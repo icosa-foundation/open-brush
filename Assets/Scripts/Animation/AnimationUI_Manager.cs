@@ -96,6 +96,9 @@ namespace TiltBrush.FrameAnimation
         [SerializeField] public GameObject layersPanel;
 
 
+        // [SerializeField] public GameObject captureRig;
+
+
         bool animationMode = true;
 
 
@@ -133,7 +136,7 @@ namespace TiltBrush.FrameAnimation
 
 
             App.Scene.animationUI_manager = this;
-            resetTimeline();
+            // resetTimeline();
 
 
         }
@@ -240,7 +243,7 @@ namespace TiltBrush.FrameAnimation
 
             List<Frame> framesChanging = new List<Frame>();
             while ( 
-                i < timeline[Loc.Item2].Frames.Count &&
+                Loc.Item1 + i < timeline[Loc.Item2].Frames.Count &&
                 timeline[Loc.Item2].Frames[Loc.Item1 + i].canvas.Equals(origCanvas)
                 ){
 
@@ -1247,6 +1250,9 @@ namespace TiltBrush.FrameAnimation
 
             this.gameObject.GetComponent<TiltBrush.Layers.LayerUI_Manager>().setAnimating(playing);
         }
+        public bool getPlaying(){
+            return playing;
+        }
         public void toggleAnimation()
         {
             print("TOGGLING ANIMATION");
@@ -1303,14 +1309,27 @@ namespace TiltBrush.FrameAnimation
 
 
 
+                int frameInt = getFrameOn();
+
+                focusFrame(frameInt);
+
+                // Update layer animation transforms 
+
+                if (frameInt > 0){
+
+                    for (int t = 0; t < timeline.Count; t++){
+
+                        if (timeline[0].Frames[frameInt].animatedPath != null &&
+                            timeline[0].Frames[frameInt - 1].animatedPath != null &&
+                            !timeline[0].Frames[frameInt].animatedPath.Equals(timeline[0].Frames[frameInt - 1].animatedPath)
+                         ){
+
+                            App.Scene.captureRig.GetComponent<TiltBrush.MovementPathCaptureRig>().RecordPath();
 
 
-                focusFrame(getFrameOn());
+                        }
 
-
-                foreach (animatedModel model in animatedModels)
-                {
-                    model.gameObject.transform.localPosition = new Vector3(frameOn, 0, 0);
+                    }
 
                 }
 

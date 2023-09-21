@@ -48,7 +48,19 @@ namespace TiltBrush.Layers
         {
             ResetUI();
             initScroll();
-            App.Scene.animationUI_manager.startTimeline();
+
+            if ( hasAnimationComponent()){
+                    App.Scene.animationUI_manager.startTimeline();
+            } 
+           
+        }
+
+        private bool hasAnimationComponent(){
+            return this.gameObject.GetComponent<TiltBrush.FrameAnimation.AnimationUI_Manager>() != null;
+        }
+        private bool isAnimationPlaying(){
+
+            return App.Scene.animationUI_manager != null && App.Scene.animationUI_manager.getPlaying();
         }
 
         public void setAnimating(bool animatingNow)
@@ -58,8 +70,11 @@ namespace TiltBrush.Layers
 
         public void ResetUI()
         {
-            if (animationEvent) return;
 
+
+            if ( isAnimationPlaying()) return;
+
+            Debug.Log("RESSETING UI");
 
             m_Canvases = new List<CanvasScript>();
             var layerCanvases = App.Scene.LayerCanvases.ToArray();
@@ -138,7 +153,9 @@ namespace TiltBrush.Layers
             scrollUpButton.SetActive(scrollOffset != 0);
             scrollDownButton.SetActive(scrollOffset + m_Widgets.Count > 7);
 
+            if ( hasAnimationComponent()){
             App.Scene.animationUI_manager.updateTrackScroll(scrollOffset, scrollHeight);
+            }
         }
 
 

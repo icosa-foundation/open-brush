@@ -46,6 +46,7 @@ namespace TiltBrush
             App.Switchboard.CameraPathKnotChanged += RefreshVisibility;
             App.Switchboard.CurrentCameraPathChanged += RefreshVisibility;
             App.Scene.MainCanvas.PoseChanged += OnPoseChanged;
+            App.Scene.captureRig = this.gameObject;
         }
 
         void OnDestroy()
@@ -114,6 +115,8 @@ namespace TiltBrush
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.MovementPathTool);
             App.Switchboard.TriggerCameraPathModeChanged(MovementPathTool.Mode.Recording);
 
+
+        
             VideoRecorderUtils.StartVideoCapture(
                 MultiCamTool.GetSaveName(MultiCamStyle.Video),
                 m_Manager.GetComponent<VideoRecorder>(),

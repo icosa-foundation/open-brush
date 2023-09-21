@@ -42,6 +42,8 @@ namespace TiltBrush
 
         public AnimationUI_Manager animationUI_manager;
 
+        public GameObject captureRig;
+
         private bool m_bInitialized;
         private Light[] m_Lights;
         private HashSet<int> m_DeletedLayers;
