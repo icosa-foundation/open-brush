@@ -181,7 +181,8 @@ namespace TiltBrush
         [LuaDocsParameter("width", "Image width")]
         [LuaDocsParameter("height", "Image height")]
         [LuaDocsParameter("superSampling", "The supersampling strength to apply (between 0.125 and 4.0)")]
-        public static void TakeSnapshot(TrTransform tr, string filename, int width, int height, float superSampling = 1f)
+        [LuaDocsParameter("renderDepth", "If true then render the depth buffer instead of the image")]
+        public static void TakeSnapshot(TrTransform tr, string filename, int width, int height, float superSampling = 1f, bool renderDepth = false)
         {
             bool saveAsPng;
             if (filename.ToLower().EndsWith(".jpg") || filename.ToLower().EndsWith(".jpeg"))
@@ -213,7 +214,7 @@ namespace TiltBrush
                 RenderWrapper wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
                 float ssaaRestore = wrapper.SuperSampling;
                 wrapper.SuperSampling = superSampling;
-                rMgr.RenderToTexture(tmp);
+                rMgr.RenderToTexture(tmp, asDepth: renderDepth);
                 wrapper.SuperSampling = ssaaRestore;
                 using (var fs = new FileStream(path, FileMode.Create))
                 {

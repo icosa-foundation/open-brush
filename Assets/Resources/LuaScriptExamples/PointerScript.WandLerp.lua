@@ -13,7 +13,7 @@ function Main()
 
     mix = (Math:Sin(App.time * freq) + 1) * amp
 
-    position = Vector3.LerpUnclamped(Brush.position, Wand.position, mix)
+    position = Vector3:LerpUnclamped(Brush.position, Wand.position, mix)
     rotation = Rotation:Lerp(Brush.rotation, Wand.rotation, mix)
 
     return Transform:New(position, rotation)

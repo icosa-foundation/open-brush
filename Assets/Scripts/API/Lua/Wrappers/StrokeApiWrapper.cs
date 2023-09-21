@@ -151,6 +151,10 @@ namespace TiltBrush
             SelectionManager.m_Instance.SelectStrokes(new List<Stroke> { _Stroke });
         }
 
+        [LuaDocsDescription("Removes this stroke from the current selection")]
+        [LuaDocsExample("myStroke:Deselect()")]
+        public void Deselect() => SelectionManager.m_Instance.DeselectStrokes(new [] {_Stroke});
+
         [LuaDocsDescription("Adds multiple strokes to the current selection")]
         [LuaDocsExample("Stroke:SelectMultiple(0, 4) --Adds the first 5 strokes on the sketch")]
         [LuaDocsParameter("from", "Start stroke index (0 is the first stroke that was drawn")]
@@ -178,12 +182,12 @@ namespace TiltBrush
         public void MergeFrom(string name) => ApiMethods.MergeNamedFile(name);
 
         [LuaDocsDescription("Hides the section of the stroke that is outside the specified range")]
-        [LuaDocsParameter("start", "The amount of the stroke to hide from the start (0-1)")]
-        [LuaDocsParameter("end", "The amount of the stroke to hide from the end (0-1)")]
-        [LuaDocsExample("myStroke:SetShaderFloat(\"_EmissionGain\", 0.5)")]
-        public void SetShaderClipping(float start, float end)
+        [LuaDocsParameter("clipStart", "The amount of the stroke to hide from the start (0-1)")]
+        [LuaDocsParameter("clipEnd", "The amount of the stroke to hide from the end (0-1)")]
+        [LuaDocsExample("myStroke:SetShaderClipping(0.1, 0.9)")]
+        public void SetShaderClipping(float clipStart, float clipEnd)
         {
-            _Stroke.SetShaderClipping(start, end);
+            _Stroke.SetShaderClipping(clipStart, clipEnd);
         }
 
         [LuaDocsDescription("Changes a shader float parameter")]

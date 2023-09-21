@@ -557,6 +557,11 @@ namespace TiltBrush
             SelectionManager.m_Instance.SelectWidget(widget);
         }
 
+        public static void DeselectWidget(GrabWidget widget)
+        {
+            SelectionManager.m_Instance.DeselectWidget(widget);
+        }
+
         public static void DeleteWidget(GrabWidget widget)
         {
             widget.HideNow(force: true);

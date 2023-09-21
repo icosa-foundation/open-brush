@@ -82,6 +82,10 @@ namespace TiltBrush
         [LuaDocsExample(@"myImage:Select()")]
         public void Select() => ApiMethods.SelectWidget(_ImageWidget);
 
+        [LuaDocsDescription("Removes the image from the current selection")]
+        [LuaDocsExample("myImage:Deselect()")]
+        public void Deselect() => ApiMethods.DeselectWidget(_ImageWidget);
+
         [LuaDocsDescription("Deletes the image widget")]
         [LuaDocsExample(@"myImage:Delete()")]
         public void Delete() => ApiMethods.DeleteWidget(_ImageWidget);

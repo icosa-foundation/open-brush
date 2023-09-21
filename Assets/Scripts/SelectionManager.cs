@@ -723,26 +723,8 @@ namespace TiltBrush
                     Debug.LogWarning("Attempted to deselect stroke that is not selected.");
                     continue;
                 }
-                CanvasScript destinationCanvas;
-
-                // Deselected strokes are placed on (in order of preference):
-                // 1. Supplied targetCanvas
-                // 2. Their stored m_PreviousCanvas
-                // 3. The active canvas
-                if (IsValidDestination(targetCanvas))
-                {
-                    destinationCanvas = targetCanvas;
-                }
-                else if (IsValidDestination(stroke.m_PreviousCanvas))
-                {
-                    destinationCanvas = stroke.m_PreviousCanvas;
-                }
-                else
-                {
-                    destinationCanvas = App.Scene.ActiveCanvas;
-                }
-
-                stroke.SetParentKeepWorldPosition(destinationCanvas, SelectionTransform);
+                var destination = ChooseDestinationCanvas(targetCanvas, stroke.m_PreviousCanvas);
+                stroke.SetParentKeepWorldPosition(destination, SelectionTransform);
                 m_SelectedStrokes.Remove(stroke);
 
                 var groupStrokes = m_GroupToSelectedStrokes[stroke.Group];
@@ -806,6 +788,11 @@ namespace TiltBrush
             groupWidgets.Add(widget);
         }
 
+        public void DeselectWidget(GrabWidget widget, CanvasScript targetCanvas = null)
+        {
+            DeselectWidgets(new []{widget}, targetCanvas);
+        }
+
         public void DeselectWidgets(IEnumerable<GrabWidget> widgets, CanvasScript targetCanvas = null)
         {
             // Deselects to the canvas stored in m_PreviousCanvas for each stroke or widget
@@ -819,25 +806,9 @@ namespace TiltBrush
                     continue;
                 }
 
-                CanvasScript destinationCanvas;
-                // Deselected widgets  are placed on (in order of preference):
-                // 1. Supplied targetCanvas
-                // 2. Their stored m_PreviousCanvas
-                // 3. The active canvas
-                if (IsValidDestination(targetCanvas))
-                {
-                    destinationCanvas = targetCanvas;
-                }
-                else if (IsValidDestination(widget.m_PreviousCanvas))
-                {
-                    destinationCanvas = widget.m_PreviousCanvas;
-                }
-                else
-                {
-                    destinationCanvas = App.Scene.ActiveCanvas;
-                }
-                widget.SetCanvas(destinationCanvas);
-                widget.RestoreGameObjectLayer(App.ActiveCanvas.gameObject.layer);
+                var destination = ChooseDestinationCanvas(targetCanvas, widget.m_PreviousCanvas);
+                widget.SetCanvas(destination);
+                widget.RestoreGameObjectLayer(destination.gameObject.layer);
                 widget.gameObject.SetActive(true);
                 m_SelectedWidgets.Remove(widget);
 
@@ -853,6 +824,17 @@ namespace TiltBrush
             {
                 SelectionTransform = TrTransform.identity;
             }
+        }
+
+        // Deselected objects are placed on (in order of preference):
+        // 1. Supplied targetCanvas
+        // 2. Their stored m_PreviousCanvas
+        // 3. The active canvas
+        private CanvasScript ChooseDestinationCanvas(CanvasScript targetCanvas, CanvasScript previousCanvas)
+        {
+            if (IsValidDestination(targetCanvas)) return targetCanvas;
+            if (IsValidDestination(previousCanvas)) return previousCanvas;
+            return App.Scene.ActiveCanvas;
         }
 
         public void RegisterStrokesInSelectionCanvas(ICollection<Stroke> strokes)
@@ -895,15 +877,15 @@ namespace TiltBrush
             UpdateSelectionWidget();
         }
 
-        public void InvertSelection()
+        public void InvertSelection(CanvasScript canvas)
         {
             // Build a list of all the strokes in the main canvas.
             List<Stroke> unselectedStrokes =
-                SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes();
+                SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes(canvas);
 
             // Build a list of all the unpinned widgets in the main canvas.
             List<GrabWidget> unselectedWidgets =
-                WidgetManager.m_Instance.GetAllUnselectedActiveWidgets();
+                WidgetManager.m_Instance.GetAllUnselectedActiveWidgets(canvas);
 
             // Select everything that was in the main canvas.
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
@@ -932,15 +914,15 @@ namespace TiltBrush
                 new FlipSelectionCommand(m_SelectedStrokes, m_SelectedWidgets, flipPlaneInSelectionSpace));
         }
 
-        public void SelectAll()
+        public void SelectAll(CanvasScript canvas)
         {
             // Build a list of all the strokes in the main canvas.
             List<Stroke> unselectedStrokes =
-                SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes();
+                SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes(canvas);
 
             // Build a list of all the unpinned widgets in the main canvas.
             List<GrabWidget> unselectedWidgets =
-                WidgetManager.m_Instance.GetAllUnselectedActiveWidgets();
+                WidgetManager.m_Instance.GetAllUnselectedActiveWidgets(canvas);
 
             // Select em all.
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(

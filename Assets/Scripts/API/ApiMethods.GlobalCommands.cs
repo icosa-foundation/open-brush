@@ -436,14 +436,14 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
 
-        [ApiEndpoint("select.all", "Selects all strokes and widgets in the scene")]
+        [ApiEndpoint("select.all", "Selects all strokes and widgets on the current layer")]
         public static void SelectAll()
         {
             var rEnum = SketchControlsScript.GlobalCommands.SelectAll;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
 
-        [ApiEndpoint("select.none", "Deselects all strokes and widgets in the scene")]
+        [ApiEndpoint("select.none", "Deselects all strokes and widgets on the current layer")]
         public static void SelectNone()
         {
             SelectionManager.m_Instance.ClearActiveSelection();

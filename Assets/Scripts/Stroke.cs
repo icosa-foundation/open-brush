@@ -484,7 +484,7 @@ namespace TiltBrush
             }
         }
 
-        public void SetShaderClipping(float start, float end)
+        public void SetShaderClipping(float clipStart, float clipEnd)
         {
             _CheckValidLayerState();
             var batch = m_BatchSubset.m_ParentBatch;
@@ -493,8 +493,8 @@ namespace TiltBrush
             {
                 throw new StrokeShaderModifierException($"Brush material {material.name} does not support shader clipping");
             }
-            float startIndex = start * batch.Geometry.NumVerts;
-            float endIndex = end * batch.Geometry.NumVerts;
+            float startIndex = clipStart * batch.Geometry.NumVerts;
+            float endIndex = clipEnd * batch.Geometry.NumVerts;
             batch.InstantiatedMaterial.SetFloat("_ClipStart", startIndex);
             batch.InstantiatedMaterial.SetFloat("_ClipEnd", endIndex);
         }

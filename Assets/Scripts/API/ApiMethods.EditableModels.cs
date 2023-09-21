@@ -101,7 +101,7 @@ namespace TiltBrush
 
             // At this point we've got a relative path to a file in Models
             string relativePath = location;
-            var tr = _CurrentTransform().TransformBy(Coords.CanvasPose);
+            var tr = _CurrentTransform().TransformBy(App.Scene.ActiveCanvas.Pose);
             var model = new Model(Model.Location.File(relativePath));
             if (editable)
             {

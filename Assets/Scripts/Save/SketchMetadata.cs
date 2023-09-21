@@ -1032,13 +1032,6 @@ namespace TiltBrush
         {
             return SceneTransformInRoomSpace != TrTransform.identity;
         }
-        public TrTransform CanvasTransformInSceneSpace = TrTransform.identity;
-        // Callback for JSON.net (name is magic and special)
-        public bool ShouldSerializeCanvasTransformInSceneSpace()
-        {
-            return CanvasTransformInSceneSpace != TrTransform.identity;
-        }
-
         // This was the old name of ThumbnailCameraTransformInRoomSpace.
         [Serializable]
         public struct UnusedSketchTransform

@@ -312,7 +312,7 @@ namespace TiltBrush
 
         protected override TrTransform ApplyAxisLocks(TrTransform xf_GS)
         {
-            var outXf_CS = App.ActiveCanvas.Pose.inverse * xf_GS;
+            var outXf_CS = m_SelectionCanvas.Pose.inverse * xf_GS;
             // Restore transforms for locked axes
             if (SelectionManager.m_Instance.m_LockTranslationX) outXf_CS.translation.x = transform.localPosition.x;
             if (SelectionManager.m_Instance.m_LockTranslationY) outXf_CS.translation.y = transform.localPosition.y;
@@ -322,7 +322,7 @@ namespace TiltBrush
             if (SelectionManager.m_Instance.m_LockRotationY) euler.y = transform.localRotation.eulerAngles.y;
             if (SelectionManager.m_Instance.m_LockRotationZ) euler.z = transform.localRotation.eulerAngles.z;
             outXf_CS.rotation.eulerAngles = euler;
-            xf_GS = App.ActiveCanvas.Pose * outXf_CS;
+            xf_GS = m_SelectionCanvas.Pose * outXf_CS;
             return xf_GS;
         }
 

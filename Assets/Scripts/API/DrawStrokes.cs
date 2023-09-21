@@ -39,12 +39,12 @@ namespace TiltBrush
             List<Color> colors = null,
             float brushScale = 1f,
             bool rawStrokes = false,
-            float smoothing = 0.2f)
+            float smoothing = 0.2f,
+            uint group = GroupManager.kIdSketchGroupTagNone)
         {
             var paths = pathEnumerable.ToList();
             var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
             uint time = 0;
-            var group = App.GroupManager.NewUnusedGroup();
             int pathIndex = 0;
             for (var i = 0; i < paths.Count; i++)
             {
@@ -103,7 +103,7 @@ namespace TiltBrush
                     m_ControlPoints = controlPoints.ToArray(),
                 };
                 stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
-                stroke.Group = group;
+                stroke.Group = new SketchGroupTag(group);
                 stroke.Recreate(tr, App.Scene.ActiveCanvas);
                 if (pathIndex != 0) stroke.m_Flags = SketchMemoryScript.StrokeFlags.IsGroupContinue;
                 SketchMemoryScript.m_Instance.MemoryListAdd(stroke);

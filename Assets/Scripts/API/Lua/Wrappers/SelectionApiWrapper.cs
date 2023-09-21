@@ -5,6 +5,8 @@ namespace TiltBrush
     [MoonSharpUserData]
     public static class SelectionApiWrapper
     {
+        public static void Deselect() => SelectionManager.m_Instance.ClearActiveSelection();
+
         [LuaDocsDescription("Duplicates the currently selected items")]
         [LuaDocsExample("Selection:Duplicate()")]
         public static void Duplicate() => ApiMethods.DuplicateSelection();
@@ -37,9 +39,5 @@ namespace TiltBrush
         [LuaDocsExample("Selection:Trim(5)")]
         [LuaDocsParameter("count", "The number of points to trim from each stroke")]
         public static void Trim(int count) => ApiMethods.TrimSelection(count);
-
-        [LuaDocsDescription("Selects all brush strokes and widgets on the current layer")]
-        [LuaDocsExample("Selection:SelectAll()")]
-        public static void SelectAll() => ApiMethods.SelectAll();
     }
 }

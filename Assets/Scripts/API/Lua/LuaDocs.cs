@@ -73,42 +73,24 @@ namespace TiltBrush
             string methods = "";
             string enumValues = "";
 
-
-            if (Properties.Count > 0)
-            {
-                properties = $@"
----Properties for class {Name}
-
----@class {Name}
-t = Class()
-
-{String.Join("\n", Properties.Select(p => p.AutocompleteSerialize(Name)))}
+            if (Properties.Count > 0) properties = $@"{String.Join("\n",
+                Properties
+    .Where(p => p.Name != "Item")  // Exclude indexers
+    .Select(p => p.AutocompleteSerialize()))}
+";
+            if (EnumValues.Count > 0) enumValues = $@"{String.Join("\n",
+                EnumValues.Select(p => p.AutocompleteSerialize(Name)))}
 
 ";
-            }
-
-            if (EnumValues.Count > 0)
-            {
-                enumValues = $@"
----Values for enum {Name}
-
----@class {Name}
-t = Class()
-
-{String.Join("\n", EnumValues.Select(p => p.AutocompleteSerialize(Name)))}
-
+            if (Methods.Count > 0) methods = $@"{String.Join("\n",
+                Methods.Select(m => m.AutocompleteSerialize(Name)))}
 ";
-            }
-
-            if (Methods.Count > 0)
-            {
-                methods = $@"---Methods for type {Name}
-
-{String.Join("\n", Methods.Select(m => m.AutocompleteSerialize(Name)))}";
-
-            }
             
-            return $"{properties}{enumValues}{methods}";
+            return $@"
+
+---@class {Name}
+{properties}{Name} = {{}}
+{enumValues}{methods}";
         }
 
         public string MarkdownSerialize()
@@ -205,10 +187,11 @@ t = Class()
         public LuaDocsPrimitiveType PrimitiveType;
         [CanBeNull] public string CustomTypeName;
         public bool IsTable;
-        
-        public static LuaDocsType CsharpTypeToDocsType(string reflectedType)
+
+        public static LuaDocsType CsharpTypeToDocsType(Type reflectedType)
         {
-            var docsType = reflectedType switch
+            string reflectedTypeName = reflectedType.ToString();
+            var docsType = reflectedTypeName switch
             {
                 "System.Boolean" => new LuaDocsType
                 {
@@ -315,9 +298,9 @@ t = Class()
                 _ => new LuaDocsType
                 {
                     PrimitiveType = LuaDocsPrimitiveType.UserData,
-                    CustomTypeName = reflectedType
+                    CustomTypeName = reflectedTypeName
                         .Replace("TiltBrush.", "")
-                        .Replace("ApiWrapper", "")
+                        .Replace("ApiWrapper", ""),
                 }
             };
 
@@ -366,17 +349,21 @@ t = Class()
         public string Name;
         public LuaDocsType ParameterType;
         public string Description;
-        
-        // 0=name 1=type 2=description
-        private string markdownTemplate = "<tr><td>{0}</td><td>{1}</td><td>{2}</td></tr>";
+        public bool IsOptional;
+        public string DefaultValue;
+
+        // 0=name 1=type 2=default value 3=description
+        private string markdownTemplate = "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>";
+
         public string MarkdownSerialize()
         {
-            return string.Format(markdownTemplate, Name, ParameterType.TypeAsMarkdownString(), Description);
+            return string.Format(markdownTemplate, Name, ParameterType.TypeAsMarkdownString(), DefaultValue, Description);
         }
         
         public string AutocompleteSerialize()
         {
-            return $"---@param {Name} {ParameterType.TypeAsLuaString()}";
+            string suffix = IsOptional ? "?" : "";
+            return $"---@param {Name}{suffix} {ParameterType.TypeAsLuaString()} {Description}";
         }
     }
     
@@ -416,7 +403,7 @@ t = Class()
 **Parameters:**
 
 <table data-full-width=""false"">
-<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<thead><tr><th>Name</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
 <tbody>{parameters}</tbody></table>
 
 ";
@@ -478,7 +465,7 @@ t = Class()
             string returnTypeAnnotation = "";
             if (ReturnType.PrimitiveType != LuaDocsPrimitiveType.Nil)
             {
-                returnTypeAnnotation = $"\n---@return {ReturnType.TypeAsLuaString()}";
+                returnTypeAnnotation = $"\n---@return {ReturnType.TypeAsLuaString()} {ReturnValueDescription}";
             }
 
             return $@"{parameters}{returnTypeAnnotation}
@@ -510,6 +497,7 @@ function {className}:{Name}({string.Join(", ", Parameters.Select(p => p.Name))})
     {
         public string Name;
         public LuaDocsType PropertyType;
+        public LuaDocsType IndexerType;
         public string Description;
         public bool ReadWrite;
         public bool Static;
@@ -525,11 +513,15 @@ function {className}:{Name}({string.Join(", ", Parameters.Select(p => p.Name))})
             return string.Format(markdownTemplate, name, PropertyType.TypeAsMarkdownString(), readwrite, Description);
         }
 
-        public string AutocompleteSerialize(string className)
+        public string AutocompleteSerialize()
         {
-            return $@"---@type {PropertyType.TypeAsLuaString()}
-{className}.{Name} = nil
-";
+            string indexerAnnotation = "";
+            if (IndexerType != null)
+            {
+                // Union with the indexer type
+                indexerAnnotation = $" | {IndexerType.TypeAsLuaString()}[]";
+            }
+            return $"---@field {Name} {PropertyType.TypeAsLuaString()}{indexerAnnotation} {Description}";
         }
     }
 }

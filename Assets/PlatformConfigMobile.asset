@@ -32,7 +32,7 @@ MonoBehaviour:
   EnableExportLatk: 1
   EnableExportMemoryOptimization: 1
   EnableMulticamPreview: 1
-  EnabledMulticamStyles: 000000000100000002000000
+  EnabledMulticamStyles: 00000000010000000200000004000000
   MaxSnapshotDimension: 4096
   FrameRateToPreviewRenderGap:
     serializedVersion: 2

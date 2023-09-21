@@ -30,7 +30,7 @@ namespace TiltBrush
         [LuaDocsParameter("onError", "A function to call when the request fails")]
         [LuaDocsParameter("headers", "A table of key-value pairs to send as headers")]
         [LuaDocsParameter("context", "A value to pass to the onSuccess and onError functions")]
-        public static void Get(string url, Closure onSuccess, Closure onError, Table headers, DynValue context)
+        public static void Get(string url, Closure onSuccess, Closure onError = null, Table headers = null, DynValue context = null)
         {
             var request = UnityWebRequest.Get(url);
             _setHeaders(ref request, headers);

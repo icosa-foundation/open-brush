@@ -74,6 +74,7 @@ namespace TiltBrush
 
             // Generate __autocomplete.lua
             var autocomplete = new StringBuilder();
+            autocomplete.Append("---@meta\n\n");
             string autocompleteFilePath = Path.Combine("Assets/Resources/LuaModules", "__autocomplete.lua");
             foreach (var klass in LuaDocsRegistration.ApiDocClasses)
             {

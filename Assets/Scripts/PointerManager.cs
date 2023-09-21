@@ -17,9 +17,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Polyhydra.Core;
-using TiltBrush.MeshEditing;
-using MoonSharp.Interpreter;
 using ControllerName = TiltBrush.InputManager.ControllerName;
 using Random = UnityEngine.Random;
 
@@ -901,6 +898,7 @@ namespace TiltBrush
                             needsDummyPointer = false;
                         }
                         Quaternion pointerRot_GS = rAttachPoint_GS.rotation * FreePaintTool.sm_OrientationAdjust;
+                        pointerRot_GS *= Quaternion.Euler(0, 180, 0);
                         newTr_CS.translation = pointerRot_GS * tr.translation;
                         break;
                     }
@@ -1707,7 +1705,7 @@ namespace TiltBrush
                 bool resetColors = true;
                 bool resetBrushes = true;
                 // TODO Better logic around when to set and revert colors
-                if (CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
+                if (CurrentSymmetryMode is SymmetryMode.ScriptedSymmetryMode or SymmetryMode.MultiMirror)
                 {
                     if (m_SymmetryPointerColors != null && m_SymmetryPointerColors.Count > 0)
                     {

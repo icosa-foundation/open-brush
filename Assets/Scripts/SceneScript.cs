@@ -392,7 +392,7 @@ namespace TiltBrush
         public LayerMetadata[] LayerCanvasesSerialized()
         {
             var layers = LayerCanvases.ToArray();
-            var meta = new LayerMetadata[layers.Count()];
+            var meta = new LayerMetadata[layers.Length];
             for (var i = 0; i < layers.Length; i++)
             {
                 var layer = layers[i];
@@ -400,7 +400,7 @@ namespace TiltBrush
                 {
                     Visible = layer.gameObject.activeSelf,
                     Name = layer.name,
-                    Transform = layer.Pose
+                    Transform = layer.LocalPose
                 };
             }
             return meta;

@@ -19,7 +19,7 @@ function Boid.new(position, velocity)
     local self = setmetatable({}, Boid)
     self.position = position
     self.velocity = velocity
-    self.orientation = Rotation.lookRotation(self.velocity, Vector3.up)
+    self.orientation = Rotation:LookRotation(self.velocity, Vector3.up)
     return self
 end
 
@@ -40,7 +40,7 @@ function Boid:update(dt, boids)
 
     self.velocity = self.velocity:ClampMagnitude(5)
     self.position = self.position:Add(self.velocity:Multiply(dt))
-    self.orientation = Rotation.lookRotation(self.velocity, Vector3.up)
+    self.orientation = Rotation:LookRotation(self.velocity, Vector3.up)
 end
 
 function Boid:calculateForces(boids)
@@ -100,7 +100,7 @@ function updateBoids(dt)
     pointers = Path:New()
     for _, boid in ipairs(boids) do
         boid:update(dt, boids)
-        pointers.Insert(Transform:New(boid.position, boid.orientation))
+        pointers:Insert(Transform:New(boid.position, boid.orientation))
     end
     return pointers
 end

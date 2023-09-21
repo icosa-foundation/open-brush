@@ -32,6 +32,20 @@ namespace TiltBrush
             _Strokes = strokes;
         }
 
+        [LuaDocsDescription("Adds these strokes to the current selection")]
+        [LuaDocsExample("myStrokes:Select()")]
+        public void Select()
+        {
+            SelectionManager.m_Instance.SelectStrokes(_Strokes);
+        }
+
+        [LuaDocsDescription("Removes these strokes from the current selection")]
+        [LuaDocsExample("myStrokes:Deselect()")]
+        public void Deselect()
+        {
+            SelectionManager.m_Instance.DeselectStrokes(_Strokes);
+        }
+
         [LuaDocsDescription("Deletes all the strokes in the list")]
         [LuaDocsExample("myStrokes:Delete()")]
         public void Delete()
@@ -44,14 +58,14 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Hides the section of the stroke that is outside the specified range")]
-        [LuaDocsParameter("start", "The amount of the stroke to hide from the start (0-1)")]
-        [LuaDocsParameter("end", "The amount of the stroke to hide from the end (0-1)")]
-        [LuaDocsExample("myStroke:SetShaderFloat(\"_EmissionGain\", 0.5)")]
-        public void SetShaderClipping(float start, float end)
+        [LuaDocsParameter("clipStart", "The amount of the stroke to hide from the start (0-1)")]
+        [LuaDocsParameter("clipEnd", "The amount of the stroke to hide from the end (0-1)")]
+        [LuaDocsExample("myStroke:SetShaderClipping(0.1, 0.9)")]
+        public void SetShaderClipping(float clipStart, float clipEnd)
         {
             foreach (var stroke in _Strokes)
             {
-                stroke.SetShaderClipping(start, end);
+                stroke.SetShaderClipping(clipStart, clipEnd);
             }
         }
 

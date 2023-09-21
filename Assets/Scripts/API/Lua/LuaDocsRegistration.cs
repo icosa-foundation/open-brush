@@ -94,15 +94,23 @@ namespace TiltBrush
                 {
                     if (isHidden(prop)) continue;
 
-                    var typeName = prop.PropertyType.ToString();
                     var property = new LuaDocsProperty
                     {
                         Name = prop.Name,
                         Description = GetPropertyDescription(prop),
-                        PropertyType = LuaDocsType.CsharpTypeToDocsType(typeName),
+                        PropertyType = LuaDocsType.CsharpTypeToDocsType(prop.PropertyType),
                         ReadWrite = prop.CanWrite,
                         Static = prop.IsStatic()
                     };
+
+                    // Does this property have an indexer?
+                    var indexer = prop.PropertyType.GetProperties().FirstOrDefault(p => p.GetIndexParameters().Length > 0);
+                    // Only document indexers for custom types.
+                    // Otherwise string ends up documented as a union of string and char[]
+                    if (indexer != null && !string.IsNullOrEmpty(property.PropertyType.CustomTypeName))
+                    {
+                        property.IndexerType = LuaDocsType.CsharpTypeToDocsType(indexer.PropertyType);
+                    }
                     apiDocClass.Properties.Add(property);
                 }
 
@@ -147,21 +155,22 @@ namespace TiltBrush
                     var paramDict = GetMethodParameters(prop);
                     foreach (var param in prop.GetParameters())
                     {
-                        var typeName = param.ParameterType.ToString();
                         string description;
+                        string defaultValue = param.DefaultValue?.ToString();
+                        if (defaultValue is "True" or "False") defaultValue = defaultValue.ToLower(); // Lua bools are lower case
                         if (!paramDict.TryGetValue(param.Name, out description)) description = "";
                         var parameter = new LuaDocsParameter
                         {
                             Name = param.Name,
                             Description = description,
-                            ParameterType = LuaDocsType.CsharpTypeToDocsType(typeName)
+                            ParameterType = LuaDocsType.CsharpTypeToDocsType(param.ParameterType),
+                            IsOptional = param.IsOptional,
+                            DefaultValue = defaultValue
                         };
                         method.Parameters.Add(parameter);
                     }
 
-                    var returnTypeName = prop.ReturnType.ToString();
-                    method.ReturnType = LuaDocsType.CsharpTypeToDocsType(returnTypeName);
-
+                    method.ReturnType = LuaDocsType.CsharpTypeToDocsType(prop.ReturnType);
                     apiDocClass.Methods.Add(method);
                 }
                 ApiDocClasses.Add(apiDocClass);
