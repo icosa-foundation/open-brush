@@ -763,11 +763,6 @@ namespace TiltBrush
             Slider3.UpdateValueAbsolute(Slider3.GetCurrentValue());
         }
 
-        public static void CreateWidgetForPolyhedron(PolyMesh poly, PolyRecipe polyRecipe, TrTransform tr)
-        {
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, polyRecipe, tr);
-        }
-
         public void HandleSavePreset(bool overwrite)
         {
             if (string.IsNullOrEmpty(CurrentPresetPath))

@@ -45,8 +45,8 @@ namespace TiltBrush
         public PolyRecipe Clone()
         {
             var clone = this;
-            clone.Colors = (Color[])Colors.Clone();
-            clone.Operators = new List<PreviewPolyhedron.OpDefinition>(Operators);
+            clone.Colors = (Color[])Colors?.Clone();
+            clone.Operators = (Operators == null) ? null : new List<PreviewPolyhedron.OpDefinition>(Operators);
             return clone;
         }
 

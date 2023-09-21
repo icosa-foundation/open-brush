@@ -315,7 +315,7 @@ namespace TiltBrush
             switch (m_CurrentCreateMode)
             {
                 case CreateModes.EditableModel:
-                    PolyhydraPanel.CreateWidgetForPolyhedron(poly, PreviewPolyhedron.m_Instance.m_PolyRecipe, tr);
+                    EditableModelManager.m_Instance.GeneratePolyMesh(poly, PreviewPolyhedron.m_Instance.m_PolyRecipe, tr);
                     break;
                 case CreateModes.BrushStrokesFromFaces:
                     CreateBrushStrokesForPoly(poly, tr);

@@ -834,6 +834,11 @@ namespace TiltBrush
                     m_LoadError = new LoadError("Unknown format", ext);
                 }
             }
+            else
+            {
+                CalcBoundsNonGltf(go);
+                EndCreatePrefab(go, warnings);
+            }
 
         }
 
