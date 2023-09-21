@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#if !DISABLE_AUDIO_CAPTURE
+#if !DISABLE_AUDIO_CAPTURE && !UNITY_OSX && !UNITY_EDITOR_OSX
 using CSCore.CoreAudioAPI;
 using CSCore.SoundIn;
 using CSCore.Streams;
@@ -107,7 +107,7 @@ namespace TiltBrush
         private float[] m_LChannelTempBuffer;
         private float[] m_RChannelTempBuffer;
 
-#if !DISABLE_AUDIO_CAPTURE
+#if !DISABLE_AUDIO_CAPTURE && !UNITY_OSX && !UNITY_EDITOR_OSX
         // Data that is only valid in State.Looking
         private Future<Queue<WasapiCapture>> m_CapturesFuture;
 
@@ -150,7 +150,7 @@ namespace TiltBrush
         void Awake()
         {
             m_State = State.Disabled;
-#if !DISABLE_AUDIO_CAPTURE
+#if !DISABLE_AUDIO_CAPTURE && !UNITY_OSX && !UNITY_EDITOR_OSX
             int size = VisualizerManager.m_Instance.FFTSize;
             m_HotValues = new StereoBuffer(size);
             m_OperateValues = new StereoBuffer(size);
@@ -179,7 +179,7 @@ namespace TiltBrush
             }
         }
 
-#if !DISABLE_AUDIO_CAPTURE
+#if !DISABLE_AUDIO_CAPTURE && !UNITY_OSX && !UNITY_EDITOR_OSX
 
         public void Activate(float delaySeconds)
         {
