@@ -231,9 +231,6 @@ namespace TiltBrush
             m_ModelInstance.gameObject.SetActive(true);
             m_ModelInstance.parent = this.transform;
 
-            print("MODEL PARENT " + this.gameObject.name);
-
-            print("CREATING MODEL ^^ " + m_ModelInstance.gameObject.name);
 
 
 

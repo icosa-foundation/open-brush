@@ -171,16 +171,20 @@ namespace TiltBrush.FrameAnimation
         }
 
 
-        private void hideFrame(int frameIndex)
+        private void hideFrame(int hidingFrame, int frameOn)
         {
-
+            Debug.Log(" HIDE FRAME " + hidingFrame);
             foreach (Track track in timeline)
             {
-                Frame thisFrame = track.Frames[frameIndex];
 
+                if (track.Frames[hidingFrame].canvas.Equals(track.Frames[frameOn].canvas)) continue;
+
+                Frame thisFrame = track.Frames[hidingFrame];
+
+            
                 App.Scene.HideLayer(thisFrame.canvas);
                 thisFrame.visible = false;
-                track.Frames[frameIndex] = thisFrame;
+                track.Frames[hidingFrame] = thisFrame;
             }
 
         }
@@ -888,7 +892,7 @@ namespace TiltBrush.FrameAnimation
                     continue;
                 }
                 print("HIDING IN FOCUS FRAME");
-                hideFrame(i);
+                hideFrame(i,FrameIndex);
 
             }
 
@@ -924,6 +928,9 @@ namespace TiltBrush.FrameAnimation
 
 
             showFrame(FrameIndex);
+
+            Debug.Log("SHOWING FRAME " + FrameIndex);
+            Debug.Log(timeline[0].Frames[FrameIndex].canvas);
 
             updateUI(timelineInput);
 
@@ -1214,6 +1221,7 @@ namespace TiltBrush.FrameAnimation
 
             print("T SLIDE frameoN- " + frameOn);
             focusFrame(getFrameOn(), true);
+            updateLayerTransforms();
 
             // Scrolling the timeline
             print("TIMELINE SCROLLING " + Value);
@@ -1263,7 +1271,96 @@ namespace TiltBrush.FrameAnimation
 
 
 
+        public float getSmoothAnimationTime(Track trackOn){
 
+            CanvasScript canvasAnimating  = trackOn.Frames[getFrameOn()].canvas;
+            (int,int) coord = getCanvasIndex(canvasAnimating);
+            // coord.Item2 > track
+
+             int frameLength  = 0;
+            while ( 
+                coord.Item1 + frameLength < timeline[coord.Item2].Frames.Count &&
+                timeline[coord.Item2].Frames[coord.Item1 + frameLength].canvas.Equals(canvasAnimating)
+                ){
+
+                    frameLength++;
+            }
+
+            return (frameOn - (float)coord.Item2) / (float)(frameLength + 1);
+
+
+        }
+
+        public void updateLayerTransforms(){
+                 int frameInt = getFrameOn();
+
+
+
+                // Update layer animation transforms 
+
+                if (frameInt > 0){
+
+                    for (int t = 0; t < timeline.Count; t++){
+
+                        if (timeline[0].Frames[frameInt].animatedPath != null &&
+                            timeline[0].Frames[frameInt - 1].animatedPath != null 
+                            // && !timeline[0].Frames[frameInt].animatedPath.Equals(timeline[0].Frames[frameInt - 1].animatedPath
+                            
+                         ){
+
+                            Debug.Log("NUM POS KNOTS");
+                            Debug.Log(timeline[0].Frames[frameInt - 1].animatedPath.Path.NumPositionKnots);
+
+                            float canvasTime = getSmoothAnimationTime(timeline[t]) *  (timeline[0].Frames[frameInt - 1].animatedPath.Path.NumPositionKnots);
+                            Debug.Log("CANVAS TIME");
+                            Debug.Log(canvasTime);
+
+                            TiltBrush.PathT pathTime = new TiltBrush.PathT(canvasTime);
+
+
+                           
+                            // if (m_CurrentPathWidget.Path.RotationKnots.Count > 0)
+                            // {
+                            //     transform.rotation = m_CurrentPathWidget.Path.GetRotation(t);
+                            // }
+                            // float fov = m_CurrentPathWidget.Path.GetFov(t);
+                            // SketchControlsScript.m_Instance.MovementPathCaptureRig.SetFov(fov);
+                            // SketchControlsScript.m_Instance.MovementPathCaptureRig.UpdateCameraTransform(transform);
+
+                            Vector3 Position  = timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathTime);
+
+                            Debug.Log("POSITION MOV" );
+                            Debug.Log(Position);
+        
+
+
+                            
+
+                            for(int i = 0; i < timeline[0].Frames[frameInt].canvas.gameObject.transform.GetChildCount(); i++)
+                            {
+
+                                GameObject Go = timeline[0].Frames[frameInt].canvas.gameObject.transform.GetChild(i).gameObject;
+
+                                if (Go.GetComponent<Batch>() != null || Go.GetComponent<ModelWidget>() != null){
+                                    Go.transform.localPosition = Position;
+                                }
+
+
+
+                            }
+
+
+
+
+
+
+                            
+
+
+                        }
+                    }
+                }
+        }
 
         // Update is called once per frame
         float prevFrameOn = 0;
@@ -1311,28 +1408,12 @@ namespace TiltBrush.FrameAnimation
 
                 int frameInt = getFrameOn();
 
-                focusFrame(frameInt);
+                focusFrame(getFrameOn());
+
+
 
                 // Update layer animation transforms 
-
-                if (frameInt > 0){
-
-                    for (int t = 0; t < timeline.Count; t++){
-
-                        if (timeline[0].Frames[frameInt].animatedPath != null &&
-                            timeline[0].Frames[frameInt - 1].animatedPath != null &&
-                            !timeline[0].Frames[frameInt].animatedPath.Equals(timeline[0].Frames[frameInt - 1].animatedPath)
-                         ){
-
-                            App.Scene.captureRig.GetComponent<TiltBrush.MovementPathCaptureRig>().RecordPath();
-
-
-                        }
-
-                    }
-
-                }
-
+                updateLayerTransforms();
 
             }
         }
