@@ -1577,7 +1577,7 @@ MonoBehaviour:
       type: 3}
     m_Command: 100
   - m_PopUpPrefab: {fileID: 125142, guid: 7009260f148146a47b18e9c43e3802a2, type: 3}
-    m_Command: 5203
+    m_Command: 1000
   m_PanelDescription: 
   m_LocalizedPanelDescription:
     m_TableReference:
@@ -4225,7 +4225,7 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Command: 5203
+  m_Command: 1000
   m_CommandParam: -1
   m_CommandParam2: -1
   m_RequiresPopup: 1
