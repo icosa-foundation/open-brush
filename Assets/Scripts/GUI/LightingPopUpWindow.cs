@@ -12,6 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// TODO: Better way to detect Passthrough support.
+// Extra: Passthrough should be *per* envrionment really!
+// See https://github.com/icosa-foundation/open-brush/issues/456
+#if OCULUS_SUPPORTED
+#define PASSTHROUGH_SUPPORTED
+#endif
+
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
@@ -47,11 +54,7 @@ namespace TiltBrush
             m_Environments = EnvironmentCatalog.m_Instance.AllEnvironments.ToList();
 
             // Remove passthrough scene for devices that don't support it
-            // (everything but Quest).
-            // TODO: Better way to detect Passthrough support.
-            // Extra: Passthrough should be *per* envrionment really!
-            // See https://github.com/icosa-foundation/open-brush/issues/456
-#if !OCULUS_SUPPORTED
+#if PASSTHROUGH_SUPPORTED
             foreach (var env in m_Environments)
             {
                 // Passthrough
@@ -61,7 +64,7 @@ namespace TiltBrush
                     break;
                 }
             }
-#endif // OCULUS_SUPPORTED
+#endif // PASSTHROUGH_SUPPORTED
 
             //find the active lighting preset
             TiltBrush.Environment rCurrentPreset = SceneSettings.m_Instance.GetDesiredPreset();
