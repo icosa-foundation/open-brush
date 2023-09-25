@@ -1286,7 +1286,9 @@ namespace TiltBrush.FrameAnimation
                     frameLength++;
             }
 
-            return (frameOn - (float)coord.Item2) / (float)(frameLength + 1);
+            Debug.Log("SMOOTH TIME " + frameOn + " " + coord.Item1 + " " + frameLength);
+
+            return (frameOn - (float)coord.Item1) / (float)(frameLength);
 
 
         }
@@ -1298,25 +1300,29 @@ namespace TiltBrush.FrameAnimation
 
                 // Update layer animation transforms 
 
-                if (frameInt > 0){
+                if (frameInt >= 0){
 
                     for (int t = 0; t < timeline.Count; t++){
 
-                        if (timeline[0].Frames[frameInt].animatedPath != null &&
-                            timeline[0].Frames[frameInt - 1].animatedPath != null 
+                        if ( 
+                            ( timeline[0].Frames[frameInt].animatedPath != null && frameInt == 0 )|| 
+                            (timeline[0].Frames[frameInt].animatedPath != null &&
+                            timeline[0].Frames[frameInt - 1].animatedPath != null)
                             // && !timeline[0].Frames[frameInt].animatedPath.Equals(timeline[0].Frames[frameInt - 1].animatedPath
                             
                          ){
 
                             Debug.Log("NUM POS KNOTS");
-                            Debug.Log(timeline[0].Frames[frameInt - 1].animatedPath.Path.NumPositionKnots);
+                            Debug.Log(timeline[0].Frames[frameInt].animatedPath.Path.NumPositionKnots);
 
-                            float canvasTime = getSmoothAnimationTime(timeline[t]) *  (timeline[0].Frames[frameInt - 1].animatedPath.Path.NumPositionKnots);
-                            Debug.Log("CANVAS TIME");
-                            Debug.Log(canvasTime);
+                            float canvasTime = (1.0f -  getSmoothAnimationTime(timeline[t])) *  (timeline[0].Frames[frameInt].animatedPath.Path.NumPositionKnots - 1);
+                            Debug.Log("CANVAS TIME " + canvasTime + " | " + getSmoothAnimationTime(timeline[t]) + " | " + (timeline[0].Frames[frameInt].animatedPath.Path.NumPositionKnots));
+
+                            
+                  
 
                             TiltBrush.PathT pathTime = new TiltBrush.PathT(canvasTime);
-
+                            TiltBrush.PathT pathStart = new TiltBrush.PathT(0);
 
                            
                             // if (m_CurrentPathWidget.Path.RotationKnots.Count > 0)
@@ -1327,27 +1333,40 @@ namespace TiltBrush.FrameAnimation
                             // SketchControlsScript.m_Instance.MovementPathCaptureRig.SetFov(fov);
                             // SketchControlsScript.m_Instance.MovementPathCaptureRig.UpdateCameraTransform(transform);
 
-                            Vector3 Position  = timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathTime);
+                            Vector3 PathPosition = timeline[0].Frames[frameInt].animatedPath.gameObject.transform.position;
+                            
+                            Vector3 Position  = timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathTime) - timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathStart) ;
+                            Vector3 NegPosition = new Vector3(0f,0f,0f) - Position;
+                            // Vector3.Subtract(
+                            //     timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathStart), 
+                            //     timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathTime)
+                            //     ); 
 
-                            Debug.Log("POSITION MOV" );
+                            Debug.Log("POSITION MOV" );;
                             Debug.Log(Position);
         
+                            TrTransform newPose = TrTransform.T(Position);
+                            // TrTransform canvasPose = timeline[0].Frames[frameInt].canvas.Pose;
+                          
+                            timeline[0].Frames[frameInt].canvas.LocalPose = newPose;
 
+                            timeline[0].Frames[frameInt].animatedPath.gameObject.transform.position = PathPosition;
 
                             
 
-                            for(int i = 0; i < timeline[0].Frames[frameInt].canvas.gameObject.transform.GetChildCount(); i++)
-                            {
 
-                                GameObject Go = timeline[0].Frames[frameInt].canvas.gameObject.transform.GetChild(i).gameObject;
+                            // for(int i = 0; i < timeline[0].Frames[frameInt].canvas.gameObject.transform.GetChildCount(); i++)
+                            // {
 
-                                if (Go.GetComponent<Batch>() != null || Go.GetComponent<ModelWidget>() != null){
-                                    Go.transform.localPosition = Position;
-                                }
+                            //     GameObject Go = timeline[0].Frames[frameInt].canvas.gameObject.transform.GetChild(i).gameObject;
+
+                            //     if (Go.GetComponent<Batch>() != null || Go.GetComponent<ModelWidget>() != null){
+                            //         Go.transform.localPosition = Position;
+                            //     }
 
 
 
-                            }
+                            // }
 
 
 
