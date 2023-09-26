@@ -13,22 +13,27 @@
 // limitations under the License.
 
 using UnityEngine;
-namespace TiltBrush {
-public class FlattenSubTool : BaseSculptSubTool {
- 
-  void Awake() {
-    m_SubToolIdentifier = SculptSubToolManager.SubTool.Flatten;
-    m_Collider = GetComponent<Collider>();
-  }
+namespace TiltBrush
+{
+    public class FlattenSubTool : BaseSculptSubTool
+    {
 
-  /// Move vertex towards closest point on subtool.
-  override public Vector3 ManipulateVertex(Vector3 vertex, bool bPushing, TrTransform canvasPose, Transform toolTransform, float toolSize, BatchSubset rGroup) {
-    Vector3 vertToTool = vertex - (canvasPose.inverse * toolTransform.position);
-    if (vertToTool.magnitude <= toolSize / canvasPose.scale) {
-      return canvasPose.inverse * m_Collider.ClosestPoint(canvasPose * vertex);
+        void Awake()
+        {
+            m_SubToolIdentifier = SculptSubToolManager.SubTool.Flatten;
+            m_Collider = GetComponent<Collider>();
+        }
+
+        /// Move vertex towards closest point on subtool.
+        override public Vector3 ManipulateVertex(Vector3 vertex, bool bPushing, TrTransform canvasPose, Transform toolTransform, float toolSize, BatchSubset rGroup)
+        {
+            Vector3 vertToTool = vertex - (canvasPose.inverse * toolTransform.position);
+            if (vertToTool.magnitude <= toolSize / canvasPose.scale)
+            {
+                return canvasPose.inverse * m_Collider.ClosestPoint(canvasPose * vertex);
+            }
+            return vertex;
+        }
     }
-    return vertex;
-  }
-}
 
 } // namespace TiltBrush

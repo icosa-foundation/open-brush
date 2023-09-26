@@ -697,7 +697,7 @@ namespace TiltBrush
                 case SketchCommands.ToggleDefaultTool:
                 case SketchCommands.MenuContextClick:
                 case SketchCommands.ToggleSelection:
-    case SketchCommands.ToggleSculpt:
+                case SketchCommands.ToggleSculpt:
                     return Brush.GetCommandDown(rCommand);
 
                 // Misc

@@ -14,15 +14,17 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
-public abstract class BaseSculptSubTool : MonoBehaviour {
+namespace TiltBrush
+{
+    public abstract class BaseSculptSubTool : MonoBehaviour
+    {
 
-    protected float m_DefaultStrength = 0.1f;
+        protected float m_DefaultStrength = 0.1f;
 
-    public SculptSubToolManager.SubTool m_SubToolIdentifier;
+        public SculptSubToolManager.SubTool m_SubToolIdentifier;
 
-    protected Collider m_Collider;
+        protected Collider m_Collider;
 
-    abstract public Vector3 ManipulateVertex(Vector3 vertex, bool bPushing, TrTransform canvasPose, Transform toolTransform, float toolSize, BatchSubset rGroup);
-}
+        abstract public Vector3 ManipulateVertex(Vector3 vertex, bool bPushing, TrTransform canvasPose, Transform toolTransform, float toolSize, BatchSubset rGroup);
+    }
 } //namespace TiltBrush

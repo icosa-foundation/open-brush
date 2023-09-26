@@ -381,13 +381,13 @@ namespace TiltBrush
                             {
                                 //check to see if we're within the brush size (plus some) radius to this triangle
                                 int iTriIndex = subset.m_iTriIndex + m_BatchTriIndexIndex;
-              // Get vectors of each triangle
+                                // Get vectors of each triangle
                                 Vector3 v0 = aVerts[aTris[iTriIndex]];
                                 Vector3 v1 = aVerts[aTris[iTriIndex + 1]];
                                 Vector3 v2 = aVerts[aTris[iTriIndex + 2]];
                                 Vector3 vTriCenter = (v0 + v1 + v2) * 0.33333f;
                                 Vector3 vToTestCenter = vDetectionCenter_CS - vTriCenter;
-              // create a sphere around triangle as a general detection range
+                                // create a sphere around triangle as a general detection range
                                 float fTestSphereRadius_CS = Vector3.Distance(v1, v2) + fDetectionRadius_CS;
                                 if (vToTestCenter.sqrMagnitude < fTestSphereRadius_CS * fTestSphereRadius_CS)
                                 {

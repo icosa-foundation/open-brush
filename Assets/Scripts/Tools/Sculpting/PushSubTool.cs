@@ -14,27 +14,33 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
-public class PushSubTool : BaseSculptSubTool {
+namespace TiltBrush
+{
+    public class PushSubTool : BaseSculptSubTool
+    {
 
-  void Awake() {
-    m_SubToolIdentifier = SculptSubToolManager.SubTool.Push;
-  }
+        void Awake()
+        {
+            m_SubToolIdentifier = SculptSubToolManager.SubTool.Push;
+        }
 
-  /// Push or pull vertex relative to center of the tool.
-  override public Vector3 ManipulateVertex(Vector3 vertex, bool bPushing, TrTransform canvasPose, Transform toolTransform, float toolSize, BatchSubset rGroup) {
-    Vector3 vertToTool = vertex - (canvasPose.inverse * toolTransform.position);
-    if (vertToTool.magnitude <= toolSize / canvasPose.scale) {
-      float strength = m_DefaultStrength;
-      
-      if (!bPushing) { // special calculation to reduce spikyness
-        strength = -m_DefaultStrength * Mathf.Pow(vertToTool.magnitude, 2) / toolSize;
-      }
+        /// Push or pull vertex relative to center of the tool.
+        override public Vector3 ManipulateVertex(Vector3 vertex, bool bPushing, TrTransform canvasPose, Transform toolTransform, float toolSize, BatchSubset rGroup)
+        {
+            Vector3 vertToTool = vertex - (canvasPose.inverse * toolTransform.position);
+            if (vertToTool.magnitude <= toolSize / canvasPose.scale)
+            {
+                float strength = m_DefaultStrength;
 
-      return vertex + strength * vertToTool.normalized;
+                if (!bPushing)
+                { // special calculation to reduce spikyness
+                    strength = -m_DefaultStrength * Mathf.Pow(vertToTool.magnitude, 2) / toolSize;
+                }
+
+                return vertex + strength * vertToTool.normalized;
+            }
+            return vertex;
+        }
     }
-    return vertex;
-  }
-}
 
 }// namespace TiltBrush

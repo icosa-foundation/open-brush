@@ -15,17 +15,20 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-/// POD, storing geometry data (verts and normals) of sculpted strokes.
-public struct SculptedGeometryData { 
-    public List<Vector3> vertices;
-    public List<Vector3> normals;
+    /// POD, storing geometry data (verts and normals) of sculpted strokes.
+    public struct SculptedGeometryData
+    {
+        public List<Vector3> vertices;
+        public List<Vector3> normals;
 
-    public SculptedGeometryData(List<Vector3> vertices, List<Vector3> normals) {
-        this.vertices = vertices;
-        this.normals = normals;
+        public SculptedGeometryData(List<Vector3> vertices, List<Vector3> normals)
+        {
+            this.vertices = vertices;
+            this.normals = normals;
+        }
     }
-}
 } // namespace TiltBrush
 

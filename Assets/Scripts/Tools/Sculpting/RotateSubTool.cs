@@ -14,33 +14,38 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
-public class RotateSubTool : BaseSculptSubTool {
+namespace TiltBrush
+{
+    public class RotateSubTool : BaseSculptSubTool
+    {
 
-  void Awake() {
-    m_SubToolIdentifier = SculptSubToolManager.SubTool.Rotate;
-    m_Collider = GetComponent<Collider>();
-  }
-  
-  /// Rotate vertex (counter-)clockwise around subtool.
-  override public Vector3 ManipulateVertex(Vector3 vertex, bool bPushing, TrTransform canvasPose, Transform toolTransform, float toolSize, BatchSubset rGroup) {
-    Vector3 vertToTool = vertex - (canvasPose.inverse * toolTransform.position);
-    if (vertToTool.magnitude <= toolSize / canvasPose.scale) {
-      Vector3 vertToPivot = (vertex - canvasPose.inverse * m_Collider.ClosestPoint(canvasPose * vertex));
-      float strength = vertToPivot.magnitude * 0.05f;
-      
-      Quaternion oldRotation = toolTransform.rotation;
-      
-      toolTransform.rotation *= Quaternion.Inverse(canvasPose.rotation);
-      // Adapted from https://answers.unity.com/questions/532297/rotate-a-vector-around-a-certain-point.html
-      Vector3 rotation = Quaternion.AngleAxis((bPushing ? 1 : -1) * -90, (toolTransform).forward) * vertToPivot.normalized;
-      toolTransform.rotation = oldRotation;
-      
-      return vertex + strength * rotation;
+        void Awake()
+        {
+            m_SubToolIdentifier = SculptSubToolManager.SubTool.Rotate;
+            m_Collider = GetComponent<Collider>();
+        }
 
+        /// Rotate vertex (counter-)clockwise around subtool.
+        override public Vector3 ManipulateVertex(Vector3 vertex, bool bPushing, TrTransform canvasPose, Transform toolTransform, float toolSize, BatchSubset rGroup)
+        {
+            Vector3 vertToTool = vertex - (canvasPose.inverse * toolTransform.position);
+            if (vertToTool.magnitude <= toolSize / canvasPose.scale)
+            {
+                Vector3 vertToPivot = (vertex - canvasPose.inverse * m_Collider.ClosestPoint(canvasPose * vertex));
+                float strength = vertToPivot.magnitude * 0.05f;
+
+                Quaternion oldRotation = toolTransform.rotation;
+
+                toolTransform.rotation *= Quaternion.Inverse(canvasPose.rotation);
+                // Adapted from https://answers.unity.com/questions/532297/rotate-a-vector-around-a-certain-point.html
+                Vector3 rotation = Quaternion.AngleAxis((bPushing ? 1 : -1) * -90, (toolTransform).forward) * vertToPivot.normalized;
+                toolTransform.rotation = oldRotation;
+
+                return vertex + strength * rotation;
+
+            }
+            return vertex;
+        }
     }
-    return vertex;
-  }
-}
 
 }// namespace TiltBrush
