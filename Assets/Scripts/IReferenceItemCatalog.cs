@@ -14,11 +14,13 @@
 
 using System;
 
-namespace TiltBrush {
-public interface IReferenceItemCatalog {
-  int ItemCount { get; }
-  bool IsScanning { get; }
-  event Action CatalogChanged;
-  void ForceCatalogScan();
-}
+namespace TiltBrush
+{
+    public interface IReferenceItemCatalog
+    {
+        int ItemCount { get; }
+        bool IsScanning { get; }
+        event Action CatalogChanged;
+        void ForceCatalogScan();
+    }
 } // namespace TiltBrush

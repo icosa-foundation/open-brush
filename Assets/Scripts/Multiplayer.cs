@@ -14,9 +14,11 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class Multiplayer : MonoBehaviour {
-  // TODO.
-}
+    public class Multiplayer : MonoBehaviour
+    {
+        // TODO.
+    }
 } // namespace TiltBrush

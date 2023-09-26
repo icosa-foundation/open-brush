@@ -1,0 +1,44 @@
+﻿<html>
+<head><meta charset='UTF-8'></head>
+<body>
+
+<label>Turn: <input id='turn' value='45'></label>
+<label>Length: <input id='length' value='2'></label>
+<label>Repeats: <input id='repeats' value='6'></label>
+
+<button onclick='run();'>Run</button>
+
+<script>
+    function run() {
+
+        sendCommands([
+            'color.set.html=red',
+            'brush.size.set=0.25',
+            'brush.type=fire',
+        ]);
+
+        var turn = document.getElementById('turn').value;
+        var length = document.getElementById('length').value;
+        var repeats = parseFloat(document.getElementById('repeats').value);
+
+        for (var i=0; i<repeats; i++) {
+            sendCommands([
+                `brush.turn=${turn}`,
+                `brush.draw=${length}`,
+                `brush.move=-${length}`,
+                'brush.color.shift=0.025, 0, 0'
+            ]);
+        }
+    }
+
+    function sendCommands(commands) {
+        var xmlHttp = new XMLHttpRequest();
+        var url = '/api/v1?' + commands.join('&');
+        xmlHttp.open('GET', url, false);
+        xmlHttp.send(null);
+    }
+
+</script>
+
+</body>
+</html>

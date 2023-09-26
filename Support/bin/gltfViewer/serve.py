@@ -17,33 +17,34 @@
 """Starts a simple http server at given port (default 8000)."""
 
 import os
-import SimpleHTTPServer
-import SocketServer
+import http.server
+import socketserver
 import subprocess
 import sys
 import time
 
 port = 8000
 if len(sys.argv) > 1:
-  port = int(sys.argv[1])
+    port = int(sys.argv[1])
 
 # If there's another server running at the chosen port, try to kill it.  If that
 # fails (e.g. when running on Windows), we forge ahead. TODO: Implement the
 # equivalent behavior outside of Linux.
 try:
-  devnull = open(os.devnull, "w")
-  subprocess.check_call(["fuser", "-k", "%s/tcp" % port],
-                        stdout=devnull, stderr=subprocess.STDOUT)
-  # Give the process a moment to die.
-  time.sleep(1)
+    devnull = open(os.devnull, "w")
+    subprocess.check_call(
+        ["fuser", "-k", "%s/tcp" % port], stdout=devnull, stderr=subprocess.STDOUT
+    )
+    # Give the process a moment to die.
+    time.sleep(1)
 except (subprocess.CalledProcessError, OSError):
-  pass
+    pass
 
 # Prevents "Address already in use" error when socket lingers in TIME_WAIT,
 # even after the corresponding process has been killed.
-SocketServer.TCPServer.allow_reuse_address = True
+socketserver.TCPServer.allow_reuse_address = True
 
-print "Serving at port", port
-Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
-server = SocketServer.TCPServer(("", port), Handler)
+print("Serving at port", port)
+Handler = http.server.SimpleHTTPRequestHandler
+server = socketserver.TCPServer(("", port), Handler)
 server.serve_forever()

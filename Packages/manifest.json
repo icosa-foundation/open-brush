@@ -1,12 +1,34 @@
 {
   "dependencies": {
-    "com.unity.editorcoroutines": "0.0.2-preview.1",
-    "com.unity.package-manager-ui": "2.0.7",
-    "com.unity.performance.profile-analyzer": "0.6.0-preview.1",
-    "com.unity.quicksearch": "1.4.1",
-    "com.unity.textmeshpro": "1.4.1",
-    "com.unity.xr.openvr.standalone": "1.0.5",
+    "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
+    "com.atteneder.gltfast": "5.0.4",
+    "com.meta.xr.sdk.utilities": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#open-brush",
+    "com.unity.2d.sprite": "1.0.0",
+    "com.unity.2d.tilemap": "1.0.0",
+    "com.unity.editorcoroutines": "1.0.0",
+    "com.unity.formats.usd": "1.0.3-preview.2",
+    "com.unity.ide.rider": "3.0.18",
+    "com.unity.ide.visualstudio": "2.0.20",
+    "com.unity.inputsystem": "https://github.com/icosa-mirror/com.unity.inputsystem.git#open-brush",
+    "com.unity.localization": "1.4.2",
+    "com.unity.mobile.android-logcat": "1.3.2",
+    "com.unity.performance.profile-analyzer": "1.1.1",
+    "com.unity.test-framework": "1.1.33",
+    "com.unity.textmeshpro": "3.0.6",
+    "com.unity.timeline": "1.6.4",
+    "com.unity.ugui": "1.0.0",
+    "com.unity.vectorgraphics": "https://github.com/icosa-mirror/com.unity.vectorgraphics.git#open-brush",
+    "com.unity.xr.core-utils": "2.1.1",
+    "com.unity.xr.management": "4.2.1",
+    "com.unity.xr.oculus": "3.2.2",
+    "com.unity.xr.openxr": "1.6.0",
+    "org.nuget.google.apis": "1.57.0",
+    "org.nuget.google.apis.auth": "1.57.0",
+    "org.nuget.google.apis.core": "https://github.com/icosa-mirror/org.nuget.google.apis.core.git#unity-newtonsoft",
+    "org.nuget.sharpziplib": "1.3.1",
+    "tv.superla.radiancehdr": "https://github.com/superlatv/RadianceHDRUnity.git#upm",
     "com.unity.modules.ai": "1.0.0",
+    "com.unity.modules.androidjni": "1.0.0",
     "com.unity.modules.animation": "1.0.0",
     "com.unity.modules.assetbundle": "1.0.0",
     "com.unity.modules.audio": "1.0.0",
@@ -33,8 +55,38 @@
     "com.unity.modules.unitywebrequestwww": "1.0.0",
     "com.unity.modules.vehicles": "1.0.0",
     "com.unity.modules.video": "1.0.0",
-    "com.unity.modules.vr": "1.0.0",
-    "com.unity.modules.wind": "1.0.0",
-    "com.unity.modules.xr": "1.0.0"
-  }
+    "com.unity.modules.wind": "1.0.0"
+  },
+  "scopedRegistries": [
+    {
+      "name": "OpenUPM",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.atteneder"
+      ]
+    },
+    {
+      "name": "Vive",
+      "url": "https://npm-registry.vive.com",
+      "scopes": [
+        "com.htc.upm"
+      ]
+    },
+    {
+      "name": "Unity NuGet",
+      "url": "https://unitynuget-registry.azurewebsites.net",
+      "scopes": [
+        "org.nuget.google",
+        "org.nuget.newtonsoft",
+        "org.nuget.sharpziplib"
+      ]
+    },
+    {
+      "name": "Meta XR",
+      "url": "https://npm.developer.oculus.com",
+      "scopes": [
+        "com.meta.xr.sdk"
+      ]
+    }
+  ]
 }

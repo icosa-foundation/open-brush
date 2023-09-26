@@ -13,117 +13,188 @@
 // limitations under the License.
 
 using UnityEngine;
+using UnityEngine.Localization;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class OptionButton : BaseButton {
-  [SerializeField] public SketchControlsScript.GlobalCommands m_Command;
-  [SerializeField] public int m_CommandParam = -1;
-  [SerializeField] protected int m_CommandParam2 = -1;
-  [SerializeField] protected bool m_RequiresPopup = false;
-  [SerializeField] protected bool m_CenterPopupOnButton = false;
-  [SerializeField] protected Vector3 m_PopupOffset;
-  [SerializeField] protected string m_PopupText = "";
-  [SerializeField] protected string m_ToggleOnDescription = "";
-  [SerializeField] protected Texture2D m_ToggleOnTexture;
-  [SerializeField] protected bool m_AllowUnavailable = false;
-  [SerializeField] private GameObject m_LinkedUIObject;
-  private string m_DefaultDescription;
-  private Texture2D m_DefaultTexture;
+    public class OptionButton : BaseButton
+    {
+        [SerializeField] public SketchControlsScript.GlobalCommands m_Command;
+        [SerializeField] public int m_CommandParam = -1;
+        [SerializeField] public int m_CommandParam2 = -1;
+        [SerializeField] protected bool m_RequiresPopup = false;
+        [SerializeField] protected bool m_CenterPopupOnButton = false;
+        [SerializeField] protected Vector3 m_PopupOffset;
+        [SerializeField] protected string m_PopupText = "";
+        [SerializeField] protected LocalizedString m_LocalizedPopup;
+        [SerializeField] protected string m_ToggleOnDescription = "";
+        [SerializeField] protected LocalizedString m_LocalizedToggleOnDescription;
+        [SerializeField] protected Texture2D m_ToggleOnTexture;
+        [SerializeField] protected bool m_AllowUnavailable = false;
+        [SerializeField] private GameObject m_LinkedUIObject;
+        protected string m_DefaultDescription;
+        protected Texture2D m_DefaultTexture;
 
-  public void SetCommandParameters(int iCommandParam, int iCommandParam2 = -1) {
-    m_CommandParam = iCommandParam;
-    m_CommandParam2 = iCommandParam2;
-  }
-
-  override protected void OnDestroy() {
-    base.OnDestroy();
-    if (m_Command == SketchControlsScript.GlobalCommands.SymmetryPlane) {
-      App.Switchboard.MirrorVisibilityChanged -= UpdateVisuals;
-    }
-  }
-
-  override protected void Awake() {
-    base.Awake();
-    m_DefaultDescription = Description;
-    m_DefaultTexture = m_ButtonTexture;
-    if (m_Command == SketchControlsScript.GlobalCommands.SymmetryPlane) {
-      App.Switchboard.MirrorVisibilityChanged += UpdateVisuals;
-    }
-  }
-
-  override protected void Start() {
-    base.Start();
-    // This is disabled on startup to serve the single button that uses it.  If additional
-    // buttons use this member, consider making this an init flag.
-    if (m_LinkedUIObject) {
-      m_LinkedUIObject.SetActive(false);
-    }
-  }
-
-  override public void UpdateVisuals() {
-    base.UpdateVisuals();
-    // Inactive and toggle buttons poll for status.
-    if (m_AllowUnavailable) {
-      UpdateAvailability();
-    }
-    if (m_ToggleButton) {
-      bool bWasToggleActive = m_ToggleActive;
-      m_ToggleActive = SketchControlsScript.m_Instance.IsCommandActive(m_Command, m_CommandParam);
-      if (bWasToggleActive != m_ToggleActive) {
-        if (m_ToggleActive) {
-          SetButtonActivated(true);
-
-          if (m_ToggleOnDescription != "") {
-            SetDescriptionText(m_ToggleOnDescription);
-          }
-          if (m_ToggleOnTexture != null) {
-            SetButtonTexture(m_ToggleOnTexture);
-          }
-        } else {
-          SetButtonActivated(false);
-
-          if (m_ToggleOnDescription != "") {
-            SetDescriptionText(m_DefaultDescription);
-          }
-          if (m_ToggleOnTexture != null) {
-            SetButtonTexture(m_DefaultTexture);
-          }
+        public string ToggleOnDescription
+        {
+            get
+            {
+                try
+                {
+                    var locString = m_LocalizedToggleOnDescription.GetLocalizedString();
+                    return locString;
+                }
+                catch
+                {
+                    return m_ToggleOnDescription;
+                }
+            }
         }
-      }
-      if (m_LinkedUIObject) {
-        m_LinkedUIObject.SetActive(m_ToggleActive);
-      }
-    }
-  }
 
-  virtual protected void UpdateAvailability() {
-    bool bWasAvailable = IsAvailable();
-    bool bAvailable = SketchControlsScript.m_Instance.IsCommandAvailable(m_Command, m_CommandParam);
-    if (bWasAvailable != bAvailable) {
-      SetButtonAvailable(bAvailable);
-    }
-  }
-
-  override protected void OnButtonPressed() {
-    if (m_RequiresPopup) {
-      if (m_Manager) {
-        BasePanel panel = m_Manager.GetPanelForPopUps();
-        if (panel != null) {
-          panel.CreatePopUp(m_Command, m_CommandParam, m_CommandParam2, m_PopupOffset,
-              m_PopupText);
-          if (m_CenterPopupOnButton) {
-            panel.PositionPopUp(transform.position +
-                transform.forward * panel.PopUpOffset +
-                panel.transform.TransformVector(m_PopupOffset));
-          }
-          ResetState();
+        public string PopupText
+        {
+            get
+            {
+                try
+                {
+                    var locString = m_LocalizedPopup.GetLocalizedString();
+                    return locString;
+                }
+                catch
+                {
+                    return m_PopupText;
+                }
+            }
         }
-      }
-    } else {
-      SketchControlsScript.m_Instance.IssueGlobalCommand(m_Command, m_CommandParam,
-          m_CommandParam2);
+
+
+        public void SetCommandParameters(int iCommandParam, int iCommandParam2 = -1)
+        {
+            m_CommandParam = iCommandParam;
+            m_CommandParam2 = iCommandParam2;
+        }
+
+        override protected void OnDestroy()
+        {
+            base.OnDestroy();
+            if (m_Command == SketchControlsScript.GlobalCommands.SymmetryPlane)
+            {
+                App.Switchboard.MirrorVisibilityChanged -= UpdateVisuals;
+            }
+        }
+
+        override protected void Awake()
+        {
+            base.Awake();
+            m_DefaultDescription = Description;
+            m_DefaultTexture = m_ButtonTexture;
+            if (m_Command == SketchControlsScript.GlobalCommands.SymmetryPlane)
+            {
+                App.Switchboard.MirrorVisibilityChanged += UpdateVisuals;
+            }
+        }
+
+        override protected void Start()
+        {
+            base.Start();
+            // This is disabled on startup to serve the single button that uses it.  If additional
+            // buttons use this member, consider making this an init flag.
+            if (m_LinkedUIObject)
+            {
+                m_LinkedUIObject.SetActive(false);
+            }
+        }
+
+        public virtual bool IsButtonActive()
+        {
+            return SketchControlsScript.m_Instance.IsCommandActive(m_Command, m_CommandParam);
+        }
+
+        override public void UpdateVisuals()
+        {
+            base.UpdateVisuals();
+            // Inactive and toggle buttons poll for status.
+            if (m_AllowUnavailable)
+            {
+                UpdateAvailability();
+            }
+            if (m_ToggleButton)
+            {
+                bool bWasToggleActive = m_ToggleActive;
+                m_ToggleActive = IsButtonActive();
+                if (bWasToggleActive != m_ToggleActive)
+                {
+                    if (m_ToggleActive)
+                    {
+                        SetButtonActivated(true);
+
+                        if (ToggleOnDescription != "")
+                        {
+                            SetDescriptionText(ToggleOnDescription);
+                        }
+                        if (m_ToggleOnTexture != null)
+                        {
+                            SetButtonTexture(m_ToggleOnTexture);
+                        }
+                    }
+                    else
+                    {
+                        SetButtonActivated(false);
+
+                        if (ToggleOnDescription != "")
+                        {
+                            SetDescriptionText(m_DefaultDescription);
+                        }
+                        if (m_ToggleOnTexture != null)
+                        {
+                            SetButtonTexture(m_DefaultTexture);
+                        }
+                    }
+                }
+                if (m_LinkedUIObject)
+                {
+                    m_LinkedUIObject.SetActive(m_ToggleActive);
+                }
+            }
+        }
+
+        virtual protected void UpdateAvailability()
+        {
+            bool bWasAvailable = IsAvailable();
+            bool bAvailable = SketchControlsScript.m_Instance.IsCommandAvailable(m_Command, m_CommandParam);
+            if (bWasAvailable != bAvailable)
+            {
+                SetButtonAvailable(bAvailable);
+            }
+        }
+
+        override protected void OnButtonPressed()
+        {
+            if (m_RequiresPopup)
+            {
+                if (m_Manager)
+                {
+                    BasePanel panel = m_Manager.GetPanelForPopUps();
+                    if (panel != null)
+                    {
+                        panel.CreatePopUp(m_Command, m_CommandParam, m_CommandParam2, m_PopupOffset,
+                            PopupText);
+                        if (m_CenterPopupOnButton)
+                        {
+                            panel.PositionPopUp(transform.position +
+                                transform.forward * panel.PopUpOffset +
+                                panel.transform.TransformVector(m_PopupOffset));
+                        }
+                        ResetState();
+                    }
+                }
+            }
+            else
+            {
+                SketchControlsScript.m_Instance.IssueGlobalCommand(m_Command, m_CommandParam,
+                    m_CommandParam2);
+            }
+        }
     }
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

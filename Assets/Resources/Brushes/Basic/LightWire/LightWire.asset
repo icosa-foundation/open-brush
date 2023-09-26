@@ -18,11 +18,23 @@ MonoBehaviour:
   m_CreationVersion: 0.0
   m_ShaderVersion: 10.0
   m_BrushPrefab: {fileID: 100000, guid: 02c4483733486ec489655bc38e0aa393, type: 3}
+  m_Tags:
+  - default
+  - audioreactive
   m_Nondeterministic: 0
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
   m_ButtonTexture: {fileID: 2800000, guid: 8b28da7f79506cc49979958cc7ae0312, type: 3}
-  m_Description: Light Wire
+  m_Description: BRUSH_LIGHTWIRE
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 81205790060896256
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionExtra: 
   m_BrushAudioLayers:
   - {fileID: 8300000, guid: 5922dca24e9dd03449e75ce7aee57224, type: 3}
@@ -73,3 +85,6 @@ MonoBehaviour:
   m_TailMinPoints: 1
   m_TailPointStep: 1
   m_MiddlePointStep: 1
+  references:
+    version: 2
+    RefIds: []

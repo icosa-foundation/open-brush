@@ -12,28 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-/// More like "BaseModifyKnotCommand"
-public class BaseKnotCommand : BaseCommand {
-  public bool MergesWithCreateCommand { get; }
+    /// More like "BaseModifyKnotCommand"
+    public class BaseKnotCommand : BaseCommand
+    {
+        public bool MergesWithCreateCommand { get; }
 
-  public CameraPathKnot Knot { get; }
+        public CameraPathKnot Knot { get; }
 
-  public BaseKnotCommand(CameraPathKnot knot, bool mergesWithCreateCommand, BaseCommand parent)
-      : base(parent) {
-    Knot = knot;
-    MergesWithCreateCommand = mergesWithCreateCommand;
-  }
-}
+        public BaseKnotCommand(CameraPathKnot knot, bool mergesWithCreateCommand, BaseCommand parent)
+            : base(parent)
+        {
+            Knot = knot;
+            MergesWithCreateCommand = mergesWithCreateCommand;
+        }
+    }
 
-public class BaseKnotCommand<T> : BaseKnotCommand
-    where T : CameraPathKnot {
-  public new T Knot { get; }
-  public BaseKnotCommand(
-      T knot, bool mergesWithCreateCommand = false, BaseCommand parent = null)
-      : base(knot, mergesWithCreateCommand, parent) {
-    Knot = knot;
-  }
-}
+    public class BaseKnotCommand<T> : BaseKnotCommand
+        where T : CameraPathKnot
+    {
+        public new T Knot { get; }
+        public BaseKnotCommand(
+            T knot, bool mergesWithCreateCommand = false, BaseCommand parent = null)
+            : base(knot, mergesWithCreateCommand, parent)
+        {
+            Knot = knot;
+        }
+    }
 } // namespace TiltBrush

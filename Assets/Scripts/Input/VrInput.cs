@@ -12,28 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-/// Tilt Brush-specific abstraction over inputs that are commonly
-/// provided by VR controllers. Mostly used with ControllerInfo.GetVrInput()
-public enum VrInput {
-  Button01,           // Pad_Left on Vive, X or A buttons on Rift.
-  Button02,           // Pad_Right on Vive, Y or B buttons on Rift.
-  Button03,           // Menu Button on Vive, Y or B on Rift
-  Button04,           // Full-pad click on Vive, X or A on the Rift.
+    /// Tilt Brush-specific abstraction over inputs that are commonly
+    /// provided by VR controllers. Mostly used with ControllerInfo.GetVrInput()
+    public enum VrInput
+    {
+        Button01, // Pad_Left on Vive, X or A buttons on Rift.
+        Button02, // Pad_Right on Vive, Y or B buttons on Rift.
+        Button03, // Menu Button on Vive, Y or B on Rift
+        Button04, // Full-pad click on Vive, X or A on the Rift.
 
-  // --------------------------------------------------------- //
-  // Vive up/down quads, only used in experimental
-  // --------------------------------------------------------- //
-  Button05,           // Quad_Up on vive, Y and B on Rift
-  Button06,           // Quad_Down on vive, X and A on Rift
-  // --------------------------------------------------------- //
+        // --------------------------------------------------------- //
+        // Vive up/down quads, only used in experimental
+        // --------------------------------------------------------- //
+        Button05, // Quad_Up on vive, Y and B on Rift
+        Button06, // Quad_Down on vive, X and A on Rift
+        // --------------------------------------------------------- //
 
-  Directional,        // Thumbstick if one exists; otherwise touchpad.
-  Trigger,            // Trigger Button on Vive, Primary Trigger Button on Rift.
-  Grip,               // Grip Button on Vive, Secondary Trigger on Rift.
-  Any,
-  Thumbstick,         // TODO: standardize spelling: ThumbStick or Thumbstick?
-  Touchpad
-}
+        Directional, // Thumbstick if one exists; otherwise touchpad.
+        Trigger,     // Trigger Button on Vive, Primary Trigger Button on Rift.
+        Grip,        // Grip Button on Vive, Secondary Trigger on Rift.
+        Any,
+        Thumbstick, // TODO: standardize spelling: ThumbStick or Thumbstick?
+        Touchpad
+    }
 } // namespace TiltBrush

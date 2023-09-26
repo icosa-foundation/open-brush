@@ -19,54 +19,63 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-[CreateAssetMenu(fileName="Manifest", menuName="Tilt Brush Manifest")]
-public class TiltBrushManifest : ScriptableObject {
-  public BrushDescriptor[] Brushes;
-  public Environment[] Environments;
-  public BrushDescriptor[] CompatibilityBrushes;
+    [CreateAssetMenu(fileName = "Manifest", menuName = "Tilt Brush Manifest")]
+    public class TiltBrushManifest : ScriptableObject
+    {
+        public BrushDescriptor[] Brushes;
+        public Environment[] Environments;
+        public BrushDescriptor[] CompatibilityBrushes;
 
-  // lhs = lhs + rhs, with duplicates removed.
-  // The leading portion of the returned array will be == lhs.
-  void AppendUnique<T>(ref T[] lhs, T[] rhs) where T : class {
-    var refEquals = new ReferenceComparer<T>();
-    lhs = lhs.Except(rhs, refEquals).Union(rhs, refEquals).ToArray();
-  }
+        // lhs = lhs + rhs, with duplicates removed.
+        // The leading portion of the returned array will be == lhs.
+        void AppendUnique<T>(ref T[] lhs, T[] rhs) where T : class
+        {
+            var refEquals = new ReferenceComparer<T>();
+            lhs = lhs.Except(rhs, refEquals).Union(rhs, refEquals).ToArray();
+        }
 
-  /// Append the contents of rhs to this, eliminating duplicates
-  public void AppendFrom(TiltBrushManifest rhs) {
-    AppendUnique(ref Brushes, rhs.Brushes);
-    AppendUnique(ref Environments, rhs.Environments);
-    AppendUnique(ref CompatibilityBrushes, rhs.CompatibilityBrushes);
-  }
+        /// Append the contents of rhs to this, eliminating duplicates
+        public void AppendFrom(TiltBrushManifest rhs)
+        {
+            AppendUnique(ref Brushes, rhs.Brushes);
+            AppendUnique(ref Environments, rhs.Environments);
+            AppendUnique(ref CompatibilityBrushes, rhs.CompatibilityBrushes);
+        }
 
-  private IEnumerable<BrushDescriptor> AllBrushesAndAncestors() {
-    foreach (var brush in Brushes.Concat(CompatibilityBrushes)) {
-      for (var current = brush; current != null; current = current.m_Supersedes) {
-        yield return current;
-      }
-    }
-  }
+        private IEnumerable<BrushDescriptor> AllBrushesAndAncestors()
+        {
+            foreach (var brush in Brushes.Concat(CompatibilityBrushes))
+            {
+                for (var current = brush; current != null; current = current.m_Supersedes)
+                {
+                    yield return current;
+                }
+            }
+        }
 
-  /// Returns a list of unique brushes in the given manifest,
-  /// including any ancestor brushes implicitly present.
-  public List<BrushDescriptor> UniqueBrushes() {
-    return AllBrushesAndAncestors()
-        .Distinct()
-        .ToList();
-  }
+        /// Returns a list of unique brushes in the given manifest,
+        /// including any ancestor brushes implicitly present.
+        public List<BrushDescriptor> UniqueBrushes()
+        {
+            return AllBrushesAndAncestors()
+                .Distinct()
+                .ToList();
+        }
 
-  [ContextMenu("Export Brush GUIDs")]
-  public void ExportBrushGuids() {
+        [ContextMenu("Export Brush GUIDs")]
+        public void ExportBrushGuids()
+        {
 #if UNITY_EDITOR
-    string path =
-        EditorUtility.SaveFilePanel("Save Brush Guids", Application.dataPath, "BrushGuids", ".txt");
-    string[] guids =
-        Brushes.Select(x => string.Format("{0},{1}",x.m_Guid.ToString(), x.DurableName)).ToArray();
-    System.IO.File.WriteAllLines(path, guids);
+            string path =
+                EditorUtility.SaveFilePanel("Save Brush Guids", Application.dataPath, "BrushGuids", ".txt");
+            string[] guids =
+                Brushes.Select(x => string.Format("{0},{1}", x.m_Guid.ToString(), x.DurableName)).ToArray();
+            System.IO.File.WriteAllLines(path, guids);
 #endif
-  }
-}  // TiltBrushManifest
+        }
+    } // TiltBrushManifest
 
-}  // namespace TiltBrush
+} // namespace TiltBrush

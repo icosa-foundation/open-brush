@@ -14,24 +14,27 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class ExitTiltBrushPopUpWindow : PopUpWindow {
-  [SerializeField] protected TextMesh m_Title;
-  [SerializeField] protected SaveAndConfirmButton m_SaveButton;
+    public class ExitTiltBrushPopUpWindow : PopUpWindow
+    {
+        [SerializeField] protected TextMesh m_Title;
+        [SerializeField] protected SaveAndConfirmButton m_SaveButton;
 
-  [SerializeField] private string m_Title_Saving;
-  [SerializeField] private string m_Title_NoSaving;
-  [SerializeField] private string m_SaveButtonDescription_Saving;
-  [SerializeField] private string m_SaveButtonDescription_NoSaving;
+        [SerializeField] private string m_Title_Saving;
+        [SerializeField] private string m_Title_NoSaving;
+        [SerializeField] private string m_SaveButtonDescription_Saving;
+        [SerializeField] private string m_SaveButtonDescription_NoSaving;
 
-  override public void Init(GameObject rParent, string sText) {
-    base.Init(rParent, sText);
-    bool shouldSave = SketchControlsScript.m_Instance.IsCommandAvailable(
-        SketchControlsScript.GlobalCommands.SaveOnLocalChanges);
-    m_Title.text = shouldSave ? m_Title_Saving : m_Title_NoSaving;
-    m_SaveButton.SetDescriptionText(shouldSave ? m_SaveButtonDescription_Saving :
-        m_SaveButtonDescription_NoSaving);
-  }
-}
-}  // namespace TiltBrush
+        override public void Init(GameObject rParent, string sText)
+        {
+            base.Init(rParent, sText);
+            bool shouldSave = SketchControlsScript.m_Instance.IsCommandAvailable(
+                SketchControlsScript.GlobalCommands.SaveOnLocalChanges);
+            m_Title.text = shouldSave ? m_Title_Saving : m_Title_NoSaving;
+            m_SaveButton.SetDescriptionText(shouldSave ? m_SaveButtonDescription_Saving :
+                m_SaveButtonDescription_NoSaving);
+        }
+    }
+} // namespace TiltBrush

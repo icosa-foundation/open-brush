@@ -12,22 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class PointerAngleSlider : BaseSlider {
-  override protected void Awake() {
-    base.Awake();
-    m_CurrentValue = PointerManager.m_Instance.FreePaintPointerAngle / 90.0f;
-    SetSliderPositionToReflectValue();
-  }
+    public class PointerAngleSlider : BaseSlider
+    {
+        override protected void Awake()
+        {
+            base.Awake();
+            m_CurrentValue = PointerManager.m_Instance.FreePaintPointerAngle / 90.0f;
+            SetSliderPositionToReflectValue();
+        }
 
-  override public void UpdateValue(float fValue) {
-    PointerManager.m_Instance.FreePaintPointerAngle = fValue * 90.0f;
-  }
+        override public void UpdateValue(float fValue)
+        {
+            PointerManager.m_Instance.FreePaintPointerAngle = fValue * 90.0f;
+        }
 
-  public override void ResetState() {
-    base.ResetState();
-    SetAvailable(!App.VrSdk.VrControls.LogitechPenIsPresent());
-  }
-}
-}  // namespace TiltBrush
+        public override void ResetState()
+        {
+            base.ResetState();
+            SetAvailable(!App.VrSdk.VrControls.LogitechPenIsPresent());
+        }
+    }
+} // namespace TiltBrush

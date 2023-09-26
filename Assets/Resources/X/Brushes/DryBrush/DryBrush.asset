@@ -14,15 +14,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Guid:
     m_storage: 725f4c6a-6427-6524-29ab-da371924adab
-  m_DurableName: 
+  m_DurableName: DryBrush
   m_CreationVersion: 
   m_ShaderVersion: 10.0
   m_BrushPrefab: {fileID: 100000, guid: 486c6801b0558714fa4a188e0747d682, type: 3}
+  m_Tags:
+  - experimental
   m_Nondeterministic: 0
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
   m_ButtonTexture: {fileID: 2800000, guid: fe5db8c7d4297c845a80702f35a58917, type: 3}
-  m_Description: Dry Brush
+  m_Description: BRUSH_DRYBRUSH
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 81204173685186560
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionExtra: 
   m_BrushAudioLayers: []
   m_BrushAudioBasePitch: 1
@@ -70,3 +81,6 @@ MonoBehaviour:
   m_TailMinPoints: 1
   m_TailPointStep: 1
   m_MiddlePointStep: 0
+  references:
+    version: 2
+    RefIds: []

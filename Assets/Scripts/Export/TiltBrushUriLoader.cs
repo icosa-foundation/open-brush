@@ -13,52 +13,57 @@
 // limitations under the License.
 
 using System.IO;
-
 using TiltBrushToolkit;
 using UnityEngine;
-
 using ToolkitRawImage = TiltBrushToolkit.RawImage;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class TiltBrushUriLoader : IUriLoader {
-  private string m_uriBase;
-  private IUriLoader m_delegate;
-  private bool m_loadImages;
+    public class TiltBrushUriLoader : IUriLoader
+    {
+        private string m_uriBase;
+        private IUriLoader m_delegate;
+        private bool m_loadImages;
 
-  /// If loadImages=true, use a C# image loader which doesn't need to be run on
-  /// the main thread (helps avoid hitching) but is much slower than Texture2D.LoadImageData.
-  public TiltBrushUriLoader(string glbPath, string uriBase, bool loadImages) {
-    m_loadImages = loadImages;
-    m_uriBase = uriBase;
-    m_delegate = new BufferedStreamLoader(glbPath, uriBase);
-  }
+        /// If loadImages=true, use a C# image loader which doesn't need to be run on
+        /// the main thread (helps avoid hitching) but is much slower than Texture2D.LoadImageData.
+        public TiltBrushUriLoader(string glbPath, string uriBase, bool loadImages)
+        {
+            m_loadImages = loadImages;
+            m_uriBase = uriBase;
+            m_delegate = new BufferedStreamLoader(glbPath, uriBase);
+        }
 
-  public IBufferReader Load(string uri) {
-    // null uri means the binary chunk of a .glb
-    uri = (uri == null) ? null : PolyRawAsset.GetPolySanitizedFilePath(uri);
-    return m_delegate.Load(uri);
-  }
+        public IBufferReader Load(string uri)
+        {
+            // null uri means the binary chunk of a .glb
+            uri = (uri == null) ? null : PolyRawAsset.GetPolySanitizedFilePath(uri);
+            return m_delegate.Load(uri);
+        }
 
-  public bool CanLoadImages() { return m_loadImages; }
+        public bool CanLoadImages() { return m_loadImages; }
 
-  public ToolkitRawImage LoadAsImage(string uri) {
-    uri = PolyRawAsset.GetPolySanitizedFilePath(uri);
-    string path = Path.Combine(m_uriBase, uri);
-    RawImage rawImage = ImageUtils.FromImageData(File.ReadAllBytes(path), path);
-    return new ToolkitRawImage {
-        format = TextureFormat.RGBA32,
-        colorData = rawImage.ColorData,
-        colorWidth = rawImage.ColorWidth,
-        colorHeight = rawImage.ColorHeight
-    };
-  }
+        public ToolkitRawImage LoadAsImage(string uri)
+        {
+            uri = PolyRawAsset.GetPolySanitizedFilePath(uri);
+            string path = Path.Combine(m_uriBase, uri);
+            RawImage rawImage = ImageUtils.FromImageData(File.ReadAllBytes(path), path);
+            return new ToolkitRawImage
+            {
+                format = TextureFormat.RGBA32,
+                colorData = rawImage.ColorData,
+                colorWidth = rawImage.ColorWidth,
+                colorHeight = rawImage.ColorHeight
+            };
+        }
 
 #if UNITY_EDITOR
-  public UnityEngine.Texture2D LoadAsAsset(string uri) {
-    return m_delegate.LoadAsAsset(uri);
-  }
+        public UnityEngine.Texture2D LoadAsAsset(string uri)
+        {
+            return m_delegate.LoadAsAsset(uri);
+        }
 #endif
-}
+    }
 
 } // namespace TiltBrush

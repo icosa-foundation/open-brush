@@ -1,0 +1,727 @@
+<html>
+    <head>
+        <meta charSet="UTF-8">
+        <script src='https://unpkg.com/blockly/blockly.min.js'></script>
+        <script>
+          Blockly.Blocks['move'] = {
+            init: function() {
+              this.appendValueInput("distance")
+                      .setCheck("Number")
+                      .appendField("move")
+                      .appendField(new Blockly.FieldNumber(0), "distance");
+              this.setPreviousStatement(true, null);
+              this.setNextStatement(true, null);
+              this.setColour(230);
+              this.setTooltip("Move Turtle, no drawing");
+              this.setHelpUrl("");
+            }
+          };
+
+          Blockly.Blocks['draw'] = {
+            init: function() {
+              this.appendValueInput("Distance")
+                      .setCheck("Number")
+                      .appendField("draw")
+                      .appendField(new Blockly.FieldNumber(0), "distance");
+              this.setPreviousStatement(true, null);
+              this.setNextStatement(true, null);
+              this.setColour(230);
+              this.setTooltip("Move Turtle, drawing");
+              this.setHelpUrl("");
+            }
+          };
+
+          Blockly.Blocks['turn'] = {
+            init: function() {
+              this.appendValueInput("angle")
+                      .setCheck("Number")
+                      .appendField("turn")
+                      .appendField(new Blockly.FieldAngle(90), "angle");
+              this.appendValueInput("direction")
+                      .setCheck("String")
+                      .appendField("direction")
+                      .appendField(new Blockly.FieldDropdown([["x","x"], ["y","y"], ["z","z"]]), "direction");
+              this.setPreviousStatement(true, null);
+              this.setNextStatement(true, null);
+              this.setColour(230);
+              this.setTooltip("Turn Turtle in 'direction' by 'angle' degrees");
+              this.setHelpUrl("");
+            }
+          };
+
+          Blockly.Blocks['setcolor'] = {
+            init: function() {
+              this.appendValueInput("color")
+                      .setCheck(null)
+                      .appendField("brush color")
+                      .appendField(new Blockly.FieldColour("#ff0000"), "color");
+              this.setPreviousStatement(true, null);
+              this.setNextStatement(true, null);
+              this.setColour(230);
+              this.setTooltip("");
+              this.setHelpUrl("");
+            }
+          };
+
+          Blockly.Blocks['setbrushtype'] = {
+            init: function() {
+              var brushes = {{brushesJson}};
+              brushes = brushes.map(function(_,i){
+                return [brushes[i], brushes[i]]
+              });
+              this.appendValueInput("brushtype")
+                      .setCheck("String")
+                      .appendField("brush type")
+                      .appendField(new Blockly.FieldDropdown(brushes), "brushtype");
+              this.setPreviousStatement(true, null);
+              this.setNextStatement(true, null);
+              this.setColour(230);
+              this.setTooltip("");
+              this.setHelpUrl("");
+            }
+          };
+
+          Blockly.Blocks['setsize'] = {
+            init: function() {
+              this.appendValueInput("direction")
+                      .setCheck("String")
+                      .appendField("brush size")
+                      .appendField(new Blockly.FieldNumber(0), "size");
+              this.setPreviousStatement(true, null);
+              this.setNextStatement(true, null);
+              this.setColour(230);
+              this.setTooltip("");
+              this.setHelpUrl("");
+            }
+          };
+
+          Blockly.Blocks['new'] = {
+            init: function() {
+              this.appendDummyInput()
+                      .appendField("new sketch");
+              this.setPreviousStatement(true, null);
+              this.setNextStatement(true, null);
+              this.setColour(230);
+              this.setTooltip("");
+              this.setHelpUrl("");
+            }
+          };
+
+          Blockly.Blocks['push'] = {
+            init: function() {
+              this.appendDummyInput()
+                      .appendField("push state");
+              this.setPreviousStatement(true, null);
+              this.setNextStatement(true, null);
+              this.setColour(230);
+              this.setTooltip("");
+              this.setHelpUrl("");
+            }
+          };
+
+          Blockly.Blocks['pop'] = {
+            init: function() {
+              this.appendDummyInput()
+                      .appendField("pop state");
+              this.setPreviousStatement(true, null);
+              this.setNextStatement(true, null);
+              this.setColour(230);
+              this.setTooltip("");
+              this.setHelpUrl("");
+            }
+          };
+        </script>
+        <script>
+          Blockly.JavaScript['move'] = function(block) {
+            var number_distance = block.getFieldValue('distance');
+            var code = `sendCommand("brush.move", ${number_distance});\n`;
+            return code;
+          };
+
+          Blockly.JavaScript['draw'] = function(block) {
+            var number_distance = block.getFieldValue('distance');
+            var code = `sendCommand("brush.draw", ${number_distance});\n`;
+            return code;
+          };
+
+          Blockly.JavaScript['turn'] = function(block) {
+            var angle_angle = block.getFieldValue('angle');
+            var value_angle = Blockly.JavaScript.valueToCode(block, 'angle', Blockly.JavaScript.ORDER_ATOMIC);
+            var dropdown_direction = block.getFieldValue('direction');
+            var value_direction = Blockly.JavaScript.valueToCode(block, 'direction', Blockly.JavaScript.ORDER_ATOMIC);
+            var code = `sendCommand("brush.turn.${value_direction || dropdown_direction}", ${value_angle || angle_angle});\n`;
+            return code;
+          };
+
+          Blockly.JavaScript['setcolor'] = function(block) {
+            var colour_color = '"' + block.getFieldValue('color') + '"';
+            var value_color = Blockly.JavaScript.valueToCode(block, 'color', Blockly.JavaScript.ORDER_ATOMIC);
+            var code = `sendCommand("color.set.html", ${value_color || colour_color}.substring(1));\n`;
+            return code;
+          };
+
+          Blockly.JavaScript['setbrushtype'] = function(block) {
+            var dropdown_brushtype = block.getFieldValue('brushtype');
+            var value_brushtype = Blockly.JavaScript.valueToCode(block, 'brushtype', Blockly.JavaScript.ORDER_ATOMIC);
+            var code = `sendCommand("brush.type", "${value_brushtype || dropdown_brushtype}");\n`;
+            return code;
+          };
+
+          Blockly.JavaScript['new'] = function(block) {
+            var code = `sendCommand("new");\n`;
+            return code;
+          };
+
+          Blockly.JavaScript['push'] = function(block) {
+            var code = `sendCommand("brush.transform.push");\n`;
+            return code;
+          };
+
+          Blockly.JavaScript['pop'] = function(block) {
+            var code = `sendCommand("brush.transform.pop");\n`;
+            return code;
+          };
+
+
+        </script>
+        <style>
+
+            .wrapper {
+                display: grid;
+                grid-template-columns: 50% 50%;
+                height: 100%;
+            }
+
+            .box {
+                padding: .1em;
+            }
+
+            .container {
+            }
+
+            #cameraPreview {
+              width: 100%;
+              height: auto;
+              margin: .25em 0 ;
+            }
+
+        </style>
+    </head>
+    <body>
+        <xml xmlns="https://developers.google.com/blockly/xml" id="toolbox" style="display: none">
+                <category name="Turtle" colour="#805ba5">
+                  <block type="new"></block>
+                  <block type="move"></block>
+                  <block type="draw"></block>
+                  <block type="turn"></block>
+                  <block type="setcolor"></block>
+                  <block type="setbrushtype"></block>
+                  <block type="setsize"></block>
+                  <block type="push"></block>
+                  <block type="pop"></block>
+                </category>
+                <category name="Logic" colour="#5b80a5">
+                  <block type="controls_if"></block>
+                  <block type="logic_compare">
+                    <field name="OP">EQ</field>
+                  </block>
+                  <block type="logic_operation">
+                    <field name="OP">AND</field>
+                  </block>
+                  <block type="logic_negate"></block>
+                  <block type="logic_boolean">
+                    <field name="BOOL">TRUE</field>
+                  </block>
+                  <block type="logic_null"></block>
+                  <block type="logic_ternary"></block>
+                </category>
+                <category name="Loops" colour="#5ba55b">
+                  <block type="controls_repeat_ext">
+                    <value name="TIMES">
+                      <shadow type="math_number">
+                        <field name="NUM">10</field>
+                      </shadow>
+                    </value>
+                  </block>
+                  <block type="controls_whileUntil">
+                    <field name="MODE">WHILE</field>
+                  </block>
+                  <block type="controls_for">
+                    <field name="VAR" id="klO[mD`%SB.xK(zHa9HN">i</field>
+                    <value name="FROM">
+                      <shadow type="math_number">
+                        <field name="NUM">1</field>
+                      </shadow>
+                    </value>
+                    <value name="TO">
+                      <shadow type="math_number">
+                        <field name="NUM">10</field>
+                      </shadow>
+                    </value>
+                    <value name="BY">
+                      <shadow type="math_number">
+                        <field name="NUM">1</field>
+                      </shadow>
+                    </value>
+                  </block>
+                  <block type="controls_forEach">
+                    <field name="VAR" id="8KcBxfu+]^w;bH]OWbK.">j</field>
+                  </block>
+                  <block type="controls_flow_statements">
+                    <field name="FLOW">BREAK</field>
+                  </block>
+                </category>
+                <category name="Math" colour="#5b67a5">
+                  <block type="math_number">
+                    <field name="NUM">0</field>
+                  </block>
+                  <block type="math_arithmetic">
+                    <field name="OP">ADD</field>
+                    <value name="A">
+                      <shadow type="math_number">
+                        <field name="NUM">1</field>
+                      </shadow>
+                    </value>
+                    <value name="B">
+                      <shadow type="math_number">
+                        <field name="NUM">1</field>
+                      </shadow>
+                    </value>
+                  </block>
+                  <block type="math_single">
+                    <field name="OP">ROOT</field>
+                    <value name="NUM">
+                      <shadow type="math_number">
+                        <field name="NUM">9</field>
+                      </shadow>
+                    </value>
+                  </block>
+                  <block type="math_trig">
+                    <field name="OP">SIN</field>
+                    <value name="NUM">
+                      <shadow type="math_number">
+                        <field name="NUM">45</field>
+                      </shadow>
+                    </value>
+                  </block>
+                  <block type="math_constant">
+                    <field name="CONSTANT">PI</field>
+                  </block>
+                  <block type="math_number_property">
+                    <mutation divisor_input="false"></mutation>
+                    <field name="PROPERTY">EVEN</field>
+                    <value name="NUMBER_TO_CHECK">
+                      <shadow type="math_number">
+                        <field name="NUM">0</field>
+                      </shadow>
+                    </value>
+                  </block>
+                  <block type="math_round">
+                    <field name="OP">ROUND</field>
+                    <value name="NUM">
+                      <shadow type="math_number">
+                        <field name="NUM">3.1</field>
+                      </shadow>
+                    </value>
+                  </block>
+                  <block type="math_on_list">
+                    <mutation op="SUM"></mutation>
+                    <field name="OP">SUM</field>
+                  </block>
+                  <block type="math_modulo">
+                    <value name="DIVIDEND">
+                      <shadow type="math_number">
+                        <field name="NUM">64</field>
+                      </shadow>
+                    </value>
+                    <value name="DIVISOR">
+                      <shadow type="math_number">
+                        <field name="NUM">10</field>
+                      </shadow>
+                    </value>
+                  </block>
+                  <block type="math_constrain">
+                    <value name="VALUE">
+                      <shadow type="math_number">
+                        <field name="NUM">50</field>
+                      </shadow>
+                    </value>
+                    <value name="LOW">
+                      <shadow type="math_number">
+                        <field name="NUM">1</field>
+                      </shadow>
+                    </value>
+                    <value name="HIGH">
+                      <shadow type="math_number">
+                        <field name="NUM">100</field>
+                      </shadow>
+                    </value>
+                  </block>
+                  <block type="math_random_int">
+                    <value name="FROM">
+                      <shadow type="math_number">
+                        <field name="NUM">1</field>
+                      </shadow>
+                    </value>
+                    <value name="TO">
+                      <shadow type="math_number">
+                        <field name="NUM">100</field>
+                      </shadow>
+                    </value>
+                  </block>
+                  <block type="math_random_float"></block>
+                </category>
+                <category name="Text" colour="#5ba58c">
+                  <block type="text">
+                    <field name="TEXT"></field>
+                  </block>
+                  <block type="text_join">
+                    <mutation items="2"></mutation>
+                  </block>
+                  <block type="text_append">
+                    <field name="VAR" id=")AoN|PjLTXttdKBoRe7`">item</field>
+                    <value name="TEXT">
+                      <shadow type="text">
+                        <field name="TEXT"></field>
+                      </shadow>
+                    </value>
+                  </block>
+                  <block type="text_length">
+                    <value name="VALUE">
+                      <shadow type="text">
+                        <field name="TEXT">abc</field>
+                      </shadow>
+                    </value>
+                  </block>
+                  <block type="text_isEmpty">
+                    <value name="VALUE">
+                      <shadow type="text">
+                        <field name="TEXT"></field>
+                      </shadow>
+                    </value>
+                  </block>
+                  <block type="text_indexOf">
+                    <field name="END">FIRST</field>
+                    <value name="VALUE">
+                      <block type="variables_get">
+                        <field name="VAR" id="vO,:ZXcE[+@rU[_ppNAe">text</field>
+                      </block>
+                    </value>
+                    <value name="FIND">
+                      <shadow type="text">
+                        <field name="TEXT">abc</field>
+                      </shadow>
+                    </value>
+                  </block>
+                  <block type="text_charAt">
+                    <mutation at="true"></mutation>
+                    <field name="WHERE">FROM_START</field>
+                    <value name="VALUE">
+                      <block type="variables_get">
+                        <field name="VAR" id="vO,:ZXcE[+@rU[_ppNAe">text</field>
+                      </block>
+                    </value>
+                  </block>
+                  <block type="text_getSubstring">
+                    <mutation at1="true" at2="true"></mutation>
+                    <field name="WHERE1">FROM_START</field>
+                    <field name="WHERE2">FROM_START</field>
+                    <value name="STRING">
+                      <block type="variables_get">
+                        <field name="VAR" id="vO,:ZXcE[+@rU[_ppNAe">text</field>
+                      </block>
+                    </value>
+                  </block>
+                  <block type="text_changeCase">
+                    <field name="CASE">UPPERCASE</field>
+                    <value name="TEXT">
+                      <shadow type="text">
+                        <field name="TEXT">abc</field>
+                      </shadow>
+                    </value>
+                  </block>
+                  <block type="text_trim">
+                    <field name="MODE">BOTH</field>
+                    <value name="TEXT">
+                      <shadow type="text">
+                        <field name="TEXT">abc</field>
+                      </shadow>
+                    </value>
+                  </block>
+                  <block type="text_print">
+                    <value name="TEXT">
+                      <shadow type="text">
+                        <field name="TEXT">abc</field>
+                      </shadow>
+                    </value>
+                  </block>
+                  <block type="text_prompt_ext">
+                    <mutation type="TEXT"></mutation>
+                    <field name="TYPE">TEXT</field>
+                    <value name="TEXT">
+                      <shadow type="text">
+                        <field name="TEXT">abc</field>
+                      </shadow>
+                    </value>
+                  </block>
+                </category>
+                <category name="Lists" colour="#745ba5">
+                  <block type="lists_create_with">
+                    <mutation items="0"></mutation>
+                  </block>
+                  <block type="lists_create_with">
+                    <mutation items="3"></mutation>
+                  </block>
+                  <block type="lists_repeat">
+                    <value name="NUM">
+                      <shadow type="math_number">
+                        <field name="NUM">5</field>
+                      </shadow>
+                    </value>
+                  </block>
+                  <block type="lists_length"></block>
+                  <block type="lists_isEmpty"></block>
+                  <block type="lists_indexOf">
+                    <field name="END">FIRST</field>
+                    <value name="VALUE">
+                      <block type="variables_get">
+                        <field name="VAR" id="UZl{2?1jmrT[Sc*+v2~H">list</field>
+                      </block>
+                    </value>
+                  </block>
+                  <block type="lists_getIndex">
+                    <mutation statement="false" at="true"></mutation>
+                    <field name="MODE">GET</field>
+                    <field name="WHERE">FROM_START</field>
+                    <value name="VALUE">
+                      <block type="variables_get">
+                        <field name="VAR" id="UZl{2?1jmrT[Sc*+v2~H">list</field>
+                      </block>
+                    </value>
+                  </block>
+                  <block type="lists_setIndex">
+                    <mutation at="true"></mutation>
+                    <field name="MODE">SET</field>
+                    <field name="WHERE">FROM_START</field>
+                    <value name="LIST">
+                      <block type="variables_get">
+                        <field name="VAR" id="UZl{2?1jmrT[Sc*+v2~H">list</field>
+                      </block>
+                    </value>
+                  </block>
+                  <block type="lists_getSublist">
+                    <mutation at1="true" at2="true"></mutation>
+                    <field name="WHERE1">FROM_START</field>
+                    <field name="WHERE2">FROM_START</field>
+                    <value name="LIST">
+                      <block type="variables_get">
+                        <field name="VAR" id="UZl{2?1jmrT[Sc*+v2~H">list</field>
+                      </block>
+                    </value>
+                  </block>
+                  <block type="lists_split">
+                    <mutation mode="SPLIT"></mutation>
+                    <field name="MODE">SPLIT</field>
+                    <value name="DELIM">
+                      <shadow type="text">
+                        <field name="TEXT">,</field>
+                      </shadow>
+                    </value>
+                  </block>
+                  <block type="lists_sort">
+                    <field name="TYPE">NUMERIC</field>
+                    <field name="DIRECTION">1</field>
+                  </block>
+                </category>
+                <category name="Colour" colour="#a5745b">
+                  <block type="colour_picker">
+                    <field name="COLOUR">#ff0000</field>
+                  </block>
+                  <block type="colour_random"></block>
+                  <block type="colour_rgb">
+                    <value name="RED">
+                      <shadow type="math_number">
+                        <field name="NUM">100</field>
+                      </shadow>
+                    </value>
+                    <value name="GREEN">
+                      <shadow type="math_number">
+                        <field name="NUM">50</field>
+                      </shadow>
+                    </value>
+                    <value name="BLUE">
+                      <shadow type="math_number">
+                        <field name="NUM">0</field>
+                      </shadow>
+                    </value>
+                  </block>
+                  <block type="colour_blend">
+                    <value name="COLOUR1">
+                      <shadow type="colour_picker">
+                        <field name="COLOUR">#ff0000</field>
+                      </shadow>
+                    </value>
+                    <value name="COLOUR2">
+                      <shadow type="colour_picker">
+                        <field name="COLOUR">#3333ff</field>
+                      </shadow>
+                    </value>
+                    <value name="RATIO">
+                      <shadow type="math_number">
+                        <field name="NUM">0.5</field>
+                      </shadow>
+                    </value>
+                  </block>
+                </category>
+                <sep></sep>
+                <category name="Variables" colour="#a55b80" custom="VARIABLE"></category>
+                <category name="Functions" colour="#995ba5" custom="PROCEDURE"></category>
+              </xml>
+
+        <div class="container">
+<!--                    <button type="button" id='generateXML'>Generate XML!</button>-->
+<!--                    <button type="button" id='generateJavascript'>Generate Javascript!</button>-->
+                    <button type="button" id='executeJavascript'>Run!</button>
+                    <button type="button" id='saveWorkspace'>Save Workspace</button>
+                    <button type="button" id='loadWorkspace'>Load Workspace</button>
+            <div class="wrapper">
+                <div class="box" id="workspace" ></div>
+                <div class="box">
+                    <img id="cameraPreview" src="http://localhost:40074/cameraview" />
+                    <button type="button" id='reset'>Reset Sketch</button><br>
+                    <button type="button" id='cameraLeft'>←</button>
+                    <button type="button" id='cameraUp'>↑</button>
+                    <button type="button" id='cameraDown'>↓</button>
+                    <button type="button" id='cameraRight'>→</button>
+
+                </div>
+            </div>
+        </div>
+        <script>
+            function refreshCameraPreview() {
+                var image = document.getElementById("cameraPreview");
+                image.src = "http://localhost:40074/cameraview?t=" + new Date().getTime();
+            }
+            setInterval(refreshCameraPreview, 1000);
+
+            /* TODO: Change toolbox XML ID if necessary. Can export toolbox XML from Workspace Factory. */
+            var toolbox = document.getElementById("toolbox");
+
+            var options = { 
+                toolbox : toolbox, 
+                collapse : true, 
+                comments : true, 
+                disable : true, 
+                maxBlocks : Infinity, 
+                trashcan : true, 
+                horizontalLayout : false, 
+                toolboxPosition : 'start', 
+                css : true, 
+                media : 'https://blockly-demo.appspot.com/static/media/', 
+                rtl : false, 
+                scrollbars : true, 
+                sounds : true, 
+                oneBasedIndex : true
+            };
+
+            /* Inject your workspace */ 
+            var workspace = Blockly.inject('workspace', options);
+
+            /* Load Workspace Blocks from XML to workspace. Remove all code below if no blocks to load */
+
+            /* TODO: Change workspace blocks XML ID if necessary. Can export workspace blocks XML from Workspace Factory. */
+            // var workspaceBlocks = document.getElementById("workspaceBlocks");
+
+            var saveWorkspace = function() {
+                var xmlDom = Blockly.Xml.workspaceToDom(workspace);
+                var xmlText = Blockly.Xml.domToPrettyText(xmlDom);
+                localStorage.setItem("blockly.xml", xmlText);
+            }
+
+            var loadWorkspace = function() {
+                var xmlText = localStorage.getItem("blockly.xml");
+                if (xmlText) {
+                    Blockly.mainWorkspace.clear();
+                    xmlDom = Blockly.Xml.textToDom(xmlText);
+                    Blockly.Xml.domToWorkspace(xmlDom, workspace);
+                }
+            }
+
+            var sendCommand = function(command, parameter) {
+                var xmlHttp = new XMLHttpRequest();
+                if (parameter===undefined) {
+                  var cmdAndParams = command;
+                } else {
+                  var cmdAndParams = `${command}=${parameter}`;
+                }
+                var url = `http://localhost:40074/api/v1?${cmdAndParams}`;
+                xmlHttp.open('GET', url, false);
+                xmlHttp.send(null);
+            };
+
+            var generateXMLClicked = function() {
+              var xml = Blockly.Xml.workspaceToDom(workspace);
+              var xml_text = Blockly.Xml.domToText(xml);
+              console.log(xml_text);
+            };
+
+            var generateJavascript = function() {
+              var code = Blockly.JavaScript.workspaceToCode(workspace);
+              console.log(code);
+            };
+
+            var executeJavascript = function() {
+              var code = Blockly.JavaScript.workspaceToCode(workspace);
+              console.log(code);
+              eval(code);
+            };
+
+            var reset = function() {
+              sendCommand("new");
+              sendCommand("brush.home");
+            }
+
+            var moveCamera = function(e) {
+              if (e.target.id==="cameraUp") {
+                sendCommand("camera.turn.x", 10);
+              } else if (e.target.id==="cameraDown") {
+                sendCommand("camera.turn.x", -10);
+              } else if (e.target.id==="cameraLeft") {
+                sendCommand("camera.turn.y", 10);
+              } else if (e.target.id==="cameraRight") {
+                sendCommand("camera.turn.y", -10);
+              }
+            }
+
+            // document.getElementById("generateXML")
+            //   .addEventListener('click', generateXMLClicked);
+            //
+            // document.getElementById("generateJavascript")
+            //   .addEventListener('click', generateJavascript);
+
+            document.getElementById("executeJavascript")
+              .addEventListener('click', executeJavascript);
+
+            document.getElementById("saveWorkspace")
+              .addEventListener('click', saveWorkspace);
+
+            document.getElementById("loadWorkspace")
+              .addEventListener('click', loadWorkspace);
+
+            document.getElementById("reset")
+              .addEventListener('click', reset);
+
+            document.getElementById("cameraUp")
+              .addEventListener('click', moveCamera);
+
+            document.getElementById("cameraDown")
+              .addEventListener('click', moveCamera);
+
+            document.getElementById("cameraLeft")
+              .addEventListener('click', moveCamera);
+
+            document.getElementById("cameraRight")
+              .addEventListener('click', moveCamera);
+        </script>
+    </body>
+</html>

@@ -15,7 +15,9 @@
 using UnityEngine;
 
 // Used by the BrushDescriptorEditor to disable some fields.
-namespace TiltBrush {
-public class DisabledPropertyAttribute : PropertyAttribute {
-}
+namespace TiltBrush
+{
+    public class DisabledPropertyAttribute : PropertyAttribute
+    {
+    }
 } // namespace TiltBrush

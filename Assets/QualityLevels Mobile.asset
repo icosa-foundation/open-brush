@@ -21,7 +21,7 @@ MonoBehaviour:
     m_Anisotropic: 0
     m_BloomLevels: 2,3,3
     m_ViewportScale: 1
-    m_EyeTextureScale: 0.9
+    m_EyeTextureScale: 1
     m_StrokeSimplification: 0
     m_TargetMaxControlPoints: 50000
     m_MaxSimplification: 50
@@ -36,7 +36,7 @@ MonoBehaviour:
     m_Anisotropic: 0
     m_BloomLevels: 2,3,3
     m_ViewportScale: 1
-    m_EyeTextureScale: 0.9
+    m_EyeTextureScale: 1
     m_StrokeSimplification: 0
     m_TargetMaxControlPoints: 50000
     m_MaxSimplification: 50
@@ -51,7 +51,7 @@ MonoBehaviour:
     m_Anisotropic: 0
     m_BloomLevels: 2,3,3
     m_ViewportScale: 1
-    m_EyeTextureScale: 0.9
+    m_EyeTextureScale: 1
     m_StrokeSimplification: 0
     m_TargetMaxControlPoints: 50000
     m_MaxSimplification: 50
@@ -66,7 +66,7 @@ MonoBehaviour:
     m_Anisotropic: 0
     m_BloomLevels: 2,3,3
     m_ViewportScale: 1
-    m_EyeTextureScale: 0.9
+    m_EyeTextureScale: 1
     m_StrokeSimplification: 0
     m_TargetMaxControlPoints: 50000
     m_MaxSimplification: 50
@@ -81,14 +81,14 @@ MonoBehaviour:
     m_Anisotropic: 0
     m_BloomLevels: 2,3,3
     m_ViewportScale: 1
-    m_EyeTextureScale: 0.9
+    m_EyeTextureScale: 1
     m_StrokeSimplification: 0
     m_TargetMaxControlPoints: 50000
     m_MaxSimplification: 50
     m_MaxSimplificationUserStrokes: 2
     m_GpuLevel: 3
     m_FixedFoveationLevel: 0
-  - m_Bloom: 3
+  - m_Bloom: 0
     m_Hdr: 0
     m_Fxaa: 0
     m_MsaaLevel: 2
@@ -96,14 +96,14 @@ MonoBehaviour:
     m_Anisotropic: 0
     m_BloomLevels: 2,3,3
     m_ViewportScale: 1
-    m_EyeTextureScale: 0.9
+    m_EyeTextureScale: 1
     m_StrokeSimplification: 0
     m_TargetMaxControlPoints: 50000
     m_MaxSimplification: 50
     m_MaxSimplificationUserStrokes: 2
     m_GpuLevel: 5
     m_FixedFoveationLevel: 0
-  - m_Bloom: 3
+  - m_Bloom: 0
     m_Hdr: 0
     m_Fxaa: 0
     m_MsaaLevel: 2
@@ -111,7 +111,7 @@ MonoBehaviour:
     m_Anisotropic: 0
     m_BloomLevels: 2,3,3
     m_ViewportScale: 1
-    m_EyeTextureScale: 0.9
+    m_EyeTextureScale: 1
     m_StrokeSimplification: 0
     m_TargetMaxControlPoints: 50000
     m_MaxSimplification: 50

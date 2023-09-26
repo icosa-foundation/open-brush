@@ -15,20 +15,23 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class PreLoadingScene : MonoBehaviour {
-  [SerializeField] private Transform m_Logo;
-  [SerializeField] private Camera m_Camera;
+    public class PreLoadingScene : MonoBehaviour
+    {
+        [SerializeField] private Transform m_Logo;
+        [SerializeField] private Camera m_Camera;
 
-  void Start() {
-    // Position screen overlay in front of the camera.
-    m_Logo.parent = m_Camera.transform;
-    m_Logo.position = m_Camera.transform.position + m_Camera.transform.forward * 25.0f;
-    m_Logo.localRotation = Quaternion.identity;
-    m_Logo.parent = null;
+        void Start()
+        {
+            // Position screen overlay in front of the camera.
+            m_Logo.parent = m_Camera.transform;
+            m_Logo.position = m_Camera.transform.position + m_Camera.transform.forward * 25.0f;
+            m_Logo.localRotation = Quaternion.identity;
+            m_Logo.parent = null;
 
-    SceneManager.LoadSceneAsync("Loading");
-  }
-}
+            SceneManager.LoadSceneAsync("Loading");
+        }
+    }
 } // namespace TiltBrush

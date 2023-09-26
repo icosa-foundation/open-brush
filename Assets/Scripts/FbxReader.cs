@@ -463,7 +463,7 @@ public class FbxReader {
       unityTranslation *= fbxUnitToTiltUnit;
     }
     transform.localPosition = unityTranslation;
-    transform.localScale    = unityScale;
+    transform.localScale = unityScale;
     transform.localRotation = unityRotation;
   }
 

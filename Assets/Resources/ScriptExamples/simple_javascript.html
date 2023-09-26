@@ -1,0 +1,28 @@
+﻿<html><head><meta charset='UTF-8'></head>
+<body>
+    <script>
+        sendCommands([
+            'brush.color=red',
+            'brush.size.set=0.5',
+            'brush.type=comet',
+        ]);
+		
+        for (var i=0; i<repeats; i++) {
+            sendCommands([
+                `brush.turn.y=45`,
+                `brush.draw=2`,
+                `brush.move=6`,
+                'color.add.hsv=0.015, 0, 0'
+            ]);
+        }
+
+        function sendCommands(commands) {
+            var xmlHttp = new XMLHttpRequest();
+            var url = '/api/v1?' + commands.join('&');
+            xmlHttp.open('GET', url, false);
+            xmlHttp.send(null);
+        }
+        
+    </script>
+</body>
+</html>

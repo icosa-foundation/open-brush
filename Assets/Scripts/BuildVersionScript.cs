@@ -13,15 +13,20 @@
 // limitations under the License.
 
 using UnityEngine;
+using TMPro;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class BuildVersionScript : MonoBehaviour {
-  void Start () {
-    TextMesh rTest = GetComponent<TextMesh>();
-    if (rTest) {
-      rTest.text = $"{App.kAppDisplayName} v{App.Config.m_VersionNumber}";
+    public class BuildVersionScript : MonoBehaviour
+    {
+        void Start()
+        {
+            TextMeshPro rTest = GetComponent<TextMeshPro>();
+            if (rTest)
+            {
+                rTest.text = $"{App.kAppDisplayName} v{App.Config.m_VersionNumber}";
+            }
+        }
     }
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

@@ -11,37 +11,51 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#if !DISABLE_AUDIO_CAPTURE && !UNITY_OSX && !UNITY_EDITOR_OSX
 using CSCore.DSP;
+#endif
 
-namespace TiltBrush {
-  /// Wrapper for CSCore.DSP.HighpassFilter and LowpassFilter
-  public class VisualizerCSCoreFilter : VisualizerManager.Filter {
-    public enum FilterType {
-      Low,
-      High,
+namespace TiltBrush
+{
+    /// Wrapper for CSCore.DSP.HighpassFilter and LowpassFilter
+    public class VisualizerCSCoreFilter : VisualizerManager.Filter
+    {
+#if !DISABLE_AUDIO_CAPTURE && !UNITY_OSX && !UNITY_EDITOR_OSX
+        public enum FilterType
+        {
+            Low,
+            High,
+        }
+
+        private BiQuad m_Filter;
+        private double m_Frequency;
+
+        public VisualizerCSCoreFilter(FilterType type, int sampleRate, double frequency)
+        {
+            if (type == FilterType.High)
+            {
+                m_Filter = new HighpassFilter(sampleRate, frequency);
+            }
+            else
+            {
+                m_Filter = new LowpassFilter(sampleRate, frequency);
+            }
+        }
+
+        public override void Process(float[] samples)
+        {
+            m_Filter.Process(samples);
+        }
+
+        public override double Frequency
+        {
+            get { return m_Frequency; }
+            set
+            {
+                m_Frequency = value;
+                m_Filter.Frequency = value;
+            }
+        }
+#endif
     }
-
-    private BiQuad m_Filter;
-    private double m_Frequency;
-
-    public VisualizerCSCoreFilter(FilterType type, int sampleRate, double frequency) {
-      if (type == FilterType.High) {
-        m_Filter = new HighpassFilter(sampleRate, frequency);
-      } else {
-        m_Filter = new LowpassFilter(sampleRate, frequency);
-      }
-    }
-
-    public override void Process(float[] samples) {
-        m_Filter.Process(samples);
-    }
-
-    public override double Frequency {
-      get { return m_Frequency; }
-      set {
-        m_Frequency = value;
-        m_Filter.Frequency = value;
-      }
-    }
-  }
 }

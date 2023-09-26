@@ -18,11 +18,23 @@ MonoBehaviour:
   m_CreationVersion: 0.0
   m_ShaderVersion: 10.0
   m_BrushPrefab: {fileID: 100000, guid: da721436b6b8e724c8d623fdc1c7a024, type: 3}
+  m_Tags:
+  - default
+  - audioreactive
   m_Nondeterministic: 0
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
   m_ButtonTexture: {fileID: 2800000, guid: 4c5312dd65489c04e821db0e7f6e50cf, type: 3}
-  m_Description: Electricity
+  m_Description: BRUSH_ELECTRICITY
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 81204382188232704
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionExtra: 
   m_BrushAudioLayers:
   - {fileID: 8300000, guid: f395375d62ad0ec4da2e387786c7daa0, type: 3}
@@ -73,3 +85,6 @@ MonoBehaviour:
   m_TailMinPoints: 1
   m_TailPointStep: 1
   m_MiddlePointStep: 2
+  references:
+    version: 2
+    RefIds: []

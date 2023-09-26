@@ -14,14 +14,17 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class ControllerConsoleMessage : MonoBehaviour {
-  [SerializeField] private string m_Message;
+    public class ControllerConsoleMessage : MonoBehaviour
+    {
+        [SerializeField] private string m_Message;
 
-  void Start() {
-    ControllerConsoleScript.m_Instance.AddNewLine(m_Message, false);
-  }
-}
+        void Start()
+        {
+            ControllerConsoleScript.m_Instance.AddNewLine(m_Message, false);
+        }
+    }
 
 } // namespace TiltBrush

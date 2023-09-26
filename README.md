@@ -1,33 +1,57 @@
-# Fine Control of 3D Meshes in Tilt Brush through Sculpting
+# Open Brush - Tilt Brush Evolved
 
-This is the code for the Bachelor Thesis project of the same name, made by Chingiz Dadashov-Khandan.
+[![Support us on Open Collective!](https://img.shields.io/opencollective/all/icosa?logo=open-collective&label=Support%20us%20on%20Open%20Collective%21)](https://opencollective.com/icosa)
+[![All GitHub releases](https://img.shields.io/github/downloads/icosa-foundation/open-brush/total?label=GitHub%20downloads)](https://github.com/icosa-foundation/open-brush/releases/latest)
+[![Twitter](https://img.shields.io/badge/follow-%40openbrushapp-blue.svg?style=flat&logo=twitter)](https://twitter.com/openbrushapp)
+[![Discord](https://discordapp.com/api/guilds/783806589991780412/embed.png?style=shield)](https://discord.gg/W7NCEYnEfy)
+![Current Version](https://img.shields.io/github/v/release/icosa-foundation/open-brush)
+![Prerelease Version](https://img.shields.io/github/v/release/icosa-foundation/open-brush?include_prereleases&label=prerelease)
 
-Made for the Department of Scientific Visualisation and Computer Graphics at the University of Groningen.
+[![Open Brush Banner](open-brush.png)](https://openbrush.app)
 
-This project is an expansion of Tilt Brush, which introduces a simple sculpting toolkit with four variations. With the Sculpting toolkit, a user can can edit any brush stroke retroactively by deforming its mesh.
+Open Brush is a free fork of Tilt Brush, a room-scale 3D-painting virtual-reality application available from Google, originally developed by Skillman & Hackett. We have made a large number of changes from the original repository, including Unity upgrades and feature additions to bring Open Brush up to modern XR development standards. You can find the notable changes on our [docs site](https://docs.openbrush.app/differences-between-open-brush-and-tilt-brush).
 
-The four variations at the moment are as follows:
-- Push 
-- Crease
-- Flatten
-- Rotate
+We hope to maintain and improve upon Tilt Brush as a community-led project, free forever!
 
-Naturally, this selection can be further expanded. See `BaseSculptSubTool`, `SculptSubToolManager` and their references/subclasses for reference.
+As the original repo is archived we cannot submit PRs, so feel free to submit them here! 
 
-To use the Sculpting Toolkit, simply turn on Advanced mode in Tilt Brush and navigate to the main tool menu. You will see a new Sculpt button on the bottom right.
+[User Guide](https://docs.openbrush.app/)  
+[Developer Notes](https://docs.openbrush.app/developer-notes)  
+[Roadmap](https://github.com/orgs/icosa-foundation/projects/1)  
+[Please join the Icosa Discord and get involved!](https://discord.com/invite/W7NCEYnEfy)  
+[List of tutorials, write-ups and other things from the community](https://docs.google.com/document/d/1gjoYp4y-1qlE3a7fvXVxGR3ioj3nMfgprmTHQ-bpq0k/)  
+**[Support us on Open Collective!](https://opencollective.com/icosa)**  
 
-This repository already includes Oculus Rift integration.
+## Downloads
+### Stores (Did we mention it's free?)
+- [SideQuest](https://sidequestvr.com/app/2852/open-brush)
+- [Oculus App Lab](https://www.oculus.com/experiences/quest/3600360710032222)
+- [Steam](https://store.steampowered.com/app/1634870/Open_Brush)
+- [Oculus Rift](https://www.oculus.com/experiences/rift/5227489953989768)
+- [Viveport Desktop](https://www.viveport.com/f1f3d00b-cf8a-443f-825e-4fea2dd3b005)
+- [itch.io](https://openbrush.itch.io/openbrush)
+### GitHub
+- [Formal GitHub Releases](https://github.com/icosa-foundation/open-brush/releases/latest)
+- [Bleeding Edge GitHub Releases](#bleeding-edge-releases)
 
-**WARNING: THIS APPLICATION'S SAVEFILES ARE INCOMPATIBLE WITH ORIGINAL TILT BRUSH'S SKETCHES AND VICE-VERSA. DO NOT TRY TO LOAD SKETCHES FROM OTHER VARIATIONS OF TILT BRUSH WHILE USING THIS VERSION, OR THE OTHER WAY AROUND.**
 
-The rest of this README is directly taken from the original repository, made by Google LLC. It includes legal information and technical instructions for installation and usage:
+## Acknowledgements
+* Thank you to the Tilt Brush developers for your amazing work and for finding a way to open source the app! 
+* [SiMonk0](http://www.furjandesign.com/) for the great new logo!
+* The [SideQuest](https://sidequestvr.com/) team for your support.
+* [VR Rosie](https://twitter.com/vr_rosie) for promotional artwork, banners, and videos.
 
-# Original Tilt Brush README
+## Bleeding Edge Releases
 
-Tilt Brush is licensed under Apache 2.0. It is not an officially supported
-Google product. See the [LICENSE](LICENSE) file for more details.
+Instead of waiting for a formal release, you can download a ZIP from Github containing an automatically built release for either Windows (SteamVR) or Oculus Quest / Quest 2 from the [Github releases page](https://github.com/icosa-foundation/open-brush/releases). Versions of the form "vX.Y.0" are official releases, whereas versions that do not end in .0 are made available for testing purposes only, with no guarantees as to their quality. Additionally, these releases are marked as "pre-release". However, if you'd like to test a recent change prior to the official release, you can use these either in place of or in parallel with the formal Open Brush releases.
 
-## Trademarks
+These builds share a save location with the official Open Brush release, but can be installed alongside the formal version. The Oculus build, like all sideloaded content, will be listed in "Unknown Sources", and will have the word "Github" appended to the name (with a different package name as well) to differentiate it from the official release).
+
+Note that the "experimental" builds contain experimental brushes, and sketches created using the experimental brushes may appear differently when loaded in the official build of Open Brush!
+
+In addition, there is also a version created for  Windows Monoscopic that is listed as an "Artifact" of the Github Actions, however, this is intended only for developers, and should not be used by general users. You can find it by browsing to the [commit list](https://github.com/icosa-foundation/open-brush/commits/main), and then clicking on the green check mark below the title (next to the XXX committed XXX ago), and scroll to the build you want, and click on **Details**. Then, towards the upper right corner, click on **Artifacts** and click on the name of the build. Unzip the downloaded file, and either run the executable (Desktop OpenXR/Monoscopic) or install the apk (Android Oculus) using `adb install com.Icosa.OpenBrush-github.apk`. 
+
+## Important note from the original Tilt Brush README
 
 The Tilt Brush trademark and logo (“Tilt Brush Trademarks”) are trademarks of
 Google, and are treated separately from the copyright or patent license grants
@@ -36,27 +60,20 @@ the Tilt Brush Trademarks other than those permitted in these guidelines must be
 approved in advance.
 
 For more information, read the
-[Tilt Brush Brand Guidelines](BRAND_GUIDELINES.md).
+[Tilt Brush Brand Guidelines](TILT_BRUSH_BRAND_GUIDELINES.md).
 
-## Building the application
+---
 
-Get the Tilt Brush open-source application running on your own devices.
+# Building the application
+
+Get the Open Brush open-source application running on your own devices.
 
 ### Prerequisites
 
-*   [Unity 2018.4.11f1](unityhub://2018.4.11f1/7098af2f11ea)
-*   [SteamVR](https://store.steampowered.com/app/250820/SteamVR/)
-*   [Python 2.7.0](https://www.python.org/download/releases/2.7/) (Optional —
+*   [Unity 2021.3.16f1](unityhub://2021.3.16f1/4016570cf34f)
+*   [Python 3](https://www.python.org/downloads/) (Optional —
     needed only if you wish to run the scripts in the `Support/bin` directory)
-
-### Changing the application name
-
-_Tilt Brush_ is a Google trademark. If you intend to publish a cloned version of
-the application, you are required to choose a different name to distinguish it
-from the official version. Before building the application, go into `App.cs` and
-the Player settings to change the company and application names to your own.
-
-Please see the [Tilt Brush Brand Guidelines](BRAND_GUIDELINES.md) for more details.
+    Tested with Python 3.8.
 
 ### Running the application in the Unity editor
 
@@ -75,10 +92,10 @@ These steps have been tested with Release 1.0.54.
 
 ### Building the application from the Unity editor
 
-Although it's possible to build Tilt Brush using the standard Unity build tools,
+Although it's possible to build Open Brush using the standard Unity build tools,
 we recommend using a build script to ensure the application builds with the
-correct settings. To run this script, go to **Tilt** > **Build** > **Do Build**,
-or build from the Tilt Brush build window by navigating to **Tilt** >
+correct settings. To run this script, go to **Open Brush** > **Build** > **Do Build**,
+or build from the Open Brush build window by navigating to **Open Brush** >
 **Build** > **Build Window**.
 
 Note: The application may take a while to build the first time.
@@ -91,21 +108,13 @@ various build options.
 
 ### Additional features
 
-You should be able to get the basic version of Tilt Brush up and running very
+You should be able to get the basic version of Open Brush up and running very
 quickly. The following features will take a little more time.
 
 *   [Google service API support](#google-service-api-support)
 *   [Enabling native Oculus support](#enabling-native-oculus-support)
 *   [Sketchfab support](#sketchfab-support)
-*   [*.fbx file support](#fbx-file-support)
-*   [Camera path support](#camera-path-support)
-*   [Video recording for the camera](#video-support)
 *   [Offline rendering support](#offline-rendering-support)
-*   [GIF support for the camera](#gif-support)
-
-**Note:** Uploading to Poly has been removed completely and cannot be added back
-in, because it uses an internal Google API. Download from Poly can still be
-enabled.
 
 ## Systems that were replaced or removed when open-sourcing Tilt Brush
 
@@ -127,7 +136,15 @@ open-source licensing issues. These are:
 *   **Tilt Shift**. The official Tilt Brush app uses modified versions of the
     Tilt Shift effect that came with the standard assets in earlier versions of
     Unity. These have been replaced with a modified version of
-    [Tilt shift by underscorediscovery](https://gist.github.com/underscorediscovery/10324388).
+    [Tilt shift by ruby0x1](https://gist.github.com/ruby0x1/10324388).
+
+## Generating Secrets file
+Credentials for services such as Google and Sketchfab are stored in a `SecretsConfig` scriptable object. This has been ignored in the git config for safety. To add it back:
+
+1.  Right click in the root `/Assets` folder in Unity's project window. 
+    Select `Create`, then `Secrets Config`. This will create `Secrets.asset` in the Asset folder.
+1.  In `Scenes/Main.unity` go to **App > Config** and replace `SecretsExample` 
+    with the newly generated `Secrets.asset`.
 
 ## Google service API support
 
@@ -142,7 +159,6 @@ Follow these steps when enabling Google service APIs:
 1.  Enable the following APIs and services:
 
     *   **YouTube Data API v3** — for uploading videos to YouTube
-    *   **Poly API** — for accessing the Poly model library
     *   **Google Drive API** — for backup to Google Drive
     *   **People API** — for username and profile picture
 
@@ -184,68 +200,54 @@ steps to create an OAuth credential:
 
 Follow these steps to store the Google API Key and credential data:
 
-1.  There is an asset in the `Assets/` directory called `Secrets` that contains
-    a `Secrets` field. Add a new item to this field.
-2.  Select `Google` as the service. Paste in the API key, client ID, and client
+1.  Follow the steps to [create your secrets file](#-Generating-Secrets-file).
+    Add a new item to the **Secrets** field.
+1.  Select `Google` as the service. Paste in the API key, client ID, and client
     secret that were generated earlier.
 
 ## Enabling native Oculus support
 
-Note: _Tilt Brush_ is a Google trademark. If you intend to publish a cloned
-version of the application, you are required to
-[choose a different name](#changing-the-application-name) to distinguish it from
-the official version.
-
-Tilt Brush targets SteamVR instead of Oculus by default. Follow these steps to
-enable native Oculus support:
-
-1.  Enable the Oculus desktop package in the Package Manager.
-1.  Install the
-    [Oculus Unity Integration](https://developer.oculus.com/downloads/package/unity-integration-archive/1.41.0/).
-
-**Note:** The above link goes to version 1.41, which the official version of
-Tilt Brush was built with. Later versions have not been tested. You only need to
-include the `Platform` and `VR` subdirectories when you import.
-
-1.  If you see a dialog about upgrading the Unity Oculus plugin, click
-    **Accept**.
-1.  In the **Standalone** tab of the Player settings, go to **Other Settings**
-    and define `OCULUS_SUPPORTED` in **Scripting Define Symbols**. Add it to the
-    end of the list and use a semicolon to separate it from the previous define
-    commands.
+Open Brush targets OpenXR instead of Oculus by default. Follow these steps to enable native Oculus support:
+.
+1.  In the **Standalone** and **Android** tabs of the Player settings, go to **Other Settings** > **Scripting Define Symbols**.
+1. Click the + button to create a new entry.
+1. Add `OCULUS_SUPPORTED` and press **Apply**.
 
 ### Building your app for Oculus Quest
 
 Follow these steps to build your app for Oculus Quest:
 
-1.  Define `OCULUS_SUPPORTED` in **Scripting Define Symbols** in the **Android**
-    tab of **Player Settings**, under **Other Settings**. Add it to the end of
-    the list and use a semicolon to separate it from the previous define
-    command.
 1.  Set up your machine for
     [Oculus Quest Development](https://developer.oculus.com/documentation/unity/book-unity-gsg/?device=QUEST).
 1.  Make sure the following are set in Unity:
-    *   **Tilt** > **Build** > **SDK: OVR**
-    *   **Tilt** > **Build** > **Platform: Android**
-    *   **Tilt** > **Build** > **Runtime: Mono**
-1.  Navigate to **Tilt** > **Build** > **Do Build**.
+    *   **Open Brush** > **Build** > **Plugin: Oculus**
+    *   **Open Brush** > **Build** > **Platform: Android**
+    *   **Open Brush** > **Build** > **Runtime: IL2CPP**
+1.  Navigate to **Open Brush** > **Build** > **Do Build**.
 1.  Find the generated executable. It will most likely be somewhere under
-    `Builds/OculusMobile_Release_TiltBrush_FromGui/`.
-1.  Run `adb install com.google.tiltbrush.apk`.
+    `../Builds/OculusMobile_Release_OpenBrush/`.
+1.  Run `adb install com.Icosa.OpenBrush.apk`.
 
 ### Publishing to Oculus stores
+
+Note: _Tilt Brush_ is a Google trademark. If you intend to publish a cloned
+version of the application, you are required to
+choose a different name to distinguish it from
+the official version.
 
 Follow these steps to publish to Oculus stores:
 
 1.  Get an application ID from Oculus. The desktop and quest versions of each
     application need separate IDs.
+1.  Follow the steps to [create your secrets file](#-Generating-Secrets-file).
+    Add 2 new items to the **Secrets** field.
 1.  Add these IDs to the `Secrets` file. Both `Oculus` and `OculusMobile` should
     have their own entries.
 1.  Put the app IDs in the `Client ID` field for each.
 
-## Tilt Brush intro sketch
+## Open Brush intro sketch
 
-The Tilt Brush intro sketch uses some slightly modified shaders to produce the
+The Open Brush intro sketch uses some slightly modified shaders to produce the
 animating-in effect while the sketch fades in. For faster loading, the intro
 sketch is turned into a `*.prefab` file beforehand. Only the shaders used in the
 intro sketch have been converted to work with the introduction.
@@ -262,9 +264,9 @@ intro sketch have been converted to work with the introduction.
 
 Follow these steps to replace or alter the intro sketch:
 
-1.  Make sure the sketch of your choice is already loaded. Run Tilt Brush in the
+1.  Make sure the sketch of your choice is already loaded. Run Open Brush in the
     Unity Editor.
-1.  Select **Tilt** > **Convert To Intro Materials** in the main Unity menu.
+1.  Select **Open Brush** > **Convert To Intro Materials** in the main Unity menu.
     This converts the materials in the sketch to the intro versions. \
     You will get warnings in the console for any materials it could not convert,
     as well as a summary of how many materials it converted.
@@ -273,8 +275,8 @@ Follow these steps to replace or alter the intro sketch:
     the intro materials set.
 1.  Move any objects that do not start with `Batch_` out from under the **Main
     Canvas** node.
-1.  Select the **Main Canvas** node and run the **Tilt** > **Save Game Object As
-    Prefab** menu command. \
+1.  Select the **Main Canvas** node and run the **Open Brush** > **Save Game Object As Prefab**
+menu command. \
     The scene will be saved as a `*.prefab` file called `gameobject_to_prefab`.
     under the `Assets/TestData` folder.
 1.  Move the game object into the `Assets/Prefabs/Intro` folder.
@@ -285,7 +287,11 @@ Follow these steps to replace or alter the intro sketch:
 
 You may want to have a pared-down version of the intro sketch for the mobile
 version of the app. Stroke simplification is located in the **Settings** menu
-inside Tilt Brush.
+inside Open Brush.
+
+## New Scenes
+
+By default, your app will only build the scenes defined in the **DoBuild** method (string[] scenes = {...} ) in `BuildTiltBrush.cs` under  `Assets/Editor/`. Make sure to add your custom scenes to this array if you want to see them in app.
 
 ## Sketchfab support
 
@@ -293,35 +299,14 @@ Follow these steps to enable Sketchfab support:
 
 1.  [Contact Sketchfab](https://sketchfab.com/developers/oauth) for a client ID
     and secret before you can upload to their service.
-1.  Add the client ID and secret to the `Secrets` file.
+    
+    -  The **Application Name** will probably need to be changed
+    -  The **Grant Type** should be **Authorization Code** 
+    -  The **URI** should be **http://localhost:40074/sketchfab**
+1.  Follow the steps to [create your secrets file](#-Generating-Secrets-file).
+    Add a new item to the **Secrets** field.
+1.  Add the client ID and secret to the field.
 1.  Set the service as **Sketchfab**. Leave the API key blank.
-
-## FBX file support
-
-You will need to build C# wrappers for the Autodesk FBX (the Autodesk filebox
-format) SDK in order to import or export FBX and OBJ files in the app. See
-[Support/fbx/README.md](Support/fbx/README.md) for details.
-
-## Camera path support
-
-Follow these steps to enable camera path support:
-
-1.  Enable video support.
-1.  Uncomment the code in `CameraPathCaptureRig.RecordPath()`.
-
-## Video support
-
-To get video support you will need to put an ffmpeg.exe binary in to 
-`/Support/ThirdParty/ffmpeg/bin`. We have created a script to build one for
-you - it temporarily requires around 2GB of space to build but will clear up
-after itself.
-
-Follow these steps to get video support:
-
-1. Find '/Support/ThirdParty/ffmpeg/BuildFfmpeg.ps1', right-click on it in explorer and select
-   'Run with Powershell'. It will take some time to build.
-2. In Unity, modify `/Assets/PlatformConfigPC` and add 'Video' to 'Enabled Multicam Styles'.
-   'Snapshot' should always be enabled.
 
 ### Video support bug fix
 
@@ -344,9 +329,9 @@ angled too far. Fix this by doing the following:
 
 ## Offline rendering support
 
-When the user records a video from a saved sketch in Tilt Brush, a `.bat` file
+When the user records a video from a saved sketch in Open Brush, a `.bat` file
 is generated next to the `.mp4` for offline rendering support. This `.bat` file
-requires the path to the executable of Tilt Brush. The code for writing out this
+requires the path to the executable of Open Brush. The code for writing out this
 path to the file has been removed.
 
 Follow these steps to restore the path:
@@ -359,70 +344,29 @@ Follow these steps to restore the path:
     the executable path.
 1.  Update the string to point to the correct path.
 
-## GIF support
-
-GIF support was removed for licensing reasons. To get GIF support, integrate
-your own system by following these steps:
-
-1.  Add the encoding code in around lines 129 - 148 of `Assets/Scripts/Gif
-    Creation/GifEncodeTask.cs`.
-1.  Modify `Assets/PlatformConfigPC` and `Assets/PlatformConfigMobile`. Add
-    **Auto GIF** and/or **Time GIF** to **Enabled Multicam Styles**.
-
-The released PC build had the following settings:
-
-*   Snapshot
-*   Auto GIF
-*   Time GIF
-*   Video
-
-The released Quest build had the following settings:
-
-*   Snapshot
-*   Time GIF
-
 ## Experimental mode
 
 Experimental mode is where features live before they are ready to be released in
 a production build. This mode enables the experimental brushes and experimental
-panel while disabling the intro sequence.
+panel while disabling the intro sequence. Experimental mode can be enabled from
+the settings panel, and requires a restart.
 
 **New features and brushes that you find in experimental mode may not work as
 expected.** Sketches that use experimental features and brushes won't work on
-Poly or Sketchfab, and may break if loaded into production versions of Tilt
+Icosa or Sketchfab, and may break if loaded into production versions of Open
 Brush.
-
-### Turning on experimental mode
-
-Follow these steps to turn on experimental mode:
-
-1.  Find the Config object in the main scene by going to **App** > **Config**.
-1.  Turn on the **Is Experimental** flag.
-
-The Tilt Brush build system will then set up the experimental flag as needed
-when you make a build.
 
 ### Making your code experimental
 
 Code in experimental mode is usually surrounded by the following block:
 
 ```
-# if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-
     if (Config.IsExperimental) {
       // Experimental code goes here
     }
-
-# endif
 ```
-
-In the editor, all you need to enable experimental mode is to turn on the
-experimental flag. The `EXPERIMENTAL_ENABLED` scripting definition needs to be
-set, or the code will not be compiled into the build at all. This prevents
-unfinished features from being accessed by people who hack or decompile the
-executable.
 
 ### Experimental brushes
 
 Experimental brushes and environments are located in the `Assets/Resources/X`
-folder. They are not included in non-experimental builds.
+folder. They are not visible in non-experimental mode.

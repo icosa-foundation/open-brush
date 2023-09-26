@@ -14,46 +14,59 @@
 
 using System;
 
-namespace TiltBrush {
-public class ReferencePanelModelTab : ReferencePanelTab {
+namespace TiltBrush
+{
+    public class ReferencePanelModelTab : ReferencePanelTab
+    {
 
-  public class ModelIcon : ReferenceIcon {
-    public ModelButton ModelButton {
-      get { return Button as ModelButton; }
-    }
-    public override void Refresh(int iCatalog) {
-      ModelButton.SetPreset(ModelCatalog.m_Instance.GetModelAtIndex(iCatalog), iCatalog);
-    }
-  }
-
-  private int m_LastPageIndexForLoad = -1;
-
-  public override IReferenceItemCatalog Catalog {
-    get { return ModelCatalog.m_Instance; }
-  }
-  public override ReferenceButton.Type ReferenceButtonType {
-    get { return ReferenceButton.Type.Models; }
-  }
-
-  protected override Type ButtonType {
-    get { return typeof(ModelButton); }
-  }
-  protected override Type IconType {
-    get { return typeof(ModelIcon); }
-  }
-
-  public override void RefreshTab(bool selected) {
-    base.RefreshTab(selected);
-    if (selected) {
-      // Destroy previews so only the thumbnail is visible.
-      // Only do this when the page changes, to avoid thrashing the game state.
-      if (m_LastPageIndexForLoad != PageIndex) {
-        m_LastPageIndexForLoad = PageIndex;
-        for (int i = 0; i < m_Icons.Length; i++) {
-          (m_Icons[i].Button as ModelButton).DestroyModelPreview();
+        public class ModelIcon : ReferenceIcon
+        {
+            public ModelButton ModelButton
+            {
+                get { return Button as ModelButton; }
+            }
+            public override void Refresh(int iCatalog)
+            {
+                ModelButton.SetPreset(ModelCatalog.m_Instance.GetModelAtIndex(iCatalog), iCatalog);
+            }
         }
-      }
+
+        private int m_LastPageIndexForLoad = -1;
+
+        public override IReferenceItemCatalog Catalog
+        {
+            get { return ModelCatalog.m_Instance; }
+        }
+        public override ReferenceButton.Type ReferenceButtonType
+        {
+            get { return ReferenceButton.Type.Models; }
+        }
+
+        protected override Type ButtonType
+        {
+            get { return typeof(ModelButton); }
+        }
+        protected override Type IconType
+        {
+            get { return typeof(ModelIcon); }
+        }
+
+        public override void RefreshTab(bool selected)
+        {
+            base.RefreshTab(selected);
+            if (selected)
+            {
+                // Destroy previews so only the thumbnail is visible.
+                // Only do this when the page changes, to avoid thrashing the game state.
+                if (m_LastPageIndexForLoad != PageIndex)
+                {
+                    m_LastPageIndexForLoad = PageIndex;
+                    for (int i = 0; i < m_Icons.Length; i++)
+                    {
+                        (m_Icons[i].Button as ModelButton).DestroyModelPreview();
+                    }
+                }
+            }
+        }
     }
-  }
-}
 } // namespace TiltBrush

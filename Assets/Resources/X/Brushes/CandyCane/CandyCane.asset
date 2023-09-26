@@ -18,11 +18,23 @@ MonoBehaviour:
   m_CreationVersion: 
   m_ShaderVersion: 10.0
   m_BrushPrefab: {fileID: 100000, guid: 52d654b652acb104784ff7360adf5458, type: 3}
+  m_Tags:
+  - experimental
+  - broken
   m_Nondeterministic: 0
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
   m_ButtonTexture: {fileID: 2800000, guid: 2f28d5fef1de5a442a19eb3d249c2143, type: 3}
-  m_Description: Candy Cane
+  m_Description: BRUSH_CANDYCANE
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 81203246727225344
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionExtra: 
   m_BrushAudioLayers: []
   m_BrushAudioBasePitch: 1
@@ -63,10 +75,13 @@ MonoBehaviour:
   m_PlayBackAtStrokeGranularity: 0
   m_BlendMode: 1
   m_EmissiveFactor: 0
-  m_AllowExport: 1
+  m_AllowExport: 0
   m_SupportsSimplification: 1
   m_HeadMinPoints: 1
   m_HeadPointStep: 1
   m_TailMinPoints: 1
   m_TailPointStep: 1
   m_MiddlePointStep: 0
+  references:
+    version: 2
+    RefIds: []

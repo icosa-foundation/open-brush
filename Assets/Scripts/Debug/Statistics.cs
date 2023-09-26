@@ -16,41 +16,45 @@ using System;
 using System.Linq;
 using UnityEngine;
 
-namespace TiltBrush {
-  /// Class containing statistical helper utilities
-  public static class Statistics {
+namespace TiltBrush
+{
+    /// Class containing statistical helper utilities
+    public static class Statistics
+    {
 
-    /// Class that calculates a set of statistical information about an array of floats passed
-    /// through at construction.
-    public class Summary {
-      public float Min { get; private set; }
-      public float Max { get; private set; }
-      public float Median { get; private set; }
-      public float Mean { get; private set; }
-      public float InterquartileMean { get; private set; }
-      public float StandardDeviation { get; private set; }
-      public float StandardDeviationPcOfMedian { get; private set; }
-      public float StandardDeviationPcOfMean { get; private set; }
-      public float StandardDeviationPcOfInterquartileMean { get; private set; }
+        /// Class that calculates a set of statistical information about an array of floats passed
+        /// through at construction.
+        public class Summary
+        {
+            public float Min { get; private set; }
+            public float Max { get; private set; }
+            public float Median { get; private set; }
+            public float Mean { get; private set; }
+            public float InterquartileMean { get; private set; }
+            public float StandardDeviation { get; private set; }
+            public float StandardDeviationPcOfMedian { get; private set; }
+            public float StandardDeviationPcOfMean { get; private set; }
+            public float StandardDeviationPcOfInterquartileMean { get; private set; }
 
-      public Summary(float[] data) {
-        float[] sortedData = new float[data.Length];
-        data.CopyTo(sortedData, 0);
-        Array.Sort(sortedData);
-        Min = sortedData.First();
-        Max = sortedData.Last();
-        int midIndex1 = sortedData.Length / 2;
-        int midIndex2 = (sortedData.Length - 1) / 2;
-        Median = (sortedData[midIndex1] + sortedData[midIndex2]) / 2f;
-        Mean = sortedData.Average();
-        InterquartileMean =
-            sortedData.Skip(sortedData.Length / 4).Take(sortedData.Length / 2).Average();
-        StandardDeviation = Mathf.Sqrt(
-          data.Select(x => Mathf.Pow(x - Median, 2f)).Sum() / (sortedData.Length - 1));
-        StandardDeviationPcOfMedian = 100f * StandardDeviation / Median;
-        StandardDeviationPcOfMean = 100f * StandardDeviation / Mean;
-        StandardDeviationPcOfInterquartileMean = 100f * StandardDeviation / InterquartileMean;
-      }
+            public Summary(float[] data)
+            {
+                float[] sortedData = new float[data.Length];
+                data.CopyTo(sortedData, 0);
+                Array.Sort(sortedData);
+                Min = sortedData.First();
+                Max = sortedData.Last();
+                int midIndex1 = sortedData.Length / 2;
+                int midIndex2 = (sortedData.Length - 1) / 2;
+                Median = (sortedData[midIndex1] + sortedData[midIndex2]) / 2f;
+                Mean = sortedData.Average();
+                InterquartileMean =
+                    sortedData.Skip(sortedData.Length / 4).Take(sortedData.Length / 2).Average();
+                StandardDeviation = Mathf.Sqrt(
+                    data.Select(x => Mathf.Pow(x - Median, 2f)).Sum() / (sortedData.Length - 1));
+                StandardDeviationPcOfMedian = 100f * StandardDeviation / Median;
+                StandardDeviationPcOfMean = 100f * StandardDeviation / Mean;
+                StandardDeviationPcOfInterquartileMean = 100f * StandardDeviation / InterquartileMean;
+            }
+        }
     }
-  }
 } // namespace TiltBrush

@@ -14,15 +14,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Guid:
     m_storage: 7c972c27-d3c2-8af4-7bf8-5d9db8f0b7bb
-  m_DurableName: 
+  m_DurableName: InkGeometry
   m_CreationVersion: 
   m_ShaderVersion: 10.0
   m_BrushPrefab: {fileID: 100000, guid: 73ce5c63e307d8d409ecd9cc7049457f, type: 3}
+  m_Tags:
+  - experimental
   m_Nondeterministic: 0
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
   m_ButtonTexture: {fileID: 2800000, guid: bf436fffd0b90734b94ac4d97b08a070, type: 3}
-  m_Description: Ink (Geometry)
+  m_Description: BRUSH_INKGEOMETRY
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 81205417556369408
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionExtra: 
   m_BrushAudioLayers: []
   m_BrushAudioBasePitch: 1.2
@@ -70,3 +81,6 @@ MonoBehaviour:
   m_TailMinPoints: 1
   m_TailPointStep: 1
   m_MiddlePointStep: 0
+  references:
+    version: 2
+    RefIds: []
