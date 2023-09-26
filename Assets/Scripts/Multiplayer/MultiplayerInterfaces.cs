@@ -1,12 +1,22 @@
 
 
 using System;
+using System.Numerics;
+using System.Threading.Tasks;
 
 namespace OpenBrush.Multiplayer
 {
     public interface IConnectionHandler
     {
-        bool Connect();
-        bool Disconnect(bool force = false);
+        Task<bool> Connect();
+        Task<bool> Disconnect(bool force = false);
+
+        ITransientData<PlayerRigData> SpawnPlayer();
+    }
+
+    public interface ITransientData<T>
+    {
+        void TransmitData(T data);
+        T RecieveData();
     }
 }

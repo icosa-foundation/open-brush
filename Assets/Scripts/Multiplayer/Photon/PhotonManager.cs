@@ -5,13 +5,17 @@ using Fusion;
 using Fusion.Photon.Realtime;
 using Fusion.Sockets;
 using TiltBrush;
+using System.Threading.Tasks;
 
 namespace OpenBrush.Multiplayer
 {
     public class PhotonManager : IConnectionHandler, INetworkRunnerCallbacks
     {
         private NetworkRunner m_Runner;
-        public bool Connect()
+
+        public Action onPlayerConnected;
+
+        public async Task<bool> Connect()
         {
             if(m_Runner != null)
             {
@@ -23,42 +27,42 @@ namespace OpenBrush.Multiplayer
             m_Runner = runnerGO.AddComponent<NetworkRunner>();
             m_Runner.ProvideInput = true;
             m_Runner.AddCallbacks(this);
-            StartSession();
 
-            return true;
-        }
-
-        private async void StartSession()
-        {
-            if(m_Runner != null)
+            var appSettings = new AppSettings
             {
-                var appSettings = new AppSettings
-                {
-                    AppIdFusion = App.Config.PhotonFusionSecrets.ClientId,
-                    // Need this set for some reason
-                    FixedRegion = "",
-                };
+                AppIdFusion = App.Config.PhotonFusionSecrets.ClientId,
+                // Need this set for some reason
+                FixedRegion = "",
+            };
 
-                var args = new StartGameArgs()
-                {
+            var args = new StartGameArgs()
+            {
                 GameMode = GameMode.Shared,
                 SessionName = "testRoom",
                 CustomPhotonAppSettings = appSettings,
                 SceneManager = m_Runner.gameObject.AddComponent<NetworkSceneManagerDefault>(),
                 Scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex,
-                };
+            };
 
-                await m_Runner.StartGame(args);
-            }
-            else
-            {
-                Debug.LogWarning("Runner not assigned!");
-            }
+            var result = await m_Runner.StartGame(args);
+            return result.Ok;
         }
 
-        public bool Disconnect(bool force)
+        public async Task<bool> Disconnect(bool force)
         {
-            throw new System.NotImplementedException();
+            if(m_Runner != null)
+            {
+                await m_Runner.Shutdown(forceShutdownProcedure: force);
+                return m_Runner.IsShutdown;
+            }
+            return true;
+        }
+
+        public ITransientData<PlayerRigData> SpawnPlayer()
+        {
+            var playerPrefab = Resources.Load("Multiplayer/Photon/PlayerRig") as GameObject;
+            var player = m_Runner.Spawn(playerPrefab);
+            return player.GetComponent<PhotonPlayerRig>();
         }
 
         public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
