@@ -3101,7 +3101,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 106429517453328384
-    m_Localized: "Background Images"
+    m_Localized: Background Images
     m_Metadata:
       m_Items: []
   - m_Id: 95221400803737600
@@ -3442,6 +3442,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 147094689821290496
     m_Localized: Account sign-in is currently unavailable on this platform.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 150014201369985024
+    m_Localized: Sculpt
     m_Metadata:
       m_Items: []
   references:

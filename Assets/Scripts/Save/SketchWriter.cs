@@ -385,7 +385,7 @@ namespace TiltBrush
         /// Parses a binary file into List of MemoryBrushStroke.
         /// Returns null on parse error.
         public static List<Stroke> GetStrokes(
-            Stream stream, Guid[] brushList, bool allowFastPath, bool squashLayers = false, Queue<SculptedGeometryData> geometryData)
+            Stream stream, Guid[] brushList, bool allowFastPath, Queue<SculptedGeometryData> geometryData, bool squashLayers = false)
         {
             var reader = new TiltBrush.SketchBinaryReader(stream);
 

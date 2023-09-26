@@ -3255,6 +3255,10 @@ MonoBehaviour:
     m_Key: POPUP_ACCOUNTS_UNAVAILABLE_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 150014201369985024
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_SCULPT
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
