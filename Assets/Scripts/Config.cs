@@ -130,6 +130,8 @@ namespace TiltBrush
         public SecretsConfig.ServiceAuthData OculusMobileSecrets => Secrets[SecretsConfig.Service.OculusMobile];
         public SecretsConfig.ServiceAuthData PimaxSecrets => Secrets[SecretsConfig.Service.Pimax];
 
+        public bool DisableAccountLogins;
+
         /// Return a value kinda sorta half-way between "building for Android" and "running on Android"
         /// In order of increasing strictness, here are the in-Editor semantics of various methods
         /// of querying the platform. All of these methods return true when running on-device.
@@ -655,9 +657,10 @@ namespace TiltBrush
 
 #if UNITY_EDITOR
         /// Called at build time, just before this Config instance is saved to Main.unity
-        public void DoBuildTimeConfiguration(UnityEditor.BuildTarget target)
+        public void DoBuildTimeConfiguration(UnityEditor.BuildTarget target, bool disableAccountLogins = false)
         {
             m_PlatformConfig = EditTimeAssetReferences.Instance.GetConfigForBuildTarget(target);
+            DisableAccountLogins = disableAccountLogins;
         }
 #endif
     }
