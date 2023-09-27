@@ -21,26 +21,27 @@ namespace OpenBrush.Multiplayer
         private ITransientData<PlayerRigData> m_LocalPlayer;
         private List<ITransientData<PlayerRigData>> m_Players;
 
-        private Action testAction;
+        public Action localPlayerJoined;
 
         // Start is called before the first frame update
         async void Start()
         {
+            localPlayerJoined += OnPlayerJoined;
             switch(m_MultiplayerType)
             {
                 case MultiplayerType.None:
                     return;
                 case MultiplayerType.Photon:
-                    m_Manager = new PhotonManager();
+                    m_Manager = new PhotonManager(this);
                     break;
             }
 
             var result = await m_Manager.Connect();
+        }
 
-            if (result)
-            {
-                m_LocalPlayer = m_Manager.SpawnPlayer();
-            }
+        void OnPlayerJoined()
+        {
+            m_LocalPlayer = m_Manager.SpawnPlayer();
         }
 
         // Update is called once per frame

@@ -13,7 +13,13 @@ namespace OpenBrush.Multiplayer
     {
         private NetworkRunner m_Runner;
 
-        public Action onPlayerConnected;
+        MultiplayerManager m_Manager;
+
+        public PhotonManager(MultiplayerManager manager)
+        {
+            m_Manager = manager;
+
+        }
 
         public async Task<bool> Connect()
         {
@@ -61,13 +67,17 @@ namespace OpenBrush.Multiplayer
         public ITransientData<PlayerRigData> SpawnPlayer()
         {
             var playerPrefab = Resources.Load("Multiplayer/Photon/PlayerRig") as GameObject;
-            var player = m_Runner.Spawn(playerPrefab);
+            var player = m_Runner.Spawn(playerPrefab, inputAuthority: m_Runner.LocalPlayer);
             return player.GetComponent<PhotonPlayerRig>();
         }
 
         public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
         {
-            Debug.Log("Joined!");
+            if(player == m_Runner.LocalPlayer)
+            {
+                Debug.Log("I Joined!");
+                m_Manager.localPlayerJoined?.Invoke();
+            }
         }
 
         #region Unused Photon Callbacks 

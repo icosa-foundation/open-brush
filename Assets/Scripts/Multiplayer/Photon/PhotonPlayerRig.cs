@@ -1,38 +1,45 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
 using Fusion;
+using Fusion.Sockets;
 
 namespace OpenBrush.Multiplayer
 {
-    public class PhotonPlayerRig : NetworkBehaviour, ITransientData<PlayerRigData>
+    public class PhotonPlayerRig : NetworkBehaviour, ITransientData<PlayerRigData>, INetworkRunnerCallbacks
     {
         public NetworkTransform m_PlayArea;
         public NetworkTransform m_PlayerHead;
         public NetworkTransform m_Left;
         public NetworkTransform m_Right;
 
-        private PlayerRigData dataHolder;
+        private PlayerRigData transmitData;
         private PlayerRigData recievedData;
 
-        // Start is called before the first frame update
-        void Start()
+        public override void Spawned()
         {
-            
-        }
-
-        // Update is called once per frame
-
-        void Update()
-        {
-            
+            base.Spawned();
         }
 
         public void TransmitData(PlayerRigData data)
         {
-            dataHolder = data;
+            transmitData = data;
         }
 
         public PlayerRigData RecieveData()
         {
             return recievedData;
+        }
+
+        public override void FixedUpdateNetwork()
+        {
+            base.FixedUpdateNetwork();
+            //update the rig at each network tick
+            if (GetInput<RigInput>(out var input))
+            {
+                m_PlayerHead.transform.position = input.headPosition;
+                m_PlayerHead.transform.rotation = input.headRotation;
+            }
         }
 
         public override void Render()
@@ -41,16 +48,71 @@ namespace OpenBrush.Multiplayer
 
             if (Object.HasStateAuthority)
             {
-                m_PlayerHead.InterpolationTarget.position = dataHolder.HeadPosition;
-                m_PlayerHead.InterpolationTarget.rotation = dataHolder.HeadRotation;
+                UnityEngine.Debug.Log("here");
+                m_PlayerHead.InterpolationTarget.position = transmitData.HeadPosition;
+                m_PlayerHead.InterpolationTarget.rotation = transmitData.HeadRotation;
             }
             else
             {
-                recievedData = new PlayerRigData();
-                recievedData.HeadPosition = m_PlayerHead.InterpolationTarget.position;
-                recievedData.HeadRotation = m_PlayerHead.InterpolationTarget.rotation;
+                UnityEngine.Debug.Log("Other here");
+                recievedData = new PlayerRigData
+                {
+                    HeadPosition = m_PlayerHead.InterpolationTarget.position,
+                    HeadRotation = m_PlayerHead.InterpolationTarget.rotation
+                };
+                UnityEngine.Debug.Log(recievedData.HeadPosition);
+                m_PlayerHead.transform.position = recievedData.HeadPosition;
+                m_PlayerHead.transform.rotation = recievedData.HeadRotation;
             }
         }
+
+        public virtual void OnInput(NetworkRunner runner, NetworkInput input) {
+            RigInput rigInput = new RigInput();
+            rigInput.headPosition = transmitData.HeadPosition;
+            rigInput.headRotation = transmitData.HeadRotation;
+            UnityEngine.Debug.Log(rigInput.headPosition);
+            input.Set(rigInput);
+        }
+
+        // Include all rig parameters in an network input structure
+        public struct RigInput : INetworkInput
+        {
+            public Vector3 headPosition;
+            public Quaternion headRotation;
+        }
+
+        #region INetworkRunnerCallbacks (unused)
+        public void OnPlayerJoined(NetworkRunner runner, PlayerRef player) { }
+
+        public void OnPlayerLeft(NetworkRunner runner, PlayerRef player) { }
+
+
+        public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input) { }
+
+        public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason) { }
+
+        public void OnConnectedToServer(NetworkRunner runner) { }
+
+        public void OnDisconnectedFromServer(NetworkRunner runner) { }
+
+        public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token) { }
+
+        public void OnConnectFailed(NetworkRunner runner, NetAddress remoteAddress, NetConnectFailedReason reason) { }
+
+        public void OnUserSimulationMessage(NetworkRunner runner, SimulationMessagePtr message) { }
+
+        public void OnSessionListUpdated(NetworkRunner runner, List<SessionInfo> sessionList) { }
+
+        public void OnCustomAuthenticationResponse(NetworkRunner runner, Dictionary<string, object> data) { }
+
+        public void OnHostMigration(NetworkRunner runner, HostMigrationToken hostMigrationToken) { }
+
+        public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ArraySegment<byte> data) { }
+
+        public void OnSceneLoadDone(NetworkRunner runner) { }
+
+        public void OnSceneLoadStart(NetworkRunner runner) { }
+        #endregion
     }
 }
 
