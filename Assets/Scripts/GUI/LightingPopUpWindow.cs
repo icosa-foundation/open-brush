@@ -54,7 +54,7 @@ namespace TiltBrush
             m_Environments = EnvironmentCatalog.m_Instance.AllEnvironments.ToList();
 
             // Remove passthrough scene for devices that don't support it
-#if PASSTHROUGH_SUPPORTED
+#if !PASSTHROUGH_SUPPORTED
             foreach (var env in m_Environments)
             {
                 // Passthrough
