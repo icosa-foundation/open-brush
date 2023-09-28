@@ -8,21 +8,24 @@ namespace TiltBrush
     {
 #if OCULUS_SUPPORTED
         private OVRPassthroughLayer ovrPassthrough;
+#endif // OCULUS_SUPPORTED 
         private OVRSceneManager ovrSceneManager;
-#endif // OCULUS_SUPPORTED
+
 
         void Start()
         {
 #if OCULUS_SUPPORTED
             ovrPassthrough = gameObject.AddComponent<OVRPassthroughLayer>();
             ovrPassthrough.overlayType = OVROverlay.OverlayType.Underlay;
-                
-            ovrSceneManager = gameObject.AddComponent<OVRSceneManager>();
 #endif // OCULUS_SUPPORTED   
+                
+            ovrSceneManager = GetComponent<OVRSceneManager>();
+            ovrSceneManager.SceneModelLoadedSuccessfully += SceneModelLoaded;
+            LoadScene();
         }
 
 // Oculus Methods
-#if OCULUS_SUPPORTED
+
         void RequestScenePermission()
         {
             const string permissionString = "com.oculus.permission.USE_SCENE";
@@ -31,7 +34,17 @@ namespace TiltBrush
                 UnityEngine.Android.Permission.RequestUserPermission(permissionString);
             }
         }
-#endif // OCULUS_SUPPORTED
+
+        void LoadScene()
+        {
+            ovrSceneManager.LoadSceneModel();
+        }
+
+        void SceneModelLoaded()
+        {
+
+        }
+
     }
 }
 
