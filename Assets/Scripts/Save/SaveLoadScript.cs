@@ -760,6 +760,10 @@ namespace TiltBrush
                         {
                             WidgetManager.m_Instance.SetDataFromTilt(jsonData.Videos);
                         }
+                        if (jsonData.TextWidgets != null)
+                        {
+                            WidgetManager.m_Instance.SetDataFromTilt(jsonData.TextWidgets);
+                        }
                     }
                     if (jsonData.Mirror != null)
                     {

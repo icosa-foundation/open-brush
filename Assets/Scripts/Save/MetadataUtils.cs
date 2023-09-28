@@ -141,6 +141,27 @@ namespace TiltBrush
                 .OrderBy(ByModelLocation).ToArray();
         }
 
+        public static TiltText[] GetTiltText(GroupIdMapping groupIdMapping)
+        {
+            return WidgetManager.m_Instance.TextWidgets.Where(x => x.gameObject.activeSelf).Select(x => ConvertTextWidgetToTiltText(x)).ToArray();
+
+            TiltText ConvertTextWidgetToTiltText(TextWidget widget)
+            {
+                TiltText text = new TiltText
+                {
+                    Transform = widget.SaveTransform,
+                    Text = widget.Text,
+                    FillColor = widget.TextColor,
+                    Pinned = widget.Pinned,
+                    GroupId = groupIdMapping.GetId(widget.Group),
+                    StrokeColor = widget.StrokeColor,
+                    Font = "Oswald-Regular", // Not currently used
+                    ExtrudeDepth = 0 // Not currently used
+                };
+                return text;
+            }
+        }
+
         public static TiltVideo[] GetTiltVideos(GroupIdMapping groupIdMapping)
         {
             return WidgetManager.m_Instance.VideoWidgets.Where(x => x.gameObject.activeSelf).Select(x => ConvertVideoToTiltVideo(x)).ToArray();

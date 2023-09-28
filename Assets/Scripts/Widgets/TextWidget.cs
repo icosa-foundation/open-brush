@@ -54,6 +54,12 @@ namespace TiltBrush
             set => m_TextMeshPro.color = value;
         }
 
+        public Color StrokeColor
+        {
+            get => m_TextMeshPro.outlineColor;
+            set => m_TextMeshPro.outlineColor = value;
+        }
+
         public override GrabWidget Clone()
         {
             return Clone(transform.position, transform.rotation, m_Size);
@@ -79,6 +85,32 @@ namespace TiltBrush
             clone.CloneInitialMaterials(this);
             clone.TrySetCanvasKeywordsFromObject(transform);
             return clone;
+        }
+
+        public static void FromTiltText(TiltText tiltText)
+        {
+            TextWidget textWidget = Instantiate(WidgetManager.m_Instance.TextWidgetPrefab);
+            textWidget.m_LoadingFromSketch = true;
+            textWidget.transform.parent = App.Instance.m_CanvasTransform;
+            textWidget.transform.localScale = Vector3.one;
+
+            textWidget.Text = tiltText.Text;
+            textWidget.SetSignedWidgetSize(tiltText.Transform.scale);
+            textWidget.Show(bShow: true, bPlayAudio: false);
+            textWidget.transform.localPosition = tiltText.Transform.translation;
+            textWidget.transform.localRotation = tiltText.Transform.rotation;
+            if (tiltText.Pinned)
+            {
+                textWidget.PinFromSave();
+            }
+            textWidget.TextColor = tiltText.FillColor;
+            textWidget.StrokeColor = tiltText.StrokeColor;
+            textWidget.Text = tiltText.Text;
+            textWidget.Group = App.GroupManager.GetGroupFromId(tiltText.GroupId);
+            textWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltText.LayerId));
+
+            TiltMeterScript.m_Instance.AdjustMeterWithWidget(textWidget.GetTiltMeterCost(), up: true);
+            textWidget.UpdateScale();
         }
 
         public override string GetExportName()

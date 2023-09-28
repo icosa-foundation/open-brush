@@ -726,6 +726,15 @@ namespace TiltBrush
             }
         }
 
+        public void SetDataFromTilt(TiltText[] tiltText)
+        {
+            for (int i = 0; i < tiltText.Length; ++i)
+            {
+                TextWidget.FromTiltText(tiltText[i]);
+            }
+        }
+
+
         public void SetDataFromTilt(TiltVideo[] value)
         {
             m_loadingTiltVideos = value;
@@ -979,6 +988,16 @@ namespace TiltBrush
             get
             {
                 return m_VideoWidgets
+                    .Select(w => w == null ? null : w.WidgetScript)
+                    .Where(w => w != null);
+            }
+        }
+
+        public IEnumerable<TextWidget> TextWidgets
+        {
+            get
+            {
+                return m_TextWidgets
                     .Select(w => w == null ? null : w.WidgetScript)
                     .Where(w => w != null);
             }

@@ -657,6 +657,20 @@ namespace TiltBrush
     }
 
     [Serializable]
+    public class TiltText
+    {
+        public TrTransform Transform { get; set; }
+        public string Text { get; set; }
+        public Color FillColor { get; set; }
+        public Color StrokeColor { get; set; }
+        public string Font { get; set; }
+        public float ExtrudeDepth { get; set; }
+        public bool Pinned { get; set; }
+        public uint GroupId { get; set; }
+        public int LayerId { get; set; }
+    }
+
+    [Serializable]
     public class TiltVideo
     {
         public string FilePath { get; set; } // relative to Media Library folder
@@ -791,5 +805,8 @@ namespace TiltBrush
         public string ApplicationName { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string ApplicationVersion { get; set; }
+        
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TiltText[] TextWidgets { get; set; }
     }
 } // namespace TiltBrush
