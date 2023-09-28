@@ -807,5 +807,8 @@ namespace TiltBrush
         public string ApplicationName { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string ApplicationVersion { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TiltSoundClip[] SoundClips { get; set; }
     }
 } // namespace TiltBrush

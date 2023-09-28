@@ -36,6 +36,16 @@ namespace TiltBrush
             get { return m_SoundClip; }
         }
 
+        public TrTransform SaveTransform
+        {
+            get
+            {
+                TrTransform xf = TrTransform.FromLocalTransform(transform);
+                xf.scale = GetSignedWidgetSize();
+                return xf;
+            }
+        }
+
         public SoundClip.SoundClipController SoundClipController { get; private set; }
 
         public void SetSoundClip(SoundClip soundClip)

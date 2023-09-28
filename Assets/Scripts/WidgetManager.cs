@@ -731,6 +731,14 @@ namespace TiltBrush
             }
         }
 
+        public void SetDataFromTilt(TiltSoundClip[] tiltSoundClip)
+        {
+            for (int i = 0; i < tiltSoundClip.Length; ++i)
+            {
+                SoundClipWidget.FromTiltSoundClip(tiltSoundClip[i]);
+            }
+        }
+
         public void SetDataFromTilt(TiltVideo[] value)
         {
             m_loadingTiltVideos = value;
@@ -984,6 +992,16 @@ namespace TiltBrush
             get
             {
                 return m_VideoWidgets
+                    .Select(w => w == null ? null : w.WidgetScript)
+                    .Where(w => w != null);
+            }
+        }
+
+        public IEnumerable<SoundClipWidget> SoundClipWidgets
+        {
+            get
+            {
+                return m_SoundClipWidgets
                     .Select(w => w == null ? null : w.WidgetScript)
                     .Where(w => w != null);
             }
