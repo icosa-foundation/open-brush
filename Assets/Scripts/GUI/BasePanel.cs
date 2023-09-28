@@ -103,7 +103,7 @@ namespace TiltBrush
             PolyMobile,
             LabsMobile,
             ReferenceMobile,
-            CameraPath,
+            MovementPath,
             BrushLab,
             WebcamPanel = 5200,
             Scripts = 6000,
@@ -111,6 +111,7 @@ namespace TiltBrush
             StencilSettings = 20200,
             LayersPanel = 15000,
             TransformPanel = 12000,
+            AnimationPanel = 18000,
         }
 
         private enum FixedTransitionState

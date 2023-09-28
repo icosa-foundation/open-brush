@@ -75,7 +75,7 @@ namespace TiltBrush
 
         public static CameraPathMetadata[] GetCameraPaths()
         {
-            return WidgetManager.m_Instance.CameraPathWidgets
+            return WidgetManager.m_Instance.MovementPathWidgets
                 .Where(cpw => cpw.WidgetScript.ShouldSerialize())
                 .Select(cpw => cpw.WidgetScript.AsSerializable())
                 .ToArray();
@@ -84,6 +84,11 @@ namespace TiltBrush
         public static LayerMetadata[] GetLayers()
         {
             return App.Scene.LayerCanvasesSerialized();
+        }
+
+        public static AnimationMetadata GetAnimationTracks()
+        {
+            return App.Scene.AnimationTracksSerialized();
         }
 
         public static TiltModels75[] GetTiltModels(GroupIdMapping groupIdMapping)

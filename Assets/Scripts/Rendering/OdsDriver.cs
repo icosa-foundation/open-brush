@@ -69,7 +69,7 @@ namespace TiltBrush
             set { m_turnTableRotation = value; }
         }
 
-        public string CameraPath { get; set; }
+        public string MovementPath { get; set; }
 
         public string OutputFolder
         {
@@ -124,11 +124,11 @@ namespace TiltBrush
                 }
             }
 
-            if (!string.IsNullOrEmpty(CameraPath) && File.Exists(CameraPath))
+            if (!string.IsNullOrEmpty(MovementPath) && File.Exists(MovementPath))
             {
 #if USD_SUPPORTED
                 m_PathSerializer = gameObject.AddComponent<UsdPathSerializer>();
-                if (m_PathSerializer.Load(CameraPath))
+                if (m_PathSerializer.Load(MovementPath))
                 {
                     m_PathSerializer.StartPlayback("/Sketch", "/VideoCamera");
                     FramesToCapture = Mathf.FloorToInt((float)(m_PathSerializer.Duration) * m_fps);
@@ -141,7 +141,7 @@ namespace TiltBrush
                     m_PathSerializer = null;
                 }
 #else
-                throw new System.NotImplementedException("CameraPath requires USD support");
+                throw new System.NotImplementedException("MovementPath requires USD support");
 #endif
             }
 

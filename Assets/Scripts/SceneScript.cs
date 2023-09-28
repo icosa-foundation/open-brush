@@ -17,12 +17,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using TiltBrush.FrameAnimation;
 
 namespace TiltBrush
 {
 
     // TODO: Allow light count to be reduced.  Having to deal with inactive
-    // lights is a burden for the rest of the codebase, and can be error prone
+    // lights is a burden for the restLayerCanvasesUpdate of the codebase, and can be error prone
     // (e.g. component enabled vs. game object active).
     public class SceneScript : MonoBehaviour
     {
@@ -36,15 +37,19 @@ namespace TiltBrush
         public delegate void LayerCanvasesUpdateEventHandler();
         public event LayerCanvasesUpdateEventHandler LayerCanvasesUpdate;
 
-        [SerializeField] private CanvasScript m_MainCanvas;
+        [SerializeField] public CanvasScript m_MainCanvas;
         [SerializeField] private CanvasScript m_SelectionCanvas;
+
+        public AnimationUI_Manager animationUI_manager;
+
+        public GameObject captureRig;
 
         private bool m_bInitialized;
         private Light[] m_Lights;
         private HashSet<int> m_DeletedLayers;
 
-        private CanvasScript m_ActiveCanvas;
-        private List<CanvasScript> m_LayerCanvases;
+        public CanvasScript m_ActiveCanvas;
+        public List<CanvasScript> m_LayerCanvases;
 
         /// Helper for getting and setting transforms on Transform components.
         /// Transform natively allows you to access parent-relative ("local")
@@ -106,7 +111,11 @@ namespace TiltBrush
                 {
                     while (canvases.MoveNext())
                     {
+                        Debug.Log("PREV HERE ");
+                        Debug.Log(prevScene);
+                        Debug.Log(canvases.Current);
                         canvases.Current.OnScenePoseChanged(prevScene, value);
+                        Debug.Log("AFTER PREV");
                     }
                 }
             }
@@ -237,6 +246,9 @@ namespace TiltBrush
 
         public CanvasScript AddLayerNow()
         {
+
+
+
             var go = new GameObject(string.Format("Layer {0}", LayerCanvases.Count()));
             go.transform.parent = transform;
             Coords.AsLocal[go.transform] = TrTransform.identity;
@@ -246,11 +258,48 @@ namespace TiltBrush
             // Otherwise GPU intersection filters them out
             HierarchyUtils.RecursivelySetLayer(go.transform, App.Scene.MainCanvas.gameObject.layer);
 
+
             var layer = go.AddComponent<CanvasScript>();
             m_LayerCanvases.Add(layer);
 
+            App.Scene.ActiveCanvas = layer;
+
             App.Scene.LayerCanvasesUpdate?.Invoke();
+
+
+            // Add canvases for other animation frames
+            animationUI_manager.AddLayerRefresh(layer);
+
             return layer;
+        }
+
+        public CanvasScript AddCanvas()
+        {
+
+            var go = new GameObject("new");
+            go.transform.parent = transform;
+            Coords.AsLocal[go.transform] = TrTransform.identity;
+            go.transform.hasChanged = false;
+
+
+            HierarchyUtils.RecursivelySetLayer(go.transform, App.Scene.MainCanvas.gameObject.layer);
+
+            var frame = go.AddComponent<CanvasScript>();
+
+            return frame;
+
+        }
+
+
+        public void DestroyCanvas(CanvasScript layer)
+        {
+
+
+            foreach (Batch b in layer.BatchManager.AllBatches())
+                b.Destroy();
+            Destroy(layer.gameObject);
+
+
         }
 
         // Destructive delete - no undo possible
@@ -261,6 +310,9 @@ namespace TiltBrush
             foreach (Batch b in layer.BatchManager.AllBatches())
                 b.Destroy();
             Destroy(layer.gameObject);
+
+            // Add canvases for other animation frames
+            animationUI_manager.DestroyLayerRefresh(layer);
         }
 
         public bool IsLayerDeleted(CanvasScript layer)
@@ -275,6 +327,30 @@ namespace TiltBrush
             return index + 1;
         }
 
+        public int GetLayerNumFromCanvas(CanvasScript canvas)
+        {
+            int index = 0;
+            foreach (CanvasScript layer in LayerCanvases)
+            {
+                if (layer.Equals(canvas)) { break; };
+                index++;
+            }
+            return index;
+        }
+        public CanvasScript GetCanvasFromLayerNum(int num)
+        {
+            int index = 0;
+            foreach (CanvasScript layer in LayerCanvases)
+            {
+                if (num == index)
+                {
+                    return layer;
+                    ;
+                };
+                index++;
+            }
+            return null;
+        }
         public bool IsLayerDeleted(int layerIndex)
         {
             return m_DeletedLayers.Contains(layerIndex);
@@ -299,7 +375,10 @@ namespace TiltBrush
         {
             if (canvas.gameObject.activeSelf) canvas.gameObject.SetActive(false);
             else canvas.gameObject.SetActive(true);
-            App.Scene.LayerCanvasesUpdate?.Invoke();
+            // App.Scene.LayerCanvasesUpdate?.Invoke();
+
+            animationUI_manager.updateLayerVisibilityRefresh(canvas);
+
         }
 
         public void ShowLayer(int canvasIndex) { ShowLayer(GetCanvasByLayerIndex(canvasIndex)); }
@@ -309,12 +388,25 @@ namespace TiltBrush
             App.Scene.LayerCanvasesUpdate?.Invoke();
         }
 
+        public void ShowCanvas(CanvasScript canvas)
+        {
+            canvas.gameObject.SetActive(true);
+            // App.Scene.LayerCanvasesUpdate?.Invoke();
+        }
+
         public void HideLayer(int canvasIndex) { HideLayer(GetCanvasByLayerIndex(canvasIndex)); }
         public void HideLayer(CanvasScript canvas)
         {
             canvas.gameObject.SetActive(false);
             App.Scene.LayerCanvasesUpdate?.Invoke();
         }
+
+        public void HideCanvas(CanvasScript canvas)
+        {
+            canvas.gameObject.SetActive(false);
+
+        }
+
 
         public CanvasScript GetOrCreateLayer(int layerIndex)
         {
@@ -345,6 +437,8 @@ namespace TiltBrush
             if (layer == MainCanvas) return;
             m_DeletedLayers.Add(GetIndexOfCanvas(layer) - 1);
             App.Scene.LayerCanvasesUpdate?.Invoke();
+
+            animationUI_manager.MarkLayerAsDeleteRefresh(layer);
         }
 
         public void RenameLayer(CanvasScript layer, string newName)
@@ -383,6 +477,30 @@ namespace TiltBrush
                     Name = layer.name
                 };
             }
+            return meta;
+        }
+
+        public AnimationMetadata AnimationTracksSerialized()
+        {
+
+
+
+            var meta = new AnimationMetadata();
+            var layers = LayerCanvases.ToArray();
+            meta.Tracks = new AnimationTrackMetadata[layers.Count()];
+
+
+            for (var i = 0; i < layers.Length; i++)
+            {
+                var layer = layers[i];
+                meta.Tracks[i] = new AnimationTrackMetadata
+                {
+                    Visible = layer.gameObject.activeSelf,
+                    Name = layer.name
+                };
+            }
+
+            meta.numFrames = animationUI_manager.timeline.Count;
             return meta;
         }
     }

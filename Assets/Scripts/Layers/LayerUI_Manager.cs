@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Localization;
+using System;
 
 namespace TiltBrush.Layers
 {
@@ -27,47 +28,143 @@ namespace TiltBrush.Layers
         [SerializeField] private LocalizedString m_MainLayerName;
         [SerializeField] private LocalizedString m_AdditionalLayerName;
 
+        [SerializeField] public GameObject modeltrackWidget;
+
+        public GameObject mainWidget;
         public List<GameObject> m_Widgets;
+        public int scrollOffset = 0;
+        public float scrollHeight = 0.2f; // Height of each element in scroll zone
         private List<CanvasScript> m_Canvases;
+
+        public Component animationUI_Manager;
+        public GameObject layersWidget;
+
+        public GameObject scrollUpButton;
+        public GameObject scrollDownButton;
+
+        bool animationEvent = false;
 
         private void Start()
         {
             ResetUI();
+            initScroll();
+
+            if ( hasAnimationComponent()){
+                    App.Scene.animationUI_manager.startTimeline();
+            } 
+           
         }
 
-        private void ResetUI()
+        private bool hasAnimationComponent(){
+            return this.gameObject.GetComponent<TiltBrush.FrameAnimation.AnimationUI_Manager>() != null;
+        }
+        private bool isAnimationPlaying(){
+
+            return App.Scene.animationUI_manager != null && App.Scene.animationUI_manager.getPlaying();
+        }
+
+        public void setAnimating(bool animatingNow)
         {
+            animationEvent = animatingNow;
+        }
+
+        public void ResetUI()
+        {
+
+
+            if ( isAnimationPlaying()) return;
+
+            Debug.Log("RESSETING UI");
+
             m_Canvases = new List<CanvasScript>();
-            var canvases = App.Scene.LayerCanvases.ToArray();
-            for (int i = 0; i < m_Widgets.Count; i++)
+            var layerCanvases = App.Scene.LayerCanvases.ToArray();
+
+            foreach (GameObject widget in m_Widgets)
             {
-                var widget = m_Widgets[i];
-                if (i >= canvases.Length)
+                if (widget.GetComponentInChildren<ModelWidget>() != null)
                 {
-                    widget.SetActive(false);
-                    continue;
+                    Destroy(widget.GetComponentInChildren<ModelWidget>().gameObject);
                 }
-                widget.SetActive(true);
-                var canvas = canvases[i];
-                widget.GetComponentInChildren<TMPro.TextMeshPro>().text = canvas.name;
+                Destroy(widget);
+            }
+            m_Widgets.Clear();
+
+            for (int i = 0; i < layerCanvases.Length; i++)
+            {
+                var newWidget = Instantiate(layersWidget, this.gameObject.transform, false);
+                // newWidget.transform.SetParent(this.gameObject.transform, false);
+                newWidget.GetComponentInChildren<TMPro.TextMeshPro>().text = layerCanvases[i].name;
                 if (i == 0)
                 {
-                    widget.GetComponentInChildren<TMPro.TextMeshPro>().text = $"{m_MainLayerName.GetLocalizedString()}";
-                    widget.GetComponentInChildren<DeleteLayerButton>()?.gameObject.SetActive(false);
-                    widget.GetComponentInChildren<LayerPopupButton>()?.gameObject.SetActive(false);
-                    widget.GetComponentInChildren<SquashLayerButton>()?.gameObject.SetActive(false);
-                    widget.GetComponentInChildren<RenameLayerButton>()?.gameObject.SetActive(false);
+                    newWidget.GetComponentInChildren<TMPro.TextMeshPro>().text = $"{m_MainLayerName.GetLocalizedString()}";
+                    newWidget.GetComponentInChildren<DeleteLayerButton>()?.gameObject.SetActive(false);
+                    newWidget.GetComponentInChildren<LayerPopupButton>()?.gameObject.SetActive(false);
+                    newWidget.GetComponentInChildren<SquashLayerButton>()?.gameObject.SetActive(false);
+                    newWidget.GetComponentInChildren<RenameLayerButton>()?.gameObject.SetActive(false);
                 }
-                widget.GetComponentInChildren<FocusLayerButton>().SetButtonActivation(canvas == App.ActiveCanvas);
-                widget.GetComponentInChildren<FocusLayerButton>().SetButtonActivation(canvas == App.ActiveCanvas);
+                if (layerCanvases[i] == App.ActiveCanvas)
+                {
+                    newWidget.GetComponentInChildren<FocusLayerButton>().SetButtonActivation(layerCanvases[i] == App.ActiveCanvas);
+                }
                 // Active button means hidden layer
-                widget.GetComponentInChildren<ToggleVisibilityLayerButton>().SetButtonActivation(!canvas.isActiveAndEnabled);
-                foreach (var btn in widget.GetComponentsInChildren<OptionButton>())
+                newWidget.GetComponentInChildren<ToggleVisibilityLayerButton>().SetButtonActivation(!layerCanvases[i].isActiveAndEnabled);
+
+                foreach (var btn in newWidget.GetComponentsInChildren<OptionButton>())
                 {
                     btn.m_CommandParam = i;
                 }
-                m_Canvases.Add(canvas);
+
+                Vector3 localPos = mainWidget.transform.localPosition;
+                localPos.y -= i * scrollHeight;
+                localPos.y -= scrollOffset;
+                newWidget.transform.localPosition = localPos;
+                m_Widgets.Add(newWidget);
+                m_Canvases.Add(layerCanvases[i]);
             }
+            UpdateScroll();
+        }
+
+        private void initScroll()
+        {
+            scrollOffset = 0;
+            scrollHeight = 0.2f;
+        }
+
+        private void UpdateScroll()
+        {
+            for (int i = 0; i < m_Widgets.Count; i++)
+            {
+                Vector3 localPos = mainWidget.transform.localPosition;
+                float subtractingVal = i * scrollHeight + scrollOffset * scrollHeight;
+                localPos.y -= subtractingVal;
+                m_Widgets[i].transform.localPosition = localPos;
+
+                int thisWidgetOffset = i + scrollOffset;
+                if (thisWidgetOffset >= 7 || thisWidgetOffset < 0)
+                {
+                    m_Widgets[i].SetActive(false);
+                }
+                else
+                {
+                    m_Widgets[i].SetActive(true);
+                }
+            }
+
+            scrollUpButton.SetActive(scrollOffset != 0);
+            scrollDownButton.SetActive(scrollOffset + m_Widgets.Count > 7);
+
+            if ( hasAnimationComponent()){
+            App.Scene.animationUI_manager.updateTrackScroll(scrollOffset, scrollHeight);
+            }
+        }
+
+
+        public void scrollDirection(bool upDirection)
+        {
+            if (scrollOffset == 0 && upDirection) return;
+            if (scrollOffset + m_Widgets.Count <= 7 && !upDirection) return;
+            scrollOffset += (Convert.ToInt32(upDirection) * 2 - 1);
+            UpdateScroll();
         }
 
         private void OnLayerCanvasesUpdate()
@@ -76,14 +173,14 @@ namespace TiltBrush.Layers
         }
 
         // Subscribes to events
-        private void OnEnable()
+        public void OnEnable()
         {
             App.Scene.ActiveCanvasChanged += ActiveSceneChanged;
             App.Scene.LayerCanvasesUpdate += OnLayerCanvasesUpdate;
         }
 
         // Unsubscribes to events
-        private void OnDisable()
+        public void OnDisable()
         {
             App.Scene.ActiveCanvasChanged -= ActiveSceneChanged;
             App.Scene.LayerCanvasesUpdate -= OnLayerCanvasesUpdate;
@@ -96,10 +193,27 @@ namespace TiltBrush.Layers
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new DeleteLayerCommand(canvas));
         }
 
+        public void DeleteLayerGeneral()
+        {
+            if (App.Scene.ActiveCanvas == App.Scene.MainCanvas) return; // Don't delete the main canvas
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new DeleteLayerCommand(App.Scene.ActiveCanvas));
+            App.Scene.animationUI_manager.resetTimeline();
+        }
+
         public void SquashLayer(int index)
         {
             var canvas = m_Canvases[index];
             var prevCanvas = m_Canvases[Mathf.Max(index - 1, 0)];
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new SquashLayerCommand(canvas, prevCanvas)
+            );
+        }
+
+        public void SquashLayerGeneral()
+        {
+            var canvas = App.Scene.ActiveCanvas;
+            var index = App.Scene.GetLayerNumFromCanvas(App.Scene.ActiveCanvas);
+            var prevCanvas = App.Scene.GetCanvasFromLayerNum(Mathf.Max(index - 1, 0));
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new SquashLayerCommand(canvas, prevCanvas)
             );
@@ -111,9 +225,16 @@ namespace TiltBrush.Layers
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas));
         }
 
+        public void ClearLayerContentsGeneral()
+        {
+            CanvasScript canvas = App.Scene.ActiveCanvas;
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas));
+        }
+
         public void AddLayer()
         {
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new AddLayerCommand(true));
+            App.Scene.animationUI_manager.resetTimeline();
         }
 
         public void ToggleVisibility(GameObject widget)
@@ -126,6 +247,7 @@ namespace TiltBrush.Layers
         {
             var newActiveCanvas = GetCanvasFromWidget(widget);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ActivateLayerCommand(newActiveCanvas));
+            ResetUI();
         }
 
         private void ActiveSceneChanged(CanvasScript prev, CanvasScript current)

@@ -604,6 +604,25 @@ namespace TiltBrush
         public bool Visible;
     }
 
+    [Serializable]
+    public class AnimationTrackMetadata
+    {
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string Name;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public bool Visible;
+    }
+    [Serializable]
+    public class AnimationMetadata
+    {
+
+        public AnimationTrackMetadata[] Tracks;
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int numFrames;
+    }
+
+
     // TODO: deprecate (7.5b-only)
     // Left just to avoid breaking trusted testers' art
     [Serializable]
@@ -783,6 +802,9 @@ namespace TiltBrush
         public TiltVideo[] Videos { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public LayerMetadata[] Layers { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+
+        public AnimationMetadata AnimationTracks { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public CameraPathMetadata[] CameraPaths { get; set; }
 

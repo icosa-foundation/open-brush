@@ -5567,7 +5567,7 @@ GameObject:
   - component: {fileID: 281700270}
   - component: {fileID: 281700271}
   m_Layer: 0
-  m_Name: CameraPathCaptureRig
+  m_Name: MovementPathCaptureRig
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5599,7 +5599,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 281700269}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7bd9651e82f4ee4e95ed6dc3f021faa, type: 3}
+  m_Script: {fileID: 11500000, guid: c95d78f294eec4945a204d159dea15d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_Object: {fileID: 464138292}
@@ -17879,6 +17879,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_MainCanvas: {fileID: 1843608206}
   m_SelectionCanvas: {fileID: 1830711221}
+  animationUI_manager: {fileID: 0}
+  m_ActiveCanvas: {fileID: 0}
+  m_LayerCanvases: []
 --- !u!1 &1372392204
 GameObject:
   m_ObjectHideFlags: 0
@@ -29472,7 +29475,15 @@ MonoBehaviour:
     m_ModeGvr: 1
     m_Basic: 0
     m_Advanced: 1
-  - m_PanelPrefab: {fileID: 176644, guid: d620d9effac3e6c4eaae746d85edf13c, type: 3}
+  - m_PanelPrefab: {fileID: 176644, guid: 832e29c521f326a41adfb1176478943b, type: 3}
+    m_ModeVr: 1
+    m_ModeVrExperimental: 1
+    m_ModeMono: 1
+    m_ModeQuest: 1
+    m_ModeGvr: 1
+    m_Basic: 0
+    m_Advanced: 1
+  - m_PanelPrefab: {fileID: 176644, guid: e4e1ee92a3873da4d8e7fcc9f2501591, type: 3}
     m_ModeVr: 1
     m_ModeVrExperimental: 1
     m_ModeMono: 1
@@ -29546,17 +29557,17 @@ MonoBehaviour:
     type: 3}
   m_VideoWidgetPrefab: {fileID: 854942063617328480, guid: a1bf54eee52cec14e8207351740867f3,
     type: 3}
-  m_CameraPathWidgetPrefab: {fileID: 114268259032398848, guid: a933b2a19614a6c4da08a0143f0ec912,
+  m_MovementPathWidgetPrefab: {fileID: 114268259032398848, guid: a933b2a19614a6c4da08a0143f0ec912,
     type: 3}
-  m_CameraPathPositionKnotPrefab: {fileID: 1334758335721002, guid: 38b506951b7a81e4e9a6c65a9a20efa9,
+  m_MovementPathPositionKnotPrefab: {fileID: 1334758335721002, guid: 38b506951b7a81e4e9a6c65a9a20efa9,
     type: 3}
-  m_CameraPathRotationKnotPrefab: {fileID: 1140733690629052, guid: 7f151c0a0ebce55489176683756d7114,
+  m_MovementPathRotationKnotPrefab: {fileID: 1140733690629052, guid: 7f151c0a0ebce55489176683756d7114,
     type: 3}
-  m_CameraPathSpeedKnotPrefab: {fileID: 1334758335721002, guid: 0b67ae7cf6315f542a055b2d19bf134f,
+  m_MovementPathSpeedKnotPrefab: {fileID: 1334758335721002, guid: 0b67ae7cf6315f542a055b2d19bf134f,
     type: 3}
-  m_CameraPathFovKnotPrefab: {fileID: 1269927219481460, guid: 52cbfcb07255b0d44be458440c4b7b59,
+  m_MovementPathFovKnotPrefab: {fileID: 1269927219481460, guid: 52cbfcb07255b0d44be458440c4b7b59,
     type: 3}
-  m_CameraPathKnotSegmentPrefab: {fileID: 1134264905350750, guid: 30133aa311127674b9021c2f6baae4d3,
+  m_MovementPathKnotSegmentPrefab: {fileID: 1134264905350750, guid: 30133aa311127674b9021c2f6baae4d3,
     type: 3}
   m_Home: {fileID: 1780237822}
   m_HomeHintLinePrefab: {fileID: 164972, guid: 0ce8790842bf7424d9065461833d80e9, type: 3}
@@ -32013,7 +32024,7 @@ GameObject:
   - component: {fileID: 1956944149}
   - component: {fileID: 1956944150}
   m_Layer: 14
-  m_Name: CameraPathTool
+  m_Name: MovementPathTool
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -32044,7 +32055,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1956944148}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e4a2993266a565d40a10172299695ee0, type: 3}
+  m_Script: {fileID: 11500000, guid: 19aa6a824aa618f419442648a3b0d741, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_Type: 24

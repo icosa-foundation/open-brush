@@ -17,6 +17,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+
 namespace TiltBrush
 {
 
@@ -144,17 +145,22 @@ namespace TiltBrush
 
         public override GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
         {
+
             ModelWidget clone = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.transform.position = position;
             clone.transform.rotation = rotation;
             clone.Model = this.Model;
+
+
             // We're obviously not loading from a sketch.  This is to prevent the intro animation.
             // TODO: Change variable name to something more explicit of what this flag does.
             clone.m_LoadingFromSketch = true;
             clone.Show(true, false);
             clone.transform.parent = transform.parent;
             clone.SetSignedWidgetSize(size);
+
+
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
 
@@ -220,10 +226,20 @@ namespace TiltBrush
             {
                 return;
             }
-
+            this.gameObject.transform.SetParent(App.Scene.ActiveCanvas.transform);
             m_ModelInstance = Instantiate(m_Model.m_ModelParent);
             m_ModelInstance.gameObject.SetActive(true);
             m_ModelInstance.parent = this.transform;
+
+
+
+
+            var uiManager = App.Scene.animationUI_manager;
+
+
+
+
+
 
             Coords.AsLocal[m_ModelInstance] = TrTransform.identity;
             float maxExtent = 2 * Mathf.Max(m_Model.m_MeshBounds.extents.x,
@@ -561,6 +577,7 @@ namespace TiltBrush
             modelWidget.Model = model;
             modelWidget.m_LoadingFromSketch = true;
             modelWidget.Show(true, false);
+
             if (isNonRawTransform)
             {
                 modelWidget.SetWidgetSizeNonRaw(xf.scale);

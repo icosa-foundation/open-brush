@@ -27,7 +27,7 @@ namespace TiltBrush
         [SerializeField] protected GameObject m_AddPathMesh;
         [SerializeField] protected TextMeshPro m_PathNumberText;
 
-        private CameraPathWidget m_PathWidget;
+        private MovementPathWidget m_PathWidget;
         private int m_NumActivePaths;
 
         override protected void Awake()
@@ -54,9 +54,9 @@ namespace TiltBrush
 
             // Count the number of active camera paths at the time we were created.
             // Note that this caching method is ok in this instance because these buttons are transient.
-            var datas = WidgetManager.m_Instance.CameraPathWidgets;
+            var datas = WidgetManager.m_Instance.MovementPathWidgets;;
             m_NumActivePaths = 0;
-            foreach (TypedWidgetData<CameraPathWidget> data in datas)
+            foreach (TypedWidgetData<MovementPathWidget> data in datas)
             {
                 ++m_NumActivePaths;
             }
@@ -80,8 +80,8 @@ namespace TiltBrush
             if (m_NumActivePaths == m_PathNumber)
             {
                 m_PathWidget = WidgetManager.m_Instance.CreatePathWidget();
-                SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.CameraPathTool);
-                App.Switchboard.TriggerCameraPathModeChanged(CameraPathTool.Mode.AddPositionKnot);
+                SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.MovementPathTool);
+                App.Switchboard.TriggerCameraPathModeChanged(MovementPathTool.Mode.AddPositionKnot);
             }
 
             WidgetManager.m_Instance.CameraPathsVisible = true;

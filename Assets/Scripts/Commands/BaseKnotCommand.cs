@@ -20,9 +20,9 @@ namespace TiltBrush
     {
         public bool MergesWithCreateCommand { get; }
 
-        public CameraPathKnot Knot { get; }
+        public MovementPathKnot Knot { get; }
 
-        public BaseKnotCommand(CameraPathKnot knot, bool mergesWithCreateCommand, BaseCommand parent)
+        public BaseKnotCommand(MovementPathKnot knot, bool mergesWithCreateCommand, BaseCommand parent)
             : base(parent)
         {
             Knot = knot;
@@ -31,7 +31,7 @@ namespace TiltBrush
     }
 
     public class BaseKnotCommand<T> : BaseKnotCommand
-        where T : CameraPathKnot
+        where T : MovementPathKnot
     {
         public new T Knot { get; }
         public BaseKnotCommand(
