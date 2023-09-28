@@ -48,19 +48,16 @@ namespace OpenBrush.Multiplayer
 
             if (Object.HasStateAuthority)
             {
-                UnityEngine.Debug.Log("here");
                 m_PlayerHead.InterpolationTarget.position = transmitData.HeadPosition;
                 m_PlayerHead.InterpolationTarget.rotation = transmitData.HeadRotation;
             }
             else
             {
-                UnityEngine.Debug.Log("Other here");
                 recievedData = new PlayerRigData
                 {
                     HeadPosition = m_PlayerHead.InterpolationTarget.position,
                     HeadRotation = m_PlayerHead.InterpolationTarget.rotation
                 };
-                UnityEngine.Debug.Log(recievedData.HeadPosition);
                 m_PlayerHead.transform.position = recievedData.HeadPosition;
                 m_PlayerHead.transform.rotation = recievedData.HeadRotation;
             }
@@ -70,11 +67,10 @@ namespace OpenBrush.Multiplayer
             RigInput rigInput = new RigInput();
             rigInput.headPosition = transmitData.HeadPosition;
             rigInput.headRotation = transmitData.HeadRotation;
-            UnityEngine.Debug.Log(rigInput.headPosition);
             input.Set(rigInput);
         }
 
-        // Include all rig parameters in an network input structure
+        [System.Serializable]
         public struct RigInput : INetworkInput
         {
             public Vector3 headPosition;
