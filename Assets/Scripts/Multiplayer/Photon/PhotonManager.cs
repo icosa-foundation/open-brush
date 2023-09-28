@@ -69,7 +69,6 @@ namespace OpenBrush.Multiplayer
             var playerPrefab = Resources.Load("Multiplayer/Photon/PlayerRig") as GameObject;
             var player = m_Runner.Spawn(playerPrefab, inputAuthority: m_Runner.LocalPlayer);
             var playerPhoton = player.GetComponent<PhotonPlayerRig>();
-            m_Runner.AddCallbacks(playerPhoton);
             return playerPhoton;
         }
 
