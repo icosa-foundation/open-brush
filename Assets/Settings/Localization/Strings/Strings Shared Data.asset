@@ -3255,6 +3255,14 @@ MonoBehaviour:
     m_Key: POPUP_ACCOUNTS_UNAVAILABLE_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 147809767845167104
+    m_Key: SETTINGS_PANEL_LOCALE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147811113256255488
+    m_Key: SETTINGS_PANEL_LOCALE_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
