@@ -142,7 +142,7 @@ namespace TiltBrush
             m_VisualizerObjects = new List<GameObject>();
             Shader.DisableKeyword("AUDIO_REACTIVE");
             // Two channels, 512 values.
-#if DISABLE_AUDIO_CAPTURE
+#if DISABLE_AUDIO_CAPTURE || UNITY_OSX || UNITY_EDITOR_OSX
     m_FFT = new Fft();
 #else
             m_FFT = new VisualizerCSCoreFft(1, 512);
@@ -301,7 +301,7 @@ namespace TiltBrush
         public void SetSampleRate(int sampleRate)
         {
             m_SampleRate = sampleRate;
-#if DISABLE_AUDIO_CAPTURE
+#if DISABLE_AUDIO_CAPTURE || UNITY_OSX || UNITY_EDITOR_OSX
     m_LowPassFilter = new Filter();
     m_HighPassFilter = new Filter();
 #else
