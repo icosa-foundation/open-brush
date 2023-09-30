@@ -139,7 +139,15 @@ namespace TiltBrush
 
         public static string GetFfmpegExe()
         {
+#if UNITY_ANDROID || UNITY_IOS || UNITY_WEBGL
+            return null;
+#endif
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
             string exe = $"{kFfmpegDir}/bin/ffmpeg.exe";
+#endif
+#if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
+            string exe = $"{kFfmpegDir}/bin/ffmpeg";
+#endif
             if (File.Exists(exe)) { return exe; }
             return null;
         }
