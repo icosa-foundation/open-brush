@@ -3124,6 +3124,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3477360781772463332, guid: e845ea7f1bc1b144f8087e425d81fb6f,
         type: 3}
+      propertyPath: m_ScaleXOnly
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3477360781772463332, guid: e845ea7f1bc1b144f8087e425d81fb6f,
+        type: 3}
       propertyPath: m_HintDescription.m_TableEntryReference.m_KeyId
       value: 5056691860905984
       objectReference: {fileID: 0}

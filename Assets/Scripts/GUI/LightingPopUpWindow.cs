@@ -12,6 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// TODO: Better way to detect Passthrough support.
+// Extra: Passthrough should be *per* envrionment really!
+// See https://github.com/icosa-foundation/open-brush/issues/456
+#if OCULUS_SUPPORTED
+#define PASSTHROUGH_SUPPORTED
+#endif
+
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,7 +28,7 @@ namespace TiltBrush
 
     public class LightingPopUpWindow : PagingPopUpWindow
     {
-        private string m_CurrentPresetDesc;
+        private string m_CurrentPresetGuid;
         private List<TiltBrush.Environment> m_Environments;
 
         protected override int m_DataCount
@@ -38,7 +45,7 @@ namespace TiltBrush
         {
             LightingButton iconButton = icon.m_IconScript as LightingButton;
             iconButton.SetPreset(m_Environments[iCatalog]);
-            iconButton.SetButtonSelected(m_CurrentPresetDesc == m_Environments[iCatalog].Description);
+            iconButton.SetButtonSelected(m_CurrentPresetGuid == m_Environments[iCatalog].m_Guid.ToString());
         }
 
         override public void Init(GameObject rParent, string sText)
@@ -46,16 +53,29 @@ namespace TiltBrush
             //build list of lighting presets we're going to show
             m_Environments = EnvironmentCatalog.m_Instance.AllEnvironments.ToList();
 
+            // Remove passthrough scene for devices that don't support it
+#if !PASSTHROUGH_SUPPORTED
+            foreach (var env in m_Environments)
+            {
+                // Passthrough
+                if (env.m_Guid.ToString() == "e38af599-4575-46ff-a040-459703dbcd36")
+                {
+                    m_Environments.Remove(env);
+                    break;
+                }
+            }
+#endif // PASSTHROUGH_SUPPORTED
+
             //find the active lighting preset
             TiltBrush.Environment rCurrentPreset = SceneSettings.m_Instance.GetDesiredPreset();
             if (rCurrentPreset != null)
             {
                 //find the index of our current preset in the preset list
                 int iPresetIndex = -1;
-                m_CurrentPresetDesc = rCurrentPreset.Description;
+                m_CurrentPresetGuid = rCurrentPreset.m_Guid.ToString();
                 for (int i = 0; i < m_Environments.Count; ++i)
                 {
-                    if (m_Environments[i].Description == m_CurrentPresetDesc)
+                    if (m_Environments[i].m_Guid.ToString() == m_CurrentPresetGuid)
                     {
                         iPresetIndex = i;
                         break;
@@ -81,7 +101,7 @@ namespace TiltBrush
             TiltBrush.Environment rCurrentPreset = SceneSettings.m_Instance.GetDesiredPreset();
             if (rCurrentPreset != null)
             {
-                m_CurrentPresetDesc = rCurrentPreset.Description;
+                m_CurrentPresetGuid = rCurrentPreset.m_Guid.ToString();
             }
             RefreshPage();
         }
