@@ -21,11 +21,18 @@ namespace TiltBrush
     {
         public override void SetPopupCommandParameters(int iCommandParam, int iCommandParam2)
         {
-            // TODO : Fix this hangnail.
             OptionButton[] optionButtons = GetComponentsInChildren<OptionButton>();
             foreach (OptionButton button in optionButtons)
             {
-                button.SetCommandParameters(iCommandParam, iCommandParam2);
+                // The context menu button should only be enabled for valid sketches
+                if (iCommandParam == -1)
+                {
+                    button.SetButtonAvailable(false);
+                }
+                else
+                {
+                    button.SetCommandParameters(iCommandParam, iCommandParam2);
+                }
             }
 
             // The rename button should only be enabled for categories that support renaming
