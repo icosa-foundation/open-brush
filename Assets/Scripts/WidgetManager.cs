@@ -543,7 +543,7 @@ namespace TiltBrush
             return false;
         }
 
-        public void DeleteCameraPath(GrabWidget cameraPathWidgetScript)
+        public void DeleteMovementPath(GrabWidget cameraPathWidgetScript)
         {
             if (cameraPathWidgetScript != null)
             {

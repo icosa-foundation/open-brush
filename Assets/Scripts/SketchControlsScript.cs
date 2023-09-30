@@ -130,7 +130,7 @@ namespace TiltBrush
             SaveOnLocalChanges,
             ToggleCameraPathVisuals,
             ToggleCameraPathPreview,
-            DeleteCameraPath,
+            DeleteMovementPath,
             RecordCameraPath,
             SelectCameraPath,
             ToggleAutosimplification,
@@ -4907,11 +4907,11 @@ namespace TiltBrush
                 case GlobalCommands.ToggleCameraPathPreview:
                     m_WidgetManager.FollowingPath = !m_WidgetManager.FollowingPath;
                     break;
-                case GlobalCommands.DeleteCameraPath:
+                case GlobalCommands.DeleteMovementPath:
                     {
                         var cameraPath = m_WidgetManager.GetCurrentCameraPath();
                         GrabWidget cameraPathWidget = cameraPath == null ? null : cameraPath.m_WidgetScript;
-                        m_WidgetManager.DeleteCameraPath(cameraPathWidget);
+                        m_WidgetManager.DeleteMovementPath(cameraPathWidget);
                     }
                     break;
                 case GlobalCommands.RecordCameraPath:
@@ -5142,7 +5142,7 @@ namespace TiltBrush
                     return ReferenceImageCatalog.m_Instance.AnyImageValid();
                 case GlobalCommands.ToggleCameraPathPreview:
                     return m_WidgetManager.CanRecordCurrentCameraPath();
-                case GlobalCommands.DeleteCameraPath:
+                case GlobalCommands.DeleteMovementPath:
                     return MovementPathCaptureRig.Enabled && m_WidgetManager.AnyActivePathHasAKnot();
                 case GlobalCommands.ToggleCameraPathVisuals:
                     return m_WidgetManager.AnyActivePathHasAKnot();

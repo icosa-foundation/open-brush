@@ -585,7 +585,7 @@ namespace TiltBrush
                 // If we're removing the last position knot, just destroy the whole path.
                 if (removeKnot is MovementPathPositionKnot && m_Path.NumPositionKnots == 1)
                 {
-                    WidgetManager.m_Instance.DeleteCameraPath(this);
+                    WidgetManager.m_Instance.DeleteMovementPath(this);
                 }
                 else
                 {

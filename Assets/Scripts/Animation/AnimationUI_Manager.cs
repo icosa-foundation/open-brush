@@ -238,10 +238,18 @@ namespace TiltBrush.FrameAnimation
         public void addAnimationPath(MovementPathWidget pathwidget)
         {
 
+
+
             
             (int,int) Loc = getCanvasIndex(App.Scene.ActiveCanvas);
 
+
+
             CanvasScript origCanvas = timeline[Loc.Item2].Frames[Loc.Item1].canvas;
+
+            if (timeline[Loc.Item2].Frames[Loc.Item1].animatedPath != null){
+                TiltBrush.WidgetManager.m_Instance.DeleteMovementPath(timeline[Loc.Item2].Frames[Loc.Item1].animatedPath);
+            }
 
             int i = 0;
 
