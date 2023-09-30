@@ -205,6 +205,13 @@ jobs:
             cache: Android_GLES
             extraoptions: -btb-il2cpp
 
+          - name: Android Pico (CN)
+            targetPlatform: Android
+            vrsdk: Pico
+            cache: Android_GLES
+            # Pico requested Chinese build that doesn't have google/sketchfab login.
+            extraoptions: -btb-il2cpp -btb-disableAccountLogins
+
     steps:
       - name: Free extra space
         # This takes several minutes, so we only do it where required
@@ -220,7 +227,7 @@ jobs:
           dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
           echo "Removing unneeded large packages"
           sudo apt-get update
-          sudo apt-get remove -y '^ghc-.*' '^dotnet-.*' azure-cli google-cloud-sdk powershell google-chrome-stable firefox microsoft-edge-stable 'php.*' 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' default-jre-headless  # Removes ~7.5 GB
+          sudo apt-get remove -y '^ghc-.*' '^dotnet-.*' azure-cli 'google-cloud-*' powershell google-chrome-stable firefox microsoft-edge-stable 'php.*' 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' default-jre-headless  # Removes ~7.5 GB
           sudo apt-get autoremove -y
           sudo apt-get clean
           df -h /
@@ -381,7 +388,7 @@ jobs:
           echo -e "\n-define:PIMAX_SUPPORTED" | tee -a Assets/csc.rsp
 
       - name: Build project
-        uses: game-ci/unity-builder@v2
+        uses: game-ci/unity-builder@v3
         env:
           VERSION: ${{ needs.configuration.outputs.version}}
         with:

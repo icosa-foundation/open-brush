@@ -3436,6 +3436,22 @@ MonoBehaviour:
     m_Localized: Move Selection to Current Layer
     m_Metadata:
       m_Items: []
+  - m_Id: 147094550989828096
+    m_Localized: Error
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147094689821290496
+    m_Localized: Account sign-in is currently unavailable on this platform.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147809767845167104
+    m_Localized: Change language
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147811113256255488
+    m_Localized: Language
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

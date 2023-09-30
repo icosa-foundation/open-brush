@@ -14,7 +14,9 @@
 
 using UnityEngine;
 using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
 using TMPro;
+using System;
 
 namespace TiltBrush
 {
@@ -27,21 +29,35 @@ namespace TiltBrush
 
         private void Awake()
         {
-            Init(m_Description.GetLocalizedString());
+            SetText();
+
+            LocalizationSettings.SelectedLocaleChanged += OnSelectedLocaleChanged;
         }
 
-        public void Init(string sText)
+        public void SetText()
         {
-            m_Text.text = sText;
+            m_Text.text = m_Description.GetLocalizedString();
 
             // Measure length of button description by getting render bounds when mesh is axis-aligned.
             float fTextWidth = TextMeasureScript.m_Instance.GetTextWidth(
-                m_Text.fontSize, m_Text.font, ("     " + sText));
+                m_Text.fontSize, m_Text.font, "     " + m_Text.text);
 
             Vector3 vBGScale = m_Mesh.localScale;
             vBGScale.x = fTextWidth;
             m_Mesh.localScale = vBGScale;
         }
+
+        private void OnDestroy()
+        {
+            LocalizationSettings.SelectedLocaleChanged -= OnSelectedLocaleChanged;
+        }
+
+        private void OnSelectedLocaleChanged(Locale locale)
+        {
+            SetText();
+        }
+
+
 
 
     }

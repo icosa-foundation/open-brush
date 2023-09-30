@@ -11,13 +11,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#if !DISABLE_AUDIO_CAPTURE && !UNITY_OSX && !UNITY_EDITOR_OSX
 using CSCore.DSP;
+#endif
 
 namespace TiltBrush
 {
     /// Wrapper for CSCore.DSP.FftProvider
     public class VisualizerCSCoreFft : VisualizerManager.Fft
     {
+#if !DISABLE_AUDIO_CAPTURE && !UNITY_OSX && !UNITY_EDITOR_OSX
         private FftProvider m_Fft;
         public VisualizerCSCoreFft(int channels, int fftSize)
         {
@@ -34,5 +37,6 @@ namespace TiltBrush
         {
             m_Fft.GetFftData(resultBuffer);
         }
+#endif
     }
 }
