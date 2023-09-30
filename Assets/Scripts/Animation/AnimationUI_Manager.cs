@@ -638,7 +638,9 @@ namespace TiltBrush.FrameAnimation
                         frameButton.gameObject.SetActive(true);
                         print("FRAME BUTTON ");
                         print(frameButton);
+#if UNITY_EDITOR
                         // EditorGUIUtility.PingObject(frameButton);
+#endif
                         frameButton.gameObject.GetComponent<FrameButton>().setButtonCoordinate(i, f);
 
                         print("NUM BATCH POOLS: " + timeline[i].Frames[f].canvas.BatchManager.GetNumBatchPools());
@@ -748,7 +750,9 @@ namespace TiltBrush.FrameAnimation
 
                 GameObject frameWrapper = timelineFrameObjects[i].transform.GetChild(0).gameObject;
 
+#if UNITY_EDITOR
                 EditorGUIUtility.PingObject(frameWrapper);
+#endif
 
                 print("START LOOP == " + frameWrapper.transform.GetChildCount());
                 for (int c = 0; c < frameWrapper.transform.GetChildCount(); c++)
