@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 5531902977439992835}
   - component: {fileID: 9186225842113814311}
   m_Layer: 0
-  m_Name: AnchorBase
+  m_Name: SceneAnchorBase
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
