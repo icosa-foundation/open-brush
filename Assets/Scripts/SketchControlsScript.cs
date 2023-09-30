@@ -143,6 +143,10 @@ namespace TiltBrush
             SignOutConfirm,
             ReadOnlyNotice,
             ShowContribution,
+
+            // Open Brush Reserved Enums 1000-1999
+            LanguagePopup = 1000,
+
             RenameSketch = 5200,
             OpenLayerOptionsPopup = 5201,
             RenameLayer = 5202,

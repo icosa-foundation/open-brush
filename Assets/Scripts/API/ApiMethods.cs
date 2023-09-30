@@ -564,7 +564,7 @@ namespace TiltBrush
                 case "sphere":
                     stencilType = StencilType.Sphere;
                     break;
-                case "capsure":
+                case "capsule":
                     stencilType = StencilType.Capsule;
                     break;
                 case "cone":
