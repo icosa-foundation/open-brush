@@ -55,26 +55,26 @@ namespace TiltBrush
             // time so newly added knots have appropriate mesh scales.
             m_Widget.transform.localScale = Vector3.one;
 
-            Debug.Log("PATH SWITCH " ) ;
+            Debug.Log("PATH SWITCH ");
             if (m_CreatedKnot == null)
             {
                 switch (m_KnotType)
                 {
                     case MovementPathKnot.Type.Position:
-                        Debug.Log("1 " ) ;
+                        Debug.Log("1 ");
                         m_CreatedKnot = m_Widget.Path.CreatePositionKnot(m_SpawnXf.translation);
                         Debug.Log(m_CreatedKnot);
                         break;
                     case MovementPathKnot.Type.Rotation:
-                         Debug.Log("2 " ) ;
+                        Debug.Log("2 ");
                         m_CreatedKnot = m_Widget.Path.CreateRotationKnot(m_PathT, m_SpawnXf.rotation);
                         break;
                     case MovementPathKnot.Type.Speed:
-                        Debug.Log("3 " ) ;
+                        Debug.Log("3 ");
                         m_CreatedKnot = m_Widget.Path.CreateSpeedKnot(m_PathT);
                         break;
                     case MovementPathKnot.Type.Fov:
-                        Debug.Log("4 " ) ;
+                        Debug.Log("4 ");
                         m_CreatedKnot = m_Widget.Path.CreateFovKnot(m_PathT);
                         break;
                     default:
@@ -92,9 +92,9 @@ namespace TiltBrush
                     // which is what we want.
 
 
-                    Debug.Log("PATH IS NULL " ) ;
-                    Debug.Log(m_Widget );
-                    Debug.Log(m_CreatedKnot );
+                    Debug.Log("PATH IS NULL ");
+                    Debug.Log(m_Widget);
+                    Debug.Log(m_CreatedKnot);
                     if (m_Widget.Path.IsPositionNearHead(m_CreatedKnot.transform.position) &&
                         knotIndex == m_Widget.Path.NumPositionKnots)
                     {

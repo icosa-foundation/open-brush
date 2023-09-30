@@ -116,7 +116,7 @@ namespace TiltBrush
             App.Switchboard.TriggerCameraPathModeChanged(MovementPathTool.Mode.Recording);
 
 
-        
+
             VideoRecorderUtils.StartVideoCapture(
                 MultiCamTool.GetSaveName(MultiCamStyle.Video),
                 m_Manager.GetComponent<VideoRecorder>(),

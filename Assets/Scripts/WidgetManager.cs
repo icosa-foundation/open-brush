@@ -478,7 +478,7 @@ namespace TiltBrush
         // global commands, which can be modified with generic integer parameters.  In those
         // cases, we can't pass a MovementPathWidget object.
 
-    
+
         public MovementPathWidget GetNthActiveCameraPath(int nth)
         {
             var activeCameraPathWidgets = m_MovementPathWidgets.Where(x => x.m_WidgetObject.activeSelf && !x.WidgetScript.belongsToAnimation);
@@ -527,7 +527,7 @@ namespace TiltBrush
             return m_MovementPathWidgets.Last().WidgetScript;
         }
 
-   
+
 
 
         public bool AnyActivePathHasAKnot()

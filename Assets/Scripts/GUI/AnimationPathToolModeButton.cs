@@ -64,7 +64,7 @@ namespace TiltBrush
 
         override protected void OnButtonPressed()
         {
-          
+
             Debug.Log("PRESSED");
             if (m_ToggleActive)
             {

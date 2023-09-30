@@ -21,7 +21,7 @@ namespace TiltBrush
     {
         public enum Mode
         {
-            
+
             AddPositionKnot,
             AddRotationKnot,
             AddSpeedKnot,
@@ -225,7 +225,7 @@ namespace TiltBrush
                             }
                         }
                         break;
-                         
+
                     case Mode.AddRotationKnot:
                         if (m_LastValidPath != null)
                         {

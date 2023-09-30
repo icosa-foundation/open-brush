@@ -101,7 +101,8 @@ namespace TiltBrush
             App.Switchboard.TriggerCameraPathCreated();
         }
 
-        public void setPathAnimation(bool animation){
+        public void setPathAnimation(bool animation)
+        {
             belongsToAnimation = animation;
         }
         void OnPoseChanged(TrTransform prev, TrTransform current)
