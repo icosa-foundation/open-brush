@@ -35,24 +35,25 @@ namespace TiltBrush
             }
 
             // Hacky but quick proof of concept
-            // TODO: Tidyup
-            m_SceneComponentPlane = GetComponent<OVRScenePlane>();
+            // TODO: Tidyup, seems a bit broken right now.
+            // You end up stuck grabbin the wall planes.
+            // m_SceneComponentPlane = GetComponent<OVRScenePlane>();
 
-            if(m_SceneComponentPlane)
-            {
-                var dimentions = m_SceneComponentPlane.Dimensions;
+            // if(m_SceneComponentPlane)
+            // {
+            //     var dimentions = m_SceneComponentPlane.Dimensions;
                 
-                var tr = TrTransform.TR(this.transform.position, this.transform.rotation);
+            //     var tr = TrTransform.TR(this.transform.position, this.transform.rotation);
                 
-                CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                    WidgetManager.m_Instance.GetStencilPrefab(StencilType.Plane), tr, null, true);
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
+            //     CreateWidgetCommand createCommand = new CreateWidgetCommand(
+            //         WidgetManager.m_Instance.GetStencilPrefab(StencilType.Plane), tr, null, true);
+            //     SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
 
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                    new MoveWidgetCommand(createCommand.Widget, tr, dimentions * 10));
+            //     SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+            //         new MoveWidgetCommand(createCommand.Widget, tr, dimentions * 10));
 
-                return;
-            }
+            //     return;
+            // }
         }
     }
 
