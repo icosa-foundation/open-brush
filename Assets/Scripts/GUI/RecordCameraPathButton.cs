@@ -30,7 +30,7 @@ namespace TiltBrush
                 BasePanel panel = m_Manager.GetPanelForPopUps();
                 if (panel != null)
                 {
-                    panel.CreatePopUp(m_CameraRecordUnsupportedPopup, transform.position);
+                    panel.CreatePopUp(m_CameraRecordUnsupportedPopup, transform.position + Vector3.back * 0.2f);
                     ResetState();
                 }
             }
