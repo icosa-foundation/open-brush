@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
 using TMPro;
 
 namespace TiltBrush
@@ -524,6 +525,7 @@ namespace TiltBrush
                     m_PanelDescriptionTextMeshPro.text = PanelDescription;
                     m_PanelDescriptionTextMeshPro.color = m_PanelDescriptionColor;
                 }
+                LocalizationSettings.SelectedLocaleChanged += OnSelectedLocaleChanged;
             }
 
             if (m_PanelFlairPrefab != null)
@@ -733,6 +735,19 @@ namespace TiltBrush
                 // Eat input when we close a popup so the close action doesn't carry over.
                 m_EatInput = true;
             }
+        }
+
+        private void OnSelectedLocaleChanged(Locale locale)
+        {
+            if (m_PanelDescriptionTextMeshPro)
+            {
+                m_PanelDescriptionTextMeshPro.text = PanelDescription;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            LocalizationSettings.SelectedLocaleChanged -= OnSelectedLocaleChanged;
         }
 
         void OnEnable()
