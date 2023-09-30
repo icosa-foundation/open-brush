@@ -75,6 +75,14 @@ MonoBehaviour:
   - {fileID: 11400000, guid: c1b260b015c6b0a479c50dee029cc5bc, type: 2}
   - {fileID: 11400000, guid: a2472d544dd1bfd4c8f3288f9f7ee108, type: 2}
   - {fileID: 11400000, guid: b42b208b245c1d34fabaf181763cd256, type: 2}
+  Locales:
+  - {fileID: 11400000, guid: 35f3779472064f74bafddfc140d73eb6, type: 2}
+  - {fileID: 11400000, guid: 24f69ae89af7fd24fb05a3798905dc72, type: 2}
+  - {fileID: 11400000, guid: f449db273dfc44449aa79eaa7135399b, type: 2}
+  - {fileID: 11400000, guid: ccffad35f32cd974cb4ed3f4b5cbccd8, type: 2}
+  - {fileID: 11400000, guid: f49fe9bebe68e674098c99a8c94562c4, type: 2}
+  - {fileID: 11400000, guid: 887d91eb154761a4cb852d5288e9a633, type: 2}
+  - {fileID: 11400000, guid: 5c5ec5e20869e384ba8781c68c5e3c51, type: 2}
   CompatibilityBrushes:
   - {fileID: 11400000, guid: 9d74e4f2898082d48885a67bc6f6e97d, type: 2}
   - {fileID: 11400000, guid: 552a6b22c41f6514fbf6de142245a2ae, type: 2}
