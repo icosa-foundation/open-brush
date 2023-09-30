@@ -22,11 +22,11 @@ namespace TiltBrush
     {
         public override void SetPopupCommandParameters(int iCommandParam, int iCommandParam2)
         {
-            // TODO : Fix this hangnail.
             OptionButton[] optionButtons = GetComponentsInChildren<OptionButton>();
             foreach (OptionButton button in optionButtons)
             {
-                if (iCommandParam == 0)
+                // The context menu button should only be enabled for valid sketches
+                if (iCommandParam == -1)
                 {
                     button.SetButtonAvailable(false);
                 }

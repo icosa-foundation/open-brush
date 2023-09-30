@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Localization;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -29,6 +30,7 @@ namespace TiltBrush
     {
         public BrushDescriptor[] Brushes;
         public Environment[] Environments;
+        public Locale[] Locales;
         public BrushDescriptor[] CompatibilityBrushes;
 
         // lhs = lhs + rhs, with duplicates removed.
