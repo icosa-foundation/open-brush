@@ -16,7 +16,7 @@ MonoBehaviour:
     m_Code: debug
   m_Metadata:
     m_Items: []
-  m_LocaleName: Debug (debug)
+  m_LocaleName: Debug
   m_CustomFormatCultureCode: 
   m_UseCustomFormatter: 0
   m_SortOrder: 10000

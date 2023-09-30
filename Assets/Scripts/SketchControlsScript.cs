@@ -144,6 +144,10 @@ namespace TiltBrush
             SignOutConfirm,
             ReadOnlyNotice,
             ShowContribution,
+
+            // Open Brush Reserved Enums 1000-1999
+            LanguagePopup = 1000,
+
             CustomSymmetryCommand = 5000,
             PolyhydraOpenMainCategoryPopup = 5001,
             PolyhydraOpenUniformsPopup = 5002,
