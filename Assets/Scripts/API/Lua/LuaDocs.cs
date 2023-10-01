@@ -465,7 +465,7 @@ namespace TiltBrush
             string returnTypeAnnotation = "";
             if (ReturnType.PrimitiveType != LuaDocsPrimitiveType.Nil)
             {
-                returnTypeAnnotation = $"\n---@return # {ReturnType.TypeAsLuaString()} {ReturnValueDescription}";
+                returnTypeAnnotation = $"\n---@return {ReturnType.TypeAsLuaString()} # {ReturnValueDescription}";
             }
 
             return $@"{parameters}{returnTypeAnnotation}
