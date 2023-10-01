@@ -61,12 +61,6 @@ namespace TiltBrush
         [LuaDocsParameter("scale", "The scale value to apply")]
         public TrTransform ScaleBy(float scale) => _TrTransform * TrTransform.S(scale);
 
-        // Convenient shorthand
-        public TransformApiWrapper(float x, float y, float z)
-        {
-            _TrTransform = TrTransform.T(new Vector3(x, y, z));
-        }
-
         public TransformApiWrapper(TrTransform tr)
         {
             _TrTransform = tr;
@@ -112,14 +106,34 @@ namespace TiltBrush
             return instance;
         }
 
-        [LuaDocsDescription("Creates a new translation transform based on the x, y, z values")]
-        [LuaDocsExample("myTransform = Transform:New(1, 2, 3)")]
+        [LuaDocsDescription("Creates a new translation transform")]
+        [LuaDocsExample("myTransform = Transform:Position(1, 2, 3)")]
         [LuaDocsParameter("x", "The x translation amount")]
         [LuaDocsParameter("y", "The y translation amount")]
         [LuaDocsParameter("z", "The z translation amount")]
-        public static TransformApiWrapper New(float x, float y, float z)
+        public static TransformApiWrapper Position(float x, float y, float z)
         {
-            var instance = new TransformApiWrapper(x, y, z);
+            var instance = new TransformApiWrapper(TrTransform.T(new Vector3(x, y, z)));
+            return instance;
+        }
+
+        [LuaDocsDescription("Creates a new rotation transform")]
+        [LuaDocsExample("myTransform = Transform:Rotation(1, 2, 3)")]
+        [LuaDocsParameter("x", "The x rotation amount")]
+        [LuaDocsParameter("y", "The y rotation amount")]
+        [LuaDocsParameter("z", "The z rotation amount")]
+        public static TransformApiWrapper Rotation(float x, float y, float z)
+        {
+            var instance = new TransformApiWrapper(TrTransform.R(Quaternion.Euler(x, y, z)));
+            return instance;
+        }
+
+        [LuaDocsDescription("Creates a new scale transform")]
+        [LuaDocsExample("myTransform = Transform:Scale(2)")]
+        [LuaDocsParameter("amount", "The scale amount")]
+        public static TransformApiWrapper Scale(float amount)
+        {
+            var instance = new TransformApiWrapper(TrTransform.S(amount));
             return instance;
         }
 
