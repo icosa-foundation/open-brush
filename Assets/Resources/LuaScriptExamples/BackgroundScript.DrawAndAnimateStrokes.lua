@@ -23,7 +23,7 @@ end
 
 function Main()
     for i = 0, copies - 1, 1 do
-        value = (Math.Sin(App.time * speed + (i * 0.2)) + 1) / 4
-        strokes[i].SetShaderClipping(value, value + 0.5)
+        value = (Math:Sin(App.time * speed + (i * 0.2)) + 1) / 4
+        strokes[i]:SetShaderClipping(value, value + 0.5)
     end
 end

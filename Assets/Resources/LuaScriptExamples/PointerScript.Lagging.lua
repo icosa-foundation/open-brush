@@ -26,7 +26,7 @@ function Main()
         mix = (Waveform:Sine(App.time, frequency) + 1) * amplitude
 
         --Interpolate back and forth between old and current positions
-        newPosition = Vector3.LerpUnclamped(oldPosition, Brush.position, mix)
+        newPosition = Vector3:LerpUnclamped(oldPosition, Brush.position, mix)
         return Transform:New(newPosition, Brush.rotation)
 
     end

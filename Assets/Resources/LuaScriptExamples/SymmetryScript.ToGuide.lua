@@ -10,7 +10,7 @@ Parameters = {
 symmetryHueShift = require "symmetryHueShift"
 
 function Start()
-    guide = Guide:NewCube(Transform:New(3, 12, 0))
+    guide = Guide:NewCube(Transform:Position(3, 12, 0))
     initialHsv = Brush.colorHsv
     brushInitialPosition = Brush.position
 end

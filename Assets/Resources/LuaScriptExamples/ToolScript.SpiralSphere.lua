@@ -17,7 +17,7 @@ function Main()
             angle = (Math.pi * 2 * turns * i) / steps
             x = radius * Math:Sin(angle)
             y = radius * Math:Cos(angle)
-            points:Insert(Transform:New(x, y, z))
+            points:Insert(Transform:Position(x, y, z))
         end
         return points
     end
