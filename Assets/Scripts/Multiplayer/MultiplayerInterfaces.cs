@@ -11,7 +11,7 @@ namespace OpenBrush.Multiplayer
         Task<bool> Connect();
         Task<bool> Disconnect(bool force = false);
 
-        ITransientData<PlayerRigData> SpawnPlayer();
+        //ITransientData<PlayerRigData> SpawnPlayer();
     }
 
     public interface ITransientData<T>

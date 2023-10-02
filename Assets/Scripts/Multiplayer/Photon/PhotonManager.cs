@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using Fusion;
 using Fusion.Photon.Realtime;
 using Fusion.Sockets;
 using TiltBrush;
-using System.Threading.Tasks;
 
 namespace OpenBrush.Multiplayer
 {
@@ -18,7 +18,6 @@ namespace OpenBrush.Multiplayer
         public PhotonManager(MultiplayerManager manager)
         {
             m_Manager = manager;
-
         }
 
         public async Task<bool> Connect()
@@ -64,26 +63,26 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
-        public ITransientData<PlayerRigData> SpawnPlayer()
-        {
-            var playerPrefab = Resources.Load("Multiplayer/Photon/PlayerRig") as GameObject;
-            var player = m_Runner.Spawn(playerPrefab, inputAuthority: m_Runner.LocalPlayer);
-            var playerPhoton = player.GetComponent<PhotonPlayerRig>();
-            return playerPhoton;
-        }
-
         public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
         {
             if(player == m_Runner.LocalPlayer)
             {
-                Debug.Log("I Joined!");
-                m_Manager.localPlayerJoined?.Invoke();
+                var playerPrefab = Resources.Load("Multiplayer/Photon/PlayerRig") as GameObject;
+                var playerObj = m_Runner.Spawn(playerPrefab, inputAuthority: m_Runner.LocalPlayer);
+                var playerPhoton = playerObj.GetComponent<PhotonPlayerRig>();
+                m_Runner.SetPlayerObject(m_Runner.LocalPlayer, playerObj);
+
+                m_Manager.localPlayerJoined?.Invoke(playerPhoton);
+            }
+            else
+            {
+                //m_Manager.otherPlayerJoined?.Invoke();
             }
         }
 
         #region Unused Photon Callbacks 
         public void OnPlayerLeft(NetworkRunner runner, PlayerRef player) { }
-        public void OnConnectedToServer(NetworkRunner runner) { Debug.Log("joined server!"); }
+        public void OnConnectedToServer(NetworkRunner runner) { }
         public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason) { }
         public void OnDisconnectedFromServer(NetworkRunner runner) { }
         public void OnConnectFailed(NetworkRunner runner, NetAddress remoteAddress, NetConnectFailedReason reason) { }

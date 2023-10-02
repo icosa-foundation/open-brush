@@ -1,8 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using TiltBrush;
 using UnityEngine;
+using Oculus.Platform;
+using TiltBrush;
 
 namespace OpenBrush.Multiplayer
 {
@@ -15,18 +16,49 @@ namespace OpenBrush.Multiplayer
 
     public class MultiplayerManager : MonoBehaviour
     {
+        public static MultiplayerManager m_Instance;
         public MultiplayerType m_MultiplayerType;
 
         private IConnectionHandler m_Manager;
         private ITransientData<PlayerRigData> m_LocalPlayer;
         private List<ITransientData<PlayerRigData>> m_Players;
 
-        public Action localPlayerJoined;
+        public Action<ITransientData<PlayerRigData>> localPlayerJoined;
+        public Action<ITransientData<PlayerRigData>> otherPlayerJoined;
 
-        // Start is called before the first frame update
+        ulong oculusUserId;
+
+        List<ulong> oculusPlayerIds;
+
+        void Awake()
+        {
+            m_Instance = this;
+            oculusPlayerIds = new List<ulong>();
+        }
+
         async void Start()
         {
-            localPlayerJoined += OnPlayerJoined;
+            //Get Oculus ID
+            var appId = App.Config.OculusSecrets.ClientId;
+#if UNITY_ANDROID
+            appId = App.Config.OculusMobileSecrets.ClientId;
+#endif
+            Core.Initialize(appId);
+            Users.GetLoggedInUser().OnComplete((msg) => {
+
+                if (!msg.IsError)
+                {
+                    oculusUserId = msg.GetUser().ID;
+                    Debug.Log(oculusUserId);
+                    oculusPlayerIds.Add(oculusUserId);
+                }
+                else
+                {
+                    Debug.LogError(msg.GetError());
+                }
+            });
+
+            localPlayerJoined += OnLocalPlayerJoined;
             switch(m_MultiplayerType)
             {
                 case MultiplayerType.None:
@@ -39,20 +71,31 @@ namespace OpenBrush.Multiplayer
             var result = await m_Manager.Connect();
         }
 
-        void OnPlayerJoined()
+        void OnLocalPlayerJoined(ITransientData<PlayerRigData> playerData)
         {
-            m_LocalPlayer = m_Manager.SpawnPlayer();
+            m_LocalPlayer = playerData;
+        }
+
+        void RemotePlayerJoined(ITransientData<PlayerRigData> playerData)
+        {
+            m_Players.Add(playerData);
         }
 
         // Update is called once per frame
         void Update()
         {
+            // Transmit local player data.
             var data = new PlayerRigData();
             data.HeadPosition = App.VrSdk.GetVrCamera().transform.position;
             data.HeadRotation = App.VrSdk.GetVrCamera().transform.localRotation;
             if(m_LocalPlayer != null)
             {
                 m_LocalPlayer.TransmitData(data);
+            }
+
+            foreach (var player in m_Players)
+            {
+                
             }
         }
     }
