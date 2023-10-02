@@ -86,14 +86,18 @@ namespace OpenBrush.Multiplayer
         // Update is called once per frame
         void Update()
         {
+            m_Manager.Update();
             // Transmit local player data.
             var headTransform = App.VrSdk.GetVrCamera().transform;
-
 
             var data = new PlayerRigData
             {
                 HeadPosition = App.Scene.transform.InverseTransformPoint(headTransform.position),
                 HeadRotation = headTransform.localRotation,
+                ExtraData = new ExtraData
+                {
+                    OculusPlayerId = oculusUserId
+                }
             };
 
             if (m_LocalPlayer != null)
@@ -101,9 +105,35 @@ namespace OpenBrush.Multiplayer
                 m_LocalPlayer.TransmitData(data);
             }
 
+            bool newUser = false;
             foreach (var player in m_Players)
             {
-                
+                data = player.RecieveData();
+                // New user, share the anchor with them
+                if (data.ExtraData.OculusPlayerId != 0 && !oculusPlayerIds.Contains(data.ExtraData.OculusPlayerId))
+                {
+                    Debug.Log("detected new user!");
+                    oculusPlayerIds.Add(data.ExtraData.OculusPlayerId);
+                    newUser = true;
+                }
+            }
+
+            if (newUser)
+            {
+                ShareAnchors();
+            }
+        }
+
+        async void ShareAnchors()
+        {
+            var success = await SpatialAnchorManager.m_Instance.ShareAnchors(oculusPlayerIds);
+
+            if (success)
+            {
+                if(SpatialAnchorManager.m_Instance != null && !SpatialAnchorManager.m_Instance.AnchorUuid.Equals(String.Empty))
+                {
+                    await m_Manager.RpcSyncToSharedAnchor(SpatialAnchorManager.m_Instance.AnchorUuid);
+                }
             }
         }
     }

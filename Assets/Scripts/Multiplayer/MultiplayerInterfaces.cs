@@ -11,6 +11,10 @@ namespace OpenBrush.Multiplayer
         Task<bool> Connect();
         Task<bool> Disconnect(bool force = false);
 
+        void Update();
+        
+        Task<bool> RpcSyncToSharedAnchor(string uuid);
+
         //ITransientData<PlayerRigData> SpawnPlayer();
     }
 

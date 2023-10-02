@@ -8,14 +8,38 @@ namespace TiltBrush
 {
     public class SpatialAnchorManager : MonoBehaviour
     {
-        // Start is called before the first frame update
+        public static SpatialAnchorManager m_Instance;
         OVRSpatialAnchor m_Anchor;
+
+        public string AnchorUuid
+        {
+            get
+            {
+                if (m_Anchor)
+                {
+                    return m_Anchor.Uuid.ToString();
+                }
+                return string.Empty;
+            }
+        }
 
         const string kOriginSpatialAnchorTest = "ORIGIN_SPATIAL_ANCHOR";
 
+        void Awake()
+        {
+            if (m_Instance == null)
+            {
+                m_Instance = this;
+            }
+            else
+            {
+                Destroy(this);
+            }
+        }
+
         void Start()
         {
-            CreateOrLoadSpatialAnchor();
+            //CreateOrLoadSpatialAnchor();
         }
 
         async void CreateOrLoadSpatialAnchor()
@@ -26,11 +50,12 @@ namespace TiltBrush
                 var guid = new Guid(guidString);
 
                 var data = await OVRSpatialAnchor.LoadUnboundAnchorsAsync(new OVRSpatialAnchor.LoadOptions()
-                {
-                    StorageLocation = OVRSpace.StorageLocation.Local,
-                    Timeout = 0,
-                    Uuids = new List<Guid>() { guid }
-                });
+                    {
+                        StorageLocation = OVRSpace.StorageLocation.Local,
+                        Timeout = 0,
+                        Uuids = new List<Guid>() { guid }
+                    }
+                );
 
                 OnLoadUnboundAnchorComplete(data);
             }
@@ -72,6 +97,20 @@ namespace TiltBrush
             });
         }
 
+        public async Task<bool> ShareAnchors(List<ulong> playerIds)
+        {
+            var spaceUserList = new List<OVRSpaceUser>();
+            foreach(var id in playerIds)
+            {
+                spaceUserList.Add(new OVRSpaceUser(id));
+            }
+
+            var result = await m_Anchor.ShareAsync(spaceUserList);
+            Debug.Log($"Share complete!");
+
+            return result == OVRSpatialAnchor.OperationResult.Success;
+        }
+
         async void OnLoadUnboundAnchorComplete(OVRSpatialAnchor.UnboundAnchor[] anchors)
         {
             var unboundAnchor = anchors[0];
@@ -92,12 +131,8 @@ namespace TiltBrush
                 await Task.Yield();
             }
 
-            var pos = App.Scene.transform.InverseTransformPoint(m_Anchor.transform.position);
             var m_anchorTr = TrTransform.FromTransform(m_Anchor.transform);
 
-            // var currentPose = App.Scene.Pose;
-            // currentPose += pos;
-            // currentPose.rotation
             var newPose = SketchControlsScript.MakeValidScenePose(m_anchorTr,
                 SceneSettings.m_Instance.HardBoundsRadiusMeters_SS);
             App.Scene.Pose = newPose;
@@ -105,10 +140,30 @@ namespace TiltBrush
             Debug.Log("Cached anchor localized!");
         }
 
-        // Update is called once per frame
-        void Update()
+        public async void SyncToAnchor(string uuid)
         {
-            
+            Debug.Log("recieved sync to anchor command");
+            var guid = new Guid(uuid);
+
+            // Cloud check takes much longer, but we're testing for now
+            var data = await OVRSpatialAnchor.LoadUnboundAnchorsAsync(new OVRSpatialAnchor.LoadOptions()
+                {
+                    StorageLocation = OVRSpace.StorageLocation.Cloud,
+                    Timeout = 0,
+                    Uuids = new List<Guid>() { guid }
+                }
+            );
+
+            OnLoadUnboundAnchorComplete(data);
+        }
+
+        // Update is called once per frame
+        void OnDestroy()
+        {
+            if(m_Instance == this)
+            {
+                m_Instance = null;
+            }
         }
     }
 }

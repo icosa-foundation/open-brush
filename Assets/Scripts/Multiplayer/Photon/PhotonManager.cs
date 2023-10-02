@@ -15,9 +15,12 @@ namespace OpenBrush.Multiplayer
 
         MultiplayerManager m_Manager;
 
+        List<PlayerRef> m_PlayersSpawning;
+
         public PhotonManager(MultiplayerManager manager)
         {
             m_Manager = manager;
+            m_PlayersSpawning = new List<PlayerRef>();
         }
 
         public async Task<bool> Connect()
@@ -63,11 +66,31 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
+        public void Update()
+        {
+            foreach( var player in m_PlayersSpawning)
+            {
+                var newPlayer = m_Runner.GetPlayerObject(player);
+                if (newPlayer != null)
+                {
+                    m_Manager.remotePlayerJoined?.Invoke(newPlayer.GetComponent<PhotonPlayerRig>());
+                    m_PlayersSpawning.Remove(player);
+                }
+            }
+        }
+
+        public async Task<bool> RpcSyncToSharedAnchor(string uuid)
+        {
+            m_Runner.GetPlayerObject(m_Runner.LocalPlayer).GetComponent<PhotonPlayerRig>().Rpc_SyncToSharedAnchor(uuid);
+            await Task.Yield();
+            return true;
+        }
+
         public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
         {
             if(player == m_Runner.LocalPlayer)
             {
-                var playerPrefab = Resources.Load("Multiplayer/Photon/PlayerRig") as GameObject;
+                var playerPrefab = Resources.Load("Multiplayer/Photon/PhotonPlayerRig") as GameObject;
                 var playerObj = m_Runner.Spawn(playerPrefab, inputAuthority: m_Runner.LocalPlayer);
                 var playerPhoton = playerObj.GetComponent<PhotonPlayerRig>();
                 m_Runner.SetPlayerObject(m_Runner.LocalPlayer, playerObj);
@@ -76,13 +99,17 @@ namespace OpenBrush.Multiplayer
             }
             else
             {
-                //m_Manager.otherPlayerJoined?.Invoke();
+                m_PlayersSpawning.Add(player);
             }
+        }
+
+        public void OnConnectedToServer(NetworkRunner runner)
+        { 
+
         }
 
         #region Unused Photon Callbacks 
         public void OnPlayerLeft(NetworkRunner runner, PlayerRef player) { }
-        public void OnConnectedToServer(NetworkRunner runner) { }
         public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason) { }
         public void OnDisconnectedFromServer(NetworkRunner runner) { }
         public void OnConnectFailed(NetworkRunner runner, NetAddress remoteAddress, NetConnectFailedReason reason) { }

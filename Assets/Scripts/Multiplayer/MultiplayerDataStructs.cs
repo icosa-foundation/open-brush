@@ -8,5 +8,11 @@ namespace OpenBrush.Multiplayer
     {
         public Vector3 HeadPosition;
         public Quaternion HeadRotation;
+        public ExtraData ExtraData;
+    }
+
+    public struct ExtraData
+    {
+        public ulong OculusPlayerId;
     }
 }

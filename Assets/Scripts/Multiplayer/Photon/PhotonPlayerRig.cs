@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Fusion;
-using Fusion.Sockets;
+using TiltBrush;
 
 namespace OpenBrush.Multiplayer
 {
@@ -13,11 +13,14 @@ namespace OpenBrush.Multiplayer
         public NetworkTransform m_Left;
         public NetworkTransform m_Right;
 
+        [Networked] public ulong oculusPlayerId { get; set; } 
+
         private PlayerRigData transmitData;
 
         public void TransmitData(PlayerRigData data)
         {
             transmitData = data;
+            oculusPlayerId = data.ExtraData.OculusPlayerId;
         }
 
         public PlayerRigData RecieveData()
@@ -27,7 +30,11 @@ namespace OpenBrush.Multiplayer
             var data = new PlayerRigData
             {
                 HeadPosition = m_PlayerHead.InterpolationTarget.position,
-                HeadRotation = m_PlayerHead.InterpolationTarget.rotation
+                HeadRotation = m_PlayerHead.InterpolationTarget.rotation,
+                ExtraData = new ExtraData
+                {
+                    OculusPlayerId = this.oculusPlayerId
+                }
             };
             return data;
         }
@@ -42,6 +49,14 @@ namespace OpenBrush.Multiplayer
                 m_PlayerHead.transform.rotation = transmitData.HeadRotation;
             }
         }
+
+#region RPCs
+        [Rpc]
+        public void Rpc_SyncToSharedAnchor(string uuid)
+        {
+            Debug.Log("just about to run sync command!");
+            SpatialAnchorManager.m_Instance.SyncToAnchor(uuid);
+        }
+#endregion
     }
 }
-
