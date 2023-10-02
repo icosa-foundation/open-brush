@@ -24,7 +24,7 @@ namespace OpenBrush.Multiplayer
         private List<ITransientData<PlayerRigData>> m_Players;
 
         public Action<ITransientData<PlayerRigData>> localPlayerJoined;
-        public Action<ITransientData<PlayerRigData>> otherPlayerJoined;
+        public Action<ITransientData<PlayerRigData>> remotePlayerJoined;
 
         ulong oculusUserId;
 
@@ -34,6 +34,7 @@ namespace OpenBrush.Multiplayer
         {
             m_Instance = this;
             oculusPlayerIds = new List<ulong>();
+            m_Players = new List<ITransientData<PlayerRigData>>();
         }
 
         async void Start()
@@ -59,6 +60,7 @@ namespace OpenBrush.Multiplayer
             });
 
             localPlayerJoined += OnLocalPlayerJoined;
+            remotePlayerJoined += OnRemotePlayerJoined;
             switch(m_MultiplayerType)
             {
                 case MultiplayerType.None:
@@ -76,7 +78,7 @@ namespace OpenBrush.Multiplayer
             m_LocalPlayer = playerData;
         }
 
-        void RemotePlayerJoined(ITransientData<PlayerRigData> playerData)
+        void OnRemotePlayerJoined(ITransientData<PlayerRigData> playerData)
         {
             m_Players.Add(playerData);
         }
@@ -85,10 +87,16 @@ namespace OpenBrush.Multiplayer
         void Update()
         {
             // Transmit local player data.
-            var data = new PlayerRigData();
-            data.HeadPosition = App.VrSdk.GetVrCamera().transform.position;
-            data.HeadRotation = App.VrSdk.GetVrCamera().transform.localRotation;
-            if(m_LocalPlayer != null)
+            var headTransform = App.VrSdk.GetVrCamera().transform;
+
+
+            var data = new PlayerRigData
+            {
+                HeadPosition = App.Scene.transform.InverseTransformPoint(headTransform.position),
+                HeadRotation = headTransform.localRotation,
+            };
+
+            if (m_LocalPlayer != null)
             {
                 m_LocalPlayer.TransmitData(data);
             }
