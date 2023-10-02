@@ -255,7 +255,7 @@ namespace TiltBrush
                 exePath, sketchFile, usdaFile, offlineRenderExePath);
             File.WriteAllText(batFile, batText);
 #endif
-#if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX         
+#if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
             string shFile = Path.ChangeExtension(usdaFile, ".HQ_Render.sh");
             var pathSections = Application.dataPath.Split('/').ToArray();
             var exePath = String.Join("/", pathSections.Take(pathSections.Length - 1).ToArray());
@@ -266,7 +266,7 @@ namespace TiltBrush
             string batText = $"\"{exePath}/Support/bin/renderVideo.sh\" \\\n\t\"{sketchFile}\" \\\n\t\"{usdaFile}\" \\\n\t\"{offlineRenderExePath}\"";
             File.WriteAllText(shFile, batText);
 #endif
-            
+
         }
     }
 
