@@ -25,7 +25,7 @@ namespace TiltBrush
         override protected void OnButtonPressed()
         {
 #if UNITY_ANDROID || true
-        if (m_Manager)
+            if (m_Manager)
             {
                 BasePanel panel = m_Manager.GetPanelForPopUps();
                 if (panel != null)
