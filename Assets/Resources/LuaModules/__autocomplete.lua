@@ -1120,11 +1120,6 @@ function Path:FindMaximumZ() end
 ---@param size? number The size of the cube to fit the path into
 function Path:Normalize(size) end
 
----@param trs Transform[] 
----@param parts number 
----@return Transform[] # 
-function Path:_SubdivideSegments(trs, parts) end
-
 ---@param spacing number The space between points in the new path
 function Path:SampleByDistance(spacing) end
 
@@ -1862,6 +1857,12 @@ function Transform:Scale(amount) end
 ---@param other Transform The Transform to apply to this one
 ---@return Transform # 
 function Transform:Multiply(other) end
+
+---@param a Transform The first transform
+---@param b Transform The second transform
+---@param t number The value between 0 and 1 that controls how far between a and b the new transform is
+---@return Transform # A transform that blends between a and b based on the value of t
+function Transform:Lerp(a, b, t) end
 
 
 
