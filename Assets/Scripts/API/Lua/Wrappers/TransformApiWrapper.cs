@@ -176,5 +176,17 @@ namespace TiltBrush
         [LuaDocsExample(@"if myTransform:Equals(Transform.up) then print(""Equal to Transform.up"")")]
         [LuaDocsParameter("other", "The Transform to compare to this one")]
         public bool Equals(TrTransform other) => _TrTransform == other;
+
+        [LuaDocsDescription("Interpolates between two transforms")]
+        [LuaDocsExample("newTransform = Transform:Lerp(transformA, transformB, 0.25)")]
+        [LuaDocsParameter("a", "The first transform")]
+        [LuaDocsParameter("b", "The second transform")]
+        [LuaDocsParameter("t", "The value between 0 and 1 that controls how far between a and b the new transform is")]
+        [LuaDocsReturnValue("A transform that blends between a and b based on the value of t")]
+        public static TrTransform Lerp(TrTransform a, TrTransform b, float t) => TrTransform.TRS(
+            Vector3.Lerp(a.translation, b.translation, t),
+            Quaternion.Slerp(a.rotation, b.rotation, t),
+            Mathf.Lerp(a.scale, b.scale, t)
+        );
     }
 }
