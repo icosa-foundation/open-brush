@@ -153,7 +153,7 @@ namespace TiltBrush
         public TransformApiWrapper last => new TransformApiWrapper(_Path[^1]);
 
         [LuaDocsDescription("Inserts a new point at the end of the path")]
-        [LuaDocsExample("myPath:Insert(Transform:New(pos, rot)")]
+        [LuaDocsExample("myPath:Insert(myTransform")]
         [LuaDocsParameter("transform", "The transform to be inserted at the end of the path")]
         public void Insert(TrTransform transform) => _Path.Add(transform);
 
