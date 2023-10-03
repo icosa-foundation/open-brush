@@ -2,8 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Oculus.Platform;
 using TiltBrush;
+using OVRPlatform = Oculus.Platform;
 
 namespace OpenBrush.Multiplayer
 {
@@ -20,13 +20,14 @@ namespace OpenBrush.Multiplayer
         public MultiplayerType m_MultiplayerType;
 
         private IConnectionHandler m_Manager;
+
         private ITransientData<PlayerRigData> m_LocalPlayer;
-        private List<ITransientData<PlayerRigData>> m_Players;
+        private List<ITransientData<PlayerRigData>> m_RemotePlayers;
 
         public Action<ITransientData<PlayerRigData>> localPlayerJoined;
         public Action<ITransientData<PlayerRigData>> remotePlayerJoined;
 
-        ulong oculusUserId;
+        ulong myOculusUserId;
 
         List<ulong> oculusPlayerIds;
 
@@ -34,24 +35,17 @@ namespace OpenBrush.Multiplayer
         {
             m_Instance = this;
             oculusPlayerIds = new List<ulong>();
-            m_Players = new List<ITransientData<PlayerRigData>>();
+            m_RemotePlayers = new List<ITransientData<PlayerRigData>>();
         }
 
-        async void Start()
+        void Start()
         {
-            //Get Oculus ID
-            var appId = App.Config.OculusSecrets.ClientId;
-#if UNITY_ANDROID
-            appId = App.Config.OculusMobileSecrets.ClientId;
-#endif
-            Core.Initialize(appId);
-            Users.GetLoggedInUser().OnComplete((msg) => {
-
+            OVRPlatform.Users.GetLoggedInUser().OnComplete((msg) => {
                 if (!msg.IsError)
                 {
-                    oculusUserId = msg.GetUser().ID;
-                    Debug.Log(oculusUserId);
-                    oculusPlayerIds.Add(oculusUserId);
+                    myOculusUserId = msg.GetUser().ID;
+                    Debug.Log($"OculusID: {myOculusUserId}");
+                    oculusPlayerIds.Add(myOculusUserId);
                 }
                 else
                 {
@@ -61,7 +55,11 @@ namespace OpenBrush.Multiplayer
 
             localPlayerJoined += OnLocalPlayerJoined;
             remotePlayerJoined += OnRemotePlayerJoined;
-            switch(m_MultiplayerType)
+        }
+
+        public async void Connect()
+        {
+            switch (m_MultiplayerType)
             {
                 case MultiplayerType.None:
                     return;
@@ -80,23 +78,28 @@ namespace OpenBrush.Multiplayer
 
         void OnRemotePlayerJoined(ITransientData<PlayerRigData> playerData)
         {
-            m_Players.Add(playerData);
+            Debug.Log("Adding new player to track.");
+            m_RemotePlayers.Add(playerData);
         }
 
-        // Update is called once per frame
         void Update()
         {
+            if(m_Manager == null)
+            {
+                return;
+            }
+
             m_Manager.Update();
+
             // Transmit local player data.
             var headTransform = App.VrSdk.GetVrCamera().transform;
-
             var data = new PlayerRigData
             {
                 HeadPosition = App.Scene.transform.InverseTransformPoint(headTransform.position),
                 HeadRotation = headTransform.localRotation,
                 ExtraData = new ExtraData
                 {
-                    OculusPlayerId = oculusUserId
+                    OculusPlayerId = myOculusUserId
                 }
             };
 
@@ -105,14 +108,17 @@ namespace OpenBrush.Multiplayer
                 m_LocalPlayer.TransmitData(data);
             }
 
+
+            // Update remote user refs, and send Anchors if new player joins.
             bool newUser = false;
-            foreach (var player in m_Players)
+            foreach (var player in m_RemotePlayers)
             {
                 data = player.RecieveData();
                 // New user, share the anchor with them
                 if (data.ExtraData.OculusPlayerId != 0 && !oculusPlayerIds.Contains(data.ExtraData.OculusPlayerId))
                 {
                     Debug.Log("detected new user!");
+                    Debug.Log(data.ExtraData.OculusPlayerId);
                     oculusPlayerIds.Add(data.ExtraData.OculusPlayerId);
                     newUser = true;
                 }
@@ -126,13 +132,14 @@ namespace OpenBrush.Multiplayer
 
         async void ShareAnchors()
         {
-            var success = await SpatialAnchorManager.m_Instance.ShareAnchors(oculusPlayerIds);
+            Debug.Log($"sharing to {oculusPlayerIds.Count} Ids");
+            var success = await OculusMRController.m_Instance.m_SpatialAnchorManager.ShareAnchors(oculusPlayerIds);
 
             if (success)
             {
-                if(SpatialAnchorManager.m_Instance != null && !SpatialAnchorManager.m_Instance.AnchorUuid.Equals(String.Empty))
+                if(!OculusMRController.m_Instance.m_SpatialAnchorManager.AnchorUuid.Equals(String.Empty))
                 {
-                    await m_Manager.RpcSyncToSharedAnchor(SpatialAnchorManager.m_Instance.AnchorUuid);
+                    await m_Manager.RpcSyncToSharedAnchor(OculusMRController.m_Instance.m_SpatialAnchorManager.AnchorUuid);
                 }
             }
         }

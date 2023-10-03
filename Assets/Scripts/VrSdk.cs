@@ -184,6 +184,14 @@ namespace TiltBrush
             var cameraRig = m_VrSystem.AddComponent<OVRCameraRig>();
             //Disable the OVRCameraRig's eye cameras, since Open Brush already has its own.
             cameraRig.disableEyeAnchorCameras = true;
+
+            //Get Oculus ID
+            var appId = App.Config.OculusSecrets.ClientId;
+#if UNITY_ANDROID
+            appId = App.Config.OculusMobileSecrets.ClientId;
+#endif
+            Oculus.Platform.Core.Initialize(appId);
+
 #endif // OCULUS_SUPPORTED
 
 #if PIMAX_SUPPORTED

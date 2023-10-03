@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace OpenBrush.Multiplayer
 {
+    [System.Serializable]
     public struct PlayerRigData
     {
         public Vector3 HeadPosition;
@@ -11,6 +12,7 @@ namespace OpenBrush.Multiplayer
         public ExtraData ExtraData;
     }
 
+    [System.Serializable]
     public struct ExtraData
     {
         public ulong OculusPlayerId;

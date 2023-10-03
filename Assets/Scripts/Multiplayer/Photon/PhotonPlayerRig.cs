@@ -51,11 +51,11 @@ namespace OpenBrush.Multiplayer
         }
 
 #region RPCs
-        [Rpc]
-        public void Rpc_SyncToSharedAnchor(string uuid)
+        [Rpc(sources: RpcSources.All, targets: RpcTargets.All)]
+        public void RPC_SyncToSharedAnchor(string uuid)
         {
             Debug.Log("just about to run sync command!");
-            SpatialAnchorManager.m_Instance.SyncToAnchor(uuid);
+            OculusMRController.m_Instance.RemoteSyncToAnchor(uuid);
         }
 #endregion
     }

@@ -6,12 +6,14 @@ using Fusion;
 using Fusion.Photon.Realtime;
 using Fusion.Sockets;
 using TiltBrush;
+using System.Linq;
 
 namespace OpenBrush.Multiplayer
 {
     public class PhotonManager : IConnectionHandler, INetworkRunnerCallbacks
     {
         private NetworkRunner m_Runner;
+        private PhotonRpcManager m_RpcManager;
 
         MultiplayerManager m_Manager;
 
@@ -53,6 +55,12 @@ namespace OpenBrush.Multiplayer
             };
 
             var result = await m_Runner.StartGame(args);
+
+            // var rpcPrefab = Resources.Load("Multiplayer/Photon/PhotonRpcManager") as GameObject;
+            // var rpcObj = m_Runner.Spawn(rpcPrefab);
+            // m_RpcManager = rpcObj.GetComponent<PhotonRpcManager>();
+            // m_Runner.AddSimulationBehaviour(m_RpcManager);
+
             return result.Ok;
         }
 
@@ -68,7 +76,8 @@ namespace OpenBrush.Multiplayer
 
         public void Update()
         {
-            foreach( var player in m_PlayersSpawning)
+            var copy = m_PlayersSpawning.ToList();
+            foreach (var player in copy)
             {
                 var newPlayer = m_Runner.GetPlayerObject(player);
                 if (newPlayer != null)
@@ -81,7 +90,7 @@ namespace OpenBrush.Multiplayer
 
         public async Task<bool> RpcSyncToSharedAnchor(string uuid)
         {
-            m_Runner.GetPlayerObject(m_Runner.LocalPlayer).GetComponent<PhotonPlayerRig>().Rpc_SyncToSharedAnchor(uuid);
+            m_Runner.GetPlayerObject(m_Runner.LocalPlayer).GetComponent<PhotonPlayerRig>().RPC_SyncToSharedAnchor(uuid);
             await Task.Yield();
             return true;
         }
@@ -103,12 +112,8 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        public void OnConnectedToServer(NetworkRunner runner)
-        { 
-
-        }
-
         #region Unused Photon Callbacks 
+        public void OnConnectedToServer(NetworkRunner runner) { }
         public void OnPlayerLeft(NetworkRunner runner, PlayerRef player) { }
         public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason) { }
         public void OnDisconnectedFromServer(NetworkRunner runner) { }

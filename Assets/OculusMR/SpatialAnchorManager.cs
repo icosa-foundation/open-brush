@@ -8,14 +8,15 @@ namespace TiltBrush
 {
     public class SpatialAnchorManager : MonoBehaviour
     {
-        public static SpatialAnchorManager m_Instance;
+        const string kOriginSpatialAnchorPref = "ORIGIN_SPATIAL_ANCHOR";
+
         OVRSpatialAnchor m_Anchor;
 
         public string AnchorUuid
         {
             get
             {
-                if (m_Anchor)
+                if (m_Anchor != null)
                 {
                     return m_Anchor.Uuid.ToString();
                 }
@@ -23,30 +24,47 @@ namespace TiltBrush
             }
         }
 
-        const string kOriginSpatialAnchorTest = "ORIGIN_SPATIAL_ANCHOR";
-
-        void Awake()
+        public async Task<bool> CreateSpatialAnchor()
         {
-            if (m_Instance == null)
-            {
-                m_Instance = this;
-            }
-            else
-            {
-                Destroy(this);
-            }
+            var anchorGO = new GameObject("Origin Anchor");
+            m_Anchor = anchorGO.AddComponent<OVRSpatialAnchor>();
+
+            return await SaveAnchor();
         }
 
-        void Start()
+        async Task<bool> SaveAnchor()
         {
-            //CreateOrLoadSpatialAnchor();
+            while (!m_Anchor.Created && !m_Anchor.Localized)
+            {
+                await Task.Yield();
+            }
+
+            //Local save, then cloud save.
+            var success = await m_Anchor.SaveAsync();
+
+            if (!success)
+            {
+                return false;
+            }
+
+            Debug.Log("Anchor saved to device!");
+            PlayerPrefs.SetString(kOriginSpatialAnchorPref, m_Anchor.Uuid.ToString());
+
+            success = await m_Anchor.SaveAsync(saveOptions: new OVRSpatialAnchor.SaveOptions{ Storage = OVRSpace.StorageLocation.Cloud });
+            if (!success)
+            {
+                return false;
+            }
+            Debug.Log("Anchor saved to cloud!");
+
+            return true;
         }
 
-        async void CreateOrLoadSpatialAnchor()
+        public async Task<bool> LoadSpatialAnchor()
         {
-            if (PlayerPrefs.HasKey(kOriginSpatialAnchorTest))
+            if (PlayerPrefs.HasKey(kOriginSpatialAnchorPref))
             {
-                var guidString = PlayerPrefs.GetString(kOriginSpatialAnchorTest);
+                var guidString = PlayerPrefs.GetString(kOriginSpatialAnchorPref);
                 var guid = new Guid(guidString);
 
                 var data = await OVRSpatialAnchor.LoadUnboundAnchorsAsync(new OVRSpatialAnchor.LoadOptions()
@@ -57,65 +75,59 @@ namespace TiltBrush
                     }
                 );
 
-                OnLoadUnboundAnchorComplete(data);
+                return await BindAnchors(data);
             }
-
             else
             {
-                var anchorGO = new GameObject("Test Anchor");
-                m_Anchor = anchorGO.AddComponent<OVRSpatialAnchor>();
-
-                SaveAnchor();
+                return await CreateSpatialAnchor();
             }
         }
-        
-        async void SaveAnchor()
+
+        public bool SceneLocalizeToAnchor()
         {
-            while (!m_Anchor.Created && !m_Anchor.Localized)
+            if (m_Anchor == null)
             {
-                await Task.Yield();
+                return false;
             }
 
-            //Local save, then cloud save.
-            m_Anchor.Save((anchor, success) => {
-                if (!success)
+            var m_anchorTr = TrTransform.FromTransform(m_Anchor.transform);
+
+            var newPose = SketchControlsScript.MakeValidScenePose(m_anchorTr,
+                SceneSettings.m_Instance.HardBoundsRadiusMeters_SS);
+            App.Scene.Pose = newPose;
+            
+            Debug.Log("Anchor localized!");
+            return true;
+        }
+
+        public async Task<bool> SyncToRemoteAnchor(string uuid, OVRSpace.StorageLocation defaultStorageLocation = OVRSpace.StorageLocation.Local)
+        {
+            var guid = new Guid(uuid);
+
+            var data = await OVRSpatialAnchor.LoadUnboundAnchorsAsync(new OVRSpatialAnchor.LoadOptions()
                 {
-                    return;
+                    StorageLocation = defaultStorageLocation,
+                    Timeout = 0,
+                    Uuids = new List<Guid>() { guid }
                 }
+            );
 
-                Debug.Log("Anchor saved to device!");
-                PlayerPrefs.SetString(kOriginSpatialAnchorTest, m_Anchor.Uuid.ToString());
+            Debug.Log("Remote anchor recieved!");
+            bool bindSuccess = await BindAnchors(data);
 
-                m_Anchor.Save(saveOptions: new OVRSpatialAnchor.SaveOptions{ Storage = OVRSpace.StorageLocation.Cloud }, (anchor, success) => {
-                    if (!success)
-                    {
-                        return;
-                    }
-
-                    Debug.Log("Anchor saved to cloud!");
-                });
-            });
-        }
-
-        public async Task<bool> ShareAnchors(List<ulong> playerIds)
-        {
-            var spaceUserList = new List<OVRSpaceUser>();
-            foreach(var id in playerIds)
+            if (bindSuccess)
             {
-                spaceUserList.Add(new OVRSpaceUser(id));
+                Debug.Log("Remote anchor bound!");
+                return SceneLocalizeToAnchor();
             }
-
-            var result = await m_Anchor.ShareAsync(spaceUserList);
-            Debug.Log($"Share complete!");
-
-            return result == OVRSpatialAnchor.OperationResult.Success;
+            return false;
         }
 
-        async void OnLoadUnboundAnchorComplete(OVRSpatialAnchor.UnboundAnchor[] anchors)
+        async Task<bool> BindAnchors(OVRSpatialAnchor.UnboundAnchor[] anchors)
         {
             var unboundAnchor = anchors[0];
 
-            var anchorGO = new GameObject("Test Anchor");
+            var anchorGO = new GameObject("Origin Anchor");
             m_Anchor = anchorGO.AddComponent<OVRSpatialAnchor>();
             unboundAnchor.BindTo(m_Anchor);
 
@@ -131,39 +143,33 @@ namespace TiltBrush
                 await Task.Yield();
             }
 
-            var m_anchorTr = TrTransform.FromTransform(m_Anchor.transform);
-
-            var newPose = SketchControlsScript.MakeValidScenePose(m_anchorTr,
-                SceneSettings.m_Instance.HardBoundsRadiusMeters_SS);
-            App.Scene.Pose = newPose;
-            
-            Debug.Log("Cached anchor localized!");
+            return true;
         }
 
-        public async void SyncToAnchor(string uuid)
+        public async Task<bool> ShareAnchors(List<ulong> playerIds)
         {
-            Debug.Log("recieved sync to anchor command");
-            var guid = new Guid(uuid);
-
-            // Cloud check takes much longer, but we're testing for now
-            var data = await OVRSpatialAnchor.LoadUnboundAnchorsAsync(new OVRSpatialAnchor.LoadOptions()
-                {
-                    StorageLocation = OVRSpace.StorageLocation.Cloud,
-                    Timeout = 0,
-                    Uuids = new List<Guid>() { guid }
-                }
-            );
-
-            OnLoadUnboundAnchorComplete(data);
-        }
-
-        // Update is called once per frame
-        void OnDestroy()
-        {
-            if(m_Instance == this)
+            if(m_Anchor == null)
             {
-                m_Instance = null;
+                return false;
             }
+
+            var spaceUserList = new List<OVRSpaceUser>();
+            foreach(var id in playerIds)
+            {
+                Debug.Log($"new share id: {id}");
+                spaceUserList.Add(new OVRSpaceUser(id));
+            }
+
+            // TODO: Check anchor exists and is in cloud storage.
+            var result = await m_Anchor.ShareAsync(spaceUserList);
+
+            if(result == OVRSpatialAnchor.OperationResult.Success)
+            {
+                Debug.Log($"Share complete!");
+                return true;
+            }
+
+            return false;
         }
     }
 }

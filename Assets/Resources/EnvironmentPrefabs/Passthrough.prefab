@@ -10,8 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 413308}
   - component: {fileID: 2894341405841368711}
-  - component: {fileID: 4678461782034466865}
-  - component: {fileID: 3943298673663757051}
   m_Layer: 0
   m_Name: Passthrough
   m_TagString: Untagged
@@ -47,38 +45,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d3974c6c53f3f8942b147e7e86cb0e75, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &4678461782034466865
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 118944}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2253d75e3ddc644b8153409c62dd74e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  PlanePrefab: {fileID: 5531902977439992835, guid: 96517f8af456f7943b86d2b7ed027964,
-    type: 3}
-  VolumePrefab: {fileID: 5531902977439992835, guid: 96517f8af456f7943b86d2b7ed027964,
-    type: 3}
-  PrefabOverrides: []
-  VerboseLogging: 0
-  MaxSceneAnchorUpdatesPerFrame: 3
-  _initialAnchorParent: {fileID: 0}
---- !u!114 &3943298673663757051
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 118944}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 91e9b9159d619a2428162e46f16afb16, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  isHost: 1
 --- !u!1 &86167322126847170
 GameObject:
   m_ObjectHideFlags: 0
