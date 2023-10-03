@@ -1844,11 +1844,19 @@ function Transform:New(translation, scale) end
 ---@return Transform # 
 function Transform:Position(x, y, z) end
 
+---@param position Vector3 The Vector3 position
+---@return Transform # 
+function Transform:Position(position) end
+
 ---@param x number The x rotation amount
 ---@param y number The y rotation amount
 ---@param z number The z rotation amount
 ---@return Transform # 
 function Transform:Rotation(x, y, z) end
+
+---@param rotation Rotation The rotation
+---@return Transform # 
+function Transform:Rotation(rotation) end
 
 ---@param amount number The scale amount
 ---@return Transform # 
