@@ -13,7 +13,6 @@ namespace OpenBrush.Multiplayer
     public class PhotonManager : IConnectionHandler, INetworkRunnerCallbacks
     {
         private NetworkRunner m_Runner;
-        private PhotonRpcManager m_RpcManager;
 
         MultiplayerManager m_Manager;
 

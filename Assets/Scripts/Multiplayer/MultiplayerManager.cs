@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TiltBrush;
 using OVRPlatform = Oculus.Platform;
+using Unity.XR.CoreUtils;
 
 namespace OpenBrush.Multiplayer
 {
@@ -95,7 +96,7 @@ namespace OpenBrush.Multiplayer
             var headTransform = App.VrSdk.GetVrCamera().transform;
             var data = new PlayerRigData
             {
-                HeadPosition = App.Scene.transform.InverseTransformPoint(headTransform.position),
+                HeadPosition = headTransform.InverseTransformPoint(App.Scene.transform.position),
                 HeadRotation = headTransform.localRotation,
                 ExtraData = new ExtraData
                 {

@@ -8,10 +8,14 @@ namespace OpenBrush.Multiplayer
 {
     public class PhotonPlayerRig : NetworkBehaviour, ITransientData<PlayerRigData>
     {
+        // Only used for transferring data - don't actually use these transforms without offsetting
         public NetworkTransform m_PlayArea;
         public NetworkTransform m_PlayerHead;
         public NetworkTransform m_Left;
         public NetworkTransform m_Right;
+
+        // The offset transforms.
+        [SerializeField] private Transform headTransform;
 
         [Networked] public ulong oculusPlayerId { get; set; } 
 
@@ -48,6 +52,11 @@ namespace OpenBrush.Multiplayer
                 m_PlayerHead.transform.position = transmitData.HeadPosition;
                 m_PlayerHead.transform.rotation = transmitData.HeadRotation;
             }
+
+            //headTransform.position = App.Scene.transform.position + transmitData.HeadPosition;
+            headTransform.position = App.Scene.transform.position + m_PlayerHead.InterpolationTarget.position;
+            headTransform.rotation = m_PlayerHead.InterpolationTarget.rotation;
+
         }
 
 #region RPCs
