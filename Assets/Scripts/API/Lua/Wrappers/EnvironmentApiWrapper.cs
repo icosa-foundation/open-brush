@@ -33,15 +33,15 @@ namespace TiltBrush
             _Environment = SceneSettings.m_Instance.CurrentEnvironment;
             if (isCurrent)
             {
-                _GradientColorA = new (SceneSettings.m_Instance.SkyColorA);
-                _GradientColorB = new (SceneSettings.m_Instance.SkyColorB);
-                _GradientOrientation = new (SceneSettings.m_Instance.GradientOrientation);
+                _GradientColorA = new(SceneSettings.m_Instance.SkyColorA);
+                _GradientColorB = new(SceneSettings.m_Instance.SkyColorB);
+                _GradientOrientation = new(SceneSettings.m_Instance.GradientOrientation);
                 _FogColor = new(SceneSettings.m_Instance.FogColor);
                 _FogDensity = SceneSettings.m_Instance.FogDensity;
-                _AmbientColor = new (LightsControlScript.m_Instance.CustomLights.Ambient);
-                _MainLightColor = new (LightsControlScript.m_Instance.CustomLights.Shadow.Color);
+                _AmbientColor = new(LightsControlScript.m_Instance.CustomLights.Ambient);
+                _MainLightColor = new(LightsControlScript.m_Instance.CustomLights.Shadow.Color);
                 _MainLightDirection = new(LightsControlScript.m_Instance.CustomLights.Shadow.Orientation);
-                _SecondaryLightColor = new (LightsControlScript.m_Instance.CustomLights.NoShadow.Color);
+                _SecondaryLightColor = new(LightsControlScript.m_Instance.CustomLights.NoShadow.Color);
                 _SecondaryLightDirection = new(LightsControlScript.m_Instance.CustomLights.NoShadow.Orientation);
                 _Current = this;
             }
@@ -128,7 +128,7 @@ namespace TiltBrush
 
         [LuaDocsDescription("The ambient light color")]
         public ColorApiWrapper ambientColor
-            {
+        {
             get => _AmbientColor;
             set
             {

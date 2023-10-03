@@ -20,7 +20,7 @@ namespace TiltBrush
         [MoonSharpHidden]
         public List<List<TrTransform>> AsMultiTrList() => new List<List<TrTransform>> { AsSingleTrList() };
 
-        public enum Axis {X, Y, Z}
+        public enum Axis { X, Y, Z }
 
         [MoonSharpHidden]
         public List<Vector2> _Path2d;
@@ -169,7 +169,7 @@ namespace TiltBrush
         public int FindClosest(Vector2 point)
         {
             if (_Path2d == null) return 0;
-            return _Path2d.Select((x, i) => new {i, x}).Aggregate(
+            return _Path2d.Select((x, i) => new { i, x }).Aggregate(
                 (acc, v) => (v.x - point).sqrMagnitude < (acc.x - point).sqrMagnitude ? v : acc
             ).i;
         }

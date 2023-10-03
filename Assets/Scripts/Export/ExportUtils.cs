@@ -513,8 +513,8 @@ namespace TiltBrush
 
         /// Filters and returns geometry in a convenient format for export.
         /// Returns geometry for the main canvas
-        
-        private static HashSet<Guid> AllowedBrushGuids => new (
+
+        private static HashSet<Guid> AllowedBrushGuids => new(
             BrushCatalog.m_Instance.AllBrushes
                 .Where(b => b.m_AllowExport)
                 .Select(b => (Guid)b.m_Guid));

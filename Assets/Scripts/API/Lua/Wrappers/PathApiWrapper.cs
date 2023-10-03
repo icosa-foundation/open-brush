@@ -27,7 +27,7 @@ namespace TiltBrush
         [MoonSharpHidden]
         public List<List<TrTransform>> AsMultiTrList() => new List<List<TrTransform>> { _Path };
 
-        public enum Axis {X, Y, Z}
+        public enum Axis { X, Y, Z }
 
         [MoonSharpHidden]
         public List<TrTransform> _Path;
@@ -103,9 +103,9 @@ namespace TiltBrush
 
         private static Vector3 _CalculatePathVector(List<TrTransform> path, int i)
         {
-            if (i == 0 && path.Count <= 1) {return path[i].rotation * Vector3.forward;} // A path with only one point
-            if (i == 0) {return (path[i + 1].translation - path[i].translation).normalized;}
-            if (i + 1 >= path.Count) {return (path[i].translation - path[i - 1].translation).normalized;}
+            if (i == 0 && path.Count <= 1) { return path[i].rotation * Vector3.forward; } // A path with only one point
+            if (i == 0) { return (path[i + 1].translation - path[i].translation).normalized; }
+            if (i + 1 >= path.Count) { return (path[i].translation - path[i - 1].translation).normalized; }
 
             Vector3 toPrevious = (path[i].translation - path[i - 1].translation).normalized;
             Vector3 toNext = (path[i + 1].translation - path[i].translation).normalized;

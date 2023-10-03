@@ -55,7 +55,8 @@ namespace TiltBrush
         public static LayerApiWrapper mainLayer => new LayerApiWrapper(App.Scene.MainCanvas);
 
         [LuaDocsDescription("All the groups in this sketch")]
-        public static GroupListApiWrapper groups {
+        public static GroupListApiWrapper groups
+        {
             get
             {
                 var tags = new HashSet<(SketchGroupTag, CanvasScript)>();

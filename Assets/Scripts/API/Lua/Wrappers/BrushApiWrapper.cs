@@ -169,7 +169,7 @@ namespace TiltBrush
         [LuaDocsDescription("The current path of the brush. Assumes a stroke is in progress.")]
         public static PathApiWrapper currentPath
         {
-            get => new (PointerManager.m_Instance.MainPointer.CurrentPath);
+            get => new(PointerManager.m_Instance.MainPointer.CurrentPath);
             set => PointerManager.m_Instance.MainPointer.CurrentPath = value._Path;
         }
 

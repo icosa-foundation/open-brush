@@ -51,8 +51,8 @@ namespace TiltBrush
             LuaDocsRegistration.RegisterForDocs(typeof(StrokeListApiWrapper), false);
 
             // Manually add some entries that aren't added the standard way
-            var transformProp = new LuaDocsType {PrimitiveType = LuaDocsPrimitiveType.UserData, CustomTypeName = "Transform"};
-            var rotationProp = new LuaDocsType {PrimitiveType = LuaDocsPrimitiveType.UserData, CustomTypeName = "Rotation"};
+            var transformProp = new LuaDocsType { PrimitiveType = LuaDocsPrimitiveType.UserData, CustomTypeName = "Transform" };
+            var rotationProp = new LuaDocsType { PrimitiveType = LuaDocsPrimitiveType.UserData, CustomTypeName = "Rotation" };
             var toolApiDocClass = new LuaDocsClass
             {
                 Name = "Tool",
@@ -95,7 +95,7 @@ namespace TiltBrush
                 var markDown = klass.MarkdownSerialize();
                 File.WriteAllText(Path.Join(docsPath, $"{klass.Name.ToLower()}.md"), markDown);
             }
-            
+
             // Done
             LuaDocsRegistration.ApiDocClasses = null;
             Debug.Log($"Finished Generating Lua Docs");

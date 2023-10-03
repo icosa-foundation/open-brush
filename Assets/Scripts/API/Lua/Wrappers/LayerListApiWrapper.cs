@@ -30,7 +30,7 @@ namespace TiltBrush
         public LayerApiWrapper this[string name] => new LayerApiWrapper(_Layers.First(x => x.name == name));
 
         [LuaDocsDescription("Returns the main layer")]
-        public  LayerApiWrapper main => new LayerApiWrapper(_Layers[0]);
+        public LayerApiWrapper main => new LayerApiWrapper(_Layers[0]);
 
         [LuaDocsDescription("The number of layers")]
         public int count => _Layers?.Count ?? 0;

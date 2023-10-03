@@ -677,7 +677,8 @@ namespace TiltBrush
         public bool HasOutgoingListeners => m_OutgoingApiListeners != null && m_OutgoingApiListeners.Count > 0;
 
         // TODO Find a better home for this. It won't always be API specific
-        public CHRFont TextFont {
+        public CHRFont TextFont
+        {
             get
             {
                 if (m_TextFont == null)

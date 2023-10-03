@@ -39,7 +39,7 @@ namespace TiltBrush
         [LuaDocsDescription("The Transform (position, rotation, scale) of the Video Widget")]
         public TrTransform transform
         {
-            get =>  App.Scene.MainCanvas.AsCanvas[_VideoWidget.transform];
+            get => App.Scene.MainCanvas.AsCanvas[_VideoWidget.transform];
             set
             {
                 value = App.Scene.Pose * value;
@@ -71,7 +71,7 @@ namespace TiltBrush
         [LuaDocsDescription("Imports a video file from the user's MediaLibrary/Videos folder")]
         [LuaDocsExample(@"myVideo = Video.Import(""myVideo.mp4"")")]
         [LuaDocsParameter("location", "The filename of the video file to import from the user's MediaLibrary/Videos folder")]
-        public static VideoApiWrapper Import(string location) => new (ApiMethods.ImportVideo(location));
+        public static VideoApiWrapper Import(string location) => new(ApiMethods.ImportVideo(location));
 
         [LuaDocsDescription("Adds this Video Widget to the current selection")]
         [LuaDocsExample("myVideo:Select()")]

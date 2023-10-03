@@ -157,7 +157,7 @@ namespace TiltBrush
         [LuaDocsDescription(@"The position and orientation of the pointer")]
         public TrTransform transform
         {
-            get =>  App.Scene.MainCanvas.AsCanvas[_Pointer.transform];
+            get => App.Scene.MainCanvas.AsCanvas[_Pointer.transform];
             set
             {
                 value = App.Scene.Pose * value;

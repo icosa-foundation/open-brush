@@ -20,7 +20,7 @@ namespace TiltBrush
     {
         [SerializeField] private GameObject m_Mesh;
         [SerializeField] private Material m_UninitializedCameraMaterial;
-        
+
         public bool m_PreviewOn;
 
         private Camera m_Camera;
@@ -35,13 +35,13 @@ namespace TiltBrush
         // Height of the live render target
         public int m_DisplayHeight;
 
-        
+
         protected override void Awake()
         {
             base.Awake();
             m_Mesh.GetComponent<Renderer>().material = m_UninitializedCameraMaterial;
         }
-        
+
         void UpdateScreenVisuals()
         {
             bool previewShouldBeOn = LeftEyeMaterialRenderTextureExists;

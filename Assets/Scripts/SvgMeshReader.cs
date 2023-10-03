@@ -27,7 +27,7 @@ namespace TiltBrush
     {
         private readonly Material m_vertexColorMaterial;
         private readonly string m_path; // Full path to file
-        private readonly List<string> m_warnings = new ();
+        private readonly List<string> m_warnings = new();
         private readonly ImportMaterialCollector m_collector;
 
         private List<string> warnings => m_warnings;
@@ -45,7 +45,7 @@ namespace TiltBrush
             var mf = go.AddComponent<MeshFilter>();
             var mr = go.AddComponent<MeshRenderer>();
             var mat = RuntimeSVGImporter.MaterialForSVG(false);
-            mr.materials = new[] {mat};
+            mr.materials = new[] { mat };
             m_collector.AddSvgIem(mr.materials[0]);
             Mesh mesh = ImportAsMesh(m_path);
             mf.mesh = mesh;

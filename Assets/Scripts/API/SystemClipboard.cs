@@ -48,8 +48,8 @@ namespace TiltBrush
 #elif UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
             return GetClipboardImageWindows();
 #else
-        Debug.LogError("GetClipboardImage is not supported on this platform.");
-        return null;
+            Debug.LogError("GetClipboardImage is not supported on this platform.");
+            return null;
 #endif
         }
 

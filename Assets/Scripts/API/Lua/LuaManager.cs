@@ -109,7 +109,7 @@ namespace TiltBrush
         public static LuaManager Instance => m_Instance;
 
         private LinkedList<LuaWebRequest> m_WebRequests;
-        
+
         public string LuaModulesPath => Path.Join(UserPluginsPath(), "LuaModules");
 
         public struct ScriptTrTransform
@@ -192,7 +192,7 @@ namespace TiltBrush
             ConfigureScriptButton(LuaApiCategory.SymmetryScript);
             ConfigureScriptButton(LuaApiCategory.ToolScript);
         }
-        
+
         public void CopyLuaModules()
         {
             // Copy built-in Lua Libraries to User's LuaModules directory
@@ -200,7 +200,7 @@ namespace TiltBrush
             foreach (var library in libraries)
             {
                 var newFilename = Path.Join(LuaModulesPath, $"{library.name}.lua");
-                if (!File.Exists(newFilename) || library.name=="__autocomplete") // Always overwrite autocomplete
+                if (!File.Exists(newFilename) || library.name == "__autocomplete") // Always overwrite autocomplete
                 {
                     FileUtils.WriteTextFromResources($"LuaModules/{library.name}", newFilename);
                 }
@@ -209,17 +209,17 @@ namespace TiltBrush
 
         public void SetBrushBufferSize(int size)
         {
-            if (m_TransformBuffers.BrushBufferSize!=size) ResizeBrushBuffer(size);
+            if (m_TransformBuffers.BrushBufferSize != size) ResizeBrushBuffer(size);
         }
 
         public void SetWandBufferSize(int size)
         {
-            if (m_TransformBuffers.WandBufferSize!=size) ResizeWandBuffer(size);
+            if (m_TransformBuffers.WandBufferSize != size) ResizeWandBuffer(size);
         }
 
         public void SetHeadBufferSize(int size)
         {
-            if (m_TransformBuffers.HeadBufferSize!=size) ResizeHeadBuffer(size);
+            if (m_TransformBuffers.HeadBufferSize != size) ResizeHeadBuffer(size);
         }
 
         public void ResizeBrushBuffer(int size)

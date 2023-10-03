@@ -76,7 +76,7 @@ namespace TiltBrush
         [LuaDocsExample(@"Image:Import(""test.png"")")]
         [LuaDocsParameter("location", "The location of the image")]
         [LuaDocsReturnValue("The imported image widget")]
-        public static ImageApiWrapper Import(string location) => new (ApiMethods.ImportImage(location));
+        public static ImageApiWrapper Import(string location) => new(ApiMethods.ImportImage(location));
 
         [LuaDocsDescription("Selects the image widget")]
         [LuaDocsExample(@"myImage:Select()")]

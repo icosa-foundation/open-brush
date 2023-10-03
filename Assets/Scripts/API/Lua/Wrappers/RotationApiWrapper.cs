@@ -96,7 +96,7 @@ namespace TiltBrush
         private (float, Vector3) _GetAngleAxis()
         {
             _Quaternion.ToAngleAxis(out float angle, out Vector3 axis);
-            return new (angle, axis);
+            return new(angle, axis);
         }
 
         [LuaDocsDescription(@"The angle in degrees of the angle-axis representation of this rotation")]

@@ -81,7 +81,7 @@ namespace TiltBrush
                 {
                     stroke.SetShaderFloat(parameter, value);
                 }
-                catch (StrokeShaderModifierException e) {LuaManager.LogLuaError(e);}
+                catch (StrokeShaderModifierException e) { LuaManager.LogLuaError(e); }
             }
         }
 
@@ -97,7 +97,7 @@ namespace TiltBrush
                 {
                     stroke.SetShaderColor(parameter, color);
                 }
-                catch (StrokeShaderModifierException e) {LuaManager.LogLuaError(e);}
+                catch (StrokeShaderModifierException e) { LuaManager.LogLuaError(e); }
             }
         }
 
@@ -114,7 +114,7 @@ namespace TiltBrush
                 {
                     stroke.SetShaderTexture(parameter, texture);
                 }
-                catch (StrokeShaderModifierException e) {LuaManager.LogLuaError(e);}
+                catch (StrokeShaderModifierException e) { LuaManager.LogLuaError(e); }
             }
         }
 
@@ -133,7 +133,7 @@ namespace TiltBrush
                 {
                     stroke.SetShaderVector(parameter, x, y, z, w);
                 }
-                catch (StrokeShaderModifierException e) {LuaManager.LogLuaError(e);}
+                catch (StrokeShaderModifierException e) { LuaManager.LogLuaError(e); }
             }
         }
     }
