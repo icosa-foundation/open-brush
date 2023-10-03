@@ -116,7 +116,7 @@ namespace TiltBrush
             var instance = new TransformApiWrapper(TrTransform.T(new Vector3(x, y, z)));
             return instance;
         }
-        
+
         [LuaDocsDescription("Creates a new translation transform")]
         [LuaDocsExample("myTransform = Transform:Position(myVector3)")]
         [LuaDocsParameter("position", "The Vector3 position")]
@@ -136,7 +136,7 @@ namespace TiltBrush
             var instance = new TransformApiWrapper(TrTransform.R(Quaternion.Euler(x, y, z)));
             return instance;
         }
-        
+
         [LuaDocsDescription("Creates a new rotation transform")]
         [LuaDocsExample("myTransform = Transform:Rotation(myRotation)")]
         [LuaDocsParameter("rotation", "The rotation")]

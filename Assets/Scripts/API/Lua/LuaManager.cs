@@ -671,7 +671,7 @@ namespace TiltBrush
                     // It's a PathApiWrapper instance
                     pathWrapper = result.ToObject<PathApiWrapper>();
                 }
-                
+
                 if (pathWrapper != null)
                 {
                     pathWrapper._Space = _GetSpaceForActiveScript(LuaApiCategory.SymmetryScript);
