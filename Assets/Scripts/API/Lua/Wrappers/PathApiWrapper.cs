@@ -369,6 +369,7 @@ namespace TiltBrush
             return subdividedPath;
         }
 
+        [MoonSharpHidden]
         public static List<TrTransform> _SubdivideSegments(List<TrTransform> trs, int parts)
         {
             if (parts < 1 || trs == null || trs.Count < 2)
