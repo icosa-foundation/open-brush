@@ -2219,7 +2219,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 81213093988327424
-    m_Localized: Passthrough
+    m_Localized: Meta MR as Host
     m_Metadata:
       m_Items: []
   - m_Id: 81213138796077056
@@ -3101,7 +3101,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 106429517453328384
-    m_Localized: "Background Images"
+    m_Localized: Background Images
     m_Metadata:
       m_Items: []
   - m_Id: 95221400803737600
@@ -3450,6 +3450,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 147811113256255488
     m_Localized: Language
+    m_Metadata:
+      m_Items: []
+  - m_Id: 152476571148857344
+    m_Localized: Meta MR as Guest
     m_Metadata:
       m_Items: []
   references:

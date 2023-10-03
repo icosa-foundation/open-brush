@@ -3263,6 +3263,10 @@ MonoBehaviour:
     m_Key: SETTINGS_PANEL_LOCALE_BUTTON_POPUP
     m_Metadata:
       m_Items: []
+  - m_Id: 152476571148857344
+    m_Key: ENVIRONMENT_PASSTHROUGHGUEST
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
