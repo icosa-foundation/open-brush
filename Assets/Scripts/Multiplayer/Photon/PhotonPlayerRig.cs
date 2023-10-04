@@ -21,6 +21,10 @@ namespace OpenBrush.Multiplayer
 
         private PlayerRigData transmitData;
 
+        public bool inverseScene;
+        public bool inverseHead;
+        public bool swapOrder;
+
         public void TransmitData(PlayerRigData data)
         {
             transmitData = data;
@@ -53,10 +57,12 @@ namespace OpenBrush.Multiplayer
                 m_PlayerHead.transform.rotation = transmitData.HeadRotation;
             }
 
+            // TODO: learn maths.
             //headTransform.position = App.Scene.transform.position + transmitData.HeadPosition;
-            headTransform.position = App.Scene.transform.position + m_PlayerHead.InterpolationTarget.position;
-            headTransform.rotation = m_PlayerHead.InterpolationTarget.rotation;
+            //headTransform.position = App.Scene.transform.position + m_PlayerHead.InterpolationTarget.position;
 
+            headTransform.position = m_PlayerHead.InterpolationTarget.position;
+            headTransform.rotation = m_PlayerHead.InterpolationTarget.rotation;
         }
 
 #region RPCs
