@@ -388,7 +388,6 @@ namespace TiltBrush
         /// Returns the same value as GetVrInput(VrControllerInput.Grip)
         public bool GetControllerGrip()
         {
-            return false;
             return GetVrInput(VrInput.Grip);
         }
 
