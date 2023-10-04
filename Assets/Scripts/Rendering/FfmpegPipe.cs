@@ -144,13 +144,15 @@ namespace TiltBrush
             // Editor, Mac builds and Windows builds have different paths
             // between Application.dataPath and the actual executable
             string traverseToApp = "";
-            if (Application.platform == RuntimePlatform.OSXPlayer) {
+            if (Application.platform == RuntimePlatform.OSXPlayer)
+            {
                 traverseToApp = "/../../";
             }
-            else if (Application.platform == RuntimePlatform.WindowsPlayer) {
+            else if (Application.platform == RuntimePlatform.WindowsPlayer)
+            {
                 traverseToApp = "/../";
             }
-            
+
             string exeName = null;
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
             exeName = "ffmpeg.exe";
@@ -158,7 +160,7 @@ namespace TiltBrush
 #if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
             exeName = "ffmpeg";
 #endif
-            
+
             string fullPath = Path.GetFullPath(
                 Path.Combine(
                     Application.dataPath,
@@ -170,7 +172,7 @@ namespace TiltBrush
             );
             Debug.Log($"ffmpeg path: {fullPath}");
             if (exeName != null && File.Exists(fullPath)) return fullPath;
-            
+
             // Only Android and Linux builds should hit this point
             return null;
         }
