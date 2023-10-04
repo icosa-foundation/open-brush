@@ -12,6 +12,8 @@ namespace TiltBrush
         public OVRSceneManager ovrSceneManager;
         public SpatialAnchorManager m_SpatialAnchorManager;
 
+        private bool loadedScene;
+
         private bool host;
 
         void Awake()
@@ -53,11 +55,12 @@ namespace TiltBrush
             {
                 await m_SpatialAnchorManager.SyncToRemoteAnchor(uuid, OVRSpace.StorageLocation.Cloud);
             }
-        }
 
-        public void LoadScene()
-        {
-            ovrSceneManager.LoadSceneModel();
+            if (!loadedScene)
+            {
+                ovrSceneManager.LoadSceneModel();
+                loadedScene = true;
+            }
         }
     }
 }

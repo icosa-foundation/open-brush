@@ -1,10 +1,9 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using TiltBrush;
-using OVRPlatform = Oculus.Platform;
 using Unity.XR.CoreUtils;
+using OVRPlatform = Oculus.Platform;
+using TiltBrush;
 
 namespace OpenBrush.Multiplayer
 {
@@ -41,6 +40,7 @@ namespace OpenBrush.Multiplayer
 
         void Start()
         {
+#if OCULUS_SUPPORTED
             OVRPlatform.Users.GetLoggedInUser().OnComplete((msg) => {
                 if (!msg.IsError)
                 {
@@ -53,6 +53,15 @@ namespace OpenBrush.Multiplayer
                     Debug.LogError(msg.GetError());
                 }
             });
+#endif
+            switch (m_MultiplayerType)
+            {
+                case MultiplayerType.Photon:
+                    m_Manager = new PhotonManager(this);
+                    break;
+                default:
+                    return;
+            }
 
             localPlayerJoined += OnLocalPlayerJoined;
             remotePlayerJoined += OnRemotePlayerJoined;
@@ -60,27 +69,7 @@ namespace OpenBrush.Multiplayer
 
         public async void Connect()
         {
-            switch (m_MultiplayerType)
-            {
-                case MultiplayerType.None:
-                    return;
-                case MultiplayerType.Photon:
-                    m_Manager = new PhotonManager(this);
-                    break;
-            }
-
             var result = await m_Manager.Connect();
-        }
-
-        void OnLocalPlayerJoined(ITransientData<PlayerRigData> playerData)
-        {
-            m_LocalPlayer = playerData;
-        }
-
-        void OnRemotePlayerJoined(ITransientData<PlayerRigData> playerData)
-        {
-            Debug.Log("Adding new player to track.");
-            m_RemotePlayers.Add(playerData);
         }
 
         void Update()
@@ -94,10 +83,11 @@ namespace OpenBrush.Multiplayer
 
             // Transmit local player data.
             var headTransform = App.VrSdk.GetVrCamera().transform;
+            var inversePose = App.Scene.transform.InverseTransformPose(headTransform.GetLocalPose());
             var data = new PlayerRigData
             {
-                HeadPosition = headTransform.InverseTransformPoint(App.Scene.transform.position),
-                HeadRotation = headTransform.localRotation,
+                HeadPosition = inversePose.position,
+                HeadRotation = inversePose.rotation,
                 ExtraData = new ExtraData
                 {
                     OculusPlayerId = myOculusUserId
@@ -129,6 +119,17 @@ namespace OpenBrush.Multiplayer
             {
                 ShareAnchors();
             }
+        }
+
+        void OnLocalPlayerJoined(ITransientData<PlayerRigData> playerData)
+        {
+            m_LocalPlayer = playerData;
+        }
+
+        void OnRemotePlayerJoined(ITransientData<PlayerRigData> playerData)
+        {
+            Debug.Log("Adding new player to track.");
+            m_RemotePlayers.Add(playerData);
         }
 
         async void ShareAnchors()

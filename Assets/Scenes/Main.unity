@@ -35672,11 +35672,6 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 652605545}
     m_Modifications:
-    - target: {fileID: 5619048699234477578, guid: d25a8154340103c4883d7fc7ddab0827,
-        type: 3}
-      propertyPath: m_SpatialAnchorManager
-      value: 
-      objectReference: {fileID: 6518006851118185554}
     - target: {fileID: 7081236046508280627, guid: d25a8154340103c4883d7fc7ddab0827,
         type: 3}
       propertyPath: m_Name
@@ -35745,18 +35740,6 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 6518006851118185552}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &6518006851118185554 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: -3473970634249864913, guid: d25a8154340103c4883d7fc7ddab0827,
-    type: 3}
-  m_PrefabInstance: {fileID: 6518006851118185552}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 91e9b9159d619a2428162e46f16afb16, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &6962742248766418969
 Transform:
   m_ObjectHideFlags: 0

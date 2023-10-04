@@ -46,6 +46,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 57acf6fd80bfa99419bc6274bd16c6c8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ovrSceneManager: {fileID: 5425681579648101261}
   m_SpatialAnchorManager: {fileID: -3473970634249864913}
 --- !u!114 &-3473970634249864913
 MonoBehaviour:
