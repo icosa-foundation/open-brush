@@ -31,15 +31,11 @@ namespace OpenBrush.Multiplayer
 
         List<ulong> oculusPlayerIds;
 
-        private Transform m_trans;
-
         void Awake()
         {
             m_Instance = this;
             oculusPlayerIds = new List<ulong>();
             m_RemotePlayers = new List<ITransientData<PlayerRigData>>();
-
-            m_trans = new GameObject("HMDRelativeToScene").transform;
         }
 
         void Start()
@@ -85,22 +81,13 @@ namespace OpenBrush.Multiplayer
 
             m_Manager.Update();
 
-            // Transmit local player data.
-            var headTransform = App.VrSdk.GetVrCamera().transform;
+            // Transmit local player data relative to scene origin
+            var headRelativeToScene = App.Scene.AsScene[App.VrSdk.GetVrCamera().transform];
 
-            // Stupid, so stupid.
-            m_trans.parent = headTransform;
-            m_trans.localPosition = Vector3.zero;
-            m_trans.localRotation = Quaternion.identity;
-            m_trans.localScale = Vector3.one;
-            m_trans.parent = App.Scene.transform;
-
-            // TODO: Learn maths
-            // var inversePose = App.Scene.transform.InverseTransformPose(headTransform.GetWorldPose());
             var data = new PlayerRigData
             {
-                HeadPosition = m_trans.position,
-                HeadRotation = m_trans.rotation,
+                HeadPosition = headRelativeToScene.translation,
+                HeadRotation = headRelativeToScene.rotation,
                 ExtraData = new ExtraData
                 {
                     OculusPlayerId = myOculusUserId
