@@ -16,6 +16,7 @@ using UnityEngine;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using Debug = UnityEngine.Debug;
 
 namespace TiltBrush
 {
@@ -135,18 +136,42 @@ namespace TiltBrush
     ///
     class FfmpegPipe
     {
+        // This value is also used by the build script
         public const string kFfmpegDir = "Support/ThirdParty/ffmpeg";
 
         public static string GetFfmpegExe()
         {
-            string exe = null;
+            // Editor, Mac builds and Windows builds have different paths
+            // between Application.dataPath and the actual executable
+            string traverseToApp = "";
+            if (Application.platform == RuntimePlatform.OSXPlayer) {
+                traverseToApp = "/../../";
+            }
+            else if (Application.platform == RuntimePlatform.WindowsPlayer) {
+                traverseToApp = "/../";
+            }
+            
+            string exeName = null;
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
-            exe = $"{kFfmpegDir}/bin/ffmpeg.exe";
+            exeName = "ffmpeg.exe";
 #endif
 #if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
-            exe = $"{kFfmpegDir}/bin/ffmpeg";
+            exeName = "ffmpeg";
 #endif
-            if (exe != null && File.Exists(exe)) { return exe; }
+            
+            string fullPath = Path.GetFullPath(
+                Path.Combine(
+                    Application.dataPath,
+                    traverseToApp,
+                    kFfmpegDir,
+                    "bin",
+                    exeName
+                )
+            );
+            Debug.Log($"ffmpeg path: {fullPath}");
+            if (exeName != null && File.Exists(fullPath)) return fullPath;
+            
+            // Only Android and Linux builds should hit this point
             return null;
         }
 
@@ -352,7 +377,7 @@ namespace TiltBrush
             string ffmpegExe = GetFfmpegExe();
             if (ffmpegExe == null)
             {
-                UnityEngine.Debug.LogError("ffmpeg.exe could not be found.");
+                UnityEngine.Debug.LogError("ffmpeg executable could not be found.");
                 return false;
             }
             m_encoderProc = new Process();
