@@ -89,14 +89,5 @@ namespace OpenBrush.Multiplayer
             var remoteTR = TrTransform.TR(m_PlayerHead.InterpolationTarget.position, m_PlayerHead.InterpolationTarget.rotation);
             App.Scene.AsScene[headTransform] = remoteTR;
         }
-
-#region RPCs
-        [Rpc(sources: RpcSources.All, targets: RpcTargets.All)]
-        public void RPC_SyncToSharedAnchor(string uuid)
-        {
-            Debug.Log("just about to run sync command!");
-            OculusMRController.m_Instance.RemoteSyncToAnchor(uuid);
-        }
-#endregion
     }
 }

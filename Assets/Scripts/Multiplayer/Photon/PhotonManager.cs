@@ -54,7 +54,7 @@ namespace OpenBrush.Multiplayer
             };
 
             var result = await m_Runner.StartGame(args);
-            
+
             return result.Ok;
         }
 
@@ -106,7 +106,7 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        #region Unused Photon Callbacks 
+#region Unused Photon Callbacks 
         public void OnConnectedToServer(NetworkRunner runner) { }
         public void OnPlayerLeft(NetworkRunner runner, PlayerRef player) { }
         public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason) { }
@@ -122,7 +122,6 @@ namespace OpenBrush.Multiplayer
         public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ArraySegment<byte> data) { }
         public void OnSceneLoadDone(NetworkRunner runner) { }
         public void OnSceneLoadStart(NetworkRunner runner) { }
-        #endregion
+#endregion
     }
 }
-
