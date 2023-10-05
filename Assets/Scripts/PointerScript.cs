@@ -58,7 +58,7 @@ namespace TiltBrush
         [SerializeField] private bool m_PreviewLineEnabled;
         [SerializeField] private float m_PreviewLineControlPointLife = 1.0f;
         [SerializeField] private float m_PreviewLineIdealLength = 1.0f;
-        [SerializeField] private GvrAudioSource[] m_AudioSources;
+        [SerializeField] private AudioSource[] m_AudioSources;
         [SerializeField] private Vector2 m_BrushAudioPitchVelocityRange;
         [SerializeField] private AudioClip m_BrushPlaybackAudioClip;
 
@@ -321,7 +321,7 @@ namespace TiltBrush
                 for (int i = 0; i < m_AudioSources.Length; i++)
                 {
                     // Adjust volume of each layer based on brush speed
-                    m_AudioSources[i].volume = LayerVolume(i, m_CurrentTotalVolume);
+                    // m_AudioSources[i].volume = LayerVolume(i, m_CurrentTotalVolume);
                     m_AudioSources[i].pitch += fPitchAdjust;
                 }
             }
