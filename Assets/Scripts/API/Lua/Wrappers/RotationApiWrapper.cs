@@ -92,7 +92,7 @@ namespace TiltBrush
 
         [LuaDocsDescription(@"Converts this rotation to one with the same orientation but with a magnitude of 1")]
         public Quaternion normalized => _Quaternion.normalized;
-        
+
         [LuaDocsDescription(@"Returns the Inverse of this rotation")]
         public Quaternion inverse => Quaternion.Inverse(_Quaternion);
 
@@ -191,7 +191,7 @@ namespace TiltBrush
         [LuaDocsParameter("to", "The target direction vector")]
         [LuaDocsReturnValue(@"Returns a Quaternion that represents the rotation")]
         public static Quaternion FromToRotation(Vector3 from, Vector3 to) => Quaternion.FromToRotation(from, to);
-        
+
         [LuaDocsDescription(@"Interpolates between a and b by t and normalizes the result afterwards. The parameter t is clamped to the range [0, 1]")]
         [LuaDocsExample(@"result = Rotation:Lerp(a, b, t)")]
         [LuaDocsParameter("a", "The first rotation")]
