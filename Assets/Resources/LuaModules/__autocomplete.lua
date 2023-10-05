@@ -1361,6 +1361,7 @@ function Random:Range(min, max) end
 ---@field anticlockwise Rotation | number[] A 90 degree anti-clockwise rotation in the z axis (roll)
 ---@field clockwise Rotation | number[] A 90 degree clockwise rotation in the z axis (roll)
 ---@field normalized Rotation | number[] Converts this rotation to one with the same orientation but with a magnitude of 1
+---@field inverse Rotation | number[] Returns the Inverse of this rotation
 ---@field angle number The angle in degrees of the angle-axis representation of this rotation
 ---@field axis Vector3 | number[] The axis part of the angle-axis representation of this rotation
 Rotation = {}
@@ -1403,10 +1404,6 @@ function Rotation:Dot(a, b) end
 ---@param to Vector3 The target direction vector
 ---@return Rotation # Returns a Quaternion that represents the rotation
 function Rotation:FromToRotation(from, to) end
-
----@param a Rotation The rotation to invert
----@return Rotation # Returns the inverse of the provided rotation
-function Rotation:Inverse(a) end
 
 ---@param a Rotation The first rotation
 ---@param b Rotation The second rotation
