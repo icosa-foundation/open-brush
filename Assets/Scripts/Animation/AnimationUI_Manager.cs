@@ -1346,6 +1346,7 @@ namespace TiltBrush.FrameAnimation
 
                         TiltBrush.PathT pathTime = new TiltBrush.PathT(canvasTime);
                         TiltBrush.PathT pathStart = new TiltBrush.PathT(0);
+                        TiltBrush.PathT pathOne = new TiltBrush.PathT(1);
 
 
                         // if (m_CurrentPathWidget.Path.RotationKnots.Count > 0)
@@ -1359,6 +1360,7 @@ namespace TiltBrush.FrameAnimation
                         Vector3 PathPosition = timeline[0].Frames[frameInt].animatedPath.gameObject.transform.position;
 
                         Vector3 Position = timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathTime) - timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathStart);
+                        Position = Position/App.Scene.Pose.scale;
                         Vector3 NegPosition = new Vector3(0f, 0f, 0f) - Position;
                         // Vector3.Subtract(
                         //     timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathStart), 
@@ -1367,6 +1369,14 @@ namespace TiltBrush.FrameAnimation
 
                         Debug.Log("POSITION MOV"); ;
                         Debug.Log(Position);
+
+                        Vector3 PositionTest = timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathOne) - timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathStart);
+                        PositionTest = PositionTest /App.Scene.Pose.scale;
+                        Debug.Log("POSITION STANDARD"); ;
+                        Debug.Log(PositionTest);
+
+                        Debug.Log("SCENE SCALE"); ;
+                        Debug.Log(App.Scene.Pose.scale);
 
                         TrTransform newPose = TrTransform.T(Position);
                         // TrTransform canvasPose = timeline[0].Frames[frameInt].canvas.Pose;
