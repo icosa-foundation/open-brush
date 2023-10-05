@@ -47,19 +47,14 @@ namespace OpenBrush.Multiplayer
             var args = new StartGameArgs()
             {
                 GameMode = GameMode.Shared,
-                SessionName = "MetaMRTest",
+                SessionName = "OpenBrushMultiplayerTest",
                 CustomPhotonAppSettings = appSettings,
                 SceneManager = m_Runner.gameObject.AddComponent<NetworkSceneManagerDefault>(),
                 Scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex,
             };
 
             var result = await m_Runner.StartGame(args);
-
-            // var rpcPrefab = Resources.Load("Multiplayer/Photon/PhotonRpcManager") as GameObject;
-            // var rpcObj = m_Runner.Spawn(rpcPrefab);
-            // m_RpcManager = rpcObj.GetComponent<PhotonRpcManager>();
-            // m_Runner.AddSimulationBehaviour(m_RpcManager);
-
+            
             return result.Ok;
         }
 
@@ -89,7 +84,7 @@ namespace OpenBrush.Multiplayer
 
         public async Task<bool> RpcSyncToSharedAnchor(string uuid)
         {
-            m_Runner.GetPlayerObject(m_Runner.LocalPlayer).GetComponent<PhotonPlayerRig>().RPC_SyncToSharedAnchor(uuid);
+            PhotonRPC.RPC_SyncToSharedAnchor(m_Runner, uuid);
             await Task.Yield();
             return true;
         }

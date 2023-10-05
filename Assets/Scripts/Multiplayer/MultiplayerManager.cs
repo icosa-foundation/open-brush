@@ -65,6 +65,8 @@ namespace OpenBrush.Multiplayer
 
             localPlayerJoined += OnLocalPlayerJoined;
             remotePlayerJoined += OnRemotePlayerJoined;
+
+            Connect();
         }
 
         public async void Connect()
@@ -83,14 +85,23 @@ namespace OpenBrush.Multiplayer
 
             // Transmit local player data relative to scene origin
             var headRelativeToScene = App.Scene.AsScene[App.VrSdk.GetVrCamera().transform];
+            var pointerRelativeToScene = App.Scene.AsScene[PointerManager.m_Instance.MainPointer.transform];
 
             var data = new PlayerRigData
             {
                 HeadPosition = headRelativeToScene.translation,
                 HeadRotation = headRelativeToScene.rotation,
+                ToolPosition = pointerRelativeToScene.translation,
+                ToolRotation = pointerRelativeToScene.rotation,
+                BrushData = new BrushData
+                {
+                    Color = PointerManager.m_Instance.MainPointer.GetCurrentColor(),
+                    Size = PointerManager.m_Instance.MainPointer.BrushSize01,
+                    Guid = BrushController.m_Instance.ActiveBrush.m_Guid.ToString(),                 
+                },
                 ExtraData = new ExtraData
                 {
-                    OculusPlayerId = myOculusUserId
+                    OculusPlayerId = myOculusUserId,
                 }
             };
 

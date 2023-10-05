@@ -13,28 +13,33 @@ namespace OpenBrush.Multiplayer
         public NetworkTransform m_PlayerHead;
         public NetworkTransform m_Left;
         public NetworkTransform m_Right;
+        public NetworkTransform m_Tool;
 
         // The offset transforms.
         [SerializeField] private Transform headTransform;
+
+        PointerScript transientPointer;
+
+        [Networked] private Color brushColor { get; set; }
+        [Networked] private float brushSize { get; set; }
+        [Networked] private NetworkString<_64> brushGuid { get; set; }
 
         [Networked] public ulong oculusPlayerId { get; set; } 
 
         private PlayerRigData transmitData;
 
-        public bool inverseScene;
-        public bool inverseHead;
-        public bool swapOrder;
-
         public void TransmitData(PlayerRigData data)
         {
             transmitData = data;
             oculusPlayerId = data.ExtraData.OculusPlayerId;
+
+            brushColor = data.BrushData.Color;
+            brushSize = data.BrushData.Size;
+            brushGuid = data.BrushData.Guid;
         }
 
         public PlayerRigData RecieveData()
         {
-            // We construct this dynamically to get the most up-to-date interpolation
-            // TODO: needed?
             var data = new PlayerRigData
             {
                 HeadPosition = m_PlayerHead.InterpolationTarget.position,
@@ -47,6 +52,17 @@ namespace OpenBrush.Multiplayer
             return data;
         }
 
+        public override void Spawned()
+        {
+            base.Spawned();
+            if(!Object.HasStateAuthority)
+            {
+                transientPointer = PointerManager.m_Instance.CreateRemotePointer();
+                transientPointer.SetBrush(BrushCatalog.m_Instance.DefaultBrush);
+                transientPointer.SetColor(App.BrushColor.CurrentColor);
+            }
+        }
+
         public override void FixedUpdateNetwork()
         {
             base.FixedUpdateNetwork();
@@ -55,6 +71,19 @@ namespace OpenBrush.Multiplayer
             {
                 m_PlayerHead.transform.position = transmitData.HeadPosition;
                 m_PlayerHead.transform.rotation = transmitData.HeadRotation;
+
+                m_Tool.transform.position = transmitData.ToolPosition;
+                m_Tool.transform.rotation = transmitData.ToolRotation;
+            }
+
+            else
+            {
+                var toolTR = TrTransform.TR(m_Tool.InterpolationTarget.position, m_Tool.InterpolationTarget.rotation);
+                App.Scene.AsScene[transientPointer.transform] = toolTR;
+
+                transientPointer.SetColor(brushColor);
+                transientPointer.SetBrush(BrushCatalog.m_Instance.GetBrush(new System.Guid(brushGuid.ToString())));
+                transientPointer.BrushSize01 = brushSize;
             }
 
             var remoteTR = TrTransform.TR(m_PlayerHead.InterpolationTarget.position, m_PlayerHead.InterpolationTarget.rotation);

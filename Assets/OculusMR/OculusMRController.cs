@@ -51,10 +51,7 @@ namespace TiltBrush
 
         public async void RemoteSyncToAnchor(string uuid)
         {
-            if (!host)
-            {
-                await m_SpatialAnchorManager.SyncToRemoteAnchor(uuid, OVRSpace.StorageLocation.Cloud);
-            }
+            await m_SpatialAnchorManager.SyncToRemoteAnchor(uuid, OVRSpace.StorageLocation.Cloud);
 
             if (!loadedScene)
             {
