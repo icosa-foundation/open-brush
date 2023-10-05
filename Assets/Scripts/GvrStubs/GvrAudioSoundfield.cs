@@ -2,35 +2,6 @@ using UnityEngine;
 
 public class GvrAudioSoundfield : MonoBehaviour
 {
-    
-    public void Awake()
-    {
-        if (GetComponent<ResonanceAudioSource>() != null) return;
-        var resAudioSoundfield = gameObject.AddComponent<ResonanceAudioSource>();
-        var audioSource = gameObject.GetComponent<AudioSource>();
-        if (audioSource == null)
-        {
-            audioSource = gameObject.AddComponent<AudioSource>();
-        }
-        
-        resAudioSoundfield.bypassRoomEffects = bypassRoomEffects;
-        resAudioSoundfield.gainDb = gainDb;
-        audioSource.playOnAwake = playOnAwake;
-        // See https://resonance-audio.github.io/resonance-audio/develop/unity/getting-started.html#gvraudiosoundfield
-        audioSource.clip = soundfieldClip0102;
-        // audioSource.clip = soundfieldClip0304; // TODO How do we handle this
-        audioSource.loop = soundfieldLoop;
-        audioSource.mute = soundfieldMute;
-        audioSource.pitch = soundfieldPitch;
-        audioSource.priority = soundfieldPriority;
-        audioSource.spatialBlend = soundfieldSpatialBlend;
-        audioSource.dopplerLevel = soundfieldDopplerLevel;
-        audioSource.volume = soundfieldVolume;
-        audioSource.rolloffMode = soundfieldRolloffMode;
-        audioSource.maxDistance = soundfieldMaxDistance;
-        audioSource.minDistance = soundfieldMinDistance;
-    }
-
     /// Denotes whether the room effects should be bypassed.
     public bool bypassRoomEffects = true;
 

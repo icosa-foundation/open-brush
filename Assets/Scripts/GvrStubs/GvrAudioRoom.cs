@@ -2,24 +2,6 @@ using UnityEngine;
 
 public class GvrAudioRoom : MonoBehaviour
 {
-    public void Awake()
-    {
-        if (GetComponent<ResonanceAudioRoom>() != null) return;
-        var resAudioRoom = gameObject.AddComponent<ResonanceAudioRoom>();
-        
-        resAudioRoom.leftWall = (ResonanceAudioRoomManager.SurfaceMaterial)leftWall;
-        resAudioRoom.rightWall = (ResonanceAudioRoomManager.SurfaceMaterial)rightWall;
-        resAudioRoom.floor = (ResonanceAudioRoomManager.SurfaceMaterial)floor;
-        resAudioRoom.ceiling = (ResonanceAudioRoomManager.SurfaceMaterial)ceiling;
-        resAudioRoom.backWall = (ResonanceAudioRoomManager.SurfaceMaterial)backWall;
-        resAudioRoom.frontWall = (ResonanceAudioRoomManager.SurfaceMaterial)frontWall;
-        resAudioRoom.reflectivity = reflectivity;
-        resAudioRoom.reverbGainDb = reverbGainDb;
-        resAudioRoom.reverbBrightness = reverbBrightness;
-        resAudioRoom.reverbTime = reverbTime;
-        resAudioRoom.size = size;
-    }
-    
     /// Material type that determines the acoustic properties of a room surface.
     public enum SurfaceMaterial
     {
