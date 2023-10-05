@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 
 public class ReplaceGvr : Editor
 {
-    [MenuItem("Custom/ReplaceGvr")]
+    [MenuItem("Open Brush/Replace GoogleVR Audio")]
     public static void Run()
     {
         // Iterate through all scenes
@@ -14,7 +14,7 @@ public class ReplaceGvr : Editor
             var scene = SceneManager.GetSceneAt(i);
             EditorSceneManager.OpenScene(scene.path);
             
-            foreach (GameObject obj in GameObject.FindObjectsOfType<GameObject>())
+            foreach (GameObject obj in FindObjectsOfType<GameObject>(includeInactive: true))
             {
                 FixAllGvr(obj);
             }
@@ -32,7 +32,7 @@ public class ReplaceGvr : Editor
     
     private static void IteratePrefab(Transform transform)
     {
-        FixGvrSource(transform.gameObject);
+        FixAllGvr(transform.gameObject);
         
         foreach (Transform child in transform)
         {
@@ -81,7 +81,6 @@ public class ReplaceGvr : Editor
         var gvr = go.GetComponent<GvrAudioRoom>();
         if (gvr == null) return;
         
-        
 #if RESONANCE_AUDIO_PRESENT
         if (go.GetComponent<ResonanceAudioRoom>() != null) return;
         var resAudioRoom = go.AddComponent<ResonanceAudioRoom>();
@@ -104,17 +103,27 @@ public class ReplaceGvr : Editor
     {
         var gvr = go.GetComponent<GvrAudioListener>();
         if (gvr == null) return;
+
+#if RESONANCE_AUDIO_PRESENT
+
+        // Remove non-resonance audio listener
+        var audioListener = go.GetComponent<AudioListener>();
+        Destroy(audioListener);
         
+        if (go.GetComponent<ResonanceAudioListener>() != null) return;
+        var resAudioListener = go.AddComponent<ResonanceAudioListener>();
+        resAudioListener.occlusionMask = gvr.occlusionMask;
+        resAudioListener.globalGainDb = gvr.globalGainDb;
+        // resAudioListener.??? = gvr.quality;
+        return;
+#endif
+
         var audioListener = go.GetComponent<AudioListener>();
         if (audioListener == null)
         {
             go.AddComponent<AudioListener>();
         }
         
-#if RESONANCE_AUDIO_PRESENT
-        if (go.GetComponent<ResonanceAudioListener>() != null) return;
-        var resAudioListener = go.AddComponent<ResonanceAudioListener>();
-#endif
     }
     
     public static void FixGvrSource(GameObject go)
@@ -125,23 +134,11 @@ public class ReplaceGvr : Editor
         var audioSource = go.GetComponent<AudioSource>();
         if (audioSource == null)
         {
-            go.AddComponent<AudioSource>();
+            audioSource = go.AddComponent<AudioSource>();
         }
-    
-#if RESONANCE_AUDIO_PRESENT
-        if (go.GetComponent<ResonanceAudioSource>() != null) return;
-        var resAudioSource = go.AddComponent<ResonanceAudioSource>();
-        
+
         audioSource.bypassEffects = gvr.bypassRoomEffects;
         audioSource.bypassListenerEffects = gvr.bypassRoomEffects;
-        resAudioSource.directivityAlpha = gvr.directivityAlpha;
-        resAudioSource.directivitySharpness = gvr.directivitySharpness;
-        resAudioSource.listenerDirectivityAlpha = gvr.listenerDirectivityAlpha;
-        resAudioSource.listenerDirectivitySharpness = gvr.listenerDirectivitySharpness;
-        resAudioSource.gainDb = gvr.gainDb;
-        resAudioSource.occlusionEnabled = gvr.occlusionEnabled;
-        audioSource.playOnAwake = gvr.playOnAwake;
-        // resAudioSource.disableOnStop = gvr.disableOnStop;
         audioSource.clip = gvr.sourceClip;
         audioSource.loop = gvr.sourceLoop;
         audioSource.mute = gvr.sourceMute;
@@ -154,6 +151,19 @@ public class ReplaceGvr : Editor
         audioSource.rolloffMode = gvr.sourceRolloffMode;
         audioSource.maxDistance = gvr.sourceMaxDistance;
         audioSource.minDistance = gvr.sourceMinDistance;
+
+#if RESONANCE_AUDIO_PRESENT
+        if (go.GetComponent<ResonanceAudioSource>() != null) return;
+        var resAudioSource = go.AddComponent<ResonanceAudioSource>();
+        
+        resAudioSource.directivityAlpha = gvr.directivityAlpha;
+        resAudioSource.directivitySharpness = gvr.directivitySharpness;
+        resAudioSource.listenerDirectivityAlpha = gvr.listenerDirectivityAlpha;
+        resAudioSource.listenerDirectivitySharpness = gvr.listenerDirectivitySharpness;
+        resAudioSource.gainDb = gvr.gainDb;
+        resAudioSource.occlusionEnabled = gvr.occlusionEnabled;
+        audioSource.playOnAwake = gvr.playOnAwake;
+        // resAudioSource.disableOnStop = gvr.disableOnStop;
         // resAudioSource.hrtfEnabled = gvr.hrtfEnabled;
 #endif
     }
