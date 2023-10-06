@@ -5,6 +5,10 @@ using UnityEngine.SceneManagement;
 
 public class ReplaceGvr : Editor
 {
+
+    // Only used for console logging
+    private static string currentSceneOrPrefabName;
+    
     [MenuItem("Open Brush/Replace GoogleVR Audio")]
     public static void Run()
     {
@@ -14,6 +18,7 @@ public class ReplaceGvr : Editor
             var scene = SceneManager.GetSceneAt(i);
             EditorSceneManager.OpenScene(scene.path);
             
+            currentSceneOrPrefabName = scene.name;
             foreach (GameObject obj in FindObjectsOfType<GameObject>(includeInactive: true))
             {
                 FixAllGvr(obj);
@@ -32,6 +37,7 @@ public class ReplaceGvr : Editor
     
     private static void IteratePrefab(Transform transform)
     {
+        currentSceneOrPrefabName = transform.name;
         FixAllGvr(transform.gameObject);
         
         foreach (Transform child in transform)
@@ -52,38 +58,25 @@ public class ReplaceGvr : Editor
     {
         var gvr = go.GetComponent<GvrAudioSoundfield>();
         if (gvr == null) return;
-        
-#if RESONANCE_AUDIO_PRESENT
-        if (go.GetComponent<ResonanceAudioSource>() != null) return;
-        var resAudioSoundfield = go.AddComponent<ResonanceAudioSource>();
 
-        resAudioSoundfield.bypassRoomEffects = gvr.bypassRoomEffects;
-        resAudioSoundfield.gainDb = gvr.gainDb;
-        audioSource.playOnAwake = gvr.playOnAwake;
-        // See https://resonance-audio.github.io/resonance-audio/develop/unity/getting-started.html#gvraudiosoundfield
-        audioSource.clip = gvr.soundfieldClip0102;
-        // audioSource.clip = gvr.soundfieldClip0304; // TODO How do we handle this
-        audioSource.loop = gvr.soundfieldLoop;
-        audioSource.mute = gvr.soundfieldMute;
-        audioSource.pitch = gvr.soundfieldPitch;
-        audioSource.priority = gvr.soundfieldPriority;
-        audioSource.spatialBlend = gvr.soundfieldSpatialBlend;
-        audioSource.dopplerLevel = gvr.soundfieldDopplerLevel;
-        audioSource.volume = gvr.soundfieldVolume;
-        audioSource.rolloffMode = gvr.soundfieldRolloffMode;
-        audioSource.maxDistance = gvr.soundfieldMaxDistance;
-        audioSource.minDistance = gvr.soundfieldMinDistance;
-#endif
+        if (go.GetComponent<ResonanceAudioSource>() == null)
+        {
+            go.AddComponent<ResonanceAudioSource>();
+            Debug.Log($"Added ResonanceAudioSource to {currentSceneOrPrefabName}.{go.name}");
+        }
     }
 
     public static void FixGvrRoom(GameObject go)
     {
         var gvr = go.GetComponent<GvrAudioRoom>();
         if (gvr == null) return;
-        
-#if RESONANCE_AUDIO_PRESENT
-        if (go.GetComponent<ResonanceAudioRoom>() != null) return;
-        var resAudioRoom = go.AddComponent<ResonanceAudioRoom>();
+
+        ResonanceAudioRoom resAudioRoom = null;
+        if (go.GetComponent<ResonanceAudioRoom>() == null)
+        {
+            resAudioRoom = go.AddComponent<ResonanceAudioRoom>();    
+            Debug.Log($"Added ResonanceAudioRoom to {currentSceneOrPrefabName}.{go.name}");
+        }
 
         resAudioRoom.leftWall = (ResonanceAudioRoomManager.SurfaceMaterial)gvr.leftWall;
         resAudioRoom.rightWall = (ResonanceAudioRoomManager.SurfaceMaterial)gvr.rightWall;
@@ -96,7 +89,6 @@ public class ReplaceGvr : Editor
         resAudioRoom.reverbBrightness = gvr.reverbBrightness;
         resAudioRoom.reverbTime = gvr.reverbTime;
         resAudioRoom.size = gvr.size;
-#endif
     }
 
     public static void FixGvrListener(GameObject go)
@@ -104,26 +96,16 @@ public class ReplaceGvr : Editor
         var gvr = go.GetComponent<GvrAudioListener>();
         if (gvr == null) return;
 
-#if RESONANCE_AUDIO_PRESENT
-
-        // Remove non-resonance audio listener
-        var audioListener = go.GetComponent<AudioListener>();
-        Destroy(audioListener);
+        ResonanceAudioListener resAudioListener = null;
+        if (go.GetComponent<ResonanceAudioListener>() == null)
+        {
+            resAudioListener = go.AddComponent<ResonanceAudioListener>();
+            Debug.Log($"Added ResonanceAudioListener to {currentSceneOrPrefabName}.{go.name}");
+        }
         
-        if (go.GetComponent<ResonanceAudioListener>() != null) return;
-        var resAudioListener = go.AddComponent<ResonanceAudioListener>();
         resAudioListener.occlusionMask = gvr.occlusionMask;
         resAudioListener.globalGainDb = gvr.globalGainDb;
         // resAudioListener.??? = gvr.quality;
-        return;
-#endif
-
-        var audioListener = go.GetComponent<AudioListener>();
-        if (audioListener == null)
-        {
-            go.AddComponent<AudioListener>();
-        }
-        
     }
     
     public static void FixGvrSource(GameObject go)
@@ -135,6 +117,7 @@ public class ReplaceGvr : Editor
         if (audioSource == null)
         {
             audioSource = go.AddComponent<AudioSource>();
+            Debug.Log($"Added AudioSource to {currentSceneOrPrefabName}.{go.name}");
         }
 
         audioSource.bypassEffects = gvr.bypassRoomEffects;
@@ -152,9 +135,12 @@ public class ReplaceGvr : Editor
         audioSource.maxDistance = gvr.sourceMaxDistance;
         audioSource.minDistance = gvr.sourceMinDistance;
 
-#if RESONANCE_AUDIO_PRESENT
-        if (go.GetComponent<ResonanceAudioSource>() != null) return;
-        var resAudioSource = go.AddComponent<ResonanceAudioSource>();
+        ResonanceAudioSource resAudioSource = null;
+        if (go.GetComponent<ResonanceAudioSource>() == null)
+        {
+            resAudioSource = go.AddComponent<ResonanceAudioSource>();
+            Debug.Log($"Added ResonanceAudioSource to {currentSceneOrPrefabName}.{go.name}");
+        }
         
         resAudioSource.directivityAlpha = gvr.directivityAlpha;
         resAudioSource.directivitySharpness = gvr.directivitySharpness;
@@ -165,6 +151,5 @@ public class ReplaceGvr : Editor
         audioSource.playOnAwake = gvr.playOnAwake;
         // resAudioSource.disableOnStop = gvr.disableOnStop;
         // resAudioSource.hrtfEnabled = gvr.hrtfEnabled;
-#endif
     }
 }
