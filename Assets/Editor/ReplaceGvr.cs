@@ -8,7 +8,7 @@ public class ReplaceGvr : Editor
 
     // Only used for console logging
     private static string currentSceneOrPrefabName;
-    
+
     [MenuItem("Open Brush/Replace GoogleVR Audio")]
     public static void Run()
     {
@@ -17,7 +17,7 @@ public class ReplaceGvr : Editor
         {
             var scene = SceneManager.GetSceneAt(i);
             EditorSceneManager.OpenScene(scene.path);
-            
+
             currentSceneOrPrefabName = scene.name;
             foreach (GameObject obj in FindObjectsOfType<GameObject>(includeInactive: true))
             {
@@ -34,12 +34,12 @@ public class ReplaceGvr : Editor
             IteratePrefab(prefab.transform);
         }
     }
-    
+
     private static void IteratePrefab(Transform transform)
     {
         currentSceneOrPrefabName = transform.name;
         FixAllGvr(transform.gameObject);
-        
+
         foreach (Transform child in transform)
         {
             IteratePrefab(child);
@@ -74,7 +74,7 @@ public class ReplaceGvr : Editor
         ResonanceAudioRoom resAudioRoom = null;
         if (go.GetComponent<ResonanceAudioRoom>() == null)
         {
-            resAudioRoom = go.AddComponent<ResonanceAudioRoom>();    
+            resAudioRoom = go.AddComponent<ResonanceAudioRoom>();
             Debug.Log($"Added ResonanceAudioRoom to {currentSceneOrPrefabName}.{go.name}");
         }
 
@@ -102,17 +102,17 @@ public class ReplaceGvr : Editor
             resAudioListener = go.AddComponent<ResonanceAudioListener>();
             Debug.Log($"Added ResonanceAudioListener to {currentSceneOrPrefabName}.{go.name}");
         }
-        
+
         resAudioListener.occlusionMask = gvr.occlusionMask;
         resAudioListener.globalGainDb = gvr.globalGainDb;
         // resAudioListener.??? = gvr.quality;
     }
-    
+
     public static void FixGvrSource(GameObject go)
     {
         var gvr = go.GetComponent<GvrAudioSource>();
         if (gvr == null) return;
-        
+
         var audioSource = go.GetComponent<AudioSource>();
         if (audioSource == null)
         {
@@ -141,7 +141,7 @@ public class ReplaceGvr : Editor
             resAudioSource = go.AddComponent<ResonanceAudioSource>();
             Debug.Log($"Added ResonanceAudioSource to {currentSceneOrPrefabName}.{go.name}");
         }
-        
+
         resAudioSource.directivityAlpha = gvr.directivityAlpha;
         resAudioSource.directivitySharpness = gvr.directivitySharpness;
         resAudioSource.listenerDirectivityAlpha = gvr.listenerDirectivityAlpha;

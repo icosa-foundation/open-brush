@@ -4,7 +4,7 @@ using UnityEngine.Audio;
 
 public class GvrAudioSource : MonoBehaviour
 {
-    
+
     /// Denotes whether the room effects should be bypassed.
     public bool bypassRoomEffects = false;
 
