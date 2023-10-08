@@ -14,7 +14,7 @@ function Main()
     for i = 1.0, copies do
         angle = (App.time * speed) + (360 * (i / copies))
         position2d = Vector2:PointOnCircle(angle) * radius
-        pointers:Insert(Transform:New(position:OnZ()))
+        pointers:Insert(Transform:New(position2d:OnZ()))
     end
     return pointers
 end
