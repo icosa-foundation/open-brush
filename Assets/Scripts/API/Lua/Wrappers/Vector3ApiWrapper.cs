@@ -223,12 +223,12 @@ namespace TiltBrush
         public static Vector3 zero => Vector3.zero;
 
         // Operators
-        
+
         public static Vector3 operator +(Vector3ApiWrapper a, Vector3ApiWrapper b) => a._Vector3 + b._Vector3;
         public static Vector3 operator -(Vector3ApiWrapper a, Vector3ApiWrapper b) => a._Vector3 - b._Vector3;
         public static Vector3 operator *(Vector3ApiWrapper a, float b) => a._Vector3 * b;
         public static Vector3 operator /(Vector3ApiWrapper a, float b) => a._Vector3 / b;
-        
+
         [LuaDocsDescription("Adds two vectors")]
         [LuaDocsExample("result = myVector:Add(secondVector)")]
         [LuaDocsParameter("other", "The other vector")]
@@ -274,7 +274,7 @@ namespace TiltBrush
         [LuaDocsExample(@"if myVector:Equals(Vector3.zero) then print(""Vector is zero"") end")]
         [LuaDocsParameter("other", "The other vector")]
         public bool Equals(Vector3ApiWrapper other) => Equals(other._Vector3);
-        
+
         public override bool Equals(System.Object obj)
         {
             var other = obj as Vector3ApiWrapper;

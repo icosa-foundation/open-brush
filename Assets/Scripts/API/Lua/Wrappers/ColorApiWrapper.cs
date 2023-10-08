@@ -184,9 +184,9 @@ namespace TiltBrush
 
         [LuaDocsDescription("The color yellow")]
         public static Color yellow => Color.yellow;
-        
+
         // Operators
-        
+
         public static Color operator +(ColorApiWrapper a, ColorApiWrapper b) => a._Color + b._Color;
         public static Color operator -(ColorApiWrapper a, ColorApiWrapper b) => a._Color - b._Color;
         public static Color operator *(ColorApiWrapper a, ColorApiWrapper b) => a._Color * b._Color;
@@ -245,7 +245,7 @@ namespace TiltBrush
         [LuaDocsParameter("other", "The color to compare")]
         [LuaDocsReturnValue("true if this color is equal to the specified color; otherwise, false")]
         public bool Equals(ColorApiWrapper other) => Equals(other._Color);
-        
+
         public override bool Equals(Object obj)
         {
             var other = obj as ColorApiWrapper;
