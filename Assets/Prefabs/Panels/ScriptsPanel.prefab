@@ -1173,7 +1173,7 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_ToggleOnDescription: Distable Background Scripts
+  m_ToggleOnDescription: Disable Background Scripts
   m_LocalizedToggleOnDescription:
     m_TableReference:
       m_TableCollectionName: 
