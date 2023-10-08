@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using MoonSharp.Interpreter;
 using UnityEngine;
+using Object = System.Object;
 
 namespace TiltBrush
 {
@@ -182,6 +184,13 @@ namespace TiltBrush
 
         [LuaDocsDescription("The color yellow")]
         public static Color yellow => Color.yellow;
+        
+        // Operators
+        
+        public static Color operator +(ColorApiWrapper a, ColorApiWrapper b) => a._Color + b._Color;
+        public static Color operator -(ColorApiWrapper a, ColorApiWrapper b) => a._Color - b._Color;
+        public static Color operator *(ColorApiWrapper a, ColorApiWrapper b) => a._Color * b._Color;
+        public static Color operator /(ColorApiWrapper a, float b) => a._Color / b;
 
         [LuaDocsDescription("Adds the specified color to this color")]
         [LuaDocsExample("newColor = color1:Add(color2)")]
@@ -235,7 +244,14 @@ namespace TiltBrush
         [LuaDocsExample("if color1:Equals(color2) then print(\"colors are the same\") end")]
         [LuaDocsParameter("other", "The color to compare")]
         [LuaDocsReturnValue("true if this color is equal to the specified color; otherwise, false")]
-        public bool Equals(Color other) => _Color == other;
+        public bool Equals(ColorApiWrapper other) => Equals(other._Color);
+        
+        public override bool Equals(Object obj)
+        {
+            var other = obj as ColorApiWrapper;
+            return other != null && _Color == other._Color;
+        }
+        public override int GetHashCode() => 0; // Always return 0. Dicts and HashSets will have to use Equals to compare
 
         [LuaDocsDescription("Determines whether this color is equal to the specified RGB values")]
         [LuaDocsExample("if color1:Equals(1, 0, 0) then print(\"the color is red\") end")]
@@ -249,7 +265,7 @@ namespace TiltBrush
         [LuaDocsExample("if color1:NotEquals(color2) then print(\"colors are different\") end")]
         [LuaDocsParameter("other", "The color to compare")]
         [LuaDocsReturnValue("true if this color is not equal to the specified color; otherwise, false")]
-        public bool NotEquals(Color other) => _Color != other;
+        public bool NotEquals(ColorApiWrapper other) => !Equals(other);
 
         [LuaDocsDescription("Determines whether this color is not equal to the specified RGB values")]
         [LuaDocsExample("if color1:NotEquals(0, 1, 0) then print(\"color is not green\") end")]

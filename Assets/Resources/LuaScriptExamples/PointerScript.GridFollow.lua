@@ -25,7 +25,7 @@ function Main()
         if framesSinceChange > framesBetweenChanges then
 
             -- A vector from the actual Brush.Position to the calculated one used for drawing
-            vector = Brush.position:Subtract(currentPosition)
+            vector = Brush.position - currentPosition
 
             -- Store whether the vector is positive or negative in each axis
             signs = Vector3:New(
@@ -62,8 +62,8 @@ function Main()
         end
 
         -- Shift the brush position based on the value calculated above
-        currentPosition = currentPosition:Add(vector)
-        
+        currentPosition = currentPosition + vector
+
         return Transform:New(currentPosition, currentRotation)
 
     end

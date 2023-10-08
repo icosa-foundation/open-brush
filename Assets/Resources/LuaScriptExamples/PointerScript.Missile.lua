@@ -19,7 +19,7 @@ function Main()
 
         --Similar to the LaserBeam PointerScript except we can change the direction during "flight"
         direction = Brush.direction
-        currentPos = currentPos:Add(direction:Multiply(speed))
+        currentPos = currentPos + (direction * speed)
         return Transform:New(currentPos, currentRotation)
 
     end

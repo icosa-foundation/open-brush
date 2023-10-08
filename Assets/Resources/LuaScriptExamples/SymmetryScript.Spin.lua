@@ -13,8 +13,8 @@ function Main()
     pointers = Path:New()
     for i = 1.0, copies do
         angle = (App.time * speed) + (360 * (i / copies))
-        position = Vector2:PointOnCircle(angle):Multiply(radius):OnZ()
-        pointers:Insert(Transform:New(position))
+        position2d = Vector2:PointOnCircle(angle) * radius
+        pointers:Insert(Transform:New(position:OnZ()))
     end
     return pointers
 end

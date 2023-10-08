@@ -203,6 +203,12 @@ namespace TiltBrush
         public static Vector2 zero => Vector2.zero;
 
         // Operators
+        
+        public static Vector2 operator +(Vector2ApiWrapper a, Vector2ApiWrapper b) => a._Vector2 + b._Vector2;
+        public static Vector2 operator -(Vector2ApiWrapper a, Vector2ApiWrapper b) => a._Vector2 - b._Vector2;
+        public static Vector2 operator *(Vector2ApiWrapper a, float b) => a._Vector2 * b;
+        public static Vector2 operator /(Vector2ApiWrapper a, float b) => a._Vector2 / b;
+
 
         [LuaDocsDescription("Adds this vector to another")]
         [LuaDocsExample("result = myVector:Add(otherVector)")]
@@ -214,12 +220,13 @@ namespace TiltBrush
         [LuaDocsParameter("x", "The x value")]
         [LuaDocsParameter("y", "The y value")]
         public Vector2 Add(float x, float y) => _Vector2 + new Vector2(x, y);
-
+        
         [LuaDocsDescription("Subtracts another vector from this one")]
         [LuaDocsExample("result = myVector:Subtract(otherVector)")]
         [LuaDocsParameter("other", "The other vector")]
         public Vector2 Subtract(Vector2 other) => _Vector2 - other;
 
+        
         [LuaDocsDescription("Subtracts the given x and y values from this vector")]
         [LuaDocsExample("result = myVector:Subtract(2, 3)")]
         [LuaDocsParameter("x", "The x value")]
@@ -250,7 +257,14 @@ namespace TiltBrush
         [LuaDocsDescription("Is this vector equal to another?")]
         [LuaDocsExample(@"if myVector:Equals(Vector2.zero) then print(""Vector is zero"") end")]
         [LuaDocsParameter("other", "The other vector")]
-        public bool Equals(Vector2 other) => _Vector2 == other;
+        public bool Equals(Vector2ApiWrapper other) => Equals(other._Vector2);
+        
+        public override bool Equals(System.Object obj)
+        {
+            var other = obj as Vector2ApiWrapper;
+            return other != null && _Vector2 == other._Vector2;
+        }
+        public override int GetHashCode() => 0; // Always return 0. Lookups will have to use Equals to compare
 
         [LuaDocsDescription("Is this vector equal to the given x and y values?")]
         [LuaDocsExample(@"if myVector:Equals(1, 2) then print(""Vector is 1,2"") end")]
@@ -268,6 +282,7 @@ namespace TiltBrush
         [LuaDocsParameter("x", "The x value")]
         [LuaDocsParameter("y", "The y value")]
         public bool NotEquals(float x, float y) => _Vector2 != new Vector2(x, y);
+        
     }
 
 }

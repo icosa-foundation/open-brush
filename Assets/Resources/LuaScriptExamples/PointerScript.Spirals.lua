@@ -13,8 +13,8 @@ function Main()
 
         currentRadius = radius * Brush.timeSincePressed
         angle = Brush.timeSincePressed * speed
-        position = Vector2:PointOnCircle(angle):Multiply(currentRadius):OnZ()
-        return Transform:New(position, Brush.rotation)
+        position2d = Vector2:PointOnCircle(angle) * currentRadius
+        return Transform:New(position2d:OnZ(), Brush.rotation)
 
     end
 

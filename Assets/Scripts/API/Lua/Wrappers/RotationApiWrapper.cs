@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using MoonSharp.Interpreter;
 using UnityEngine;
 
@@ -252,6 +251,9 @@ namespace TiltBrush
         public static Quaternion SlerpUnclamped(Quaternion a, Quaternion b, float t) => Quaternion.SlerpUnclamped(a, b, t);
 
         // Operators
+        
+        public static Quaternion operator *(RotationApiWrapper a, RotationApiWrapper b) => a._Quaternion * b._Quaternion;
+        
         [LuaDocsDescription(@"Combines two rotations")]
         [LuaDocsExample(@"result = myRotation:Multiply(anotherRotation)")]
         [LuaDocsParameter("other", "The other rotation")]
@@ -262,6 +264,27 @@ namespace TiltBrush
         [LuaDocsExample(@"if myRotation:Equals(otherRotation) then print(""Equal!"") end")]
         [LuaDocsParameter("other", "The rotation to comapre to")]
         [LuaDocsReturnValue(@"True if they are the same as each other")]
-        public bool Equals(Quaternion other) => _Quaternion == other;
+        public bool Equals(RotationApiWrapper other) => Equals(other._Quaternion);
+        
+        [LuaDocsDescription("Determines whether this rotation is not equal to the specified rotation")]
+        [LuaDocsExample("if myRotation:NotEquals(rot2) then print(\"rotations are different\") end")]
+        [LuaDocsParameter("other", "The rotation to compare")]
+        [LuaDocsReturnValue("true if this rotation is not equal to the specified rotation; otherwise, false")]
+        public bool NotEquals(RotationApiWrapper other) => !Equals(other);
+        
+        [LuaDocsDescription("Determines whether this rotation is equal to the specified xyz values")]
+        [LuaDocsExample("if myRotation:Equals(0, 90, 0) then print(\"90 degree turn to the right\") end")]
+        [LuaDocsParameter("x", "The x value to compare")]
+        [LuaDocsParameter("y", "The y value to compare")]
+        [LuaDocsParameter("z", "The z value to compare")]
+        [LuaDocsReturnValue("true if this rotation is equal to the specified xyz values; otherwise, false")]
+        public bool Equals(float x, float y, float z) => _Quaternion == Quaternion.Euler(x, y, z);
+        
+        public override bool Equals(System.Object obj)
+        {
+            var other = obj as RotationApiWrapper;
+            return other != null && _Quaternion == other._Quaternion;
+        }
+        public override int GetHashCode() => 0; // Always return 0. Lookups will have to use Equals to compare
     }
 }

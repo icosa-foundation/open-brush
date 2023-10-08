@@ -32,11 +32,12 @@ function Main()
         end
 
         -- Wandering path based on a noise field
-        currentPos = currentPos:Add(
-            speed * (-0.5 + Math:PerlinNoise(currentPos.y, currentPos.z)),
-            speed * (-0.5 + Math:PerlinNoise(currentPos.x, currentPos.z)),
-            speed * (-0.5 + Math:PerlinNoise(currentPos.x, currentPos.y))
-        )
+        currentPos = currentPos +
+            Vector3:New(
+                speed * (-0.5 + Math:PerlinNoise(currentPos.y, currentPos.z)),
+                speed * (-0.5 + Math:PerlinNoise(currentPos.x, currentPos.z)),
+                speed * (-0.5 + Math:PerlinNoise(currentPos.x, currentPos.y))
+            )
 
         return Transform:New(currentPos, Brush.rotation)
 

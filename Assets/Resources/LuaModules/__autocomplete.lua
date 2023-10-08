@@ -1452,6 +1452,10 @@ function Rotation:SlerpUnclamped(a, b, t) end
 ---@return Rotation # The rotation that represents applying both rotations in turn
 function Rotation:Multiply(other) end
 
+---@param other Rotation The rotation to compare
+---@return boolean # true if this rotation is not equal to the specified rotation; otherwise, false
+function Rotation:NotEquals(other) end
+
 
 
 ---@class Selection

@@ -185,15 +185,25 @@ namespace TiltBrush
         public static TrTransform identity => TrTransform.identity;
 
         // Operators
+        
+        public static TrTransform operator *(TransformApiWrapper a, TransformApiWrapper b) => a._TrTransform * b._TrTransform;
+        
         [LuaDocsDescription(@"Combines another transform with this one (Does the same as ""TransformBy"")")]
         [LuaDocsExample("newTransform = myTransform:Multiply(Transform.up)")]
         [LuaDocsParameter("other", "The Transform to apply to this one")]
         public TrTransform Multiply(TrTransform other) => _TrTransform * other;
-
+        
         [LuaDocsDescription("Is this transform equal to another?")]
         [LuaDocsExample(@"if myTransform:Equals(Transform.up) then print(""Equal to Transform.up"")")]
         [LuaDocsParameter("other", "The Transform to compare to this one")]
-        public bool Equals(TrTransform other) => _TrTransform == other;
+        public bool Equals(TransformApiWrapper other) => Equals(other._TrTransform);
+        
+        public override bool Equals(System.Object obj)
+        {
+            var other = obj as TransformApiWrapper;
+            return other != null && _TrTransform == other._TrTransform;
+        }
+        public override int GetHashCode() => 0; // Always return 0. Lookups will have to use Equals to compare
 
         [LuaDocsDescription("Interpolates between two transforms")]
         [LuaDocsExample("newTransform = Transform:Lerp(transformA, transformB, 0.25)")]
