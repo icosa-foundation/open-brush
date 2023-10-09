@@ -106,6 +106,7 @@ namespace TiltBrush
         // The layout should match the most commonly-seen layout in the binary file.
         // See SketchMemoryScript.ReadMemory.
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [System.Serializable]
         public struct ControlPoint
         {
             public Vector3 m_Pos;

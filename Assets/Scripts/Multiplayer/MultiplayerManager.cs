@@ -40,6 +40,7 @@ namespace OpenBrush.Multiplayer
 
         void Start()
         {
+
 #if OCULUS_SUPPORTED
             OVRPlatform.Users.GetLoggedInUser().OnComplete((msg) => {
                 if (!msg.IsError)
@@ -65,8 +66,18 @@ namespace OpenBrush.Multiplayer
 
             localPlayerJoined += OnLocalPlayerJoined;
             remotePlayerJoined += OnRemotePlayerJoined;
+            SketchMemoryScript.m_Instance.CommandPerformed += OnCommandPerformed;
+            SketchMemoryScript.m_Instance.CommandUndone += OnCommandUndone;
 
             Connect();
+        }
+
+        void OnDestroy()
+        {
+            localPlayerJoined -= OnLocalPlayerJoined;
+            remotePlayerJoined -= OnRemotePlayerJoined;
+            SketchMemoryScript.m_Instance.CommandPerformed -= OnCommandPerformed;
+            SketchMemoryScript.m_Instance.CommandUndone -= OnCommandUndone;            
         }
 
         public async void Connect()
@@ -76,7 +87,8 @@ namespace OpenBrush.Multiplayer
 
         void Update()
         {
-            if(m_Manager == null)
+
+            if(App.CurrentState != App.AppState.Standard || m_Manager == null)
             {
                 return;
             }
@@ -142,6 +154,20 @@ namespace OpenBrush.Multiplayer
             Debug.Log("Adding new player to track.");
             m_RemotePlayers.Add(playerData);
         }
+
+        private void OnCommandPerformed(BaseCommand command)
+        {
+            Debug.Log($"Command performed: {command.GetType()}");
+            m_Manager.PerformCommand(command);
+        }
+
+        private void OnCommandUndone(BaseCommand command)
+        {
+            Debug.Log($"Command undone: {command.GetType()}");
+            m_Manager.UndoCommand(command);
+        }
+
+
 
         async void ShareAnchors()
         {

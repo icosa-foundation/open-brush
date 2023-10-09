@@ -82,11 +82,46 @@ namespace OpenBrush.Multiplayer
             }
         }
 
+        public static IEnumerable<string> SplitByLength(string str, int maxLength)
+        {
+            for (int index = 0; index < str.Length; index += maxLength) {
+                yield return str.Substring(index, Math.Min(maxLength, str.Length - index));
+            }
+        }
+
+        public async Task<bool> PerformCommand(BaseCommand command)
+        {
+                string data = command.Serialize();
+                var split = SplitByLength(data, short.MaxValue/4);
+                Debug.Log(split.ToArray().Length);
+                var guid = (command as BrushStrokeCommand).m_Stroke.m_BrushGuid.ToString();
+                PhotonRPC.RPC_PerformCommand(m_Runner, command.GetType().ToString(), guid, split.ToArray());
+            
+            await Task.Yield();
+            return true;
+        }
+
+        public async Task<bool> UndoCommand(BaseCommand command)
+        {
+            if(command is BrushStrokeCommand)
+            {
+                PhotonRPC.RPC_UndoCommand(m_Runner, command.GetType().ToString(), new byte[] {});
+            }
+            await Task.Yield();
+            return true;
+        }
+
         public async Task<bool> RpcSyncToSharedAnchor(string uuid)
         {
             PhotonRPC.RPC_SyncToSharedAnchor(m_Runner, uuid);
             await Task.Yield();
             return true;
+        }
+
+        public void OnConnectedToServer(NetworkRunner runner)
+        {
+            var rpc = m_Runner.gameObject.AddComponent<PhotonRPC>();
+            m_Runner.AddSimulationBehaviour(rpc);
         }
 
         public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
@@ -97,6 +132,7 @@ namespace OpenBrush.Multiplayer
                 var playerObj = m_Runner.Spawn(playerPrefab, inputAuthority: m_Runner.LocalPlayer);
                 var playerPhoton = playerObj.GetComponent<PhotonPlayerRig>();
                 m_Runner.SetPlayerObject(m_Runner.LocalPlayer, playerObj);
+                
 
                 m_Manager.localPlayerJoined?.Invoke(playerPhoton);
             }
@@ -107,7 +143,6 @@ namespace OpenBrush.Multiplayer
         }
 
 #region Unused Photon Callbacks 
-        public void OnConnectedToServer(NetworkRunner runner) { }
         public void OnPlayerLeft(NetworkRunner runner, PlayerRef player) { }
         public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason) { }
         public void OnDisconnectedFromServer(NetworkRunner runner) { }

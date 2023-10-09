@@ -111,6 +111,11 @@ namespace TiltBrush
             return other.IsNoop;
         }
 
+        public virtual string Serialize()
+        {
+            return string.Empty;
+        }
+
         /// Dispose of this entire command tree if there are any
         /// controlled resources.
         /// Parent is always destroyed after all children.

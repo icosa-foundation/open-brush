@@ -925,6 +925,8 @@ namespace TiltBrush
             }
 
             m_CurrentLine = null;
+
+            Debug.Log("done recreating");
         }
 
         // During playback, rMemoryObjectForPlayback is non-null, and strokeFlags should not be passed.

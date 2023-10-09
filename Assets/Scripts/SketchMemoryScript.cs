@@ -36,6 +36,8 @@ namespace TiltBrush
         public static SketchMemoryScript m_Instance;
 
         public event Action OperationStackChanged;
+        public Action<BaseCommand> CommandPerformed;
+        public Action<BaseCommand> CommandUndone;
 
         public GameObject m_UndoBatchMeshPrefab;
         public GameObject m_UndoBatchMesh;
@@ -340,7 +342,7 @@ namespace TiltBrush
                     PerformAndRecordCommand(m_RepaintStrokeParent);
                     m_RepaintStrokeParent = null;
                 }
-                OperationStackChanged();
+                OperationStackChanged?.Invoke();
             }
         }
 
@@ -371,8 +373,9 @@ namespace TiltBrush
             return duplicate;
         }
 
-        public void PerformAndRecordCommand(BaseCommand command, bool discardIfNotMerged = false)
+        public void PerformAndRecordCommand(BaseCommand command, bool discardIfNotMerged = false, bool propegate = true)
         {
+            Debug.Log("recording command");
             SketchSurfacePanel.m_Instance.m_LastCommand = command;
             bool discardCommand = discardIfNotMerged;
             BaseCommand delta = command;
@@ -395,7 +398,12 @@ namespace TiltBrush
             }
             delta.Redo();
             m_OperationStack.Push(command);
-            OperationStackChanged();
+            OperationStackChanged?.Invoke();
+
+            if(propegate)
+            {
+                CommandPerformed?.Invoke(command);
+            }
         }
 
         // TODO: deprecate in favor of PerformAndRecordCommand
@@ -414,7 +422,8 @@ namespace TiltBrush
                 command = top;
             }
             m_OperationStack.Push(command);
-            OperationStackChanged();
+            OperationStackChanged?.Invoke();
+            CommandPerformed?.Invoke(command);
         }
 
         /// Returns approximate latest timestamp from the stroke list (including deleted strokes).
@@ -455,6 +464,7 @@ namespace TiltBrush
         // and immutable. This includes the timestamps on the control points.
         public void MemoryListAdd(Stroke stroke)
         {
+            Debug.Log("at beginnin of mem list asdd");
             Debug.Assert(stroke.m_Type == Stroke.Type.NotCreated ||
                 stroke.m_Type == Stroke.Type.BrushStroke ||
                 stroke.m_Type == Stroke.Type.BatchedBrushStroke);
@@ -788,7 +798,7 @@ namespace TiltBrush
                 }
             }
             m_OperationStack.Clear();
-            if (OperationStackChanged != null) { OperationStackChanged(); }
+            OperationStackChanged?.Invoke();
             m_LastOperationStackCount = 0;
             m_MemoryList.Clear();
             App.GroupManager.ResetGroups();
@@ -909,7 +919,8 @@ namespace TiltBrush
             var comm = m_OperationStack.Pop();
             comm.Undo();
             m_RedoStack.Push(comm);
-            OperationStackChanged();
+            OperationStackChanged?.Invoke();
+            CommandUndone?.Invoke(comm);
         }
 
         public void StepForward()
@@ -917,7 +928,8 @@ namespace TiltBrush
             var comm = m_RedoStack.Pop();
             comm.Redo();
             m_OperationStack.Push(comm);
-            OperationStackChanged();
+            OperationStackChanged?.Invoke();
+            CommandPerformed?.Invoke(comm);
         }
 
         public static IEnumerable<Stroke> AllStrokes()
