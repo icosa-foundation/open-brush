@@ -83,12 +83,6 @@ namespace TiltBrush
         [LuaDocsDescription(@"A 90 degree anti-clockwise rotation in the x axis (pitch)")]
         public static Quaternion down => Quaternion.Euler(-90, 0, 0);
 
-        [LuaDocsDescription(@"A 90 degree anti-clockwise rotation in the z axis (roll)")]
-        public static Quaternion anticlockwise => Quaternion.Euler(0, 0, -90);
-
-        [LuaDocsDescription(@"A 90 degree clockwise rotation in the z axis (roll)")]
-        public static Quaternion clockwise => Quaternion.Euler(0, 0, 90);
-
         [LuaDocsDescription(@"Converts this rotation to one with the same orientation but with a magnitude of 1")]
         public Quaternion normalized => _Quaternion.normalized;
 
