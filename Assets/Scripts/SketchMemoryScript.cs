@@ -375,7 +375,6 @@ namespace TiltBrush
 
         public void PerformAndRecordCommand(BaseCommand command, bool discardIfNotMerged = false, bool propegate = true)
         {
-            Debug.Log("recording command");
             SketchSurfacePanel.m_Instance.m_LastCommand = command;
             bool discardCommand = discardIfNotMerged;
             BaseCommand delta = command;
@@ -464,7 +463,6 @@ namespace TiltBrush
         // and immutable. This includes the timestamps on the control points.
         public void MemoryListAdd(Stroke stroke)
         {
-            Debug.Log("at beginnin of mem list asdd");
             Debug.Assert(stroke.m_Type == Stroke.Type.NotCreated ||
                 stroke.m_Type == Stroke.Type.BrushStroke ||
                 stroke.m_Type == Stroke.Type.BatchedBrushStroke);

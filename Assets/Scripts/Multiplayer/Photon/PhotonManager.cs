@@ -91,11 +91,16 @@ namespace OpenBrush.Multiplayer
 
         public async Task<bool> PerformCommand(BaseCommand command)
         {
-                string data = command.Serialize();
-                var split = SplitByLength(data, short.MaxValue/4);
-                Debug.Log(split.ToArray().Length);
-                var guid = (command as BrushStrokeCommand).m_Stroke.m_BrushGuid.ToString();
-                PhotonRPC.RPC_PerformCommand(m_Runner, command.GetType().ToString(), guid, split.ToArray());
+            // string data = command.Serialize();
+            // var split = SplitByLength(data, short.MaxValue/4);
+            // Debug.Log(split.ToArray().Length);
+            // var guid = (command as BrushStrokeCommand).m_Stroke.m_BrushGuid.ToString();
+            // PhotonRPC.RPC_PerformCommand(m_Runner, command.GetType().ToString(), guid, split.ToArray());
+
+            // if(command is BrushStrokeCommand)
+            // {
+                PhotonRPC.RPC_BrushStroke(m_Runner, new NetworkedStroke().Init((command as BrushStrokeCommand).m_Stroke));
+            // }
             
             await Task.Yield();
             return true;

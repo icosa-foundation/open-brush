@@ -14,6 +14,21 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false)]
+        public static void RPC_BrushStroke(NetworkRunner runner, NetworkedStroke strokeData)
+        {
+            var decode = NetworkedStroke.ToStroke(strokeData);
+
+            decode.m_Type = Stroke.Type.NotCreated;
+            decode.m_IntendedCanvas = App.Scene.MainCanvas;
+
+            // Setup data that couldn't be transferred
+            decode.Recreate(null, App.Scene.MainCanvas);
+            SketchMemoryScript.m_Instance.MemoryListAdd(decode);
+
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new BrushStrokeCommand(decode), propegate: false);
+        }
+
+        [Rpc(InvokeLocal = false)]
         public static void RPC_PerformCommand(NetworkRunner runner, string commandName, string guid, string[] data)
         {
             Debug.Log($"Command recieved: {commandName}");
@@ -22,11 +37,6 @@ namespace OpenBrush.Multiplayer
                 var asString = string.Join(string.Empty, data);
                 Debug.Log(asString);
                 var decode = JsonUtility.FromJson<Stroke>(asString);
-
-                if(decode == null)
-                {
-                    Debug.Log("help?");
-                }
 
                 // Temp
                 decode.m_BrushGuid = new System.Guid(guid);
