@@ -60,11 +60,11 @@ function cube(cell, bottom, top, gridSize)
     points:Insert(Transform:New(Vector3:New(-distance + x, bottom, distance + z), Rotation.zero))
     points:Insert(Transform:New(Vector3:New(-distance + x, top, distance + z), Rotation.zero))
 
-    points:Insert(Transform:New(Vector3:New(distance + x, top, distance + z), Rotation.clockwise))
-    points:Insert(Transform:New(Vector3:New(distance + x, top, -distance + z), Rotation.clockwise))
-    points:Insert(Transform:New(Vector3:New(distance + x, bottom, -distance + z), Rotation.clockwise))
-    points:Insert(Transform:New(Vector3:New(distance + x, bottom, distance + z), Rotation.clockwise))
-    points:Insert(Transform:New(Vector3:New(distance + x, top, distance + z), Rotation.clockwise))
+    points:Insert(Transform:New(Vector3:New(distance + x, top, distance + z), Rotation:New(0, 0, 90)))
+    points:Insert(Transform:New(Vector3:New(distance + x, top, -distance + z), Rotation:New(0, 0, 90)))
+    points:Insert(Transform:New(Vector3:New(distance + x, bottom, -distance + z), Rotation:New(0, 0, 90)))
+    points:Insert(Transform:New(Vector3:New(distance + x, bottom, distance + z), Rotation:New(0, 0, 90)))
+    points:Insert(Transform:New(Vector3:New(distance + x, top, distance + z), Rotation:New(0, 0, 90)))
 
     points:Insert(Transform:New(Vector3:New(distance + x, top, -distance + z), Rotation:New(0, 0, 180)))
     points:Insert(Transform:New(Vector3:New(-distance + x, top, -distance + z), Rotation:New(0, 0, 180)))
@@ -72,11 +72,11 @@ function cube(cell, bottom, top, gridSize)
     points:Insert(Transform:New(Vector3:New(distance + x, bottom, -distance + z), Rotation:New(0, 0, 180)))
     points:Insert(Transform:New(Vector3:New(distance + x, top, -distance + z), Rotation:New(0, 0, 180)))
 
-    points:Insert(Transform:New(Vector3:New(-distance + x, top, -distance + z), Rotation.anticlockwise))
-    points:Insert(Transform:New(Vector3:New(-distance + x, top, distance + z), Rotation.anticlockwise))
-    points:Insert(Transform:New(Vector3:New(-distance + x, bottom, distance + z), Rotation.anticlockwise))
-    points:Insert(Transform:New(Vector3:New(-distance + x, bottom, -distance + z), Rotation.anticlockwise))
-    points:Insert(Transform:New(Vector3:New(-distance + x, top, -distance + z), Rotation.anticlockwise))
+    points:Insert(Transform:New(Vector3:New(-distance + x, top, -distance + z), Rotation:New(0, 0, -90)))
+    points:Insert(Transform:New(Vector3:New(-distance + x, top, distance + z), Rotation:New(0, 0, -90)))
+    points:Insert(Transform:New(Vector3:New(-distance + x, bottom, distance + z), Rotation:New(0, 0, -90)))
+    points:Insert(Transform:New(Vector3:New(-distance + x, bottom, -distance + z), Rotation:New(0, 0, -90)))
+    points:Insert(Transform:New(Vector3:New(-distance + x, top, -distance + z), Rotation:New(0, 0, -90)))
 
     return points
 end
