@@ -1358,18 +1358,17 @@ namespace TiltBrush.FrameAnimation
                         // SketchControlsScript.m_Instance.MovementPathCaptureRig.UpdateCameraTransform(transform);
 
                         Vector3 PathPosition = timeline[0].Frames[frameInt].animatedPath.gameObject.transform.position;
+                     
 
                         Vector3 Position = timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathTime) - timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathStart);
+                        // Quaternion Rotation = timeline[0].Frames[frameInt].animatedPath.Path.GetRotation(pathTime) * Quaternion.Inverse(timeline[0].Frames[frameInt].animatedPath.Path.GetRotation(pathStart));
+                    
                         Position = Position/App.Scene.Pose.scale;
-                        // Position = Position - App.Scene.Pose.translation;
-                        Vector3 NegPosition = new Vector3(0f, 0f, 0f) - Position;
-                        // Vector3.Subtract(
-                        //     timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathStart), 
-                        //     timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathTime)
-                        //     ); 
-
+                       
                         Debug.Log("POSITION MOV"); ;
                         Debug.Log(Position);
+
+                        Debug.Log("ROTATION  PATH " + Rotation.ToString()); ;
 
                         Vector3 PositionTestOne = timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathOne) - timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathStart);
                         Vector3 PositionTest = PositionTestOne /App.Scene.Pose.scale;
@@ -1379,7 +1378,9 @@ namespace TiltBrush.FrameAnimation
 
                         Debug.Log("SCENE SCALE" + App.Scene.Pose.scale.ToString()); ;
           
-                        TrTransform newPose = TrTransform.TR(Position,App.Scene.Pose.rotation);
+                        // TrTransform newPose = TrTransform.TR(Position,App.Scene.Pose.rotation);
+
+                         TrTransform newPose = TrTransform.T(Position);
                         // TrTransform canvasPose = timeline[0].Frames[frameInt].canvas.Pose;
 
                         timeline[0].Frames[frameInt].canvas.LocalPose = newPose;
