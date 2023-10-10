@@ -195,7 +195,7 @@ function CameraPath:New() end
 ---@return CameraPath # A new CameraPath
 function CameraPath:FromPath(path, looped) end
 
----@param step number A control point is created at time=0, time=step, time=step x 2 etc
+---@param step number The time step is use for each sample
 ---@return Path # The new Path
 function CameraPath:AsPath(step) end
 
@@ -1258,6 +1258,13 @@ function Path2d:TranslateBy(amount) end
 ---@param amount Rotation The amount by which to rotate the path
 function Path2d:RotateBy(amount) end
 
+---@param scale number The scaling factor to apply to the path
+function Path2d:ScaleBy(scale) end
+
+---@param x number The x scaling factor to apply to the path
+---@param y number The y scaling factor to apply to the path
+function Path2d:ScaleBy(x, y) end
+
 ---@param scale Vector2 The scaling factor to apply to the path
 function Path2d:ScaleBy(scale) end
 
@@ -1358,8 +1365,6 @@ function Random:Range(min, max) end
 ---@field right Rotation | number[] A 90 degree clockwise rotation in the y axis (yaw)
 ---@field up Rotation | number[] A 90 degree clockwise rotation in the x axis (pitch)
 ---@field down Rotation | number[] A 90 degree anti-clockwise rotation in the x axis (pitch)
----@field anticlockwise Rotation | number[] A 90 degree anti-clockwise rotation in the z axis (roll)
----@field clockwise Rotation | number[] A 90 degree clockwise rotation in the z axis (roll)
 ---@field normalized Rotation | number[] Converts this rotation to one with the same orientation but with a magnitude of 1
 ---@field inverse Rotation | number[] Returns the Inverse of this rotation
 ---@field angle number The angle in degrees of the angle-axis representation of this rotation
@@ -1811,9 +1816,21 @@ function Transform:TransformBy(transform) end
 ---@return Transform # 
 function Transform:TranslateBy(translation) end
 
+---@param x number The x translation to apply
+---@param y number The y translation to apply
+---@param z number The z translation to apply
+---@return Transform # 
+function Transform:TranslateBy(x, y, z) end
+
 ---@param rotation Rotation The rotation to apply
 ---@return Transform # 
 function Transform:RotateBy(rotation) end
+
+---@param x number The x rotation to apply
+---@param y number The y rotation to apply
+---@param z number The z rotation to apply
+---@return Transform # 
+function Transform:RotateBy(x, y, z) end
 
 ---@param scale number The scale value to apply
 ---@return Transform # 
