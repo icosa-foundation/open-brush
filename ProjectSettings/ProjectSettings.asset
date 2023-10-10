@@ -8,7 +8,7 @@ PlayerSettings:
   AndroidProfiler: 0
   AndroidFilterTouchesWhenObscured: 0
   AndroidEnableSustainedPerformanceMode: 0
-  defaultScreenOrientation: 3
+  defaultScreenOrientation: 4
   targetDevice: 2
   useOnDemandResources: 0
   accelerometerFrequency: 100
@@ -59,8 +59,8 @@ PlayerSettings:
   androidShowActivityIndicatorOnLoading: -1
   iosUseCustomAppBackgroundBehavior: 0
   iosAllowHTTPDownload: 1
-  allowedAutorotateToPortrait: 0
-  allowedAutorotateToPortraitUpsideDown: 0
+  allowedAutorotateToPortrait: 1
+  allowedAutorotateToPortraitUpsideDown: 1
   allowedAutorotateToLandscapeRight: 1
   allowedAutorotateToLandscapeLeft: 1
   useOSAutorotation: 1
@@ -140,6 +140,9 @@ PlayerSettings:
   bundleVersion: 2.0.0
   preloadedAssets:
   - {fileID: 0}
+  - {fileID: 11400000, guid: 62987a061b20ae345a45e835010db90d, type: 2}
+  - {fileID: -9082068873259680106, guid: f1ebaba0fe484c1469e1bc54ab8d82e1, type: 2}
+  - {fileID: 7827100572801356344, guid: 07092d12b03adbd49b1ade5f5742e72e, type: 2}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -164,7 +167,7 @@ PlayerSettings:
     Tizen: com.yourcompany.yourproduct
     WebGL: com.yourcompany.yourproduct
     Windows Store Apps: com.yourcompany.yourproduct
-    iPhone: foundation.icosa.openbrush
+    iPhone: foundation.icosa.open-brush
     tvOS: com.yourcompany.yourproduct
   buildNumber:
     Standalone: 0
@@ -240,7 +243,7 @@ PlayerSettings:
   tvOSManualSigningProvisioningProfileID: 
   iOSManualSigningProvisioningProfileType: 0
   tvOSManualSigningProvisioningProfileType: 0
-  appleEnableAutomaticSigning: 0
+  appleEnableAutomaticSigning: 2
   iOSRequireARKit: 0
   iOSAutomaticallyDetectAndAddCapabilities: 1
   appleEnableProMotion: 0

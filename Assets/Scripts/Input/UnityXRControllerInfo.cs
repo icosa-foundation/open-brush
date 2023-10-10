@@ -75,7 +75,7 @@ namespace TiltBrush
                     bindingGroup = actionSet.IndexControllerScheme.bindingGroup;
                     break;
                 case ControllerStyle.OculusTouch:
-                    bindingGroup = actionSet.OculusTouchControllerScheme.bindingGroup;
+                    bindingGroup = actionSet.ZapboxScheme.bindingGroup;
                     break;
                 case ControllerStyle.Wmr:
                     bindingGroup = actionSet.WMRControllerScheme.bindingGroup;

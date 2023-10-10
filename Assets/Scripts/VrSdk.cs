@@ -703,6 +703,10 @@ namespace TiltBrush
                 }
 #endif
             }
+            else if (device.name.StartsWith("Zapbox"))
+            {
+                SetControllerStyle(ControllerStyle.OculusTouch);
+            }
             else
             {
                 Debug.LogWarning("Unrecognised controller device name: " + device.name);

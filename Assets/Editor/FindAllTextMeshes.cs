@@ -20,7 +20,7 @@ using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using USD.NET;
+//using USD.NET;
 using Object = UnityEngine.Object;
 
 namespace TiltBrush

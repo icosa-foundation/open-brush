@@ -205,6 +205,12 @@ jobs:
             cache: Android_GLES
             extraoptions: -btb-il2cpp
 
+          - name: Zapbox iOS
+            targetPlatform: iOS
+            vrsdk: Zapbox
+            cache: iOS
+            extraoptions: -btb-il2cpp
+
     steps:
       - name: Free extra space
         # This takes several minutes, so we only do it where required

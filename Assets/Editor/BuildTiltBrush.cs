@@ -62,6 +62,10 @@ static class BuildTiltBrush
     public static string GuiBuildAndroidApplicationIdentifier => $"foundation.{kVendorName}.{kGuiBuildExecutableName}".ToLower();
     // Android Executable
     public static string GuiBuildAndroidExecutableName => GuiBuildAndroidApplicationIdentifier + ".apk";
+    // iOS Application Identifier
+    public static string GuiBuildIosApplicationIdentifier => $"foundation.{kVendorName}.open-brush";
+    // iOS Executable
+    public static string GuiBuildIosExecutableName => kGuiBuildExecutableName;
 
     public class TiltBuildOptions
     {
@@ -115,7 +119,7 @@ static class BuildTiltBrush
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.StandaloneWindows64),
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.Android),
 
-            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Cardboard, BuildTarget.iOS),
+            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Zapbox, BuildTarget.iOS),
 #if OCULUS_SUPPORTED
             // Oculus
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Oculus, BuildTarget.StandaloneWindows64),
@@ -1099,8 +1103,8 @@ static class BuildTiltBrush
                 case XrSdkMode.Pico:
                     targetXrPluginsRequired = new string[] { "Unity.XR.PXR.PXR_Loader" };
                     break;
-                case XrSdkMode.Cardboard:
-                    targetXrPluginsRequired = new string[] { "Google.XR.Cardboard.XRLoader" };
+                case XrSdkMode.Zapbox:
+                    targetXrPluginsRequired = new string[] { "Zappar.XR.ZapboxLoader" };
                     break;
                 case XrSdkMode.Monoscopic:
                     targetSettings.InitManagerOnStart = false;
