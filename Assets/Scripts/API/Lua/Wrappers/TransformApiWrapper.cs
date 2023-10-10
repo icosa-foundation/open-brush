@@ -47,14 +47,28 @@ namespace TiltBrush
         public TrTransform TransformBy(TrTransform transform) => _TrTransform * transform;
 
         [LuaDocsDescription("Applies a translation to this transform")]
-        [LuaDocsExample("newTransform = myTransform:TranslateBy(Vector3(1, 2, 3))")]
+        [LuaDocsExample("newTransform = myTransform:TranslateBy(Vector3.up * 3)")]
         [LuaDocsParameter("translation", "The translation to apply")]
         public TrTransform TranslateBy(Vector3 translation) => _TrTransform * TrTransform.T(translation);
 
+        [LuaDocsDescription("Applies a translation to this transform")]
+        [LuaDocsExample("newTransform = myTransform:TranslateBy(1, 2, 3)")]
+        [LuaDocsParameter("x", "The x translation to apply")]
+        [LuaDocsParameter("y", "The y translation to apply")]
+        [LuaDocsParameter("z", "The z translation to apply")]
+        public TrTransform TranslateBy(float x, float y, float z) => TranslateBy(new Vector3(x, y, z));
+
         [LuaDocsDescription("Applies a rotation to this transform")]
-        [LuaDocsExample("newTransform = myTransform:RotateBy(Rotation.New(0, 45, 0))")]
+        [LuaDocsExample("newTransform = myTransform:RotateBy(Rotation.left)")]
         [LuaDocsParameter("rotation", "The rotation to apply")]
         public TrTransform RotateBy(Quaternion rotation) => _TrTransform * TrTransform.R(rotation);
+
+        [LuaDocsDescription("Applies a rotation to this transform")]
+        [LuaDocsExample("newTransform = myTransform:RotateBy(45, 0, 0)")]
+        [LuaDocsParameter("x", "The x rotation to apply")]
+        [LuaDocsParameter("y", "The y rotation to apply")]
+        [LuaDocsParameter("z", "The z rotation to apply")]
+        public TrTransform RotateBy(float x, float y, float z) => RotateBy(Quaternion.Euler(x, y, z));
 
         [LuaDocsDescription("Applies a scale to this transform")]
         [LuaDocsExample("newTransform = myTransform:ScaleBy(2)")]
