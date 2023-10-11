@@ -15,18 +15,19 @@ namespace OpenBrush.Multiplayer
         public NetworkTransform m_Right;
         public NetworkTransform m_Tool;
 
-        // The offset transforms.
-        [SerializeField] private Transform headTransform;
 
-        PointerScript transientPointer;
 
         [Networked] private Color brushColor { get; set; }
         [Networked] private float brushSize { get; set; }
         [Networked] private NetworkString<_64> brushGuid { get; set; }
+        [Networked] public ulong oculusPlayerId { get; set; }
 
-        [Networked] public ulong oculusPlayerId { get; set; } 
-
+        PointerScript transientPointer;
+        // The offset transforms.
+        [SerializeField] private Transform headTransform;
         private PlayerRigData transmitData;
+
+        private Dictionary <int, Stroke> inProgressStrokes;
 
         public void TransmitData(PlayerRigData data)
         {
@@ -60,6 +61,8 @@ namespace OpenBrush.Multiplayer
                 transientPointer = PointerManager.m_Instance.CreateRemotePointer();
                 transientPointer.SetBrush(BrushCatalog.m_Instance.DefaultBrush);
                 transientPointer.SetColor(App.BrushColor.CurrentColor);
+
+                inProgressStrokes = new Dictionary<int, Stroke>();
             }
         }
 
@@ -89,5 +92,67 @@ namespace OpenBrush.Multiplayer
             var remoteTR = TrTransform.TR(m_PlayerHead.InterpolationTarget.position, m_PlayerHead.InterpolationTarget.rotation);
             App.Scene.AsScene[headTransform] = remoteTR;
         }
+
+
+#region Long brush strokes sync
+        [Rpc(InvokeLocal = false)]
+        public void RPC_BrushStrokeBegin(int id, NetworkedStroke strokeData, int finalLength)
+        {
+            var decode = NetworkedStroke.ToStroke(strokeData);
+
+            decode.m_Type = Stroke.Type.NotCreated;
+            decode.m_IntendedCanvas = App.Scene.MainCanvas;
+            
+            Array.Resize(ref decode.m_ControlPoints, finalLength);
+            Array.Resize(ref decode.m_ControlPointsToDrop, finalLength);
+
+            if(inProgressStrokes.ContainsKey(id))
+            {
+                Debug.LogError("Shouldn't be here!");
+                return;
+            }
+
+            inProgressStrokes[id] = decode;
+
+        }
+        
+        [Rpc(InvokeLocal = false)]
+        public void RPC_BrushStrokeContinue(int id, int offset, NetworkedControlPoint[] controlPoints, bool[] dropPoints)
+        {
+            if(!inProgressStrokes.ContainsKey(id))
+            {
+                Debug.LogError("shouldn't be here!");
+                return;
+            }
+
+            var stroke = inProgressStrokes[id];
+            
+            for(int i = 0; i < controlPoints.Length; ++i)
+            {
+                stroke.m_ControlPoints[offset + i] = NetworkedControlPoint.ToControlPoint(controlPoints[i]);
+                stroke.m_ControlPointsToDrop[offset + i] = dropPoints[i];
+            }
+        }
+
+        [Rpc(InvokeLocal = false)]
+        public void RPC_BrushStrokeComplete(int id)
+        {
+            if(!inProgressStrokes.ContainsKey(id))
+            {
+                Debug.LogError("shouldn't be here!");
+                return;
+            }
+
+            var stroke = inProgressStrokes[id];
+
+            // Setup data that couldn't be transferred
+            stroke.Recreate(null, App.Scene.MainCanvas);
+            SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
+
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new BrushStrokeCommand(stroke), propegate: false);
+
+            inProgressStrokes.Remove(id);
+        }
+#endregion
     }
 }

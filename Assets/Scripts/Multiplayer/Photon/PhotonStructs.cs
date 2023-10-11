@@ -44,9 +44,9 @@ namespace OpenBrush.Multiplayer
     [System.Serializable]
     public struct NetworkedStroke : INetworkStruct
     {
+        public const int k_MaxCapacity = 128;
         public Stroke.Type m_Type;
-        [Networked][Capacity(128)] public NetworkArray<bool> m_ControlPointsToDrop => default;
-        public int m_ControlPointsToDropCapacity;
+        [Networked][Capacity(k_MaxCapacity)] public NetworkArray<bool> m_ControlPointsToDrop => default;
         public Color m_Color;
         public Guid m_BrushGuid;
         // The room-space size of the brush when the stroke was laid down
@@ -55,7 +55,9 @@ namespace OpenBrush.Multiplayer
         // AKA, the "pointer to local" scale factor.
         // m_BrushSize * m_BrushScale = size in local/canvas space
         public float m_BrushScale;
-        [Networked][Capacity(128)] public NetworkArray<NetworkedControlPoint> m_ControlPoints => default;
+        [Networked][Capacity(k_MaxCapacity)] public NetworkArray<NetworkedControlPoint> m_ControlPoints => default;
+
+        // Use for determining length.
         public int m_ControlPointsCapacity;
         // Seed for deterministic pseudo-random numbers for geometry generation.
         // Not currently serialized.
@@ -73,7 +75,7 @@ namespace OpenBrush.Multiplayer
                 m_Color = netStroke.m_Color,
                 m_Seed = netStroke.m_Seed,
                 m_ControlPoints = new PointerManager.ControlPoint[netStroke.m_ControlPointsCapacity],
-                m_ControlPointsToDrop = new bool[netStroke.m_ControlPointsToDropCapacity]
+                m_ControlPointsToDrop = new bool[netStroke.m_ControlPointsCapacity]
             };
 
             for (int i = 0; i < netStroke.m_ControlPointsCapacity; ++i)
@@ -82,23 +84,12 @@ namespace OpenBrush.Multiplayer
                 stroke.m_ControlPoints[i] = point;
             }
 
-            for (int i = 0; i < netStroke.m_ControlPointsToDropCapacity; ++i)
+            for (int i = 0; i < netStroke.m_ControlPointsCapacity; ++i)
             {
                 stroke.m_ControlPointsToDrop[i] = netStroke.m_ControlPointsToDrop[i];
             }
 
-
-
-
             return stroke;
-        }
-
-        public static NetworkedStroke Defaults
-        {
-            get
-            {
-                return new NetworkedStroke();
-            }
         }
 
         public NetworkedStroke Init(Stroke data)
@@ -110,20 +101,18 @@ namespace OpenBrush.Multiplayer
             m_Color = data.m_Color;
             m_Seed = data.m_Seed;
 
+            m_ControlPointsCapacity = data.m_ControlPoints.Length;
+
             for(int i = 0; i < data.m_ControlPoints.Length; i++)
             {
                 var point = new NetworkedControlPoint().Init(data.m_ControlPoints[i]);
                 m_ControlPoints.Set(i, point);
             }
 
-            m_ControlPointsCapacity = data.m_ControlPoints.Length;
-
             for(int i = 0; i < data.m_ControlPointsToDrop.Length; i++)
             {
                 m_ControlPointsToDrop.Set(i, data.m_ControlPointsToDrop[i]);
             }
-
-            m_ControlPointsToDropCapacity = data.m_ControlPointsToDrop.Length;
 
             return this;
         }

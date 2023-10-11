@@ -82,25 +82,60 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        public static IEnumerable<string> SplitByLength(string str, int maxLength)
-        {
-            for (int index = 0; index < str.Length; index += maxLength) {
-                yield return str.Substring(index, Math.Min(maxLength, str.Length - index));
-            }
-        }
-
+#region IConnectionHandler Methods
         public async Task<bool> PerformCommand(BaseCommand command)
         {
-            // string data = command.Serialize();
-            // var split = SplitByLength(data, short.MaxValue/4);
-            // Debug.Log(split.ToArray().Length);
-            // var guid = (command as BrushStrokeCommand).m_Stroke.m_BrushGuid.ToString();
-            // PhotonRPC.RPC_PerformCommand(m_Runner, command.GetType().ToString(), guid, split.ToArray());
+            if(command is BrushStrokeCommand)
+            {
+                var brushCommand = command as BrushStrokeCommand;
+                var stroke = brushCommand.m_Stroke;
 
-            // if(command is BrushStrokeCommand)
-            // {
-                PhotonRPC.RPC_BrushStroke(m_Runner, new NetworkedStroke().Init((command as BrushStrokeCommand).m_Stroke));
-            // }
+                if (stroke.m_ControlPoints.Length > 128)
+                {
+                    // Multiple players may be sending strokes at once, lets reduce collisions
+                    var localPlayer = m_Runner.GetPlayerObject(m_Runner.LocalPlayer).GetComponent<PhotonPlayerRig>();
+
+                    // Split and Send
+                    int numSplits = stroke.m_ControlPoints.Length / 128;
+
+                    var firstStroke = new Stroke(stroke)
+                    {
+                        m_ControlPoints = stroke.m_ControlPoints.Take(128).ToArray(),
+                        m_ControlPointsToDrop = stroke.m_ControlPointsToDrop.Take(128).ToArray()
+                    };
+
+                    var netStroke = new NetworkedStroke().Init(firstStroke);
+
+                    // First Stroke
+                    localPlayer.RPC_BrushStrokeBegin(1, netStroke, stroke.m_ControlPoints.Length);
+
+                    // Middle
+                    for (int rounds = 1; rounds < numSplits + 1; ++rounds)
+                    {
+                        var controlPoints = stroke.m_ControlPoints.Skip(rounds*128).Take(128).ToArray();
+                        var dropPoints = stroke.m_ControlPointsToDrop.Skip(rounds*128).Take(128).ToArray();
+
+                        var netControlPoints = new NetworkedControlPoint[controlPoints.Length];
+
+                        for (int point = 0; point < controlPoints.Length; ++ point)
+                        {
+                            netControlPoints[point] = new NetworkedControlPoint().Init(controlPoints[point]);
+                        }
+
+                        localPlayer.RPC_BrushStrokeContinue(1, rounds * 128, netControlPoints, dropPoints);
+                    }
+
+                    // End
+                    localPlayer.RPC_BrushStrokeComplete(1);
+                }
+                else
+                {
+                    // Can send in one.
+                    PhotonRPC.RPC_BrushStroke(m_Runner, new NetworkedStroke().Init(brushCommand.m_Stroke));
+                }
+            }
+
+            Debug.LogWarning("Don't know how to send this command.");
             
             await Task.Yield();
             return true;
@@ -122,6 +157,7 @@ namespace OpenBrush.Multiplayer
             await Task.Yield();
             return true;
         }
+#endregion
 
         public void OnConnectedToServer(NetworkRunner runner)
         {

@@ -1,7 +1,6 @@
 using UnityEngine;
 using Fusion;
 using TiltBrush;
-using System.Linq;
 
 namespace OpenBrush.Multiplayer
 {
