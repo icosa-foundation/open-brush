@@ -17,6 +17,7 @@ namespace OpenBrush.Multiplayer
         
         Task<bool> PerformCommand(BaseCommand command);
         Task<bool> UndoCommand(BaseCommand command);
+        Task<bool> RedoCommand(BaseCommand command);
         Task<bool> RpcSyncToSharedAnchor(string uuid);
 
         //ITransientData<PlayerRigData> SpawnPlayer();

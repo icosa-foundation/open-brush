@@ -53,9 +53,21 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false)]
-        public static void RPC_UndoCommand(NetworkRunner runner, string commandName, byte[] data)
+        public static void RPC_Undo(NetworkRunner runner, string commandName)
         {
-            Debug.Log($"Command recieved: {commandName}");
+            if (SketchMemoryScript.m_Instance.CanUndo())
+            {
+                SketchMemoryScript.m_Instance.StepBack(false);
+            }
+        }
+
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_Redo(NetworkRunner runner, string commandName)
+        {
+            if (SketchMemoryScript.m_Instance.CanRedo())
+            {
+                SketchMemoryScript.m_Instance.StepForward(false);
+            }
         }
     }
 }

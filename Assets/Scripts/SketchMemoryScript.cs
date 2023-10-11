@@ -37,7 +37,8 @@ namespace TiltBrush
 
         public event Action OperationStackChanged;
         public Action<BaseCommand> CommandPerformed;
-        public Action<BaseCommand> CommandUndone;
+        public Action<BaseCommand> CommandUndo;
+        public Action<BaseCommand> CommandRedo;
 
         public GameObject m_UndoBatchMeshPrefab;
         public GameObject m_UndoBatchMesh;
@@ -912,22 +913,30 @@ namespace TiltBrush
             m_RepaintCoroutine = null;
         }
 
-        public void StepBack()
+        public void StepBack(bool propegate = true)
         {
             var comm = m_OperationStack.Pop();
             comm.Undo();
             m_RedoStack.Push(comm);
             OperationStackChanged?.Invoke();
-            CommandUndone?.Invoke(comm);
+
+            if(propegate)
+            {
+                CommandUndo?.Invoke(comm);
+            }
         }
 
-        public void StepForward()
+        public void StepForward(bool propegate = true)
         {
             var comm = m_RedoStack.Pop();
             comm.Redo();
             m_OperationStack.Push(comm);
             OperationStackChanged?.Invoke();
-            CommandPerformed?.Invoke(comm);
+
+            if(propegate)
+            {
+                CommandRedo?.Invoke(comm);
+            }
         }
 
         public static IEnumerable<Stroke> AllStrokes()

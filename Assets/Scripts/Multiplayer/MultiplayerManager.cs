@@ -67,7 +67,8 @@ namespace OpenBrush.Multiplayer
             localPlayerJoined += OnLocalPlayerJoined;
             remotePlayerJoined += OnRemotePlayerJoined;
             SketchMemoryScript.m_Instance.CommandPerformed += OnCommandPerformed;
-            SketchMemoryScript.m_Instance.CommandUndone += OnCommandUndone;
+            SketchMemoryScript.m_Instance.CommandUndo += OnCommandUndo;
+            SketchMemoryScript.m_Instance.CommandRedo += OnCommandRedo;
 
             Connect();
         }
@@ -77,7 +78,8 @@ namespace OpenBrush.Multiplayer
             localPlayerJoined -= OnLocalPlayerJoined;
             remotePlayerJoined -= OnRemotePlayerJoined;
             SketchMemoryScript.m_Instance.CommandPerformed -= OnCommandPerformed;
-            SketchMemoryScript.m_Instance.CommandUndone -= OnCommandUndone;            
+            SketchMemoryScript.m_Instance.CommandUndo -= OnCommandUndo;
+            SketchMemoryScript.m_Instance.CommandRedo -= OnCommandRedo;
         }
 
         public async void Connect()
@@ -87,7 +89,6 @@ namespace OpenBrush.Multiplayer
 
         void Update()
         {
-
             if(App.CurrentState != App.AppState.Standard || m_Manager == null)
             {
                 return;
@@ -157,17 +158,18 @@ namespace OpenBrush.Multiplayer
 
         private void OnCommandPerformed(BaseCommand command)
         {
-            Debug.Log($"Command performed: {command.GetType()}");
             m_Manager.PerformCommand(command);
         }
 
-        private void OnCommandUndone(BaseCommand command)
+        private void OnCommandUndo(BaseCommand command)
         {
-            Debug.Log($"Command undone: {command.GetType()}");
             m_Manager.UndoCommand(command);
         }
 
-
+        private void OnCommandRedo(BaseCommand command)
+        {
+            m_Manager.RedoCommand(command);
+        }
 
         async void ShareAnchors()
         {

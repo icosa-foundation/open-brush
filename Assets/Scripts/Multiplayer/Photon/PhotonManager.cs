@@ -133,9 +133,8 @@ namespace OpenBrush.Multiplayer
                     // Can send in one.
                     PhotonRPC.RPC_BrushStroke(m_Runner, new NetworkedStroke().Init(brushCommand.m_Stroke));
                 }
-            }
 
-            Debug.LogWarning("Don't know how to send this command.");
+            }
             
             await Task.Yield();
             return true;
@@ -143,10 +142,16 @@ namespace OpenBrush.Multiplayer
 
         public async Task<bool> UndoCommand(BaseCommand command)
         {
-            if(command is BrushStrokeCommand)
-            {
-                PhotonRPC.RPC_UndoCommand(m_Runner, command.GetType().ToString(), new byte[] {});
-            }
+            PhotonRPC.RPC_Undo(m_Runner, command.GetType().ToString());
+
+            await Task.Yield();
+            return true;
+        }
+
+        public async Task<bool> RedoCommand(BaseCommand command)
+        {
+            PhotonRPC.RPC_Redo(m_Runner, command.GetType().ToString());
+            
             await Task.Yield();
             return true;
         }
