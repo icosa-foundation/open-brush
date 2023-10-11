@@ -26,6 +26,7 @@ namespace TiltBrush
     /// the base class or be sure to recurse into children.
     public class BaseCommand : IDisposable
     {
+        public Guid m_Guid;
         protected List<BaseCommand> m_Children;
 
         protected static Vector3 GetPositionForCommand(Stroke stroke)
@@ -48,6 +49,7 @@ namespace TiltBrush
         /// The constructor should not mutate sketch state.
         public BaseCommand(BaseCommand parent = null)
         {
+            m_Guid = new Guid();
             m_Children = new List<BaseCommand>();
             if (parent != null)
             {

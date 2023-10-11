@@ -1,6 +1,7 @@
 using UnityEngine;
 using Fusion;
 using TiltBrush;
+using System.Linq;
 
 namespace OpenBrush.Multiplayer
 {
@@ -25,6 +26,23 @@ namespace OpenBrush.Multiplayer
             SketchMemoryScript.m_Instance.MemoryListAdd(decode);
 
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new BrushStrokeCommand(decode), propegate: false);
+        }
+
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_DeleteStroke(NetworkRunner runner, int seed)
+        {
+            Debug.Log(seed);
+            var foundStroke = SketchMemoryScript.m_Instance.GetMemoryList.Where(x => x.m_Seed == seed).First();
+
+            if (foundStroke != null)
+            {
+                Debug.Log($"Found seed: {foundStroke.m_Seed}");
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(new DeleteStrokeCommand(foundStroke), propegate: false);
+            }
+            else
+            {
+                Debug.Log("couldn't find stroke with seed: {}");
+            }
         }
 
         [Rpc(InvokeLocal = false)]

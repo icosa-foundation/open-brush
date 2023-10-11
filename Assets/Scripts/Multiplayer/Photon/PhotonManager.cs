@@ -85,9 +85,11 @@ namespace OpenBrush.Multiplayer
 #region IConnectionHandler Methods
         public async Task<bool> PerformCommand(BaseCommand command)
         {
+            Debug.Log(command.GetType().ToString());
             if(command is BrushStrokeCommand)
             {
                 var brushCommand = command as BrushStrokeCommand;
+                Debug.Log(brushCommand.m_Stroke.m_Seed);
                 var stroke = brushCommand.m_Stroke;
 
                 if (stroke.m_ControlPoints.Length > 128)
@@ -134,6 +136,13 @@ namespace OpenBrush.Multiplayer
                     PhotonRPC.RPC_BrushStroke(m_Runner, new NetworkedStroke().Init(brushCommand.m_Stroke));
                 }
 
+            }
+            else if (command is DeleteStrokeCommand)
+            {
+                var deleteCommand = command as DeleteStrokeCommand;
+
+                Debug.Log(deleteCommand.m_TargetStroke.m_Seed);
+                PhotonRPC.RPC_DeleteStroke(m_Runner, deleteCommand.m_TargetStroke.m_Seed);
             }
             
             await Task.Yield();
