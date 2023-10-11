@@ -146,11 +146,11 @@ namespace TiltBrush
             string traverseToApp = "";
             if (Application.platform == RuntimePlatform.OSXPlayer)
             {
-                traverseToApp = "/../../";
+                traverseToApp = "../../";
             }
             else if (Application.platform == RuntimePlatform.WindowsPlayer)
             {
-                traverseToApp = "/../";
+                traverseToApp = "../";
             }
 
             string exeName = null;
@@ -161,16 +161,19 @@ namespace TiltBrush
             exeName = "ffmpeg";
 #endif
 
-            string fullPath = Path.GetFullPath(
-                Path.Combine(
-                    Application.dataPath,
-                    traverseToApp,
-                    kFfmpegDir,
-                    "bin",
-                    exeName
-                )
+            var combinedPath = Path.Combine(
+                Application.dataPath,
+                traverseToApp,
+                kFfmpegDir,
+                "bin",
+                exeName
             );
-            Debug.Log($"ffmpeg path: {fullPath}");
+            string fullPath = Path.GetFullPath(combinedPath);
+
+            Debug.Log($"Application.dataPath path: {Application.dataPath}");
+            Debug.Log($"combinedPath path: {combinedPath}");
+            Debug.Log($"fullPath path: {fullPath}");
+
             if (exeName != null && File.Exists(fullPath)) return fullPath;
 
             // Only Android and Linux builds should hit this point
