@@ -1358,32 +1358,22 @@ namespace TiltBrush.FrameAnimation
                         // SketchControlsScript.m_Instance.MovementPathCaptureRig.UpdateCameraTransform(transform);
 
                         Vector3 PathPosition = timeline[0].Frames[frameInt].animatedPath.gameObject.transform.position;
-                     
+                        
+              
+                        Debug.Log("POSITION START " + timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathStart).ToString());
 
-                        Vector3 Position = timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathTime) - timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathStart);
-                        // Quaternion Rotation = timeline[0].Frames[frameInt].animatedPath.Path.GetRotation(pathTime) * Quaternion.Inverse(timeline[0].Frames[frameInt].animatedPath.Path.GetRotation(pathStart));
-                    
-                        Position = Position/App.Scene.Pose.scale;
-                       
-                        Debug.Log("POSITION MOV"); ;
-                        Debug.Log(Position);
+                        TrTransform posStart =  App.Scene.Pose.inverse * TrTransform.T(timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathStart));
+                        TrTransform posNow =  App.Scene.Pose.inverse * TrTransform.T(timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathTime));
 
-                        Debug.Log("ROTATION  PATH " + Rotation.ToString()); ;
+                        TrTransform posDifference = posNow * posStart.inverse ;
 
-                        Vector3 PositionTestOne = timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathOne) - timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathStart);
-                        Vector3 PositionTest = PositionTestOne /App.Scene.Pose.scale;
-                        Debug.Log("POSITION STANDARD " + PositionTestOne.ToString() +  " | POSITION STANDARD " + PositionTest.ToString() + " | SCENE POS" + App.Scene.Pose.scale.ToString()); ;
-          
-                        // Debug.Log(PositionTest);
 
-                        Debug.Log("SCENE SCALE" + App.Scene.Pose.scale.ToString()); ;
-          
-                        // TrTransform newPose = TrTransform.TR(Position,App.Scene.Pose.rotation);
 
-                         TrTransform newPose = TrTransform.T(Position);
+                         Debug.Log("POSITION NORM " + posDifference.ToString());
+
                         // TrTransform canvasPose = timeline[0].Frames[frameInt].canvas.Pose;
 
-                        timeline[0].Frames[frameInt].canvas.LocalPose = newPose;
+                        timeline[0].Frames[frameInt].canvas.LocalPose = posDifference;
 
                         timeline[0].Frames[frameInt].animatedPath.gameObject.transform.position = PathPosition;
 
