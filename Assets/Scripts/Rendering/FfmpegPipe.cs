@@ -169,11 +169,6 @@ namespace TiltBrush
                 exeName
             );
             string fullPath = Path.GetFullPath(combinedPath);
-
-            Debug.Log($"Application.dataPath path: {Application.dataPath}");
-            Debug.Log($"combinedPath path: {combinedPath}");
-            Debug.Log($"fullPath path: {fullPath}");
-
             if (exeName != null && File.Exists(fullPath)) return fullPath;
 
             // Only Android and Linux builds should hit this point
