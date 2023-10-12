@@ -1357,13 +1357,13 @@ namespace TiltBrush.FrameAnimation
                         // SketchControlsScript.m_Instance.MovementPathCaptureRig.SetFov(fov);
                         // SketchControlsScript.m_Instance.MovementPathCaptureRig.UpdateCameraTransform(transform);
 
-                        Vector3 PathPosition = timeline[0].Frames[frameInt].animatedPath.gameObject.transform.position;
+                        TrTransform pathPosition = TrTransform.FromTransform(timeline[0].Frames[frameInt].animatedPath.gameObject.transform);
                         
               
                         Debug.Log("POSITION START " + timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathStart).ToString());
 
-                        TrTransform posStart =  App.Scene.Pose.inverse * TrTransform.T(timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathStart));
-                        TrTransform posNow =  App.Scene.Pose.inverse * TrTransform.T(timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathTime));
+                        TrTransform posStart =  App.Scene.Pose.inverse * TrTransform.TR(timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathStart),timeline[0].Frames[frameInt].animatedPath.Path.GetRotation(pathStart));
+                        TrTransform posNow =  App.Scene.Pose.inverse * TrTransform.TR(timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathTime),timeline[0].Frames[frameInt].animatedPath.Path.GetRotation(pathTime));
 
                         TrTransform posDifference = posNow * posStart.inverse ;
 
@@ -1375,9 +1375,9 @@ namespace TiltBrush.FrameAnimation
 
                         timeline[0].Frames[frameInt].canvas.LocalPose = posDifference;
 
-                        timeline[0].Frames[frameInt].animatedPath.gameObject.transform.position = PathPosition;
-
-
+                        timeline[0].Frames[frameInt].animatedPath.gameObject.transform.position = pathPosition.translation;
+                        // timeline[0].Frames[frameInt].animatedPath.gameObject.transform.rotation = pathPosition.rotation; 
+                        // timeline[0].Frames[frameInt].animatedPath.gameObject.transform.scale = pathPosition.scale;
 
 
                         // for(int i = 0; i < timeline[0].Frames[frameInt].canvas.gameObject.transform.GetChildCount(); i++)
