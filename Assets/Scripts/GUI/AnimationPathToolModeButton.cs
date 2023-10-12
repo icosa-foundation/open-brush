@@ -40,10 +40,14 @@ namespace TiltBrush
             // Availability visuals.
             if (m_Mode != MovementPathTool.Mode.AddAnimationPositionKnot)
             {
+              
                 bool wasAvailable = IsAvailable();
-                bool available = WidgetManager.m_Instance.AnyActivePathHasAKnot();
+                bool available = WidgetManager.m_Instance.AnyActiveAnimationPathHasAKnot();
+
+                Debug.Log("IN UPDATE ANIMATION PATH TOOL " + wasAvailable + " " + available);
                 if (wasAvailable != available)
                 {
+                    Debug.Log("SETTING AVAIL");
                     SetButtonAvailable(available);
                 }
             }

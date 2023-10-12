@@ -404,6 +404,13 @@ namespace TiltBrush
         public IEnumerable<TypedWidgetData<MovementPathWidget>> MovementPathWidgets =>
             m_MovementPathWidgets.Where(x => x.m_WidgetObject.activeSelf && !x.WidgetScript.belongsToAnimation);
 
+        public IEnumerable<TypedWidgetData<MovementPathWidget>> AnimationPathWidgets =>
+            m_MovementPathWidgets.Where(x => x.m_WidgetObject.activeSelf && x.WidgetScript.belongsToAnimation);
+
+        public IEnumerable<TypedWidgetData<MovementPathWidget>> AllPathWidgets =>
+            m_MovementPathWidgets.Where(x => x.m_WidgetObject.activeSelf );
+
+
         public TypedWidgetData<MovementPathWidget> GetCurrentCameraPath() => m_CurrentCameraPath;
 
         public void SetCurrentCameraPath(MovementPathWidget path)
@@ -542,6 +549,19 @@ namespace TiltBrush
             }
             return false;
         }
+         public bool AnyActiveAnimationPathHasAKnot()
+        {
+            var datas = AnimationPathWidgets;
+            foreach (TypedWidgetData<MovementPathWidget> data in datas)
+            {
+                if (data.WidgetScript.Path.NumPositionKnots > 0)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
 
         public void DeleteMovementPath(GrabWidget cameraPathWidgetScript)
         {

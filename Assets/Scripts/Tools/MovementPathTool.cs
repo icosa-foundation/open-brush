@@ -31,6 +31,8 @@ namespace TiltBrush
 
             AddAnimationPositionKnot,
 
+            AddAnimationRotationKnot,
+
         }
 
         public enum ExtendPathType
@@ -235,6 +237,15 @@ namespace TiltBrush
                             m_LastPlacedKnotPath = m_LastValidPath;
                         }
                         break;
+                    case Mode.AddAnimationRotationKnot:
+                        if (m_LastValidPath != null)
+                        {
+                            m_LastValidPath.AddPathConstrainedKnot(
+                                MovementPathKnot.Type.Rotation, m_LastValidPosition, toolAttachXf.rotation);
+                            m_LastPlacedKnot = m_LastValidPath.Path.LastPlacedKnotInfo;
+                            m_LastPlacedKnotPath = m_LastValidPath;
+                        }
+                        break;
                     case Mode.AddSpeedKnot:
                         if (m_LastValidPath != null)
                         {
@@ -363,7 +374,7 @@ namespace TiltBrush
                 m_LastValidPath = null;
 
                 GrabWidgetData currentData = WidgetManager.m_Instance.GetCurrentCameraPath();
-                var datas = WidgetManager.m_Instance.MovementPathWidgets;
+                var datas = WidgetManager.m_Instance.AllPathWidgets;
                 foreach (TypedWidgetData<MovementPathWidget> data in datas)
                 {
                     MovementPathWidget widget = data.WidgetScript;
@@ -520,6 +531,14 @@ namespace TiltBrush
                 case Mode.RemoveKnot:
                     m_RemoveKnot.SetActive(true);
                     break;
+
+                case Mode.AddAnimationPositionKnot:
+                    m_PositionKnot.SetActive(true);
+                    break;
+                case Mode.AddAnimationRotationKnot:
+                    m_RotationKnot.SetActive(true);
+                    break;
+
             }
         }
 
