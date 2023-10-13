@@ -1,9 +1,6 @@
-using System;
-using System.Collections.Generic;
 using UnityEngine;
 using Fusion;
 using TiltBrush;
-using System.Linq;
 
 namespace OpenBrush.Multiplayer
 {
@@ -15,8 +12,6 @@ namespace OpenBrush.Multiplayer
         public NetworkTransform m_Left;
         public NetworkTransform m_Right;
         public NetworkTransform m_Tool;
-
-
 
         [Networked] private Color brushColor { get; set; }
         [Networked] private float brushSize { get; set; }
@@ -78,7 +73,17 @@ namespace OpenBrush.Multiplayer
                 m_Tool.transform.position = transmitData.ToolPosition;
                 m_Tool.transform.rotation = transmitData.ToolRotation;
             }
+        }
 
+        public override void Render()
+        {
+            base.Render();
+
+            if (Object.HasStateAuthority)
+            {
+
+            }
+            
             else
             {
                 var toolTR = TrTransform.TR(m_Tool.InterpolationTarget.position, m_Tool.InterpolationTarget.rotation);
