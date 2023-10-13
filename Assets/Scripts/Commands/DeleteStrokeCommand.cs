@@ -29,7 +29,6 @@ namespace TiltBrush
         public DeleteStrokeCommand(Stroke stroke, BaseCommand parent = null)
             : base(parent)
         {
-            m_Type = CommandType.DeleteStrokeCommand;
             m_TargetStroke = stroke;
             m_SilenceFirstAudio = true;
         }

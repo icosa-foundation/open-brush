@@ -156,9 +156,19 @@ namespace OpenBrush.Multiplayer
             m_RemotePlayers.Add(playerData);
         }
 
-        private void OnCommandPerformed(BaseCommand command)
+        private async void OnCommandPerformed(BaseCommand command)
         {
-            m_Manager.PerformCommand(command);
+            var success = await m_Manager.PerformCommand(command);
+
+            // TODO: Proper rollback if command not possible right now.
+            // Commented so it doesn't interfere with general use.
+            // Link actions to connect/disconnect, not Unity lifecycle.
+
+            // if (!success)
+            // {
+            //     OutputWindowScript.m_Instance.CreateInfoCardAtController(InputManager.ControllerName.Brush, "Don't know how to network this action yet.");
+            //     SketchMemoryScript.m_Instance.StepBack(false);
+            // }
         }
 
         private void OnCommandUndo(BaseCommand command)

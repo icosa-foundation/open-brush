@@ -3,9 +3,43 @@ using System;
 using UnityEngine;
 using Fusion;
 using TiltBrush;
+using System.Collections.Generic;
 
 namespace OpenBrush.Multiplayer
 {
+    public struct PendingCommand
+    {
+        public int TotalExpectedChildren;
+
+        public Guid Guid;
+        public BaseCommand Command;
+        public Action PreCommandAction;
+        public List<PendingCommand> ChildCommands;
+
+        public PendingCommand(Guid guid, BaseCommand command, Action action, int count)
+        {
+            Guid = guid;
+            Command = command;
+            PreCommandAction = action;
+            TotalExpectedChildren = count;
+            ChildCommands = new List<PendingCommand>();
+        }
+    }
+    
+    public struct NetworkCommandData : INetworkStruct
+    {
+        public Guid CommandGuid;
+        public Guid ParentGuid;
+        public int ChildCount;
+
+        public NetworkCommandData(Guid commandGuid, Guid parentGuid = default, int childCount = 0)
+        {
+            CommandGuid = commandGuid;
+            ParentGuid = parentGuid;
+            ChildCount = childCount;
+        }
+    }
+
     public struct NetworkedControlPoint : INetworkStruct
     {
         public Vector3 m_Pos;
@@ -117,5 +151,4 @@ namespace OpenBrush.Multiplayer
             return this;
         }
     }
-    
 }

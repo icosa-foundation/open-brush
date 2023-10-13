@@ -94,7 +94,6 @@ namespace OpenBrush.Multiplayer
         public async Task<bool> UndoCommand(BaseCommand command)
         {
             PhotonRPC.RPC_Undo(m_Runner, command.GetType().ToString());
-
             await Task.Yield();
             return true;
         }
@@ -102,7 +101,6 @@ namespace OpenBrush.Multiplayer
         public async Task<bool> RedoCommand(BaseCommand command)
         {
             PhotonRPC.RPC_Redo(m_Runner, command.GetType().ToString());
-            
             await Task.Yield();
             return true;
         }
@@ -118,35 +116,37 @@ namespace OpenBrush.Multiplayer
 #region Command Methods
         private bool ProcessCommand(BaseCommand command)
         {
-            switch(command.m_Type)
+            bool success = true;
+            switch(command)
             {
-                case CommandType.BrushStrokeCommand:
-                    CommandBrushStroke(command as BrushStrokeCommand);
+                case BrushStrokeCommand:
+                    success = CommandBrushStroke(command as BrushStrokeCommand);
                     break;
-                case CommandType.DeleteStrokeCommand:
-                    CommandDeleteStroke(command as DeleteStrokeCommand);
+                case DeleteStrokeCommand:
+                    success = CommandDeleteStroke(command as DeleteStrokeCommand);
                     break;
-                case CommandType.BaseCommand:
-                    CommandBase(command);
+                case BaseCommand:
+                    success = CommandBase(command);
                     break;
                 default:
+                    // Don't know how to process this command
+                    success = false;
                     break;
             }
 
-            if(command.ChildCount > 0)
+            if(command.ChildrenCount > 0)
             {
-                foreach(var child in command.m_Children)
+                foreach(var child in command.Children)
                 {
-                    ProcessCommand(child);
+                    success &= ProcessCommand(child);
                 }
             }
 
-            return true;
+            return success;
         }
 
         private bool CommandBrushStroke(BrushStrokeCommand command)
         {
-            Debug.Log(command.m_Stroke.m_Seed);
             var stroke = command.m_Stroke;
 
             if (stroke.m_ControlPoints.Length > 128)
@@ -165,7 +165,7 @@ namespace OpenBrush.Multiplayer
                 var strokeGuid = Guid.NewGuid();
 
                 // First Stroke
-                m_LocalPlayer.RPC_BrushStrokeBegin(strokeGuid, netStroke, stroke.m_ControlPoints.Length);
+                PhotonRPC.RPC_BrushStrokeBegin(m_Runner, strokeGuid, netStroke, stroke.m_ControlPoints.Length);
 
                 // Middle
                 for (int rounds = 1; rounds < numSplits + 1; ++rounds)
@@ -180,41 +180,34 @@ namespace OpenBrush.Multiplayer
                         netControlPoints[point] = new NetworkedControlPoint().Init(controlPoints[point]);
                     }
 
-                    m_LocalPlayer.RPC_BrushStrokeContinue(strokeGuid, rounds * 128, netControlPoints, dropPoints);
+                    PhotonRPC.RPC_BrushStrokeContinue(m_Runner, strokeGuid, rounds * 128, netControlPoints, dropPoints);
                 }
 
                 // End
-                Guid parentGuid = command.m_Parent != null ? command.m_Parent.m_Guid : Guid.Empty;
-                m_LocalPlayer.RPC_BrushStrokeComplete(strokeGuid, command.m_Guid, parentGuid, command.ChildCount);
+                PhotonRPC.RPC_BrushStrokeComplete(m_Runner, strokeGuid, command.Guid, command.ParentGuid, command.ChildrenCount);
             }
             else
             {
                 // Can send in one.
-                Guid parentGuid = command.m_Parent != null ? command.m_Parent.m_Guid : Guid.Empty;
-                m_LocalPlayer.RPC_BrushStrokeFull(new NetworkedStroke().Init(command.m_Stroke), command.m_Guid, parentGuid, command.ChildCount);
+                PhotonRPC.RPC_BrushStrokeFull(m_Runner, new NetworkedStroke().Init(command.m_Stroke), command.Guid, command.ParentGuid, command.ChildrenCount);
             }
             return true;
         }
 
         private bool CommandBase(BaseCommand command)
         {
-            Debug.Log($"Base command child count: {command.ChildCount}");
-
-            Guid parentGuid = command.m_Parent != null ? command.m_Parent.m_Guid : Guid.Empty;
-            m_LocalPlayer.RPC_BaseCommand(command.m_Guid, parentGuid, command.ChildCount);
+            PhotonRPC.RPC_BaseCommand(m_Runner, command.Guid, command.ParentGuid, command.ChildrenCount);
             return true;
         }
 
         private bool CommandDeleteStroke(DeleteStrokeCommand command)
         {
-            Debug.Log(command.m_TargetStroke.m_Seed);
-            Guid parentGuid = command.m_Parent != null ? command.m_Parent.m_Guid : Guid.Empty;
-            m_LocalPlayer.RPC_DeleteStroke(command.m_TargetStroke.m_Seed, command.m_Guid, parentGuid, command.ChildCount);
-
+            PhotonRPC.RPC_DeleteStroke(m_Runner, command.m_TargetStroke.m_Seed, command.Guid, command.ParentGuid, command.ChildrenCount);
             return true;
         }
 #endregion
 
+#region Photon Callbacks
         public void OnConnectedToServer(NetworkRunner runner)
         {
             var rpc = m_Runner.gameObject.AddComponent<PhotonRPC>();
@@ -238,6 +231,7 @@ namespace OpenBrush.Multiplayer
                 m_PlayersSpawning.Add(player);
             }
         }
+#endregion
 
 #region Unused Photon Callbacks 
         public void OnPlayerLeft(NetworkRunner runner, PlayerRef player) { }
