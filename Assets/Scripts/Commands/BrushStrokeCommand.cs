@@ -30,6 +30,7 @@ namespace TiltBrush
         public BrushStrokeCommand(Stroke stroke, StencilWidget widget = null,
                                   float lineLength = -1, BaseCommand parent = null) : base(parent)
         {
+            m_Type = CommandType.BrushStrokeCommand;
             m_Stroke = stroke;
             m_Widget = widget;
             m_LineLength_CS = lineLength;

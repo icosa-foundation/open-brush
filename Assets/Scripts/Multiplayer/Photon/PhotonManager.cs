@@ -18,6 +18,8 @@ namespace OpenBrush.Multiplayer
 
         List<PlayerRef> m_PlayersSpawning;
 
+        PhotonPlayerRig m_LocalPlayer;
+
         public PhotonManager(MultiplayerManager manager)
         {
             m_Manager = manager;
@@ -85,68 +87,8 @@ namespace OpenBrush.Multiplayer
 #region IConnectionHandler Methods
         public async Task<bool> PerformCommand(BaseCommand command)
         {
-            Debug.Log(command.GetType().ToString());
-            if(command is BrushStrokeCommand)
-            {
-                var brushCommand = command as BrushStrokeCommand;
-                Debug.Log(brushCommand.m_Stroke.m_Seed);
-                var stroke = brushCommand.m_Stroke;
-
-                if (stroke.m_ControlPoints.Length > 128)
-                {
-                    // Multiple players may be sending strokes at once, lets reduce collisions
-                    var localPlayer = m_Runner.GetPlayerObject(m_Runner.LocalPlayer).GetComponent<PhotonPlayerRig>();
-
-                    // Split and Send
-                    int numSplits = stroke.m_ControlPoints.Length / 128;
-
-                    var firstStroke = new Stroke(stroke)
-                    {
-                        m_ControlPoints = stroke.m_ControlPoints.Take(128).ToArray(),
-                        m_ControlPointsToDrop = stroke.m_ControlPointsToDrop.Take(128).ToArray()
-                    };
-
-                    var netStroke = new NetworkedStroke().Init(firstStroke);
-
-                    // First Stroke
-                    localPlayer.RPC_BrushStrokeBegin(1, netStroke, stroke.m_ControlPoints.Length);
-
-                    // Middle
-                    for (int rounds = 1; rounds < numSplits + 1; ++rounds)
-                    {
-                        var controlPoints = stroke.m_ControlPoints.Skip(rounds*128).Take(128).ToArray();
-                        var dropPoints = stroke.m_ControlPointsToDrop.Skip(rounds*128).Take(128).ToArray();
-
-                        var netControlPoints = new NetworkedControlPoint[controlPoints.Length];
-
-                        for (int point = 0; point < controlPoints.Length; ++ point)
-                        {
-                            netControlPoints[point] = new NetworkedControlPoint().Init(controlPoints[point]);
-                        }
-
-                        localPlayer.RPC_BrushStrokeContinue(1, rounds * 128, netControlPoints, dropPoints);
-                    }
-
-                    // End
-                    localPlayer.RPC_BrushStrokeComplete(1);
-                }
-                else
-                {
-                    // Can send in one.
-                    PhotonRPC.RPC_BrushStroke(m_Runner, new NetworkedStroke().Init(brushCommand.m_Stroke));
-                }
-
-            }
-            else if (command is DeleteStrokeCommand)
-            {
-                var deleteCommand = command as DeleteStrokeCommand;
-
-                Debug.Log(deleteCommand.m_TargetStroke.m_Seed);
-                PhotonRPC.RPC_DeleteStroke(m_Runner, deleteCommand.m_TargetStroke.m_Seed);
-            }
-            
             await Task.Yield();
-            return true;
+            return ProcessCommand(command);;
         }
 
         public async Task<bool> UndoCommand(BaseCommand command)
@@ -173,6 +115,106 @@ namespace OpenBrush.Multiplayer
         }
 #endregion
 
+#region Command Methods
+        private bool ProcessCommand(BaseCommand command)
+        {
+            switch(command.m_Type)
+            {
+                case CommandType.BrushStrokeCommand:
+                    CommandBrushStroke(command as BrushStrokeCommand);
+                    break;
+                case CommandType.DeleteStrokeCommand:
+                    CommandDeleteStroke(command as DeleteStrokeCommand);
+                    break;
+                case CommandType.BaseCommand:
+                    CommandBase(command);
+                    break;
+                default:
+                    break;
+            }
+
+            if(command.ChildCount > 0)
+            {
+                foreach(var child in command.m_Children)
+                {
+                    ProcessCommand(child);
+                }
+            }
+
+            return true;
+        }
+
+        private bool CommandBrushStroke(BrushStrokeCommand command)
+        {
+            Debug.Log(command.m_Stroke.m_Seed);
+            var stroke = command.m_Stroke;
+
+            if (stroke.m_ControlPoints.Length > 128)
+            {
+                // Split and Send
+                int numSplits = stroke.m_ControlPoints.Length / 128;
+
+                var firstStroke = new Stroke(stroke)
+                {
+                    m_ControlPoints = stroke.m_ControlPoints.Take(128).ToArray(),
+                    m_ControlPointsToDrop = stroke.m_ControlPointsToDrop.Take(128).ToArray()
+                };
+
+                var netStroke = new NetworkedStroke().Init(firstStroke);
+
+                var strokeGuid = Guid.NewGuid();
+
+                // First Stroke
+                m_LocalPlayer.RPC_BrushStrokeBegin(strokeGuid, netStroke, stroke.m_ControlPoints.Length);
+
+                // Middle
+                for (int rounds = 1; rounds < numSplits + 1; ++rounds)
+                {
+                    var controlPoints = stroke.m_ControlPoints.Skip(rounds*128).Take(128).ToArray();
+                    var dropPoints = stroke.m_ControlPointsToDrop.Skip(rounds*128).Take(128).ToArray();
+
+                    var netControlPoints = new NetworkedControlPoint[controlPoints.Length];
+
+                    for (int point = 0; point < controlPoints.Length; ++ point)
+                    {
+                        netControlPoints[point] = new NetworkedControlPoint().Init(controlPoints[point]);
+                    }
+
+                    m_LocalPlayer.RPC_BrushStrokeContinue(strokeGuid, rounds * 128, netControlPoints, dropPoints);
+                }
+
+                // End
+                Guid parentGuid = command.m_Parent != null ? command.m_Parent.m_Guid : Guid.Empty;
+                m_LocalPlayer.RPC_BrushStrokeComplete(strokeGuid, command.m_Guid, parentGuid, command.ChildCount);
+            }
+            else
+            {
+                // Can send in one.
+                Guid parentGuid = command.m_Parent != null ? command.m_Parent.m_Guid : Guid.Empty;
+                m_LocalPlayer.RPC_BrushStrokeFull(new NetworkedStroke().Init(command.m_Stroke), command.m_Guid, parentGuid, command.ChildCount);
+            }
+            return true;
+        }
+
+        private bool CommandBase(BaseCommand command)
+        {
+            Debug.Log($"Base command child count: {command.ChildCount}");
+
+            Guid parentGuid = command.m_Parent != null ? command.m_Parent.m_Guid : Guid.Empty;
+            m_LocalPlayer.RPC_BaseCommand(command.m_Guid, parentGuid, command.ChildCount);
+            return true;
+        }
+
+        private bool CommandDeleteStroke(DeleteStrokeCommand command)
+        {
+            Debug.Log(command.m_TargetStroke.m_Seed);
+            Guid parentGuid = command.m_Parent != null ? command.m_Parent.m_Guid : Guid.Empty;
+            m_LocalPlayer.RPC_DeleteStroke(command.m_TargetStroke.m_Seed, command.m_Guid, parentGuid, command.ChildCount);
+
+            return true;
+        }
+#endregion
+
         public void OnConnectedToServer(NetworkRunner runner)
         {
             var rpc = m_Runner.gameObject.AddComponent<PhotonRPC>();
@@ -185,11 +227,11 @@ namespace OpenBrush.Multiplayer
             {
                 var playerPrefab = Resources.Load("Multiplayer/Photon/PhotonPlayerRig") as GameObject;
                 var playerObj = m_Runner.Spawn(playerPrefab, inputAuthority: m_Runner.LocalPlayer);
-                var playerPhoton = playerObj.GetComponent<PhotonPlayerRig>();
+                m_LocalPlayer = playerObj.GetComponent<PhotonPlayerRig>();
                 m_Runner.SetPlayerObject(m_Runner.LocalPlayer, playerObj);
                 
 
-                m_Manager.localPlayerJoined?.Invoke(playerPhoton);
+                m_Manager.localPlayerJoined?.Invoke(m_LocalPlayer);
             }
             else
             {

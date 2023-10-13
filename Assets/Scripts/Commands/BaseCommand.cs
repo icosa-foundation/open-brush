@@ -19,6 +19,12 @@ using UnityEngine;
 
 namespace TiltBrush
 {
+    public enum CommandType
+    {
+        BaseCommand,
+        BrushStrokeCommand,
+        DeleteStrokeCommand
+    }
     /// Commands on the undo stack of SketchMemoryScript
     ///
     /// Subclasses should override the virtual methods to
@@ -26,8 +32,15 @@ namespace TiltBrush
     /// the base class or be sure to recurse into children.
     public class BaseCommand : IDisposable
     {
+        public CommandType m_Type;
         public Guid m_Guid;
-        protected List<BaseCommand> m_Children;
+        public int ChildCount
+        {
+            get { return m_Children.Count; }
+        }
+        
+        public List<BaseCommand> m_Children;
+        public BaseCommand m_Parent;
 
         protected static Vector3 GetPositionForCommand(Stroke stroke)
         {
@@ -49,11 +62,13 @@ namespace TiltBrush
         /// The constructor should not mutate sketch state.
         public BaseCommand(BaseCommand parent = null)
         {
-            m_Guid = new Guid();
+            m_Type = CommandType.BaseCommand;
+            m_Guid = Guid.NewGuid();
             m_Children = new List<BaseCommand>();
             if (parent != null)
             {
                 parent.m_Children.Add(this);
+                m_Parent = parent;
             }
         }
 
