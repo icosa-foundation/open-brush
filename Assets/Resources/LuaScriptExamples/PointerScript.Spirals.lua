@@ -3,19 +3,17 @@ Settings = {
 }
 
 Parameters = {
-    speed={label="Speed", type="float", min=0.01, max=20, default=16},
+    speed={label="Speed", type="float", min=1, max=1000, default=500},
     radius={label="Radius", type="float", min=0.01, max=5, default=1},
 }
 
 function Main()
 
     if Brush.triggerIsPressed then
-
         currentRadius = radius * Brush.timeSincePressed
         angle = Brush.timeSincePressed * speed
         position2d = Vector2:PointOnCircle(angle) * currentRadius
         return Transform:New(position2d:OnZ(), Brush.rotation)
-
     end
 
 end
