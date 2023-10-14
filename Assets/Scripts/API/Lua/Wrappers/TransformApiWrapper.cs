@@ -196,7 +196,7 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("A transform that does nothing. No translation, rotation or scaling")]
-        public static TransformApiWrapper identity => new (TrTransform.identity);
+        public static TransformApiWrapper identity => new(TrTransform.identity);
 
         // Operators
 
