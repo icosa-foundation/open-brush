@@ -305,7 +305,7 @@ namespace TiltBrush
         public bool PanelsAreStable()
         {
             return StandardActive() || SketchbookActive() || SettingsActive() || MemoryWarningActive() ||
-                CameraActive() || BrushLabActive();
+                CameraActive() || BrushLabActive() || MultiplayerActive();
         }
         public bool StandardActive() { return m_PanelsMode == PanelMode.Standard; }
         public bool SketchbookActive() { return m_PanelsMode == PanelMode.Sketchbook; }
