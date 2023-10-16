@@ -65,7 +65,7 @@ namespace OpenBrush.Multiplayer
             var args = new StartGameArgs()
             {
                 GameMode = GameMode.Shared,
-                SessionName = "OpenBrushMultiplayerTest",
+                SessionName = "OpenBrushMetaMR",
                 CustomPhotonAppSettings = appSettings,
                 SceneManager = m_Runner.gameObject.AddComponent<NetworkSceneManagerDefault>(),
                 Scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex,

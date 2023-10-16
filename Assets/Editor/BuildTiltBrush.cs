@@ -300,7 +300,7 @@ static class BuildTiltBrush
             UnityOptions = GuiDevelopment
                 ? (BuildOptions.AllowDebugging | BuildOptions.Development | BuildOptions.CleanBuildCache)
                 : BuildOptions.None,
-            Description = "(unity editor)",
+            Description = "",
         };
     }
 

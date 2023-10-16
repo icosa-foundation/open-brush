@@ -655,7 +655,7 @@ namespace TiltBrush
             string exeTitle = Path.GetFileNameWithoutExtension(exeName);
 
             // Note, we add "unityeditor" to the package name - Unity appends this.
-            string packageName = exeTitle + "unityeditor";
+            string packageName = exeTitle;// + "unityeditor";
 
             if (m_upload != null)
             {
