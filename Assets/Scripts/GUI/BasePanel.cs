@@ -1486,28 +1486,19 @@ namespace TiltBrush
 
                 if (iPopUpIndex >= 0)
                 {
-                    Vector3 position;
-                    // If we're replacing a popup, put the new one in the same position.
-                    if (bPopUpExisted)
-                    {
-                        position = vPrevPopUpPos;
-                    }
-                    else
-                    {
-                        Vector3 vPos = m_Mesh.transform.position +
-                            (m_Mesh.transform.forward * m_ActivePopUp.GetPopUpForwardOffset()) +
-                            m_Mesh.transform.TransformVector(vPopupOffset);
-                        position = vPos;
-                    }
-                    CreatePopUp(m_PanelPopUpMap[iPopUpIndex].m_PopUpPrefab, position, bPopUpExisted, iCommandParam,
-                        iCommandParam2, rCommand, sDelayedText, delayedClose);
+                    Vector3 position = vPopupOffset;
+                    CreatePopUp(
+                        m_PanelPopUpMap[iPopUpIndex].m_PopUpPrefab, position,
+                        bPopUpExisted, bPopUpExisted, iCommandParam,
+                        iCommandParam2, rCommand, sDelayedText, delayedClose
+                    );
                 }
             }
         }
 
         public void CreatePopUp(
                             GameObject prefab, Vector3 position,
-                            bool transition = true, int iCommandParam = -1, int iCommandParam2 = -1,
+                            bool explicitPosition, bool transition, int iCommandParam = -1, int iCommandParam2 = -1,
                             SketchControlsScript.GlobalCommands delayedCommand = SketchControlsScript.GlobalCommands.Null,
                             string sDelayedText = "", Action delayedClose = null)
         {
@@ -1516,7 +1507,17 @@ namespace TiltBrush
                 m_Mesh.transform.position, m_Mesh.transform.rotation);
             m_ActivePopUp = popUp.GetComponent<PopUpWindow>();
 
-            popUp.transform.position = position;
+            if (explicitPosition)
+            {
+                popUp.transform.position = position;
+            }
+            else
+            {
+                // Treat position as an offset
+                popUp.transform.position = m_Mesh.transform.position +
+                    (m_Mesh.transform.forward * m_ActivePopUp.GetPopUpForwardOffset()) +
+                    m_Mesh.transform.TransformVector(position);
+            }
 
             popUp.transform.parent = m_Mesh.transform;
             m_ActivePopUp.Init(gameObject, sDelayedText);
