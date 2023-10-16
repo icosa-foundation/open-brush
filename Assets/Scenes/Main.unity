@@ -708,7 +708,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 1
+  inputIsHDR: 0
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -30062,6 +30062,15 @@ MonoBehaviour:
     m_ModeGvr: 0
     m_Basic: 0
     m_Advanced: 0
+  - m_PanelPrefab: {fileID: 160214, guid: 5a442232cda8d79489436e6d45958790, type: 3}
+    m_ModeVr: 1
+    m_ModeVrExperimental: 1
+    m_ModeQuestExperimental: 1
+    m_ModeMono: 1
+    m_ModeQuest: 1
+    m_ModeGvr: 1
+    m_Basic: 1
+    m_Advanced: 1
   - m_PanelPrefab: {fileID: 1272310558547734, guid: 38a4b95a5f6824c41994709bfbd012ad,
       type: 3}
     m_ModeVr: 1
@@ -33307,7 +33316,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 1
+  inputIsHDR: 0
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -34189,7 +34198,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 1
+  inputIsHDR: 0
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
