@@ -818,6 +818,11 @@ namespace TiltBrush
             switch (App.Config.m_SdkMode)
             {
                 case SdkMode.UnityXR:
+                    if (XRGeneralSettings.Instance.Manager.activeLoader.GetLoadedSubsystem<XRDisplaySubsystem>().TryGetDisplayRefreshRate(out float rate))
+                    {
+                        Debug.Log($"Subsystem refresh rate: {rate}");
+                        return (int)rate;
+                    }
                     return 60; // 90?
                 case SdkMode.Monoscopic:
                     return 60;
