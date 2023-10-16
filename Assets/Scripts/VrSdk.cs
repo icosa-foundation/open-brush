@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.XR;
+using UnityEngine.XR.Management;
 
 #if PICO_SUPPORTED
 using PicoInput = Unity.XR.PXR.PXR_Input;
@@ -740,7 +741,7 @@ namespace TiltBrush
             switch (App.Config.m_SdkMode)
             {
                 case SdkMode.UnityXR:
-                    return UnityEngine.XR.Management.XRGeneralSettings.Instance.Manager.activeLoader != null;
+                    return XRGeneralSettings.Instance.Manager.activeLoader != null;
                 default:
                     return true;
             }
@@ -752,6 +753,11 @@ namespace TiltBrush
             switch (App.Config.m_SdkMode)
             {
                 case SdkMode.UnityXR:
+                    if (XRGeneralSettings.Instance.Manager.activeLoader.GetLoadedSubsystem<XRDisplaySubsystem>().TryGetDisplayRefreshRate(out float rate))
+                    {
+                        Debug.Log($"Subsystem refresh rate: {rate}");
+                        return (int)rate;
+                    }
                     return 60; // 90?
                 case SdkMode.Monoscopic:
                     return 60;
