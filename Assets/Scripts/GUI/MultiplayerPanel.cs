@@ -12,15 +12,48 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
+using OpenBrush.Multiplayer;
 using UnityEngine;
+
 namespace TiltBrush
 {
-
     public class MultiplayerPanel : BasePanel
     {
+        public enum Mode
+        {
+            Lobby,
+            Create,
+            RoomSettings,
+            GeneralSettings
+        }
+
+        [SerializeField] private GameObject m_LobbyElements;
+        [SerializeField] private GameObject m_CreateRoomElements;
+        [SerializeField] private GameObject m_RoomSettingsElements;
+        [SerializeField] private GameObject m_GeneralSettingsElements;
+
+        private Mode m_CurrentMode;
+
         public override void InitPanel()
         {
             base.InitPanel();
+
+            InitMultiplayer();
+        }
+
+        public async void InitMultiplayer()
+        {
+            bool success = await MultiplayerManager.m_Instance.Init();
+        }
+
+        private void UpdateMode(Mode newMode)
+        {
+            m_CurrentMode = newMode;
+            m_LobbyElements.SetActive(m_CurrentMode == Mode.Lobby);
+            m_CreateRoomElements.SetActive(m_CurrentMode == Mode.Create);
+            m_RoomSettingsElements.SetActive(m_CurrentMode == Mode.RoomSettings);
+            m_GeneralSettingsElements.SetActive(m_CurrentMode == Mode.GeneralSettings);
         }
     }
 } // namespace TiltBrush
