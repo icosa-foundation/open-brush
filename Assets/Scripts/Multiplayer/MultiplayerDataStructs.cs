@@ -46,4 +46,24 @@ namespace OpenBrush.Multiplayer
     {
         public ulong OculusPlayerId;
     }
+
+    [System.Serializable]
+    public struct RoomCreateData
+    {
+        public string roomName;
+        public string roomPassword;
+        public bool @private;
+        public int maxPlayers;
+        public bool voiceDisabled;
+    }
+
+    [System.Serializable]
+    public struct RoomData
+    {
+        public string roomName;
+        public bool @private;
+        public int numPlayers;
+        public int maxPlayers;
+        public bool voiceDisabled;
+    }
 }

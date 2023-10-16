@@ -22,7 +22,8 @@ namespace OpenBrush.Multiplayer
 {
     public interface IConnectionHandler
     {
-        Task<bool> Connect();
+        Task<bool> Init();
+        Task<bool> Connect(RoomCreateData data);
 
         bool IsConnected();
         Task<bool> Disconnect(bool force = false);

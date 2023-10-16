@@ -14,12 +14,17 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using Unity.XR.CoreUtils;
 #if OCULUS_SUPPORTED
 using OVRPlatform = Oculus.Platform;
 #endif
 using TiltBrush;
+
+#if OCULUS_SUPPORTED
+using OVRPlatform = Oculus.Platform;
+#endif // OCULUS_SUPPORTED
 
 namespace OpenBrush.Multiplayer
 {
@@ -42,6 +47,7 @@ namespace OpenBrush.Multiplayer
 
         public Action<ITransientData<PlayerRigData>> localPlayerJoined;
         public Action<ITransientData<PlayerRigData>> remotePlayerJoined;
+        public Action<List<RoomData>> roomDataRefreshed;
 
         ulong myOculusUserId;
 
@@ -58,7 +64,6 @@ namespace OpenBrush.Multiplayer
 
         void Start()
         {
-
 #if OCULUS_SUPPORTED
             OVRPlatform.Users.GetLoggedInUser().OnComplete((msg) => {
                 if (!msg.IsError)
@@ -100,9 +105,19 @@ namespace OpenBrush.Multiplayer
             SketchMemoryScript.m_Instance.CommandRedo -= OnCommandRedo;
         }
 
-        public async void Connect()
+        public async Task<bool> Init()
         {
-            var result = await m_Manager.Connect();
+            var success = false;
+            if (m_Manager !=null)
+            {
+                success = await m_Manager.Init();
+            }
+            return success;
+        }
+
+        public async void Connect(RoomCreateData data)
+        {
+            var result = await m_Manager.Connect(data);
         }
 
         void Update()
