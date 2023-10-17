@@ -146,7 +146,8 @@ namespace TiltBrush
 
             // Open Brush Reserved Enums 1000-1999
             LanguagePopup = 1000,
-            ToggleMultiplayerPanel = 1001,
+            MultiplayerTogglePanel = 1001,
+            MultiplayerPanelOptions = 1002, // iParam1: Popup options
 
             RenameSketch = 5200,
             OpenLayerOptionsPopup = 5201,
@@ -4940,7 +4941,7 @@ namespace TiltBrush
                     // TODO refactor code above to use this method
                     OpenUrl($"http://localhost:{App.HttpServer.HttpPort}/examplescripts");
                     break;
-                case GlobalCommands.ToggleMultiplayerPanel:
+                case GlobalCommands.MultiplayerTogglePanel:
                     m_PanelManager.ToggleMultiplayerPanels();
                     PointerManager.m_Instance.EatLineEnabledInput();
                     SketchSurfacePanel.m_Instance.EatToolsInput();

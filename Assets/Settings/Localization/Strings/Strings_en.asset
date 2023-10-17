@@ -3472,6 +3472,10 @@ MonoBehaviour:
       Brush Size'
     m_Metadata:
       m_Items: []
+  - m_Id: 157582826200739840
+    m_Localized: Close
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

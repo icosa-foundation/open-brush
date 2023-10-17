@@ -3283,6 +3283,10 @@ MonoBehaviour:
     m_Key: ADMIN_PANEL_MULTIPLAYER_BUTTON_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 157582826200739840
+    m_Key: MULTIPLAYER_PANEL_CLOSE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

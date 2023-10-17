@@ -22,6 +22,7 @@ namespace TiltBrush
     {
         public enum Mode
         {
+            Null,
             Lobby,
             Create,
             RoomSettings,
@@ -54,6 +55,35 @@ namespace TiltBrush
             m_CreateRoomElements.SetActive(m_CurrentMode == Mode.Create);
             m_RoomSettingsElements.SetActive(m_CurrentMode == Mode.RoomSettings);
             m_GeneralSettingsElements.SetActive(m_CurrentMode == Mode.GeneralSettings);
+        }
+
+        private void RefreshObjects()
+        {
+            
+        }
+
+        // This function serves as a callback from ProfilePopUpButtons that want to
+        // change the mode of the popup on click.
+        public void OnMultiplayerPanelButtonPressed(MultiplayerPanelButton button)
+        {
+            switch (button.m_Command)
+            {
+                // Identifier for signaling we understand the info message.
+                case SketchControlsScript.GlobalCommands.Null:
+                    UpdateMode(Mode.Lobby);
+                    RefreshObjects();
+                    break;
+                case SketchControlsScript.GlobalCommands.MultiplayerPanelOptions:
+                    switch((Mode)button.m_CommandParam)
+                    {
+                        case Mode.Lobby:
+                            UpdateMode(Mode.Lobby);
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+            }
         }
     }
 } // namespace TiltBrush
