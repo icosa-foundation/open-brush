@@ -398,6 +398,12 @@ namespace TiltBrush
             return script;
         }
 
+        public void RemoveRemotePointer(PointerScript pointer)
+        {
+            m_RemoteUserPointers.Remove(pointer);
+            Destroy(pointer.gameObject);
+        }
+
         /// The brush size, using "normalized" values in the range [0,1].
         /// Guaranteed to be in [0,1].
         public float GetPointerBrushSize01(InputManager.ControllerName controller)

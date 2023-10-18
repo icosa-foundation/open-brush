@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using Unity.XR.CoreUtils;
@@ -45,8 +46,9 @@ namespace OpenBrush.Multiplayer
         private ITransientData<PlayerRigData> m_LocalPlayer;
         private List<ITransientData<PlayerRigData>> m_RemotePlayers;
 
-        public Action<ITransientData<PlayerRigData>> localPlayerJoined;
-        public Action<ITransientData<PlayerRigData>> remotePlayerJoined;
+        public Action<int, ITransientData<PlayerRigData>> localPlayerJoined;
+        public Action<int, ITransientData<PlayerRigData>> remotePlayerJoined;
+        public Action<int> playerLeft;
         public Action<List<RoomData>> roomDataRefreshed;
 
         ulong myOculusUserId;
@@ -91,6 +93,7 @@ namespace OpenBrush.Multiplayer
 
             localPlayerJoined += OnLocalPlayerJoined;
             remotePlayerJoined += OnRemotePlayerJoined;
+            playerLeft += OnPlayerLeft;
             SketchMemoryScript.m_Instance.CommandPerformed += OnCommandPerformed;
             SketchMemoryScript.m_Instance.CommandUndo += OnCommandUndo;
             SketchMemoryScript.m_Instance.CommandRedo += OnCommandRedo;
@@ -100,6 +103,7 @@ namespace OpenBrush.Multiplayer
         {
             localPlayerJoined -= OnLocalPlayerJoined;
             remotePlayerJoined -= OnRemotePlayerJoined;
+            playerLeft -= OnPlayerLeft;
             SketchMemoryScript.m_Instance.CommandPerformed -= OnCommandPerformed;
             SketchMemoryScript.m_Instance.CommandUndo -= OnCommandUndo;
             SketchMemoryScript.m_Instance.CommandRedo -= OnCommandRedo;
@@ -108,7 +112,7 @@ namespace OpenBrush.Multiplayer
         public async Task<bool> Init()
         {
             var success = false;
-            if (m_Manager !=null)
+            if (m_Manager != null)
             {
                 success = await m_Manager.Init();
             }
@@ -162,6 +166,7 @@ namespace OpenBrush.Multiplayer
             foreach (var player in m_RemotePlayers)
             {
                 data = player.RecieveData();
+#if OCULUS_SUPPORTED
                 // New user, share the anchor with them
                 if (data.ExtraData.OculusPlayerId != 0 && !oculusPlayerIds.Contains(data.ExtraData.OculusPlayerId))
                 {
@@ -170,6 +175,7 @@ namespace OpenBrush.Multiplayer
                     oculusPlayerIds.Add(data.ExtraData.OculusPlayerId);
                     newUser = true;
                 }
+#endif // OCULUS_SUPPORTED
             }
 
             if (newUser)
@@ -178,15 +184,33 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        void OnLocalPlayerJoined(ITransientData<PlayerRigData> playerData)
+        void OnLocalPlayerJoined(int id, ITransientData<PlayerRigData> playerData)
         {
             m_LocalPlayer = playerData;
         }
 
-        void OnRemotePlayerJoined(ITransientData<PlayerRigData> playerData)
+        void OnRemotePlayerJoined(int id, ITransientData<PlayerRigData> playerData)
         {
             Debug.Log("Adding new player to track.");
+            playerData.PlayerId = id;
             m_RemotePlayers.Add(playerData);
+        }
+
+        void OnPlayerLeft(int id)
+        {
+            if (m_LocalPlayer.PlayerId == id)
+            {
+                Debug.Log("Possible to get here!");
+                return;
+            }
+            var copy = m_RemotePlayers.ToList();
+            foreach (var player in copy)
+            {
+                if (player.PlayerId == id)
+                {
+                    m_RemotePlayers.Remove(player);
+                }
+            }
         }
 
         private async void OnCommandPerformed(BaseCommand command)

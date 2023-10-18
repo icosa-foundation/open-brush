@@ -53,8 +53,8 @@ MonoBehaviour:
   m_Left: {fileID: 6268094594865570998}
   m_Right: {fileID: 4999079164026519325}
   m_Tool: {fileID: 5771162771103583132}
-  headTransform: {fileID: 5041384770245166357}
   _oculusPlayerId: 0
+  headTransform: {fileID: 5041384770245166357}
 --- !u!114 &6752862290110515822
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -69,7 +69,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ObjectInterest: 1
   DefaultInterestGroups: []
-  DestroyWhenStateAuthorityLeaves: 0
+  DestroyWhenStateAuthorityLeaves: 1
   AllowStateAuthorityOverride: 0
   AoiPositionSource: {fileID: 0}
   Flags: 2305
