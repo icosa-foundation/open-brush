@@ -16,7 +16,10 @@ using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
+using GLTF.Schema;
 using UnityEngine;
+using UnityGLTF;
+using UnityGLTF.Extensions;
 using static TiltBrush.ExportUtils;
 
 namespace TiltBrush
@@ -28,7 +31,6 @@ namespace TiltBrush
         public struct ExportResults
         {
             public bool success;
-            public int numTris;
             public string[] exportedFiles;
         }
 
@@ -41,6 +43,10 @@ namespace TiltBrush
             public string tiltBrushBuildStamp;
             public Dictionary<Guid, ExportedBrush> brushes = new Dictionary<Guid, ExportedBrush>();
         }
+
+        // As each GeometryPool is emitted, the glTF mesh is memoized and shared across all nodes which
+        // reference the same pool.
+        private Dictionary<GeometryPool, GLTFMesh> m_meshCache = new ();
 
         [Serializable]
         public class ExportedBrush
@@ -63,7 +69,7 @@ namespace TiltBrush
             public Dictionary<string, Color> colorParams = new Dictionary<string, Color>();
         }
 
-        private GlTF_ScriptableExporter m_exporter;
+        private GLTFSceneExporter m_exporter;
 
         // This exports the scene into glTF. Brush strokes are exported in the style of the FBX exporter
         // by building individual meshes for the brush strokes, merging them by brush type, and exporting
@@ -115,65 +121,68 @@ namespace TiltBrush
             // 1. will not write files whose names conflict with payload's
             // 2. will clean up the entire directory when done
             // This works, as long as the payload isn't used for more than one export (it currently isn't)
-            using (var exporter = new GlTF_ScriptableExporter(
-                       payload.temporaryDirectory, gltfVersion,
-                       App.UserConfig.Flags.LargeMeshSupport))
+
+            var exportOptions = new ExportOptions();
+            var exporter = new GLTFSceneExporter(App.Scene.transform, exportOptions);
+
+            // payload.temporaryDirectory, gltfVersion,
+            // App.UserConfig.Flags.LargeMeshSupport)
+            // exporter.AllowHttpUri = allowHttpUri;
+
+            try
             {
-                exporter.AllowHttpUri = allowHttpUri;
-                try
-                {
-                    m_exporter = exporter;
-                    exporter.G.binary = binary;
+                m_exporter = exporter;
 
-                    exporter.BeginExport(outputFile);
-                    exporter.SetMetadata(payload.generator, copyright: null);
-                    if (doExtras)
-                    {
-                        SetExtras(exporter, payload);
-                    }
-
-                    if (payload.env.skyCubemap != null)
-                    {
-                        // Add the skybox texture to the export.
-                        string texturePath = ExportUtils.GetTexturePath(payload.env.skyCubemap);
-                        string textureFilename = Path.GetFileName(texturePath);
-                        exporter.G.extras["TB_EnvironmentSkybox"] =
-                            ExportFileReference.CreateLocal(texturePath, textureFilename);
-                    }
-
-                    WriteObjectsAndConnections(exporter, payload);
-
-                    string[] exportedFiles = exporter.EndExport();
-                    return new ExportResults
-                    {
-                        success = true,
-                        exportedFiles = exportedFiles,
-                        numTris = exporter.NumTris
-                    };
-                }
-                catch (InvalidOperationException e)
+                exporter.SaveGLB(Path.GetFileName(outputFile), Path.GetDirectoryName(outputFile));
+                if (doExtras)
                 {
-                    OutputWindowScript.Error("glTF export failed", e.Message);
-                    // TODO: anti-pattern. Let the exception bubble up so caller can log it properly
-                    // Actually, InvalidOperationException is now somewhat expected in experimental, since
-                    // the gltf exporter does not check IExportableMaterial.SupportsDetailedMaterialInfo.
-                    // But we still want the logging for standalone builds.
-                    Debug.LogException(e);
-                    return new ExportResults { success = false };
+                    SetExtras(exporter, payload);
                 }
-                catch (IOException e)
+
+                if (payload.env.skyCubemap != null)
                 {
-                    OutputWindowScript.Error("glTF export failed", e.Message);
-                    return new ExportResults { success = false };
+                    // Add the skybox texture to the export.
+                    string texturePath = ExportUtils.GetTexturePath(payload.env.skyCubemap);
+                    string textureFilename = Path.GetFileName(texturePath);
+                    var root = exporter.GetRoot();
+                    ExportFileReference environmentSkybox =
+                        ExportFileReference.CreateLocal(texturePath, textureFilename);
+                    root.Extras["TB_EnvironmentSkybox"] = environmentSkybox.ToString();
                 }
-                finally
+
+                WriteObjectsAndConnections(exporter, payload);
+
+                exporter.SaveGLB(Path.GetFileName(outputFile), Path.GetDirectoryName(outputFile));
+                string[] exportedFiles = { outputFile };
+                return new ExportResults
                 {
-                    payload.Destroy();
-                    // The lifetime of ExportGlTF, GlTF_ScriptableExporter, and GlTF_Globals instances
-                    // is identical. This is solely to be pedantic.
-                    m_exporter = null;
-                }
+                    success = true,
+                    exportedFiles = exportedFiles
+                };
             }
+            catch (InvalidOperationException e)
+            {
+                OutputWindowScript.Error("glTF export failed", e.Message);
+                // TODO: anti-pattern. Let the exception bubble up so caller can log it properly
+                // Actually, InvalidOperationException is now somewhat expected in experimental, since
+                // the gltf exporter does not check IExportableMaterial.SupportsDetailedMaterialInfo.
+                // But we still want the logging for standalone builds.
+                Debug.LogException(e);
+                return new ExportResults { success = false };
+            }
+            catch (IOException e)
+            {
+                OutputWindowScript.Error("glTF export failed", e.Message);
+                return new ExportResults { success = false };
+            }
+            finally
+            {
+                payload.Destroy();
+                // The lifetime of ExportGlTF, GlTF_ScriptableExporter, and GlTF_Globals instances
+                // is identical. This is solely to be pedantic.
+                m_exporter = null;
+            }
+
         }
 
         static string CommaFormattedFloatRGB(Color c)
@@ -186,49 +195,341 @@ namespace TiltBrush
         }
 
         // Populates glTF metadata and scene extras fields.
-        private void SetExtras(
-            GlTF_ScriptableExporter exporter, ExportUtils.SceneStatePayload payload)
+        private void SetExtras(GLTFSceneExporter exporter, SceneStatePayload payload)
         {
             Color skyColorA = payload.env.skyColorA;
             Color skyColorB = payload.env.skyColorB;
             Vector3 skyGradientDir = payload.env.skyGradientDir;
 
+            var root = exporter.GetRoot();
+
             // Scene-level extras:
-            exporter.G.extras["TB_EnvironmentGuid"] = payload.env.guid.ToString("D");
-            exporter.G.extras["TB_Environment"] = payload.env.description;
-            exporter.G.extras["TB_UseGradient"] = payload.env.useGradient ? "true" : "false";
-            exporter.G.extras["TB_SkyColorA"] = CommaFormattedFloatRGB(skyColorA);
-            exporter.G.extras["TB_SkyColorB"] = CommaFormattedFloatRGB(skyColorB);
+            root.Extras["TB_EnvironmentGuid"] = payload.env.guid.ToString("D");
+            root.Extras["TB_Environment"] = payload.env.description;
+            root.Extras["TB_UseGradient"] = payload.env.useGradient ? "true" : "false";
+            root.Extras["TB_SkyColorA"] = CommaFormattedFloatRGB(skyColorA);
+            root.Extras["TB_SkyColorB"] = CommaFormattedFloatRGB(skyColorB);
             Matrix4x4 exportFromUnity = AxisConvention.GetFromUnity(payload.axes);
-            exporter.G.extras["TB_SkyGradientDirection"] = CommaFormattedVector3(
+            root.Extras["TB_SkyGradientDirection"] = CommaFormattedVector3(
                 exportFromUnity * skyGradientDir);
-            exporter.G.extras["TB_FogColor"] = CommaFormattedFloatRGB(payload.env.fogColor);
-            exporter.G.extras["TB_FogDensity"] = payload.env.fogDensity.ToString();
+            root.Extras["TB_FogColor"] = CommaFormattedFloatRGB(payload.env.fogColor);
+            root.Extras["TB_FogDensity"] = payload.env.fogDensity.ToString();
 
             // TODO: remove when Poly starts using the new color data
-            exporter.G.extras["TB_SkyColorHorizon"] = CommaFormattedFloatRGB(skyColorA);
-            exporter.G.extras["TB_SkyColorZenith"] = CommaFormattedFloatRGB(skyColorB);
+            root.Extras["TB_SkyColorHorizon"] = CommaFormattedFloatRGB(skyColorA);
+            root.Extras["TB_SkyColorZenith"] = CommaFormattedFloatRGB(skyColorB);
         }
 
-        // Returns a GlTF_Node; null means "there is no node for this group".
-        public GlTF_Node GetGroupNode(uint groupId)
+        // Returns a Node; null means "there is no node for this group".
+        public Node GetGroupNode(uint groupId)
         {
-            GlTF_Globals G = m_exporter.G;
-            if (!G.Gltf2 || groupId == 0)
+            Node node;
+            try
             {
-                // When exporting for Poly be maximally compatible and don't create interior nodes
+                node = m_exporter.GetRoot().Nodes.Find(x => x.Name == $"group_{groupId}");
+            }
+            catch (InvalidOperationException e)
+            {
+                node = new Node();
+
+            }
+            return node;
+        }
+
+        // Doesn't do material export; for that see ExportMeshPayload
+        private Node ExportMeshPayload_NoMaterial(
+            BaseMeshPayload mesh,
+            Node parent,
+            Matrix4x4? localXf = null)
+        {
+
+            string meshNameAndId = mesh.legacyUniqueName;
+            GeometryPool pool = mesh.geometry;
+            Matrix4x4 xf = localXf ?? mesh.xform;
+
+            // Create a Node and (usually) a Mesh, both named after meshNameAndId.
+            // This is safe because the namespaces for Node and Mesh are distinct.
+            // If we have already seen the GeometryPool, the Mesh will be reused.
+            // In this (less common) case, the Node and Mesh will have different names.
+
+            // We don't actually ever use the "VERTEXID" attribute, even in gltf1.
+            // It's time to cut it away.
+            // Also, in gltf2, it needs to be called _VERTEXID anyway since it's a custom attribute
+
+            // AndyB: TODO
+            // GlTF_VertexLayout gltfLayout = new GlTF_VertexLayout(G, pool.Layout);
+
+            int numTris = pool.NumTriIndices / 3;
+            if (numTris < 1) {
                 return null;
             }
-            ObjectName name = new ObjectName($"group_{groupId}");
-            return GlTF_Node.GetOrCreate(G, name, Matrix4x4.identity, null, out _);
+
+            // NumTris += numTris;
+
+            GLTFMesh gltfMesh;
+
+            // Share meshes for any repeated geometry pool.
+            if (!m_meshCache.TryGetValue(pool, out gltfMesh)) {
+                gltfMesh = new GLTFMesh();
+                gltfMesh.Name = meshNameAndId;
+                m_meshCache.Add(pool, gltfMesh);
+
+                // Populate mesh data only once.
+                AddMeshDependencies(meshNameAndId, mesh.exportableMaterial, gltfMesh);
+                Populate(gltfMesh, pool);
+                m_exporter.GetRoot().Meshes.Add(gltfMesh);
+            }
+
+            // The mesh may or may not be shared, but every mesh will have a distinct node to allow them
+            // to have unique transforms.
+            var nodes = m_exporter.GetRoot().Nodes;
+            Node node;
+            try
+            {
+                node = nodes.First(n => n.Name == meshNameAndId);
+            }
+            catch (InvalidOperationException e)
+            {
+                node = new Node();
+                node.Name = meshNameAndId;
+                node.Matrix = xf.ToGltfMatrix4x4Convert();
+            }
+            var uniqueMesh = new List<GLTFSceneExporter.UniquePrimitive>
+            {
+                new(){ Mesh = mesh.geometry.GetBackingMesh() }
+            };
+            var meshId = m_exporter.ExportMesh(mesh.geometryName, uniqueMesh);
+            node.Mesh = meshId;
+            return node;
         }
 
-        private void WriteObjectsAndConnections(GlTF_ScriptableExporter exporter,
+        public void Populate(GLTFMesh mesh, GeometryPool pool)
+        {
+            pool.EnsureGeometryResident();
+
+            // if (mesh.Primitives.Count > 0) {
+            //     // Vertex data is shared among all the primitives in the mesh, so only do [0]
+            //     mesh.Primitives[0].Attributes.Populate(pool);
+            //     mesh.Primitives[0].Populate(pool, largeIndices);
+            //
+            //     // I guess someone might want to map Unity submeshes -> gltf primitives.
+            //     // - First you'd want to make sure that consuming tools won't freak out about that,
+            //     //   since it doesn't seem to be the intended use for the mesh/primitive distinction.
+            //     //   See https://github.com/KhronosGroup/glTF/issues/1278
+            //     // - Then you'd want Populate() to take multiple GeometryPools, one per MeshSubset.
+            //     // - Then you'd want those GeometryPools to indicate somehow whether their underlying
+            //     //   vertex data is or can be shared -- maybe do this in GeometryPool.FromMesh()
+            //     //   by having them point to the same Lists.
+            //     // - Then you'd want to make GlTF_attributes.Populate() smart enough to understand that
+            //     //   sharing (ie, memoizing on the List<Vector3> pointer)
+            //     // None of that is implemented, which is okay since our current gltf generation
+            //     // code doesn't add more than one GlTF_Primitive per GlTF_Mesh.
+            //     if (mesh.Primitives.Count > 1) {
+            //         Debug.LogError("More than one primitive per mesh is unimplemented and unsupported");
+            //     }
+            // }
+
+            // The mesh data is only ever needed once (because it only goes into the .bin
+            // file once), but ExportMeshGeomPool still uses bits of data like pool.NumTris
+            // so we can't destroy it.
+            //
+            // We could MakeNotResident(filename) again, but that's wasteful and I'd need to
+            // add an API to get the cache filename. So this "no coming back" API seems like
+            // the most expedient solution.
+            // TODO: replace this hack with something better? eg, a way to reload from
+            // file without destroying the file?
+            // pool.Destroy();
+            pool.MakeGeometryPermanentlyNotResident();
+        }
+
+        // Returns the gltf mesh that corresponds to the payload, or null.
+        // Currently, null is only returned if the payload's 'geometry pool is empty.
+        // Pass a localXf to override the default, which is to use base.xform
+        private Node ExportMeshPayload(
+            SceneStatePayload payload,
+            BaseMeshPayload meshPayload,
+            Node parent,
+            Matrix4x4? localXf = null)
+        {
+
+            // Node node = GetGroupNode(meshPayload.group);
+            // GLTFMesh mesh = node.Mesh.Value;
+            // var prims = exporter.GetPrimitivesForMesh(meshPayload.geometry.GetBackingMesh());
+            // mesh.Primitives.AddRange(prims.Select(p => p.prim));
+            // exporter.GetRoot().Nodes.Add(node);
+
+
+
+            var node = ExportMeshPayload_NoMaterial(meshPayload, parent, localXf);
+
+            if (node != null) {
+                // IExportableMaterial exportableMaterial = meshPayload.exportableMaterial;
+                // List<GLTFMaterial> materials = m_exporter.GetRoot().Materials;
+                //
+                // if (!materials.Contains(exportableMaterial))
+                // {
+                //     var prims = node.Mesh?.Value.Primitives;
+                //     var attrs = (prims != null && prims.Count > 0) ? prims[0].Attributes : null;
+                //     if (attrs != null) {
+                //         ExportMaterial(payload, meshPayload.MeshNamespace, exportableMaterial, attrs);
+                //         // Debug.Assert(m_exporter.GetRoot().Materials.Exists(exportableMaterial.name));name
+                //     }
+                // }
+            }
+            return node;
+        }
+
+        // Adds to gltfMesh the glTF dependencies (primitive, material, technique, program, shaders)
+        // required by unityMesh, using matObjName for naming the various material-related glTF
+        // components. This does not add any geometry from the mesh (that's done separately using
+        // GlTF_Mesh.Populate()).
+        //
+        // This does not create the material either. It adds a reference to a material that
+        // presumably will be created very soon (if it hasn't previously been created).
+        private void AddMeshDependencies(
+            string meshName, IExportableMaterial exportableMaterial, GLTFMesh gltfMesh)
+        {
+            var primitive = new MeshPrimitive();
+
+            var indexSize = GLTFComponentType.UnsignedInt;
+            var accessors = m_exporter.GetRoot().Accessors;
+            var indexAccessor = new Accessor();
+            // indexAccessor.Name = Accessor.GetNameFromObject(meshName, "indices_0");
+            indexAccessor.Name = meshName;
+            indexAccessor.Type = GLTFAccessorAttributeType.SCALAR;
+            indexAccessor.ComponentType = indexSize;
+            // indexAccessor.isNonVertexAttributeAccessor = true;
+            accessors.Add(indexAccessor);
+
+            // AndyB: TODO
+            // primitive.Indices = indexAccessor.;
+            if (gltfMesh.Primitives.Count > 0) {
+                Debug.LogError("More than one primitive per mesh is unimplemented and unsupported");
+            }
+            gltfMesh.Primitives.Add(primitive);
+
+            // This needs to be a forward-reference (ie, by name) because G.materials[exportableMaterial]
+            // may not have been created yet.
+            // AndyB: TODO
+            //primitive.Material = GlTF_Material.GetNameFromObject(exportableMaterial);
+        }
+
+
+        // Pass:
+        //   meshNamespace - A string used as the "namespace" of the mesh that owns this material.
+        //     Useful for uniquifying names (texture file names, material names, ...) in a
+        //     human-friendly way.
+        //   hack - attributes of some mesh that uses this material
+        private void ExportMaterial(
+            SceneStatePayload payload,
+            string meshNamespace,
+            IExportableMaterial exportableMaterial,
+            Dictionary<string, AccessorId> hack)
+        {
+            throw new NotImplementedException();
+
+            // //
+            // // Set culling and blending modes.
+            // //
+            // m_exporter.DeclareExtensionUsage("KHR_techniques_webgl");
+            // m_exporter.GetRoot().AddExtension("KHR_techniques_webgl");
+            // GlTF_Technique.States states = new GlTF_Technique.States();
+            // m_exporter.GetRoot().techqu
+            // m_techniqueStates[exportableMaterial] = states;
+            // // Everyone gets depth test
+            // states.enable = new[] { GlTF_Technique.Enable.DEPTH_TEST }.ToList();
+            //
+            // if (exportableMaterial.EnableCull)
+            // {
+            //     states.enable.Add(GlTF_Technique.Enable.CULL_FACE);
+            // }
+            //
+            // if (exportableMaterial.BlendMode == ExportableMaterialBlendMode.AdditiveBlend)
+            // {
+            //     states.enable.Add(GlTF_Technique.Enable.BLEND);
+            //     // Blend array format: [srcRGB, dstRGB, srcAlpha, dstAlpha]
+            //     states.functions["blendFuncSeparate"] =
+            //         new GlTF_Technique.Value(G, new Vector4(1.0f, 1.0f, 1.0f, 1.0f)); // Additive.
+            //     states.functions["depthMask"] = new GlTF_Technique.Value(G, false);   // No depth write.
+            //     // Note: If we switch bloom to use LDR color, adding the alpha channels won't do.
+            //     // GL_MIN would be a good choice for alpha, but it's unsupported by glTF 1.0.
+            // }
+            // else if (exportableMaterial.BlendMode == ExportableMaterialBlendMode.AlphaBlend)
+            // {
+            //     states.enable.Add(GlTF_Technique.Enable.BLEND);
+            //     // Blend array format: [srcRGB, dstRGB, srcAlpha, dstAlpha]
+            //     // These enum values correspond to: [ONE, ONE_MINUS_SRC_ALPHA, ONE, ONE_MINUS_SRC_ALPHA]
+            //     states.functions["blendFuncSeparate"] =
+            //         new GlTF_Technique.Value(G, new Vector4(1.0f, 771.0f, 1.0f, 771.0f)); // Blend.
+            //     states.functions["depthMask"] = new GlTF_Technique.Value(G, true);
+            // }
+            // else
+            // {
+            //     // Standard z-buffering: Enable depth write.
+            //     states.functions["depthMask"] = new GlTF_Technique.Value(G, true);
+            // }
+            //
+            // // First add the material, then export any per-material attributes, such as shader uniforms.
+            // AddMaterialWithDependencies(exportableMaterial, meshNamespace, hack);
+            //
+            // // Add lighting for this material.
+            // AddLights(exportableMaterial, payload);
+            //
+            // //
+            // // Export shader/material parameters.
+            // //
+            //
+            // foreach (var kvp in exportableMaterial.FloatParams)
+            // {
+            //     ExportShaderUniform(exportableMaterial, kvp.Key, kvp.Value);
+            // }
+            // foreach (var kvp in exportableMaterial.ColorParams)
+            // {
+            //     ExportShaderUniform(exportableMaterial, kvp.Key, kvp.Value);
+            // }
+            // foreach (var kvp in exportableMaterial.VectorParams)
+            // {
+            //     ExportShaderUniform(exportableMaterial, kvp.Key, kvp.Value);
+            // }
+            // foreach (var kvp in exportableMaterial.TextureSizes)
+            // {
+            //     float width = kvp.Value.x;
+            //     float height = kvp.Value.y;
+            //     ExportShaderUniform(exportableMaterial, kvp.Key + "_TexelSize",
+            //         new Vector4(1 / width, 1 / height, width, height));
+            // }
+            //
+            // //
+            // // Export textures.
+            // //
+            // foreach (var kvp in exportableMaterial.TextureUris)
+            // {
+            //     string textureName = kvp.Key;
+            //     string textureUri = kvp.Value;
+            //
+            //     ExportFileReference fileRef;
+            //     if (ExportFileReference.IsHttp(textureUri))
+            //     {
+            //         // Typically this happens for textures used by BrushDescriptor materials
+            //         fileRef = CreateExportFileReferenceFromHttp(textureUri);
+            //     }
+            //     else
+            //     {
+            //         fileRef = ExportFileReference.GetOrCreateSafeLocal(
+            //             G.m_disambiguationContext, textureUri, exportableMaterial.UriBase,
+            //             $"{meshNamespace}_{Path.GetFileName(textureUri)}");
+            //     }
+            //
+            //     AddTextureToMaterial(exportableMaterial, textureName, fileRef);
+            // }
+        }
+
+        private void WriteObjectsAndConnections(GLTFSceneExporter exporter,
                                                 SceneStatePayload payload)
         {
             foreach (BrushMeshPayload meshPayload in payload.groups.SelectMany(g => g.brushMeshes))
             {
-                exporter.ExportMeshPayload(payload, meshPayload, GetGroupNode(meshPayload.group));
+                ExportMeshPayload(payload, meshPayload, GetGroupNode(meshPayload.group), localXf: meshPayload.xform);
             }
 
             foreach (var sameInstance in payload.modelMeshes.GroupBy(m => (m.model, m.modelId)))
@@ -239,31 +540,18 @@ namespace TiltBrush
                 // All of these pieces will come from the same Widget and therefore will have
                 // the same group id, root transform, etc
                 var first = modelMeshPayloads[0];
-                GlTF_Node groupNode = GetGroupNode(first.group);
+                Node groupNode = GetGroupNode(first.group);
 
-                if (exporter.G.Gltf2)
+                // Non-Poly exports get a multi-level structure for meshes: transform node on top,
+                // all the contents as direct children.
+                string rootNodeName = $"model_{first.model.GetExportName()}_{first.modelId}";
+                if (modelMeshPayloads.Count == 1 && first.localXform.isIdentity)
                 {
-                    // Non-Poly exports get a multi-level structure for meshes: transform node on top,
-                    // all the contents as direct children.
-                    string rootNodeName = $"model_{first.model.GetExportName()}_{first.modelId}";
-                    if (modelMeshPayloads.Count == 1 && first.localXform.isIdentity)
-                    {
-                        // Condense the two levels into one; give the top-level node the same name
-                        // it would have had had it been multi-level.
-                        GlTF_Node newNode = exporter.ExportMeshPayload(payload, first, groupNode);
-                        newNode.PresentationNameOverride = rootNodeName;
-                    }
-                    else
-                    {
-                        GlTF_Node parentNode = GlTF_Node.Create(
-                            exporter.G, rootNodeName,
-                            first.parentXform, groupNode);
-                        foreach (var modelMeshPayload in modelMeshPayloads)
-                        {
-                            exporter.ExportMeshPayload(payload, modelMeshPayload, parentNode,
-                                modelMeshPayload.localXform);
-                        }
-                    }
+                    // Condense the two levels into one; give the top-level node the same name
+                    // it would have had had it been multi-level.
+                    Node newNode = ExportMeshPayload(payload, first, groupNode);
+                    // newNode.PresentationNameOverride = rootNodeName;
+                    newNode.Name = rootNodeName;
                 }
                 else
                 {
@@ -271,21 +559,24 @@ namespace TiltBrush
                     // an abundance of caution, keep Poly unchanged
                     foreach (var modelMeshPayload in modelMeshPayloads)
                     {
-                        exporter.ExportMeshPayload(payload, modelMeshPayload, groupNode);
+                        ExportMeshPayload(payload, modelMeshPayload, groupNode);
                     }
                 }
             }
 
             foreach (ImageQuadPayload meshPayload in payload.imageQuads)
             {
-                exporter.ExportMeshPayload(payload, meshPayload, GetGroupNode(meshPayload.group));
+                ExportMeshPayload(payload, meshPayload, GetGroupNode(meshPayload.group));
             }
 
             foreach (var (xformPayload, i) in payload.referenceThings.WithIndex())
             {
                 string uniqueName = $"empty_{xformPayload.name}_{i}";
-                var node = GlTF_Node.Create(exporter.G, uniqueName, xformPayload.xform, null);
-                node.PresentationNameOverride = $"empty_{xformPayload.name}";
+                var node = new Node();
+                node.Name = uniqueName;
+                node.Matrix = xformPayload.xform.ToGltfMatrix4x4Convert();
+                // parent = exporter.GetRoot()
+                // node.PresentationNameOverride = $"empty_{xformPayload.name}";
             }
         }
     }

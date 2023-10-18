@@ -160,11 +160,6 @@ namespace TiltBrush
             m_uri = uri;
         }
 
-        public string AsJson()
-        {
-            return new SimpleJSON.JSONData(m_uri).ToString();
-        }
-
         public bool IsHttp()
         {
             return ExportFileReference.IsHttp(m_uri);
