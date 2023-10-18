@@ -317,9 +317,9 @@ MonoBehaviour:
   m_PreviewLineControlPointLife: 0.2
   m_PreviewLineIdealLength: 1
   m_AudioSources:
-  - {fileID: 114453837716747884}
-  - {fileID: 114054523002933400}
-  - {fileID: 114160529511473284}
+  - {fileID: -3960940074271305933}
+  - {fileID: -8312023248257998569}
+  - {fileID: -6042884290199676049}
   m_BrushAudioPitchVelocityRange: {x: 10, y: 30}
   m_BrushPlaybackAudioClip: {fileID: 8300000, guid: d52d5fa13bdd38749b0cd828ae9a9193,
     type: 3}
