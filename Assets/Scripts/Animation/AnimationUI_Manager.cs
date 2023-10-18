@@ -57,6 +57,8 @@ namespace TiltBrush.FrameAnimation
             public bool deleted;
 
         }
+        
+         public List<Track> timeline;
 
 
         public Frame newFrame(CanvasScript canvas)
@@ -93,7 +95,11 @@ namespace TiltBrush.FrameAnimation
         [SerializeField] public GameObject frameButtonPrefab;
 
 
+
+
         [SerializeField] public GameObject layersPanel;
+
+        GameObject animationPathCanvas;
 
 
         // [SerializeField] public GameObject captureRig;
@@ -109,7 +115,7 @@ namespace TiltBrush.FrameAnimation
         public List<GameObject> timelineNotches;
         public List<GameObject> timelineFrameObjects;
 
-        public List<Track> timeline;
+       
 
         public struct animatedModel
         {
@@ -161,6 +167,11 @@ namespace TiltBrush.FrameAnimation
             timelineFrameObjects = new List<GameObject>();
 
             resetTimeline();
+
+            animationPathCanvas = new GameObject("AnimationPaths");
+            animationPathCanvas.transform.parent = App.Scene.gameObject.transform;
+            animationPathCanvas.AddComponent<CanvasScript>();
+
 
             print("START TIMELINE");
         }
@@ -239,7 +250,8 @@ namespace TiltBrush.FrameAnimation
         {
 
 
-
+            GameObject moveTransform = pathwidget.gameObject;
+            moveTransform.transform.SetParent(animationPathCanvas.transform);
 
             (int, int) Loc = getCanvasIndex(App.Scene.ActiveCanvas);
 
@@ -1362,10 +1374,12 @@ namespace TiltBrush.FrameAnimation
               
                         Debug.Log("POSITION START " + timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathStart).ToString());
 
-                        TrTransform posStart =  App.Scene.Pose.inverse * TrTransform.TR(timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathStart),timeline[0].Frames[frameInt].animatedPath.Path.GetRotation(pathStart));
-                        TrTransform posNow =  App.Scene.Pose.inverse * TrTransform.TR(timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathTime),timeline[0].Frames[frameInt].animatedPath.Path.GetRotation(pathTime));
+                        TrTransform posStart =  App.Scene.Pose.inverse * TrTransform.T(timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathStart));
+                        TrTransform posNow =  App.Scene.Pose.inverse * TrTransform.T(timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathTime));
 
                         TrTransform posDifference = posNow * posStart.inverse ;
+
+                        // posDifference = posDifference*
 
 
 
@@ -1375,7 +1389,11 @@ namespace TiltBrush.FrameAnimation
 
                         timeline[0].Frames[frameInt].canvas.LocalPose = posDifference;
 
-                        timeline[0].Frames[frameInt].animatedPath.gameObject.transform.position = pathPosition.translation;
+                        TrTransform pathPositionConstant = (pathPosition);
+
+                        timeline[0].Frames[frameInt].animatedPath.gameObject.transform.position = pathPositionConstant.translation;
+
+                        timeline[0].Frames[frameInt].animatedPath.gameObject.transform.rotation = pathPositionConstant.rotation;
                         // timeline[0].Frames[frameInt].animatedPath.gameObject.transform.rotation = pathPosition.rotation; 
                         // timeline[0].Frames[frameInt].animatedPath.gameObject.transform.scale = pathPosition.scale;
 
