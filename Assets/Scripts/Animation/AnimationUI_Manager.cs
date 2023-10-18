@@ -1350,15 +1350,16 @@ namespace TiltBrush.FrameAnimation
                         Debug.Log("NUM POS KNOTS");
                         Debug.Log(timeline[0].Frames[frameInt].animatedPath.Path.NumPositionKnots);
 
-                        float canvasTime = (1.0f - getSmoothAnimationTime(timeline[t])) * (timeline[0].Frames[frameInt].animatedPath.Path.NumPositionKnots - 1);
+                        float canvasTime =  getSmoothAnimationTime(timeline[t]) * (timeline[0].Frames[frameInt].animatedPath.Path.NumPositionKnots - 1);
                         Debug.Log("CANVAS TIME " + canvasTime + " | " + getSmoothAnimationTime(timeline[t]) + " | " + (timeline[0].Frames[frameInt].animatedPath.Path.NumPositionKnots));
 
 
 
+                        TiltBrush.PathT pathTime = new TiltBrush.PathT(timeline[0].Frames[frameInt].animatedPath.Path.NumPositionKnots - 1 - canvasTime);
+                        TiltBrush.PathT pathStart = new TiltBrush.PathT(timeline[0].Frames[frameInt].animatedPath.Path.NumPositionKnots - 1);
 
-                        TiltBrush.PathT pathTime = new TiltBrush.PathT(canvasTime);
-                        TiltBrush.PathT pathStart = new TiltBrush.PathT(0);
-                        TiltBrush.PathT pathOne = new TiltBrush.PathT(1);
+
+
 
 
                         // if (m_CurrentPathWidget.Path.RotationKnots.Count > 0)
@@ -1374,20 +1375,15 @@ namespace TiltBrush.FrameAnimation
               
                         Debug.Log("POSITION START " + timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathStart).ToString());
 
-                        TrTransform posStart =  App.Scene.Pose.inverse * TrTransform.T(timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathStart));
-                        TrTransform posNow =  App.Scene.Pose.inverse * TrTransform.T(timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathTime));
+                        TrTransform posStart =  App.Scene.Pose.inverse * TrTransform.TR(timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathStart),timeline[0].Frames[frameInt].animatedPath.Path.GetRotation(pathStart));
+                        TrTransform posNow =  App.Scene.Pose.inverse * TrTransform.TR(timeline[0].Frames[frameInt].animatedPath.Path.GetPosition(pathTime),timeline[0].Frames[frameInt].animatedPath.Path.GetRotation(pathTime));
 
                         TrTransform posDifference = posNow * posStart.inverse ;
 
-                        // posDifference = posDifference*
 
-
-
-                         Debug.Log("POSITION NORM " + posDifference.ToString());
-
-                        // TrTransform canvasPose = timeline[0].Frames[frameInt].canvas.Pose;
-
+            
                         timeline[0].Frames[frameInt].canvas.LocalPose = posDifference;
+                        // Debug.Log("POSITION AFTER " + timeline[0].Frames[frameInt].canvas.LocalPose.ToString());
 
                         TrTransform pathPositionConstant = (pathPosition);
 
