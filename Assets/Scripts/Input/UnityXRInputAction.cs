@@ -216,7 +216,7 @@ namespace TiltBrush
                     ""path"": ""<XRController>{RightHand}/grip"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller"",
+                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller;Zapbox"",
                     ""action"": ""GripAxis"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -238,7 +238,7 @@ namespace TiltBrush
                     ""path"": ""<XRController>{RightHand}/gripPressed"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller"",
+                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller;Zapbox"",
                     ""action"": ""GripButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -517,6 +517,28 @@ namespace TiltBrush
                     ""action"": ""PadTouch"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""Zapbox Fake Touch"",
+                    ""id"": ""657037af-70ff-42f0-bf1e-c040c19b00a1"",
+                    ""path"": ""FakeThumbTouch"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Zapbox"",
+                    ""action"": ""ThumbTouch"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""axis"",
+                    ""id"": ""738d54c3-7a80-47d6-8b3b-cb7efde5bb90"",
+                    ""path"": ""<ZapboxController>{RightHand}/thumbstick"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Zapbox"",
+                    ""action"": ""ThumbTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
                 }
             ]
         },
@@ -711,7 +733,7 @@ namespace TiltBrush
                     ""path"": ""<XRController>{LeftHand}/grip"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller"",
+                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller;Zapbox"",
                     ""action"": ""GripAxis"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -722,7 +744,7 @@ namespace TiltBrush
                     ""path"": ""<XRController>{LeftHand}/gripPressed"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller"",
+                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller;Zapbox"",
                     ""action"": ""GripButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -981,6 +1003,28 @@ namespace TiltBrush
                     ""isPartOfComposite"": true
                 },
                 {
+                    ""name"": ""Zapbox Fake Touch"",
+                    ""id"": ""ee016306-e73a-48c5-859d-8fc93ac39d44"",
+                    ""path"": ""FakeThumbTouch"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ThumbTouch"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""axis"",
+                    ""id"": ""641226a5-9367-46d8-ac53-4e1df0e64e11"",
+                    ""path"": ""<ZapboxController>{LeftHand}/thumbstick"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Zapbox"",
+                    ""action"": ""ThumbTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
                     ""name"": """",
                     ""id"": ""094e043e-aa39-42cc-979d-4121c9492f66"",
                     ""path"": ""<XRController>{LeftHand}/touchpadTouch"",
@@ -1067,6 +1111,17 @@ namespace TiltBrush
             ""devices"": [
                 {
                     ""devicePath"": ""<PXR_Controller>"",
+                    ""isOptional"": false,
+                    ""isOR"": false
+                }
+            ]
+        },
+        {
+            ""name"": ""Zapbox"",
+            ""bindingGroup"": ""Zapbox"",
+            ""devices"": [
+                {
+                    ""devicePath"": ""<ZapboxController>"",
                     ""isOptional"": false,
                     ""isOR"": false
                 }
@@ -1496,6 +1551,15 @@ namespace TiltBrush
             {
                 if (m_PicoControllerSchemeIndex == -1) m_PicoControllerSchemeIndex = asset.FindControlSchemeIndex("Pico Controller");
                 return asset.controlSchemes[m_PicoControllerSchemeIndex];
+            }
+        }
+        private int m_ZapboxSchemeIndex = -1;
+        public InputControlScheme ZapboxScheme
+        {
+            get
+            {
+                if (m_ZapboxSchemeIndex == -1) m_ZapboxSchemeIndex = asset.FindControlSchemeIndex("Zapbox");
+                return asset.controlSchemes[m_ZapboxSchemeIndex];
             }
         }
         public interface IBrushActions
