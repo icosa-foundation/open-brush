@@ -942,12 +942,12 @@ static class BuildTiltBrush
     class TempSetBundleVersion : IDisposable
     {
         string m_prevBundleVersion;
-        public TempSetBundleVersion(string configVersionNumber, string stamp)
+        public TempSetBundleVersion(BuildTarget target, string configVersionNumber, string stamp)
         {
             m_prevBundleVersion = PlayerSettings.bundleVersion;
             // https://stackoverflow.com/a/9741724/194921 for more on the meaning/format of this string
             PlayerSettings.bundleVersion = configVersionNumber;
-            if (!string.IsNullOrEmpty(stamp))
+            if (!string.IsNullOrEmpty(stamp) && target != BuildTarget.iOS)
             {
                 PlayerSettings.bundleVersion += string.Format("-{0}", stamp);
             }
@@ -1136,7 +1136,7 @@ static class BuildTiltBrush
                     targetXrPluginsRequired = new string[] { "Unity.XR.PXR.PXR_Loader" };
                     break;
                 case XrSdkMode.Zapbox:
-                    targetXrPluginsRequired = new string[] { "Google.XR.Cardboard.XRLoader" };
+                    targetXrPluginsRequired = new string[] { "Zappar.XR.ZapboxLoader" };
                     break;
                 case XrSdkMode.Monoscopic:
                     targetSettings.InitManagerOnStart = false;
@@ -1206,7 +1206,7 @@ static class BuildTiltBrush
         public TempSetGraphicsApis(TiltBuildOptions tiltOptions)
         {
             m_Target = tiltOptions.Target;
-            m_graphicsApis = PlayerSettings.GetGraphicsAPIs(tiltOptions.Target);
+            m_graphicsApis = PlayerSettings.GetGraphicsAPIs(m_Target);
             UnityEngine.Rendering.GraphicsDeviceType[] targetGraphicsApisRequired;
 
             switch (tiltOptions.XrSdk)
@@ -1486,7 +1486,7 @@ static class BuildTiltBrush
         using (var unused4 = new TempHookUpSingletons())
         using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))
         using (var unused14 = new TempSetGraphicsApis(tiltOptions))
-        using (var unused6 = new TempSetBundleVersion(App.Config.m_VersionNumber, stamp))
+        using (var unused6 = new TempSetBundleVersion(target, App.Config.m_VersionNumber, stamp))
         using (var unused10 = new TempSetAppNames(target, tiltOptions.Description))
         using (var unused7 = new TempSetXrPlugin(tiltOptions))
         using (var unused13 = new TempSetOpenXrFeatureGroup(tiltOptions))
