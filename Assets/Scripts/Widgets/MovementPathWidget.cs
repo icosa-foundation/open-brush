@@ -444,6 +444,11 @@ namespace TiltBrush
 
         override protected void OnUserBeginInteracting()
         {
+
+            App.Scene.captureRig.SetActive(!belongsToAnimation);
+
+            Debug.Log("INTERACT WIDGET");
+            
             GrabWidgetData data = WidgetManager.m_Instance.GetCurrentCameraPath();
             m_EatInteractingInput = (data == null) ? false : data.m_WidgetScript != this;
             WidgetManager.m_Instance.SetCurrentCameraPath(this);
@@ -477,6 +482,8 @@ namespace TiltBrush
         {
             base.OnUserEndInteracting();
 
+
+            Debug.Log("FINISHING MOVE");
             if (!m_EatInteractingInput)
             {
                 // Finalize our move commands with the current state of whatever's being actively modified.

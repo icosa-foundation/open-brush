@@ -166,6 +166,7 @@ namespace TiltBrush
                             m_ExtendPath = WidgetManager.m_Instance.CreatePathWidget();
                             m_ExtendPathType = ExtendPathType.ExtendAtHead;
                             WidgetManager.m_Instance.SetCurrentCameraPath(m_ExtendPath);
+                            App.Scene.captureRig.SetActive(true);
                         }
 
                         if (m_LastValidPath != null)
@@ -201,6 +202,7 @@ namespace TiltBrush
                             m_ExtendPath.setPathAnimation(true);
                             m_ExtendPathType = ExtendPathType.ExtendAtHead;
                             WidgetManager.m_Instance.SetCurrentCameraPath(m_ExtendPath);
+                            App.Scene.captureRig.SetActive(false);
                             App.Scene.animationUI_manager.addAnimationPath(m_ExtendPath);
 
                         }

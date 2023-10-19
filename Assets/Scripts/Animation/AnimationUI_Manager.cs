@@ -253,6 +253,8 @@ namespace TiltBrush.FrameAnimation
             GameObject moveTransform = pathwidget.gameObject;
             moveTransform.transform.SetParent(animationPathCanvas.transform);
 
+            pathwidget.setPathAnimation(true);
+
             (int, int) Loc = getCanvasIndex(App.Scene.ActiveCanvas);
 
 
