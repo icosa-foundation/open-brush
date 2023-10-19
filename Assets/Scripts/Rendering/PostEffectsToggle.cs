@@ -24,7 +24,7 @@ namespace TiltBrush
             MonoBehaviour t = GetComponent<T>() as MonoBehaviour;
             if (t != null)
             {
-                t.enabled = enabled;
+                t.enabled = false;
             }
         }
 

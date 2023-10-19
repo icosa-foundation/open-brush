@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.IO;
+using Kino;
 using UnityEngine;
 
 namespace TiltBrush
@@ -424,6 +425,11 @@ namespace TiltBrush
         /// with CreateTemporaryTargetForSave().
         public void RenderToTexture(RenderTexture rTexture)
         {
+            Debug.Log($"[CamDebug] Bloom: {GetComponent<SENaturalBloomAndDirtyLens>().enabled}");
+            Debug.Log($"[CamDebug] TiltShift: {GetComponent<TiltShift>().enabled}");
+            Debug.Log($"[CamDebug] MobileBloom: {GetComponent<MobileBloom>().enabled}");
+            Debug.Log($"[CamDebug] WatermarkEffect: {GetComponent<WatermarkEffect>().enabled}");
+
             RenderTextureFormat format = CameraFormat();
             int depth = 24;
 
