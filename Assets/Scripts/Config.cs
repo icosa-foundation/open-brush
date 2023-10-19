@@ -154,8 +154,10 @@ namespace TiltBrush
             // but their editor platform is still set to Windows.
 #if UNITY_EDITOR && UNITY_ANDROID
             get => Application.platform == RuntimePlatform.Android || SpoofMobileHardware.MobileHardware;
+#elif UNITY_EDITOR && UNITY_IOS
+            get => Application.platform == RuntimePlatform.IPhonePlayer || SpoofMobileHardware.MobileHardware;
 #else
-            get => Application.platform == RuntimePlatform.Android;
+            get => Application.platform == RuntimePlatform.Android || Application.platform == RuntimePlatform.IPhonePlayer;
 #endif
         }
 
