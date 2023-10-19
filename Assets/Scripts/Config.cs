@@ -45,6 +45,7 @@ namespace TiltBrush
         Oculus,
         Wave,
         Pico,
+        Zapbox
     }
 
     // The sdk mode indicates which SDK that we're using to drive the display.

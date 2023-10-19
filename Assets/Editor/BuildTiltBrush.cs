@@ -117,6 +117,9 @@ static class BuildTiltBrush
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.StandaloneWindows64),
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.Android),
 
+            // Zapbox
+            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Zapbox, BuildTarget.iOS),
+
 #if OCULUS_SUPPORTED
             // Oculus
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Oculus, BuildTarget.StandaloneWindows64),
@@ -1131,6 +1134,9 @@ static class BuildTiltBrush
                     break;
                 case XrSdkMode.Pico:
                     targetXrPluginsRequired = new string[] { "Unity.XR.PXR.PXR_Loader" };
+                    break;
+                case XrSdkMode.Zapbox:
+                    targetXrPluginsRequired = new string[] { "Google.XR.Cardboard.XRLoader" };
                     break;
                 case XrSdkMode.Monoscopic:
                     targetSettings.InitManagerOnStart = false;

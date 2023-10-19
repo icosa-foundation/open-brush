@@ -212,6 +212,12 @@ jobs:
             # Pico requested Chinese build that doesn't have google/sketchfab login.
             extraoptions: -btb-il2cpp -btb-disableAccountLogins
 
+          - name: Zapbox iOS
+            targetPlatform: iOS
+            vrsdk: Zapbox
+            cache: iOS
+            extraoptions: -btb-il2cpp
+
     steps:
       - name: Free extra space
         # This takes several minutes, so we only do it where required. As of 12/10/2023, this increases free space from 18GB to 41GB
@@ -341,6 +347,13 @@ jobs:
         run:
           echo "filename=com.Icosa.$BASENAME.apk" >> $GITHUB_ENV
 
+      - name: Set filename (for iOS)
+        if: matrix.targetPlatform == 'iOS'
+        env:
+          BASENAME: ${{ needs.configuration.outputs.basename}}
+        run:
+          echo "filename=$BASENAME" >> $GITHUB_ENV
+
       - name: Set build stamp
         if: ${{ needs.configuration.outputs.stamp }}
         # We checkout the merge commit, but for the purpose of the tag, use the version from the PR, not the merge commit, which is rather hard to find later. We skip the version tag, since this comes from the code and can't be easily overwritten
@@ -380,6 +393,11 @@ jobs:
         if: matrix.vrsdk == 'Pico'
         run: |
           echo -e "\n-define:PICO_SUPPORTED" | tee -a Assets/csc.rsp
+
+      - name: Set ZAPBOX_SUPPORTED in csc.rsp
+        if: matrix.vrsdk == 'Zapbox'
+        run: |
+          echo -e "\n-define:ZAPBOX_SUPPORTED" | tee -a Assets/csc.rsp
 
       - name: Set PIMAX_SUPPORTED in csc.rsp
         if: matrix.name == 'Windows Pimax'
