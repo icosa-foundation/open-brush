@@ -1818,6 +1818,18 @@ static class BuildTiltBrush
                     //project.SetBuildProperty(pbxTarget, "ENABLE_BITCODE", "false");
 
                     File.WriteAllText(pbxPath, project.WriteToString());
+
+                    string plistPath = path + "/Info.plist";
+                    PlistDocument plist = new PlistDocument();
+                    plist.ReadFromFile(plistPath);
+                    PlistElementDict root = plist.root;
+                    
+                    PlistElementBoolean enable = new (true);
+                    root["UIFileSharingEnabled"] = enable;
+                    root["LSSupportsOpeningDocumentsInPlace"] = enable;
+
+                    //save plist values
+                    plist.WriteToFile(plistPath);
 #endif
                     break;
                 }
