@@ -230,7 +230,7 @@ namespace TiltBrush
             m_isRecording = (VideoRecorderUtils.ActiveVideoRecording != null) &&
                 VideoRecorderUtils.ActiveVideoRecording.IsCapturing;
 
-#if UNITY_ANDROID
+#if false
     // TODO:Mike - setting MSAA seems to crash quest when in Vulkan
     
     int msaa = QualityControls.m_Instance.MSAALevel;
