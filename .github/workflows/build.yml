@@ -157,41 +157,41 @@ jobs:
       matrix:
         # We don't use an actual matrix because there's more exceptions than actual cases!
         include:
-#          - name: Windows OpenXR
-#            targetPlatform: StandaloneWindows64
-#            vrsdk: OpenXR
-#            cache: Windows
-#
-#          - name: Windows Pimax
-#            targetPlatform: StandaloneWindows64
-#            vrsdk: OpenXR
-#            cache: Windows
-#
-#          - name: Windows Rift
-#            targetPlatform: StandaloneWindows64
-#            vrsdk: Oculus
-#            cache: Windows
-#
-#          - name: Windows Monoscopic
-#            targetPlatform: StandaloneWindows64
-#            vrsdk: Monoscopic
-#            cache: Windows
-#
-#          - name: Linux Monoscopic
-#            targetPlatform: StandaloneLinux64
-#            vrsdk: Monoscopic
-#            cache: Linux
-#
-#          - name: MacOS Monoscopic
-#            targetPlatform: StandaloneOSX
-#            vrsdk: Monoscopic
-#            cache: MacOS
-#
-#          - name: Android OpenXR
-#            targetPlatform: Android
-#            vrsdk: OpenXR
-#            cache: Android_Vulkan
-#            extraoptions: -btb-il2cpp
+          - name: Windows OpenXR
+            targetPlatform: StandaloneWindows64
+            vrsdk: OpenXR
+            cache: Windows
+
+          - name: Windows Pimax
+            targetPlatform: StandaloneWindows64
+            vrsdk: OpenXR
+            cache: Windows
+
+          - name: Windows Rift
+            targetPlatform: StandaloneWindows64
+            vrsdk: Oculus
+            cache: Windows
+
+          - name: Windows Monoscopic
+            targetPlatform: StandaloneWindows64
+            vrsdk: Monoscopic
+            cache: Windows
+
+          - name: Linux Monoscopic
+            targetPlatform: StandaloneLinux64
+            vrsdk: Monoscopic
+            cache: Linux
+
+          - name: MacOS Monoscopic
+            targetPlatform: StandaloneOSX
+            vrsdk: Monoscopic
+            cache: MacOS
+
+          - name: Android OpenXR
+            targetPlatform: Android
+            vrsdk: OpenXR
+            cache: Android_Vulkan
+            extraoptions: -btb-il2cpp
 
           - name: Oculus Quest
             targetPlatform: Android
