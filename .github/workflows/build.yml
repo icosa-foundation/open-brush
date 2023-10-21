@@ -199,18 +199,18 @@ jobs:
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
 
-          - name: Android Pico
-            targetPlatform: Android
-            vrsdk: Pico
-            cache: Android_GLES
-            extraoptions: -btb-il2cpp
-
-          - name: Android Pico (CN)
-            targetPlatform: Android
-            vrsdk: Pico
-            cache: Android_GLES
-            # Pico requested Chinese build that doesn't have google/sketchfab login.
-            extraoptions: -btb-il2cpp -btb-disableAccountLogins
+#          - name: Android Pico
+#            targetPlatform: Android
+#            vrsdk: Pico
+#            cache: Android_GLES
+#            extraoptions: -btb-il2cpp
+#
+#          - name: Android Pico (CN)
+#            targetPlatform: Android
+#            vrsdk: Pico
+#            cache: Android_GLES
+#            # Pico requested Chinese build that doesn't have google/sketchfab login.
+#            extraoptions: -btb-il2cpp -btb-disableAccountLogins
 
     steps:
       - name: Free extra space
