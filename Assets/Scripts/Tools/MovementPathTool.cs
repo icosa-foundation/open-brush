@@ -178,6 +178,7 @@ namespace TiltBrush
                         }
                         else if (m_ExtendPath != null)
                         {
+    
                             // Manipulation of a path we wish to extend.
                             m_ExtendPath.ExtendPath(toolAttachXf.position, m_ExtendPathType);
 
@@ -192,7 +193,6 @@ namespace TiltBrush
                         }
                         break;
                     case Mode.AddAnimationPositionKnot:
-                        Debug.Log("ADDING ANIMATION KNOT");
                         // Create a new path if none exists or if we're trying to add a position point
                         // in a place where we're not extending an existing path.
                         if (!WidgetManager.m_Instance.AnyCameraPathWidgetsActive ||
@@ -406,7 +406,7 @@ namespace TiltBrush
                     // path, they should be able to extend the length of the path.  That is, add a new knot
                     // off the respective end.
                     bool currentWidget = (currentData == null) ? false : currentData.m_WidgetScript == widget;
-                    if (currentWidget && m_Mode == Mode.AddPositionKnot)
+                    if (currentWidget && (m_Mode == Mode.AddPositionKnot || m_Mode == Mode.AddAnimationPositionKnot ))
                     {
                         if (widget.Path.PathLoops)
                         {

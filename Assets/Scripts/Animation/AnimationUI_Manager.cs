@@ -248,7 +248,7 @@ namespace TiltBrush.FrameAnimation
 
         public void addAnimationPath(MovementPathWidget pathwidget)
         {
-
+            
 
             GameObject moveTransform = pathwidget.gameObject;
             moveTransform.transform.SetParent(animationPathCanvas.transform);
@@ -1357,8 +1357,8 @@ namespace TiltBrush.FrameAnimation
 
 
 
-                        TiltBrush.PathT pathTime = new TiltBrush.PathT(timeline[0].Frames[frameInt].animatedPath.Path.NumPositionKnots - 1 - canvasTime);
-                        TiltBrush.PathT pathStart = new TiltBrush.PathT(timeline[0].Frames[frameInt].animatedPath.Path.NumPositionKnots - 1);
+                        TiltBrush.PathT pathTime = new TiltBrush.PathT( canvasTime);
+                        TiltBrush.PathT pathStart = new TiltBrush.PathT(0);
 
 
 
