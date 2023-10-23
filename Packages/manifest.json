@@ -1,10 +1,10 @@
 {
   "dependencies": {
-    "com.atteneder.gltfast": "5.0.4",
     "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
     "com.meta.xr.sdk.utilities": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#open-brush",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
+    "com.unity.cloud.gltfast": "6.0.1",
     "com.unity.editorcoroutines": "1.0.0",
     "com.unity.formats.usd": "1.0.3-preview.2",
     "com.unity.ide.rider": "3.0.24",
