@@ -899,7 +899,9 @@ namespace TiltBrush.FrameAnimation
             updateTimelineSlider();
             if (!timelineInput) updateTimelineNob();
 
-            deleteFrameButton.SetActive(frameOn != 0);
+            deleteFrameButton.GetComponent<RemoveKeyFrameButton>().SetButtonAvailable(
+                ! timeline[0].Frames[getFrameOn()].canvas.Equals( timeline[0].Frames[0].canvas) 
+                );
 
         }
 
@@ -1079,6 +1081,20 @@ namespace TiltBrush.FrameAnimation
             resetTimeline();
 
 
+
+        }
+
+        public void reduceKeyFrame(){
+              (int, int) index = getCanvasIndex(App.Scene.ActiveCanvas);
+
+                int frameLength = getFrameLength(index.Item2,index.Item1);
+
+                if (frameLength > 1){
+                        timeline[index.Item2].Frames.RemoveAt(index.Item1);
+                        resetTimeline();
+                }   
+
+            
 
         }
 
@@ -1301,6 +1317,28 @@ namespace TiltBrush.FrameAnimation
         }
 
 
+        public int getFrameLength(int trackOn, int frameOn)
+        {
+
+            CanvasScript canvasOn = timeline[trackOn].Frames[frameOn].canvas;
+            (int, int) coord = getCanvasIndex(canvasOn);
+            // coord.Item2 > track
+
+            int frameLength = 0;
+            while (
+                coord.Item1 + frameLength < timeline[coord.Item2].Frames.Count &&
+                timeline[coord.Item2].Frames[coord.Item1 + frameLength].canvas.Equals(canvasOn)
+                )
+            {
+
+                frameLength++;
+            }
+
+
+            return frameLength;
+
+
+        }
 
         public float getSmoothAnimationTime(Track trackOn)
         {
