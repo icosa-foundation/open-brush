@@ -24,7 +24,7 @@ namespace TiltBrush
         public GameObject m_CameraRecordUnsupportedPopup;
         override protected void OnButtonPressed()
         {
-#if UNITY_ANDROID || true
+#if UNITY_ANDROID
             if (m_Manager)
             {
                 BasePanel panel = m_Manager.GetPanelForPopUps();
