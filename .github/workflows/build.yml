@@ -12,7 +12,7 @@ on:  # yamllint disable-line rule:truthy
       - "v*"
 
 env:
-  UNITY_VERSION: "2021.3.16f1"
+  UNITY_VERSION: "2021.3.30f1"
   UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
   UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
   UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
@@ -214,20 +214,19 @@ jobs:
 
     steps:
       - name: Free extra space
-        # This takes several minutes, so we only do it where required
-        # Ubuntu 22.04 20230517.1 added some new packages, so we'll enable this (temporarily, hopefully). See https://github.com/actions/runner-images/pull/7645/files#diff-d3f496e99457b699df2a5621c8f59cb52f60a050e1a88318af7d6f7069c12b2eR180 for details
-        if: matrix.targetPlatform == 'Android' # We needed this to build for Android with the Ubuntu 20.04 image, which started with 29GB free. The 22.04 starts with 37GB free, and this is enough.
+        # This takes several minutes, so we only do it where required. As of 12/10/2023, this increases free space from 18GB to 41GB
+        if: matrix.targetPlatform == 'Android' || matrix.targetPlatform == 'StandaloneWindows64'
         run: |
           echo "Initial free space"
           df -h /
           echo "Removing all pre-loaded docker images"
-          docker rmi $(docker image ls -aq)  # Removes ~4GB
+          docker rmi $(docker image ls -aq)  # Removes ~6GB
           df -h /
           echo "Listing 100 largest packages"
           dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
           echo "Removing unneeded large packages"
           sudo apt-get update
-          sudo apt-get remove -y '^ghc-.*' '^dotnet-.*' azure-cli 'google-cloud-*' powershell google-chrome-stable firefox microsoft-edge-stable 'php.*' 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' default-jre-headless  # Removes ~7.5 GB
+          sudo apt-get remove -y '^ghc-.*' '^dotnet-.*' azure-cli 'google-cloud-*' powershell google-chrome-stable firefox microsoft-edge-stable 'php.*' 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' default-jre-headless  # Removes ~5GB
           sudo apt-get autoremove -y
           sudo apt-get clean
           df -h /
@@ -236,7 +235,7 @@ jobs:
           echo "Removing remaining large directories"
           rm -rf /usr/share/dotnet/  # Removes ~1GB
           df -h /
-          rm -rf "$AGENT_TOOLSDIRECTORY"  # Removes ~7GB
+          rm -rf "$AGENT_TOOLSDIRECTORY"  # Removes ~11GB
           echo "Disk space after cleanup"
           df -h /
 
