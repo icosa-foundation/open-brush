@@ -19,6 +19,14 @@ namespace TiltBrush
     public class AppSettingsPanel : BasePanel
     {
 
+        public ToggleButton m_ExperimentalModeToggle;
+
+        public override void InitPanel()
+        {
+            base.InitPanel();
+            m_ExperimentalModeToggle.IsToggledOn = App.Config.GetIsExperimental();
+        }
+
         public void HandleToggleHandedness()
         {
             SketchControlsScript.DoSwapControls();
