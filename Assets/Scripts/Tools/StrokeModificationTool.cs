@@ -41,7 +41,7 @@ namespace TiltBrush
             On,
             FadingOut
         }
-        private GvrAudioSource m_ToolAudio;
+        private AudioSource m_ToolAudio;
         private AudioState m_CurrentAudioState;
         private float m_AudioFadeRatio;
         public float m_AudioVolumeMax;
@@ -66,7 +66,7 @@ namespace TiltBrush
 
             m_CurrentSize = Mathf.Lerp(m_SizeRange.x, m_SizeRange.y, 0.5f);
             m_ToolTransform.localScale = Vector3.one * m_CurrentSize;
-            m_ToolAudio = m_ToolTransform.GetComponent<GvrAudioSource>();
+            m_ToolAudio = m_ToolTransform.GetComponent<AudioSource>();
 
             m_LockToController = m_SketchSurface.IsInFreePaintMode();
 
