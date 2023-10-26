@@ -645,6 +645,9 @@ namespace TiltBrush.FrameAnimation
                     {
 
 
+
+                     
+
                         // var frameButton =  frameWrapper.transform.GetChild(layerOn);
                         var newButton = Instantiate(frameButtonPrefab, frameWrapper.transform, false);
                         var frameButton = newButton.transform.GetChild(0);
@@ -657,6 +660,12 @@ namespace TiltBrush.FrameAnimation
                         print(frameButton);
 #if UNITY_EDITOR
                         // EditorGUIUtility.PingObject(frameButton);
+
+                        if (timeline[i].Frames[f].canvas.Equals(App.Scene.ActiveCanvas)){
+                            frameButton.gameObject.GetComponent<FrameButton>().SetButtonSelected(true);
+                        }else{
+                            frameButton.gameObject.GetComponent<FrameButton>().SetButtonSelected(false);
+                        }
 #endif
                         frameButton.gameObject.GetComponent<FrameButton>().setButtonCoordinate(i, f);
 
