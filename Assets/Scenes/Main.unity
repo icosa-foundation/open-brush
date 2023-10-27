@@ -29760,7 +29760,7 @@ MonoBehaviour:
       type: 3}
     m_ModeVr: 0
     m_ModeVrExperimental: 0
-    m_ModeQuestExperimental: 1
+    m_ModeQuestExperimental: 0
     m_ModeMono: 0
     m_ModeQuest: 1
     m_ModeGvr: 1
@@ -29851,7 +29851,7 @@ MonoBehaviour:
   - m_PanelPrefab: {fileID: 118774, guid: ccf3c045c4caee34386327d7023b10cf, type: 3}
     m_ModeVr: 0
     m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 0
+    m_ModeQuestExperimental: 1
     m_ModeMono: 0
     m_ModeQuest: 0
     m_ModeGvr: 0
