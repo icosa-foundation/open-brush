@@ -14,7 +14,6 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using JetBrains.Annotations;
 using UnityEngine;
 
 namespace TiltBrush
@@ -915,7 +914,7 @@ namespace TiltBrush
                 }
 
                 // If we found a good stencil, return the surface collision transform.
-                if (m_ActiveStencil != null)
+                if (m_ActiveStencil != null && m_StencilContactInfos[iPrimaryIndex].normal.sqrMagnitude >= 0f)
                 {
                     m_ActiveStencil.SetInUse(true);
                     pos = m_StencilContactInfos[iPrimaryIndex].pos;
