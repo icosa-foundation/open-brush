@@ -3458,7 +3458,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 151490030713540608
     m_Localized: 'You can create a video of your sketch by opening it on a Mac or PC.
-      Search for "camera path" on our docs website: https://docs.openbrush.app
+      Search for "Exporting video" on our docs website: https://docs.openbrush.app
       for a step by step guide.'
     m_Metadata:
       m_Items: []
