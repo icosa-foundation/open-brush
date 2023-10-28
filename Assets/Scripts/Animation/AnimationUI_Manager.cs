@@ -652,6 +652,8 @@ namespace TiltBrush.FrameAnimation
                         var newButton = Instantiate(frameButtonPrefab, frameWrapper.transform, false);
                         var frameButton = newButton.transform.GetChild(0);
 
+                        frameButton.GetComponent<MeshRenderer>().enabled = false;
+
 
                         // frameButton.localScale = new Vector3(1f,1f,7.88270617f);
                         frameButton.localPosition = new Vector3(0.00538007962f, 0.449999988f - frameOffset * i, -0.963263571f);
@@ -661,11 +663,7 @@ namespace TiltBrush.FrameAnimation
 #if UNITY_EDITOR
                         // EditorGUIUtility.PingObject(frameButton);
 
-                        if (timeline[i].Frames[f].canvas.Equals(App.Scene.ActiveCanvas)){
-                            frameButton.gameObject.GetComponent<FrameButton>().SetButtonSelected(true);
-                        }else{
-                            frameButton.gameObject.GetComponent<FrameButton>().SetButtonSelected(false);
-                        }
+               
 #endif
                         frameButton.gameObject.GetComponent<FrameButton>().setButtonCoordinate(i, f);
 
@@ -692,16 +690,38 @@ namespace TiltBrush.FrameAnimation
 
                         frameButton.GetChild(Convert.ToInt32(filled)).gameObject.SetActive(true);
 
+                        int backBox = 6;
+                        frameButton.GetChild(backBox).gameObject.SetActive(true);
+
+
+                        // Set behind colours depending on if frame is active
+                        Color backColor;
+                        if (timeline[i].Frames[f].canvas.Equals(App.Scene.ActiveCanvas)){
+                            backColor = new Color(150 / 255f, 150 / 255f, 150 / 255f);
+                        }else{
+                            backColor = new Color(0 / 255f, 0 / 255f, 0 / 255f);
+                        }
+
+                        
+                        frameButton.GetChild(backBox).gameObject.GetComponent<SpriteRenderer>().color = backColor;
+                        frameButton.GetChild(backBox+1).gameObject.GetComponent<SpriteRenderer>().color = backColor;
+                        frameButton.GetChild(backBox+2).gameObject.GetComponent<SpriteRenderer>().color = backColor;
+                        
+
+                     
+           
+
                         if (backwardsConnect)
                         {
                             frameButton.GetChild(Convert.ToInt32(filled) + 2).gameObject.SetActive(true);
+                            frameButton.GetChild(backBox+1).gameObject.SetActive(true);
                         }
 
                         if (forwardConnect)
                         {
                             frameButton.GetChild(Convert.ToInt32(filled) + 4).gameObject.SetActive(true);
+                            frameButton.GetChild(backBox+2).gameObject.SetActive(true);
                         }
-
 
 
 
