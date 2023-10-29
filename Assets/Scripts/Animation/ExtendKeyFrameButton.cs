@@ -12,7 +12,7 @@ namespace TiltBrush.FrameAnimation
         {
             // m_Action.Invoke();
             var uiManager = GetComponentInParent<AnimationUI_Manager>();
-            uiManager.addKeyFrame();
+            uiManager.extendKeyFrame();
 
         }
     }
