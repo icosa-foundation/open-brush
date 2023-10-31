@@ -432,7 +432,7 @@ namespace TiltBrush
         // Post-effect to blit temp framebuffer to downstream effects.
         // -------------------------------------------------------------------------------------------- //
         // This must be excluded from the build, even a no-op post effect negatively impacts performance.
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
         public void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
             // We could skip the offscreen render when anti-aliasing is disabled.
