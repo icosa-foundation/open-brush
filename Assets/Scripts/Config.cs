@@ -507,6 +507,9 @@ namespace TiltBrush
 #if OCULUS_SUPPORTED
                 SystemHeadset headset = Unity.XR.Oculus.Utils.GetSystemHeadsetType();
                 return headset != SystemHeadset.Oculus_Quest;
+#endif // OCULUS_SUPPORTED
+#if ZAPBOX_SUPPORTED
+                return false;
 #endif
                 return true;
             }
