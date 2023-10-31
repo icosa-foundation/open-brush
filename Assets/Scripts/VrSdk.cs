@@ -39,7 +39,8 @@ namespace TiltBrush
         LogitechPen,
         Cosmos,
         Neo3,
-        Phoenix
+        Phoenix,
+        Zapbox
     }
 
     //
@@ -427,7 +428,8 @@ namespace TiltBrush
                 style == ControllerStyle.Knuckles ||
                 style == ControllerStyle.Cosmos ||
                 style == ControllerStyle.Neo3 ||
-                style == ControllerStyle.Phoenix;
+                style == ControllerStyle.Phoenix ||
+                style == ControllerStyle.Zapbox;
         }
 
         // Destroy and recreate the ControllerBehavior and ControllerGeometry objects.
@@ -512,6 +514,9 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.Phoenix:
                     controlsPrefab = m_UnityXRPhoenixControlsPrefab;
+                    break;
+                case ControllerStyle.Zapbox:
+                    controlsPrefab = m_UnityXRQuestControlsPrefab;
                     break;
                 case ControllerStyle.Gvr:
                     controlsPrefab = m_GvrPointerControlsPrefab;
@@ -706,6 +711,10 @@ namespace TiltBrush
                         break;
                 }
 #endif
+            }
+            else if (device.name.StartsWith("Zapbox"))
+            {
+                SetControllerStyle(ControllerStyle.Zapbox);
             }
             else
             {

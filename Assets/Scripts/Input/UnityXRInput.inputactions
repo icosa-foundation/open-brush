@@ -192,7 +192,7 @@
                     "path": "<XRController>{RightHand}/grip",
                     "interactions": "",
                     "processors": "",
-                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller;Zapbox",
+                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller;Zapbox Controller",
                     "action": "GripAxis",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -214,7 +214,7 @@
                     "path": "<XRController>{RightHand}/gripPressed",
                     "interactions": "",
                     "processors": "",
-                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller;Zapbox",
+                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller;Zapbox Controller",
                     "action": "GripButton",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -500,7 +500,7 @@
                     "path": "FakeThumbTouch",
                     "interactions": "",
                     "processors": "",
-                    "groups": "Zapbox",
+                    "groups": "Zapbox Controller",
                     "action": "ThumbTouch",
                     "isComposite": true,
                     "isPartOfComposite": false
@@ -511,7 +511,7 @@
                     "path": "<ZapboxController>{RightHand}/thumbstick",
                     "interactions": "",
                     "processors": "",
-                    "groups": "Zapbox",
+                    "groups": "Zapbox Controller",
                     "action": "ThumbTouch",
                     "isComposite": false,
                     "isPartOfComposite": true
@@ -709,7 +709,7 @@
                     "path": "<XRController>{LeftHand}/grip",
                     "interactions": "",
                     "processors": "",
-                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller;Zapbox",
+                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller;Zapbox Controller",
                     "action": "GripAxis",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -720,7 +720,7 @@
                     "path": "<XRController>{LeftHand}/gripPressed",
                     "interactions": "",
                     "processors": "",
-                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller;Zapbox",
+                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller;Zapbox Controller",
                     "action": "GripButton",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -995,7 +995,7 @@
                     "path": "<ZapboxController>{LeftHand}/thumbstick",
                     "interactions": "",
                     "processors": "",
-                    "groups": "Zapbox",
+                    "groups": "Zapbox Controller",
                     "action": "ThumbTouch",
                     "isComposite": false,
                     "isPartOfComposite": true
@@ -1093,8 +1093,8 @@
             ]
         },
         {
-            "name": "Zapbox",
-            "bindingGroup": "Zapbox",
+            "name": "Zapbox Controller",
+            "bindingGroup": "Zapbox Controller",
             "devices": [
                 {
                     "devicePath": "<ZapboxController>",
