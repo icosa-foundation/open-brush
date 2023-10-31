@@ -180,7 +180,7 @@ namespace TiltBrush
                     case ControllerStyle.Knuckles:
                     case ControllerStyle.Phoenix:
                     case ControllerStyle.Neo3:
-                    // case ControllerStyle.Zapbox:
+                    case ControllerStyle.Zapbox:
                         App.Instance.SelectionEffect.RegisterMesh(
                             ControllerGeometry.JoystickPad.GetComponent<MeshFilter>());
                         break;

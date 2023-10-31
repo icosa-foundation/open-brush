@@ -978,7 +978,8 @@ static class BuildTiltBrush
             string new_name = App.kAppDisplayName;
 
             string new_identifier = m_identifier;
-            switch (m_Target){
+            switch (m_Target)
+            {
                 case BuildTarget.Android:
                     new_identifier = GuiBuildAndroidApplicationIdentifier;
                     break;
