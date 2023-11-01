@@ -45,7 +45,7 @@ namespace TiltBrush
         Oculus,
         Wave,
         Pico,
-        Zapbox
+        Zapbox,
     }
 
     // The sdk mode indicates which SDK that we're using to drive the display.
@@ -173,7 +173,7 @@ namespace TiltBrush
 
         [Header("Versioning")]
         public string m_VersionNumber; // eg "17.0b", "18.3"
-        public string m_BuildStamp;    // eg "f73783b61", "f73783b61-exp", "(menuitem)"
+        public string m_BuildStamp;    // eg "f73783b61", "f73783b61-exp", "menuitem"
 
         [Header("Misc")]
         public bool m_UseBatchedBrushes;

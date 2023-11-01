@@ -40,7 +40,7 @@ namespace TiltBrush
         Cosmos,
         Neo3,
         Phoenix,
-        Zapbox
+        Zapbox,
     }
 
     //

@@ -300,11 +300,11 @@ static class BuildTiltBrush
             Target = GuiSelectedBuildTarget,
             XrSdk = GuiSelectedSdk,
             Location = GetAppPathForGuiBuild(),
-            Stamp = "(menuitem)",
+            Stamp = "menuitem",
             UnityOptions = GuiDevelopment
                 ? (BuildOptions.AllowDebugging | BuildOptions.Development | BuildOptions.CleanBuildCache)
                 : BuildOptions.None,
-            Description = "(unity editor)",
+            Description = "unity editor",
         };
     }
 
@@ -1000,8 +1000,8 @@ static class BuildTiltBrush
 #endif
             if (!String.IsNullOrEmpty(Description))
             {
-                new_name += " (" + Description + ")";
-                new_identifier += Description.Replace("_", "").Replace("#", "").Replace("-", "");
+                new_name += "-(" + Description + ")";
+                new_identifier += "-" + Description.Replace("_", "").Replace("#", "").Replace("-", "");
             }
             if (m_IsAndroidOrIos)
             {
