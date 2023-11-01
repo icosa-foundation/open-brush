@@ -37,10 +37,15 @@ namespace TiltBrush
         [SerializeField] private GameObject m_SketchfabSignedInElements;
         [SerializeField] private GameObject m_SketchfabSignedOutElements;
         [SerializeField] private GameObject m_SketchfabConfirmSignOutElements;
+        [SerializeField] private GameObject m_IcosaSignedInElements;
+        [SerializeField] private GameObject m_IcosaSignedOutElements;
+        [SerializeField] private GameObject m_IcosaConfirmSignOutElements;
         [SerializeField] private Renderer m_GooglePhoto;
         [SerializeField] private Renderer m_SketchfabPhoto;
+        [SerializeField] private Renderer m_IcosaPhoto;
         [SerializeField] private TextMeshPro m_GoogleNameText;
         [SerializeField] private TextMeshPro m_SketchfabNameText;
+        [SerializeField] private TextMeshPro m_IcosaNameText;
         [SerializeField] private Texture2D m_GenericPhoto;
 
         [SerializeField] private GameObject m_Accounts;
@@ -48,6 +53,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_GoogleInfoElements;
         [SerializeField] private GameObject m_DriveInfoElements;
         [SerializeField] private GameObject m_SketchfabInfoElements;
+        [SerializeField] private GameObject m_IcosaInfoElements;
         [SerializeField] private GameObject m_UnavailableElements;
 
         [SerializeField] private GameObject m_DriveSyncEnabledElements;
@@ -136,6 +142,18 @@ namespace TiltBrush
             {
                 m_SketchfabNameText.text = sketchfabInfo.name;
                 m_SketchfabPhoto.material.mainTexture = sketchfabInfo.icon;
+            }
+
+            // Icosa.
+            OAuth2Identity.UserInfo icosaInfo = App.IcosaIdentity.Profile;
+            bool icosaInfoValid = icosaInfo != null;
+            m_IcosaSignedInElements.SetActive(icosaInfoValid);
+            m_IcosaSignedOutElements.SetActive(!icosaInfoValid);
+            m_IcosaConfirmSignOutElements.SetActive(false);
+            if (icosaInfoValid)
+            {
+                m_IcosaNameText.text = icosaInfo.name;
+                m_IcosaPhoto.material.mainTexture = icosaInfo.icon;
             }
 
             m_DriveFullElements.SetActive(driveFull && driveSyncEnabled);
@@ -244,6 +262,11 @@ namespace TiltBrush
                             m_SketchfabSignedInElements.SetActive(false);
                             m_SketchfabSignedOutElements.SetActive(false);
                             m_SketchfabConfirmSignOutElements.SetActive(true);
+                            break;
+                        case Cloud.Icosa:
+                            m_IcosaSignedInElements.SetActive(false);
+                            m_IcosaSignedOutElements.SetActive(false);
+                            m_IcosaConfirmSignOutElements.SetActive(true);
                             break;
                         case Cloud.None: break;
                     }

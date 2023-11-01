@@ -129,6 +129,7 @@ namespace TiltBrush
 
         public static OAuth2Identity GoogleIdentity => m_Instance.m_GoogleIdentity;
         public static OAuth2Identity SketchfabIdentity => m_Instance.m_SketchfabIdentity;
+        public static OAuth2Identity IcosaIdentity => m_Instance.m_IcosaIdentity;
 
         public static GoogleUserSettings GoogleUserSettings => m_Instance.m_GoogleUserSettings;
 
@@ -154,6 +155,7 @@ namespace TiltBrush
             {
                 case Cloud.Poly: return GoogleIdentity;
                 case Cloud.Sketchfab: return SketchfabIdentity;
+                case Cloud.Icosa: return IcosaIdentity;
                 default: throw new InvalidOperationException($"No identity for {cloud}");
             }
         }
@@ -223,6 +225,7 @@ namespace TiltBrush
         [Header("Identities")]
         [SerializeField] private OAuth2Identity m_GoogleIdentity;
         [SerializeField] private OAuth2Identity m_SketchfabIdentity;
+        [SerializeField] private OAuth2Identity m_IcosaIdentity;
 
         // ------------------------------------------------------------
         // Private data

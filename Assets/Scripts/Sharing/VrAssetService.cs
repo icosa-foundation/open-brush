@@ -35,7 +35,8 @@ namespace TiltBrush
     {
         None,
         Poly,
-        Sketchfab
+        Sketchfab,
+        Icosa
     }
 
     [Serializable]
