@@ -3452,6 +3452,16 @@ MonoBehaviour:
     m_Localized: Language
     m_Metadata:
       m_Items: []
+  - m_Id: 151489918612377600
+    m_Localized: Video Recording is not supported on this device.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151490030713540608
+    m_Localized: 'You can create a video of your sketch by opening it on a Mac or PC.
+      Search for "Exporting video" on our docs website: https://docs.openbrush.app
+      for a step by step guide.'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

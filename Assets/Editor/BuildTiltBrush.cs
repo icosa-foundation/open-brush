@@ -144,6 +144,7 @@ static class BuildTiltBrush
         new CopyRequest("Support/README.txt") { omitForAndroid = true },
         new CopyRequest("Support/exportManifest.json"),
         new CopyRequest("Support/bin/renderVideo.cmd") { omitForAndroid = true },
+        new CopyRequest("Support/bin/renderVideo.sh") { omitForAndroid = true },
         new CopyRequest("Support/whiteTextureMap.png"),
         // No longer needed, now that these are hosted
         // new CopyRequest("Support/GlTFShaders"),
