@@ -13,7 +13,6 @@ namespace TiltBrush
     {
         public class SubFileStream : Stream
         {
-            private Stream m_OriginalStream;
             private SubStream m_SubStream;
             private ZipArchive m_Archive;
             private ZipArchiveEntry m_Entry;
@@ -31,7 +30,6 @@ namespace TiltBrush
                 await m_Stream.DisposeAsync();
                 m_Archive.Dispose();
                 await m_SubStream.DisposeAsync();
-                await m_OriginalStream.DisposeAsync();
             }
             public override void Flush()
             {
