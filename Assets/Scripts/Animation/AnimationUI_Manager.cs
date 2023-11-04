@@ -780,9 +780,17 @@ namespace TiltBrush.FrameAnimation
 
                         }
             
-                        bool backwardsConnect = (f > 0 && timeline[i].Frames[f].canvas.Equals(timeline[i].Frames[f - 1].canvas));
-                        bool forwardConnect = f < timeline[i].Frames.Count - 1 && timeline[i].Frames[f].canvas.Equals(timeline[i].Frames[f + 1].canvas);
+                     
                         bool filled = timeline[i].Frames[f].canvas.BatchManager.GetNumBatchPools() > 0;
+
+                        bool backwardsConnect = false ,forwardConnect = false;
+
+                        if (filled){
+                        backwardsConnect = (f > 0 && timeline[i].Frames[f].canvas.Equals(timeline[i].Frames[f - 1].canvas));
+                        forwardConnect = (f < timeline[i].Frames.Count - 1 && timeline[i].Frames[f].canvas.Equals(timeline[i].Frames[f + 1].canvas));
+                        }
+
+
 
                         frameButton.GetChild(Convert.ToInt32(filled)).gameObject.SetActive(true);
 
@@ -792,10 +800,20 @@ namespace TiltBrush.FrameAnimation
 
                         // Set behind colours depending on if frame is active
                         Color backColor;
-                        if (timeline[i].Frames[f].canvas.Equals(App.Scene.ActiveCanvas)){
-                            backColor = new Color(150 / 255f, 150 / 255f, 150 / 255f);
+                        if (filled){
+                                if (timeline[i].Frames[f].canvas.Equals(App.Scene.ActiveCanvas) ){
+                                    backColor = new Color(150 / 255f, 150 / 255f, 150 / 255f);
+                                }else{
+                                    backColor = new Color(0 / 255f, 0 / 255f, 0 / 255f);
+                                }
                         }else{
-                            backColor = new Color(0 / 255f, 0 / 255f, 0 / 255f);
+
+                            (int,int) index = getCanvasIndex(App.Scene.ActiveCanvas);
+                            if (index.Item2 == i && f == getFrameOn() ){
+                                    backColor = new Color(150 / 255f, 150 / 255f, 150 / 255f);
+                            }else{
+                                    backColor = new Color(0 / 255f, 0 / 255f, 0 / 255f);
+                            }
                         }
 
                         
@@ -1200,42 +1218,72 @@ namespace TiltBrush.FrameAnimation
         public void extendKeyFrame()
         {
 
+            
+
             print("BEFORE  ADD");
 
             (int, int) index = getCanvasIndex(App.Scene.ActiveCanvas);
 
-            print("ADDING LAYER HERE - " + index.Item2);
-                        // Frame addingFrame = newFrame(App.Scene.AddCanvas());
-
-            Frame addingFrame = newFrame(timeline[index.Item2].Frames[index.Item1].canvas);
-                        // CanvasScript newCanvas = App.Scene.AddCanvas();
-                        // frameLayer addingLayer = newFrameLayer(newCanvas);
-            addingFrame.deleted = timeline[index.Item2].Frames[0].deleted;
-            addingFrame.animatedPath = timeline[index.Item2].Frames[index.Item1].animatedPath;
-            print("ADDING LAYER - " + index.Item1);
-
-            timeline[index.Item2].Frames.Insert(index.Item1 + 1, addingFrame);
-
-            // for (int l = 0; l < timeline.Count; l++)
-            // {
-
-            //     if (index.Item2 == l){
-
-            //             print("ADDING LAYER HERE - " + l);
+            // print("ADDING LAYER HERE - " + index.Item2);
             //             // Frame addingFrame = newFrame(App.Scene.AddCanvas());
 
-            //             Frame addingFrame = newFrame(timeline[l].Frames[timeline[l].Frames.Count - 1].canvas);
+            // Frame addingFrame = newFrame(timeline[index.Item2].Frames[index.Item1].canvas);
             //             // CanvasScript newCanvas = App.Scene.AddCanvas();
             //             // frameLayer addingLayer = newFrameLayer(newCanvas);
-            //             addingFrame.deleted = timeline[l].Frames[0].deleted;
-            //             addingFrame.animatedPath = timeline[l].Frames[timeline[l].Frames.Count - 1].animatedPath;
-            //             print("ADDING LAYER - " + l);
+            // addingFrame.deleted = timeline[index.Item2].Frames[0].deleted;
+            // addingFrame.animatedPath = timeline[index.Item2].Frames[index.Item1].animatedPath;
+            // print("ADDING LAYER - " + index.Item1);
 
-            //             timeline[l].Frames.Insert(getFrameOn() + 1, addingFrame);
-            //     }
+            // timeline[index.Item2].Frames.Insert(index.Item1 + 1, addingFrame);
 
 
-            // }
+            // bool onFilled = timeline[index.Item2].Frames[getFrameOn()].canvas.BatchManager.GetNumBatchPools() > 0;
+
+            if (timeline[index.Item2].Frames[getFrameOn()].canvas.BatchManager.GetNumBatchPools() == 0){return;}
+
+            for (int l = 0; l < timeline.Count; l++)
+            {
+
+                
+
+
+                        if (l == index.Item2){
+
+                              Frame  addingFrame = newFrame(timeline[l].Frames[getFrameOn()].canvas);
+                                addingFrame.deleted = timeline[l].Frames[getFrameOn()].deleted;
+                                addingFrame.animatedPath = timeline[l].Frames[getFrameOn()].animatedPath;
+
+                            timeline[l].Frames.Insert(getFrameOn() + 1, addingFrame);
+                        }else{
+
+                        print("ADDING LAYER HERE - " + l);
+                        // Frame addingFrame = newFrame(App.Scene.AddCanvas());
+
+                        Frame addingFrame;
+
+                            bool filled = timeline[l].Frames[timeline[l].Frames.Count - 1].canvas.BatchManager.GetNumBatchPools() > 0;
+
+                            if (filled){
+                                
+                               addingFrame = newFrame(App.Scene.AddCanvas());
+                            }else{
+
+                                  addingFrame = newFrame(timeline[l].Frames[timeline[l].Frames.Count - 1].canvas);
+                                    addingFrame.deleted = timeline[l].Frames[timeline[l].Frames.Count - 1].deleted;
+                                    addingFrame.animatedPath = timeline[l].Frames[timeline[l].Frames.Count - 1].animatedPath;
+                            }
+
+                                  print("ADDING LAYER - " + l);       
+
+                             timeline[l].Frames.Insert(timeline[l].Frames.Count, addingFrame);
+
+                        }
+
+                    
+                  
+                        
+
+            }
 
 
             ;
