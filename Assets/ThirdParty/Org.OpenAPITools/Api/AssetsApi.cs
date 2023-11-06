@@ -71,8 +71,11 @@ namespace Org.OpenAPITools.Api
         /// <param name="results"> (optional, default to 20)</param>
         /// <param name="page"> (optional, default to 0)</param>
         /// <param name="curated"> (optional, default to false)</param>
+        /// <param name="name"> (optional)</param>
+        /// <param name="description"> (optional)</param>
+        /// <param name="ownername"> (optional)</param>
         /// <returns>List&lt;Asset&gt;</returns>
-        List<Asset> GetAssetsAssetsGet(int? results = default(int?), int? page = default(int?), bool? curated = default(bool?));
+        List<Asset> GetAssetsAssetsGet(int? results = default(int?), int? page = default(int?), bool? curated = default(bool?), string? name = default(string?), string? description = default(string?), string? ownername = default(string?));
 
         /// <summary>
         /// Get Assets
@@ -84,8 +87,11 @@ namespace Org.OpenAPITools.Api
         /// <param name="results"> (optional, default to 20)</param>
         /// <param name="page"> (optional, default to 0)</param>
         /// <param name="curated"> (optional, default to false)</param>
+        /// <param name="name"> (optional)</param>
+        /// <param name="description"> (optional)</param>
+        /// <param name="ownername"> (optional)</param>
         /// <returns>ApiResponse of List&lt;Asset&gt;</returns>
-        ApiResponse<List<Asset>> GetAssetsAssetsGetWithHttpInfo(int? results = default(int?), int? page = default(int?), bool? curated = default(bool?));
+        ApiResponse<List<Asset>> GetAssetsAssetsGetWithHttpInfo(int? results = default(int?), int? page = default(int?), bool? curated = default(bool?), string? name = default(string?), string? description = default(string?), string? ownername = default(string?));
         /// <summary>
         /// Get Id Asset
         /// </summary>
@@ -127,9 +133,14 @@ namespace Org.OpenAPITools.Api
         /// </summary>
         /// <exception cref="Org.OpenAPITools.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="asset"></param>
-        /// <param name="assetPatchData"></param>
+        /// <param name="data"> (optional)</param>
+        /// <param name="name"> (optional)</param>
+        /// <param name="url"> (optional)</param>
+        /// <param name="description"> (optional)</param>
+        /// <param name="visibility"> (optional)</param>
+        /// <param name="thumbnail"> (optional)</param>
         /// <returns>Asset</returns>
-        Asset UpdateAssetAssetsAssetPatch(int asset, AssetPatchData assetPatchData);
+        Asset UpdateAssetAssetsAssetPatch(int asset, AssetPatchData? data = default(AssetPatchData?), string? name = default(string?), string? url = default(string?), string? description = default(string?), string? visibility = default(string?), System.IO.Stream? thumbnail = default(System.IO.Stream?));
 
         /// <summary>
         /// Update Asset
@@ -139,9 +150,14 @@ namespace Org.OpenAPITools.Api
         /// </remarks>
         /// <exception cref="Org.OpenAPITools.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="asset"></param>
-        /// <param name="assetPatchData"></param>
+        /// <param name="data"> (optional)</param>
+        /// <param name="name"> (optional)</param>
+        /// <param name="url"> (optional)</param>
+        /// <param name="description"> (optional)</param>
+        /// <param name="visibility"> (optional)</param>
+        /// <param name="thumbnail"> (optional)</param>
         /// <returns>ApiResponse of Asset</returns>
-        ApiResponse<Asset> UpdateAssetAssetsAssetPatchWithHttpInfo(int asset, AssetPatchData assetPatchData);
+        ApiResponse<Asset> UpdateAssetAssetsAssetPatchWithHttpInfo(int asset, AssetPatchData? data = default(AssetPatchData?), string? name = default(string?), string? url = default(string?), string? description = default(string?), string? visibility = default(string?), System.IO.Stream? thumbnail = default(System.IO.Stream?));
         /// <summary>
         /// Upload New Assets
         /// </summary>
@@ -227,9 +243,12 @@ namespace Org.OpenAPITools.Api
         /// <param name="results"> (optional, default to 20)</param>
         /// <param name="page"> (optional, default to 0)</param>
         /// <param name="curated"> (optional, default to false)</param>
+        /// <param name="name"> (optional)</param>
+        /// <param name="description"> (optional)</param>
+        /// <param name="ownername"> (optional)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
         /// <returns>Task of List&lt;Asset&gt;</returns>
-        System.Threading.Tasks.Task<List<Asset>> GetAssetsAssetsGetAsync(int? results = default(int?), int? page = default(int?), bool? curated = default(bool?), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<List<Asset>> GetAssetsAssetsGetAsync(int? results = default(int?), int? page = default(int?), bool? curated = default(bool?), string? name = default(string?), string? description = default(string?), string? ownername = default(string?), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Get Assets
@@ -241,9 +260,12 @@ namespace Org.OpenAPITools.Api
         /// <param name="results"> (optional, default to 20)</param>
         /// <param name="page"> (optional, default to 0)</param>
         /// <param name="curated"> (optional, default to false)</param>
+        /// <param name="name"> (optional)</param>
+        /// <param name="description"> (optional)</param>
+        /// <param name="ownername"> (optional)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
         /// <returns>Task of ApiResponse (List&lt;Asset&gt;)</returns>
-        System.Threading.Tasks.Task<ApiResponse<List<Asset>>> GetAssetsAssetsGetWithHttpInfoAsync(int? results = default(int?), int? page = default(int?), bool? curated = default(bool?), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<List<Asset>>> GetAssetsAssetsGetWithHttpInfoAsync(int? results = default(int?), int? page = default(int?), bool? curated = default(bool?), string? name = default(string?), string? description = default(string?), string? ownername = default(string?), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
         /// <summary>
         /// Get Id Asset
         /// </summary>
@@ -298,10 +320,15 @@ namespace Org.OpenAPITools.Api
         /// </remarks>
         /// <exception cref="Org.OpenAPITools.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="asset"></param>
-        /// <param name="assetPatchData"></param>
+        /// <param name="data"> (optional)</param>
+        /// <param name="name"> (optional)</param>
+        /// <param name="url"> (optional)</param>
+        /// <param name="description"> (optional)</param>
+        /// <param name="visibility"> (optional)</param>
+        /// <param name="thumbnail"> (optional)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
         /// <returns>Task of Asset</returns>
-        System.Threading.Tasks.Task<Asset> UpdateAssetAssetsAssetPatchAsync(int asset, AssetPatchData assetPatchData, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<Asset> UpdateAssetAssetsAssetPatchAsync(int asset, AssetPatchData? data = default(AssetPatchData?), string? name = default(string?), string? url = default(string?), string? description = default(string?), string? visibility = default(string?), System.IO.Stream? thumbnail = default(System.IO.Stream?), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Update Asset
@@ -311,10 +338,15 @@ namespace Org.OpenAPITools.Api
         /// </remarks>
         /// <exception cref="Org.OpenAPITools.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="asset"></param>
-        /// <param name="assetPatchData"></param>
+        /// <param name="data"> (optional)</param>
+        /// <param name="name"> (optional)</param>
+        /// <param name="url"> (optional)</param>
+        /// <param name="description"> (optional)</param>
+        /// <param name="visibility"> (optional)</param>
+        /// <param name="thumbnail"> (optional)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
         /// <returns>Task of ApiResponse (Asset)</returns>
-        System.Threading.Tasks.Task<ApiResponse<Asset>> UpdateAssetAssetsAssetPatchWithHttpInfoAsync(int asset, AssetPatchData assetPatchData, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<Asset>> UpdateAssetAssetsAssetPatchWithHttpInfoAsync(int asset, AssetPatchData? data = default(AssetPatchData?), string? name = default(string?), string? url = default(string?), string? description = default(string?), string? visibility = default(string?), System.IO.Stream? thumbnail = default(System.IO.Stream?), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
         /// <summary>
         /// Upload New Assets
         /// </summary>
@@ -771,10 +803,13 @@ namespace Org.OpenAPITools.Api
         /// <param name="results"> (optional, default to 20)</param>
         /// <param name="page"> (optional, default to 0)</param>
         /// <param name="curated"> (optional, default to false)</param>
+        /// <param name="name"> (optional)</param>
+        /// <param name="description"> (optional)</param>
+        /// <param name="ownername"> (optional)</param>
         /// <returns>List&lt;Asset&gt;</returns>
-        public List<Asset> GetAssetsAssetsGet(int? results = default(int?), int? page = default(int?), bool? curated = default(bool?))
+        public List<Asset> GetAssetsAssetsGet(int? results = default(int?), int? page = default(int?), bool? curated = default(bool?), string? name = default(string?), string? description = default(string?), string? ownername = default(string?))
         {
-            Org.OpenAPITools.Client.ApiResponse<List<Asset>> localVarResponse = GetAssetsAssetsGetWithHttpInfo(results, page, curated);
+            Org.OpenAPITools.Client.ApiResponse<List<Asset>> localVarResponse = GetAssetsAssetsGetWithHttpInfo(results, page, curated, name, description, ownername);
             return localVarResponse.Data;
         }
 
@@ -785,8 +820,11 @@ namespace Org.OpenAPITools.Api
         /// <param name="results"> (optional, default to 20)</param>
         /// <param name="page"> (optional, default to 0)</param>
         /// <param name="curated"> (optional, default to false)</param>
+        /// <param name="name"> (optional)</param>
+        /// <param name="description"> (optional)</param>
+        /// <param name="ownername"> (optional)</param>
         /// <returns>ApiResponse of List&lt;Asset&gt;</returns>
-        public Org.OpenAPITools.Client.ApiResponse<List<Asset>> GetAssetsAssetsGetWithHttpInfo(int? results = default(int?), int? page = default(int?), bool? curated = default(bool?))
+        public Org.OpenAPITools.Client.ApiResponse<List<Asset>> GetAssetsAssetsGetWithHttpInfo(int? results = default(int?), int? page = default(int?), bool? curated = default(bool?), string? name = default(string?), string? description = default(string?), string? ownername = default(string?))
         {
             Org.OpenAPITools.Client.RequestOptions localVarRequestOptions = new Org.OpenAPITools.Client.RequestOptions();
 
@@ -815,6 +853,18 @@ namespace Org.OpenAPITools.Api
             if (curated != null)
             {
                 localVarRequestOptions.QueryParameters.Add(Org.OpenAPITools.Client.ClientUtils.ParameterToMultiMap("", "curated", curated));
+            }
+            if (name != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(Org.OpenAPITools.Client.ClientUtils.ParameterToMultiMap("", "name", name));
+            }
+            if (description != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(Org.OpenAPITools.Client.ClientUtils.ParameterToMultiMap("", "description", description));
+            }
+            if (ownername != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(Org.OpenAPITools.Client.ClientUtils.ParameterToMultiMap("", "ownername", ownername));
             }
 
 
@@ -837,11 +887,14 @@ namespace Org.OpenAPITools.Api
         /// <param name="results"> (optional, default to 20)</param>
         /// <param name="page"> (optional, default to 0)</param>
         /// <param name="curated"> (optional, default to false)</param>
+        /// <param name="name"> (optional)</param>
+        /// <param name="description"> (optional)</param>
+        /// <param name="ownername"> (optional)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
         /// <returns>Task of List&lt;Asset&gt;</returns>
-        public async System.Threading.Tasks.Task<List<Asset>> GetAssetsAssetsGetAsync(int? results = default(int?), int? page = default(int?), bool? curated = default(bool?), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public async System.Threading.Tasks.Task<List<Asset>> GetAssetsAssetsGetAsync(int? results = default(int?), int? page = default(int?), bool? curated = default(bool?), string? name = default(string?), string? description = default(string?), string? ownername = default(string?), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
-            var task = GetAssetsAssetsGetWithHttpInfoAsync(results, page, curated, cancellationToken);
+            var task = GetAssetsAssetsGetWithHttpInfoAsync(results, page, curated, name, description, ownername, cancellationToken);
 #if UNITY_EDITOR || !UNITY_WEBGL
             Org.OpenAPITools.Client.ApiResponse<List<Asset>> localVarResponse = await task.ConfigureAwait(false);
 #else
@@ -857,9 +910,12 @@ namespace Org.OpenAPITools.Api
         /// <param name="results"> (optional, default to 20)</param>
         /// <param name="page"> (optional, default to 0)</param>
         /// <param name="curated"> (optional, default to false)</param>
+        /// <param name="name"> (optional)</param>
+        /// <param name="description"> (optional)</param>
+        /// <param name="ownername"> (optional)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
         /// <returns>Task of ApiResponse (List&lt;Asset&gt;)</returns>
-        public async System.Threading.Tasks.Task<Org.OpenAPITools.Client.ApiResponse<List<Asset>>> GetAssetsAssetsGetWithHttpInfoAsync(int? results = default(int?), int? page = default(int?), bool? curated = default(bool?), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public async System.Threading.Tasks.Task<Org.OpenAPITools.Client.ApiResponse<List<Asset>>> GetAssetsAssetsGetWithHttpInfoAsync(int? results = default(int?), int? page = default(int?), bool? curated = default(bool?), string? name = default(string?), string? description = default(string?), string? ownername = default(string?), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
 
             Org.OpenAPITools.Client.RequestOptions localVarRequestOptions = new Org.OpenAPITools.Client.RequestOptions();
@@ -890,6 +946,18 @@ namespace Org.OpenAPITools.Api
             if (curated != null)
             {
                 localVarRequestOptions.QueryParameters.Add(Org.OpenAPITools.Client.ClientUtils.ParameterToMultiMap("", "curated", curated));
+            }
+            if (name != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(Org.OpenAPITools.Client.ClientUtils.ParameterToMultiMap("", "name", name));
+            }
+            if (description != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(Org.OpenAPITools.Client.ClientUtils.ParameterToMultiMap("", "description", description));
+            }
+            if (ownername != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(Org.OpenAPITools.Client.ClientUtils.ParameterToMultiMap("", "ownername", ownername));
             }
 
 
@@ -1177,11 +1245,16 @@ namespace Org.OpenAPITools.Api
         /// </summary>
         /// <exception cref="Org.OpenAPITools.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="asset"></param>
-        /// <param name="assetPatchData"></param>
+        /// <param name="data"> (optional)</param>
+        /// <param name="name"> (optional)</param>
+        /// <param name="url"> (optional)</param>
+        /// <param name="description"> (optional)</param>
+        /// <param name="visibility"> (optional)</param>
+        /// <param name="thumbnail"> (optional)</param>
         /// <returns>Asset</returns>
-        public Asset UpdateAssetAssetsAssetPatch(int asset, AssetPatchData assetPatchData)
+        public Asset UpdateAssetAssetsAssetPatch(int asset, AssetPatchData? data = default(AssetPatchData?), string? name = default(string?), string? url = default(string?), string? description = default(string?), string? visibility = default(string?), System.IO.Stream? thumbnail = default(System.IO.Stream?))
         {
-            Org.OpenAPITools.Client.ApiResponse<Asset> localVarResponse = UpdateAssetAssetsAssetPatchWithHttpInfo(asset, assetPatchData);
+            Org.OpenAPITools.Client.ApiResponse<Asset> localVarResponse = UpdateAssetAssetsAssetPatchWithHttpInfo(asset, data, name, url, description, visibility, thumbnail);
             return localVarResponse.Data;
         }
 
@@ -1190,18 +1263,19 @@ namespace Org.OpenAPITools.Api
         /// </summary>
         /// <exception cref="Org.OpenAPITools.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="asset"></param>
-        /// <param name="assetPatchData"></param>
+        /// <param name="data"> (optional)</param>
+        /// <param name="name"> (optional)</param>
+        /// <param name="url"> (optional)</param>
+        /// <param name="description"> (optional)</param>
+        /// <param name="visibility"> (optional)</param>
+        /// <param name="thumbnail"> (optional)</param>
         /// <returns>ApiResponse of Asset</returns>
-        public Org.OpenAPITools.Client.ApiResponse<Asset> UpdateAssetAssetsAssetPatchWithHttpInfo(int asset, AssetPatchData assetPatchData)
+        public Org.OpenAPITools.Client.ApiResponse<Asset> UpdateAssetAssetsAssetPatchWithHttpInfo(int asset, AssetPatchData? data = default(AssetPatchData?), string? name = default(string?), string? url = default(string?), string? description = default(string?), string? visibility = default(string?), System.IO.Stream? thumbnail = default(System.IO.Stream?))
         {
-            // verify the required parameter 'assetPatchData' is set
-            if (assetPatchData == null)
-                throw new Org.OpenAPITools.Client.ApiException(400, "Missing required parameter 'assetPatchData' when calling AssetsApi->UpdateAssetAssetsAssetPatch");
-
             Org.OpenAPITools.Client.RequestOptions localVarRequestOptions = new Org.OpenAPITools.Client.RequestOptions();
 
             string[] _contentTypes = new string[] {
-                "application/json"
+                "multipart/form-data"
             };
 
             // to determine the Accept header
@@ -1216,7 +1290,29 @@ namespace Org.OpenAPITools.Api
             if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.PathParameters.Add("asset", Org.OpenAPITools.Client.ClientUtils.ParameterToString(asset)); // path parameter
-            localVarRequestOptions.Data = assetPatchData;
+            if (data != null)
+            {
+                localVarRequestOptions.FormParameters.Add("data", Org.OpenAPITools.Client.ClientUtils.ParameterToString(data)); // form parameter
+            }
+            if (name != null)
+            {
+                localVarRequestOptions.FormParameters.Add("name", Org.OpenAPITools.Client.ClientUtils.ParameterToString(name)); // form parameter
+            }
+            if (url != null)
+            {
+                localVarRequestOptions.FormParameters.Add("url", Org.OpenAPITools.Client.ClientUtils.ParameterToString(url)); // form parameter
+            }
+            if (description != null)
+            {
+                localVarRequestOptions.FormParameters.Add("description", Org.OpenAPITools.Client.ClientUtils.ParameterToString(description)); // form parameter
+            }
+            if (visibility != null)
+            {
+                localVarRequestOptions.FormParameters.Add("visibility", Org.OpenAPITools.Client.ClientUtils.ParameterToString(visibility)); // form parameter
+            }
+            if (thumbnail != null)
+            {
+            }
 
             // authentication (OAuth2PasswordBearer) required
             // oauth required
@@ -1242,12 +1338,17 @@ namespace Org.OpenAPITools.Api
         /// </summary>
         /// <exception cref="Org.OpenAPITools.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="asset"></param>
-        /// <param name="assetPatchData"></param>
+        /// <param name="data"> (optional)</param>
+        /// <param name="name"> (optional)</param>
+        /// <param name="url"> (optional)</param>
+        /// <param name="description"> (optional)</param>
+        /// <param name="visibility"> (optional)</param>
+        /// <param name="thumbnail"> (optional)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
         /// <returns>Task of Asset</returns>
-        public async System.Threading.Tasks.Task<Asset> UpdateAssetAssetsAssetPatchAsync(int asset, AssetPatchData assetPatchData, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public async System.Threading.Tasks.Task<Asset> UpdateAssetAssetsAssetPatchAsync(int asset, AssetPatchData? data = default(AssetPatchData?), string? name = default(string?), string? url = default(string?), string? description = default(string?), string? visibility = default(string?), System.IO.Stream? thumbnail = default(System.IO.Stream?), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
-            var task = UpdateAssetAssetsAssetPatchWithHttpInfoAsync(asset, assetPatchData, cancellationToken);
+            var task = UpdateAssetAssetsAssetPatchWithHttpInfoAsync(asset, data, name, url, description, visibility, thumbnail, cancellationToken);
 #if UNITY_EDITOR || !UNITY_WEBGL
             Org.OpenAPITools.Client.ApiResponse<Asset> localVarResponse = await task.ConfigureAwait(false);
 #else
@@ -1261,20 +1362,21 @@ namespace Org.OpenAPITools.Api
         /// </summary>
         /// <exception cref="Org.OpenAPITools.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="asset"></param>
-        /// <param name="assetPatchData"></param>
+        /// <param name="data"> (optional)</param>
+        /// <param name="name"> (optional)</param>
+        /// <param name="url"> (optional)</param>
+        /// <param name="description"> (optional)</param>
+        /// <param name="visibility"> (optional)</param>
+        /// <param name="thumbnail"> (optional)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
         /// <returns>Task of ApiResponse (Asset)</returns>
-        public async System.Threading.Tasks.Task<Org.OpenAPITools.Client.ApiResponse<Asset>> UpdateAssetAssetsAssetPatchWithHttpInfoAsync(int asset, AssetPatchData assetPatchData, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public async System.Threading.Tasks.Task<Org.OpenAPITools.Client.ApiResponse<Asset>> UpdateAssetAssetsAssetPatchWithHttpInfoAsync(int asset, AssetPatchData? data = default(AssetPatchData?), string? name = default(string?), string? url = default(string?), string? description = default(string?), string? visibility = default(string?), System.IO.Stream? thumbnail = default(System.IO.Stream?), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
-            // verify the required parameter 'assetPatchData' is set
-            if (assetPatchData == null)
-                throw new Org.OpenAPITools.Client.ApiException(400, "Missing required parameter 'assetPatchData' when calling AssetsApi->UpdateAssetAssetsAssetPatch");
-
 
             Org.OpenAPITools.Client.RequestOptions localVarRequestOptions = new Org.OpenAPITools.Client.RequestOptions();
 
             string[] _contentTypes = new string[] {
-                "application/json"
+                "multipart/form-data"
             };
 
             // to determine the Accept header
@@ -1290,7 +1392,29 @@ namespace Org.OpenAPITools.Api
             if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.PathParameters.Add("asset", Org.OpenAPITools.Client.ClientUtils.ParameterToString(asset)); // path parameter
-            localVarRequestOptions.Data = assetPatchData;
+            if (data != null)
+            {
+                localVarRequestOptions.FormParameters.Add("data", Org.OpenAPITools.Client.ClientUtils.ParameterToString(data)); // form parameter
+            }
+            if (name != null)
+            {
+                localVarRequestOptions.FormParameters.Add("name", Org.OpenAPITools.Client.ClientUtils.ParameterToString(name)); // form parameter
+            }
+            if (url != null)
+            {
+                localVarRequestOptions.FormParameters.Add("url", Org.OpenAPITools.Client.ClientUtils.ParameterToString(url)); // form parameter
+            }
+            if (description != null)
+            {
+                localVarRequestOptions.FormParameters.Add("description", Org.OpenAPITools.Client.ClientUtils.ParameterToString(description)); // form parameter
+            }
+            if (visibility != null)
+            {
+                localVarRequestOptions.FormParameters.Add("visibility", Org.OpenAPITools.Client.ClientUtils.ParameterToString(visibility)); // form parameter
+            }
+            if (thumbnail != null)
+            {
+            }
 
             // authentication (OAuth2PasswordBearer) required
             // oauth required
