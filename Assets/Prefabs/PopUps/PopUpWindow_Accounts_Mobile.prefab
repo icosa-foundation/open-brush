@@ -780,6 +780,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1766577842652504206, guid: 4abd2477ca9b56d4ebbc36af78d00b5d,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 7
+      objectReference: {fileID: 0}
     - target: {fileID: 8529915923179660036, guid: 4abd2477ca9b56d4ebbc36af78d00b5d,
         type: 3}
       propertyPath: m_ConfirmLoginElements
@@ -854,6 +859,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8645625735778197046, guid: 4abd2477ca9b56d4ebbc36af78d00b5d,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 8
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4abd2477ca9b56d4ebbc36af78d00b5d, type: 3}

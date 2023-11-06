@@ -218,7 +218,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Sketchfab
+  m_text: Icosa
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
   m_sharedMaterial: {fileID: 2133298, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
@@ -476,9 +476,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Sign in to a Sketchfab account to allow
+  m_text: 'Sign in to an Icosa account to allow
 
-    uploading to Sketchfab.'
+    uploading to Icosa.'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
   m_sharedMaterial: {fileID: 2133298, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
@@ -584,7 +584,7 @@ MonoBehaviour:
           m_TableReference:
             m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
           m_TableEntryReference:
-            m_KeyId: 76138521224077312
+            m_KeyId: 164911761917042688
             m_Key: 
           m_FallbackState: 0
           m_WaitForCompletion: 0
@@ -7585,7 +7585,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 46140578835b4f14582726c5d76a6eda, type: 2}
+  - {fileID: 2100000, guid: e7a4b5a3979042447af7f344f59498c7, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -9919,7 +9919,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Share to Sketchfab
+  m_text: Share to Icosa
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
   m_sharedMaterial: {fileID: 2133298, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
@@ -10025,7 +10025,7 @@ MonoBehaviour:
           m_TableReference:
             m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
           m_TableEntryReference:
-            m_KeyId: 76138395621449728
+            m_KeyId: 164911966586494976
             m_Key: 
           m_FallbackState: 0
           m_WaitForCompletion: 0
