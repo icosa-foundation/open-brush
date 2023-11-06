@@ -343,11 +343,16 @@ namespace TiltBrush.FrameAnimation
 
             for (int i = 0; i < getTimelineLength(); i++)
             {
-              
-
-                Frame addingFrame = newFrame(canvasAdding);
+               Frame addingFrame;
+                if (i == getFrameOn()){
+                 addingFrame = newFrame(canvasAdding);
+                }
+                else{
+                 addingFrame = newFrame(App.Scene.AddCanvas());
+                }
                 
                 addingTrack.Frames.Add(addingFrame);
+                
                 // if (i == frameOn){
 
                 //     Frame addingFrame = newFrame(canvasAdding);
@@ -390,6 +395,7 @@ namespace TiltBrush.FrameAnimation
             }
             return (-1, -1);
         }
+
 
 
 
@@ -1238,54 +1244,77 @@ namespace TiltBrush.FrameAnimation
 
 
             // bool onFilled = timeline[index.Item2].Frames[getFrameOn()].canvas.BatchManager.GetNumBatchPools() > 0;
-
+            
             if (timeline[index.Item2].Frames[getFrameOn()].canvas.BatchManager.GetNumBatchPools() == 0){return;}
 
-            for (int l = 0; l < timeline.Count; l++)
-            {
 
-                
+            int frameLength = getFrameLength(index.Item2,getFrameOn());
 
 
-                        if (l == index.Item2){
+            if (   index.Item1 + frameLength >= timeline[index.Item2].Frames.Count || timeline[index.Item2].Frames[index.Item1 + frameLength ].canvas.BatchManager.GetNumBatchPools() != 0){
 
-                              Frame  addingFrame = newFrame(timeline[l].Frames[getFrameOn()].canvas);
-                                addingFrame.deleted = timeline[l].Frames[getFrameOn()].deleted;
-                                addingFrame.animatedPath = timeline[l].Frames[getFrameOn()].animatedPath;
+                    for (int l = 0; l < timeline.Count; l++)
+                    {
 
-                            timeline[l].Frames.Insert(getFrameOn() + 1, addingFrame);
-                        }else{
-
-                        print("ADDING LAYER HERE - " + l);
-                        // Frame addingFrame = newFrame(App.Scene.AddCanvas());
-
-                        Frame addingFrame;
-
-                            bool filled = timeline[l].Frames[timeline[l].Frames.Count - 1].canvas.BatchManager.GetNumBatchPools() > 0;
-
-                            if (filled){
-                                
-                               addingFrame = newFrame(App.Scene.AddCanvas());
-                            }else{
-
-                                  addingFrame = newFrame(timeline[l].Frames[timeline[l].Frames.Count - 1].canvas);
-                                    addingFrame.deleted = timeline[l].Frames[timeline[l].Frames.Count - 1].deleted;
-                                    addingFrame.animatedPath = timeline[l].Frames[timeline[l].Frames.Count - 1].animatedPath;
-                            }
-
-                                  print("ADDING LAYER - " + l);       
-
-                             timeline[l].Frames.Insert(timeline[l].Frames.Count, addingFrame);
-
-                        }
-
-                    
-                  
                         
+
+
+                                if (l == index.Item2){
+
+                                    Frame  addingFrame = newFrame(timeline[l].Frames[getFrameOn()].canvas);
+                                        addingFrame.deleted = timeline[l].Frames[getFrameOn()].deleted;
+                                        addingFrame.animatedPath = timeline[l].Frames[getFrameOn()].animatedPath;
+
+                                    timeline[l].Frames.Insert(getFrameOn() + 1, addingFrame);
+                                }else{
+
+
+                                print("ADDING LAYER HERE - " + l);
+                                Frame addingFrame = newFrame(App.Scene.AddCanvas());
+                                timeline[l].Frames.Insert(timeline[l].Frames.Count, addingFrame);
+                                // addingFrame = newFrame(App.Scene.AddCanvas());
+                                }
+                                // Frame addingFrame;
+
+                                //     bool filled = timeline[l].Frames[timeline[l].Frames.Count - 1].canvas.BatchManager.GetNumBatchPools() > 0;
+
+                                //     if (filled){
+                                        
+                                //        addingFrame = newFrame(App.Scene.AddCanvas());
+                                //     }else{
+
+                                //           addingFrame = newFrame(timeline[l].Frames[timeline[l].Frames.Count - 1].canvas);
+                                //             addingFrame.deleted = timeline[l].Frames[timeline[l].Frames.Count - 1].deleted;
+                                //             addingFrame.animatedPath = timeline[l].Frames[timeline[l].Frames.Count - 1].animatedPath;
+                                //     }
+
+                                //           print("ADDING LAYER - " + l);       
+
+                                //      timeline[l].Frames.Insert(timeline[l].Frames.Count, addingFrame);
+
+                                // }
+
+                            
+                        
+                                
 
             }
 
+                   
+            }else{
 
+            
+   
+
+                     Frame  addingFrame = newFrame(timeline[index.Item2].Frames[index.Item1].canvas);
+                                addingFrame.deleted = timeline[index.Item2].Frames[index.Item1].deleted;
+                                addingFrame.animatedPath = timeline[index.Item2].Frames[index.Item1].animatedPath;
+
+                            timeline[index.Item2].Frames[index.Item1 + frameLength ] = addingFrame;
+
+
+
+            }
             ;
 
             frameOn++;
@@ -1306,7 +1335,11 @@ namespace TiltBrush.FrameAnimation
                 int frameLength = getFrameLength(index.Item2,index.Item1);
 
                 if (frameLength > 1){
-                        timeline[index.Item2].Frames.RemoveAt(index.Item1);
+                    Frame emptyFrame = newFrame(App.Scene.AddCanvas());
+                        timeline[index.Item2].Frames[index.Item1 + frameLength -1] = emptyFrame;
+                      
+                        frameOn--;
+                        focusFrame(getFrameOn());
                         resetTimeline();
                 }   
 

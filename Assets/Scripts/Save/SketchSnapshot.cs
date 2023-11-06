@@ -143,6 +143,7 @@ namespace TiltBrush
                 CameraPaths = MetadataUtils.GetCameraPaths(),
                 Layers = MetadataUtils.GetLayers(),
                 AnimationTracks = MetadataUtils.GetAnimationTracks(),
+                AnimationPaths = MetadataUtils.GetAnimationPaths(),
                 SchemaVersion = SketchMetadata.kSchemaVersion,
                 ApplicationName = App.kAppDisplayName,
                 ApplicationVersion = App.Config.m_VersionNumber,

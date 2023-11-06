@@ -596,6 +596,16 @@ namespace TiltBrush
     }
 
     [Serializable]
+    public class AnimationPathMetadata
+    {
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public CameraPathPositionKnotMetadata[] PathKnots { get; set; }
+        public CameraPathRotationKnotMetadata[] RotationKnots { get; set; }
+        public CameraPathSpeedKnotMetadata[] SpeedKnots { get; set; }
+        public CameraPathFovKnotMetadata[] FovKnots { get; set; }
+    }
+
+    [Serializable]
     public class LayerMetadata
     {
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
@@ -807,6 +817,8 @@ namespace TiltBrush
         public AnimationMetadata AnimationTracks { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public CameraPathMetadata[] CameraPaths { get; set; }
+
+        public AnimationPathMetadata[] AnimationPaths { get; set; }
 
         // Added for 24.0b Open-source edition
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
