@@ -15,23 +15,20 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using JetBrains.Annotations;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Org.OpenAPITools.Api;
 using Org.OpenAPITools.Client;
 using Org.OpenAPITools.Model;
 using UnityEngine;
-using UnityEngine.Assertions;
 
 namespace TiltBrush
 {
     class IcosaService
     {
-        public const string kModelLandingPage = "https://sketchfab.com/3d-models/";
-        const string kApiHost = "https://api.sketchfab.com";
+        public const string kModelLandingPage = "https://icosa.gallery/";
+        const string kApiHost = "https://api.icosa.gallery";
+
 
         /// A paginated response, for use with GetNextPageAsync()
         public interface Paginated
@@ -99,14 +96,10 @@ namespace TiltBrush
             public string uri;
         }
 
-        /// Options are constructed according to:
-        ///   https://docs.sketchfab.com/data-api/v3/index.html#!/models/patch_v3_models_uid_options
         [Serializable, UsedImplicitly]
         public class Options
         {
-            // shading (string, optional),
             public Dictionary<string, string> background;
-            // orientation (string, optional),
 
             public void SetBackgroundColor(Color color)
             {
@@ -115,83 +108,30 @@ namespace TiltBrush
             }
         }
 
-        private readonly OAuth2Identity m_identity;
+        private readonly LoginToken m_accessToken;
 
-        public IcosaService(OAuth2Identity identity)
+        public IcosaService(LoginToken token)
         {
-            m_identity = identity;
+            m_accessToken = token;
         }
 
-        /// Returns null if there is no next page.
-        /// It's assumed that you've used the results from the current page, meaning
-        /// that the task for fetching the current page must be completed.
-        public Task<T> GetNextPageAsync<T>(Task<T> task) where T : Paginated
-        {
-            // Ensure task.Result does not block.
-            // If this function were async we could await, but then couldn't return null.
-            // In C# 8 this could be switched to use async enumerators.
-            if (!task.IsCompleted)
-            {
-                throw new ArgumentException("page");
-            }
-            var uri = task.Result.NextUri;
-            if (string.IsNullOrEmpty(uri)) { return null; }
-            return new WebRequest(uri, m_identity, "GET")
-                .SendAsync()
-                .ContinueWith(antecedent => antecedent.Result.Deserialize<T>());
-        }
-
-        public async Task<MeDetail> GetUserInfo()
-        {
-            var result = await new WebRequest($"{kApiHost}/v3/me", m_identity, "GET").SendAsync();
-            return result.Deserialize<MeDetail>();
-        }
         [Serializable, UsedImplicitly]
         public class MeDetail
         {
-            // subscriptionCount (integer, optional),
-            // followerCount (integer, optional),
             public string uid;
             public string modelsUrl;
-            // likeCount (integer, optional),
-            // facebookUsername (string, optional),
-            // biography (string, optional),
-            // city (string, optional),
-            // tagline (string, optional),
             public int modelCount;
-            // twitterUsername (string, optional),
             public string email;
             public string website;
-            // billingCycle (string, optional),
-            // followersUrl (string, optional),
-            // collectionCount (integer, optional),
-            // dateJoined (string, optional),
             public string account;
             public string displayName;
             public string profileUrl;
-            // followingsUrl (string, optional),
-            // skills (Array[SkillDetail], optional),
-            // country (string, optional),
             public string uri;
-            // apiToken (string, optional),
             public string username;
-            // linkedinUsername (string, optional),
-            // likesUrl (string, optional),
             public AvatarRelated avatar;
             public bool isLimited;
-            // followingCount (integer, optional),
-            // collectionsUrl (string, optional)
         }
 
-
-        /// Returns the metadata for a model.
-        /// See also GetModelDownload().
-        public async Task<ModelDetail> GetModelDetail(string uid)
-        {
-            var result = await new WebRequest(
-                $"{kApiHost}/v3/models/{uid}", m_identity, "GET").SendAsync();
-            return result.Deserialize<ModelDetail>();
-        }
         [Serializable, UsedImplicitly]
         public class ModelDetail
         {
@@ -211,40 +151,22 @@ namespace TiltBrush
             public string uid;
             public TagRelated[] tags;
             public string viewerUrl;
-            // categories (Array[CategoriesRelated], optional),
             public string publishedAt;
             public int likeCount;
             public int commentCount;
             public int vertexCount;
             public UserRelated user;
-            // animationCount (integer, optional),
             public bool isDownloadable;
             public string description;
-            // viewCount (integer, optional),
             public string name;
             public JObject license; // license (object, optional),
             public string editorUrl;
-            // soundCount (integer, optional),
-            // isAgeRestricted (boolean, optional),
             public string uri;
             public int faceCount;
-            // ext (string,null, optional),
-            // staffpickedAt (string,null, optional),
-            // createdAt (string, optional),
             public ThumbnailsRelated thumbnails;
-            // downloadCount (integer, optional),
-            // embedUrl (string, optional),
             public JObject options; // options (object, optional)
         }
 
-
-        /// Returns a temporary URL where a model can be downloaded from
-        public async Task<ModelDownload> GetModelDownload(string uid)
-        {
-            var result = await new WebRequest(
-                $"{kApiHost}/v3/models/{uid}/download", m_identity, "GET").SendAsync();
-            return result.Deserialize<ModelDownload>();
-        }
         [Serializable, UsedImplicitly]
         public class ModelDownload
         {
@@ -258,48 +180,25 @@ namespace TiltBrush
             public inline_model_1 gltf;
         }
 
-
-        public Task<ModelLikesResponse> GetMeLikes()
-        {
-            return new WebRequest($"{kApiHost}/v3/me/likes", m_identity, "GET")
-                .SendAsync()
-                .ContinueWith(antecedent => antecedent.Result.Deserialize<ModelLikesResponse>());
-        }
         // Documentation for this API is incorrect, so this was created by inspection of the result
         // (and therefore may itself have errors)
         [Serializable, UsedImplicitly]
-        public class ModelLikesResponse : Paginated
+        public class xxModelLikesResponse : Paginated
         {
             [Serializable, UsedImplicitly]
             public class ModelLikesList
             {
                 public string uid;
-                // public TagRelated[] tags;
                 public string viewerUrl;
                 public bool isProtected;
-                // categories (Array[CategoriesRelated], optional),
-                // public string publishedAt;
-                // public int likeCount;
-                // public int commentCount;
-                // public int viewCount;
                 public int vertexCount;
                 public UserRelated user;
                 public bool isDownloadable;
                 public string description;
-                // public int animationCount;
                 public string name;
-                // public int soundCount;
-                // public bool isAgeRestricted;
                 public string uri;
                 public int faceCount;
-                // staffpickedAt (string,null, optional),
                 public ThumbnailsRelated thumbnails;
-                // public string embedUrl;
-
-                // public CategoriesRelated categories;
-                // public string createdAt;
-                // public string license;  // not documented and sometimes null?
-                // public ?string? price;
             }
             public string previous; // uri
             public string next;     // uri
@@ -309,50 +208,6 @@ namespace TiltBrush
             string Paginated.PreviousUri => previous;
         }
 
-        // TODO: /v3/search and /v3/me/search?
-        // The parameters to the search functions are the same, except /v3/me/search omits
-        // the "username" parameter, so maybe we can have a single function which wraps both.
-
-        //
-        /// Pass:
-        ///   temporaryDirectory - if passed, caller is responsible for cleaning it up
-        public async Task<CreateResponse> CreateModel(
-            string name,
-            string zipPath, IProgress<double> progress, CancellationToken token,
-            Options options = null, string temporaryDirectory = null)
-        {
-
-            // No compression because it's a compressed .zip already
-            WebRequest uploader = new WebRequest(
-                $"{kApiHost}/v3/models", m_identity, "POST", compress: false);
-
-            var moreParams = new List<(string, string)>
-            {
-                ("name", name),
-                ("source", "open-brush"),
-                ("private", "true"), // TODO: remove when this feature is not secret
-                // https://docs.sketchfab.com/data-api/v3/index.html#!/models/post_v3_models
-                // "Enables 2D view in model inspector. All downloadable models must have isInspectable
-                // enabled."
-                ("isInspectable", "true"),
-                // ??? https://docs.sketchfab.com/data-api/v3/index.html#!/licenses/get_v3_licenses
-                ("license", "by-sa"),
-                // This is how you specify multiple tags:
-                // ("tags", "[\"tiltbrush\", \"some-other-tag\"]"),
-                ("tags", "[\"openbrush\", \"tiltbrush\"]"),
-                ("isPublished", "false"),
-                // ("description", "Dummy description"),
-            };
-            if (options != null)
-            {
-                moreParams.Add(("options", JsonConvert.SerializeObject(options)));
-            }
-            uploader.ProgressObject = progress;
-            var reply = await uploader.SendNamedDataAsync(
-                "modelFile", File.OpenRead(zipPath), Path.GetFileName(zipPath), "application/zip",
-                moreParams: moreParams, token, temporaryDirectory);
-            return reply.Deserialize<CreateResponse>();
-        }
         [Serializable, UsedImplicitly]
         public struct CreateResponse
         {
@@ -360,20 +215,38 @@ namespace TiltBrush
             public string uri;
         }
 
+        public LoginToken TestLogin(string deviceCode)
+        {
+            Configuration config = new Configuration();
+            config.BasePath = kApiHost;
+            var apiInstance = new LoginApi(config);
+            try
+            {
+                LoginToken result = apiInstance.DeviceLoginLoginDeviceLoginPost(deviceCode);
+                Debug.Log(result.AccessToken);
+
+                return new LoginToken(result.AccessToken);
+            }
+            catch (ApiException e)
+            {
+                Debug.Log("Exception when calling LoginApi.LoginTokenPost: " + e.Message);
+                Debug.Log("Status Code: " + e.ErrorCode);
+                Debug.Log(e.StackTrace);
+                throw;
+            }
+        }
+
         public void TestUpload(LoginToken token, List<Stream> files)
         {
             Configuration config = new Configuration();
-            config.BasePath = "https://api.icosa.gallery";
+            config.BasePath = kApiHost;
             config.AccessToken = token.AccessToken;
             var apiInstance = new AssetsApi(config);
-
             try
             {
-                // Upload New Assets
-                var result = apiInstance.UploadNewAssetsAssetsPost(files);
-                Debug.Log(result);
+                var foo = apiInstance.UploadNewAssetsAssetsPost(files);
             }
-            catch (ApiException  e)
+            catch (ApiException e)
             {
                 Debug.Log("Exception when calling AssetsApi.UploadNewAssetsAssetsPost: " + e.Message);
                 Debug.Log("Status Code: " + e.ErrorCode);
@@ -384,21 +257,23 @@ namespace TiltBrush
         public LoginToken TestLogin()
         {
             Configuration config = new Configuration();
-            config.BasePath = "https://api.icosa.gallery";
+            config.BasePath = kApiHost;
             var apiInstance = new LoginApi(config);
-            var username = "andy@andybak.net";         // string |
-            var password = "clavoi23";         // string |
+            var username = "andy@andybak.net";
+            var password = "foobar";
 
             try
             {
-                LoginToken result = apiInstance.LoginLoginPost(username, password, grantType, scope, clientId, clientSecret);
+                LoginToken result = apiInstance.LoginLoginPost(username, password);
                 Debug.Log(result.AccessToken);
+                return result;
             }
             catch (ApiException  e)
             {
                 Debug.Log("Exception when calling LoginApi.LoginLoginPost: " + e.Message);
                 Debug.Log("Status Code: " + e.ErrorCode);
                 Debug.Log(e.StackTrace);
+                return null;
             }
         }
     }
