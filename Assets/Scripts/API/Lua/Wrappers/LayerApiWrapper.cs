@@ -206,7 +206,7 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Combines this layer and the one above it. If this layer is the first layer do nothing")]
-        [LuaDocsReturnValue("The resulting LayerApiWrapper instance")]
+        [LuaDocsReturnValue("The layer that contains the combined content")]
         [LuaDocsExample(@"combinedLayer = myLayer:Squash()")]
         public LayerApiWrapper Squash()
         {

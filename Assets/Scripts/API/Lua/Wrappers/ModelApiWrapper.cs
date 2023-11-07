@@ -69,7 +69,7 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription(@"Imports a new model from the MediaLibrary/Models folder")]
-        [LuaDocsExample(@"ModelApiWrapper:Import(""Andy.obj"")")]
+        [LuaDocsExample(@"Model:Import(""Andy.obj"")")]
         [LuaDocsParameter(@"filename", "The filename of the model to be imported")]
         [LuaDocsReturnValue(@"Returns the Model instance")]
         public static ModelApiWrapper Import(string filename) => new ModelApiWrapper(ApiMethods.ImportModel(filename).Result);

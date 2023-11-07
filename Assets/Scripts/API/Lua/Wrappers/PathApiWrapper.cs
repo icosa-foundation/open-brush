@@ -476,7 +476,7 @@ namespace TiltBrush
         [LuaDocsParameter(@"endTangent", "End tangent")]
         [LuaDocsParameter(@"resolution", "Resolution of the spline")]
         [LuaDocsParameter(@"tangentStrength", "Strength of the tangent")]
-        [LuaDocsReturnValue(@"Instance of PathApiWrapper")]
+        [LuaDocsReturnValue(@"A new Path")]
         public static PathApiWrapper Hermite(TrTransform startTransform, TrTransform endTransform, Vector3 startTangent, Vector3 endTangent, int resolution, float tangentStrength = 1f)
         {
 

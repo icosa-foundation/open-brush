@@ -608,7 +608,7 @@ function Guide:NewCone(transform) end
 function Guide:NewEllipsoid(transform) end
 
 ---@param transform Transform The transform of the Guide Widget
----@param model Model The ModelApiWrapper to use for the custom stencil
+---@param model Model The Model to use for the custom guide
 ---@return Guide # A new custom guide based on the convex hull of the model
 function Guide:NewCustom(transform, model) end
 
@@ -735,7 +735,7 @@ function Layer:Clear() end
 function Layer:Delete() end
 
 
----@return Layer # The resulting LayerApiWrapper instance
+---@return Layer # The layer that contains the combined content
 function Layer:Squash() end
 
 ---@param destinationLayer Layer The destination layer
@@ -1135,7 +1135,7 @@ function Path:SubdivideSegments(parts) end
 ---@param endTangent Vector3 End tangent
 ---@param resolution number Resolution of the spline
 ---@param tangentStrength? number Strength of the tangent
----@return Path # Instance of PathApiWrapper
+---@return Path # A new Path
 function Path:Hermite(startTransform, endTransform, startTangent, endTangent, resolution, tangentStrength) end
 
 
@@ -1148,7 +1148,7 @@ PathList = {}
 ---@return PathList # 
 function PathList:New() end
 
----@param pathList Path[] A list of pathApiWrapper objects.
+---@param pathList Path[] A list of Paths .
 ---@return PathList # 
 function PathList:New(pathList) end
 

@@ -48,12 +48,12 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription(@"Creates a new empty PathList")]
-        [LuaDocsExample(@"PathListApiWrapper:New()")]
+        [LuaDocsExample(@"PathList:New()")]
         public static PathListApiWrapper New() => new PathListApiWrapper();
 
         [LuaDocsDescription(@"Creates a new PathList from a list of Paths")]
-        [LuaDocsExample(@"PathListApiWrapper:New(pathList)")]
-        [LuaDocsParameter(@"pathList", "A list of pathApiWrapper objects.")]
+        [LuaDocsExample(@"PathList:New(pathList)")]
+        [LuaDocsParameter(@"pathList", "A list of Paths .")]
         public static PathListApiWrapper New(List<PathApiWrapper> pathList) => new PathListApiWrapper(pathList);
 
         [LuaDocsDescription("Draws this PathList using current settings")]
@@ -61,7 +61,7 @@ namespace TiltBrush
         public void Draw() => LuaApiMethods.DrawPaths(this);
 
         [LuaDocsDescription("Creates a new PathList from a text")]
-        [LuaDocsExample(@"PathListApiWrapper.FromText('example')")]
+        [LuaDocsExample(@"PathList.FromText('example')")]
         [LuaDocsParameter(@"text", "Input text to generate a path.")]
         public static PathListApiWrapper FromText(string text)
         {
