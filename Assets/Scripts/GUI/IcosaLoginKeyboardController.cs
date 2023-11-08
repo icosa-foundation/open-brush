@@ -15,28 +15,21 @@
 using System;
 using System.IO;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace TiltBrush
 {
-    public class KeyboardPopUpWindow : OptionsPopUpWindow
+    public class IcosaLoginKeyboardController : MonoBehaviour
     {
         private KeyboardUI m_KeyboardUI;
         [NonSerialized] public static string m_InitialText;
-        [NonSerialized] public static string m_LastInput;
-
-        public bool m_SanitizeFilename;
+        public UnityEvent<string> OnSubmit;
 
         void Awake()
         {
-            m_KeyboardUI = GetComponentInChildren<KeyboardUI>();
+            m_KeyboardUI = GetComponentInChildren<KeyboardUI>(includeInactive: true);
             m_KeyboardUI.KeyPressed += KeyPressed;
-        }
-
-        override public void Init(GameObject rParent, string sText)
-        {
-            base.Init(rParent, sText);
             m_KeyboardUI.AddConsoleContent(m_InitialText);
-            m_LastInput = m_InitialText;
         }
 
         private void OnDestroy()
@@ -49,20 +42,14 @@ namespace TiltBrush
             switch (e.Key.KeyType)
             {
                 case KeyboardKeyType.Enter:
-                    // Logic will been to be updated if we ever have a multi-line keyboard
-                    m_LastInput = m_KeyboardUI.ConsoleContent;
-                    if (m_ParentPanel)
-                    {
-                        m_ParentPanel.ResolveDelayedButtonCommand(true);
-                    }
-                    RequestClose(bForceClose: true);
+                    OnSubmit.Invoke(m_KeyboardUI.ConsoleContent);
                     break;
             }
+        }
 
-            if (m_SanitizeFilename)
-            {
-                m_KeyboardUI.SanitizeFilename();
-            }
+        public void Clear()
+        {
+            m_KeyboardUI.Clear();
         }
     }
 } // namespace TiltBrush

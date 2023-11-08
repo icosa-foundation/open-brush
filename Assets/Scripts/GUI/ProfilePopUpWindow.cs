@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections;
+using System.Numerics;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
+using Org.OpenAPITools.Model;
 using UnityEngine;
 using TMPro;
 
@@ -27,6 +32,7 @@ namespace TiltBrush
             GoogleHelp,
             DriveHelp,
             SketchfabHelp,
+            IcosaHelp,
             ConfirmLogin,
             Unavailable,
         }
@@ -40,6 +46,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_IcosaSignedInElements;
         [SerializeField] private GameObject m_IcosaSignedOutElements;
         [SerializeField] private GameObject m_IcosaConfirmSignOutElements;
+        [SerializeField] private GameObject m_IcosaLoginElements;
         [SerializeField] private Renderer m_GooglePhoto;
         [SerializeField] private Renderer m_SketchfabPhoto;
         [SerializeField] private Renderer m_IcosaPhoto;
@@ -55,7 +62,6 @@ namespace TiltBrush
         [SerializeField] private GameObject m_SketchfabInfoElements;
         [SerializeField] private GameObject m_IcosaInfoElements;
         [SerializeField] private GameObject m_UnavailableElements;
-
         [SerializeField] private GameObject m_DriveSyncEnabledElements;
         [SerializeField] private GameObject m_DriveSyncDisabledElements;
         [SerializeField] private GameObject m_DriveFullElements;
@@ -85,6 +91,7 @@ namespace TiltBrush
             base.Init(rParent, sText);
             OAuth2Identity.ProfileUpdated += OnProfileUpdated;
             RefreshObjects();
+            m_IcosaLoginElements.SetActive(false);
             App.DriveAccess.RefreshFreeSpaceAsync().AsAsyncVoid();
 
             // TODO: Make configurable by secrets/login data available at runtime.
@@ -145,15 +152,14 @@ namespace TiltBrush
             }
 
             // Icosa.
-            OAuth2Identity.UserInfo icosaInfo = App.IcosaIdentity.Profile;
-            bool icosaInfoValid = icosaInfo != null;
+            bool icosaInfoValid = App.IcosaIdentity != null;
             m_IcosaSignedInElements.SetActive(icosaInfoValid);
             m_IcosaSignedOutElements.SetActive(!icosaInfoValid);
             m_IcosaConfirmSignOutElements.SetActive(false);
             if (icosaInfoValid)
             {
-                m_IcosaNameText.text = icosaInfo.name;
-                m_IcosaPhoto.material.mainTexture = icosaInfo.icon;
+                m_IcosaNameText.text = App.IcosaUserName;
+                m_IcosaPhoto.material.mainTexture = App.IcosaUserIcon;
             }
 
             m_DriveFullElements.SetActive(driveFull && driveSyncEnabled);
@@ -163,6 +169,96 @@ namespace TiltBrush
             m_BackingUpElements.SetActive(driveSyncing);
             m_DriveSyncing = driveSyncing;
             RefreshBackupProgressText();
+        }
+        
+        public void HideIcosaLogin()
+        {
+            m_IcosaLoginElements.SetActive(false);
+            m_IcosaSignedInElements.SetActive(true);
+            m_IcosaSignedOutElements.SetActive(true);
+            m_SketchfabSignedOutElements.SetActive(true);
+            m_SketchfabSignedInElements.SetActive(true);
+            m_GoogleSignedInElements.SetActive(true);
+            m_GoogleSignedOutElements.SetActive(true);
+            RefreshObjects();
+        }
+
+        public void ShowIcosaLogin()
+        {
+            m_IcosaLoginElements.SetActive(true);
+            m_IcosaLoginElements.GetComponent<IcosaLoginKeyboardController>().Clear();
+            m_IcosaSignedInElements.SetActive(false);
+            m_IcosaSignedOutElements.SetActive(false);
+            m_SketchfabSignedOutElements.SetActive(false);
+            m_SketchfabSignedInElements.SetActive(false);
+            m_GoogleSignedInElements.SetActive(false);
+            m_GoogleSignedOutElements.SetActive(false);
+        }
+
+        public void HandleIcosaLoginSubmit(string code)
+        {
+            Debug.Log($"StartCoroutine");
+            StartCoroutine(LoginCoroutine(code));
+        }
+
+        private IEnumerator LoginCoroutine(string code)
+        {
+            var config = new Configuration();
+            var loginApi = new LoginApi(App.Instance.IcosaApiBasePath);
+            loginApi.Configuration = config;
+            var loginTask = loginApi.DeviceLoginLoginDeviceLoginPostAsync(code);
+            yield return new WaitUntil(() => loginTask.IsCompleted);
+
+            if (loginTask.Exception != null)
+            {
+                Debug.Log($"Exception != null");
+                if (loginTask.Exception.Message.Contains("401 Unauthorized"))
+                {
+                    Debug.Log($"Unauthorized");
+                    AudioManager.m_Instance.PlayTrashSound(transform.position);
+                }
+                else
+                {
+                    Debug.Log($"Login failed: {loginTask.Exception}");
+                }
+                yield break;
+            }
+            
+            if (loginTask.Result?.AccessToken == null)
+            {
+                Debug.Log($"Access token is null");
+                yield break;
+            }
+            Debug.Log($"Now call the GetUser method");
+            var token = loginTask.Result;
+            
+            // Now call the GetUser method
+            config.AccessToken = token.AccessToken;
+            var usersApi = new UsersApi(App.Instance.IcosaApiBasePath);
+            usersApi.Configuration = config;
+            var getUserTask = usersApi.GetUsersMeUsersMeGetAsync();
+            yield return new WaitUntil(() => getUserTask.IsCompleted);
+
+            if (getUserTask.Exception != null)
+            {
+                Debug.Log($"GetUser failed with exception: {getUserTask.Exception}");
+                yield break; 
+            }
+
+            var userData = getUserTask.Result;
+            if (userData == null)
+            {
+                Debug.Log($"Failure - no user data received");
+            }
+            LoginSuccess(token, userData);
+        }
+
+        private void LoginSuccess(LoginToken token, FullUser userInfo)
+        {
+            HideIcosaLogin();
+            App.IcosaIdentity = token.AccessToken;
+            App.IcosaUserName = userInfo.Displayname;
+            App.IcosaUserIcon = m_IcosaPhoto.material.mainTexture;
         }
 
         void RefreshBackupProgressText()
@@ -182,6 +278,7 @@ namespace TiltBrush
             m_GoogleInfoElements.SetActive(m_CurrentMode == Mode.GoogleHelp);
             m_DriveInfoElements.SetActive(m_CurrentMode == Mode.DriveHelp);
             m_SketchfabInfoElements.SetActive(m_CurrentMode == Mode.SketchfabHelp);
+            m_IcosaInfoElements.SetActive(m_CurrentMode == Mode.IcosaHelp);
             m_UnavailableElements.SetActive(m_CurrentMode == Mode.Unavailable);
             if (m_ConfirmLoginElements != null)
             {
@@ -197,6 +294,7 @@ namespace TiltBrush
             // and they've done so correctly, switch back to the accounts view.
             if (m_CurrentMode == Mode.TakeOffHeadset)
             {
+                Debug.Log($"OnProfileUpdated set AccountMode");
                 UpdateMode(Mode.Accounts);
             }
             RefreshObjects();
@@ -235,6 +333,10 @@ namespace TiltBrush
                         }
                     }
                     break;
+                case SketchControlsScript.GlobalCommands.LoginToIcosa:
+                    ShowIcosaLogin();   
+                    m_Persistent = true;
+                    break;
                 case SketchControlsScript.GlobalCommands.AccountInfo:
                     // Identifier for triggering an info message.
                     switch (button.m_CommandParam)
@@ -247,6 +349,9 @@ namespace TiltBrush
                             break;
                         case 2:
                             UpdateMode(Mode.SketchfabHelp);
+                            break;
+                        case 3:
+                            UpdateMode(Mode.IcosaHelp);
                             break;
                     }
                     break;

@@ -150,6 +150,9 @@ namespace TiltBrush
             RenameSketch = 5200,
             OpenLayerOptionsPopup = 5201,
             RenameLayer = 5202,
+            LoginToIcosa = 5600,
+            UploadToIcosa = 5601,
+            LogOutOfIcosa = 5602,
             OpenScriptsCommandsList = 6000,
             OpenScriptsList = 6001,
             OpenExampleScriptsList = 6002,
@@ -4940,7 +4943,8 @@ namespace TiltBrush
                     OpenUrl($"http://localhost:{App.HttpServer.HttpPort}/examplescripts");
                     break;
                 case GlobalCommands.RepaintOptions: break; // Intentionally blank.
-                case GlobalCommands.Null: break; // Intentionally blank.
+                case GlobalCommands.LoginToIcosa: break; // Intentionally blank.
+                case GlobalCommands.Null: break;           // Intentionally blank.
                 default:
                     Debug.LogError($"Unrecognized command {rEnum}");
                     break;

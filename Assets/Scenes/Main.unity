@@ -10056,6 +10056,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f54224fb4c2be945a489e461185fd80, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  IcosaApiBasePath: http://192.168.1.228:8000
   m_VrSdk: {fileID: 1412532062}
   m_SceneScript: {fileID: 1370550524}
   m_FadeFromBlackDuration: 3
@@ -22047,11 +22048,11 @@ MonoBehaviour:
   m_Service: 5
   m_OAuthScopes: []
   m_AdditionalDesktopOAuthScopes: []
-  m_CallbackPath: /sketchfab
+  m_CallbackPath: /icosa
   m_LoggedInTexture: {fileID: 2800000, guid: 0d05cda193064458a9a7bb085905c5a1, type: 3}
-  m_TokenStorePrefix: SketchfabOAuth2
-  m_AuthorizationServerUrl: https://sketchfab.com/oauth2/authorize/
-  m_TokenServerUrl: https://sketchfab.com/oauth2/token/
+  m_TokenStorePrefix: IcosaOAuth2
+  m_AuthorizationServerUrl: 
+  m_TokenServerUrl: 
 --- !u!1 &1612665327
 GameObject:
   m_ObjectHideFlags: 0
