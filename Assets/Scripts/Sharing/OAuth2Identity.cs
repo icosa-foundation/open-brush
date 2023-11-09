@@ -29,8 +29,6 @@ namespace TiltBrush
 {
 
     /// Handle accessing OAuth2 based web services.
-    /// Inaccurately named now as Icosa auth is going to
-    /// either be username/password or timed tokens
     public class OAuth2Identity : MonoBehaviour
     {
 
