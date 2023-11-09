@@ -146,7 +146,7 @@ namespace TiltBrush
         {
             rescalingMode = GltfImportOptions.RescalingMode.CONVERT,
             scaleFactor = App.METERS_TO_UNITS,
-            axisConventionOverride = AxisConvention.kGltfAccordingToPoly,
+            axisConventionOverride = AxisConvention.kGltfAccordingToIcosa,
             recenter = false
         };
 

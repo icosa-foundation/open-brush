@@ -3994,7 +3994,7 @@ GameObject:
   - component: {fileID: 3275547546821622028}
   - component: {fileID: 6831880153218701541}
   m_Layer: 16
-  m_Name: Poly_Logo
+  m_Name: Icosa_Logo
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4043,7 +4043,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 7a3b280f73263e34c97f3dd6db616888, type: 2}
+  - {fileID: 2100000, guid: e7a4b5a3979042447af7f344f59498c7, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -4543,7 +4543,7 @@ GameObject:
   m_Component:
   - component: {fileID: 791103424055215284}
   m_Layer: 16
-  m_Name: Poly_LoggedOutElements
+  m_Name: Icosa_LoggedOutElements
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6497,7 +6497,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4248595653238781298}
   m_Layer: 16
-  m_Name: Poly_LoggedInElements
+  m_Name: Icosa_LoggedInElements
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7092,7 +7092,7 @@ MonoBehaviour:
   m_HoverBoxColliderGrow: 0.05
   m_AddOverlay: 0
   m_Command: 96
-  m_CommandParam: 1
+  m_CommandParam: 3
   m_CommandParam2: -1
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
@@ -10314,7 +10314,7 @@ MonoBehaviour:
   m_HoverBoxColliderGrow: 0.05
   m_AddOverlay: 0
   m_Command: 95
-  m_CommandParam: 1
+  m_CommandParam: 3
   m_CommandParam2: -1
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
@@ -11164,7 +11164,7 @@ GameObject:
   - component: {fileID: 5387404676713886195}
   - component: {fileID: 5158317984005904495}
   m_Layer: 16
-  m_Name: Google_ProfilePhoto
+  m_Name: Icosa_ProfilePhoto
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -11720,7 +11720,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 7a3b280f73263e34c97f3dd6db616888, type: 2}
+  - {fileID: 2100000, guid: e7a4b5a3979042447af7f344f59498c7, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

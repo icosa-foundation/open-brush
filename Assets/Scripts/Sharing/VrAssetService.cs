@@ -21,6 +21,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using Org.OpenAPITools.Api;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -54,24 +55,24 @@ namespace TiltBrush
 
         const string kGltfName = "sketch.gltf";
 
-        public const string kApiHost = "https://poly.googleapis.com";
-        private const string kAssetLandingPage = "https://vr.google.com/sketches/uploads/publish/";
+        public const string kApiHost = "https://api.icosa.gallery";
+        private const string kAssetLandingPage = "https://icosa.gallery/uploads";
 
         private const string kListAssetsUri = "/v1/assets";
         private const string kUserAssetsUri = "/v1/users/me/assets";
         private const string kUserLikesUri = "/v1/users/me/likedassets";
         private const string kGetVersionUri = "/$discovery/rest?version=v1";
 
-        public static string kPolyApiKey => App.Config.GoogleSecrets?.ApiKey;
+        public static string kIcosaApiKey => App.Config.GoogleSecrets?.ApiKey;
 
         public const string kCreativeCommonsLicense = "CREATIVE_COMMONS_BY";
 
-        // Poly API used by Tilt Brush.
-        // If Poly doesn't support this version, don't try to talk to Poly and prompt the user to upgrade.
-        private const string kPolyApiVersion = "v1";
+        // Icosa API used by Tilt Brush.
+        // If Icosa doesn't support this version, don't try to talk to Icosa and prompt the user to upgrade.
+        private const string kIcosaApiVersion = "v1";
 
         /// Change-of-basis transform
-        public static readonly TrTransform kPolyFromUnity;
+        public static readonly TrTransform kIcosaFromUnity;
 
         private static Dictionary<string, string> kGltfMimetypes = new Dictionary<string, string>
         {
@@ -97,7 +98,7 @@ namespace TiltBrush
         }
 
         // These are progress values at the start of each step.
-        // TODO(b/146892613): have a different set for Poly vs Sketchfab?
+        // TODO(b/146892613): have a different set for Icosa vs Sketchfab?
         private static double[] kProgressSteps =
         {
             0.01, // UploadStep.CreateGltf -- progress > 0 means we have begun
@@ -242,14 +243,14 @@ namespace TiltBrush
             }
         }
 
-        /// Returns true if Poly would accept a PATCH of the specified asset
+        /// Returns true if Icosa would accept a PATCH of the specified asset
         /// from the specified user.
         ///
         /// Pass:
         ///   type -
         ///     Where you found the assetId. Necessary because of some shortcuts
         ///     taken by the implementation.
-        ///   userId - Poly user id of the currently-logged-in OAuth user. Get it
+        ///   userId - Icosa user id of the currently-logged-in OAuth user. Get it
         ///     with GetAccountIdAsync().
         public static async Task<bool> IsMutableAssetIdAsync(
             FileInfoType type, string assetId, string userId, string apiHost)
@@ -268,7 +269,7 @@ namespace TiltBrush
                 // Assumption: this asset is mutable because it's unlikely for a cloud-based .tilt
                 // to be in the user's Sketches/ folder. Local sketches always become un-published
                 // and mutable assets when uploaded (remember, publishing makes a copy).
-                // If someone grabbed a .tilt from their Poly asset cache and put it in Sketches/
+                // If someone grabbed a .tilt from their Icosa asset cache and put it in Sketches/
                 // that would break this assumption and I'm not sure what would happen.
                 if (userId == null) { return false; }
                 // It's mutable, but check whether it's mutable by _us_.
@@ -276,7 +277,7 @@ namespace TiltBrush
                 {
                     // The null == null case is handled earlier
                     WebRequest request = new WebRequest(
-                        $"{apiHost}{kListAssetsUri}/{assetId}?key={kPolyApiKey}",
+                        $"{apiHost}{kListAssetsUri}/{assetId}?key={kIcosaApiKey}",
                         App.GoogleIdentity, UnityWebRequest.kHttpVerbGET);
                     return (await request.SendAsync()).JObject?["accountId"].ToString() == userId;
                 }
@@ -295,10 +296,10 @@ namespace TiltBrush
 
         static VrAssetService()
         {
-            Matrix4x4 polyFromUnity = AxisConvention.GetFromUnity(AxisConvention.kGltfAccordingToPoly);
+            Matrix4x4 polyFromUnity = AxisConvention.GetFromUnity(AxisConvention.kGltfAccordingToIcosa);
 
             // Provably non-lossy: the mat4 is purely TRS, and the S is uniform
-            kPolyFromUnity = TrTransform.FromMatrix4x4(polyFromUnity);
+            kIcosaFromUnity = TrTransform.FromMatrix4x4(polyFromUnity);
         }
 
         // Instance API
@@ -314,20 +315,20 @@ namespace TiltBrush
         private string m_LastUploadCompleteUrl;
         TaskAndCts<(string url, long bytes)> m_UploadTask = null;
 
-        // Poly account id associated with the Google identity
-        private string m_PolyAccountId;
+        // Icosa account id associated with the Google identity
+        private string m_IcosaAccountId;
 
-        private enum PolyStatus
+        private enum IcosaStatus
         {
             Ok,
             Disabled,
             NoConnection
         }
-        private PolyStatus m_PolyStatus;
+        private IcosaStatus m_IcosaStatus;
 
-        public bool Available => m_PolyStatus == PolyStatus.Ok;
+        public bool Available => m_IcosaStatus == IcosaStatus.Ok;
 
-        public bool NoConnection => m_PolyStatus == PolyStatus.NoConnection;
+        public bool NoConnection => m_IcosaStatus == IcosaStatus.NoConnection;
 
         public float UploadProgress => m_UploadProgress;
 
@@ -389,14 +390,14 @@ namespace TiltBrush
                     ApiHost, AssetLandingPage);
             }
 
-            // If auto profiling is enabled, disable automatic Poly downloading.
+            // If auto profiling is enabled, disable automatic Icosa downloading.
             if (!App.UserConfig.Profiling.AutoProfile)
             {
-                VerifyPolyConnectionAndCheckApiVersionAsync();
+                VerifyIcosaConnectionAndCheckApiVersionAsync();
             }
             else
             {
-                m_PolyStatus = PolyStatus.Disabled;
+                m_IcosaStatus = IcosaStatus.Disabled;
             }
         }
 
@@ -521,46 +522,44 @@ namespace TiltBrush
             m_UploadTask?.Cancel();
         }
 
-        private async void VerifyPolyConnectionAndCheckApiVersionAsync()
+        private async void VerifyIcosaConnectionAndCheckApiVersionAsync()
         {
-            m_PolyStatus = await GetPolyStatus();
+            m_IcosaStatus = await GetIcosaStatus();
         }
 
-        private static async Task<PolyStatus> GetPolyStatus()
+        private static async Task<IcosaStatus> GetIcosaStatus()
         {
-            return PolyStatus.Disabled;
-
             // UserConfig override
-            if (App.UserConfig.Flags.DisablePoly ||
-                string.IsNullOrEmpty(App.Config.GoogleSecrets?.ApiKey))
+            if (App.UserConfig.Flags.DisableIcosa || App.Instance.IcosaToken==null)
             {
-                return PolyStatus.Disabled;
+                return IcosaStatus.Disabled;
             }
 
             string uri = String.Format("{0}{1}", ApiHost, kGetVersionUri);
             try
             {
-                var result = (await new WebRequest(uri, App.GoogleIdentity).SendAsync()).JObject;
-                string version = result["version"].Value<string>();
-                if (version == kPolyApiVersion)
+                var api = new LoginApi($"{App.ICOSA_API_BASEPATH}");
+                var result = new Dictionary<string, string> { { "version", "v1" } }; // TODO: get version from API
+                string version = result["version"];
+                if (version == kIcosaApiVersion)
                 {
-                    return PolyStatus.Ok;
+                    return IcosaStatus.Ok;
                 }
                 else
                 {
-                    Debug.LogWarning($"Poly requires API {version} > {kPolyApiVersion}");
-                    return PolyStatus.Disabled;
+                    Debug.LogWarning($"Icosa requires API {version} > {kIcosaApiVersion}");
+                    return IcosaStatus.Disabled;
                 }
             }
             catch (VrAssetServiceException e)
             {
-                Debug.LogWarning($"Error connecting to Poly: {e}");
-                return PolyStatus.NoConnection;
+                Debug.LogWarning($"Error connecting to Icosa: {e}");
+                return IcosaStatus.NoConnection;
             }
             catch (Exception e)
             {
-                Debug.LogError($"Internal error connecting to Poly: {e}");
-                return PolyStatus.NoConnection;
+                Debug.LogError($"Internal error connecting to Icosa: {e}");
+                return IcosaStatus.NoConnection;
             }
         }
 
@@ -755,7 +754,7 @@ namespace TiltBrush
             }
             else
             {
-                uri = String.Format("{0}{1}/{2}?key={3}", ApiHost, kListAssetsUri, assetId, kPolyApiKey);
+                uri = String.Format("{0}{1}/{2}?key={3}", ApiHost, kListAssetsUri, assetId, kIcosaApiKey);
             }
             return new AssetGetter(uri, assetId, type, reason);
         }
@@ -771,15 +770,15 @@ namespace TiltBrush
                     {
                         return null;
                     }
-                    filter = $"{kUserLikesUri}?format=TILT&orderBy=LIKED_TIME&key={kPolyApiKey}";
+                    filter = $"{kUserLikesUri}?format=TILT&orderBy=LIKED_TIME&key={kIcosaApiKey}";
                     errorMessage = "Failed to access your liked sketches.";
                     break;
                 case SketchSetType.Curated:
-                    if (string.IsNullOrEmpty(kPolyApiKey))
+                    if (string.IsNullOrEmpty(kIcosaApiKey))
                     {
                         return null;
                     }
-                    filter = $"{kListAssetsUri}?format=TILT&curated=true&orderBy=NEWEST&key={kPolyApiKey}";
+                    filter = $"{kListAssetsUri}?format=TILT&curated=true&orderBy=NEWEST&key={kIcosaApiKey}";
                     errorMessage = "Failed to access featured sketches.";
                     break;
             }
@@ -790,9 +789,9 @@ namespace TiltBrush
 
         // Get a specific sketch and insert it into the listed sketches at the specified index.
         public IEnumerator<object> InsertSketchInfo(
-            string assetId, int index, List<PolySceneFileInfo> infos)
+            string assetId, int index, List<IcosaSceneFileInfo> infos)
         {
-            string uri = String.Format("{0}{1}/{2}?key={3}", ApiHost, kListAssetsUri, assetId, kPolyApiKey);
+            string uri = String.Format("{0}{1}/{2}?key={3}", ApiHost, kListAssetsUri, assetId, kIcosaApiKey);
             WebRequest request = new WebRequest(uri, App.GoogleIdentity, UnityWebRequest.kHttpVerbGET);
             using (var cr = request.SendAsync().AsIeNull())
             {
@@ -815,33 +814,33 @@ namespace TiltBrush
             Future<JObject> f = new Future<JObject>(() => JObject.Parse(request.Result));
             JObject json;
             while (!f.TryGetResult(out json)) { yield return null; }
-            infos.Insert(index, new PolySceneFileInfo(json.Root));
+            infos.Insert(index, new IcosaSceneFileInfo(json.Root));
         }
 
-        public AssetLister ListAssets(PolySetType type)
+        public AssetLister ListAssets(IcosaSetType type)
         {
             string uri = null;
             switch (type)
             {
-                case PolySetType.Liked:
+                case IcosaSetType.Liked:
                     uri = $"{ApiHost}{kUserLikesUri}?format=GLTF2&orderBy=LIKED_TIME&pageSize={m_AssetsPerPage}";
                     break;
-                case PolySetType.User:
+                case IcosaSetType.User:
                     uri = $"{ApiHost}{kUserAssetsUri}?format=GLTF2&orderBy=NEWEST&pageSize={m_AssetsPerPage}";
                     break;
-                case PolySetType.Featured:
-                    uri = $"{ApiHost}{kListAssetsUri}?key={kPolyApiKey}" +
+                case IcosaSetType.Featured:
+                    uri = $"{ApiHost}{kListAssetsUri}?key={kIcosaApiKey}" +
                         $"&format=GLTF2&curated=true&orderBy=NEWEST&pageSize={m_AssetsPerPage}";
                     break;
             }
-            return new AssetLister(uri, "Failed to connect to Poly.");
+            return new AssetLister(uri, "Failed to connect to Icosa.");
         }
 
         // Download a tilt file to a temporary file and load it
         public IEnumerator LoadTiltFile(string id)
         {
             string path = Path.GetTempFileName();
-            string uri = String.Format("{0}{1}/{2}?key={3}", ApiHost, kListAssetsUri, id, kPolyApiKey);
+            string uri = String.Format("{0}{1}/{2}?key={3}", ApiHost, kListAssetsUri, id, kIcosaApiKey);
             WebRequest request = new WebRequest(uri, App.GoogleIdentity, UnityWebRequest.kHttpVerbGET);
             using (var cr = request.SendAsync().AsIeNull())
             {
@@ -859,7 +858,7 @@ namespace TiltBrush
                 }
             }
             JObject json = JObject.Parse(request.Result);
-            var info = new PolySceneFileInfo(json);
+            var info = new IcosaSceneFileInfo(json);
             using (UnityWebRequest www = UnityWebRequest.Get(info.TiltFileUrl))
             {
                 yield return www.SendWebRequest();

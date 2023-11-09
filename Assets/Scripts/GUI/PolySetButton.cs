@@ -17,7 +17,7 @@ namespace TiltBrush
 
     public class PolySetButton : ModeButton
     {
-        public PolySetType m_ButtonType;
+        public IcosaSetType m_ButtonType;
 
         override protected void OnButtonPressed()
         {

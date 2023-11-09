@@ -19,7 +19,7 @@ using TMPro;
 namespace TiltBrush
 {
 
-    public enum PolySetType
+    public enum IcosaSetType
     {
         User,
         Liked,
@@ -46,16 +46,16 @@ namespace TiltBrush
         [SerializeField] private GameObject m_OutOfDateMessage;
         [SerializeField] private GameObject m_NoPolyConnectionMessage;
 
-        private PolySetType m_CurrentSet;
+        private IcosaSetType m_CurrentSet;
         private bool m_LoggedIn;
 
         // State for automatically loading models.
         int m_LastPageIndexForLoad = -1;
-        PolySetType m_LastSetTypeForLoad = PolySetType.User;
+        IcosaSetType m_LastSetTypeForLoad = IcosaSetType.User;
 
-        public bool ShowingFeatured { get { return m_CurrentSet == PolySetType.Featured; } }
-        public bool ShowingLikes { get { return m_CurrentSet == PolySetType.Liked; } }
-        public bool ShowingUser { get { return m_CurrentSet == PolySetType.User; } }
+        public bool ShowingFeatured { get { return m_CurrentSet == IcosaSetType.Featured; } }
+        public bool ShowingLikes { get { return m_CurrentSet == IcosaSetType.Liked; } }
+        public bool ShowingUser { get { return m_CurrentSet == IcosaSetType.User; } }
 
 
 
@@ -97,7 +97,7 @@ namespace TiltBrush
                 Icons.Add(icon);
             }
 
-            m_CurrentSet = PolySetType.Featured;
+            m_CurrentSet = IcosaSetType.Featured;
 
             // Make sure Poly gallery button starts at greyscale when panel is initialized
             m_PolyGalleryRenderer.material.SetFloat("_Grayscale", 1);
@@ -106,7 +106,7 @@ namespace TiltBrush
             App.PolyAssetCatalog.CatalogChanged += OnPolyAssetCatalogChanged;
         }
 
-        void SetVisiblePolySet(PolySetType type)
+        void SetVisiblePolySet(IcosaSetType type)
         {
             m_CurrentSet = type;
             App.PolyAssetCatalog.RequestRefresh(m_CurrentSet);
@@ -194,13 +194,13 @@ namespace TiltBrush
             }
 
             bool internetError =
-                App.PolyAssetCatalog.NumCloudModels(PolySetType.Featured) == 0;
+                App.PolyAssetCatalog.NumCloudModels(IcosaSetType.Featured) == 0;
             m_InternetError.SetActive(internetError);
 
             RefreshPanelText();
             switch (m_CurrentSet)
             {
-                case PolySetType.User:
+                case IcosaSetType.User:
                     if (!internetError)
                     {
                         if (App.GoogleIdentity.LoggedIn)
@@ -216,7 +216,7 @@ namespace TiltBrush
                         }
                     }
                     break;
-                case PolySetType.Liked:
+                case IcosaSetType.Liked:
                     if (!internetError)
                     {
                         if (App.GoogleIdentity.LoggedIn)
@@ -241,17 +241,17 @@ namespace TiltBrush
         {
             switch (m_CurrentSet)
             {
-                case PolySetType.User:
+                case IcosaSetType.User:
                     m_PanelText.text = PanelTextStandard;
                     m_PanelTextSubtitle.gameObject.SetActive(false);
                     m_PanelTextUserSubtitle.gameObject.SetActive(true);
                     break;
-                case PolySetType.Featured:
+                case IcosaSetType.Featured:
                     m_PanelText.text = PanelTextFeatured;
                     m_PanelTextSubtitle.gameObject.SetActive(false);
                     m_PanelTextUserSubtitle.gameObject.SetActive(false);
                     break;
-                case PolySetType.Liked:
+                case IcosaSetType.Liked:
                     m_PanelText.text = PanelTextLiked;
                     m_PanelTextSubtitle.gameObject.SetActive(true);
                     m_PanelTextUserSubtitle.gameObject.SetActive(false);
@@ -300,7 +300,7 @@ namespace TiltBrush
         }
 
         // Works specifically with PolySetButtons.
-        public void ButtonPressed(PolySetType rType)
+        public void ButtonPressed(IcosaSetType rType)
         {
             SetVisiblePolySet(rType);
         }

@@ -264,7 +264,7 @@ namespace TiltBrush
         private string m_CacheDir;
         private string m_ThumbnailCacheDir;
         private Dictionary<string, Model> m_ModelsByAssetId;
-        private Dictionary<PolySetType, AssetSet> m_AssetSetByType;
+        private Dictionary<IcosaSetType, AssetSet> m_AssetSetByType;
         private bool m_NotifyListeners;
 
         private AwaitableRateLimiter m_thumbnailFetchLimiter =
@@ -286,10 +286,10 @@ namespace TiltBrush
             return m_IsLoadingMemo.Contains(assetId);
         }
 
-        public void RequestRefresh(PolySetType type)
+        public void RequestRefresh(IcosaSetType type)
         {
             // We don't update featured except on startup.
-            if (type != PolySetType.Featured && App.GoogleIdentity.LoggedIn)
+            if (type != IcosaSetType.Featured && App.GoogleIdentity.LoggedIn)
             {
                 m_AssetSetByType[type].m_RefreshRequested = true;
             }
@@ -339,18 +339,18 @@ namespace TiltBrush
                 Debug.LogException(e);
             }
 
-            m_AssetSetByType = new Dictionary<PolySetType, AssetSet>
+            m_AssetSetByType = new Dictionary<IcosaSetType, AssetSet>
             {
                 {
-                    PolySetType.User,
+                    IcosaSetType.User,
                     new AssetSet()
                 },
                 {
-                    PolySetType.Liked,
+                    IcosaSetType.Liked,
                     new AssetSet()
                 },
                 {
-                    PolySetType.Featured,
+                    IcosaSetType.Featured,
                     new AssetSet { m_RefreshRequested = true }
                 }
             };
@@ -855,7 +855,7 @@ namespace TiltBrush
             return result;
         }
 
-        private IEnumerator<Null> RefreshAssetSet(PolySetType type)
+        private IEnumerator<Null> RefreshAssetSet(IcosaSetType type)
         {
             List<AssetDetails> models = new List<AssetDetails>();
             // When the list is empty, make it the actual list acted upon so that results start
@@ -911,19 +911,19 @@ namespace TiltBrush
         {
             if (App.GoogleIdentity.Profile != null)
             {
-                m_AssetSetByType[PolySetType.User].m_RefreshRequested = true;
-                m_AssetSetByType[PolySetType.Liked].m_RefreshRequested = true;
+                m_AssetSetByType[IcosaSetType.User].m_RefreshRequested = true;
+                m_AssetSetByType[IcosaSetType.Liked].m_RefreshRequested = true;
             }
             else
             {
-                AssetSet set = m_AssetSetByType[PolySetType.User];
+                AssetSet set = m_AssetSetByType[IcosaSetType.User];
                 if (set.m_FetchMetadataCoroutine != null)
                 {
                     StopCoroutine(set.m_FetchMetadataCoroutine);
                     set.m_FetchMetadataCoroutine = null;
                 }
                 set.m_Models.Clear();
-                set = m_AssetSetByType[PolySetType.Liked];
+                set = m_AssetSetByType[IcosaSetType.Liked];
                 if (set.m_FetchMetadataCoroutine != null)
                 {
                     StopCoroutine(set.m_FetchMetadataCoroutine);
@@ -947,12 +947,12 @@ namespace TiltBrush
             OAuth2Identity.ProfileUpdated -= OnProfileUpdated;
         }
 
-        public int NumCloudModels(PolySetType type)
+        public int NumCloudModels(IcosaSetType type)
         {
             return m_AssetSetByType[type].m_Models.Count();
         }
 
-        public AssetDetails GetPolyAsset(PolySetType type, int index)
+        public AssetDetails GetPolyAsset(IcosaSetType type, int index)
         {
             return m_AssetSetByType[type].m_Models[index];
         }

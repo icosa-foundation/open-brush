@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
@@ -36,7 +37,7 @@ namespace TiltBrush
         {
             public bool DisableAudio;
             public bool DisableAutosave;
-            public bool DisablePoly;
+            [FormerlySerializedAs("DisablePoly")] public bool DisableIcosa;
             public bool UnlockScale;
             public bool GuideToggleVisiblityOnly;
             public bool HighResolutionSnapshots; // Deprecated

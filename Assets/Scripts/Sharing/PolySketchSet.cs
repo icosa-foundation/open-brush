@@ -38,7 +38,7 @@ namespace TiltBrush
             // before this one.  It's used during our sort to retain order from Poly, while
             // allowing a custom sort on top.
             public int m_DownloadIndex;
-            private PolySceneFileInfo m_FileInfo;
+            private IcosaSceneFileInfo m_FileInfo;
             private Texture2D m_Icon;
 
             public SceneFileInfo SceneFileInfo
@@ -67,7 +67,7 @@ namespace TiltBrush
                 get { return m_Icon != null; }
             }
 
-            public PolySketch(PolySceneFileInfo info)
+            public PolySketch(IcosaSceneFileInfo info)
             {
                 m_FileInfo = info;
             }
@@ -79,7 +79,7 @@ namespace TiltBrush
             }
 
             // Not part of the interface
-            public PolySceneFileInfo PolySceneFileInfo
+            public IcosaSceneFileInfo IcosaSceneFileInfo
             {
                 get { return m_FileInfo; }
             }
@@ -370,7 +370,7 @@ namespace TiltBrush
             int loadSketchCount = 0;
 
             AssetLister lister = null;
-            List<PolySceneFileInfo> infos = new List<PolySceneFileInfo>();
+            List<IcosaSceneFileInfo> infos = new List<IcosaSceneFileInfo>();
 
             // If we don't have a connection to Poly and we're querying the Showcase, use
             // the json metadatas stored in resources, instead of trying to get them from Poly.
@@ -381,7 +381,7 @@ namespace TiltBrush
                 for (int i = 0; i < textAssets.Length; ++i)
                 {
                     JObject jo = JObject.Parse(textAssets[i].text);
-                    infos.Add(new PolySceneFileInfo(jo));
+                    infos.Add(new IcosaSceneFileInfo(jo));
                 }
             }
             else
@@ -444,7 +444,7 @@ namespace TiltBrush
                 }
                 for (int i = 0; i < infos.Count; i++)
                 {
-                    PolySceneFileInfo info = infos[i];
+                    IcosaSceneFileInfo info = infos[i];
                     PolySketch sketch;
                     if (m_AssetIds.TryGetValue(info.AssetId, out sketch))
                     {
@@ -502,7 +502,7 @@ namespace TiltBrush
             if (!fromEmpty)
             {
                 // Find anything that was removed
-                int removed = m_Sketches.Count(s => !assetIds.ContainsKey(s.PolySceneFileInfo.AssetId));
+                int removed = m_Sketches.Count(s => !assetIds.ContainsKey(s.IcosaSceneFileInfo.AssetId));
                 if (removed > 0)
                 {
                     changed = true;
@@ -546,15 +546,15 @@ namespace TiltBrush
         // sketches list so as not to confuse the user.
         private void RemoveFailedDownloads(List<PolySketch> sketches)
         {
-            sketches.RemoveAll(x => !x.PolySceneFileInfo.TiltDownloaded ||
-                !x.PolySceneFileInfo.IconDownloaded);
+            sketches.RemoveAll(x => !x.IcosaSceneFileInfo.TiltDownloaded ||
+                !x.IcosaSceneFileInfo.IconDownloaded);
         }
 
         // Download tilt files and thumbnails (that we don't already have)
         private IEnumerator DownloadFilesCoroutine(List<PolySketch> sketches)
         {
             bool notifyOnError = true;
-            void NotifyCreateError(PolySceneFileInfo sceneFileInfo, string type, Exception ex)
+            void NotifyCreateError(IcosaSceneFileInfo sceneFileInfo, string type, Exception ex)
             {
                 string error = $"Error downloading {type} file for {sceneFileInfo.HumanName}.";
                 ControllerConsoleScript.m_Instance.AddNewLine(error, notifyOnError);
@@ -563,7 +563,7 @@ namespace TiltBrush
                 Debug.LogError($"{sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
             }
 
-            void NotifyWriteError(PolySceneFileInfo sceneFileInfo, string type, UnityWebRequest www)
+            void NotifyWriteError(IcosaSceneFileInfo sceneFileInfo, string type, UnityWebRequest www)
             {
                 string error = $"Error downloading {type} file for {sceneFileInfo.HumanName}.\n" +
                     "Out of disk space?";
@@ -576,7 +576,7 @@ namespace TiltBrush
             // Load the icons first, then the thumbnails
             foreach (PolySketch sketch in sketches)
             {
-                PolySceneFileInfo sceneFileInfo = sketch.PolySceneFileInfo;
+                IcosaSceneFileInfo sceneFileInfo = sketch.IcosaSceneFileInfo;
                 // TODO(b/36270116): Check filesizes when Poly can give it to us to detect incomplete downloads
                 if (!sceneFileInfo.IconDownloaded)
                 {
@@ -616,7 +616,7 @@ namespace TiltBrush
 
             foreach (PolySketch sketch in sketches)
             {
-                PolySceneFileInfo sceneFileInfo = sketch.PolySceneFileInfo;
+                IcosaSceneFileInfo sceneFileInfo = sketch.IcosaSceneFileInfo;
                 if (!sceneFileInfo.TiltDownloaded)
                 {
                     if (File.Exists(sceneFileInfo.TiltPath))
@@ -688,8 +688,8 @@ namespace TiltBrush
                 foreach (int i in m_RequestedIcons)
                 {
                     PolySketch sketch = m_Sketches[i];
-                    string path = sketch.PolySceneFileInfo.IconPath;
-                    if (sketch.PolySceneFileInfo.IconDownloaded)
+                    string path = sketch.IcosaSceneFileInfo.IconPath;
+                    if (sketch.IcosaSceneFileInfo.IconDownloaded)
                     {
                         byte[] data = File.ReadAllBytes(path);
                         Texture2D t = new Texture2D(2, 2);
@@ -741,11 +741,11 @@ namespace TiltBrush
         // Buckets the sketches into buckets 100000 tris in size.
         private static int CloudSketchComplexityBucket(PolySketch s)
         {
-            return s.PolySceneFileInfo.GltfTriangleCount / 100000;
+            return s.IcosaSceneFileInfo.GltfTriangleCount / 100000;
         }
     }
 
-    public class PolySceneFileInfo : SceneFileInfo
+    public class IcosaSceneFileInfo : SceneFileInfo
     {
 
         // Asset
@@ -764,7 +764,7 @@ namespace TiltBrush
 
         // Populate metadata from the JSON returned by Poly for a single asset
         // See go/vr-assets-service-api
-        public PolySceneFileInfo(JToken json)
+        public IcosaSceneFileInfo(JToken json)
         {
             m_AssetId = json["name"].ToString().Substring(7); // strip 'assets/' from start
             m_HumanName = json["displayName"].ToString();

@@ -95,7 +95,7 @@ namespace TiltBrush
         {
             new ExportGlTF().ExportBrushStrokes(
                 GetExportBaseName() + ".gltf",
-                AxisConvention.kGltfAccordingToPoly,
+                AxisConvention.kGltfAccordingToIcosa,
                 binary: false,
                 doExtras: true,
                 gltfVersion: 1,

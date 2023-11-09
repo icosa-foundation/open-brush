@@ -36,7 +36,7 @@ namespace TiltBrush
             m_ErrorMessage = errorMessage;
         }
 
-        public IEnumerator<object> NextPage(List<PolySceneFileInfo> files)
+        public IEnumerator<object> NextPage(List<IcosaSceneFileInfo> files)
         {
             string uri = m_PageToken == null ? m_Uri
                 : String.Format("{0}&page_token={1}", m_Uri, m_PageToken);
@@ -68,7 +68,7 @@ namespace TiltBrush
             {
                 foreach (var asset in assets)
                 {
-                    var info = new PolySceneFileInfo(asset);
+                    var info = new IcosaSceneFileInfo(asset);
                     info.Author = asset["displayName"].ToString();
                     ;
                     files.Add(info);
