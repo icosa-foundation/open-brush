@@ -46,6 +46,7 @@ namespace TiltBrush
 
         private void KeyPressed(object sender, KeyboardKeyEventArgs e)
         {
+            if (!e.IsPress) return; // Ignore key up events
             switch (e.Key.KeyType)
             {
                 case KeyboardKeyType.Enter:
