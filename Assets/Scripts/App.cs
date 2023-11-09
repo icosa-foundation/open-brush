@@ -130,8 +130,17 @@ namespace TiltBrush
         public static OAuth2Identity GoogleIdentity => m_Instance.m_GoogleIdentity;
         public static OAuth2Identity SketchfabIdentity => m_Instance.m_SketchfabIdentity;
 
-        public string IcosaApiBasePath;
-        public static string IcosaIdentity;
+        // public static string ICOSA_DEVICECODE_URL = "http://icosa.gallery/device";
+        public static string ICOSA_DEVICECODE_URL = "http://192.168.1.228:3000/device";
+        // public static string ICOSA_API_BASEPATH = "http://api.icosa.gallery";
+        public static string ICOSA_API_BASEPATH = "http://192.168.1.228:8000";
+        public string IcosaToken
+        {
+            get => PlayerPrefs.HasKey("IcosaToken") ? PlayerPrefs.GetString("IcosaToken") : null;
+            set => PlayerPrefs.SetString("IcosaToken", value);
+        }
+        public static bool IcosaIsLoggedIn => !string.IsNullOrEmpty(App.Instance.IcosaToken);
+
         public static string IcosaUserName;
         public static Texture IcosaUserIcon;
 
@@ -228,8 +237,7 @@ namespace TiltBrush
         [Header("Identities")]
         [SerializeField] private OAuth2Identity m_GoogleIdentity;
         [SerializeField] private OAuth2Identity m_SketchfabIdentity;
-        [SerializeField] private OAuth2Identity m_IcosaIdentity;
-
+        
         // ------------------------------------------------------------
         // Private data
         // ------------------------------------------------------------

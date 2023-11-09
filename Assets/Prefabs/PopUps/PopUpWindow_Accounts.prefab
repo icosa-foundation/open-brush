@@ -1801,7 +1801,7 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Command: 5602
+  m_Command: 27
   m_CommandParam: 3
   m_CommandParam2: -1
   m_RequiresPopup: 0
@@ -13795,7 +13795,7 @@ PrefabInstance:
     - target: {fileID: 114387715371604348, guid: ef7eb6dda2db50c4bbf6c682e4a21736,
         type: 3}
       propertyPath: _maxLineLength
-      value: 6
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 114387715371604348, guid: ef7eb6dda2db50c4bbf6c682e4a21736,
         type: 3}
@@ -14080,12 +14080,12 @@ PrefabInstance:
     - target: {fileID: 5277493517320569316, guid: ef7eb6dda2db50c4bbf6c682e4a21736,
         type: 3}
       propertyPath: m_text
-      value: 
+      value: Backspace
       objectReference: {fileID: 0}
     - target: {fileID: 5277493517320569316, guid: ef7eb6dda2db50c4bbf6c682e4a21736,
         type: 3}
       propertyPath: m_fontSize
-      value: 36
+      value: 80
       objectReference: {fileID: 0}
     - target: {fileID: 5277493517320569316, guid: ef7eb6dda2db50c4bbf6c682e4a21736,
         type: 3}
@@ -14305,12 +14305,12 @@ PrefabInstance:
     - target: {fileID: 5277493519053288274, guid: ef7eb6dda2db50c4bbf6c682e4a21736,
         type: 3}
       propertyPath: m_text
-      value: 
+      value: Enter
       objectReference: {fileID: 0}
     - target: {fileID: 5277493519053288274, guid: ef7eb6dda2db50c4bbf6c682e4a21736,
         type: 3}
       propertyPath: m_fontSize
-      value: 36
+      value: 80
       objectReference: {fileID: 0}
     - target: {fileID: 5277493519053288274, guid: ef7eb6dda2db50c4bbf6c682e4a21736,
         type: 3}

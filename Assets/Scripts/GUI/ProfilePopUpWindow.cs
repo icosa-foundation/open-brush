@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections;
 using System.Numerics;
 using Org.OpenAPITools.Api;
@@ -92,6 +93,11 @@ namespace TiltBrush
             OAuth2Identity.ProfileUpdated += OnProfileUpdated;
             RefreshObjects();
             m_IcosaLoginElements.SetActive(false);
+            if (App.IcosaIsLoggedIn)
+            {
+                StartCoroutine(FetchUserDataCoroutine(null));
+            }
+
             App.DriveAccess.RefreshFreeSpaceAsync().AsAsyncVoid();
 
             // TODO: Make configurable by secrets/login data available at runtime.
@@ -152,15 +158,9 @@ namespace TiltBrush
             }
 
             // Icosa.
-            bool icosaInfoValid = App.IcosaIdentity != null;
-            m_IcosaSignedInElements.SetActive(icosaInfoValid);
-            m_IcosaSignedOutElements.SetActive(!icosaInfoValid);
+            m_IcosaSignedInElements.SetActive(App.IcosaIsLoggedIn);
+            m_IcosaSignedOutElements.SetActive(!App.IcosaIsLoggedIn);
             m_IcosaConfirmSignOutElements.SetActive(false);
-            if (icosaInfoValid)
-            {
-                m_IcosaNameText.text = App.IcosaUserName;
-                m_IcosaPhoto.material.mainTexture = App.IcosaUserIcon;
-            }
 
             m_DriveFullElements.SetActive(driveFull && driveSyncEnabled);
             m_DriveSyncEnabledElements.SetActive(!driveFull && driveSyncEnabled);
@@ -180,6 +180,7 @@ namespace TiltBrush
             m_SketchfabSignedInElements.SetActive(true);
             m_GoogleSignedInElements.SetActive(true);
             m_GoogleSignedOutElements.SetActive(true);
+            m_Persistent = false;
             RefreshObjects();
         }
 
@@ -197,50 +198,55 @@ namespace TiltBrush
 
         public void HandleIcosaLoginSubmit(string code)
         {
-            Debug.Log($"StartCoroutine");
+            if (App.IcosaIsLoggedIn) return;
             StartCoroutine(LoginCoroutine(code));
         }
 
         private IEnumerator LoginCoroutine(string code)
         {
             var config = new Configuration();
-            var loginApi = new LoginApi(App.Instance.IcosaApiBasePath);
+            var loginApi = new LoginApi(App.ICOSA_API_BASEPATH);
             loginApi.Configuration = config;
             var loginTask = loginApi.DeviceLoginLoginDeviceLoginPostAsync(code);
             yield return new WaitUntil(() => loginTask.IsCompleted);
 
             if (loginTask.Exception != null)
             {
-                Debug.Log($"Exception != null");
                 if (loginTask.Exception.Message.Contains("401 Unauthorized"))
                 {
-                    Debug.Log($"Unauthorized");
+                    // TODO: Show error message.
+                    LoginFailure();
                     AudioManager.m_Instance.PlayTrashSound(transform.position);
                 }
-                else
-                {
-                    Debug.Log($"Login failed: {loginTask.Exception}");
-                }
                 yield break;
             }
-            
+    
             if (loginTask.Result?.AccessToken == null)
             {
-                Debug.Log($"Access token is null");
+                // TODO: Show error message.
+                LoginFailure();
+                AudioManager.m_Instance.PlayPinSound(transform.position, AudioManager.PinSoundType.Wobble);
                 yield break;
             }
-            Debug.Log($"Now call the GetUser method");
-            var token = loginTask.Result;
-            
-            // Now call the GetUser method
-            config.AccessToken = token.AccessToken;
-            var usersApi = new UsersApi(App.Instance.IcosaApiBasePath);
+            App.Instance.IcosaToken = loginTask.Result.AccessToken;
+            StartCoroutine(FetchUserDataCoroutine(userData => LoginSuccess(userData)));
+        }
+
+        private IEnumerator FetchUserDataCoroutine(Action<FullUser> onSuccess)
+        {
+            var usersApi = new UsersApi(App.ICOSA_API_BASEPATH);
+            var config = new Configuration { AccessToken = App.Instance.IcosaToken };
             usersApi.Configuration = config;
             var getUserTask = usersApi.GetUsersMeUsersMeGetAsync();
             yield return new WaitUntil(() => getUserTask.IsCompleted);
 
             if (getUserTask.Exception != null)
             {
+                if (getUserTask.Exception.Message.Contains("401 Unauthorized"))
+                {
+                    // Clear user token
+                    LoginFailure();
+                }
                 Debug.Log($"GetUser failed with exception: {getUserTask.Exception}");
                 yield break; 
             }
@@ -249,16 +255,27 @@ namespace TiltBrush
             if (userData == null)
             {
                 Debug.Log($"Failure - no user data received");
+                // TODO should we logout? Clear username/icon?
+                yield break;
             }
-            LoginSuccess(token, userData);
-        }
 
-        private void LoginSuccess(LoginToken token, FullUser userInfo)
+            // Call the callback delegate if it's provided (which means this was called from the first coroutine)
+            App.IcosaUserName = userData.Displayname;
+            App.IcosaUserIcon = m_IcosaPhoto.material.mainTexture;
+            onSuccess?.Invoke(userData);
+        }
+        
+        private void LoginSuccess(FullUser userInfo)
         {
             HideIcosaLogin();
-            App.IcosaIdentity = token.AccessToken;
-            App.IcosaUserName = userInfo.Displayname;
-            App.IcosaUserIcon = m_IcosaPhoto.material.mainTexture;
+        }
+        
+        private void LoginFailure()
+        {
+            HideIcosaLogin();
+            App.Instance.IcosaToken = null;
+            App.IcosaUserName = "";
+            App.IcosaUserIcon = null;
         }
 
         void RefreshBackupProgressText()
@@ -334,6 +351,16 @@ namespace TiltBrush
                     }
                     break;
                 case SketchControlsScript.GlobalCommands.LoginToIcosa:
+                    if (!App.Config.IsMobileHardware)
+                    {
+                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                            InputManager.ControllerName.Brush,
+                            SketchControlsScript.kRemoveHeadsetFyi,
+                            fPopScalar: 0.5f
+                        );
+                    }
+
+                    App.OpenURL(App.ICOSA_DEVICECODE_URL);
                     ShowIcosaLogin();   
                     m_Persistent = true;
                     break;

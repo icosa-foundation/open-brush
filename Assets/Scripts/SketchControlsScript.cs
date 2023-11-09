@@ -28,7 +28,7 @@ namespace TiltBrush
     public class SketchControlsScript : MonoBehaviour
     {
         public const string kRemoveHeadsetFyi = "Remove headset to view.";
-        const string kTiltBrushGalleryUrl = "https://poly.google.com/tiltbrush";
+        const string kTiltBrushGalleryUrl = "https://icosa.gallery";
         const string kBlocksGalleryUrl = "https://poly.google.com/blocks";
         const string kPolyMainPageUri = "https://poly.google.com";
 
@@ -151,8 +151,6 @@ namespace TiltBrush
             OpenLayerOptionsPopup = 5201,
             RenameLayer = 5202,
             LoginToIcosa = 5600,
-            UploadToIcosa = 5601,
-            LogOutOfIcosa = 5602,
             OpenScriptsCommandsList = 6000,
             OpenScriptsList = 6001,
             OpenExampleScriptsList = 6002,
@@ -4572,18 +4570,40 @@ namespace TiltBrush
                     }
                 case GlobalCommands.LogOutOfGenericCloud:
                     {
-                        var ident = App.GetIdentity((Cloud)iParam1);
-                        if (ident.LoggedIn) { ident.Logout(); }
+                        Cloud cloud = (Cloud)iParam1;
+                        if (cloud == Cloud.Icosa)
+                        {
+                            App.Instance.IcosaToken = null;
+                            App.IcosaUserName = "";
+                            App.IcosaUserIcon = null;
+                        }
+                        else
+                        {
+                            var ident = App.GetIdentity(cloud);
+                            if (ident.LoggedIn) { ident.Logout(); }
+                        }
                         break;
                     }
                 case GlobalCommands.UploadToGenericCloud:
                     {
                         Cloud cloud = (Cloud)iParam1;
-                        var ident = App.GetIdentity(cloud);
-                        if (!ident.LoggedIn)
+                        if (cloud == Cloud.Icosa)
                         {
-                            ident.LoginAsync();
-                            break;
+                            if (App.Instance.IcosaToken == null)
+                            {
+                                OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                                    InputManager.ControllerName.Brush,
+                                    "Not logged in", fPopScalar: 0.5f);
+                            }
+                        }
+                        else
+                        {
+                            var ident = App.GetIdentity(cloud);
+                            if (!ident.LoggedIn)
+                            {
+                                ident.LoginAsync();
+                                break;
+                            }
                         }
                         SelectionManager.m_Instance.ClearActiveSelection();
                         VrAssetService.m_Instance.UploadCurrentSketchAsync(cloud, isDemoUpload: false).AsAsyncVoid();
