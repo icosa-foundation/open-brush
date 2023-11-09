@@ -10056,7 +10056,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f54224fb4c2be945a489e461185fd80, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  IcosaApiBasePath: http://192.168.1.228:8000
   m_VrSdk: {fileID: 1412532062}
   m_SceneScript: {fileID: 1370550524}
   m_FadeFromBlackDuration: 3
@@ -10081,7 +10080,6 @@ MonoBehaviour:
   m_ShaderWarmup: {fileID: 2094189264}
   m_GoogleIdentity: {fileID: 1209128957}
   m_SketchfabIdentity: {fileID: 2095572865}
-  m_IcosaIdentity: {fileID: 1611595292}
 --- !u!4 &652605545
 Transform:
   m_ObjectHideFlags: 0
@@ -10596,7 +10594,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 652605543}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 59a80c71ac022374fbe28ebb361ab7ee, type: 3}
   m_Name: 
