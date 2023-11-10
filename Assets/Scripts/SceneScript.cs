@@ -381,6 +381,9 @@ namespace TiltBrush
 
         }
 
+        public void triggerLayersUpdate(){
+            App.Scene.LayerCanvasesUpdate?.Invoke();
+        }
         public void ShowLayer(int canvasIndex) { ShowLayer(GetCanvasByLayerIndex(canvasIndex)); }
         public void ShowLayer(CanvasScript canvas)
         {

@@ -28,6 +28,7 @@ namespace TiltBrush.FrameAnimation
         float frameOffset = 1.22f;
         int trackScrollOffset = 0;
         bool playing = false;
+        bool scrolling = false;
 
 
 
@@ -198,11 +199,13 @@ namespace TiltBrush.FrameAnimation
                 Frame thisFrame = track.Frames[hidingFrame];
 
 
-                App.Scene.HideLayer(thisFrame.canvas);
+                App.Scene.HideCanvas(thisFrame.canvas);
                 thisFrame.visible = false;
                 track.Frames[hidingFrame] = thisFrame;
             }
 
+
+            // App.Scene.triggerLayersUpdate();
         }
 
 
@@ -235,19 +238,21 @@ namespace TiltBrush.FrameAnimation
                 if ( timeline[i].visible && !thisFrame.deleted)
                 {
             
-                    App.Scene.ShowLayer(thisFrame.canvas);
+                    App.Scene.ShowCanvas(thisFrame.canvas);
                     thisFrame.visible = true;
                 }
                 else
                 {
                  
-                    App.Scene.HideLayer(thisFrame.canvas);
+                    App.Scene.HideCanvas(thisFrame.canvas);
                     thisFrame.visible = false;
                 }
                 timeline[i].Frames[frameIndex] = thisFrame;
             }
 
             previousShowingFrame = frameIndex;
+
+       
 
 
         }
@@ -258,32 +263,51 @@ namespace TiltBrush.FrameAnimation
             resetTimeline();
         }
 
+        public bool getFrameFilled(int track,int frame){
+            return timeline[track].Frames[frame].canvas.gameObject.transform.childCount > 0;
+        }
+        public bool getFrameFilled(CanvasScript canvas){
+            (int,int) loc = getCanvasLocation(canvas);
+            return timeline[loc.Item1].Frames[loc.Item2].canvas.gameObject.transform.childCount > 0;
+        }
+
+
         public void addAnimationPath(MovementPathWidget pathwidget)
         {
-            
 
+  
+    
+            
             GameObject moveTransform = pathwidget.gameObject;
             moveTransform.transform.SetParent(animationPathCanvas.transform);
 
             pathwidget.setPathAnimation(true);
 
-            (int, int) Loc = getCanvasIndex(App.Scene.ActiveCanvas);
+            (int, int) Loc = getCanvasLocation(App.Scene.ActiveCanvas);
+
+            if (!getFrameFilled(Loc.Item1,Loc.Item2)){
+                    TiltBrush.WidgetManager.m_Instance.UnregisterGrabWidget(pathwidget.gameObject);
+                    Destroy(pathwidget);
+                    return;
+            }
+
+            Debug.Log("ADDING ANIMATINON PATH! " + Loc.Item1 + " " + Loc.Item2);
 
 
 
-            CanvasScript origCanvas = timeline[Loc.Item2].Frames[Loc.Item1].canvas;
+            CanvasScript origCanvas = timeline[Loc.Item1].Frames[Loc.Item2].canvas;
 
-            if (timeline[Loc.Item2].Frames[Loc.Item1].animatedPath != null)
+            if (timeline[Loc.Item1].Frames[Loc.Item2].animatedPath != null)
             {
-                TiltBrush.WidgetManager.m_Instance.DeleteMovementPath(timeline[Loc.Item2].Frames[Loc.Item1].animatedPath);
+                TiltBrush.WidgetManager.m_Instance.DeleteMovementPath(timeline[Loc.Item1].Frames[Loc.Item2].animatedPath);
             }
 
             int i = 0;
 
             List<Frame> framesChanging = new List<Frame>();
             while (
-                Loc.Item1 + i < timeline[Loc.Item2].Frames.Count &&
-                timeline[Loc.Item2].Frames[Loc.Item1 + i].canvas.Equals(origCanvas)
+                Loc.Item2 + i < timeline[Loc.Item1].Frames.Count &&
+                timeline[Loc.Item1].Frames[Loc.Item2 + i].canvas.Equals(origCanvas)
                 )
             {
 
@@ -295,15 +319,15 @@ namespace TiltBrush.FrameAnimation
             for (int c = 0; c < i; c++)
             {
 
-                Frame changingFrame = timeline[Loc.Item2].Frames[Loc.Item1 + c];
+                Frame changingFrame = timeline[Loc.Item1].Frames[Loc.Item2 + c];
 
                 changingFrame.animatedPath = pathwidget;
-                timeline[Loc.Item2].Frames[Loc.Item1 + c] = changingFrame;
+                timeline[Loc.Item1].Frames[Loc.Item2 + c] = changingFrame;
             }
 
 
             Debug.Log("FINISHED ANIMATED PATH ");
-            Debug.Log(timeline[Loc.Item2].Frames[Loc.Item1].animatedPath);
+            Debug.Log(timeline[Loc.Item1].Frames[Loc.Item2].animatedPath);
 
 
             resetTimeline();
@@ -376,7 +400,28 @@ namespace TiltBrush.FrameAnimation
 
 
         
-        public (int, int) getCanvasIndex(CanvasScript canvas)
+        // public (int, int) getCanvasIndex(CanvasScript canvas)
+        // {
+
+        //     for (int trackNum = 0; trackNum < timeline.Count; trackNum++)
+        //     {
+
+        //         for (int frameNum = 0; frameNum < timeline[trackNum].Frames.Count; frameNum++)
+        //         {
+
+        //             if (canvas.Equals(timeline[trackNum].Frames[frameNum].canvas))
+        //             {
+        //                 return (frameNum, trackNum);
+        //             };
+
+        //         }
+
+        //     }
+        //     return (-1, -1);
+        // }
+
+
+        public (int, int) getCanvasLocation(CanvasScript canvas)
         {
 
             for (int trackNum = 0; trackNum < timeline.Count; trackNum++)
@@ -387,7 +432,7 @@ namespace TiltBrush.FrameAnimation
 
                     if (canvas.Equals(timeline[trackNum].Frames[frameNum].canvas))
                     {
-                        return (frameNum, trackNum);
+                        return (trackNum, frameNum );
                     };
 
                 }
@@ -398,13 +443,12 @@ namespace TiltBrush.FrameAnimation
 
 
 
-
-        public CanvasScript getTimelineCanvas(int frameIndex, int trackIndex)
+        public CanvasScript getTimelineCanvas(int trackIndex, int frameIndex )
         {
 
-            if (timeline.Count > frameIndex)
+            if (trackIndex < timeline.Count )
             {
-                if (timeline[trackIndex].Frames.Count > frameIndex)
+                if (frameIndex < timeline[trackIndex].Frames.Count)
                 {
                     return timeline[trackIndex].Frames[frameIndex].canvas;
                 }
@@ -452,7 +496,7 @@ namespace TiltBrush.FrameAnimation
                 for (int l = 0; l < timeline[i].Frames.Count; l++)
                 {
 
-                    timelineString += "[Frame " + timeline[i].Frames[l].deleted + "] ";
+                    timelineString += "[ Frame D: " + (getFrameFilled(i,l)  ? "1" : "0") + " A:" + (timeline[i].Frames[l].animatedPath != null  ? "1" : "0") + " ] ";
                 }
 
                 timelineString += "\n";
@@ -468,13 +512,13 @@ namespace TiltBrush.FrameAnimation
 
             bool visible = canvas.gameObject.activeSelf;
 
-            (int, int) canvasIndex = getCanvasIndex(canvas);
+            (int, int) canvasIndex = getCanvasLocation(canvas);
 
-            if (canvasIndex.Item1 != -1)
+            if (canvasIndex.Item2 != -1)
             {
 
 
-                Track thisTrack = timeline[canvasIndex.Item2];
+                Track thisTrack = timeline[canvasIndex.Item1];
                 thisTrack.visible = visible;
 
 
@@ -491,7 +535,7 @@ namespace TiltBrush.FrameAnimation
 
                 }
 
-                timeline[canvasIndex.Item2] = thisTrack;
+                timeline[canvasIndex.Item1] = thisTrack;
             }
 
         }
@@ -499,14 +543,14 @@ namespace TiltBrush.FrameAnimation
         public void MarkLayerAsDeleteRefresh(CanvasScript canvas)
         {
 
-            (int, int) canvasIndex = getCanvasIndex(canvas);
+            (int, int) canvasIndex = getCanvasLocation(canvas);
 
-            print(" DELETING LAYER TRACK " + canvasIndex.Item2);
+            print(" DELETING LAYER TRACK " + canvasIndex.Item1);
 
-            if (canvasIndex.Item1 != -1)
+            if (canvasIndex.Item2 != -1)
             {
 
-                Track thisTrack = timeline[canvasIndex.Item2];
+                Track thisTrack = timeline[canvasIndex.Item1];
                 thisTrack.deleted = true;
 
                 for (int i = 0; i < thisTrack.Frames.Count; i++)
@@ -522,7 +566,7 @@ namespace TiltBrush.FrameAnimation
                     thisTrack.Frames[i] = deletingFrame;
 
                 }
-                timeline[canvasIndex.Item2] = thisTrack;
+                timeline[canvasIndex.Item1] = thisTrack;
             }
             updateTrackScroll();
         }
@@ -531,17 +575,13 @@ namespace TiltBrush.FrameAnimation
         public void SquashLayerRefresh(CanvasScript SquashedLayer, CanvasScript DestinationLayer)
         {
 
-            // (int,int) canvasIndex = getCanvasIndex(canvas);
 
-            // print(" DELETING LAYER TRACK " + canvasIndex.Item2);
-
-
-            (int, int) SquashedCoord = getCanvasIndex(SquashedLayer);
-            (int, int) DestinationCoord = getCanvasIndex(DestinationLayer);
+            (int, int) SquashedCoord = getCanvasLocation(SquashedLayer);
+            (int, int) DestinationCoord = getCanvasLocation(DestinationLayer);
 
             Stroke[] m_OriginalStrokes;
 
-            if (SquashedCoord.Item1 != -1 && DestinationCoord.Item1 != -1)
+            if (SquashedCoord.Item2 != -1 && DestinationCoord.Item2 != -1)
             {
 
                 for (int i = 0; i < getTimelineLength(); i++)
@@ -553,22 +593,22 @@ namespace TiltBrush.FrameAnimation
                     {
 
                         m_OriginalStrokes = SketchMemoryScript.m_Instance.GetMemoryList
-                            .Where(x => x.Canvas == timeline[SquashedCoord.Item2].Frames[i].canvas).ToArray();
+                            .Where(x => x.Canvas == timeline[SquashedCoord.Item1].Frames[i].canvas).ToArray();
 
                         foreach (var stroke in m_OriginalStrokes)
                         {
 
-                            stroke.SetParentKeepWorldPosition(timeline[DestinationCoord.Item2].Frames[i].canvas);
+                            stroke.SetParentKeepWorldPosition(timeline[DestinationCoord.Item1].Frames[i].canvas);
 
                         }
                     }
 
-                    Frame squashingFrame = timeline[SquashedCoord.Item2].Frames[i];
+                    Frame squashingFrame = timeline[SquashedCoord.Item1].Frames[i];
                     squashingFrame.deleted = true;
 
-                    timeline[SquashedCoord.Item2].Frames[i] = squashingFrame;
+                    timeline[SquashedCoord.Item1].Frames[i] = squashingFrame;
 
-                    App.Scene.HideLayer(timeline[SquashedCoord.Item2].Frames[i].canvas);
+                    App.Scene.HideLayer(timeline[SquashedCoord.Item1].Frames[i].canvas);
 
 
                 }
@@ -700,7 +740,7 @@ namespace TiltBrush.FrameAnimation
 
 
                         // frameButton.localScale = new Vector3(1f,1f,7.88270617f);
-                        frameButton.localPosition = new Vector3(0.00538007962f, 0.449999988f - frameOffset * i, -0.963263571f);
+                        frameButton.localPosition = new Vector3(0.00538007962f, 0.449999988f - frameOffset * i, 0);
                         frameButton.gameObject.SetActive(true);
 
 
@@ -762,7 +802,7 @@ namespace TiltBrush.FrameAnimation
 
 
                         // frameButton.localScale = new Vector3(1f,1f,7.88270617f);
-                        frameButton.localPosition = new Vector3(0.00538007962f, 0.449999988f - frameOffset * i, -0.963263571f);
+                        frameButton.localPosition = new Vector3(0.00538007962f, 0.449999988f - frameOffset * i, 0);
                         frameButton.gameObject.SetActive(true);
 
 
@@ -782,12 +822,14 @@ namespace TiltBrush.FrameAnimation
                             {
                                 Debug.Log("BUT COLOUR " + frameButton.GetChild(o).gameObject.name);
                                 frameButton.GetChild(o).gameObject.GetComponent<SpriteRenderer>().color = new Color(92f / 255f, 52f / 255f, 237f / 255f);
+
+                                timeline[i].Frames[f].animatedPath.gameObject.SetActive(timeline[i].Frames[f].canvas.Equals(App.Scene.ActiveCanvas));
                             }
 
                         }
             
                      
-                        bool filled = timeline[i].Frames[f].canvas.BatchManager.GetNumBatchPools() > 0;
+                        bool filled = getFrameFilled(i,f);
 
                         bool backwardsConnect = false ,forwardConnect = false;
 
@@ -814,8 +856,8 @@ namespace TiltBrush.FrameAnimation
                                 }
                         }else{
 
-                            (int,int) index = getCanvasIndex(App.Scene.ActiveCanvas);
-                            if (index.Item2 == i && f == getFrameOn() ){
+                            (int,int) index = getCanvasLocation(App.Scene.ActiveCanvas);
+                            if (index.Item1 == i && f == getFrameOn() ){
                                     backColor = new Color(150 / 255f, 150 / 255f, 150 / 255f);
                             }else{
                                     backColor = new Color(0 / 255f, 0 / 255f, 0 / 255f);
@@ -870,6 +912,11 @@ namespace TiltBrush.FrameAnimation
             updateTimelineSlider();
             updateTimelineNob();
             updateTrackScroll();
+            updateUI();
+
+            App.Scene.triggerLayersUpdate();
+
+            
         }
 
         public void updateTrackScroll(int scrollOffset, float scrollHeight)
@@ -971,7 +1018,7 @@ namespace TiltBrush.FrameAnimation
 
 
             int timelineLength =  getTimelineLength();
-            for (int f = 0; f < getTimelineLength(); f++)
+            for (int f = 0; f < timelineLength; f++)
             {
              
 
@@ -1059,12 +1106,13 @@ namespace TiltBrush.FrameAnimation
             updateTimelineSlider();
             if (!timelineInput) updateTimelineNob();
 
-            deleteFrameButton.GetComponent<RemoveKeyFrameButton>().SetButtonAvailable(
-                !(
-                getFrameOn() < timeline[0].Frames.Count &&
-                 timeline[0].Frames[getFrameOn()].canvas.Equals( timeline[0].Frames[0].canvas) 
-                )
-                );
+
+            
+
+            deleteFrameButton.GetComponent<RemoveKeyFrameButton>().SetButtonAvailable(  
+                App.Scene.ActiveCanvas != timeline[0].Frames[0].canvas &&
+                getFrameFilled(App.Scene.ActiveCanvas)
+                 );
 
         }
 
@@ -1120,13 +1168,13 @@ namespace TiltBrush.FrameAnimation
 
 
 
-            (int, int) previousActiveCanvas = getCanvasIndex(App.Scene.ActiveCanvas);
+            (int, int) previousActiveCanvas = getCanvasLocation(App.Scene.ActiveCanvas);
 
             print("PREV CANV INDEX " + previousActiveCanvas.Item1 + " " + previousActiveCanvas.Item2);
 
-            if (previousActiveCanvas.Item2 != -1 && FrameIndex < timeline[previousActiveCanvas.Item2].Frames.Count)
+            if (previousActiveCanvas.Item1 != -1 && FrameIndex < timeline[previousActiveCanvas.Item1].Frames.Count)
             {
-                App.Scene.ActiveCanvas = timeline[previousActiveCanvas.Item2].Frames[FrameIndex].canvas;
+                App.Scene.ActiveCanvas = timeline[previousActiveCanvas.Item1].Frames[FrameIndex].canvas;
             }
 
 
@@ -1136,6 +1184,8 @@ namespace TiltBrush.FrameAnimation
             // Debug.Log(timeline[0].Frames[FrameIndex].canvas);
 
             updateUI(timelineInput);
+            
+            App.Scene.triggerLayersUpdate();
 
         }
         public void removeKeyFrame()
@@ -1146,34 +1196,63 @@ namespace TiltBrush.FrameAnimation
             print("BEFORE REMOVE");
             printTimeline();
 
-            int previousTrackActive = getCanvasIndex(App.Scene.ActiveCanvas).Item2;
+            (int,int) index = getCanvasLocation(App.Scene.ActiveCanvas);  
+            (int,int) nextIndex = getFollowingFrameIndex(index.Item1,index.Item2);
 
 
-            for (int l = 0; l < timeline.Count; l++)
+
+            for (int l = index.Item2; l < nextIndex.Item2; l++)
             {
 
 
 
                 //App.Scene.destroyCanvas(timeline[frameOn].layers[l].canvas);
-                App.Scene.HideCanvas(timeline[l].Frames[getFrameOn()].canvas);
+                App.Scene.HideCanvas(timeline[index.Item1].Frames[l].canvas);
 
-                Frame removingFrame = timeline[l].Frames[getFrameOn()];
+                Frame removingFrame = timeline[index.Item1].Frames[l];
                 removingFrame.deleted = true;
 
-                timeline[l].Frames.RemoveAt(getFrameOn());
+
+
+                Frame replacingFrame = newFrame(App.Scene.AddCanvas());
+                timeline[index.Item1].Frames[l] = replacingFrame;
+            }
+
+            
+
+
+
+          
+
+            print("AFTER REMOVE");
+            // cleanTimeline();
+
+
+            
+            int closestIndex = 0;
+
+            for (int i = 0; i < timeline[nextIndex.Item1].Frames.Count; i++){
+
+
+                closestIndex = i;
+
+                if (i >= nextIndex.Item2  - 1 ) break;
+
             }
 
 
 
-            frameOn = Math.Clamp(frameOn, 0, timeline.Count - 1);
+            print("NEW ACTIVE CANVSA " + index.Item1 + " " + closestIndex);
+            // App.Scene.ActiveCanvas = getTimelineCanvas(index.Item1,closestIndex);
 
-            print("AFTER REMOVE");
+            selectTimelineFrame(index.Item1,closestIndex);
+       
             printTimeline();
 
-            App.Scene.ActiveCanvas = timeline[previousTrackActive].Frames[getFrameOn()].canvas;
-            focusFrame(getFrameOn());
-
             resetTimeline();
+
+  
+
 
         }
         public void clearTimeline()
@@ -1217,8 +1296,231 @@ namespace TiltBrush.FrameAnimation
 
         }
 
+        
+        public (int,int) getFollowingFrameIndex(int trackNum, int frameNum) {
+
+            int frameAt = frameNum;
+            while (frameAt <  timeline[trackNum].Frames.Count){
+
+            if ( !timeline[trackNum].Frames[frameAt].canvas.Equals(timeline[trackNum].Frames[frameNum].canvas)){
+                return (trackNum,frameAt);
+            }
+
+            frameAt++;
+            
+            }
+
+            return (trackNum,frameAt);
+
+
+        }
+
+
+
+        public int getTimelineMaxCanvas(){
+            int maxLength = 0;
+
+            for (int t = 0; t < timeline.Count; t++){
+                for (int f = 0; f < timeline[t].Frames.Count; f++){
+                    if (f > maxLength && getFrameFilled(t,f)){
+
+                        maxLength = f;
+
+                    }
+                }
+        
+
+            }
+            return maxLength;
+        }
+
+
+        public void cleanTimeline(){
+
+            int maxTimeline = getTimelineMaxCanvas();
+
+            List<Track> newTimeline = new List<Track>();
+
+            for (int t = 0; t < timeline.Count; t++){
+
+                Track addingTrack = newTrack();
+                newTimeline.Add(addingTrack);
+                int f;
+                for (f = 0; f < timeline[t].Frames.Count; f++){
+                   
+                   if (f > maxTimeline){
+
+                   }else{   
+                    newTimeline[t].Frames.Add(timeline[t].Frames[f]);
+                   }
+
+
+                }
+
+                if (f < maxTimeline){
+                    while ( f < maxTimeline){
+
+                        Frame  addingFrame = newFrame(App.Scene.AddCanvas());
+
+                        newTimeline[t].Frames.Add(addingFrame); 
+
+                        f++;
+
+
+                    }
+                }
+        
+
+            }
+          
+            
+            timeline = newTimeline;
+
+
+            Debug.Log("CLEAN TIMELIEN FOCUS " + getFrameOn());
+            focusFrame(getFrameOn());
+            Debug.Log("CLEAN TIMELIEN AFTER FOCUS " + getFrameOn());
+            
+
+        }
+
+         public void fillTimeline(){
+
+            int maxTimeline = getTimelineLength();
+
+            List<Track> newTimeline = new List<Track>();
+
+            for (int t = 0; t < timeline.Count; t++){
+
+                Track addingTrack = newTrack();
+                newTimeline.Add(addingTrack);
+                int f;
+                for (f = 0; f < timeline[t].Frames.Count; f++){
+                   
+ 
+                    newTimeline[t].Frames.Add(timeline[t].Frames[f]);
+                   
+
+                }
+
+                if (f < maxTimeline){
+                    while ( f < maxTimeline){
+
+                        Frame  addingFrame = newFrame(App.Scene.AddCanvas());
+
+                        newTimeline[t].Frames.Add(addingFrame); 
+
+                        f++;
+
+
+                    }
+                }
+        
+
+            }
+            
+            timeline = newTimeline;
+
+
+            
+
+        }
+
+        public void moveKeyFrame(bool moveRight){
+
+            (int, int) index = getCanvasLocation(App.Scene.ActiveCanvas);
+            (int, int ) nextIndex = getFollowingFrameIndex(index.Item1,index.Item2);
+            bool failure = false;
+
+            if (moveRight){
+                if (nextIndex.Item2 >= timeline[nextIndex.Item1].Frames.Count ){
+
+                    Frame  emptyFrame = newFrame(App.Scene.AddCanvas());
+
+
+                    
+            
+                    Frame  movedFrame = timeline[index.Item1].Frames[index.Item2];
+
+
+                    timeline[index.Item1].Frames[index.Item2] = emptyFrame;
+                    timeline[nextIndex.Item1].Frames.Insert(timeline[nextIndex.Item1].Frames.Count, movedFrame);
+
+                }else if ( !getFrameFilled(nextIndex.Item1,nextIndex.Item2)){
+
+                    Frame tempFrame =  timeline[nextIndex.Item1].Frames[nextIndex.Item2 ];
+
+                    timeline[nextIndex.Item1].Frames[nextIndex.Item2 ] = timeline[index.Item1].Frames[index.Item2];
+
+                    timeline[index.Item1].Frames[index.Item2] = tempFrame;
+
+
+                }else{
+                    failure = true;  
+                }
+            }else{
+
+
+                if (index.Item2 > 0  &&   !getFrameFilled(index.Item1,index.Item2 - 1)){
+
+                    int frameLength = getFrameLength(index.Item1,index.Item2);
+
+                    Frame tempFrame =  timeline[index.Item1].Frames[index.Item2-1 ];
+
+
+                    timeline[index.Item1].Frames[index.Item2 - 1 ] = timeline[index.Item1].Frames[index.Item2 + frameLength - 1];
+
+                    timeline[index.Item1].Frames[index.Item2 + frameLength - 1] = tempFrame;
+
+                }else{
+                    failure = true;  
+                }
+
+            }
+
+            if (failure) return;
+
+
+            fillTimeline();
+
+            if (moveRight) { 
+
+                selectTimelineFrame(nextIndex.Item1,nextIndex.Item2); 
+
+            }else{
+
+                 selectTimelineFrame(index.Item1,index.Item2 - 1); 
+            }
+
+          
+        }
+
         public void addKeyFrame(){
 
+            (int, int) index = getCanvasLocation(App.Scene.ActiveCanvas);
+            (int, int ) nextIndex = getFollowingFrameIndex(index.Item1,index.Item2);
+
+            if (nextIndex.Item2 >= timeline[nextIndex.Item1].Frames.Count ){
+
+                  Frame  addingFrame = newFrame(App.Scene.AddCanvas());
+
+                timeline[nextIndex.Item1].Frames.Insert(timeline[nextIndex.Item1].Frames.Count, addingFrame);
+                nextIndex.Item2 = timeline[nextIndex.Item1].Frames.Count - 1;
+
+            }else if(  getFrameFilled(nextIndex.Item1,nextIndex.Item2)) {
+
+                Frame  addingFrame = newFrame(App.Scene.AddCanvas());
+
+                timeline[nextIndex.Item1].Frames.Insert(nextIndex.Item2, addingFrame);
+
+
+
+            }
+
+            fillTimeline();
+
+            selectTimelineFrame(nextIndex.Item1,nextIndex.Item2);
+            
         }
 
         public void extendKeyFrame()
@@ -1228,7 +1530,7 @@ namespace TiltBrush.FrameAnimation
 
             print("BEFORE  ADD");
 
-            (int, int) index = getCanvasIndex(App.Scene.ActiveCanvas);
+            (int, int) index = getCanvasLocation(App.Scene.ActiveCanvas);
 
             // print("ADDING LAYER HERE - " + index.Item2);
             //             // Frame addingFrame = newFrame(App.Scene.AddCanvas());
@@ -1243,15 +1545,15 @@ namespace TiltBrush.FrameAnimation
             // timeline[index.Item2].Frames.Insert(index.Item1 + 1, addingFrame);
 
 
-            // bool onFilled = timeline[index.Item2].Frames[getFrameOn()].canvas.BatchManager.GetNumBatchPools() > 0;
+        
             
-            if (timeline[index.Item2].Frames[getFrameOn()].canvas.BatchManager.GetNumBatchPools() == 0){return;}
+            if ( !getFrameFilled(index.Item1,getFrameOn()) ){return;}
 
 
-            int frameLength = getFrameLength(index.Item2,getFrameOn());
+            int frameLength = getFrameLength(index.Item1,getFrameOn());
 
 
-            if (   index.Item1 + frameLength >= timeline[index.Item2].Frames.Count || timeline[index.Item2].Frames[index.Item1 + frameLength ].canvas.BatchManager.GetNumBatchPools() != 0){
+            if (   index.Item2 + frameLength >= timeline[index.Item1].Frames.Count || getFrameFilled(index.Item1,index.Item2 + frameLength) ){
 
                     for (int l = 0; l < timeline.Count; l++)
                     {
@@ -1259,7 +1561,7 @@ namespace TiltBrush.FrameAnimation
                         
 
 
-                                if (l == index.Item2){
+                                if (l == index.Item1){
 
                                     Frame  addingFrame = newFrame(timeline[l].Frames[getFrameOn()].canvas);
                                         addingFrame.deleted = timeline[l].Frames[getFrameOn()].deleted;
@@ -1276,7 +1578,7 @@ namespace TiltBrush.FrameAnimation
                                 }
                                 // Frame addingFrame;
 
-                                //     bool filled = timeline[l].Frames[timeline[l].Frames.Count - 1].canvas.BatchManager.GetNumBatchPools() > 0;
+                    
 
                                 //     if (filled){
                                         
@@ -1306,11 +1608,11 @@ namespace TiltBrush.FrameAnimation
             
    
 
-                     Frame  addingFrame = newFrame(timeline[index.Item2].Frames[index.Item1].canvas);
-                                addingFrame.deleted = timeline[index.Item2].Frames[index.Item1].deleted;
-                                addingFrame.animatedPath = timeline[index.Item2].Frames[index.Item1].animatedPath;
+                     Frame  addingFrame = newFrame(timeline[index.Item1].Frames[index.Item2].canvas);
+                                addingFrame.deleted = timeline[index.Item1].Frames[index.Item2].deleted;
+                                addingFrame.animatedPath = timeline[index.Item1].Frames[index.Item2].animatedPath;
 
-                            timeline[index.Item2].Frames[index.Item1 + frameLength ] = addingFrame;
+                            timeline[index.Item1].Frames[index.Item2 + frameLength ] = addingFrame;
 
 
 
@@ -1330,13 +1632,13 @@ namespace TiltBrush.FrameAnimation
         }
 
         public void reduceKeyFrame(){
-              (int, int) index = getCanvasIndex(App.Scene.ActiveCanvas);
+              (int, int) index = getCanvasLocation(App.Scene.ActiveCanvas);
 
-                int frameLength = getFrameLength(index.Item2,index.Item1);
+                int frameLength = getFrameLength(index.Item1,index.Item2);
 
                 if (frameLength > 1){
                     Frame emptyFrame = newFrame(App.Scene.AddCanvas());
-                        timeline[index.Item2].Frames[index.Item1 + frameLength -1] = emptyFrame;
+                        timeline[index.Item1].Frames[index.Item2 + frameLength -1] = emptyFrame;
                       
                         frameOn--;
                         focusFrame(getFrameOn());
@@ -1347,19 +1649,87 @@ namespace TiltBrush.FrameAnimation
 
         }
 
+        public void splitKeyFrame(){
 
+        
+
+            (int, int) index = getCanvasLocation(App.Scene.ActiveCanvas);
+
+            CanvasScript newCanvas = App.Scene.AddCanvas();       
+            CanvasScript oldCanvas = App.Scene.ActiveCanvas;
+
+            int frameLegnth = getFrameLength(index.Item1,index.Item2 );
+
+
+            int splittingIndex = getFrameOn() + 1;
+            if (splittingIndex < index.Item2  || splittingIndex > index.Item2 +frameLegnth - 1   ) return;
+
+
+
+
+            List<Stroke> oldStrokes = SketchMemoryScript.m_Instance.GetMemoryList
+                        .Where(x => x.Canvas
+                        ==
+                            oldCanvas
+                            ).ToList();
+
+            List<Stroke> newStrokes = oldStrokes
+            .Select(stroke => SketchMemoryScript.m_Instance.DuplicateStroke(
+                stroke, App.Scene.SelectionCanvas, null))
+            .ToList();
+
+            foreach (var stroke in newStrokes)
+            {
+                switch (stroke.m_Type)
+                {
+                    case Stroke.Type.BrushStroke:
+                        {
+                            BaseBrushScript brushScript = stroke.m_Object.GetComponent<BaseBrushScript>();
+                            if (brushScript)
+                            {
+                                brushScript.HideBrush(false);
+                            }
+                        }
+                        break;
+                    case Stroke.Type.BatchedBrushStroke:
+                        {
+                            stroke.m_BatchSubset.m_ParentBatch.EnableSubset(stroke.m_BatchSubset);
+                        }
+                        break;
+                    default:
+                        Debug.LogError("Unexpected: redo NotCreated duplicate stroke");
+                        break;
+                }
+                TiltMeterScript.m_Instance.AdjustMeter(stroke, up: true);
+
+                stroke.SetParentKeepWorldPosition(newCanvas);
+            }
+
+
+           
+
+            for (int f = splittingIndex ; f < index.Item2 + frameLegnth; f++){
+
+                Frame addingFrame = newFrame(newCanvas);
+                timeline[index.Item1].Frames[f] = addingFrame;
+            }
+
+            selectTimelineFrame(index.Item1,splittingIndex);
+            resetTimeline();
+
+        }
         public void duplicateKeyFrame()
         {
 
 
 
-            (int, int) index = getCanvasIndex(App.Scene.ActiveCanvas);
+            (int, int) index = getCanvasLocation(App.Scene.ActiveCanvas);
 
-            CanvasScript newCanvas = App.Scene.AddCanvas();
+            CanvasScript newCanvas = App.Scene.AddCanvas();       
+            CanvasScript oldCanvas = App.Scene.ActiveCanvas;
 
-
-            (int, int) canvasCoord = (getFrameOn(), index.Item2);
-            CanvasScript oldCanvas = getTimelineCanvas(canvasCoord.Item1, canvasCoord.Item2);
+            int frameLegnth = getFrameLength(index.Item1,index.Item2 );
+            (int, int) nextIndex = getFollowingFrameIndex(index.Item1,index.Item2 );
 
 
 
@@ -1405,22 +1775,41 @@ namespace TiltBrush.FrameAnimation
             }
 
 
-            Frame addingFrame = newFrame(newCanvas);
+           
 
+            for (int f = 0 ; f < frameLegnth; f++){
 
-            addingFrame.deleted = false;
+                     
 
-            timeline[canvasCoord.Item2].Frames[canvasCoord.Item1 + 1] = addingFrame;
+                    if ( nextIndex.Item2 + f < timeline[nextIndex.Item1].Frames.Count && !getFrameFilled(nextIndex.Item1,nextIndex.Item2)  ){
+                        Destroy(timeline[nextIndex.Item1].Frames[nextIndex.Item2 + f].canvas);
 
-            int i = 2;
-            while (canvasCoord.Item1 + i < timeline[canvasCoord.Item2].Frames.Count &&
-             timeline[canvasCoord.Item2].Frames[canvasCoord.Item1 + i].canvas.Equals(oldCanvas)
-             )
-            {
-                timeline[canvasCoord.Item2].Frames[canvasCoord.Item1 + i] = newFrame(newCanvas);
-                i++;
+                        Frame addingFrame = newFrame(newCanvas);       
+
+                        timeline[nextIndex.Item1].Frames[nextIndex.Item2 + f] = addingFrame ; 
+                    }else{
+                        Frame addingFrame = newFrame(newCanvas);      
+                        timeline[nextIndex.Item1].Frames.Insert(nextIndex.Item2 + f,addingFrame)  ;                
+                    }
+                 
             }
 
+
+
+            // timeline[canvasCoord.Item2].Frames[canvasCoord.Item1 + 1] = addingFrame;
+
+            // int i = 2;
+            // while (canvasCoord.Item1 + i < timeline[canvasCoord.Item2].Frames.Count &&
+            //  timeline[canvasCoord.Item2].Frames[canvasCoord.Item1 + i].canvas.Equals(oldCanvas)
+            //  )
+            // {
+            //     timeline[canvasCoord.Item2].Frames[canvasCoord.Item1 + i] = newFrame(newCanvas);
+            //     i++;
+            // }
+
+
+            fillTimeline();
+            selectTimelineFrame(nextIndex.Item1,nextIndex.Item2);
             resetTimeline();
 
 
@@ -1429,41 +1818,46 @@ namespace TiltBrush.FrameAnimation
 
         }
 
-
+        public void timelineSlideDown(bool down ){
+   
+            scrolling = down;
+            
+        }
 
         public void timelineSlide(float Value)
         {
 
             this.gameObject.GetComponent<TiltBrush.Layers.LayerUI_Manager>().OnDisable();
+            
 
             frameOn = ((float)(Value + timelineOffset) / sliderFrameSize);
 
 
-
-            frameOn = frameOn >= getTimelineLength() ? getTimelineLength() : frameOn;
+            int timelineLength = getTimelineLength();
+            frameOn = frameOn >= timelineLength ? timelineLength : frameOn;
             frameOn = frameOn < 0 ? 0 : frameOn;
 
-            print("T SLIDE frameoN- " + frameOn);
+            // print("T SLIDE frameoN- " + frameOn);
             focusFrame(getFrameOn(), true);
             updateLayerTransforms();
 
             // Scrolling the timeline
-            print("TIMELINE SCROLLING " + Value);
+            // print("TIMELINE SCROLLING " + Value);
             if (Value < 0.1f)
             {
                 timelineOffset -= 0.05f;
-                print("SCROLL LEFT " + timelineOffset);
+                // print("SCROLL LEFT " + timelineOffset);
             }
             if (Value > 0.9f)
             {
                 timelineOffset += 0.05f;
-                print("SCROLL RIGHT " + timelineOffset);
+                // print("SCROLL RIGHT " + timelineOffset);
             }
-            float max = sliderFrameSize * (float)getTimelineLength() - 1;
+            float max = sliderFrameSize * (float)timelineLength - 1;
             timelineOffset = Math.Clamp(timelineOffset, 0, max < 0 ? 0 : max);
 
 
-            updateTimelineSlider();
+            // updateTimelineSlider();
 
             this.gameObject.GetComponent<TiltBrush.Layers.LayerUI_Manager>().OnEnable();
         }
@@ -1482,9 +1876,13 @@ namespace TiltBrush.FrameAnimation
 
             this.gameObject.GetComponent<TiltBrush.Layers.LayerUI_Manager>().setAnimating(playing);
         }
+
         public bool getPlaying()
         {
             return playing;
+        }
+        public bool getChanging(){
+            return playing || scrolling;
         }
         public void toggleAnimation()
         {
@@ -1499,13 +1897,13 @@ namespace TiltBrush.FrameAnimation
         {
 
             CanvasScript canvasOn = timeline[trackOn].Frames[frameOn].canvas;
-            (int, int) coord = getCanvasIndex(canvasOn);
+            (int, int) coord = getCanvasLocation(canvasOn);
             // coord.Item2 > track
 
             int frameLength = 0;
             while (
-                coord.Item1 + frameLength < timeline[coord.Item2].Frames.Count &&
-                timeline[coord.Item2].Frames[coord.Item1 + frameLength].canvas.Equals(canvasOn)
+                coord.Item2 + frameLength < timeline[coord.Item1].Frames.Count &&
+                timeline[coord.Item1].Frames[coord.Item2 + frameLength].canvas.Equals(canvasOn)
                 )
             {
 
@@ -1522,22 +1920,22 @@ namespace TiltBrush.FrameAnimation
         {
 
             CanvasScript canvasAnimating = trackOn.Frames[getFrameOn()].canvas;
-            (int, int) coord = getCanvasIndex(canvasAnimating);
+            (int, int) coord = getCanvasLocation(canvasAnimating);
             // coord.Item2 > track
 
             int frameLength = 0;
             while (
-                coord.Item1 + frameLength < timeline[coord.Item2].Frames.Count &&
-                timeline[coord.Item2].Frames[coord.Item1 + frameLength].canvas.Equals(canvasAnimating)
+                coord.Item2 + frameLength < timeline[coord.Item1].Frames.Count &&
+                timeline[coord.Item1].Frames[coord.Item2 + frameLength].canvas.Equals(canvasAnimating)
                 )
             {
 
                 frameLength++;
             }
 
-            Debug.Log("SMOOTH TIME " + frameOn + " " + coord.Item1 + " " + frameLength);
+            // Debug.Log("SMOOTH TIME " + frameOn + " " + coord.Item2 + " " + frameLength);
 
-            return (frameOn - (float)coord.Item1) / (float)(frameLength);
+            return (frameOn - (float)coord.Item2) / (float)(frameLength);
 
 
         }
@@ -1547,6 +1945,8 @@ namespace TiltBrush.FrameAnimation
             int frameInt = getFrameOn();
 
 
+            Debug.Log("BEFORE TIMELINE PRINT");
+            printTimeline();
 
             // Update layer animation transforms 
 
@@ -1564,15 +1964,18 @@ namespace TiltBrush.FrameAnimation
                   
                     
                     if (
-                        (timeline[t].Frames[frameInt].animatedPath != null && frameInt == 0) ||
-                        (timeline[t].Frames[frameInt].animatedPath != null &&
-                        timeline[t].Frames[frameInt - 1].animatedPath != null)
+                        (timeline[t].Frames[frameInt].animatedPath != null)
+                        // (timeline[t].Frames[frameInt].animatedPath != null && frameInt == 0) ||
+                        // (timeline[t].Frames[frameInt].animatedPath != null &&
+                        // timeline[t].Frames[frameInt - 1].animatedPath != null)
                      // && !timeline[0].Frames[frameInt].animatedPath.Equals(timeline[0].Frames[frameInt - 1].animatedPath
 
                      )
                     {
 
+                        if (t == 1){
 
+                        }
                    
                         float canvasTime =  getSmoothAnimationTime(timeline[t]) * (timeline[t].Frames[frameInt].animatedPath.Path.NumPositionKnots - 1);
                         // Debug.Log("CANVAS TIME " + canvasTime + " | " + getSmoothAnimationTime(timeline[t]) + " | " + (timeline[0].Frames[frameInt].animatedPath.Path.NumPositionKnots));
@@ -1660,6 +2063,7 @@ namespace TiltBrush.FrameAnimation
             lastCanvas = App.Scene.ActiveCanvas;
             ;
 
+            // (int,int) index = getCanvasLocation(App.Scene.ActiveCanvas);
             int currentBatchPools = App.Scene.ActiveCanvas.BatchManager.GetNumBatchPools();
 
             if (currentBatchPools != 0 && previousCanvasBatches != currentBatchPools)
