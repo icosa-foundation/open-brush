@@ -261,7 +261,9 @@ namespace TiltBrush
 
             // Call the callback delegate if it's provided (which means this was called from the first coroutine)
             App.IcosaUserName = userData.Displayname;
-            App.IcosaUserIcon = m_IcosaPhoto.material.mainTexture;
+            App.IcosaUserIcon = m_GenericPhoto; // TODO: Get icon from API
+            m_IcosaNameText.text = App.IcosaUserName;
+            m_IcosaPhoto.material.mainTexture = App.IcosaUserIcon;
             onSuccess?.Invoke(userData);
         }
         
