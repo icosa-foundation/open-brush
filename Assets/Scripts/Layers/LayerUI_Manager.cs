@@ -171,6 +171,8 @@ namespace TiltBrush.Layers
             UpdateScroll();
         }
 
+
+        
         private void OnLayerCanvasesUpdate()
         {
             ResetUI();

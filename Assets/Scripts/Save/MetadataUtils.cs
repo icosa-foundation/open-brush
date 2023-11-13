@@ -73,25 +73,15 @@ namespace TiltBrush
             return "";
         }
 
-        public static CameraPathMetadata[] GetCameraPaths()
+        public static CameraPathMetadata[] GetMovementPaths()
         {
-            return WidgetManager.m_Instance.MovementPathWidgets
+            return WidgetManager.m_Instance.AllPathWidgets
                 .Where(cpw => cpw.WidgetScript.ShouldSerialize())
                 .Select(cpw => cpw.WidgetScript.AsSerializable())
                 .ToArray();
         }
 
-        public static CameraPathMetadata[] GetAnimationPaths()
-        {
-            // return WidgetManager.m_Instance.AnimationPathWidgets
-            //     .Where(cpw => cpw.WidgetScript.ShouldSerialize())
-            //     .Select(cpw => cpw.WidgetScript.AsSerializable())
-            //     .ToArray();
-             return WidgetManager.m_Instance.MovementPathWidgets
-                .Where(cpw => cpw.WidgetScript.ShouldSerialize())
-                .Select(cpw => cpw.WidgetScript.AsSerializable())
-                .ToArray();
-        }
+
 
 
         public static LayerMetadata[] GetLayers()

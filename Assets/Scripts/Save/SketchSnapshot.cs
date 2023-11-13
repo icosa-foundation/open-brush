@@ -140,10 +140,9 @@ namespace TiltBrush
                 SourceId =
                     SaveLoadScript.m_Instance.TransferredSourceIdFrom(SaveLoadScript.m_Instance.SceneFile),
                 AssetId = SaveLoadScript.m_Instance.SceneFile.AssetId,
-                CameraPaths = MetadataUtils.GetCameraPaths(),
+                CameraPaths = MetadataUtils.GetMovementPaths(),
                 Layers = MetadataUtils.GetLayers(),
-                // AnimationTracks = MetadataUtils.GetAnimationTracks(),
-                // AnimationPaths = MetadataUtils.GetAnimationPaths(),
+                AnimationTracks = MetadataUtils.GetAnimationTracks(),
                 SchemaVersion = SketchMetadata.kSchemaVersion,
                 ApplicationName = App.kAppDisplayName,
                 ApplicationVersion = App.Config.m_VersionNumber,

@@ -641,6 +641,7 @@ namespace TiltBrush
             return m_Path.SerializeToCameraPathMetadata();
         }
 
+
         static public void CreateFromSaveData(CameraPathMetadata cameraPath)
         {
             // Create a new widget.
