@@ -22,6 +22,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -466,9 +467,18 @@ namespace TiltBrush
                     AudioManager.m_Instance.UploadLoop(true);
                     var timer = System.Diagnostics.Stopwatch.StartNew();
                     m_UploadTask = new TaskAndCts<(string url, long bytes)>();
-                    Debug.Assert(backend == Cloud.Sketchfab);
-                    m_UploadTask.Task = UploadCurrentSketchSketchfabAsync(m_UploadTask.Token, tempUploadDir.Value,
-                        isDemoUpload);
+
+                    switch (backend)
+                    {
+                        case Cloud.Icosa:
+                            m_UploadTask.Task = UploadCurrentSketchIcosaAsync(m_UploadTask.Token, tempUploadDir.Value,
+                                isDemoUpload);
+                            break;
+                        case Cloud.Sketchfab:
+                            m_UploadTask.Task = UploadCurrentSketchSketchfabAsync(m_UploadTask.Token, tempUploadDir.Value,
+                                isDemoUpload);
+                            break;
+                    }
                     var (url, totalUploadLength) = await m_UploadTask.Task;
                     m_LastUploadCompleteUrl = url;
                     ControllerConsoleScript.m_Instance.AddNewLine("Upload succeeded!");
@@ -652,6 +662,64 @@ namespace TiltBrush
                     }
                 }
             }
+        }
+
+        // TODO: Refactor. This is largely the same as UploadCurrentSketchSketchFabAsync aside from a few url changes and the response.
+        private async Task<(string, long)> UploadCurrentSketchIcosaAsync(
+            CancellationToken token, string tempUploadDir, bool _)
+        {
+            DiskSceneFileInfo fileInfo = GetWritableFile();
+
+            SetUploadProgress(UploadStep.CreateGltf, 0);
+            // Do the glTF straight away as it relies on the meshes, not the stroke descriptions.
+            string gltfFile = Path.Combine(tempUploadDir, kGltfName);
+            var exportResults = await OverlayManager.m_Instance.RunInCompositorAsync(
+                OverlayType.Export, fadeDuration: 0.5f,
+                action: () => new ExportGlTF().ExportBrushStrokes(
+                    gltfFile,
+                    AxisConvention.kGltf2, binary: false, doExtras: false,
+                    includeLocalMediaContent: true, gltfVersion: 2,
+                    // TODO: selfContained: false was Poly setting but is it what we want to do now?
+                    selfContained: true));
+            if (!exportResults.success)
+            {
+                throw new VrAssetServiceException("Internal error creating upload data.");
+            }
+
+            // Construct options to set the background color to the current environment's clear color.
+            Color bgColor = SceneSettings.m_Instance.CurrentEnvironment.m_RenderSettings.m_ClearColor;
+            IcosaService.Options options = null;
+            // options.SetBackgroundColor(bgColor);
+
+            // TODO(b/146892613): we're not uploading this at the moment. Should we be?
+            // If we don't, we can probably remove this step...?
+            SetUploadProgress(UploadStep.CreateTilt, 0);
+            await CreateTiltForUploadAsync(fileInfo);
+            token.ThrowIfCancellationRequested();
+
+            // Create a copy of the .tilt file in tempUploadDir.
+            string tempTiltPath = Path.Combine(tempUploadDir, "sketch.tilt");
+            File.Copy(fileInfo.FullPath, tempTiltPath);
+
+            // Collect files into a .zip file, including the .tilt file.
+            string zipName = Path.Combine(tempUploadDir, "archive.zip");
+            var filesToZip = exportResults.exportedFiles.ToList().Append(tempTiltPath);
+            await CreateZipFileAsync(zipName, tempUploadDir, filesToZip.ToArray(), token);
+            var uploadLength = new FileInfo(zipName).Length;
+
+            var service = new IcosaService(App.Instance.IcosaToken);
+            var progress = new Progress<double>(d => SetUploadProgress(UploadStep.UploadElements, d));
+            var response = await service.CreateModel(
+                fileInfo.HumanName, zipName, progress, token, options, tempUploadDir);
+            // TODO(b/146892613): return the UID and stick it into the .tilt file?
+            // Or do we not care since we aren't recording provenance and remixing
+
+            // TODO(b/146892613): figure out this flow
+            // response.uri is not very useful; it is an API uri that gives you json of asset details.
+            // Also, the 3d-models URI might show that the asset is still processing. We can poll their
+            // API and find out when it's done and pop up the window then?
+            string uri = $"{IcosaService.kModelLandingPage}{App.IcosaUserId}/{response.ToString()}";
+            return (uri, 0);
         }
 
         private async Task<(string, long)> UploadCurrentSketchSketchfabAsync(

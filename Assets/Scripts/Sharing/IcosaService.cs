@@ -15,21 +15,23 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Org.OpenAPITools.Api;
-using Org.OpenAPITools.Client;
-using Org.OpenAPITools.Model;
 using UnityEngine;
 
 namespace TiltBrush
 {
     class IcosaService
     {
-        public const string kModelLandingPage = "https://icosa.gallery/";
-        const string kApiHost = "https://api.icosa.gallery";
-
-
+        // public const string kModelLandingPage = "https://api.icosa.gallery/edit/";
+        // const string kApiHost = "https://api.icosa.gallery";
+        
+        public const string kModelLandingPage = "http://192.168.1.228:3000/edit/";
+        const string kApiHost = "http://192.168.1.228:3000";
+        
         /// A paginated response, for use with GetNextPageAsync()
         public interface Paginated
         {
@@ -108,9 +110,9 @@ namespace TiltBrush
             }
         }
 
-        private readonly LoginToken m_accessToken;
+        private readonly string m_accessToken;
 
-        public IcosaService(LoginToken token)
+        public IcosaService(string token)
         {
             m_accessToken = token;
         }
@@ -208,73 +210,42 @@ namespace TiltBrush
             string Paginated.PreviousUri => previous;
         }
 
+        // TODO: /v3/search and /v3/me/search?
+        // The parameters to the search functions are the same, except /v3/me/search omits
+        // the "username" parameter, so maybe we can have a single function which wraps both.
+
+        //
+        /// Pass:
+        ///   temporaryDirectory - if passed, caller is responsible for cleaning it up
+        public async Task<CreateResponse> CreateModel(
+            string name,
+            string zipPath, IProgress<double> progress, CancellationToken token,
+            Options options = null, string temporaryDirectory = null)
+        {
+
+            // No compression because it's a compressed .zip already
+            WebRequest uploader = new WebRequest(
+                $"{kApiHost}/assets", App.IcosaUserId, "POST", compress: false);
+
+            var moreParams = new List<(string, string)>();
+            
+            // Not currently used or supported by the backend
+            if (options != null)
+            {
+                moreParams.Add(("options", JsonConvert.SerializeObject(options)));
+            }
+            
+            uploader.ProgressObject = progress;
+            var reply = await uploader.SendNamedDataAsync(
+                "files", File.OpenRead(zipPath), Path.GetFileName(zipPath), "application/zip",
+                moreParams: moreParams, token, temporaryDirectory);
+            return reply.Deserialize<CreateResponse>();
+        }
         [Serializable, UsedImplicitly]
         public struct CreateResponse
         {
             public string uid;
             public string uri;
-        }
-
-        public LoginToken TestLogin(string deviceCode)
-        {
-            Configuration config = new Configuration();
-            config.BasePath = kApiHost;
-            var apiInstance = new LoginApi(config);
-            try
-            {
-                LoginToken result = apiInstance.DeviceLoginLoginDeviceLoginPost(deviceCode);
-                Debug.Log(result.AccessToken);
-
-                return new LoginToken(result.AccessToken);
-            }
-            catch (ApiException e)
-            {
-                Debug.Log("Exception when calling LoginApi.LoginTokenPost: " + e.Message);
-                Debug.Log("Status Code: " + e.ErrorCode);
-                Debug.Log(e.StackTrace);
-                throw;
-            }
-        }
-
-        public void TestUpload(LoginToken token, List<Stream> files)
-        {
-            Configuration config = new Configuration();
-            config.BasePath = kApiHost;
-            config.AccessToken = token.AccessToken;
-            var apiInstance = new AssetsApi(config);
-            try
-            {
-                var foo = apiInstance.UploadNewAssetsAssetsPost(files);
-            }
-            catch (ApiException e)
-            {
-                Debug.Log("Exception when calling AssetsApi.UploadNewAssetsAssetsPost: " + e.Message);
-                Debug.Log("Status Code: " + e.ErrorCode);
-                Debug.Log(e.StackTrace);
-            }
-        }
-
-        public LoginToken TestLogin()
-        {
-            Configuration config = new Configuration();
-            config.BasePath = kApiHost;
-            var apiInstance = new LoginApi(config);
-            var username = "andy@andybak.net";
-            var password = "foobar";
-
-            try
-            {
-                LoginToken result = apiInstance.LoginLoginPost(username, password);
-                Debug.Log(result.AccessToken);
-                return result;
-            }
-            catch (ApiException  e)
-            {
-                Debug.Log("Exception when calling LoginApi.LoginLoginPost: " + e.Message);
-                Debug.Log("Status Code: " + e.ErrorCode);
-                Debug.Log(e.StackTrace);
-                return null;
-            }
         }
     }
 } // namespace TiltBrush
