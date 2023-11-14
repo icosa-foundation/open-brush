@@ -335,7 +335,6 @@ namespace TiltBrush
         /// show a warning or error.
         public void UserPressedUploadButton(Cloud cloud, Action onSafeToUpload)
         {
-            Debug.Assert(cloud == Cloud.Sketchfab);
             // User attempted to upload, but make sure there's actually something to upload.
             if (!WidgetManager.m_Instance.HasExportableContent(cloud))
             {
