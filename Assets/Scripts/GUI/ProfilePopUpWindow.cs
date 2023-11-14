@@ -95,7 +95,13 @@ namespace TiltBrush
             m_IcosaLoginElements.SetActive(false);
             if (App.IcosaIsLoggedIn)
             {
-                StartCoroutine(FetchUserDataCoroutine(null));
+                StartCoroutine(FetchUserDataCoroutine(userData =>
+                {
+                    App.IcosaUserName = userData.Displayname;
+                    App.IcosaUserId = userData.Id;
+                    App.IcosaUserIcon = m_GenericPhoto; // TODO: Get icon from API
+                    RefreshIcosaUserInfoUi();
+                }));
             }
 
             App.DriveAccess.RefreshFreeSpaceAsync().AsAsyncVoid();
@@ -161,6 +167,7 @@ namespace TiltBrush
             m_IcosaSignedInElements.SetActive(App.IcosaIsLoggedIn);
             m_IcosaSignedOutElements.SetActive(!App.IcosaIsLoggedIn);
             m_IcosaConfirmSignOutElements.SetActive(false);
+            RefreshIcosaUserInfoUi();
 
             m_DriveFullElements.SetActive(driveFull && driveSyncEnabled);
             m_DriveSyncEnabledElements.SetActive(!driveFull && driveSyncEnabled);
@@ -171,6 +178,12 @@ namespace TiltBrush
             RefreshBackupProgressText();
         }
         
+        private void RefreshIcosaUserInfoUi()
+        {
+            m_IcosaNameText.text = App.IcosaUserName;
+            m_IcosaPhoto.material.mainTexture = App.IcosaUserIcon;
+        }
+
         public void HideIcosaLogin()
         {
             m_IcosaLoginElements.SetActive(false);
@@ -258,26 +271,23 @@ namespace TiltBrush
                 // TODO should we logout? Clear username/icon?
                 yield break;
             }
-
-            // Call the callback delegate if it's provided (which means this was called from the first coroutine)
-            App.IcosaUserName = userData.Displayname;
-            App.IcosaUserIcon = m_GenericPhoto; // TODO: Get icon from API
-            m_IcosaNameText.text = App.IcosaUserName;
-            m_IcosaPhoto.material.mainTexture = App.IcosaUserIcon;
             onSuccess?.Invoke(userData);
         }
         
-        private void LoginSuccess(FullUser userInfo)
+        private void LoginSuccess(FullUser userData)
         {
+            // Call the callback delegate if it's provided (which means this was called from the first coroutine)
+            App.IcosaUserName = userData.Displayname;
+            App.IcosaUserId = userData.Id;
+            App.IcosaUserIcon = m_GenericPhoto; // TODO: Get icon from API
+            RefreshIcosaUserInfoUi();
             HideIcosaLogin();
         }
         
         private void LoginFailure()
         {
             HideIcosaLogin();
-            App.Instance.IcosaToken = null;
-            App.IcosaUserName = "";
-            App.IcosaUserIcon = null;
+            App.LogoutIcosa();
         }
 
         void RefreshBackupProgressText()

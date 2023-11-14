@@ -134,6 +134,7 @@ namespace TiltBrush
         public static string ICOSA_DEVICECODE_URL = "http://192.168.1.228:3000/device";
         // public static string ICOSA_API_BASEPATH = "http://api.icosa.gallery";
         public static string ICOSA_API_BASEPATH = "http://192.168.1.228:8000";
+        
         public string IcosaToken
         {
             get => PlayerPrefs.HasKey("IcosaToken") ? PlayerPrefs.GetString("IcosaToken") : null;
@@ -142,6 +143,7 @@ namespace TiltBrush
         public static bool IcosaIsLoggedIn => !string.IsNullOrEmpty(App.Instance.IcosaToken);
 
         public static string IcosaUserName;
+        public static string IcosaUserId;
         public static Texture IcosaUserIcon;
 
         public static GoogleUserSettings GoogleUserSettings => m_Instance.m_GoogleUserSettings;
@@ -2349,5 +2351,12 @@ namespace TiltBrush
             }
         }
 
+        public void LogoutIcosa()
+        {
+            IcosaUserName = null;
+            IcosaUserId = null;
+            IcosaUserIcon = null;
+            IcosaToken = null;
+        }
     } // class App
 }     // namespace TiltBrush
