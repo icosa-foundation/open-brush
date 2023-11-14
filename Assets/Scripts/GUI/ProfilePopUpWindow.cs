@@ -287,7 +287,7 @@ namespace TiltBrush
         private void LoginFailure()
         {
             HideIcosaLogin();
-            App.LogoutIcosa();
+            App.Instance.LogoutIcosa();
         }
 
         void RefreshBackupProgressText()
