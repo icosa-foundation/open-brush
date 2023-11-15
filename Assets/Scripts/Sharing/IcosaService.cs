@@ -30,7 +30,7 @@ namespace TiltBrush
         // const string kApiHost = "https://api.icosa.gallery";
         
         public const string kModelLandingPage = "http://192.168.1.228:3000/edit/";
-        const string kApiHost = "http://192.168.1.228:3000";
+        const string kApiHost = "http://192.168.1.228:8000";
         
         /// A paginated response, for use with GetNextPageAsync()
         public interface Paginated
