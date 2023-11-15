@@ -3,6 +3,7 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Localization;
@@ -106,6 +107,7 @@ namespace TiltBrush
         [SerializeField] private TMPro.TMP_Text             _multipleLayoutValueBottomLeft;
         [SerializeField] private TMPro.TMP_Text             _multipleLayoutValueBottomRight;
         [SerializeField] private List<KeyboardToggleSymbolsPage> _toggleSymbols;
+        [SerializeField] private UnityEngine.InputSystem.Key _keycode;
 
         // Hidden in the custom inspector
         [SerializeField] private bool _nameDirty;
@@ -190,7 +192,7 @@ namespace TiltBrush
         {
             _keyboard.KeyButton_KeyDown(this);
         }
-
+        
         public void KeyUp()
         {
             _keyboard.KeyButton_KeyUp(this);
@@ -377,6 +379,19 @@ namespace TiltBrush
                 if (_nameDirty)
                 {
                     UpdateName();
+                }
+            }
+            
+            // Support real keyboard input while open
+            if (_keycode != UnityEngine.InputSystem.Key.None)
+            {
+                if (UnityEngine.InputSystem.Keyboard.current[_keycode].wasPressedThisFrame)
+                {
+                    KeyDown();
+                }
+                if (UnityEngine.InputSystem.Keyboard.current[_keycode].wasReleasedThisFrame)
+                {
+                    KeyUp();
                 }
             }
         }
