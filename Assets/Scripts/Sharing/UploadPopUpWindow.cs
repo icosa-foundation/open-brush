@@ -47,13 +47,13 @@ namespace TiltBrush
 
         // Things that should be visible when confirming upload.
         [SerializeField] private GameObject m_ConfirmObjects;
-        [FormerlySerializedAs("m_PolyLoggedInObjects")] [SerializeField] private GameObject m_IcosaLoggedInObjects;
-        [FormerlySerializedAs("m_PolyLoggedOutObjects")] [SerializeField] private GameObject m_IcosaLoggedOutObjects;
+        [SerializeField] private GameObject m_IcosaLoggedInObjects;
+        [SerializeField] private GameObject m_IcosaLoggedOutObjects;
         [SerializeField] private GameObject m_SketchfabLoggedInObjects;
         [SerializeField] private GameObject m_SketchfabLoggedOutObjects;
-        [FormerlySerializedAs("m_PolyUserName")] [SerializeField] private TMPro.TextMeshPro m_IcosaUserName;
+        [SerializeField] private TMPro.TextMeshPro m_IcosaUserName;
         [SerializeField] private TMPro.TextMeshPro m_SketchfabUserName;
-        [FormerlySerializedAs("m_GooglePhoto")] [SerializeField] private Renderer m_IcosaPhoto;
+        [SerializeField] private Renderer m_IcosaPhoto;
         [SerializeField] private Renderer m_SketchfabPhoto;
 
         // Things that should be visible when uploading.
@@ -73,7 +73,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_WaitObjects;
 
         // Things that should be visible when media library content is in the scene.
-        [FormerlySerializedAs("m_EmbeddedMediaWarningPoly")] [SerializeField] private GameObject m_EmbeddedMediaWarningIcosa;
+        [SerializeField] private GameObject m_EmbeddedMediaWarningIcosa;
         [SerializeField] private GameObject m_EmbeddedMediaWarningSketchfab;
 
         // Things that should be visible when there's nothing to upload.
@@ -202,7 +202,7 @@ namespace TiltBrush
             if (m_LoginOnDesktopObjects.activeSelf)
             {
                 // Check to see if we just logged in.
-                if ((m_LoggingInType == Cloud.Icosa && App.Instance.IcosaToken != null) ||
+                if ((m_LoggingInType == Cloud.Icosa && App.IcosaIsLoggedIn) ||
                     (m_LoggingInType == Cloud.Sketchfab && App.SketchfabIdentity.LoggedIn))
                 {
                     SetMode(DisplayMode.Loggedout);
@@ -274,7 +274,7 @@ namespace TiltBrush
             var ui = GetUiFor(backend);
             if (backend == Cloud.Icosa)
             {
-                bool icosaLoggedIn = App.Instance.IcosaToken != null;
+                bool icosaLoggedIn = App.IcosaIsLoggedIn;
                 ui.loggedInElements.SetActive(icosaLoggedIn);
                 ui.loggedOutElements.SetActive(!icosaLoggedIn);
                 if (icosaLoggedIn)

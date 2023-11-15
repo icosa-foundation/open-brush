@@ -1402,7 +1402,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4000013830214004}
   m_Layer: 16
-  m_Name: EmbeddedMediaWarningPoly
+  m_Name: EmbeddedMediaWarningIcosa
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2079,13 +2079,13 @@ MonoBehaviour:
   m_Progress: {fileID: 23000010967552864}
   m_LoginOnDesktopObjects: {fileID: 1000013096383082}
   m_ConfirmObjects: {fileID: 6508589329552276940}
-  m_PolyLoggedInObjects: {fileID: 2420543688105002897}
-  m_PolyLoggedOutObjects: {fileID: 587811777206900469}
+  m_IcosaLoggedInObjects: {fileID: 2420543688105002897}
+  m_IcosaLoggedOutObjects: {fileID: 587811777206900469}
   m_SketchfabLoggedInObjects: {fileID: 4035661904903806700}
   m_SketchfabLoggedOutObjects: {fileID: 5455702764299504055}
-  m_PolyUserName: {fileID: 5207780760739753065}
+  m_IcosaUserName: {fileID: 5207780760739753065}
   m_SketchfabUserName: {fileID: 8355879036552585063}
-  m_GooglePhoto: {fileID: 5158317984005904495}
+  m_IcosaPhoto: {fileID: 5158317984005904495}
   m_SketchfabPhoto: {fileID: 6725221811800815683}
   m_UploadObjects: {fileID: 1000013114340806}
   m_UploadCompleteObjects: {fileID: 1000012022869828}
@@ -2093,7 +2093,7 @@ MonoBehaviour:
   m_UploadFailedMessage: {fileID: 114000010005430638}
   m_UploadingDeniedObjects: {fileID: 1954885538622324}
   m_WaitObjects: {fileID: 1000010727908878}
-  m_EmbeddedMediaWarningPoly: {fileID: 1000011947057708}
+  m_EmbeddedMediaWarningIcosa: {fileID: 1000011947057708}
   m_EmbeddedMediaWarningSketchfab: {fileID: 8734179732674817566}
   m_NothingToUploadWarning: {fileID: 1607740331362510216}
   m_ConnectionErrorObjects: {fileID: 1000012381343644}
