@@ -593,6 +593,9 @@ namespace TiltBrush
         public CameraPathRotationKnotMetadata[] RotationKnots { get; set; }
         public CameraPathSpeedKnotMetadata[] SpeedKnots { get; set; }
         public CameraPathFovKnotMetadata[] FovKnots { get; set; }
+
+        public bool belongsAnimation;
+        public (int,int) timelineLoc;
     }
 
     [Serializable]

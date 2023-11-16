@@ -283,7 +283,9 @@ namespace TiltBrush.FrameAnimation
 
             pathwidget.setPathAnimation(true);
 
+
             (int, int) Loc = getCanvasLocation(App.Scene.ActiveCanvas);
+            pathwidget.Path.timelineLocation = Loc;
 
             if (!getFrameFilled(Loc.Item1,Loc.Item2)){
                     TiltBrush.WidgetManager.m_Instance.UnregisterGrabWidget(pathwidget.gameObject);

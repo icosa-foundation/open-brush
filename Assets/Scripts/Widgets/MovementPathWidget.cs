@@ -41,7 +41,7 @@ namespace TiltBrush
         private Vector3? m_KnotEditingLastInputXf;
         private float m_GrabControlInitialYDiff;
 
-        public bool belongsToAnimation = false;
+    
 
         public MovementPath Path { get { return m_Path; } }
 
@@ -103,7 +103,7 @@ namespace TiltBrush
 
         public void setPathAnimation(bool animation)
         {
-            belongsToAnimation = animation;
+            m_Path.belongsToAnimation = animation;
         }
         void OnPoseChanged(TrTransform prev, TrTransform current)
         {
@@ -445,7 +445,7 @@ namespace TiltBrush
         override protected void OnUserBeginInteracting()
         {
 
-            App.Scene.captureRig.SetActive(!belongsToAnimation);
+            App.Scene.captureRig.SetActive(!m_Path.belongsToAnimation);
 
             Debug.Log("INTERACT WIDGET");
             
