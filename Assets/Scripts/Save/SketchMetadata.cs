@@ -16,6 +16,7 @@ using Newtonsoft.Json;
 using System;
 using System.Linq;
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace TiltBrush
 {
@@ -617,11 +618,26 @@ namespace TiltBrush
         public bool Visible;
     }
 
+
+    //  [Serializable]
+    // public class AnimationFrameMetadata
+    // {
+    //     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    //     public string Name;
+    //     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+ 
+    //     public List<int> frameLengths 
+    //     public bool Visible;
+    // }
+
     [Serializable]
     public class AnimationTrackMetadata
     {
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string Name;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+ 
+        public List<int> frameLengths ;
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public bool Visible;
     }

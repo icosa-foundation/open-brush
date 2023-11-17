@@ -492,14 +492,36 @@ namespace TiltBrush
             var layers = LayerCanvases.ToArray();
             meta.Tracks = new AnimationTrackMetadata[layers.Count()];
 
-
+            var timeline = animationUI_manager.timeline;
             for (var i = 0; i < layers.Length; i++)
             {
                 var layer = layers[i];
+                List<int> frameLengthsFound = new List<int>();
+              
+
+
+                for (var f = 0; f< timeline[i].Frames.Count;f++){
+                    
+                    if ( f > 0  ){
+
+                        if (timeline[i].Frames[f].canvas.Equals(timeline[i].Frames[f-1].canvas)){
+                            frameLengthsFound[frameLengthsFound.Count - 1]++;
+                        }else{
+                             frameLengthsFound.Add(1);
+                        }
+
+                    }else{
+
+                        frameLengthsFound.Add(1);
+
+                    }
+                }
                 meta.Tracks[i] = new AnimationTrackMetadata
                 {
                     Visible = layer.gameObject.activeSelf,
-                    Name = layer.name
+                    Name = layer.name,
+                    frameLengths = frameLengthsFound,
+
                 };
             }
 

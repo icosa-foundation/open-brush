@@ -835,10 +835,10 @@ namespace TiltBrush.FrameAnimation
 
                         bool backwardsConnect = false ,forwardConnect = false;
 
-                        if (filled){
+                        // if (filled){
                         backwardsConnect = (f > 0 && timeline[i].Frames[f].canvas.Equals(timeline[i].Frames[f - 1].canvas));
                         forwardConnect = (f < timeline[i].Frames.Count - 1 && timeline[i].Frames[f].canvas.Equals(timeline[i].Frames[f + 1].canvas));
-                        }
+                        // }
 
 
 
@@ -1496,7 +1496,31 @@ namespace TiltBrush.FrameAnimation
 
           
         }
+         public void addKeyFrame(int trackNum){
 
+            (int, int) index = (trackNum, timeline[trackNum].Frames.Count-1);
+                (int, int ) nextIndex = getFollowingFrameIndex(index.Item1,index.Item2);
+
+                if (nextIndex.Item2 >= timeline[nextIndex.Item1].Frames.Count ){
+
+                    Frame  addingFrame = newFrame(App.Scene.AddCanvas());
+
+                    timeline[nextIndex.Item1].Frames.Insert(timeline[nextIndex.Item1].Frames.Count, addingFrame);
+                    nextIndex.Item2 = timeline[nextIndex.Item1].Frames.Count - 1;
+
+                }else if(  getFrameFilled(nextIndex.Item1,nextIndex.Item2)) {
+
+                    Frame  addingFrame = newFrame(App.Scene.AddCanvas());
+
+                    timeline[nextIndex.Item1].Frames.Insert(nextIndex.Item2, addingFrame);
+
+
+
+                }
+
+        
+
+        }
         public void addKeyFrame(){
 
             (int, int) index = getCanvasLocation(App.Scene.ActiveCanvas);
@@ -1525,6 +1549,61 @@ namespace TiltBrush.FrameAnimation
             
         }
 
+
+         public void extendKeyFrame(int trackNum)  {
+
+            
+
+            print("BEFORE  ADD");
+
+            (int, int) index = (trackNum, timeline[trackNum].Frames.Count-1);
+
+
+           
+                    
+            Frame  addingFrame = newFrame(timeline[index.Item1].Frames[index.Item2].canvas);
+                addingFrame.deleted = timeline[index.Item1].Frames[index.Item2].deleted;
+                addingFrame.animatedPath = timeline[index.Item1].Frames[index.Item2].animatedPath;
+
+            timeline[index.Item1].Frames.Insert(index.Item2 + 1, addingFrame);
+                            
+
+                    
+
+                                //     if (filled){
+                                        
+                                //        addingFrame = newFrame(App.Scene.AddCanvas());
+                                //     }else{
+
+                                //           addingFrame = newFrame(timeline[l].Frames[timeline[l].Frames.Count - 1].canvas);
+                                //             addingFrame.deleted = timeline[l].Frames[timeline[l].Frames.Count - 1].deleted;
+                                //             addingFrame.animatedPath = timeline[l].Frames[timeline[l].Frames.Count - 1].animatedPath;
+                                //     }
+
+                                //           print("ADDING LAYER - " + l);       
+
+                                //      timeline[l].Frames.Insert(timeline[l].Frames.Count, addingFrame);
+
+                                // }
+                    
+
+                            
+                        
+                                
+
+            
+
+                   
+       
+            ;
+
+           
+
+
+
+        }
+
+
         public void extendKeyFrame()
         {
 
@@ -1549,10 +1628,10 @@ namespace TiltBrush.FrameAnimation
 
         
             
-            if ( !getFrameFilled(index.Item1,getFrameOn()) ){return;}
+            if ( !getFrameFilled(index.Item1,index.Item2)) {return;}
 
 
-            int frameLength = getFrameLength(index.Item1,getFrameOn());
+            int frameLength = getFrameLength(index.Item1,index.Item2);
 
 
             if (   index.Item2 + frameLength >= timeline[index.Item1].Frames.Count || getFrameFilled(index.Item1,index.Item2 + frameLength) ){
@@ -1565,11 +1644,11 @@ namespace TiltBrush.FrameAnimation
 
                                 if (l == index.Item1){
 
-                                    Frame  addingFrame = newFrame(timeline[l].Frames[getFrameOn()].canvas);
-                                        addingFrame.deleted = timeline[l].Frames[getFrameOn()].deleted;
-                                        addingFrame.animatedPath = timeline[l].Frames[getFrameOn()].animatedPath;
+                                    Frame  addingFrame = newFrame(timeline[l].Frames[index.Item2].canvas);
+                                        addingFrame.deleted = timeline[l].Frames[index.Item2].deleted;
+                                        addingFrame.animatedPath = timeline[l].Frames[index.Item2].animatedPath;
 
-                                    timeline[l].Frames.Insert(getFrameOn() + 1, addingFrame);
+                                    timeline[l].Frames.Insert(index.Item2 + 1, addingFrame);
                                 }else{
 
 
