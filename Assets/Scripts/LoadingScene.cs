@@ -15,6 +15,11 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Localization;
+
+#if UNITY_ANDROID
+using UnityEngine.Android;
+#endif
 
 namespace TiltBrush
 {
@@ -26,6 +31,9 @@ namespace TiltBrush
         [SerializeField] private float m_MaximumLoadingTime;
         // Amount of the progress bar taken up by the scene load
         [SerializeField] private float m_SceneLoadRatio;
+
+        [SerializeField] private LocalizedString m_LoadingText;
+        [SerializeField] private LocalizedString m_RequestAndroidFolderPermissions;
 
         // We have a slightly faked loading position that will always increase
         // The fake loading rate is the minimum amount it will increase in one second, the reciprocal of
@@ -57,6 +65,21 @@ namespace TiltBrush
             UpdateProgress(0, 0, 0);
 
             DontDestroyOnLoad(gameObject);
+
+            if (Application.platform == RuntimePlatform.Android)
+            {
+                if (!UserHasManageExternalStoragePermission())
+                {
+                    m_Overlay.MessageStatus = m_RequestAndroidFolderPermissions.GetLocalizedString();
+                    AskForManageStoragePermission();
+                    while (!UserHasManageExternalStoragePermission())
+                    {
+                        yield return new WaitForEndOfFrame();
+                    }
+
+                    m_Overlay.MessageStatus = m_LoadingText.GetLocalizedString();
+                }
+            }
 
             AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("Main");
             while (!asyncLoad.isDone)
@@ -90,6 +113,23 @@ namespace TiltBrush
             float position = start + scale * progress;
             m_CurrentLoadingPosition = Mathf.Max(m_CurrentLoadingPosition, position);
             m_Overlay.Progress = m_CurrentLoadingPosition;
+        }
+
+        private bool UserHasManageExternalStoragePermission()
+        {
+            return Permission.HasUserAuthorizedPermission("android.permission.MANAGE_EXTERNAL_STORAGE");
+        }
+
+        private void AskForManageStoragePermission()
+        {
+            using var unityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+            using AndroidJavaObject currentActivityObject = unityClass.GetStatic<AndroidJavaObject>("currentActivity");
+            string packageName = currentActivityObject.Call<string>("getPackageName");
+            using var uriClass = new AndroidJavaClass("android.net.Uri");
+            using AndroidJavaObject uriObject = uriClass.CallStatic<AndroidJavaObject>("fromParts", "package", packageName, null);
+            using var intentObject = new AndroidJavaObject("android.content.Intent", "android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION", uriObject);
+            intentObject.Call<AndroidJavaObject>("addCategory", "android.intent.category.DEFAULT");
+            currentActivityObject.Call("startActivity", intentObject);
         }
     }
 } // namespace TiltBrush
