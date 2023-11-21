@@ -173,9 +173,14 @@ namespace TiltBrush.FrameAnimation
 
             resetTimeline();
 
-            animationPathCanvas = new GameObject("AnimationPaths");
-            animationPathCanvas.transform.parent = App.Scene.gameObject.transform;
-            animationPathCanvas.AddComponent<CanvasScript>();
+
+
+            if (animationPathCanvas == null ){
+                animationPathCanvas = new GameObject("AnimationPaths");
+                animationPathCanvas.transform.parent = App.Scene.gameObject.transform;
+                animationPathCanvas.AddComponent<CanvasScript>();
+            }
+      
 
 
             print("START TIMELINE");
@@ -272,6 +277,67 @@ namespace TiltBrush.FrameAnimation
         }
 
 
+        public void addAnimationPath(MovementPathWidget pathwidget,int trackNum,int frameNum)
+        {
+
+  
+    
+            
+            GameObject moveTransform = pathwidget.gameObject;
+            moveTransform.transform.SetParent(animationPathCanvas.transform);
+
+            pathwidget.setPathAnimation(true);
+
+
+            (int, int) Loc = (trackNum,frameNum);
+            pathwidget.Path.timelineLocation = Loc;
+
+         
+
+            Debug.Log("ADDING ANIMATINON PATH! " + Loc.Item1 + " " + Loc.Item2);
+
+
+
+            CanvasScript origCanvas = timeline[Loc.Item1].Frames[Loc.Item2].canvas;
+
+            if (timeline[Loc.Item1].Frames[Loc.Item2].animatedPath != null)
+            {
+                TiltBrush.WidgetManager.m_Instance.DeleteMovementPath(timeline[Loc.Item1].Frames[Loc.Item2].animatedPath);
+            }
+
+            int i = 0;
+
+            List<Frame> framesChanging = new List<Frame>();
+            while (
+                Loc.Item2 + i < timeline[Loc.Item1].Frames.Count &&
+                timeline[Loc.Item1].Frames[Loc.Item2 + i].canvas.Equals(origCanvas)
+                )
+            {
+
+                i++;
+            }
+
+
+
+            for (int c = 0; c < i; c++)
+            {
+
+                Frame changingFrame = timeline[Loc.Item1].Frames[Loc.Item2 + c];
+
+                changingFrame.animatedPath = pathwidget;
+                timeline[Loc.Item1].Frames[Loc.Item2 + c] = changingFrame;
+            }
+
+
+            Debug.Log("FINISHED ANIMATED PATH ");
+            Debug.Log(timeline[Loc.Item1].Frames[Loc.Item2].animatedPath);
+
+
+
+
+
+        }
+   
         public void addAnimationPath(MovementPathWidget pathwidget)
         {
 

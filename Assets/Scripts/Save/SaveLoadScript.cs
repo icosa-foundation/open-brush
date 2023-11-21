@@ -755,11 +755,6 @@ namespace TiltBrush
                     }
                
 
-
-                    App.Scene.animationUI_manager.resetTimeline();
-                    App.Scene.animationUI_manager.updateUI();
-
-                    App.Scene.animationUI_manager.selectTimelineFrame(0,0);
                 }
 
                 var oldGroupToNewGroup = new Dictionary<int, int>();
@@ -846,6 +841,13 @@ namespace TiltBrush
                                 WidgetManager.m_Instance.CreateMediaWidgetsFromLoadDataCoroutine(),
                                 0.5f));
                     }
+                    if ( App.Scene.animationUI_manager != null){
+                    App.Scene.animationUI_manager.resetTimeline();
+                    App.Scene.animationUI_manager.selectTimelineFrame(0,0);
+                    }
+                 
+
+
                     m_LastSceneFile = fileInfo;
                 }
             }

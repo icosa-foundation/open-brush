@@ -751,10 +751,28 @@ namespace TiltBrush
                 widget.m_Path.AllKnots[i].SetActivePathVisuals(false);
             }
 
+
+
+           
+
             // And turn them off.
             widget.m_Path.ValidatePathLooping();
             widget.m_Path.SetKnotsActive(false);
             App.Switchboard.TriggerCameraPathCreated();
+
+
+            widget.setPathAnimation(cameraPath.belongsAnimation);
+
+            if (cameraPath.belongsAnimation && App.Scene.animationUI_manager != null){
+
+                (int,int) Loc = cameraPath.timelineLoc;
+                App.Scene.animationUI_manager.addAnimationPath(widget,Loc.Item1,Loc.Item2);
+                foreach (Transform child in widget.gameObject.transform)
+                {
+                        child.gameObject.SetActive(true);
+                }
+            }
+
         }
 
         void OnDrawGizmosSelected()
