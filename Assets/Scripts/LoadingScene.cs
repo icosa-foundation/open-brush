@@ -40,6 +40,9 @@ namespace TiltBrush
         // m_MaximumLoadingTime
         private float m_FakeLoadingRate;
         private float m_CurrentLoadingPosition;
+#if UNITY_ANDROID
+        private bool m_FolderPermissionOverride = false;
+#endif
 
         private IEnumerator Start()
         {
@@ -66,6 +69,7 @@ namespace TiltBrush
 
             DontDestroyOnLoad(gameObject);
 
+#if UNITY_ANDROID
             if (Application.platform == RuntimePlatform.Android)
             {
                 if (!UserHasManageExternalStoragePermission())
@@ -80,6 +84,7 @@ namespace TiltBrush
                     m_Overlay.MessageStatus = m_LoadingText.GetLocalizedString();
                 }
             }
+#endif
 
             AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("Main");
             while (!asyncLoad.isDone)
@@ -115,21 +120,32 @@ namespace TiltBrush
             m_Overlay.Progress = m_CurrentLoadingPosition;
         }
 
+#if UNITY_ANDROID
         private bool UserHasManageExternalStoragePermission()
         {
-            return Permission.HasUserAuthorizedPermission("android.permission.MANAGE_EXTERNAL_STORAGE");
+            return m_FolderPermissionOverride || Permission.HasUserAuthorizedPermission("android.permission.MANAGE_EXTERNAL_STORAGE");
         }
 
         private void AskForManageStoragePermission()
         {
-            using var unityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-            using AndroidJavaObject currentActivityObject = unityClass.GetStatic<AndroidJavaObject>("currentActivity");
-            string packageName = currentActivityObject.Call<string>("getPackageName");
-            using var uriClass = new AndroidJavaClass("android.net.Uri");
-            using AndroidJavaObject uriObject = uriClass.CallStatic<AndroidJavaObject>("fromParts", "package", packageName, null);
-            using var intentObject = new AndroidJavaObject("android.content.Intent", "android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION", uriObject);
-            intentObject.Call<AndroidJavaObject>("addCategory", "android.intent.category.DEFAULT");
-            currentActivityObject.Call("startActivity", intentObject);
+            try
+            {
+                using var unityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                using AndroidJavaObject currentActivityObject = unityClass.GetStatic<AndroidJavaObject>("currentActivity");
+                string packageName = currentActivityObject.Call<string>("getPackageName");
+                using var uriClass = new AndroidJavaClass("android.net.Uri");
+                using AndroidJavaObject uriObject = uriClass.CallStatic<AndroidJavaObject>("fromParts", "package", packageName, null);
+                using var intentObject = new AndroidJavaObject("android.content.Intent", "android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION", uriObject);
+                intentObject.Call<AndroidJavaObject>("addCategory", "android.intent.category.DEFAULT");
+                currentActivityObject.Call("startActivity", intentObject);
+            }
+            catch (AndroidJavaException e)
+            {
+                // TODO: only skip this if it's of type act=android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION
+                m_FolderPermissionOverride = true;
+                Debug.LogError("Java Exception caught and ignored: " + e.Message);
+            }
         }
+#endif
     }
 } // namespace TiltBrush
