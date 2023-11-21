@@ -50,8 +50,6 @@ namespace TiltBrush
             else
             {
                 targetCanvas = App.Scene.SelectionCanvas;
-                // If we're not stamping then we don't want to duplicate the original
-                matrices = matrices.Skip(1).ToList();
             }
 
             foreach (var stroke in m_SelectedStrokes)
@@ -110,6 +108,18 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
+            if (m_SelectedStrokes != null)
+            {
+                if (m_StampMode)
+                {
+                    SelectionManager.m_Instance.DeselectStrokes(m_DuplicatedStrokes);
+                }
+                else
+                {
+                    SelectionManager.m_Instance.DeselectStrokes(m_SelectedStrokes);
+                }
+            }
+
             // Place duplicated strokes.
             foreach (var stroke in m_DuplicatedStrokes)
             {
@@ -135,7 +145,15 @@ namespace TiltBrush
                 }
                 TiltMeterScript.m_Instance.AdjustMeter(stroke, up: true);
             }
-            SelectionManager.m_Instance.RegisterStrokesInSelectionCanvas(m_DuplicatedStrokes);
+
+            if (m_StampMode)
+            {
+                SelectionManager.m_Instance.RegisterStrokesInSelectionCanvas(m_SelectedStrokes);
+            }
+            else
+            {
+                SelectionManager.m_Instance.RegisterStrokesInSelectionCanvas(m_DuplicatedStrokes);
+            }
 
             // Place duplicated widgets.
             for (int i = 0; i < m_DuplicatedWidgets.Count; ++i)
@@ -191,7 +209,6 @@ namespace TiltBrush
                 }
                 TiltMeterScript.m_Instance.AdjustMeter(stroke, up: false);
             }
-            SelectionManager.m_Instance.DeregisterStrokesInSelectionCanvas(m_DuplicatedStrokes);
 
             // Deselect selected widgets.
             if (m_DuplicatedWidgets != null && !m_StampMode)
@@ -209,10 +226,20 @@ namespace TiltBrush
             // Reset the selection transform before we select strokes.
             SelectionManager.m_Instance.SelectionTransform = m_Transform;
 
-            // Select strokes.
             if (m_SelectedStrokes != null)
             {
-                SelectionManager.m_Instance.SelectStrokes(m_SelectedStrokes);
+                if (m_StampMode)
+                {
+                    // I don't think we need to do anything here
+                    // My original stab at this below was buggy and created lots of duplicates
+                    // SelectionManager.m_Instance.DeregisterStrokesInSelectionCanvas(m_SelectedStrokes);
+                    // SelectionManager.m_Instance.SelectStrokes(m_DuplicatedStrokes);
+                }
+                else
+                {
+                    SelectionManager.m_Instance.DeregisterStrokesInSelectionCanvas(m_DuplicatedStrokes);
+                    SelectionManager.m_Instance.SelectStrokes(m_SelectedStrokes);
+                }
             }
 
             SelectionManager.m_Instance.UpdateSelectionWidget();
