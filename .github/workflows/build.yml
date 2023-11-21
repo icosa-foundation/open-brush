@@ -297,6 +297,7 @@ jobs:
           rm -rf tmp.plugin tmp.package
 
       - name: Restore Library/
+        id: cache_library
         uses: actions/cache/restore@v3
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
@@ -306,6 +307,7 @@ jobs:
           key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
       - name: Restore Library/PackageCache
+        id: cache_packagecache
         uses: actions/cache/restore@v3
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
@@ -387,7 +389,7 @@ jobs:
           echo -e "\n-define:PIMAX_SUPPORTED" | tee -a Assets/csc.rsp
 
       - name: Build project
-        uses: game-ci/unity-builder@v3
+        uses: game-ci/unity-builder@v4
         env:
           VERSION: ${{ needs.configuration.outputs.version}}
         with:
@@ -424,7 +426,7 @@ jobs:
 
       - name: Save Library/PackageCache cache
         uses: actions/cache/save@v3
-        if: github.ref == 'refs/heads/main'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
+        if: github.ref == 'refs/heads/main' && steps.cache_packagecache.outputs.cache-hit != 'true'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -432,6 +434,7 @@ jobs:
           key: Library_PackageCache_${{ env.UNITY_VERSION }}
 
       - name: Clean Library before caching
+        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         run: |
           # Remove the large files from the Library directory that we know we'll rebuild. As our il2cpp caches are huge and barely fit in the Github quota, it's better not to save an unneeded 1GB of space (or so). If a new Unity version is taken, this may need to be updated
           # Debugging
@@ -450,7 +453,7 @@ jobs:
 
       - name: Save Library/ cache
         uses: actions/cache/save@v3
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
