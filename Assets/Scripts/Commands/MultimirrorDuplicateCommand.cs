@@ -145,7 +145,7 @@ namespace TiltBrush
                 }
                 TiltMeterScript.m_Instance.AdjustMeter(stroke, up: true);
             }
-            
+
             if (m_StampMode)
             {
                 SelectionManager.m_Instance.RegisterStrokesInSelectionCanvas(m_SelectedStrokes);
@@ -154,7 +154,7 @@ namespace TiltBrush
             {
                 SelectionManager.m_Instance.RegisterStrokesInSelectionCanvas(m_DuplicatedStrokes);
             }
-            
+
             // Place duplicated widgets.
             for (int i = 0; i < m_DuplicatedWidgets.Count; ++i)
             {
