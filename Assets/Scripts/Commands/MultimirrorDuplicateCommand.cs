@@ -90,7 +90,7 @@ namespace TiltBrush
                 for (int i = 0; i < matrices.Count; i++)
                 {
                     var duplicatedWidget = widget.Clone();
-                    ((Media2dWidget)duplicatedWidget).TwoSided = duplicateAsTwoSided;
+                    if (duplicateAsTwoSided) ((Media2dWidget)duplicatedWidget).TwoSided = true;
 
                     (TrTransform, TrTransform) trAndFix_WS;
                     trAndFix_WS = PointerManager.m_Instance.TrFromMatrixWithFixedReflections(matrices[i]);
