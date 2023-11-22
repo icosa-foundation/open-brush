@@ -317,14 +317,18 @@ namespace TiltBrush
 
         public bool IsLayerDeleted(CanvasScript layer)
         {
-            var layerIndex = GetIndexOfCanvas(layer) - 1;
+            var layerIndex = GetIndexOfCanvas(layer).Item1 - 1;
             return IsLayerDeleted(layerIndex);
         }
 
-        public int GetIndexOfCanvas(CanvasScript canvas)
+        public (int,int) GetIndexOfCanvas(CanvasScript canvas)
         {
-            int index = m_LayerCanvases.IndexOf(canvas);
-            return index + 1;
+            if (App.Scene.animationUI_manager == null || App.Scene.animationUI_manager.getTimelineLength() == 0){
+                int index = m_LayerCanvases.IndexOf(canvas);
+                return (index + 1,0);
+            }
+            return App.Scene.animationUI_manager.getCanvasLocation(canvas);
+   
         }
 
         public int GetLayerNumFromCanvas(CanvasScript canvas)
@@ -411,6 +415,15 @@ namespace TiltBrush
         }
 
 
+        public CanvasScript GetOrCreateLayer((int,int) canvasIndex){
+
+
+                    if (canvasIndex.Item1 < animationUI_manager.timeline.Count && canvasIndex.Item2 < animationUI_manager.getTimelineLength()){
+                        return animationUI_manager.getTimelineCanvas(canvasIndex.Item1,canvasIndex.Item2);
+                    }else{
+                        return GetOrCreateLayer(canvasIndex.Item1);
+                    }
+        }
         public CanvasScript GetOrCreateLayer(int layerIndex)
         {
             // Layers are numbered 0=Main then 1, 2, 3
@@ -438,7 +451,7 @@ namespace TiltBrush
         public void MarkLayerAsDeleted(CanvasScript layer)
         {
             if (layer == MainCanvas) return;
-            m_DeletedLayers.Add(GetIndexOfCanvas(layer) - 1);
+            m_DeletedLayers.Add(GetIndexOfCanvas(layer).Item1 - 1);
             App.Scene.LayerCanvasesUpdate?.Invoke();
 
             animationUI_manager.MarkLayerAsDeleteRefresh(layer);
@@ -453,7 +466,7 @@ namespace TiltBrush
 
         public void MarkLayerAsNotDeleted(CanvasScript layer)
         {
-            m_DeletedLayers.Remove(GetIndexOfCanvas(layer) - 1);
+            m_DeletedLayers.Remove(GetIndexOfCanvas(layer).Item1 - 1);
             App.Scene.LayerCanvasesUpdate?.Invoke();
         }
 

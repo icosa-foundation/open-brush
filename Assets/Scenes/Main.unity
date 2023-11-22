@@ -18169,6 +18169,7 @@ MonoBehaviour:
   m_MainCanvas: {fileID: 1843608206}
   m_SelectionCanvas: {fileID: 1830711221}
   animationUI_manager: {fileID: 0}
+  captureRig: {fileID: 0}
   m_ActiveCanvas: {fileID: 0}
   m_LayerCanvases: []
 --- !u!1 &1372392204

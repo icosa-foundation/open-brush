@@ -424,7 +424,7 @@ namespace TiltBrush
         public uint[] GroupIds { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public int[] LayerIds { get; set; }
+        public (int,int)[] CanvasIds { get; set; }
     }
 
     [Serializable]
@@ -694,7 +694,7 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public uint[] GroupIds { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public int[] LayerIds { get; set; }
+        public (int,int)[] CanvasIds { get; set; }
         public bool[] TwoSidedFlags { get; set; }
     }
 
@@ -716,7 +716,7 @@ namespace TiltBrush
         public float Volume { get; set; }
         // Group ID for widget. 0 for ungrouped items.
         public uint GroupId { get; set; }
-        public int LayerId { get; set; }
+        public (int,int) CanvasId { get; set; }
         public bool TwoSided { get; set; }
     }
 
