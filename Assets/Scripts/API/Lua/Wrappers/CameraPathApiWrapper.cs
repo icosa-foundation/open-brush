@@ -168,9 +168,9 @@ namespace TiltBrush
             return new CameraPathApiWrapper(widget);
         }
 
-        [LuaDocsDescription("Converts the camera path to a path with the specified step size")]
-        [LuaDocsParameter("step", "A control point is created at time=0, time=step, time=step x 2 etc")]
-        [LuaDocsExample("myPath = myCameraPath:AsPath(5)")]
+        [LuaDocsDescription("Converts the camera path to a path by sampling it at regular time intervals")]
+        [LuaDocsParameter("step", "The time step is use for each sample")]
+        [LuaDocsExample("myPath = myCameraPath:AsPath(0.5)")]
         [LuaDocsReturnValue("The new Path")]
         public PathApiWrapper AsPath(float step)
         {
@@ -407,7 +407,7 @@ namespace TiltBrush
                     t = new PathT(t.T % maxT.T);
                 }
             }
-            var tr = TrTransform.TR(
+            var tr = _CameraPathWidget.Canvas.Pose.inverse * TrTransform.TR(
                 cameraPath.GetPosition(t) - origin,
                 cameraPath.GetRotation(t)
             );

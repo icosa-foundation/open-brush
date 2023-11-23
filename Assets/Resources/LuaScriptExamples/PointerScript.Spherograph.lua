@@ -17,7 +17,7 @@ function Main()
         v = Brush.distanceDrawn * vScale
         p = Sphere(u,v)
         return Transform:New(
-            initialPos:Add(p),
+            initialPos + p,
             Rotation:LookRotation(p, Vector3.right)
         )
     end

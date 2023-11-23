@@ -108,7 +108,8 @@ namespace TiltBrush
         public SymmetryMode mode
         {
             get => _Mode;
-            set {
+            set
+            {
                 _Mode = value;
                 if (_IsCurrent)
                 {
@@ -143,7 +144,8 @@ namespace TiltBrush
         public Vector3ApiWrapper position
         {
             get => new(_Position);
-            set {
+            set
+            {
                 _Position = value._Vector3;
                 if (_IsCurrent) _SetTransform(TrTransform.TR(value._Vector3, _Rotation));
             }
@@ -153,7 +155,8 @@ namespace TiltBrush
         public RotationApiWrapper rotation
         {
             get => new(_Rotation);
-            set {
+            set
+            {
                 _Rotation = value._Quaternion;
                 if (_IsCurrent) _SetTransform(TrTransform.TR(_Position, value._Quaternion));
             }
@@ -171,7 +174,8 @@ namespace TiltBrush
         public Vector3ApiWrapper spin
         {
             get => new(_Spin);
-            set {
+            set
+            {
                 _Spin = value._Vector3;
                 if (_IsCurrent) PointerManager.m_Instance.SymmetryWidget.Spin(value.x, value.y, value.z);
             }
@@ -181,7 +185,8 @@ namespace TiltBrush
         public SymmetryPointType pointType
         {
             get => _PointType;
-            set {
+            set
+            {
                 _PointType = value;
                 if (_IsCurrent)
                 {
@@ -195,7 +200,8 @@ namespace TiltBrush
         public int pointOrder
         {
             get => _PointOrder;
-            set {
+            set
+            {
                 _PointOrder = value;
                 if (_IsCurrent)
                 {
@@ -209,7 +215,8 @@ namespace TiltBrush
         public SymmetryWallpaperType wallpaperType
         {
             get => _WallpaperType;
-            set {
+            set
+            {
                 _WallpaperType = value;
                 if (_IsCurrent)
                 {
@@ -223,7 +230,8 @@ namespace TiltBrush
         public int wallpaperRepeatX
         {
             get => _WallpaperRepeatX;
-            set {
+            set
+            {
                 _WallpaperRepeatX = value;
                 if (_IsCurrent)
                 {
@@ -237,7 +245,8 @@ namespace TiltBrush
         public int wallpaperRepeatY
         {
             get => _WallpaperRepeatY;
-            set {
+            set
+            {
                 _WallpaperRepeatY = value;
                 if (_IsCurrent)
                 {
@@ -251,7 +260,8 @@ namespace TiltBrush
         public float wallpaperScale
         {
             get => _WallpaperScale;
-            set {
+            set
+            {
                 _WallpaperScale = value;
                 if (_IsCurrent)
                 {
@@ -265,7 +275,8 @@ namespace TiltBrush
         public float wallpaperScaleX
         {
             get => _WallpaperScaleX;
-            set {
+            set
+            {
                 _WallpaperScaleX = value;
                 if (_IsCurrent)
                 {
@@ -279,7 +290,8 @@ namespace TiltBrush
         public float wallpaperScaleY
         {
             get => _WallpaperScaleY;
-            set {
+            set
+            {
                 _WallpaperScaleY = value;
                 if (_IsCurrent)
                 {
@@ -293,7 +305,8 @@ namespace TiltBrush
         public float wallpaperSkewX
         {
             get => _WallpaperSkewX;
-            set {
+            set
+            {
                 _WallpaperSkewX = value;
                 if (_IsCurrent)
                 {
@@ -307,7 +320,8 @@ namespace TiltBrush
         public float wallpaperSkewY
         {
             get => _WallpaperSkewY;
-            set {
+            set
+            {
                 _WallpaperSkewY = value;
                 if (_IsCurrent)
                 {

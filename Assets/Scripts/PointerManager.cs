@@ -854,7 +854,7 @@ namespace TiltBrush
             var result = LuaManager.Instance.CallActiveSymmetryScript(LuaNames.Main);
             if (result == null)
             {
-                trs_CS = new List<TrTransform>{TrTransform.identity};
+                trs_CS = new List<TrTransform> { TrTransform.identity };
                 return false;
             }
             List<TrTransform> transforms = result.AsSingleTrList();
@@ -867,41 +867,41 @@ namespace TiltBrush
                 switch (result._Space)
                 {
                     case ScriptCoordSpace.Default:
-                    {
-                        // Check to see if any pointers have an unchanged position
-                        if (tr.translation == SymmetryApiWrapper.brushOffset)
                         {
-                            needsDummyPointer = false;
+                            // Check to see if any pointers have an unchanged position
+                            if (tr.translation == SymmetryApiWrapper.brushOffset)
+                            {
+                                needsDummyPointer = false;
+                            }
+                            var xfWidget_GS = TrTransform.FromTransform(m_SymmetryWidget);
+                            var xfWidget_CS = App.Scene.MainCanvas.AsCanvas[m_SymmetryWidget];
+                            var xfPointer_CS = TrTransform.T(LuaManager.Instance.GetPastBrushPos(0));
+                            var brushToWidget_CS = xfWidget_CS.inverse * xfPointer_CS;
+                            TrTransform pos = TrTransform.T(-brushToWidget_CS.translation + tr.translation);
+                            newTr_CS = TrTransform.T(pos.translation);
+                            TrTransform rot = TrTransform.R(tr.rotation);
+                            newTr_CS = rot * newTr_CS;
+                            newTr_CS = xfWidget_GS * newTr_CS * xfWidget_GS.inverse;
+                            break;
                         }
-                        var xfWidget_GS = TrTransform.FromTransform(m_SymmetryWidget);
-                        var xfWidget_CS = App.Scene.MainCanvas.AsCanvas[m_SymmetryWidget];
-                        var xfPointer_CS = TrTransform.T(LuaManager.Instance.GetPastBrushPos(0));
-                        var brushToWidget_CS = xfWidget_CS.inverse * xfPointer_CS;
-                        TrTransform pos = TrTransform.T(-brushToWidget_CS.translation + tr.translation);
-                        newTr_CS = TrTransform.T(pos.translation);
-                        TrTransform rot = TrTransform.R(tr.rotation);
-                        newTr_CS = rot * newTr_CS;
-                        newTr_CS = xfWidget_GS * newTr_CS * xfWidget_GS.inverse;
-                        break;
-                    }
                     case ScriptCoordSpace.Canvas:
-                    {
-                        needsDummyPointer = false;
-                        newTr_CS = TrTransform.T(tr.translation - LuaManager.Instance.GetPastBrushPos(0));
-                        break;
-                    }
-                    case ScriptCoordSpace.Pointer:
-                    {
-                        // Check to see if any pointers have an unchanged position
-                        if (tr.translation == Vector3.zero)
                         {
                             needsDummyPointer = false;
+                            newTr_CS = TrTransform.T(tr.translation - LuaManager.Instance.GetPastBrushPos(0));
+                            break;
                         }
-                        Quaternion pointerRot_GS = rAttachPoint_GS.rotation * FreePaintTool.sm_OrientationAdjust;
-                        pointerRot_GS *= Quaternion.Euler(0, 180, 0);
-                        newTr_CS.translation = pointerRot_GS * tr.translation;
-                        break;
-                    }
+                    case ScriptCoordSpace.Pointer:
+                        {
+                            // Check to see if any pointers have an unchanged position
+                            if (tr.translation == Vector3.zero)
+                            {
+                                needsDummyPointer = false;
+                            }
+                            Quaternion pointerRot_GS = rAttachPoint_GS.rotation * FreePaintTool.sm_OrientationAdjust;
+                            pointerRot_GS *= Quaternion.Euler(0, 180, 0);
+                            newTr_CS.translation = pointerRot_GS * tr.translation;
+                            break;
+                        }
                 }
                 trs_CS.Add(newTr_CS);
             }

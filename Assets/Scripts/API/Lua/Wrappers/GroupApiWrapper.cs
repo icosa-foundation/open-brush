@@ -96,23 +96,23 @@ namespace TiltBrush
 
         [LuaDocsDescription("All the images in this group")]
         public ImageListApiWrapper images =>
-            new (new LayerApiWrapper(_Layer).images._Images.Where(w => w.Group == _Group).ToList());
+            new(new LayerApiWrapper(_Layer).images._Images.Where(w => w.Group == _Group).ToList());
 
         [LuaDocsDescription("All the videos in this group")]
         public VideoListApiWrapper videos =>
-            new (new LayerApiWrapper(_Layer).videos._Videos.Where(w => w.Group == _Group).ToList());
+            new(new LayerApiWrapper(_Layer).videos._Videos.Where(w => w.Group == _Group).ToList());
 
         [LuaDocsDescription("All the models in this group")]
         public ModelListApiWrapper models =>
-            new (new LayerApiWrapper(_Layer).models._Models.Where(w => w.Group == _Group).ToList());
+            new(new LayerApiWrapper(_Layer).models._Models.Where(w => w.Group == _Group).ToList());
 
         [LuaDocsDescription("All the guides in this group")]
         public GuideListApiWrapper guides =>
-            new (new LayerApiWrapper(_Layer).guides._Guides.Where(w => w.Group == _Group).ToList());
+            new(new LayerApiWrapper(_Layer).guides._Guides.Where(w => w.Group == _Group).ToList());
 
         [LuaDocsDescription("All the camera paths in this group")]
         public CameraPathListApiWrapper cameraPaths =>
-            new (new LayerApiWrapper(_Layer).cameraPaths._CameraPaths.Where(w => w.Group == _Group).ToList());
+            new(new LayerApiWrapper(_Layer).cameraPaths._CameraPaths.Where(w => w.Group == _Group).ToList());
     }
 }
 

@@ -9,5 +9,5 @@ Parameters = {
 
 function Main()
     y = Waveform:Sine(Brush.distanceMoved, frequency) * amplitude
-    return Transform:New(0, y, 0)
+    return Transform:Position(0, y, 0)
 end

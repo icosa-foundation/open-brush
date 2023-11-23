@@ -109,7 +109,7 @@ namespace TiltBrush
         public static LuaManager Instance => m_Instance;
 
         private LinkedList<LuaWebRequest> m_WebRequests;
-        
+
         public string LuaModulesPath => Path.Join(UserPluginsPath(), "LuaModules");
 
         public struct ScriptTrTransform
@@ -192,7 +192,7 @@ namespace TiltBrush
             ConfigureScriptButton(LuaApiCategory.SymmetryScript);
             ConfigureScriptButton(LuaApiCategory.ToolScript);
         }
-        
+
         public void CopyLuaModules()
         {
             // Copy built-in Lua Libraries to User's LuaModules directory
@@ -200,7 +200,7 @@ namespace TiltBrush
             foreach (var library in libraries)
             {
                 var newFilename = Path.Join(LuaModulesPath, $"{library.name}.lua");
-                if (!File.Exists(newFilename) || library.name=="__autocomplete") // Always overwrite autocomplete
+                if (!File.Exists(newFilename) || library.name == "__autocomplete") // Always overwrite autocomplete
                 {
                     FileUtils.WriteTextFromResources($"LuaModules/{library.name}", newFilename);
                 }
@@ -209,17 +209,17 @@ namespace TiltBrush
 
         public void SetBrushBufferSize(int size)
         {
-            if (m_TransformBuffers.BrushBufferSize!=size) ResizeBrushBuffer(size);
+            if (m_TransformBuffers.BrushBufferSize != size) ResizeBrushBuffer(size);
         }
 
         public void SetWandBufferSize(int size)
         {
-            if (m_TransformBuffers.WandBufferSize!=size) ResizeWandBuffer(size);
+            if (m_TransformBuffers.WandBufferSize != size) ResizeWandBuffer(size);
         }
 
         public void SetHeadBufferSize(int size)
         {
-            if (m_TransformBuffers.HeadBufferSize!=size) ResizeHeadBuffer(size);
+            if (m_TransformBuffers.HeadBufferSize != size) ResizeHeadBuffer(size);
         }
 
         public void ResizeBrushBuffer(int size)
@@ -614,24 +614,36 @@ namespace TiltBrush
             var script = GetActiveScript(LuaApiCategory.ToolScript);
             DynValue result = _CallScript(script, fnName);
             PathListApiWrapper pathListWrapper = null;
-            try
+
+            if (result.Table != null)
             {
-                // Try to cast to multipath first
-                pathListWrapper = result.ToObject<PathListApiWrapper>();
+                // It's a lua array
+                var trList = result.Table.Values.Select(v => v.ToObject<TrTransform>()).ToList();
+                var path = new PathApiWrapper(trList);
+                pathListWrapper = new PathListApiWrapper(path);
             }
-            catch (Exception _)
+            else
             {
+                // It's either a multipath or path
                 try
                 {
-                    // If that fails, try to cast to path
-                    var pathWrapper = result.ToObject<PathApiWrapper>();
-                    // and wrap it as a multipath
-                    pathListWrapper = new PathListApiWrapper(pathWrapper);
+                    // Try to cast to multipath first
+                    pathListWrapper = result.ToObject<PathListApiWrapper>();
                 }
-                catch (Exception e)
+                catch (Exception _)
                 {
-                    // If neither then log the error
-                    LogGenericLuaError(script, fnName, e);
+                    try
+                    {
+                        // If that fails, try to cast to path
+                        var pathWrapper = result.ToObject<PathApiWrapper>();
+                        // and wrap it as a multipath
+                        pathListWrapper = new PathListApiWrapper(pathWrapper);
+                    }
+                    catch (Exception e)
+                    {
+                        // If neither then log the error
+                        LogGenericLuaError(script, fnName, e);
+                    }
                 }
             }
             if (pathListWrapper != null)
@@ -648,7 +660,18 @@ namespace TiltBrush
             try
             {
                 DynValue result = _CallScript(script, fnName);
-                pathWrapper = result.ToObject<PathApiWrapper>();
+                if (result.Table != null)
+                {
+                    // It's a lua array
+                    var trList = result.Table.Values.Select(v => v.ToObject<TrTransform>()).ToList();
+                    pathWrapper = new PathApiWrapper(trList);
+                }
+                else
+                {
+                    // It's a PathApiWrapper instance
+                    pathWrapper = result.ToObject<PathApiWrapper>();
+                }
+
                 if (pathWrapper != null)
                 {
                     pathWrapper._Space = _GetSpaceForActiveScript(LuaApiCategory.SymmetryScript);

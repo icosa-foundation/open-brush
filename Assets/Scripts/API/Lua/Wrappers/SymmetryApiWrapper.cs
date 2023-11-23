@@ -172,7 +172,7 @@ namespace TiltBrush
             "  pointer = Transform:New(Symmetry.brushOffset:ScaleBy(radius, 1, radius))\n" +
             "  pointers:Insert(pointer)\n" +
             "end")]
-        public static float Polygon(float angle, int numSides, float radius=1f)
+        public static float Polygon(float angle, int numSides, float radius = 1f)
         {
             // Calculate the angle of each sector in the polygon
             float sectorAngle = 2 * Mathf.PI / numSides;

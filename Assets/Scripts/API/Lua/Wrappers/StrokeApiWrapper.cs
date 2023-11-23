@@ -153,7 +153,7 @@ namespace TiltBrush
 
         [LuaDocsDescription("Removes this stroke from the current selection")]
         [LuaDocsExample("myStroke:Deselect()")]
-        public void Deselect() => SelectionManager.m_Instance.DeselectStrokes(new [] {_Stroke});
+        public void Deselect() => SelectionManager.m_Instance.DeselectStrokes(new[] { _Stroke });
 
         [LuaDocsDescription("Adds multiple strokes to the current selection")]
         [LuaDocsExample("Stroke:SelectMultiple(0, 4) --Adds the first 5 strokes on the sketch")]
@@ -200,7 +200,7 @@ namespace TiltBrush
             {
                 _Stroke.SetShaderFloat(parameter, value);
             }
-            catch (StrokeShaderModifierException e) {LuaManager.LogLuaError(e);}
+            catch (StrokeShaderModifierException e) { LuaManager.LogLuaError(e); }
         }
 
         [LuaDocsDescription("Changes a shader color parameter")]
@@ -213,7 +213,7 @@ namespace TiltBrush
             {
                 _Stroke.SetShaderColor(parameter, color);
             }
-            catch (StrokeShaderModifierException e) {LuaManager.LogLuaError(e);}
+            catch (StrokeShaderModifierException e) { LuaManager.LogLuaError(e); }
         }
 
         [LuaDocsDescription("Changes a shader texture parameter")]
@@ -227,7 +227,7 @@ namespace TiltBrush
             {
                 _Stroke.SetShaderTexture(parameter, texture);
             }
-            catch (StrokeShaderModifierException e) {LuaManager.LogLuaError(e);}
+            catch (StrokeShaderModifierException e) { LuaManager.LogLuaError(e); }
         }
 
         [LuaDocsDescription("Changes a shader vector parameter")]
@@ -243,7 +243,7 @@ namespace TiltBrush
             {
                 _Stroke.SetShaderVector(parameter, x, y, z, w);
             }
-            catch (StrokeShaderModifierException e) {LuaManager.LogLuaError(e);}
+            catch (StrokeShaderModifierException e) { LuaManager.LogLuaError(e); }
         }
     }
 }

@@ -1858,9 +1858,10 @@ namespace TiltBrush
         public List<TrTransform> AsTrList(float step)
         {
             var points = new List<TrTransform>();
+            var widget = m_Widget.GetComponent<CameraPathWidget>();
             for (float t = 0; t < Segments.Count; t += step)
             {
-                points.Add(TrTransform.TR(
+                points.Add(widget.Canvas.Pose.inverse * TrTransform.TR(
                     GetPosition(new PathT(t)),
                     GetRotation(new PathT(t))
                 ));

@@ -220,7 +220,7 @@ namespace TiltBrush
             {
                 var path = Path.Combine(App.MediaLibraryPath(), destinationFolder, filename);
                 WebClient wc = new WebClient();
-                wc.Headers.Add ("user-agent", ApiManager.WEBREQUEST_USER_AGENT);
+                wc.Headers.Add("user-agent", ApiManager.WEBREQUEST_USER_AGENT);
                 wc.DownloadFile(uri, path);
                 return filename;
             }

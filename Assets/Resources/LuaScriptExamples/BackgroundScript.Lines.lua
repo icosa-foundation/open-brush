@@ -9,13 +9,13 @@ Parameters = {
 
 function Main()
 
-    startPoint = Transform:New(
+    startPoint = Transform:Position(
         Random.value * range,
         Random.value * range,
         Random.value * range
     )
 
-    endPoint = Transform:New(
+    endPoint = Transform:Position(
         Random.value * range,
         Random.value * range,
         Random.value * range

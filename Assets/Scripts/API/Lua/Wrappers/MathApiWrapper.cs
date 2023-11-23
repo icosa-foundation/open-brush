@@ -287,5 +287,6 @@ namespace TiltBrush
         [LuaDocsExample("result = Math:Tanh(0.1)")]
         [LuaDocsParameter("f", "The input value in radians")]
         [LuaDocsReturnValue("The hyperbolic tangent of f")]
-        public static float Tanh(float f) => (float)System.Math.Tanh(f);    }
+        public static float Tanh(float f) => (float)System.Math.Tanh(f);
+    }
 }

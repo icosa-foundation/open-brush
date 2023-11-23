@@ -225,7 +225,7 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Take a 360-degree snapshot of the scene and save it")]
-        [LuaDocsExample(@"App:Take360Snapshot(Transform:New(0, 12, 3), ""my360snapshot.png"", 4096)")]
+        [LuaDocsExample(@"App:Take360Snapshot(Transform:Position(0, 12, 3), ""my360snapshot.png"", 4096)")]
         [LuaDocsParameter("tr", "Determines the position and orientation of the camera used to take the snapshot")]
         [LuaDocsParameter("filename", "The filename to use for the saved snapshot")]
         [LuaDocsParameter("width", "The width of the image")]

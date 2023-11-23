@@ -27,7 +27,7 @@ namespace TiltBrush
         [MoonSharpHidden]
         public List<List<TrTransform>> AsMultiTrList() => new List<List<TrTransform>> { _Path };
 
-        public enum Axis {X, Y, Z}
+        public enum Axis { X, Y, Z }
 
         [MoonSharpHidden]
         public List<TrTransform> _Path;
@@ -103,9 +103,9 @@ namespace TiltBrush
 
         private static Vector3 _CalculatePathVector(List<TrTransform> path, int i)
         {
-            if (i == 0 && path.Count <= 1) {return path[i].rotation * Vector3.forward;} // A path with only one point
-            if (i == 0) {return (path[i + 1].translation - path[i].translation).normalized;}
-            if (i + 1 >= path.Count) {return (path[i].translation - path[i - 1].translation).normalized;}
+            if (i == 0 && path.Count <= 1) { return path[i].rotation * Vector3.forward; } // A path with only one point
+            if (i == 0) { return (path[i + 1].translation - path[i].translation).normalized; }
+            if (i + 1 >= path.Count) { return (path[i].translation - path[i - 1].translation).normalized; }
 
             Vector3 toPrevious = (path[i].translation - path[i - 1].translation).normalized;
             Vector3 toNext = (path[i + 1].translation - path[i].translation).normalized;
@@ -153,7 +153,7 @@ namespace TiltBrush
         public TransformApiWrapper last => new TransformApiWrapper(_Path[^1]);
 
         [LuaDocsDescription("Inserts a new point at the end of the path")]
-        [LuaDocsExample("myPath:Insert(Transform:New(pos, rot)")]
+        [LuaDocsExample("myPath:Insert(myTransform")]
         [LuaDocsParameter("transform", "The transform to be inserted at the end of the path")]
         public void Insert(TrTransform transform) => _Path.Add(transform);
 
@@ -369,6 +369,7 @@ namespace TiltBrush
             return subdividedPath;
         }
 
+        [MoonSharpHidden]
         public static List<TrTransform> _SubdivideSegments(List<TrTransform> trs, int parts)
         {
             if (parts < 1 || trs == null || trs.Count < 2)
@@ -475,7 +476,7 @@ namespace TiltBrush
         [LuaDocsParameter(@"endTangent", "End tangent")]
         [LuaDocsParameter(@"resolution", "Resolution of the spline")]
         [LuaDocsParameter(@"tangentStrength", "Strength of the tangent")]
-        [LuaDocsReturnValue(@"Instance of PathApiWrapper")]
+        [LuaDocsReturnValue(@"A new Path")]
         public static PathApiWrapper Hermite(TrTransform startTransform, TrTransform endTransform, Vector3 startTangent, Vector3 endTangent, int resolution, float tangentStrength = 1f)
         {
 

@@ -223,6 +223,12 @@ namespace TiltBrush
         public static Vector3 zero => Vector3.zero;
 
         // Operators
+
+        public static Vector3 operator +(Vector3ApiWrapper a, Vector3ApiWrapper b) => a._Vector3 + b._Vector3;
+        public static Vector3 operator -(Vector3ApiWrapper a, Vector3ApiWrapper b) => a._Vector3 - b._Vector3;
+        public static Vector3 operator *(Vector3ApiWrapper a, float b) => a._Vector3 * b;
+        public static Vector3 operator /(Vector3ApiWrapper a, float b) => a._Vector3 / b;
+
         [LuaDocsDescription("Adds two vectors")]
         [LuaDocsExample("result = myVector:Add(secondVector)")]
         [LuaDocsParameter("other", "The other vector")]
@@ -267,10 +273,14 @@ namespace TiltBrush
         [LuaDocsDescription("Is this vector equal to another?")]
         [LuaDocsExample(@"if myVector:Equals(Vector3.zero) then print(""Vector is zero"") end")]
         [LuaDocsParameter("other", "The other vector")]
-        public bool Equals(Vector3ApiWrapper other)
+        public bool Equals(Vector3ApiWrapper other) => Equals(other._Vector3);
+
+        public override bool Equals(System.Object obj)
         {
-            return _Vector3 == other._Vector3;
+            var other = obj as Vector3ApiWrapper;
+            return other != null && _Vector3 == other._Vector3;
         }
+        public override int GetHashCode() => 0; // Always return 0. Lookups will have to use Equals to compare
 
         [LuaDocsDescription("Is this vector equal these x, y and z values?")]
         [LuaDocsExample(@"if myVector:Equals(1, 2, 3) then print(""Vector is 1,2,3"") end")]

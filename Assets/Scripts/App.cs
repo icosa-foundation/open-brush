@@ -792,7 +792,7 @@ namespace TiltBrush
 
             // Wait for the environment transition to complete before capturing.
             if (Config.m_SdkMode == SdkMode.Ods
-                &&m_OdsPivot
+                && m_OdsPivot
                 && !m_OdsPivot.activeInHierarchy
                 && !SceneSettings.m_Instance.IsTransitioning
                 && ((m_CurrentAppState == AppState.Loading && !Config.m_QuickLoad)

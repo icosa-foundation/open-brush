@@ -5283,7 +5283,7 @@ namespace TiltBrush
                 m_WidgetManager.AnyCameraPathWidgetsActive;
         }
 
-        public void OpenPanelOfType(BasePanel.PanelType type, TrTransform trSpawnXf, bool forced=false)
+        public void OpenPanelOfType(BasePanel.PanelType type, TrTransform trSpawnXf, bool forced = false)
         {
             m_PanelManager.OpenPanel(type, trSpawnXf, forced);
             EatGazeObjectInput();

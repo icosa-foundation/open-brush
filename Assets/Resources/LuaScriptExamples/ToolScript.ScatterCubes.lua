@@ -24,9 +24,9 @@ function Main()
         origin = Brush.position
 
         if Random.value < amount then
-            randomOffset = Random.insideUnitSphere:Multiply(spread)
+            randomOffset = Random.insideUnitSphere * spread
             return drawCube(
-                origin:Add(randomOffset),
+                origin + randomOffset,
                 Random.value * maxSize
             )
         end

@@ -33,10 +33,18 @@ namespace TiltBrush
         public static float distanceDrawn => SketchSurfacePanel.m_Instance.ActiveTool.DistanceDrawn_CS;
 
         [LuaDocsDescription("The 3D position of the Brush Controller's tip")]
-        public static Vector3 position => LuaManager.Instance.GetPastBrushPos(0);
+        public static Vector3 position
+        {
+            get => LuaManager.Instance.GetPastBrushPos(0);
+            set => PointerManager.m_Instance.MainPointer.transform.position = value;
+        }
 
         [LuaDocsDescription("The 3D orientation of the Brush Controller's tip")]
-        public static Quaternion rotation => LuaManager.Instance.GetPastBrushRot(0);
+        public static Quaternion rotation
+        {
+            get => LuaManager.Instance.GetPastBrushRot(0);
+            set => PointerManager.m_Instance.MainPointer.transform.rotation = value;
+        }
 
         [LuaDocsDescription("The vector representing the forward direction of the brush")]
         public static Vector3 direction => LuaManager.Instance.GetPastBrushRot(0) * Vector3.back;
@@ -49,7 +57,11 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Brush pressure is determined by how far the trigger is pressed in")]
-        public static float pressure => PointerManager.m_Instance.MainPointer.GetPressure();
+        public static float pressure
+        {
+            get => PointerManager.m_Instance.MainPointer.GetPressure();
+            set => PointerManager.m_Instance.MainPointer.SetPressure(value);
+        }
 
         [LuaDocsDescription("The current brush type")]
         public static string type
@@ -157,7 +169,7 @@ namespace TiltBrush
         [LuaDocsDescription("The current path of the brush. Assumes a stroke is in progress.")]
         public static PathApiWrapper currentPath
         {
-            get => new (PointerManager.m_Instance.MainPointer.CurrentPath);
+            get => new(PointerManager.m_Instance.MainPointer.CurrentPath);
             set => PointerManager.m_Instance.MainPointer.CurrentPath = value._Path;
         }
 

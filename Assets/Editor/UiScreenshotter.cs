@@ -103,7 +103,7 @@ namespace TiltBrush
             var origin = new Vector3(-1.25f, 100, 4);
             for (float i = 0; i < 3; i += 0.1f)
             {
-                path.Add(TrTransform.T(new Vector3(i, Mathf.Sin(i * 5f) * (1 - i/3), 0)));
+                path.Add(TrTransform.T(new Vector3(i, Mathf.Sin(i * 5f) * (1 - i / 3), 0)));
             }
 
             foreach (var brush in BrushCatalog.m_Instance.GetTagFilteredBrushList())

@@ -15,9 +15,9 @@ function Main()
         radius = Tool.vector.magnitude
         angle = 360.0 / sides
         for a = 0, 360 - angle, angle do
-            position = Vector2:PointOnCircle(a):Multiply(radius):OnY()
+            position2d = Vector2:PointOnCircle(a) * radius
             rotation = Rotation:New(0, -a, 0)
-            path.Insert(Transform:New(position, rotation, ((Math.pi * 0.5) / sides) * radius))
+            path.Insert(Transform:New(position2d:OnY(), rotation, ((Math.pi * 0.5) / sides) * radius))
         end
         path:TransformBy(Transform:New(Tool.startPoint.position, Tool.rotation));
         CameraPath:FromPath(path, true)

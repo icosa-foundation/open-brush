@@ -790,7 +790,7 @@ namespace TiltBrush
 
         public void DeselectWidget(GrabWidget widget, CanvasScript targetCanvas = null)
         {
-            DeselectWidgets(new []{widget}, targetCanvas);
+            DeselectWidgets(new[] { widget }, targetCanvas);
         }
 
         public void DeselectWidgets(IEnumerable<GrabWidget> widgets, CanvasScript targetCanvas = null)

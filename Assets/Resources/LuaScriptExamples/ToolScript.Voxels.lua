@@ -51,11 +51,11 @@ function cube(center, gridSize)
     points:Insert(Transform:New(center:Add(-d, -d, d), Rotation.zero))
     points:Insert(Transform:New(center:Add(-d, d, d), Rotation.zero))
 
-    points:Insert(Transform:New(center:Add(d, d, d), Rotation.clockwise))
-    points:Insert(Transform:New(center:Add(d, d, -d), Rotation.clockwise))
-    points:Insert(Transform:New(center:Add(d, -d, -d), Rotation.clockwise))
-    points:Insert(Transform:New(center:Add(d, -d, d), Rotation.clockwise))
-    points:Insert(Transform:New(center:Add(d, d, d), Rotation.clockwise))
+    points:Insert(Transform:New(center:Add(d, d, d), Rotation:New(0, 0, 90)))
+    points:Insert(Transform:New(center:Add(d, d, -d), Rotation:New(0, 0, 90)))
+    points:Insert(Transform:New(center:Add(d, -d, -d), Rotation:New(0, 0, 90)))
+    points:Insert(Transform:New(center:Add(d, -d, d), Rotation:New(0, 0, 90)))
+    points:Insert(Transform:New(center:Add(d, d, d), Rotation:New(0, 0, 90)))
 
     points:Insert(Transform:New(center:Add(d, d, -d), Rotation:New(0, 0, 180)))
     points:Insert(Transform:New(center:Add(-d, d, -d), Rotation:New(0, 0, 180)))
@@ -63,11 +63,11 @@ function cube(center, gridSize)
     points:Insert(Transform:New(center:Add(d, -d, -d), Rotation:New(0, 0, 180)))
     points:Insert(Transform:New(center:Add(d, d, -d), Rotation:New(0, 0, 180)))
 
-    points:Insert(Transform:New(center:Add(-d, d, -d), Rotation.anticlockwise))
-    points:Insert(Transform:New(center:Add(-d, d, d), Rotation.anticlockwise))
-    points:Insert(Transform:New(center:Add(-d, -d, d), Rotation.anticlockwise))
-    points:Insert(Transform:New(center:Add(-d, -d, -d), Rotation.anticlockwise))
-    points:Insert(Transform:New(center:Add(-d, d, -d), Rotation.anticlockwise))
+    points:Insert(Transform:New(center:Add(-d, d, -d), Rotation:New(0, 0, -90)))
+    points:Insert(Transform:New(center:Add(-d, d, d), Rotation:New(0, 0, -90)))
+    points:Insert(Transform:New(center:Add(-d, -d, d), Rotation:New(0, 0, -90)))
+    points:Insert(Transform:New(center:Add(-d, -d, -d), Rotation:New(0, 0, -90)))
+    points:Insert(Transform:New(center:Add(-d, d, -d), Rotation:New(0, 0, -90)))
 
     return points
 end

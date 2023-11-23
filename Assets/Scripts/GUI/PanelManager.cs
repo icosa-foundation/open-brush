@@ -2365,7 +2365,7 @@ namespace TiltBrush
                 data.m_Widget.gameObject.activeSelf && data.m_Widget.IsAvailable();
         }
 
-        public void OpenPanel(BasePanel.PanelType type, TrTransform trSpawnXf, bool forced=false)
+        public void OpenPanel(BasePanel.PanelType type, TrTransform trSpawnXf, bool forced = false)
         {
             if ((type != BasePanel.PanelType.SketchSurface && type != BasePanel.PanelType.Color &&
                 type != BasePanel.PanelType.Brush) || forced)

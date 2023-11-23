@@ -20,7 +20,7 @@ namespace TiltBrush
         [MoonSharpHidden]
         public List<List<TrTransform>> AsMultiTrList() => new List<List<TrTransform>> { AsSingleTrList() };
 
-        public enum Axis {X, Y, Z}
+        public enum Axis { X, Y, Z }
 
         [MoonSharpHidden]
         public List<Vector2> _Path2d;
@@ -123,7 +123,24 @@ namespace TiltBrush
         public void RotateBy(Quaternion amount) => TransformBy(TrTransform.R(amount));
 
         [LuaDocsDescription("Scales the path")]
-        [LuaDocsExample("myPath:ScaleBy(Vector2:New(2, 1)")]
+        [LuaDocsExample("myPath:ScaleBy(2)")]
+        [LuaDocsParameter("scale", "The scaling factor to apply to the path")]
+        public void ScaleBy(float scale)
+        {
+            ScaleBy(new Vector2(scale, scale));
+        }
+
+        [LuaDocsDescription("Scales the path")]
+        [LuaDocsExample("myPath:ScaleBy(2, 1)")]
+        [LuaDocsParameter("x", "The x scaling factor to apply to the path")]
+        [LuaDocsParameter("y", "The y scaling factor to apply to the path")]
+        public void ScaleBy(float x, float y)
+        {
+            ScaleBy(new Vector2(x, y));
+        }
+
+        [LuaDocsDescription("Scales the path")]
+        [LuaDocsExample("myPath:ScaleBy(myVector2")]
         [LuaDocsParameter("scale", "The scaling factor to apply to the path")]
         public void ScaleBy(Vector2 scale)
         {
@@ -169,7 +186,7 @@ namespace TiltBrush
         public int FindClosest(Vector2 point)
         {
             if (_Path2d == null) return 0;
-            return _Path2d.Select((x, i) => new {i, x}).Aggregate(
+            return _Path2d.Select((x, i) => new { i, x }).Aggregate(
                 (acc, v) => (v.x - point).sqrMagnitude < (acc.x - point).sqrMagnitude ? v : acc
             ).i;
         }

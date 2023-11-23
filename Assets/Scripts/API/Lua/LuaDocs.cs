@@ -85,7 +85,7 @@ namespace TiltBrush
             if (Methods.Count > 0) methods = $@"{String.Join("\n",
                 Methods.Select(m => m.AutocompleteSerialize(Name)))}
 ";
-            
+
             return $@"
 
 ---@class {Name}
@@ -117,7 +117,7 @@ namespace TiltBrush
                 );
             }
 
-            if (EnumValues!= null && EnumValues.Count > 0)
+            if (EnumValues != null && EnumValues.Count > 0)
             {
                 enumValues = String.Format(
                     markdownTemplateForEnumValues,
@@ -161,7 +161,7 @@ namespace TiltBrush
             string json = JsonConvert.SerializeObject(this, Formatting.Indented);
             return json;
         }
-        
+
         public static LuaDocsClass Deserialize(string json)
         {
             return JsonConvert.DeserializeObject<LuaDocsClass>(json);
@@ -180,7 +180,7 @@ namespace TiltBrush
         DynValue,
         Nil
     }
-    
+
     [Serializable]
     public class LuaDocsType
     {
@@ -342,7 +342,7 @@ namespace TiltBrush
             return markdown;
         }
     }
-    
+
     [Serializable]
     public class LuaDocsParameter
     {
@@ -359,14 +359,14 @@ namespace TiltBrush
         {
             return string.Format(markdownTemplate, Name, ParameterType.TypeAsMarkdownString(), DefaultValue, Description);
         }
-        
+
         public string AutocompleteSerialize()
         {
             string suffix = IsOptional ? "?" : "";
             return $"---@param {Name}{suffix} {ParameterType.TypeAsLuaString()} {Description}";
         }
     }
-    
+
     [Serializable]
     public class LuaDocsMethod
     {
@@ -452,7 +452,7 @@ namespace TiltBrush
             return string.Format(markdownTemplate, className, Name, methodSignature, Description,
                 ReturnType.TypeAsMarkdownString(), returnValueDescription, parameters, example);
         }
-        
+
         public string AutocompleteSerialize(string className)
         {
 
@@ -465,7 +465,7 @@ namespace TiltBrush
             string returnTypeAnnotation = "";
             if (ReturnType.PrimitiveType != LuaDocsPrimitiveType.Nil)
             {
-                returnTypeAnnotation = $"\n---@return {ReturnType.TypeAsLuaString()} {ReturnValueDescription}";
+                returnTypeAnnotation = $"\n---@return {ReturnType.TypeAsLuaString()} # {ReturnValueDescription}";
             }
 
             return $@"{parameters}{returnTypeAnnotation}
@@ -504,7 +504,7 @@ function {className}:{Name}({string.Join(", ", Parameters.Select(p => p.Name))})
 
         // 0=name 1=type 2=ReadWrite 3=description
         private string markdownTemplate = "<tr><td>{0}</td><td>{1}<br>{2}</td><td>{3}</td></tr>";
-        
+
         public string MarkdownSerialize()
         {
             string readwrite = ReadWrite ? "Read/Write" : "Read-only";

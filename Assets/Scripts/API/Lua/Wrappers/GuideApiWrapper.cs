@@ -18,8 +18,8 @@ namespace TiltBrush
         [LuaDocsDescription("The index of the active widget")]
         public int index => WidgetManager.m_Instance.GetActiveWidgetIndex(_StencilWidget);
 
-        [LuaDocsDescription("Returns a string representation of the GuideApiWrapper")]
-        [LuaDocsReturnValue("A string representation of the GuideApiWrapper")]
+        [LuaDocsDescription("Returns a string representation of the Guide")]
+        [LuaDocsReturnValue("A string representation of the Guide")]
         public override string ToString()
         {
             return $"Guide({_StencilWidget})";
@@ -104,7 +104,7 @@ namespace TiltBrush
         [LuaDocsDescription(@"Creates a new custom guide from a 3d model. Note that custom guides have to be convex so your model will be ""wrapped"" as a convex hull")]
         [LuaDocsExample("myGuide = Guide:NewCustom(Transform:New(0, 5, 2), myModel")]
         [LuaDocsParameter("transform", "The transform of the Guide Widget")]
-        [LuaDocsParameter("model", "The ModelApiWrapper to use for the custom stencil")]
+        [LuaDocsParameter("model", "The Model to use for the custom guide")]
         [LuaDocsReturnValue("A new custom guide based on the convex hull of the model")]
         public static GuideApiWrapper NewCustom(TrTransform transform, ModelApiWrapper model)
         {

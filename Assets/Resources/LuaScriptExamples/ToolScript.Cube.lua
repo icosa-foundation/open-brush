@@ -13,16 +13,16 @@ function createFace(center, normal, up)
     local right = Vector3:Cross(normal, up)
     local rotation = Rotation:LookRotation(normal, up)
 
-    local normal = normal:Multiply(inset)
-    local center = center:Add(normal)
+    local normal = normal * inset
+    local center = center + normal
 
-    local up = up:Multiply(1 - inset)
-    local right = right:Multiply(1 - inset)
+    local up = up * (1 - inset)
+    local right = right * (1 - inset)
 
-    local topLeft = (center:Add(up)):Subtract(right)
-    local topRight = (center:Add(up)):Add(right)
-    local bottomRight = (center:Subtract(up)):Add(right)
-    local bottomLeft = (center:Subtract(up)):Subtract(right)
+    local topLeft = center + up - right
+    local topRight = center + up + right
+    local bottomRight = center - up + right
+    local bottomLeft = center - up - right
 
     local face = Path:New()
     face:Insert(Transform:New(topLeft, rotation))

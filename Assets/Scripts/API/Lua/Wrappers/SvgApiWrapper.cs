@@ -39,15 +39,17 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Draws an SVG path string")]
-        [LuaDocsExample("SVG:DrawPathString('M 100 100 L 200 200')")]
+        [LuaDocsExample("Svg:DrawPathString('M 100 100 L 200 200')")]
         [LuaDocsParameter("svg", "The SVG path string to draw")]
         [LuaDocsParameter("tr", "The transform to apply to the result")]
-        public static void DrawPathString(string svg, TrTransform tr = default) => DrawStrokes.DrawSvgPathString(svg, tr);
+        public static void DrawPathString(string svg, TransformApiWrapper tr = null) =>
+            DrawStrokes.DrawSvgPathString(svg, (tr ?? TransformApiWrapper.identity)._TrTransform);
 
         [LuaDocsDescription("Draws an SVG document")]
-        [LuaDocsExample("SVG:Draw('<svg>...</svg>')")]
+        [LuaDocsExample("Svg:Draw('<svg>...</svg>')")]
         [LuaDocsParameter("svg", "A text string that is a valid SVG document")]
         [LuaDocsParameter("tr", "The transform (position, rotation and scale) to apply to the result")]
-        public static void DrawDocument(string svg, TrTransform tr = default) => DrawStrokes.DrawSvg(svg, tr);
+        public static void DrawDocument(string svg, TrTransform tr = default) =>
+            DrawStrokes.DrawSvg(svg, tr);
     }
 }

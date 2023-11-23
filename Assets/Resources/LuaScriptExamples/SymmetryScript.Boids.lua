@@ -28,18 +28,18 @@ function Boid:update(dt, boids)
     local sep, align, coh = self:calculateForces(boids)
 
     -- Calculate a force vector pointing towards the origin
-    local attractionToOrigin = Vector3.zero:Subtract(self.position)
+    local attractionToOrigin = Vector3.zero - self.position
     attractionToOrigin = attractionToOrigin.normalized
 
-    self.velocity = self.velocity:Add(sep:Multiply(separationForce))
-    self.velocity = self.velocity:Add(align:Multiply(alignmentForce))
-    self.velocity = self.velocity:Add(coh:Multiply(cohesionForce))
+    self.velocity = self.velocity + (sep * separationForce)
+    self.velocity = self.velocity + (align * alignmentForce)
+    self.velocity = self.velocity + (coh * cohesionForce)
 
     -- Apply the attraction to origin force
-    self.velocity = self.velocity:Add(attractionToOrigin:Multiply(originForce))
+    self.velocity = self.velocity + (attractionToOrigin * originForce)
 
     self.velocity = self.velocity:ClampMagnitude(5)
-    self.position = self.position:Add(self.velocity:Multiply(dt))
+    self.position = self.position + (self.velocity * dt)
     self.orientation = Rotation:LookRotation(self.velocity, Vector3.up)
 end
 
@@ -51,21 +51,21 @@ function Boid:calculateForces(boids)
 
     for _, other in ipairs(boids) do
         if other ~= self then
-            local direction = self.position:Subtract(other.position)
+            local direction = self.position - other.position
             local distanceSquared = direction.sqrMagnitude
             if distanceSquared < 25 and distanceSquared > 0 then
-                separation = separation:Add(direction:Divide(distanceSquared))
-                alignment = alignment:Add(other.velocity)
-                cohesion = cohesion:Add(other.position)
+                separation = separation + (direction / distanceSquared)
+                alignment = alignment + other.velocity
+                cohesion = cohesion + other.position
                 count = count + 1
             end
         end
     end
 
     if count > 0 then
-        separation = separation:Divide(count)
-        alignment = alignment:Divide(count).normalized
-        cohesion = cohesion:Divide(count):Subtract(self.position).normalized
+        separation = separation / count
+        alignment = (alignment / count).normalized
+        cohesion = ((cohesion / count) - self.position).normalized
     end
 
     return separation, alignment, cohesion
@@ -87,8 +87,8 @@ function Main()
         -- Initialize boids with random positions and velocities
         boids = {}
         for i = 1, copies do
-            local position = Random.insideUnitSphere:Multiply(0.25)
-            local velocity = Random.insideUnitSphere:Multiply(0.1)
+            local position = Random.insideUnitSphere * 0.25
+            local velocity = Random.insideUnitSphere * 0.1
             boids[i] = Boid.new(position, velocity)
         end
         symmetryHueShift.generate(copies, initialHsv)

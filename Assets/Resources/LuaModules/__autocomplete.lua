@@ -65,7 +65,7 @@ function App:DraftingHidden() end
 function App:Watermark(active) end
 
 ---@param path string The file path to read from. It must be relative to and contined within the Scripts folder
----@return string The contents of the file as a string
+---@return string # The contents of the file as a string
 function App:ReadFile(path) end
 
 ---@param message string The error message to display
@@ -114,7 +114,7 @@ function App:Take360Snapshot(tr, filename, width) end
 Brush = {}
 ---@param includeTags string[] Include brushes that have any of these tags
 ---@param excludeTags string[] Exclude brushes that have any of these tags
----@return string[] A filtered list of brush types
+---@return string[] # A filtered list of brush types
 function Brush:GetTypes(includeTags, excludeTags) end
 
 
@@ -127,11 +127,11 @@ function Brush:ResizeHistory(size) end
 function Brush:SetHistorySize(size) end
 
 ---@param back number How many frames back in the history to look
----@return Vector3 The position of the brush during the specified frame
+---@return Vector3 # The position of the brush during the specified frame
 function Brush:GetPastPosition(back) end
 
 ---@param back number How many frames back in the history to look
----@return Rotation The rotation of the brush during the specified frame
+---@return Rotation # The rotation of the brush during the specified frame
 function Brush:GetPastRotation(back) end
 
 ---@param active boolean True means forced painting, false is normal behaviour
@@ -144,19 +144,19 @@ function Brush:ForcePaintingOff(active) end
 function Brush:ForceNewStroke() end
 
 ---@param type string The brush name
----@return string[] A list of float property names usable with Stroke:SetShaderFloat
+---@return string[] # A list of float property names usable with Stroke:SetShaderFloat
 function Brush:GetShaderFloatParameters(type) end
 
 ---@param type string The brush name
----@return string[] A list of color property names usable with Stroke:SetShaderColor
+---@return string[] # A list of color property names usable with Stroke:SetShaderColor
 function Brush:GetShaderColorParameters(type) end
 
 ---@param type string The brush name
----@return string[] A list of texture property names usable with Stroke:SetShaderTexture
+---@return string[] # A list of texture property names usable with Stroke:SetShaderTexture
 function Brush:GetShaderTextureParameters(type) end
 
 ---@param type string The brush name
----@return string[] A list of vector property names usable with Stroke:SetShaderVector
+---@return string[] # A list of vector property names usable with Stroke:SetShaderVector
 function Brush:GetShaderVectorParameters(type) end
 
 
@@ -187,62 +187,62 @@ function CameraPath:PreviewActivePath(active) end
 function CameraPath:Delete() end
 
 
----@return CameraPath The new CameraPath
+---@return CameraPath # The new CameraPath
 function CameraPath:New() end
 
 ---@param path Path The Path to convert
 ---@param looped boolean Whether the resulting CameraPath should loop
----@return CameraPath A new CameraPath
+---@return CameraPath # A new CameraPath
 function CameraPath:FromPath(path, looped) end
 
----@param step number A control point is created at time=0, time=step, time=step x 2 etc
----@return Path The new Path
+---@param step number The time step is use for each sample
+---@return Path # The new Path
 function CameraPath:AsPath(step) end
 
 
----@return CameraPath The copy of the specied CameraPath
+---@return CameraPath # The copy of the specied CameraPath
 function CameraPath:Duplicate() end
 
 ---@param position Vector3 The position of the new knot
 ---@param rotation Rotation The rotation of the new knot
 ---@param smoothing number Controls the spline curvature for this knot
----@return number The index of the new knot, or -1 if the position is too far from the path
+---@return number # The index of the new knot, or -1 if the position is too far from the path
 function CameraPath:InsertPosition(position, rotation, smoothing) end
 
 ---@param t number The time along the path to insert the new knot
 ---@param rotation Rotation The rotation of the new knot
 ---@param smoothing number Controls the spline curvature for this knot
----@return number The index of the new knot
+---@return number # The index of the new knot
 function CameraPath:InsertPositionAtTime(t, rotation, smoothing) end
 
 ---@param position Vector3 The position of the new knot
 ---@param rotation Rotation The rotation of the new knot
----@return number The index of the new knot, or -1 if the position is too far from the path
+---@return number # The index of the new knot, or -1 if the position is too far from the path
 function CameraPath:InsertRotation(position, rotation) end
 
 ---@param t number The time along the path to insert the new knot
 ---@param rotation Rotation The rotation of the new knot
----@return number The index of the new knot
+---@return number # The index of the new knot
 function CameraPath:InsertRotationAtTime(t, rotation) end
 
 ---@param position Vector3 The position of the new knot
 ---@param fov number The field of view of the new knot
----@return number The index of the new knot, or -1 if the position is too far from the path
+---@return number # The index of the new knot, or -1 if the position is too far from the path
 function CameraPath:InsertFov(position, fov) end
 
 ---@param t number The time along the path to insert the new knot
 ---@param fov number The field of view of the new knot
----@return number The index of the new knot
+---@return number # The index of the new knot
 function CameraPath:InsertFovAtTime(t, fov) end
 
 ---@param position Vector3 The position of the new knot
 ---@param speed number The speed of the new knot
----@return number The index of the new knot, or -1 if the position is too far from the path
+---@return number # The index of the new knot, or -1 if the position is too far from the path
 function CameraPath:InsertSpeed(position, speed) end
 
 ---@param t number The time along the path to insert the new knot
 ---@param speed number The speed of the new knot
----@return number The index of the new knot
+---@return number # The index of the new knot
 function CameraPath:InsertSpeedAtTime(t, speed) end
 
 ---@param position Vector3 The position to extend the camera path to
@@ -260,12 +260,12 @@ function CameraPath:RecordActivePath() end
 ---@param time number The time at which to sample the camera path
 ---@param loop? boolean Determines whether the camera path should loop
 ---@param pingpong? boolean Determines whether the camera path should pingpong (reverse direction every loop
----@return Transform The sampled transform of the camera at the specified time
+---@return Transform # The sampled transform of the camera at the specified time
 function CameraPath:Sample(time, loop, pingpong) end
 
 ---@param tolerance number The tolerance used for simplification
 ---@param smoothing number The smoothing factor used for simplification
----@return CameraPath A new simplified Camera Path
+---@return CameraPath # A new simplified Camera Path
 function CameraPath:Simplify(tolerance, smoothing) end
 
 
@@ -312,77 +312,77 @@ Color = {}
 ---@param r? number The red component of the color. Default is 0
 ---@param g? number The green component of the color. Default is 0
 ---@param b? number The blue component of the color. Default is 0
----@return Color instance of the Color
+---@return Color # instance of the Color
 function Color:New(r, g, b) end
 
 ---@param html string The HTML string representing the color
----@return Color Returns the color. Invalid html inputs return bright magenta (r=1, g=0, b=1)
+---@return Color # Returns the color. Invalid html inputs return bright magenta (r=1, g=0, b=1)
 function Color:New(html) end
 
 ---@param a Color The start color
 ---@param b Color The end color
 ---@param t number The interpolation value. Should be between 0 and 1
----@return Color The interpolated color
+---@return Color # The interpolated color
 function Color:Lerp(a, b, t) end
 
 ---@param a Color The start color
 ---@param b Color The end color
 ---@param t number The interpolation value
----@return Color color
+---@return Color # color
 function Color:LerpUnclamped(a, b, t) end
 
 ---@param h number The hue value. Should be between 0 and 1
 ---@param s number The saturation value. Should be between 0 and 1
 ---@param v number The value value. Should be between 0 and 1
----@return Color color
+---@return Color # color
 function Color:HsvToRgb(h, s, v) end
 
 ---@param hsv Vector3 A Vector3 with xyz representing hsv. All values between 0 and 1
----@return Color color
+---@return Color # color
 function Color:HsvToRgb(hsv) end
 
 ---@param other Color The color to add
----@return Color color
+---@return Color # color
 function Color:Add(other) end
 
 ---@param r number The red component value to add
 ---@param g number The green component value to add
 ---@param b number The blue component value to add
----@return Color color
+---@return Color # color
 function Color:Add(r, g, b) end
 
 ---@param other Color The color to subtract
----@return Color color
+---@return Color # color
 function Color:Subtract(other) end
 
 ---@param r number The red component value to subtract
 ---@param g number The green component value to subtract
 ---@param b number The blue component value to subtract
----@return Color color
+---@return Color # color
 function Color:Subtract(r, g, b) end
 
 ---@param value number The value to multiply
----@return Color color
+---@return Color # color
 function Color:Multiply(value) end
 
 ---@param r number The red component value to multiply
 ---@param g number The green component value to multiply
 ---@param b number The blue component value to multiply
----@return Color color
+---@return Color # color
 function Color:Multiply(r, g, b) end
 
 ---@param value number The value to divide
----@return Color color
+---@return Color # color
 function Color:Divide(value) end
 
 ---@param other Color The color to compare
----@return boolean true if this color is not equal to the specified color; otherwise, false
+---@return boolean # true if this color is not equal to the specified color; otherwise, false
 function Color:NotEquals(other) end
 
 ---@param r number The red component value to compare
 ---@param g number The green component value to compare
 ---@param b number The blue component value to compare
----@return boolean true if this color is not equal to the specified RGB values; otherwise, false
+---@return boolean # true if this color is not equal to the specified RGB values; otherwise, false
 function Color:NotEquals(r, g, b) end
 
 
@@ -408,7 +408,7 @@ Environment = {}
 ---@field count number The number of available environments
 EnvironmentList = {}
 ---@param name string The name of the environment to get
----@return Environment The environment, or nil if no environment has that name
+---@return Environment # The environment, or nil if no environment has that name
 function EnvironmentList:ByName(name) end
 
 
@@ -416,127 +416,127 @@ function EnvironmentList:ByName(name) end
 ---@class Easing
 Easing = {}
 ---@param t number The input value between 0 and 1
----@return number The input is returned unchanged
+---@return number # The input is returned unchanged
 function Easing:Linear(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in the in direction only
+---@return number # The value smoothed in the in direction only
 function Easing:InQuad(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in the out direction only
+---@return number # The value smoothed in the out direction only
 function Easing:OutQuad(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in and out
+---@return number # The value smoothed in and out
 function Easing:InOutQuad(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in the in direction only
+---@return number # The value smoothed in the in direction only
 function Easing:InCubic(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in the out direction only
+---@return number # The value smoothed in the out direction only
 function Easing:OutCubic(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in and out
+---@return number # The value smoothed in and out
 function Easing:InOutCubic(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in the in direction only
+---@return number # The value smoothed in the in direction only
 function Easing:InQuart(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in the out direction only
+---@return number # The value smoothed in the out direction only
 function Easing:OutQuart(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in and out
+---@return number # The value smoothed in and out
 function Easing:InOutQuart(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in the in direction only
+---@return number # The value smoothed in the in direction only
 function Easing:InQuint(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in the out direction only
+---@return number # The value smoothed in the out direction only
 function Easing:OutQuint(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in and out
+---@return number # The value smoothed in and out
 function Easing:InOutQuint(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in the in direction only
+---@return number # The value smoothed in the in direction only
 function Easing:InSine(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in the out direction only
+---@return number # The value smoothed in the out direction only
 function Easing:OutSine(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in and out
+---@return number # The value smoothed in and out
 function Easing:InOutSine(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in the in direction only
+---@return number # The value smoothed in the in direction only
 function Easing:InExpo(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in the out direction only
+---@return number # The value smoothed in the out direction only
 function Easing:OutExpo(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in and out
+---@return number # The value smoothed in and out
 function Easing:InOutExpo(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in the in direction only
+---@return number # The value smoothed in the in direction only
 function Easing:InCirc(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in the out direction only
+---@return number # The value smoothed in the out direction only
 function Easing:OutCirc(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in and out
+---@return number # The value smoothed in and out
 function Easing:InOutCirc(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in the in direction only
+---@return number # The value smoothed in the in direction only
 function Easing:InElastic(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in the out direction only
+---@return number # The value smoothed in the out direction only
 function Easing:OutElastic(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in and out
+---@return number # The value smoothed in and out
 function Easing:InOutElastic(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in the in direction only
+---@return number # The value smoothed in the in direction only
 function Easing:InBack(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in the out direction only
+---@return number # The value smoothed in the out direction only
 function Easing:OutBack(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in and out
+---@return number # The value smoothed in and out
 function Easing:InOutBack(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in the in direction only
+---@return number # The value smoothed in the in direction only
 function Easing:InBounce(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in the out direction only
+---@return number # The value smoothed in the out direction only
 function Easing:OutBounce(t) end
 
 ---@param t number The input value between 0 and 1
----@return number The value smoothed in and out
+---@return number # The value smoothed in and out
 function Easing:InOutBounce(t) end
 
 
@@ -549,7 +549,7 @@ function Easing:InOutBounce(t) end
 ---@field cameraPaths CameraPathList | CameraPath[] All the camera paths in this group
 Group = {}
 
----@return Group The new group
+---@return Group # The new group
 function Group:New() end
 
 ---@param image Image The image to add
@@ -588,28 +588,28 @@ GroupList = {}
 ---@field scale number The scale of the Guide Widget
 Guide = {}
 ---@param transform Transform The transform of the Guide Widget
----@return Guide A new cube guide
+---@return Guide # A new cube guide
 function Guide:NewCube(transform) end
 
 ---@param transform Transform The transform of the Guide Widget
----@return Guide A new sphere guide
+---@return Guide # A new sphere guide
 function Guide:NewSphere(transform) end
 
 ---@param transform Transform The transform of the Guide Widget
----@return Guide A new capsule guide
+---@return Guide # A new capsule guide
 function Guide:NewCapsule(transform) end
 
 ---@param transform Transform The transform of the Guide Widget
----@return Guide A new cone guide
+---@return Guide # A new cone guide
 function Guide:NewCone(transform) end
 
 ---@param transform Transform The transform of the Guide Widget
----@return Guide A new ellipsoid guide
+---@return Guide # A new ellipsoid guide
 function Guide:NewEllipsoid(transform) end
 
 ---@param transform Transform The transform of the Guide Widget
----@param model Model The ModelApiWrapper to use for the custom stencil
----@return Guide A new custom guide based on the convex hull of the model
+---@param model Model The Model to use for the custom guide
+---@return Guide # A new custom guide based on the convex hull of the model
 function Guide:NewCustom(transform, model) end
 
 
@@ -643,11 +643,11 @@ function Headset:ResizeHistory(size) end
 function Headset:SetHistorySize(size) end
 
 ---@param back number How many frames back in the history to look
----@return Vector3 
+---@return Vector3 # 
 function Headset:PastPosition(back) end
 
 ---@param back number How many frames back in the history to look
----@return Rotation 
+---@return Rotation # 
 function Headset:PastRotation(back) end
 
 
@@ -662,7 +662,7 @@ function Headset:PastRotation(back) end
 ---@field scale number The scale of the image widget
 Image = {}
 ---@param location string The location of the image
----@return Image The imported image widget
+---@return Image # The imported image widget
 function Image:Import(location) end
 
 
@@ -679,12 +679,12 @@ function Image:Delete() end
 function Image:Extrude(depth, color) end
 
 
----@return string The encoded image so it can be submitted as a response to a HTML form
+---@return string # The encoded image so it can be submitted as a response to a HTML form
 function Image:FormEncode() end
 
 ---@param base64 string The base64 data for the image
 ---@param filename string The filename to save as
----@return string 
+---@return string # 
 function Image:SaveBase64(base64, filename) end
 
 
@@ -713,7 +713,7 @@ ImageList = {}
 ---@field scale number The scale of the layer
 Layer = {}
 
----@return Layer The new layer
+---@return Layer # The new layer
 function Layer:New() end
 
 
@@ -735,7 +735,7 @@ function Layer:Clear() end
 function Layer:Delete() end
 
 
----@return Layer The resulting LayerApiWrapper instance
+---@return Layer # The layer that contains the combined content
 function Layer:Squash() end
 
 ---@param destinationLayer Layer The destination layer
@@ -817,187 +817,187 @@ LayerList = {}
 ---@field rad2Deg number A constant that you multiply with a value in radians to convert it to degrees
 Math = {}
 ---@param f number The input value
----@return number The absolute value of f
+---@return number # The absolute value of f
 function Math:Abs(f) end
 
 ---@param f number The input value
----@return number The angle in radians whose cosine is f
+---@return number # The angle in radians whose cosine is f
 function Math:Acos(f) end
 
 ---@param a number The first value
 ---@param b number The second value
----@return boolean True if the difference between the values is less than Math.epsilon
+---@return boolean # True if the difference between the values is less than Math.epsilon
 function Math:Approximately(a, b) end
 
 ---@param f number The input value
----@return number The angle in radians whose sine is f
+---@return number # The angle in radians whose sine is f
 function Math:Asin(f) end
 
 ---@param f number The input value
----@return number The angle in radians whose tangent is f
+---@return number # The angle in radians whose tangent is f
 function Math:Atan(f) end
 
 ---@param y number The numerator value
 ---@param x number The denominator value
----@return number The angle in radians whose tan is y/x
+---@return number # The angle in radians whose tan is y/x
 function Math:Atan2(y, x) end
 
 ---@param f number The input value
----@return number The smallest integer greater to or equal to f
+---@return number # The smallest integer greater to or equal to f
 function Math:Ceil(f) end
 
 ---@param f number The input value
 ---@param min number The minimum value
 ---@param max number The maximum value
----@return number min if f < min, max if f > max otherwise f
+---@return number # min if f < min, max if f > max otherwise f
 function Math:Clamp(f, min, max) end
 
 ---@param value number The input value
----@return number 0 if f < 0, 1 if f > 1 otherwise f
+---@return number # 0 if f < 0, 1 if f > 1 otherwise f
 function Math:Clamp01(value) end
 
 ---@param value number The input value
----@return number The closest power of two
+---@return number # The closest power of two
 function Math:ClosestPowerOfTwo(value) end
 
 ---@param f number The input value in radians
----@return number The cosine of angle f
+---@return number # The cosine of angle f
 function Math:Cos(f) end
 
 ---@param a number The first value in degrees
 ---@param b number The second value in degrees
----@return number The smaller of the two angles in degrees between input and target
+---@return number # The smaller of the two angles in degrees between input and target
 function Math:DeltaAngle(a, b) end
 
 ---@param power number The input value
----@return number Returns e raised to the specified power
+---@return number # Returns e raised to the specified power
 function Math:Exp(power) end
 
 ---@param f number The input value
----@return number The largest integer that is less than or equal to the input
+---@return number # The largest integer that is less than or equal to the input
 function Math:Floor(f) end
 
 ---@param min number The minimum value
 ---@param max number The maximum value
 ---@param t number The input value
----@return number A value between 0 and 1 representing how far t is between min and max
+---@return number # A value between 0 and 1 representing how far t is between min and max
 function Math:InverseLerp(min, max, t) end
 
 ---@param value number The input value
----@return boolean The logarithm of f in base b
+---@return boolean # The logarithm of f in base b
 function Math:IsPowerOfTwo(value) end
 
 ---@param min number The minimum value
 ---@param max number The maximum value
 ---@param t number The input value
----@return number A value between min and max representing how far t is between 0 and 1
+---@return number # A value between min and max representing how far t is between 0 and 1
 function Math:Lerp(min, max, t) end
 
 ---@param min number The start angle in degrees
 ---@param max number The end angle in degrees
 ---@param a number The input value in degrees
----@return number An angle between min and max representing how far t is between 0 and 1
+---@return number # An angle between min and max representing how far t is between 0 and 1
 function Math:LerpAngle(min, max, a) end
 
 ---@param min number The minimum value
 ---@param max number The maximum value
 ---@param t number The input value
----@return number A value representing t scaled from the range 0:1 to a new range min:max
+---@return number # A value representing t scaled from the range 0:1 to a new range min:max
 function Math:LerpUnclamped(min, max, t) end
 
 ---@param f number The input value
 ---@param b number The base
----@return number The logarithm of f in base b
+---@return number # The logarithm of f in base b
 function Math:Log(f, b) end
 
 ---@param f number The input value
----@return number The base 10 logarithm of a specified number
+---@return number # The base 10 logarithm of a specified number
 function Math:Log10(f) end
 
 ---@param a number The first input value
 ---@param b number The second input value
----@return number The largest of a and b
+---@return number # The largest of a and b
 function Math:Max(a, b) end
 
 ---@param values number[] A list of numbers
----@return number The largest value in the list
+---@return number # The largest value in the list
 function Math:Max(values) end
 
 ---@param a number The first input value
 ---@param b number The second input value
----@return number The smaller of a and b
+---@return number # The smaller of a and b
 function Math:Min(a, b) end
 
 ---@param values number[] A list of numbers
----@return number The smallest value in a sequence of float numbers
+---@return number # The smallest value in a sequence of float numbers
 function Math:Min(values) end
 
 ---@param current number The input value
 ---@param target number The target value
 ---@param maxDelta number The largest change allowed each time
----@return number The input + or - maxDelta but clamped to it won't overshoot the target value
+---@return number # The input + or - maxDelta but clamped to it won't overshoot the target value
 function Math:MoveTowards(current, target, maxDelta) end
 
 ---@param value number The input value
----@return number The smallest power of two greater than or equal to the specified number
+---@return number # The smallest power of two greater than or equal to the specified number
 function Math:NextPowerOfTwo(value) end
 
 ---@param x number The input value
 ---@param y number The power to raise to
----@return number Returns the value of the perlin noise as coordinates x,y
+---@return number # Returns the value of the perlin noise as coordinates x,y
 function Math:PerlinNoise(x, y) end
 
 ---@param t number The input value
 ---@param length number The upper limit
----@return number A value that is never larger than length and never smaller than 0
+---@return number # A value that is never larger than length and never smaller than 0
 function Math:PingPong(t, length) end
 
 ---@param f number The input value
 ---@param p number The power to raise to
----@return number Returns f raised to the specified power
+---@return number # Returns f raised to the specified power
 function Math:Pow(f, p) end
 
 ---@param t number The input value
 ---@param length number The upper limit
----@return number A value that is never larger than length and never smaller than 0
+---@return number # A value that is never larger than length and never smaller than 0
 function Math:Repeater(t, length) end
 
 ---@param f number The input value
----@return number The nearest integer value to f
+---@return number # The nearest integer value to f
 function Math:Round(f) end
 
 ---@param f number The input value
----@return number The sign of f
+---@return number # The sign of f
 function Math:Sign(f) end
 
 ---@param f number The input value in radians
----@return number The sine of angle f
+---@return number # The sine of angle f
 function Math:Sin(f) end
 
 ---@param f number The input value
----@return number The square root of f
+---@return number # The square root of f
 function Math:Sqrt(f) end
 
 ---@param from number The lower range
 ---@param to number The upper range
 ---@param t number The input value
----@return number The input smoothly interpolated between the range [from, to] by the ratio t
+---@return number # The input smoothly interpolated between the range [from, to] by the ratio t
 function Math:SmoothStep(from, to, t) end
 
 ---@param f number The input value
----@return number The tangent of an angle
+---@return number # The tangent of an angle
 function Math:Tan(f) end
 
 ---@param f number The input value in radians
----@return number The hyperbolic sine of f
+---@return number # The hyperbolic sine of f
 function Math:Sinh(f) end
 
 ---@param f number The input value in radians
----@return number The hyperbolic cosine of f
+---@return number # The hyperbolic cosine of f
 function Math:Cosh(f) end
 
 ---@param f number The input value in radians
----@return number The hyperbolic tangent of f
+---@return number # The hyperbolic tangent of f
 function Math:Tanh(f) end
 
 
@@ -1012,7 +1012,7 @@ function Math:Tanh(f) end
 ---@field scale number The scale of the Model Widget
 Model = {}
 ---@param filename string The filename of the model to be imported
----@return Model Returns the Model instance
+---@return Model # Returns the Model instance
 function Model:Import(filename) end
 
 
@@ -1038,27 +1038,27 @@ ModelList = {}
 ---@field last Transform Returns the last point in this path
 Path = {}
 
----@return Path 
+---@return Path # 
 function Path:New() end
 
 ---@param transformList Transform[] The list of transforms
----@return Path 
+---@return Path # 
 function Path:New(transformList) end
 
 ---@param positionList Vector3[] The list of positions
----@return Path 
+---@return Path # 
 function Path:New(positionList) end
 
 ---@param index number Index of control point to use
----@return Vector3 
+---@return Vector3 # 
 function Path:GetDirection(index) end
 
 ---@param index number Index of control point to use
----@return Vector3 
+---@return Vector3 # 
 function Path:GetNormal(index) end
 
 ---@param index number Index of control point to use
----@return Vector3 
+---@return Vector3 # 
 function Path:GetTangent(index) end
 
 
@@ -1090,40 +1090,35 @@ function Path:Center() end
 function Path:StartingFrom(index) end
 
 ---@param point Vector3 The 3D position that we are seeking the closest to
----@return number 
+---@return number # 
 function Path:FindClosest(point) end
 
 
----@return number 
+---@return number # 
 function Path:FindMinimumX() end
 
 
----@return number 
+---@return number # 
 function Path:FindMinimumY() end
 
 
----@return number 
+---@return number # 
 function Path:FindMinimumZ() end
 
 
----@return number 
+---@return number # 
 function Path:FindMaximumX() end
 
 
----@return number 
+---@return number # 
 function Path:FindMaximumY() end
 
 
----@return number 
+---@return number # 
 function Path:FindMaximumZ() end
 
 ---@param size? number The size of the cube to fit the path into
 function Path:Normalize(size) end
-
----@param trs Transform[] 
----@param parts number 
----@return Transform[] 
-function Path:_SubdivideSegments(trs, parts) end
 
 ---@param spacing number The space between points in the new path
 function Path:SampleByDistance(spacing) end
@@ -1140,7 +1135,7 @@ function Path:SubdivideSegments(parts) end
 ---@param endTangent Vector3 End tangent
 ---@param resolution number Resolution of the spline
 ---@param tangentStrength? number Strength of the tangent
----@return Path Instance of PathApiWrapper
+---@return Path # A new Path
 function Path:Hermite(startTransform, endTransform, startTangent, endTangent, resolution, tangentStrength) end
 
 
@@ -1150,18 +1145,18 @@ function Path:Hermite(startTransform, endTransform, startTangent, endTangent, re
 ---@field pointCount number Gets the number of points in all paths in the PathList
 PathList = {}
 
----@return PathList 
+---@return PathList # 
 function PathList:New() end
 
----@param pathList Path[] A list of pathApiWrapper objects.
----@return PathList 
+---@param pathList Path[] A list of Paths .
+---@return PathList # 
 function PathList:New(pathList) end
 
 
 function PathList:Draw() end
 
 ---@param text string Input text to generate a path.
----@return PathList 
+---@return PathList # 
 function PathList:FromText(text) end
 
 ---@param path Path The path to be inserted.
@@ -1210,11 +1205,11 @@ function PathList:SampleByCount(count) end
 function PathList:SubdivideSegments(parts) end
 
 
----@return Path A single path
+---@return Path # A single path
 function PathList:Join() end
 
 
----@return Path The path with the most control points
+---@return Path # The path with the most control points
 function PathList:Longest() end
 
 
@@ -1224,15 +1219,15 @@ function PathList:Longest() end
 ---@field last Transform Returns the last point in this path
 Path2d = {}
 
----@return Path2d 
+---@return Path2d # 
 function Path2d:New() end
 
 ---@param positionList Vector2[] The list of points
----@return Path2d 
+---@return Path2d # 
 function Path2d:New(positionList) end
 
 ---@param positionList Vector3[] The list of points
----@return Path2d 
+---@return Path2d # 
 function Path2d:New(positionList) end
 
 ---@param point Vector2 The point to be inserted at the end of the path
@@ -1243,15 +1238,15 @@ function Path2d:Insert(point) end
 function Path2d:Insert(point, index) end
 
 
----@return Path 
+---@return Path # 
 function Path2d:OnX() end
 
 
----@return Path 
+---@return Path # 
 function Path2d:OnY() end
 
 
----@return Path 
+---@return Path # 
 function Path2d:OnZ() end
 
 ---@param transform Transform The transform to be applied to all points in the path
@@ -1263,6 +1258,13 @@ function Path2d:TranslateBy(amount) end
 ---@param amount Rotation The amount by which to rotate the path
 function Path2d:RotateBy(amount) end
 
+---@param scale number The scaling factor to apply to the path
+function Path2d:ScaleBy(scale) end
+
+---@param x number The x scaling factor to apply to the path
+---@param y number The y scaling factor to apply to the path
+function Path2d:ScaleBy(x, y) end
+
 ---@param scale Vector2 The scaling factor to apply to the path
 function Path2d:ScaleBy(scale) end
 
@@ -1273,30 +1275,30 @@ function Path2d:Center() end
 function Path2d:StartingFrom(index) end
 
 ---@param point Vector2 The 3D position that we are seeking the closest to
----@return number 
+---@return number # 
 function Path2d:FindClosest(point) end
 
 
----@return number 
+---@return number # 
 function Path2d:FindMinimumX() end
 
 
----@return number 
+---@return number # 
 function Path2d:FindMinimumY() end
 
 
----@return number 
+---@return number # 
 function Path2d:FindMaximumX() end
 
 
----@return number 
+---@return number # 
 function Path2d:FindMaximumY() end
 
 ---@param size? number The size of the square to fit the path into
 function Path2d:Normalize(size) end
 
 ---@param sides number The number of sides for the polygon
----@return Path2d The new path
+---@return Path2d # The new path
 function Path2d:Polygon(sides) end
 
 ---@param spacing number The space between points in the new pat
@@ -1316,7 +1318,7 @@ function Path2d:Resample(spacing) end
 ---@field rotation Rotation | number[] The 3D orientation of the Pointer
 Pointer = {}
 
----@return Pointer The new pointer
+---@return Pointer # The new pointer
 function Pointer:New() end
 
 
@@ -1336,7 +1338,7 @@ Random = {}
 ---@param saturationMax number Maximum saturation
 ---@param valueMin number Minimum brightness
 ---@param valueMax number Maximum brightness
----@return Color The new random color
+---@return Color # The new random color
 function Random:ColorHSV(hueMin, hueMax, saturationMin, saturationMax, valueMin, valueMax) end
 
 ---@param seed number The seed for the random number generator
@@ -1344,12 +1346,12 @@ function Random:InitState(seed) end
 
 ---@param min number Minimum value
 ---@param max number Maximum value
----@return number A random whole number >= min and <= max
+---@return number # A random whole number >= min and <= max
 function Random:Range(min, max) end
 
 ---@param min number Minimum value
 ---@param max number Maximum value
----@return number The random number  >= min and <= max
+---@return number # The random number  >= min and <= max
 function Random:Range(min, max) end
 
 
@@ -1363,102 +1365,101 @@ function Random:Range(min, max) end
 ---@field right Rotation | number[] A 90 degree clockwise rotation in the y axis (yaw)
 ---@field up Rotation | number[] A 90 degree clockwise rotation in the x axis (pitch)
 ---@field down Rotation | number[] A 90 degree anti-clockwise rotation in the x axis (pitch)
----@field anticlockwise Rotation | number[] A 90 degree anti-clockwise rotation in the z axis (roll)
----@field clockwise Rotation | number[] A 90 degree clockwise rotation in the z axis (roll)
 ---@field normalized Rotation | number[] Converts this rotation to one with the same orientation but with a magnitude of 1
+---@field inverse Rotation | number[] Returns the Inverse of this rotation
 ---@field angle number The angle in degrees of the angle-axis representation of this rotation
 ---@field axis Vector3 | number[] The axis part of the angle-axis representation of this rotation
 Rotation = {}
 ---@param x? number The angle of rotation on the x axis in degrees
 ---@param y? number The angle of rotation on the y axis in degrees
 ---@param z? number The angle of rotation on the z axis in degrees
----@return Rotation 
+---@return Rotation # 
 function Rotation:New(x, y, z) end
 
 ---@param fromDirection Vector3 The starting direction
 ---@param toDirection Vector3 The target direction
----@return Rotation A rotation that would change one direction to the other
+---@return Rotation # A rotation that would change one direction to the other
 function Rotation:SetFromToRotation(fromDirection, toDirection) end
 
 ---@param view Vector3 The direction to look in
----@return Rotation The new Rotation
+---@return Rotation # The new Rotation
 function Rotation:SetLookRotation(view) end
 
 ---@param view Vector3 The direction to look in
 ---@param up Vector3 The vector that defines in which direction is up
----@return Rotation The new Rotation
+---@return Rotation # The new Rotation
 function Rotation:SetLookRotation(view, up) end
 
 ---@param a Rotation The first rotation angle
 ---@param b Rotation The second rotation angle
----@return number Returns the angle in degrees between two rotations
+---@return number # Returns the angle in degrees between two rotations
 function Rotation:Angle(a, b) end
 
 ---@param angle number The angle in degrees
 ---@param axis Vector3 The axis of rotation
----@return Rotation Returns a Quaternion that represents the rotation
+---@return Rotation # Returns a Quaternion that represents the rotation
 function Rotation:AngleAxis(angle, axis) end
 
 ---@param a Rotation The first rotation
 ---@param b Rotation The second rotation
----@return number Returns the dot product between two rotations
+---@return number # Returns the dot product between two rotations
 function Rotation:Dot(a, b) end
 
 ---@param from Vector3 The initial direction vector
 ---@param to Vector3 The target direction vector
----@return Rotation Returns a Quaternion that represents the rotation
+---@return Rotation # Returns a Quaternion that represents the rotation
 function Rotation:FromToRotation(from, to) end
-
----@param a Rotation The rotation to invert
----@return Rotation Returns the inverse of the provided rotation
-function Rotation:Inverse(a) end
 
 ---@param a Rotation The first rotation
 ---@param b Rotation The second rotation
 ---@param t number A ratio between 0 and 1
----@return Rotation Interpolated rotation
+---@return Rotation # Interpolated rotation
 function Rotation:Lerp(a, b, t) end
 
 ---@param a Rotation The first rotation
 ---@param b Rotation The second rotation
 ---@param t number A ratio between 0 and 1
----@return Rotation Interpolated rotation
+---@return Rotation # Interpolated rotation
 function Rotation:LerpUnclamped(a, b, t) end
 
 ---@param forward Vector3 Vector3 forward direction
----@return Rotation Rotation with specified forward direction
+---@return Rotation # Rotation with specified forward direction
 function Rotation:LookRotation(forward) end
 
 ---@param forward Vector3 Vector3 forward direction
 ---@param up Vector3 Vector3 up direction
----@return Rotation Rotation with specified forward and up directions
+---@return Rotation # Rotation with specified forward and up directions
 function Rotation:LookRotation(forward, up) end
 
 ---@param a Rotation The input rotation
----@return Rotation Normalized rotation
+---@return Rotation # Normalized rotation
 function Rotation:Normalize(a) end
 
 ---@param from Rotation Rotation from
 ---@param to Rotation Rotation to
 ---@param maxDegreesDelta number Max degrees delta
----@return Rotation Rotation rotated from towards to
+---@return Rotation # Rotation rotated from towards to
 function Rotation:RotateTowards(from, to, maxDegreesDelta) end
 
 ---@param a Rotation The first rotation
 ---@param b Rotation The second rotation
 ---@param t number A ratio between 0 and 1
----@return Rotation Spherically interpolated rotation
+---@return Rotation # Spherically interpolated rotation
 function Rotation:Slerp(a, b, t) end
 
 ---@param a Rotation The first rotation
 ---@param b Rotation The second rotation
 ---@param t number A ratio
----@return Rotation Spherically interpolated rotation
+---@return Rotation # Spherically interpolated rotation
 function Rotation:SlerpUnclamped(a, b, t) end
 
 ---@param other Rotation The other rotation
----@return Rotation The rotation that represents applying both rotations in turn
+---@return Rotation # The rotation that represents applying both rotations in turn
 function Rotation:Multiply(other) end
+
+---@param other Rotation The rotation to compare
+---@return boolean # true if this rotation is not equal to the specified rotation; otherwise, false
+function Rotation:NotEquals(other) end
 
 
 
@@ -1587,15 +1588,15 @@ function Stroke:SelectRange(from, to) end
 
 ---@param from number Start stroke index (0 is the first stroke that was drawn
 ---@param to number End stroke index
----@return Stroke 
+---@return Stroke # 
 function Stroke:JoinRange(from, to) end
 
 
----@return Stroke 
+---@return Stroke # 
 function Stroke:JoinToPrevious() end
 
 ---@param stroke2 Stroke The stroke to join to this one
----@return Stroke 
+---@return Stroke # 
 function Stroke:Join(stroke2) end
 
 ---@param name string Name of the file to be merged
@@ -1668,13 +1669,13 @@ function StrokeList:SetShaderVector(parameter, x, y, z, w) end
 ---@class Svg
 Svg = {}
 ---@param svgPath string The SVG path string to parse
----@return PathList Returns a PathList representing the parsed SVG path
+---@return PathList # Returns a PathList representing the parsed SVG path
 function Svg:ParsePathString(svgPath) end
 
 ---@param svg string A text string that is valid SVG document
 ---@param offsetPerPath? number Each path can be lifted to form a layered result
 ---@param includeColors? boolean Whether the colors from the SVG are used
----@return PathList Returns a PathList representing the parsed SVG document
+---@return PathList # Returns a PathList representing the parsed SVG document
 function Svg:ParseDocument(svg, offsetPerPath, includeColors) end
 
 ---@param svg string The SVG path string to draw
@@ -1697,30 +1698,30 @@ function Symmetry:SummonWidget() end
 
 ---@param angle number The angle in degrees to sample the radius at
 ---@param minorRadius number The minor radius of the ellipse (The major radius is always 1)
----@return number 
+---@return number # 
 function Symmetry:Ellipse(angle, minorRadius) end
 
 ---@param angle number The angle in degrees to sample the radius at
----@return number 
+---@return number # 
 function Symmetry:Square(angle) end
 
 ---@param angle number The angle in degrees to sample the radius at
 ---@param n number The exponent of the superellipse. This determines the roundness vs sharpness of the corners of the superellipse. For n = 2, you get an ellipse. As n increases, the shape becomes more rectangular with sharper corners. As n approaches infinity, the superellipse becomes a rectangle. If n is less than 1, the shape becomes a star with pointed tips.
 ---@param a? number The horizontal radius of the superellipse
 ---@param b? number The vertical radius of the superellipse
----@return number 
+---@return number # 
 function Symmetry:Superellipse(angle, n, a, b) end
 
 ---@param angle number The angle in degrees to sample the radius at
 ---@param size number Half the length of a side or the distance from the center to any edge midpoint
 ---@param cornerRadius number The radius of the rounded corners
----@return number 
+---@return number # 
 function Symmetry:Rsquare(angle, size, cornerRadius) end
 
 ---@param angle number The angle in degrees to sample the radius at
 ---@param numSides number The number of sides of the polygon
 ---@param radius? number The distance from the center to any vertex
----@return number 
+---@return number # 
 function Symmetry:Polygon(angle, numSides, radius) end
 
 
@@ -1733,7 +1734,7 @@ function Symmetry:AddColor(color) end
 function Symmetry:SetColors(colors) end
 
 
----@return Color[] 
+---@return Color[] # 
 function Symmetry:GetColors() end
 
 ---@param brush string The brush to add. Either the name or the GUID of the brush
@@ -1746,15 +1747,15 @@ function Symmetry:ClearBrushes() end
 function Symmetry:SetBrushes(brushes) end
 
 
----@return string[] 
+---@return string[] # 
 function Symmetry:GetBrushNames() end
 
 
----@return string[] 
+---@return string[] # 
 function Symmetry:GetBrushGuids() end
 
 ---@param path Path The path to convert
----@return Path 
+---@return Path # 
 function Symmetry:PathToPolar(path) end
 
 
@@ -1776,7 +1777,7 @@ function Symmetry:PathToPolar(path) end
 ---@field wallpaperSkewY number The skew of the wallpaper symmetry in the Y axis
 SymmetrySettings = {}
 
----@return SymmetrySettings 
+---@return SymmetrySettings # 
 function SymmetrySettings:Duplicate() end
 
 
@@ -1808,50 +1809,86 @@ function Timer:Unset(fn) end
 ---@field identity Transform A transform that does nothing. No translation, rotation or scaling
 Transform = {}
 ---@param transform Transform The transform to apply
----@return Transform 
+---@return Transform # 
 function Transform:TransformBy(transform) end
 
 ---@param translation Vector3 The translation to apply
----@return Transform 
+---@return Transform # 
 function Transform:TranslateBy(translation) end
 
+---@param x number The x translation to apply
+---@param y number The y translation to apply
+---@param z number The z translation to apply
+---@return Transform # 
+function Transform:TranslateBy(x, y, z) end
+
 ---@param rotation Rotation The rotation to apply
----@return Transform 
+---@return Transform # 
 function Transform:RotateBy(rotation) end
 
+---@param x number The x rotation to apply
+---@param y number The y rotation to apply
+---@param z number The z rotation to apply
+---@return Transform # 
+function Transform:RotateBy(x, y, z) end
+
 ---@param scale number The scale value to apply
----@return Transform 
+---@return Transform # 
 function Transform:ScaleBy(scale) end
 
 ---@param translation Vector3 The translation amount
 ---@param rotation Rotation The rotation amount
 ---@param scale number The scale amount
----@return Transform 
+---@return Transform # 
 function Transform:New(translation, rotation, scale) end
 
 ---@param translation Vector3 The translation amount
 ---@param rotation Rotation The rotation amount
----@return Transform 
+---@return Transform # 
 function Transform:New(translation, rotation) end
 
 ---@param translation Vector3 The translation amount
----@return Transform 
+---@return Transform # 
 function Transform:New(translation) end
 
 ---@param translation Vector3 The translation amount
 ---@param scale number The scale amount
----@return Transform 
+---@return Transform # 
 function Transform:New(translation, scale) end
 
 ---@param x number The x translation amount
 ---@param y number The y translation amount
 ---@param z number The z translation amount
----@return Transform 
-function Transform:New(x, y, z) end
+---@return Transform # 
+function Transform:Position(x, y, z) end
+
+---@param position Vector3 The Vector3 position
+---@return Transform # 
+function Transform:Position(position) end
+
+---@param x number The x rotation amount
+---@param y number The y rotation amount
+---@param z number The z rotation amount
+---@return Transform # 
+function Transform:Rotation(x, y, z) end
+
+---@param rotation Rotation The rotation
+---@return Transform # 
+function Transform:Rotation(rotation) end
+
+---@param amount number The scale amount
+---@return Transform # 
+function Transform:Scale(amount) end
 
 ---@param other Transform The Transform to apply to this one
----@return Transform 
+---@return Transform # 
 function Transform:Multiply(other) end
+
+---@param a Transform The first transform
+---@param b Transform The second transform
+---@param t number The value between 0 and 1 that controls how far between a and b the new transform is
+---@return Transform # A transform that blends between a and b based on the value of t
+function Transform:Lerp(a, b, t) end
 
 
 
@@ -1878,135 +1915,135 @@ User = {}
 Vector2 = {}
 ---@param x? number The x coordinate
 ---@param y? number The y coordinate
----@return Vector2 
+---@return Vector2 # 
 function Vector2:New(x, y) end
 
 ---@param other Vector2 The other vector
----@return number 
+---@return number # 
 function Vector2:Angle(other) end
 
 ---@param maxLength number The maximum length of the new vector
----@return Vector2 
+---@return Vector2 # 
 function Vector2:ClampMagnitude(maxLength) end
 
 ---@param other Vector2 The other vector
----@return number 
+---@return number # 
 function Vector2:Distance(other) end
 
 ---@param a Vector2 The first vector
 ---@param b Vector2 The second vector
----@return number 
+---@return number # 
 function Vector2:Dot(a, b) end
 
 ---@param a Vector2 The first point
 ---@param b Vector2 The second point
 ---@param t number The value between 0 and 1 that controls how far between a and b the new point is
----@return Vector2 A point somewhere between a and b based on the value of t
+---@return Vector2 # A point somewhere between a and b based on the value of t
 function Vector2:Lerp(a, b, t) end
 
 ---@param a Vector2 The first point
 ---@param b Vector2 The second point
 ---@param t number The value that controls how far between (or beyond) a and b the new point is
----@return Vector2 A point somewhere between a and b based on the value of t
+---@return Vector2 # A point somewhere between a and b based on the value of t
 function Vector2:LerpUnclamped(a, b, t) end
 
 ---@param a Vector2 The first vector
 ---@param b Vector2 The second vector
----@return Vector2 
+---@return Vector2 # 
 function Vector2:Max(a, b) end
 
 ---@param a Vector2 The first vector
 ---@param b Vector2 The second vector
----@return Vector2 
+---@return Vector2 # 
 function Vector2:Min(a, b) end
 
 ---@param target Vector2 The target point
 ---@param maxDistanceDelta number The maximum distance to move
----@return Vector2 
+---@return Vector2 # 
 function Vector2:MoveTowards(target, maxDistanceDelta) end
 
 ---@param normal Vector2 The normal vector
----@return Vector2 
+---@return Vector2 # 
 function Vector2:Reflect(normal) end
 
 ---@param other Vector2 The vector to scale by
----@return Vector2 
+---@return Vector2 # 
 function Vector2:Scale(other) end
 
 ---@param other Vector2 The other vector
----@return number 
+---@return number # 
 function Vector2:SignedAngle(other) end
 
 ---@param a Vector2 The first point
 ---@param b Vector2 The second point
 ---@param t number The value that controls how far between (or beyond) a and b the new point is
----@return Vector2 A point somewhere between a and b based on the value of t
+---@return Vector2 # A point somewhere between a and b based on the value of t
 function Vector2:Slerp(a, b, t) end
 
 ---@param a Vector2 The first point
 ---@param b Vector2 The second point
 ---@param t number The value that controls how far between (or beyond) a and b the new point is
----@return Vector2 A point somewhere between a and b based on the value of t
+---@return Vector2 # A point somewhere between a and b based on the value of t
 function Vector2:SlerpUnclamped(a, b, t) end
 
 ---@param degrees number The angle in degrees
----@return Vector2 
+---@return Vector2 # 
 function Vector2:PointOnCircle(degrees) end
 
 
----@return Vector3 
+---@return Vector3 # 
 function Vector2:OnX() end
 
 
----@return Vector3 
+---@return Vector3 # 
 function Vector2:OnY() end
 
 
----@return Vector3 
+---@return Vector3 # 
 function Vector2:OnZ() end
 
 ---@param other Vector2 The other vector
----@return Vector2 
+---@return Vector2 # 
 function Vector2:Add(other) end
 
 ---@param x number The x value
 ---@param y number The y value
----@return Vector2 
+---@return Vector2 # 
 function Vector2:Add(x, y) end
 
 ---@param other Vector2 The other vector
----@return Vector2 
+---@return Vector2 # 
 function Vector2:Subtract(other) end
 
 ---@param x number The x value
 ---@param y number The y value
----@return Vector2 
+---@return Vector2 # 
 function Vector2:Subtract(x, y) end
 
 ---@param value number The value to multiply by
----@return Vector2 
+---@return Vector2 # 
 function Vector2:Multiply(value) end
 
 ---@param other Vector2 The other vector
----@return Vector2 
+---@return Vector2 # 
 function Vector2:ScaleBy(other) end
 
 ---@param x number The x value
 ---@param y number The y value
----@return Vector2 
+---@return Vector2 # 
 function Vector2:ScaleBy(x, y) end
 
 ---@param value number The value to divide by
----@return Vector2 
+---@return Vector2 # 
 function Vector2:Divide(value) end
 
 ---@param other Vector2 The other vector
----@return boolean 
+---@return boolean # 
 function Vector2:NotEquals(other) end
 
 ---@param x number The x value
 ---@param y number The y value
----@return boolean 
+---@return boolean # 
 function Vector2:NotEquals(x, y) end
 
 
@@ -2032,134 +2069,134 @@ Vector3 = {}
 ---@param x number The x coordinate
 ---@param y number The y coordinate
 ---@param z number The z coordinate
----@return Vector3 
+---@return Vector3 # 
 function Vector3:New(x, y, z) end
 
 ---@param other Vector3 The other vector
----@return number 
+---@return number # 
 function Vector3:Angle(other) end
 
 ---@param maxLength number The maximum length of the returned vector
----@return Vector3 
+---@return Vector3 # 
 function Vector3:ClampMagnitude(maxLength) end
 
 ---@param a Vector3 The first vector
 ---@param b Vector3 The second vector
----@return Vector3 
+---@return Vector3 # 
 function Vector3:Cross(a, b) end
 
 ---@param other Vector3 The other vector
----@return number 
+---@return number # 
 function Vector3:Distance(other) end
 
 ---@param a Vector3 The first point
 ---@param b Vector3 The second point
 ---@param t number The value between 0 and 1 that controls how far between a and b the new point is
----@return Vector3 A point somewhere between a and b based on the value of t
+---@return Vector3 # A point somewhere between a and b based on the value of t
 function Vector3:Lerp(a, b, t) end
 
 ---@param a Vector3 The first point
 ---@param b Vector3 The second point
 ---@param t number The value that controls how far between (or beyond) a and b the new point is
----@return Vector3 A point somewhere between a and b based on the value of t
+---@return Vector3 # A point somewhere between a and b based on the value of t
 function Vector3:LerpUnclamped(a, b, t) end
 
 ---@param a Vector3 The first vector
 ---@param b Vector3 The second vector
----@return Vector3 
+---@return Vector3 # 
 function Vector3:Max(a, b) end
 
 ---@param a Vector3 The first vector
 ---@param b Vector3 The second vector
----@return Vector3 
+---@return Vector3 # 
 function Vector3:Min(a, b) end
 
 ---@param target Vector3 The target point
 ---@param maxDistanceDelta number The maximum distance to move towards the target point
----@return Vector3 
+---@return Vector3 # 
 function Vector3:MoveTowards(target, maxDistanceDelta) end
 
 ---@param other Vector3 The other vector
----@return Vector3 
+---@return Vector3 # 
 function Vector3:Project(other) end
 
 ---@param planeNormal Vector3 The normal vector of the plane
----@return Vector3 
+---@return Vector3 # 
 function Vector3:ProjectOnPlane(planeNormal) end
 
 ---@param normal Vector3 The normal vector
----@return Vector3 
+---@return Vector3 # 
 function Vector3:Reflect(normal) end
 
 ---@param target Vector3 The target vector
 ---@param maxRadiansDelta number The maximum change in angle
 ---@param maxMagnitudeDelta number The maximum allowed change in vector magnitude for this rotation
----@return Vector3 
+---@return Vector3 # 
 function Vector3:RotateTowards(target, maxRadiansDelta, maxMagnitudeDelta) end
 
 ---@param other Vector3 The other vector
----@return Vector3 
+---@return Vector3 # 
 function Vector3:ScaleBy(other) end
 
 ---@param other Vector3 The other vector
 ---@param axis Vector3 The axis around which the vectors are rotated
----@return number 
+---@return number # 
 function Vector3:SignedAngle(other, axis) end
 
 ---@param a Vector3 The first point
 ---@param b Vector3 The second point
 ---@param t number The value that controls how far between (or beyond) a and b the new point is
----@return Vector3 A point somewhere between a and b based on the value of t
+---@return Vector3 # A point somewhere between a and b based on the value of t
 function Vector3:Slerp(a, b, t) end
 
 ---@param a Vector3 The first point
 ---@param b Vector3 The second point
 ---@param t number The value that controls how far between (or beyond) a and b the new point is
----@return Vector3 A point somewhere between a and b based on the value of t
+---@return Vector3 # A point somewhere between a and b based on the value of t
 function Vector3:SlerpUnclamped(a, b, t) end
 
 ---@param other Vector3 The other vector
----@return Vector3 
+---@return Vector3 # 
 function Vector3:Add(other) end
 
 ---@param x number The x value
 ---@param y number The y value
 ---@param z number The z value
----@return Vector3 
+---@return Vector3 # 
 function Vector3:Add(x, y, z) end
 
 ---@param other Vector3 The vector to subtract
----@return Vector3 
+---@return Vector3 # 
 function Vector3:Subtract(other) end
 
 ---@param x number The x value
 ---@param y number The y value
 ---@param z number The z value
----@return Vector3 
+---@return Vector3 # 
 function Vector3:Subtract(x, y, z) end
 
 ---@param value number The scalar value
----@return Vector3 
+---@return Vector3 # 
 function Vector3:Multiply(value) end
 
 ---@param x number The x value
 ---@param y number The y value
 ---@param z number The z value
----@return Vector3 
+---@return Vector3 # 
 function Vector3:ScaleBy(x, y, z) end
 
 ---@param value number The scalar value
----@return Vector3 
+---@return Vector3 # 
 function Vector3:Divide(value) end
 
 ---@param other Vector3 The other vector
----@return boolean 
+---@return boolean # 
 function Vector3:NotEquals(other) end
 
 ---@param x number The x value
 ---@param y number The y value
 ---@param z number The z value
----@return boolean 
+---@return boolean # 
 function Vector3:NotEquals(x, y, z) end
 
 
@@ -2174,7 +2211,7 @@ function Vector3:NotEquals(x, y, z) end
 ---@field scale number The scale of the Video Widget
 Video = {}
 ---@param location string The filename of the video file to import from the user's MediaLibrary/Videos folder
----@return Video 
+---@return Video # 
 function Video:Import(location) end
 
 
@@ -2247,11 +2284,11 @@ function Wand:ResizeHistory(size) end
 function Wand:SetHistorySize(size) end
 
 ---@param back number How far back in the history to get the position from
----@return Vector3 
+---@return Vector3 # 
 function Wand:PastPosition(back) end
 
 ---@param back number How far back in the history to get the rotation from
----@return Rotation 
+---@return Rotation # 
 function Wand:PastRotation(back) end
 
 
@@ -2260,72 +2297,72 @@ function Wand:PastRotation(back) end
 Waveform = {}
 ---@param time number The time to sample the waveform at
 ---@param frequency number The frequency of the wave
----@return number The value of the wave sampled at the given time
+---@return number # The value of the wave sampled at the given time
 function Waveform:Sine(time, frequency) end
 
 ---@param time number The time to sample the waveform at
 ---@param frequency number The frequency of the wave
----@return number The value of the wave sampled at the given time
+---@return number # The value of the wave sampled at the given time
 function Waveform:Cosine(time, frequency) end
 
 ---@param time number The time to sample the waveform at
 ---@param frequency number The frequency of the wave
----@return number The value of the wave sampled at the given time
+---@return number # The value of the wave sampled at the given time
 function Waveform:Triangle(time, frequency) end
 
 ---@param time number The time to sample the waveform at
 ---@param frequency number The frequency of the wave
----@return number The value of the wave sampled at the given time
+---@return number # The value of the wave sampled at the given time
 function Waveform:Sawtooth(time, frequency) end
 
 ---@param time number The time to sample the waveform at
 ---@param frequency number The frequency of the wave
----@return number The value of the wave sampled at the given time
+---@return number # The value of the wave sampled at the given time
 function Waveform:Square(time, frequency) end
 
 ---@param time number The time to sample the waveform at
 ---@param frequency number The frequency of the wave
 ---@param pulseWidth number The width of the pulse
----@return number The value of the wave sampled at the given time
+---@return number # The value of the wave sampled at the given time
 function Waveform:Pulse(time, frequency, pulseWidth) end
 
 ---@param time number The time to sample the waveform at
 ---@param frequency number The frequency of the wave
----@return number The value of the wave sampled at the given time
+---@return number # The value of the wave sampled at the given time
 function Waveform:Exponent(time, frequency) end
 
 ---@param time number The time to sample the waveform at
 ---@param frequency number The frequency of the wave
 ---@param power number The power exponent of the wave
----@return number The value of the wave sampled at the given time
+---@return number # The value of the wave sampled at the given time
 function Waveform:Power(time, frequency, power) end
 
 ---@param time number The time to sample the waveform at
 ---@param frequency number The frequency of the wave
----@return number The value of the wave sampled at the given time
+---@return number # The value of the wave sampled at the given time
 function Waveform:Parabolic(time, frequency) end
 
 ---@param time number The time to sample the waveform at
 ---@param frequency number The frequency of the wave
 ---@param exponent number The exponent of the wave
----@return number The value of the wave sampled at the given time
+---@return number # The value of the wave sampled at the given time
 function Waveform:ExponentialSawtooth(time, frequency, exponent) end
 
 ---@param time number The time to sample the waveform at
 ---@param frequency number The frequency of the wave
----@return number The value of the wave sampled at the given time
+---@return number # The value of the wave sampled at the given time
 function Waveform:PerlinNoise(time, frequency) end
 
 
----@return number The value of the wave sampled at the given time
+---@return number # The value of the wave sampled at the given time
 function Waveform:WhiteNoise() end
 
 ---@param previous number The previous calculated value to feed back into the function
----@return number The value of the wave sampled at the given time
+---@return number # The value of the wave sampled at the given time
 function Waveform:BrownNoise(previous) end
 
 ---@param previous number The previous calculated value to feed back into the function
----@return number The value of the wave sampled at the given time
+---@return number # The value of the wave sampled at the given time
 function Waveform:BlueNoise(previous) end
 
 ---@param time number The time to start sampling the waveform at
@@ -2333,7 +2370,7 @@ function Waveform:BlueNoise(previous) end
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
 ---@param amplitude? number The amplitude of the generated waveform
----@return number[] An array of float values
+---@return number[] # An array of float values
 function Waveform:Sine(time, frequency, duration, sampleRate, amplitude) end
 
 ---@param time number The time to start sampling the waveform at
@@ -2341,7 +2378,7 @@ function Waveform:Sine(time, frequency, duration, sampleRate, amplitude) end
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
 ---@param amplitude? number The amplitude of the generated waveform
----@return number[] An array of float values
+---@return number[] # An array of float values
 function Waveform:Cosine(time, frequency, duration, sampleRate, amplitude) end
 
 ---@param time number The time to start sampling the waveform at
@@ -2349,7 +2386,7 @@ function Waveform:Cosine(time, frequency, duration, sampleRate, amplitude) end
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
 ---@param amplitude? number The amplitude of the generated waveform
----@return number[] An array of float values
+---@return number[] # An array of float values
 function Waveform:Triangle(time, frequency, duration, sampleRate, amplitude) end
 
 ---@param time number The time to start sampling the waveform at
@@ -2357,7 +2394,7 @@ function Waveform:Triangle(time, frequency, duration, sampleRate, amplitude) end
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
 ---@param amplitude? number The amplitude of the generated waveform
----@return number[] An array of float values
+---@return number[] # An array of float values
 function Waveform:Sawtooth(time, frequency, duration, sampleRate, amplitude) end
 
 ---@param time number The time to start sampling the waveform at
@@ -2365,7 +2402,7 @@ function Waveform:Sawtooth(time, frequency, duration, sampleRate, amplitude) end
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
 ---@param amplitude? number The amplitude of the generated waveform
----@return number[] An array of float values
+---@return number[] # An array of float values
 function Waveform:Square(time, frequency, duration, sampleRate, amplitude) end
 
 ---@param time number The time to start sampling the waveform at
@@ -2373,7 +2410,7 @@ function Waveform:Square(time, frequency, duration, sampleRate, amplitude) end
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
 ---@param amplitude? number The amplitude of the generated waveform
----@return number[] An array of float values
+---@return number[] # An array of float values
 function Waveform:Exponent(time, frequency, duration, sampleRate, amplitude) end
 
 ---@param time number The time to start sampling the waveform at
@@ -2381,7 +2418,7 @@ function Waveform:Exponent(time, frequency, duration, sampleRate, amplitude) end
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
 ---@param amplitude? number The amplitude of the generated waveform
----@return number[] An array of float values
+---@return number[] # An array of float values
 function Waveform:Parabolic(time, frequency, duration, sampleRate, amplitude) end
 
 ---@param time number The time to start sampling the waveform at
@@ -2390,7 +2427,7 @@ function Waveform:Parabolic(time, frequency, duration, sampleRate, amplitude) en
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
 ---@param amplitude? number The amplitude of the generated waveform
----@return number[] An array of float values
+---@return number[] # An array of float values
 function Waveform:Pulse(time, frequency, pulseWidth, duration, sampleRate, amplitude) end
 
 ---@param time number The time to start sampling the waveform at
@@ -2399,7 +2436,7 @@ function Waveform:Pulse(time, frequency, pulseWidth, duration, sampleRate, ampli
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
 ---@param amplitude? number The amplitude of the generated waveform
----@return number[] An array of float values
+---@return number[] # An array of float values
 function Waveform:Power(time, frequency, power, duration, sampleRate, amplitude) end
 
 ---@param time number The time to start sampling the waveform at
@@ -2408,7 +2445,7 @@ function Waveform:Power(time, frequency, power, duration, sampleRate, amplitude)
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
 ---@param amplitude? number The amplitude of the generated waveform
----@return number[] An array of float values
+---@return number[] # An array of float values
 function Waveform:ExponentialSawtoothWave(time, frequency, exponent, duration, sampleRate, amplitude) end
 
 ---@param time number The time to start sampling the waveform at
@@ -2416,25 +2453,25 @@ function Waveform:ExponentialSawtoothWave(time, frequency, exponent, duration, s
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
 ---@param amplitude? number The amplitude of the generated waveform
----@return number[] An array of float values
+---@return number[] # An array of float values
 function Waveform:PerlinNoise(time, frequency, duration, sampleRate, amplitude) end
 
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
 ---@param amplitude? number The amplitude of the generated waveform
----@return number[] An array of float values
+---@return number[] # An array of float values
 function Waveform:WhiteNoise(duration, sampleRate, amplitude) end
 
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
 ---@param amplitude? number The amplitude of the generated waveform
----@return number[] An array of float values
+---@return number[] # An array of float values
 function Waveform:BrownNoise(duration, sampleRate, amplitude) end
 
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
 ---@param amplitude? number The amplitude of the generated waveform
----@return number[] An array of float values
+---@return number[] # An array of float values
 function Waveform:BlueNoise(duration, sampleRate, amplitude) end
 
 

@@ -263,7 +263,7 @@ namespace TiltBrush
         {
             Vector3 directionVector = ApiManager.Instance.BrushRotation * Vector3.forward;
             var end = directionVector * distance;
-            var path = new List<List<TrTransform>> {new List<TrTransform>{TrTransform.identity, TrTransform.T(end)}};
+            var path = new List<List<TrTransform>> { new List<TrTransform> { TrTransform.identity, TrTransform.T(end) } };
             DrawStrokes.DrawNestedTrList(path, TrTransform.T(ApiManager.Instance.BrushPosition));
             ApiManager.Instance.BrushPosition += end;
         }
@@ -393,7 +393,7 @@ namespace TiltBrush
                 videoWidget.Show(true);
                 cmd.SetWidgetCost(videoWidget.GetTiltMeterCost());
                 // videoWidget.VideoController.Playing = true;
-                UnityAsyncAwaitUtil.AsyncCoroutineRunner.Instance.StartCoroutine(video.PrepareVideoPlayer(() => {}));
+                UnityAsyncAwaitUtil.AsyncCoroutineRunner.Instance.StartCoroutine(video.PrepareVideoPlayer(() => { }));
             }
             return videoWidget;
         }

@@ -24,7 +24,8 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("All the strokes on this layer")]
-        public StrokeListApiWrapper strokes {
+        public StrokeListApiWrapper strokes
+        {
             get
             {
                 var batches = _CanvasScript.BatchManager.AllBatches();
@@ -35,7 +36,8 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("All the images on this layer")]
-        public ImageListApiWrapper images {
+        public ImageListApiWrapper images
+        {
             get
             {
                 var imageWidgets = _CanvasScript.transform.GetComponentsInChildren<ImageWidget>().Where(w => w.gameObject.activeSelf);
@@ -51,7 +53,8 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("All the videos on this layer")]
-        public VideoListApiWrapper videos {
+        public VideoListApiWrapper videos
+        {
             get
             {
                 var videoWidgets = _CanvasScript.transform.GetComponentsInChildren<VideoWidget>().Where(w => w.gameObject.activeSelf);
@@ -60,7 +63,8 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("All the models on this layer")]
-        public ModelListApiWrapper models {
+        public ModelListApiWrapper models
+        {
             get
             {
                 var modelWidgets = _CanvasScript.transform.GetComponentsInChildren<ModelWidget>().Where(w => w.gameObject.activeSelf);
@@ -69,7 +73,8 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("All the guides on this layer")]
-        public GuideListApiWrapper guides {
+        public GuideListApiWrapper guides
+        {
             get
             {
                 var guideWidgets = _CanvasScript.transform.GetComponentsInChildren<StencilWidget>().Where(w => w.gameObject.activeSelf);
@@ -78,7 +83,8 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("All the camera paths on this layer")]
-        public CameraPathListApiWrapper cameraPaths {
+        public CameraPathListApiWrapper cameraPaths
+        {
             get
             {
                 var cameraPathWidgets = _CanvasScript.transform.GetComponentsInChildren<CameraPathWidget>().Where(w => w.gameObject.activeSelf);
@@ -87,7 +93,8 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("All the groups on this layer")]
-        public GroupListApiWrapper groups {
+        public GroupListApiWrapper groups
+        {
             get
             {
                 var tags = new HashSet<SketchGroupTag>();
@@ -199,7 +206,7 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Combines this layer and the one above it. If this layer is the first layer do nothing")]
-        [LuaDocsReturnValue("The resulting LayerApiWrapper instance")]
+        [LuaDocsReturnValue("The layer that contains the combined content")]
         [LuaDocsExample(@"combinedLayer = myLayer:Squash()")]
         public LayerApiWrapper Squash()
         {
