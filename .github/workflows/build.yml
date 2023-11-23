@@ -43,8 +43,6 @@ jobs:
       description: ${{ steps.github.outputs.description}}
       itchchannelname: ${{ steps.version.outputs.itchchannelname }}
     steps:
-      - name: Set masking
-        run: echo "::add-mask::$UNITY_PASSWORD"
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -213,6 +211,8 @@ jobs:
             extraoptions: -btb-il2cpp -btb-disableAccountLogins
 
     steps:
+      - name: Set masking
+        run: echo "::add-mask::$UNITY_PASSWORD"
       - name: Free extra space
         # This takes several minutes, so we only do it where required. As of 12/10/2023, this increases free space from 18GB to 41GB
         if: matrix.targetPlatform == 'Android' || matrix.targetPlatform == 'StandaloneWindows64'
