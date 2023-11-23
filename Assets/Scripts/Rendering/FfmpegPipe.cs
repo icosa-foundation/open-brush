@@ -148,7 +148,7 @@ namespace TiltBrush
             {
                 traverseToApp = "../../";
             }
-            else if (Application.platform == RuntimePlatform.WindowsPlayer)
+            else if (Application.platform == RuntimePlatform.WindowsPlayer || Application.isEditor)
             {
                 traverseToApp = "../";
             }
