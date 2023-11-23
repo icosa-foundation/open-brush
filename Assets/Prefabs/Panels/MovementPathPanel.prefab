@@ -2277,7 +2277,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 3594904241839047799}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
+  m_Script: {fileID: 11500000, guid: 885caf52e55fe154480d179c15dc4421, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
@@ -2343,6 +2343,8 @@ MonoBehaviour:
   m_ToggleOnTexture: {fileID: 2800000, guid: 004dcde2a5e59f24495c0d00964e99c3, type: 3}
   m_AllowUnavailable: 1
   m_LinkedUIObject: {fileID: 0}
+  m_CameraRecordUnsupportedPopup: {fileID: 1106918886213026712, guid: 8478748b6046ca946b96439cff529a6e,
+    type: 3}
   references:
     version: 2
     RefIds: []

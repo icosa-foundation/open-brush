@@ -3263,6 +3263,14 @@ MonoBehaviour:
     m_Key: SETTINGS_PANEL_LOCALE_BUTTON_POPUP
     m_Metadata:
       m_Items: []
+  - m_Id: 151489918612377600
+    m_Key: POPUP_RECORD_UNSUPPORTED_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151490030713540608
+    m_Key: POPUP_RECORD_UNSUPPORTED_TEXT
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
