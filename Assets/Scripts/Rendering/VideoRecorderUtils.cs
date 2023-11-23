@@ -242,7 +242,7 @@ namespace TiltBrush
         /// has just been recorded.
         static void CreateOfflineRenderBatchFile(string sketchFile, string usdaFile)
         {
-#if UNITY_STANDALONE_WINDOWS || UNITY_EDITOR_WINDOWS
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
             string batFile = Path.ChangeExtension(usdaFile, ".HQ_Render.bat");
             var pathSections = Application.dataPath.Split('/').ToArray();
             var exePath = String.Join("/", pathSections.Take(pathSections.Length - 1).ToArray());
