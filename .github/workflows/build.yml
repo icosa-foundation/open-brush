@@ -13,12 +13,10 @@ on:  # yamllint disable-line rule:truthy
 
 env:
   UNITY_VERSION: "2021.3.30f1"
-  UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-  UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
   UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
-  # If UNITY_SERIAL is not set, then use a hardcoded license. Otherwise, don't set this, so the game-ci actions will use EMAIL/PASS/SERIAL
-  UNITY_LICENSE: ${{ fromJSON('["<?xml version=\"1.0\" encoding=\"UTF-8\"?><root>\n    <License id=\"Terms\">\n        <MachineBindings>\n            <Binding Key=\"1\" Value=\"576562626572264761624c65526f7578\"/>\n            <Binding Key=\"2\" Value=\"576562626572264761624c65526f7578\"/>\n        </MachineBindings>\n        <MachineID Value=\"D7nTUnjNAmtsUMcnoyrqkgIbYdM=\"/>\n        <SerialHash Value=\"56bce8b03146a1a47339b2bc8a7a40af276146b9\"/>\n        <Features>\n            <Feature Value=\"33\"/>\n            <Feature Value=\"1\"/>\n            <Feature Value=\"12\"/>\n            <Feature Value=\"2\"/>\n            <Feature Value=\"24\"/>\n            <Feature Value=\"3\"/>\n            <Feature Value=\"36\"/>\n            <Feature Value=\"17\"/>\n            <Feature Value=\"19\"/>\n            <Feature Value=\"62\"/>\n        </Features>\n        <DeveloperData Value=\"AQAAAEY0LURFWjQtVVk1TS04M1lULTNOWVAtNEtXNg==\"/>\n        <SerialMasked Value=\"F4-DEZ4-UY5M-83YT-3NYP-XXXX\"/>\n        <StartDate Value=\"2021-01-27T00:00:00\"/>\n        <UpdateDate Value=\"2021-05-06T05:54:38\"/>\n        <InitialActivationDate Value=\"2021-01-27T07:00:51\"/>\n        <LicenseVersion Value=\"6.x\"/>\n        <ClientProvidedVersion Value=\"2019.4.25f1\"/>\n        <AlwaysOnline Value=\"false\"/>\n        <Entitlements>\n            <Entitlement Ns=\"unity_editor\" Tag=\"UnityPersonal\" Type=\"EDITOR\" ValidTo=\"9999-12-31T00:00:00\"/>\n            <Entitlement Ns=\"unity_editor\" Tag=\"DarkSkin\" Type=\"EDITOR_FEATURE\" ValidTo=\"9999-12-31T00:00:00\"/>\n        </Entitlements>\n    </License>\n<Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments\"/><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><Reference URI=\"#Terms\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>xCBKYap0JQVBqX22jba4k5Da5t0=</DigestValue></Reference></SignedInfo><SignatureValue>n8eYH6Exi6mpw6onE5blxgQY1bAb+NLrsblMlFLUTPVTGw5KmugyVHedyZiI47D3nZVK/FpGaVxJ\n2xcNBr8yR1lfQrakloAZhvlCTiNi/O8N+6aHGZgyi/5+2SLqj0E/ZB+bVlTaSioLy/cF6iOt0d0T\nvW+VEdhht9iWrKKeNBakcXGccX5tQhJFaTR8aYevp0t0TMz3cfGPhs5qDivufqoFl34Y6qa8HjAC\n+OvrlD0TIgMyev+czK0KMIRsT/euOoyOHupXb93BuiMWceRIqf4mYvPKJbhx15Zy3uxHbsF6lV8q\nGah5JCb8iGRTDmG2JzMg6pXCjiznPFNk4Tkl7Q==</SignatureValue></Signature></root>", null]')[secrets.UNITY_SERIAL != null] }}
-
+  UNITY_EMAIL: ${{ fromJSON(format('["unitytest@mikeage.net", "{0}"]', secrets.UNITY_EMAIL))[secrets.UNITY_SERIAL != null] }}
+  UNITY_PASSWORD: ${{ fromJSON(format('["DoNotStealThis1", "{0}"]', secrets.UNITY_PASSWORD))[secrets.UNITY_SERIAL != null] }}
+  UNITY_LICENSE: ${{ fromJSON('["<?xml version=\"1.0\" encoding=\"UTF-8\"?><root><TimeStamp Value=\"chxldhvc0zh5Vw==\"/>\n    <License id=\"Terms\">\n        <MachineBindings>\n            <Binding Key=\"1\" Value=\"C372866C-B44C-5E48-806F-7583B55F04FB\"/>\n            <Binding Key=\"2\" Value=\"C02F32Y5ML85\"/>\n        </MachineBindings>\n        <MachineID Value=\"LcL/yxIaeUG12OSX31mKDtxcVx8=\"/>\n        <SerialHash Value=\"e25c63636985259e763d40cc9253cdfe6a862ceb\"/>\n        <Features>\n            <Feature Value=\"33\"/>\n            <Feature Value=\"1\"/>\n            <Feature Value=\"12\"/>\n            <Feature Value=\"2\"/>\n            <Feature Value=\"24\"/>\n            <Feature Value=\"3\"/>\n            <Feature Value=\"36\"/>\n            <Feature Value=\"17\"/>\n            <Feature Value=\"19\"/>\n            <Feature Value=\"62\"/>\n        </Features>\n        <DeveloperData Value=\"AQAAAEY0LUtFWUItMzYyOC0zWEI3LVBZVVEtTUI5VQ==\"/>\n        <SerialMasked Value=\"F4-KEYB-3628-3XB7-PYUQ-XXXX\"/>\n        <StartDate Value=\"2023-11-21T00:00:00\"/>\n        <UpdateDate Value=\"2023-11-22T06:03:23\"/>\n        <InitialActivationDate Value=\"2023-11-21T06:03:21\"/>\n        <LicenseVersion Value=\"6.x\"/>\n        <ClientProvidedVersion Value=\"2017.2.0\"/>\n        <AlwaysOnline Value=\"false\"/>\n        <Entitlements>\n            <Entitlement Ns=\"unity_editor\" Tag=\"UnityPersonal\" Type=\"EDITOR\" ValidTo=\"9999-12-31T00:00:00\"/>\n            <Entitlement Ns=\"unity_editor\" Tag=\"DarkSkin\" Type=\"EDITOR_FEATURE\" ValidTo=\"9999-12-31T00:00:00\"/>\n        </Entitlements>\n    </License><Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments\"/><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><Reference URI=\"#Terms\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>9DZF11miRAzx7TIuCxih78B6CXU=</DigestValue></Reference></SignedInfo><SignatureValue>weRQubqMNN61lSZtm/e7S+UDzTPNQjM5aQl/c4aKLH/b2khefpgLfdWneoxdnNopA6+rW6kBqxWt\nhMLdHY+oAOfDsfmMQRTnmQG0Y3G3xh6gjGP1RAIHoLDfFHf+0LQ3FakA2WehcFWPSYeVDrdxm3HW\nqMmdKWooD9i+J4s4rQFTDx9+/G6yjc5KGTyGxIz3c5kxTEkV2qsFPXsauomY9Z8YPKy+cZK7g+Ol\npO+LhtzetgTIlIN/qG8eByjlp6nOuVGdDOIrhNJW+vllNyx0qNWPREadVrhFViI4UXegMFRl5gJc\nrgcrlr/fD+NorDVLfcu7D863QXkkuriILUIq2Q==</SignatureValue></Signature></root>", null]')[secrets.UNITY_SERIAL != null] }}
 jobs:
   configuration:
     if: |
@@ -297,6 +295,7 @@ jobs:
           rm -rf tmp.plugin tmp.package
 
       - name: Restore Library/
+        id: cache_library
         uses: actions/cache/restore@v3
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
@@ -306,6 +305,7 @@ jobs:
           key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
       - name: Restore Library/PackageCache
+        id: cache_packagecache
         uses: actions/cache/restore@v3
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
@@ -387,7 +387,7 @@ jobs:
           echo -e "\n-define:PIMAX_SUPPORTED" | tee -a Assets/csc.rsp
 
       - name: Build project
-        uses: game-ci/unity-builder@v3
+        uses: game-ci/unity-builder@v4
         env:
           VERSION: ${{ needs.configuration.outputs.version}}
         with:
@@ -424,7 +424,7 @@ jobs:
 
       - name: Save Library/PackageCache cache
         uses: actions/cache/save@v3
-        if: github.ref == 'refs/heads/main'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
+        if: github.ref == 'refs/heads/main' && steps.cache_packagecache.outputs.cache-hit != 'true'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -432,6 +432,7 @@ jobs:
           key: Library_PackageCache_${{ env.UNITY_VERSION }}
 
       - name: Clean Library before caching
+        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         run: |
           # Remove the large files from the Library directory that we know we'll rebuild. As our il2cpp caches are huge and barely fit in the Github quota, it's better not to save an unneeded 1GB of space (or so). If a new Unity version is taken, this may need to be updated
           # Debugging
@@ -450,7 +451,7 @@ jobs:
 
       - name: Save Library/ cache
         uses: actions/cache/save@v3
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
