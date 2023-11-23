@@ -1562,6 +1562,7 @@ namespace TiltBrush.FrameAnimation
 
           
         }
+        // For loading the scene
          public void addKeyFrame(int trackNum){
 
             (int, int) index = (trackNum, timeline[trackNum].Frames.Count-1);
@@ -1589,30 +1590,10 @@ namespace TiltBrush.FrameAnimation
         }
         public void addKeyFrame(){
 
-            (int, int) index = getCanvasLocation(App.Scene.ActiveCanvas);
-            (int, int ) nextIndex = getFollowingFrameIndex(index.Item1,index.Item2);
 
-            if (nextIndex.Item2 >= timeline[nextIndex.Item1].Frames.Count ){
+                (int, int) index = getCanvasLocation(App.Scene.ActiveCanvas);
 
-                  Frame  addingFrame = newFrame(App.Scene.AddCanvas());
-
-                timeline[nextIndex.Item1].Frames.Insert(timeline[nextIndex.Item1].Frames.Count, addingFrame);
-                nextIndex.Item2 = timeline[nextIndex.Item1].Frames.Count - 1;
-
-            }else if(  getFrameFilled(nextIndex.Item1,nextIndex.Item2)) {
-
-                Frame  addingFrame = newFrame(App.Scene.AddCanvas());
-
-                timeline[nextIndex.Item1].Frames.Insert(nextIndex.Item2, addingFrame);
-
-
-
-            }
-
-            fillTimeline();
-
-            selectTimelineFrame(nextIndex.Item1,nextIndex.Item2);
-            
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(new AddFrameCommand(index,this));
         }
 
 
