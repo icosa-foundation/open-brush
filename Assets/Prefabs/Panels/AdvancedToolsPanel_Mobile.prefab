@@ -123,6 +123,15 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: a6f643f129325414a94d43c84f1181fd, type: 3}
@@ -291,6 +300,15 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 0}
@@ -458,6 +476,15 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 500cd172c9f6e9d4492856a074b01c6a, type: 3}
@@ -626,6 +653,15 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: ae19c367768bbaf4baf2b0ee6f7b7316, type: 3}
@@ -766,6 +802,15 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: c13f39fa0f58aaf49b2840c3d4f99d21, type: 3}
@@ -1068,6 +1113,15 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: ffdaccdb5d8967442866f82ca5e9e5e6, type: 3}
@@ -1208,6 +1262,15 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 82be5dbd822a76e42b0484d1bd56c21e, type: 3}
@@ -1348,6 +1411,15 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 48c4e2e5ea2c3794fa991bd025329d44, type: 3}
@@ -1478,7 +1550,25 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Join
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: cdc7d38d9e0b30443961d1cc27195586, type: 3}
@@ -1493,6 +1583,9 @@ MonoBehaviour:
   m_AddOverlay: 0
   m_Tool: 11001
   m_EatGazeInputOnPress: 0
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &3065005045680727798
 GameObject:
   m_ObjectHideFlags: 0
@@ -1616,6 +1709,15 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: cb6b7ca16015bea4296953a3a21293e0, type: 3}
@@ -1829,7 +1931,25 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Cameras
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: c13105d1ce387374c865c8a7bf9dd4bd, type: 3}
@@ -1849,13 +1969,34 @@ MonoBehaviour:
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnDescription: 
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
   m_LongPressDuration: 0.3
   m_Tool: 16
   m_EatGazeInputOnPress: 1
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &5698353309075386388
 GameObject:
   m_ObjectHideFlags: 0
@@ -1979,6 +2120,15 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 3c2f6d4b151d82d4d8f53c00ffb8589a, type: 3}
@@ -2548,6 +2698,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SelectionTray_Mobile
       objectReference: {fileID: 0}
+    - target: {fileID: 1503094713155990, guid: f18f4d6ac4e4e174a882c97332da8767, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4073457010706892, guid: f18f4d6ac4e4e174a882c97332da8767, type: 3}
       propertyPath: m_RootOrder
       value: 15
@@ -2558,7 +2712,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4073457010706892, guid: f18f4d6ac4e4e174a882c97332da8767, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.20500001
+      value: 0.05
       objectReference: {fileID: 0}
     - target: {fileID: 4073457010706892, guid: f18f4d6ac4e4e174a882c97332da8767, type: 3}
       propertyPath: m_LocalPosition.z
