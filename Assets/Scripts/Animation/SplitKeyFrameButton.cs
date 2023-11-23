@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace TiltBrush.FrameAnimation
 {
-    public class ExtendKeyFrameButton : BaseButton
+    public class SplitKeyFrameButton : BaseButton
     {
         [SerializeField] private UnityEngine.Events.UnityEvent m_Action;
 
@@ -12,7 +12,7 @@ namespace TiltBrush.FrameAnimation
         {
             // m_Action.Invoke();
             var uiManager = GetComponentInParent<AnimationUI_Manager>();
-            uiManager.extendKeyFrame();
+            uiManager.splitKeyFrame();
 
         }
     }

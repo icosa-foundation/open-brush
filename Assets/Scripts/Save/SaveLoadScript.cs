@@ -692,8 +692,9 @@ namespace TiltBrush
                     {
 
                         App.Scene.animationUI_manager.startTimeline();
-                        print("BEOFRE ADDING");
+                        print("BEFORE ADDING");
                         App.Scene.animationUI_manager.printTimeline();
+
                         foreach (var layer in jsonData.Layers.Skip(1))  // Skip the main canvas
                         {
                             var canvas = App.Scene.AddLayerNow();
@@ -706,14 +707,45 @@ namespace TiltBrush
                     }
                     // Debug.Log("BEFORE LOAD TIMELINE");
 
+                     print("BEFORE ANIMATION LOAD");
+                    App.Scene.animationUI_manager.printTimeline();
                     if (jsonData.AnimationTracks != null)
                     {
 
-                        for (int i = 0; i < jsonData.AnimationTracks.numFrames - 1; i++)  // Skip the main canvas
+                        var timeline = App.Scene.animationUI_manager.timeline;
+                        for (int i = 0; i < jsonData.AnimationTracks.Tracks.Length; i++)  // Skip the main canvas
                         {
-                            App.Scene.animationUI_manager.addKeyFrame();
+                            
+                            for (int f = 0;f< jsonData.AnimationTracks.Tracks[i].frameLengths.Count;f++){
+
+     
+
+                                if (f > 0){
+                                      App.Scene.animationUI_manager.addKeyFrame(i);
+                                }
+                              
+                                
+
+                                // App.Scene.ActiveCanvas = timeline[i].Frames[f].canvas;
+                                  print("BEFORE EXTEND FRAME " );
+                                       App.Scene.animationUI_manager.printTimeline();
+                                for (int l = 0;l< jsonData.AnimationTracks.Tracks[i].frameLengths[f] - 1;l++){
+                                    
+                                    App.Scene.animationUI_manager.extendKeyFrame(i);
+                                }
+
+                                 print("AFTER EXTEND FRAME " );
+                                       App.Scene.animationUI_manager.printTimeline();
+
+                            }
+                         
                         }
 
+                        App.Scene.animationUI_manager.timeline = timeline;
+
+
+                          print("AFTER ANIMATION LOAD");
+                    App.Scene.animationUI_manager.printTimeline();
                         // foreach (var track in jsonData.AnimationTracks.Tracks)  // Skip the main canvas
                         // {
 
@@ -721,17 +753,8 @@ namespace TiltBrush
 
                         // } 
                     }
-                    print("BEFORE FOCUS FRAME");
+               
 
-
-                    App.Scene.animationUI_manager.printTimeline();
-
-
-                    Debug.Log("AFTER LOAD TIMELINE");
-                    App.Scene.animationUI_manager.printTimeline();
-                    App.Scene.animationUI_manager.resetTimeline();
-                    App.Scene.animationUI_manager.focusFrameNum(0);
-                    App.Scene.animationUI_manager.timelineSlide(0);
                 }
 
                 var oldGroupToNewGroup = new Dictionary<int, int>();
@@ -818,6 +841,13 @@ namespace TiltBrush
                                 WidgetManager.m_Instance.CreateMediaWidgetsFromLoadDataCoroutine(),
                                 0.5f));
                     }
+                    if ( App.Scene.animationUI_manager != null){
+                    App.Scene.animationUI_manager.resetTimeline();
+                    App.Scene.animationUI_manager.selectTimelineFrame(0,0);
+                    }
+                 
+
+
                     m_LastSceneFile = fileInfo;
                 }
             }

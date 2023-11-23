@@ -500,9 +500,10 @@ namespace TiltBrush
                             break;
                         case StrokeExtension.Frame:
                             UInt32 frameIndex = reader.UInt32();
-                            Debug.Log("ADDING S FRAME " + thisTrack + " " + frameIndex.ToString());
-
-                            var canvas = App.Scene.animationUI_manager.getTimelineCanvas((int)frameIndex, (int)thisTrack);
+                           
+                           
+                            // For Loading Animation
+                            var canvas = App.Scene.animationUI_manager.getTimelineCanvas((int)thisTrack, (int)frameIndex);
                             stroke.m_IntendedCanvas = canvas;
                             break;
                         case StrokeExtension.Seed:

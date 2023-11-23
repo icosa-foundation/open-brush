@@ -60,10 +60,10 @@ namespace TiltBrush.Layers
         {
             return this.gameObject.GetComponent<TiltBrush.FrameAnimation.AnimationUI_Manager>() != null;
         }
-        private bool isAnimationPlaying()
+        private bool isAnimationChanging()
         {
 
-            return App.Scene.animationUI_manager != null && App.Scene.animationUI_manager.getPlaying();
+            return App.Scene.animationUI_manager != null && App.Scene.animationUI_manager.getChanging();
         }
 
         public void setAnimating(bool animatingNow)
@@ -75,7 +75,7 @@ namespace TiltBrush.Layers
         {
 
 
-            if (isAnimationPlaying()) return;
+            if (isAnimationChanging()) return;
 
             Debug.Log("RESSETING UI");
 
@@ -171,6 +171,8 @@ namespace TiltBrush.Layers
             UpdateScroll();
         }
 
+
+        
         private void OnLayerCanvasesUpdate()
         {
             ResetUI();

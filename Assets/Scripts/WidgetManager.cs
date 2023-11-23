@@ -402,13 +402,13 @@ namespace TiltBrush
         }
 
         public IEnumerable<TypedWidgetData<MovementPathWidget>> MovementPathWidgets =>
-            m_MovementPathWidgets.Where(x => x.m_WidgetObject.activeSelf && !x.WidgetScript.belongsToAnimation);
+            m_MovementPathWidgets.Where(x => x.m_WidgetObject.activeSelf && !x.WidgetScript.Path.belongsToAnimation);
 
         public IEnumerable<TypedWidgetData<MovementPathWidget>> AnimationPathWidgets =>
-            m_MovementPathWidgets.Where(x => x.m_WidgetObject.activeSelf && x.WidgetScript.belongsToAnimation);
+            m_MovementPathWidgets.Where(x => x.m_WidgetObject.activeSelf && x.WidgetScript.Path.belongsToAnimation);
 
         public IEnumerable<TypedWidgetData<MovementPathWidget>> AllPathWidgets =>
-            m_MovementPathWidgets.Where(x => x.m_WidgetObject.activeSelf );
+            m_MovementPathWidgets.Where(x => x.m_WidgetObject.activeSelf || x.WidgetScript.Path.belongsToAnimation);
 
 
         public TypedWidgetData<MovementPathWidget> GetCurrentCameraPath() => m_CurrentCameraPath;
@@ -488,7 +488,7 @@ namespace TiltBrush
 
         public MovementPathWidget GetNthActiveCameraPath(int nth)
         {
-            var activeCameraPathWidgets = m_MovementPathWidgets.Where(x => x.m_WidgetObject.activeSelf && !x.WidgetScript.belongsToAnimation);
+            var activeCameraPathWidgets = m_MovementPathWidgets.Where(x => x.m_WidgetObject.activeSelf && !x.WidgetScript.Path.belongsToAnimation);
             foreach (var cpw in activeCameraPathWidgets)
             {
                 if (nth == 0)
@@ -513,7 +513,7 @@ namespace TiltBrush
             int index = 0;
             for (int i = 0; i < m_MovementPathWidgets.Count; ++i)
             {
-                if (m_MovementPathWidgets[i].m_WidgetObject.activeSelf && !m_MovementPathWidgets[i].WidgetScript.belongsToAnimation)
+                if (m_MovementPathWidgets[i].m_WidgetObject.activeSelf && !m_MovementPathWidgets[i].WidgetScript.Path.belongsToAnimation)
                 {
                     if (m_MovementPathWidgets[i].WidgetScript == path)
                     {

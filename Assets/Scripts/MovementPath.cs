@@ -157,6 +157,9 @@ namespace TiltBrush
         public List<MovementPathFovKnot> FovKnots;
         public List<KnotSegment> Segments;
 
+        public bool belongsToAnimation = false;
+        public (int,int) timelineLocation = (-1,-1);
+
         private Transform m_Widget;
         private float m_SegmentRadius;
         private float m_SegmentStepInterval;
@@ -1728,6 +1731,9 @@ namespace TiltBrush
                 RotationKnots = RotationKnots.Select(k => k.AsSerializable()).ToArray(),
                 SpeedKnots = SpeedKnots.Select(k => k.AsSerializable()).ToArray(),
                 FovKnots = FovKnots.Select(k => k.AsSerializable()).ToArray(),
+                belongsAnimation = belongsToAnimation,
+                timelineLoc = timelineLocation,
+
             };
         }
 
