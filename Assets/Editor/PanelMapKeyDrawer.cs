@@ -73,6 +73,12 @@ namespace TiltBrush
                 EditorGUI.LabelField(drawRect, new GUIContent("Exp"));
 
                 NextRect(baseX, pos.y, 10, baseHeight, 12);
+                EditorGUI.PropertyField(drawRect, prop.FindPropertyRelative("m_ModeQuestExperimental"),
+                    GUIContent.none);
+                NextRect(baseX, pos.y, 30, baseHeight, 30);
+                EditorGUI.LabelField(drawRect, new GUIContent("ExpQ"));
+
+                NextRect(baseX, pos.y, 10, baseHeight, 12);
                 EditorGUI.PropertyField(drawRect, prop.FindPropertyRelative("m_ModeMono"), GUIContent.none);
                 NextRect(baseX, pos.y, 30, baseHeight, 30);
                 EditorGUI.LabelField(drawRect, new GUIContent("Mo", "Monoscopic"));
