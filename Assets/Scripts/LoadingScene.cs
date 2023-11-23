@@ -123,7 +123,18 @@ namespace TiltBrush
 #if UNITY_ANDROID
         private bool UserHasManageExternalStoragePermission()
         {
-            return m_FolderPermissionOverride || Permission.HasUserAuthorizedPermission("android.permission.MANAGE_EXTERNAL_STORAGE");
+            bool isExternalStorageManager = false;
+            try
+            {
+                AndroidJavaClass environmentClass = new AndroidJavaClass("android.os.Environment");
+                isExternalStorageManager = environmentClass.CallStatic<bool>("isExternalStorageManager");
+            }
+            catch (AndroidJavaException e)
+            {
+                Debug.LogError("Java Exception caught and ignored: " + e.Message);
+                Debug.LogError("Assuming this means this device doesn't support isExternalStorageManager.");
+            }
+            return m_FolderPermissionOverride || isExternalStorageManager;
         }
 
         private void AskForManageStoragePermission()
@@ -144,6 +155,7 @@ namespace TiltBrush
                 // TODO: only skip this if it's of type act=android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION
                 m_FolderPermissionOverride = true;
                 Debug.LogError("Java Exception caught and ignored: " + e.Message);
+                Debug.LogError("Assuming this means we don't need android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION (e.g., Android SDK < 30)");
             }
         }
 #endif
