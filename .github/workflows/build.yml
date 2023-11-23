@@ -43,6 +43,8 @@ jobs:
       description: ${{ steps.github.outputs.description}}
       itchchannelname: ${{ steps.version.outputs.itchchannelname }}
     steps:
+      - name: Set masking
+        run: echo "::add-mask::$UNITY_PASSWORD"
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
