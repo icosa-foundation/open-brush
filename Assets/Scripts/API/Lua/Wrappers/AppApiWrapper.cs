@@ -182,7 +182,7 @@ namespace TiltBrush
         [LuaDocsParameter("height", "Image height")]
         [LuaDocsParameter("superSampling", "The supersampling strength to apply (between 0.125 and 4.0)")]
         [LuaDocsParameter("renderDepth", "If true then render the depth buffer instead of the image")]
-        public static void TakeSnapshot(TrTransform tr, string filename, int width, int height, float superSampling = 1f, bool renderDepth = false)
+        public static void TakeSnapshot(TrTransform tr, string filename, int width, int height, float superSampling = 1f, bool renderDepth = false, bool removeBackground = false)
         {
             bool saveAsPng;
             if (filename.ToLower().EndsWith(".jpg") || filename.ToLower().EndsWith(".jpeg"))
@@ -205,16 +205,14 @@ namespace TiltBrush
             {
                 var rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
                 App.Scene.AsScene[rig.gameObject.transform] = tr;
-                var rMgr = rig.ManagerFromStyle(
-                    MultiCamStyle.Snapshot
-                );
+                var rMgr = rig.ManagerFromStyle(MultiCamStyle.Snapshot);
                 var initialState = rig.gameObject.activeSelf;
                 rig.gameObject.SetActive(true);
                 RenderTexture tmp = rMgr.CreateTemporaryTargetForSave(width, height);
                 RenderWrapper wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
                 float ssaaRestore = wrapper.SuperSampling;
                 wrapper.SuperSampling = superSampling;
-                rMgr.RenderToTexture(tmp, asDepth: renderDepth);
+                rMgr.RenderToTexture(tmp, asDepth: renderDepth, removeBackground: removeBackground);
                 wrapper.SuperSampling = ssaaRestore;
                 using (var fs = new FileStream(path, FileMode.Create))
                 {
