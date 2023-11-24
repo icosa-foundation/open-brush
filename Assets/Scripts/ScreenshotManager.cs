@@ -453,7 +453,7 @@ namespace TiltBrush
                     var prevCullingMask = camera.cullingMask;
                     camera.clearFlags = CameraClearFlags.SolidColor;
                     camera.backgroundColor = new Color(0, 0, 0, 0);
-                    camera.cullingMask = LayerMask.GetMask("MainCanvas");;
+                    camera.cullingMask = LayerMask.GetMask("MainCanvas");
                     camera.Render();
                     camera.clearFlags = prevClearFlags;
                     camera.backgroundColor = prevBackgroundColor;
