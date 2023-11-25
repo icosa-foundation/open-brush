@@ -464,6 +464,7 @@ namespace TiltBrush.FrameAnimation
 
             print("ADDED LAYER REFRESH");
             printTimeline();
+            resetTimeline();
         }
 
 
@@ -620,23 +621,24 @@ namespace TiltBrush.FrameAnimation
 
                 Track thisTrack = timeline[canvasIndex.Item1];
                 thisTrack.deleted = true;
+                
 
-                for (int i = 0; i < thisTrack.Frames.Count; i++)
-                {
+                // for (int i = 0; i < thisTrack.Frames.Count; i++)
+                // {
 
 
 
 
-                    Frame deletingFrame = thisTrack.Frames[i];
-                    deletingFrame.deleted = true;
-                    App.Scene.HideLayer(deletingFrame.canvas);
+                //     Frame deletingFrame = thisTrack.Frames[i];
+                //     deletingFrame.deleted = true;
+                //     App.Scene.HideLayer(deletingFrame.canvas);
 
-                    thisTrack.Frames[i] = deletingFrame;
+                //     thisTrack.Frames[i] = deletingFrame;
 
-                }
+                // }
                 timeline[canvasIndex.Item1] = thisTrack;
             }
-            updateTrackScroll();
+            resetTimeline();
         }
 
 
@@ -797,65 +799,13 @@ namespace TiltBrush.FrameAnimation
                     // bool backgroundForwardConnect = (f < timeline[i].Frames.Count - 1);
 
 
-                    // Empty timeslot in timeline
-                    if (f >= timeline[i].Frames.Count) {
+                  
 
+                    numDeleted += timeline[i].deleted ? 1 : 0;
 
-                        var newButton = Instantiate(frameButtonPrefab, frameWrapper.transform, false);
-                        var frameButton = newButton.transform.GetChild(0);
+                    int trackOn = i - numDeleted;
 
-                        frameButton.GetComponent<MeshRenderer>().enabled = false;
-
-
-                        // frameButton.localScale = new Vector3(1f,1f,7.88270617f);
-                        frameButton.localPosition = new Vector3(0.00538007962f, 0.449999988f - frameOffset * i, 0);
-                        frameButton.gameObject.SetActive(true);
-
-
-                        frameButton.gameObject.GetComponent<FrameButton>().setButtonCoordinate(i, f);
-
-                        
-                         for (int o = 0; o < frameButton.GetChildCount(); o++)
-                        {
-
-                            frameButton.GetChild(o).gameObject.SetActive(false);
-
-                        }
-
-                        int backBox = 6;
-                        frameButton.GetChild(backBox).gameObject.SetActive(true);
-
-                        Color backColor = new Color(0 / 255f, 0 / 255f, 0 / 255f);
-
-                        frameButton.GetChild(backBox).gameObject.GetComponent<SpriteRenderer>().color = backColor;
-                        frameButton.GetChild(backBox+1).gameObject.GetComponent<SpriteRenderer>().color = backColor;
-                        frameButton.GetChild(backBox+2).gameObject.GetComponent<SpriteRenderer>().color = backColor;
-
-
-
-                        bool backgroundBackConnect = (f > 0 && f - 1 > timeline[i].Frames.Count - 1);
-                        bool backgroundForwardConnect = f < getTimelineLength() - 1 && (f + 1 <  timeline[i].Frames.Count && timeline[i].Frames[f + 1].canvas == null);
-
-                        if (backgroundBackConnect)
-                        {
-                
-                            frameButton.GetChild(backBox+1).gameObject.SetActive(true);
-                        }
-
-                        if (backgroundForwardConnect)
-                        {
-                            frameButton.GetChild(backBox+2).gameObject.SetActive(true);
-                        }
-
-                        
-                    }
-                    // Timestamp with frame
-                    else{
-                    numDeleted += timeline[i].Frames[f].deleted ? 1 : 0;
-
-                    int layerOn = i - numDeleted;
-
-                    if (layerOn < timeline.Count && !timeline[i].Frames[f].deleted)
+                    if (trackOn < timeline.Count && !timeline[i].deleted)
                     {
 
 
@@ -870,7 +820,7 @@ namespace TiltBrush.FrameAnimation
 
 
                         // frameButton.localScale = new Vector3(1f,1f,7.88270617f);
-                        frameButton.localPosition = new Vector3(0.00538007962f, 0.449999988f - frameOffset * i, 0);
+                        frameButton.localPosition = new Vector3(0.00538007962f, 0.449999988f - frameOffset * trackOn, 0);
                         frameButton.gameObject.SetActive(true);
 
 
@@ -968,7 +918,7 @@ namespace TiltBrush.FrameAnimation
 
 
                     }
-                    }
+                    
                 }
 
 
@@ -1461,8 +1411,10 @@ namespace TiltBrush.FrameAnimation
             for (int t = 0; t < timeline.Count; t++){
 
                 Track addingTrack = newTrack();
+                addingTrack.deleted = timeline[t].deleted;
                 newTimeline.Add(addingTrack);
                 int f;
+            
                 for (f = 0; f < timeline[t].Frames.Count; f++){
                    
  
@@ -1588,12 +1540,51 @@ namespace TiltBrush.FrameAnimation
         
 
         }
-        public void addKeyFrame(){
+        public (int,int) addKeyFrame(){
 
 
-                (int, int) index = getCanvasLocation(App.Scene.ActiveCanvas);
+            (int, int) index = getCanvasLocation(App.Scene.ActiveCanvas);
 
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(new AddFrameCommand(index,this));
+
+
+            Debug.Log("ON REDO");
+            (int, int ) insertingAt;
+            (int, int ) nextIndex = getFollowingFrameIndex(index.Item1,index.Item2);
+
+            if (nextIndex.Item2 >= timeline[nextIndex.Item1].Frames.Count ){
+
+                  AnimationUI_Manager.Frame addingFrame = newFrame(App.Scene.AddCanvas());
+
+                timeline[nextIndex.Item1].Frames.Insert(timeline[nextIndex.Item1].Frames.Count, addingFrame);
+                nextIndex.Item2 = timeline[nextIndex.Item1].Frames.Count - 1;
+
+
+          
+                insertingAt = (nextIndex.Item1,timeline[nextIndex.Item1].Frames.Count - 1);
+       
+
+            }else if(  getFrameFilled(nextIndex.Item1,nextIndex.Item2)) {
+
+                AnimationUI_Manager.Frame  addingFrame = newFrame(App.Scene.AddCanvas());
+
+                timeline[nextIndex.Item1].Frames.Insert(nextIndex.Item2, addingFrame);
+
+
+                insertingAt = nextIndex;
+         
+
+
+            }else{
+                     insertingAt = nextIndex;
+         
+            }
+
+            fillTimeline();
+
+            selectTimelineFrame(nextIndex.Item1,nextIndex.Item2);
+
+            return insertingAt;
+            
         }
 
 

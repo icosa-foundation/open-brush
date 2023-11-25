@@ -29,10 +29,11 @@ namespace TiltBrush.FrameAnimation
         int frameOnStart;
 
 
-        public AddFrameCommand( (int,int) Loc , AnimationUI_Manager animationManager)
+        public AddFrameCommand()
         {
-           manager = animationManager;
-           timelineLocation = Loc;
+           manager = App.Scene.animationUI_manager;
+           timelineLocation = manager.getCanvasLocation(App.Scene.ActiveCanvas);
+
         }
 
         public override bool NeedsSave { get { return true; } }
@@ -45,44 +46,12 @@ namespace TiltBrush.FrameAnimation
         protected override void OnRedo()
         {
            
-            frameOnStart = manager.getFrameOn();
-
-            Debug.Log("ON REDO");
-            (int, int ) nextIndex = manager.getFollowingFrameIndex(timelineLocation.Item1,timelineLocation.Item2);
-
-            if (nextIndex.Item2 >= manager.timeline[nextIndex.Item1].Frames.Count ){
-
-                  AnimationUI_Manager.Frame addingFrame = manager.newFrame(App.Scene.AddCanvas());
-
-                manager.timeline[nextIndex.Item1].Frames.Insert(manager.timeline[nextIndex.Item1].Frames.Count, addingFrame);
-                nextIndex.Item2 = manager.timeline[nextIndex.Item1].Frames.Count - 1;
-
-
-                expandTimeline = true;
-                insertingAt = (nextIndex.Item1,manager.timeline[nextIndex.Item1].Frames.Count - 1);
-                justMoved = false;
-
-            }else if(  manager.getFrameFilled(nextIndex.Item1,nextIndex.Item2)) {
-
-                AnimationUI_Manager.Frame  addingFrame = manager.newFrame(App.Scene.AddCanvas());
-
-                manager.timeline[nextIndex.Item1].Frames.Insert(nextIndex.Item2, addingFrame);
-
-                expandTimeline = false;
-                insertingAt = nextIndex;
-                justMoved = false;
-
-
-            }
-
-            manager.fillTimeline();
-
-            manager.selectTimelineFrame(nextIndex.Item1,nextIndex.Item2);
+            insertingAt = manager.addKeyFrame();
         }
 
         protected override void OnUndo()
         {
-            if (justMoved) return;
+            // if (justMoved) return;
 
    
             Debug.Log("UNDO ADD FRAME");
@@ -92,7 +61,7 @@ namespace TiltBrush.FrameAnimation
 
             manager.fillTimeline();
 
-            manager.selectTimelineFrame(timelineLocation.Item1,frameOnStart);
+            manager.selectTimelineFrame(timelineLocation.Item1,timelineLocation.Item2);
 
     
  
