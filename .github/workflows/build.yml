@@ -389,7 +389,7 @@ jobs:
           echo -e "\n-define:PIMAX_SUPPORTED" | tee -a Assets/csc.rsp
 
       - name: Build project
-        uses: mikeage/unity-builder@same_uuid
+        uses: game-ci/unity-builder@fix-pro-activation
         env:
           VERSION: ${{ needs.configuration.outputs.version}}
         with:
