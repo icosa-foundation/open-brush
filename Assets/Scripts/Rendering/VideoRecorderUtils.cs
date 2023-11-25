@@ -242,6 +242,7 @@ namespace TiltBrush
         /// has just been recorded.
         static void CreateOfflineRenderBatchFile(string sketchFile, string usdaFile)
         {
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
             string batFile = Path.ChangeExtension(usdaFile, ".HQ_Render.bat");
             var pathSections = Application.dataPath.Split('/').ToArray();
             var exePath = String.Join("/", pathSections.Take(pathSections.Length - 1).ToArray());
@@ -253,6 +254,19 @@ namespace TiltBrush
                 "@\"{0}/Support/bin/renderVideo.cmd\" ^\n\t\"{1}\" ^\n\t\"{2}\" ^\n\t\"{3}\"",
                 exePath, sketchFile, usdaFile, offlineRenderExePath);
             File.WriteAllText(batFile, batText);
+#endif
+#if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
+            string shFile = Path.ChangeExtension(usdaFile, ".HQ_Render.sh");
+            var pathSections = Application.dataPath.Split('/').ToArray();
+            var exePath = String.Join("/", pathSections.Take(pathSections.Length - 1).ToArray());
+
+            // It would be nice to think of a way to get this to do something sensible in the editor!
+            string offlineRenderExePath = Process.GetCurrentProcess().MainModule.FileName;
+
+            string batText = $"\"{exePath}/Support/bin/renderVideo.sh\" \\\n\t\"{sketchFile}\" \\\n\t\"{usdaFile}\" \\\n\t\"{offlineRenderExePath}\"";
+            File.WriteAllText(shFile, batText);
+#endif
+
         }
     }
 

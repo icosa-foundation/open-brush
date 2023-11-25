@@ -144,6 +144,7 @@ static class BuildTiltBrush
         new CopyRequest("Support/README.txt") { omitForAndroid = true },
         new CopyRequest("Support/exportManifest.json"),
         new CopyRequest("Support/bin/renderVideo.cmd") { omitForAndroid = true },
+        new CopyRequest("Support/bin/renderVideo.sh") { omitForAndroid = true },
         new CopyRequest("Support/whiteTextureMap.png"),
         // No longer needed, now that these are hosted
         // new CopyRequest("Support/GlTFShaders"),
@@ -1720,29 +1721,6 @@ static class BuildTiltBrush
     // Returns null if no errors; otherwise a string with what went wrong.
     private static string FormatBuildReport(BuildReport report)
     {
-        // This format is required by the game-ci build action
-        Console.WriteLine(
-                $"{Environment.NewLine}" +
-                $"###########################{Environment.NewLine}" +
-                $"#      Build results      #{Environment.NewLine}" +
-                $"###########################{Environment.NewLine}" +
-                $"{Environment.NewLine}" +
-                $"Duration: {report.summary.totalTime.ToString()}{Environment.NewLine}" +
-                $"Warnings: {report.summary.totalWarnings.ToString()}{Environment.NewLine}"
-        );
-        // We have some "errors" that show up on Mac and Linux (IOException copying FBX and USD) that are ignored. The builds succeed, but for some reason they get reported anyway. To avoid confusing the analysis, print a 0 even if we have errors logged, provided that the build passed
-        if (report.summary.result == BuildResult.Succeeded)
-        {
-            Console.WriteLine($"Errors: 0{Environment.NewLine}");
-        }
-        else
-        {
-            Console.WriteLine($"Errors: {report.summary.totalErrors.ToString()}{Environment.NewLine}");
-        }
-        Console.WriteLine(
-                $"Size: {report.summary.totalSize.ToString()} bytes{Environment.NewLine}" +
-                $"{Environment.NewLine}"
-        );
         if (report.summary.result == BuildResult.Succeeded)
         {
             return null;
