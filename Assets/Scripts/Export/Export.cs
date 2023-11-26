@@ -15,9 +15,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using GLTF.Schema;
 using UnityEngine;
 using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;
+using UnityGLTF;
 
 namespace TiltBrush
 {
@@ -225,10 +228,19 @@ URL=" + kExportDocumentationUrl;
                     using (var unused = new AutoTimer("glb export"))
                     {
                         OverlayManager.m_Instance.UpdateProgress(0.7f);
-                        var exporter = new ExportGlTF();
+                        var settings = GLTFSettings.GetOrCreateSettings();
+                        settings.UseMainCameraVisibility = false;
+                        var options = new ExportOptions();
+                        options.ExportLayers = -1;
+                        var layers = App.Scene.LayerCanvases.Select(x => x.transform).ToArray();
+                        var unityGltfexporter = new GLTFSceneExporter(layers, options);
+                        settings.SaveFolderPath = filename;
+                        unityGltfexporter.SaveGLB(Path.Combine(parent, extension), $"{basename}_unitygltf.glb");
+
                         // TBT doesn't need (or want) brush textures in the output because it replaces all
                         // the materials, so it's fine to keep those http:. However, Sketchfab doesn't support
                         // http textures so if uploaded, this glb will have missing textures.
+                        var exporter = new ExportGlTF();
                         exporter.ExportBrushStrokes(
                             filename, AxisConvention.kGltf2, binary: true, doExtras: false,
                             includeLocalMediaContent: true,
