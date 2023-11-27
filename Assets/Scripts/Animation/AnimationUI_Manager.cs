@@ -53,6 +53,13 @@ namespace TiltBrush.FrameAnimation
 
         }
 
+        public struct DeletedFrame{
+            public Frame frame;
+            public int length;
+            public (int,int) location;
+        }
+
+
         public struct Track
         {
             public List<Frame> Frames;
@@ -713,7 +720,7 @@ namespace TiltBrush.FrameAnimation
         public void resetTimeline()
         {
 
-
+            
             print("RESET TIMELINE");
             print(timelineNotches);
 
@@ -1206,10 +1213,9 @@ namespace TiltBrush.FrameAnimation
             App.Scene.triggerLayersUpdate();
 
         }
-        public void removeKeyFrame()
+        public DeletedFrame removeKeyFrame()
         {
 
-            if (frameOn <= 0) return;
 
             print("BEFORE REMOVE");
             printTimeline();
@@ -1219,57 +1225,55 @@ namespace TiltBrush.FrameAnimation
 
 
 
+            DeletedFrame deletedFrame;
+
+            deletedFrame.frame = timeline[index.Item1].Frames[index.Item2];
+            deletedFrame.frame.canvas = timeline[index.Item1].Frames[index.Item2].canvas;
+            deletedFrame.length = getFrameLength(index.Item1,index.Item2);
+            deletedFrame.location = (index.Item1,index.Item2);
+     
+
+            // App.Scene.DestroyCanvas(timeline[index.Item1].Frames[index.Item2].canvas);
+
+            App.Scene.HideCanvas(timeline[index.Item1].Frames[index.Item2].canvas);
+            CanvasScript replacingCanvas = App.Scene.AddCanvas();
             for (int l = index.Item2; l < nextIndex.Item2; l++)
             {
 
 
 
-                //App.Scene.destroyCanvas(timeline[frameOn].layers[l].canvas);
-                App.Scene.HideCanvas(timeline[index.Item1].Frames[l].canvas);
-
-                Frame removingFrame = timeline[index.Item1].Frames[l];
-                removingFrame.deleted = true;
-
-
-
-                Frame replacingFrame = newFrame(App.Scene.AddCanvas());
-                timeline[index.Item1].Frames[l] = replacingFrame;
-            }
-
             
 
+                Frame removingFrame =  newFrame(replacingCanvas);
+                // removingFrame.deleted = true;
+
+                timeline[index.Item1].Frames[l] = removingFrame;
 
 
-          
-
-            print("AFTER REMOVE");
-            // cleanTimeline();
-
-
-            
-            int closestIndex = 0;
-
-            for (int i = 0; i < timeline[nextIndex.Item1].Frames.Count; i++){
-
-
-                closestIndex = i;
-
-                if (i >= nextIndex.Item2  - 1 ) break;
 
             }
 
+     
 
+            
 
-            print("NEW ACTIVE CANVSA " + index.Item1 + " " + closestIndex);
-            // App.Scene.ActiveCanvas = getTimelineCanvas(index.Item1,closestIndex);
-
-            selectTimelineFrame(index.Item1,closestIndex);
-       
+            print("REMOVE TIMELINE PRINT");
             printTimeline();
 
-            resetTimeline();
+
+            fillandCleanTimeline();
+
 
   
+
+            selectTimelineFrame(index.Item1, Math.Clamp(index.Item2, 0, getTimelineLength() - 1));
+       
+   
+            resetTimeline();
+
+
+
+            return deletedFrame;
 
 
         }
@@ -1362,6 +1366,7 @@ namespace TiltBrush.FrameAnimation
             for (int t = 0; t < timeline.Count; t++){
 
                 Track addingTrack = newTrack();
+                addingTrack.deleted = timeline[t].deleted;
                 newTimeline.Add(addingTrack);
                 int f;
                 for (f = 0; f < timeline[t].Frames.Count; f++){
@@ -1375,18 +1380,7 @@ namespace TiltBrush.FrameAnimation
 
                 }
 
-                if (f < maxTimeline){
-                    while ( f < maxTimeline){
 
-                        Frame  addingFrame = newFrame(App.Scene.AddCanvas());
-
-                        newTimeline[t].Frames.Add(addingFrame); 
-
-                        f++;
-
-
-                    }
-                }
         
 
             }
@@ -1395,9 +1389,9 @@ namespace TiltBrush.FrameAnimation
             timeline = newTimeline;
 
 
-            Debug.Log("CLEAN TIMELIEN FOCUS " + getFrameOn());
-            focusFrame(getFrameOn());
-            Debug.Log("CLEAN TIMELIEN AFTER FOCUS " + getFrameOn());
+            
+            // focusFrame(getFrameOn());
+            // resetTimeline();
             
 
         }
@@ -1445,13 +1439,23 @@ namespace TiltBrush.FrameAnimation
             
 
         }
+        // Make sures there aren't too many or few empty frames
+        public void fillandCleanTimeline(){
+            fillTimeline();
+            cleanTimeline();
+        }
+        public (int,int) moveKeyFrame(bool moveRight, CanvasScript canvas = null){
 
-        public void moveKeyFrame(bool moveRight){
 
-            (int, int) index = getCanvasLocation(App.Scene.ActiveCanvas);
+
+            canvas = canvas == null ? App.Scene.ActiveCanvas : canvas;
+
+            (int, int) index = getCanvasLocation(canvas);
             (int, int ) nextIndex = getFollowingFrameIndex(index.Item1,index.Item2);
             bool failure = false;
 
+
+        
             if (moveRight){
                 if (nextIndex.Item2 >= timeline[nextIndex.Item1].Frames.Count ){
 
@@ -1498,18 +1502,21 @@ namespace TiltBrush.FrameAnimation
 
             }
 
-            if (failure) return;
+            if (failure) return (-1,-1);
 
 
-            fillTimeline();
+            fillandCleanTimeline();
+            
 
             if (moveRight) { 
 
                 selectTimelineFrame(nextIndex.Item1,nextIndex.Item2); 
+                return (index.Item1,index.Item2 + 1);
 
             }else{
 
                  selectTimelineFrame(index.Item1,index.Item2 - 1); 
+                 return (index.Item1,index.Item2 - 1);
             }
 
           
@@ -1642,14 +1649,13 @@ namespace TiltBrush.FrameAnimation
         }
 
 
-        public void extendKeyFrame()
+        public (int,int) extendKeyFrame( CanvasScript canvas = null)
         {
 
-            
 
-            print("BEFORE  ADD");
+            canvas = canvas == null ? App.Scene.ActiveCanvas : canvas;
 
-            (int, int) index = getCanvasLocation(App.Scene.ActiveCanvas);
+            (int, int) index = getCanvasLocation(canvas);
 
             // print("ADDING LAYER HERE - " + index.Item2);
             //             // Frame addingFrame = newFrame(App.Scene.AddCanvas());
@@ -1666,7 +1672,7 @@ namespace TiltBrush.FrameAnimation
 
         
             
-            if ( !getFrameFilled(index.Item1,index.Item2)) {return;}
+            if ( !getFrameFilled(index.Item1,index.Item2)) {return (-1,-1);}
 
 
             int frameLength = getFrameLength(index.Item1,index.Item2);
@@ -1745,13 +1751,17 @@ namespace TiltBrush.FrameAnimation
 
 
             resetTimeline();
-
+            return index;
 
 
         }
 
-        public void reduceKeyFrame(){
-              (int, int) index = getCanvasLocation(App.Scene.ActiveCanvas);
+         public (int,int) reduceKeyFrame( CanvasScript canvas = null){
+
+
+            canvas = canvas == null ? App.Scene.ActiveCanvas : canvas;
+
+            (int, int) index = getCanvasLocation(canvas);
 
                 int frameLength = getFrameLength(index.Item1,index.Item2);
 
@@ -1764,11 +1774,13 @@ namespace TiltBrush.FrameAnimation
                         resetTimeline();
                 }   
 
-            
+
+            fillandCleanTimeline();
+            return index;
 
         }
 
-        public void splitKeyFrame(){
+        public (int,int) splitKeyFrame(){
 
         
 
@@ -1780,8 +1792,8 @@ namespace TiltBrush.FrameAnimation
             int frameLegnth = getFrameLength(index.Item1,index.Item2 );
 
 
-            int splittingIndex = getFrameOn() + 1;
-            if (splittingIndex < index.Item2  || splittingIndex > index.Item2 +frameLegnth - 1   ) return;
+            int splittingIndex = getFrameOn() ;
+            if (splittingIndex < index.Item2  || splittingIndex > index.Item2 +frameLegnth - 1   ) return (-1,-1);
 
 
 
@@ -1836,8 +1848,9 @@ namespace TiltBrush.FrameAnimation
             selectTimelineFrame(index.Item1,splittingIndex);
             resetTimeline();
 
+            return (index.Item1,splittingIndex);
         }
-        public void duplicateKeyFrame()
+        public  (int, int) duplicateKeyFrame()
         {
 
 
@@ -1933,7 +1946,7 @@ namespace TiltBrush.FrameAnimation
 
 
            
-
+            return nextIndex;
 
         }
 

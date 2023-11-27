@@ -11,8 +11,9 @@ namespace TiltBrush.FrameAnimation
         protected override void OnButtonPressed()
         {
             // m_Action.Invoke();
-            var uiManager = GetComponentInParent<AnimationUI_Manager>();
-            uiManager.reduceKeyFrame();
+               SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new ReduceFrameCommand()
+            );
 
         }
     }

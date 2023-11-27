@@ -11,9 +11,9 @@ namespace TiltBrush.FrameAnimation
         protected override void OnButtonPressed()
         {
             // m_Action.Invoke();
-            var uiManager = GetComponentInParent<AnimationUI_Manager>();
-            uiManager.splitKeyFrame();
-
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new SplitFrameCommand()
+            );
         }
     }
 } // namespace TiltBrush
