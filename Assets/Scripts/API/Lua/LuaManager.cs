@@ -446,9 +446,14 @@ namespace TiltBrush
             {
                 script.DoString(contents);
             }
+            catch (ScriptRuntimeException e)
+            {
+                LogLuaInterpreterError(script, $"(ScriptRuntimeException loading: {scriptFilename})", e);
+                return null;
+            }
             catch (SyntaxErrorException e)
             {
-                LogLuaInterpreterError(script, $"(Loading: {scriptFilename})", e);
+                LogLuaInterpreterError(script, $"(SyntaxErrorException loading: {scriptFilename})", e);
                 return null;
             }
             var catMatch = TryGetCategoryFromScriptName(scriptFilename);
@@ -457,15 +462,33 @@ namespace TiltBrush
                 var category = catMatch.Value;
                 scriptName = scriptFilename.Substring(category.ToString().Length + 1);
 
-                script.Globals[LuaNames.ScriptNameString] = scriptName;
-                script.Globals[LuaNames.IsExampleScriptBool] = isExampleScript;
+                try {script.Globals[LuaNames.ScriptNameString] = scriptName;}
+                catch (ScriptRuntimeException e)
+                {
+                    LogLuaInterpreterError(script, $"(ScriptRuntimeException setting ScriptNameString: {scriptFilename})", e);
+                    return null;
+                }
+                try { script.Globals[LuaNames.IsExampleScriptBool] = isExampleScript; }
+                catch (ScriptRuntimeException e)
+                {
+                    LogLuaInterpreterError(script, $"(ScriptRuntimeException setting IsExampleScriptBool: {scriptFilename})", e);
+                    return null;
+                }
 
                 Scripts[category][scriptName] = script;
                 if (m_ActiveBackgroundScripts.ContainsKey(scriptName))
                 {
                     m_ActiveBackgroundScripts[scriptName] = script;
                 }
-                InitScriptOnce(script);
+                try
+                {
+                    InitScriptOnce(script);
+                }
+                catch (ScriptRuntimeException e)
+                {
+                    LogLuaInterpreterError(script, $"(ScriptRuntimeException InitScriptOnce: {scriptFilename})", e);
+                    return null;
+                }
             }
             return scriptName;
         }
