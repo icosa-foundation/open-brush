@@ -409,10 +409,10 @@ jobs:
         continue-on-error: true
 
       - name: Check build state
-        if: ${{ steps.unity_builder.outputs.exitCode != 0 }}  # not always() because if we cancel the job, this shouldn't run
+        if: ${{ steps.unity_builder.outputs.engineExitCode != 0 }}  # not always() because if we cancel the job, this shouldn't run
         run: |
           # Check if the build exit code was a license failure or compilation error
-          if [[ ${{ steps.unity_builder.outputs.exitCode }} -eq 1 ]]
+          if [[ ${{ steps.unity_builder.outputs.engineExitCode }} -eq 1 ]]
           then
               echo "::notice::License activation seems to have failed. Ignoring the failure and retrying the build step"
           else
@@ -421,7 +421,7 @@ jobs:
           fi
       - name: Build project rerun (if needed)
         id: unity_builder_rerun
-        if: ${{ steps.unity_builder.outputs.exitCode == 1 }}
+        if: ${{ steps.unity_builder.outputs.engineExitCode == 1 }}
         uses: game-ci/unity-builder@fix-pro-activation
         env:
           VERSION: ${{ needs.configuration.outputs.version}}
