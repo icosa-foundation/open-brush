@@ -275,7 +275,7 @@
       "url": "https://packages.unity.com"
     },
     "moonsharp": {
-      "version": "https://github.com/nothke/moonsharp-unity-upm.git",
+      "version": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",
       "depth": 0,
       "source": "git",
       "dependencies": {},
