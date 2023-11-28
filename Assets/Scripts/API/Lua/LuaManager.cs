@@ -167,11 +167,14 @@ namespace TiltBrush
                 Directory.CreateDirectory(LuaModulesPath);
             }
 
-            // Allow includes from Scripts/LuaModules
-            Script.DefaultOptions.ScriptLoader = new FileSystemScriptLoader();
-            ((ScriptLoaderBase)Script.DefaultOptions.ScriptLoader).ModulePaths = new[] { Path.Join(LuaModulesPath, "?.lua") };
-
             CopyLuaModules();
+
+            // Allow includes from Scripts/LuaModules
+            Script.DefaultOptions.ScriptLoader = new OpenBrushScriptLoader();
+            ((ScriptLoaderBase)Script.DefaultOptions.ScriptLoader).ModulePaths = new[]
+            {
+                Path.Join(LuaModulesPath, "?.lua")
+            };
 
             LoadExampleScripts();
             LoadUserScripts();
@@ -448,12 +451,12 @@ namespace TiltBrush
             }
             catch (ScriptRuntimeException e)
             {
-                LogLuaInterpreterError(script, $"(ScriptRuntimeException loading: {scriptFilename})", e);
+                LogLuaInterpreterError(script, $"(Runtime Error loading: {scriptFilename})", e);
                 return null;
             }
             catch (SyntaxErrorException e)
             {
-                LogLuaInterpreterError(script, $"(SyntaxErrorException loading: {scriptFilename})", e);
+                LogLuaInterpreterError(script, $"(Syntax Error loading: {scriptFilename})", e);
                 return null;
             }
             var catMatch = TryGetCategoryFromScriptName(scriptFilename);
@@ -462,18 +465,8 @@ namespace TiltBrush
                 var category = catMatch.Value;
                 scriptName = scriptFilename.Substring(category.ToString().Length + 1);
 
-                try {script.Globals[LuaNames.ScriptNameString] = scriptName;}
-                catch (ScriptRuntimeException e)
-                {
-                    LogLuaInterpreterError(script, $"(ScriptRuntimeException setting ScriptNameString: {scriptFilename})", e);
-                    return null;
-                }
-                try { script.Globals[LuaNames.IsExampleScriptBool] = isExampleScript; }
-                catch (ScriptRuntimeException e)
-                {
-                    LogLuaInterpreterError(script, $"(ScriptRuntimeException setting IsExampleScriptBool: {scriptFilename})", e);
-                    return null;
-                }
+                script.Globals[LuaNames.ScriptNameString] = scriptName;
+                script.Globals[LuaNames.IsExampleScriptBool] = isExampleScript;
 
                 Scripts[category][scriptName] = script;
                 if (m_ActiveBackgroundScripts.ContainsKey(scriptName))
