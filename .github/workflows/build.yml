@@ -225,17 +225,17 @@ jobs:
           echo "Listing 100 largest packages"
           dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
           echo "Removing unneeded large packages"
-          sudo apt-get update
-          sudo apt-get remove -y '^ghc-.*' '^dotnet-.*' azure-cli 'google-cloud-*' powershell google-chrome-stable firefox microsoft-edge-stable 'php.*' 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' default-jre-headless  # Removes ~5GB
-          sudo apt-get autoremove -y
-          sudo apt-get clean
+          sudo apt update
+          sudo apt remove -y '^ghc-.*' '^dotnet-.*' azure-cli powershell google-chrome-stable firefox microsoft-edge-stable 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' default-jre-headless  # Removes ~7GB  # Adding 'google-cloud-*' removes another 750MB but takes about a minute; not worth it
+          sudo apt autoremove -y
+          sudo apt clean
           df -h /
           echo "Listing 100 largest remaining packages"
           dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
           echo "Removing remaining large directories"
-          rm -rf /usr/share/dotnet/  # Removes ~1GB
           df -h /
-          rm -rf "$AGENT_TOOLSDIRECTORY"  # Removes ~11GB
+          rm -rf /usr/share/dotnet/  # Removes ~1GB
+          rm -rf "$AGENT_TOOLSDIRECTORY"  # Removes ~6GB
           echo "Disk space after cleanup"
           df -h /
 
