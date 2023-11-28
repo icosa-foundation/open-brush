@@ -1506,7 +1506,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Split Frame
+  m_DescriptionText: Duplicate Frame
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: 

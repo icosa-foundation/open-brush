@@ -59,7 +59,7 @@ namespace TiltBrush.FrameAnimation
            manager.moveKeyFrame(!moveRight,movedCanvas);
 
     
- 
+        
         }
 
         // public override bool Merge(BaseCommand other)

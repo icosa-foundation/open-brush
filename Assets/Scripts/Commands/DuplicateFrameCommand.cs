@@ -54,7 +54,13 @@ namespace TiltBrush.FrameAnimation
         protected override void OnUndo()
         {
 
-       
+
+            if (duplicatingIndex.Item1 == -1 || duplicatingIndex.Item2 == -1) return; 
+
+            manager.removeKeyFrame(duplicatingIndex.Item1,duplicatingIndex.Item2);
+            manager.fillandCleanTimeline();
+            manager.selectTimelineFrame(duplicatingIndex.Item1,duplicatingIndex.Item2 - 1);
+            manager.resetTimeline();
             // if (justMoved) return;
 
             // manager.timeline[previousTrack.Item1] = previousTrack.Item2;

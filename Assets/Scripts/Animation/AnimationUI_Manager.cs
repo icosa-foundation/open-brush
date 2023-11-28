@@ -1088,7 +1088,7 @@ namespace TiltBrush.FrameAnimation
 
 
             App.Scene.ActiveCanvas = timeline[trackNum].Frames[frameNum].canvas;
-            frameOn = frameNum;
+            frameOn = Math.Clamp((int)frameNum, 0, timeline[trackNum].Frames.Count - 1);;
             focusFrame(frameNum);
 
             resetTimeline();
@@ -1135,7 +1135,7 @@ namespace TiltBrush.FrameAnimation
             
 
             deleteFrameButton.GetComponent<RemoveKeyFrameButton>().SetButtonAvailable(  
-                App.Scene.ActiveCanvas != timeline[0].Frames[0].canvas &&
+                App.Scene.ActiveCanvas != null && App.Scene.ActiveCanvas != timeline[0].Frames[0].canvas &&
                 getFrameFilled(App.Scene.ActiveCanvas)
                  );
 
@@ -1213,14 +1213,15 @@ namespace TiltBrush.FrameAnimation
             App.Scene.triggerLayersUpdate();
 
         }
-        public DeletedFrame removeKeyFrame()
+        public DeletedFrame removeKeyFrame(int trackNum = -1, int frameNum = -1)
         {
+
 
 
             print("BEFORE REMOVE");
             printTimeline();
 
-            (int,int) index = getCanvasLocation(App.Scene.ActiveCanvas);  
+            (int,int) index = (trackNum == -1 || frameNum == -1) ? getCanvasLocation(App.Scene.ActiveCanvas) : (trackNum,frameNum);  
             (int,int) nextIndex = getFollowingFrameIndex(index.Item1,index.Item2);
 
 

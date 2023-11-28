@@ -54,7 +54,23 @@ namespace TiltBrush.FrameAnimation
         protected override void OnUndo()
         {
 
-       
+            if (splittingIndex.Item1 == -1 || splittingIndex.Item2 == -1) return;
+
+            int followingLength = manager.getFrameLength(splittingIndex.Item1,splittingIndex.Item2);
+            CanvasScript previousCanvas = manager.timeline[splittingIndex.Item1].Frames[splittingIndex.Item2 - 1].canvas;
+            Debug.Log("PREVIOUS CANVAS");
+             Debug.Log(previousCanvas);
+            
+            for (int i = 0; i < followingLength; i++){
+
+                AnimationUI_Manager.Frame differentFrame = manager.timeline[splittingIndex.Item1].Frames[splittingIndex.Item2 + i];
+
+                differentFrame.canvas = previousCanvas;
+                manager.timeline[splittingIndex.Item1].Frames[splittingIndex.Item2 + i] = differentFrame;
+            }
+            manager.selectTimelineFrame(splittingIndex.Item1,splittingIndex.Item2);
+            manager.fillandCleanTimeline();
+            manager.resetTimeline();
             // if (justMoved) return;
 
             // manager.timeline[previousTrack.Item1] = previousTrack.Item2;
