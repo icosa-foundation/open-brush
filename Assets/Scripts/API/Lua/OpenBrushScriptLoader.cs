@@ -23,14 +23,14 @@ namespace TiltBrush
     {
         public override bool ScriptFileExists(string name)
         {
-            Debug.Log($"ScriptFileExists: {name}? {File.Exists(name)}");
+            LuaManager.LogLuaMessage($"ScriptFileExists: {name}? {File.Exists(name)}");
             return File.Exists(name);
         }
 
         public override object LoadFile(string file, Table globalContext)
         {
             FileStream result = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            Debug.Log($"LoadFile: {file} CanRead? {result.CanRead}");
+            LuaManager.LogLuaMessage($"LoadFile: {file} CanRead? {result.CanRead}");
             return result;
         }
     }
