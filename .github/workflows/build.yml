@@ -390,7 +390,7 @@ jobs:
 
       - name: Build project
         id: unity_builder
-        uses: game-ci/unity-builder@fix-pro-activation
+        uses: game-ci/unity-builder@v4
         env:
           VERSION: ${{ needs.configuration.outputs.version}}
         with:
@@ -422,7 +422,7 @@ jobs:
       - name: Build project rerun (if needed)
         id: unity_builder_rerun
         if: ${{ steps.unity_builder.outputs.engineExitCode == 1 }}
-        uses: game-ci/unity-builder@fix-pro-activation
+        uses: game-ci/unity-builder@v4
         env:
           VERSION: ${{ needs.configuration.outputs.version}}
         with:
