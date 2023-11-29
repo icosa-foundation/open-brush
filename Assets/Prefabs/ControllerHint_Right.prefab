@@ -31,6 +31,11 @@ PrefabInstance:
       propertyPath: m_LocalPosition.x
       value: -1
       objectReference: {fileID: 0}
+    - target: {fileID: 4584288707958903752, guid: e845ea7f1bc1b144f8087e425d81fb6f,
+        type: 3}
+      propertyPath: m_SwitchCaps
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5328659286739045611, guid: e845ea7f1bc1b144f8087e425d81fb6f,
         type: 3}
       propertyPath: m_LocalPosition.x
