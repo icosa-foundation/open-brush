@@ -167,11 +167,14 @@ namespace TiltBrush
                 Directory.CreateDirectory(LuaModulesPath);
             }
 
-            // Allow includes from Scripts/LuaModules
-            Script.DefaultOptions.ScriptLoader = new FileSystemScriptLoader();
-            ((ScriptLoaderBase)Script.DefaultOptions.ScriptLoader).ModulePaths = new[] { Path.Join(LuaModulesPath, "?.lua") };
-
             CopyLuaModules();
+
+            // Allow includes from Scripts/LuaModules
+            Script.DefaultOptions.ScriptLoader = new OpenBrushScriptLoader();
+            ((ScriptLoaderBase)Script.DefaultOptions.ScriptLoader).ModulePaths = new[]
+            {
+                Path.Join(LuaModulesPath, "?.lua")
+            };
 
             LoadExampleScripts();
             LoadUserScripts();
@@ -446,9 +449,14 @@ namespace TiltBrush
             {
                 script.DoString(contents);
             }
+            catch (ScriptRuntimeException e)
+            {
+                LogLuaInterpreterError(script, $"(Runtime Error loading: {scriptFilename})", e);
+                return null;
+            }
             catch (SyntaxErrorException e)
             {
-                LogLuaInterpreterError(script, $"(Loading: {scriptFilename})", e);
+                LogLuaInterpreterError(script, $"(Syntax Error loading: {scriptFilename})", e);
                 return null;
             }
             var catMatch = TryGetCategoryFromScriptName(scriptFilename);
@@ -465,7 +473,15 @@ namespace TiltBrush
                 {
                     m_ActiveBackgroundScripts[scriptName] = script;
                 }
-                InitScriptOnce(script);
+                try
+                {
+                    InitScriptOnce(script);
+                }
+                catch (ScriptRuntimeException e)
+                {
+                    LogLuaInterpreterError(script, $"(ScriptRuntimeException InitScriptOnce: {scriptFilename})", e);
+                    return null;
+                }
             }
             return scriptName;
         }

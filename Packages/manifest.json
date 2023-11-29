@@ -23,7 +23,7 @@
     "com.unity.xr.management": "4.3.3",
     "com.unity.xr.oculus": "3.3.0",
     "com.unity.xr.openxr": "1.8.2",
-    "moonsharp": "https://github.com/nothke/moonsharp-unity-upm.git",
+    "moonsharp": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",
     "org.nuget.google.apis": "1.57.0",
     "org.nuget.google.apis.auth": "1.57.0",
     "org.nuget.google.apis.core": "https://github.com/icosa-mirror/org.nuget.google.apis.core.git#unity-newtonsoft",
