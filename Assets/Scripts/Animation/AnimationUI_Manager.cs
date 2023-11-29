@@ -1445,13 +1445,16 @@ namespace TiltBrush.FrameAnimation
             fillTimeline();
             cleanTimeline();
         }
-        public (int,int) moveKeyFrame(bool moveRight, CanvasScript canvas = null){
+        public (int,int) moveKeyFrame(bool moveRight, int trackNum = -1, int frameNum = -1)
+        {
 
 
 
-            canvas = canvas == null ? App.Scene.ActiveCanvas : canvas;
+            print("BEFORE REMOVE");
+            printTimeline();
 
-            (int, int) index = getCanvasLocation(canvas);
+            (int,int) index = (trackNum == -1 || frameNum == -1) ? getCanvasLocation(App.Scene.ActiveCanvas) : (trackNum,frameNum);  
+
             (int, int ) nextIndex = getFollowingFrameIndex(index.Item1,index.Item2);
             bool failure = false;
 
@@ -1523,7 +1526,7 @@ namespace TiltBrush.FrameAnimation
           
         }
         // For loading the scene
-         public void addKeyFrame(int trackNum){
+            public void addKeyFrame(int trackNum){
 
             (int, int) index = (trackNum, timeline[trackNum].Frames.Count-1);
                 (int, int ) nextIndex = getFollowingFrameIndex(index.Item1,index.Item2);
@@ -1548,11 +1551,16 @@ namespace TiltBrush.FrameAnimation
         
 
         }
-        public (int,int) addKeyFrame(){
+
+        public (int,int) addKeyFrame(int trackNum = -1, int frameNum = -1)
+        {
 
 
-            (int, int) index = getCanvasLocation(App.Scene.ActiveCanvas);
 
+            print("BEFORE REMOVE");
+            printTimeline();
+
+            (int,int) index = (trackNum == -1 || frameNum == -1) ? getCanvasLocation(App.Scene.ActiveCanvas) : (trackNum,frameNum);  
 
 
             Debug.Log("ON REDO");
@@ -1650,13 +1658,14 @@ namespace TiltBrush.FrameAnimation
         }
 
 
-        public (int,int) extendKeyFrame( CanvasScript canvas = null)
+        public (int,int) extendKeyFrame(int trackNum = -1, int frameNum = -1)
         {
 
 
-            canvas = canvas == null ? App.Scene.ActiveCanvas : canvas;
 
-            (int, int) index = getCanvasLocation(canvas);
+            (int,int) index = (trackNum == -1 || frameNum == -1) ? getCanvasLocation(App.Scene.ActiveCanvas) : (trackNum,frameNum);  
+
+     
 
             // print("ADDING LAYER HERE - " + index.Item2);
             //             // Frame addingFrame = newFrame(App.Scene.AddCanvas());
@@ -1757,12 +1766,14 @@ namespace TiltBrush.FrameAnimation
 
         }
 
-         public (int,int) reduceKeyFrame( CanvasScript canvas = null){
+         public (int,int) reduceKeyFrame(int trackNum = -1, int frameNum = -1)
+        {
 
 
-            canvas = canvas == null ? App.Scene.ActiveCanvas : canvas;
 
-            (int, int) index = getCanvasLocation(canvas);
+            (int,int) index = (trackNum == -1 || frameNum == -1) ? getCanvasLocation(App.Scene.ActiveCanvas) : (trackNum,frameNum);  
+
+
 
                 int frameLength = getFrameLength(index.Item1,index.Item2);
 
@@ -1781,11 +1792,12 @@ namespace TiltBrush.FrameAnimation
 
         }
 
-        public (int,int) splitKeyFrame(){
+        public (int,int) splitKeyFrame(int trackNum = -1, int frameNum = -1)
+        {
 
-        
 
-            (int, int) index = getCanvasLocation(App.Scene.ActiveCanvas);
+            (int,int) index = (trackNum == -1 || frameNum == -1) ? getCanvasLocation(App.Scene.ActiveCanvas) : (trackNum,frameNum);  
+
 
             CanvasScript newCanvas = App.Scene.AddCanvas();       
             CanvasScript oldCanvas = App.Scene.ActiveCanvas;
@@ -1851,12 +1863,17 @@ namespace TiltBrush.FrameAnimation
 
             return (index.Item1,splittingIndex);
         }
-        public  (int, int) duplicateKeyFrame()
+        public  (int, int) duplicateKeyFrame(int trackNum = -1, int frameNum = -1)
         {
 
 
 
-            (int, int) index = getCanvasLocation(App.Scene.ActiveCanvas);
+            print("BEFORE REMOVE");
+            printTimeline();
+
+            (int,int) index = (trackNum == -1 || frameNum == -1) ? getCanvasLocation(App.Scene.ActiveCanvas) : (trackNum,frameNum);  
+
+            // (int, int) index = getCanvasLocation(App.Scene.ActiveCanvas);
 
             CanvasScript newCanvas = App.Scene.AddCanvas();       
             CanvasScript oldCanvas = App.Scene.ActiveCanvas;

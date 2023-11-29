@@ -46,15 +46,15 @@ namespace TiltBrush.FrameAnimation
         protected override void OnRedo()
         {
            
-            insertingAt = manager.reduceKeyFrame();
+            insertingAt = manager.reduceKeyFrame(timelineLocation.Item1,timelineLocation.Item2);
         }
 
         protected override void OnUndo()
         {
             // if (justMoved) return;
         if (insertingAt.Item1 == -1 || insertingAt.Item2 == -1) return;
-           CanvasScript reducedanvas = manager.getTimelineCanvas(insertingAt.Item1,insertingAt.Item2);
-           manager.extendKeyFrame(reducedanvas);
+     
+           manager.extendKeyFrame(insertingAt.Item1,insertingAt.Item2);
 
     
  

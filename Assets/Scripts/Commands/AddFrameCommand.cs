@@ -46,7 +46,7 @@ namespace TiltBrush.FrameAnimation
         protected override void OnRedo()
         {
            
-            insertingAt = manager.addKeyFrame();
+            insertingAt = manager.addKeyFrame(timelineLocation.Item1,timelineLocation.Item2);
         }
 
         protected override void OnUndo()

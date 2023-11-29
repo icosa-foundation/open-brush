@@ -48,15 +48,15 @@ namespace TiltBrush.FrameAnimation
         protected override void OnRedo()
         {
            
-            movingTo = manager.moveKeyFrame(moveRight);
+            movingTo = manager.moveKeyFrame(moveRight,timelineLocation.Item1,timelineLocation.Item2);
         }
 
         protected override void OnUndo()
         {
             // if (justMoved) return;
         if (movingTo.Item1 == -1 || movingTo.Item2 == -1) return;
-           CanvasScript movedCanvas = manager.getTimelineCanvas(movingTo.Item1,movingTo.Item2);
-           manager.moveKeyFrame(!moveRight,movedCanvas);
+  
+           manager.moveKeyFrame(!moveRight,movingTo.Item1,movingTo.Item2);
 
     
         
