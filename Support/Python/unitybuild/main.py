@@ -156,7 +156,7 @@ def get_unity_exe(version, lenient=True):
     exes = sorted(iter_editors_and_versions(), reverse=True)
     if len(exes) == 0:
         raise BuildFailed("Cannot find any Unity versions (want %s)" % (version,))
-    for (found_exe, found_version) in exes:
+    for found_exe, found_version in exes:
         if found_version == version:
             return found_exe
 
@@ -617,7 +617,7 @@ def build(
     full_version = "%s-%s" % (get_end_user_version(project_dir), stamp)
 
     # Populate environment with secrets just before calling subprocess
-    for (env_var, credential_name) in required_credentials:
+    for env_var, credential_name in required_credentials:
         if env_var not in cmd_env:
             if is_jenkins:
                 # TODO(pld): Look into Jenkins plugins to get at these credentials
@@ -723,7 +723,7 @@ def create_notice_file(project_dir):
 This software makes use of third-party software with the following notices.
 """
     )
-    for (library_name, notice_file) in iter_notice_files():
+    for library_name, notice_file in iter_notice_files():
         tmpf.write("\n\n=== %s ===\n" % library_name)
         with open(notice_file) as inf:
             contents = inf.read()
@@ -950,7 +950,7 @@ def main(
 
         create_notice_file(project_dir)
 
-        for (platform, vrsdk, config) in iter_builds(args):
+        for platform, vrsdk, config in iter_builds(args):
             stamp = revision + ("-exp" if args.experimental else "")
             print(
                 "Building %s %s %s exp:%d signed:%d il2cpp:%d"
@@ -1008,7 +1008,7 @@ def main(
             if args.for_distribution and vrsdk == "Oculus":
                 # .pdb files violate VRC.PC.Security.3 and ovr-platform-utils rejects the submission
                 to_remove = []
-                for (r, _, fs) in os.walk(output_dir):
+                for r, _, fs in os.walk(output_dir):
                     for f in fs:
                         if f.endswith(".pdb"):
                             to_remove.append(os.path.join(r, f))
@@ -1097,6 +1097,7 @@ def main(
 
 
 # Tests
+
 
 # This code seems rather temporary; ignore any and all warnings
 # pylint: disable=all
