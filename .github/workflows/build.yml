@@ -302,16 +302,6 @@ jobs:
           cp -R 'tmp.package/Assets/TextMesh Pro' Assets/
           rm -rf tmp.plugin tmp.package
 
-
-      - name: Manually delete Zapbox package
-        if: matrix.vrsdk != 'Zapbox'
-        run: |
-          # Android builds fail on if Zapbox package is present
-          cat Packages/manifest.json | jq 'del( .dependencies ["com.zappar.xr.zapbox"] )' | tee Packages/manifest.json.new
-          mv Packages/manifest.json.new Packages/manifest.json
-          cat Packages/packages-lock.json | jq 'del( .dependencies ["com.zappar.xr.zapbox"] )' | tee Packages/packages-lock.json.new
-          mv Packages/packages-lock.json.new Packages/packages-lock.json
-
       - name: Manually delete USD packages
         if: matrix.targetPlatform == 'iOS'
         run: |
