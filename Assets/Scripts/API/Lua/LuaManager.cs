@@ -444,6 +444,14 @@ namespace TiltBrush
         private string LoadScriptFromString(string scriptFilename, string contents, bool isExampleScript = false)
         {
             Script script = new Script();
+
+            // Shouldn't be neccesary but this is an attempt to debug require not working on Android
+            script.Options.ScriptLoader = new OpenBrushScriptLoader();
+            ((ScriptLoaderBase)script.Options.ScriptLoader).ModulePaths = new[]
+            {
+                Path.Join(LuaModulesPath, "?.lua")
+            };
+
             string scriptName = null;
             try
             {
