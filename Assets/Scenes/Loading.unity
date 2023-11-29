@@ -206,6 +206,27 @@ MonoBehaviour:
   m_VrCamera: {fileID: 1815664868}
   m_MaximumLoadingTime: 60
   m_SceneLoadRatio: 0.75
+  m_LoadingText:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 287897575133184
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_RequestAndroidFolderPermissions:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 170004956477833216
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  references:
+    version: 2
+    RefIds: []
 --- !u!4 &326031496
 Transform:
   m_ObjectHideFlags: 0
