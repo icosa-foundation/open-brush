@@ -3101,7 +3101,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 106429517453328384
-    m_Localized: "Background Images"
+    m_Localized: Background Images
     m_Metadata:
       m_Items: []
   - m_Id: 95221400803737600
@@ -3457,9 +3457,13 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 151490030713540608
-    m_Localized: 'You can create a video of your sketch by opening it on a Mac or PC.
-      Search for "Exporting video" on our docs website: https://docs.openbrush.app
+    m_Localized: 'You can create a video of your sketch by opening it on a Mac or
+      PC. Search for "Exporting video" on our docs website: https://docs.openbrush.app
       for a step by step guide.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 170004956477833216
+    m_Localized: Please give Open Brush file access to save your creations!
     m_Metadata:
       m_Items: []
   references:

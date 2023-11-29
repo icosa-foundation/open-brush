@@ -540,7 +540,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 287897575133184
-    m_Key: LOADING_SCENE_OVERLAY_MESSAGE
+    m_Key: LOADING_SCENE_OVERLAY_LOADING
     m_Metadata:
       m_Items: []
   - m_Id: 7892854560759808
@@ -3269,6 +3269,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 151490030713540608
     m_Key: POPUP_RECORD_UNSUPPORTED_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 170004956477833216
+    m_Key: LOADING_SCENE_OVERLAY_ANDROIDPERMISSIONS
     m_Metadata:
       m_Items: []
   m_Metadata:
