@@ -79,7 +79,7 @@ namespace TiltBrush
                 vBGScale.x = fTextWidth;
                 m_BG.localScale = vBGScale;
             }
-            
+
             if (!m_SwitchCaps && m_RightCap)
             {
                 m_RightCap.transform.localPosition = Vector3.right * fTextWidth;
