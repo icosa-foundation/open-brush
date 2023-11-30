@@ -73,7 +73,7 @@ namespace TiltBrush
                 transform.localPosition = new Vector3(.5f, m_YOffset, 0f);
             }
 
-            if(m_BG != null)
+            if (m_BG != null)
             {
                 Vector3 vBGScale = m_BG.localScale;
                 vBGScale.x = fTextWidth;
