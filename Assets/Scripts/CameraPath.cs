@@ -23,12 +23,12 @@ namespace TiltBrush
 
     public class KnotDescriptor
     {
-        public MovementPathKnot knot;
+        public CameraPathKnot knot;
         // Refers to a part of the knot in reference, respective to the
         // type of knot.  This is usually cast to an enum defined by the knot class.
         // For example, MovementPathPositionKnot has 3 controls in enum ControlType:
         // Knot == 0, TangentControlForward == 1, and TangentControlBack == 2.
-        public int control = MovementPathKnot.kDefaultControl;
+        public int control = CameraPathKnot.kDefaultControl;
         // For PositionKnots, this value refers to the index into the path.  0 is the head
         // knot, and MovementPath.m_PositionKnots.Count - 1 is the tail.  This is null for
         // path constrained knots.
@@ -43,7 +43,7 @@ namespace TiltBrush
             Set(k.knot, k.control, k.positionKnotIndex, k.pathT);
         }
 
-        public void Set(MovementPathKnot _k, int _c, int? _ki, PathT? _t)
+        public void Set(CameraPathKnot _k, int _c, int? _ki, PathT? _t)
         {
             knot = _k;
             control = _c;
@@ -133,7 +133,7 @@ namespace TiltBrush
         public float length;
     }
 
-    public class MovementPath
+    public class CameraPath
     {
         private const int kNumSegmentPoints = 30;
         private const float kEpsilon = 0.0001f;
@@ -146,15 +146,15 @@ namespace TiltBrush
         }
 
         // Unsorted list used for parsing all types of knots.
-        public List<MovementPathKnot> AllKnots;
+        public List<CameraPathKnot> AllKnots;
         // Sorted list of positions which define path.
-        public List<MovementPathPositionKnot> PositionKnots;
+        public List<CameraPathPositionKnot> PositionKnots;
         // List of rotation points sorted relative to the m_PositionKnots.
-        public List<MovementPathRotationKnot> RotationKnots;
+        public List<CameraPathRotationKnot> RotationKnots;
         // List of speed points sorted relative to the m_PositionKnots.
-        public List<MovementPathSpeedKnot> SpeedKnots;
+        public List<CameraPathSpeedKnot> SpeedKnots;
         // List of fov points sorted relative to the m_PositionKnots.
-        public List<MovementPathFovKnot> FovKnots;
+        public List<CameraPathFovKnot> FovKnots;
         public List<KnotSegment> Segments;
 
         public bool belongsToAnimation = false;
@@ -201,13 +201,13 @@ namespace TiltBrush
             get { return m_LastPlacedKnotInfo; }
         }
 
-        public MovementPath(Transform widget, float segmentRad, float endRad, float speed, float fov)
+        public CameraPath(Transform widget, float segmentRad, float endRad, float speed, float fov)
         {
-            AllKnots = new List<MovementPathKnot>();
-            PositionKnots = new List<MovementPathPositionKnot>();
-            RotationKnots = new List<MovementPathRotationKnot>();
-            SpeedKnots = new List<MovementPathSpeedKnot>();
-            FovKnots = new List<MovementPathFovKnot>();
+            AllKnots = new List<CameraPathKnot>();
+            PositionKnots = new List<CameraPathPositionKnot>();
+            RotationKnots = new List<CameraPathRotationKnot>();
+            SpeedKnots = new List<CameraPathSpeedKnot>();
+            FovKnots = new List<CameraPathFovKnot>();
             Segments = new List<KnotSegment>();
             m_LastPlacedKnotInfo = new KnotDescriptor();
 
@@ -269,7 +269,7 @@ namespace TiltBrush
         public bool IsPositionNearHead(Vector3 pos)
         {
             if (NumPositionKnots == 0) { return false; }
-            MovementPathPositionKnot pk0 = PositionKnots[0];
+            CameraPathPositionKnot pk0 = PositionKnots[0];
             return Vector3.Distance(pk0.transform.position, pos) < kEpsilon;
         }
 
@@ -287,8 +287,8 @@ namespace TiltBrush
             bool pathShouldLoop = false;
             if (NumPositionKnots > 2)
             {
-                MovementPathPositionKnot pk0 = PositionKnots[0];
-                MovementPathPositionKnot pkn1 = PositionKnots[NumPositionKnots - 1];
+                CameraPathPositionKnot pk0 = PositionKnots[0];
+                CameraPathPositionKnot pkn1 = PositionKnots[NumPositionKnots - 1];
                 if (Mathf.Abs(pk0.TangentMagnitude - pkn1.TangentMagnitude) < kEpsilon)
                 {
                     if (Vector3.Distance(pk0.transform.position, pkn1.transform.position) < kEpsilon)
@@ -323,15 +323,15 @@ namespace TiltBrush
 
         /// The MovementPath class will not clean up this knot gameObject.  It is the duty of the caller
         /// to clean up their mess.
-        public MovementPathSpeedKnot CreateSpeedKnot(PathT pathT)
+        public CameraPathSpeedKnot CreateSpeedKnot(PathT pathT)
         {
             GameObject go = UnityEngine.Object.Instantiate(
                 WidgetManager.m_Instance.MovementPathSpeedKnotPrefab,
                 GetPosition(pathT), Quaternion.identity);
-            return go.GetComponent<MovementPathSpeedKnot>();
+            return go.GetComponent<CameraPathSpeedKnot>();
         }
 
-        public void AddSpeedKnot(MovementPathSpeedKnot knot, PathT pathT)
+        public void AddSpeedKnot(CameraPathSpeedKnot knot, PathT pathT)
         {
             knot.transform.parent = m_Widget;
             knot.PathT = pathT;
@@ -354,20 +354,20 @@ namespace TiltBrush
             }
             SpeedKnots.Insert(insertIndex, knot);
             m_LastPlacedKnotInfo.Set(knot,
-                (int)MovementPathSpeedKnot.ControlType.SpeedControl, null, pathT);
+                (int)CameraPathSpeedKnot.ControlType.SpeedControl, null, pathT);
         }
 
         /// The MovementPath class will not clean up this knot gameObject.  It is the duty of the caller
         /// to clean up their mess.
-        public MovementPathFovKnot CreateFovKnot(PathT pathT)
+        public CameraPathFovKnot CreateFovKnot(PathT pathT)
         {
             GameObject go = UnityEngine.Object.Instantiate(
                 WidgetManager.m_Instance.MovementPathFovKnotPrefab,
                 GetPosition(pathT), Quaternion.identity);
-            return go.GetComponent<MovementPathFovKnot>();
+            return go.GetComponent<CameraPathFovKnot>();
         }
 
-        public void AddFovKnot(MovementPathFovKnot knot, PathT pathT)
+        public void AddFovKnot(CameraPathFovKnot knot, PathT pathT)
         {
             knot.transform.parent = m_Widget;
             knot.PathT = pathT;
@@ -390,20 +390,20 @@ namespace TiltBrush
             }
             FovKnots.Insert(insertIndex, knot);
             m_LastPlacedKnotInfo.Set(knot,
-                (int)MovementPathFovKnot.ControlType.FovControl, null, pathT);
+                (int)CameraPathFovKnot.ControlType.FovControl, null, pathT);
         }
 
         /// The MovementPath class will not clean up this knot gameObject.  It is the duty of the caller
         /// to clean up their mess.
-        public MovementPathRotationKnot CreateRotationKnot(PathT pathT, Quaternion rot)
+        public CameraPathRotationKnot CreateRotationKnot(PathT pathT, Quaternion rot)
         {
             GameObject go = UnityEngine.Object.Instantiate(
                 WidgetManager.m_Instance.MovementPathRotationKnotPrefab,
                 GetPosition(pathT), rot);
-            return go.GetComponent<MovementPathRotationKnot>();
+            return go.GetComponent<CameraPathRotationKnot>();
         }
 
-        public void AddRotationKnot(MovementPathRotationKnot knot, PathT pathT)
+        public void AddRotationKnot(CameraPathRotationKnot knot, PathT pathT)
         {
             knot.transform.parent = m_Widget;
             knot.PathT = pathT;
@@ -427,7 +427,7 @@ namespace TiltBrush
             // Align quaternions on all rotation knots so we don't have unexpected camera flips
             // when calculating rotation as we walk the path.
             RefreshRotationKnotPolarities();
-            m_LastPlacedKnotInfo.Set(knot, MovementPathKnot.kDefaultControl, null, pathT);
+            m_LastPlacedKnotInfo.Set(knot, CameraPathKnot.kDefaultControl, null, pathT);
         }
 
         public void RefreshRotationKnotPolarities()
@@ -446,14 +446,14 @@ namespace TiltBrush
 
         /// The MovementPath class will not clean up this knot gameObject.  It is the duty of the caller
         /// to clean up their mess.
-        public MovementPathPositionKnot CreatePositionKnot(Vector3 pos)
+        public CameraPathPositionKnot CreatePositionKnot(Vector3 pos)
         {
             GameObject go = UnityEngine.Object.Instantiate(
                 WidgetManager.m_Instance.MovementPathPositionKnotPrefab, pos, Quaternion.identity);
-            return go.GetComponent<MovementPathPositionKnot>();
+            return go.GetComponent<CameraPathPositionKnot>();
         }
 
-        public void InsertPositionKnot(MovementPathPositionKnot knot, int index)
+        public void InsertPositionKnot(CameraPathPositionKnot knot, int index)
         {
             knot.transform.parent = m_Widget;
             knot.RefreshVisuals();
@@ -467,23 +467,23 @@ namespace TiltBrush
             // The ControlType of m_LastPlacedKnotInfo is dependent on our index.  When we add to the
             // head, we want the user manipulating the back tangent.  In other cases, the forward tangent.
             // The exception to the head is when there's only one knot.
-            MovementPathPositionKnot.ControlType controlType = (index == 0 && PositionKnots.Count > 1) ?
-                MovementPathPositionKnot.ControlType.TangentControlBack :
-                MovementPathPositionKnot.ControlType.TangentControlForward;
+            CameraPathPositionKnot.ControlType controlType = (index == 0 && PositionKnots.Count > 1) ?
+                CameraPathPositionKnot.ControlType.TangentControlBack :
+                CameraPathPositionKnot.ControlType.TangentControlForward;
             m_LastPlacedKnotInfo.Set(knot, (int)controlType, index, null);
         }
 
-        public void SortKnotList(MovementPathKnot.Type type)
+        public void SortKnotList(CameraPathKnot.Type type)
         {
             switch (type)
             {
-                case MovementPathKnot.Type.Fov:
+                case CameraPathKnot.Type.Fov:
                     FovKnots.Sort(CompareKnotsByPathT);
                     break;
-                case MovementPathKnot.Type.Rotation:
+                case CameraPathKnot.Type.Rotation:
                     RotationKnots.Sort(CompareKnotsByPathT);
                     break;
-                case MovementPathKnot.Type.Speed:
+                case CameraPathKnot.Type.Speed:
                     SpeedKnots.Sort(CompareKnotsByPathT);
                     break;
                 default:
@@ -492,7 +492,7 @@ namespace TiltBrush
             }
         }
 
-        private static int CompareKnotsByPathT(MovementPathKnot a, MovementPathKnot b)
+        private static int CompareKnotsByPathT(CameraPathKnot a, CameraPathKnot b)
         {
             return PathT.Cmp(a.PathT, b.PathT);
         }
@@ -550,7 +550,7 @@ namespace TiltBrush
             }
         }
 
-        public MovementPathKnot GetKnotAtPosition(Vector3 pos)
+        public CameraPathKnot GetKnotAtPosition(Vector3 pos)
         {
             for (int i = 0; i < RotationKnots.Count; ++i)
             {
@@ -586,9 +586,9 @@ namespace TiltBrush
             return null;
         }
 
-        public void RemoveKnot(MovementPathKnot knot)
+        public void RemoveKnot(CameraPathKnot knot)
         {
-            MovementPathRotationKnot rotationKnot = knot as MovementPathRotationKnot;
+            CameraPathRotationKnot rotationKnot = knot as CameraPathRotationKnot;
             if (rotationKnot != null)
             {
                 AllKnots.Remove(knot);
@@ -597,7 +597,7 @@ namespace TiltBrush
                 return;
             }
 
-            MovementPathSpeedKnot speedKnot = knot as MovementPathSpeedKnot;
+            CameraPathSpeedKnot speedKnot = knot as CameraPathSpeedKnot;
             if (speedKnot != null)
             {
                 AllKnots.Remove(knot);
@@ -606,7 +606,7 @@ namespace TiltBrush
                 return;
             }
 
-            MovementPathFovKnot fovKnot = knot as MovementPathFovKnot;
+            CameraPathFovKnot fovKnot = knot as CameraPathFovKnot;
             if (fovKnot != null)
             {
                 AllKnots.Remove(knot);
@@ -615,7 +615,7 @@ namespace TiltBrush
                 return;
             }
 
-            MovementPathPositionKnot positionKnot = knot as MovementPathPositionKnot;
+            CameraPathPositionKnot positionKnot = knot as CameraPathPositionKnot;
             if (positionKnot != null)
             {
                 AllKnots.Remove(knot);
@@ -628,18 +628,18 @@ namespace TiltBrush
             }
         }
 
-        public List<MovementPathKnot> GetKnotsOrphanedByKnotRemoval(MovementPathKnot knot)
+        public List<CameraPathKnot> GetKnotsOrphanedByKnotRemoval(CameraPathKnot knot)
         {
-            List<MovementPathKnot> orphanedKnots = new List<MovementPathKnot>();
+            List<CameraPathKnot> orphanedKnots = new List<CameraPathKnot>();
             // Position knots are the only type whose removal affects other knots.
-            if (knot.KnotType != MovementPathKnot.Type.Position)
+            if (knot.KnotType != CameraPathKnot.Type.Position)
             {
                 return orphanedKnots;
             }
 
-            int positionIndex = PositionKnots.IndexOf(knot as MovementPathPositionKnot);
+            int positionIndex = PositionKnots.IndexOf(knot as CameraPathPositionKnot);
 
-            // If we're removing an internal position knot, nothing will be orphaned.  
+            // If we're removing an internal position knot, nothing will be orphaned.
             if (positionIndex > 0 && positionIndex < PositionKnots.Count - 1)
             {
                 return orphanedKnots;
@@ -784,14 +784,14 @@ namespace TiltBrush
 
         void RefreshRotationKnot(int index)
         {
-            MovementPathRotationKnot knot = RotationKnots[index];
+            CameraPathRotationKnot knot = RotationKnots[index];
             knot.SetPosition(GetPosition(knot.PathT));
             knot.DistanceAlongSegment = GetSegmentDistanceToT(knot.PathT);
         }
 
         void RefreshSpeedKnot(int index)
         {
-            MovementPathSpeedKnot knot = SpeedKnots[index];
+            CameraPathSpeedKnot knot = SpeedKnots[index];
             knot.SetPosition(GetPosition(knot.PathT));
             knot.DistanceAlongSegment = GetSegmentDistanceToT(knot.PathT);
             knot.RefreshVisuals();
@@ -799,7 +799,7 @@ namespace TiltBrush
 
         void RefreshFovKnot(int index)
         {
-            MovementPathFovKnot knot = FovKnots[index];
+            CameraPathFovKnot knot = FovKnots[index];
             knot.SetPosition(GetPosition(knot.PathT));
             knot.DistanceAlongSegment = GetSegmentDistanceToT(knot.PathT);
             knot.RefreshVisuals();
@@ -914,7 +914,7 @@ namespace TiltBrush
             return EndType.None;
         }
 
-        void RecomputeKnotPlacementAfterPositionAdded(MovementPathKnot knot, int addedKnotIndex,
+        void RecomputeKnotPlacementAfterPositionAdded(CameraPathKnot knot, int addedKnotIndex,
                                                       float[] prevSegmentLengths, float[] newSegmentLengths)
         {
             if (addedKnotIndex > Mathf.CeilToInt(knot.PathT.T))
@@ -979,7 +979,7 @@ namespace TiltBrush
             }
         }
 
-        void RecomputeKnotPlacementAfterPositionRemoved(MovementPathKnot knot, int removedKnotIndex,
+        void RecomputeKnotPlacementAfterPositionRemoved(CameraPathKnot knot, int removedKnotIndex,
                                                         float[] prevSegmentLengths, float[] newSegmentLengths)
         {
             if (removedKnotIndex > Mathf.CeilToInt(knot.PathT.T))
@@ -1302,8 +1302,8 @@ namespace TiltBrush
             return new PathT();
         }
 
-        // 
-        //  Knot 0             Knot 1             Knot 2     
+        //
+        //  Knot 0             Knot 1             Knot 2
         // pathT=0.0          pathT=1.0          pathT=2.0
         //    |__________________|__________________|_________...
         //
@@ -1435,7 +1435,7 @@ namespace TiltBrush
             PathT t1 = new PathT(), t2 = new PathT();
             for (int i = 0; i < numRotKnots; ++i)
             {
-                MovementPathRotationKnot thisKnot = RotationKnots[i];
+                CameraPathRotationKnot thisKnot = RotationKnots[i];
                 if (pathT <= thisKnot.PathT)
                 {
                     v0 = RotationKnots[ClampIndex(i - 2, 0, numRotKnots - 1)].transform.rotation;
@@ -1527,7 +1527,7 @@ namespace TiltBrush
             PathT t1 = new PathT(), t2 = new PathT();
             for (int i = 0; i < numSpeedKnots; ++i)
             {
-                MovementPathSpeedKnot thisKnot = SpeedKnots[i];
+                CameraPathSpeedKnot thisKnot = SpeedKnots[i];
                 if (pathT <= thisKnot.PathT)
                 {
                     v0 = SpeedKnots[ClampIndex(i - 2, 0, numSpeedKnots - 1)].CameraSpeed;
@@ -1596,7 +1596,7 @@ namespace TiltBrush
             PathT t1 = new PathT(), t2 = new PathT();
             for (int i = 0; i < numFovKnots; ++i)
             {
-                MovementPathFovKnot thisKnot = FovKnots[i];
+                CameraPathFovKnot thisKnot = FovKnots[i];
                 if (pathT <= thisKnot.PathT)
                 {
                     v0 = FovKnots[ClampIndex(i - 2, 0, numFovKnots - 1)].CameraFov;

@@ -104,7 +104,7 @@ namespace TiltBrush
             PolyMobile,
             LabsMobile,
             ReferenceMobile,
-            MovementPath,
+            CameraPath,
             BrushLab,
             WebcamPanel = 5200,
             Scripts = 6000,

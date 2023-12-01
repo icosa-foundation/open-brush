@@ -18,11 +18,11 @@ using TMPro;
 namespace TiltBrush
 {
 
-    public class MovementPathFovKnot : MovementPathKnot
+    public class CameraPathFovKnot : CameraPathKnot
     {
         public enum ControlType
         {
-            Knot = MovementPathKnot.kDefaultControl,
+            Knot = CameraPathKnot.kDefaultControl,
             FovControl,
         }
 

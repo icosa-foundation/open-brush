@@ -14,13 +14,13 @@
 
 namespace TiltBrush
 {
-    public class ModifySpeedKnotCommand : BaseKnotCommand<MovementPathSpeedKnot>
+    public class ModifySpeedKnotCommand : BaseKnotCommand<CameraPathSpeedKnot>
     {
         private float m_StartSpeed;
         private float m_EndSpeed;
         private bool m_Final;
 
-        public ModifySpeedKnotCommand(MovementPathSpeedKnot knot, float endSpeed,
+        public ModifySpeedKnotCommand(CameraPathSpeedKnot knot, float endSpeed,
                                       bool mergesWithCreateCommand = false, bool final = false,
                                       BaseCommand parent = null) : base(knot, mergesWithCreateCommand, parent)
         {

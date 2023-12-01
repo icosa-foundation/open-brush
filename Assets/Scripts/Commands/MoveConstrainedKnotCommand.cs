@@ -18,14 +18,14 @@ namespace TiltBrush
 {
     public class MoveConstrainedKnotCommand : BaseKnotCommand
     {
-        private MovementPath m_Path;
+        private CameraPath m_Path;
         private Quaternion m_StartRotation_CS;
         private Quaternion m_EndRotation_CS;
         private PathT m_StartT;
         private PathT m_EndT;
         private bool m_Final;
 
-        public MoveConstrainedKnotCommand(MovementPath path, KnotDescriptor knotDesc, Quaternion rot_GS,
+        public MoveConstrainedKnotCommand(CameraPath path, KnotDescriptor knotDesc, Quaternion rot_GS,
                                           bool mergesWithCreateCommand = false, bool final = false, BaseCommand parent = null)
             : base(knotDesc.knot, mergesWithCreateCommand, parent)
         {
@@ -48,7 +48,7 @@ namespace TiltBrush
             Knot.transform.position = m_Path.GetPosition(m_EndT);
             Knot.transform.localRotation = m_EndRotation_CS;
             Knot.RefreshVisuals();
-            if (Knot.KnotType == MovementPathKnot.Type.Rotation)
+            if (Knot.KnotType == CameraPathKnot.Type.Rotation)
             {
                 // Align quaternions on all rotation knots so we don't have unexpected camera flips
                 // when calculating rotation as we walk the path.
@@ -65,7 +65,7 @@ namespace TiltBrush
             Knot.transform.position = m_Path.GetPosition(m_StartT);
             Knot.transform.localRotation = m_StartRotation_CS;
             Knot.RefreshVisuals();
-            if (Knot.KnotType == MovementPathKnot.Type.Rotation)
+            if (Knot.KnotType == CameraPathKnot.Type.Rotation)
             {
                 m_Path.RefreshRotationKnotPolarities();
             }

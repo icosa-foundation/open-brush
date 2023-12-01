@@ -17,11 +17,11 @@ using UnityEngine;
 namespace TiltBrush
 {
 
-    public class MovementPathPositionKnot : MovementPathKnot
+    public class CameraPathPositionKnot : CameraPathKnot
     {
         public enum ControlType
         {
-            Knot = MovementPathKnot.kDefaultControl,
+            Knot = CameraPathKnot.kDefaultControl,
             TangentControlForward,
             TangentControlBack
         }

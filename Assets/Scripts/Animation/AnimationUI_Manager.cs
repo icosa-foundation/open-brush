@@ -49,7 +49,7 @@ namespace TiltBrush.FrameAnimation
             public bool frameExists;
             public CanvasScript canvas;
 
-            public MovementPathWidget animatedPath;
+            public CameraPathWidget animatedPath;
 
         }
 
@@ -284,7 +284,7 @@ namespace TiltBrush.FrameAnimation
         }
 
 
-        public void addAnimationPath(MovementPathWidget pathwidget,int trackNum,int frameNum)
+        public void addAnimationPath(CameraPathWidget pathwidget,int trackNum,int frameNum)
         {
 
   
@@ -309,7 +309,7 @@ namespace TiltBrush.FrameAnimation
 
             if (timeline[Loc.Item1].Frames[Loc.Item2].animatedPath != null)
             {
-                TiltBrush.WidgetManager.m_Instance.DeleteMovementPath(timeline[Loc.Item1].Frames[Loc.Item2].animatedPath);
+                TiltBrush.WidgetManager.m_Instance.CameraMovementPath(timeline[Loc.Item1].Frames[Loc.Item2].animatedPath);
             }
 
             int i = 0;
@@ -345,7 +345,7 @@ namespace TiltBrush.FrameAnimation
 
         }
    
-        public void addAnimationPath(MovementPathWidget pathwidget)
+        public void addAnimationPath(CameraPathWidget pathwidget)
         {
 
   
@@ -374,7 +374,7 @@ namespace TiltBrush.FrameAnimation
 
             if (timeline[Loc.Item1].Frames[Loc.Item2].animatedPath != null)
             {
-                TiltBrush.WidgetManager.m_Instance.DeleteMovementPath(timeline[Loc.Item1].Frames[Loc.Item2].animatedPath);
+                TiltBrush.WidgetManager.m_Instance.CameraMovementPath(timeline[Loc.Item1].Frames[Loc.Item2].animatedPath);
             }
 
             int i = 0;

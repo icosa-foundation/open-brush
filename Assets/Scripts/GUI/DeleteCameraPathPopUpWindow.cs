@@ -35,7 +35,7 @@ namespace TiltBrush
         {
             base.UpdateVisuals();
 
-            MovementPathWidget cpw = WidgetManager.m_Instance.GetCurrentCameraPath().WidgetScript;
+            CameraPathWidget cpw = WidgetManager.m_Instance.GetCurrentCameraPath().WidgetScript;
             if (cpw != null)
             {
                 cpw.HighlightEntirePath();

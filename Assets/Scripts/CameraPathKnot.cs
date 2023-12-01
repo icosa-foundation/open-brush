@@ -18,7 +18,7 @@ using UnityEngine;
 namespace TiltBrush
 {
 
-    public class MovementPathKnot : MonoBehaviour
+    public class CameraPathKnot : MonoBehaviour
     {
         public const int kDefaultControl = 0;
 

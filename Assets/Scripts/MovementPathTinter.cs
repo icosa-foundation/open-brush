@@ -21,11 +21,11 @@ namespace TiltBrush
     public class MovementPathTinter : MonoBehaviour
     {
         private List<KnotSegment> m_TintedSegments;
-        private List<MovementPathKnot> m_TintedKnots;
+        private List<CameraPathKnot> m_TintedKnots;
 
         private void Awake()
         {
-            m_TintedKnots = new List<MovementPathKnot>();
+            m_TintedKnots = new List<CameraPathKnot>();
             m_TintedSegments = new List<KnotSegment>();
         }
 
@@ -48,7 +48,7 @@ namespace TiltBrush
             enabled = false;
         }
 
-        public void TintKnot(MovementPathKnot knot)
+        public void TintKnot(CameraPathKnot knot)
         {
             knot.ActivateTint(true);
             m_TintedKnots.Add(knot);

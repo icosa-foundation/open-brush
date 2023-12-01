@@ -535,7 +535,7 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("camerapath.delete", "Deletes the current camera path")]
-        public static void DeleteMovementPath()
+        public static void DeleteCameraPath()
         {
             var rEnum = SketchControlsScript.GlobalCommands.DeleteMovementPath;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);

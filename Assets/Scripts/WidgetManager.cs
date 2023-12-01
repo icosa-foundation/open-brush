@@ -16,6 +16,7 @@ using System.Linq;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
@@ -105,7 +106,7 @@ namespace TiltBrush
         [SerializeField] GameObject m_WidgetPinPrefab;
         [SerializeField] ImageWidget m_ImageWidgetPrefab;
         [SerializeField] VideoWidget m_VideoWidgetPrefab;
-        [SerializeField] MovementPathWidget m_MovementPathWidgetPrefab;
+        [FormerlySerializedAs("m_MovementPathWidgetPrefab")] [SerializeField] CameraPathWidget mCameraPathWidgetPrefab;
         [SerializeField] private GameObject m_MovementPathPositionKnotPrefab;
         [SerializeField] private GameObject m_MovementPathRotationKnotPrefab;
         [SerializeField] private GameObject m_MovementPathSpeedKnotPrefab;
@@ -144,7 +145,7 @@ namespace TiltBrush
         private List<TypedWidgetData<StencilWidget>> m_StencilWidgets;
         private List<TypedWidgetData<ImageWidget>> m_ImageWidgets;
         private List<TypedWidgetData<VideoWidget>> m_VideoWidgets;
-        private List<TypedWidgetData<MovementPathWidget>> m_MovementPathWidgets;
+        private List<TypedWidgetData<CameraPathWidget>> m_MovementPathWidgets;
 
         // These lists are used by the PinTool.  They're kept in sync by the
         // widget manager, but the PinTool is responsible for their coherency.
@@ -170,7 +171,7 @@ namespace TiltBrush
 
         // Camera path.
         [NonSerialized] public bool FollowingPath;
-        private TypedWidgetData<MovementPathWidget> m_CurrentCameraPath;
+        private TypedWidgetData<CameraPathWidget> m_CurrentCameraPath;
         private bool m_CameraPathsVisible;
         private MovementPathTinter m_CameraPathTinter;
 
@@ -300,7 +301,7 @@ namespace TiltBrush
             m_StencilWidgets = new List<TypedWidgetData<StencilWidget>>();
             m_ImageWidgets = new List<TypedWidgetData<ImageWidget>>();
             m_VideoWidgets = new List<TypedWidgetData<VideoWidget>>();
-            m_MovementPathWidgets = new List<TypedWidgetData<MovementPathWidget>>();
+            m_MovementPathWidgets = new List<TypedWidgetData<CameraPathWidget>>();
 
             m_CanBePinnedWidgets = new List<GrabWidget>();
             m_CanBeUnpinnedWidgets = new List<GrabWidget>();
@@ -326,7 +327,7 @@ namespace TiltBrush
         public ModelWidget ModelWidgetPrefab { get { return m_ModelWidgetPrefab; } }
         public ImageWidget ImageWidgetPrefab { get { return m_ImageWidgetPrefab; } }
         public VideoWidget VideoWidgetPrefab { get { return m_VideoWidgetPrefab; } }
-        public MovementPathWidget MovementPathWidgetPrefab { get { return m_MovementPathWidgetPrefab; } }
+        public CameraPathWidget CameraPathWidgetPrefab { get { return mCameraPathWidgetPrefab; } }
         public GameObject MovementPathPositionKnotPrefab { get { return m_MovementPathPositionKnotPrefab; } }
         public GameObject MovementPathRotationKnotPrefab { get { return m_MovementPathRotationKnotPrefab; } }
         public GameObject MovementPathSpeedKnotPrefab { get { return m_MovementPathSpeedKnotPrefab; } }
@@ -401,19 +402,19 @@ namespace TiltBrush
             }
         }
 
-        public IEnumerable<TypedWidgetData<MovementPathWidget>> MovementPathWidgets =>
+        public IEnumerable<TypedWidgetData<CameraPathWidget>> MovementPathWidgets =>
             m_MovementPathWidgets.Where(x => x.m_WidgetObject.activeSelf && !x.WidgetScript.Path.belongsToAnimation);
 
-        public IEnumerable<TypedWidgetData<MovementPathWidget>> AnimationPathWidgets =>
+        public IEnumerable<TypedWidgetData<CameraPathWidget>> AnimationPathWidgets =>
             m_MovementPathWidgets.Where(x => x.m_WidgetObject.activeSelf && x.WidgetScript.Path.belongsToAnimation);
 
-        public IEnumerable<TypedWidgetData<MovementPathWidget>> AllPathWidgets =>
+        public IEnumerable<TypedWidgetData<CameraPathWidget>> AllPathWidgets =>
             m_MovementPathWidgets.Where(x => x.m_WidgetObject.activeSelf || x.WidgetScript.Path.belongsToAnimation);
 
 
-        public TypedWidgetData<MovementPathWidget> GetCurrentCameraPath() => m_CurrentCameraPath;
+        public TypedWidgetData<CameraPathWidget> GetCurrentCameraPath() => m_CurrentCameraPath;
 
-        public void SetCurrentCameraPath(MovementPathWidget path)
+        public void SetCurrentCameraPath(CameraPathWidget path)
         {
             // Early out if we're trying to set the path to the already current path.
             if (m_CurrentCameraPath != null && m_CurrentCameraPath.WidgetScript == path)
@@ -452,7 +453,7 @@ namespace TiltBrush
             }
         }
 
-        void SetCurrentCameraPath_Internal(TypedWidgetData<MovementPathWidget> cp)
+        void SetCurrentCameraPath_Internal(TypedWidgetData<CameraPathWidget> cp)
         {
             if (m_CurrentCameraPath != null && m_CurrentCameraPath.WidgetScript != null)
             {
@@ -471,7 +472,7 @@ namespace TiltBrush
             {
                 if (m_CameraPathsVisible && m_CurrentCameraPath != null)
                 {
-                    MovementPathWidget cpw = m_CurrentCameraPath.WidgetScript;
+                    CameraPathWidget cpw = m_CurrentCameraPath.WidgetScript;
                     return (cpw != null) && cpw.gameObject.activeSelf && cpw.Path.NumPositionKnots > 1;
                 }
             }
@@ -486,7 +487,7 @@ namespace TiltBrush
         // cases, we can't pass a MovementPathWidget object.
 
 
-        public MovementPathWidget GetNthActiveCameraPath(int nth)
+        public CameraPathWidget GetNthActiveCameraPath(int nth)
         {
             var activeCameraPathWidgets = m_MovementPathWidgets.Where(x => x.m_WidgetObject.activeSelf && !x.WidgetScript.Path.belongsToAnimation);
             foreach (var cpw in activeCameraPathWidgets)
@@ -502,13 +503,13 @@ namespace TiltBrush
 
         public bool IsCameraPathAtIndexCurrent(int pathIndex)
         {
-            MovementPathWidget cpw = (m_CurrentCameraPath != null) ? cpw = m_CurrentCameraPath.WidgetScript :
+            CameraPathWidget cpw = (m_CurrentCameraPath != null) ? cpw = m_CurrentCameraPath.WidgetScript :
                 null;
             if (cpw == null) { return false; }
             return GetNthActiveCameraPath(pathIndex) == m_CurrentCameraPath.WidgetScript;
         }
 
-        public int? GetIndexOfCameraPath(MovementPathWidget path)
+        public int? GetIndexOfCameraPath(CameraPathWidget path)
         {
             int index = 0;
             for (int i = 0; i < m_MovementPathWidgets.Count; ++i)
@@ -525,11 +526,11 @@ namespace TiltBrush
             return null;
         }
 
-        public MovementPathWidget CreatePathWidget()
+        public CameraPathWidget CreatePathWidget()
         {
             Debug.Log("CREATE PATH WIDGET");
             CreateWidgetCommand command =
-                new CreateWidgetCommand(m_MovementPathWidgetPrefab, TrTransform.identity);
+                new CreateWidgetCommand(mCameraPathWidgetPrefab, TrTransform.identity);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
             return m_MovementPathWidgets.Last().WidgetScript;
         }
@@ -540,7 +541,7 @@ namespace TiltBrush
         public bool AnyActivePathHasAKnot()
         {
             var datas = MovementPathWidgets;
-            foreach (TypedWidgetData<MovementPathWidget> data in datas)
+            foreach (TypedWidgetData<CameraPathWidget> data in datas)
             {
                 if (data.WidgetScript.Path.NumPositionKnots > 0)
                 {
@@ -552,7 +553,7 @@ namespace TiltBrush
          public bool AnyActiveAnimationPathHasAKnot()
         {
             var datas = AnimationPathWidgets;
-            foreach (TypedWidgetData<MovementPathWidget> data in datas)
+            foreach (TypedWidgetData<CameraPathWidget> data in datas)
             {
                 if (data.WidgetScript.Path.NumPositionKnots > 0)
                 {
@@ -563,7 +564,7 @@ namespace TiltBrush
         }
 
 
-        public void DeleteMovementPath(GrabWidget cameraPathWidgetScript)
+        public void CameraMovementPath(GrabWidget cameraPathWidgetScript)
         {
             if (cameraPathWidgetScript != null)
             {
@@ -599,7 +600,7 @@ namespace TiltBrush
                     // Camera paths.
                     for (int i = 0; i < m_MovementPathWidgets.Count; ++i)
                     {
-                        MovementPathWidget cpw = m_MovementPathWidgets[i].m_WidgetScript as MovementPathWidget;
+                        CameraPathWidget cpw = m_MovementPathWidgets[i].m_WidgetScript as CameraPathWidget;
                         if (cpw.gameObject.activeSelf)
                         {
                             cpw.Path.SetKnotsActive(m_CameraPathsVisible);
@@ -734,7 +735,7 @@ namespace TiltBrush
         {
             for (int i = 0; i < cameraPaths.Length; ++i)
             {
-                MovementPathWidget.CreateFromSaveData(cameraPaths[i]);
+                CameraPathWidget.CreateFromSaveData(cameraPaths[i]);
             }
         }
 
@@ -1161,10 +1162,10 @@ namespace TiltBrush
             {
                 m_VideoWidgets.Add(new TypedWidgetData<VideoWidget>(video));
             }
-            else if (generic is MovementPathWidget cpw)
+            else if (generic is CameraPathWidget cpw)
             {
                 Debug.Log("adding to movement path Widget");
-                m_MovementPathWidgets.Add(new TypedWidgetData<MovementPathWidget>(cpw));
+                m_MovementPathWidgets.Add(new TypedWidgetData<CameraPathWidget>(cpw));
             }
             else
             {
@@ -1525,7 +1526,7 @@ namespace TiltBrush
             m_ModelWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<VideoWidget>> ActiveVideoWidgets =>
             m_VideoWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
-        public List<TypedWidgetData<MovementPathWidget>> ActiveCameraPathWidgets =>
+        public List<TypedWidgetData<CameraPathWidget>> ActiveCameraPathWidgets =>
             m_MovementPathWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
 
     }
