@@ -295,7 +295,7 @@
       "url": "https://unitynuget-registry.azurewebsites.net"
     },
     "org.nuget.google.apis.core": {
-      "version": "https://github.com/icosa-mirror/org.nuget.google.apis.core.git#mike-test",
+      "version": "https://github.com/icosa-mirror/org.nuget.google.apis.core.git#1.64.0-openbrush",
       "depth": 0,
       "source": "git",
       "dependencies": {
