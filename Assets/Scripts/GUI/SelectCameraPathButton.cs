@@ -54,7 +54,7 @@ namespace TiltBrush
 
             // Count the number of active camera paths at the time we were created.
             // Note that this caching method is ok in this instance because these buttons are transient.
-            var datas = WidgetManager.m_Instance.MovementPathWidgets; ;
+            var datas = WidgetManager.m_Instance.CameraPathWidgets; ;
             m_NumActivePaths = 0;
             foreach (TypedWidgetData<CameraPathWidget> data in datas)
             {
@@ -81,7 +81,7 @@ namespace TiltBrush
             {
                 m_PathWidget = WidgetManager.m_Instance.CreatePathWidget();
                 SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.MovementPathTool);
-                App.Switchboard.TriggerCameraPathModeChanged(MovementPathTool.Mode.AddPositionKnot);
+                App.Switchboard.TriggerCameraPathModeChanged(CameraPathTool.Mode.AddPositionKnot);
             }
 
             WidgetManager.m_Instance.CameraPathsVisible = true;

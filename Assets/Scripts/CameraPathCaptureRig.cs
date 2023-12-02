@@ -18,7 +18,7 @@ using UnityEngine.Localization;
 namespace TiltBrush
 {
 
-    public class MovementPathCaptureRig : MonoBehaviour
+    public class CameraPathCaptureRig : MonoBehaviour
     {
         [SerializeField] private GameObject m_Object;
         [SerializeField] private GameObject m_Camera;
@@ -113,7 +113,7 @@ namespace TiltBrush
             // When we begin recording a camera path, switch to the MovementPathTool and set the
             // mode to recording.
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.MovementPathTool);
-            App.Switchboard.TriggerCameraPathModeChanged(MovementPathTool.Mode.Recording);
+            App.Switchboard.TriggerCameraPathModeChanged(CameraPathTool.Mode.Recording);
 
 
 
@@ -148,7 +148,7 @@ namespace TiltBrush
             // When we stop recording a camera path, make sure our MovementPathTool isn't in the
             // recording state.
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.MovementPathTool);
-            App.Switchboard.TriggerCameraPathModeChanged(MovementPathTool.Mode.AddPositionKnot);
+            App.Switchboard.TriggerCameraPathModeChanged(CameraPathTool.Mode.AddPositionKnot);
         }
 
         void RefreshVisibility()

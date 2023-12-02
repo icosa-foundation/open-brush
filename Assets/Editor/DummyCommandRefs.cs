@@ -107,7 +107,7 @@ namespace TiltBrush
 
         public static void Prefabs_Panels_CameraPathPanel()
         {
-            Use(GlobalCommands.DeleteMovementPath);
+            Use(GlobalCommands.DeleteCameraPath);
             Use(GlobalCommands.RecordCameraPath);
             Use(GlobalCommands.SelectCameraPath);
             Use(GlobalCommands.ToggleCameraPathPreview);

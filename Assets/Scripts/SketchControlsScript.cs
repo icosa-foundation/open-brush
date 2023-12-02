@@ -130,7 +130,7 @@ namespace TiltBrush
             SaveOnLocalChanges,
             ToggleCameraPathVisuals,
             ToggleCameraPathPreview,
-            DeleteMovementPath,
+            DeleteCameraPath,
             RecordCameraPath,
             SelectCameraPath,
             ToggleAutosimplification,
@@ -521,7 +521,7 @@ namespace TiltBrush
         private GrabWidget m_IRCChatWidget;
         private GrabWidget m_YouTubeChatWidget;
         private MultiCamCaptureRig m_MultiCamCaptureRig;
-        private MovementPathCaptureRig m_CameraPathCaptureRig;
+        private CameraPathCaptureRig m_CameraPathCaptureRig;
 
         private bool m_ViewOnly = false;
 
@@ -541,7 +541,7 @@ namespace TiltBrush
             get { return m_MultiCamCaptureRig; }
         }
 
-        public MovementPathCaptureRig MovementPathCaptureRig
+        public CameraPathCaptureRig CameraPathCaptureRig
         {
             get { return m_CameraPathCaptureRig; }
         }
@@ -800,7 +800,7 @@ namespace TiltBrush
             m_MultiCamCaptureRig = GetComponentInChildren<MultiCamCaptureRig>(true);
             m_MultiCamCaptureRig.Init();
 
-            m_CameraPathCaptureRig = GetComponentInChildren<MovementPathCaptureRig>(true);
+            m_CameraPathCaptureRig = GetComponentInChildren<CameraPathCaptureRig>(true);
             m_CameraPathCaptureRig.Init();
 
             m_SketchSurfacePanel = m_SketchSurface.GetComponent<SketchSurfacePanel>();
@@ -4911,7 +4911,7 @@ namespace TiltBrush
                 case GlobalCommands.ToggleCameraPathPreview:
                     m_WidgetManager.FollowingPath = !m_WidgetManager.FollowingPath;
                     break;
-                case GlobalCommands.DeleteMovementPath:
+                case GlobalCommands.DeleteCameraPath:
                     {
                         var cameraPath = m_WidgetManager.GetCurrentCameraPath();
                         GrabWidget cameraPathWidget = cameraPath == null ? null : cameraPath.m_WidgetScript;
@@ -4924,7 +4924,7 @@ namespace TiltBrush
                     {
                         m_SketchSurfacePanel.EnableDefaultTool();
                     }
-                    MovementPathCaptureRig.RecordPath();
+                    CameraPathCaptureRig.RecordPath();
                     EatGazeObjectInput();
                     break;
                 case GlobalCommands.OpenScriptsCommandsList:
@@ -5146,8 +5146,8 @@ namespace TiltBrush
                     return ReferenceImageCatalog.m_Instance.AnyImageValid();
                 case GlobalCommands.ToggleCameraPathPreview:
                     return m_WidgetManager.CanRecordCurrentCameraPath();
-                case GlobalCommands.DeleteMovementPath:
-                    return MovementPathCaptureRig.Enabled && m_WidgetManager.AnyActivePathHasAKnot();
+                case GlobalCommands.DeleteCameraPath:
+                    return CameraPathCaptureRig.Enabled && m_WidgetManager.AnyActivePathHasAKnot();
                 case GlobalCommands.ToggleCameraPathVisuals:
                     return m_WidgetManager.AnyActivePathHasAKnot();
                 case GlobalCommands.GoogleDriveSync:

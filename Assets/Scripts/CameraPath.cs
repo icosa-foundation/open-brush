@@ -842,7 +842,7 @@ namespace TiltBrush
         }
 
         public void RefreshSegmentVisuals(Vector3 segPos, KnotSegment seg,
-                                          MovementPathTool.ExtendPathType extendType)
+                                          CameraPathTool.ExtendPathType extendType)
         {
             // If we don't have position knots, just keep the segment quiet.
             if (PositionKnots.Count <= 0)
@@ -854,23 +854,23 @@ namespace TiltBrush
                 return;
             }
 
-            Debug.Assert(extendType != MovementPathTool.ExtendPathType.None);
+            Debug.Assert(extendType != CameraPathTool.ExtendPathType.None);
             Vector3 pos0, pos1, tangent0, tangent1;
             switch (extendType)
             {
-                case MovementPathTool.ExtendPathType.ExtendAtHead:
+                case CameraPathTool.ExtendPathType.ExtendAtHead:
                     pos0 = segPos;
                     pos1 = PositionKnots[0].KnotXf.position;
                     tangent0 = Vector3.zero;
                     tangent1 = PositionKnots[0].ScaledTangent;
                     break;
-                case MovementPathTool.ExtendPathType.ExtendAtTail:
+                case CameraPathTool.ExtendPathType.ExtendAtTail:
                     pos0 = PositionKnots[PositionKnots.Count - 1].KnotXf.position;
                     pos1 = segPos;
                     tangent0 = PositionKnots[PositionKnots.Count - 1].ScaledTangent;
                     tangent1 = Vector3.zero;
                     break;
-                case MovementPathTool.ExtendPathType.Loop:
+                case CameraPathTool.ExtendPathType.Loop:
                 default:
                     pos0 = PositionKnots[PositionKnots.Count - 1].KnotXf.position;
                     pos1 = PositionKnots[0].KnotXf.position;

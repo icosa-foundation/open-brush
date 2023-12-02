@@ -70,7 +70,7 @@ namespace TiltBrush
 
                     if (VideoRecorderUtils.ActiveVideoRecording != null && completed)
                     {
-                        SketchControlsScript.m_Instance.MovementPathCaptureRig.StopRecordingPath(true);
+                        SketchControlsScript.m_Instance.CameraPathCaptureRig.StopRecordingPath(true);
                     }
                 }
 
@@ -82,8 +82,8 @@ namespace TiltBrush
                     transform.rotation = m_CurrentPathWidget.Path.GetRotation(t);
                 }
                 float fov = m_CurrentPathWidget.Path.GetFov(t);
-                SketchControlsScript.m_Instance.MovementPathCaptureRig.SetFov(fov);
-                SketchControlsScript.m_Instance.MovementPathCaptureRig.UpdateCameraTransform(transform);
+                SketchControlsScript.m_Instance.CameraPathCaptureRig.SetFov(fov);
+                SketchControlsScript.m_Instance.CameraPathCaptureRig.UpdateCameraTransform(transform);
             }
         }
 

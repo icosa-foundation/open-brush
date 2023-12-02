@@ -19,7 +19,7 @@ namespace TiltBrush
 
     public class AnimationPathToolModeButton : BaseButton
     {
-        [SerializeField] private MovementPathTool.Mode m_Mode;
+        [SerializeField] private CameraPathTool.Mode m_Mode;
 
         override protected void Awake()
         {
@@ -38,7 +38,7 @@ namespace TiltBrush
             base.UpdateVisuals();
 
             // Availability visuals.
-            if (m_Mode != MovementPathTool.Mode.AddAnimationPositionKnot)
+            if (m_Mode != CameraPathTool.Mode.AddAnimationPositionKnot)
             {
               
                 bool wasAvailable = IsAvailable();
@@ -55,7 +55,7 @@ namespace TiltBrush
             // Activated visuals.
             bool bWasToggleActive = m_ToggleActive;
             m_ToggleActive = false;
-            MovementPathTool cpt = SketchSurfacePanel.m_Instance.ActiveTool as MovementPathTool;
+            CameraPathTool cpt = SketchSurfacePanel.m_Instance.ActiveTool as CameraPathTool;
             if (cpt != null)
             {
                 m_ToggleActive = cpt.CurrentMode == m_Mode;

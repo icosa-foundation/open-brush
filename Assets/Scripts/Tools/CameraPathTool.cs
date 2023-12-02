@@ -17,7 +17,7 @@ using UnityEngine;
 namespace TiltBrush
 {
 
-    public class MovementPathTool : BaseTool
+    public class CameraPathTool : BaseTool
     {
         public enum Mode
         {
@@ -121,12 +121,12 @@ namespace TiltBrush
             {
                 if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.MenuContextClick))
                 {
-                    SketchControlsScript.m_Instance.MovementPathCaptureRig.StopRecordingPath(false);
+                    SketchControlsScript.m_Instance.CameraPathCaptureRig.StopRecordingPath(false);
                 }
                 return;
             }
 
-            var widgets = WidgetManager.m_Instance.MovementPathWidgets;
+            var widgets = WidgetManager.m_Instance.CameraPathWidgets;
             Transform toolAttachXf = InputManager.Brush.Geometry.ToolAttachPoint;
 
             bool input = InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate);
@@ -319,7 +319,7 @@ namespace TiltBrush
                         case CameraPathKnot.Type.Rotation:
                             // Rotation knots hide when we grab them, and in their place, we set the preview widget.
                             m_LastPlacedKnot.knot.gameObject.SetActive(false);
-                            SketchControlsScript.m_Instance.MovementPathCaptureRig.OverridePreviewWidgetPathT(
+                            SketchControlsScript.m_Instance.CameraPathCaptureRig.OverridePreviewWidgetPathT(
                                 m_LastPlacedKnot.knot.PathT);
                             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                                 new MoveConstrainedKnotCommand(m_LastPlacedKnotPath.Path, m_LastPlacedKnot,
@@ -353,7 +353,7 @@ namespace TiltBrush
                     if (m_LastPlacedKnot.knot.KnotType == CameraPathKnot.Type.Rotation)
                     {
                         m_LastPlacedKnot.knot.gameObject.SetActive(true);
-                        SketchControlsScript.m_Instance.MovementPathCaptureRig.OverridePreviewWidgetPathT(null);
+                        SketchControlsScript.m_Instance.CameraPathCaptureRig.OverridePreviewWidgetPathT(null);
                     }
                 }
                 m_LastPlacedKnot = null;

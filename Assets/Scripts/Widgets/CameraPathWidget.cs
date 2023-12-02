@@ -396,7 +396,7 @@ namespace TiltBrush
 
         public void HighlightEntirePath()
         {
-            MovementPathTinter t = WidgetManager.m_Instance.PathTinter;
+            CameraPathTinter t = WidgetManager.m_Instance.PathTinter;
             for (int i = 0; i < Path.PositionKnots.Count; ++i)
             {
                 CameraPathPositionKnot pk = Path.PositionKnots[i];
@@ -512,7 +512,7 @@ namespace TiltBrush
                         m_ActiveKnot.knot.gameObject.SetActive(true);
                         InputManager.Wand.Geometry.PreviewKnotHint.Activate(false);
                         InputManager.Brush.Geometry.PreviewKnotHint.Activate(false);
-                        SketchControlsScript.m_Instance.MovementPathCaptureRig.OverridePreviewWidgetPathT(null);
+                        SketchControlsScript.m_Instance.CameraPathCaptureRig.OverridePreviewWidgetPathT(null);
 
                         if (m_ActiveKnot.control == 0)
                         {
@@ -550,16 +550,16 @@ namespace TiltBrush
             PathT? pt = null;
             if (input) { pt = pathT; }
             InputManager.GetControllerGeometry(m_InteractingController).PreviewKnotHint.Activate(!input);
-            SketchControlsScript.m_Instance.MovementPathCaptureRig.OverridePreviewWidgetPathT(pt);
+            SketchControlsScript.m_Instance.CameraPathCaptureRig.OverridePreviewWidgetPathT(pt);
         }
 
-        public void ExtendPath(Vector3 pos, MovementPathTool.ExtendPathType extendType)
+        public void ExtendPath(Vector3 pos, CameraPathTool.ExtendPathType extendType)
         {
-            Debug.Assert(extendType != MovementPathTool.ExtendPathType.None);
-            int index = (extendType == MovementPathTool.ExtendPathType.ExtendAtHead) ? 0 :
+            Debug.Assert(extendType != CameraPathTool.ExtendPathType.None);
+            int index = (extendType == CameraPathTool.ExtendPathType.ExtendAtHead) ? 0 :
                 Path.NumPositionKnots;
             // If we're extending the path into a loop, ignore the passed position.
-            if (extendType == MovementPathTool.ExtendPathType.Loop)
+            if (extendType == CameraPathTool.ExtendPathType.Loop)
             {
                 pos = Path.PositionKnots[0].transform.position;
             }

@@ -34,7 +34,7 @@ namespace TiltBrush
         protected override void Awake()
         {
             base.Awake();
-            m_SsMgr = SketchControlsScript.m_Instance.MovementPathCaptureRig.Manager;
+            m_SsMgr = SketchControlsScript.m_Instance.CameraPathCaptureRig.Manager;
             m_Mesh.GetComponent<Renderer>().material = m_UninitializedCameraMaterial;
             m_PreviewOn = false;
 
@@ -81,7 +81,7 @@ namespace TiltBrush
         private void Update()
         {
             float? completion =
-                SketchControlsScript.m_Instance.MovementPathCaptureRig.GetCompletionOfCameraAlongPath();
+                SketchControlsScript.m_Instance.CameraPathCaptureRig.GetCompletionOfCameraAlongPath();
             m_ScrubBar.gameObject.SetActive(m_PreviewOn);
             if (completion.HasValue)
             {
@@ -156,7 +156,7 @@ namespace TiltBrush
             float clampedLocalX = Mathf.Clamp(localHitPoint.x, -0.5f, 0.5f);
             float zeroToOne = clampedLocalX + 0.5f;
             PositionScrubBar(zeroToOne);
-            SketchControlsScript.m_Instance.MovementPathCaptureRig.SetPreviewWidgetCompletionPercent(zeroToOne);
+            SketchControlsScript.m_Instance.CameraPathCaptureRig.SetPreviewWidgetCompletionPercent(zeroToOne);
         }
     }
 
