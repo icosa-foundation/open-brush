@@ -10783,12 +10783,27 @@ MonoBehaviour:
   m_BrushSizeHintShowDistance: 250
   m_BrushSizeHintPreventSwipeAmount: 1
   m_BrushSizeHintCancelSwipeAmount: 0.3
-  m_GrabPanelHintText: 'Use Grip To Grab
-
-    The Blinking Panel'
-  m_TossPanelHintText: 'Toss The Panel
-
-    To Dismiss It'
+  m_GrabPanelHintText:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 6606866780160
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_TossPanelHintText:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 6887293751296
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  references:
+    version: 2
+    RefIds: []
 --- !u!114 &652605569
 MonoBehaviour:
   m_ObjectHideFlags: 0
