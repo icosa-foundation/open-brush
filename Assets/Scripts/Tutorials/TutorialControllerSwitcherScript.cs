@@ -41,10 +41,19 @@ namespace TiltBrush
             ActivateControllers(m_KnucklesControllers, false);
 
             // Enable whatever style is active.
-            // TODO:Mike - check if we need anything for UnityXR
             switch (style)
             {
+                case ControllerStyle.Wmr:
+                    ActivateControllers(m_WmrControllers, true);
+                    break;
+                case ControllerStyle.Knuckles:
+                    ActivateControllers(m_KnucklesControllers, true);
+                    break;
+                case ControllerStyle.Vive:
+                    ActivateControllers(m_ViveControllers, true);
+                    break;
                 case ControllerStyle.OculusTouch:
+                default:
                     // if (App.Config.IsMobileHardware)
                     // {
                     //     ActivateControllers(m_QuestControllers, true);
@@ -56,17 +65,8 @@ namespace TiltBrush
                     // }
 
                     // TODO: Rift prefabs are completely missing. just using quest now.
+                    break;
                     ActivateControllers(m_QuestControllers, true);
-                    break;
-                case ControllerStyle.Wmr:
-                    ActivateControllers(m_WmrControllers, true);
-                    break;
-                case ControllerStyle.Knuckles:
-                    ActivateControllers(m_KnucklesControllers, true);
-                    break;
-                case ControllerStyle.Vive:
-                default:
-                    ActivateControllers(m_ViveControllers, true);
                     break;
             }
         }
