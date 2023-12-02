@@ -112,7 +112,7 @@ namespace TiltBrush
             WidgetManager.m_Instance.FollowingPath = true;
             // When we begin recording a camera path, switch to the MovementPathTool and set the
             // mode to recording.
-            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.MovementPathTool);
+            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.CameraPathTool);
             App.Switchboard.TriggerCameraPathModeChanged(CameraPathTool.Mode.Recording);
 
 
@@ -147,7 +147,7 @@ namespace TiltBrush
 
             // When we stop recording a camera path, make sure our MovementPathTool isn't in the
             // recording state.
-            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.MovementPathTool);
+            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.CameraPathTool);
             App.Switchboard.TriggerCameraPathModeChanged(CameraPathTool.Mode.AddPositionKnot);
         }
 

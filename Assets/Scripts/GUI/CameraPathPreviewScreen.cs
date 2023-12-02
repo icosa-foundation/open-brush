@@ -17,7 +17,7 @@ using UnityEngine;
 namespace TiltBrush
 {
 
-    public class MovementPathPreviewScreen : OptionButton
+    public class CameraPathPreviewScreen : OptionButton
     {
         [SerializeField] private GameObject m_Mesh;
         [SerializeField] private Material m_UninitializedCameraMaterial;

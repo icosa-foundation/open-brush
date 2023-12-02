@@ -18,7 +18,7 @@ using TMPro;
 namespace TiltBrush
 {
 
-    public class MovementPathButtons : UIComponent
+    public class CameraPathButtons : UIComponent
     {
         [SerializeField] private GameObject m_PathObjects;
         [SerializeField] private GameObject m_NoPathObjects;
@@ -120,7 +120,7 @@ namespace TiltBrush
             // No Path Text should reflect whether we're creating our first path, or building out
             // another path.
             m_NoPathText.text = anyPathsActive ||
-                SketchSurfacePanel.m_Instance.GetCurrentToolType() == BaseTool.ToolType.MovementPathTool ?
+                SketchSurfacePanel.m_Instance.GetCurrentToolType() == BaseTool.ToolType.CameraPathTool ?
                     m_NonFirstPathMessage : m_FirstPathMessage;
 
             m_RecordButton.UpdateVisuals();

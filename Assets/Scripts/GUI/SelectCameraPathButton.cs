@@ -80,7 +80,7 @@ namespace TiltBrush
             if (m_NumActivePaths == m_PathNumber)
             {
                 m_PathWidget = WidgetManager.m_Instance.CreatePathWidget();
-                SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.MovementPathTool);
+                SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.CameraPathTool);
                 App.Switchboard.TriggerCameraPathModeChanged(CameraPathTool.Mode.AddPositionKnot);
             }
 

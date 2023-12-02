@@ -659,7 +659,7 @@ namespace TiltBrush
             for (int i = 0; i < cameraPath.PathKnots.Length; ++i)
             {
                 GameObject go = Instantiate<GameObject>(
-                    WidgetManager.m_Instance.MovementPathPositionKnotPrefab);
+                    WidgetManager.m_Instance.CameraPathPositionKnotPrefab);
                 go.transform.position = cameraPath.PathKnots[i].Xf.translation;
                 go.transform.rotation = cameraPath.PathKnots[i].Xf.rotation;
                 go.transform.parent = widget.transform;
@@ -687,7 +687,7 @@ namespace TiltBrush
             for (int i = 0; i < cameraPath.RotationKnots.Length; ++i)
             {
                 GameObject go = Instantiate<GameObject>(
-                    WidgetManager.m_Instance.MovementPathRotationKnotPrefab);
+                    WidgetManager.m_Instance.CameraPathRotationKnotPrefab);
                 go.transform.position = cameraPath.RotationKnots[i].Xf.translation;
                 go.transform.rotation = cameraPath.RotationKnots[i].Xf.rotation;
                 go.transform.parent = widget.transform;
@@ -708,7 +708,7 @@ namespace TiltBrush
             for (int i = 0; i < cameraPath.SpeedKnots.Length; ++i)
             {
                 GameObject go = Instantiate<GameObject>(
-                    WidgetManager.m_Instance.MovementPathSpeedKnotPrefab);
+                    WidgetManager.m_Instance.CameraPathSpeedKnotPrefab);
                 go.transform.position = cameraPath.SpeedKnots[i].Xf.translation;
                 go.transform.rotation = cameraPath.SpeedKnots[i].Xf.rotation;
                 go.transform.parent = widget.transform;
@@ -728,7 +728,7 @@ namespace TiltBrush
             for (int i = 0; i < cameraPath.FovKnots.Length; ++i)
             {
                 GameObject go = Instantiate<GameObject>(
-                    WidgetManager.m_Instance.MovementPathFovKnotPrefab);
+                    WidgetManager.m_Instance.CameraPathFovKnotPrefab);
                 go.transform.position = cameraPath.FovKnots[i].Xf.translation;
                 go.transform.rotation = cameraPath.FovKnots[i].Xf.rotation;
                 go.transform.parent = widget.transform;

@@ -107,11 +107,11 @@ namespace TiltBrush
         [SerializeField] ImageWidget m_ImageWidgetPrefab;
         [SerializeField] VideoWidget m_VideoWidgetPrefab;
         [FormerlySerializedAs("m_MovementPathWidgetPrefab")] [SerializeField] CameraPathWidget mCameraPathWidgetPrefab;
-        [SerializeField] private GameObject m_MovementPathPositionKnotPrefab;
-        [SerializeField] private GameObject m_MovementPathRotationKnotPrefab;
-        [SerializeField] private GameObject m_MovementPathSpeedKnotPrefab;
-        [SerializeField] private GameObject m_MovementPathFovKnotPrefab;
-        [SerializeField] private GameObject m_MovementPathKnotSegmentPrefab;
+        [FormerlySerializedAs("m_MovementPathPositionKnotPrefab")] [SerializeField] private GameObject mCameraPathPositionKnotPrefab;
+        [FormerlySerializedAs("m_MovementPathRotationKnotPrefab")] [SerializeField] private GameObject mCameraPathRotationKnotPrefab;
+        [FormerlySerializedAs("m_MovementPathSpeedKnotPrefab")] [SerializeField] private GameObject mCameraPathSpeedKnotPrefab;
+        [FormerlySerializedAs("m_MovementPathFovKnotPrefab")] [SerializeField] private GameObject mCameraPathFovKnotPrefab;
+        [FormerlySerializedAs("m_MovementPathKnotSegmentPrefab")] [SerializeField] private GameObject mCameraPathKnotSegmentPrefab;
         [SerializeField] private GrabWidgetHome m_Home;
         [SerializeField] private GameObject m_HomeHintLinePrefab;
         [SerializeField] float m_WidgetSnapAngle = 15.0f;
@@ -328,11 +328,11 @@ namespace TiltBrush
         public ImageWidget ImageWidgetPrefab { get { return m_ImageWidgetPrefab; } }
         public VideoWidget VideoWidgetPrefab { get { return m_VideoWidgetPrefab; } }
         public CameraPathWidget CameraPathWidgetPrefab { get { return mCameraPathWidgetPrefab; } }
-        public GameObject MovementPathPositionKnotPrefab { get { return m_MovementPathPositionKnotPrefab; } }
-        public GameObject MovementPathRotationKnotPrefab { get { return m_MovementPathRotationKnotPrefab; } }
-        public GameObject MovementPathSpeedKnotPrefab { get { return m_MovementPathSpeedKnotPrefab; } }
-        public GameObject MovementPathFovKnotPrefab { get { return m_MovementPathFovKnotPrefab; } }
-        public GameObject MovementPathKnotSegmentPrefab { get { return m_MovementPathKnotSegmentPrefab; } }
+        public GameObject CameraPathPositionKnotPrefab { get { return mCameraPathPositionKnotPrefab; } }
+        public GameObject CameraPathRotationKnotPrefab { get { return mCameraPathRotationKnotPrefab; } }
+        public GameObject CameraPathSpeedKnotPrefab { get { return mCameraPathSpeedKnotPrefab; } }
+        public GameObject CameraPathFovKnotPrefab { get { return mCameraPathFovKnotPrefab; } }
+        public GameObject CameraPathKnotSegmentPrefab { get { return mCameraPathKnotSegmentPrefab; } }
 
         public IEnumerable<GrabWidgetData> ActiveGrabWidgets
         {
@@ -581,7 +581,7 @@ namespace TiltBrush
             // invited to start a path.  It looks weird.
             if (m_CurrentCameraPath == null || !m_CurrentCameraPath.WidgetScript.gameObject.activeSelf)
             {
-                if (SketchSurfacePanel.m_Instance.ActiveToolType == BaseTool.ToolType.MovementPathTool)
+                if (SketchSurfacePanel.m_Instance.ActiveToolType == BaseTool.ToolType.CameraPathTool)
                 {
                     SketchSurfacePanel.m_Instance.EnableDefaultTool();
                 }
@@ -610,7 +610,7 @@ namespace TiltBrush
                     if (!m_CameraPathsVisible)
                     {
                         // Flip back to default tool if we turned off paths.
-                        if (SketchSurfacePanel.m_Instance.ActiveToolType == BaseTool.ToolType.MovementPathTool)
+                        if (SketchSurfacePanel.m_Instance.ActiveToolType == BaseTool.ToolType.CameraPathTool)
                         {
                             SketchSurfacePanel.m_Instance.EnableDefaultTool();
                         }

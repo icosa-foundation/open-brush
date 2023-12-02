@@ -308,7 +308,7 @@ namespace TiltBrush
         {
             KnotSegment segment = new KnotSegment();
             GameObject go =
-                UnityEngine.Object.Instantiate(WidgetManager.m_Instance.MovementPathKnotSegmentPrefab);
+                UnityEngine.Object.Instantiate(WidgetManager.m_Instance.CameraPathKnotSegmentPrefab);
             go.transform.parent = parent;
             segment.renderer = go.GetComponent<LineRenderer>();
             segment.renderer.positionCount = kNumSegmentPoints;
@@ -326,7 +326,7 @@ namespace TiltBrush
         public CameraPathSpeedKnot CreateSpeedKnot(PathT pathT)
         {
             GameObject go = UnityEngine.Object.Instantiate(
-                WidgetManager.m_Instance.MovementPathSpeedKnotPrefab,
+                WidgetManager.m_Instance.CameraPathSpeedKnotPrefab,
                 GetPosition(pathT), Quaternion.identity);
             return go.GetComponent<CameraPathSpeedKnot>();
         }
@@ -362,7 +362,7 @@ namespace TiltBrush
         public CameraPathFovKnot CreateFovKnot(PathT pathT)
         {
             GameObject go = UnityEngine.Object.Instantiate(
-                WidgetManager.m_Instance.MovementPathFovKnotPrefab,
+                WidgetManager.m_Instance.CameraPathFovKnotPrefab,
                 GetPosition(pathT), Quaternion.identity);
             return go.GetComponent<CameraPathFovKnot>();
         }
@@ -398,7 +398,7 @@ namespace TiltBrush
         public CameraPathRotationKnot CreateRotationKnot(PathT pathT, Quaternion rot)
         {
             GameObject go = UnityEngine.Object.Instantiate(
-                WidgetManager.m_Instance.MovementPathRotationKnotPrefab,
+                WidgetManager.m_Instance.CameraPathRotationKnotPrefab,
                 GetPosition(pathT), rot);
             return go.GetComponent<CameraPathRotationKnot>();
         }
@@ -449,7 +449,7 @@ namespace TiltBrush
         public CameraPathPositionKnot CreatePositionKnot(Vector3 pos)
         {
             GameObject go = UnityEngine.Object.Instantiate(
-                WidgetManager.m_Instance.MovementPathPositionKnotPrefab, pos, Quaternion.identity);
+                WidgetManager.m_Instance.CameraPathPositionKnotPrefab, pos, Quaternion.identity);
             return go.GetComponent<CameraPathPositionKnot>();
         }
 

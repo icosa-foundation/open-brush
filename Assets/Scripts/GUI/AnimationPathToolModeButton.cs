@@ -79,7 +79,7 @@ namespace TiltBrush
                 WidgetManager.m_Instance.CameraPathsVisible = true;
                 SketchControlsScript.m_Instance.EatGazeObjectInput();
                 SketchSurfacePanel.m_Instance.RequestHideActiveTool(true);
-                SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.MovementPathTool);
+                SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.CameraPathTool);
                 App.Switchboard.TriggerCameraPathModeChanged(m_Mode);
             }
         }

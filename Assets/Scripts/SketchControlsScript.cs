@@ -5046,7 +5046,7 @@ namespace TiltBrush
             // I'm doing this because if we leave the camera path tool active, the camera path
             // panel shows the button highlighted, which affects the user's flow for being
             // invited to start a path.  It looks weird.
-            if (m_SketchSurfacePanel.ActiveToolType == BaseTool.ToolType.MovementPathTool)
+            if (m_SketchSurfacePanel.ActiveToolType == BaseTool.ToolType.CameraPathTool)
             {
                 m_SketchSurfacePanel.EnableDefaultTool();
             }
