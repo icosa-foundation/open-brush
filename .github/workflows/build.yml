@@ -271,7 +271,7 @@ jobs:
         run: |
           # version 2.1.1
           mkdir Packages/com.unity.xr.picoxr
-          wget -q https://sdk.picovr.com/developer-platform/sdk/PICO%20Unity%20Integration%20SDK%20v211.zip -O package.zip
+          wget -q https://sdk.picovr.com/developer-platform/sdk/PICO%20Unity%20Integration%20SDK%20240.zip -O package.zip
           unzip package.zip -d Packages/com.unity.xr.picoxr
 
       - name: Install TextMesh Pro package
