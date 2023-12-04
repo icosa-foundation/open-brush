@@ -19,6 +19,7 @@ Properties {
 	_Shininess ("Shininess", Range (0.01, 1)) = 0.078125
 }
     SubShader {
+    	LOD 200
         Cull Back
 
 		CGPROGRAM
