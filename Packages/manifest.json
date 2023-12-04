@@ -1,7 +1,6 @@
 {
   "dependencies": {
     "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
-    "com.atteneder.gltfast": "5.0.4",
     "com.meta.xr.sdk.platform": "56.0.0-preview",
     "com.meta.xr.sdk.utilities": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#meta-mr-test",
     "com.unity.2d.sprite": "1.0.0",
