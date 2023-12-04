@@ -25,6 +25,7 @@ namespace TiltBrush
         public GameObject m_PanelPrefab;
         public bool m_ModeVr;
         public bool m_ModeVrExperimental;
+        public bool m_ModeQuestExperimental;
         public bool m_ModeMono;
         public bool m_ModeQuest;
         public bool m_ModeGvr;
@@ -35,26 +36,21 @@ namespace TiltBrush
         {
             switch (mode)
             {
-                case SdkMode.UnityXR:
-                    if (Config.IsExperimental)
-                    {
-                        return m_ModeVrExperimental;
-                    }
-                    if (App.Config.IsMobileHardware)
-                    {
-                        return m_ModeQuest;
-                    }
+                case SdkMode.UnityXR when Config.IsExperimental && App.Config.IsMobileHardware:
+                    return m_ModeQuestExperimental;
+                case SdkMode.UnityXR when Config.IsExperimental && !App.Config.IsMobileHardware:
+                    return m_ModeVrExperimental;
+                case SdkMode.UnityXR when !Config.IsExperimental && App.Config.IsMobileHardware:
+                    return m_ModeQuest;
+                case SdkMode.UnityXR when !Config.IsExperimental && !App.Config.IsMobileHardware:
                     return m_ModeVr;
                 case SdkMode.Monoscopic:
                     return m_ModeMono;
+                case SdkMode.Ods when App.VrSdk.GetControllerDof() != VrSdk.DoF.None:
+                    return m_ModeMono;
                 default:
-                    if (App.VrSdk.GetControllerDof() != VrSdk.DoF.None)
-                    {
-                        return m_ModeMono;
-                    }
-                    break;
+                    return false;
             }
-            return false;
         }
     }
 

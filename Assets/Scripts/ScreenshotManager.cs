@@ -205,7 +205,7 @@ namespace TiltBrush
                 var mobileBloom = GetComponent<MobileBloom>();
                 if (mobileBloom != null)
                 {
-                    mobileBloom.enabled = true;
+                    mobileBloom.enabled = false;
                 }
                 else
                 {

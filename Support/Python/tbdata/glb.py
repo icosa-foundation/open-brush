@@ -250,6 +250,7 @@ class Glb2(BaseGltf):
 # Testing
 #
 
+
 # pylint: disable=all
 # flake8: noqa
 def load(version, name):

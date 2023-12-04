@@ -175,8 +175,8 @@ PlayerSettings:
     tvOS: 0
   overrideDefaultApplicationIdentifier: 1
   AndroidBundleVersionCode: 1
-  AndroidMinSdkVersion: 27
-  AndroidTargetSdkVersion: 29
+  AndroidMinSdkVersion: 29
+  AndroidTargetSdkVersion: 32
   AndroidPreferredInstallLocation: 0
   aotOptions: 
   stripEngineCode: 1
@@ -876,7 +876,7 @@ PlayerSettings:
     iPhone: 1
   il2cppCompilerConfiguration: {}
   managedStrippingLevel:
-    Android: 1
+    Android: 4
     EmbeddedLinux: 1
     GameCoreScarlett: 1
     GameCoreXboxOne: 1
