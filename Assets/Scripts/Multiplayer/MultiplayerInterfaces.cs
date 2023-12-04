@@ -26,7 +26,7 @@ namespace OpenBrush.Multiplayer
         Task<bool> Disconnect(bool force = false);
 
         void Update();
-        
+
         Task<bool> PerformCommand(BaseCommand command);
         Task<bool> UndoCommand(BaseCommand command);
         Task<bool> RedoCommand(BaseCommand command);

@@ -400,7 +400,7 @@ namespace TiltBrush
             m_OperationStack.Push(command);
             OperationStackChanged?.Invoke();
 
-            if(propegate)
+            if (propegate)
             {
                 CommandPerformed?.Invoke(command);
             }
@@ -920,7 +920,7 @@ namespace TiltBrush
             m_RedoStack.Push(comm);
             OperationStackChanged?.Invoke();
 
-            if(propegate)
+            if (propegate)
             {
                 CommandUndo?.Invoke(comm);
             }
@@ -933,7 +933,7 @@ namespace TiltBrush
             m_OperationStack.Push(comm);
             OperationStackChanged?.Invoke();
 
-            if(propegate)
+            if (propegate)
             {
                 CommandRedo?.Invoke(comm);
             }

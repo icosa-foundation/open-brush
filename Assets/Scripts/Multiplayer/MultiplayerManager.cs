@@ -103,7 +103,7 @@ namespace OpenBrush.Multiplayer
 
         void Update()
         {
-            if(App.CurrentState != App.AppState.Standard || m_Manager == null)
+            if (App.CurrentState != App.AppState.Standard || m_Manager == null)
             {
                 return;
             }
@@ -124,7 +124,7 @@ namespace OpenBrush.Multiplayer
                 {
                     Color = PointerManager.m_Instance.MainPointer.GetCurrentColor(),
                     Size = PointerManager.m_Instance.MainPointer.BrushSize01,
-                    Guid = BrushController.m_Instance.ActiveBrush.m_Guid.ToString(),                 
+                    Guid = BrushController.m_Instance.ActiveBrush.m_Guid.ToString(),
                 },
                 ExtraData = new ExtraData
                 {
@@ -202,7 +202,7 @@ namespace OpenBrush.Multiplayer
 
             if (success)
             {
-                if(!OculusMRController.m_Instance.m_SpatialAnchorManager.AnchorUuid.Equals(String.Empty))
+                if (!OculusMRController.m_Instance.m_SpatialAnchorManager.AnchorUuid.Equals(String.Empty))
                 {
                     await m_Manager.RpcSyncToSharedAnchor(OculusMRController.m_Instance.m_SpatialAnchorManager.AnchorUuid);
                 }

@@ -30,7 +30,7 @@ namespace OpenBrush.Multiplayer
 
         public BrushData BrushData;
         public ExtraData ExtraData;
-        
+
     }
 
     [System.Serializable]
@@ -38,7 +38,7 @@ namespace OpenBrush.Multiplayer
     {
         public Color Color;
         public string Guid;
-        public float Size; 
+        public float Size;
     }
 
     [System.Serializable]

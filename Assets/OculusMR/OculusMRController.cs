@@ -42,7 +42,8 @@ namespace TiltBrush
         {
             const string permissionString = "com.oculus.permission.USE_SCENE";
             bool hasUserAuthorizedPermission = UnityEngine.Android.Permission.HasUserAuthorizedPermission(permissionString);
-            if (!hasUserAuthorizedPermission) {
+            if (!hasUserAuthorizedPermission)
+            {
                 UnityEngine.Android.Permission.RequestUserPermission(permissionString);
             }
         }

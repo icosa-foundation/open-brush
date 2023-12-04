@@ -29,15 +29,15 @@ namespace TiltBrush
         void Start()
         {
             m_SceneComponentVolume = GetComponent<OVRSceneVolume>();
-            
-            if(m_SceneComponentVolume)
+
+            if (m_SceneComponentVolume)
             {
                 var dimentions = m_SceneComponentVolume.Dimensions;
-                
+
                 var pos = App.Scene.transform.InverseTransformPoint(this.transform.position);
                 pos.y /= 2.0f;
                 var tr = TrTransform.TR(pos, this.transform.rotation);
-                
+
                 CreateWidgetCommand createCommand = new CreateWidgetCommand(
                     WidgetManager.m_Instance.GetStencilPrefab(StencilType.Cube), tr, null, true);
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
@@ -56,9 +56,9 @@ namespace TiltBrush
             // if(m_SceneComponentPlane)
             // {
             //     var dimentions = m_SceneComponentPlane.Dimensions;
-                
+
             //     var tr = TrTransform.TR(this.transform.position, this.transform.rotation);
-                
+
             //     CreateWidgetCommand createCommand = new CreateWidgetCommand(
             //         WidgetManager.m_Instance.GetStencilPrefab(StencilType.Plane), tr, null, true);
             //     SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);

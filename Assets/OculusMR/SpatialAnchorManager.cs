@@ -64,7 +64,7 @@ namespace TiltBrush
             Debug.Log("Anchor saved to device!");
             PlayerPrefs.SetString(kOriginSpatialAnchorPref, m_Anchor.Uuid.ToString());
 
-            success = await m_Anchor.SaveAsync(saveOptions: new OVRSpatialAnchor.SaveOptions{ Storage = OVRSpace.StorageLocation.Cloud });
+            success = await m_Anchor.SaveAsync(saveOptions: new OVRSpatialAnchor.SaveOptions { Storage = OVRSpace.StorageLocation.Cloud });
             if (!success)
             {
                 return false;
@@ -82,11 +82,11 @@ namespace TiltBrush
                 var guid = new Guid(guidString);
 
                 var data = await OVRSpatialAnchor.LoadUnboundAnchorsAsync(new OVRSpatialAnchor.LoadOptions()
-                    {
-                        StorageLocation = OVRSpace.StorageLocation.Local,
-                        Timeout = 0,
-                        Uuids = new List<Guid>() { guid }
-                    }
+                {
+                    StorageLocation = OVRSpace.StorageLocation.Local,
+                    Timeout = 0,
+                    Uuids = new List<Guid>() { guid }
+                }
                 );
 
                 return await BindAnchors(data);
@@ -109,7 +109,7 @@ namespace TiltBrush
             var newPose = SketchControlsScript.MakeValidScenePose(m_anchorTr,
                 SceneSettings.m_Instance.HardBoundsRadiusMeters_SS);
             App.Scene.Pose = newPose;
-            
+
             Debug.Log("Anchor localized!");
             return true;
         }
@@ -119,11 +119,11 @@ namespace TiltBrush
             var guid = new Guid(uuid);
 
             var data = await OVRSpatialAnchor.LoadUnboundAnchorsAsync(new OVRSpatialAnchor.LoadOptions()
-                {
-                    StorageLocation = defaultStorageLocation,
-                    Timeout = 0,
-                    Uuids = new List<Guid>() { guid }
-                }
+            {
+                StorageLocation = defaultStorageLocation,
+                Timeout = 0,
+                Uuids = new List<Guid>() { guid }
+            }
             );
 
             Debug.Log("Remote anchor recieved!");
@@ -162,13 +162,13 @@ namespace TiltBrush
 
         public async Task<bool> ShareAnchors(List<ulong> playerIds)
         {
-            if(m_Anchor == null)
+            if (m_Anchor == null)
             {
                 return false;
             }
 
             var spaceUserList = new List<OVRSpaceUser>();
-            foreach(var id in playerIds)
+            foreach (var id in playerIds)
             {
                 Debug.Log($"new share id: {id}");
                 spaceUserList.Add(new OVRSpaceUser(id));
@@ -177,7 +177,7 @@ namespace TiltBrush
             // TODO: Check anchor exists and is in cloud storage.
             var result = await m_Anchor.ShareAsync(spaceUserList);
 
-            if(result == OVRSpatialAnchor.OperationResult.Success)
+            if (result == OVRSpatialAnchor.OperationResult.Success)
             {
                 Debug.Log($"Share complete!");
                 return true;
