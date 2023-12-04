@@ -24,7 +24,7 @@
       "url": "https://npm.developer.oculus.com"
     },
     "com.meta.xr.sdk.utilities": {
-      "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#meta-mr-test",
+      "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.core.git#56.0.0-openbrush",
       "depth": 0,
       "source": "git",
       "dependencies": {},
