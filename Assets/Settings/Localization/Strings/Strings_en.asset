@@ -3472,6 +3472,8 @@ MonoBehaviour:
     m_Localized: Share to Icosa
     m_Metadata:
       m_Items: []
+  - m_Id: 170004956477833216
+    m_Localized: Please give Open Brush file access to save your creations!
     m_Metadata:
       m_Items: []
   references:
