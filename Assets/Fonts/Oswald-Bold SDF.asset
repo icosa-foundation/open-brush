@@ -2897,7 +2897,8 @@ MonoBehaviour:
   m_FontFeatureTable:
     m_GlyphPairAdjustmentRecords: []
   fallbackFontAssets: []
-  m_FallbackFontAssetTable: []
+  m_FallbackFontAssetTable:
+  - {fileID: 0}
   m_CreationSettings:
     sourceFontFileName: 
     sourceFontFileGUID: 
