@@ -374,7 +374,7 @@ namespace TiltBrush
             return duplicate;
         }
 
-        public void PerformAndRecordCommand(BaseCommand command, bool discardIfNotMerged = false, bool propegate = true)
+        public void PerformAndRecordCommand(BaseCommand command, bool discardIfNotMerged = false, bool invoke = true)
         {
             SketchSurfacePanel.m_Instance.m_LastCommand = command;
             bool discardCommand = discardIfNotMerged;
@@ -400,7 +400,7 @@ namespace TiltBrush
             m_OperationStack.Push(command);
             OperationStackChanged?.Invoke();
 
-            if (propegate)
+            if (invoke)
             {
                 CommandPerformed?.Invoke(command);
             }
@@ -913,27 +913,27 @@ namespace TiltBrush
             m_RepaintCoroutine = null;
         }
 
-        public void StepBack(bool propegate = true)
+        public void StepBack(bool invoke = true)
         {
             var comm = m_OperationStack.Pop();
             comm.Undo();
             m_RedoStack.Push(comm);
             OperationStackChanged?.Invoke();
 
-            if (propegate)
+            if (invoke)
             {
                 CommandUndo?.Invoke(comm);
             }
         }
 
-        public void StepForward(bool propegate = true)
+        public void StepForward(bool invoke = true)
         {
             var comm = m_RedoStack.Pop();
             comm.Redo();
             m_OperationStack.Push(comm);
             OperationStackChanged?.Invoke();
 
-            if (propegate)
+            if (invoke)
             {
                 CommandRedo?.Invoke(comm);
             }
