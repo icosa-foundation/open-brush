@@ -23,9 +23,9 @@
     "com.unity.xr.oculus": "3.3.0",
     "com.unity.xr.openxr": "1.8.2",
     "moonsharp": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",
-    "org.nuget.google.apis": "1.57.0",
-    "org.nuget.google.apis.auth": "1.57.0",
-    "org.nuget.google.apis.core": "https://github.com/icosa-mirror/org.nuget.google.apis.core.git#unity-newtonsoft",
+    "org.nuget.google.apis": "1.64.0",
+    "org.nuget.google.apis.auth": "1.64.0",
+    "org.nuget.google.apis.core": "https://github.com/icosa-mirror/org.nuget.google.apis.core.git#1.64.0-openbrush",
     "org.nuget.sharpziplib": "1.3.1",
     "tv.superla.radiancehdr": "https://github.com/superlatv/RadianceHDRUnity.git#upm",
     "com.unity.modules.ai": "1.0.0",
@@ -78,8 +78,8 @@
       "url": "https://unitynuget-registry.azurewebsites.net",
       "scopes": [
         "org.nuget.google",
-        "org.nuget.newtonsoft",
-        "org.nuget.sharpziplib"
+        "org.nuget.sharpziplib",
+        "org.nuget.system"
       ]
     },
     {

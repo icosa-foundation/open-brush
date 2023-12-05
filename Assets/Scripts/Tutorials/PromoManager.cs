@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using UnityEngine;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.Localization;
 
 namespace TiltBrush
 {
@@ -60,8 +61,8 @@ namespace TiltBrush
         [SerializeField] private float m_BrushSizeHintCancelSwipeAmount = 0.3f;
 
         [Header("Floating Panel Promo")]
-        [SerializeField, TextArea] private string m_GrabPanelHintText;
-        [SerializeField, TextArea] private string m_TossPanelHintText;
+        [SerializeField] private LocalizedString m_GrabPanelHintText;
+        [SerializeField] private LocalizedString m_TossPanelHintText;
 
         private Dictionary<PromoType, IPromoFactory> m_Factories;
         private HashSet<BasePromo> m_RequestedPromos;
@@ -77,8 +78,8 @@ namespace TiltBrush
         public float BrushSizeHintShowDistance { get { return m_BrushSizeHintShowDistance; } }
         public float BrushSizeHintPreventSwipeAmount { get { return m_BrushSizeHintPreventSwipeAmount; } }
         public float BrushSizeHintCancelSwipeAmount { get { return m_BrushSizeHintCancelSwipeAmount; } }
-        public string GrabPanelHintText { get { return m_GrabPanelHintText; } }
-        public string TossPanelHintText { get { return m_TossPanelHintText; } }
+        public string GrabPanelHintText { get { return m_GrabPanelHintText.GetLocalizedString(); } }
+        public string TossPanelHintText { get { return m_TossPanelHintText.GetLocalizedString(); } }
 
         public IEnumerable<BasePromo> RequestedPromos { get { return m_RequestedPromos; } }
 
