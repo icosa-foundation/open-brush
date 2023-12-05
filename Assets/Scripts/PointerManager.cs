@@ -83,8 +83,6 @@ namespace TiltBrush
 
         [NonSerialized] public bool m_SymmetryLockedToController = false;
 
-        [NonSerialized] public bool m_SymmetryColorShiftEnabled = true;
-
         [Serializable]
         public struct ColorShiftComponentSetting
         {
@@ -972,15 +970,10 @@ namespace TiltBrush
 
         public void CalculateMirrorColors()
         {
-            if (m_SymmetryColorShiftEnabled)
+            m_SymmetryPointerColors = new List<Color>();
+            for (float i = 0; i < m_NumActivePointers; i++)
             {
-                m_SymmetryPointerColors = new List<Color>();
-                for (float i = 0; i < m_NumActivePointers; i++)
-                {
-                    m_SymmetryPointerColors.Add(CalcColorShift(m_lastChosenColor, i / m_NumActivePointers));
-                    // BrushDescriptor desc = BrushCatalog.m_Instance.GetBrush(MainPointer.CurrentBrush.m_Guid);
-                    // script.BrushSize01 = GenerateJitteredSize(desc, MainPointer.BrushSize01);
-                }
+                m_SymmetryPointerColors.Add(CalcColorShift(m_lastChosenColor, i / m_NumActivePointers));
             }
         }
 
@@ -1489,7 +1482,7 @@ namespace TiltBrush
 
                 // Currently only Multimirror mode shows UI for color shift
                 // So disable it for all other modes
-                if (m_SymmetryColorShiftEnabled && m_CurrentSymmetryMode == SymmetryMode.MultiMirror)
+                if (m_CurrentSymmetryMode == SymmetryMode.MultiMirror)
                 {
                     script.SetColor(m_SymmetryPointerColors[i % m_SymmetryPointerColors.Count]);
                 }
