@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4.7.1
-      - uses: actions/setup-dotnet@v3.2.0
+      - uses: actions/setup-dotnet@v4.0.0
         with:
           dotnet-version: '7.0.x'
       - name: Cache pre-commit directories  # This is also built into the action, but we want to create our own cache (which they can load) because of the hack below. If we remove it, we can remove this cache as well
