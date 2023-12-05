@@ -803,7 +803,7 @@ namespace TiltBrush
                     // Don't call CalculateMirrorPointers
                     // as this is handled below
                     CalculateMirrorMatrices();
-                    CalculateMirrorColors();
+                    CalculateMirrorColors(m_CustomMirrorMatrices.Count);
                     active = m_CustomMirrorMatrices.Count;
                     break;
                 case SymmetryMode.DebugMultiple:
@@ -970,10 +970,15 @@ namespace TiltBrush
 
         public void CalculateMirrorColors()
         {
+            CalculateMirrorColors(m_NumActivePointers);
+        }
+
+        public void CalculateMirrorColors(int numPointers)
+        {
             m_SymmetryPointerColors = new List<Color>();
-            for (float i = 0; i < m_NumActivePointers; i++)
+            for (float i = 0; i < numPointers; i++)
             {
-                m_SymmetryPointerColors.Add(CalcColorShift(m_lastChosenColor, i / m_NumActivePointers));
+                m_SymmetryPointerColors.Add(CalcColorShift(m_lastChosenColor, i / numPointers));
             }
         }
 
