@@ -50,6 +50,8 @@ public class BuildTiltBrushPostProcess
                 true,
                 "value", "quest|quest2|quest3"
             );
+
+            doc.Save(path);
         }
         catch (System.Exception e)
         {
