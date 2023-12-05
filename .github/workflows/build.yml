@@ -50,21 +50,6 @@ jobs:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
 
-      - name: Checkout private photon repository if available
-        if: ${{ env.PHOTON_PAT }}
-        uses: actions/checkout@v4
-        with:
-          token: ${{ env.PHOTON_PAT }}
-          repository: icosa-mirror/photon-fusion
-          path: photon-fusion-mirror/
-
-      - name: Copy photon files
-        if: ${{ env.PHOTON_PAT }}
-        run: |
-          rsync -a --ignore-existing photon-fusion-mirror/ ./
-          echo "For debugging: these are the files in Assets/Photon:"
-          find Assets/Photon
-
       - name: Calculate version and stamp
         id: version
         run: |
@@ -313,6 +298,21 @@ jobs:
           mkdir -p 'Assets/TextMesh Pro'
           cp -R 'tmp.package/Assets/TextMesh Pro' Assets/
           rm -rf tmp.plugin tmp.package
+
+      - name: Checkout private photon repository if available
+        if: ${{ env.PHOTON_PAT }}
+        uses: actions/checkout@v4
+        with:
+          token: ${{ env.PHOTON_PAT }}
+          repository: icosa-mirror/photon-fusion
+          path: photon-fusion-mirror/
+
+      - name: Copy photon files
+        if: ${{ env.PHOTON_PAT }}
+        run: |
+          rsync -a --ignore-existing photon-fusion-mirror/ ./
+          echo "For debugging: these are the files in Assets/Photon:"
+          find Assets/Photon
 
       - name: Restore Library/
         id: cache_library
