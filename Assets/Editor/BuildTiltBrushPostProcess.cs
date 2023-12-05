@@ -36,11 +36,14 @@ public class BuildTiltBrushPostProcess
         try
         {
             XmlDocument doc = new XmlDocument();
-            doc.Load(path);
+            doc.Load(file);
 
             XmlElement element = (XmlElement)doc.SelectSingleNode("/manifest");
             var androidNamespaceURI = element.GetAttribute("xmlns:android");
 
+
+
+            UnityEngine.Debug.Log("Add all quest supported devices.");
             AddOrRemoveTag(doc,
                 androidNamespaceURI,
                 "/manifest/application",
@@ -51,7 +54,7 @@ public class BuildTiltBrushPostProcess
                 "value", "quest|quest2|quest3"
             );
 
-            doc.Save(path);
+            doc.Save(file);
         }
         catch (System.Exception e)
         {
