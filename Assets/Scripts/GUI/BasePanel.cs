@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
 using TMPro;
 
 namespace TiltBrush
@@ -103,7 +104,7 @@ namespace TiltBrush
             PolyMobile,
             LabsMobile,
             ReferenceMobile,
-            MovementPath,
+            CameraPath,
             BrushLab,
             WebcamPanel = 5200,
             Scripts = 6000,
@@ -525,6 +526,7 @@ namespace TiltBrush
                     m_PanelDescriptionTextMeshPro.text = PanelDescription;
                     m_PanelDescriptionTextMeshPro.color = m_PanelDescriptionColor;
                 }
+                LocalizationSettings.SelectedLocaleChanged += OnSelectedLocaleChanged;
             }
 
             if (m_PanelFlairPrefab != null)
@@ -734,6 +736,19 @@ namespace TiltBrush
                 // Eat input when we close a popup so the close action doesn't carry over.
                 m_EatInput = true;
             }
+        }
+
+        private void OnSelectedLocaleChanged(Locale locale)
+        {
+            if (m_PanelDescriptionTextMeshPro)
+            {
+                m_PanelDescriptionTextMeshPro.text = PanelDescription;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            LocalizationSettings.SelectedLocaleChanged -= OnSelectedLocaleChanged;
         }
 
         void OnEnable()
@@ -1472,45 +1487,60 @@ namespace TiltBrush
 
                 if (iPopUpIndex >= 0)
                 {
-                    // Create a new popup.
-                    GameObject popUp = (GameObject)Instantiate(m_PanelPopUpMap[iPopUpIndex].m_PopUpPrefab,
-                        m_Mesh.transform.position, m_Mesh.transform.rotation);
-                    m_ActivePopUp = popUp.GetComponent<PopUpWindow>();
-
-                    // If we're replacing a popup, put the new one in the same position.
-                    if (bPopUpExisted)
-                    {
-                        popUp.transform.position = vPrevPopUpPos;
-                    }
-                    else
-                    {
-                        Vector3 vPos = m_Mesh.transform.position +
-                            (m_Mesh.transform.forward * m_ActivePopUp.GetPopUpForwardOffset()) +
-                            m_Mesh.transform.TransformVector(vPopupOffset);
-                        popUp.transform.position = vPos;
-                    }
-                    popUp.transform.parent = m_Mesh.transform;
-                    m_ActivePopUp.Init(gameObject, sDelayedText);
-                    m_ActivePopUp.SetPopupCommandParameters(iCommandParam, iCommandParam2);
-
-                    m_ActivePopUp.m_OnClose += delayedClose;
-                    m_PopUpGazeTimer = 0;
-                    m_EatInput = !m_ActivePopUp.IsLongPressPopUp();
-
-                    // If we closed a popup to create this one, we wan't don't want the standard visual
-                    // fade that happens when a popup comes in.  We're spoofing the transition value
-                    // for visuals to avoid a pop.
-                    if (bPopUpExisted)
-                    {
-                        m_ActivePopUp.SpoofTransitionValue();
-                    }
-
-                    // Cache the intended command.
-                    m_DelayedCommand = rCommand;
-                    m_DelayedCommandParam = iCommandParam;
-                    m_DelayedCommandParam2 = iCommandParam2;
+                    Vector3 position = vPopupOffset;
+                    CreatePopUp(
+                        m_PanelPopUpMap[iPopUpIndex].m_PopUpPrefab, position,
+                        bPopUpExisted, bPopUpExisted, iCommandParam,
+                        iCommandParam2, rCommand, sDelayedText, delayedClose
+                    );
                 }
             }
+        }
+
+        public void CreatePopUp(
+                            GameObject prefab, Vector3 position,
+                            bool explicitPosition, bool transition, int iCommandParam = -1, int iCommandParam2 = -1,
+                            SketchControlsScript.GlobalCommands delayedCommand = SketchControlsScript.GlobalCommands.Null,
+                            string sDelayedText = "", Action delayedClose = null)
+        {
+            // Create a new popup.
+            GameObject popUp = Instantiate(prefab,
+                m_Mesh.transform.position, m_Mesh.transform.rotation);
+            m_ActivePopUp = popUp.GetComponent<PopUpWindow>();
+
+            if (explicitPosition)
+            {
+                popUp.transform.position = position;
+            }
+            else
+            {
+                // Treat position as an offset
+                popUp.transform.position = m_Mesh.transform.position +
+                    (m_Mesh.transform.forward * m_ActivePopUp.GetPopUpForwardOffset()) +
+                    m_Mesh.transform.TransformVector(position);
+            }
+
+            popUp.transform.parent = m_Mesh.transform;
+            m_ActivePopUp.Init(gameObject, sDelayedText);
+            m_ActivePopUp.SetPopupCommandParameters(iCommandParam, iCommandParam2);
+
+            m_ActivePopUp.m_OnClose += delayedClose;
+            m_PopUpGazeTimer = 0;
+            m_EatInput = !m_ActivePopUp.IsLongPressPopUp();
+
+            // If we closed a popup to create this one, we wan't don't want the standard visual
+            // fade that happens when a popup comes in.  We're spoofing the transition value
+            // for visuals to avoid a pop.
+            if (!transition)
+            {
+                m_ActivePopUp.SpoofTransitionValue();
+            }
+
+            // Cache the intended command.
+            m_DelayedCommand = delayedCommand;
+            m_DelayedCommandParam = iCommandParam;
+            m_DelayedCommandParam2 = iCommandParam2;
+
         }
 
         public void PositionPopUp(Vector3 basePos)

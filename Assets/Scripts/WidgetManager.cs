@@ -16,6 +16,7 @@ using System.Linq;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
@@ -105,12 +106,12 @@ namespace TiltBrush
         [SerializeField] GameObject m_WidgetPinPrefab;
         [SerializeField] ImageWidget m_ImageWidgetPrefab;
         [SerializeField] VideoWidget m_VideoWidgetPrefab;
-        [SerializeField] MovementPathWidget m_MovementPathWidgetPrefab;
-        [SerializeField] private GameObject m_MovementPathPositionKnotPrefab;
-        [SerializeField] private GameObject m_MovementPathRotationKnotPrefab;
-        [SerializeField] private GameObject m_MovementPathSpeedKnotPrefab;
-        [SerializeField] private GameObject m_MovementPathFovKnotPrefab;
-        [SerializeField] private GameObject m_MovementPathKnotSegmentPrefab;
+        [FormerlySerializedAs("m_MovementPathWidgetPrefab")] [SerializeField] CameraPathWidget mCameraPathWidgetPrefab;
+        [FormerlySerializedAs("m_MovementPathPositionKnotPrefab")] [SerializeField] private GameObject mCameraPathPositionKnotPrefab;
+        [FormerlySerializedAs("m_MovementPathRotationKnotPrefab")] [SerializeField] private GameObject mCameraPathRotationKnotPrefab;
+        [FormerlySerializedAs("m_MovementPathSpeedKnotPrefab")] [SerializeField] private GameObject mCameraPathSpeedKnotPrefab;
+        [FormerlySerializedAs("m_MovementPathFovKnotPrefab")] [SerializeField] private GameObject mCameraPathFovKnotPrefab;
+        [FormerlySerializedAs("m_MovementPathKnotSegmentPrefab")] [SerializeField] private GameObject mCameraPathKnotSegmentPrefab;
         [SerializeField] private GrabWidgetHome m_Home;
         [SerializeField] private GameObject m_HomeHintLinePrefab;
         [SerializeField] float m_WidgetSnapAngle = 15.0f;
@@ -144,7 +145,7 @@ namespace TiltBrush
         private List<TypedWidgetData<StencilWidget>> m_StencilWidgets;
         private List<TypedWidgetData<ImageWidget>> m_ImageWidgets;
         private List<TypedWidgetData<VideoWidget>> m_VideoWidgets;
-        private List<TypedWidgetData<MovementPathWidget>> m_MovementPathWidgets;
+        private List<TypedWidgetData<CameraPathWidget>> m_CameraPathWidgets;
 
         // These lists are used by the PinTool.  They're kept in sync by the
         // widget manager, but the PinTool is responsible for their coherency.
@@ -170,9 +171,9 @@ namespace TiltBrush
 
         // Camera path.
         [NonSerialized] public bool FollowingPath;
-        private TypedWidgetData<MovementPathWidget> m_CurrentCameraPath;
+        private TypedWidgetData<CameraPathWidget> m_CurrentCameraPath;
         private bool m_CameraPathsVisible;
-        private MovementPathTinter m_CameraPathTinter;
+        private CameraPathTinter m_CameraPathTinter;
 
         static private Dictionary<ushort, GrabWidget> sm_BatchMap = new Dictionary<ushort, GrabWidget>();
         public bool m_EnableSnapToGuides;
@@ -265,9 +266,9 @@ namespace TiltBrush
         public bool AnyVideoWidgetActive => m_VideoWidgets.Any(x => x.m_WidgetObject.activeSelf);
 
         public bool AnyCameraPathWidgetsActive =>
-            m_MovementPathWidgets.Any(x => x.m_WidgetObject.activeSelf);
+            m_CameraPathWidgets.Any(x => x.m_WidgetObject.activeSelf);
 
-        public MovementPathTinter PathTinter { get => m_CameraPathTinter; }
+        public CameraPathTinter PathTinter { get => m_CameraPathTinter; }
 
         // Returns the associated widget for the given batchId.
         // Returns null if key doesn't exist.
@@ -293,14 +294,14 @@ namespace TiltBrush
 
         public void Init()
         {
-            m_CameraPathTinter = gameObject.AddComponent<MovementPathTinter>();
+            m_CameraPathTinter = gameObject.AddComponent<CameraPathTinter>();
 
             m_GrabWidgets = new List<GrabWidgetData>();
             m_ModelWidgets = new List<TypedWidgetData<ModelWidget>>();
             m_StencilWidgets = new List<TypedWidgetData<StencilWidget>>();
             m_ImageWidgets = new List<TypedWidgetData<ImageWidget>>();
             m_VideoWidgets = new List<TypedWidgetData<VideoWidget>>();
-            m_MovementPathWidgets = new List<TypedWidgetData<MovementPathWidget>>();
+            m_CameraPathWidgets = new List<TypedWidgetData<CameraPathWidget>>();
 
             m_CanBePinnedWidgets = new List<GrabWidget>();
             m_CanBeUnpinnedWidgets = new List<GrabWidget>();
@@ -326,12 +327,12 @@ namespace TiltBrush
         public ModelWidget ModelWidgetPrefab { get { return m_ModelWidgetPrefab; } }
         public ImageWidget ImageWidgetPrefab { get { return m_ImageWidgetPrefab; } }
         public VideoWidget VideoWidgetPrefab { get { return m_VideoWidgetPrefab; } }
-        public MovementPathWidget MovementPathWidgetPrefab { get { return m_MovementPathWidgetPrefab; } }
-        public GameObject MovementPathPositionKnotPrefab { get { return m_MovementPathPositionKnotPrefab; } }
-        public GameObject MovementPathRotationKnotPrefab { get { return m_MovementPathRotationKnotPrefab; } }
-        public GameObject MovementPathSpeedKnotPrefab { get { return m_MovementPathSpeedKnotPrefab; } }
-        public GameObject MovementPathFovKnotPrefab { get { return m_MovementPathFovKnotPrefab; } }
-        public GameObject MovementPathKnotSegmentPrefab { get { return m_MovementPathKnotSegmentPrefab; } }
+        public CameraPathWidget CameraPathWidgetPrefab { get { return mCameraPathWidgetPrefab; } }
+        public GameObject CameraPathPositionKnotPrefab { get { return mCameraPathPositionKnotPrefab; } }
+        public GameObject CameraPathRotationKnotPrefab { get { return mCameraPathRotationKnotPrefab; } }
+        public GameObject CameraPathSpeedKnotPrefab { get { return mCameraPathSpeedKnotPrefab; } }
+        public GameObject CameraPathFovKnotPrefab { get { return mCameraPathFovKnotPrefab; } }
+        public GameObject CameraPathKnotSegmentPrefab { get { return mCameraPathKnotSegmentPrefab; } }
 
         public IEnumerable<GrabWidgetData> ActiveGrabWidgets
         {
@@ -383,11 +384,11 @@ namespace TiltBrush
                     yield return m_VideoWidgets[i];
                 }
             }
-            for (int i = 0; i < m_MovementPathWidgets.Count; ++i)
+            for (int i = 0; i < m_CameraPathWidgets.Count; ++i)
             {
-                if (m_MovementPathWidgets[i].m_WidgetObject.activeSelf)
+                if (m_CameraPathWidgets[i].m_WidgetObject.activeSelf)
                 {
-                    yield return m_MovementPathWidgets[i];
+                    yield return m_CameraPathWidgets[i];
                 }
             }
         }
@@ -401,12 +402,19 @@ namespace TiltBrush
             }
         }
 
-        public IEnumerable<TypedWidgetData<MovementPathWidget>> MovementPathWidgets =>
-            m_MovementPathWidgets.Where(x => x.m_WidgetObject.activeSelf && !x.WidgetScript.belongsToAnimation);
+        public IEnumerable<TypedWidgetData<CameraPathWidget>> CameraPathWidgets =>
+            m_CameraPathWidgets.Where(x => x.m_WidgetObject.activeSelf && !x.WidgetScript.Path.belongsToAnimation);
 
-        public TypedWidgetData<MovementPathWidget> GetCurrentCameraPath() => m_CurrentCameraPath;
+        public IEnumerable<TypedWidgetData<CameraPathWidget>> AnimationPathWidgets =>
+            m_CameraPathWidgets.Where(x => x.m_WidgetObject.activeSelf && x.WidgetScript.Path.belongsToAnimation);
 
-        public void SetCurrentCameraPath(MovementPathWidget path)
+        public IEnumerable<TypedWidgetData<CameraPathWidget>> AllPathWidgets =>
+            m_CameraPathWidgets.Where(x => x.m_WidgetObject.activeSelf || x.WidgetScript.Path.belongsToAnimation);
+
+
+        public TypedWidgetData<CameraPathWidget> GetCurrentCameraPath() => m_CurrentCameraPath;
+
+        public void SetCurrentCameraPath(CameraPathWidget path)
         {
             // Early out if we're trying to set the path to the already current path.
             if (m_CurrentCameraPath != null && m_CurrentCameraPath.WidgetScript == path)
@@ -414,12 +422,12 @@ namespace TiltBrush
                 return;
             }
 
-            for (int i = 0; i < m_MovementPathWidgets.Count; ++i)
+            for (int i = 0; i < m_CameraPathWidgets.Count; ++i)
             {
-                if (m_MovementPathWidgets[i].m_WidgetScript == path)
+                if (m_CameraPathWidgets[i].m_WidgetScript == path)
                 {
                     FollowingPath = false;
-                    SetCurrentCameraPath_Internal(m_MovementPathWidgets[i]);
+                    SetCurrentCameraPath_Internal(m_CameraPathWidgets[i]);
                     App.Switchboard.TriggerCurrentCameraPathChanged();
                     return;
                 }
@@ -433,19 +441,19 @@ namespace TiltBrush
                 !m_CurrentCameraPath.m_WidgetObject.activeSelf)
             {
                 var prevPath = m_CurrentCameraPath;
-                for (int i = 0; i < m_MovementPathWidgets.Count; ++i)
+                for (int i = 0; i < m_CameraPathWidgets.Count; ++i)
                 {
-                    if (m_MovementPathWidgets[i] != prevPath &&
-                        m_MovementPathWidgets[i].m_WidgetObject.activeSelf)
+                    if (m_CameraPathWidgets[i] != prevPath &&
+                        m_CameraPathWidgets[i].m_WidgetObject.activeSelf)
                     {
-                        SetCurrentCameraPath_Internal(m_MovementPathWidgets[i]);
+                        SetCurrentCameraPath_Internal(m_CameraPathWidgets[i]);
                         return;
                     }
                 }
             }
         }
 
-        void SetCurrentCameraPath_Internal(TypedWidgetData<MovementPathWidget> cp)
+        void SetCurrentCameraPath_Internal(TypedWidgetData<CameraPathWidget> cp)
         {
             if (m_CurrentCameraPath != null && m_CurrentCameraPath.WidgetScript != null)
             {
@@ -464,7 +472,7 @@ namespace TiltBrush
             {
                 if (m_CameraPathsVisible && m_CurrentCameraPath != null)
                 {
-                    MovementPathWidget cpw = m_CurrentCameraPath.WidgetScript;
+                    CameraPathWidget cpw = m_CurrentCameraPath.WidgetScript;
                     return (cpw != null) && cpw.gameObject.activeSelf && cpw.Path.NumPositionKnots > 1;
                 }
             }
@@ -478,10 +486,10 @@ namespace TiltBrush
         // global commands, which can be modified with generic integer parameters.  In those
         // cases, we can't pass a MovementPathWidget object.
 
-    
-        public MovementPathWidget GetNthActiveCameraPath(int nth)
+
+        public CameraPathWidget GetNthActiveCameraPath(int nth)
         {
-            var activeCameraPathWidgets = m_MovementPathWidgets.Where(x => x.m_WidgetObject.activeSelf && !x.WidgetScript.belongsToAnimation);
+            var activeCameraPathWidgets = m_CameraPathWidgets.Where(x => x.m_WidgetObject.activeSelf && !x.WidgetScript.Path.belongsToAnimation);
             foreach (var cpw in activeCameraPathWidgets)
             {
                 if (nth == 0)
@@ -495,20 +503,20 @@ namespace TiltBrush
 
         public bool IsCameraPathAtIndexCurrent(int pathIndex)
         {
-            MovementPathWidget cpw = (m_CurrentCameraPath != null) ? cpw = m_CurrentCameraPath.WidgetScript :
+            CameraPathWidget cpw = (m_CurrentCameraPath != null) ? cpw = m_CurrentCameraPath.WidgetScript :
                 null;
             if (cpw == null) { return false; }
             return GetNthActiveCameraPath(pathIndex) == m_CurrentCameraPath.WidgetScript;
         }
 
-        public int? GetIndexOfCameraPath(MovementPathWidget path)
+        public int? GetIndexOfCameraPath(CameraPathWidget path)
         {
             int index = 0;
-            for (int i = 0; i < m_MovementPathWidgets.Count; ++i)
+            for (int i = 0; i < m_CameraPathWidgets.Count; ++i)
             {
-                if (m_MovementPathWidgets[i].m_WidgetObject.activeSelf && !m_MovementPathWidgets[i].WidgetScript.belongsToAnimation)
+                if (m_CameraPathWidgets[i].m_WidgetObject.activeSelf && !m_CameraPathWidgets[i].WidgetScript.Path.belongsToAnimation)
                 {
-                    if (m_MovementPathWidgets[i].WidgetScript == path)
+                    if (m_CameraPathWidgets[i].WidgetScript == path)
                     {
                         return index;
                     }
@@ -518,22 +526,34 @@ namespace TiltBrush
             return null;
         }
 
-        public MovementPathWidget CreatePathWidget()
+        public CameraPathWidget CreatePathWidget()
         {
             Debug.Log("CREATE PATH WIDGET");
             CreateWidgetCommand command =
-                new CreateWidgetCommand(m_MovementPathWidgetPrefab, TrTransform.identity);
+                new CreateWidgetCommand(mCameraPathWidgetPrefab, TrTransform.identity);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
-            return m_MovementPathWidgets.Last().WidgetScript;
+            return m_CameraPathWidgets.Last().WidgetScript;
         }
 
-   
+
 
 
         public bool AnyActivePathHasAKnot()
         {
-            var datas = MovementPathWidgets;
-            foreach (TypedWidgetData<MovementPathWidget> data in datas)
+            var datas = CameraPathWidgets;
+            foreach (TypedWidgetData<CameraPathWidget> data in datas)
+            {
+                if (data.WidgetScript.Path.NumPositionKnots > 0)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+         public bool AnyActiveAnimationPathHasAKnot()
+        {
+            var datas = AnimationPathWidgets;
+            foreach (TypedWidgetData<CameraPathWidget> data in datas)
             {
                 if (data.WidgetScript.Path.NumPositionKnots > 0)
                 {
@@ -543,7 +563,8 @@ namespace TiltBrush
             return false;
         }
 
-        public void DeleteCameraPath(GrabWidget cameraPathWidgetScript)
+
+        public void CameraMovementPath(GrabWidget cameraPathWidgetScript)
         {
             if (cameraPathWidgetScript != null)
             {
@@ -560,7 +581,7 @@ namespace TiltBrush
             // invited to start a path.  It looks weird.
             if (m_CurrentCameraPath == null || !m_CurrentCameraPath.WidgetScript.gameObject.activeSelf)
             {
-                if (SketchSurfacePanel.m_Instance.ActiveToolType == BaseTool.ToolType.MovementPathTool)
+                if (SketchSurfacePanel.m_Instance.ActiveToolType == BaseTool.ToolType.CameraPathTool)
                 {
                     SketchSurfacePanel.m_Instance.EnableDefaultTool();
                 }
@@ -577,9 +598,9 @@ namespace TiltBrush
                     m_CameraPathsVisible = value;
 
                     // Camera paths.
-                    for (int i = 0; i < m_MovementPathWidgets.Count; ++i)
+                    for (int i = 0; i < m_CameraPathWidgets.Count; ++i)
                     {
-                        MovementPathWidget cpw = m_MovementPathWidgets[i].m_WidgetScript as MovementPathWidget;
+                        CameraPathWidget cpw = m_CameraPathWidgets[i].m_WidgetScript as CameraPathWidget;
                         if (cpw.gameObject.activeSelf)
                         {
                             cpw.Path.SetKnotsActive(m_CameraPathsVisible);
@@ -589,7 +610,7 @@ namespace TiltBrush
                     if (!m_CameraPathsVisible)
                     {
                         // Flip back to default tool if we turned off paths.
-                        if (SketchSurfacePanel.m_Instance.ActiveToolType == BaseTool.ToolType.MovementPathTool)
+                        if (SketchSurfacePanel.m_Instance.ActiveToolType == BaseTool.ToolType.CameraPathTool)
                         {
                             SketchSurfacePanel.m_Instance.EnableDefaultTool();
                         }
@@ -714,7 +735,7 @@ namespace TiltBrush
         {
             for (int i = 0; i < cameraPaths.Length; ++i)
             {
-                MovementPathWidget.CreateFromSaveData(cameraPaths[i]);
+                CameraPathWidget.CreateFromSaveData(cameraPaths[i]);
             }
         }
 
@@ -1141,10 +1162,10 @@ namespace TiltBrush
             {
                 m_VideoWidgets.Add(new TypedWidgetData<VideoWidget>(video));
             }
-            else if (generic is MovementPathWidget cpw)
+            else if (generic is CameraPathWidget cpw)
             {
                 Debug.Log("adding to movement path Widget");
-                m_MovementPathWidgets.Add(new TypedWidgetData<MovementPathWidget>(cpw));
+                m_CameraPathWidgets.Add(new TypedWidgetData<CameraPathWidget>(cpw));
             }
             else
             {
@@ -1192,7 +1213,7 @@ namespace TiltBrush
             if (RemoveFrom(m_StencilWidgets, rWidget)) { return; }
             if (RemoveFrom(m_ImageWidgets, rWidget)) { return; }
             if (RemoveFrom(m_VideoWidgets, rWidget)) { return; }
-            if (RemoveFrom(m_MovementPathWidgets, rWidget)) { return; }
+            if (RemoveFrom(m_CameraPathWidgets, rWidget)) { return; }
             RemoveFrom(m_GrabWidgets, rWidget);
         }
 
@@ -1339,7 +1360,7 @@ namespace TiltBrush
             DestroyWidgetList(m_ImageWidgets);
             DestroyWidgetList(m_VideoWidgets);
             DestroyWidgetList(m_StencilWidgets);
-            DestroyWidgetList(m_MovementPathWidgets, false);
+            DestroyWidgetList(m_CameraPathWidgets, false);
             SetCurrentCameraPath_Internal(null);
             App.Switchboard.TriggerAllWidgetsDestroyed();
 
@@ -1505,8 +1526,8 @@ namespace TiltBrush
             m_ModelWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<VideoWidget>> ActiveVideoWidgets =>
             m_VideoWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
-        public List<TypedWidgetData<MovementPathWidget>> ActiveCameraPathWidgets =>
-            m_MovementPathWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+        public List<TypedWidgetData<CameraPathWidget>> ActiveCameraPathWidgets =>
+            m_CameraPathWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
 
     }
 }

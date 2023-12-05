@@ -140,7 +140,7 @@ namespace TiltBrush
             return WidgetManager.m_Instance.ActiveModelWidgets[index].WidgetScript;
         }
 
-        private static MovementPathWidget _GetActiveCameraPath(int index)
+        private static CameraPathWidget _GetActiveCameraPath(int index)
         {
             index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveCameraPathWidgets);
             return WidgetManager.m_Instance.GetNthActiveCameraPath(index);

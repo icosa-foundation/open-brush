@@ -21,7 +21,7 @@ namespace TiltBrush
     {
         [SerializeField] private Color m_RecordColor;
 
-        private MovementPathWidget m_CurrentPathWidget;
+        private CameraPathWidget m_CurrentPathWidget;
         private Vector3? m_LastRecordedInputXf;
         private PathT m_PathT;
 
@@ -64,13 +64,13 @@ namespace TiltBrush
                     // camera path stop advancing.  To correct this, ensure the minimum speed is
                     // the lowest speed available for a speed knot.
                     float speed = Mathf.Max(m_CurrentPathWidget.Path.GetSpeed(m_PathT),
-                        MovementPathSpeedKnot.kMinSpeed);
+                        CameraPathSpeedKnot.kMinSpeed);
                     bool completed = m_CurrentPathWidget.Path.MoveAlongPath(speed * Time.deltaTime,
                         m_PathT, out m_PathT);
 
                     if (VideoRecorderUtils.ActiveVideoRecording != null && completed)
                     {
-                        SketchControlsScript.m_Instance.MovementPathCaptureRig.StopRecordingPath(true);
+                        SketchControlsScript.m_Instance.CameraPathCaptureRig.StopRecordingPath(true);
                     }
                 }
 
@@ -82,8 +82,8 @@ namespace TiltBrush
                     transform.rotation = m_CurrentPathWidget.Path.GetRotation(t);
                 }
                 float fov = m_CurrentPathWidget.Path.GetFov(t);
-                SketchControlsScript.m_Instance.MovementPathCaptureRig.SetFov(fov);
-                SketchControlsScript.m_Instance.MovementPathCaptureRig.UpdateCameraTransform(transform);
+                SketchControlsScript.m_Instance.CameraPathCaptureRig.SetFov(fov);
+                SketchControlsScript.m_Instance.CameraPathCaptureRig.UpdateCameraTransform(transform);
             }
         }
 

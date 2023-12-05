@@ -16,18 +16,18 @@ using System;
 
 namespace TiltBrush
 {
-    public class MovePositionKnotCommand : BaseKnotCommand<MovementPathPositionKnot>
+    public class MovePositionKnotCommand : BaseKnotCommand<CameraPathPositionKnot>
     {
-        private MovementPath m_Path;
+        private CameraPath m_Path;
         private TrTransform m_StartXf_CS;
         private TrTransform m_EndXf_CS;
         private int m_KnotIndex;
         private float m_StartTangentMagnitude;
         private bool m_Final;
 
-        public MovePositionKnotCommand(MovementPath path, KnotDescriptor knotDesc,
+        public MovePositionKnotCommand(CameraPath path, KnotDescriptor knotDesc,
                                        TrTransform endXf_GS, bool final = false, BaseCommand parent = null)
-            : base((MovementPathPositionKnot)knotDesc.knot, false, parent)
+            : base((CameraPathPositionKnot)knotDesc.knot, false, parent)
         {
             m_Path = path;
             m_EndXf_CS = App.Scene.Pose.inverse * endXf_GS;

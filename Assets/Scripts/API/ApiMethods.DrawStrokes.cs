@@ -193,8 +193,8 @@ namespace TiltBrush
         [ApiEndpoint("draw.camerapath", "Draws along a camera path with the current brush settings")]
         public static void DrawCameraPath(int index)
         {
-            MovementPathWidget widget = _GetActiveCameraPath(index);
-            MovementPath path = widget.Path;
+            CameraPathWidget widget = _GetActiveCameraPath(index);
+            CameraPath path = widget.Path;
             var positions = new List<Vector3>();
             var rotations = new List<Quaternion>();
             for (float t = 0; t < path.Segments.Count; t += .1f)

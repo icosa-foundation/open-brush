@@ -71,7 +71,7 @@ namespace TiltBrush
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(m_TiltMeterCost, up: false);
             m_TiltMeterCostUndone = true;
 
-            if (m_Widget is MovementPathWidget)
+            if (m_Widget is CameraPathWidget)
             {
                 WidgetManager.m_Instance.ValidateCurrentCameraPath();
                 App.Switchboard.TriggerCameraPathDeleted();
@@ -115,7 +115,7 @@ namespace TiltBrush
                     m_Widget.transform.parent = m_Canvas.transform;
                     m_Widget.Show(true);
                 }
-                else if (m_Widget is MovementPathWidget)
+                else if (m_Widget is CameraPathWidget)
                 {
                     m_Widget.transform.parent = m_Canvas.transform;
                     m_Widget.transform.localPosition = Vector3.zero;

@@ -670,7 +670,7 @@ namespace TiltBrush
                 driver.OutputBasename = Config.m_OdsOutputPrefix;
                 if (!string.IsNullOrEmpty(App.Config.m_VideoPathToRender))
                 {
-                    driver.MovementPath = App.Config.m_VideoPathToRender;
+                    driver.CameraPath = App.Config.m_VideoPathToRender;
                 }
 
                 ODS.HybridCamera cam = driver.OdsCamera;

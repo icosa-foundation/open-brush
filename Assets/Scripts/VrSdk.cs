@@ -684,6 +684,10 @@ namespace TiltBrush
             {
                 SetControllerStyle(ControllerStyle.Wmr);
             }
+            else if (device.name.StartsWith("HP Reverb G2 Controller"))
+            {
+                SetControllerStyle(ControllerStyle.Wmr);
+            }
             else if (device.name.Contains("PICO Controller"))
             {
                 // Controller name isn't specified in Pico's device layout

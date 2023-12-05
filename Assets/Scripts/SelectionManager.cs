@@ -483,6 +483,7 @@ namespace TiltBrush
         /// Select a group that a widget belongs to and then return the corresponding selection widget.
         public SelectionWidget StartGrabbingGroupWithWidget(GrabWidget grabWidget)
         {
+            Debug.Log("START TRANSFORM SELECT");
             m_IsGrabbingGroup = true;
 
             // Save off the current tool and selection.

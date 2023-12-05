@@ -42,12 +42,33 @@ namespace TiltBrush.FrameAnimation
 
         }
 
+        override public void ButtonPressed(RaycastHit rHitInfo)
+        {
+            if (IsAvailable())
+            {
+                PositionSliderNob(rHitInfo.point);
+
+                  var uiManager = GetComponentInParent<AnimationUI_Manager>();
+                uiManager.timelineSlideDown(true);
+            }
+            SetDescriptionActive(true);
+        }
+
+        override public void ButtonReleased() { 
+
+        var uiManager = GetComponentInParent<AnimationUI_Manager>();
+        uiManager.timelineSlideDown(false);
+
+        }
+
+
         override public void UpdateValue(float fValue)
         {
             base.UpdateValue(fValue);
             // PointerManager.m_Instance.FreePaintPointerAngle = fValue * 90.0f;
 
             var uiManager = GetComponentInParent<AnimationUI_Manager>();
+            uiManager.timelineSlideDown(true);
             uiManager.timelineSlide(fValue);
         }
 

@@ -317,14 +317,18 @@ namespace TiltBrush
 
         public bool IsLayerDeleted(CanvasScript layer)
         {
-            var layerIndex = GetIndexOfCanvas(layer) - 1;
+            var layerIndex = GetIndexOfCanvas(layer).Item1 - 1;
             return IsLayerDeleted(layerIndex);
         }
 
-        public int GetIndexOfCanvas(CanvasScript canvas)
+        public (int,int) GetIndexOfCanvas(CanvasScript canvas)
         {
-            int index = m_LayerCanvases.IndexOf(canvas);
-            return index + 1;
+            if (App.Scene.animationUI_manager == null || App.Scene.animationUI_manager.getTimelineLength() == 0){
+                int index = m_LayerCanvases.IndexOf(canvas);
+                return (index + 1,0);
+            }
+            return App.Scene.animationUI_manager.getCanvasLocation(canvas);
+   
         }
 
         public int GetLayerNumFromCanvas(CanvasScript canvas)
@@ -381,6 +385,9 @@ namespace TiltBrush
 
         }
 
+        public void triggerLayersUpdate(){
+            App.Scene.LayerCanvasesUpdate?.Invoke();
+        }
         public void ShowLayer(int canvasIndex) { ShowLayer(GetCanvasByLayerIndex(canvasIndex)); }
         public void ShowLayer(CanvasScript canvas)
         {
@@ -408,6 +415,15 @@ namespace TiltBrush
         }
 
 
+        public CanvasScript GetOrCreateLayer((int,int) canvasIndex){
+
+
+                    if (canvasIndex.Item1 < animationUI_manager.timeline.Count && canvasIndex.Item2 < animationUI_manager.getTimelineLength()){
+                        return animationUI_manager.getTimelineCanvas(canvasIndex.Item1,canvasIndex.Item2);
+                    }else{
+                        return GetOrCreateLayer(canvasIndex.Item1);
+                    }
+        }
         public CanvasScript GetOrCreateLayer(int layerIndex)
         {
             // Layers are numbered 0=Main then 1, 2, 3
@@ -435,7 +451,7 @@ namespace TiltBrush
         public void MarkLayerAsDeleted(CanvasScript layer)
         {
             if (layer == MainCanvas) return;
-            m_DeletedLayers.Add(GetIndexOfCanvas(layer) - 1);
+            m_DeletedLayers.Add(GetIndexOfCanvas(layer).Item1 - 1);
             App.Scene.LayerCanvasesUpdate?.Invoke();
 
             animationUI_manager.MarkLayerAsDeleteRefresh(layer);
@@ -450,7 +466,7 @@ namespace TiltBrush
 
         public void MarkLayerAsNotDeleted(CanvasScript layer)
         {
-            m_DeletedLayers.Remove(GetIndexOfCanvas(layer) - 1);
+            m_DeletedLayers.Remove(GetIndexOfCanvas(layer).Item1 - 1);
             App.Scene.LayerCanvasesUpdate?.Invoke();
         }
 
@@ -489,14 +505,36 @@ namespace TiltBrush
             var layers = LayerCanvases.ToArray();
             meta.Tracks = new AnimationTrackMetadata[layers.Count()];
 
-
+            var timeline = animationUI_manager.timeline;
             for (var i = 0; i < layers.Length; i++)
             {
                 var layer = layers[i];
+                List<int> frameLengthsFound = new List<int>();
+              
+
+
+                for (var f = 0; f< timeline[i].Frames.Count;f++){
+                    
+                    if ( f > 0  ){
+
+                        if (timeline[i].Frames[f].canvas.Equals(timeline[i].Frames[f-1].canvas)){
+                            frameLengthsFound[frameLengthsFound.Count - 1]++;
+                        }else{
+                             frameLengthsFound.Add(1);
+                        }
+
+                    }else{
+
+                        frameLengthsFound.Add(1);
+
+                    }
+                }
                 meta.Tracks[i] = new AnimationTrackMetadata
                 {
                     Visible = layer.gameObject.activeSelf,
-                    Name = layer.name
+                    Name = layer.name,
+                    frameLengths = frameLengthsFound,
+
                 };
             }
 

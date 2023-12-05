@@ -19,7 +19,7 @@ namespace TiltBrush
 
     public class AnimationPathToolModeButton : BaseButton
     {
-        [SerializeField] private MovementPathTool.Mode m_Mode;
+        [SerializeField] private CameraPathTool.Mode m_Mode;
 
         override protected void Awake()
         {
@@ -38,12 +38,16 @@ namespace TiltBrush
             base.UpdateVisuals();
 
             // Availability visuals.
-            if (m_Mode != MovementPathTool.Mode.AddAnimationPositionKnot)
+            if (m_Mode != CameraPathTool.Mode.AddAnimationPositionKnot)
             {
+              
                 bool wasAvailable = IsAvailable();
-                bool available = WidgetManager.m_Instance.AnyActivePathHasAKnot();
+                bool available = WidgetManager.m_Instance.AnyActiveAnimationPathHasAKnot();
+
+                Debug.Log("IN UPDATE ANIMATION PATH TOOL " + wasAvailable + " " + available);
                 if (wasAvailable != available)
                 {
+                    Debug.Log("SETTING AVAIL");
                     SetButtonAvailable(available);
                 }
             }
@@ -51,7 +55,7 @@ namespace TiltBrush
             // Activated visuals.
             bool bWasToggleActive = m_ToggleActive;
             m_ToggleActive = false;
-            MovementPathTool cpt = SketchSurfacePanel.m_Instance.ActiveTool as MovementPathTool;
+            CameraPathTool cpt = SketchSurfacePanel.m_Instance.ActiveTool as CameraPathTool;
             if (cpt != null)
             {
                 m_ToggleActive = cpt.CurrentMode == m_Mode;
@@ -64,7 +68,7 @@ namespace TiltBrush
 
         override protected void OnButtonPressed()
         {
-          
+
             Debug.Log("PRESSED");
             if (m_ToggleActive)
             {
@@ -75,7 +79,7 @@ namespace TiltBrush
                 WidgetManager.m_Instance.CameraPathsVisible = true;
                 SketchControlsScript.m_Instance.EatGazeObjectInput();
                 SketchSurfacePanel.m_Instance.RequestHideActiveTool(true);
-                SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.MovementPathTool);
+                SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.CameraPathTool);
                 App.Switchboard.TriggerCameraPathModeChanged(m_Mode);
             }
         }

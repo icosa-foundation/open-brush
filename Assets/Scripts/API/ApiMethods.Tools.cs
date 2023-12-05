@@ -143,7 +143,7 @@
         [ApiEndpoint("tool.camerapath", "Activates the MovementPath Tool")]
         public static void ActivateCameraPathTool()
         {
-            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.MovementPathTool);
+            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.CameraPathTool);
         }
 
         [ApiEndpoint("tool.fly", "Activates the Fly Tool")]
