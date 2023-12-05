@@ -106,7 +106,7 @@ namespace OpenBrush.Multiplayer
             InvokePreCommands(command);
 
 
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(command.Command, propegate: false);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(command.Command, invoke: false);
 
             TryProcessCommands();
         }
@@ -180,7 +180,7 @@ namespace OpenBrush.Multiplayer
                 decode.Recreate(null, App.Scene.MainCanvas);
                 SketchMemoryScript.m_Instance.MemoryListAdd(decode);
 
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(new BrushStrokeCommand(decode), propegate: false);
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(new BrushStrokeCommand(decode), invoke: false);
             }
         }
 
