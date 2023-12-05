@@ -23,6 +23,8 @@ namespace OpenBrush.Multiplayer
     public interface IConnectionHandler
     {
         Task<bool> Connect();
+
+        bool IsConnected();
         Task<bool> Disconnect(bool force = false);
 
         void Update();

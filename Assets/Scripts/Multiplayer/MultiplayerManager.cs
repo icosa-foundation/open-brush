@@ -45,6 +45,8 @@ namespace OpenBrush.Multiplayer
 
         List<ulong> oculusPlayerIds;
 
+        private bool IsConnected { get { return m_Manager != null && m_Manager.IsConnected(); } }
+
         void Awake()
         {
             m_Instance = this;
@@ -172,6 +174,11 @@ namespace OpenBrush.Multiplayer
 
         private async void OnCommandPerformed(BaseCommand command)
         {
+            if (!IsConnected)
+            {
+                return;
+            }
+
             var success = await m_Manager.PerformCommand(command);
 
             // TODO: Proper rollback if command not possible right now.
@@ -187,12 +194,18 @@ namespace OpenBrush.Multiplayer
 
         private void OnCommandUndo(BaseCommand command)
         {
-            m_Manager.UndoCommand(command);
+            if (IsConnected)
+            {
+                m_Manager.UndoCommand(command);
+            }
         }
 
         private void OnCommandRedo(BaseCommand command)
         {
-            m_Manager.RedoCommand(command);
+            if (IsConnected)
+            {
+                m_Manager.RedoCommand(command);
+            }
         }
 
         async void ShareAnchors()

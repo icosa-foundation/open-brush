@@ -74,6 +74,16 @@ namespace OpenBrush.Multiplayer
             var result = await m_Runner.StartGame(args);
 
             return result.Ok;
+            
+        }
+
+        public bool IsConnected()
+        {
+            if(m_Runner == null)
+            {
+                return false;
+            }
+            return m_Runner.IsRunning;
         }
 
         public async Task<bool> Disconnect(bool force)

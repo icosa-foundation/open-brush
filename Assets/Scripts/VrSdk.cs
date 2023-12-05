@@ -190,7 +190,11 @@ namespace TiltBrush
 #if UNITY_ANDROID
             appId = App.Config.OculusMobileSecrets.ClientId;
 #endif
-            Oculus.Platform.Core.Initialize(appId);
+
+            if (Unity.XR.Oculus.Utils.GetSystemHeadsetType() != Unity.XR.Oculus.SystemHeadset.Oculus_Quest)
+            {
+                Oculus.Platform.Core.Initialize(appId);
+            }
 
 #endif // OCULUS_SUPPORTED
 
