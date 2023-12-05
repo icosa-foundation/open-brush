@@ -51,7 +51,7 @@ public class BuildTiltBrushPostProcess
                 "com.oculus.supportedDevices",
                 true,
                 true,
-                "value", "quest|quest2|quest3"
+                "value", "quest|quest2"
             );
 
             doc.Save(file);
