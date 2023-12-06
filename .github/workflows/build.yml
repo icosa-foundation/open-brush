@@ -377,20 +377,15 @@ jobs:
         run: |
           sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
 
-      - name: Set OCULUS_SUPPORTED in csc.rsp
-        if: matrix.vrsdk == 'Oculus'
+      - name: Update platform specific defines in csc.rsp
         run: |
-          echo -e "\n-define:OCULUS_SUPPORTED" | tee -a Assets/csc.rsp
-
-      - name: Set PICO_SUPPORTED in csc.rsp
-        if: matrix.vrsdk == 'Pico'
-        run: |
-          echo -e "\n-define:PICO_SUPPORTED" | tee -a Assets/csc.rsp
-
-      - name: Set PIMAX_SUPPORTED in csc.rsp
-        if: matrix.name == 'Windows Pimax'
-        run: |
-          echo -e "\n-define:PIMAX_SUPPORTED" | tee -a Assets/csc.rsp
+          if [[ "${{ matrix.vrsdk }}" == "Oculus" ]]; then
+            echo -e "\n-define:OCULUS_SUPPORTED" | tee -a Assets/csc.rsp
+          elif [[ "${{ matrix.vrsdk }}" == "Pico" ]]; then
+            echo -e "\n-define:PICO_SUPPORTED" | tee -a Assets/csc.rsp
+          elif [[ "${{ matrix.vrsdk }}" == "Oculus" ]]; then
+            echo -e "\n-define:PIMAX_SUPPORTED" | tee -a Assets/csc.rsp
+          fi
 
       - name: Build project
         id: unity_builder
