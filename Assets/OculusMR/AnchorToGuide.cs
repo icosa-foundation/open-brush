@@ -21,7 +21,7 @@ namespace TiltBrush
     public class AnchorToGuide : MonoBehaviour
     {
         // Start is called before the first frame update
-
+#if OCULUS_SUPPORTED
         private OVRSceneVolume m_SceneComponentVolume;
         private OVRScenePlane m_SceneComponentPlane;
         private OVRSemanticClassification m_Classification;
@@ -69,6 +69,7 @@ namespace TiltBrush
             //     return;
             // }
         }
+#endif // OCULUS_SUPPORTED
     }
 
 }

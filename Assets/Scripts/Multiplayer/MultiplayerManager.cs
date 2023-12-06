@@ -16,7 +16,9 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.XR.CoreUtils;
+#if OCULUS_SUPPORTED
 using OVRPlatform = Oculus.Platform;
+#endif
 using TiltBrush;
 
 namespace OpenBrush.Multiplayer
@@ -210,6 +212,7 @@ namespace OpenBrush.Multiplayer
 
         async void ShareAnchors()
         {
+#if OCULUS_SUPPORTED
             Debug.Log($"sharing to {oculusPlayerIds.Count} Ids");
             var success = await OculusMRController.m_Instance.m_SpatialAnchorManager.ShareAnchors(oculusPlayerIds);
 
@@ -220,6 +223,7 @@ namespace OpenBrush.Multiplayer
                     await m_Manager.RpcSyncToSharedAnchor(OculusMRController.m_Instance.m_SpatialAnchorManager.AnchorUuid);
                 }
             }
+#endif // OCULUS_SUPPORTED
         }
     }
 }

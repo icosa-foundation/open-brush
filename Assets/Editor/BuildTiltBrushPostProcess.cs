@@ -43,7 +43,8 @@ public class BuildTiltBrushPostProcess
 
 
 
-            UnityEngine.Debug.Log("Add all quest supported devices.");
+#if FORCE_QUEST_SUPPORT_DEVICE
+            UnityEngine.Debug.Log("Add quest as a supported devices");
             AddOrRemoveTag(doc,
                 androidNamespaceURI,
                 "/manifest/application",
@@ -51,8 +52,36 @@ public class BuildTiltBrushPostProcess
                 "com.oculus.supportedDevices",
                 true,
                 true,
-                "value", "quest|quest2"
+                "value", "quest"
             );
+#endif
+
+#if FORCE_FOCUSAWARE
+            UnityEngine.Debug.Log("Add com.oculus.vr.focusaware");
+            AddOrRemoveTag(doc,
+                androidNamespaceURI,
+                "/manifest/application/activity",
+                "meta-data",
+                "com.oculus.vr.focusaware",
+                true,
+                true,
+                "value", "true"
+            );
+#endif
+
+#if FORCE_HEADTRACKING
+            UnityEngine.Debug.Log("Add android.hardware.vr.headtracking");
+            AddOrRemoveTag(doc,
+                    androidNamespaceURI,
+                    "/manifest",
+                    "uses-feature",
+                    "android.hardware.vr.headtracking",
+                    true,
+                    true,
+                    "version", "1",
+                    "required", "true"
+            );
+#endif
 
             doc.Save(file);
         }

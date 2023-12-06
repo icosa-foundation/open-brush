@@ -21,6 +21,7 @@ namespace TiltBrush
 {
     public class OculusMRController : MonoBehaviour
     {
+#if OCULUS_SUPPORTED
         public static OculusMRController m_Instance;
 
         public OVRSceneManager ovrSceneManager;
@@ -74,6 +75,7 @@ namespace TiltBrush
                 loadedScene = true;
             }
         }
+#endif // OCULUS_SUPPORTED
     }
 }
 

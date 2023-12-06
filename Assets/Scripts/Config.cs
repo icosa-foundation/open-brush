@@ -498,6 +498,7 @@ namespace TiltBrush
         {
             get => PlayerPrefs.HasKey("ExperimentalMode") && PlayerPrefs.GetInt("ExperimentalMode") == 1;
         }
+
         public bool GeometryShaderSuppported
         {
             get
@@ -506,7 +507,7 @@ namespace TiltBrush
                 SystemHeadset headset = Unity.XR.Oculus.Utils.GetSystemHeadsetType();
                 return headset != SystemHeadset.Oculus_Quest;
 #endif
-                return true;
+                return SystemInfo.supportsGeometryShaders;
             }
         }
 
