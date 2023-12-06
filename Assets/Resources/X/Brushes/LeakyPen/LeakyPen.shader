@@ -28,7 +28,7 @@ Shader "Brush/Special/LeakyPen" {
 		SubShader {
 			Tags{ "Queue" = "AlphaTest" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
 
-			LOD 400
+			LOD 200
 			CGPROGRAM
 			#pragma surface surf StandardSpecular vertex:vert alphatest:_Cutoff addshadow
 			#pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
