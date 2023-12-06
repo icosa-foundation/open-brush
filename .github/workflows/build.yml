@@ -207,6 +207,7 @@ jobs:
             extraoptions: -btb-il2cpp
             versionSuffix: 0
             extra_defines: USE_QUEST_PACKAGE_NAME FORCE_QUEST_SUPPORT_DEVICE FORCE_FOCUSAWARE
+            packages_to_remove: com.meta.xr.sdk.platform com.meta.xr.sdk.utilities
 
           - name: Oculus Quest (2+)
             targetPlatform: Android
@@ -346,6 +347,20 @@ jobs:
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
           key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
+      - name: Remove problematic packages
+        if: ${{ matrix.packages_to_remove }}
+        run: |
+          cp Packages/manifest.json{,.bak}
+          cp Packages/packages-lock.json{,.bak}
+          for PACKAGE in ${{ matrix.packages_to_remove }}; do
+            cat Packages/manifest.json | jq 'del( .dependencies ["'${PACKAGE}'"] )' > Packages/manifest.json.new
+            mv Packages/manifest.json.new Packages/manifest.json
+            cat Packages/packages-lock.json | jq 'del( .dependencies ["'${PACKAGE}'"] )' > Packages/packages-lock.json.new
+            mv Packages/packages-lock.json.new Packages/packages-lock.json
+          done
+          diff -u Packages/manifest.json.bak Packages/manifest.json || true
+          diff -u Packages/packages-lock.json.bak Packages/packages-lock.json || true
+
       - name: Restore Library/PackageCache
         id: cache_packagecache
         uses: actions/cache/restore@v3
@@ -478,7 +493,7 @@ jobs:
 
       - name: Save Library/PackageCache cache
         uses: actions/cache/save@v3
-        if: github.ref == 'refs/heads/main' && steps.cache_packagecache.outputs.cache-hit != 'true'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
+        if: github.ref == 'refs/heads/main' && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
