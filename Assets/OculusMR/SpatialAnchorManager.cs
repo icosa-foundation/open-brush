@@ -22,6 +22,7 @@ namespace TiltBrush
 {
     public class SpatialAnchorManager : MonoBehaviour
     {
+#if OCULUS_SUPPORTED
         const string kOriginSpatialAnchorPref = "ORIGIN_SPATIAL_ANCHOR";
 
         OVRSpatialAnchor m_Anchor;
@@ -185,5 +186,6 @@ namespace TiltBrush
 
             return false;
         }
+#endif // OCULUS_SUPPORTED
     }
 }
