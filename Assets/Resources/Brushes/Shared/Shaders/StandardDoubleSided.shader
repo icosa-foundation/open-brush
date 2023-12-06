@@ -181,7 +181,7 @@ Properties {
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
 
           if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-          if (_Opacity < 1 && Dither8x8(i.vertex.xy) >= _Opacity) discard;
+          if (_Opacity < 1 && Dither8x8(i.pos.xy) >= _Opacity) discard;
 
           fixed4 col = i.color;
           col.a = tex2D(_MainTex, i.uv).a * col.a;
@@ -501,7 +501,7 @@ Properties {
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
 
           if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-          if (_Opacity < 1 && Dither8x8(i.vertex.xy) >= _Opacity) discard;
+          if (_Opacity < 1 && Dither8x8(i.pos.xy) >= _Opacity) discard;
 
           fixed4 col = i.color;
           col.a *= tex2D(_MainTex, i.uv).a;
