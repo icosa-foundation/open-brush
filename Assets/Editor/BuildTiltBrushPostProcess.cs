@@ -54,6 +54,16 @@ public class BuildTiltBrushPostProcess
                 "value", "quest|quest2"
             );
 
+            AddOrRemoveTag(doc,
+                androidNamespaceURI,
+                "/manifest/application/activity",
+                "meta-data",
+                "com.oculus.vr.focusaware",
+                true,
+                true,
+                "value", "true"
+            );
+
             doc.Save(file);
         }
         catch (System.Exception e)
