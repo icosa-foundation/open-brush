@@ -21,7 +21,7 @@ Shader "Brush/StandardSingleSided" {
     _BumpMap ("Normalmap", 2D) = "bump" {}
     _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
 
-    _Opacity("Opacity", Range(0,1)) = 1
+    _Opacity ("Opacity", Range(0,1)) = 1
     _ClipStart("Clip Start", Float) = 0
     _ClipEnd("Clip End", Float) = -1
   }
@@ -50,15 +50,6 @@ Shader "Brush/StandardSingleSided" {
         float4 screenPos;
       };
 
-      sampler2D _MainTex;
-      sampler2D _BumpMap;
-      fixed4 _Color;
-      half _Shininess;
-
-  	  uniform float _ClipStart;
-	    uniform float _ClipEnd;
-      uniform half _Opacity;
-
       struct appdata_full_plus_id {
         float4 vertex : POSITION;
         float4 tangent : TANGENT;
@@ -71,6 +62,15 @@ Shader "Brush/StandardSingleSided" {
         uint id : SV_VertexID;
         UNITY_VERTEX_INPUT_INSTANCE_ID
       };
+
+      sampler2D _MainTex;
+      sampler2D _BumpMap;
+      fixed4 _Color;
+      half _Shininess;
+
+  	  uniform float _ClipStart;
+	    uniform float _ClipEnd;
+      uniform half _Opacity;
 
       void vert (inout appdata_full_plus_id i, out Input o) {
         UNITY_INITIALIZE_OUTPUT(Input, o);
@@ -99,7 +99,7 @@ Shader "Brush/StandardSingleSided" {
   // MOBILE VERSION - Vert/Frag, MSAA + Alpha-To-Coverage, w/Bump.
   // -------------------------------------------------------------------------------------------- //
   SubShader {
-    Tags{ "Queue" = "AlphaTest" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
+    Tags{ "Queue" = "Geometry" "IgnoreProjector" = "True" }
     Cull Back
     LOD 201
 
@@ -136,7 +136,7 @@ Shader "Brush/StandardSingleSided" {
           half3 tspace0 : TEXCOORD1;
           half3 tspace1 : TEXCOORD2;
           half3 tspace2 : TEXCOORD3;
-          float2 id : TEXCOORD4;
+          uint id : TEXCOORD4;
         };
 
         sampler2D _MainTex;
@@ -172,14 +172,13 @@ Shader "Brush/StandardSingleSided" {
           o.tspace0 = half3(wTangent.x, wBitangent.x, wNormal.x);
           o.tspace1 = half3(wTangent.y, wBitangent.y, wNormal.y);
           o.tspace2 = half3(wTangent.z, wBitangent.z, wNormal.z);
-          o.id = (float2)v.id;
           return o;
         }
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
 
           if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-
+          if (_Opacity < 1 && Dither8x8(i.pos.xy) >= _Opacity) discard;
 
           fixed4 col = i.color;
           col.a = tex2D(_MainTex, i.uv).a * col.a;
@@ -223,13 +222,13 @@ Shader "Brush/StandardSingleSided" {
         #pragma vertex vert
         #pragma fragment frag
         #pragma target 3.0
+        #pragma multi_compile __ SELECTION_ON
+        #pragma multi_compile_fog
 
         #include "UnityCG.cginc"
         #include "Lighting.cginc"
         #include "Assets/Shaders/Include/MobileSelection.cginc"
 
-        #pragma multi_compile __ SELECTION_ON
-        #pragma multi_compile_fog
         // Disable all the things.
         #pragma multi_compile_fwdbase nolightmap nodirlightmap nodynlightmap novertexlight noshadow
 
@@ -249,16 +248,17 @@ Shader "Brush/StandardSingleSided" {
             half3 tspace0 : TEXCOORD1;
             half3 tspace1 : TANGENT;
             half3 tspace2 : NORMAL;
-            uint id : TEXCOORD2;
+            float4 worldPos : TEXCOORD4;
+            float2 id : TEXCOORD5;
             UNITY_FOG_COORDS(5)
         };
 
         sampler2D _MainTex;
         float4 _MainTex_ST;
         sampler2D _BumpMap;
+        half _Shininess;
 
         fixed _Cutoff;
-
         uniform float _ClipStart;
         uniform float _ClipEnd;
         uniform half _Opacity;
@@ -276,7 +276,9 @@ Shader "Brush/StandardSingleSided" {
           o.tspace0 = half3(wTangent.x, wBitangent.x, wNormal.x);
           o.tspace1 = half3(wTangent.y, wBitangent.y, wNormal.y);
           o.tspace2 = half3(wTangent.z, wBitangent.z, wNormal.z);
+          o.worldPos = mul (unity_ObjectToWorld, v.vertex);
           UNITY_TRANSFER_FOG(o, o.pos);
+          o.id = (float2)v.id;
           return o;
         }
 
@@ -288,6 +290,13 @@ Shader "Brush/StandardSingleSided" {
           fixed4 col = i.color;
           col.a = tex2D(_MainTex, i.uv).a * col.a;
           if (col.a < _Cutoff) { discard; }
+
+          // The standard shader we have desaturates the color of objects depending on the
+          // brightness of their specular color - this seems to be a reasonable emulation.
+          float desaturated = dot(col, float3(0.3, 0.59, 0.11));
+          col.rgb = lerp(col, desaturated, _SpecColor * 1.2);
+
+          col.a = 1;
           half3 tnormal = UnpackNormal(tex2D(_BumpMap, i.uv));
           tnormal.z *= vface;
 
@@ -300,7 +309,6 @@ Shader "Brush/StandardSingleSided" {
           fixed ndotl = saturate(dot(worldNormal, normalize(_WorldSpaceLightPos0.xyz)));
           fixed3 lighting = ndotl * _LightColor0;
           lighting += ShadeSH9(half4(worldNormal, 1.0));
-
           col.rgb *= lighting;
           UNITY_APPLY_FOG(i.fogCoord, col);
           FRAG_MOBILESELECT(col)
@@ -314,7 +322,7 @@ Shader "Brush/StandardSingleSided" {
   // MOBILE VERSION -- vert/frag, MSAA + Alpha-To-Coverage, No Bump.
   // -------------------------------------------------------------------------------------------- //
   SubShader {
-    Tags{ "Queue" = "AlphaTest" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
+    Tags{ "Queue" = "Geometry" "IgnoreProjector" = "True" }
     Cull Back
     LOD 150
 
@@ -380,7 +388,7 @@ Shader "Brush/StandardSingleSided" {
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
 
           if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-
+          if (_Opacity < 1 && Dither8x8(i.pos.xy) >= _Opacity) discard;
 
           fixed4 col = i.color;
           col.a *= tex2D(_MainTex, i.uv).a;
@@ -404,9 +412,10 @@ Shader "Brush/StandardSingleSided" {
   // -------------------------------------------------------------------------------------------- //
   // MOBILE VERSION - Lambert SurfaceShader, Alpha Test, No Bump.
   // -------------------------------------------------------------------------------------------- //
-  SubShader{
+  SubShader {
     Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
     LOD 50
+    Cull Back
 
     CGPROGRAM
       #pragma surface surf Lambert vertex:vert alphatest:_Cutoff
@@ -418,7 +427,7 @@ Shader "Brush/StandardSingleSided" {
       fixed4 _Color;
 
       uniform float _ClipStart;
-	    uniform float _ClipEnd;
+      uniform float _ClipEnd;
       uniform half _Opacity;
 
       struct Input {
@@ -440,9 +449,8 @@ Shader "Brush/StandardSingleSided" {
         o.Albedo = c.rgb * IN.color.rgb;
         o.Alpha = c.a * IN.color.a;
       }
-
     ENDCG
-  } // SubShader
+  }
 
   FallBack "Transparent/Cutout/VertexLit"
-} // shader
+}
