@@ -170,11 +170,13 @@ jobs:
             targetPlatform: StandaloneWindows64
             vrsdk: OpenXR
             cache: Windows
+            extra_defines: PIMAX_SUPPORTED
 
           - name: Windows Rift
             targetPlatform: StandaloneWindows64
             vrsdk: Oculus
             cache: Windows
+            extra_defines: OCULUS_SUPPORTED
 
           - name: Windows Monoscopic
             targetPlatform: StandaloneWindows64
@@ -198,12 +200,21 @@ jobs:
             extraoptions: -btb-il2cpp
             versionSuffix: 0
 
-          - name: Oculus Quest
+          - name: Oculus Quest (1)
+            targetPlatform: Android
+            vrsdk: OpenXR
+            cache: Android_Vulkan
+            extraoptions: -btb-il2cpp
+            versionSuffix: 0
+            extra_defines: USE_QUEST_PACKAGE_NAME
+
+          - name: Oculus Quest (2+)
             targetPlatform: Android
             vrsdk: Oculus
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
             versionSuffix: 1
+            extra_defines: OCULUS_SUPPORTED USE_QUEST_PACKAGE_NAME
 
           - name: Android Pico
             targetPlatform: Android
@@ -211,6 +222,7 @@ jobs:
             cache: Android_GLES
             extraoptions: -btb-il2cpp
             versionSuffix: 0
+            extra_defines: PICO_SUPPORTED
 
           - name: Android Pico (CN)
             targetPlatform: Android
@@ -219,6 +231,7 @@ jobs:
             # Pico requested Chinese build that doesn't have google/sketchfab login.
             extraoptions: -btb-il2cpp -btb-disableAccountLogins
             versionSuffix: 0
+            extra_defines: PICO_SUPPORTED
 
     steps:
       - name: Set masking
@@ -386,15 +399,12 @@ jobs:
         run: |
           sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
 
-      - name: Update platform specific defines in csc.rsp
+      - name: Update build matrix specific defines in csc.rsp
+        if: ${{ matrix.extra_defines }}
         run: |
-          if [[ "${{ matrix.vrsdk }}" == "Oculus" ]]; then
-            echo -e "\n-define:OCULUS_SUPPORTED" | tee -a Assets/csc.rsp
-          elif [[ "${{ matrix.vrsdk }}" == "Pico" ]]; then
-            echo -e "\n-define:PICO_SUPPORTED" | tee -a Assets/csc.rsp
-          elif [[ "${{ matrix.vrsdk }}" == "Oculus" ]]; then
-            echo -e "\n-define:PIMAX_SUPPORTED" | tee -a Assets/csc.rsp
-          fi
+          for DEFINE in ${{ matrix.extra_defines }}; do
+            echo -e "\n-define:$DEFINE" | tee -a Assets/csc.rsp
+          done
 
       - name: Build project
         id: unity_builder
@@ -569,10 +579,16 @@ jobs:
           name: Windows Monoscopic
           path: build_windows_mono
 
-      - name: Download Build Artifacts (Oculus Quest)
+      - name: Download Build Artifacts (Oculus Quest 1)
         uses: actions/download-artifact@v3
         with:
-          name: Oculus Quest
+          name: Oculus Quest (1)
+          path: build_oculus_quest1
+
+      - name: Download Build Artifacts (Oculus Quest 2+)
+        uses: actions/download-artifact@v3
+        with:
+          name: Oculus Quest (2+)
           path: build_oculus_quest
 
       - name: Download Build Artifacts (Pico)
@@ -586,6 +602,7 @@ jobs:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
           mkdir releases
+          mv build_oculus_quest1/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest1_$VERSION.apk
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
           mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_$VERSION/
@@ -811,10 +828,10 @@ jobs:
           name: Windows OpenXR
           path: build_windows_openxr
 
-      - name: Download Build Artifacts (Oculus Quest)
+      - name: Download Build Artifacts (Oculus Quest 2+)
         uses: actions/download-artifact@v3
         with:
-          name: Oculus Quest
+          name: Oculus Quest (2+)
           path: build_oculus_quest
 
       - name: Package Artifacts for release
@@ -843,11 +860,16 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
-      - name: Download Build Artifacts (Oculus Quest)
+      - name: Download Build Artifacts (Oculus Quest 2+)
         uses: actions/download-artifact@v3
         with:
-          name: Oculus Quest
+          name: Oculus Quest (2+)
           path: build_oculus_quest
+      - name: Download Build Artifacts (Oculus Quest 1)
+        uses: actions/download-artifact@v3
+        with:
+          name: Oculus Quest (1)
+          path: build_oculus_quest1
       - name: Publish Oculus Builds
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
@@ -859,18 +881,37 @@ jobs:
           mkdir releases
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
           mv build_oculus_quest/*/com.Icosa.OpenBrush*.symbols.zip releases/symbols.zip
-          cd releases
+          mkdir releases1
+          mv build_oculus_quest1/*/com.Icosa.OpenBrush*apk releases1/OpenBrush_Quest1_$VERSION.apk
+          mv build_oculus_quest1/*/com.Icosa.OpenBrush*.symbols.zip releases1/symbols.zip
+
+          pushd releases
           unzip symbols.zip
           curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
           chmod 755 ovr-platform-util
 
           if [ "$PRERELEASE" == "false" ]
           then
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel LIVE --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so'
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel LIVE:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so'
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}"
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}"
           fi
+          popd
+
+          pushd releases1
+          unzip symbols.zip
+          curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
+          chmod 755 ovr-platform-util
+
+          if [ "$PRERELEASE" == "false" ]
+          then
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest1_$VERSION.apk --channel LIVE:quest1only --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so'
+          else
+            CHANGELOG="${RAW_CHANGELOG}"
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest1_$VERSION.apk --channel Beta:quest1only --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}"
+          fi
+
 
   publish_oculus_rift:
     name: Publish Oculus Rift Release
