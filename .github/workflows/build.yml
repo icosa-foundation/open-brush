@@ -96,6 +96,11 @@ jobs:
           echo "stamp=$STAMP" >> $GITHUB_OUTPUT
           MAJOR=$(echo $VERSION | cut -d '.' -f 1)
           MINOR=$(echo $VERSION | cut -d '.' -f 2)
+
+          # TODO: for testing only
+          MAJOR=0
+          MINOR=8
+
           ANDROID_VERSION_CODE=$((MAJOR * 1000000 + MINOR * 1000 + PATCH_VERSION))
           echo "androidVersionCode=$ANDROID_VERSION_CODE" >> $GITHUB_OUTPUT
           echo "Version $VERSION stamp=$STAMP androidVersionCode=$ANDROID_VERSION_CODE"
