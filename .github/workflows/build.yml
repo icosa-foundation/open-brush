@@ -206,7 +206,7 @@ jobs:
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
             versionSuffix: 0
-            extra_defines: USE_QUEST_PACKAGE_NAME
+            extra_defines: USE_QUEST_PACKAGE_NAME FORCE_QUEST_SUPPORT_DEVICE FORCE_FOCUSAWARE
 
           - name: Oculus Quest (2+)
             targetPlatform: Android
