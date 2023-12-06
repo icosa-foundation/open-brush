@@ -594,11 +594,11 @@ jobs:
           name: Windows Monoscopic
           path: build_windows_mono
 
-      - name: Download Build Artifacts (Oculus Quest 1)
+      - name: Download Build Artifacts (Android OpenXR)
         uses: actions/download-artifact@v3
         with:
-          name: Oculus Quest (1)
-          path: build_oculus_quest1
+          name: Android OpenXR
+          path: build_android_openxr
 
       - name: Download Build Artifacts (Oculus Quest 2+)
         uses: actions/download-artifact@v3
@@ -617,8 +617,8 @@ jobs:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
           mkdir releases
-          mv build_oculus_quest1/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest1_$VERSION.apk
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
+          mv build_android_openxr/*/com.Icosa.OpenBrush*apk releases/OpenBrush_OpenXR_$VERSION.apk
           mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_$VERSION/
           mv build_windows_rift/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_$VERSION/
