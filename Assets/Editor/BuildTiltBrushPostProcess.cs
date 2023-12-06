@@ -69,6 +69,20 @@ public class BuildTiltBrushPostProcess
             );
 #endif
 
+#if FORCE_HEADTRACKING
+            UnityEngine.Debug.Log("Add android.hardware.vr.headtracking");
+            AddOrRemoveTag(doc,
+                    androidNamespaceURI,
+                    "/manifest",
+                    "uses-feature",
+                    "android.hardware.vr.headtracking",
+                    true,
+                    true,
+                    "version", "1",
+                    "required", "true"
+            );
+#endif
+
             doc.Save(file);
         }
         catch (System.Exception e)
