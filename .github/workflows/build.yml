@@ -34,6 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version}}
+      androidVersionCode: ${{ steps.version.outputs.androidVersionCode }}
       stamp: ${{ steps.version.outputs.stamp }}
       prerelease: ${{ steps.version.outputs.prerelease }}
       previousrelease: ${{ steps.rawchangelogdata.outputs.previousrelease }}
@@ -93,7 +94,11 @@ jobs:
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "stamp=$STAMP" >> $GITHUB_OUTPUT
-          echo "Version $VERSION stamp=$STAMP"
+          MAJOR=$(echo $VERSION | cut -d '.' -f 1)
+          MINOR=$(echo $VERSION | cut -d '.' -f 2)
+          ANDROID_VERSION_CODE=$((MAJOR * 1000000 + MINOR * 1000 + PATCH_VERSION))
+          echo "androidVersionCode=$ANDROID_VERSION_CODE" >> $GITHUB_OUTPUT
+          echo "Version $VERSION stamp=$STAMP androidVersionCode=$ANDROID_VERSION_CODE"
       - name: Calculate Release tags for Changelog and raw changelog
         id: rawchangelogdata
         env:
@@ -191,18 +196,21 @@ jobs:
             vrsdk: OpenXR
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
+            versionSuffix: 0
 
           - name: Oculus Quest
             targetPlatform: Android
             vrsdk: Oculus
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
+            versionSuffix: 1
 
           - name: Android Pico
             targetPlatform: Android
             vrsdk: Pico
             cache: Android_GLES
             extraoptions: -btb-il2cpp
+            versionSuffix: 0
 
           - name: Android Pico (CN)
             targetPlatform: Android
@@ -210,6 +218,7 @@ jobs:
             cache: Android_GLES
             # Pico requested Chinese build that doesn't have google/sketchfab login.
             extraoptions: -btb-il2cpp -btb-disableAccountLogins
+            versionSuffix: 0
 
     steps:
       - name: Set masking
@@ -398,6 +407,7 @@ jobs:
           targetPlatform: ${{ matrix.targetPlatform }}
           customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }} ${{ needs.configuration.outputs.description}} ${{ env.stamp }} ${{ matrix.extraoptions }}
           versioning: Custom
+          androidVersionCode: "${{ needs.configuration.outputs.androidVersionCode }}${{ matrix.versionSuffix }}"
           version: ${{ needs.configuration.outputs.version }}
           buildMethod: BuildTiltBrush.CommandLine
           androidKeystoreName: openbrush.keystore
