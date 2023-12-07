@@ -1,0 +1,164 @@
+{
+    "Version": 1,
+    "TypeId": "NetworkProjectConfig",
+    "PeerMode": 0,
+    "PhysicsEngine": 0,
+    "ServerPhysicsMode": 0,
+    "UseLagCompensation": true,
+    "LagCompensation": {
+        "HitboxBufferSize": 12,
+        "HitboxCapacity": 512,
+        "ExpansionFactor": 0.20000000298023225,
+        "Optimize": false,
+        "DebugBroadphase": false,
+        "DebugHistory": false,
+        "DebugColor": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 0.5
+        },
+        "ClientDebugColor": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 1.0,
+            "a": 0.5
+        },
+        "HistoryDebugColor": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 1.0,
+            "a": 0.5
+        }
+    },
+    "SceneLoadSpawnMode": 0,
+    "DeltaCompressor": 0,
+    "InvokeRenderInBatchMode": true,
+    "MaxNetworkedObjectCount": 8192,
+    "NetworkIdIsObjectName": false,
+    "HideNetworkObjectInactivityGuard": false,
+    "EnableHostMigration": false,
+    "HostMigrationSnapshotInterval": 60,
+    "Simulation": {
+        "InputDataWordCount": 0,
+        "TickRate": 60,
+        "MaxPrediction": 60,
+        "DefaultPlayers": 10,
+        "ReplicationMode": 0,
+        "ObjectInterest": false,
+        "ServerPacketInterval": 1,
+        "ClientPacketInterval": 1
+    },
+    "Interpolation": {
+        "DeltaAdjustment": 1,
+        "AllowedJitter": 25,
+        "SnapLimit": 200,
+        "MultiplierMin": 1.25,
+        "MultiplierMax": 3.0
+    },
+    "Network": {
+        "SocketSendBufferSize": 256,
+        "SocketRecvBufferSize": 256,
+        "ConnectAttempts": 10,
+        "ConnectInterval": 0.5,
+        "ConnectionDefaultRtt": 0.1,
+        "ConnectionTimeout": 10.0,
+        "ConnectionPingInterval": 1.0,
+        "ConnectionShutdownTime": 1.0,
+        "MtuDefault": 1136,
+        "ReliableDataTransferModes": 3
+    },
+    "NetworkConditions": {
+        "Enabled": false,
+        "DelayShape": 1,
+        "DelayMin": 0.01,
+        "DelayMax": 0.1,
+        "DelayPeriod": 3.0,
+        "DelayThreshold": 0.5,
+        "AdditionalJitter": 0.01,
+        "LossChanceShape": 1,
+        "LossChanceMin": 0.0,
+        "LossChanceMax": 0.02,
+        "LossChanceThreshold": 0.9,
+        "LossChancePeriod": 3.0,
+        "AdditionalLoss": 0.005
+    },
+    "Heap": {
+        "PageShift": 14,
+        "PageCount": 128,
+        "GlobalsSize": 0
+    },
+    "AccuracyDefaults": {
+        "coreKeys": [
+            "Uncompressed",
+            "Default",
+            "Position",
+            "Rotation",
+            "NormalizedTime"
+        ],
+        "coreDefs": [
+            {
+                "_value": 0.0,
+                "_inverse": Infinity,
+                "_hash": -1382104104
+            },
+            {
+                "_value": 0.0010000000474974514,
+                "_inverse": 999.9999389648438,
+                "_hash": -814817977
+            },
+            {
+                "_value": 0.0010000000474974514,
+                "_inverse": 999.9999389648438,
+                "_hash": -194233199
+            },
+            {
+                "_value": 0.0010000000474974514,
+                "_inverse": 999.9999389648438,
+                "_hash": -258202764
+            },
+            {
+                "_value": 0.00009999999747378752,
+                "_inverse": 10000.0,
+                "_hash": 1061325578
+            }
+        ],
+        "coreVals": [
+            {
+                "_value": 0.0,
+                "_inverse": Infinity,
+                "_hash": -1382104104
+            },
+            {
+                "_value": 0.0010000000474974514,
+                "_inverse": 999.9999389648438,
+                "_hash": -814817977
+            },
+            {
+                "_value": 0.0010000000474974514,
+                "_inverse": 999.9999389648438,
+                "_hash": -194233199
+            },
+            {
+                "_value": 0.0010000000474974514,
+                "_inverse": 999.9999389648438,
+                "_hash": -258202764
+            },
+            {
+                "_value": 0.00009999999747378752,
+                "_inverse": 10000.0,
+                "_hash": 1061325578
+            }
+        ],
+        "tags": [],
+        "values": []
+    },
+    "AssembliesToWeave": [
+        "Assembly-CSharp",
+        "Assembly-CSharp-firstpass"
+    ],
+    "UseSerializableDictionary": true,
+    "NullChecksForNetworkedProperties": true,
+    "CheckRpcAttributeUsage": false,
+    "CheckNetworkedPropertiesBeingEmpty": false
+}
