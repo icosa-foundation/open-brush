@@ -31,7 +31,7 @@ repos:
     rev: "a2c1431dabf2229052cf598f86f31bc3eac5bc7b"  # Main as of 2022-12-05
     hooks:
       - id: dotnet-format
-        exclude: ^(Assets/ThirdParty)|(Packages/)
+        exclude: ^(Assets/ThirdParty)|(Packages/)|(Assets/Photon/)
         entry: dotnet format whitespace
         args:
           - --folder
