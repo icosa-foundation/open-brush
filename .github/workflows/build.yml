@@ -489,7 +489,9 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.name }}
-          path: build
+          path: |
+            build
+            !build/*_BackUpThisFolder_ButDontShipItWithYourGame
 
       - name: Save Library/PackageCache cache
         uses: actions/cache/save@v3
