@@ -17,6 +17,7 @@ env:
   UNITY_EMAIL: ${{ fromJSON(format('["unitytest@mikeage.net", "{0}"]', secrets.UNITY_EMAIL))[secrets.UNITY_SERIAL != null] }}
   UNITY_PASSWORD: ${{ fromJSON(format('["DoNotStealThis1", "{0}"]', secrets.UNITY_PASSWORD))[secrets.UNITY_SERIAL != null] }}
   UNITY_LICENSE: ${{ fromJSON('["<?xml version=\"1.0\" encoding=\"UTF-8\"?><root><TimeStamp Value=\"chxldhvc0zh5Vw==\"/>\n    <License id=\"Terms\">\n        <MachineBindings>\n            <Binding Key=\"1\" Value=\"C372866C-B44C-5E48-806F-7583B55F04FB\"/>\n            <Binding Key=\"2\" Value=\"C02F32Y5ML85\"/>\n        </MachineBindings>\n        <MachineID Value=\"LcL/yxIaeUG12OSX31mKDtxcVx8=\"/>\n        <SerialHash Value=\"e25c63636985259e763d40cc9253cdfe6a862ceb\"/>\n        <Features>\n            <Feature Value=\"33\"/>\n            <Feature Value=\"1\"/>\n            <Feature Value=\"12\"/>\n            <Feature Value=\"2\"/>\n            <Feature Value=\"24\"/>\n            <Feature Value=\"3\"/>\n            <Feature Value=\"36\"/>\n            <Feature Value=\"17\"/>\n            <Feature Value=\"19\"/>\n            <Feature Value=\"62\"/>\n        </Features>\n        <DeveloperData Value=\"AQAAAEY0LUtFWUItMzYyOC0zWEI3LVBZVVEtTUI5VQ==\"/>\n        <SerialMasked Value=\"F4-KEYB-3628-3XB7-PYUQ-XXXX\"/>\n        <StartDate Value=\"2023-11-21T00:00:00\"/>\n        <UpdateDate Value=\"2023-11-22T06:03:23\"/>\n        <InitialActivationDate Value=\"2023-11-21T06:03:21\"/>\n        <LicenseVersion Value=\"6.x\"/>\n        <ClientProvidedVersion Value=\"2017.2.0\"/>\n        <AlwaysOnline Value=\"false\"/>\n        <Entitlements>\n            <Entitlement Ns=\"unity_editor\" Tag=\"UnityPersonal\" Type=\"EDITOR\" ValidTo=\"9999-12-31T00:00:00\"/>\n            <Entitlement Ns=\"unity_editor\" Tag=\"DarkSkin\" Type=\"EDITOR_FEATURE\" ValidTo=\"9999-12-31T00:00:00\"/>\n        </Entitlements>\n    </License><Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments\"/><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><Reference URI=\"#Terms\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>9DZF11miRAzx7TIuCxih78B6CXU=</DigestValue></Reference></SignedInfo><SignatureValue>weRQubqMNN61lSZtm/e7S+UDzTPNQjM5aQl/c4aKLH/b2khefpgLfdWneoxdnNopA6+rW6kBqxWt\nhMLdHY+oAOfDsfmMQRTnmQG0Y3G3xh6gjGP1RAIHoLDfFHf+0LQ3FakA2WehcFWPSYeVDrdxm3HW\nqMmdKWooD9i+J4s4rQFTDx9+/G6yjc5KGTyGxIz3c5kxTEkV2qsFPXsauomY9Z8YPKy+cZK7g+Ol\npO+LhtzetgTIlIN/qG8eByjlp6nOuVGdDOIrhNJW+vllNyx0qNWPREadVrhFViI4UXegMFRl5gJc\nrgcrlr/fD+NorDVLfcu7D863QXkkuriILUIq2Q==</SignatureValue></Signature></root>", null]')[secrets.UNITY_SERIAL != null] }}
+  PHOTON_PAT: ${{ secrets.PHOTON_PAT }}
 jobs:
   configuration:
     if: |
@@ -33,6 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version}}
+      androidVersionCode: ${{ steps.version.outputs.androidVersionCode }}
       stamp: ${{ steps.version.outputs.stamp }}
       prerelease: ${{ steps.version.outputs.prerelease }}
       previousrelease: ${{ steps.rawchangelogdata.outputs.previousrelease }}
@@ -92,7 +94,11 @@ jobs:
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "stamp=$STAMP" >> $GITHUB_OUTPUT
-          echo "Version $VERSION stamp=$STAMP"
+          MAJOR=$(echo $VERSION | cut -d '.' -f 1)
+          MINOR=$(echo $VERSION | cut -d '.' -f 2)
+          ANDROID_VERSION_CODE=$((MAJOR * 1000000 + MINOR * 1000 + PATCH_VERSION))
+          echo "androidVersionCode=$ANDROID_VERSION_CODE" >> $GITHUB_OUTPUT
+          echo "Version $VERSION stamp=$STAMP androidVersionCode=$ANDROID_VERSION_CODE"
       - name: Calculate Release tags for Changelog and raw changelog
         id: rawchangelogdata
         env:
@@ -164,11 +170,13 @@ jobs:
             targetPlatform: StandaloneWindows64
             vrsdk: OpenXR
             cache: Windows
+            extra_defines: PIMAX_SUPPORTED
 
           - name: Windows Rift
             targetPlatform: StandaloneWindows64
             vrsdk: Oculus
             cache: Windows
+            extra_defines: OCULUS_SUPPORTED
 
           - name: Windows Monoscopic
             targetPlatform: StandaloneWindows64
@@ -190,18 +198,32 @@ jobs:
             vrsdk: OpenXR
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
+            versionSuffix: 0
 
-          - name: Oculus Quest
+          - name: Oculus Quest (1)
+            targetPlatform: Android
+            vrsdk: OpenXR
+            cache: Android_Vulkan
+            extraoptions: -btb-il2cpp
+            versionSuffix: 0
+            extra_defines: USE_QUEST_PACKAGE_NAME FORCE_QUEST_SUPPORT_DEVICE FORCE_FOCUSAWARE FORCE_HEADTRACKING
+            packages_to_remove: com.meta.xr.sdk.platform com.meta.xr.sdk.utilities
+
+          - name: Oculus Quest (2+)
             targetPlatform: Android
             vrsdk: Oculus
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
+            versionSuffix: 1
+            extra_defines: OCULUS_SUPPORTED USE_QUEST_PACKAGE_NAME
 
           - name: Android Pico
             targetPlatform: Android
             vrsdk: Pico
             cache: Android_GLES
             extraoptions: -btb-il2cpp
+            versionSuffix: 0
+            extra_defines: PICO_SUPPORTED
 
           - name: Android Pico (CN)
             targetPlatform: Android
@@ -209,6 +231,8 @@ jobs:
             cache: Android_GLES
             # Pico requested Chinese build that doesn't have google/sketchfab login.
             extraoptions: -btb-il2cpp -btb-disableAccountLogins
+            versionSuffix: 0
+            extra_defines: PICO_SUPPORTED
 
     steps:
       - name: Set masking
@@ -273,6 +297,8 @@ jobs:
           mkdir Packages/com.unity.xr.picoxr
           wget -q https://sdk.picovr.com/developer-platform/sdk/PICO%20Unity%20Integration%20SDK%20v211.zip -O package.zip
           unzip package.zip -d Packages/com.unity.xr.picoxr
+          # Pico has a GUID conflict because they copied code from Oculus. Delete the offending .meta file from our mutable Pico SDK.
+          rm Packages/com.unity.xr.picoxr/Platform/Scripts/Models/Common.cs.meta
 
       - name: Install TextMesh Pro package
         run: |
@@ -296,6 +322,21 @@ jobs:
           cp -R 'tmp.package/Assets/TextMesh Pro' Assets/
           rm -rf tmp.plugin tmp.package
 
+      - name: Checkout private photon repository if available
+        if: ${{ env.PHOTON_PAT }}
+        uses: actions/checkout@v4
+        with:
+          token: ${{ env.PHOTON_PAT }}
+          repository: icosa-mirror/photon-fusion
+          path: photon-fusion-mirror/
+
+      - name: Copy photon files
+        if: ${{ env.PHOTON_PAT }}
+        run: |
+          rsync -a --ignore-existing photon-fusion-mirror/ ./
+          echo "For debugging: these are the files in Assets/Photon:"
+          find Assets/Photon
+
       - name: Restore Library/
         id: cache_library
         uses: actions/cache/restore@v3
@@ -306,6 +347,20 @@ jobs:
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
           key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
+      - name: Remove problematic packages
+        if: ${{ matrix.packages_to_remove }}
+        run: |
+          cp Packages/manifest.json{,.bak}
+          cp Packages/packages-lock.json{,.bak}
+          for PACKAGE in ${{ matrix.packages_to_remove }}; do
+            cat Packages/manifest.json | jq 'del( .dependencies ["'${PACKAGE}'"] )' > Packages/manifest.json.new
+            mv Packages/manifest.json.new Packages/manifest.json
+            cat Packages/packages-lock.json | jq 'del( .dependencies ["'${PACKAGE}'"] )' > Packages/packages-lock.json.new
+            mv Packages/packages-lock.json.new Packages/packages-lock.json
+          done
+          diff -u Packages/manifest.json.bak Packages/manifest.json || true
+          diff -u Packages/packages-lock.json.bak Packages/packages-lock.json || true
+
       - name: Restore Library/PackageCache
         id: cache_packagecache
         uses: actions/cache/restore@v3
@@ -315,33 +370,19 @@ jobs:
           path: Library/PackageCache
           key: Library_PackageCache_${{ env.UNITY_VERSION }}
 
-      - name: Set filename (for Windows)
-        if: matrix.targetPlatform == 'StandaloneWindows64'
+      - name: Set output filename
         env:
           BASENAME: ${{ needs.configuration.outputs.basename}}
-        run:
-          echo "filename=$BASENAME.exe" >> $GITHUB_ENV
-
-      - name: Set filename (for Linux)
-        if: matrix.targetPlatform == 'StandaloneLinux64'
-        env:
-          BASENAME: ${{ needs.configuration.outputs.basename}}
-        run:
-          echo "filename=$BASENAME" >> $GITHUB_ENV
-
-      - name: Set filename (for OSX)
-        if: matrix.targetPlatform == 'StandaloneOSX'
-        env:
-          BASENAME: ${{ needs.configuration.outputs.basename}}
-        run:
-          echo "filename=$BASENAME.app" >> $GITHUB_ENV
-
-      - name: Set filename (for Android)
-        if: matrix.targetPlatform == 'Android'
-        env:
-          BASENAME: ${{ needs.configuration.outputs.basename}}
-        run:
-          echo "filename=com.Icosa.$BASENAME.apk" >> $GITHUB_ENV
+        run: |
+          if [[ "${{ matrix.targetPlatform}}" == "StandaloneWindows64" ]]; then
+            echo "filename=$BASENAME.exe" >> $GITHUB_ENV
+          elif [[ "${{ matrix.targetPlatform}}" == "StandaloneLinux64" ]]; then
+            echo "filename=$BASENAME" >> $GITHUB_ENV
+          elif [[ "${{ matrix.targetPlatform}}" == "StandaloneOSX" ]]; then
+            echo "filename=$BASENAME.app" >> $GITHUB_ENV
+          elif [[ "${{ matrix.targetPlatform}}" == "Android" ]]; then
+            echo "filename=com.Icosa.$BASENAME.apk" >> $GITHUB_ENV
+          fi
 
       - name: Set build stamp
         if: ${{ needs.configuration.outputs.stamp }}
@@ -373,20 +414,12 @@ jobs:
         run: |
           sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
 
-      - name: Set OCULUS_SUPPORTED in csc.rsp
-        if: matrix.vrsdk == 'Oculus'
+      - name: Update build matrix specific defines in csc.rsp
+        if: ${{ matrix.extra_defines }}
         run: |
-          echo -e "\n-define:OCULUS_SUPPORTED" | tee -a Assets/csc.rsp
-
-      - name: Set PICO_SUPPORTED in csc.rsp
-        if: matrix.vrsdk == 'Pico'
-        run: |
-          echo -e "\n-define:PICO_SUPPORTED" | tee -a Assets/csc.rsp
-
-      - name: Set PIMAX_SUPPORTED in csc.rsp
-        if: matrix.name == 'Windows Pimax'
-        run: |
-          echo -e "\n-define:PIMAX_SUPPORTED" | tee -a Assets/csc.rsp
+          for DEFINE in ${{ matrix.extra_defines }}; do
+            echo -e "\n-define:$DEFINE" | tee -a Assets/csc.rsp
+          done
 
       - name: Build project
         id: unity_builder
@@ -399,6 +432,7 @@ jobs:
           targetPlatform: ${{ matrix.targetPlatform }}
           customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }} ${{ needs.configuration.outputs.description}} ${{ env.stamp }} ${{ matrix.extraoptions }}
           versioning: Custom
+          androidVersionCode: "${{ needs.configuration.outputs.androidVersionCode }}${{ matrix.versionSuffix }}"
           version: ${{ needs.configuration.outputs.version }}
           buildMethod: BuildTiltBrush.CommandLine
           androidKeystoreName: openbrush.keystore
@@ -459,7 +493,7 @@ jobs:
 
       - name: Save Library/PackageCache cache
         uses: actions/cache/save@v3
-        if: github.ref == 'refs/heads/main' && steps.cache_packagecache.outputs.cache-hit != 'true'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
+        if: github.ref == 'refs/heads/main' && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -560,10 +594,16 @@ jobs:
           name: Windows Monoscopic
           path: build_windows_mono
 
-      - name: Download Build Artifacts (Oculus Quest)
+      - name: Download Build Artifacts (Android OpenXR)
         uses: actions/download-artifact@v3
         with:
-          name: Oculus Quest
+          name: Android OpenXR
+          path: build_android_openxr
+
+      - name: Download Build Artifacts (Oculus Quest 2+)
+        uses: actions/download-artifact@v3
+        with:
+          name: Oculus Quest (2+)
           path: build_oculus_quest
 
       - name: Download Build Artifacts (Pico)
@@ -578,6 +618,7 @@ jobs:
         run: |
           mkdir releases
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
+          mv build_android_openxr/*/com.Icosa.OpenBrush*apk releases/OpenBrush_OpenXR_$VERSION.apk
           mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_$VERSION/
           mv build_windows_rift/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_$VERSION/
@@ -802,10 +843,10 @@ jobs:
           name: Windows OpenXR
           path: build_windows_openxr
 
-      - name: Download Build Artifacts (Oculus Quest)
+      - name: Download Build Artifacts (Oculus Quest 2+)
         uses: actions/download-artifact@v3
         with:
-          name: Oculus Quest
+          name: Oculus Quest (2+)
           path: build_oculus_quest
 
       - name: Package Artifacts for release
@@ -825,7 +866,7 @@ jobs:
           PACKAGE: releases/OpenBrush_Quest_${{ needs.configuration.outputs.version }}.apk
 
   publish_oculus_quest:
-    name: Publish Oculus Quest Release
+    name: Publish Oculus Quest 2+ Release
     needs: [configuration, build]
     runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
     if: |
@@ -834,10 +875,10 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
-      - name: Download Build Artifacts (Oculus Quest)
+      - name: Download Build Artifacts (Oculus Quest 2+)
         uses: actions/download-artifact@v3
         with:
-          name: Oculus Quest
+          name: Oculus Quest (2+)
           path: build_oculus_quest
       - name: Publish Oculus Builds
         env:
@@ -850,6 +891,7 @@ jobs:
           mkdir releases
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
           mv build_oculus_quest/*/com.Icosa.OpenBrush*.symbols.zip releases/symbols.zip
+
           cd releases
           unzip symbols.zip
           curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
@@ -857,11 +899,53 @@ jobs:
 
           if [ "$PRERELEASE" == "false" ]
           then
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel LIVE --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so'
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel LIVE:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so'
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}"
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}"
           fi
+
+
+  publish_oculus_quest1:
+    name: Publish Oculus Quest 1 Release
+    needs: [configuration, build]
+    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Download Build Artifacts (Oculus Quest 1)
+        uses: actions/download-artifact@v3
+        with:
+          name: Oculus Quest (1)
+          path: build_oculus_quest1
+      - name: Publish Oculus Builds
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
+          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
+          OCULUS_QUEST_APP_ID: ${{ secrets.OCULUS_QUEST_APP_ID }}
+          OCULUS_QUEST_APP_SECRET: ${{ secrets.OCULUS_QUEST_APP_SECRET }}
+        run: |
+          mkdir releases1
+          mv build_oculus_quest1/*/com.Icosa.OpenBrush*apk releases1/OpenBrush_Quest1_$VERSION.apk
+          mv build_oculus_quest1/*/com.Icosa.OpenBrush*.symbols.zip releases1/symbols.zip
+
+          cd releases1
+          unzip symbols.zip
+          curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
+          chmod 755 ovr-platform-util
+
+          if [ "$PRERELEASE" == "false" ]
+          then
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest1_$VERSION.apk --channel LIVE:quest1only --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so'
+          else
+            CHANGELOG="${RAW_CHANGELOG}"
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest1_$VERSION.apk --channel Beta:quest1only --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}"
+          fi
+
 
   publish_oculus_rift:
     name: Publish Oculus Rift Release

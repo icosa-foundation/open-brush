@@ -19,4 +19,5 @@
     </application>
     <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove"/>
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="com.oculus.permission.USE_SCENE" />
 </manifest>
