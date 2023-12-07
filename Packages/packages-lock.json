@@ -13,12 +13,22 @@
       "dependencies": {},
       "hash": "4f87195d54ccefe076678cb83a296b3f0428fc53"
     },
+    "com.meta.xr.sdk.platform": {
+      "version": "56.0.0-preview",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.meta.xr.sdk.utilities": "56.0.0-preview",
+        "com.unity.ugui": "1.0.0"
+      },
+      "url": "https://npm.developer.oculus.com"
+    },
     "com.meta.xr.sdk.utilities": {
-      "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#open-brush",
+      "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.core.git#56.0.0-openbrush",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "79e3da292d15308ab01b14e9487b8b1253dcba84"
+      "hash": "57bad66c67cd72a31898a1d29dae4d4201ef36c1"
     },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
@@ -136,6 +146,13 @@
     },
     "com.unity.mobile.android-logcat": {
       "version": "1.3.2",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.nuget.mono-cecil": {
+      "version": "1.10.2",
       "depth": 0,
       "source": "registry",
       "dependencies": {},
@@ -275,38 +292,55 @@
       "url": "https://packages.unity.com"
     },
     "org.nuget.google.apis": {
-      "version": "1.57.0",
+      "version": "1.64.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "org.nuget.google.apis.core": "1.57.0"
+        "org.nuget.google.apis.core": "1.64.0"
       },
       "url": "https://unitynuget-registry.azurewebsites.net"
     },
     "org.nuget.google.apis.auth": {
-      "version": "1.57.0",
+      "version": "1.64.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "org.nuget.google.apis.core": "1.57.0",
-        "org.nuget.google.apis": "1.57.0"
+        "org.nuget.google.apis.core": "1.64.0",
+        "org.nuget.google.apis": "1.64.0",
+        "org.nuget.system.management": "7.0.2"
       },
       "url": "https://unitynuget-registry.azurewebsites.net"
     },
     "org.nuget.google.apis.core": {
-      "version": "https://github.com/icosa-mirror/org.nuget.google.apis.core.git#unity-newtonsoft",
+      "version": "https://github.com/icosa-mirror/org.nuget.google.apis.core.git#1.64.0-openbrush",
       "depth": 0,
       "source": "git",
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "2.0.2"
       },
-      "hash": "87f1383eaf64980de11fa5d7cbc0e1c09bf4904d"
+      "hash": "caa704e0ec7de2a30b9b883690813f2beac0f2c3"
     },
     "org.nuget.sharpziplib": {
       "version": "1.3.1",
       "depth": 0,
       "source": "registry",
       "dependencies": {},
+      "url": "https://unitynuget-registry.azurewebsites.net"
+    },
+    "org.nuget.system.codedom": {
+      "version": "7.0.0",
+      "depth": 2,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://unitynuget-registry.azurewebsites.net"
+    },
+    "org.nuget.system.management": {
+      "version": "7.0.2",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "org.nuget.system.codedom": "7.0.0"
+      },
       "url": "https://unitynuget-registry.azurewebsites.net"
     },
     "tv.superla.radiancehdr": {

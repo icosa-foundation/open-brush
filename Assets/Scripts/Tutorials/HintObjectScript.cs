@@ -225,6 +225,11 @@ namespace TiltBrush
                 vScale = m_BaseScale * fScale;
             }
             transform.localScale = vScale;
+
+            if (m_Stem != null)
+            {
+                m_Stem.enabled = fScale != 0.0f;
+            }
         }
 
         void CreateStemNodes()

@@ -26,7 +26,29 @@ namespace TiltBrush
     /// the base class or be sure to recurse into children.
     public class BaseCommand : IDisposable
     {
+        private Guid m_Guid;
+        private BaseCommand m_Parent;
         protected List<BaseCommand> m_Children;
+
+        public int ChildrenCount
+        {
+            get { return m_Children.Count; }
+        }
+
+        public Guid Guid
+        {
+            get { return m_Guid; }
+        }
+
+        public List<BaseCommand> Children
+        {
+            get { return m_Children.ToList(); }
+        }
+
+        public Guid ParentGuid
+        {
+            get { return m_Parent != null ? m_Parent.Guid : Guid.Empty; }
+        }
 
         protected static Vector3 GetPositionForCommand(Stroke stroke)
         {
@@ -48,10 +70,12 @@ namespace TiltBrush
         /// The constructor should not mutate sketch state.
         public BaseCommand(BaseCommand parent = null)
         {
+            m_Guid = Guid.NewGuid();
             m_Children = new List<BaseCommand>();
             if (parent != null)
             {
                 parent.m_Children.Add(this);
+                m_Parent = parent;
             }
         }
 
@@ -109,6 +133,11 @@ namespace TiltBrush
         public virtual bool Merge(BaseCommand other)
         {
             return other.IsNoop;
+        }
+
+        public virtual string Serialize()
+        {
+            return string.Empty;
         }
 
         /// Dispose of this entire command tree if there are any
