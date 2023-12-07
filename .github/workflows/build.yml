@@ -491,7 +491,7 @@ jobs:
           name: ${{ matrix.name }}
           path: |
             build
-            !build/*_BackUpThisFolder_ButDontShipItWithYourGame
+            !build/**/*_BackUpThisFolder_ButDontShipItWithYourGame
 
       - name: Save Library/PackageCache cache
         uses: actions/cache/save@v3
