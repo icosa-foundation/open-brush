@@ -129,6 +129,7 @@ namespace TiltBrush
         public SecretsConfig.ServiceAuthData OculusSecrets => Secrets[SecretsConfig.Service.Oculus];
         public SecretsConfig.ServiceAuthData OculusMobileSecrets => Secrets[SecretsConfig.Service.OculusMobile];
         public SecretsConfig.ServiceAuthData PimaxSecrets => Secrets[SecretsConfig.Service.Pimax];
+        public SecretsConfig.ServiceAuthData PhotonFusionSecrets => Secrets[SecretsConfig.Service.PhotonFusion];
 
         public bool DisableAccountLogins;
 
@@ -497,6 +498,7 @@ namespace TiltBrush
         {
             get => PlayerPrefs.HasKey("ExperimentalMode") && PlayerPrefs.GetInt("ExperimentalMode") == 1;
         }
+
         public bool GeometryShaderSuppported
         {
             get
@@ -505,7 +507,7 @@ namespace TiltBrush
                 SystemHeadset headset = Unity.XR.Oculus.Utils.GetSystemHeadsetType();
                 return headset != SystemHeadset.Oculus_Quest;
 #endif
-                return true;
+                return SystemInfo.supportsGeometryShaders;
             }
         }
 
