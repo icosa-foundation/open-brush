@@ -102,5 +102,10 @@
 # Pico Integration
 Packages/com.unity.xr.picoxr
 
+# Photon Integration
+/Assets/Photon/**
+/Assets/Photon.meta
+!/Assets/Photon/Fusion/Resources/NetworkProjectConfig.fusion*
+
 # Cache files
 *.cache
