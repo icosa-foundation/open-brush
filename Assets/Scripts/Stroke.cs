@@ -20,7 +20,7 @@ using Object = UnityEngine.Object;
 
 namespace TiltBrush
 {
-
+    [System.Serializable]
     public class Stroke : StrokeData
     {
         public enum Type
