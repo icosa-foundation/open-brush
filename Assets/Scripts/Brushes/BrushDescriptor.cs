@@ -91,11 +91,18 @@ namespace TiltBrush
         public Texture2D m_ButtonTexture;
         [Tooltip("Name of the brush, in the UI and elsewhere")]
         public LocalizedString m_LocalizedDescription;
+        // Non-translated name overrides for user brushes
+        public string m_DescriptionOverride;
 
         public string Description
         {
             get
             {
+                if (!string.IsNullOrEmpty(m_DescriptionOverride))
+                {
+                    return m_DescriptionOverride;
+                }
+
                 try
                 {
                     var locString = m_LocalizedDescription.GetLocalizedString();

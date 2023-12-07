@@ -48,6 +48,10 @@ public class UserVariantBrush
         public string FieldName { get; set; }
         public MapTo(string fieldName)
         {
+            if (fieldName == "m_Description")
+            {
+                fieldName = "m_DescriptionOverride";
+            }
             FieldName = fieldName;
         }
     }
