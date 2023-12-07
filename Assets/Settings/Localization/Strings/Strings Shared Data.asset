@@ -3287,6 +3287,10 @@ MonoBehaviour:
     m_Key: MULTIPLAYER_PANEL_CLOSE_BUTTON_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 176097607781543936
+    m_Key: LABEL_ALPHATAG
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
