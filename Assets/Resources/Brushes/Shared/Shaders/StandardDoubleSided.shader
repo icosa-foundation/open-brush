@@ -252,7 +252,7 @@ Properties {
             half3 tspace1 : TANGENT;
             half3 tspace2 : NORMAL;
             float4 worldPos : TEXCOORD4;
-            float2 id : TEXCOORD5;
+            float2 id : TEXCOORD6;
             UNITY_FOG_COORDS(5)
         };
 
