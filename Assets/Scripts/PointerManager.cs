@@ -106,6 +106,7 @@ namespace TiltBrush
         // The layout should match the most commonly-seen layout in the binary file.
         // See SketchMemoryScript.ReadMemory.
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [System.Serializable]
         public struct ControlPoint
         {
             public Vector3 m_Pos;
@@ -198,6 +199,8 @@ namespace TiltBrush
         /// active simultaneously. eg, 4-way symmetry is not allowed during timeline edit mode;
         /// floating-panel mode doesn't actually _use_ the Wand's pointer, etc.
         private PointerData[] m_Pointers;
+
+        private List<PointerScript> m_RemoteUserPointers;
         private bool m_InPlaybackMode;
 
         private PointerData m_MainPointerData;
@@ -388,6 +391,15 @@ namespace TiltBrush
             return m_Pointers[NumUserPointers + i].m_Script;
         }
 
+        public PointerScript CreateRemotePointer()
+        {
+            GameObject obj = (GameObject)Instantiate(m_AuxPointerPrefab, transform, true);
+            var script = obj.GetComponent<PointerScript>();
+            script.ChildIndex = m_RemoteUserPointers.Count - 1;
+            m_RemoteUserPointers.Add(script);
+            return script;
+        }
+
         /// The brush size, using "normalized" values in the range [0,1].
         /// Guaranteed to be in [0,1].
         public float GetPointerBrushSize01(InputManager.ControllerName controller)
@@ -469,6 +481,7 @@ namespace TiltBrush
 
             Debug.Assert(m_MaxPointers > 0);
             m_Pointers = new PointerData[m_MaxPointers];
+            m_RemoteUserPointers = new List<PointerScript>();
             m_CustomMirrorMatrices = new List<Matrix4x4>();
 
             for (int i = 0; i < m_Pointers.Length; ++i)
@@ -608,6 +621,11 @@ namespace TiltBrush
                 //turn off pointers
                 SetPointersRenderingEnabled(false);
                 DisablePointerPreviewLine();
+            }
+
+            for (int i = 0; i < m_RemoteUserPointers.Count; ++i)
+            {
+                m_RemoteUserPointers[i].UpdatePointer();
             }
         }
 

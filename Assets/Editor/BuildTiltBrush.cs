@@ -41,6 +41,7 @@ using Environment = System.Environment;
 //----------------------------------------------------------------------------------------
 // All output from this class is prefixed with "_btb_" to facilitate extracting
 // it from Unity's very noisy and spammy Editor.log file.
+
 static class BuildTiltBrush
 {
     // Types, consts, enums
@@ -968,7 +969,7 @@ static class BuildTiltBrush
             m_company = PlayerSettings.companyName;
             string new_name = App.kAppDisplayName;
             string new_identifier = GuiBuildAndroidApplicationIdentifier;
-#if OCULUS_SUPPORTED
+#if OCULUS_SUPPORTED || USE_QUEST_PACKAGE_NAME
             //Can't change Quest identifier
             new_identifier = "com.Icosa.OpenBrush";
 #endif

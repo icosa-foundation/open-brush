@@ -3466,6 +3466,12 @@ MonoBehaviour:
     m_Localized: Please give Open Brush file access to save your creations!
     m_Metadata:
       m_Items: []
+  - m_Id: 172767995928834048
+    m_Localized: 'Swipe To Adjust
+
+      Brush Size'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
