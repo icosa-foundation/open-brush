@@ -3621,7 +3621,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_FakeCommandLineArgsInEditor: 
   m_PlatformConfig: {fileID: 11400000, guid: 0764a106823cbec4e8d75b2816f3cbd3, type: 2}
-  m_SdkMode: 1
+  m_SdkMode: 0
   m_AutoProfile: 0
   m_AutoProfileWaitTime: 10
   Secrets: {fileID: 11400000, guid: 2f5f8e93c6bc7be49a5023148b50e7a0, type: 2}
@@ -30084,6 +30084,7 @@ MonoBehaviour:
   - m_PanelPrefab: {fileID: 109932, guid: 1a1bd060bbfe0493a92711ae9973a65a, type: 3}
     m_ModeVr: 1
     m_ModeVrExperimental: 1
+    m_ModeQuestExperimental: 0
     m_ModeMono: 1
     m_ModeQuest: 1
     m_ModeGvr: 1
