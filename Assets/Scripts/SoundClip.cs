@@ -36,7 +36,7 @@ namespace TiltBrush
             private SoundClip m_SoundClip;
             private bool m_SoundClipInitialized;
 
-            public GvrAudioSource m_SoundClipAudioSource;
+            public AudioSource m_SoundClipAudioSource;
 
             public bool Initialized => m_SoundClipInitialized;
 
@@ -128,7 +128,7 @@ namespace TiltBrush
             public SoundClipController(SoundClip soundClip, SoundClipWidget widget)
             {
                 m_SoundClip = soundClip;
-                m_SoundClipAudioSource = widget.gameObject.GetComponent<GvrAudioSource>();
+                m_SoundClipAudioSource = widget.gameObject.GetComponent<AudioSource>();
                 if (m_SoundClipAudioSource != null)
                 {
                     m_SoundClipInitialized = m_SoundClipAudioSource.clip != null;
