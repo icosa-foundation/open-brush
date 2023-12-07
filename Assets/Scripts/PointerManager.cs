@@ -76,8 +76,6 @@ namespace TiltBrush
 
         [NonSerialized] public bool m_SymmetryLockedToController = false;
 
-        [NonSerialized] public bool m_SymmetryColorShiftEnabled = true;
-
         [Serializable]
         public struct ColorShiftComponentSetting
         {
@@ -983,7 +981,7 @@ namespace TiltBrush
                     // Don't call CalculateMirrorPointers
                     // as this is handled below
                     CalculateMirrorMatrices();
-                    CalculateMirrorColors();
+                    CalculateMirrorColors(m_CustomMirrorMatrices.Count);
                     active = m_CustomMirrorMatrices.Count;
                     break;
                 case SymmetryMode.ScriptedSymmetryMode:
@@ -1167,15 +1165,15 @@ namespace TiltBrush
 
         public void CalculateMirrorColors()
         {
-            if (m_SymmetryColorShiftEnabled)
+            CalculateMirrorColors(m_NumActivePointers);
+        }
+
+        public void CalculateMirrorColors(int numPointers)
+        {
+            m_SymmetryPointerColors = new List<Color>();
+            for (float i = 0; i < numPointers; i++)
             {
-                m_SymmetryPointerColors = new List<Color>();
-                for (float i = 0; i < m_NumActivePointers; i++)
-                {
-                    m_SymmetryPointerColors.Add(CalcColorShift(m_lastChosenColor, i / m_NumActivePointers));
-                    // BrushDescriptor desc = BrushCatalog.m_Instance.GetBrush(MainPointer.CurrentBrush.m_Guid);
-                    // script.BrushSize01 = GenerateJitteredSize(desc, MainPointer.BrushSize01);
-                }
+                m_SymmetryPointerColors.Add(CalcColorShift(m_lastChosenColor, i / numPointers));
             }
         }
 
@@ -1681,6 +1679,8 @@ namespace TiltBrush
 
                 bool resetColors = true;
                 bool resetBrushes = true;
+                // Currently only Multimirror mode shows UI for color shift
+                // So disable it for all other modes
                 // TODO Better logic around when to set and revert colors
                 if (CurrentSymmetryMode is SymmetryMode.ScriptedSymmetryMode or SymmetryMode.MultiMirror)
                 {
