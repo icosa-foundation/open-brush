@@ -13,12 +13,22 @@
       "dependencies": {},
       "hash": "4f87195d54ccefe076678cb83a296b3f0428fc53"
     },
+    "com.meta.xr.sdk.platform": {
+      "version": "56.0.0-preview",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.meta.xr.sdk.utilities": "56.0.0-preview",
+        "com.unity.ugui": "1.0.0"
+      },
+      "url": "https://npm.developer.oculus.com"
+    },
     "com.meta.xr.sdk.utilities": {
-      "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#open-brush",
+      "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.core.git#56.0.0-openbrush",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "79e3da292d15308ab01b14e9487b8b1253dcba84"
+      "hash": "57bad66c67cd72a31898a1d29dae4d4201ef36c1"
     },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
@@ -136,6 +146,13 @@
     },
     "com.unity.mobile.android-logcat": {
       "version": "1.3.2",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.nuget.mono-cecil": {
+      "version": "1.10.2",
       "depth": 0,
       "source": "registry",
       "dependencies": {},
