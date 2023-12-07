@@ -1,22 +1,22 @@
 ---
 repos:
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.17.0
+    rev: v1.33.0
     hooks:
       - id: yamllint
   - repo: https://github.com/psf/black
-    rev: 22.3.0
+    rev: 23.11.0
     hooks:
       - id: black
         files: ^Support/
         language_version: python3
   - repo: https://github.com/pycqa/flake8
-    rev: 3.9.0
+    rev: 6.1.0
     hooks:
       - id: flake8
         files: ^Support/
   - repo: https://github.com/PyCQA/pylint.git
-    rev: v2.15.5
+    rev: v3.0.1
     hooks:
       - id: pylint
         name: pylint
@@ -31,8 +31,8 @@ repos:
     rev: "a2c1431dabf2229052cf598f86f31bc3eac5bc7b"  # Main as of 2022-12-05
     hooks:
       - id: dotnet-format
-        exclude: ^(Assets/ThirdParty)|(Packages/)
-        entry: dotnet-format whitespace
+        exclude: ^(Assets/ThirdParty)|(Packages/)|(Assets/Photon/)
+        entry: dotnet format whitespace
         args:
           - --folder
           - --include
