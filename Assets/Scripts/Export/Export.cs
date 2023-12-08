@@ -234,7 +234,6 @@ URL=" + kExportDocumentationUrl;
                         options.ExportLayers = -1;
                         var layers = App.Scene.LayerCanvases.Select(x => x.transform).ToArray();
                         var unityGltfexporter = new GLTFSceneExporter(layers, options);
-                        settings.SaveFolderPath = filename;
                         unityGltfexporter.SaveGLB(Path.Combine(parent, extension), $"{basename}_unitygltf.glb");
 
                         // TBT doesn't need (or want) brush textures in the output because it replaces all
