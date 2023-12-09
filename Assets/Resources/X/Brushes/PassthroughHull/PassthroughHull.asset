@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: PassthroughHull
   m_EditorClassIdentifier: 
   m_Guid:
-    m_storage: 355b3579-bf1d-4ff5-a200-704437fe684b
+    m_storage: cc131ff8-0d17-4677-93e0-d7cd19fea9ac
   m_DurableName: PassthroughHull
   m_CreationVersion: 
   m_ShaderVersion: 10.0
@@ -48,7 +48,7 @@ MonoBehaviour:
   m_VolumeVelocityRangeMultiplier: 1.5
   m_AudioReactive: 0
   m_ButtonAudio: {fileID: 0}
-  m_Material: {fileID: 2100000, guid: 87f1c57b7bd3e354eb92ac44189367ef, type: 2}
+  m_Material: {fileID: 2100000, guid: ce8b2be5f7b63f344ae603ba6f4b4aec, type: 2}
   m_TextureAtlasV: 1
   m_TileRate: 0.01
   m_UseBloomSwatchOnColorPicker: 0
