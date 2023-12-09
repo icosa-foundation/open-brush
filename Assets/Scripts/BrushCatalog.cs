@@ -192,7 +192,7 @@ namespace TiltBrush
                 Debug.LogError("There will be no brushes because there are no 'include' tags.");
             }
 
-            #if PASSTHROUGH_SUPPORTED
+            #if !PASSTHROUGH_SUPPORTED
             excludeTags.Add("passthrough");
             #endif
 
