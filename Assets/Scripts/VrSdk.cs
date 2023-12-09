@@ -195,6 +195,9 @@ namespace TiltBrush
             {
                 Oculus.Platform.Core.Initialize(appId);
             }
+#if PASSTHROUGH_SUPPORTED
+            OVRManager.eyeFovPremultipliedAlphaModeEnabled = false;
+#endif
 
 #endif // OCULUS_SUPPORTED
 

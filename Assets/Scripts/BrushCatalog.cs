@@ -184,15 +184,17 @@ namespace TiltBrush
 
         public Brush[] GetTagFilteredBrushList()
         {
-            string[] includeTags = App.UserConfig.Brushes.IncludeTags;
-            string[] excludeTags = App.UserConfig.Brushes.ExcludeTags;
+            List<string> includeTags = App.UserConfig.Brushes.IncludeTags.ToList();
+            List<string> excludeTags = App.UserConfig.Brushes.ExcludeTags.ToList();
 
-            Dictionary<string, string[]> test = App.UserConfig.Brushes.AddTagsToBrushes;
-
-            if (includeTags == null)
+            if (includeTags.Count == 0)
             {
                 Debug.LogError("There will be no brushes because there are no 'include' tags.");
             }
+
+            #if PASSTHROUGH_SUPPORTED
+            excludeTags.Add("passthrough");
+            #endif
 
             // Filter m_GuiBrushList down to those that are both 'included' and not 'excluded'
             Brush[] filteredList = m_GuiBrushList.Where((brush) =>
