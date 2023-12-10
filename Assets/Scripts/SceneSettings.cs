@@ -302,6 +302,21 @@ namespace TiltBrush
             get { return m_CurrentEnvironment; }
         }
 
+        public Material CurrentSkyboxMaterial
+        {
+            get
+            {
+                if (HasCustomSkybox())
+                {
+                    return m_CustomSkyboxMaterial;
+                }
+                else
+                {
+                    return CurrentEnvironment?.m_SkyboxMaterial;
+                }
+            }
+        }
+
         public bool EnvironmentChanged
         {
             get
@@ -844,6 +859,14 @@ namespace TiltBrush
                     FadingToDesiredEnvironment();
                 }
             }
+        }
+
+        public void ClearCustomSkybox()
+        {
+            m_CustomSkyboxTextureName = null;
+            RenderSettings.skybox = CurrentEnvironment.m_SkyboxMaterial;
+            RenderSettings.ambientMode = AmbientMode.Skybox;
+            TriggerSkyboxChanged();
         }
 
         public Environment GetDesiredPreset()
