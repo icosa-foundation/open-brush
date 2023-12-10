@@ -120,6 +120,33 @@ namespace TiltBrush
         private string m_CustomSkyboxTextureName;
         private Material m_CustomSkyboxMaterial;
 
+        private bool m_PassthroughEnabled;
+
+        public bool PassthroughEnabled
+        {
+            get
+            {
+                return m_PassthroughEnabled;
+            }
+            set
+            {
+#if OCULUS_SUPPORTED
+                if (value)
+                {
+                    var passthrough  = m_RoomGeometry.AddComponent<OVRPassthroughLayer>();
+                    passthrough.overlayType = OVROverlay.OverlayType.Underlay;
+                    m_PassthroughEnabled = true;
+                }
+                else
+                {
+                    var passthrough  = m_RoomGeometry.AddComponent<OVRPassthroughLayer>();
+                    Destroy(passthrough);
+                    m_PassthroughEnabled = false;
+                }
+#endif // OCULUS_SUPPORTED
+            }
+        }
+
         public float HardBoundsRadiusMeters_SS
         {
             get

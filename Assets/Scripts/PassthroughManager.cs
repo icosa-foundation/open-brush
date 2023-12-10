@@ -20,10 +20,7 @@ namespace TiltBrush
     {
         void Start()
         {
-#if OCULUS_SUPPORTED
-            var passthrough  = gameObject.AddComponent<OVRPassthroughLayer>();
-            passthrough.overlayType = OVROverlay.OverlayType.Underlay;
-#endif // OCULUS_SUPPORTED
+            SceneSettings.m_Instance.PassthroughEnabled = true;
         }
     }
 }
