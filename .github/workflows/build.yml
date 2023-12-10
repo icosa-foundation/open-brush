@@ -487,9 +487,9 @@ jobs:
         if: matrix.targetPlatform == 'StandaloneOSX'
         run: |
           # Compress, but skip the top directories
-          tar -c -v -z -f OpenBrush.tgz -C build ${{ matrix.vrsdk }}/${{ matrix.targetPlatform}}
-          rm -rf build/*
-          mv OpenBrush.tgz build/
+          tar -c -v -z -f OpenBrush.tgz -C build/${{ matrix.vrsdk }} ${{ matrix.targetPlatform}}
+          rm -rf build/${{ matrix.vrsdk }}/*
+          mv OpenBrush.tgz build/${{ matrix.vrsdk }}/
 
       - name: Upload build/
         uses: actions/upload-artifact@v3
