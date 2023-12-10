@@ -875,7 +875,16 @@ static class BuildTiltBrush
             keystoreName, keystorePass,
             keyaliasName, keyaliasPass))
         {
-            DoBuild(tiltOptions);
+            try
+            {
+                DoBuild(tiltOptions);
+            }
+            catch (Exception Ex)
+            {
+                string oneLineMessage = Ex.Message.Replace("\n", " ");
+                Debug.LogErrorFormat("::error ::Build failed with Exception <<{0}>>", oneLineMessage);
+                throw;
+            }
         }
     }
 
