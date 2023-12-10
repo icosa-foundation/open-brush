@@ -727,7 +727,7 @@ MonoBehaviour:
   - {fileID: 1423503888}
   m_HintObjectScale: 1.05
   m_ActiveMinShowAngle: 0
-  m_ScaleXOnly: 1
+  m_ScaleXOnly: 0
   m_HintDescription:
     m_TableReference:
       m_TableCollectionName: 
