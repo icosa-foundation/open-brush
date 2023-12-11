@@ -131,18 +131,14 @@ namespace TiltBrush
             set
             {
 #if OCULUS_SUPPORTED
-                if (value)
+                var passthrough  = m_RoomGeometry.GetComponent<OVRPassthroughLayer>();
+                if (passthrough == null)
                 {
-                    var passthrough  = m_RoomGeometry.AddComponent<OVRPassthroughLayer>();
+                    passthrough = m_RoomGeometry.AddComponent<OVRPassthroughLayer>();
                     passthrough.overlayType = OVROverlay.OverlayType.Underlay;
-                    m_PassthroughEnabled = true;
                 }
-                else
-                {
-                    var passthrough  = m_RoomGeometry.AddComponent<OVRPassthroughLayer>();
-                    Destroy(passthrough);
-                    m_PassthroughEnabled = false;
-                }
+                passthrough.hidden = !value;
+                m_PassthroughEnabled = value;
 #endif // OCULUS_SUPPORTED
             }
         }
@@ -270,6 +266,7 @@ namespace TiltBrush
                 m_CustomSkyboxMaterial.SetColor("_Tint", Color.gray);
                 RenderSettings.skybox = m_CustomSkyboxMaterial;
                 RenderSettings.ambientMode = AmbientMode.Skybox;
+                TriggerSkyboxChanged();
             }
             else
             {
@@ -310,10 +307,7 @@ namespace TiltBrush
                 {
                     return m_CustomSkyboxMaterial;
                 }
-                else
-                {
-                    return CurrentEnvironment?.m_SkyboxMaterial;
-                }
+                return m_DesiredEnvironment.m_SkyboxMaterial;
             }
         }
 

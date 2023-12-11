@@ -21,6 +21,7 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
+            SceneSettings.m_Instance.ClearCustomSkybox();
             SceneSettings.m_Instance.InGradient = true;
         }
 

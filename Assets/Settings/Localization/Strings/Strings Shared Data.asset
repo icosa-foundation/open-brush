@@ -3283,6 +3283,10 @@ MonoBehaviour:
     m_Key: BRUSH_PASSTHROUGHHULL
     m_Metadata:
       m_Items: []
+  - m_Id: 177558531188809728
+    m_Key: BACKDROP_PANEL_PASSTHROUGH_TEXT
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

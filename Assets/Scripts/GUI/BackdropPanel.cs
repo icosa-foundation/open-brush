@@ -21,15 +21,14 @@ namespace TiltBrush
     {
         [SerializeField] private ToggleButton m_TogglePassthroughButton;
 
-        protected override void Awake()
+        void Start()
         {
-            base.Awake();
             m_TogglePassthroughButton.IsToggledOn = SceneSettings.m_Instance.PassthroughEnabled;
         }
 
         public void TogglePassthrough()
         {
-            m_TogglePassthroughButton.IsToggledOn = !m_TogglePassthroughButton.IsToggledOn;
+            SceneSettings.m_Instance.PassthroughEnabled = m_TogglePassthroughButton.IsToggledOn;
         }
     }
 

@@ -22,15 +22,21 @@ namespace TiltBrush
         [SerializeField] private GameObject[] m_ShowOnPress;
         [SerializeField] private float m_TransitionDuration = 0.1f;
         [SerializeField] private GameObject m_Title;
+        [SerializeField] MeshRenderer m_SkyboxPreview;
+        [SerializeField] Material m_SkyboxPreviewMaterial;
+        [SerializeField] Material m_PassthroughPreviewMaterial;
+
         private bool m_TransitionToUnlockedSkybox;
         private float m_TransitionTimer;
         private float[] m_HideStartSizes;
         private float[] m_ShowEndSizes;
+        private static readonly int Tex = Shader.PropertyToID("_Tex");
 
         override protected void Awake()
         {
             base.Awake();
             SceneSettings.m_Instance.GradientActiveChanged += OnGradientActiveChanged;
+            SceneSettings.m_Instance.SkyboxChanged += OnSkyboxChanged;
 
             m_TransitionToUnlockedSkybox = SceneSettings.m_Instance.InGradient;
             if (m_TransitionToUnlockedSkybox)
@@ -124,6 +130,19 @@ namespace TiltBrush
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new UnlockSkyboxCommand());
         }
 
+        void OnSkyboxChanged()
+        {
+            if (SceneSettings.m_Instance.PassthroughEnabled)
+            {
+                m_SkyboxPreview.material = m_PassthroughPreviewMaterial;
+            }
+            else if (SceneSettings.m_Instance.CurrentSkyboxMaterial != null)
+            {
+                m_SkyboxPreview.material = m_SkyboxPreviewMaterial;
+                m_SkyboxPreview.material.mainTexture = SceneSettings.m_Instance.CurrentSkyboxMaterial.GetTexture(Tex);
+            }
+        }
+
         void OnGradientActiveChanged()
         {
             m_TransitionToUnlockedSkybox = SceneSettings.m_Instance.InGradient;
@@ -171,6 +190,7 @@ namespace TiltBrush
 
         void SetSkyboxLocked()
         {
+            m_SkyboxPreview.material.mainTexture = RenderSettings.skybox.mainTexture;
             for (int i = 0; i < m_HideOnPress.Length; ++i)
             {
                 m_HideOnPress[i].transform.localScale = m_HideStartSizes[i] * Vector3.one;
