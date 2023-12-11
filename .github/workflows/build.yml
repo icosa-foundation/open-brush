@@ -351,6 +351,18 @@ jobs:
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
           key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
+      - name: Restore Library/PackageCache
+        id: cache_packagecache
+        uses: actions/cache/restore@v3
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
+        with:
+          path: Library/PackageCache
+          key: Library_PackageCache_${{ env.UNITY_VERSION }}_${{ hashFiles('Packages/packages-lock.json') }}
+          restore-keys: |
+            Library_PackageCache_${{ env.UNITY_VERSION }}
+            Library_PackageCache
+
       - name: Remove problematic packages
         if: ${{ matrix.packages_to_remove }}
         run: |
@@ -364,18 +376,6 @@ jobs:
           done
           diff -u Packages/manifest.json.bak Packages/manifest.json || true
           diff -u Packages/packages-lock.json.bak Packages/packages-lock.json || true
-
-      - name: Restore Library/PackageCache
-        id: cache_packagecache
-        uses: actions/cache/restore@v3
-        env:
-          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
-        with:
-          path: Library/PackageCache
-          key: Library_PackageCache_${{ env.UNITY_VERSION }}_${{ hashFiles('Packages/packages-lock.json') }}
-          restore-keys: |
-            Library_PackageCache_${{ env.UNITY_VERSION }}
-            Library_PackageCache
 
       - name: Set output filename
         env:
