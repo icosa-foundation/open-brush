@@ -351,6 +351,18 @@ jobs:
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
           key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
+      - name: Restore Library/PackageCache
+        id: cache_packagecache
+        uses: actions/cache/restore@v3
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
+        with:
+          path: Library/PackageCache
+          key: Library_PackageCache_${{ env.UNITY_VERSION }}_${{ hashFiles('Packages/packages-lock.json') }}
+          restore-keys: |
+            Library_PackageCache_${{ env.UNITY_VERSION }}
+            Library_PackageCache
+
       - name: Remove problematic packages
         if: ${{ matrix.packages_to_remove }}
         run: |
@@ -364,15 +376,6 @@ jobs:
           done
           diff -u Packages/manifest.json.bak Packages/manifest.json || true
           diff -u Packages/packages-lock.json.bak Packages/packages-lock.json || true
-
-      - name: Restore Library/PackageCache
-        id: cache_packagecache
-        uses: actions/cache/restore@v3
-        env:
-          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
-        with:
-          path: Library/PackageCache
-          key: Library_PackageCache_${{ env.UNITY_VERSION }}
 
       - name: Set output filename
         env:
@@ -497,14 +500,25 @@ jobs:
           name: ${{ matrix.name }}
           path: build/${{ matrix.vrsdk }}
 
+      - name: Check if packages-lock.json has changed or if it's cacheable
+        id: check_packagecache
+        run: |
+          # Check if there are any changes to the packages-lock.json file
+          set +e
+          git diff --exit-code -- Packages/packages-lock.json
+          CHANGES="$?"
+          set -e
+          echo "changes=$CHANGES" >> $GITHUB_OUTPUT
+          echo "diff returned: $CHANGES"
+
       - name: Save Library/PackageCache cache
         uses: actions/cache/save@v3
-        if: github.ref == 'refs/heads/main' && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
+        if: github.ref == 'refs/heads/main' && steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
           path: Library/PackageCache
-          key: Library_PackageCache_${{ env.UNITY_VERSION }}
+          key: Library_PackageCache_${{ env.UNITY_VERSION }}_${{ hashFiles('Packages/packages-lock.json') }}
 
       - name: Clean Library before caching
         if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
