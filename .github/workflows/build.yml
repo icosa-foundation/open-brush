@@ -498,7 +498,9 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.name }}
-          path: build/${{ matrix.vrsdk }}
+          path: |
+            build/${{ matrix.vrsdk }}
+            !build/**/*_BackUpThisFolder_ButDontShipItWithYourGame
 
       - name: Check if packages-lock.json has changed or if it's cacheable
         id: check_packagecache
