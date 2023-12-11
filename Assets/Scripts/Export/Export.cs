@@ -103,7 +103,16 @@ URL=" + kExportDocumentationUrl;
                 Debug.LogFormat("{0} time: {1}s", m_tag, timer.ElapsedMilliseconds / 1000.0f);
             }
         }
-
+        
+        public static bool IsExportEnabled(string format){
+            
+            Dictionary<string, bool> formats = App.UserConfig.Export.Formats;
+            if (formats.ContainsKey(format)){
+                return formats[format];
+            }else{
+                return false;
+            }
+        }
         public static void ExportScene()
         {
             var current = SaveLoadScript.m_Instance.SceneFile;
@@ -130,10 +139,16 @@ URL=" + kExportDocumentationUrl;
 #if LATK_SUPPORTED
             if (App.PlatformConfig.EnableExportLatk) { progress.SetWork("latk"); }
 #endif
-            if (Config.IsExperimental)
-            {
+
+            if (IsExportEnabled("wrl")){
                 progress.SetWork("wrl");
+            }
+            if (IsExportEnabled("stl"))
+            {
                 progress.SetWork("stl");
+            }
+            if (IsExportEnabled("obj"))
+            {
 #if FBX_SUPPORTED
       progress.SetWork("obj");
 #endif
@@ -187,14 +202,14 @@ URL=" + kExportDocumentationUrl;
             progress.CompleteWork("latk");
 #endif
 
-            if (Config.IsExperimental &&
+            if (IsExportEnabled("wrl") &&
                 (filename = MakeExportPath(parent, basename, "wrl")) != null)
             {
                 ExportVrml.Export(filename);
                 progress.CompleteWork("wrl");
             }
 
-            if (Config.IsExperimental &&
+            if (IsExportEnabled("stl") &&
                 (filename = MakeExportPath(parent, basename, "stl")) != null)
             {
                 try
@@ -209,7 +224,7 @@ URL=" + kExportDocumentationUrl;
             }
 
 #if FBX_SUPPORTED
-    if (Config.IsExperimental &&
+    if (IsExportEnabled("obj") &&
         App.PlatformConfig.EnableExportFbx &&
         (filename = MakeExportPath(parent, basename, "obj")) != null) {
       // This has never been tested with the new fbx export style and may not work

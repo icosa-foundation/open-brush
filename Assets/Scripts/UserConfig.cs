@@ -255,6 +255,33 @@ namespace TiltBrush
                 get { return m_ExportStrokeTimestamp ?? true; }
                 set { m_ExportStrokeTimestamp = value; }
             }
+
+            private Dictionary<string, bool> m_Formats;
+            public Dictionary<string, bool> Formats
+            {
+                get
+                {
+                    if (m_Formats == null)
+                    {
+                        m_Formats = new Dictionary<string, bool>
+                        {
+                            {"fbx", true},
+                            {"glb", true},
+                            {"newglb", true},
+                            {"json", true},
+                            {"latk", true},
+                            {"obj", true},
+                            {"stl", true},
+                            {"usd", true},
+                            {"wrl", true},
+                        };
+                    }
+                    return m_Formats;
+                }
+                set => m_Formats = value;
+            }
+        
+
         }
         public ExportConfig Export;
 
