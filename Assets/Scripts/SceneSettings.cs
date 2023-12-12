@@ -127,7 +127,11 @@ namespace TiltBrush
         {
             get
             {
+#if OCULUS_SUPPORTED
                 return m_PassthroughEnabled;
+#else
+                return false;
+#endif
             }
             set
             {
@@ -140,6 +144,8 @@ namespace TiltBrush
                 }
                 passthrough.hidden = !value;
                 m_PassthroughEnabled = value;
+#else
+                m_PassthroughEnabled = false;
 #endif // OCULUS_SUPPORTED
             }
         }
@@ -233,6 +239,11 @@ namespace TiltBrush
                     GradientActiveChanged();
                 }
             }
+        }
+
+        public void ReapplyEnvironmentSkybox()
+        {
+            RenderSettings.skybox = CurrentEnvironment.m_SkyboxMaterial;
         }
 
         public void LoadCustomSkybox(string filename)
@@ -941,8 +952,9 @@ namespace TiltBrush
         }
 
         // Use m_DesiredEnvironment otherwise we get previous environment during transitions
-        public bool HasSkybox => HasCustomSkybox || (m_DesiredEnvironment != null && m_DesiredEnvironment.HasSkybox);
+        public bool HasSkybox => !InGradient && (HasCustomSkybox || (m_DesiredEnvironment != null && m_DesiredEnvironment.HasSkybox));
 
         public bool HasCustomSkybox => !string.IsNullOrEmpty(m_CustomSkyboxTextureName);
+        public string CustomSkybox => m_CustomSkyboxTextureName;
     }
 } // namespace TiltBrush

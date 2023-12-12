@@ -92,6 +92,7 @@ namespace TiltBrush
             {
                 case BackdropMode.Gradient:
                     SceneSettings.m_Instance.ClearCustomSkybox();
+                    SceneSettings.m_Instance.PassthroughEnabled = false;
                     if (!SceneSettings.m_Instance.InGradient)
                     {
                         SketchMemoryScript.m_Instance.PerformAndRecordCommand(new UnlockSkyboxCommand());
@@ -99,7 +100,15 @@ namespace TiltBrush
                     break;
                 case BackdropMode.Skybox:
                     SceneSettings.m_Instance.InGradient = false;
-                    // SceneSettings.m_Instance.LoadCustomSkybox();
+                    SceneSettings.m_Instance.PassthroughEnabled = false;
+                    if (SceneSettings.m_Instance.CurrentEnvironment.HasSkybox)
+                    {
+                        SceneSettings.m_Instance.ReapplyEnvironmentSkybox();
+                    }
+                    else
+                    {
+                        SceneSettings.m_Instance.LoadCustomSkybox(BackgroundImageCatalog.m_Instance.IndexToImage(0).FileName);
+                    }
                     break;
                 case BackdropMode.Passthrough:
                     SceneSettings.m_Instance.ClearCustomSkybox();
