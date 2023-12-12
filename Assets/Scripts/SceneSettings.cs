@@ -42,7 +42,8 @@ namespace TiltBrush
         public event Action FogDensityChanged;
         public event Action FogColorChanged;
         public event Action GradientActiveChanged;
-        public event Action SkyboxChanged;
+        public event Action SkyGradientChanged;
+        public event Action BackdropModeChanged;
 
         private enum TransitionState
         {
@@ -131,7 +132,7 @@ namespace TiltBrush
             set
             {
 #if OCULUS_SUPPORTED
-                var passthrough  = m_RoomGeometry.GetComponent<OVRPassthroughLayer>();
+                var passthrough = m_RoomGeometry.GetComponent<OVRPassthroughLayer>();
                 if (passthrough == null)
                 {
                     passthrough = m_RoomGeometry.AddComponent<OVRPassthroughLayer>();
@@ -174,7 +175,7 @@ namespace TiltBrush
             {
                 m_SkyColorA = value;
                 RenderSettings.skybox.SetColor("_ColorA", value);
-                TriggerSkyboxChanged();
+                SkyGradientChanged?.Invoke();
             }
         }
 
@@ -185,7 +186,7 @@ namespace TiltBrush
             {
                 m_SkyColorB = value;
                 RenderSettings.skybox.SetColor("_ColorB", value);
-                TriggerSkyboxChanged();
+                SkyGradientChanged?.Invoke();
             }
         }
 
@@ -196,7 +197,7 @@ namespace TiltBrush
             {
                 m_CustomFogColor = value;
                 RenderSettings.fogColor = value;
-                TriggerFogColorChanged();
+                FogColorChanged?.Invoke();
             }
         }
 
@@ -207,7 +208,7 @@ namespace TiltBrush
             {
                 m_CurrentValues.m_FogDensity = value;
                 RenderSettings.fogDensity = value / App.Scene.Pose.scale;
-                TriggerFogDensityChanged();
+                FogDensityChanged?.Invoke();
             }
         }
 
@@ -266,7 +267,7 @@ namespace TiltBrush
                 m_CustomSkyboxMaterial.SetColor("_Tint", Color.gray);
                 RenderSettings.skybox = m_CustomSkyboxMaterial;
                 RenderSettings.ambientMode = AmbientMode.Skybox;
-                TriggerSkyboxChanged();
+                BackdropModeChanged?.Invoke();
             }
             else
             {
@@ -285,7 +286,7 @@ namespace TiltBrush
                     RenderSettings.skybox.SetVector("_GradientDirection",
                         App.Scene.Pose.rotation * m_GradientSkew * Vector3.up);
                 }
-                TriggerSkyboxChanged();
+                SkyGradientChanged?.Invoke();
             }
         }
 
@@ -303,7 +304,7 @@ namespace TiltBrush
         {
             get
             {
-                if (HasCustomSkybox())
+                if (HasCustomSkybox)
                 {
                     return m_CustomSkyboxMaterial;
                 }
@@ -319,8 +320,7 @@ namespace TiltBrush
                 bool skyboxChanged = (m_InGradient && m_CurrentEnvironment.m_RenderSettings.m_SkyboxCubemap != null) ||
                     m_CurrentEnvironment.m_SkyboxColorA != m_SkyColorA ||
                     m_CurrentEnvironment.m_SkyboxColorB != m_SkyColorB ||
-                    m_GradientSkew != Quaternion.identity ||
-                    HasCustomSkybox();
+                    m_GradientSkew != Quaternion.identity || HasCustomSkybox;
                 return skyboxChanged ||
                     m_CurrentEnvironment.m_RenderSettings.m_FogColor != RenderSettings.fogColor ||
                     m_CurrentEnvironment.m_RenderSettings.m_FogDensity != FogDensity ||
@@ -519,7 +519,7 @@ namespace TiltBrush
                     {
                         RenderSettings.skybox.SetVector("_GradientDirection", Vector3.up);
                     }
-                    if (HasCustomSkybox())
+                    if (HasCustomSkybox)
                     {
                         RenderSettings.skybox = m_CustomSkyboxMaterial;
                     }
@@ -541,9 +541,10 @@ namespace TiltBrush
             }
 
             // Fire off messages that say 'everything changed!'
-            TriggerFogDensityChanged();
-            TriggerFogColorChanged();
-            TriggerSkyboxChanged();
+            FogDensityChanged?.Invoke();
+            FogColorChanged?.Invoke();
+            SkyGradientChanged?.Invoke();
+            BackdropModeChanged?.Invoke();
 
             m_TeleportBoundsHalfWidth = m_DesiredEnvironment.m_TeleportBoundsHalfWidth;
             m_ControllerXRayHeight = m_DesiredEnvironment.m_ControllerXRayHeight;
@@ -622,7 +623,7 @@ namespace TiltBrush
                 m_LoadingCustomEnvironment = false;
                 m_CurrentEnvironment = m_DesiredEnvironment;
 
-                if (HasCustomSkybox())
+                if (HasCustomSkybox)
                 {
                     RenderSettings.skybox = m_CustomSkyboxMaterial;
                     RenderSettings.skybox.SetColor("_Tint", Color.gray);
@@ -814,7 +815,7 @@ namespace TiltBrush
                 Debug.Log("null environment");
             }
             else if (env == m_DesiredEnvironment && !bEnvironmentModified &&
-                !hasCustomLights && !m_LoadingCustomEnvironment && !forceTransition)
+                     !hasCustomLights && !m_LoadingCustomEnvironment && !forceTransition)
             {
                 // same environment and lights not changed; but make sure we inhibit scene reset if requested
                 m_InhibitSceneReset = keepSceneTransform;
@@ -839,7 +840,7 @@ namespace TiltBrush
                 m_TransitionValue = 0.0f;
                 m_CurrentState = TransitionState.FadingToBlack;
                 m_InhibitSceneReset = keepSceneTransform;
-                if (HasCustomSkybox())
+                if (HasCustomSkybox)
                 {
                     LoadCustomSkybox(m_CustomSkyboxTextureName);
                 }
@@ -857,10 +858,13 @@ namespace TiltBrush
 
         public void ClearCustomSkybox()
         {
-            m_CustomSkyboxTextureName = null;
-            RenderSettings.skybox = CurrentEnvironment.m_SkyboxMaterial;
-            RenderSettings.ambientMode = AmbientMode.Skybox;
-            TriggerSkyboxChanged();
+            if (HasCustomSkybox)
+            {
+                m_CustomSkyboxTextureName = null;
+                RenderSettings.skybox = CurrentEnvironment.m_SkyboxMaterial;
+                RenderSettings.ambientMode = AmbientMode.Skybox;
+                BackdropModeChanged?.Invoke();
+            }
         }
 
         public Environment GetDesiredPreset()
@@ -936,33 +940,9 @@ namespace TiltBrush
             throw new System.ArgumentException("Invalid color mode");
         }
 
-        void TriggerFogDensityChanged()
-        {
-            if (FogDensityChanged != null)
-            {
-                FogDensityChanged();
-            }
-        }
+        // Use m_DesiredEnvironment otherwise we get previous environment during transitions
+        public bool HasSkybox => HasCustomSkybox || (m_DesiredEnvironment != null && m_DesiredEnvironment.HasSkybox);
 
-        void TriggerFogColorChanged()
-        {
-            if (FogColorChanged != null)
-            {
-                FogColorChanged();
-            }
-        }
-
-        void TriggerSkyboxChanged()
-        {
-            if (SkyboxChanged != null)
-            {
-                SkyboxChanged();
-            }
-        }
-
-        public bool HasCustomSkybox()
-        {
-            return !string.IsNullOrEmpty(m_CustomSkyboxTextureName);
-        }
+        public bool HasCustomSkybox => !string.IsNullOrEmpty(m_CustomSkyboxTextureName);
     }
 } // namespace TiltBrush
