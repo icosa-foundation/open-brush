@@ -70,7 +70,7 @@ namespace TiltBrush
             }
             else
             {
-                Debug.LogError("Unable to detect valid Backdrop Mode");
+                // Probably initial startup - so assume the default environment
                 m_CurrentBackdropMode = BackdropMode.Gradient;
             }
         }
