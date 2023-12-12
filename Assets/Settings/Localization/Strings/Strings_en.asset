@@ -3480,6 +3480,18 @@ MonoBehaviour:
     m_Localized: 'Passthrough:'
     m_Metadata:
       m_Items: []
+  - m_Id: 177989628385124352
+    m_Localized: Skybox
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989815199424512
+    m_Localized: Gradient
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989991964172288
+    m_Localized: "Passthrough\t"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -3287,6 +3287,18 @@ MonoBehaviour:
     m_Key: BACKDROP_PANEL_PASSTHROUGH_TEXT
     m_Metadata:
       m_Items: []
+  - m_Id: 177989628385124352
+    m_Key: BACKDROP_PANEL_SKYBOX_MODE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989815199424512
+    m_Key: BACKDROP_PANEL_GRADIENT_MODE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989991964172288
+    m_Key: BACKDROP_PANEL_PASSTHROUGH_MODE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
