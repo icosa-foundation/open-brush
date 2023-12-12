@@ -136,16 +136,24 @@ namespace TiltBrush
             set
             {
 #if OCULUS_SUPPORTED
-                m_InGradient = false;
-                m_CustomSkyboxTextureName = null;
                 var passthrough = m_RoomGeometry.GetComponent<OVRPassthroughLayer>();
                 if (passthrough == null)
                 {
                     passthrough = m_RoomGeometry.AddComponent<OVRPassthroughLayer>();
                     passthrough.overlayType = OVROverlay.OverlayType.Underlay;
                 }
-                passthrough.hidden = !value;
-                m_PassthroughEnabled = value;
+                if (value)
+                {
+                    m_InGradient = false;
+                    m_CustomSkyboxTextureName = null;
+                    passthrough.hidden = false;
+                    m_PassthroughEnabled = value;
+                }
+                else
+                {
+                    passthrough.hidden = true;
+                    m_PassthroughEnabled = false;
+                }
 #else
                 m_PassthroughEnabled = false;
 #endif // OCULUS_SUPPORTED
@@ -514,6 +522,10 @@ namespace TiltBrush
 
             // Set the reflection cubemap
             RenderSettings.customReflection = rDesired.m_ReflectionCubemap;
+
+            // Turn on passthrough if requested
+            PassthroughEnabled = m_DesiredEnvironment.m_PassthroughEnabled;
+
             if (!m_LoadingCustomEnvironment)
             {
                 if (rDesired.m_SkyboxCubemap)
