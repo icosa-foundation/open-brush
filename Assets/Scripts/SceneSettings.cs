@@ -136,7 +136,7 @@ namespace TiltBrush
             set
             {
 #if OCULUS_SUPPORTED
-                InGradient = false;
+                m_InGradient = false;
                 m_CustomSkyboxTextureName = null;
                 var passthrough = m_RoomGeometry.GetComponent<OVRPassthroughLayer>();
                 if (passthrough == null)
@@ -251,7 +251,7 @@ namespace TiltBrush
         public void LoadCustomSkybox(string filename)
         {
             m_PassthroughEnabled = false;
-            InGradient = false;
+            m_InGradient = false;
             m_CustomSkyboxTextureName = filename;
             Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
             var path = Path.Combine(App.BackgroundImagesLibraryPath(), filename);
