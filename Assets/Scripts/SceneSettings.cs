@@ -165,11 +165,30 @@ namespace TiltBrush
                         color.a = 0;
                         RenderSettings.skybox.SetColor("_Tint", color);
                     }
+
+                    for (int i = 0; i < m_Cameras.Count; ++i)
+                    {
+                        if (m_Cameras[i].gameObject.activeSelf)
+                        {
+                            var col = m_Cameras[i].backgroundColor;
+                            col.a = 0;
+                            m_Cameras[i].backgroundColor = col;
+                        }
+                    }
                 }
                 else
                 {
                     passthrough.hidden = true;
                     m_PassthroughEnabled = false;
+                    for (int i = 0; i < m_Cameras.Count; ++i)
+                    {
+                        if (m_Cameras[i].gameObject.activeSelf)
+                        {
+                            var col = m_Cameras[i].backgroundColor;
+                            col.a = 1;
+                            m_Cameras[i].backgroundColor = col;
+                        }
+                    }
                 }
 #else
                 m_PassthroughEnabled = false;
