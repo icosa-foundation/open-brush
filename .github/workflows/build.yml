@@ -500,6 +500,7 @@ jobs:
           name: ${{ matrix.name }}
           path: |
             build/${{ matrix.vrsdk }}
+            !build/Pico/*.symbols.zip
             !build/**/*_BackUpThisFolder_ButDontShipItWithYourGame
 
       - name: Check if packages-lock.json has changed or if it's cacheable
