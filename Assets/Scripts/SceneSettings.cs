@@ -148,6 +148,23 @@ namespace TiltBrush
                     m_CustomSkyboxTextureName = null;
                     passthrough.hidden = false;
                     m_PassthroughEnabled = value;
+
+                    // Clear gradient opactity
+                    if (RenderSettings.skybox.HasColor("_ColorA"))
+                    {
+                        var colorA = RenderSettings.skybox.GetColor("_ColorA");
+                        var colorB = RenderSettings.skybox.GetColor("_ColorB");
+                        colorA.a = 0;
+                        colorB.a = 0;
+                        RenderSettings.skybox.SetColor("_ColorA", colorA);
+                        RenderSettings.skybox.SetColor("_ColorB", colorB);
+                    }
+                    else
+                    {
+                        var color = RenderSettings.skybox.GetColor("_Tint");
+                        color.a = 0;
+                        RenderSettings.skybox.SetColor("_Tint", color);
+                    }
                 }
                 else
                 {
@@ -419,6 +436,7 @@ namespace TiltBrush
             // Set InGradient after the colors have been defined.  This call sends a message to all those
             // registered to listen for gradient changes.
             InGradient = hasCustomGradient;
+            PassthroughEnabled = custom.PassthroughEnabled;
         }
 
         public void UpdateReflectionIntensity()
@@ -947,6 +965,7 @@ namespace TiltBrush
                         FogColor = (Color32)RenderSettings.fogColor,
                         FogDensity = SceneSettings.m_Instance.FogDensity,
                         ReflectionIntensity = RenderSettings.reflectionIntensity,
+                        PassthroughEnabled = m_PassthroughEnabled,
                         Skybox = m_CustomSkyboxTextureName
                     };
             }
@@ -971,6 +990,6 @@ namespace TiltBrush
         public bool HasSkybox => !InGradient && (HasCustomSkybox || (m_DesiredEnvironment != null && m_DesiredEnvironment.HasSkybox));
 
         public bool HasCustomSkybox => !string.IsNullOrEmpty(m_CustomSkyboxTextureName);
-        public string CustomSkybox => m_CustomSkyboxTextureName;
+        public string CustomSkyboxPath => m_CustomSkyboxTextureName;
     }
 } // namespace TiltBrush

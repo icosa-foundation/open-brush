@@ -17,7 +17,7 @@ namespace TiltBrush
     public class UnlockSkyboxCommand : BaseCommand
     {
 
-        public string m_previousSkybox = SceneSettings.m_Instance.CustomSkybox;
+        public string m_previousSkybox = SceneSettings.m_Instance.CustomSkyboxPath;
         public bool m_previousPassthroughState = SceneSettings.m_Instance.PassthroughEnabled;
 
         public override bool NeedsSave { get { return base.NeedsSave; } }

@@ -167,6 +167,18 @@ namespace TiltBrush
             SwitchTab(newTab);
         }
 
+        public void SwitchTab(System.Type tabType)
+        {
+            foreach (var tab in m_Tabs)
+            {
+                if (tab.GetType() == tabType)
+                {
+                    SwitchTab(tab);
+                    return;
+                }
+            }
+        }
+
         public void SwitchTab(ReferencePanelTab newTab)
         {
             m_CurrentTab.OnTabDisable();

@@ -29,6 +29,8 @@ namespace TiltBrush
         public TextActionButton m_ButtonShowSkyboxControls;
         public TextActionButton m_ButtonShowGradientControls;
         public TextActionButton m_ButtonShowPassthroughControls;
+        public TextActionButton m_SwitchToPresetSkyboxButton;
+        public TextActionButton m_SwitchToCustomSkyboxButton;
         [SerializeField] BackdropMode m_CurrentBackdropMode;
 
         [SerializeField] private GameObject m_GradientControls;
@@ -39,6 +41,7 @@ namespace TiltBrush
         [SerializeField] Material m_PassthroughPreviewMaterial;
 
         private static readonly int Tex = Shader.PropertyToID("_Tex");
+        private string m_PreviousCustomSkyboxPath;
 
         public void TogglePassthrough()
         {
@@ -52,6 +55,9 @@ namespace TiltBrush
             m_TogglePassthroughButton.IsToggledOn = SceneSettings.m_Instance.PassthroughEnabled;
             DetectCurrentBackdropMode();
             OnBackdropModeChanged();
+#if !OCULUS_SUPPORTED
+            m_TogglePassthroughButton.SetButtonAvailable(false);
+#endif
         }
 
         private void DetectCurrentBackdropMode()
@@ -107,7 +113,7 @@ namespace TiltBrush
                     }
                     else
                     {
-                        SceneSettings.m_Instance.LoadCustomSkybox(BackgroundImageCatalog.m_Instance.IndexToImage(0).FileName);
+                        LoadPreviousCustomSkybox();
                     }
                     break;
                 case BackdropMode.Passthrough:
@@ -119,9 +125,31 @@ namespace TiltBrush
             OnBackdropModeChanged();
         }
 
+        private void LoadPreviousCustomSkybox()
+        {
+            if (string.IsNullOrEmpty(m_PreviousCustomSkyboxPath))
+            {
+                m_PreviousCustomSkyboxPath = BackgroundImageCatalog.m_Instance.IndexToImage(0).FileName;
+            }
+
+            // If user has removed all custom skybox files then the value could still be null
+            if (m_PreviousCustomSkyboxPath != null)
+            {
+                SceneSettings.m_Instance.LoadCustomSkybox(m_PreviousCustomSkyboxPath);
+            }
+        }
+
         void OnBackdropModeChanged()
         {
             DetectCurrentBackdropMode();
+            m_PreviousCustomSkyboxPath = SceneSettings.m_Instance.CustomSkyboxPath;
+            bool hasCustom = SceneSettings.m_Instance.HasCustomSkybox;
+            if (SceneSettings.m_Instance.CurrentEnvironment != null)
+            {
+                m_SwitchToPresetSkyboxButton.SetButtonAvailable(SceneSettings.m_Instance.CurrentEnvironment.HasSkybox);
+            }
+            m_SwitchToPresetSkyboxButton.SetButtonSelected(!hasCustom);
+            m_SwitchToCustomSkyboxButton.SetButtonSelected(hasCustom);
             switch (m_CurrentBackdropMode)
             {
                 case BackdropMode.Gradient:
@@ -152,6 +180,22 @@ namespace TiltBrush
                     m_SkyboxPreview.material = m_PassthroughPreviewMaterial;
                     break;
             }
+        }
+
+        public void HandleSwitchToPresetSkyboxButton()
+        {
+            if (!SceneSettings.m_Instance.CurrentEnvironment.HasSkybox) return;
+            m_PreviousCustomSkyboxPath = SceneSettings.m_Instance.CustomSkyboxPath;
+            SceneSettings.m_Instance.ClearCustomSkybox();
+            m_SwitchToPresetSkyboxButton.SetButtonSelected(true);
+            m_SwitchToCustomSkyboxButton.SetButtonSelected(false);
+        }
+
+        public void HandleSwitchToCustomSkyboxButton()
+        {
+            LoadPreviousCustomSkybox();
+            m_SwitchToPresetSkyboxButton.SetButtonSelected(false);
+            m_SwitchToCustomSkyboxButton.SetButtonSelected(true);
         }
     }
 } // namespace TiltBrush
