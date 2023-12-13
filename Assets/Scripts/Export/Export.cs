@@ -129,15 +129,15 @@ URL=" + kExportDocumentationUrl;
 
             // Set up progress bar.
             var progress = new Progress();
-            if (App.PlatformConfig.EnableExportJson) { progress.SetWork("json"); }
+            if (App.PlatformConfig.EnableExportJson && IsExportEnabled("json")) { progress.SetWork("json"); }
 #if FBX_SUPPORTED
-    if (App.PlatformConfig.EnableExportFbx) { progress.SetWork("fbx"); }
+    if (App.PlatformConfig.EnableExportFbx && IsExportEnabled("fbx")) { progress.SetWork("fbx"); }
 #endif
 #if USD_SUPPORTED
-            if (App.PlatformConfig.EnableExportUsd) { progress.SetWork("usd"); }
+            if (App.PlatformConfig.EnableExportUsd  && IsExportEnabled("usd")) { progress.SetWork("usd"); }
 #endif
 #if LATK_SUPPORTED
-            if (App.PlatformConfig.EnableExportLatk) { progress.SetWork("latk"); }
+            if (App.PlatformConfig.EnableExportLatk && IsExportEnabled("latk")) { progress.SetWork("latk"); }
 #endif
 
             if (IsExportEnabled("wrl")){
@@ -153,11 +153,11 @@ URL=" + kExportDocumentationUrl;
       progress.SetWork("obj");
 #endif
             }
-            if (App.PlatformConfig.EnableExportGlb) { progress.SetWork("glb"); }
+            if (App.PlatformConfig.EnableExportGlb && IsExportEnabled("glb")) { progress.SetWork("glb"); }
 
             string filename;
 
-            if (App.PlatformConfig.EnableExportJson &&
+            if (App.PlatformConfig.EnableExportJson && IsExportEnabled("json") &&
                 (filename = MakeExportPath(parent, basename, "json")) != null)
                 using (var unused = new AutoTimer("raw export"))
                 {
@@ -170,7 +170,7 @@ URL=" + kExportDocumentationUrl;
             progress.CompleteWork("json");
 
 #if FBX_SUPPORTED
-    if (App.PlatformConfig.EnableExportFbx &&
+    if (App.PlatformConfig.EnableExportFbx && IsExportEnabled("fbx") &&
         (filename = MakeExportPath(parent, basename, "fbx")) != null)
     using (var unused = new AutoTimer("fbx export")) {
       OverlayManager.m_Instance.UpdateProgress(0.3f);
@@ -183,7 +183,7 @@ URL=" + kExportDocumentationUrl;
 #endif
 
 #if USD_SUPPORTED
-            if (App.PlatformConfig.EnableExportUsd &&
+            if (App.PlatformConfig.EnableExportUsd && IsExportEnabled("usd") &&
                 (filename = MakeExportPath(parent, basename, "usd")) != null)
                 using (var unused = new AutoTimer("usd export"))
                 {
@@ -193,7 +193,7 @@ URL=" + kExportDocumentationUrl;
 #endif
 
 #if LATK_SUPPORTED
-            if (App.PlatformConfig.EnableExportLatk &&
+            if (App.PlatformConfig.EnableExportLatk && IsExportEnabled("latk") &&
                 (filename = MakeExportPath(parent, basename, "latk")) != null)
                 using (var unused = new AutoTimer("latk export"))
                 {
@@ -233,7 +233,7 @@ URL=" + kExportDocumentationUrl;
     }
 #endif
 
-            if (App.PlatformConfig.EnableExportGlb)
+            if (App.PlatformConfig.EnableExportGlb && IsExportEnabled("glb"))
             {
                 string extension = App.Config.m_EnableGlbVersion2 ? "glb" : "glb1";
                 int gltfVersion = App.Config.m_EnableGlbVersion2 ? 2 : 1;
