@@ -21,6 +21,10 @@ using UnityEngine.XR;
 using PicoInput = Unity.XR.PXR.PXR_Input;
 #endif
 
+#if OCULUS_SUPPORTED
+#define PASSTHROUGH_SUPPORTED
+#endif
+
 namespace TiltBrush
 {
     // If these names are used in analytics etc, they must be protected from obfuscation.
@@ -578,7 +582,7 @@ namespace TiltBrush
             //     return new NonVrControllerInfo(behavior);
             //     //return new SteamControllerInfo(behavior);
             // }
-            // else 
+            // else
             if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 return new UnityXRControllerInfo(behavior, isLeftHand);
