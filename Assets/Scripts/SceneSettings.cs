@@ -19,6 +19,10 @@ using Superla.RadianceHDR;
 using UnityEngine;
 using UnityEngine.Rendering;
 
+#if OCULUS_SUPPORTED
+#define PASSTHROUGH_SUPPORTED
+#endif
+
 namespace TiltBrush
 {
 
@@ -127,7 +131,7 @@ namespace TiltBrush
         {
             get
             {
-#if OCULUS_SUPPORTED
+#if PASSTHROUGH_SUPPORTED
                 return m_PassthroughEnabled;
 #else
                 return false;
@@ -135,7 +139,7 @@ namespace TiltBrush
             }
             set
             {
-#if OCULUS_SUPPORTED
+#if PASSTHROUGH_SUPPORTED
                 var passthrough = m_RoomGeometry.GetComponent<OVRPassthroughLayer>();
                 if (passthrough == null)
                 {
@@ -152,12 +156,8 @@ namespace TiltBrush
                     // Clear gradient opactity
                     if (RenderSettings.skybox.HasColor("_ColorA"))
                     {
-                        var colorA = RenderSettings.skybox.GetColor("_ColorA");
-                        var colorB = RenderSettings.skybox.GetColor("_ColorB");
-                        colorA.a = 0;
-                        colorB.a = 0;
-                        RenderSettings.skybox.SetColor("_ColorA", colorA);
-                        RenderSettings.skybox.SetColor("_ColorB", colorB);
+                        RenderSettings.skybox.SetColor("_ColorA", Color.clear);
+                        RenderSettings.skybox.SetColor("_ColorB", Color.clear);
                     }
                     else
                     {
@@ -170,6 +170,7 @@ namespace TiltBrush
                     {
                         if (m_Cameras[i].gameObject.activeSelf)
                         {
+                            m_Cameras[i].clearFlags = CameraClearFlags.SolidColor;
                             var col = m_Cameras[i].backgroundColor;
                             col.a = 0;
                             m_Cameras[i].backgroundColor = col;
@@ -180,19 +181,21 @@ namespace TiltBrush
                 {
                     passthrough.hidden = true;
                     m_PassthroughEnabled = false;
+
                     for (int i = 0; i < m_Cameras.Count; ++i)
                     {
                         if (m_Cameras[i].gameObject.activeSelf)
                         {
-                            var col = m_Cameras[i].backgroundColor;
-                            col.a = 1;
-                            m_Cameras[i].backgroundColor = col;
+                            var clearFlags = CurrentEnvironment.HasSkybox ? CameraClearFlags.Skybox : CameraClearFlags.SolidColor;
+                            m_Cameras[i].clearFlags = clearFlags;
                         }
                     }
+
+                    SetDesiredPreset(CurrentEnvironment, false, true, m_HasCustomLights, true);
                 }
 #else
                 m_PassthroughEnabled = false;
-#endif // OCULUS_SUPPORTED
+#endif // PASSTHROUGH_SUPPORTED
             }
         }
 
