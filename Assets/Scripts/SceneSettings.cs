@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#if OCULUS_SUPPORTED
+#define PASSTHROUGH_SUPPORTED
+#endif
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 using Superla.RadianceHDR;
 using UnityEngine;
 using UnityEngine.Rendering;
-
-#if OCULUS_SUPPORTED
-#define PASSTHROUGH_SUPPORTED
-#endif
 
 namespace TiltBrush
 {

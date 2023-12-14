@@ -11,6 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+#if OCULUS_SUPPORTED
+#define PASSTHROUGH_SUPPORTED
+#endif
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,10 +24,6 @@ using UnityEngine.XR;
 
 #if PICO_SUPPORTED
 using PicoInput = Unity.XR.PXR.PXR_Input;
-#endif
-
-#if OCULUS_SUPPORTED
-#define PASSTHROUGH_SUPPORTED
 #endif
 
 namespace TiltBrush
