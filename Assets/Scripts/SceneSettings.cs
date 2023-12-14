@@ -151,47 +151,36 @@ namespace TiltBrush
                     m_InGradient = false;
                     m_CustomSkyboxTextureName = null;
                     passthrough.hidden = false;
-                    m_PassthroughEnabled = value;
-
-                    // Clear gradient opactity
-                    if (RenderSettings.skybox.HasColor("_ColorA"))
-                    {
-                        RenderSettings.skybox.SetColor("_ColorA", Color.clear);
-                        RenderSettings.skybox.SetColor("_ColorB", Color.clear);
-                    }
-                    else
-                    {
-                        var color = RenderSettings.skybox.GetColor("_Tint");
-                        color.a = 0;
-                        RenderSettings.skybox.SetColor("_Tint", color);
-                    }
-
+                    RenderSettings.skybox = null;
+                    RenderSettings.fog = false;
                     for (int i = 0; i < m_Cameras.Count; ++i)
                     {
                         if (m_Cameras[i].gameObject.activeSelf)
                         {
                             m_Cameras[i].clearFlags = CameraClearFlags.SolidColor;
-                            var col = m_Cameras[i].backgroundColor;
-                            col.a = 0;
-                            m_Cameras[i].backgroundColor = col;
+                            m_Cameras[i].backgroundColor = Color.clear;
                         }
                     }
+                    m_PassthroughEnabled = true;
                 }
                 else
                 {
                     passthrough.hidden = true;
                     m_PassthroughEnabled = false;
+                    RenderSettings.skybox = CurrentEnvironment.m_SkyboxMaterial;
 
-                    for (int i = 0; i < m_Cameras.Count; ++i)
+                    if (CurrentEnvironment != null)
                     {
-                        if (m_Cameras[i].gameObject.activeSelf)
+                        for (int i = 0; i < m_Cameras.Count; ++i)
                         {
-                            var clearFlags = CurrentEnvironment.HasSkybox ? CameraClearFlags.Skybox : CameraClearFlags.SolidColor;
-                            m_Cameras[i].clearFlags = clearFlags;
+                            if (m_Cameras[i].gameObject.activeSelf)
+                            {
+                                var clearFlags = CurrentEnvironment.HasSkybox ? CameraClearFlags.Skybox : CameraClearFlags.SolidColor;
+                                m_Cameras[i].clearFlags = clearFlags;
+                            }
                         }
+                        SetDesiredPreset(CurrentEnvironment, false, true, m_HasCustomLights, true);
                     }
-
-                    SetDesiredPreset(CurrentEnvironment, false, true, m_HasCustomLights, true);
                 }
 #else
                 m_PassthroughEnabled = false;
