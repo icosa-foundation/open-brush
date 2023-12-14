@@ -14,6 +14,10 @@
 
 using UnityEngine;
 
+#if OCULUS_SUPPORTED
+#define PASSTHROUGH_SUPPORTED
+#endif
+
 namespace TiltBrush
 {
     public enum BackdropMode
@@ -25,7 +29,6 @@ namespace TiltBrush
 
     public class BackdropPanel : BasePanel
     {
-        [SerializeField] private ToggleButton m_TogglePassthroughButton;
         public TextActionButton m_ButtonShowSkyboxControls;
         public TextActionButton m_ButtonShowGradientControls;
         public TextActionButton m_ButtonShowPassthroughControls;
@@ -43,20 +46,14 @@ namespace TiltBrush
         private static readonly int Tex = Shader.PropertyToID("_Tex");
         private string m_PreviousCustomSkyboxPath;
 
-        public void TogglePassthrough()
-        {
-            SceneSettings.m_Instance.PassthroughEnabled = m_TogglePassthroughButton.IsToggledOn;
-        }
-
         public override void InitPanel()
         {
             base.InitPanel();
             SceneSettings.m_Instance.BackdropModeChanged += OnBackdropModeChanged;
-            m_TogglePassthroughButton.IsToggledOn = SceneSettings.m_Instance.PassthroughEnabled;
             DetectCurrentBackdropMode();
             OnBackdropModeChanged();
-#if !OCULUS_SUPPORTED
-            m_TogglePassthroughButton.SetButtonAvailable(false);
+#if !PASSTHROUGH_SUPPORTED
+            m_ButtonShowPassthroughControls.SetButtonAvailable(false);
 #endif
         }
 
