@@ -24,6 +24,7 @@
     "com.unity.xr.management": "4.3.3",
     "com.unity.xr.oculus": "3.3.0",
     "com.unity.xr.openxr": "1.8.2",
+    "jp.keijiro.klak.ndi": "2.1.0",
     "org.nuget.google.apis": "1.64.0",
     "org.nuget.google.apis.auth": "1.64.0",
     "org.nuget.google.apis.core": "https://github.com/icosa-mirror/org.nuget.google.apis.core.git#1.64.0-openbrush",
@@ -88,6 +89,13 @@
       "url": "https://npm.developer.oculus.com",
       "scopes": [
         "com.meta.xr.sdk"
+      ]
+    },
+    {
+      "name": "Keijiro",
+      "url": "https://registry.npmjs.com",
+      "scopes": [
+        "jp.keijiro"
       ]
     }
   ]
