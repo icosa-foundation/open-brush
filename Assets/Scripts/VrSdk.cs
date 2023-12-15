@@ -173,7 +173,7 @@ namespace TiltBrush
             // OculusVR
             // ---------------------------------------------------------------------------------------- //
             OVRManager manager = gameObject.AddComponent<OVRManager>();
-            manager.trackingOriginType = OVRManager.TrackingOrigin.FloorLevel;
+            manager.trackingOriginType = OVRManager.TrackingOrigin.Stage;
             manager.useRecommendedMSAALevel = false;
             manager.isInsightPassthroughEnabled = true;
 
@@ -184,6 +184,18 @@ namespace TiltBrush
             var cameraRig = m_VrSystem.AddComponent<OVRCameraRig>();
             //Disable the OVRCameraRig's eye cameras, since Open Brush already has its own.
             cameraRig.disableEyeAnchorCameras = true;
+
+            //Get Oculus ID
+            var appId = App.Config.OculusSecrets.ClientId;
+#if UNITY_ANDROID
+            appId = App.Config.OculusMobileSecrets.ClientId;
+#endif
+
+            if (Unity.XR.Oculus.Utils.GetSystemHeadsetType() != Unity.XR.Oculus.SystemHeadset.Oculus_Quest)
+            {
+                Oculus.Platform.Core.Initialize(appId);
+            }
+
 #endif // OCULUS_SUPPORTED
 
 #if PIMAX_SUPPORTED
