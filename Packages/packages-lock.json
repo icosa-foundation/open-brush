@@ -291,6 +291,15 @@
       },
       "url": "https://packages.unity.com"
     },
+    "jp.keijiro.klak.ndi": {
+      "version": "2.1.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.modules.screencapture": "1.0.0"
+      },
+      "url": "https://registry.npmjs.com"
+    },
     "org.nuget.google.apis": {
       "version": "1.64.0",
       "depth": 0,
