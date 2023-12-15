@@ -495,7 +495,7 @@ jobs:
           mv OpenBrush.tgz build/${{ matrix.vrsdk }}/
 
       - name: Upload build/
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.name }}
           path: |
@@ -599,37 +599,37 @@ jobs:
         run: echo "$CHANGELOG"
 
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Windows OpenXR
           path: build_windows_openxr
 
       - name: Download Build Artifacts (Windows Rift)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Windows Rift
           path: build_windows_rift
 
       - name: Download Build Artifacts (Windows Monoscopic)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Windows Monoscopic
           path: build_windows_mono
 
       - name: Download Build Artifacts (Android OpenXR)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Android OpenXR
           path: build_android_openxr
 
       - name: Download Build Artifacts (Oculus Quest 2+)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Oculus Quest (2+)
           path: build_oculus_quest
 
       - name: Download Build Artifacts (Pico)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Android Pico
           path: build_android_pico
@@ -749,7 +749,7 @@ jobs:
           echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - > /home/runner/Steam/config/config.vdf
           md5sum /home/runner/Steam/config/config.vdf
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Windows OpenXR
           path: build_windows_openxr
@@ -775,7 +775,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.SECRET_UPDATER_PAT }}
       - name: Save logs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: steamcmd logs
@@ -797,7 +797,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows Pimax)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Windows Pimax
           path: build_windows_pimax
@@ -829,7 +829,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Windows OpenXR
           path: build_windows_openxr
@@ -860,13 +860,13 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Windows OpenXR
           path: build_windows_openxr
 
       - name: Download Build Artifacts (Oculus Quest 2+)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Oculus Quest (2+)
           path: build_oculus_quest
@@ -898,7 +898,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Oculus Quest 2+)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Oculus Quest (2+)
           path: build_oculus_quest
@@ -939,7 +939,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Oculus Quest 1)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Oculus Quest (1)
           path: build_oculus_quest1
@@ -980,7 +980,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows Rift)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Windows Rift
           path: build_windows_rift
