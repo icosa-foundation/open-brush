@@ -300,7 +300,11 @@ URL=" + kExportDocumentationUrl;
                     OverlayManager.m_Instance.UpdateProgress(0.7f);
                     var settings = GLTFSettings.GetOrCreateSettings();
                     settings.UseMainCameraVisibility = false;
-                    var options = new ExportOptions { ExportLayers = -1 };
+                    var options = new ExportOptions
+                    {
+                        ExportLayers = -1,
+                        AfterNodeExport = AfterNodeExport
+                    };
                     var layers = App.Scene.LayerCanvases.Select(x => x.transform).ToArray();
                     var unityGltfexporter = new GLTFSceneExporter(layers, options);
                     unityGltfexporter.SaveGLB(Path.Combine(parent, $"newglb"), $"{basename}.{extension}");
@@ -317,6 +321,25 @@ URL=" + kExportDocumentationUrl;
             if (!File.Exists(readmeFilename) && !Directory.Exists(readmeFilename))
             {
                 File.WriteAllText(readmeFilename, kExportReadmeBody);
+            }
+        }
+
+        private static void AfterNodeExport(GLTFSceneExporter exporter, GLTFRoot gltfroot, Transform transform, Node node)
+        {
+            try
+            {
+                if (node.Name.StartsWith("Batch_"))
+                {
+                    var parts = node.Name.Split("_");
+                    Guid brushGuid = new Guid(parts.Last());
+                    string brushName = BrushCatalog.m_Instance.GetBrush(brushGuid).DurableName;
+                    brushName = brushName.Replace(" ", "_").ToLower();
+                    node.Name = $"brush_{brushName}_{parts[1]}";
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Failed to rename node {node.Name} based on brush guid: {e.Message}");
             }
         }
     }
