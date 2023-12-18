@@ -104,15 +104,11 @@ URL=" + kExportDocumentationUrl;
             }
         }
 
-        public static bool IsExportEnabled(string format){
-
-            Dictionary<string, bool> formats = App.UserConfig.Export.Formats;
-            if (formats.ContainsKey(format)){
-                return formats[format];
-            }else{
-                return false;
-            }
+        static bool IsExportEnabled(string format)
+        {
+            return App.UserConfig.Export.Formats.GetValueOrDefault(format);
         }
+
         public static void ExportScene()
         {
             var current = SaveLoadScript.m_Instance.SceneFile;

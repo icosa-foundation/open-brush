@@ -280,8 +280,6 @@ namespace TiltBrush
                 }
                 set => m_Formats = value;
             }
-
-
         }
         public ExportConfig Export;
 
