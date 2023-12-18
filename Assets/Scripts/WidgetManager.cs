@@ -528,15 +528,11 @@ namespace TiltBrush
 
         public CameraPathWidget CreatePathWidget()
         {
-            Debug.Log("CREATE PATH WIDGET");
             CreateWidgetCommand command =
                 new CreateWidgetCommand(mCameraPathWidgetPrefab, TrTransform.identity);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
             return m_CameraPathWidgets.Last().WidgetScript;
         }
-
-
-
 
         public bool AnyActivePathHasAKnot()
         {
@@ -550,7 +546,8 @@ namespace TiltBrush
             }
             return false;
         }
-         public bool AnyActiveAnimationPathHasAKnot()
+
+        public bool AnyActiveAnimationPathHasAKnot()
         {
             var datas = AnimationPathWidgets;
             foreach (TypedWidgetData<CameraPathWidget> data in datas)
@@ -563,8 +560,7 @@ namespace TiltBrush
             return false;
         }
 
-
-        public void CameraMovementPath(GrabWidget cameraPathWidgetScript)
+        public void DeleteCameraPath(GrabWidget cameraPathWidgetScript)
         {
             if (cameraPathWidgetScript != null)
             {
@@ -1164,7 +1160,6 @@ namespace TiltBrush
             }
             else if (generic is CameraPathWidget cpw)
             {
-                Debug.Log("adding to movement path Widget");
                 m_CameraPathWidgets.Add(new TypedWidgetData<CameraPathWidget>(cpw));
             }
             else

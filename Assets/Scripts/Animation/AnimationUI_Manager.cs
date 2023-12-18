@@ -184,7 +184,7 @@ namespace TiltBrush.FrameAnimation
 
             if (Timeline[Loc.Item1].Frames[Loc.Item2].AnimatedPath != null)
             {
-                WidgetManager.m_Instance.CameraMovementPath(Timeline[Loc.Item1].Frames[Loc.Item2].AnimatedPath);
+                WidgetManager.m_Instance.DeleteCameraPath(Timeline[Loc.Item1].Frames[Loc.Item2].AnimatedPath);
             }
 
             int i = 0;
@@ -221,7 +221,7 @@ namespace TiltBrush.FrameAnimation
 
             if (Timeline[Loc.Item1].Frames[Loc.Item2].AnimatedPath != null)
             {
-                WidgetManager.m_Instance.CameraMovementPath(Timeline[Loc.Item1].Frames[Loc.Item2].AnimatedPath);
+                WidgetManager.m_Instance.DeleteCameraPath(Timeline[Loc.Item1].Frames[Loc.Item2].AnimatedPath);
             }
 
             int i = 0;
