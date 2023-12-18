@@ -257,27 +257,10 @@ namespace TiltBrush
             }
 
             private Dictionary<string, bool> m_Formats;
+            [JsonProperty]
             public Dictionary<string, bool> Formats
             {
-                get
-                {
-                    if (m_Formats == null)
-                    {
-                        m_Formats = new Dictionary<string, bool>
-                        {
-                            {"fbx", true},
-                            {"glb", true},
-                            {"newglb", false},
-                            {"json", false},
-                            {"latk", false},
-                            {"obj", true},
-                            {"stl", false},
-                            {"usd", false},
-                            {"wrl", false},
-                        };
-                    }
-                    return m_Formats;
-                }
+                get { return m_Formats ?? null; }
                 set => m_Formats = value;
             }
         }

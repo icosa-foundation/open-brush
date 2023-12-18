@@ -106,7 +106,25 @@ URL=" + kExportDocumentationUrl;
 
         static bool IsExportEnabled(string format)
         {
-            return App.UserConfig.Export.Formats.GetValueOrDefault(format);
+            // I couldn't figure out how to get the default value from the config file for a dictionary with a getter/setter
+            // so I'm handling defaults here.
+            var formats = App.UserConfig.Export.Formats;
+            if (formats == null)
+            {
+                formats = new Dictionary<string, bool>
+                {
+                    {"fbx", true},
+                    {"glb", true},
+                    {"newglb", false},
+                    {"json", false},
+                    {"latk", false},
+                    {"obj", true},
+                    {"stl", false},
+                    {"usd", false},
+                    {"wrl", false},
+                };
+            }
+            return formats.GetValueOrDefault(format);
         }
 
         public static void ExportScene()
@@ -277,7 +295,6 @@ URL=" + kExportDocumentationUrl;
             if (App.PlatformConfig.EnableExportGlb && IsExportEnabled("newglb"))
             {
                 string extension = "glb";
-                MakeExportPath(parent, basename, extension);
                 using (var unused = new AutoTimer("glb export"))
                 {
                     OverlayManager.m_Instance.UpdateProgress(0.7f);
@@ -286,7 +303,6 @@ URL=" + kExportDocumentationUrl;
                     var options = new ExportOptions { ExportLayers = -1 };
                     var layers = App.Scene.LayerCanvases.Select(x => x.transform).ToArray();
                     var unityGltfexporter = new GLTFSceneExporter(layers, options);
-                    MakeExportPath(parent, basename, extension);
                     unityGltfexporter.SaveGLB(Path.Combine(parent, $"newglb"), $"{basename}.{extension}");
                 }
                 progress.CompleteWork("newglb");
