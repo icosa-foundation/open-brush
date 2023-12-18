@@ -148,10 +148,14 @@ URL=" + kExportDocumentationUrl;
             if (IsExportEnabled("obj"))
             {
 #if FBX_SUPPORTED
-      progress.SetWork("obj");
+                progress.SetWork("obj");
 #endif
             }
-            if (App.PlatformConfig.EnableExportGlb && IsExportEnabled("glb")) { progress.SetWork("glb"); }
+            if (App.PlatformConfig.EnableExportGlb)
+            {
+                if (IsExportEnabled("glb")) { progress.SetWork("glb"); }
+                if (IsExportEnabled("newglb")) { progress.SetWork("newglb"); }
+            }
 
             string filename;
 
@@ -238,14 +242,7 @@ URL=" + kExportDocumentationUrl;
                 {
                     using (var unused = new AutoTimer("glb export"))
                     {
-                        OverlayManager.m_Instance.UpdateProgress(0.7f);
-                        var settings = GLTFSettings.GetOrCreateSettings();
-                        settings.UseMainCameraVisibility = false;
-                        var options = new ExportOptions();
-                        options.ExportLayers = -1;
-                        var layers = App.Scene.LayerCanvases.Select(x => x.transform).ToArray();
-                        var unityGltfexporter = new GLTFSceneExporter(layers, options);
-                        unityGltfexporter.SaveGLB(Path.Combine(parent, extension), $"{basename}_unitygltf.glb");
+                        OverlayManager.m_Instance.UpdateProgress(0.6f);
 
                         // TBT doesn't need (or want) brush textures in the output because it replaces all
                         // the materials, so it's fine to keep those http:. However, Sketchfab doesn't support
@@ -259,6 +256,24 @@ URL=" + kExportDocumentationUrl;
                         );
                         progress.CompleteWork("glb");
                     }
+                }
+            }
+
+            if (App.PlatformConfig.EnableExportGlb && IsExportEnabled("newglb"))
+            {
+                string extension = "glb";
+                MakeExportPath(parent, basename, extension);
+                using (var unused = new AutoTimer("glb export"))
+                {
+                    OverlayManager.m_Instance.UpdateProgress(0.7f);
+                    var settings = GLTFSettings.GetOrCreateSettings();
+                    settings.UseMainCameraVisibility = false;
+                    var options = new ExportOptions { ExportLayers = -1 };
+                    var layers = App.Scene.LayerCanvases.Select(x => x.transform).ToArray();
+                    var unityGltfexporter = new GLTFSceneExporter(layers, options);
+                    MakeExportPath(parent, basename, extension);
+                    unityGltfexporter.SaveGLB(Path.Combine(parent, $"newglb"), $"{basename}.{extension}");
+                    progress.CompleteWork("newglb");
                 }
             }
 
