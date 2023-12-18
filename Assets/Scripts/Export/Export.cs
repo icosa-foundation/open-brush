@@ -103,9 +103,9 @@ URL=" + kExportDocumentationUrl;
                 Debug.LogFormat("{0} time: {1}s", m_tag, timer.ElapsedMilliseconds / 1000.0f);
             }
         }
-        
+
         public static bool IsExportEnabled(string format){
-            
+
             Dictionary<string, bool> formats = App.UserConfig.Export.Formats;
             if (formats.ContainsKey(format)){
                 return formats[format];
@@ -136,9 +136,7 @@ URL=" + kExportDocumentationUrl;
 #if USD_SUPPORTED
             if (App.PlatformConfig.EnableExportUsd  && IsExportEnabled("usd")) { progress.SetWork("usd"); }
 #endif
-#if LATK_SUPPORTED
             if (App.PlatformConfig.EnableExportLatk && IsExportEnabled("latk")) { progress.SetWork("latk"); }
-#endif
 
             if (IsExportEnabled("wrl")){
                 progress.SetWork("wrl");
@@ -192,7 +190,6 @@ URL=" + kExportDocumentationUrl;
             progress.CompleteWork("usd");
 #endif
 
-#if LATK_SUPPORTED
             if (App.PlatformConfig.EnableExportLatk && IsExportEnabled("latk") &&
                 (filename = MakeExportPath(parent, basename, "latk")) != null)
                 using (var unused = new AutoTimer("latk export"))
@@ -200,7 +197,6 @@ URL=" + kExportDocumentationUrl;
                     ExportLatk.Export(filename);
                 }
             progress.CompleteWork("latk");
-#endif
 
             if (IsExportEnabled("wrl") &&
                 (filename = MakeExportPath(parent, basename, "wrl")) != null)
