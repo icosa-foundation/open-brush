@@ -144,7 +144,7 @@ URL=" + kExportDocumentationUrl;
             }
 #endif
 
-            if (App.PlatformConfig.EnableExportLatk && IsExportEnabled("latk"))
+            if (IsExportEnabled("latk"))
             {
                 progress.SetWork("latk");
             }
@@ -153,6 +153,7 @@ URL=" + kExportDocumentationUrl;
             {
                 progress.SetWork("wrl");
             }
+
             if (IsExportEnabled("stl"))
             {
                 progress.SetWork("stl");
@@ -177,8 +178,8 @@ URL=" + kExportDocumentationUrl;
                     // Also write the metadata that would normally go in the .tilt file
                     SketchSnapshot.ExportMetadata(filename.Replace(".json", ".metadata.json"));
                 }
+                progress.CompleteWork("json");
             }
-            progress.CompleteWork("json");
 
 #if FBX_SUPPORTED
             if (App.PlatformConfig.EnableExportFbx && IsExportEnabled("fbx") &&
@@ -192,8 +193,8 @@ URL=" + kExportDocumentationUrl;
                         App.UserConfig.Export.ExportFbxVersion);
                     OverlayManager.m_Instance.UpdateProgress(0.5f);
                 }
+                progress.CompleteWork("fbx");
             }
-            progress.CompleteWork("fbx");
 
             if (IsExportEnabled("obj") && App.PlatformConfig.EnableExportFbx &&
                 (filename = MakeExportPath(parent, basename, "obj")) != null)
@@ -207,20 +208,24 @@ URL=" + kExportDocumentationUrl;
 #if USD_SUPPORTED
             if (App.PlatformConfig.EnableExportUsd && IsExportEnabled("usd") &&
                 (filename = MakeExportPath(parent, basename, "usd")) != null)
+            {
                 using (var unused = new AutoTimer("usd export"))
                 {
                     ExportUsd.ExportPayload(filename);
                 }
-            progress.CompleteWork("usd");
+                progress.CompleteWork("usd");
+            }
 #endif
 
-            if (App.PlatformConfig.EnableExportLatk && IsExportEnabled("latk") &&
+            if (IsExportEnabled("latk") &&
                 (filename = MakeExportPath(parent, basename, "latk")) != null)
+            {
                 using (var unused = new AutoTimer("latk export"))
                 {
                     ExportLatk.Export(filename);
                 }
-            progress.CompleteWork("latk");
+                progress.CompleteWork("latk");
+            }
 
             if (IsExportEnabled("wrl") &&
                 (filename = MakeExportPath(parent, basename, "wrl")) != null)
@@ -264,9 +269,9 @@ URL=" + kExportDocumentationUrl;
                             gltfVersion: gltfVersion,
                             selfContained: true
                         );
-                        progress.CompleteWork("glb");
                     }
                 }
+                progress.CompleteWork("glb");
             }
 
             if (App.PlatformConfig.EnableExportGlb && IsExportEnabled("newglb"))
@@ -283,12 +288,13 @@ URL=" + kExportDocumentationUrl;
                     var unityGltfexporter = new GLTFSceneExporter(layers, options);
                     MakeExportPath(parent, basename, extension);
                     unityGltfexporter.SaveGLB(Path.Combine(parent, $"newglb"), $"{basename}.{extension}");
-                    progress.CompleteWork("newglb");
                 }
+                progress.CompleteWork("newglb");
             }
 
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                InputManager.ControllerName.Brush, basename + $" {LocalizationSettings.StringDatabase.GetLocalizedString(kExportSuccess)}");
+                InputManager.ControllerName.Brush, basename +
+                $" {LocalizationSettings.StringDatabase.GetLocalizedString(kExportSuccess)}");
             ControllerConsoleScript.m_Instance.AddNewLine("Located in " + App.UserExportPath());
 
             string readmeFilename = Path.Combine(App.UserExportPath(), kExportReadmeName);
