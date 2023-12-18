@@ -118,27 +118,39 @@ URL=" + kExportDocumentationUrl;
 
             string parent = FileUtils.GenerateNonexistentFilename(App.UserExportPath(), basename, "");
             if (!FileUtils.InitializeDirectoryWithUserError(
-                parent, "Failed to create export directory"))
-            {
-                return;
-            }
+                parent, "Failed to create export directory")) return;
 
             // Set up progress bar.
             var progress = new Progress();
-            if (App.PlatformConfig.EnableExportJson && IsExportEnabled("json")) { progress.SetWork("json"); }
+            if (App.PlatformConfig.EnableExportJson && IsExportEnabled("json"))
+            {
+                progress.SetWork("json");
+            }
 #if FBX_SUPPORTED
-            if (App.PlatformConfig.EnableExportFbx && IsExportEnabled("fbx")) { progress.SetWork("fbx"); }
+            if (App.PlatformConfig.EnableExportFbx && IsExportEnabled("fbx"))
+            {
+                progress.SetWork("fbx");
+            }
             if (IsExportEnabled("obj"))
             {
                 progress.SetWork("obj");
             }
 #endif
-#if USD_SUPPORTED
-            if (App.PlatformConfig.EnableExportUsd  && IsExportEnabled("usd")) { progress.SetWork("usd"); }
-#endif
-            if (App.PlatformConfig.EnableExportLatk && IsExportEnabled("latk")) { progress.SetWork("latk"); }
 
-            if (IsExportEnabled("wrl")){
+#if USD_SUPPORTED
+            if (App.PlatformConfig.EnableExportUsd && IsExportEnabled("usd"))
+            {
+                progress.SetWork("usd");
+            }
+#endif
+
+            if (App.PlatformConfig.EnableExportLatk && IsExportEnabled("latk"))
+            {
+                progress.SetWork("latk");
+            }
+
+            if (IsExportEnabled("wrl"))
+            {
                 progress.SetWork("wrl");
             }
             if (IsExportEnabled("stl"))
@@ -156,6 +168,7 @@ URL=" + kExportDocumentationUrl;
 
             if (App.PlatformConfig.EnableExportJson && IsExportEnabled("json") &&
                 (filename = MakeExportPath(parent, basename, "json")) != null)
+            {
                 using (var unused = new AutoTimer("raw export"))
                 {
                     OverlayManager.m_Instance.UpdateProgress(0.1f);
@@ -164,6 +177,7 @@ URL=" + kExportDocumentationUrl;
                     // Also write the metadata that would normally go in the .tilt file
                     SketchSnapshot.ExportMetadata(filename.Replace(".json", ".metadata.json"));
                 }
+            }
             progress.CompleteWork("json");
 
 #if FBX_SUPPORTED
@@ -181,7 +195,8 @@ URL=" + kExportDocumentationUrl;
             }
             progress.CompleteWork("fbx");
 
-            if (IsExportEnabled("obj") && App.PlatformConfig.EnableExportFbx && (filename = MakeExportPath(parent, basename, "obj")) != null)
+            if (IsExportEnabled("obj") && App.PlatformConfig.EnableExportFbx &&
+                (filename = MakeExportPath(parent, basename, "obj")) != null)
             {
                 // This has never been tested with the new fbx export style and may not work
                 ExportFbx.Export(filename, ExportFbx.kObj);
