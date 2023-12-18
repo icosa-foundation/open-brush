@@ -14,21 +14,13 @@
 
 namespace TiltBrush.FrameAnimation
 {
-    public class FrameButton : BaseButton
+    public class PlayButton : TiltBrush.Layers.ToggleButton
     {
-        public int Layer = -1;
-        public int Frame = -1;
-
         protected override void OnButtonPressed()
         {
             base.OnButtonPressed();
-            App.Scene.animationUI_manager.SelectTimelineFrame(Layer, Frame);
-        }
-
-        public void SetButtonCoordinate(int updatedLayer, int updatedFrame)
-        {
-            Layer = updatedLayer;
-            Frame = updatedFrame;
+            var uiManager = GetComponentInParent<AnimationUI_Manager>();
+            uiManager.ToggleAnimation();
         }
     }
 } // namespace TiltBrush.FrameAnimation

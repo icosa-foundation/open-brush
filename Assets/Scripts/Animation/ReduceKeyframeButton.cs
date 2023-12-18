@@ -12,23 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using UnityEngine;
+
 namespace TiltBrush.FrameAnimation
 {
-    public class FrameButton : BaseButton
+    public class ReduceKeyframeButton : BaseButton
     {
-        public int Layer = -1;
-        public int Frame = -1;
-
         protected override void OnButtonPressed()
         {
-            base.OnButtonPressed();
-            App.Scene.animationUI_manager.SelectTimelineFrame(Layer, Frame);
-        }
-
-        public void SetButtonCoordinate(int updatedLayer, int updatedFrame)
-        {
-            Layer = updatedLayer;
-            Frame = updatedFrame;
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new ReduceFrameCommand()
+            );
         }
     }
 } // namespace TiltBrush.FrameAnimation

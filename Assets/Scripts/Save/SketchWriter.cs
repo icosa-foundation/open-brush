@@ -137,11 +137,9 @@ namespace TiltBrush
             //     |0  |1Cx|2C |  =>  |0  |2C |
             //     |0  |1Cx|2Cx|  =>  |0  |
             //     |0 x|1Cx|2C |  =>  |2  |
-            Debug.Log("1");
             bool resetGroupContinue = false;
-            var canvases = App.Scene.animationUI_manager.getTrackCanvases();
+            var canvases = App.Scene.animationUI_manager.GetTrackCanvases();
             var canvasToIndexMap = new Dictionary<CanvasScript, Tuple<uint, uint>>();
-            Debug.Log("2");
             for (uint indexFrame = 0; indexFrame < canvases.Count; indexFrame++)
             {
                 for (uint indexLayer = 0; indexLayer < canvases[0].Count; indexLayer++)
@@ -150,7 +148,6 @@ namespace TiltBrush
                     canvasToIndexMap[canvas] = new Tuple<uint, uint>(indexFrame, indexLayer);
                 }
             }
-            Debug.Log("3");
             foreach (var stroke in strokes)
             {
                 AdjustedMemoryBrushStroke snapshot = new AdjustedMemoryBrushStroke();
@@ -165,20 +162,16 @@ namespace TiltBrush
                 {
                     if (stroke.Canvas == App.Scene.SelectionCanvas)
                     {
-
                         if (canvasToIndexMap.ContainsKey(stroke.m_PreviousCanvas))
                         {
                             snapshot.frameIndex = canvasToIndexMap[stroke.m_PreviousCanvas].Item1;
                             snapshot.trackIndex = canvasToIndexMap[stroke.m_PreviousCanvas].Item2;
-
                         }
                         else
                         {
                             // Previous canvas has been deleted?
                             snapshot.frameIndex = canvasToIndexMap[App.Scene.ActiveCanvas].Item1;
                             snapshot.trackIndex = canvasToIndexMap[App.Scene.ActiveCanvas].Item2;
-
-
                         }
                     }
                     else
@@ -186,10 +179,7 @@ namespace TiltBrush
                         // Don't use the method in SceneScript as they count deleted layers
                         snapshot.frameIndex = canvasToIndexMap[stroke.Canvas].Item1;
                         snapshot.trackIndex = canvasToIndexMap[stroke.Canvas].Item2;
-
-
                     }
-                    Debug.Log("SAVING STROKE " + snapshot.trackIndex.ToString() + " " + snapshot.frameIndex.ToString());
                     yield return snapshot;
                 }
                 else
@@ -271,7 +261,6 @@ namespace TiltBrush
                 }
                 if ((uint)(strokeExtensionMask & StrokeExtension.Frame) != 0)
                 {
-
                     writer.UInt32(copy.frameIndex);
                 }
 
@@ -434,36 +423,8 @@ namespace TiltBrush
                 //    isolate lowest set bit: x & ~(x-1)
                 //    clear lowest set bit: x & (x-1)
 
-
                 UInt32 thisTrack = 0;
                 int MaxTrack = 0, MaxFrame = 0;
-
-
-
-
-                // for (var fields = strokeExtensionMask; fields != 0; fields &= (fields - 1))
-                // {
-                //    uint bit = (fields & ~(fields - 1));
-                //     switch ((StrokeExtension)bit)
-                //     {
-                //         case StrokeExtension.Track:
-                //             UInt32 trackIndex = reader.UInt32();
-                //              Debug.Log("TRACK: ");
-                //             Debug.Log(trackIndex);
-                //             MaxTrack = (int)trackIndex > MaxTrack ? (int)trackIndex : MaxTrack;
-                //             break;
-                //         case StrokeExtension.Frame:
-                //             UInt32 frameIndex = reader.UInt32();
-                //             Debug.Log("FRAME: ");
-                //             Debug.Log(frameIndex);
-                //             MaxFrame = (int)frameIndex > MaxFrame ? (int)frameIndex : MaxFrame;
-                //             break;
-                // }
-
-                // }
-
-                // Debug.Log("MAX FRAME AND MAX TRACK "  + MaxTrack.ToString() + " " + MaxFrame.ToString());
-
 
                 for (var fields = strokeExtensionMask; fields != 0; fields &= (fields - 1))
                 {
@@ -492,18 +453,12 @@ namespace TiltBrush
                             {
                                 layerIndex = 0;
                             }
-
                             thisTrack = layerIndex;
-
-                            // var canvas = App.Scene.GetOrCreateLayer((int)layerIndex);
-                            // stroke.m_IntendedCanvas = canvas;
                             break;
                         case StrokeExtension.Frame:
                             UInt32 frameIndex = reader.UInt32();
-                           
-                           
                             // For Loading Animation
-                            var canvas = App.Scene.animationUI_manager.getTimelineCanvas((int)thisTrack, (int)frameIndex);
+                            var canvas = App.Scene.animationUI_manager.GetTimelineCanvas((int)thisTrack, (int)frameIndex);
                             stroke.m_IntendedCanvas = canvas;
                             break;
                         case StrokeExtension.Seed:

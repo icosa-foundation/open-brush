@@ -1,4 +1,4 @@
-// Copyright 2020 The Tilt Brush Authors
+// Copyright 2023 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,33 +13,22 @@
 // limitations under the License.
 
 using UnityEngine;
-using System;
-
 
 namespace TiltBrush.FrameAnimation
 {
-
     public class TimelineSlider : BaseSlider
     {
         override protected void Awake()
         {
             base.Awake();
-            // m_CurrentValue = PointerManager.m_Instance.FreePaintPointerAngle / 90.0f;
             SetSliderPositionToReflectValue();
         }
 
-        // For @Animation
-        public void setSliderValue(float fValue)
+        public void SetSliderValue(float fValue)
         {
-
             float newVal = (fValue - 0.5f) * m_MeshScale.x;
-
-
             Vector3 vLocalPos = m_Nob.transform.localPosition;
             m_Nob.transform.localPosition = new Vector3(newVal, vLocalPos.y, vLocalPos.z);
-            // UpdateValue(fValue);
-
-
         }
 
         override public void ButtonPressed(RaycastHit rHitInfo)
@@ -47,35 +36,23 @@ namespace TiltBrush.FrameAnimation
             if (IsAvailable())
             {
                 PositionSliderNob(rHitInfo.point);
-
-                  var uiManager = GetComponentInParent<AnimationUI_Manager>();
-                uiManager.timelineSlideDown(true);
+                var uiManager = GetComponentInParent<AnimationUI_Manager>();
+                uiManager.TimelineSlideDown(true);
             }
             SetDescriptionActive(true);
         }
 
-        override public void ButtonReleased() { 
-
-        var uiManager = GetComponentInParent<AnimationUI_Manager>();
-        uiManager.timelineSlideDown(false);
-
+        public override void ButtonReleased() {
+            var uiManager = GetComponentInParent<AnimationUI_Manager>();
+            uiManager.TimelineSlideDown(false);
         }
 
-
-        override public void UpdateValue(float fValue)
+        public override void UpdateValue(float fValue)
         {
             base.UpdateValue(fValue);
-            // PointerManager.m_Instance.FreePaintPointerAngle = fValue * 90.0f;
-
             var uiManager = GetComponentInParent<AnimationUI_Manager>();
-            uiManager.timelineSlideDown(true);
-            uiManager.timelineSlide(fValue);
-        }
-
-        public override void ResetState()
-        {
-            base.ResetState();
-            // SetAvailable(!App.VrSdk.VrControls.LogitechPenIsPresent());
+            uiManager.TimelineSlideDown(true);
+            uiManager.TimelineSlide(fValue);
         }
     }
-} // namespace TiltBrush
+} // namespace TiltBrush.FrameAnimation

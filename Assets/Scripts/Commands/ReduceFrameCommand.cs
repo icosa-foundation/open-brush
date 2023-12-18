@@ -1,4 +1,4 @@
-// Copyright 2020 The Tilt Brush Authors
+// Copyright 2023 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,57 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using UnityEngine;
-using System.Collections;
-
 namespace TiltBrush.FrameAnimation
 {
     public class ReduceFrameCommand : BaseCommand
     {
-        private (int,int) timelineLocation;
-        private (int,int) insertingAt;
-        AnimationUI_Manager manager;
-
-        bool expandTimeline;
-        bool justMoved = true;
-
-        int frameOnStart;
-
+        private (int,int) m_TimelineLocation;
+        private (int,int) m_InsertingAt;
+        AnimationUI_Manager m_Manager;
+        bool m_ExpandTimeline;
+        bool m_JustMoved = true;
+        int m_FrameOnStart;
 
         public ReduceFrameCommand()
         {
-           manager = App.Scene.animationUI_manager;
-           timelineLocation = manager.getCanvasLocation(App.Scene.ActiveCanvas);
-
+           m_Manager = App.Scene.animationUI_manager;
+           m_TimelineLocation = m_Manager.GetCanvasLocation(App.Scene.ActiveCanvas);
         }
 
-        public override bool NeedsSave { get { return true; } }
-
-        protected override void OnDispose()
-        {
-         
-        }
+        public override bool NeedsSave => true;
 
         protected override void OnRedo()
         {
-           
-            insertingAt = manager.reduceKeyFrame(timelineLocation.Item1,timelineLocation.Item2);
+            m_InsertingAt = m_Manager.ReduceKeyFrame(m_TimelineLocation.Item1,m_TimelineLocation.Item2);
         }
 
         protected override void OnUndo()
         {
-            // if (justMoved) return;
-        if (insertingAt.Item1 == -1 || insertingAt.Item2 == -1) return;
-     
-           manager.extendKeyFrame(insertingAt.Item1,insertingAt.Item2);
-
-    
- 
+            if (m_InsertingAt.Item1 == -1 || m_InsertingAt.Item2 == -1) return;
+            m_Manager.ExtendKeyFrame(m_InsertingAt.Item1,m_InsertingAt.Item2);
         }
-
-        // public override bool Merge(BaseCommand other)
-        // {
-          
-        // }
     }
-} // namespace TiltBrush
+} // namespace TiltBrush.FrameAnimation

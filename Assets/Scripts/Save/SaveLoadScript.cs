@@ -687,74 +687,38 @@ namespace TiltBrush
                 {
                     // Create Layers
                     if (jsonData.Layers != null)
-
-
                     {
+                        App.Scene.animationUI_manager.StartTimeline();
 
-                        App.Scene.animationUI_manager.startTimeline();
-                        print("BEFORE ADDING");
-                        App.Scene.animationUI_manager.printTimeline();
-
-                        foreach (var layer in jsonData.Layers.Skip(1))  // Skip the main canvas
+                        foreach (var layer in jsonData.Layers.Skip(1)) // Skip the main canvas
                         {
                             var canvas = App.Scene.AddLayerNow();
                             canvas.gameObject.name = layer.Name;
                             canvas.gameObject.SetActive(layer.Visible);
-                            // App.Scene.animationUI_manager.timeline[0].layers.Add(App.Scene.animationUI_manager.newFrameLayer(canvas));
-                            print("ADD FRAME HERE");
-                            App.Scene.animationUI_manager.printTimeline();
                         }
                     }
-                    // Debug.Log("BEFORE LOAD TIMELINE");
 
-                     print("BEFORE ANIMATION LOAD");
-                    App.Scene.animationUI_manager.printTimeline();
                     if (jsonData.AnimationTracks != null)
                     {
 
-                        var timeline = App.Scene.animationUI_manager.timeline;
-                        for (int i = 0; i < jsonData.AnimationTracks.Tracks.Length; i++)  // Skip the main canvas
+                        var timeline = App.Scene.animationUI_manager.Timeline;
+                        for (int i = 0; i < jsonData.AnimationTracks.Tracks.Length; i++) // Skip the main canvas
                         {
-                            
-                            for (int f = 0;f< jsonData.AnimationTracks.Tracks[i].frameLengths.Count;f++){
-
-     
-
-                                if (f > 0){
-                                      App.Scene.animationUI_manager.addKeyFrame(i);
-                                }
-                              
-                                
-
-                                // App.Scene.ActiveCanvas = timeline[i].Frames[f].canvas;
-                                  print("BEFORE EXTEND FRAME " );
-                                       App.Scene.animationUI_manager.printTimeline();
-                                for (int l = 0;l< jsonData.AnimationTracks.Tracks[i].frameLengths[f] - 1;l++){
-                                    
-                                    App.Scene.animationUI_manager.extendKeyFrame(i);
+                            for (int f = 0; f < jsonData.AnimationTracks.Tracks[i].frameLengths.Count; f++)
+                            {
+                                if (f > 0)
+                                {
+                                    App.Scene.animationUI_manager.AddKeyFrame(i);
                                 }
 
-                                 print("AFTER EXTEND FRAME " );
-                                       App.Scene.animationUI_manager.printTimeline();
-
+                                for (int l = 0; l < jsonData.AnimationTracks.Tracks[i].frameLengths[f] - 1; l++)
+                                {
+                                    App.Scene.animationUI_manager.ExtendKeyFrame(i);
+                                }
                             }
-                         
                         }
-
-                        App.Scene.animationUI_manager.timeline = timeline;
-
-
-                          print("AFTER ANIMATION LOAD");
-                    App.Scene.animationUI_manager.printTimeline();
-                        // foreach (var track in jsonData.AnimationTracks.Tracks)  // Skip the main canvas
-                        // {
-
-                        //     App.Scene.animationUI_manager.addLayersRaw(track.Name,track.Visible,track.Name == "Main Canvas");
-
-                        // } 
+                        App.Scene.animationUI_manager.Timeline = timeline;
                     }
-               
-
                 }
 
                 var oldGroupToNewGroup = new Dictionary<int, int>();
@@ -776,8 +740,7 @@ namespace TiltBrush
                     }
                 }
 
-
-                // It's proving to be rather complex to merge widgets/models etc. 
+                // It's proving to be rather complex to merge widgets/models etc.
                 // For now skip all that when loading additively with the if (!bAdditive) below
                 // This should cover the majority of use cases.
 
@@ -841,13 +804,11 @@ namespace TiltBrush
                                 WidgetManager.m_Instance.CreateMediaWidgetsFromLoadDataCoroutine(),
                                 0.5f));
                     }
-                    if ( App.Scene.animationUI_manager != null){
-                    App.Scene.animationUI_manager.resetTimeline();
-                    App.Scene.animationUI_manager.selectTimelineFrame(0,0);
+                    if (App.Scene.animationUI_manager != null)
+                    {
+                        App.Scene.animationUI_manager.ResetTimeline();
+                        App.Scene.animationUI_manager.SelectTimelineFrame(0, 0);
                     }
-                 
-
-
                     m_LastSceneFile = fileInfo;
                 }
             }
@@ -864,7 +825,7 @@ namespace TiltBrush
         }
 
         private void HandleDeserializationError(object sender,
-                                                Newtonsoft.Json.Serialization.ErrorEventArgs errorArgs)
+            Newtonsoft.Json.Serialization.ErrorEventArgs errorArgs)
         {
             var currentError = errorArgs.ErrorContext.Error.Message;
             Debug.LogWarning(currentError);

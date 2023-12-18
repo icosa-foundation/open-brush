@@ -1,4 +1,4 @@
-// Copyright 2020 The Tilt Brush Authors
+// Copyright 2023 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,67 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using UnityEngine;
-using System.Collections;
-
 namespace TiltBrush.FrameAnimation
 {
     public class DuplicateFrameCommand : BaseCommand
     {
-        private (int,int) timelineLocation;
-        private (int,int) duplicatingIndex;
-        AnimationUI_Manager manager;
-
-        bool expandTimeline;
-        bool justMoved = true;
-
-        int frameOnStart;
-
-        AnimationUI_Manager.DeletedFrame deletedFrame;
-
+        private (int,int) m_TimelineLocation;
+        private (int,int) m_DuplicatingIndex;
+        AnimationUI_Manager m_Manager;
+        bool m_ExpandTimeline;
+        bool m_JustMoved = true;
+        int m_FrameOnStart;
+        AnimationUI_Manager.DeletedFrame m_DeletedFrame;
 
         public DuplicateFrameCommand()
         {
-           manager = App.Scene.animationUI_manager;
-           timelineLocation = manager.getCanvasLocation(App.Scene.ActiveCanvas);
-
+           m_Manager = App.Scene.animationUI_manager;
+           m_TimelineLocation = m_Manager.GetCanvasLocation(App.Scene.ActiveCanvas);
         }
 
-        public override bool NeedsSave { get { return true; } }
-
-        protected override void OnDispose()
-        {
-         
-        }
+        public override bool NeedsSave => true;
 
         protected override void OnRedo()
         {
-           
-            duplicatingIndex = manager.duplicateKeyFrame(timelineLocation.Item1,timelineLocation.Item2);
+            m_DuplicatingIndex = m_Manager.duplicateKeyFrame(m_TimelineLocation.Item1,m_TimelineLocation.Item2);
         }
 
         protected override void OnUndo()
         {
-
-
-            if (duplicatingIndex.Item1 == -1 || duplicatingIndex.Item2 == -1) return; 
-
-            manager.removeKeyFrame(duplicatingIndex.Item1,duplicatingIndex.Item2);
-            manager.fillandCleanTimeline();
-            manager.selectTimelineFrame(duplicatingIndex.Item1,duplicatingIndex.Item2 - 1);
-            manager.resetTimeline();
-            // if (justMoved) return;
-
-            // manager.timeline[previousTrack.Item1] = previousTrack.Item2;
-
-
-    
- 
+            if (m_DuplicatingIndex.Item1 == -1 || m_DuplicatingIndex.Item2 == -1) return;
+            m_Manager.RemoveKeyFrame(m_DuplicatingIndex.Item1,m_DuplicatingIndex.Item2);
+            m_Manager.FillandCleanTimeline();
+            m_Manager.SelectTimelineFrame(m_DuplicatingIndex.Item1,m_DuplicatingIndex.Item2 - 1);
+            m_Manager.ResetTimeline();
         }
-
-        // public override bool Merge(BaseCommand other)
-        // {
-          
-        // }
     }
-} // namespace TiltBrush
+} // namespace TiltBrush.FrameAnimation

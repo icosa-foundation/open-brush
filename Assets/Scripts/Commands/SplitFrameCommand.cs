@@ -1,4 +1,4 @@
-// Copyright 2020 The Tilt Brush Authors
+// Copyright 2023 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,77 +12,47 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using UnityEngine;
-using System.Collections;
-
 namespace TiltBrush.FrameAnimation
 {
     public class SplitFrameCommand : BaseCommand
     {
-        private (int,int) timelineLocation;
-        private (int,int) splittingIndex;
-        AnimationUI_Manager manager;
-
-        bool expandTimeline;
-        bool justMoved = true;
-
-        int frameOnStart;
-
-        AnimationUI_Manager.DeletedFrame deletedFrame;
-
+        private (int,int) m_TimelineLocation;
+        private (int,int) m_SplittingIndex;
+        AnimationUI_Manager m_Manager;
+        bool m_ExpandTimeline;
+        bool m_JustMoved = true;
+        int m_FrameOnStart;
+        AnimationUI_Manager.DeletedFrame m_DeletedFrame;
 
         public SplitFrameCommand()
         {
-           manager = App.Scene.animationUI_manager;
-           timelineLocation = manager.getCanvasLocation(App.Scene.ActiveCanvas);
-
+           m_Manager = App.Scene.animationUI_manager;
+           m_TimelineLocation = m_Manager.GetCanvasLocation(App.Scene.ActiveCanvas);
         }
 
-        public override bool NeedsSave { get { return true; } }
-
-        protected override void OnDispose()
-        {
-         
-        }
+        public override bool NeedsSave => true;
 
         protected override void OnRedo()
         {
-           
-            splittingIndex = manager.splitKeyFrame(timelineLocation.Item1,timelineLocation.Item2);
+            m_SplittingIndex = m_Manager.splitKeyFrame(m_TimelineLocation.Item1,m_TimelineLocation.Item2);
         }
 
         protected override void OnUndo()
         {
+            if (m_SplittingIndex.Item1 == -1 || m_SplittingIndex.Item2 == -1) return;
 
-            if (splittingIndex.Item1 == -1 || splittingIndex.Item2 == -1) return;
+            int followingLength = m_Manager.GetFrameLength(m_SplittingIndex.Item1,m_SplittingIndex.Item2);
+            CanvasScript previousCanvas = m_Manager.Timeline[m_SplittingIndex.Item1].Frames[m_SplittingIndex.Item2 - 1].Canvas;
 
-            int followingLength = manager.getFrameLength(splittingIndex.Item1,splittingIndex.Item2);
-            CanvasScript previousCanvas = manager.timeline[splittingIndex.Item1].Frames[splittingIndex.Item2 - 1].canvas;
-            Debug.Log("PREVIOUS CANVAS");
-             Debug.Log(previousCanvas);
-            
-            for (int i = 0; i < followingLength; i++){
-
-                AnimationUI_Manager.Frame differentFrame = manager.timeline[splittingIndex.Item1].Frames[splittingIndex.Item2 + i];
-
-                differentFrame.canvas = previousCanvas;
-                manager.timeline[splittingIndex.Item1].Frames[splittingIndex.Item2 + i] = differentFrame;
+            for (int i = 0; i < followingLength; i++)
+            {
+                AnimationUI_Manager.Frame differentFrame = m_Manager.Timeline[m_SplittingIndex.Item1].Frames[m_SplittingIndex.Item2 + i];
+                differentFrame.Canvas = previousCanvas;
+                m_Manager.Timeline[m_SplittingIndex.Item1].Frames[m_SplittingIndex.Item2 + i] = differentFrame;
             }
-            manager.selectTimelineFrame(splittingIndex.Item1,splittingIndex.Item2);
-            manager.fillandCleanTimeline();
-            manager.resetTimeline();
-            // if (justMoved) return;
-
-            // manager.timeline[previousTrack.Item1] = previousTrack.Item2;
-
-
-    
- 
+            m_Manager.SelectTimelineFrame(m_SplittingIndex.Item1,m_SplittingIndex.Item2);
+            m_Manager.FillandCleanTimeline();
+            m_Manager.ResetTimeline();
         }
-
-        // public override bool Merge(BaseCommand other)
-        // {
-          
-        // }
     }
-} // namespace TiltBrush
+} // namespace TiltBrush.FrameAnimation

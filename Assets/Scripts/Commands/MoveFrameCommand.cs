@@ -1,4 +1,4 @@
-// Copyright 2020 The Tilt Brush Authors
+// Copyright 2023 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,59 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using UnityEngine;
-using System.Collections;
-
 namespace TiltBrush.FrameAnimation
 {
     public class MoveFrameCommand : BaseCommand
     {
-        private (int,int) timelineLocation;
-        private (int,int) movingTo;
-        AnimationUI_Manager manager;
-
-        bool expandTimeline;
-        bool justMoved = true;
-
-        int frameOnStart;
-        bool moveRight; 
-
+        private (int,int) m_TimelineLocation;
+        private (int,int) m_MovingTo;
+        AnimationUI_Manager m_Manager;
+        bool m_ExpandTimeline;
+        bool m_JustMoved = true;
+        int m_FrameOnStart;
+        bool m_MoveRight;
 
         public MoveFrameCommand(bool movingRight)
         {
-           manager = App.Scene.animationUI_manager;
-           timelineLocation = manager.getCanvasLocation(App.Scene.ActiveCanvas);
-
-            moveRight = movingRight;
+           m_Manager = App.Scene.animationUI_manager;
+           m_TimelineLocation = m_Manager.GetCanvasLocation(App.Scene.ActiveCanvas);
+            m_MoveRight = movingRight;
         }
 
-        public override bool NeedsSave { get { return true; } }
-
-        protected override void OnDispose()
-        {
-         
-        }
+        public override bool NeedsSave => true;
 
         protected override void OnRedo()
         {
-           
-            movingTo = manager.moveKeyFrame(moveRight,timelineLocation.Item1,timelineLocation.Item2);
+            m_MovingTo = m_Manager.MoveKeyFrame(m_MoveRight,m_TimelineLocation.Item1,m_TimelineLocation.Item2);
         }
 
         protected override void OnUndo()
         {
-            // if (justMoved) return;
-        if (movingTo.Item1 == -1 || movingTo.Item2 == -1) return;
-  
-           manager.moveKeyFrame(!moveRight,movingTo.Item1,movingTo.Item2);
-
-    
-        
+            if (m_MovingTo.Item1 == -1 || m_MovingTo.Item2 == -1) return;
+            m_Manager.MoveKeyFrame(!m_MoveRight,m_MovingTo.Item1,m_MovingTo.Item2);
         }
-
-        // public override bool Merge(BaseCommand other)
-        // {
-          
-        // }
     }
-} // namespace TiltBrush
+} // namespace TiltBrush.FrameAnimation

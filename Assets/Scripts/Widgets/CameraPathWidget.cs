@@ -41,8 +41,6 @@ namespace TiltBrush
         private Vector3? m_KnotEditingLastInputXf;
         private float m_GrabControlInitialYDiff;
 
-    
-
         public CameraPath Path { get { return m_Path; } }
 
         override public Transform GrabTransform_GS
@@ -101,10 +99,11 @@ namespace TiltBrush
             App.Switchboard.TriggerCameraPathCreated();
         }
 
-        public void setPathAnimation(bool animation)
+        public void SetPathAnimation(bool animation)
         {
             m_Path.belongsToAnimation = animation;
         }
+
         void OnPoseChanged(TrTransform prev, TrTransform current)
         {
             // Attempting to start a coroutine when inactive was throwing an error.
@@ -444,11 +443,7 @@ namespace TiltBrush
 
         override protected void OnUserBeginInteracting()
         {
-
             App.Scene.captureRig.SetActive(!m_Path.belongsToAnimation);
-
-            Debug.Log("INTERACT WIDGET");
-
             GrabWidgetData data = WidgetManager.m_Instance.GetCurrentCameraPath();
             m_EatInteractingInput = (data == null) ? false : data.m_WidgetScript != this;
             WidgetManager.m_Instance.SetCurrentCameraPath(this);
@@ -482,8 +477,6 @@ namespace TiltBrush
         {
             base.OnUserEndInteracting();
 
-
-            Debug.Log("FINISHING MOVE");
             if (!m_EatInteractingInput)
             {
                 // Finalize our move commands with the current state of whatever's being actively modified.
@@ -641,7 +634,6 @@ namespace TiltBrush
             return m_Path.SerializeToCameraPathMetadata();
         }
 
-
         static public void CreateFromSaveData(CameraPathMetadata cameraPath)
         {
             // Create a new widget.
@@ -751,28 +743,20 @@ namespace TiltBrush
                 widget.m_Path.AllKnots[i].SetActivePathVisuals(false);
             }
 
-
-
-           
-
             // And turn them off.
             widget.m_Path.ValidatePathLooping();
             widget.m_Path.SetKnotsActive(false);
             App.Switchboard.TriggerCameraPathCreated();
-
-
-            widget.setPathAnimation(cameraPath.belongsAnimation);
-
-            if (cameraPath.belongsAnimation && App.Scene.animationUI_manager != null){
-
+            widget.SetPathAnimation(cameraPath.belongsAnimation);
+            if (cameraPath.belongsAnimation && App.Scene.animationUI_manager != null)
+            {
                 (int,int) Loc = cameraPath.timelineLoc;
-                App.Scene.animationUI_manager.addAnimationPath(widget,Loc.Item1,Loc.Item2);
+                App.Scene.animationUI_manager.AddAnimationPath(widget,Loc.Item1,Loc.Item2);
                 foreach (Transform child in widget.gameObject.transform)
                 {
                         child.gameObject.SetActive(true);
                 }
             }
-
         }
 
         void OnDrawGizmosSelected()

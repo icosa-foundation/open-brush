@@ -36,24 +36,19 @@ namespace TiltBrush.Layers
         public float scrollHeight = 0.2f; // Height of each element in scroll zone
         private List<CanvasScript> m_Canvases;
 
-        public Component animationUI_Manager;
         public GameObject layersWidget;
 
         public GameObject scrollUpButton;
         public GameObject scrollDownButton;
 
-        bool animationEvent = false;
-
         private void Start()
         {
             ResetUI();
             initScroll();
-
             if (hasAnimationComponent())
             {
-                App.Scene.animationUI_manager.startTimeline();
+                App.Scene.animationUI_manager.StartTimeline();
             }
-
         }
 
         private bool hasAnimationComponent()
@@ -62,23 +57,12 @@ namespace TiltBrush.Layers
         }
         private bool isAnimationChanging()
         {
-
-            return App.Scene.animationUI_manager != null && App.Scene.animationUI_manager.getChanging();
-        }
-
-        public void setAnimating(bool animatingNow)
-        {
-            animationEvent = animatingNow;
+            return App.Scene.animationUI_manager != null && App.Scene.animationUI_manager.GetChanging();
         }
 
         public void ResetUI()
         {
-
-
             if (isAnimationChanging()) return;
-
-            Debug.Log("RESSETING UI");
-
             m_Canvases = new List<CanvasScript>();
             var layerCanvases = App.Scene.LayerCanvases.ToArray();
 
@@ -95,7 +79,6 @@ namespace TiltBrush.Layers
             for (int i = 0; i < layerCanvases.Length; i++)
             {
                 var newWidget = Instantiate(layersWidget, this.gameObject.transform, false);
-                // newWidget.transform.SetParent(this.gameObject.transform, false);
                 newWidget.GetComponentInChildren<TMPro.TextMeshPro>().text = layerCanvases[i].name;
                 if (i == 0)
                 {
@@ -105,10 +88,12 @@ namespace TiltBrush.Layers
                     newWidget.GetComponentInChildren<SquashLayerButton>()?.gameObject.SetActive(false);
                     newWidget.GetComponentInChildren<RenameLayerButton>()?.gameObject.SetActive(false);
                 }
+
                 if (layerCanvases[i] == App.ActiveCanvas)
                 {
                     newWidget.GetComponentInChildren<FocusLayerButton>().SetButtonActivation(layerCanvases[i] == App.ActiveCanvas);
                 }
+
                 // Active button means hidden layer
                 newWidget.GetComponentInChildren<ToggleVisibilityLayerButton>().SetButtonActivation(!layerCanvases[i].isActiveAndEnabled);
 
@@ -158,10 +143,9 @@ namespace TiltBrush.Layers
 
             if (hasAnimationComponent())
             {
-                App.Scene.animationUI_manager.updateTrackScroll(scrollOffset, scrollHeight);
+                App.Scene.animationUI_manager.UpdateTrackScroll(scrollOffset, scrollHeight);
             }
         }
-
 
         public void scrollDirection(bool upDirection)
         {
@@ -171,8 +155,6 @@ namespace TiltBrush.Layers
             UpdateScroll();
         }
 
-
-        
         private void OnLayerCanvasesUpdate()
         {
             ResetUI();
@@ -203,7 +185,7 @@ namespace TiltBrush.Layers
         {
             if (App.Scene.ActiveCanvas == App.Scene.MainCanvas) return; // Don't delete the main canvas
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new DeleteLayerCommand(App.Scene.ActiveCanvas));
-            App.Scene.animationUI_manager.resetTimeline();
+            App.Scene.animationUI_manager.ResetTimeline();
         }
 
         public void SquashLayer(int index)
@@ -240,7 +222,7 @@ namespace TiltBrush.Layers
         public void AddLayer()
         {
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new AddLayerCommand(true));
-            App.Scene.animationUI_manager.resetTimeline();
+            App.Scene.animationUI_manager.ResetTimeline();
         }
 
         public void ToggleVisibility(GameObject widget)

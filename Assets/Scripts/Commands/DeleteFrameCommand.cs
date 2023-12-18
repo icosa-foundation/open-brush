@@ -1,4 +1,4 @@
-// Copyright 2020 The Tilt Brush Authors
+// Copyright 2023 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,75 +12,46 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using UnityEngine;
-using System.Collections;
-
 namespace TiltBrush.FrameAnimation
 {
     public class DeleteFrameCommand : BaseCommand
     {
-        private (int,int) timelineLocation;
-        private (int,int) insertingAt;
-        AnimationUI_Manager manager;
-
-        bool expandTimeline;
-        bool justMoved = true;
-
-        int frameOnStart;
-
-        AnimationUI_Manager.DeletedFrame deletedFrame;
-
+        private (int,int) m_TimelineLocation;
+        private (int,int) m_InsertingAt;
+        AnimationUI_Manager m_Manager;
+        bool m_ExpandTimeline;
+        bool m_JustMoved = true;
+        int m_FrameOnStart;
+        AnimationUI_Manager.DeletedFrame m_DeletedFrame;
 
         public DeleteFrameCommand()
         {
-           manager = App.Scene.animationUI_manager;
-           timelineLocation = manager.getCanvasLocation(App.Scene.ActiveCanvas);
-
+           m_Manager = App.Scene.animationUI_manager;
+           m_TimelineLocation = m_Manager.GetCanvasLocation(App.Scene.ActiveCanvas);
         }
 
-        public override bool NeedsSave { get { return true; } }
-
-        protected override void OnDispose()
-        {
-         
-        }
+        public override bool NeedsSave => true;
 
         protected override void OnRedo()
         {
-           
-            deletedFrame = manager.removeKeyFrame(timelineLocation.Item1,timelineLocation.Item2);
+            m_DeletedFrame = m_Manager.RemoveKeyFrame(m_TimelineLocation.Item1,m_TimelineLocation.Item2);
         }
 
         protected override void OnUndo()
         {
-
-            for (int i = 0; i< deletedFrame.length;i++){
-                if (deletedFrame.location.Item2 + i >= manager.timeline[deletedFrame.location.Item1].Frames.Count){
-
-                     manager.timeline[deletedFrame.location.Item1].Frames.Add(deletedFrame.frame);
-
-                }else{
-
-                     manager.timeline[deletedFrame.location.Item1].Frames[deletedFrame.location.Item2 + i] = deletedFrame.frame;
-
+            for (int i = 0; i< m_DeletedFrame.Length;i++)
+            {
+                if (m_DeletedFrame.Location.Item2 + i >= m_Manager.Timeline[m_DeletedFrame.Location.Item1].Frames.Count)
+                {
+                     m_Manager.Timeline[m_DeletedFrame.Location.Item1].Frames.Add(m_DeletedFrame.Frame);
                 }
-              
+                else
+                {
+                    m_Manager.Timeline[m_DeletedFrame.Location.Item1].Frames[m_DeletedFrame.Location.Item2 + i] = m_DeletedFrame.Frame;
+                }
             }
-
-            manager.resetTimeline();
-            manager.selectTimelineFrame(deletedFrame.location.Item1,deletedFrame.location.Item2);
-            // if (justMoved) return;
-
-            // manager.timeline[previousTrack.Item1] = previousTrack.Item2;
-
-
-    
- 
+            m_Manager.ResetTimeline();
+            m_Manager.SelectTimelineFrame(m_DeletedFrame.Location.Item1,m_DeletedFrame.Location.Item2);
         }
-
-        // public override bool Merge(BaseCommand other)
-        // {
-          
-        // }
     }
-} // namespace TiltBrush
+} // namespace TiltBrush.FrameAnimation

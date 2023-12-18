@@ -21,18 +21,14 @@ namespace TiltBrush
     {
         public enum Mode
         {
-
             AddPositionKnot,
             AddRotationKnot,
             AddSpeedKnot,
             AddFovKnot,
             RemoveKnot,
             Recording,
-
             AddAnimationPositionKnot,
-
             AddAnimationRotationKnot,
-
         }
 
         public enum ExtendPathType
@@ -178,7 +174,7 @@ namespace TiltBrush
                         }
                         else if (m_ExtendPath != null)
                         {
-    
+
                             // Manipulation of a path we wish to extend.
                             m_ExtendPath.ExtendPath(toolAttachXf.position, m_ExtendPathType);
 
@@ -199,12 +195,11 @@ namespace TiltBrush
                             (m_LastValidPath == null && m_ExtendPath == null))
                         {
                             m_ExtendPath = WidgetManager.m_Instance.CreatePathWidget();
-                            m_ExtendPath.setPathAnimation(true);
+                            m_ExtendPath.SetPathAnimation(true);
                             m_ExtendPathType = ExtendPathType.ExtendAtHead;
                             WidgetManager.m_Instance.SetCurrentCameraPath(m_ExtendPath);
                             App.Scene.captureRig.SetActive(false);
-                            App.Scene.animationUI_manager.addAnimationPath(m_ExtendPath);
-
+                            App.Scene.animationUI_manager.AddAnimationPath(m_ExtendPath);
                         }
 
                         if (m_LastValidPath != null)
@@ -229,7 +224,6 @@ namespace TiltBrush
                             }
                         }
                         break;
-
                     case Mode.AddRotationKnot:
                         if (m_LastValidPath != null)
                         {
@@ -533,14 +527,12 @@ namespace TiltBrush
                 case Mode.RemoveKnot:
                     m_RemoveKnot.SetActive(true);
                     break;
-
                 case Mode.AddAnimationPositionKnot:
                     m_PositionKnot.SetActive(true);
                     break;
                 case Mode.AddAnimationRotationKnot:
                     m_RotationKnot.SetActive(true);
                     break;
-
             }
         }
 

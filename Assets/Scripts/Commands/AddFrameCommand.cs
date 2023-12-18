@@ -1,4 +1,4 @@
-// Copyright 2020 The Tilt Brush Authors
+// Copyright 2023 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,63 +13,39 @@
 // limitations under the License.
 
 using UnityEngine;
-using System.Collections;
 
 namespace TiltBrush.FrameAnimation
 {
     public class AddFrameCommand : BaseCommand
     {
-        private (int,int) timelineLocation;
-        private (int,int) insertingAt;
-        AnimationUI_Manager manager;
+        private (int,int) m_TimelineLocation;
+        private (int,int) m_InsertingAt;
+        AnimationUI_Manager m_Manager;
 
-        bool expandTimeline;
-        bool justMoved = true;
+        bool m_ExpandTimeline;
+        bool m_JustMoved = true;
 
-        int frameOnStart;
-
+        int m_FrameOnStart;
 
         public AddFrameCommand()
         {
-           manager = App.Scene.animationUI_manager;
-           timelineLocation = manager.getCanvasLocation(App.Scene.ActiveCanvas);
-
+           m_Manager = App.Scene.animationUI_manager;
+           m_TimelineLocation = m_Manager.GetCanvasLocation(App.Scene.ActiveCanvas);
         }
 
-        public override bool NeedsSave { get { return true; } }
-
-        protected override void OnDispose()
-        {
-         
-        }
+        public override bool NeedsSave => true;
 
         protected override void OnRedo()
         {
-           
-            insertingAt = manager.addKeyFrame(timelineLocation.Item1,timelineLocation.Item2);
+            m_InsertingAt = m_Manager.AddKeyFrame(m_TimelineLocation.Item1,m_TimelineLocation.Item2);
         }
 
         protected override void OnUndo()
         {
-            // if (justMoved) return;
-
-   
-            Debug.Log("UNDO ADD FRAME");
-            UnityEngine.Object.Destroy( manager.timeline[insertingAt.Item1].Frames[insertingAt.Item2].canvas);
-            manager.timeline[insertingAt.Item1].Frames.RemoveAt(insertingAt.Item2);
-
-
-            manager.fillTimeline();
-
-            manager.selectTimelineFrame(timelineLocation.Item1,timelineLocation.Item2);
-
-    
- 
+            Object.Destroy( m_Manager.Timeline[m_InsertingAt.Item1].Frames[m_InsertingAt.Item2].Canvas);
+            m_Manager.Timeline[m_InsertingAt.Item1].Frames.RemoveAt(m_InsertingAt.Item2);
+            m_Manager.FillTimeline();
+            m_Manager.SelectTimelineFrame(m_TimelineLocation.Item1,m_TimelineLocation.Item2);
         }
-
-        // public override bool Merge(BaseCommand other)
-        // {
-          
-        // }
     }
-} // namespace TiltBrush
+} // namespace TiltBrush.FrameAnimation
