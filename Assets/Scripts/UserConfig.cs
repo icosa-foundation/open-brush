@@ -267,20 +267,20 @@ namespace TiltBrush
                         {
                             {"fbx", true},
                             {"glb", true},
-                            {"newglb", true},
-                            {"json", true},
-                            {"latk", true},
+                            {"newglb", false},
+                            {"json", false},
+                            {"latk", false},
                             {"obj", true},
-                            {"stl", true},
-                            {"usd", true},
-                            {"wrl", true},
+                            {"stl", false},
+                            {"usd", false},
+                            {"wrl", false},
                         };
                     }
                     return m_Formats;
                 }
                 set => m_Formats = value;
             }
-        
+
 
         }
         public ExportConfig Export;
