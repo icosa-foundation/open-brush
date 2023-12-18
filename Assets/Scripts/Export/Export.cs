@@ -127,7 +127,11 @@ URL=" + kExportDocumentationUrl;
             var progress = new Progress();
             if (App.PlatformConfig.EnableExportJson && IsExportEnabled("json")) { progress.SetWork("json"); }
 #if FBX_SUPPORTED
-    if (App.PlatformConfig.EnableExportFbx && IsExportEnabled("fbx")) { progress.SetWork("fbx"); }
+            if (App.PlatformConfig.EnableExportFbx && IsExportEnabled("fbx")) { progress.SetWork("fbx"); }
+            if (IsExportEnabled("obj"))
+            {
+                progress.SetWork("obj");
+            }
 #endif
 #if USD_SUPPORTED
             if (App.PlatformConfig.EnableExportUsd  && IsExportEnabled("usd")) { progress.SetWork("usd"); }
@@ -141,12 +145,7 @@ URL=" + kExportDocumentationUrl;
             {
                 progress.SetWork("stl");
             }
-            if (IsExportEnabled("obj"))
-            {
-#if FBX_SUPPORTED
-                progress.SetWork("obj");
-#endif
-            }
+
             if (App.PlatformConfig.EnableExportGlb)
             {
                 if (IsExportEnabled("glb")) { progress.SetWork("glb"); }
@@ -168,16 +167,26 @@ URL=" + kExportDocumentationUrl;
             progress.CompleteWork("json");
 
 #if FBX_SUPPORTED
-    if (App.PlatformConfig.EnableExportFbx && IsExportEnabled("fbx") &&
-        (filename = MakeExportPath(parent, basename, "fbx")) != null)
-    using (var unused = new AutoTimer("fbx export")) {
-      OverlayManager.m_Instance.UpdateProgress(0.3f);
-      ExportFbx.Export(filename,
-          App.UserConfig.Export.ExportBinaryFbx ? ExportFbx.kFbxBinary : ExportFbx.kFbxAscii,
-          App.UserConfig.Export.ExportFbxVersion);
-      OverlayManager.m_Instance.UpdateProgress(0.5f);
-    }
-    progress.CompleteWork("fbx");
+            if (App.PlatformConfig.EnableExportFbx && IsExportEnabled("fbx") &&
+                (filename = MakeExportPath(parent, basename, "fbx")) != null)
+            {
+                using (var unused = new AutoTimer("fbx export"))
+                {
+                    OverlayManager.m_Instance.UpdateProgress(0.3f);
+                    ExportFbx.Export(filename,
+                        App.UserConfig.Export.ExportBinaryFbx ? ExportFbx.kFbxBinary : ExportFbx.kFbxAscii,
+                        App.UserConfig.Export.ExportFbxVersion);
+                    OverlayManager.m_Instance.UpdateProgress(0.5f);
+                }
+            }
+            progress.CompleteWork("fbx");
+
+            if (IsExportEnabled("obj") && App.PlatformConfig.EnableExportFbx && (filename = MakeExportPath(parent, basename, "obj")) != null)
+            {
+                // This has never been tested with the new fbx export style and may not work
+                ExportFbx.Export(filename, ExportFbx.kObj);
+                progress.CompleteWork("obj");
+            }
 #endif
 
 #if USD_SUPPORTED
@@ -218,16 +227,6 @@ URL=" + kExportDocumentationUrl;
                 }
                 progress.CompleteWork("stl");
             }
-
-#if FBX_SUPPORTED
-    if (IsExportEnabled("obj") &&
-        App.PlatformConfig.EnableExportFbx &&
-        (filename = MakeExportPath(parent, basename, "obj")) != null) {
-      // This has never been tested with the new fbx export style and may not work
-      ExportFbx.Export(filename, ExportFbx.kObj);
-      progress.CompleteWork("obj");
-    }
-#endif
 
             if (App.PlatformConfig.EnableExportGlb && IsExportEnabled("glb"))
             {
