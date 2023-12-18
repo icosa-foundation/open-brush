@@ -80,9 +80,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _ndiName: Open Brush
   _keepAlpha: 0
-  _captureMethod: 1
+  _captureMethod: 2
   _sourceCamera: {fileID: 5203933145544813605}
-  _sourceTexture: {fileID: 0}
+  _sourceTexture: {fileID: 8400000, guid: 02bf2908f2fbfb74b804e22530e24ad6, type: 2}
   _resources: {fileID: 11400000, guid: 69304b86950074db7ba8caba75214004, type: 2}
 --- !u!1001 &5223974458865055269
 PrefabInstance:
@@ -235,6 +235,11 @@ PrefabInstance:
       propertyPath: m_TargetDisplay
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 20086462653250320, guid: 44dc44e7a312d054f81186fc482da0c5,
+        type: 3}
+      propertyPath: m_TargetTexture
+      value: 
+      objectReference: {fileID: 8400000, guid: 02bf2908f2fbfb74b804e22530e24ad6, type: 2}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 44dc44e7a312d054f81186fc482da0c5, type: 3}
 --- !u!20 &5203933145544813605 stripped
