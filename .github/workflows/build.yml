@@ -1019,14 +1019,14 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Android Pico)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Android Pico
           path: build_android_pico
       - name: Download Build Artifacts (Android Pico CN)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: Android Pico CN
+          name: Android Pico (CN)
           path: build_android_pico_cn
       - name: Publish Pico Builds
         env:
