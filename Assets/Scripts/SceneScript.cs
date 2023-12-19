@@ -387,12 +387,12 @@ namespace TiltBrush
             canvas.gameObject.SetActive(false);
         }
 
-        public CanvasScript GetOrCreateLayer((int,int) canvasIndex)
+        public CanvasScript GetOrCreateLayer(int layerIndex, int frameIndex)
         {
-            if (canvasIndex.Item1 < animationUI_manager.Timeline.Count && canvasIndex.Item2 < animationUI_manager.GetTimelineLength()){
-                return animationUI_manager.GetTimelineCanvas(canvasIndex.Item1,canvasIndex.Item2);
+            if (layerIndex < animationUI_manager.Timeline.Count && frameIndex < animationUI_manager.GetTimelineLength()){
+                return animationUI_manager.GetTimelineCanvas(layerIndex, frameIndex);
             }
-            return GetOrCreateLayer(canvasIndex.Item1);
+            return GetOrCreateLayer(layerIndex);
         }
 
         public CanvasScript GetOrCreateLayer(int layerIndex)

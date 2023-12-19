@@ -26,7 +26,8 @@ namespace TiltBrush
             public bool pinned;
             public bool tinted;
             public uint groupId;
-            public (int,int) canvasId;
+            public int layerId;
+            public int frameId;
             public bool twoSided;
         }
 
@@ -116,7 +117,7 @@ namespace TiltBrush
                 newEntry.xf = widget.GetSaveTransform();
                 newEntry.pinned = widget.Pinned;
                 newEntry.groupId = groupIdMapping.GetId(widget.Group);
-                newEntry.canvasId = App.Scene.GetIndexOfCanvas(widget.Canvas);
+                (newEntry.layerId, newEntry.frameId) = App.Scene.GetIndexOfCanvas(widget.Canvas);
                 modelLocationMap[widget.Model.GetLocation()].Add(newEntry);
             }
 
@@ -133,13 +134,15 @@ namespace TiltBrush
                 val.PinStates = new bool[ordered.Length];
                 val.RawTransforms = new TrTransform[ordered.Length];
                 val.GroupIds = new uint[ordered.Length];
-                val.CanvasIds = new (int,int)[ordered.Length];
+                val.LayerIds = new int[ordered.Length];
+                val.FrameIds = new int[ordered.Length];
                 for (int i = 0; i < ordered.Length; ++i)
                 {
                     val.PinStates[i] = ordered[i].pinned;
                     val.RawTransforms[i] = ordered[i].xf;
                     val.GroupIds[i] = ordered[i].groupId;
-                    val.CanvasIds[i] = ordered[i].canvasId;
+                    val.LayerIds[i] = ordered[i].layerId;
+                    val.FrameIds[i] = ordered[i].frameId;
                 }
                 models.Add(val);
             }
@@ -155,6 +158,7 @@ namespace TiltBrush
 
             TiltVideo ConvertVideoToTiltVideo(VideoWidget widget)
             {
+                (int layerId, int frameId) = App.Scene.GetIndexOfCanvas(widget.Canvas);
                 TiltVideo video = new TiltVideo
                 {
                     FilePath = widget.Video.PersistentPath,
@@ -162,7 +166,8 @@ namespace TiltBrush
                     Pinned = widget.Pinned,
                     Transform = widget.SaveTransform,
                     GroupId = groupIdMapping.GetId(widget.Group),
-                    CanvasId = App.Scene.GetIndexOfCanvas(widget.Canvas),
+                    LayerId = layerId,
+                    FrameId = frameId,
                     TwoSided = widget.TwoSided
                 };
                 if (widget.VideoController != null)
@@ -236,7 +241,7 @@ namespace TiltBrush
                 newEntry.pinned = image.Pinned;
                 newEntry.tinted = image.UseLegacyTint;
                 newEntry.groupId = groupIdMapping.GetId(image.Group);
-                newEntry.canvasId = App.Scene.GetIndexOfCanvas(image.Canvas);
+                (newEntry.layerId, newEntry.frameId) = App.Scene.GetIndexOfCanvas(image.Canvas);
                 newEntry.twoSided = image.TwoSided;
                 imagesByFileName[fileName].Add(newEntry);
             }
@@ -258,7 +263,8 @@ namespace TiltBrush
                 val.TintStates = new bool[ordered.Length];
                 val.Transforms = new TrTransform[ordered.Length];
                 val.GroupIds = new uint[ordered.Length];
-                val.CanvasIds = new (int,int)[ordered.Length];
+                val.LayerIds = new int[ordered.Length];
+                val.FrameIds = new int[ordered.Length];
                 val.TwoSidedFlags = new bool[ordered.Length];
                 for (int i = 0; i < ordered.Length; ++i)
                 {
@@ -266,7 +272,8 @@ namespace TiltBrush
                     val.TintStates[i] = ordered[i].tinted;
                     val.Transforms[i] = ordered[i].xf;
                     val.GroupIds[i] = ordered[i].groupId;
-                    val.CanvasIds[i] = ordered[i].canvasId;
+                    val.LayerIds[i] = ordered[i].layerId;
+                    val.FrameIds[i] = ordered[i].frameId;
                     val.TwoSidedFlags[i] = ordered[i].twoSided;
                 }
                 imageIndex.Add(val);

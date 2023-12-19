@@ -74,7 +74,7 @@ namespace TiltBrush
             Group = 1 << 2, // uint32, a value of 0 corresponds to SketchGroupTag.None so in that case,
             // we don't save out the group.
             Seed = 1 << 3, // int32; if not found then you get a random int.
-            Track = 1 << 4, // uint32;
+            Track = 1 << 4, // uint32 - previously known as Layer;
             Frame = 1 << 5, // uint32;
         }
 
