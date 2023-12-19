@@ -116,14 +116,14 @@ namespace TiltBrush
                 var task = CreateModelsFromRelativePath(
                     modelDatas.FilePath,
                     modelDatas.Transforms, modelDatas.RawTransforms, modelDatas.PinStates,
-                    modelDatas.GroupIds);
+                    modelDatas.GroupIds, modelDatas.LayerIds, modelDatas.FrameIds);
                 ok = task.IsCompletedSuccessfully;
             }
             else if (modelDatas.AssetId != null)
             {
                 CreateEditableModelsFromAssetId(
-                    modelDatas.AssetId,
-                    modelDatas.RawTransforms, modelDatas.PinStates, modelDatas.GroupIds);
+                    modelDatas.AssetId, modelDatas.RawTransforms, modelDatas.PinStates,
+                    modelDatas.GroupIds, modelDatas.LayerIds, modelDatas.FrameIds);
                 ok = true;
             }
             else
@@ -142,7 +142,7 @@ namespace TiltBrush
         // Used when loading model assetIds from a serialized format (e.g. Tilt file).
         private static void CreateEditableModelsFromAssetId(
             string assetId, TrTransform[] rawXfs,
-            bool[] pinStates, uint[] groupIds)
+            bool[] pinStates, uint[] groupIds, int[] layerIds, int[] frameIds)
         {
             // Request model from Poly and if it doesn't exist, ask to load it.
             Model model = App.PolyAssetCatalog.GetModel(assetId);
@@ -162,7 +162,9 @@ namespace TiltBrush
             {
                 bool pin = (i < pinStates.Length) ? pinStates[i] : true;
                 uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
-                CreateModel(model, rawXfs[i], pin, isNonRawTransform: false, groupId, assetId: assetId);
+                int layerId = (layerIds != null && i < layerIds.Length) ? layerIds[i] : 0;
+                int frameId = (frameIds != null && i < frameIds.Length) ? frameIds[i] : 0;
+                CreateModel(model, rawXfs[i], pin, isNonRawTransform: false, groupId, layerId, frameId, assetId: assetId);
             }
         }
 

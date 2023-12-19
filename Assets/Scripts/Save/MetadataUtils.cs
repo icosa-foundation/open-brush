@@ -188,7 +188,7 @@ namespace TiltBrush
                 newEntry.xf = widget.GetSaveTransform();
                 newEntry.pinned = widget.Pinned;
                 newEntry.groupId = groupIdMapping.GetId(widget.Group);
-                newEntry.layerId = App.Scene.GetIndexOfCanvas(widget.Canvas);
+                (newEntry.layerId, newEntry.frameId) = App.Scene.GetIndexOfCanvas(widget.Canvas);
                 modelLocationMap[widget.Model.GetLocation()].Add(newEntry);
             }
 
