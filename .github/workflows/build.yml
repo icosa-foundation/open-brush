@@ -1048,10 +1048,9 @@ jobs:
           if [ "$PRERELEASE" == "false" ]
           then
             # The order here matters, because the Chinese build has a slightly higher version code due to the suffix of 1 vs 0
-            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 2 --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
-            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_CN_$VERSION.apk --channel 1 --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 2 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_CN_$VERSION.apk --channel 1 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
           else
             # For Pico, Beta channels can only get one build, not a separate China / non-China build
-            CHANGELOG="${RAW_CHANGELOG}"
-            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 3 --notes-en "${CHANGELOG}" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 3 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
           fi
