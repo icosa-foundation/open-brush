@@ -96,8 +96,6 @@ namespace TiltBrush
             m_WallpaperScaleSliderY.SetInitialValueAndUpdate(PointerManager.m_Instance.m_WallpaperSymmetryScaleY);
             m_WallpaperSkewSliderX.SetInitialValueAndUpdate(PointerManager.m_Instance.m_WallpaperSymmetrySkewX);
             m_WallpaperSkewSliderY.SetInitialValueAndUpdate(PointerManager.m_Instance.m_WallpaperSymmetrySkewY);
-
-            // m_ToggleJitter.m_InitialToggleState = PointerManager.m_Instance.m_SymmetryColorShiftEnabled;
         }
 
         public OptionButton GetParentButton()
@@ -491,11 +489,6 @@ namespace TiltBrush
                     UpdateActiveColorShiftMode(WaveGenerator.Mode.WhiteNoise);
                     break;
             }
-        }
-
-        public void HandleToggleColorShift(ActionToggleButton btn)
-        {
-            PointerManager.m_Instance.m_SymmetryColorShiftEnabled = btn.ToggleState;
         }
 
         public void HandleChangeAmp(Vector3 value)

@@ -18,7 +18,7 @@ namespace TiltBrush
 {
     public class BrushStrokeCommand : BaseCommand
     {
-        private Stroke m_Stroke;
+        public Stroke m_Stroke;
         private StencilWidget m_Widget;
         private float m_LineLength_CS; // Only valid if m_Widget != null
 
@@ -33,6 +33,13 @@ namespace TiltBrush
             m_Stroke = stroke;
             m_Widget = widget;
             m_LineLength_CS = lineLength;
+        }
+
+        public override string Serialize()
+        {
+            //var data = Newtonsoft.Json.JsonConvert.SerializeObject(m_Stroke);
+            //UnityEngine.Debug.Log($"test: {data}");
+            return JsonUtility.ToJson(m_Stroke);
         }
 
         public override bool NeedsSave { get { return true; } }

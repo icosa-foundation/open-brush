@@ -482,7 +482,7 @@ namespace TiltBrush
                 Task<bool> okTask = CreateModelsFromRelativePath(
                     modelDatas.FilePath,
                     modelDatas.Transforms, modelDatas.RawTransforms, modelDatas.PinStates,
-                    modelDatas.GroupIds);
+                    modelDatas.GroupIds, modelDatas.LayerIds);
                 ok = await okTask;
 
             }
@@ -490,7 +490,7 @@ namespace TiltBrush
             {
                 CreateModelsFromAssetId(
                     modelDatas.AssetId,
-                    modelDatas.RawTransforms, modelDatas.PinStates, modelDatas.GroupIds);
+                    modelDatas.RawTransforms, modelDatas.PinStates, modelDatas.GroupIds, modelDatas.LayerIds);
                 ok = true;
             }
             else
@@ -510,12 +510,11 @@ namespace TiltBrush
         /// Returns false if the model can't be loaded -- in this case, caller is responsible
         /// for creating the missing-model placeholder.
         public static async Task<bool> CreateModelsFromRelativePath(
-            string relativePath,
-            TrTransform[] xfs, TrTransform[] rawXfs, bool[] pinStates, uint[] groupIds)
+            string relativePath, TrTransform[] xfs, TrTransform[] rawXfs, bool[] pinStates, uint[] groupIds, int[] layerIds)
         {
             // Verify model is loaded.  Or, at least, has been tried to be loaded.
             Model model = ModelCatalog.m_Instance.GetModel(relativePath);
-            ;
+
             if (model == null) { return false; }
 
             if (!model.m_Valid)
@@ -535,7 +534,7 @@ namespace TiltBrush
                 {
                     bool pin = (pinStates != null && i < pinStates.Length) ? pinStates[i] : true;
                     uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
-                    CreateModel(model, xfs[i], pin, isNonRawTransform: true, groupId);
+                    CreateModel(model, xfs[i], pin, isNonRawTransform: true, groupId, 0);
                 }
             }
             if (rawXfs != null)
@@ -545,7 +544,8 @@ namespace TiltBrush
                 {
                     bool pin = (pinStates != null && i < pinStates.Length) ? pinStates[i] : true;
                     uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
-                    CreateModel(model, rawXfs[i], pin, isNonRawTransform: false, groupId);
+                    int layerId = (layerIds != null && i < layerIds.Length) ? layerIds[i] : 0;
+                    CreateModel(model, rawXfs[i], pin, isNonRawTransform: false, groupId, layerId);
                 }
             }
             return true;
@@ -553,7 +553,7 @@ namespace TiltBrush
 
         /// isNonRawTransform - true if the transform uses the pre-M13 meaning of transform.scale.
         protected static void CreateModel(Model model, TrTransform xf, bool pin,
-                                          bool isNonRawTransform, uint groupId, string assetId = null)
+                                bool isNonRawTransform, uint groupId, int layerId, string assetId = null)
         {
 
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
@@ -584,12 +584,12 @@ namespace TiltBrush
                 modelWidget.m_PolyCallbackActive = true;
             }
             modelWidget.Group = App.GroupManager.GetGroupFromId(groupId);
+            modelWidget.SetCanvas(App.Scene.GetOrCreateLayer(layerId));
         }
 
         // Used when loading model assetIds from a serialized format (e.g. Tilt file).
-        static void CreateModelsFromAssetId(
-            string assetId, TrTransform[] rawXfs,
-            bool[] pinStates, uint[] groupIds)
+        static void CreateModelsFromAssetId(string assetId, TrTransform[] rawXfs,
+                                            bool[] pinStates, uint[] groupIds, int[] layerIds)
         {
             // Request model from Poly and if it doesn't exist, ask to load it.
             Model model = App.PolyAssetCatalog.GetModel(assetId);
@@ -609,7 +609,8 @@ namespace TiltBrush
             {
                 bool pin = (i < pinStates.Length) ? pinStates[i] : true;
                 uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
-                CreateModel(model, rawXfs[i], pin, isNonRawTransform: false, groupId, assetId: assetId);
+                int layerId = (layerIds != null && i < layerIds.Length) ? layerIds[i] : 0;
+                CreateModel(model, rawXfs[i], pin, isNonRawTransform: false, groupId, layerId, assetId);
             }
         }
 

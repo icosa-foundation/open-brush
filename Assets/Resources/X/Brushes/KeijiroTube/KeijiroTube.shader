@@ -28,8 +28,8 @@ Properties {
     _ClipEnd("Clip End", Float) = -1
 }
     SubShader {
-		LOD 400
-    Cull Back
+    	LOD 200
+        Cull Back
 
 		CGPROGRAM
 		#pragma target 4.0

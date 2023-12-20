@@ -561,14 +561,15 @@
             <summary>
             List all "Other contacts", that is contacts that are not in a contact group. "Other contacts" are typically
             auto created contacts from interactions. Sync tokens expire 7 days after the full sync. A request with an
-            expired sync token will result in a 410 error. In the case of such an error clients should make a full sync
-            request without a `sync_token`. The first page of a full sync request has an additional quota. If the quota
-            is exceeded, a 429 error will be returned. This quota is fixed and can not be increased. When the
-            `sync_token` is specified, resources deleted since the last sync will be returned as a person with
-            `PersonMetadata.deleted` set to true. When the `page_token` or `sync_token` is specified, all other request
-            parameters must match the first call. Writes may have a propagation delay of several minutes for sync
-            requests. Incremental syncs are not intended for read-after-write use cases. See example usage at [List the
-            user's other contacts that have
+            expired sync token will get an error with an
+            [google.rpc.ErrorInfo](https://cloud.google.com/apis/design/errors#error_info) with reason
+            "EXPIRED_SYNC_TOKEN". In the case of such an error clients should make a full sync request without a
+            `sync_token`. The first page of a full sync request has an additional quota. If the quota is exceeded, a 429
+            error will be returned. This quota is fixed and can not be increased. When the `sync_token` is specified,
+            resources deleted since the last sync will be returned as a person with `PersonMetadata.deleted` set to
+            true. When the `page_token` or `sync_token` is specified, all other request parameters must match the first
+            call. Writes may have a propagation delay of several minutes for sync requests. Incremental syncs are not
+            intended for read-after-write use cases. See example usage at [List the user's other contacts that have
             changed](/people/v1/other-contacts#list_the_users_other_contacts_that_have_changed).
             </summary>
         </member>
@@ -576,14 +577,15 @@
             <summary>
             List all "Other contacts", that is contacts that are not in a contact group. "Other contacts" are typically
             auto created contacts from interactions. Sync tokens expire 7 days after the full sync. A request with an
-            expired sync token will result in a 410 error. In the case of such an error clients should make a full sync
-            request without a `sync_token`. The first page of a full sync request has an additional quota. If the quota
-            is exceeded, a 429 error will be returned. This quota is fixed and can not be increased. When the
-            `sync_token` is specified, resources deleted since the last sync will be returned as a person with
-            `PersonMetadata.deleted` set to true. When the `page_token` or `sync_token` is specified, all other request
-            parameters must match the first call. Writes may have a propagation delay of several minutes for sync
-            requests. Incremental syncs are not intended for read-after-write use cases. See example usage at [List the
-            user's other contacts that have
+            expired sync token will get an error with an
+            [google.rpc.ErrorInfo](https://cloud.google.com/apis/design/errors#error_info) with reason
+            "EXPIRED_SYNC_TOKEN". In the case of such an error clients should make a full sync request without a
+            `sync_token`. The first page of a full sync request has an additional quota. If the quota is exceeded, a 429
+            error will be returned. This quota is fixed and can not be increased. When the `sync_token` is specified,
+            resources deleted since the last sync will be returned as a person with `PersonMetadata.deleted` set to
+            true. When the `page_token` or `sync_token` is specified, all other request parameters must match the first
+            call. Writes may have a propagation delay of several minutes for sync requests. Incremental syncs are not
+            intended for read-after-write use cases. See example usage at [List the user's other contacts that have
             changed](/people/v1/other-contacts#list_the_users_other_contacts_that_have_changed).
             </summary>
         </member>
@@ -625,6 +627,9 @@
         <member name="P:Google.Apis.PeopleService.v1.OtherContactsResource.ListRequest.Sources">
             <summary>
             Optional. A mask of what source types to return. Defaults to READ_SOURCE_TYPE_CONTACT if not set.
+            Possible values for this field are: * READ_SOURCE_TYPE_CONTACT *
+            READ_SOURCE_TYPE_CONTACT,READ_SOURCE_TYPE_PROFILE Specifying READ_SOURCE_TYPE_PROFILE without specifying
+            READ_SOURCE_TYPE_CONTACT is not permitted.
             </summary>
             <remarks>
             Use this property to set a single value for the parameter, or <see cref="P:Google.Apis.PeopleService.v1.OtherContactsResource.ListRequest.SourcesList"/> to set multiple
@@ -634,6 +639,9 @@
         <member name="P:Google.Apis.PeopleService.v1.OtherContactsResource.ListRequest.SourcesList">
             <summary>
             Optional. A mask of what source types to return. Defaults to READ_SOURCE_TYPE_CONTACT if not set.
+            Possible values for this field are: * READ_SOURCE_TYPE_CONTACT *
+            READ_SOURCE_TYPE_CONTACT,READ_SOURCE_TYPE_PROFILE Specifying READ_SOURCE_TYPE_PROFILE without specifying
+            READ_SOURCE_TYPE_CONTACT is not permitted.
             </summary>
             <remarks>
             Use this property to set one or more values for the parameter. Do not set both this property and
@@ -643,6 +651,9 @@
         <member name="T:Google.Apis.PeopleService.v1.OtherContactsResource.ListRequest.SourcesEnum">
             <summary>
             Optional. A mask of what source types to return. Defaults to READ_SOURCE_TYPE_CONTACT if not set.
+            Possible values for this field are: * READ_SOURCE_TYPE_CONTACT *
+            READ_SOURCE_TYPE_CONTACT,READ_SOURCE_TYPE_PROFILE Specifying READ_SOURCE_TYPE_PROFILE without specifying
+            READ_SOURCE_TYPE_CONTACT is not permitted.
             </summary>
         </member>
         <member name="F:Google.Apis.PeopleService.v1.OtherContactsResource.ListRequest.SourcesEnum.READSOURCETYPEUNSPECIFIED">
@@ -754,14 +765,16 @@
         <member name="M:Google.Apis.PeopleService.v1.PeopleResource.ConnectionsResource.List(System.String)">
             <summary>
             Provides a list of the authenticated user's contacts. Sync tokens expire 7 days after the full sync. A
-            request with an expired sync token will result in a 410 error. In the case of such an error clients
-            should make a full sync request without a `sync_token`. The first page of a full sync request has an
-            additional quota. If the quota is exceeded, a 429 error will be returned. This quota is fixed and can
-            not be increased. When the `sync_token` is specified, resources deleted since the last sync will be
-            returned as a person with `PersonMetadata.deleted` set to true. When the `page_token` or `sync_token` is
-            specified, all other request parameters must match the first call. Writes may have a propagation delay
-            of several minutes for sync requests. Incremental syncs are not intended for read-after-write use cases.
-            See example usage at [List the user's contacts that have
+            request with an expired sync token will get an error with an
+            [google.rpc.ErrorInfo](https://cloud.google.com/apis/design/errors#error_info) with reason
+            "EXPIRED_SYNC_TOKEN". In the case of such an error clients should make a full sync request without a
+            `sync_token`. The first page of a full sync request has an additional quota. If the quota is exceeded, a
+            429 error will be returned. This quota is fixed and can not be increased. When the `sync_token` is
+            specified, resources deleted since the last sync will be returned as a person with
+            `PersonMetadata.deleted` set to true. When the `page_token` or `sync_token` is specified, all other
+            request parameters must match the first call. Writes may have a propagation delay of several minutes for
+            sync requests. Incremental syncs are not intended for read-after-write use cases. See example usage at
+            [List the user's contacts that have
             changed](/people/v1/contacts#list_the_users_contacts_that_have_changed).
             </summary>
             <param name="resourceName">
@@ -771,14 +784,16 @@
         <member name="T:Google.Apis.PeopleService.v1.PeopleResource.ConnectionsResource.ListRequest">
             <summary>
             Provides a list of the authenticated user's contacts. Sync tokens expire 7 days after the full sync. A
-            request with an expired sync token will result in a 410 error. In the case of such an error clients
-            should make a full sync request without a `sync_token`. The first page of a full sync request has an
-            additional quota. If the quota is exceeded, a 429 error will be returned. This quota is fixed and can
-            not be increased. When the `sync_token` is specified, resources deleted since the last sync will be
-            returned as a person with `PersonMetadata.deleted` set to true. When the `page_token` or `sync_token` is
-            specified, all other request parameters must match the first call. Writes may have a propagation delay
-            of several minutes for sync requests. Incremental syncs are not intended for read-after-write use cases.
-            See example usage at [List the user's contacts that have
+            request with an expired sync token will get an error with an
+            [google.rpc.ErrorInfo](https://cloud.google.com/apis/design/errors#error_info) with reason
+            "EXPIRED_SYNC_TOKEN". In the case of such an error clients should make a full sync request without a
+            `sync_token`. The first page of a full sync request has an additional quota. If the quota is exceeded, a
+            429 error will be returned. This quota is fixed and can not be increased. When the `sync_token` is
+            specified, resources deleted since the last sync will be returned as a person with
+            `PersonMetadata.deleted` set to true. When the `page_token` or `sync_token` is specified, all other
+            request parameters must match the first call. Writes may have a propagation delay of several minutes for
+            sync requests. Incremental syncs are not intended for read-after-write use cases. See example usage at
+            [List the user's contacts that have
             changed](/people/v1/contacts#list_the_users_contacts_that_have_changed).
             </summary>
         </member>
@@ -1746,8 +1761,8 @@
             </summary>
             <param name="body">The body of the request.</param>
             <param name="resourceName">
-            The resource name for the person, assigned by the server. An ASCII string with a max length of 27
-            characters, in the form of `people/{person_id}`.
+            The resource name for the person, assigned by the server. An ASCII string in the form of
+            `people/{person_id}`.
             </param>
         </member>
         <member name="T:Google.Apis.PeopleService.v1.PeopleResource.UpdateContactRequest">
@@ -1769,8 +1784,8 @@
         </member>
         <member name="P:Google.Apis.PeopleService.v1.PeopleResource.UpdateContactRequest.ResourceName">
             <summary>
-            The resource name for the person, assigned by the server. An ASCII string with a max length of 27
-            characters, in the form of `people/{person_id}`.
+            The resource name for the person, assigned by the server. An ASCII string in the form of
+            `people/{person_id}`.
             </summary>
         </member>
         <member name="P:Google.Apis.PeopleService.v1.PeopleResource.UpdateContactRequest.PersonFields">
@@ -2225,8 +2240,14 @@
             [`ListContactGroups`](/people/api/rest/v1/contactgroups/list) requests that include a sync token.
             </summary>
         </member>
-        <member name="P:Google.Apis.PeopleService.v1.Data.ContactGroupMetadata.UpdateTime">
+        <member name="P:Google.Apis.PeopleService.v1.Data.ContactGroupMetadata.UpdateTimeRaw">
             <summary>Output only. The time the group was last updated.</summary>
+        </member>
+        <member name="P:Google.Apis.PeopleService.v1.Data.ContactGroupMetadata.UpdateTime">
+            <summary><seealso cref="T:System.Object"/> representation of <see cref="P:Google.Apis.PeopleService.v1.Data.ContactGroupMetadata.UpdateTimeRaw"/>.</summary>
+        </member>
+        <member name="P:Google.Apis.PeopleService.v1.Data.ContactGroupMetadata.UpdateTimeDateTimeOffset">
+            <summary><seealso cref="T:System.DateTimeOffset"/> representation of <see cref="P:Google.Apis.PeopleService.v1.Data.ContactGroupMetadata.UpdateTimeRaw"/>.</summary>
         </member>
         <member name="P:Google.Apis.PeopleService.v1.Data.ContactGroupMetadata.ETag">
             <summary>The ETag of the item.</summary>
@@ -3064,8 +3085,8 @@
         </member>
         <member name="P:Google.Apis.PeopleService.v1.Data.Person.ResourceName">
             <summary>
-            The resource name for the person, assigned by the server. An ASCII string with a max length of 27
-            characters, in the form of `people/{person_id}`.
+            The resource name for the person, assigned by the server. An ASCII string in the form of
+            `people/{person_id}`.
             </summary>
         </member>
         <member name="P:Google.Apis.PeopleService.v1.Data.Person.SipAddresses">
@@ -3388,10 +3409,16 @@
         <member name="P:Google.Apis.PeopleService.v1.Data.Source.Type">
             <summary>The source type.</summary>
         </member>
-        <member name="P:Google.Apis.PeopleService.v1.Data.Source.UpdateTime">
+        <member name="P:Google.Apis.PeopleService.v1.Data.Source.UpdateTimeRaw">
             <summary>
             Output only. **Only populated in `person.metadata.sources`.** Last update timestamp of this source.
             </summary>
+        </member>
+        <member name="P:Google.Apis.PeopleService.v1.Data.Source.UpdateTime">
+            <summary><seealso cref="T:System.Object"/> representation of <see cref="P:Google.Apis.PeopleService.v1.Data.Source.UpdateTimeRaw"/>.</summary>
+        </member>
+        <member name="P:Google.Apis.PeopleService.v1.Data.Source.UpdateTimeDateTimeOffset">
+            <summary><seealso cref="T:System.DateTimeOffset"/> representation of <see cref="P:Google.Apis.PeopleService.v1.Data.Source.UpdateTimeRaw"/>.</summary>
         </member>
         <member name="T:Google.Apis.PeopleService.v1.Data.Status">
             <summary>

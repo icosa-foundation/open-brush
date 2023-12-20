@@ -39,8 +39,8 @@ MonoBehaviour:
     m_Url: https://unitynuget-registry.azurewebsites.net
     m_Scopes:
     - org.nuget.google
-    - org.nuget.newtonsoft
     - org.nuget.sharpziplib
+    - org.nuget.system
     m_IsDefault: 0
     m_Capabilities: 0
     m_ConfigSource: 4
