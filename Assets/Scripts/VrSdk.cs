@@ -173,7 +173,7 @@ namespace TiltBrush
             // OculusVR
             // ---------------------------------------------------------------------------------------- //
             OVRManager manager = gameObject.AddComponent<OVRManager>();
-            manager.trackingOriginType = OVRManager.TrackingOrigin.FloorLevel;
+            manager.trackingOriginType = OVRManager.TrackingOrigin.Stage;
             manager.useRecommendedMSAALevel = false;
             manager.isInsightPassthroughEnabled = true;
 
