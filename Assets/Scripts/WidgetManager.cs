@@ -1256,7 +1256,7 @@ namespace TiltBrush
             }
             return bestWidget;
         }
-        
+
         public ImageWidget GetNearestImage(Vector3 pos, float maxDepth, ref Vector3 sampleLoc)
         {
             ImageWidget bestImage = null;

@@ -29,7 +29,7 @@ namespace TiltBrush
             base.UpdateScale();
             UpdateCollider();
         }
-        
+
         public string Text
         {
             get => m_TextMeshPro.text;
