@@ -48,7 +48,7 @@ namespace TiltBrush
         public static bool Export(string outputFile)
         {
             ExportUtils.SceneStatePayload payload = ExportCollector.GetExportPayload(
-            AxisConvention.kVrml, 
+            AxisConvention.kVrml,
                 outputDirectory: Path.GetDirectoryName(outputFile)
             );
 

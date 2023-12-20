@@ -132,27 +132,27 @@ namespace TiltBrush
                     var textMesh = tw.m_TextMeshPro;
                     var guid = MakeDeterministicUniqueName(kPbrTransparentGuid, tw, 0);
                     string texturePath = $"{outputDirectory}/{guid}.png";
-                    
+
                     int width = Mathf.RoundToInt(textMesh.renderedWidth * 256);
                     int height = Mathf.RoundToInt(textMesh.renderedHeight * 256);
-                    
+
                     Camera tempCamera = new GameObject("TempCamera").AddComponent<Camera>();
                     RenderTexture renderTexture = new RenderTexture(width, height, 24);
                     tempCamera.targetTexture = renderTexture;
-    
+
                     // Adjust camera's position and rotation to capture the text mesh
                     tempCamera.orthographic = true;
                     tempCamera.orthographicSize = textMesh.renderedHeight;
                     tempCamera.aspect = tw.AspectRatio.Value;
                     tempCamera.transform.position = textMesh.transform.position + textMesh.transform.forward * -1;
                     tempCamera.transform.forward = textMesh.transform.forward;
-    
+
                     // Set the camera's culling mask to only render the temp layer
                     // int tmpLayer = LayerMask.NameToLayer("TempRenderTex");
                     var prevLayer = textMesh.gameObject.layer;
                     // textMesh.gameObject.layer = tmpLayer;
                     // tempCamera.cullingMask = 1 << tmpLayer;
-    
+
                     // Capture the image
                     tempCamera.Render();
 
@@ -394,7 +394,7 @@ namespace TiltBrush
         {
             return GuidUtils.Uuid5(descriptor, string.Format("{0}_{1}", ri.FileFullPath, id));
         }
-        
+
         static Guid MakeDeterministicUniqueName(Guid descriptor, TextWidget tw, int id)
         {
             return GuidUtils.Uuid5(descriptor, string.Format("{0}_{1}", tw.Text, id));
@@ -414,7 +414,7 @@ namespace TiltBrush
                 MetallicFactor = kRefimageMetallicFactor
             };
         }
-        
+
         static DynamicExportableMaterial CreateImageQuadMaterial(TextWidget tw, string path, Guid guid)
         {
             BrushDescriptor desc = BrushCatalog.m_Instance.GetBrush(kPbrTransparentGuid);
@@ -494,7 +494,7 @@ namespace TiltBrush
                 exportableMaterial = material,
             };
         }
-        
+
         private static Mesh CreateQuad(float aspect)
         {
             float width = aspect / 2f;

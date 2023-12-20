@@ -357,7 +357,7 @@ namespace TiltBrush
             image.SynchronousLoad();
             return image;
         }
-        
+
         [ApiEndpoint("text.add", "Adds a text widget to the sketch")]
         public static void AddText(string text)
         {
@@ -365,13 +365,13 @@ namespace TiltBrush
                 ApiManager.Instance.BrushPosition,
                 ApiManager.Instance.BrushRotation
             );
-            
+
             var cmd = new CreateWidgetCommand(
                 WidgetManager.m_Instance.TextWidgetPrefab, tr, null, true
             );
 
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
-            
+
             var textWidget = cmd.Widget as TextWidget;
             if (textWidget != null)
             {
@@ -504,19 +504,19 @@ namespace TiltBrush
         {
             _PositionWidget(_GetActiveImage(index), position);
         }
-        
+
         [ApiEndpoint("text.position", "Move a text widget to the given coordinates")]
         public static void PositionText(int index, Vector3 position)
         {
             _PositionWidget(_GetActiveTextWidget(index), position);
         }
-        
+
         [ApiEndpoint("text.setText", "Changes the text on a text widget")]
         public static void ChangeTextContent(int index, string text)
         {
             _GetActiveTextWidget(index).Text = text;
         }
-        
+
         [ApiEndpoint("text.setColor", "Changes the color on a text widget")]
         public static void ChangeTextColor(int index, Vector3 color)
         {

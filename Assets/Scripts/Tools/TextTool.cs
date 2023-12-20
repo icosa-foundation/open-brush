@@ -51,7 +51,7 @@ namespace TiltBrush
         override public void UpdateTool()
         {
             base.UpdateTool();
-            
+
             Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
@@ -91,7 +91,7 @@ namespace TiltBrush
             }
             PointerManager.m_Instance.SetMainPointerPosition(rAttachPoint.position);
         }
-        
+
         override public void LateUpdateTool()
         {
             base.LateUpdateTool();
