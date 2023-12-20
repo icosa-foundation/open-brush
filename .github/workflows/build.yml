@@ -235,7 +235,7 @@ jobs:
             cache: Android_GLES
             # Pico requested Chinese build that doesn't have google/sketchfab login.
             extraoptions: -btb-il2cpp -btb-disableAccountLogins
-            versionSuffix: 0
+            versionSuffix: 1
             extra_defines: PICO_SUPPORTED
 
     steps:
@@ -500,6 +500,7 @@ jobs:
           name: ${{ matrix.name }}
           path: |
             build/${{ matrix.vrsdk }}
+            !build/Pico/*.symbols.zip
             !build/**/*_BackUpThisFolder_ButDontShipItWithYourGame
 
       - name: Check if packages-lock.json has changed or if it's cacheable
@@ -1005,4 +1006,51 @@ jobs:
           else
             CHANGELOG="${RAW_CHANGELOG}"
             ./ovr-platform-util upload-rift-build --app-id ${OCULUS_RIFT_APP_ID} --app-secret ${OCULUS_RIFT_APP_SECRET} --build-dir OpenBrush_Rift_$VERSION --launch-file OpenBrush.exe --channel BETA --version $VERSION --firewall_exceptions true --redistributables 822786567843179,1675031999409058,2657209094360789 --notes "${CHANGELOG}"
+          fi
+
+  publish_pico:
+    name: Publish Pico Releases
+    needs: [configuration, build]
+    runs-on: ubuntu-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Download Build Artifacts (Android Pico)
+        uses: actions/download-artifact@v4
+        with:
+          name: Android Pico
+          path: build_android_pico
+      - name: Download Build Artifacts (Android Pico CN)
+        uses: actions/download-artifact@v4
+        with:
+          name: Android Pico (CN)
+          path: build_android_pico_cn
+      - name: Publish Pico Builds
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
+          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
+          PICO_APP_ID: ${{ secrets.PICO_APP_ID }}
+          PICO_APP_SECRET: ${{ secrets.PICO_APP_SECRET }}
+        run: |
+          mkdir releases
+          mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
+          mv build_android_pico_cn/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_CN_$VERSION.apk
+
+          cd releases
+          # pico-cli v1.0.3
+          curl -L 'https://p16-platform-static-va.ibyteimg.com/tos-maliva-i-jo6vmmv194-us/linux-noncn/202304111056/pico-cli?r=1681181814847245000' -o pico-cli
+          chmod 755 pico-cli
+
+          if [ "$PRERELEASE" == "false" ]
+          then
+            # The order here matters, because the Chinese build has a slightly higher version code due to the suffix of 1 vs 0
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 2 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_CN_$VERSION.apk --channel 1 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
+          else
+            # For Pico, Beta channels can only get one build, not a separate China / non-China build
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 3 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
           fi
