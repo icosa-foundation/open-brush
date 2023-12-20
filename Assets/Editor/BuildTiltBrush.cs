@@ -875,7 +875,19 @@ static class BuildTiltBrush
             keystoreName, keystorePass,
             keyaliasName, keyaliasPass))
         {
-            DoBuild(tiltOptions);
+            try
+            {
+                DoBuild(tiltOptions);
+            }
+            catch (Exception Ex)
+            {
+                string oneLineMessage = Ex.Message.Replace("\n", " ");
+                Debug.LogErrorFormat("::error ::Build failed with Exception <<{0}>>", oneLineMessage);
+                Debug.LogError($"{Ex.StackTrace}\n\n");
+                // For some reason, Unity exits if we rethrow this (or never caught it), but with an exit code of 0. So instead, we'll explicitly exit here
+                // throw;
+                Die(6, oneLineMessage);
+            }
         }
     }
 
