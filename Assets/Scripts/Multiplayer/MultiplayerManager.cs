@@ -23,10 +23,6 @@ using OVRPlatform = Oculus.Platform;
 #endif
 using TiltBrush;
 
-#if OCULUS_SUPPORTED
-using OVRPlatform = Oculus.Platform;
-#endif // OCULUS_SUPPORTED
-
 namespace OpenBrush.Multiplayer
 {
     public enum MultiplayerType
@@ -83,7 +79,7 @@ namespace OpenBrush.Multiplayer
             switch (m_MultiplayerType)
             {
                 case MultiplayerType.Photon:
-#if FUSION_WEAVER                
+#if FUSION_WEAVER
                     m_Manager = new PhotonManager(this);
 #endif // FUSION_WEAVER
                     break;
