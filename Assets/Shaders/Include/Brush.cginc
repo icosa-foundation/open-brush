@@ -21,6 +21,16 @@ uniform float4x4 xf_I_CS;
 uniform uint _BatchID;  // NOTOOLKIT
 #include "Ods.cginc"  // NOTOOLKIT
 
+float4 GetTime() {
+  #ifdef TIME_OVERRIDES_DEFINED
+  if (_OverrideTime)
+  {
+    return lerp(_Time * _TimeSpeed, _TimeOverrideValue, _TimeBlend);
+  }
+  #endif
+  return _Time;
+}
+
 // Unity only guarantees signed 2.8 for fixed4.
 // In practice, 2*exp(_EmissionGain * 10) = 180, so we need to use float4
 float4 bloomColor(float4 color, float gain) {
@@ -39,9 +49,8 @@ float4 bloomColor(float4 color, float gain) {
 // Used by various shaders to animate selection outlines
 // Needs to be visible even when the color is black
 float4 GetAnimatedSelectionColor( float4 color) {
-  return color + sin(_Time.w*2)*.1 + .2f;
+  return color + sin(GetTime().w*2)*.1 + .2f;
 }
-
 
 //
 // Common for Music Reactive Brushes
@@ -77,7 +86,7 @@ float4 musicReactiveColor(float4 color, float beat) {
 
 float4 musicReactiveAnimationWorldSpace(float4 worldPos, float4 color, float beat, float t) {
   float intensity = .15;
-  float randomOffset = 2 * 3.14159 * randomizeByColor(color) + _Time.w + worldPos.z;
+  float randomOffset = 2 * 3.14159 * randomizeByColor(color) + GetTime().w + worldPos.z;
   // the first sin function makes the start and end points of the UV's (0:1) have zero modulation.
   // The second sin term causes vibration along the stroke like a plucked guitar string - frequency defined by color
   worldPos.xyz += randomNormal(color.rgb) * beat * sin(t * 3.14159) * sin(randomOffset) * intensity;
@@ -153,4 +162,27 @@ float4 NativeToSrgb(float4 color) { return color; }
 // TBT is in meters, TB is in decimeters.
 // TOOLKIT: #define kDecimetersToWorldUnits 0.1
 #define kDecimetersToWorldUnits 1.0 // NOTOOLKIT
+
+float Dither8x8(float2 position)
+{
+  const float DitherSize = 8.0;
+  float2 ditherPosition = position % DitherSize;
+  int x = int(ditherPosition.x);
+  int y = int(ditherPosition.y);
+
+  const float dither8x8[8*8] =
+  {
+    0,32, 8,40, 2,34,10,42,
+    48,16,56,24,50,18,58,26,
+    12,44, 4,36,14,46, 6,38,
+    60,28,52,20,62,30,54,22,
+    3,35,11,43, 1,33, 9,41,
+    51,19,59,27,49,17,57,25,
+    15,47, 7,39,13,45, 5,37,
+    63,31,55,23,61,29,53,21
+};
+
+  float value = dither8x8[y * 8 + x] / 64.0;
+  return value;
+}
 

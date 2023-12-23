@@ -17,6 +17,15 @@ Properties {
   _TintColor ("Tint Color", Color) = (0.5,0.5,0.5,0.5)
   _MainTex ("Particle Texture", 2D) = "white" {}
   _ScrollRate("Scroll Rate", Float) = 1.0
+
+  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
+
+  _Opacity ("Opacity", Range(0, 1)) = 1
+  _ClipStart("Clip Start", Float) = 0
+  _ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -38,6 +47,7 @@ Category {
       #pragma multi_compile __ SELECTION_ON
 
       #include "UnityCG.cginc"
+      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Particles.cginc"
       #include "Assets/ThirdParty/Shaders/Noise.cginc"
@@ -50,10 +60,15 @@ Category {
         float4 pos : SV_POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        uint id : TEXCOORD2;
       };
 
       float4 _MainTex_ST;
       float _ScrollRate;
+
+      uniform float _ClipStart;
+      uniform float _ClipEnd;
+      uniform half _Opacity;
 
       //
       // Functions for line/plane distances. Experimental.
@@ -88,8 +103,8 @@ Category {
         float4 center = float4(v.center.xyz, 1);
         float4 center_WS = mul(unity_ObjectToWorld, center);
 
-        float t = _Time.y*_ScrollRate + v.color.a * 10;
-        float time = _Time.x * 5;
+        float t = GetTime().y*_ScrollRate + v.color.a * 10;
+        float time = GetTime().x * 5;
         float d = 30;
         float freq = .1;
         float3 disp = float3(1,0,0) * curlX(center_WS.xyz * freq + time, d);
@@ -106,12 +121,16 @@ Category {
         o.color = v.color;
         v.color.a = 1;
         o.texcoord = TRANSFORM_TEX(v.texcoord.xy,_MainTex);
+        o.id = (float2)v.id;
 
         return o;
       }
 
       fixed4 frag (v2f i) : SV_Target
       {
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+
+
         float4 c =  tex2D(_MainTex, i.texcoord);
         c *= i.color * _TintColor;
         c = SrgbToNative(c);
@@ -120,6 +139,7 @@ Category {
         FRAG_MOBILESELECT(c)
         c.rgb *= strength;
 #endif
+        c.a *= _Opacity;
         return c;
       }
       ENDCG

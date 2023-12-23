@@ -17,7 +17,17 @@ Shader "Brush/Special/WigglyGraphiteDoubleSided" {
     _MainTex("Main Texture", 2D) = "white" {}
     _SecondaryTex("Diffuse Tex", 2D) = "white" {}
     _Cutoff("Alpha cutoff", Range(0,1)) = 0.5
+
+    [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+    _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+    _TimeBlend("Time Blend", Float) = 0
+    _TimeSpeed("Time Speed", Float) = 1.0
+
+    _Opacity("Opacity", Range(0,1)) = 1
+    _ClipStart("Clip Start", Float) = 0
+    _ClipEnd("Clip End", Float) = -1
   }
+
   SubShader{
     Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
     Cull Off
@@ -31,6 +41,7 @@ Shader "Brush/Special/WigglyGraphiteDoubleSided" {
       // Faster compiles
       #pragma skip_variants INSTANCING_ON
 
+      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/ThirdParty/Shaders/Noise.cginc"
       #include "Assets/Shaders/Include/MobileSelection.cginc"
@@ -43,6 +54,7 @@ Shader "Brush/Special/WigglyGraphiteDoubleSided" {
         half3 normal : NORMAL;
         fixed4 color : COLOR;
         float4 tangent : TANGENT;
+        uint id : SV_VertexID;
         UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
@@ -50,25 +62,38 @@ Shader "Brush/Special/WigglyGraphiteDoubleSided" {
         float2 uv_MainTex;
         float4 color : Color;
         fixed vface : VFACE;
+        uint id : SV_VertexID;
+        float4 vertex : SV_POSITION;
+        float4 screenPos;
       };
 
       sampler2D _MainTex;
       float _Cutoff;
 
+      uniform float _ClipStart;
+	    uniform float _ClipEnd;
+      uniform half _Opacity;
+
       void vert(inout appdata i, out Input o) {
         UNITY_INITIALIZE_OUTPUT(Input, o);
+        o.vertex = UnityObjectToClipPos(i.vertex);
         PrepForOds(i.vertex);
         o.color = TbVertToSrgb(i.color);
+        o.id = i.id;
       }
 
       void surf(Input IN, inout SurfaceOutputStandardSpecular o) {
+
+        if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
+        if (_Opacity < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Opacity) discard;
+
         fixed2 scrollUV = IN.uv_MainTex;
 
         // Animate flipbook motion. Currently tuned to taste.
 #ifdef AUDIO_REACTIVE
-        float anim = ceil(fmod(_Time.y * 3.0 + _BeatOutput.x * 3.0, 6.0));
+        float anim = ceil(fmod(GetTime().y * 3.0 + _BeatOutput.x * 3.0, 6.0));
 #else
-        float anim = ceil(fmod(_Time.y * 12.0, 6.0));
+        float anim = ceil(fmod(GetTime().y * 12.0, 6.0));
 #endif
         scrollUV.x += anim;
         scrollUV.x *= 1.1;

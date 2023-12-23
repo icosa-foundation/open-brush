@@ -17,6 +17,10 @@ Shader "Brush/Special/CelVinyl" {
     _MainTex("MainTex", 2D) = "white" {}
     _Color("Color", Color) = (1,1,1,1)
     _Cutoff ("Alpha Cutoff", Range (0,1)) = 0.5
+
+    _Opacity ("Opacity", Range(0, 1)) = 1
+  	_ClipStart("Clip Start", Float) = 0
+	  _ClipEnd("Clip End", Float) = -1
   }
 
   SubShader{
@@ -42,16 +46,22 @@ Shader "Brush/Special/CelVinyl" {
         fixed4 _Color;
         float _Cutoff;
 
+        uniform float _ClipStart;
+        uniform float _ClipEnd;
+        uniform half _Opacity;
+
         struct appdata_t {
             float4 vertex : POSITION;
             float2 texcoord : TEXCOORD0;
             float4 color : COLOR;
+            uint id : SV_VertexID;
         };
 
         struct v2f {
             float4 pos : POSITION;
             float2 texcoord : TEXCOORD0;
             float4 color : COLOR;
+            uint id : TEXCOORD2;
             UNITY_FOG_COORDS(1)
         };
 
@@ -64,12 +74,17 @@ Shader "Brush/Special/CelVinyl" {
           o.pos = UnityObjectToClipPos(v.vertex);
           o.texcoord = v.texcoord;
           o.color = TbVertToNative(v.color);
+          o.id = (float2)v.id;
           UNITY_TRANSFER_FOG(o, o.pos);
           return o;
         }
 
         fixed4 frag (v2f i) : COLOR
         {
+
+          if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+          if (_Opacity < 1 && Dither8x8(i.pos.xy) >= _Opacity) discard;
+
           fixed4 tex = tex2D(_MainTex, i.texcoord) * i.color;
           UNITY_APPLY_FOG(i.fogCoord, tex);
 
