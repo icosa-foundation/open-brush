@@ -32,7 +32,7 @@ namespace TiltBrush
             get => StrokePreview.GetComponent<MeshRenderer>().sharedMaterial;
             set => StrokePreview.GetComponent<MeshRenderer>().sharedMaterial = value;
         }
-        
+
         public List<Texture2D> AvailableTextures
         {
             get
@@ -91,13 +91,13 @@ namespace TiltBrush
                     textureRefs[texturePropertyName] = Path.Combine(textureDirectory, textureName);
                 }
             }
-            
+
             string newBrushPath = UserVariantBrush.ExportDuplicateDescriptor(oldBrush, $"{oldBrush.DurableName}Copy");
-            
+
             BrushCatalog.m_Instance.UpdateCatalog(newBrushPath);
             BrushCatalog.m_Instance.HandleChangedBrushes();
             BrushDescriptor newBrush = BrushCatalog.m_Instance.AllBrushes.Last();
-            
+
             var fileName = Path.Combine(UserVariantBrush.GetBrushesPath(), newBrush.UserVariantBrush.Location, "brush.cfg");
             UserVariantBrush.SaveDescriptor(newBrush, fileName, textureRefs);
             m_needsSaving = false;
@@ -118,7 +118,7 @@ namespace TiltBrush
             path= Path.Combine(Application.persistentDataPath, path);
             DirectoryInfo dataDir = new DirectoryInfo(path);
             FileInfo[] fileinfo = dataDir.GetFiles();
-            
+
             for (int i = 0; i < fileinfo.Length; i++)
             {
                 if (!validExtensions.Contains(fileinfo[i].Extension.ToLower())) continue;
@@ -131,11 +131,11 @@ namespace TiltBrush
                 AvailableTextures.Add(tex);
             }
         }
-        
+
         private void AddResourceTextures(string resourcePath)
         {
             var brushTextures = Resources.LoadAll<Texture2D>(resourcePath);
-            
+
             foreach (var tex in brushTextures)
             {
                 string textureName = tex.name;
@@ -151,7 +151,7 @@ namespace TiltBrush
                 AvailableTextures.Add(tex);
             }
         }
-        
+
         private void RegenerateTextureLists()
         {
             AvailableTextures = new List<Texture2D>();
@@ -176,7 +176,7 @@ namespace TiltBrush
                 var textureButton = btns[i];
                 if (textureButton.TextureIndex == -1) continue;  // null texture
                 var texturePropertyName = textureButton.TexturePropertyName;
-                
+
                 var textureFullPath = TexturePaths[textureButton.TextureIndex];
                 if (!textureFullPath.StartsWith("__Resources__"))
                 {
@@ -207,7 +207,7 @@ namespace TiltBrush
                 brush.Material.SetFloat(propertyName, value);
             }
         }
-        
+
         public void TextureChanged(string propertyName, int textureIndex, BrushEditorTexturePickerButton btn)
         {
             if (textureIndex >= 0)
@@ -237,17 +237,17 @@ namespace TiltBrush
             return val == 0 ?
                 new Vector2(0, 1) : // We can't guess a range for 0 so use 0..1
                 new Vector2(val / 10f, val * 10);
-            
+
         }
 
         private void OnMainPointerBrushChange(BrushDescriptor brush)
         {
             if (brush == null) return;
             // if (m_needsSaving) return;
-            
+
             GeneratePreviewMesh(brush);
             if (AvailableTextures == null) RegenerateTextureLists();
-            
+
             if (ParameterWidgets != null)
             {
                 foreach (var widget in ParameterWidgets)
@@ -274,6 +274,13 @@ namespace TiltBrush
                 for (int i = 0; i < shader.GetPropertyCount(); ++i)
                 {
                     string propertyName = shader.GetPropertyName(i);
+
+                    // Skip some properties that we don't want to expose
+                    if (propertyName is "_OverrideTime" or "_TimeOverrideValue" or "_TimeBlend" or "_TimeSpeed" or "_ClipStart" or "_ClipEnd")
+                    {
+                        continue;
+                    }
+
                     switch (shader.GetPropertyType(i))
                     {
                         case ShaderPropertyType.Float:
@@ -299,7 +306,7 @@ namespace TiltBrush
                             widgetIndex++;
                             AddSlider($"{propertyName}", v.z, widgetIndex, GuessRange(v.z), 2);
                             widgetIndex++;
-                            // No current shader uses the 4th component 
+                            // No current shader uses the 4th component
                             // AddSlider($"{propertyName}", v.w, widgetIndex, GuessRange(v.w), 3);
                             // widgetIndex++;
                             break;
@@ -363,10 +370,10 @@ namespace TiltBrush
         {
             var sliderTr = Instantiate(SliderPrefab, gameObject.transform, true);
             var slider = sliderTr.GetComponent<EditBrushSlider>();
-            slider.ParentPanel = this;
             slider.FloatPropertyName = propertyName;
-            slider.Range = range;
-            slider.UpdateValueIgnoreParent(unscaledValue);
+            slider.SetMin(range.x);
+            slider.SetMax(range.y);
+            slider.UpdateValue(unscaledValue);
             slider.SetSliderPositionToReflectValue();
             slider.VectorComponent = vectorComponent;
             slider.SetDescriptionText(slider.GenerateDescription(unscaledValue));
@@ -450,7 +457,7 @@ namespace TiltBrush
                     });
                 }
             }
-            
+
             currentStroke = new Stroke
             {
                 m_Type = Stroke.Type.NotCreated,
@@ -465,12 +472,12 @@ namespace TiltBrush
             currentStroke.m_ControlPointsToDrop = Enumerable.Repeat(false, currentStroke.m_ControlPoints.Length).ToArray();
             currentStroke.Group = group;
             currentStroke.Recreate(null, App.Scene.ActiveCanvas);
-            
-            // TODO 
+
+            // TODO
             // Cheat and keep a stroke history as stroke geometry isn't created immediately
             // so destroying the current stroke destroys the preview stroke mesh
             // if (previousStroke != null) previousStroke.DestroyStroke();
-            
+
             previousStroke = currentStroke;
             StrokePreview.GetComponent<MeshRenderer>().sharedMaterial = brush.Material;
             StrokePreview.GetComponent<MeshFilter>().mesh = null; // And set it on Update
