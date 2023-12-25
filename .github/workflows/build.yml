@@ -741,6 +741,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          sparse-checkout: |
+            Support/steam
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
       - name: Setup steamcmd
         uses: CyberAndrii/setup-steamcmd@v1.1.5
