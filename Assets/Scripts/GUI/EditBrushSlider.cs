@@ -12,11 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
+using UnityEngine;
+
 namespace TiltBrush
 {
 
     public class EditBrushSlider : AdvancedSlider
     {
+        [NonSerialized] public EditBrushPanel ParentPanel;
         public string FloatPropertyName;
         public int? VectorComponent;
 
@@ -31,6 +35,31 @@ namespace TiltBrush
             // Append the current value
             description = $"{description}={unscaledValue:0.##}";
             return description;
+        }
+
+        public void UpdateValueIgnoreParent(float unscaledValue)
+        {
+            float unitValue = UnscaledValueToUnitValue(unscaledValue);
+            SetDescriptionText(GenerateDescription(unscaledValue));
+            base.UpdateValue(unitValue);
+        }
+
+        public override void UpdateValue(float unitValue)
+        {
+            float unscaledValue = UnitValueToUnscaledValue(unitValue);
+            ParentPanel.SliderChanged(FloatPropertyName, unscaledValue, VectorComponent);
+            SetDescriptionText(GenerateDescription(unscaledValue));
+            base.UpdateValue(unitValue);
+        }
+
+        public float UnscaledValueToUnitValue(float unscaledValue)
+        {
+            return Mathf.InverseLerp(Min, Max, unscaledValue);
+        }
+
+        public float UnitValueToUnscaledValue(float unitValue)
+        {
+            return Mathf.Lerp(Min, Max, unitValue);
         }
     }
 } // namespace TiltBrush

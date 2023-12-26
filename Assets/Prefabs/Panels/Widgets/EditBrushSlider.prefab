@@ -263,10 +263,22 @@ MonoBehaviour:
   minText: {fileID: 8413733921089717916}
   maxText: {fileID: 1832718878323850487}
   valueText: {fileID: 8317759016426249774}
-  SliderType: 0
+  SliderType: 1
   onUpdateValue:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: 
+        m_MethodName: 
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   FloatPropertyName: 
   references:
     version: 2

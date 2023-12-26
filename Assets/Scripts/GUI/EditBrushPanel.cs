@@ -370,10 +370,11 @@ namespace TiltBrush
         {
             var sliderTr = Instantiate(SliderPrefab, gameObject.transform, true);
             var slider = sliderTr.GetComponent<EditBrushSlider>();
+            slider.ParentPanel = this;
             slider.FloatPropertyName = propertyName;
             slider.SetMin(range.x);
             slider.SetMax(range.y);
-            slider.UpdateValue(unscaledValue);
+            slider.UpdateValueIgnoreParent(unscaledValue);
             slider.SetSliderPositionToReflectValue();
             slider.VectorComponent = vectorComponent;
             slider.SetDescriptionText(slider.GenerateDescription(unscaledValue));
