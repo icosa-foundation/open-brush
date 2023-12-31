@@ -106,6 +106,9 @@ namespace TiltBrush
             PointerManager.m_Instance.MainPointer.SetBrush(newBrush);
             BrushCatalog.m_Instance.UpdateCatalog(newBrushPath);
             BrushCatalog.m_Instance.HandleChangedBrushes();
+
+            var brushPanel = PanelManager.m_Instance.GetPanelByType(PanelType.Brush);
+            brushPanel.GetComponentInChildren<BrushGrid>().GotoPageForBrush(newBrush);
         }
 
         private void AddUserTextures(string path)
@@ -368,7 +371,7 @@ namespace TiltBrush
             var pos = tr.localPosition;
             pos.x = 0;
             pos.z = -0.075f;
-            pos.y = initialY - (index * 0.22f);
+            pos.y = initialY - (index * 0.26f);
             tr.localPosition = pos;
         }
 
