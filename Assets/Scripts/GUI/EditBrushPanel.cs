@@ -112,20 +112,25 @@ namespace TiltBrush
         {
             var validExtensions = new List<string>
             {
-                "jpg", "jpeg", "png",
+                ".jpg", ".jpeg", ".png",
             };
 
-            path= Path.Combine(Application.persistentDataPath, path);
-            DirectoryInfo dataDir = new DirectoryInfo(path);
-            FileInfo[] fileinfo = dataDir.GetFiles();
+            var filteredFiles = Directory
+                .EnumerateFiles(
+                    Path.Combine(Application.persistentDataPath, path),
+                    "*.*",
+                    SearchOption.AllDirectories)
+                .Where(file => validExtensions.Any(file.ToLower().EndsWith))
+                .ToList();
 
-            for (int i = 0; i < fileinfo.Length; i++)
+            for (int i = 0; i < filteredFiles.Count; i++)
             {
-                if (!validExtensions.Contains(fileinfo[i].Extension.ToLower())) continue;
-                string textureName = fileinfo[i].Name;
+                var fileInfo = new FileInfo(filteredFiles[i]);
+                if (!validExtensions.Contains(fileInfo.Extension.ToLower())) continue;
+                string textureName = fileInfo.Name;
                 TextureNames.Add(textureName);
-                TexturePaths.Add(fileinfo[i].FullName);
-                var bytes = File.ReadAllBytes(fileinfo[i].FullName);
+                TexturePaths.Add(fileInfo.FullName);
+                var bytes = File.ReadAllBytes(fileInfo.FullName);
                 Texture2D tex = new Texture2D(2, 2);
                 tex.LoadImage(bytes);
                 AvailableTextures.Add(tex);
@@ -158,7 +163,7 @@ namespace TiltBrush
             TextureNames = new List<string>();
             TexturePaths = new List<string>();
 
-            AddUserTextures(App.MediaLibraryPath());
+            AddUserTextures(App.ReferenceImagePath());
             AddUserTextures(App.UserBrushesPath());
             AddResourceTextures("Brushes");
             AddResourceTextures("X/Brushes");
@@ -246,6 +251,8 @@ namespace TiltBrush
             // if (m_needsSaving) return;
 
             GeneratePreviewMesh(brush);
+
+            // TODO - directory watcher
             if (AvailableTextures == null) RegenerateTextureLists();
 
             if (ParameterWidgets != null)

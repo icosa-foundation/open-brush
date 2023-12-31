@@ -865,7 +865,7 @@ public class UserVariantBrush
                 {
 
                     string textureFullPath = textureRefs[propertyName];
-                    var userPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
+                    var userPath = App.ReferenceImagePath();
 
                     string thisUserBrushDir = Path.Combine(GetBrushesPath(), Location);
                     string textureName;
@@ -876,11 +876,23 @@ public class UserVariantBrush
                         // A texture that is already saved
                         newTextureFullPath = textureFullPath;
                     }
-                    else if (textureFullPath.StartsWith(userPath))
+                    else if (textureFullPath.StartsWith(userPath)) // Copy to the brush folder.
                     {
-                        // A texture from somewhere else in the Open Brush user folder. Copy it.
-                        textureName = Path.GetFileName(textureFullPath + ".png");
-                        newTextureFullPath = Path.Combine(thisUserBrushDir, textureName + ".png");
+                        // TODO - this always creates a new copy of the texture, even if it's already in the brush folder
+                        // Do we want to check if files are identical and only copy if they're not?
+                        // Or do we want to give the user options?
+                        textureName = Path.GetFileName(textureFullPath);
+                        newTextureFullPath = Path.Combine(thisUserBrushDir, textureName);
+                        while (File.Exists(newTextureFullPath))
+                        {
+                            string baseNewTextureFullPath = newTextureFullPath;
+                            int count = 1;
+                            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(baseNewTextureFullPath);
+                            string extension = Path.GetExtension(baseNewTextureFullPath);
+                            string directory = Path.GetDirectoryName(baseNewTextureFullPath);
+                            newTextureFullPath = Path.Combine(directory, $"{fileNameWithoutExtension}_{count}{extension}");
+                            count++;
+                        }
                         File.Copy(textureFullPath, newTextureFullPath);
                     }
                     else if (textureFullPath.StartsWith("__Resources__"))
