@@ -185,7 +185,25 @@ MonoBehaviour:
   m_DescriptionType: 2
   m_DescriptionYOffset: 0
   m_DescriptionText: 
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 8
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 0}
@@ -200,7 +218,13 @@ MonoBehaviour:
   m_AddOverlay: 0
   m_PreviewBGTexture: {fileID: 2800000, guid: 609917f61fdca0d469c1bc06bfeb713b, type: 3}
   m_AudioReactiveIcon: {fileID: 8145981955289720272}
-  m_ExperimentalIcon: {fileID: 8145362942664174142}
+  m_BrushTypeIcon: {fileID: 8145362942664174142}
+  m_ExperimentalMaterial: {fileID: 2100000, guid: a44ecbd1f2c3647a3b768c0170fb98b9,
+    type: 2}
+  m_LibraryMaterial: {fileID: 2100000, guid: c00a9124cb8f22c4a82f32064974ea6f, type: 2}
+  references:
+    version: 2
+    RefIds: []
 --- !u!65 &8205928198768957834
 BoxCollider:
   m_ObjectHideFlags: 0

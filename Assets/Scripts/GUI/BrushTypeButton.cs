@@ -16,6 +16,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;
+using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
@@ -24,23 +25,25 @@ namespace TiltBrush
     {
         [SerializeField] private Texture2D m_PreviewBGTexture;
         [SerializeField] private GameObject m_AudioReactiveIcon;
-        [SerializeField] private GameObject m_ExperimentalIcon;
+        [FormerlySerializedAs("m_ExperimentalIcon")] [SerializeField] private GameObject m_BrushTypeIcon;
+        [SerializeField] private Material m_ExperimentalMaterial;
+        [SerializeField] private Material m_LibraryMaterial;
 
         [NonSerialized] public BrushDescriptor m_Brush;
         [NonSerialized] public Vector3 m_OriginPosition;
 
         protected PreviewCubeScript m_PreviewCubeScript;
         private Renderer m_AudioReactiveIconRenderer;
-        private Renderer m_ExperimentalIconRenderer;
+        private Renderer m_BrushTypeIconRenderer;
         private Vector3 m_AudioReactiveIconBaseLocalPos;
-        private Vector3 m_ExperimentalIconBaseLocalPos;
+        private Vector3 m_BrushTypeIconBaseLocalPos;
         private Texture2D m_BrushIconTexture;
 
         override protected void Awake()
         {
             base.Awake();
             m_AudioReactiveIconRenderer = m_AudioReactiveIcon.GetComponent<Renderer>();
-            m_ExperimentalIconRenderer = m_ExperimentalIcon.GetComponent<Renderer>();
+            m_BrushTypeIconRenderer = m_BrushTypeIcon.GetComponent<Renderer>();
             m_OriginPosition = transform.localPosition;
         }
 
@@ -69,7 +72,7 @@ namespace TiltBrush
         {
             base.OnRegisterComponent();
             m_AudioReactiveIconBaseLocalPos = m_AudioReactiveIcon.transform.localPosition;
-            m_ExperimentalIconBaseLocalPos = m_ExperimentalIcon.transform.localPosition;
+            m_BrushTypeIconBaseLocalPos = m_BrushTypeIcon.transform.localPosition;
         }
 
         override protected void ConfigureTextureAtlas()
@@ -114,9 +117,21 @@ namespace TiltBrush
                 VisualizerManager.m_Instance.VisualsRequested);
             // Play standard click sound if brush doesn't have a custom button sound
             m_ButtonHasPressedAudio = (rBrush.m_ButtonAudio == null);
-            if (App.Config.m_WasExperimentalAtStartup)
+
+
+            if (BrushCatalog.m_Instance.IsBrushInLibrary(rBrush))
             {
-                m_ExperimentalIcon.SetActive(App.Instance.IsBrushExperimental(rBrush));
+                m_BrushTypeIconRenderer.material = m_LibraryMaterial;
+                m_BrushTypeIcon.SetActive(true);
+            }
+            else if (App.Instance.IsBrushExperimental(rBrush))
+            {
+                m_BrushTypeIconRenderer.material = m_ExperimentalMaterial;
+                m_BrushTypeIcon.SetActive(true);
+            }
+            else
+            {
+                m_BrushTypeIcon.SetActive(false);
             }
         }
 
@@ -154,12 +169,12 @@ namespace TiltBrush
             if (bSelected)
             {
                 m_AudioReactiveIconRenderer.material.SetFloat("_Activated", 1.0f);
-                m_ExperimentalIconRenderer.material.SetFloat("_Activated", 1.0f);
+                m_BrushTypeIconRenderer.material.SetFloat("_Activated", 1.0f);
             }
             else
             {
                 m_AudioReactiveIconRenderer.material.SetFloat("_Activated", 0.0f);
-                m_ExperimentalIconRenderer.material.SetFloat("_Activated", 0.0f);
+                m_BrushTypeIconRenderer.material.SetFloat("_Activated", 0.0f);
             }
             // only set our texture if we're deactivated-- otherwise we'll get it when we turn off the preview
             // The brush can be null if we have less than 1 page of brushes
@@ -206,16 +221,16 @@ namespace TiltBrush
             localPos.z -= offset;
             m_AudioReactiveIcon.transform.localPosition = localPos;
 
-            localPos = m_ExperimentalIconBaseLocalPos;
+            localPos = m_BrushTypeIconBaseLocalPos;
             localPos.z -= offset;
-            m_ExperimentalIcon.transform.localPosition = localPos;
+            m_BrushTypeIcon.transform.localPosition = localPos;
         }
 
         override public void SetColor(Color rColor)
         {
             base.SetColor(rColor);
             m_AudioReactiveIconRenderer.material.SetColor("_Color", rColor);
-            m_ExperimentalIconRenderer.material.SetColor("_Color", rColor);
+            m_BrushTypeIconRenderer.material.SetColor("_Color", rColor);
         }
     }
 } // namespace TiltBrush

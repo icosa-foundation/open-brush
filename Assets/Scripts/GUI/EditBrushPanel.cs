@@ -77,7 +77,7 @@ namespace TiltBrush
         {
             var oldBrush = PointerManager.m_Instance.MainPointer.CurrentBrush;
             var textureRefs = new Dictionary<string, string>();
-            if (oldBrush.UserVariantBrush == null)
+            if (BrushCatalog.m_Instance.IsBrushBuiltIn(oldBrush))
             {
                 foreach (var texturePropertyName in oldBrush.Material.GetTexturePropertyNames())
                 {
@@ -263,9 +263,8 @@ namespace TiltBrush
                 }
             }
             ParameterWidgets = new List<GameObject>();
-            if (brush.UserVariantBrush == null)
+            if (BrushCatalog.m_Instance.IsBrushBuiltIn(brush))
             {
-                // A built in brush
                 CloneMaterialButton.GetComponent<ActionButton>().SetDescriptionText($"Copy {brush.DurableName} as a new user brush");
                 CloneMaterialButton.SetActive(true);
                 SaveButton.SetActive(false);
