@@ -58,7 +58,10 @@ namespace TiltBrush
         {
             if (tex != null)
             {
-                SetButtonTexture(tex);
+                if (m_ButtonRenderer != null)
+                {
+                    SetButtonTexture(tex);
+                }
                 m_ButtonTexture = tex;
                 GetComponent<MeshRenderer>().material.mainTexture = tex;
             }
