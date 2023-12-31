@@ -276,7 +276,7 @@ public class UserVariantBrush
     private bool Initialize(FolderOrZipReader brushFile, bool forceInGui = false)
     {
         m_FileData = new Dictionary<string, byte[]>();
-		
+
         if (!brushFile.Exists(kConfigFile))
         {
             return false;
@@ -578,7 +578,7 @@ public class UserVariantBrush
         }
     }
 
-    
+
     [MenuItem("Tilt/Brushes/Export Standard Brush Properties")]
     public static void ExportDescriptorDetails()
     {
@@ -599,17 +599,17 @@ public class UserVariantBrush
 
         Debug.Log($"Exported {manifest.Brushes.Length} brushes.");
     }
-    
+
 #endif
 
     public static void SaveDescriptor(BrushDescriptor brush, string filename, Dictionary<string, string> textureRefs)
     {
-        
+
         BrushProperties properties = brush.UserVariantBrush.m_BrushProperties;
-        
+
         CopyDescriptorToProperties(brush, properties);
         CopyMaterialToProperties(brush, properties);
-        
+
         // Copy textures and update texture paths
         brush.UserVariantBrush.SaveorCopyTextures(brush.Material.shader, textureRefs);
 
@@ -631,7 +631,7 @@ public class UserVariantBrush
             Debug.LogWarning(e.Message);
         }
     }
-    
+
     /// <summary>
     /// Exports a single descriptor to a file.
     /// </summary>
@@ -667,18 +667,18 @@ public class UserVariantBrush
             Debug.LogWarning(e.Message);
         }
     }
-    
+
     public static string ExportDuplicateDescriptor(BrushDescriptor brush, string newBrushName)
     {
         var brushesPath = GetBrushesPath();
-        
+
         BrushProperties properties = new BrushProperties();
         CopyDescriptorToProperties(brush, properties);
         CopyMaterialToProperties(brush, properties);
-        
+
         string oldGuid = brush.m_Guid.ToString();
         string newGuid = Guid.NewGuid().ToString();
-        
+
         string newBrushPath = Path.Combine(brushesPath, $"{newBrushName}_{newGuid}");
         if (!Directory.Exists(newBrushPath)) Directory.CreateDirectory(newBrushPath);
         string filename = Path.Combine(newBrushPath, "brush.cfg");
@@ -744,8 +744,8 @@ public class UserVariantBrush
 
         return obj;
     }
-    
-    
+
+
     /// <summary>
     /// Copies the details of a BrushDescriptor to an object.
     /// </summary>
@@ -841,32 +841,32 @@ public class UserVariantBrush
             }
         }
     }
-    
+
     /// <summary>
     /// Fills in values for m_BrushProperties.Material.TextureProperties
     /// Also - if the texture is internal (i.e. in Resources) it saves it to the brush directory
     /// If the texture is external but from a different brush then it creates a copy in the brush directory
-    /// Used when saving a user brush created at runtime 
+    /// Used when saving a user brush created at runtime
     /// </summary>
     /// <param name="material">The BrushDescriptor.</param>
     /// <param name="textureRefs">A dictionary mapping texture property names to texture paths.</param>
     public void SaveorCopyTextures(Shader shader, Dictionary<string, string> textureRefs)
     {
-        
+
         for (int i = 0; i < shader.GetPropertyCount(); ++i)
         {
-            
+
             var propertyType = shader.GetPropertyType(i);
             string propertyName = shader.GetPropertyName(i);
-            
+
             if (propertyType==ShaderPropertyType.Texture)
             {
                 if (textureRefs.ContainsKey(propertyName))
                 {
-                    
+
                     string textureFullPath = textureRefs[propertyName];
                     var userPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
-                    
+
                     string thisUserBrushDir = Path.Combine(GetBrushesPath(), Location);
                     string textureName;
                     string newTextureFullPath;
@@ -895,7 +895,6 @@ public class UserVariantBrush
                         var bytes = ImageConversion.EncodeToPNG(validTex);
                         newTextureFullPath = Path.Combine(thisUserBrushDir, tex.name + ".png");
                         File.WriteAllBytes(newTextureFullPath, bytes);
-
                     }
                     else
                     {
@@ -912,5 +911,5 @@ public class UserVariantBrush
             }
         }
     }
-    
+
 }

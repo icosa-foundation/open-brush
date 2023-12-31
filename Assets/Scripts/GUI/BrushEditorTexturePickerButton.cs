@@ -30,7 +30,7 @@ namespace TiltBrush
             set
             { _textureIndex = value; }
         }
-        
+
         protected override void OnButtonPressed()
         {
             for (int i = 0; i < m_ObjectsToHideBehindPopups.Length; ++i)
@@ -38,7 +38,7 @@ namespace TiltBrush
                 m_ObjectsToHideBehindPopups[i].SetActive(false);
             }
             base.OnButtonPressed();
-            
+
             popup = (BrushEditorTexturePopUpWindow) ParentPanel.PanelPopUp;
             popup.ActiveTextureIndex = _textureIndex;
             popup.OpenerButton = this;
@@ -48,7 +48,7 @@ namespace TiltBrush
             // popup.SetActiveTextureButtonSelected(buttonIndex);
 
         }
-        
+
         override public void GazeRatioChanged(float gazeRatio)
         {
             GetComponent<Renderer>().material.SetFloat("_Distance", gazeRatio);
