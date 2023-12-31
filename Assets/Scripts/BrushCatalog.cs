@@ -117,6 +117,7 @@ namespace TiltBrush
         {
             return m_BuiltinBrushes.ContainsKey(brush.m_Guid);
         }
+        
         public bool IsBrushInLibrary(BrushDescriptor brush)
         {
             return !m_BuiltinBrushes.ContainsKey(brush.m_Guid) &&
@@ -285,7 +286,7 @@ namespace TiltBrush
             HandleChangedBrushes();
             ModifyBrushTags();
         }
-        
+
         private void ModifyBrushTags()
         {
             Dictionary<string, string[]> tagsToAddMap = App.UserConfig.Brushes.AddTagsToBrushes;
@@ -329,7 +330,7 @@ namespace TiltBrush
                 return m_AllBrushes.FirstOrDefault(descriptor => descriptor.Description.Equals(searchString, comparison));
             }
 	}
-	    
+
         public void HandleChangedBrushes()
         {
             if (m_ChangedBrushes.Count > 0)
@@ -475,7 +476,7 @@ namespace TiltBrush
                 UpdateCatalog(path);
             }
         }
-        
+
         public void UpdateCatalog(string brushPath)
         {
             int brushPathLength = App.UserBrushesPath().Length + 1;
