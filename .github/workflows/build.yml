@@ -741,6 +741,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          sparse-checkout: |
+            Support/steam
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
       - name: Setup steamcmd
         uses: CyberAndrii/setup-steamcmd@v1.1.5
@@ -756,10 +758,10 @@ jobs:
           path: build_windows_openxr
       - name: Upload Build
         run: |
-          pip install -U j2cli
-          j2 Support/steam/app.vdf.j2 > build_windows_openxr/app.vdf
-          j2 Support/steam/main_depot.vdf.j2 > build_windows_openxr/main_depot.vdf
-          j2 Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
+          pip install -U jinjanator
+          jinjanate Support/steam/app.vdf.j2 > build_windows_openxr/app.vdf
+          jinjanate Support/steam/main_depot.vdf.j2 > build_windows_openxr/main_depot.vdf
+          jinjanate Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
           steamcmd +login $STEAM_USERNAME +run_app_build $(pwd)/build_windows_openxr/app.vdf +quit
         env:
           STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
