@@ -404,6 +404,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 4486572399880723504, guid: 5056dc0f2865306449988b756f72f2c2,
         type: 3}
+      propertyPath: m_CenterPopupOnButton
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4486572399880723504, guid: 5056dc0f2865306449988b756f72f2c2,
+        type: 3}
       propertyPath: m_BeforePopupAction.m_PersistentCalls.m_Calls.Array.size
       value: 1
       objectReference: {fileID: 0}
