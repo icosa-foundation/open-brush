@@ -708,7 +708,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 1
+  inputIsHDR: 0
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -990,7 +990,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 1226230318}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1149556738}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 20faaaed7d9c21040bd6371092acb8b3, type: 3}
   m_Name: 
@@ -16831,6 +16831,11 @@ PrefabInstance:
       propertyPath: m_CullingMask.m_Bits
       value: 4278059007
       objectReference: {fileID: 0}
+    - target: {fileID: 114000011221534130, guid: dedd7823645ca60468aca5f2ff1b9a7f,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 114000012336249088, guid: dedd7823645ca60468aca5f2ff1b9a7f,
         type: 3}
       propertyPath: m_Enabled
@@ -16850,6 +16855,11 @@ PrefabInstance:
         type: 3}
       propertyPath: depthBlending
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000014001565202, guid: dedd7823645ca60468aca5f2ff1b9a7f,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 114000014001565202, guid: dedd7823645ca60468aca5f2ff1b9a7f,
         type: 3}
@@ -33307,7 +33317,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 1
+  inputIsHDR: 0
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -34189,7 +34199,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 1
+  inputIsHDR: 0
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
