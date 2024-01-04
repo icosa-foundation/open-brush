@@ -250,7 +250,7 @@ Shader "Brush/StandardSingleSided" {
             half3 tspace2 : NORMAL;
             float4 worldPos : TEXCOORD4;
             float2 id : TEXCOORD5;
-            UNITY_FOG_COORDS(5)
+            UNITY_FOG_COORDS(6)
         };
 
         sampler2D _MainTex;
