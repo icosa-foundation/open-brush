@@ -19,6 +19,11 @@ namespace TiltBrush
             _TrTransform = TrTransform.TRS(translation, Quaternion.identity, scale);
         }
 
+        public TransformApiWrapper(float x, float y, float z)
+        {
+            _TrTransform = TrTransform.TRS(new Vector3(x, y, z), Quaternion.identity, 1f);
+        }
+
         [LuaDocsDescription("The inverse of this transform")]
         public TrTransform inverse => _TrTransform.inverse;
 
