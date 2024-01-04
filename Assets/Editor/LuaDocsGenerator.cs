@@ -58,6 +58,7 @@ namespace TiltBrush
                 Name = "Tool",
                 Methods = new List<LuaDocsMethod>(),
                 Description = "A class to interact with Scripted Tools",
+                IsTopLevelClass = true,
                 Properties = new List<LuaDocsProperty>
                 {
                     new() {Name=LuaNames.ToolScriptStartPoint, PropertyType = transformProp, Description = "The position and orientation of the point where the trigger was pressed"},
