@@ -1763,6 +1763,7 @@ function Symmetry:PathToPolar(path) end
 
 ---@class SymmetrySettings
 ---@field mode SymmetryMode The symmetry mode
+---@field transform Transform The transform of the symmetry widget
 ---@field position Vector3 | number[] The position of the symmetry widget
 ---@field rotation Rotation | number[] The rotation of the symmetry widget
 ---@field spin Vector3 | number[] How fast the symmetry widget is spinning in each axis
