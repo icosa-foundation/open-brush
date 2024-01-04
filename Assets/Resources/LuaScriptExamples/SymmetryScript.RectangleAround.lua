@@ -17,47 +17,56 @@ end
 
 function Main()
 
-    if Brush.triggerPressedThisFrame then
-        symmetryHueShift.generate(numPointsWidth * numPointsHeight * 2, initialHsv)
+    if Parameters.exteriorOnly==1 then
+        points = calculateRectangleExteriorPoints()
+    else
+        points = calculateRectanglePoints()
     end
 
-    if exteriorOnly==1 then
-        points = calculateRectangleExteriorPoints(numPointsWidth, numPointsHeight, spacing)
-    else
-        points = calculateRectanglePoints(numPointsWidth, numPointsHeight, spacing)
+    if Brush.triggerPressedThisFrame then
+        symmetryHueShift.generate(#points, initialHsv)
     end
 
     return Symmetry:PathToPolar(points)
 end
 
 
-function calculateRectangleExteriorPoints(numPointsWidth, numPointsHeight, spacing)
+function calculateRectangleExteriorPoints()
     local points = Path:New()
-    local width = (numPointsWidth - 1) * spacing
-    local height = (numPointsHeight - 1) * spacing
+    local width = (Parameters.numPointsWidth - 1) * Parameters.spacing
+    local height = (Parameters.numPointsHeight - 1) * Parameters.spacing
 
-    for i = 0, numPointsHeight - 1 do
-        for j = 0, numPointsWidth - 1 do
-            if i == 0 or i == numPointsHeight - 1 or j == 0 or j == numPointsWidth - 1 then
-                local x = -width / 2 + j * spacing
-                local y = -height / 2 + i * spacing
+    for i = 0, Parameters.numPointsHeight - 1 do
+        for j = 0, Parameters.numPointsWidth - 1 do
+
+            if i == 0
+                or i == Parameters.numPointsHeight - 1
+                or j == 0
+                or j == Parameters.numPointsWidth - 1
+            then
+
+                local x = -width / 2 + j * Parameters.spacing
+                local y = -height / 2 + i * Parameters.spacing
                 points:Insert(Vector2.New(x, y):OnZ())
+
             end
         end
     end
 
     return points
+
 end
 
-function calculateRectanglePoints(numPointsWidth, numPointsHeight, spacing)
-    local points = Path:New()
-    local width = (numPointsWidth - 1) * spacing
-    local height = (numPointsHeight - 1) * spacing
+function calculateRectanglePoints()
 
-    for i = 0, numPointsHeight - 1 do
-        for j = 0, numPointsWidth - 1 do
-            local x = -width / 2 + j * spacing
-            local y = -height / 2 + i * spacing
+    local points = Path:New()
+    local width = (Parameters.numPointsWidth - 1) * Parameters.spacing
+    local height = (Parameters.numPointsHeight - 1) * Parameters.spacing
+
+    for i = 0, Parameters.numPointsHeight - 1 do
+        for j = 0, Parameters.numPointsWidth - 1 do
+            local x = -width / 2 + j * Parameters.spacing
+            local y = -height / 2 + i * Parameters.spacing
             points:Insert(Vector2.New(x, y):OnZ())
         end
     end

@@ -10,8 +10,8 @@ Parameters = {
 function Main()
 
     if Brush.triggerIsPressed then
-        currentRadius = radius * Brush.timeSincePressed
-        angle = Brush.timeSincePressed * speed
+        currentRadius = Parameters.radius * Brush.timeSincePressed
+        angle = Brush.timeSincePressed * Parameters.speed
         position2d = Vector2:PointOnCircle(angle) * currentRadius
         return Transform:New(position2d:OnZ(), Brush.rotation)
     end

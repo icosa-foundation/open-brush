@@ -18,7 +18,7 @@ function Main()
         currentPos = Brush.position
 
         -- Only draw every N frames
-        if App.frames % rate == 0 then
+        if App.frames % Parameters.rate == 0 then
             path = Path:New({
                 Transform:New(initialPos, Brush.rotation),
                 Transform:New(currentPos, Brush.rotation),

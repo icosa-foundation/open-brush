@@ -16,7 +16,7 @@ function Main()
     elseif Brush.triggerIsPressed then
 
         --Only draw every n frames (where n is the "spacing" parameter)
-        if App.frames % spacing == 0 then
+        if App.frames % Parameters.spacing == 0 then
             --A line from the start position to the current position
             path = Path:New({
                 Transform:New(initialPos, Brush.rotation),

@@ -26,5 +26,6 @@ function Main()
 end
 
 function getHeight(x, y)
-    return Math:PerlinNoise(x * scale, y * scale) * height + offset
+    noise = Math:PerlinNoise(x * Parameters.scale, y * Parameters.scale)
+    return noise * Parameters.height + Parameters.offset
 end

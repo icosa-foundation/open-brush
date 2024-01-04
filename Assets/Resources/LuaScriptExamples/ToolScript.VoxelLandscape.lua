@@ -18,12 +18,12 @@ function Main()
 
         --Calculate which cell we are in
         cell = {
-            x = quantize(Brush.position.x, xzGrid),
-            z = quantize(Brush.position.z, xzGrid),
+            x = quantize(Brush.position.x, Parameters.xzGrid),
+            z = quantize(Brush.position.z, Parameters.xzGrid),
         }
         key = cell.x .. "," .. cell.z
 
-        top = quantize(Brush.position.y, yGrid)
+        top = quantize(Brush.position.y, Parameters.yGrid)
         bottom = filledCells[key]
 
         if bottom==nil or bottom < top then
@@ -31,7 +31,7 @@ function Main()
             if bottom == nil then
                 bottom = 0
             end
-            path = cube(cell, bottom, top, xzGrid)
+            path = cube(cell, bottom, top, Parameters.xzGrid)
             path:SampleByDistance(0.1)
             return path
         else

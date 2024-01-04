@@ -7,5 +7,5 @@ Parameters = {
 }
 
 function Main()
-    return Random.onUnitSphere * (amount * 0.1)
+    return Random.onUnitSphere * (Parameters.amount * 0.1)
 end

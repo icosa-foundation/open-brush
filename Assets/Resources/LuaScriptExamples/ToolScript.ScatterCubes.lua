@@ -23,11 +23,11 @@ function Main()
         Brush.colorRgb = Color:New(Random.value, Random.value, Random.value)
         origin = Brush.position
 
-        if Random.value < amount then
-            randomOffset = Random.insideUnitSphere * spread
+        if Random.value < Parameters.amount then
+            randomOffset = Random.insideUnitSphere * Parameters.spread
             return drawCube(
                 origin + randomOffset,
-                Random.value * maxSize
+                Random.value * Parameters.maxSize
             )
         end
 

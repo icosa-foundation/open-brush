@@ -9,6 +9,6 @@ Parameters = {
 function Main()
 
     --We only want to change the pointer orientation
-    return Transform:Rotation(0, 0, App.time * speed)
+    return Transform:Rotation(0, 0, App.time * Parameters.speed)
 
 end

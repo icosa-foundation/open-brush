@@ -21,8 +21,8 @@ function Main()
 
         --Work out which cell we are in
         cell = {
-            x = quantize(Brush.position.x, grid),
-            z = quantize(Brush.position.z, grid),
+            x = quantize(Brush.position.x, Parameters.grid),
+            z = quantize(Brush.position.z, Parameters.grid),
        }
 
         --A unique string key for each potential tile
@@ -32,7 +32,7 @@ function Main()
         if filledCells[key]==nil then
             filledCells[key] = true
             Brush:JitterColor()
-            return patch(cell, grid)
+            return patch(cell, Parameters.grid)
         else
             return Path:New()
         end
@@ -67,5 +67,5 @@ function patch(cell, gridSize)
 end
 
 function getHeight(x, y)
-    return Math:PerlinNoise(x * scale, y * scale) * height + offset
+    return Math:PerlinNoise(x * Parameters.scale, y * Parameters.scale) * Parameters.height + Parameters.offset
 end

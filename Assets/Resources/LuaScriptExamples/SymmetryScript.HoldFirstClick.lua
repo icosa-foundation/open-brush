@@ -17,9 +17,9 @@ function Main()
     Brush:ForcePaintingOff(Brush.triggerPressedThisFrame)
 
     pointers = Path:New()
-    theta = 360.0 / copies
+    theta = 360.0 / Parameters.copies
 
-    for i = 0, copies - 1 do
+    for i = 0, Parameters.copies - 1 do
         pointers:Insert(Transform:New(Symmetry.brushOffset, Rotation:New(0, i * theta, 0)))
     end
 

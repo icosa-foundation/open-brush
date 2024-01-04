@@ -9,7 +9,7 @@ Parameters = {
 }
 
 function Main()
-    Symmetry.current.spin = Vector3:New(speedX, speedY, speedZ)
+    Symmetry.current.spin = Vector3:New(Parameters.speedX, Parameters.speedY, Parameters.speedZ)
 end
 
 function End()

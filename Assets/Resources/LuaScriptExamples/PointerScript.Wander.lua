@@ -19,14 +19,14 @@ function Main()
 
     elseif Brush.triggerIsPressed then
 
-        if frameCount == framesPerPath then
+        if frameCount == Parameters.framesPerPath then
             Brush:ForceNewStroke()
         end
 
         frameCount = frameCount + 1
 
         -- Reset the path when we reach the limit
-        if frameCount > framesPerPath then
+        if frameCount > Parameters.framesPerPath then
             frameCount = 0
             currentPos = Brush.position
         end
@@ -34,9 +34,9 @@ function Main()
         -- Wandering path based on a noise field
         currentPos = currentPos +
             Vector3:New(
-                speed * (-0.5 + Math:PerlinNoise(currentPos.y, currentPos.z)),
-                speed * (-0.5 + Math:PerlinNoise(currentPos.x, currentPos.z)),
-                speed * (-0.5 + Math:PerlinNoise(currentPos.x, currentPos.y))
+                Parameters.speed * (-0.5 + Math:PerlinNoise(currentPos.y, currentPos.z)),
+                Parameters.speed * (-0.5 + Math:PerlinNoise(currentPos.x, currentPos.z)),
+                Parameters.speed * (-0.5 + Math:PerlinNoise(currentPos.x, currentPos.y))
             )
 
         return Transform:New(currentPos, Brush.rotation)

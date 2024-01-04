@@ -11,17 +11,17 @@ function Main()
 
     -- Calculate the angle and position of the brush based on app time, points, and size
     angle = App.time * 2 * Math.pi
-    point = Math:Floor(angle / (2 * Math.pi / points))
-    pointAngle = point * 2 * Math.pi / points
+    point = Math:Floor(angle / (2 * Math.pi / Parameters.points))
+    pointAngle = point * 2 * Math.pi / Parameters.points
 
     -- Calculate the coordinates of the current point and the next point
-    x1 = size * Math:Cos(pointAngle)
-    y1 = size * Math:Sin(pointAngle)
-    x2 = size * Math:Cos(pointAngle + 2 * Math.pi / points)
-    y2 = size * Math:Sin(pointAngle + 2 * Math.pi / points)
+    x1 = Parameters.size * Math:Cos(pointAngle)
+    y1 = Parameters.size * Math:Sin(pointAngle)
+    x2 = Parameters.size * Math:Cos(pointAngle + 2 * Math.pi / Parameters.points)
+    y2 = Parameters.size * Math:Sin(pointAngle + 2 * Math.pi / Parameters.points)
 
     -- Calculate the brush position based on the angle
-    t = (angle - pointAngle) / (2 * Math.pi / points)
+    t = (angle - pointAngle) / (2 * Math.pi / Parameters.points)
     x = x1 + (x2 - x1) * t
     y = y1 + (y2 - y1) * t
 

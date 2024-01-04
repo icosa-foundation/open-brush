@@ -24,7 +24,7 @@ function Main()
     layerIn = Sketch.layers[nextLayerNumber]
     layerOut:SetShaderFloat("_Opacity", 1 - fadeProgress)
     layerIn:SetShaderFloat("_Opacity", fadeProgress)
-    fadeProgress = fadeProgress + speed
+    fadeProgress = fadeProgress + Parameters.speed
     if fadeProgress >= 1 then
         fadeProgress = 0
         currentLayerNumber = (currentLayerNumber + 1) % Sketch.layers.count

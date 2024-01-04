@@ -11,10 +11,10 @@ Parameters = {
 function Main()
     if Brush.triggerReleasedThisFrame then
         points = Path:New()
-        for i = 0, steps do
-            z = 2.0 * i / steps - 1
+        for i = 0, Parameters.steps do
+            z = 2.0 * i / Parameters.steps - 1
             radius = Math:Sqrt(1 - z * z)
-            angle = (Math.pi * 2 * turns * i) / steps
+            angle = (Math.pi * 2 * Parameters.turns * i) / Parameters.steps
             x = radius * Math:Sin(angle)
             y = radius * Math:Cos(angle)
             points:Insert(Transform:Position(x, y, z))

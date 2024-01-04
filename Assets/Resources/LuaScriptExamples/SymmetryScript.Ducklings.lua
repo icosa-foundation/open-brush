@@ -18,23 +18,16 @@ function Main()
         Brush:SetHistorySize(1)
         Brush:ForceNewStroke()
         initialHsv = Brush.colorHsv
+        symmetryHueShift.generate(Parameters.copies, initialHsv)
     end
 
     pointers = Path:New()
     Symmetry:ClearColors()
 
-    Brush:SetHistorySize(copies * delay)
-    for i = 0, copies - 1 do
-        pointer = Transform:New(Vector3:Lerp(Brush.position, Brush:GetPastPosition(i * delay), mix))
+    Brush:SetHistorySize(Parameters.copies * Parameters.delay)
+    for i = 0, Parameters.copies - 1 do
+        pointer = Transform:New(Vector3:Lerp(Brush.position, Brush:GetPastPosition(i * Parameters.delay), Parameters.mix))
         pointers:Insert(pointer)
-
-        --Colour cycling for the extra pointers
-        if hueShiftAmount > 0 then
-            t = i / copies
-            newHue = Waveform:Triangle(t, hueShiftFrequency) * hueShiftAmount
-            newColor = Color:HsvToRgb(initialHsv.x + newHue, initialHsv.y, initialHsv.z)
-            Symmetry:AddColor(newColor)
-        end
     end
     return pointers
 end

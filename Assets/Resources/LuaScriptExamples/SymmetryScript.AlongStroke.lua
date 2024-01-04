@@ -14,22 +14,26 @@ end
 
 function Main()
 
-    -- Update the path if we changed the spacing
-    if copies ~= lastCopies then
+    -- Update the path only when we change the number of copies
+    if Parameters.copies ~= previousCopies then
         updatePath()
-        lastCopies = copies
+        previousCopies = Parameters.copies
     end
+
     return path
+
 end
 
 function updatePath()
+
     if stroke == nil then
         App:Error("Please draw a stroke and then restart this plugin")
         path = Path:New()
     else
         path = stroke.path
-        path:SampleByCount(copies)
+        path:SampleByCount(Parameters.copies)
         path:Center()
-        symmetryHueShift.generate(copies, initialHsv)
+        symmetryHueShift.generate(Parameters.copies, initialHsv)
     end
+
 end
