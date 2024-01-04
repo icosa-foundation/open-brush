@@ -57,6 +57,7 @@ namespace TiltBrush
             {
                 Name = "Tool",
                 Methods = new List<LuaDocsMethod>(),
+                EnumValues = new List<LuaDocsEnumValue>(),
                 Description = "A class to interact with Scripted Tools",
                 IsTopLevelClass = true,
                 Properties = new List<LuaDocsProperty>

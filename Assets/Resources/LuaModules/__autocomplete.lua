@@ -2546,3 +2546,11 @@ SymmetryWallpaperType.pmg = nil
 SymmetryWallpaperType.pmm = nil
 SymmetryWallpaperType.cmm = nil
 
+
+
+---@class Tool
+---@field startPoint Transform The position and orientation of the point where the trigger was pressed
+---@field endPoint Transform The position and orientation of the point where the trigger was released
+---@field vector Transform The vector from startPoint to endPoint
+---@field rotation Rotation The rotation from startPoint to endPoint
+Tool = {}
