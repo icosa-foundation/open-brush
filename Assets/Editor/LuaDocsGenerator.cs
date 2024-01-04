@@ -52,6 +52,7 @@ namespace TiltBrush
 
             // Manually add some entries that aren't added the standard way
             var transformProp = new LuaDocsType { PrimitiveType = LuaDocsPrimitiveType.UserData, CustomTypeName = "Transform" };
+            var vector3Prop = new LuaDocsType { PrimitiveType = LuaDocsPrimitiveType.UserData, CustomTypeName = "Vector3" };
             var rotationProp = new LuaDocsType { PrimitiveType = LuaDocsPrimitiveType.UserData, CustomTypeName = "Rotation" };
             var toolApiDocClass = new LuaDocsClass
             {
@@ -64,7 +65,7 @@ namespace TiltBrush
                 {
                     new() {Name=LuaNames.ToolScriptStartPoint, PropertyType = transformProp, Description = "The position and orientation of the point where the trigger was pressed"},
                     new() {Name=LuaNames.ToolScriptEndPoint, PropertyType = transformProp, Description = "The position and orientation of the point where the trigger was released"},
-                    new() {Name=LuaNames.ToolScriptVector, PropertyType = transformProp, Description = "The vector from startPoint to endPoint"},
+                    new() {Name=LuaNames.ToolScriptVector, PropertyType = vector3Prop, Description = "The vector from startPoint to endPoint"},
                     new() {Name=LuaNames.ToolScriptRotation, PropertyType = rotationProp, Description = "The rotation from startPoint to endPoint"},
                 }
             };
@@ -86,6 +87,20 @@ namespace TiltBrush
                 if (!klass.IsTopLevelClass) continue;
                 autocomplete.Append(klass.AutocompleteSerialize());
             }
+
+            // Some hardcoded Moonsharp built-ins
+            autocomplete.Append(@"
+---@class json
+json = {}
+---@param jsonString string
+function json:parse(jsonString) end
+
+---@param table table
+function json:serialize(table) end
+
+function json:null() end
+function json:isNull() end");
+
             File.WriteAllText(autocompleteFilePath, autocomplete.ToString());
             LuaManager.Instance.CopyLuaModules(); // Update the copy in User docs (also done on app start)
 

@@ -2551,6 +2551,17 @@ SymmetryWallpaperType.cmm = nil
 ---@class Tool
 ---@field startPoint Transform The position and orientation of the point where the trigger was pressed
 ---@field endPoint Transform The position and orientation of the point where the trigger was released
----@field vector Transform The vector from startPoint to endPoint
+---@field vector Vector3 The vector from startPoint to endPoint
 ---@field rotation Rotation The rotation from startPoint to endPoint
 Tool = {}
+
+---@class json
+json = {}
+---@param jsonString string
+function json:parse(jsonString) end
+
+---@param table table
+function json:serialize(table) end
+
+function json:null() end
+function json:isNull() end
