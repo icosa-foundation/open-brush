@@ -80,7 +80,8 @@ function App:SetFont(fontData) end
 ---@param height number Image height
 ---@param superSampling? number The supersampling strength to apply (between 0.125 and 4.0)
 ---@param renderDepth? boolean If true then render the depth buffer instead of the image
-function App:TakeSnapshot(tr, filename, width, height, superSampling, renderDepth) end
+---@param removeBackground? boolean 
+function App:TakeSnapshot(tr, filename, width, height, superSampling, renderDepth, removeBackground) end
 
 ---@param tr Transform Determines the position and orientation of the camera used to take the snapshot
 ---@param filename string The filename to use for the saved snapshot
