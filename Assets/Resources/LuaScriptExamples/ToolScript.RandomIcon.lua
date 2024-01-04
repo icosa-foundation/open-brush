@@ -16,7 +16,7 @@ function onGetCollection(result, prefix)
         print ("Empty collection returned for: " .. prefix)
         return
     end
-    local collection = json.parse(result)
+    local collection = json:parse(result)
     local categories = collection.categories
     local randomCategory
     if categories == nil then
