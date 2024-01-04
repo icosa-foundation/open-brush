@@ -4,8 +4,8 @@ Settings = {
 }
 
 Parameters = {
-    speed={label="Speed", type="float", min=0.01, max=.25, default=.05},
-    framesBetweenChanges={label="Number of frames between direction changes", type="int", min=0, max=20, default=5},
+    speed={label="Speed", type="float", min=0.01, max=.1, default=.025},
+    framesBetweenChanges={label="Number of frames between direction changes", type="int", min=1, max=20, default=10},
 }
 
 function Main()
@@ -14,7 +14,6 @@ function Main()
 
         --Store the brush transform at the moment we start drawing a line
         currentPosition = Brush.position
-        currentRotation = Brush.rotation
         vector = Vector3.zero
         framesSinceChange = 0
 
