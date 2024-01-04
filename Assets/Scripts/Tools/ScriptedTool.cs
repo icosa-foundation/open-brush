@@ -271,16 +271,18 @@ namespace TiltBrush
 
         private void UpdateTransformsFromControllers()
         {
+            var tr = transform;
             // Lock tool to camera controller.
             if (m_LockToController)
             {
-                transform.position = m_BrushController.position;
-                transform.rotation = m_BrushController.rotation;
+                tr.position = m_BrushController.position;
+                tr.rotation = m_BrushController.rotation;
             }
             else
             {
-                transform.position = SketchSurfacePanel.m_Instance.transform.position;
-                transform.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
+                var panelTr = SketchSurfacePanel.m_Instance.transform;
+                tr.position = panelTr.position;
+                tr.rotation = panelTr.rotation;
             }
         }
     }
