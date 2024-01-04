@@ -31,12 +31,12 @@ function Boid:update(dt, boids)
     local attractionToOrigin = Vector3.zero - self.position
     attractionToOrigin = attractionToOrigin.normalized
 
-    self.velocity = self.velocity + (sep * separationForce)
-    self.velocity = self.velocity + (align * alignmentForce)
+    self.velocity = self.velocity + (sep * Parameters.separationForce)
+    self.velocity = self.velocity + (align * Parameters.alignmentForce)
     self.velocity = self.velocity + (coh * cohesionForce)
 
     -- Apply the attraction to origin force
-    self.velocity = self.velocity + (attractionToOrigin * originForce)
+    self.velocity = self.velocity + (attractionToOrigin * Parameters.originForce)
 
     self.velocity = self.velocity:ClampMagnitude(5)
     self.position = self.position + (self.velocity * dt)
@@ -86,12 +86,12 @@ function Main()
     if Brush.triggerPressedThisFrame then
         -- Initialize boids with random positions and velocities
         boids = {}
-        for i = 1, copies do
+        for i = 1, Parameters.copies do
             local position = Random.insideUnitSphere * 0.25
             local velocity = Random.insideUnitSphere * 0.1
             boids[i] = Boid.new(position, velocity)
         end
-        symmetryHueShift.generate(copies, initialHsv)
+        symmetryHueShift.generate(Parameters.copies, initialHsv)
     end
     return updateBoids(0.01)
 end

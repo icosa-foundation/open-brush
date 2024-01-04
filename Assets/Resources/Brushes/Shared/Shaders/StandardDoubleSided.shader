@@ -181,7 +181,7 @@ Properties {
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
 
           if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-          if (_Opacity < 1 && Dither8x8(i.vertex.xy) >= _Opacity) discard;
+          if (_Opacity < 1 && Dither8x8(i.pos.xy) >= _Opacity) discard;
 
           fixed4 col = i.color;
           col.a = tex2D(_MainTex, i.uv).a * col.a;
@@ -252,7 +252,7 @@ Properties {
             half3 tspace1 : TANGENT;
             half3 tspace2 : NORMAL;
             float4 worldPos : TEXCOORD4;
-            float2 id : TEXCOORD5;
+            float2 id : TEXCOORD6;
             UNITY_FOG_COORDS(5)
         };
 
@@ -501,7 +501,7 @@ Properties {
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
 
           if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-          if (_Opacity < 1 && Dither8x8(i.vertex.xy) >= _Opacity) discard;
+          if (_Opacity < 1 && Dither8x8(i.pos.xy) >= _Opacity) discard;
 
           fixed4 col = i.color;
           col.a *= tex2D(_MainTex, i.uv).a;

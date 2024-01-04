@@ -11,9 +11,9 @@ Parameters = {
 
 function Main()
     pointers = Path:New()
-    for i = 1.0, copies do
-        angle = (App.time * speed) + (360 * (i / copies))
-        position2d = Vector2:PointOnCircle(angle) * radius
+    for i = 1.0, Parameters.copies do
+        angle = (App.time * Parameters.speed) + (360 * (i / Parameters.copies))
+        position2d = Vector2:PointOnCircle(angle) * Parameters.radius
         pointers:Insert(Transform:New(position2d:OnZ()))
     end
     return pointers

@@ -18,24 +18,24 @@ end
 function Main()
 
     if Brush.triggerPressedThisFrame then
-        symmetryHueShift.generate(copies, initialHsv)
+        symmetryHueShift.generate(Parameters.copies, initialHsv)
     end
 
     pointers = Path:New()
-    theta = (Math.pi * 2.0) / copies
+    theta = (Math.pi * 2.0) / Parameters.copies
 
-    for i = 0, copies - 1 do
+    for i = 0, Parameters.copies - 1 do
         angle = (Symmetry.current.rotation.y * Math.deg2Rad) + i * theta
-        radius = Symmetry:Superellipse(angle, n, eccentricity)
-        if n < 1 then
-            radius = radius * Math:Pow(1 + (1-n), 2)
+        radius = Symmetry:Superellipse(angle, Parameters.n, Parameters.eccentricity)
+        if Parameters.n < 1 then
+            radius = radius * Math:Pow(1 + (1-Parameters.n), 2)
         end
 
         pointer = Transform:New(
             Vector3:New(
                 Symmetry.brushOffset.x * radius,
                 Symmetry.brushOffset.y,
-                Math:Lerp(Symmetry.brushOffset.z, Symmetry.brushOffset.z * radius, axisConsistency)
+                Math:Lerp(Symmetry.brushOffset.z, Symmetry.brushOffset.z * radius, Parameters.axisConsistency)
             ),
             Rotation:New(0, angle * Math.rad2Deg, 0)
         )

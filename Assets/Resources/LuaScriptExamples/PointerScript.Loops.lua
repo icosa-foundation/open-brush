@@ -10,8 +10,8 @@ Parameters = {
 function Main()
 
     --Move the pointer in a circular path around the actual brush position
-    angle = (App.time * speed) % 360
-    position2d = Vector2:PointOnCircle(angle) * radius
+    angle = (App.time * Parameters.speed) % 360
+    position2d = Vector2:PointOnCircle(angle) * Parameters.radius
     return Transform:New(position2d:OnZ())
 
 end

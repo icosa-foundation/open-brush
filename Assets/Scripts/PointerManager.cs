@@ -1719,6 +1719,8 @@ namespace TiltBrush
 
                 bool resetColors = true;
                 bool resetBrushes = true;
+                // Currently only Multimirror mode shows UI for color shift
+                // So disable it for all other modes
                 // TODO Better logic around when to set and revert colors
                 if (CurrentSymmetryMode is SymmetryMode.ScriptedSymmetryMode or SymmetryMode.MultiMirror)
                 {

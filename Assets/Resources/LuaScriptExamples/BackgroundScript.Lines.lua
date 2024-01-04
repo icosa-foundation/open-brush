@@ -10,18 +10,18 @@ Parameters = {
 function Main()
 
     startPoint = Transform:Position(
-        Random.value * range,
-        Random.value * range,
-        Random.value * range
+        Random.value * Parameters.range,
+        Random.value * Parameters.range,
+        Random.value * Parameters.range
     )
 
     endPoint = Transform:Position(
-        Random.value * range,
-        Random.value * range,
-        Random.value * range
+        Random.value * Parameters.range,
+        Random.value * Parameters.range,
+        Random.value * Parameters.range
     )
 
-    if App.frames % rate == 0 then
+    if App.frames % Parameters.rate == 0 then
         Path:New({startPoint, endPoint}):Draw()
     end
 end

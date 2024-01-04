@@ -11,9 +11,9 @@ Parameters = {
 function Main()
     if Brush.triggerReleasedThisFrame then
         points = Path:New();
-        totalSteps = turns * steps
+        totalSteps = Parameters.turns * Parameters.steps
         for i = 0, 1, 1/totalSteps do
-            angle = Math.pi * 2 * turns * i
+            angle = Math.pi * 2 * Parameters.turns * i
             position = Vector3:New(Math:Cos(angle) * i, Math:Sin(angle) * i, -(i * 2) + 1)
             rotation = Rotation:New(0, angle * Math.rad2Deg, 0)
             points:Insert(Transform:New(position, rotation))

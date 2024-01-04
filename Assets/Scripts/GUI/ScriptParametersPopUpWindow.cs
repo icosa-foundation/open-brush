@@ -23,51 +23,43 @@ namespace TiltBrush
     public class ScriptParametersPopUpWindow : OptionsPopUpWindow
     {
         private LuaApiCategory m_ApiCategory;
-        private Table m_WidgetConfigs;
         private List<AdvancedSlider> m_Widgets;
 
         public override void SetPopupCommandParameters(int iCommandParam, int iCommandParam2)
         {
             m_Widgets = GetComponentsInChildren<AdvancedSlider>().ToList();
             m_ApiCategory = (LuaApiCategory)iCommandParam;
-            var script = LuaManager.Instance.GetActiveScript(m_ApiCategory);
-            m_WidgetConfigs = LuaManager.Instance.GetWidgetConfigs(script);
-            var kvs = m_WidgetConfigs.Pairs.ToList();
-            int index = 0;
-            foreach (var widget in m_Widgets)
+            var scriptName = LuaManager.Instance.GetActiveScriptName(m_ApiCategory);
+            var widgetConfigs = LuaManager.Instance.GetWidgetConfigs(scriptName);
+            m_Widgets.ForEach(w => w.gameObject.SetActive(false));
+            for (int i=0; i < widgetConfigs.Count; i++)
             {
-                if (index < kvs.Count)
+                var name = widgetConfigs.Keys.ElementAt(i);
+                var config = widgetConfigs[name];
+                var widget = m_Widgets[i];
+                widget.gameObject.SetActive(true);
+                widget.name = name;
+                widget.SliderType = config.type.ToLower() switch
                 {
-                    widget.gameObject.SetActive(true);
-                    var config = kvs[index];
-                    widget.name = config.Key.String;
-                    widget.SliderType = config.Value.Table.Get("type").String.ToLower() switch
-                    {
-                        "int" => SliderTypes.Int,
-                        "float" => SliderTypes.Float,
-                        _ => widget.SliderType
-                    };
-                    widget.SetMin((float)config.Value.Table.Get("min").Number);
-                    widget.SetMax((float)config.Value.Table.Get("max").Number);
-                    widget.SetDescriptionText(config.Value.Table.Get("label").String);
+                    "int" => SliderTypes.Int,
+                    "float" => SliderTypes.Float,
+                    _ => widget.SliderType
+                };
+                widget.SetMin(config.min);
+                widget.SetMax(config.max);
+                widget.SetDescriptionText(config.label);
 
-                    var val = LuaManager.Instance.GetOrSetWidgetCurrentValue(script, config);
-                    widget.SetInitialValueAndUpdate(val);
-                }
-                else
-                {
-                    widget.gameObject.SetActive(false);
-                }
-                index++;
+                var script = LuaManager.Instance.GetActiveScript(m_ApiCategory);
+                var val = LuaManager.Instance.GetOrSetWidgetCurrentValue(script, name, config);
+                widget.SetInitialValueAndUpdate(val);
             }
         }
 
         public void OnSliderChanged(Vector3 sliderValue)
         {
             int sliderIndex = Mathf.FloorToInt(sliderValue.x);
-            if (m_WidgetConfigs == null) return;
-            var config = m_WidgetConfigs.Pairs.ToList()[sliderIndex];
-            var paramName = config.Key.String;
+            var slider = m_Widgets[sliderIndex];
+            var paramName = slider.name;
             LuaManager.Instance.SetScriptParameterForActiveScript(m_ApiCategory, paramName, sliderValue.z);
         }
     }

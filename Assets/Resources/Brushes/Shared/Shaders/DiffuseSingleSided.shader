@@ -93,6 +93,7 @@ SubShader {
 CGPROGRAM
 #pragma surface surf Lambert vertex:vert alphatest:_Cutoff
 #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
+#pragma target 4.0
 #include "Assets/Shaders/Include/Brush.cginc"
 
 sampler2D _MainTex;
@@ -106,7 +107,9 @@ struct Input {
   float2 uv_MainTex;
   float4 color : COLOR;
   uint id : SV_VertexID;
+  float4 vertex : POSITION;
   float4 screenPos;
+  fixed vface : VFACE;
 };
 
 struct appdata_full_plus_id {
@@ -123,7 +126,7 @@ struct appdata_full_plus_id {
 };
 
 void vert (inout appdata_full_plus_id v, out Input o) {
-  UNITY_INITIALIZE_OUTPUT(Input, v);
+  UNITY_INITIALIZE_OUTPUT(Input, o);
   PrepForOds(v.vertex);
   v.color = TbVertToNative(v.color);
 }

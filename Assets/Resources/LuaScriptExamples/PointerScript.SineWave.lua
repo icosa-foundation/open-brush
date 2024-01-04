@@ -8,6 +8,6 @@ Parameters = {
 }
 
 function Main()
-    y = Waveform:Sine(Brush.distanceMoved, frequency) * amplitude
+    y = Waveform:Sine(Brush.distanceMoved, Parameters.frequency) * Parameters.amplitude
     return Transform:Position(0, y, 0)
 end

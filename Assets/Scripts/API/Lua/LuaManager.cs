@@ -76,7 +76,15 @@ namespace TiltBrush
         public static string ToolScriptEndPoint => "endPoint";
         public static string ToolScriptVector => "vector";
         public static string ToolScriptRotation => "rotation";
+    }
 
+    public struct ScriptWidgetConfig
+    {
+        public string label;
+        public string type;
+        public float min;
+        public float max;
+        public float defaultVal;
     }
 
     public class LuaManager : MonoBehaviour
@@ -101,6 +109,7 @@ namespace TiltBrush
         [NonSerialized] public bool BackgroundScriptsEnabled;
         private List<string> m_ScriptPathsToUpdate;
         private Dictionary<string, Script> m_ActiveBackgroundScripts;
+        private Dictionary<string, Dictionary<string, ScriptWidgetConfig>> m_WidgetConfigs;
 
         private TransformBuffers m_TransformBuffers;
         private bool m_TriggerWasPressed;
@@ -151,6 +160,7 @@ namespace TiltBrush
             m_ScriptPathsToUpdate = new List<string>();
             m_ActiveBackgroundScripts = new Dictionary<string, Script>();
             m_Timers = new Dictionary<(Script OwnerScript, int ReferenceID), LuaTimer>();
+            m_WidgetConfigs = new Dictionary<string, Dictionary<string, ScriptWidgetConfig>>();
             LuaCustomConverters.RegisterAll();
             UserData.RegisterAssembly();
             Script.GlobalOptions.Platform = new StandardPlatformAccessor();
@@ -276,7 +286,7 @@ namespace TiltBrush
                     }
                     else
                     {
-                        var activeScriptName = GetScriptNames(category)[ActiveScripts[category]];
+                        var activeScriptName = GetActiveScriptName(category);
                         ActiveScripts[category] = GetScriptNames(category).IndexOf(activeScriptName);
                         if (activeScriptName == scriptName)
                         {
@@ -476,6 +486,7 @@ namespace TiltBrush
                 try
                 {
                     InitScriptOnce(script);
+                    InitWidgetConfigs(script, scriptName);
                 }
                 catch (ScriptRuntimeException e)
                 {
@@ -549,10 +560,14 @@ namespace TiltBrush
 #endif
         }
 
+        public string GetActiveScriptName(LuaApiCategory category)
+        {
+            return GetScriptNames(category)[ActiveScripts[category]];
+        }
+
         public Script GetActiveScript(LuaApiCategory category)
         {
-            string scriptName = GetScriptNames(category)[ActiveScripts[category]];
-            return Scripts[category][scriptName];
+            return Scripts[category][GetActiveScriptName(category)];
         }
 
         private DynValue _CallScript(Script script, string fnName)
@@ -803,12 +818,12 @@ namespace TiltBrush
         {
             if (!script.Globals.Get("_scriptHasBeenInitialized").Boolean)
             {
-                var configs = GetWidgetConfigs(script);
-                foreach (var config in configs.Pairs)
+                var scriptName = script.Globals.Get(LuaNames.ScriptNameString).String;
+                var configs = GetWidgetConfigs(scriptName);
+                foreach (var config in configs)
                 {
-                    if (config.Key.Type != DataType.String) continue;
                     // Ensure the value is set
-                    GetOrSetWidgetCurrentValue(script, config);
+                    GetOrSetWidgetCurrentValue(script, config.Key, config.Value);
                 }
                 script.Globals.Set("_scriptHasBeenInitialized", DynValue.True); // Used by EndScript
                 script.Globals.Set("_scriptHasEnded", DynValue.False);
@@ -927,33 +942,70 @@ namespace TiltBrush
             }
         }
 
-        public Table GetWidgetConfigs(Script script)
+        public void InitWidgetConfigs(Script script, string scriptName)
         {
-            var configs = script.Globals.Get(LuaNames.Parameters);
-            return configs.IsNil() ? new Table(script) : configs.Table;
+            m_WidgetConfigs[scriptName] = new Dictionary<string, ScriptWidgetConfig>();
+            var paramsDynVal = script.Globals.Get(LuaNames.Parameters);
+            if (!paramsDynVal.IsNil())
+            {
+                foreach (var pair in paramsDynVal.Table.Pairs)
+                {
+                    m_WidgetConfigs[scriptName][pair.Key.String] = new ScriptWidgetConfig
+                    {
+                        label = pair.Value.Table.Get("label").String,
+                        type = pair.Value.Table.Get("type").String,
+                        min = (float)pair.Value.Table.Get("min").Number,
+                        max = (float)pair.Value.Table.Get("max").Number,
+                        defaultVal = (float)pair.Value.Table.Get("default").Number
+                    };
+                }
+            }
+            // Replace the config table with the default value
+            foreach (var item in m_WidgetConfigs[scriptName])
+            {
+                SetScriptParam(script, item.Key, item.Value.defaultVal);
+            }
+        }
+
+        public Dictionary<string, ScriptWidgetConfig> GetWidgetConfigs(string scriptName)
+        {
+            return m_WidgetConfigs[scriptName];
         }
 
         public void SetScriptParameterForActiveScript(LuaApiCategory category, string paramName, float paramValue)
         {
             var script = GetActiveScript(category);
-            script.Globals.Set(paramName, DynValue.NewNumber(paramValue));
+            SetScriptParam(script, paramName, paramValue);
         }
 
-        public float GetOrSetWidgetCurrentValue(Script script, TablePair config)
+        private void SetScriptParam(Script script, string paramName, float paramValue)
+        {
+            script.Globals.Get(LuaNames.Parameters).Table.Set(paramName, DynValue.NewNumber(paramValue));
+        }
+
+        private DynValue GetScriptParam(Script script, object paramName)
+        {
+            return script.Globals.Get(LuaNames.Parameters).Table.Get(paramName);
+        }
+
+        public float GetOrSetWidgetCurrentValue(Script script, string paramName, ScriptWidgetConfig config)
         {
             // Try and get the value from the script
-            var val = script.Globals.Get(config.Key);
+            var dynVal = GetScriptParam(script, paramName);
+            float val;
             // If it isn't set...
-            if (val.Equals(DynValue.Nil))
+            if (dynVal.Equals(DynValue.Nil))
             {
                 // Get the default from the config entry
-                val = config.Value.Table.Get("default");
-                // Otherwise default to 0
-                val = val.Equals(DynValue.Nil) ? DynValue.NewNumber(0) : val;
+                val = config.defaultVal;
                 // Set the value in the script
-                script.Globals.Set(config.Key, val);
+                SetScriptParam(script, paramName, val);
             }
-            return (float)val.Number;
+            else
+            {
+                val = (float)dynVal.Number;
+            }
+            return val;
         }
 
         public void RecordPointerPositions(

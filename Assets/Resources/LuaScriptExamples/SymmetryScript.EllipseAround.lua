@@ -17,16 +17,16 @@ end
 function Main()
 
     if Brush.triggerPressedThisFrame then
-        symmetryHueShift.generate(copies, initialHsv)
+        symmetryHueShift.generate(Parameters.copies, initialHsv)
     end
 
     pointers = Path:New()
-    theta = (Math.pi * 2.0) / copies
+    theta = (Math.pi * 2.0) / Parameters.copies
 
-    for i = 0, copies - 1 do
+    for i = 0, Parameters.copies - 1 do
         angle = (Symmetry.current.rotation.y * Math.deg2Rad) + i * theta
-        radius = Symmetry:Ellipse(angle, eccentricity)
-        newZ = Math:Lerp(Symmetry.brushOffset.z, Symmetry.brushOffset.z * radius, axisConsistency)
+        radius = Symmetry:Ellipse(angle, Parameters.eccentricity)
+        newZ = Math:Lerp(Symmetry.brushOffset.z, Symmetry.brushOffset.z * radius, Parameters.axisConsistency)
         position = Vector3:New(
             Symmetry.brushOffset.x * radius,
             Symmetry.brushOffset.y,

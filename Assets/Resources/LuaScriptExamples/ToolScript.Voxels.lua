@@ -16,16 +16,16 @@ function Main()
     if Brush.triggerIsPressed then
 
         cell = Vector3:New(
-                quantize(Brush.position.x, gridSize),
-                quantize(Brush.position.y, gridSize),
-                quantize(Brush.position.z, gridSize)
+                quantize(Brush.position.x, Parameters.gridSize),
+                quantize(Brush.position.y, Parameters.gridSize),
+                quantize(Brush.position.z, Parameters.gridSize)
         )
 
         key = cell.x .. "," .. cell.y .. "," .. cell.z
 
         if filledCells[key]==nil then
             filledCells[key] = true
-            path = cube(cell, gridSize)
+            path = cube(cell, Parameters.gridSize)
             path:SampleByDistance(0.1)
             return path
         else

@@ -22,11 +22,11 @@ function Main()
     elseif Brush.triggerIsPressed then
 
         local t = Brush.timeSincePressed;
-        x = sampleWave(xWave, t, xFrequency, xPrevious)
-        y = sampleWave(yWave, t + (yPhase * 0.5), yFrequency, yPrevious)
+        x = sampleWave(Parameters.xWave, t, Parameters.xFrequency, xPrevious)
+        y = sampleWave(Parameters.yWave, t + (Parameters.yPhase * 0.5), Parameters.yFrequency, yPrevious)
         xPrevious = x
         yPrevious = y
-        position = Vector3:New(-x * radius, y * radius, 0)
+        position = Vector3:New(-x * Parameters.radius, y * Parameters.radius, 0)
         return Transform:New(position)
 
     end

@@ -15,13 +15,13 @@ end
 function Main()
 
     if Brush.triggerPressedThisFrame then
-        symmetryHueShift.generate(copies, initialHsv)
+        symmetryHueShift.generate(Parameters.copies, initialHsv)
     end
 
     pointers = Path:New()
-    theta = 360.0 / copies
+    theta = 360.0 / Parameters.copies
 
-    for i = 0, copies - 1 do
+    for i = 0, Parameters.copies - 1 do
         angle = i * theta
         radius = (1 + (Math:Sin(angle/360 * 16 * Math.pi)) * 0.25)
         pointer = Transform:New(

@@ -140,6 +140,18 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The transform of the symmetry widget")]
+        public TransformApiWrapper transform
+        {
+            get => new (TrTransform.TR(_Position, _Rotation));
+            set
+            {
+                _Position = value._TrTransform.translation;
+                _Rotation = value._TrTransform.rotation;
+                if (_IsCurrent) _SetTransform(value._TrTransform);
+            }
+        }
+
         [LuaDocsDescription("The position of the symmetry widget")]
         public Vector3ApiWrapper position
         {
@@ -164,10 +176,8 @@ namespace TiltBrush
 
         private void _SetTransform(TrTransform tr)
         {
-            var widget = PointerManager.m_Instance.SymmetryWidget;
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                new MoveWidgetCommand(widget, tr, widget.CustomDimension, true)
-            );
+            SymmetryWidget widget = PointerManager.m_Instance.SymmetryWidget;
+            widget.LocalTransform = tr;
         }
 
         [LuaDocsDescription("How fast the symmetry widget is spinning in each axis")]

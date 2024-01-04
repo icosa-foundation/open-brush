@@ -80,7 +80,8 @@ function App:SetFont(fontData) end
 ---@param height number Image height
 ---@param superSampling? number The supersampling strength to apply (between 0.125 and 4.0)
 ---@param renderDepth? boolean If true then render the depth buffer instead of the image
-function App:TakeSnapshot(tr, filename, width, height, superSampling, renderDepth) end
+---@param removeBackground? boolean 
+function App:TakeSnapshot(tr, filename, width, height, superSampling, renderDepth, removeBackground) end
 
 ---@param tr Transform Determines the position and orientation of the camera used to take the snapshot
 ---@param filename string The filename to use for the saved snapshot
@@ -1762,6 +1763,7 @@ function Symmetry:PathToPolar(path) end
 
 ---@class SymmetrySettings
 ---@field mode SymmetryMode The symmetry mode
+---@field transform Transform The transform of the symmetry widget
 ---@field position Vector3 | number[] The position of the symmetry widget
 ---@field rotation Rotation | number[] The rotation of the symmetry widget
 ---@field spin Vector3 | number[] How fast the symmetry widget is spinning in each axis
@@ -2545,3 +2547,22 @@ SymmetryWallpaperType.pmg = nil
 SymmetryWallpaperType.pmm = nil
 SymmetryWallpaperType.cmm = nil
 
+
+
+---@class Tool
+---@field startPoint Transform The position and orientation of the point where the trigger was pressed
+---@field endPoint Transform The position and orientation of the point where the trigger was released
+---@field vector Vector3 The vector from startPoint to endPoint
+---@field rotation Rotation The rotation from startPoint to endPoint
+Tool = {}
+
+---@class json
+json = {}
+---@param jsonString string
+function json:parse(jsonString) end
+
+---@param table table
+function json:serialize(table) end
+
+function json:null() end
+function json:isNull() end

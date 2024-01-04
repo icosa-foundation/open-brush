@@ -6,15 +6,15 @@ symmetryHueShift = require "symmetryHueShift"
 
 function Start()
     initialHsv = Brush.colorHsv
-    lastSpacing = spacing
+    lastSpacing = Parameters.spacing
     updatePath()
 end
 
 function Main()
     -- Update the path if we changed the spacing
-    if spacing ~= lastSpacing then
+    if Parameters.spacing ~= lastSpacing then
         updatePath()
-        lastSpacing = spacing
+        lastSpacing = Parameters.spacing
     end
     return Symmetry:PathToPolar(path)
 end
@@ -25,8 +25,8 @@ function updatePath()
     path = paths:Longest() -- Get the longest path
     path:RotateBy(Rotation:New(0, 0, 90)) -- Rotate 90 degrees
     path:Normalize(2) -- Scale and center inside a 2x2 square
-    path:SampleByDistance(spacing) -- Evenly space all the points
-    lowest = path:FindMinimumX(path) -- Find the point with the lowest x value
+    path:SampleByDistance(Parameters.spacing) -- Evenly space all the points
+    lowest = path:FindMinimumX() -- Find the point with the lowest x value
     path:StartingFrom(lowest) -- Make it the new start point
     symmetryHueShift.generate(path.count, initialHsv)
 end

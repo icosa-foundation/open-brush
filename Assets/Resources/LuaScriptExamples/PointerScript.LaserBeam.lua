@@ -19,7 +19,7 @@ function Main()
     elseif Brush.triggerIsPressed then
 
         -- Move the pointer in the direction we were facing when we pressed the trigger
-        currentPos = currentPos + (direction * speed)
+        currentPos = currentPos + (direction * Parameters.speed)
         return Transform:New(currentPos, currentRotation)
 
     end

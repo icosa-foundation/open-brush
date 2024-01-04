@@ -16,17 +16,17 @@ end
 function Main()
 
     if Brush.triggerPressedThisFrame then
-        symmetryHueShift.generate(copies, initialHsv)
+        symmetryHueShift.generate(Parameters.copies, initialHsv)
     end
 
     pointers = Path:New()
 
-    for i = 0, copies - 1 do
+    for i = 0, Parameters.copies - 1 do
 
-        t = i / copies
+        t = i / Parameters.copies
 
         --Shift the extra pointers
-        position = Symmetry.brushOffset:Subtract(distance * t, 0, 0)
+        position = Symmetry.brushOffset:Subtract(Parameters.distance * t, 0, 0)
         pointers:Insert(position)
     end
     return pointers

@@ -553,7 +553,7 @@ namespace TiltBrush
 
         /// isNonRawTransform - true if the transform uses the pre-M13 meaning of transform.scale.
         protected static void CreateModel(Model model, TrTransform xf, bool pin,
-                                bool isNonRawTransform, uint groupId, int layerId, string assetId = null)
+                              bool isNonRawTransform, uint groupId, int layerId, string assetId = null)
         {
 
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;

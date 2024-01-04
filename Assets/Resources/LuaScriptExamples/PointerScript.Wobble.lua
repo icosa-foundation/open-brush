@@ -9,10 +9,19 @@ Parameters = {
 }
 
 function Main()
-    noiseX = -0.5 + Math:PerlinNoise(frequency * Brush.position.x - 100, frequency * Brush.position.z)
-    noiseY = -0.5 + Math:PerlinNoise(frequency * Brush.position.x, frequency * Brush.position.z)
-    noiseZ = -0.5 + Math:PerlinNoise(frequency * Brush.position.x + 100, frequency * Brush.position.z)
-    position = Vector3:New(noiseX * positionAmount, noiseY * positionAmount, noiseZ * positionAmount)
-    rotation = Rotation:New(noiseX * rotationAmount, noiseY * rotationAmount, noiseZ * rotationAmount)
+
+    -- Shorthand parameters for convenience
+    local f = Parameters.frequency
+    local p = Parameters.positionAmount
+    local r = Parameters.rotationAmount
+
+    noiseX = -0.5 + Math:PerlinNoise(f * Brush.position.x - 100, f * Brush.position.z)
+    noiseY = -0.5 + Math:PerlinNoise(f * Brush.position.x, f * Brush.position.z)
+    noiseZ = -0.5 + Math:PerlinNoise(f * Brush.position.x + 100, f * Brush.position.z)
+
+    position = Vector3:New(noiseX * p, noiseY * p, noiseZ * p)
+    rotation = Rotation:New(noiseX * r, noiseY * r, noiseZ * r)
+
     return Transform:New(position, rotation)
+
 end

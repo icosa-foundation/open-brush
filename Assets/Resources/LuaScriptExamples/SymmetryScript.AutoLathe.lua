@@ -12,8 +12,8 @@ function Main()
 
     if Brush.triggerPressedThisFrame then
         Brush:ForceNewStroke()
-        Symmetry.current.rotation = Rotation:New(angleX, 0, angleZ)
-        Symmetry.current.spin = Vector3:New(0, speed, 0)
+        Symmetry.current.rotation = Rotation:New(Parameters.angleX, 0, Parameters.angleZ)
+        Symmetry.current.spin = Vector3:New(0, Parameters.speed, 0)
     end
 
     local position = Transform:New(Symmetry.brushOffset:ScaleBy(-1, 1, 1))

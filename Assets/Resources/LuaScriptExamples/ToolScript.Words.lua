@@ -25,11 +25,11 @@ function Main()
         distanceMovedThisFrame = Brush.distanceMoved - distanceLastFrame
         distanceLastFrame = Brush.distanceMoved
         distance = distance + distanceMovedThisFrame
-        if distance > spacing then
+        if distance > Parameters.spacing then
             letterCount = letterCount + 1
             letter = string.sub(text, letterCount, letterCount)
             rot = Brush.rotation
-            transform = Transform:New(Brush.position, rot, size)
+            transform = Transform:New(Brush.position, rot, Parameters.size)
             paths = PathList:FromText(letter)
             paths:TransformBy(transform)
             paths:SampleByDistance(0.01)

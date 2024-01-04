@@ -6,16 +6,16 @@ Settings = {
 Parameters = {
     uScale={label="U Scaling", type="float", min=0.001, max=1, default=1},
     vScale={label="V Scaling", type="float", min=0.001, max=1, default=0.1},
-    radius={label="Radius", type="float", min=0, max=20, default=5},
+    radius={label="Radius", type="float", min=0, max=10, default=1},
 }
 
 function Main()
     if Brush.triggerPressedThisFrame then
         initialPos = Brush.position
     elseif Brush.triggerIsPressed then
-        u = Brush.distanceDrawn * uScale
-        v = Brush.distanceDrawn * vScale
-        p = Sphere(u,v)
+        u = Brush.distanceDrawn * Parameters.uScale
+        v = Brush.distanceDrawn * Parameters.vScale
+        p = Sphere(u,v) * Parameters.radius
         return Transform:New(
             initialPos + p,
             Rotation:LookRotation(p, Vector3.right)

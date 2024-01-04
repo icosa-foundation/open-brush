@@ -18,12 +18,12 @@ function Main()
     elseif Brush.triggerIsPressed then
 
         -- Pick an old position from the buffer
-        oldPosition = Brush:GetPastPosition(Math:Min(counter, delay))
+        oldPosition = Brush:GetPastPosition(Math:Min(counter, Parameters.delay))
 
         counter = counter + 1
 
         -- How much to mix old and new positions
-        mix = (Waveform:Sine(App.time, frequency) + 1) * amplitude
+        mix = (Waveform:Sine(App.time, Parameters.frequency) + 1) * Parameters.amplitude
 
         --Interpolate back and forth between old and current positions
         newPosition = Vector3:LerpUnclamped(oldPosition, Brush.position, mix)

@@ -4,8 +4,8 @@ Settings = {
 }
 
 Parameters = {
-    speed={label="Speed", type="float", min=0.01, max=.25, default=.05},
-    framesBetweenChanges={label="Number of frames between direction changes", type="int", min=0, max=20, default=5},
+    speed={label="Speed", type="float", min=0.01, max=.1, default=.025},
+    framesBetweenChanges={label="Number of frames between direction changes", type="int", min=1, max=20, default=10},
 }
 
 function Main()
@@ -14,7 +14,6 @@ function Main()
 
         --Store the brush transform at the moment we start drawing a line
         currentPosition = Brush.position
-        currentRotation = Brush.rotation
         vector = Vector3.zero
         framesSinceChange = 0
 
@@ -22,7 +21,7 @@ function Main()
 
         framesSinceChange = framesSinceChange + 1
 
-        if framesSinceChange > framesBetweenChanges then
+        if framesSinceChange > Parameters.framesBetweenChanges then
 
             -- A vector from the actual Brush.Position to the calculated one used for drawing
             vector = Brush.position - currentPosition
@@ -44,13 +43,13 @@ function Main()
             -- Zero out all directions except the biggest
             -- and set the biggest direction equal to "speed"
             if vector.x > vector.y and vector.x > vector.z then
-                vector = Vector3:New(speed, 0, 0)
+                vector = Vector3:New(Parameters.speed, 0, 0)
                 rotation = Rotation:New(0, 90 * signs.y, 0)
             elseif vector.y > vector.x and vector.y > vector.z then
-                vector = Vector3:New(0, speed, 0)
+                vector = Vector3:New(0, Parameters.speed, 0)
                 rotation = Rotation:New(90 * signs.x, 0, 0)
             elseif vector.z > vector.x and vector.z > vector.y then
-                vector = Vector3:New(0, 0, speed)
+                vector = Vector3:New(0, 0, Parameters.speed)
                 local rot = signs.z < 0 and -180 or 0 -- If the z direction is negative, rotate 180 degrees
                 rotation = Rotation:New(0, 0, rot)
             end
@@ -64,7 +63,7 @@ function Main()
         -- Shift the brush position based on the value calculated above
         currentPosition = currentPosition + vector
 
-        return Transform:New(currentPosition, currentRotation)
+        return Transform:New(currentPosition, rotation)
 
     end
 

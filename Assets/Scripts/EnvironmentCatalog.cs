@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Localization.Settings;
 
 namespace TiltBrush
 {
@@ -30,6 +31,9 @@ namespace TiltBrush
         private bool m_IsLoading;
         private Dictionary<Guid, Environment> m_GuidToEnvironment;
 
+        // Used by the HTTP API because you can't GetLocalizedString in a background thread.
+        public List<string> m_EnvironmentDescriptions;
+
         public IEnumerable<Environment> AllEnvironments
         {
             get { return m_GuidToEnvironment.Values; }
@@ -43,6 +47,7 @@ namespace TiltBrush
         {
             m_Instance = this;
             m_GuidToEnvironment = new Dictionary<Guid, Environment>();
+            m_EnvironmentDescriptions = new List<string>();
         }
 
         public bool IsLoading { get { return m_IsLoading; } }
@@ -63,6 +68,10 @@ namespace TiltBrush
                     continue;
                 }
                 m_GuidToEnvironment[env.m_Guid] = env;
+                // TODO - do we want the API to always use English?
+                // env.m_EnvironmentDescription.LocaleOverride = LocalizationSettings.AvailableLocales.GetLocale(SystemLanguage.English);
+                m_EnvironmentDescriptions.Add(env.Description);
+                // env.m_EnvironmentDescription.LocaleOverride = null;
             }
 
             Resources.UnloadUnusedAssets();

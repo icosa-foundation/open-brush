@@ -15,10 +15,10 @@ function Main()
     if Brush.triggerReleasedThisFrame then
     points = Path:New()
         for i = 0.0, Math.pi * 2, 0.01 do
-            angle = sym * i / 4.0
-            term1 = Math:Pow(Math:Abs(Math:Cos(angle)), n2)
-            term2 = Math:Pow(Math:Abs(Math:Sin(angle)), n3)
-            r = Math:Pow(term1 + term2, -1.0 / n1)
+            angle = Parameters.sym * i / 4.0
+            term1 = Math:Pow(Math:Abs(Math:Cos(angle)), Parameters.n2)
+            term2 = Math:Pow(Math:Abs(Math:Sin(angle)), Parameters.n3)
+            r = Math:Pow(term1 + term2, -1.0 / Parameters.n1)
             x = Math:Cos(i) * r
             y = Math:Sin(i) * r
             position = Vector3:New(x, y, 0)
