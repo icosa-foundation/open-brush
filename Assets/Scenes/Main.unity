@@ -19342,6 +19342,8 @@ MonoBehaviour:
     type: 3}
   m_UnityXRPhoenixControlsPrefab: {fileID: 1000010438099326, guid: 6ec600b382b3e3a4380fae76343440be,
     type: 3}
+  m_UnityXRZapboxControlsPrefab: {fileID: 1000010438099326, guid: 97b4cb6f2999a4844b837b3883d42ced,
+    type: 3}
   m_OculusRiftControlsPrefab: {fileID: 2302704768686387309, guid: 6fb051841cd1bcb4dbc6c246b98d97c8,
     type: 3}
   m_OculusQuestControlsPrefab: {fileID: 2302704768686387309, guid: 6fb051841cd1bcb4dbc6c246b98d97c8,
