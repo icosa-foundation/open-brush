@@ -234,7 +234,7 @@ jobs:
             versionSuffix: 0
             extra_defines: PICO_SUPPORTED
 
-          - name: Zapbox iOS
+          - name: iOS Zapbox
             targetPlatform: iOS
             vrsdk: Zapbox
             cache: iOS
