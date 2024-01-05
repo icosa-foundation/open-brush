@@ -32,7 +32,7 @@ namespace TiltBrush
             var scriptName = LuaManager.Instance.GetActiveScriptName(m_ApiCategory);
             var widgetConfigs = LuaManager.Instance.GetWidgetConfigs(scriptName);
             m_Widgets.ForEach(w => w.gameObject.SetActive(false));
-            for (int i=0; i < widgetConfigs.Count; i++)
+            for (int i = 0; i < widgetConfigs.Count; i++)
             {
                 var name = widgetConfigs.Keys.ElementAt(i);
                 var config = widgetConfigs[name];
