@@ -3,7 +3,7 @@ Settings = {
 }
 
 function onGetImageResults(result)
-    local imageList = json:parse(result).results
+    local imageList = json:parse(result)["results"]
     local randomItem = imageList[math.random(#imageList)]
     env = Sketch.environments:ByName("Black")
     Sketch.environments.current = env

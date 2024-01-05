@@ -91,14 +91,17 @@ namespace TiltBrush
 
         [LuaDocsDescription("Converts the 2D path to a 3D path on the YZ plane (i.e. with all x values set to 0)")]
         [LuaDocsExample("my3dPath = my2dPath:OnX()")]
+        [LuaDocsReturnValue("A 3D Path based on the input but with all x as 0: (0, inX, inY)")]
         public PathApiWrapper OnX() => PathApiWrapper.New(_Path2d.Select(v => new Vector3(0, v.x, v.y)).ToList());
 
         [LuaDocsDescription("Converts the 2D path to a 3D path on the XZ plane (i.e. with all y values set to 0)")]
         [LuaDocsExample("my3dPath = my2dPath:OnY()")]
+        [LuaDocsReturnValue("A 3D Path based on the input but with all y as 0: (inX, 0, inY)")]
         public PathApiWrapper OnY() => PathApiWrapper.New(_Path2d.Select(v => new Vector3(v.x, 0, v.y)).ToList());
 
         [LuaDocsDescription("Converts the 2D path to a 3D path on the XY plane (i.e. with all z values set to 0)")]
         [LuaDocsExample("my3dPath = my2dPath:OnZ()")]
+        [LuaDocsReturnValue("A 3D Path based on the input but with all z as 0: (inX, inY, 0)")]
         public PathApiWrapper OnZ() => PathApiWrapper.New(_Path2d.Select(v => new Vector3(v.x, v.y, 0)).ToList());
 
         [LuaDocsDescription("Transforms all points in the path by the specific amount")]

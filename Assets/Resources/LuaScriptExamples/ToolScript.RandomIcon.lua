@@ -30,7 +30,7 @@ function onGetCollection(result, prefix)
 end
 
 function onGetAllCollections(result)
-    local collections = json.parse(result)
+    local collections = json:parse(result)
     local randomCollection = randomKey(collections)
     local url = "https://api.iconify.design/collection?prefix=" .. randomCollection
     WebRequest:Get(url, onGetCollection , onError, {}, randomCollection)

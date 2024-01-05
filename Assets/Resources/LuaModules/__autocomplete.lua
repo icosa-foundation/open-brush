@@ -1239,15 +1239,15 @@ function Path2d:Insert(point) end
 function Path2d:Insert(point, index) end
 
 
----@return Path # 
+---@return Path # A 3D Path based on the input but with all x as 0: (0, inX, inY)
 function Path2d:OnX() end
 
 
----@return Path # 
+---@return Path # A 3D Path based on the input but with all y as 0: (inX, 0, inY)
 function Path2d:OnY() end
 
 
----@return Path # 
+---@return Path # A 3D Path based on the input but with all z as 0: (inX, inY, 0)
 function Path2d:OnZ() end
 
 ---@param transform Transform The transform to be applied to all points in the path
@@ -1993,15 +1993,15 @@ function Vector2:SlerpUnclamped(a, b, t) end
 function Vector2:PointOnCircle(degrees) end
 
 
----@return Vector3 # 
+---@return Vector3 # A 3D Vector based on the input but with x as 0: (0, inX, inY)
 function Vector2:OnX() end
 
 
----@return Vector3 # 
+---@return Vector3 # A 3D Vector based on the input but with y as 0: (inX, 0, inY)
 function Vector2:OnY() end
 
 
----@return Vector3 # 
+---@return Vector3 # A 3D Vector based on the input but with z as 0: (inX, inX, 0)
 function Vector2:OnZ() end
 
 ---@param other Vector2 The other vector
@@ -2558,11 +2558,16 @@ Tool = {}
 
 ---@class json
 json = {}
----@param jsonString string
+---@param jsonString string The JSON string to parse
+---@return table # A table representing the parsed JSON
 function json:parse(jsonString) end
 
----@param table table
+---@param table table The table to serialize to JSON
+---@return string # The JSON representation of the table
 function json:serialize(table) end
 
+---@return jsonNull # a special value which is a representation of a null in JSON
 function json:null() end
+
+---@return bool # true if the value specified is a null read from JSON
 function json:isNull() end
