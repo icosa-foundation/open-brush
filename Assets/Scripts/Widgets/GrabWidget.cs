@@ -905,7 +905,7 @@ namespace TiltBrush
 
         private void LateUpdate()
         {
-#if UNITY_ANDROID
+#if UNITY_ANDROID || UNITY_IOS
     if (m_Highlighted != m_OldHighlighted) {
       if (m_Highlighted) {
         AddKeyword("HIGHLIGHT_ON");
@@ -1559,7 +1559,7 @@ namespace TiltBrush
 
         virtual protected void UnregisterHighlight()
         {
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
             if (m_HighlightMeshFilters != null)
             {
                 for (int i = 0; i < m_HighlightMeshFilters.Length; i++)

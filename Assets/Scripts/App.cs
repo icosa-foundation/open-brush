@@ -2207,7 +2207,7 @@ namespace TiltBrush
 
         DateTime GetLinkerTime(Assembly assembly, TimeZoneInfo target = null)
         {
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
             var filePath = assembly.Location;
             const int c_PeHeaderOffset = 60;
             const int c_LinkerTimestampOffset = 8;
