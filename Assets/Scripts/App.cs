@@ -1966,7 +1966,7 @@ namespace TiltBrush
         {
             string modelsDirectory = ModelLibraryPath();
 
-            // TODO:Mike - Re-enable this check in a few versions,
+            // TODO:Mikesky - Re-enable this check in a few versions,
             // and remove the one in the obj removal loop.
 
             // if (Directory.Exists(modelsDirectory)) { return true; }

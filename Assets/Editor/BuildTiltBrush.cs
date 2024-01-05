@@ -1793,7 +1793,7 @@ static class BuildTiltBrush
                     project.AddFrameworkToProject(pbxTarget, "Security.framework", false);
                     project.AddFrameworkToProject(pbxTarget, "CoreData.framework", false);
                     // disable bitcode due to issue with Cardboard plugin (b/27129333)
-                    // TODO:Mike - I've disabled this disable, does bitcode work now?
+                    // TODO:Mikesky - I've disabled this disable, does bitcode work now?
                     //project.SetBuildProperty(pbxTarget, "ENABLE_BITCODE", "false");
 
                     File.WriteAllText(pbxPath, project.WriteToString());

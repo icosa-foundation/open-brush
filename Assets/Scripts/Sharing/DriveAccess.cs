@@ -116,7 +116,7 @@ namespace TiltBrush
                 case RuntimePlatform.Android:
                     return GetAndroidId();
                 case RuntimePlatform.IPhonePlayer:
-                    // TODO:Mike - iOS ID generation
+                    // TODO:Mikesky - iOS ID generation
                     Debug.LogError("Host id not implemented for iOS");
                     return "iOS-unknown";
                 default:
