@@ -10091,6 +10091,7 @@ MonoBehaviour:
   m_Manifest: {fileID: 11400000, guid: 0be87170c871bfc4f91119634daa9c79, type: 2}
   m_ManifestExperimental: {fileID: 11400000, guid: 1121701af0c4d7145af70356f0ac2a83,
     type: 2}
+  m_ZapboxManifest: {fileID: 11400000, guid: 7be45b23483e18347a0170a596bf2867, type: 2}
   m_SelectionEffect: {fileID: 17776370}
   m_SceneTransform: {fileID: 1370550523}
   m_CanvasTransform: {fileID: 1843608204}
@@ -10141,7 +10142,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_GlobalNoiseTexture: {fileID: 2800000, guid: 13d389131c327b94f84fbac121bf6f8f,
     type: 3}
-  m_DefaultBrush: {fileID: 11400000, guid: b802f6ef146800b4bb78e9c705622cad, type: 2}
+  m_DefaultBrush: {fileID: 11400000, guid: eb608f68fb3036b47be357a021ed7618, type: 2}
   m_BlocksMaterials:
   - brushDescriptor: {fileID: 11400000, guid: 0e87b49c65463a343a448a556d7d6c3e, type: 2}
   - brushDescriptor: {fileID: 11400000, guid: d6c87eafa4cdba042933c1b4f6da46f7, type: 2}
@@ -10183,7 +10184,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_SkyboxMaterial: {fileID: 2100000, guid: 502c8257ef70e3f4b9f6b176302930e6, type: 2}
-  m_DefaultEnvironment: {fileID: 11400000, guid: 5effa9d950f0f5943b60c7dd24471505,
+  m_DefaultEnvironment: {fileID: 11400000, guid: e7ee458a16eae2b48ac405f4ccc693e6,
     type: 2}
 --- !u!114 &652605549
 MonoBehaviour:
