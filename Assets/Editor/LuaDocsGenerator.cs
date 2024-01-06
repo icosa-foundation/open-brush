@@ -92,14 +92,20 @@ namespace TiltBrush
             autocomplete.Append(@"
 ---@class json
 json = {}
----@param jsonString string
+---@param jsonString string The JSON string to parse
+---@return table # A table representing the parsed JSON
 function json:parse(jsonString) end
 
----@param table table
+---@param table table The table to serialize to JSON
+---@return string # The JSON representation of the table
 function json:serialize(table) end
 
+---@return jsonNull # a special value which is a representation of a null in JSON
 function json:null() end
-function json:isNull() end");
+
+---@return bool # true if the value specified is a null read from JSON
+function json:isNull() end
+");
 
             File.WriteAllText(autocompleteFilePath, autocomplete.ToString());
             LuaManager.Instance.CopyLuaModules(); // Update the copy in User docs (also done on app start)

@@ -143,7 +143,7 @@ namespace TiltBrush
         [LuaDocsDescription("The transform of the symmetry widget")]
         public TransformApiWrapper transform
         {
-            get => new (TrTransform.TR(_Position, _Rotation));
+            get => new(TrTransform.TR(_Position, _Rotation));
             set
             {
                 _Position = value._TrTransform.translation;
