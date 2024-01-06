@@ -24,7 +24,7 @@ function Main()
     end
 
     if Brush.triggerPressedThisFrame then
-        symmetryHueShift.generate(#points, initialHsv)
+        symmetryHueShift.generate(points.count, initialHsv)
     end
 
     return Symmetry:PathToPolar(points)
@@ -47,7 +47,8 @@ function calculateRectangleExteriorPoints()
 
                 local x = -width / 2 + j * Parameters.spacing
                 local y = -height / 2 + i * Parameters.spacing
-                points:Insert(Vector2.New(x, y):OnZ())
+                local pos = Vector2.New(x, y):OnZ()
+                points:Insert(Transform:New(pos))
 
             end
         end
