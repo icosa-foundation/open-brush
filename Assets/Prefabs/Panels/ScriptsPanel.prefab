@@ -231,6 +231,9 @@ MonoBehaviour:
   m_PanelPopUpMap:
   - m_PopUpPrefab: {fileID: 197348, guid: 637831851e146a44987a438cafccb5a3, type: 3}
     m_Command: 6005
+  - m_PopUpPrefab: {fileID: 1294213544206792, guid: 4b13edf59f1c1964ea7995bd52249cf7,
+      type: 3}
+    m_Command: 9000
   m_PanelDescription: Scripts
   m_LocalizedPanelDescription:
     m_TableReference:

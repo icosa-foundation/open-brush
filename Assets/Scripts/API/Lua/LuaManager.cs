@@ -60,6 +60,19 @@ namespace TiltBrush
         public static string Colors => "Colors";
         public static string Brushes => "Brushes";
 
+        // Widget Types
+
+            public static string widgetTypeColor => "color";
+            public static string widgetTypeFloat => "float";
+            public static string widgetTypeInt => "int";
+            public static string widgetTypeBool => "bool";
+            public static string widgetTypeString => "string";
+            public static string widgetTypeTexture => "texture";
+            public static string widgetTypeLayer => "layer";
+            public static string widgetTypeBrush => "brush";
+            public static string widgetTypeModel => "model";
+            public static string widgetTypeVideo => "video";
+
         // Special Methods
 
         public static string Main => "Main";
@@ -82,9 +95,9 @@ namespace TiltBrush
     {
         public string label;
         public string type;
-        public float min;
-        public float max;
-        public float defaultVal;
+        public DynValue min;
+        public DynValue max;
+        public DynValue defaultVal;
     }
 
     public class LuaManager : MonoBehaviour
@@ -454,7 +467,9 @@ namespace TiltBrush
         private string LoadScriptFromString(string scriptFilename, string contents, bool isExampleScript = false)
         {
             Script script = new Script();
+            InitScriptOnce(script); // Needs to be done early so Parameters can reference API classes
             string scriptName = null;
+
             try
             {
                 script.DoString(contents);
@@ -485,7 +500,6 @@ namespace TiltBrush
                 }
                 try
                 {
-                    InitScriptOnce(script);
                     InitWidgetConfigs(script, scriptName);
                 }
                 catch (ScriptRuntimeException e)
@@ -950,14 +964,13 @@ namespace TiltBrush
             {
                 foreach (var pair in paramsDynVal.Table.Pairs)
                 {
-                    m_WidgetConfigs[scriptName][pair.Key.String] = new ScriptWidgetConfig
-                    {
-                        label = pair.Value.Table.Get("label").String,
-                        type = pair.Value.Table.Get("type").String,
-                        min = (float)pair.Value.Table.Get("min").Number,
-                        max = (float)pair.Value.Table.Get("max").Number,
-                        defaultVal = (float)pair.Value.Table.Get("default").Number
-                    };
+                    var config = new ScriptWidgetConfig();
+                    config.label = pair.Value.Table.Get("label").String;
+                    config.type = pair.Value.Table.Get("type").String;
+                    config.min = pair.Value.Table.Get("min").Clone();
+                    config.max = pair.Value.Table.Get("max").Clone();
+                    config.defaultVal = pair.Value.Table.Get("default").Clone();
+                    m_WidgetConfigs[scriptName][pair.Key.String] = config;
                 }
             }
             // Replace the config table with the default value
@@ -972,40 +985,42 @@ namespace TiltBrush
             return m_WidgetConfigs[scriptName];
         }
 
-        public void SetScriptParameterForActiveScript(LuaApiCategory category, string paramName, float paramValue)
+        public void SetScriptFloatParamForActiveScript(LuaApiCategory category, string paramName, float paramValue)
         {
             var script = GetActiveScript(category);
-            SetScriptParam(script, paramName, paramValue);
+            SetScriptParam(script, paramName, DynValue.NewNumber(paramValue));
         }
 
-        private void SetScriptParam(Script script, string paramName, float paramValue)
+        public void SetScriptColorParamForActiveScript(LuaApiCategory category, string paramName, Color color)
         {
-            script.Globals.Get(LuaNames.Parameters).Table.Set(paramName, DynValue.NewNumber(paramValue));
+            var script = GetActiveScript(category);
+            var colorWrapper = new ColorApiWrapper(color);
+            script.Globals.Get(LuaNames.Parameters).Table.Set(paramName, UserData.Create(colorWrapper));
         }
 
-        private DynValue GetScriptParam(Script script, object paramName)
+        private void SetScriptParam(Script script, string paramName, DynValue paramValue)
+        {
+            script.Globals.Get(LuaNames.Parameters).Table.Set(paramName, paramValue);
+        }
+
+        private DynValue GetScriptParam(Script script, string paramName)
         {
             return script.Globals.Get(LuaNames.Parameters).Table.Get(paramName);
         }
 
-        public float GetOrSetWidgetCurrentValue(Script script, string paramName, ScriptWidgetConfig config)
+        public DynValue GetOrSetWidgetCurrentValue(Script script, string paramName, ScriptWidgetConfig config)
         {
             // Try and get the value from the script
             var dynVal = GetScriptParam(script, paramName);
-            float val;
             // If it isn't set...
-            if (dynVal.Equals(DynValue.Nil))
+            if (dynVal.IsNil())
             {
                 // Get the default from the config entry
-                val = config.defaultVal;
+                dynVal = config.defaultVal;
                 // Set the value in the script
-                SetScriptParam(script, paramName, val);
+                SetScriptParam(script, paramName, dynVal);
             }
-            else
-            {
-                val = (float)dynVal.Number;
-            }
-            return val;
+            return dynVal;
         }
 
         public void RecordPointerPositions(
