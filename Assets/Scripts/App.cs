@@ -498,6 +498,9 @@ namespace TiltBrush
             // See if this is the first time
             HasPlayedBefore = PlayerPrefs.GetInt(kPlayerPrefHasPlayedBefore, 0) == 1;
 
+            // AVN: Allow back button to close the app
+            Input.backButtonLeavesApp = true;
+
             // Copy files into Support directory
             CopySupportFiles();
 
