@@ -50,7 +50,7 @@ PlayerSettings:
   defaultScreenWidthWeb: 1024
   defaultScreenHeightWeb: 600
   m_StereoRenderingPath: 0
-  m_ActiveColorSpace: 0
+  m_ActiveColorSpace: 1
   m_MTRendering: 1
   mipStripping: 0
   numberOfMipsStripped: 0
@@ -525,7 +525,7 @@ PlayerSettings:
     m_APIs: 02000000
     m_Automatic: 0
   - m_BuildTarget: AndroidPlayer
-    m_APIs: 15000000
+    m_APIs: 0b000000
     m_Automatic: 0
   - m_BuildTarget: LinuxStandaloneSupport
     m_APIs: 1500000011000000
@@ -862,9 +862,9 @@ PlayerSettings:
   webGLDecompressionFallback: 0
   webGLPowerPreference: 2
   scriptingDefineSymbols:
-    Android: TILT_BRUSH
-    Standalone: TILT_BRUSH;USD_SUPPORTED;FBX_SUPPORTED;FBXSDK_RUNTIME;LATK_SUPPORTED
-    Windows Store Apps: TILT_BRUSH;USD_SUPPORTED
+    Android: TILT_BRUSH;USE_INPUT_SYSTEM_POSE_CONTROL;USING_SNAPDRAGON_SPACES_SDK
+    Standalone: TILT_BRUSH;USD_SUPPORTED;FBX_SUPPORTED;FBXSDK_RUNTIME;LATK_SUPPORTED;USE_INPUT_SYSTEM_POSE_CONTROL
+    Windows Store Apps: TILT_BRUSH;USD_SUPPORTED;USE_INPUT_SYSTEM_POSE_CONTROL
     iPhone: TILT_BRUSH
   additionalCompilerArguments: {}
   platformArchitecture:
