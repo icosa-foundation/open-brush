@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 05d394ae2a81edd4cbc3c51917e766e3, type: 3}
   m_Name: OculusProjectConfig
   m_EditorClassIdentifier: 
-  targetDeviceTypes: 0100000002000000
+  targetDeviceTypes: 02000000
   allowOptional3DofHeadTracking: 0
   handTrackingSupport: 0
   handTrackingFrequency: 0
