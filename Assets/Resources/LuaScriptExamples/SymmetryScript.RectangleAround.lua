@@ -6,7 +6,7 @@ Parameters = {
     numPointsWidth={label="Number of points along width", type="int", min=2, max=32, default=5},
     numPointsHeight={label="Number of points along height", type="int", min=2, max=32, default=5},
     spacing={label="Spacing", type="float", min=0.001 , max=1, default=.2},
-    exteriorOnly={label="Exterior Only", type="int", min=0, max=1, default=1},
+    exteriorOnly={label="Exterior Only?", type="toggle", default=true},
 }
 
 symmetryHueShift = require "symmetryHueShift"
@@ -17,7 +17,7 @@ end
 
 function Main()
 
-    if Parameters.exteriorOnly==1 then
+    if Parameters.exteriorOnly then
         points = calculateRectangleExteriorPoints()
     else
         points = calculateRectanglePoints()
