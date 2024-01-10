@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+﻿// Copyright 2024 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,19 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using UnityEngine;
 using UnityEngine.Events;
 
 namespace TiltBrush
 {
-    public class ColorPickerButton : OptionButton
+    public class OpenColorPickerPopupButton : OptionButton
     {
         public string ColorPropertyName;
-        [SerializeField] private GameObject[] m_ObjectsToHideBehindPopups;
         public Transform m_ColorPickerPopup;
         private Color m_chosenColor;
-        [SerializeField] private UnityEvent<(string propertyName, Color color, ColorPickerButton btn)> m_Action;
+        [SerializeField] private UnityEvent<(string propertyName, Color color)> m_Action;
 
         public Color ChosenColor
         {
@@ -41,17 +39,13 @@ namespace TiltBrush
 
         override protected void OnButtonPressed()
         {
-            for (int i = 0; i < m_ObjectsToHideBehindPopups.Length; ++i)
-            {
-                m_ObjectsToHideBehindPopups[i].SetActive(false);
-            }
-
             BasePanel panel = m_Manager.GetPanelForPopUps();
             if (panel != null)
             {
+                float zOffset = App.Config.m_SdkMode == SdkMode.Monoscopic ? 0.3f : -0.3f;
                 panel.CreatePopUp(
                     m_ColorPickerPopup.gameObject,
-                    transform.position + Vector3.back * 0.2f,
+                    transform.position + Vector3.forward * zOffset,
                     true, true
                 );
                 ResetState();
@@ -81,7 +75,7 @@ namespace TiltBrush
 
         void OnColorPicked(Color color)
         {
-            m_Action.Invoke((ColorPropertyName, color, this));
+            m_Action.Invoke((ColorPropertyName, color));
             ChosenColor = color;
         }
 

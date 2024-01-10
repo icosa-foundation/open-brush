@@ -150,7 +150,7 @@ namespace TiltBrush
             }
         }
 
-        protected void RefreshPage()
+        public void RefreshPage()
         {
             //if we can fit all the icons on one page, turn off the nav buttons and do that
             if (m_DataCount <= m_IconCountFullPage)

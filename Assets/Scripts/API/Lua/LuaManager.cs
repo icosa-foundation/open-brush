@@ -62,16 +62,17 @@ namespace TiltBrush
 
         // Widget Types
 
-            public static string widgetTypeColor => "color";
             public static string widgetTypeFloat => "float";
             public static string widgetTypeInt => "int";
-            public static string widgetTypeBool => "bool";
-            public static string widgetTypeString => "string";
-            public static string widgetTypeTexture => "texture";
+            public static string widgetTypeToggle => "toggle";
+            public static string widgetTypeColor => "color";
+            public static string widgetTypeText => "text";
+            public static string widgetTypeList => "list";
             public static string widgetTypeLayer => "layer";
             public static string widgetTypeBrush => "brush";
-            public static string widgetTypeModel => "model";
+            public static string widgetTypeImage => "image";
             public static string widgetTypeVideo => "video";
+            public static string widgetTypeModel => "model";
 
         // Special Methods
 
@@ -98,6 +99,8 @@ namespace TiltBrush
         public DynValue min;
         public DynValue max;
         public DynValue defaultVal;
+        public bool allowMultiple;
+        public List<DynValue> items;
     }
 
     public class LuaManager : MonoBehaviour
@@ -969,6 +972,7 @@ namespace TiltBrush
                     config.type = pair.Value.Table.Get("type").String;
                     config.min = pair.Value.Table.Get("min").Clone();
                     config.max = pair.Value.Table.Get("max").Clone();
+                    config.items = pair.Value.Table.Get("items")?.Table?.Values?.ToList();
                     config.defaultVal = pair.Value.Table.Get("default").Clone();
                     m_WidgetConfigs[scriptName][pair.Key.String] = config;
                 }
@@ -991,14 +995,7 @@ namespace TiltBrush
             SetScriptParam(script, paramName, DynValue.NewNumber(paramValue));
         }
 
-        public void SetScriptColorParamForActiveScript(LuaApiCategory category, string paramName, Color color)
-        {
-            var script = GetActiveScript(category);
-            var colorWrapper = new ColorApiWrapper(color);
-            script.Globals.Get(LuaNames.Parameters).Table.Set(paramName, UserData.Create(colorWrapper));
-        }
-
-        private void SetScriptParam(Script script, string paramName, DynValue paramValue)
+        public void SetScriptParam(Script script, string paramName, DynValue paramValue)
         {
             script.Globals.Get(LuaNames.Parameters).Table.Set(paramName, paramValue);
         }
