@@ -864,10 +864,8 @@ PlayerSettings:
   webGLPowerPreference: 2
   scriptingDefineSymbols:
     Android: TILT_BRUSH
-    Standalone: TILT_BRUSH;USD_SUPPORTED;FBX_SUPPORTED;FBXSDK_RUNTIME;LATK_SUPPORTED
-    Standalone: TILT_BRUSH;USD_SUPPORTED;FBX_SUPPORTED;FBXSDK_RUNTIME;HAVE_GLTFAST;UNITY_HAS_GOOGLEVR;
+    Standalone: TILT_BRUSH;USD_SUPPORTED;FBX_SUPPORTED;FBXSDK_RUNTIME;HAVE_GLTFAST;
     Windows Store Apps: TILT_BRUSH;USD_SUPPORTED
-    Windows Store Apps: TILT_BRUSH;USD_SUPPORTED;UNITY_HAS_GOOGLEVR;
     iPhone: TILT_BRUSH
   additionalCompilerArguments: {}
   platformArchitecture:
