@@ -75,9 +75,6 @@ namespace TiltBrush
             }
 #endif // PASSTHROUGH_SUPPORTED
 
-            // TODO for debugging only
-            m_PassthroughControls.gameObject.SetActive(true);
-
             //find the active lighting preset
             TiltBrush.Environment rCurrentPreset = SceneSettings.m_Instance.GetDesiredPreset();
             if (rCurrentPreset != null)
