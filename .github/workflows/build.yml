@@ -238,6 +238,14 @@ jobs:
             versionSuffix: 1
             extra_defines: PICO_SUPPORTED
 
+          - name: iOS Zapbox
+            targetPlatform: iOS
+            vrsdk: Zapbox
+            cache: iOS
+            extraoptions: -btb-il2cpp
+            extra_defines: ZAPBOX_SUPPORTED
+            packages_to_remove: com.unity.formats.usd
+
     steps:
       - name: Set masking
         run: echo "::add-mask::$UNITY_PASSWORD"
@@ -384,6 +392,8 @@ jobs:
           if [[ "${{ matrix.targetPlatform}}" == "StandaloneWindows64" ]]; then
             echo "filename=$BASENAME.exe" >> $GITHUB_ENV
           elif [[ "${{ matrix.targetPlatform}}" == "StandaloneLinux64" ]]; then
+            echo "filename=$BASENAME" >> $GITHUB_ENV
+          elif [[ "${{ matrix.targetPlatform}}" == "iOS" ]]; then
             echo "filename=$BASENAME" >> $GITHUB_ENV
           elif [[ "${{ matrix.targetPlatform}}" == "StandaloneOSX" ]]; then
             echo "filename=$BASENAME.app" >> $GITHUB_ENV

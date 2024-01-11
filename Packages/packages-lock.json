@@ -172,38 +172,12 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
-    "com.unity.render-pipelines.core": {
-      "version": "12.1.12",
-      "depth": 2,
-      "source": "builtin",
-      "dependencies": {
-        "com.unity.ugui": "1.0.0",
-        "com.unity.modules.physics": "1.0.0",
-        "com.unity.modules.jsonserialize": "1.0.0"
-      }
-    },
     "com.unity.scriptablebuildpipeline": {
       "version": "1.20.2",
       "depth": 2,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
-    },
-    "com.unity.searcher": {
-      "version": "4.9.1",
-      "depth": 2,
-      "source": "registry",
-      "dependencies": {},
-      "url": "https://packages.unity.com"
-    },
-    "com.unity.shadergraph": {
-      "version": "12.1.12",
-      "depth": 1,
-      "source": "builtin",
-      "dependencies": {
-        "com.unity.render-pipelines.core": "12.1.12",
-        "com.unity.searcher": "4.9.1"
-      }
     },
     "com.unity.test-framework": {
       "version": "1.1.33",
@@ -317,16 +291,15 @@
       },
       "url": "https://packages.unity.com"
     },
-    "org.khronos.unitygltf": {
-      "version": "https://github.com/icosa-mirror/UnityGLTF.git#dev",
+    "com.zappar.xr.zapbox": {
+      "version": "https://github.com/zappar-xr/zapbox-xr-sdk.git#5c75594e81da13a5d54a8e33b983add57b884c50",
       "depth": 0,
       "source": "git",
       "dependencies": {
-        "com.unity.nuget.newtonsoft-json": "2.0.0",
-        "com.unity.modules.imageconversion": "1.0.0",
-        "com.unity.shadergraph": "10.0.0"
+        "com.unity.xr.management": "3.2.9",
+        "com.unity.xr.legacyinputhelpers": "2.1.4"
       },
-      "hash": "a2f831d4957c2056e918baafa6ed56bd1568c13d"
+      "hash": "5c75594e81da13a5d54a8e33b983add57b884c50"
     },
     "org.nuget.google.apis": {
       "version": "1.64.0",
