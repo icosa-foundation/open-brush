@@ -3472,6 +3472,18 @@ MonoBehaviour:
       Brush Size'
     m_Metadata:
       m_Items: []
+  - m_Id: 188791089062830080
+    m_Localized: Reset Canvas Position
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791266398003200
+    m_Localized: Lock Canvas Position
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188792931159203840
+    m_Localized: Unlock Canvas Position
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
