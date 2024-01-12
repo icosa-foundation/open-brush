@@ -3472,6 +3472,11 @@ MonoBehaviour:
       Brush Size'
     m_Metadata:
       m_Items: []
+  - m_Id: 189087250755706880
+    m_Localized: Free Sketchfab accounts can't publish  Private models. If you see
+      error 403 when publishing check your visibility settings.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
