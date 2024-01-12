@@ -539,7 +539,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Exit Open Brush
+  m_text: Click to Finish Publishing
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
   m_sharedMaterial: {fileID: 2133298, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
@@ -1060,8 +1060,8 @@ PrefabInstance:
     - target: {fileID: 34748761131250936, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
         type: 3}
       propertyPath: m_text
-      value: Free Sketchfab accounts can't publish  Private models. If you see error
-        403 when publishing check your visibility settings.
+      value: To avoid error 403 on Sketchfab when publishing - change visibility
+        to public (free Sketchfab accounts can't publish private models)
       objectReference: {fileID: 0}
     - target: {fileID: 34748761131250936, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
         type: 3}
@@ -1097,6 +1097,11 @@ PrefabInstance:
         type: 3}
       propertyPath: managedReferences[3215294302546034713].m_Localized.m_TableEntryReference.m_KeyId
       value: 189087250755706880
+      objectReference: {fileID: 0}
+    - target: {fileID: 5173511161803795244, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.0035
       objectReference: {fileID: 0}
     - target: {fileID: 5173511161803795244, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
         type: 3}
