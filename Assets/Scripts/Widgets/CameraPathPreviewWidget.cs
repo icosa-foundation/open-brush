@@ -143,7 +143,7 @@ namespace TiltBrush
 
         override public void RegisterHighlight()
         {
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
             // Intentionally do not call base class.
             if (m_HighlightMeshFilters != null)
             {

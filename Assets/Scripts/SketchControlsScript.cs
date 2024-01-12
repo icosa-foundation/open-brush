@@ -1273,7 +1273,7 @@ namespace TiltBrush
                 && m_GrabBrush.grabbingWorld == false
                 && m_CurrentGazeObject == -1 // free up swipe for use by gaze object
                 && (m_ControlsType != ControlsType.SixDofControllers || InputManager.Brush.IsTrackedObjectValid)
-                // TODO:Mike - very hacky
+                // TODO:Mikesky - very hacky
                 && SketchSurfacePanel.m_Instance.ActiveTool.m_Type != BaseTool.ToolType.MultiCamTool;
 
             if (m_EatToolScaleInput)
@@ -2353,10 +2353,16 @@ namespace TiltBrush
             GrabWidgetData best = null;
             for (int i = 0; i < candidates.Count; ++i)
             {
-                if (candidates[i].m_NearController &&
-                    (best == null || candidates[i].m_ControllerScore > best.m_ControllerScore))
+                var candidate = candidates[i];
+                if (!candidate.m_NearController) continue;
+
+                // For media widgets - only select from the active layer
+                if (candidate.m_WidgetScript is MediaWidget
+                    && candidate.m_WidgetScript.Canvas != App.Scene.ActiveCanvas) continue;
+
+                if (best == null || candidate.m_ControllerScore > best.m_ControllerScore)
                 {
-                    best = candidates[i];
+                    best = candidate;
                 }
             }
             return best;

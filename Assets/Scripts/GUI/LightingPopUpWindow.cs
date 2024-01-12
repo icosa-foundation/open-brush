@@ -15,7 +15,7 @@
 // TODO: Better way to detect Passthrough support.
 // Extra: Passthrough should be *per* envrionment really!
 // See https://github.com/icosa-foundation/open-brush/issues/456
-#if OCULUS_SUPPORTED
+#if OCULUS_SUPPORTED || ZAPBOX_SUPPORTED
 #define PASSTHROUGH_SUPPORTED
 #endif
 
