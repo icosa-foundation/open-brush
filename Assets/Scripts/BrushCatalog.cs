@@ -192,9 +192,9 @@ namespace TiltBrush
                 Debug.LogError("There will be no brushes because there are no 'include' tags.");
             }
 
-            #if !PASSTHROUGH_SUPPORTED
+#if !PASSTHROUGH_SUPPORTED
             excludeTags.Add("passthrough");
-            #endif
+#endif
 
             // Filter m_GuiBrushList down to those that are both 'included' and not 'excluded'
             Brush[] filteredList = m_GuiBrushList.Where((brush) =>
