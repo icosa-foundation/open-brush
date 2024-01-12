@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#if OCULUS_SUPPORTED || ZAPBOX_SUPPORTED
+#define PASSTHROUGH_SUPPORTED
+#endif
+
 using System;
 using System.Collections.Generic;
 using System.Linq;

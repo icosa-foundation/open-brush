@@ -11,6 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+#if OCULUS_SUPPORTED || ZAPBOX_SUPPORTED
+#define PASSTHROUGH_SUPPORTED
+#endif
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -583,7 +588,7 @@ namespace TiltBrush
             //     return new NonVrControllerInfo(behavior);
             //     //return new SteamControllerInfo(behavior);
             // }
-            // else 
+            // else
             if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 return new UnityXRControllerInfo(behavior, isLeftHand);
