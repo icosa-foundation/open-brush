@@ -13,7 +13,7 @@ namespace TiltBrush
 
     }
 
-    [LuaDocsDescription("A set of transforms that form a path in 3D space. These form the basis for brush strokes and camera paths")]
+    [LuaDocsDescription("A list of transforms that usually represents a path in 3D space. These form the basis for brush strokes and camera paths")]
     [MoonSharpUserData]
     public class PathApiWrapper : IPathApiWrapper
     {

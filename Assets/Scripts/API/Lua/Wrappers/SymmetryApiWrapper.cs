@@ -72,9 +72,9 @@ namespace TiltBrush
             }
         }
 
-        [LuaDocsDescription("Gets the offset betwen the current brush position and the symmetry widget")]
+        [LuaDocsDescription("Gets the offset between the current brush position and the symmetry widget")]
         public static Vector3 brushOffset => (App.Scene.MainCanvas.AsCanvas[PointerManager.m_Instance.SymmetryWidget.transform].inverse * TrTransform.T(LuaManager.Instance.GetPastBrushPos(0))).translation;
-        [LuaDocsDescription("Gets the offset betwen the current wand position and the symmetry widget")]
+        [LuaDocsDescription("Gets the offset between the current wand position and the symmetry widget")]
         public static Vector3 wandOffset => (App.Scene.MainCanvas.AsCanvas[PointerManager.m_Instance.SymmetryWidget.transform].inverse * TrTransform.T(LuaManager.Instance.GetPastWandPos(0))).translation;
 
         [LuaDocsDescription("Moves the Symmetry Widget close to user")]
