@@ -868,6 +868,7 @@ namespace TiltBrush
             RegisterApiClass(script, "Layer", typeof(LayerApiWrapper));
             RegisterApiClass(script, "LayerList", typeof(LayerListApiWrapper));
             RegisterApiClass(script, "Math", typeof(MathApiWrapper));
+            RegisterApiClass(script, "Matrix", typeof(MatrixApiWrapper));
             RegisterApiClass(script, "Model", typeof(ModelApiWrapper));
             RegisterApiClass(script, "ModelList", typeof(ModelListApiWrapper));
             RegisterApiClass(script, "Path", typeof(PathApiWrapper));
@@ -890,6 +891,7 @@ namespace TiltBrush
             RegisterApiClass(script, "User", typeof(UserApiWrapper));
             RegisterApiClass(script, "Vector2", typeof(Vector2ApiWrapper));
             RegisterApiClass(script, "Vector3", typeof(Vector3ApiWrapper));
+            RegisterApiClass(script, "Vector4", typeof(Vector4ApiWrapper));
             RegisterApiClass(script, "Video", typeof(VideoApiWrapper));
             RegisterApiClass(script, "VideoList", typeof(VideoListApiWrapper));
             RegisterApiClass(script, "Visualizer", typeof(VisualizerApiWrapper));
