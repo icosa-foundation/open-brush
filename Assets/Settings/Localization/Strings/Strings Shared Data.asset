@@ -3279,6 +3279,10 @@ MonoBehaviour:
     m_Key: CONTROLLER_HINT_THUMBPAD_BRUSHSIZE
     m_Metadata:
       m_Items: []
+  - m_Id: 189087250755706880
+    m_Key: POPUP_UPLOAD_COMPLETE_MOBILE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

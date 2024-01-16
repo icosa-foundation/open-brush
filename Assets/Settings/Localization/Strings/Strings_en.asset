@@ -1433,7 +1433,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76086604699590656
-    m_Localized: Exit Open Brush to finish publishing
+    m_Localized: Click to Finish Publishing
     m_Metadata:
       m_Items: []
   - m_Id: 76094622149435392
@@ -3470,6 +3470,11 @@ MonoBehaviour:
     m_Localized: 'Swipe To Adjust
 
       Brush Size'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 189087250755706880
+    m_Localized: To avoid error 403 on Sketchfab when publishing - change visibility
+      to public (free Sketchfab accounts can't publish private models)
     m_Metadata:
       m_Items: []
   references:
