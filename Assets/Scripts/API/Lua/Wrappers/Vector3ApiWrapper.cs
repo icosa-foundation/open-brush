@@ -24,8 +24,8 @@ namespace TiltBrush
             _Vector3 = vector;
         }
 
-        [LuaDocsDescription("Creates a new vector")]
-        [LuaDocsExample("newVector = Vector3(1, 2, 3)")]
+        [LuaDocsDescription("Creates a new vector based on x, y and z position")]
+        [LuaDocsExample("newVector = Vector3:New(1, 2, 3)")]
         [LuaDocsParameter("x", "The x coordinate")]
         [LuaDocsParameter("y", "The y coordinate")]
         [LuaDocsParameter("z", "The z coordinate")]
@@ -107,7 +107,7 @@ namespace TiltBrush
         public float Distance(Vector3 other) => Vector3.Distance(_Vector3, other);
 
         [LuaDocsDescription("Linearly interpolates between two points")]
-        [LuaDocsExample("newPoint = Vector2:Lerp(pointA, PointB, 0.25)")]
+        [LuaDocsExample("newPoint = Vector3:Lerp(pointA, PointB, 0.25)")]
         [LuaDocsParameter("a", "The first point")]
         [LuaDocsParameter("b", "The second point")]
         [LuaDocsParameter("t", "The value between 0 and 1 that controls how far between a and b the new point is")]
