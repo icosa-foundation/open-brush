@@ -121,7 +121,7 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("The list of transform matrices for this symmetry mode")]
-        public List<MatrixApiWrapper> matrices
+        public MatrixListApiWrapper matrices
         {
             get
             {
@@ -151,7 +151,7 @@ namespace TiltBrush
                         matrices = new List<Matrix4x4>();
                     }
                 }
-                return matrices.Select(m => new MatrixApiWrapper(m)).ToList();
+                return new MatrixListApiWrapper(matrices);
             }
         }
 
