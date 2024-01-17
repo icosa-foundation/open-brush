@@ -1009,7 +1009,7 @@ function Math:Tanh(f) end
 ---@field determinant number The determinant of the matrix
 ---@field inverse Matrix | number[] The inverse of this matrix
 ---@field isIdentity boolean Checks whether this is an identity matrix
----@field lossyScale Vector3 | number[] Attempts to get a scale value from the matrix
+---@field scale Vector3 | number[] Attempts to get a scale value from the matrix
 ---@field rotation Rotation | number[] Attempts to get a rotation from this matrix
 ---@field transpose Matrix | number[] Returns the transpose of this matrix
 ---@field position Vector3 | number[] The position vector of this matrix
@@ -1091,6 +1091,11 @@ function Matrix:NewTranslation(translation) end
 ---@return Matrix # 
 function Matrix:NewTRS(translation, rotation, scale) end
 
+
+
+---@class MatrixList
+---@field count number The number of matrices
+MatrixList = {}
 
 
 ---@class Model
