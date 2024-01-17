@@ -82,16 +82,40 @@ namespace TiltBrush
         public bool isIdentity => _Matrix.isIdentity;
 
         [LuaDocsDescription("Attempts to get a scale value from the matrix")]
-        public Vector3ApiWrapper lossyScale => new (_Matrix.lossyScale);
+        public Vector3ApiWrapper scale
+        {
+            get => new(_Matrix.lossyScale);
+            set => _Matrix.SetTRS(
+                _Matrix.GetPosition(),
+                _Matrix.rotation,
+                value._Vector3
+            );
+        }
 
         [LuaDocsDescription("Attempts to get a rotation from this matrix")]
-        public RotationApiWrapper rotation => new (_Matrix.rotation);
+        public RotationApiWrapper rotation
+        {
+            get => new(_Matrix.rotation);
+            set => _Matrix.SetTRS(
+                _Matrix.GetPosition(),
+                value._Quaternion,
+                _Matrix.lossyScale
+            );
+        }
 
         [LuaDocsDescription("Returns the transpose of this matrix")]
         public MatrixApiWrapper transpose => new (_Matrix.transpose);
 
         [LuaDocsDescription("The position vector of this matrix")]
-        public Vector3ApiWrapper position => new Vector3ApiWrapper(_Matrix.GetPosition());
+        public Vector3ApiWrapper position
+        {
+            get => new(_Matrix.GetPosition());
+            set => _Matrix.SetTRS(
+                value._Vector3,
+                _Matrix.rotation,
+                _Matrix.lossyScale
+            );
+        }
 
         [LuaDocsDescription("Checks if this matrix is a valid transform matrix")]
         public bool isValidTRS => _Matrix.ValidTRS();
