@@ -35,6 +35,8 @@ namespace TiltBrush
         Default,
         Pointer,
         Canvas,
+        Polar,
+        Widget,
     }
 
     public enum LuaApiCategory
@@ -704,32 +706,37 @@ namespace TiltBrush
         public IPathApiWrapper CallActiveSymmetryScript(string fnName)
         {
             var script = GetActiveScript(LuaApiCategory.SymmetryScript);
-            var pathWrapper = new PathApiWrapper();
+            IPathApiWrapper wrapper = null;
             try
             {
                 DynValue result = _CallScript(script, fnName);
-                if (result.Table != null)
+                if (result.Table != null) // It's a lua array
                 {
-                    // It's a lua array
                     var trList = result.Table.Values.Select(v => v.ToObject<TrTransform>()).ToList();
-                    pathWrapper = new PathApiWrapper(trList);
+                    wrapper = new PathApiWrapper(trList);
                 }
-                else
+                else // It's hopefully an IPathApiWrapper instance
                 {
-                    // It's a PathApiWrapper instance
-                    pathWrapper = result.ToObject<PathApiWrapper>();
-                }
-
-                if (pathWrapper != null)
-                {
-                    pathWrapper._Space = _GetSpaceForActiveScript(LuaApiCategory.SymmetryScript);
+                    if (result.UserData.Descriptor.Type == typeof(MatrixListApiWrapper))
+                    {
+                        wrapper = result.ToObject<MatrixListApiWrapper>();
+                    }
+                    else if (result.UserData.Descriptor.Type == typeof(PathApiWrapper))
+                    {
+                        wrapper = result.ToObject<PathApiWrapper>();
+                    }
                 }
             }
             catch (InvalidCastException e)
             {
                 LogLuaCastError(script, fnName, e);
             }
-            return pathWrapper;
+            if (wrapper == null)
+            {
+                wrapper = new PathApiWrapper();
+            }
+            wrapper._Space = _GetSpaceForActiveScript(LuaApiCategory.SymmetryScript);
+            return wrapper;
         }
 
         public DynValue GetSettingForActiveScript(LuaApiCategory category, string key)
