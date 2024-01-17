@@ -187,7 +187,11 @@ namespace TiltBrush
         private PointerData[] m_Pointers;
 
         private List<PointerScript> m_RemoteUserPointers;
+
         private List<PointerScript> m_ScriptedPointers;
+        private List<TrTransform> m_ScriptedTransforms;
+        private List<TrTransform> m_ScriptedTrFixes; // Fixes for reflection transforms
+
         private bool m_InPlaybackMode;
 
         private PointerData m_MainPointerData;
@@ -861,25 +865,50 @@ namespace TiltBrush
             }
         }
 
-        public bool CalcScriptedTransforms(out List<TrTransform> trs_CS)
+        public bool CalcScriptedTransforms()
         {
             Transform rAttachPoint_GS = InputManager.m_Instance.GetBrushControllerAttachPoint();
+
             var result = LuaManager.Instance.CallActiveSymmetryScript(LuaNames.Main);
+
             if (result == null)
             {
-                trs_CS = new List<TrTransform> { TrTransform.identity };
+                m_ScriptedTransforms = new List<TrTransform> { TrTransform.identity };
+                ChangeNumActivePointers(0);
                 return false;
             }
-            List<TrTransform> transforms = result.AsSingleTrList();
-            trs_CS = new List<TrTransform>(transforms.Count);
-            bool needsDummyPointer = true;
 
-            foreach (var tr in transforms)
+            List<TrTransform> transforms = result.AsSingleTrList();
+
+            int prevCount = m_ScriptedTransforms != null ? m_ScriptedTransforms.Count : 0;
+            if (transforms.Count != prevCount || m_ScriptedTransforms == null)
             {
+                ChangeNumActivePointers(transforms.Count);
+                m_ScriptedTransforms = new List<TrTransform>(transforms.Count);
+                m_ScriptedTrFixes = new List<TrTransform>(transforms.Count);
+            }
+            else
+            {
+                m_ScriptedTransforms.Clear();
+                m_ScriptedTrFixes.Clear();
+            }
+
+            bool needsDummyPointer = true;
+            MatrixListApiWrapper matList = null;
+
+            if (result._Space == ScriptCoordSpace.Widget)
+            {
+                matList = result as MatrixListApiWrapper;
+            }
+
+            for (var i = 0; i < transforms.Count; i++)
+            {
+                var tr = transforms[i];
                 TrTransform newTr_CS = TrTransform.identity;
                 switch (result._Space)
                 {
                     case ScriptCoordSpace.Default:
+                    case ScriptCoordSpace.Polar:
                         {
                             // Check to see if any pointers have an unchanged position
                             if (tr.translation == SymmetryApiWrapper.brushOffset)
@@ -897,6 +926,18 @@ namespace TiltBrush
                             newTr_CS = xfWidget_GS * newTr_CS * xfWidget_GS.inverse;
                             break;
                         }
+                    case ScriptCoordSpace.Widget: // The only coordinate space that supports matrices
+                        {
+                            var mat = matList[i]._Matrix;
+
+                            // fubar
+                            var xfCenter_GS = TrTransform.FromTransform(m_SymmetryWidget);
+                            (TrTransform, TrTransform) trAndFix = TrFromMatrixWithFixedReflections(mat);
+                            var newTr_GS = xfCenter_GS * trAndFix.Item1 * xfCenter_GS.inverse;
+                            m_ScriptedTrFixes.Add(trAndFix.Item2);
+                            newTr_CS = newTr_GS;
+                        }
+                        break;
                     case ScriptCoordSpace.Canvas:
                         {
                             needsDummyPointer = false;
@@ -916,22 +957,15 @@ namespace TiltBrush
                             break;
                         }
                 }
-                trs_CS.Add(newTr_CS);
+                m_ScriptedTransforms.Add(newTr_CS);
             }
             return needsDummyPointer;
         }
 
 
-        public List<TrTransform> GetScriptedPointerTransforms()
+        public void GenerateScriptedPointerTransforms()
         {
-            var trs_CS = new List<TrTransform>();
-            bool needsDummyPointer = CalcScriptedTransforms(out trs_CS);
-
-            if (trs_CS.Count != m_NumActivePointers)
-            {
-                ChangeNumActivePointers(trs_CS.Count);
-            }
-
+            bool needsDummyPointer = CalcScriptedTransforms();
             Transform rAttachPoint_GS = InputManager.m_Instance.GetBrushControllerAttachPoint();
 
             // If none of the pointers match the normal pointer location then we need to show a dummy pointer
@@ -953,8 +987,6 @@ namespace TiltBrush
                     dummyPointer.SetActive(false);
                 }
             }
-
-            return trs_CS;
         }
 
         public void SetSymmetryMode(SymmetryMode mode, bool recordCommand = true)
@@ -987,8 +1019,8 @@ namespace TiltBrush
                 case SymmetryMode.ScriptedSymmetryMode:
                     var script = LuaManager.Instance.GetActiveScript(LuaApiCategory.SymmetryScript);
                     LuaManager.Instance.InitScript(script);
-                    var trs = GetScriptedPointerTransforms();
-                    active = trs.Count;
+                    GenerateScriptedPointerTransforms();
+                    active = m_ScriptedTransforms.Count;
                     break;
                 case SymmetryMode.DebugMultiple:
                     active = DEBUG_MULTIPLE_NUM_POINTERS;
@@ -1085,9 +1117,10 @@ namespace TiltBrush
                     }
                 case SymmetryMode.ScriptedSymmetryMode:
                     {
+                        // fubar
                         TrTransform scriptedTr;
                         {
-                            scriptedTr = GetScriptedPointerTransforms()[child];
+                            scriptedTr = m_ScriptedTransforms[child];
                             // convert from canvas to world coords
                             scriptedTr *= App.Scene.Pose.inverse;
                         }
@@ -1229,8 +1262,7 @@ namespace TiltBrush
 
                         for (int i = 0; i < m_CustomMirrorMatrices.Count; i++)
                         {
-                            (TrTransform, TrTransform) trAndFix;
-                            trAndFix = TrFromMatrixWithFixedReflections(m_CustomMirrorMatrices[i]);
+                            (TrTransform, TrTransform) trAndFix = TrFromMatrixWithFixedReflections(m_CustomMirrorMatrices[i]);
                             tr = xfCenter * trAndFix.Item1 * xfCenter.inverse; // convert from widget-local coords to world coords
                             var tmp = tr * pointer0 * trAndFix.Item2; // Work around 2018.3.x Mono parse bug
                             tmp.ToTransform(m_Pointers[i].m_Script.transform);
@@ -1241,15 +1273,18 @@ namespace TiltBrush
                     }
                 case SymmetryMode.ScriptedSymmetryMode:
                     {
+                        GenerateScriptedPointerTransforms();
                         TrTransform pointer0_GS = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
-                        var trs = GetScriptedPointerTransforms();
                         int pointerIndex = 0;
-                        foreach (var tr in trs)
+                        for (var i = 0; i < m_ScriptedTransforms.Count; i++)
                         {
+                            var tr = m_ScriptedTransforms[i];
                             // convert from canvas to world coords
                             // tr *= App.Scene.Pose.inverse;
                             // Apply the transform to the pointer
-                            var tmp = tr * pointer0_GS; // Work around 2018.3.x Mono parse bug
+                            // fubar
+                            TrTransform fixTr = i < m_ScriptedTrFixes.Count ? m_ScriptedTrFixes[i] : TrTransform.identity;
+                            var tmp = tr * pointer0_GS * fixTr; // Work around 2018.3.x Mono parse bug
                             if (tmp.IsFinite())
                             {
                                 tmp.ToTransform(m_Pointers[pointerIndex].m_Script.transform);
