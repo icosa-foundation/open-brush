@@ -251,7 +251,8 @@ jobs:
         run: echo "::add-mask::$UNITY_PASSWORD"
       - name: Free extra space
         # This takes several minutes, so we only do it where required. As of 12/10/2023, this increases free space from 18GB to 41GB
-        if: matrix.targetPlatform == 'Android' || matrix.targetPlatform == 'StandaloneWindows64'
+        # if: matrix.targetPlatform == 'Android' || matrix.targetPlatform == 'StandaloneWindows64'
+        if: false  # Disabled because https://github.blog/2024-01-17-github-hosted-runners-double-the-power-for-open-source/ introduces much bigger runners (150GB of SSD free)
         run: |
           echo "Initial free space"
           df -h /
