@@ -155,7 +155,7 @@ namespace TiltBrush
             }
         }
 
-        public void RefreshPage()
+        public virtual void RefreshPage()
         {
             CalcNumPages(); // in case m_DataCount has changed
 

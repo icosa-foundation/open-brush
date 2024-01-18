@@ -15,10 +15,11 @@
 // TODO: Better way to detect Passthrough support.
 // Extra: Passthrough should be *per* envrionment really!
 // See https://github.com/icosa-foundation/open-brush/issues/456
-#if OCULUS_SUPPORTED
+#if OCULUS_SUPPORTED || ZAPBOX_SUPPORTED
 #define PASSTHROUGH_SUPPORTED
 #endif
 
+using System;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,7 +29,12 @@ namespace TiltBrush
 
     public class LightingPopUpWindow : PagingPopUpWindow
     {
+        private const string PASSTHROUGH_GUID = "e38af599-4575-46ff-a040-459703dbcd36";
+
         private string m_CurrentPresetGuid;
+        [SerializeField] private Transform m_PassthroughControls;
+        [SerializeField] private ToggleButton m_WorldLockToggle;
+
         private List<TiltBrush.Environment> m_Environments;
 
         protected override int m_DataCount
@@ -50,6 +56,9 @@ namespace TiltBrush
 
         override public void Init(GameObject rParent, string sText)
         {
+            m_PassthroughControls.gameObject.SetActive(false);
+            m_WorldLockToggle.IsToggledOn = SketchControlsScript.m_Instance.m_DisableWorldGrabbing;
+
             //build list of lighting presets we're going to show
             m_Environments = EnvironmentCatalog.m_Instance.AllEnvironments.ToList();
 
@@ -58,7 +67,7 @@ namespace TiltBrush
             foreach (var env in m_Environments)
             {
                 // Passthrough
-                if (env.m_Guid.ToString() == "e38af599-4575-46ff-a040-459703dbcd36")
+                if (env.m_Guid.ToString() == PASSTHROUGH_GUID)
                 {
                     m_Environments.Remove(env);
                     break;
@@ -73,6 +82,7 @@ namespace TiltBrush
                 //find the index of our current preset in the preset list
                 int iPresetIndex = -1;
                 m_CurrentPresetGuid = rCurrentPreset.m_Guid.ToString();
+
                 for (int i = 0; i < m_Environments.Count; ++i)
                 {
                     if (m_Environments[i].m_Guid.ToString() == m_CurrentPresetGuid)
@@ -96,12 +106,49 @@ namespace TiltBrush
             base.Init(rParent, sText);
         }
 
+        public void HandleCanvasLockToggle()
+        {
+            SketchControlsScript.m_Instance.m_DisableWorldGrabbing = m_WorldLockToggle.IsToggledOn;
+        }
+
+        public void HandleCanvasReset(ActionButton btn)
+        {
+            SketchControlsScript.m_Instance.ResetGrabbedPose(true);
+        }
+
+        override protected void RefreshPage()
+        {
+            base.RefreshPage();
+            bool passthroughActive = m_CurrentPresetGuid == PASSTHROUGH_GUID;
+            if (passthroughActive)
+            {
+                m_PassthroughControls.gameObject.SetActive(true);
+            }
+            else
+            {
+                m_PassthroughControls.gameObject.SetActive(false);
+            }
+        }
+
         protected void OnFadingToDesiredEnvironment()
         {
             TiltBrush.Environment rCurrentPreset = SceneSettings.m_Instance.GetDesiredPreset();
             if (rCurrentPreset != null)
             {
                 m_CurrentPresetGuid = rCurrentPreset.m_Guid.ToString();
+                bool passthroughActive = m_CurrentPresetGuid == PASSTHROUGH_GUID;
+                if (passthroughActive)
+                {
+                    m_PassthroughControls.gameObject.SetActive(true);
+                    m_WorldLockToggle.IsToggledOn = true;
+                    SketchControlsScript.m_Instance.m_DisableWorldGrabbing = true;
+                }
+                else
+                {
+                    m_PassthroughControls.gameObject.SetActive(false);
+                    m_WorldLockToggle.IsToggledOn = false;
+                    SketchControlsScript.m_Instance.m_DisableWorldGrabbing = false;
+                }
             }
             RefreshPage();
         }

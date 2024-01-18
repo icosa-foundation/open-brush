@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
   m_Name: Strings_en
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   m_LocaleId:
     m_Code: en
   m_SharedData: {fileID: 11400000, guid: c84355079ab3f3e4f8f3812258805f86, type: 2}
@@ -1433,7 +1433,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76086604699590656
-    m_Localized: Exit Open Brush to finish publishing
+    m_Localized: Click to Finish Publishing
     m_Metadata:
       m_Items: []
   - m_Id: 76094622149435392
@@ -3474,6 +3474,23 @@ MonoBehaviour:
     m_Localized: 'Swipe To Adjust
 
       Brush Size'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 189087250755706880
+    m_Localized: To avoid error 403 on Sketchfab when publishing - change visibility
+      to public (free Sketchfab accounts can't publish private models)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791089062830080
+    m_Localized: Reset Canvas Position
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791266398003200
+    m_Localized: Lock Canvas Position
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188792931159203840
+    m_Localized: Unlock Canvas Position
     m_Metadata:
       m_Items: []
   references:

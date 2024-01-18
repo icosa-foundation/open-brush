@@ -374,7 +374,7 @@ namespace TiltBrush
 
         public override void RegisterHighlight()
         {
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
             if (m_ObjModelScript != null)
             {
                 m_ObjModelScript.RegisterHighlight();
@@ -386,7 +386,7 @@ namespace TiltBrush
 
         protected override void UnregisterHighlight()
         {
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
             if (m_ObjModelScript != null)
             {
                 m_ObjModelScript.UnregisterHighlight();
