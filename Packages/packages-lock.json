@@ -336,7 +336,7 @@
         "com.unity.modules.imageconversion": "1.0.0",
         "com.unity.shadergraph": "10.0.0"
       },
-      "hash": "a2f831d4957c2056e918baafa6ed56bd1568c13d"
+      "hash": "caa3f4c14ece0985b66dd9b544419236ccca2a68"
     },
     "org.nuget.google.apis": {
       "version": "1.64.0",
