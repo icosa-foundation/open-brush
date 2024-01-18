@@ -930,7 +930,6 @@ namespace TiltBrush
                         {
                             var mat = matList[i]._Matrix;
 
-                            // fubar
                             var xfCenter_GS = TrTransform.FromTransform(m_SymmetryWidget);
                             (TrTransform, TrTransform) trAndFix = TrFromMatrixWithFixedReflections(mat);
                             var newTr_GS = xfCenter_GS * trAndFix.Item1 * xfCenter_GS.inverse;
@@ -1117,7 +1116,6 @@ namespace TiltBrush
                     }
                 case SymmetryMode.ScriptedSymmetryMode:
                     {
-                        // fubar
                         TrTransform scriptedTr;
                         {
                             scriptedTr = m_ScriptedTransforms[child];
@@ -1282,7 +1280,6 @@ namespace TiltBrush
                             // convert from canvas to world coords
                             // tr *= App.Scene.Pose.inverse;
                             // Apply the transform to the pointer
-                            // fubar
                             TrTransform fixTr = i < m_ScriptedTrFixes.Count ? m_ScriptedTrFixes[i] : TrTransform.identity;
                             var tmp = tr * pointer0_GS * fixTr; // Work around 2018.3.x Mono parse bug
                             if (tmp.IsFinite())
