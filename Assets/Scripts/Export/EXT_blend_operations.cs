@@ -20,9 +20,9 @@ namespace TiltBrush
         }
 
         // Syntactic Sugar
-        public static EXT_blend_operations Alpha => new() {blendOperation = BlendOperation.Alpha};
-        public static EXT_blend_operations Add => new() {blendOperation = BlendOperation.Add};
-        public static EXT_blend_operations Multiply => new() {blendOperation = BlendOperation.Multiply};
+        public static EXT_blend_operations Alpha => new() { blendOperation = BlendOperation.Alpha };
+        public static EXT_blend_operations Add => new() { blendOperation = BlendOperation.Add };
+        public static EXT_blend_operations Multiply => new() { blendOperation = BlendOperation.Multiply };
 
         public const string EXTENSION_NAME = nameof(EXT_blend_operations);
         private GLTFSceneExporter exporter;
