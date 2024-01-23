@@ -197,7 +197,7 @@ namespace TiltBrush
         {
             if (materialNode.Extensions == null)
                 materialNode.Extensions = new Dictionary<string, IExtension>();
-            materialNode.Extensions.Add(KHR_blend.EXTENSION_NAME, blend);
+            materialNode.Extensions.Add(EXT_blend_operations.EXTENSION_NAME, blend);
         }
 
         public override void AfterMaterialExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Material material, GLTFMaterial materialNode)
