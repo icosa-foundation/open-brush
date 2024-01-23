@@ -43,9 +43,10 @@ namespace TiltBrush
                 foreach (var stroke in SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes())
                 {
                     var batch = stroke.m_BatchSubset.m_ParentBatch.transform;
-                    batch.tag = "EditorOnly";
-                    stroke.m_Object.SetActive(false); // Uncreate doesn't destroy immediately
                     stroke.Uncreate();
+                    // Uncreate doesn't destroy immediately, so ensure we don't also export the batch mesh
+                    batch.tag = "EditorOnly";
+                    batch.gameObject.SetActive(false);
                     stroke.Recreate();
                     if (App.UserConfig.Export.KeepGroups)
                     {
@@ -98,20 +99,7 @@ namespace TiltBrush
 
             // Hide Batched strokes
             // Not sure why these still exist after Uncreate/Recreate?
-            if (App.UserConfig.Export.KeepStrokes)
-            {
-                // if (transform.GetComponent<CanvasScript>() != null)
-                // {
-                //     foreach (Transform child in transform)
-                //     {
-                //         if (child.GetComponent<Batch>() != null)
-                //         {
-                //             child.tag = "EditorOnly";
-                //         }
-                //     }
-                // }
-            }
-            else if (App.UserConfig.Export.ExportStrokeMetadata)
+            if (!App.UserConfig.Export.KeepStrokes && App.UserConfig.Export.ExportStrokeMetadata)
             {
                 // We'll need a way to find the batch for each mesh later
                 var batch = transform.GetComponent<Batch>();
