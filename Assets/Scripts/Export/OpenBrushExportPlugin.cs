@@ -127,7 +127,7 @@ namespace TiltBrush
                             var strokeInfo = new Dictionary<string, string>();
                             strokeInfo["HeadTimestampMs"] = stroke.HeadTimestampMs.ToString();
                             strokeInfo["TailTimestampMs"] = stroke.TailTimestampMs.ToString();
-                            strokeInfo["group"] = stroke.Group.GetHashCode().ToString();
+                            strokeInfo["Group"] = stroke.Group.GetHashCode().ToString();
                             strokeInfo["Seed"] = stroke.m_Seed.ToString();
                             strokeInfo["Color"] = stroke.m_Color.ToString();
                             var primitiveExtras = new Dictionary<string, Dictionary<string, string>>
@@ -174,11 +174,11 @@ namespace TiltBrush
                         foreach (var subset in batch.m_Groups)
                         {
                             var subsetInfo = new Dictionary<string, string>();
-                            subsetInfo["vertLength"] = subset.m_VertLength.ToString();
-                            subsetInfo["startVertIndex"] = subset.m_StartVertIndex.ToString();
+                            subsetInfo["StartVertIndex"] = subset.m_StartVertIndex.ToString();
+                            subsetInfo["VertLength"] = subset.m_VertLength.ToString();
                             subsetInfo["HeadTimestampMs"] = subset.m_Stroke.HeadTimestampMs.ToString();
                             subsetInfo["TailTimestampMs"] = subset.m_Stroke.TailTimestampMs.ToString();
-                            subsetInfo["group"] = subset.m_Stroke.Group.GetHashCode().ToString();
+                            subsetInfo["Group"] = subset.m_Stroke.Group.GetHashCode().ToString();
                             subsetInfo["Seed"] = subset.m_Stroke.m_Seed.ToString();
                             subsetInfo["Color"] = subset.m_Stroke.m_Color.ToString();
                             batchInfo.Add(subsetInfo);
