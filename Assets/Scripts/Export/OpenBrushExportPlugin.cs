@@ -10,7 +10,7 @@ using Object = UnityEngine.Object;
 
 namespace TiltBrush
 {
-    public class ObMeshExportPlugin : GLTFExportPlugin
+    public class OpenBrushExportPlugin : GLTFExportPlugin
     {
         public override string DisplayName => "Open Brush Export";
         public override string Description => "Handles Open Brush specific export logic.";
@@ -18,15 +18,15 @@ namespace TiltBrush
 
         public override GLTFExportPluginContext CreateInstance(ExportContext context)
         {
-            return new ObMeshExtensionConfig();
+            return new OpenBrushExportPluginConfig();
         }
     }
 
-    public class ObMeshExtensionConfig: GLTFExportPluginContext
+    public class OpenBrushExportPluginConfig : GLTFExportPluginContext
     {
         private Dictionary<int, Batch> _meshesToBatches;
 
-        private List<string> _ignoreList = new ()
+        private List<string> _ignoreList = new()
         {
             "SnapGrid3D",
             "Preview Light"
