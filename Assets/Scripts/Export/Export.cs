@@ -16,9 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using GLTF.Schema;
 using UnityEngine;
-using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;
 using UnityGLTF;
 
@@ -44,7 +42,7 @@ URL=" + kExportDocumentationUrl;
         {
             string child = FileUtils.GenerateNonexistentFilename(parent, basename: ext, extension: "");
             if (!FileUtils.InitializeDirectoryWithUserError(
-                child, "Failed to create export directory for " + ext))
+                    child, "Failed to create export directory for " + ext))
             {
                 return null;
             }
@@ -113,15 +111,15 @@ URL=" + kExportDocumentationUrl;
             {
                 formats = new Dictionary<string, bool>
                 {
-                    {"fbx", true},
-                    {"glb", true},
-                    {"newglb", false},
-                    {"json", false},
-                    {"latk", false},
-                    {"obj", true},
-                    {"stl", false},
-                    {"usd", false},
-                    {"wrl", false},
+                    { "fbx", true },
+                    { "glb", true },
+                    { "newglb", false },
+                    { "json", false },
+                    { "latk", false },
+                    { "obj", true },
+                    { "stl", false },
+                    { "usd", false },
+                    { "wrl", false },
                 };
             }
             return formats.GetValueOrDefault(format);
@@ -136,7 +134,7 @@ URL=" + kExportDocumentationUrl;
 
             string parent = FileUtils.GenerateNonexistentFilename(App.UserExportPath(), basename, "");
             if (!FileUtils.InitializeDirectoryWithUserError(
-                parent, "Failed to create export directory")) return;
+                    parent, "Failed to create export directory")) return;
 
             // Set up progress bar.
             var progress = new Progress();
@@ -300,13 +298,12 @@ URL=" + kExportDocumentationUrl;
                     OverlayManager.m_Instance.UpdateProgress(0.7f);
                     var settings = GLTFSettings.GetOrCreateSettings();
                     settings.UseMainCameraVisibility = false;
-                    var options = new ExportOptions
+                    var context = new ExportContext
                     {
                         ExportLayers = -1,
-                        AfterNodeExport = AfterNodeExport
                     };
                     var layers = App.Scene.LayerCanvases.Select(x => x.transform).ToArray();
-                    var unityGltfexporter = new GLTFSceneExporter(layers, options);
+                    var unityGltfexporter = new GLTFSceneExporter(layers, context);
                     unityGltfexporter.SaveGLB(Path.Combine(parent, $"newglb"), $"{basename}.{extension}");
                 }
                 progress.CompleteWork("newglb");
@@ -323,25 +320,5 @@ URL=" + kExportDocumentationUrl;
                 File.WriteAllText(readmeFilename, kExportReadmeBody);
             }
         }
-
-        private static void AfterNodeExport(GLTFSceneExporter exporter, GLTFRoot gltfroot, Transform transform, Node node)
-        {
-            try
-            {
-                if (node.Name.StartsWith("Batch_"))
-                {
-                    var parts = node.Name.Split("_");
-                    Guid brushGuid = new Guid(parts.Last());
-                    string brushName = BrushCatalog.m_Instance.GetBrush(brushGuid).DurableName;
-                    brushName = brushName.Replace(" ", "_").ToLower();
-                    node.Name = $"brush_{brushName}_{parts[1]}";
-                }
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"Failed to rename node {node.Name} based on brush guid: {e.Message}");
-            }
-        }
     }
-
 } // namespace TiltBrush

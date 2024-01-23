@@ -256,6 +256,27 @@ namespace TiltBrush
                 set { m_ExportStrokeTimestamp = value; }
             }
 
+            bool? m_ExportStrokeMetadata;
+            public bool ExportStrokeMetadata
+            {
+                get { return m_ExportStrokeMetadata ?? false; }
+                set { m_ExportStrokeMetadata = value; }
+            }
+
+            bool? m_KeepStrokes;
+            public bool KeepStrokes
+            {
+                get { return m_KeepStrokes ?? false; }
+                set { m_KeepStrokes = value; }
+            }
+
+            bool? m_KeepGroups;
+            public bool KeepGroups
+            {
+                get { return m_KeepGroups ?? true; }
+                set { m_KeepGroups = value; }
+            }
+
             private Dictionary<string, bool> m_Formats;
             [JsonProperty]
             public Dictionary<string, bool> Formats
