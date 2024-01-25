@@ -63,6 +63,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d9fe28b7eb945fd891714c55c74f44b, type: 3}
   m_Name: CanvasExport
   m_EditorClassIdentifier: 
+--- !u!114 &-5101350394804673800
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: ObMeshExportPlugin
+  m_EditorClassIdentifier: Assembly-CSharp:TiltBrush:ObMeshExportPlugin
+  <Enabled>k__BackingField: 1
 --- !u!114 &-5020980606651475385
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -123,6 +136,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c261146868c45eb4eb6b9987bd8c9084, type: 3}
   m_Name: ObMeshExportPlugin
   m_EditorClassIdentifier: 
+--- !u!114 &-682178813687408182
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c261146868c45eb4eb6b9987bd8c9084, type: 3}
+  m_Name: OpenBrushExportPlugin
+  m_EditorClassIdentifier: 
 --- !u!114 &1
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -156,11 +181,11 @@ MonoBehaviour:
   - {fileID: 7420168740226561727}
   - {fileID: -6755212205620999988}
   - {fileID: 8207833083978872644}
-  - {fileID: -1229656505305497778}
+  - {fileID: -682178813687408182}
   exportNames: 1
   exportFullPath: 0
   requireExtensions: 0
-  useMainCameraVisibility: 1
+  useMainCameraVisibility: 0
   exportDisabledGameObjects: 0
   tryExportTexturesFromDisk: 0
   useTextureFileTypeHeuristic: 1

@@ -34,28 +34,8 @@ namespace TiltBrush
 
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
+            SelectionManager.m_Instance.ClearActiveSelection();
             _meshesToBatches = new Dictionary<int, Batch>();
-
-            if (App.UserConfig.Export.KeepStrokes)
-            {
-                App.Config.m_UseBatchedBrushes = false;
-                SelectionManager.m_Instance.ClearActiveSelection();
-                foreach (var stroke in SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes())
-                {
-                    var batch = stroke.m_BatchSubset.m_ParentBatch.transform;
-                    stroke.Uncreate();
-                    // Uncreate doesn't destroy immediately, so ensure we don't also export the batch mesh
-                    batch.tag = "EditorOnly";
-                    batch.gameObject.SetActive(false);
-                    stroke.Recreate();
-                    if (App.UserConfig.Export.KeepGroups)
-                    {
-                        var group = stroke.Group.GetHashCode();
-                        var groupTransform = GetOrCreateGroupTransform(stroke.Canvas, group);
-                        stroke.m_Object.transform.SetParent(groupTransform, true);
-                    }
-                }
-            }
         }
 
         private Transform GetOrCreateGroupTransform(CanvasScript layer, int group)
@@ -73,12 +53,12 @@ namespace TiltBrush
             {
                 foreach (Transform child in layer.transform)
                 {
-                    if (child.name == $"Group_{group}")
+                    if (child.name == $"_StrokeGroup_{group}")
                     {
                         return child;
                     }
                 }
-                var groupTransform = new GameObject($"Group_{group}").transform;
+                var groupTransform = new GameObject($"_StrokeGroup_{group}").transform;
                 groupTransform.parent = layer.transform;
                 groupTransform.localPosition = Vector3.zero;
                 groupTransform.localRotation = Quaternion.identity;
@@ -87,18 +67,61 @@ namespace TiltBrush
             }
         }
 
-        public override void BeforeNodeExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Transform transform, Node node)
+        public void BeforeLayerExport(Transform transform)
         {
+            var canvas = transform.GetComponent<CanvasScript>();
             foreach (Transform child in transform)
             {
                 if (_ignoreList.Contains(child.name))
                 {
                     child.tag = "EditorOnly";
                 }
+
+                if (child.GetComponent<StencilWidget>() != null)
+                {
+                    child.tag = "EditorOnly";
+                }
             }
 
-            // Hide Batched strokes
-            // Not sure why these still exist after Uncreate/Recreate?
+            if (App.UserConfig.Export.KeepStrokes)
+            {
+                App.Config.m_UseBatchedBrushes = false;
+                foreach (var batch in canvas.BatchManager.AllBatches())
+                {
+                    var subsets = batch.m_Groups.ToArray();
+                    for (var i = 0; i < subsets.Length; i++)
+                    {
+                        var subset = subsets[i];
+                        var stroke = subset.m_Stroke;
+                        stroke.m_IntendedCanvas = stroke.Canvas;
+                        if (stroke.m_Type != Stroke.Type.BatchedBrushStroke) continue;
+                        stroke.Uncreate();
+                        stroke.Recreate(null, canvas);
+                        var mesh = stroke.m_Object.GetComponent<MeshFilter>().sharedMesh;
+                        mesh = BrushBaker.m_Instance.ProcessMesh(mesh, stroke.m_BrushGuid.ToString());
+                        stroke.m_Object.GetComponent<MeshFilter>().sharedMesh = mesh;
+                        stroke.m_Object.GetComponent<MeshFilter>().mesh = mesh;
+                        stroke.m_Object.name = $"{stroke.m_Object.name}_{i}";
+                        if (App.UserConfig.Export.KeepGroups)
+                        {
+                            var group = stroke.Group.GetHashCode();
+                            var groupTransform = GetOrCreateGroupTransform(canvas, group);
+                            stroke.m_Object.transform.SetParent(groupTransform, true);
+                        }
+                    }
+                    batch.tag = "EditorOnly";
+                }
+                canvas.BatchManager.FlushMeshUpdates();
+            }
+        }
+
+        public override void BeforeNodeExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Transform transform, Node node)
+        {
+            if (transform.GetComponent<CanvasScript>() != null)
+            {
+                BeforeLayerExport(transform);
+            }
+
             if (!App.UserConfig.Export.KeepStrokes && App.UserConfig.Export.ExportStrokeMetadata)
             {
                 // We'll need a way to find the batch for each mesh later
@@ -112,8 +135,45 @@ namespace TiltBrush
             }
         }
 
+        public void AfterLayerExport(Transform transform)
+        {
+            var canvas = transform.GetComponent<CanvasScript>();
+            App.Config.m_UseBatchedBrushes = true;
+            if (App.UserConfig.Export.KeepStrokes)
+            {
+                foreach (var brushScript in canvas.transform.GetComponentsInChildren<BaseBrushScript>())
+                {
+                    var stroke = brushScript.Stroke;
+                    if (stroke==null || stroke.m_Type != Stroke.Type.BrushStroke) continue;
+                    var strokeGo = stroke.m_Object;
+                    stroke.InvalidateCopy();
+                    stroke.Uncreate();
+                    stroke.Recreate(null, canvas);
+                    stroke.m_BatchSubset.m_ParentBatch.transform.tag = "Untagged";
+                    SafeDestroy(strokeGo);
+                }
+                canvas.BatchManager.FlushMeshUpdates();
+
+                if (App.UserConfig.Export.KeepStrokes)
+                {
+                    foreach (Transform child in canvas.transform)
+                    {
+                        if (child.name.StartsWith($"_StrokeGroup_"))
+                        {
+                            SafeDestroy(child.gameObject);
+                        }
+                    }
+                }
+            }
+        }
+
         public override void AfterNodeExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Transform transform, Node node)
         {
+            if (transform.GetComponent<CanvasScript>() != null)
+            {
+                AfterLayerExport(transform);
+            }
+
             if (App.UserConfig.Export.KeepStrokes && App.UserConfig.Export.ExportStrokeMetadata)
             {
                 var brush = transform.GetComponent<BaseBrushScript>();
@@ -164,7 +224,7 @@ namespace TiltBrush
         {
             if (App.UserConfig.Export.ExportStrokeMetadata)
             {
-                if (!App.UserConfig.Export.KeepStrokes)
+                if (App.UserConfig.Export.KeepStrokes)
                 {
                     Batch batch;
                     var result = _meshesToBatches.TryGetValue(mesh.GetHashCode(), out batch);
@@ -207,7 +267,8 @@ namespace TiltBrush
 
             // Strip the (Instance) suffix from the material node name
             materialNode.Name = materialNode.Name.Replace("(Instance)", "").Trim();
-
+            materialNode.Name = $"ob-{materialNode.Name}";
+            
             var brush = BrushCatalog.m_Instance.AllBrushes.FirstOrDefault(b => b.DurableName == materialNode.Name);
 
             if (brush != null && brush.BlendMode == ExportableMaterialBlendMode.AdditiveBlend)
@@ -218,30 +279,6 @@ namespace TiltBrush
 
         public override void AfterSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
-            if (App.UserConfig.Export.KeepStrokes)
-            {
-                App.Config.m_UseBatchedBrushes = true;
-                foreach (var stroke in SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes())
-                {
-                    stroke.Uncreate();
-                    stroke.Recreate();
-                    stroke.m_BatchSubset.m_ParentBatch.transform.tag = "Untagged";
-                }
-                if (App.UserConfig.Export.KeepGroups)
-                {
-                    foreach (var layer in App.Scene.LayerCanvases)
-                    {
-                        foreach (Transform child in layer.transform)
-                        {
-                            if (child.name.StartsWith($"_StrokeGroup_"))
-                            {
-                                SafeDestroy(child.gameObject);
-                            }
-                        }
-                    }
-                }
-            }
-
             gltfRoot.Asset.Generator = $"Open Brush UnityGLTF Exporter {App.Config.m_VersionNumber}.{App.Config.m_BuildStamp})";
         }
 
