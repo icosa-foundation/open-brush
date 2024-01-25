@@ -149,7 +149,10 @@ namespace TiltBrush
                     stroke.InvalidateCopy();
                     stroke.Uncreate();
                     stroke.Recreate(null, canvas);
-                    stroke.m_BatchSubset.m_ParentBatch.transform.tag = "Untagged";
+                    if (stroke.m_BatchSubset != null)
+                    {
+                        stroke.m_BatchSubset.m_ParentBatch.transform.tag = "Untagged";
+                    }
                     SafeDestroy(strokeGo);
                 }
                 canvas.BatchManager.FlushMeshUpdates();
@@ -180,7 +183,7 @@ namespace TiltBrush
                 if (brush != null)
                 {
                     Stroke stroke = brush.Stroke;
-                    if (stroke != null)
+                    if (stroke != null && node.Mesh != null)
                     {
                         if (App.UserConfig.Export.ExportStrokeTimestamp)
                         {
@@ -194,6 +197,7 @@ namespace TiltBrush
                             {
                                 ["ICOSA_strokeInfo"] = strokeInfo
                             };
+
                             node.Mesh.Value.Extras = JToken.FromObject(primitiveExtras);
                         }
                     }
@@ -268,7 +272,7 @@ namespace TiltBrush
             // Strip the (Instance) suffix from the material node name
             materialNode.Name = materialNode.Name.Replace("(Instance)", "").Trim();
             materialNode.Name = $"ob-{materialNode.Name}";
-            
+
             var brush = BrushCatalog.m_Instance.AllBrushes.FirstOrDefault(b => b.DurableName == materialNode.Name);
 
             if (brush != null && brush.BlendMode == ExportableMaterialBlendMode.AdditiveBlend)
