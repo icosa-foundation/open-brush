@@ -3,7 +3,6 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
-using UnityEngine.Serialization;
 
 public class BrushBaker : MonoBehaviour
 {
@@ -28,7 +27,7 @@ public class BrushBaker : MonoBehaviour
         ComputeShader computeShader;
         try
         {
-            computeShader = computeShaders.First(x => x.brushGuid==brushGuid).computeShader;
+            computeShader = computeShaders.First(x => x.brushGuid == brushGuid).computeShader;
         }
         catch (InvalidOperationException e)
         {

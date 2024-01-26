@@ -144,7 +144,7 @@ namespace TiltBrush
                 foreach (var brushScript in canvas.transform.GetComponentsInChildren<BaseBrushScript>())
                 {
                     var stroke = brushScript.Stroke;
-                    if (stroke==null || stroke.m_Type != Stroke.Type.BrushStroke) continue;
+                    if (stroke == null || stroke.m_Type != Stroke.Type.BrushStroke) continue;
                     var strokeGo = stroke.m_Object;
                     stroke.InvalidateCopy();
                     stroke.Uncreate();
