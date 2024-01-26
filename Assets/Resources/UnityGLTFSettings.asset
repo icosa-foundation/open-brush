@@ -190,11 +190,11 @@ MonoBehaviour:
   tryExportTexturesFromDisk: 0
   useTextureFileTypeHeuristic: 1
   defaultJpegQuality: 90
-  exportAnimations: 0
+  exportAnimations: 1
   bakeAnimationSpeed: 0
   uniqueAnimationNames: 0
   bakeSkinnedMeshes: 0
-  blendShapeExportProperties: 0
+  blendShapeExportProperties: -1
   blendShapeExportSparseAccessors: 1
   exportVertexColors: 1
   UseCaching: 1
