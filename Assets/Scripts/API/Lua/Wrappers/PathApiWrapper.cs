@@ -147,7 +147,11 @@ namespace TiltBrush
         public int count => _Path?.Count ?? 0;
 
         [LuaDocsDescription("Returns the point at the specified index")]
-        public TransformApiWrapper this[int index] => new TransformApiWrapper(_Path[index]);
+        public TransformApiWrapper this[int index]
+        {
+            get => new(_Path[index]);
+            set => _Path[index] = value._TrTransform;
+        }
 
         [LuaDocsDescription("Returns the last point in this path")]
         public TransformApiWrapper last => new TransformApiWrapper(_Path[^1]);
