@@ -55,6 +55,7 @@ namespace TiltBrush
         public static async Task StartSyncImport(
             string localPath,
             string assetLocation,
+            string fragmentIdentifier,
             Model model,
             List<string> warnings)
         {
@@ -71,6 +72,24 @@ namespace TiltBrush
             {
                 var result = new GltfImportResult();
                 result.root = go;
+                if (fragmentIdentifier != null)
+                {
+                    var parts = fragmentIdentifier.Split('\\');
+                    // Find the node matching the fragment identifier path
+                    while (parts.Length > 0)
+                    {
+                        var name = parts[0];
+                        parts = parts.Skip(1).ToArray();
+                        var child = go.transform.Find(name);
+                        if (child == null)
+                        {
+                            Debug.LogWarning($"Couldn't find node {name} in gltf");
+                            success = false;
+                            break;
+                        }
+                        go = child.gameObject;
+                    }
+                }
                 result.materialCollector = importMaterialCollector;
             }
             else

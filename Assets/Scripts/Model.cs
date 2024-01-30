@@ -41,14 +41,29 @@ namespace TiltBrush
 
             private Type type;
             private string path;
+            private string fragmentIdentifier;
             private string id; // Only valid when the type is PolyAssetId.
 
             public static Location File(string relativePath)
             {
+                int lastIndex = relativePath.LastIndexOf('#');
+                string path, fragment;
+
+                if (lastIndex == -1)
+                {
+                    path = relativePath;
+                    fragment = null;
+                }
+                else
+                {
+                    path = relativePath.Substring(0, lastIndex);
+                    fragment = relativePath.Substring(lastIndex + 1);
+                }
                 return new Location
                 {
                     type = Type.LocalFile,
-                    path = relativePath
+                    path = path,
+                    fragmentIdentifier = fragment
                 };
             }
 
@@ -61,6 +76,8 @@ namespace TiltBrush
                     id = assetId
                 };
             }
+
+            public string FragmentIdentifier => fragmentIdentifier;
 
             /// Can return null if this is a location for a fake Model (like the ones ModelWidget
             /// assigns itself while the real Model content is in progress of being loaded).
@@ -110,14 +127,20 @@ namespace TiltBrush
 
             public override string ToString()
             {
+                string str;
                 if (type == Type.PolyAssetId)
                 {
-                    return $"{type}:{id}";
+                    str = $"{type}:{id}";
                 }
                 else
                 {
-                    return $"{type}:{path}";
+                    str = $"{type}:{path}";
                 }
+                if (fragmentIdentifier != null)
+                {
+                    str = $"{str}#{fragmentIdentifier}";
+                }
+                return str;
             }
 
             public override bool Equals(object obj)
@@ -503,12 +526,14 @@ namespace TiltBrush
         {
             string localPath = m_Location.AbsolutePath;
             string assetLocation = Path.GetDirectoryName(localPath);
+            string fragmentIdentifier = m_Location.FragmentIdentifier;
             try
             {
 
                 Task t = ImportGltfast.StartSyncImport(
                     localPath,
                     assetLocation,
+                    fragmentIdentifier,
                     this,
                     warnings
                 );
