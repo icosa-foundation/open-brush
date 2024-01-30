@@ -235,7 +235,7 @@ namespace TiltBrush
                 //look for .obj files
                 string[] aFiles = Directory.GetFiles(sPath);
                 // Models we download from Poly are called ".gltf2", but ".gltf" is more standard
-                string[] extensions = { ".obj", ".fbx", ".gltf2", ".gltf", ".glb", ".ply" };
+                string[] extensions = { ".obj", ".fbx", ".gltf2", ".gltf", ".glb", ".ply", ".svg" };
 
                 if (Config.IsExperimental)
                 {
