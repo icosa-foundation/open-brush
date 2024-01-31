@@ -919,7 +919,7 @@ namespace TiltBrush
                             {
                                 OnIntroComplete();
                             }
-                            else if (Config.IsExperimental)
+                            else if (UserConfig.Flags.SkipIntro)
                             {
                                 OnIntroComplete();
                                 PanelManager.m_Instance.ReviveFloatingPanelsForStartup();

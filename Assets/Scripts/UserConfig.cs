@@ -90,6 +90,13 @@ namespace TiltBrush
                 set { m_ShowControllers = value; }
             }
 
+            bool? m_SkipIntro;
+            public bool SkipIntro
+            {
+                get { return m_SkipIntro ?? false; }
+                set { m_SkipIntro = value; }
+            }
+
             int? m_SnapshotHeight;
             public int SnapshotHeight
             {
