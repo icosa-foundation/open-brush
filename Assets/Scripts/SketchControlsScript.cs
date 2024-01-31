@@ -1331,18 +1331,13 @@ namespace TiltBrush
         {
             UnityEngine.Profiling.Profiler.BeginSample("SketchControlScript.UpdateStandardInput");
             //debug keys
-            if (Config.IsExperimental)
+            if (App.UserConfig.Flags.AdvancedKeyboardShortcuts)
             {
                 var camTool = SketchSurfacePanel.m_Instance.ActiveTool as MultiCamTool;
 
                 if (InputManager.m_Instance.GetKeyboardShortcutDown(InputManager.KeyboardShortcut.SaveNew))
                 {
                     IssueGlobalCommand(GlobalCommands.SaveNew, 1);
-                }
-                else if (InputManager.m_Instance.GetKeyboardShortcutDown(
-                    InputManager.KeyboardShortcut.ExportAll))
-                {
-                    IssueGlobalCommand(GlobalCommands.ExportAll);
                 }
                 else if (InputManager.m_Instance.GetKeyboardShortcutDown(
                     InputManager.KeyboardShortcut.SwitchCamera) && camTool != null)

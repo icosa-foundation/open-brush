@@ -46,6 +46,16 @@ namespace TiltBrush
             public bool EnableApiRemoteCalls;
             public bool EnableApiCorsHeaders;
 
+            bool? m_AdvancedKeyboardShortcuts;
+            public bool AdvancedKeyboardShortcuts
+            {
+                get
+                {
+                    return m_AdvancedKeyboardShortcuts ?? false;
+                }
+                set { m_AdvancedKeyboardShortcuts = value; }
+            }
+
             bool? m_ShowDangerousBrushes;
             public bool ShowDangerousBrushes
             {
