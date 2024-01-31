@@ -4519,11 +4519,10 @@ namespace TiltBrush
                     SketchSurfacePanel.m_Instance.EatToolsInput();
                     break;
                 case GlobalCommands.StraightEdgeShape:
-                    if (Config.IsExperimental)
-                    {
-                        PointerManager.m_Instance.StraightEdgeGuide.SetTempShape(
-                            (StraightEdgeGuideScript.Shape)iParam1);
-                    }
+                    // Previously experimental mode only.
+                    // Untested and currently untriggerable.
+                    PointerManager.m_Instance.StraightEdgeGuide.SetTempShape(
+                        (StraightEdgeGuideScript.Shape)iParam1);
                     break;
                 case GlobalCommands.DeleteSketch:
                     {
@@ -5001,13 +5000,11 @@ namespace TiltBrush
                 case GlobalCommands.YouTubeChat: return m_YouTubeChatWidget != null;
                 case GlobalCommands.StencilsDisabled: return m_WidgetManager.StencilsDisabled;
                 case GlobalCommands.StraightEdgeShape:
-                    if (Config.IsExperimental)
-                    {
-                        return PointerManager.m_Instance.StraightEdgeGuide.TempShape == (StraightEdgeGuideScript.Shape)iParam ||
-                            (PointerManager.m_Instance.StraightEdgeGuide.TempShape == StraightEdgeGuideScript.Shape.None
-                            && PointerManager.m_Instance.StraightEdgeGuide.CurrentShape == (StraightEdgeGuideScript.Shape)iParam);
-                    }
-                    else return false;
+                    // Previously experimental mode only.
+                    // Untested and currently untriggerable.
+                    return PointerManager.m_Instance.StraightEdgeGuide.TempShape == (StraightEdgeGuideScript.Shape)iParam ||
+                        (PointerManager.m_Instance.StraightEdgeGuide.TempShape == StraightEdgeGuideScript.Shape.None
+                        && PointerManager.m_Instance.StraightEdgeGuide.CurrentShape == (StraightEdgeGuideScript.Shape)iParam);
                 case GlobalCommands.Disco: return LightsControlScript.m_Instance.DiscoMode;
                 case GlobalCommands.ToggleGroupStrokesAndWidgets: return SelectionManager.m_Instance.SelectionIsInOneGroup;
                 case GlobalCommands.ToggleProfiling: return UnityEngine.Profiling.Profiler.enabled;
