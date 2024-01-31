@@ -57,7 +57,7 @@ namespace TiltBrush
         // want to have a different config file for your edition of the app.
         public const string kConfigFileName = "Open Brush.cfg";
         // The name of the App folder (In the user's Documents folder) - original Tilt Brush used "Tilt Brush"
-        // If you are forking Open Brush, you may want to leave this as "Open Brush" or not. 
+        // If you are forking Open Brush, you may want to leave this as "Open Brush" or not.
         public const string kAppFolderName = "Open Brush";
         // The data folder used on Google Drive.
         public const string kDriveFolderName = kAppDisplayName;
@@ -755,15 +755,6 @@ namespace TiltBrush
             ShowControllers = App.UserConfig.Flags.ShowControllers;
 
             SwitchState();
-
-#if USD_SUPPORTED
-            if (Config.IsExperimental && !string.IsNullOrEmpty(Config.m_IntroSketchUsdFilename))
-            {
-                var gobject = ImportUsd.ImportWithAnim(Config.m_IntroSketchUsdFilename);
-
-                gobject.transform.SetParent(App.Scene.transform, false);
-            }
-#endif
 
             if (Config.m_AutoProfile || m_UserConfig.Profiling.AutoProfile)
             {
