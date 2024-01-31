@@ -237,12 +237,9 @@ namespace TiltBrush
                 // Models we download from Poly are called ".gltf2", but ".gltf" is more standard
                 string[] extensions = { ".obj", ".fbx", ".gltf2", ".gltf", ".glb", ".ply" };
 
-                if (Config.IsExperimental)
-                {
-                    var l = new List<string>(extensions);
-                    l.AddRange(new string[] { ".usda", ".usdc", ".usd" });
-                    extensions = l.ToArray();
-                }
+                var l = new List<string>(extensions);
+                l.AddRange(new string[] { ".usda", ".usdc", ".usd" });
+                extensions = l.ToArray();
 
                 for (int i = 0; i < aFiles.Length; ++i)
                 {
