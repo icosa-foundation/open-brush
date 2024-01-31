@@ -1090,15 +1090,6 @@ namespace TiltBrush
 
         public void UpdatePanels()
         {
-            if (Config.IsExperimental)
-            {
-                if (m_UxExploration != null)
-                {
-                    LockUxExplorationToController();
-                    return;
-                }
-            }
-
             UnityEngine.Profiling.Profiler.BeginSample("PanelManager.UpdatePanels");
             // Lock panels to the controller if we've got 6dof controls.
             if (SketchControlsScript.m_Instance.ActiveControlsType ==
@@ -1654,16 +1645,6 @@ namespace TiltBrush
             if (m_WandPaneVisualsState != PaneVisualsState.Hidden)
             {
                 m_WandPaneVisualsState = PaneVisualsState.ShowingToHidden;
-            }
-        }
-
-        public void LockUxExplorationToController()
-        {
-            if (Config.IsExperimental)
-            {
-                Transform baseTransform = InputManager.Wand.Geometry.MainAxisAttachPoint;
-                m_UxExploration.transform.position = baseTransform.position;
-                m_UxExploration.transform.rotation = baseTransform.rotation;
             }
         }
 
