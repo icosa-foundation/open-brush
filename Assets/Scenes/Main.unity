@@ -3652,7 +3652,7 @@ MonoBehaviour:
   m_EnableGlbVersion2: 1
   m_DebugUpload: 1
   m_TbtSettings: {fileID: 11400000, guid: 86eb32a1d469be44a99294025e7795de, type: 2}
-  m_ReplaceBrushesOnLoad: 1
+  m_ReplaceBrushesOnLoad: 0
   m_BrushReplacementMap: []
   m_IntroSketchUsdFilename: 
   m_IntroSketchSpeed: 1
