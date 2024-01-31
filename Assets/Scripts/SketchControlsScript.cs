@@ -928,11 +928,8 @@ namespace TiltBrush
             m_CurrentGazeObject = -1;
             m_EatInputGazeObject = false;
 
+            // Previously set to 0 in experimental builds
             int hidePanelsDelay = 1;
-            if (Config.IsExperimental)
-            {
-                hidePanelsDelay = 0;
-            }
 
             StartCoroutine(DelayedHidePanels(hidePanelsDelay));
 
