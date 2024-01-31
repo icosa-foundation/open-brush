@@ -3965,27 +3965,23 @@ namespace TiltBrush
         private void SaveModel()
         {
 #if USD_SUPPORTED
-            if (Config.IsExperimental)
-            {
+            var current = SaveLoadScript.m_Instance.SceneFile;
+            string basename = (current.Valid)
+                ? Path.GetFileNameWithoutExtension(current.FullPath)
+                : "Untitled";
+            string directoryName = FileUtils.GenerateNonexistentFilename(
+                App.ModelLibraryPath(), basename, "");
 
-                var current = SaveLoadScript.m_Instance.SceneFile;
-                string basename = (current.Valid)
-                    ? Path.GetFileNameWithoutExtension(current.FullPath)
-                    : "Untitled";
-                string directoryName = FileUtils.GenerateNonexistentFilename(
-                    App.ModelLibraryPath(), basename, "");
-
-                string usdname = Path.Combine(directoryName, basename + ".usd");
-                // TODO: export selection only, though this is still only experimental. The blocking
-                // issue to implement this is that the export collector needs to expose this as an option.
-                //
-                // SelectionManager.m_Instance.HasSelection
-                //    ? SelectionManager.m_Instance.SelectedStrokes
-                //    : null
-                ExportUsd.ExportPayload(usdname);
-                OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                    InputManager.ControllerName.Brush, "Model created!");
-            }
+            string usdname = Path.Combine(directoryName, basename + ".usd");
+            // TODO: export selection only, though this is still only experimental. The blocking
+            // issue to implement this is that the export collector needs to expose this as an option.
+            //
+            // SelectionManager.m_Instance.HasSelection
+            //    ? SelectionManager.m_Instance.SelectedStrokes
+            //    : null
+            ExportUsd.ExportPayload(usdname);
+            OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                InputManager.ControllerName.Brush, "Model created!");
 #endif
         }
 
