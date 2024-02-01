@@ -50,9 +50,14 @@ namespace TiltBrush
 
             // At this point we've got a relative path to a file in Models
             string relativePath = location;
+
+            // Normalize path slashes
+            location = location.Replace(@"\\", "/");
+            location = location.Replace(@"//", "/");
+            location = location.Replace(@"\", "/");
+
             var tr = _CurrentTransform().TransformBy(Coords.CanvasPose);
             var model = new Model(Model.Location.File(relativePath));
-
 
             Task t = model.LoadModelAsync();
             await t;
