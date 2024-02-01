@@ -40,7 +40,7 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 1);
         }
 
-        // TODO 
+        // TODO
         // [ApiEndpoint("upload", "Saves the current scene and uploads it to Poly/Icosa")]
         // public static void SaveAndUpload()
         // {
@@ -113,6 +113,7 @@ namespace TiltBrush
                 -1,
                 Path.Combine(App.UserSketchPath(), filename)
             );
+            PanelManager.m_Instance.ToggleSketchbookPanels(true);
         }
 
         [ApiEndpoint("merge.named", "Loads the sketch with the given name from the user's sketch folder")]
