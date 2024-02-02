@@ -57,8 +57,11 @@ namespace TiltBrush
 
             // At this point we've got a relative path to a file in Models
             string relativePath = parts[0];
-            string subtree = location.Substring(relativePath.Length + 1);
-
+            string subtree = null;
+            if (parts.Length > 1)
+            {
+                subtree = location.Substring(relativePath.Length + 1);
+            }
             var tr = _CurrentTransform().TransformBy(Coords.CanvasPose);
             var model = new Model(Model.Location.File(relativePath));
 
