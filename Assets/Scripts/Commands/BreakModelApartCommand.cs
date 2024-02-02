@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -29,41 +30,67 @@ namespace TiltBrush
             get => true;
         }
 
-        public BreakModelApartCommand(ModelWidget initialWidget, BaseCommand parent = null) : base(parent)
+        private static List<Transform> ExtractNextLevel(Transform startNode)
         {
-            m_InitialWidget = initialWidget;
-            m_NewWidgets = new List<ModelWidget>();
-
-            m_NodePaths = new List<string>();
             var nodes = new List<Transform>();
-            foreach (Transform child in initialWidget.GetComponentInChildren<ObjModelScript>().transform)
+            var results = new List<Transform>();
+            foreach (Transform child in startNode)
             {
+                if (!child.gameObject.activeSelf) continue;
                 nodes.Add(child);
             }
 
             var nextNodes = new List<Transform>();
-            var currentPath = "";
             int failsafe = 0;
-            while (m_NodePaths.Count < 2 && failsafe < 1000)
+            while (
+                (
+                    // Skip levels with no child meshes
+                    results.Count < 1 ||
+                    // Skip levels with a single non-mesh node
+                    (results.Count == 1 && results[0].GetComponent<MeshFilter>() == null)
+                )
+                && failsafe < 1000)
             {
+                results.Clear();
                 foreach (var node in nodes)
                 {
-                    if (currentPath == "") currentPath = node.name;
-                    else currentPath = $"{currentPath}/{node.name}";
-
                     foreach (Transform child in node)
                     {
+                        if (!child.gameObject.activeSelf) continue;
                         nextNodes.Add(child);
-                        if (child.GetComponent<MeshFilter>() != null)
+                        bool hasMeshChildren = child.GetComponentInChildren<MeshFilter>() != null;
+                        if (hasMeshChildren)
                         {
-                            m_NodePaths.Add($"{currentPath}/{child.name}");
+                            results.Add(child);
                         }
                     }
                 }
-                nodes = nextNodes;
+                nodes = nextNodes.ToList(); // Clone the list
                 nextNodes.Clear();
                 failsafe++;
             }
+            return results;
+        }
+
+        public BreakModelApartCommand(ModelWidget initialWidget, BaseCommand parent = null) : base(parent)
+        {
+            m_InitialWidget = initialWidget;
+            m_NewWidgets = new List<ModelWidget>();
+            List<Transform> results = null;
+            var root = initialWidget.GetComponentInChildren<ObjModelScript>().transform;
+            results = ExtractNextLevel(root);
+            m_NodePaths = results.Select(x => GetHierarchyPath(root, x)).ToList();
+        }
+
+        private static string GetHierarchyPath(Transform root, Transform obj)
+        {
+            string path = "/" + obj.name;
+            while (obj.transform.parent != root)
+            {
+                obj = obj.transform.parent;
+                path = "/" + obj.name + path;
+            }
+            return path;
         }
 
         protected override void OnRedo()
