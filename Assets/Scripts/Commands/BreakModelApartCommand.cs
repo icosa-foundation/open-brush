@@ -95,6 +95,7 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
+            SelectionManager.m_Instance.DeselectWidgets(new List<GrabWidget>{m_InitialWidget});
             foreach (var path in m_NodePaths)
             {
                 var newWidget = m_InitialWidget.Clone();
@@ -102,11 +103,10 @@ namespace TiltBrush
                 if (newModelWidget == null) continue;
                 newModelWidget.Subtree = path;
                 newModelWidget.SyncHierarchyToSubtree();
-                newWidget.SetCanvas(App.Scene.ActiveCanvas);
                 SelectionManager.m_Instance.SelectWidget(newModelWidget);
+                newModelWidget.RecalculateColliderBounds();
                 m_NewWidgets.Add(newModelWidget);
             }
-            SelectionManager.m_Instance.DeselectWidgets(new List<GrabWidget>{m_InitialWidget});
             m_InitialWidget.gameObject.SetActive(false);
         }
 

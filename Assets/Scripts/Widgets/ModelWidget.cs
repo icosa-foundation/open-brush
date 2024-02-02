@@ -318,15 +318,40 @@ namespace TiltBrush
 
                 modelScript.Init();
                 CloneInitialMaterials(null);
-
-                Bounds bounds = new Bounds(transform.position, Vector3.zero);
-                foreach (Renderer renderer in node.GetComponentsInChildren<Renderer>())
-                {
-                    bounds.Encapsulate(renderer.bounds);
-                }
-                m_BoxCollider.center = transform.InverseTransformPoint(bounds.center);
-                m_BoxCollider.size = bounds.size;
             }
+        }
+
+        public Bounds CalcBoundsGltf(GameObject go)
+        {
+            Bounds b = new Bounds();
+            bool first = true;
+            var boundsList = go.GetComponentsInChildren<MeshRenderer>().Select(x => x.bounds).ToList();
+            var skinnedMeshRenderers = go.GetComponentsInChildren<SkinnedMeshRenderer>();
+            boundsList.AddRange(skinnedMeshRenderers.Select(x => x.bounds));
+            foreach (Bounds bounds in boundsList)
+            {
+                if (first)
+                {
+                    b = bounds;
+                    first = false;
+                }
+                else
+                {
+                    b.Encapsulate(bounds);
+                }
+            }
+            return b;
+        }
+
+        public void RecalculateColliderBounds()
+        {
+            var root = m_ObjModelScript.transform;
+            m_MeshBounds = CalcBoundsGltf(root.gameObject);
+            m_BoxCollider.transform.localPosition = m_ObjModelScript.transform.localPosition;
+            m_BoxCollider.transform.localRotation = m_ObjModelScript.transform.localRotation;
+            m_BoxCollider.transform.localScale = m_ObjModelScript.transform.localScale;
+            m_BoxCollider.center = m_MeshBounds.center;
+            m_BoxCollider.size = m_MeshBounds.size;
         }
 
         public override float GetActivationScore(Vector3 vControllerPos, InputManager.ControllerName name)
@@ -404,7 +429,20 @@ namespace TiltBrush
             transform.localScale = Vector3.one * m_Size;
             if (m_Model != null && m_Model.m_Valid)
             {
-                m_BoxCollider.size = m_Model.m_MeshBounds.size + m_ContainerBloat;
+                m_BoxCollider.size = MeshBounds.size + m_ContainerBloat;
+            }
+        }
+
+        private Bounds m_MeshBounds;
+        public Bounds MeshBounds
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(m_Subtree))
+                {
+                    return m_Model.m_MeshBounds;
+                }
+                return m_MeshBounds;
             }
         }
 
