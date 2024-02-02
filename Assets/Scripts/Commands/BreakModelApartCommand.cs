@@ -115,7 +115,8 @@ namespace TiltBrush
             SelectionManager.m_Instance.DeselectWidgets(m_NewWidgets);
             foreach (var widget in m_NewWidgets)
             {
-                Object.Destroy(widget);
+                WidgetManager.m_Instance.UnregisterGrabWidget(widget.gameObject);
+                Object.Destroy(widget.gameObject);
             }
             m_InitialWidget.gameObject.SetActive(true);
             SelectionManager.m_Instance.SelectWidget(m_InitialWidget);
