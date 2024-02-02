@@ -41,7 +41,6 @@ namespace TiltBrush
 
             private Type type;
             private string path;
-            private string fragmentIdentifier;
             private string id; // Only valid when the type is PolyAssetId.
 
             public static Location File(string relativePath)
@@ -63,7 +62,6 @@ namespace TiltBrush
                 {
                     type = Type.LocalFile,
                     path = path,
-                    fragmentIdentifier = fragment
                 };
             }
 
@@ -76,8 +74,6 @@ namespace TiltBrush
                     id = assetId
                 };
             }
-
-            public string FragmentIdentifier => fragmentIdentifier;
 
             /// Can return null if this is a location for a fake Model (like the ones ModelWidget
             /// assigns itself while the real Model content is in progress of being loaded).
@@ -135,10 +131,6 @@ namespace TiltBrush
                 else
                 {
                     str = $"{type}:{path}";
-                }
-                if (fragmentIdentifier != null)
-                {
-                    str = $"{str}#{fragmentIdentifier}";
                 }
                 return str;
             }
@@ -546,14 +538,12 @@ namespace TiltBrush
         {
             string localPath = m_Location.AbsolutePath;
             string assetLocation = Path.GetDirectoryName(localPath);
-            string fragmentIdentifier = m_Location.FragmentIdentifier;
             try
             {
 
                 Task t = ImportGltfast.StartSyncImport(
                     localPath,
                     assetLocation,
-                    fragmentIdentifier,
                     this,
                     warnings
                 );

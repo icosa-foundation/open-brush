@@ -23,6 +23,7 @@ namespace TiltBrush
         public struct WidgetMetadata
         {
             public TrTransform xf;
+            public string subtree;
             public bool pinned;
             public bool tinted;
             public uint groupId;
@@ -106,6 +107,7 @@ namespace TiltBrush
             {
                 WidgetMetadata newEntry = new WidgetMetadata();
                 newEntry.xf = widget.GetSaveTransform();
+                newEntry.subtree = widget.Subtree;
                 newEntry.pinned = widget.Pinned;
                 newEntry.groupId = groupIdMapping.GetId(widget.Group);
                 newEntry.layerId = App.Scene.GetIndexOfCanvas(widget.Canvas);
@@ -123,11 +125,13 @@ namespace TiltBrush
                 // Order and align the metadata.
                 WidgetMetadata[] ordered = elem.Value.OrderBy(ByTranslation).ToArray();
                 val.PinStates = new bool[ordered.Length];
+                val.Subtrees = new string[ordered.Length];
                 val.RawTransforms = new TrTransform[ordered.Length];
                 val.GroupIds = new uint[ordered.Length];
                 val.LayerIds = new int[ordered.Length];
                 for (int i = 0; i < ordered.Length; ++i)
                 {
+                    val.Subtrees[i] = ordered[i].subtree;
                     val.PinStates[i] = ordered[i].pinned;
                     val.RawTransforms[i] = ordered[i].xf;
                     val.GroupIds[i] = ordered[i].groupId;

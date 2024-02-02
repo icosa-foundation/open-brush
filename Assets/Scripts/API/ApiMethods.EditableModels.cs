@@ -48,13 +48,16 @@ namespace TiltBrush
                 }
             }
 
-            // At this point we've got a relative path to a file in Models
-            string relativePath = location;
-
             // Normalize path slashes
             location = location.Replace(@"\\", "/");
             location = location.Replace(@"//", "/");
             location = location.Replace(@"\", "/");
+
+            var parts = location.Split("#");
+
+            // At this point we've got a relative path to a file in Models
+            string relativePath = parts[0];
+            string subtree = location.Substring(relativePath.Length + 1);
 
             var tr = _CurrentTransform().TransformBy(Coords.CanvasPose);
             var model = new Model(Model.Location.File(relativePath));
@@ -69,6 +72,8 @@ namespace TiltBrush
             if (widget != null)
             {
                 widget.Model = model;
+                widget.Subtree = subtree;
+                widget.SyncHierarchyToSubtree();
                 widget.Show(true);
                 createCommand.SetWidgetCost(widget.GetTiltMeterCost());
             }
