@@ -50,6 +50,8 @@ Category {
         float4 pos : SV_POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       float4 _MainTex_ST;
@@ -82,6 +84,11 @@ Category {
       {
         v.color = TbVertToSrgb(v.color);
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
         float birthTime = v.texcoord.w;
         float rotation = v.texcoord.z;
         float halfSize = GetParticleHalfSize(v.corner.xyz, v.center, birthTime);

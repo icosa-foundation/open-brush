@@ -34,6 +34,7 @@ Shader "Brush/Special/Intersection" {
 #pragma fragment frag
 #pragma geometry geom
 
+#include "UnityCG.cginc"
 #include "Assets/Shaders/Include/Brush.cginc"
 #include "Assets/Shaders/Include/PackInt.cginc"
 
@@ -45,6 +46,8 @@ Shader "Brush/Special/Intersection" {
 
       struct appdata_t {
         float4 vertex : POSITION;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
@@ -55,12 +58,18 @@ Shader "Brush/Special/Intersection" {
 #if TILT_ENABLE_CONSERVATIVE_RASTER // Saves some overhead when unused.
         float4 aabb : TEXCOORD1;
         float4 clipPos : TEXCOORD2;
-#endif
+        #endif
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       v2f vert(appdata_t v)
       {
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
         o.vertex = UnityObjectToClipPos(v.vertex);
         o.worldPos = mul(unity_ObjectToWorld, v.vertex);
         o.color = half4(0, 0, 0, 0);
