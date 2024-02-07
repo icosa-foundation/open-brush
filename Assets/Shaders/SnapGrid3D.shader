@@ -76,12 +76,16 @@ Shader "Custom/Grid3D"
                 uint id : SV_VERTEXID;
                 float4 vertex : POSITION;
                 float4 pos : TEXCOORD2;
+
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct v2f
             {
                 float4 vertex : SV_POSITION;
                 float4 pos : TEXCOORD2;
+
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             float3 calcQuadVertex(uint vtx_idx) // face 0:x 1:y 2:z
@@ -120,6 +124,11 @@ Shader "Custom/Grid3D"
             v2f vert (appdata v)
             {
                 v2f o;
+
+                UNITY_SETUP_INSTANCE_ID(v);
+                UNITY_INITIALIZE_OUTPUT(v2f, o);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
                 uint vtx_per_quad = 6;
                 uint vtx_per_line = vtx_per_quad * 2;
                 uint vtx_per_star = vtx_per_line * 3;
