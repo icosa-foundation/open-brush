@@ -40,4 +40,4 @@ jobs:
               fi
               echo '{"additional_dependencies": []}' > $PRE_COMMIT_PATH/../.install_state_v1
           done
-      - uses: pre-commit/action@v3.0.0
+      - uses: pre-commit/action@v3.0.1
