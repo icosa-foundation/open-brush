@@ -1,0 +1,26 @@
+name: iOS One-Time Setup
+
+on: workflow_dispatch
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.2
+          bundler-cache: true
+
+      - name: Build iOS
+        shell: bash
+        run: |
+          bundle exec fastlane ios init_ci
+        env:
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_P8: ${{ secrets.APPSTORE_P8 }}
+
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GITHUB_REPOSITORY: ${{ env.GITHUB_REPOSITORY }}
+          MATCH_REPOSITORY: ${{ secrets.MATCH_REPOSITORY }}
