@@ -1,10 +1,8 @@
-
 org, repo = (ENV["GITHUB_REPOSITORY"]||"").split("/")
 match_org, match_repo = (ENV["MATCH_REPOSITORY"]||"").split("/")
 
 platform :ios do
   lane :init_ci do
-    setup_ci
     github_action(
       api_token: ENV["GH_PAT"],
       org: org,
@@ -28,6 +26,56 @@ platform :ios do
       storage_mode: "git",
       git_url: "git@github.com:#{match_org}/#{match_repo}.git",
       app_identifier: ENV["IOS_BUNDLE_ID"]
+    )
+  end
+
+  desc "Deliver a new Release build to the App Store"
+  lane :release do
+    build
+    upload_to_app_store
+  end
+
+  desc "Deliver a new Beta build to Apple TestFlight"
+  lane :beta do
+    # Missing Export Compliance can also be set through Deliverfile
+    update_info_plist(
+      xcodeproj: "#{ENV['IOS_BUILD_PATH']}/iOS/Unity-iPhone.xcodeproj",
+      plist_path: 'Info.plist',
+      block: proc do |plist|
+        plist['ITSAppUsesNonExemptEncryption'] = false
+      end
+    )
+    build
+    upload_to_testflight(skip_waiting_for_build_processing: true)
+  end
+
+  desc "Create .ipa"
+  lane :build do
+    setup_ci
+
+    sync_certificates
+
+    # Unity has specific requirements around codesigning that we have to handle
+    # See https://github.com/fastlane/fastlane/discussions/17458 for context
+    update_code_signing_settings(
+      use_automatic_signing: true,
+      path: "#{ENV['IOS_BUILD_PATH']}/iOS/Unity-iPhone.xcodeproj"
+    )
+
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      team_id: ENV["sigh_#{ENV['IOS_BUNDLE_ID']}_appstore_team-id"],
+      code_sign_identity: 'iPhone Distribution',
+      targets: 'Unity-iPhone',
+      path: "#{ENV['IOS_BUILD_PATH']}/iOS/Unity-iPhone.xcodeproj",
+      profile_name: ENV["sigh_#{ENV['IOS_BUNDLE_ID']}_appstore_profile-name"],
+      profile_uuid: ENV["sigh_#{ENV['IOS_BUNDLE_ID']}_appstore"]
+    )
+
+    build_app( #alias: gym
+      project: "#{ENV['IOS_BUILD_PATH']}/iOS/Unity-iPhone.xcodeproj",
+      scheme: 'Unity-iPhone',
+      xcargs: '-allowProvisioningUpdates'
     )
   end
 
