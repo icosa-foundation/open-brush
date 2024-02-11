@@ -1,16 +1,11 @@
 name: Generate iOS Certs
 
 on:
-  push:
-    branches:
-      - "feature/fastlane"
-      
-# on:
-#   workflow_run:
-#     workflows: ['iOS One-Time Setup']
-#     types:
-#       - completed
-#   workflow_dispatch:
+  workflow_run:
+    workflows: ['iOS One-Time Setup']
+    types:
+      - completed
+  workflow_dispatch:
 
 jobs:
   generate_certs:
