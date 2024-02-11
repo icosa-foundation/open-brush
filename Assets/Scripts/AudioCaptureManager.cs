@@ -65,8 +65,8 @@ namespace TiltBrush
         void Awake()
         {
             m_Instance = this;
-#if UNITY_ANDROID
-    m_Type = AudioCaptureType.App;
+#if UNITY_ANDROID || UNITY_IOS
+            m_Type = AudioCaptureType.App;
 #else
             m_Type = AudioCaptureType.System;
 #endif
