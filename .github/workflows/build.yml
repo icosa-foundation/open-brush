@@ -500,6 +500,7 @@ jobs:
         if: matrix.targetPlatform == 'StandaloneOSX'
         run: |
           mv build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/Support "build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/${{ env.filename }}/Contents/"
+          find build -name 'UnityFbxSdkNative.bundle' -delete
           # Compress, but skip the top directories
           tar -c -v -z -f OpenBrush.tgz -C build/${{ matrix.vrsdk }} ${{ matrix.targetPlatform}}
           rm -rf build/${{ matrix.vrsdk }}/*
