@@ -27,12 +27,15 @@ repos:
         args:
           - --load-plugins=pylint.extensions.redefined_variable_type,pylint.extensions.bad_builtin
           - --disable=import-error
-  - repo: https://github.com/dotnet/format
-    rev: "a2c1431dabf2229052cf598f86f31bc3eac5bc7b"  # Main as of 2022-12-05
+  - repo: local
     hooks:
+      # Use dotnet format already installed on your machine
       - id: dotnet-format
-        exclude: ^(Assets/ThirdParty)|(Packages/)|(Assets/Photon/)
+        name: dotnet-format
+        language: system
         entry: dotnet format whitespace
+        types_or: ["c#", "vb"]
+        exclude: ^(Assets/ThirdParty)|(Packages/)|(Assets/Photon/)
         args:
           - --folder
           - --include
