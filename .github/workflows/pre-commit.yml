@@ -18,5 +18,5 @@ jobs:
           python-version: '3.12'
       - uses: actions/setup-dotnet@v4.0.0
         with:
-          dotnet-version: '7.0.x'
+          dotnet-version: '8.0.x'
       - uses: pre-commit/action@v3.0.1
