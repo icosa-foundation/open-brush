@@ -151,17 +151,19 @@ namespace TiltBrush
 
         public override GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
         {
-            ModelWidget clone = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
+            ModelWidget clone = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab);
             clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.transform.position = position;
             clone.transform.rotation = rotation;
-            clone.Model = this.Model;
+            clone.Model = Model;
             // We're obviously not loading from a sketch.  This is to prevent the intro animation.
             // TODO: Change variable name to something more explicit of what this flag does.
             clone.m_LoadingFromSketch = true;
             clone.Show(true, false);
             clone.transform.parent = transform.parent;
             clone.SetSignedWidgetSize(size);
+            clone.m_Subtree = m_Subtree;
+            clone.SyncHierarchyToSubtree();
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
 
@@ -292,6 +294,21 @@ namespace TiltBrush
             }
         }
 
+        public bool HasSubModels()
+        {
+            string ext = Model.GetLocation().Extension;
+            if (ext == ".gltf" || ext == ".glb")
+            {
+                return GetMeshes().Length > 1;
+            }
+            else if (m_Model.GetLocation().Extension == ".svg")
+            {
+
+                return m_ObjModelScript.SvgSceneInfo.HasSubShapes();
+            }
+            return false;
+        }
+
         public void SyncHierarchyToSubtree()
         {
             if (string.IsNullOrEmpty(Subtree)) return;
@@ -318,6 +335,7 @@ namespace TiltBrush
 
                 modelScript.Init();
                 CloneInitialMaterials(null);
+                RecalculateColliderBounds();
             }
         }
 

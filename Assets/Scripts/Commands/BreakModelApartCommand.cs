@@ -104,7 +104,6 @@ namespace TiltBrush
                 newModelWidget.Subtree = path;
                 newModelWidget.SyncHierarchyToSubtree();
                 SelectionManager.m_Instance.SelectWidget(newModelWidget);
-                newModelWidget.RecalculateColliderBounds();
                 m_NewWidgets.Add(newModelWidget);
             }
             m_InitialWidget.gameObject.SetActive(false);

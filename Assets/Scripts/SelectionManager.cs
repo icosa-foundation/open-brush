@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 
@@ -133,12 +134,22 @@ namespace TiltBrush
             get
             {
                 if (m_SelectedWidgets.Count != 1) return false;
-                var widget = m_SelectedWidgets.First();
+                GrabWidget widget = m_SelectedWidgets.First();
                 if (widget is ModelWidget modelWidget)
                 {
-                    return modelWidget.Model.GetMeshes().Length > 1;
+                    return modelWidget.HasSubModels();
                 }
-                // TODO: support other types of composite imports (SVG?)
+
+                if (widget is ImageWidget imageWidget)
+                {
+                    string ext = Path.GetExtension(imageWidget.ReferenceImage.FileName).ToLower();
+                    if (ext == ".svg")
+                    {
+                        return imageWidget.HasSubShapes();
+                    }
+                    return false;
+                }
+
                 return false;
             }
         }

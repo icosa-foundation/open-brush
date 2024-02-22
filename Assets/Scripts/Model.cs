@@ -21,6 +21,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using TiltBrushToolkit;
+using Unity.VectorGraphics;
 using Debug = UnityEngine.Debug;
 using UObject = UnityEngine.Object;
 
@@ -104,6 +105,8 @@ namespace TiltBrush
                     throw new Exception("Invalid relative path request");
                 }
             }
+
+            public string Extension => Path.GetExtension(AbsolutePath).ToLower();
 
             public string AssetId
             {
@@ -491,12 +494,13 @@ namespace TiltBrush
 
         }
 
-        GameObject LoadSvg(List<string> warningsOut)
+        GameObject LoadSvg(List<string> warningsOut, out SVGParser.SceneInfo sceneInfo)
         {
             try
             {
                 var reader = new SvgMeshReader(m_Location.AbsolutePath);
-                var (gameObject, warnings, collector) = reader.Import();
+                var (gameObject, warnings, collector, si) = reader.Import();
+                sceneInfo = si;
                 warningsOut.AddRange(warnings);
                 m_ImportMaterialCollector = collector;
                 m_AllowExport = (m_ImportMaterialCollector != null);
@@ -507,6 +511,7 @@ namespace TiltBrush
                 m_LoadError = new LoadError("Invalid data", ex.Message);
                 m_AllowExport = false;
                 Debug.LogException(ex);
+                sceneInfo = new SVGParser.SceneInfo();
                 return null;
             }
         }
@@ -587,7 +592,7 @@ namespace TiltBrush
             // Experimental usd loading.
             if (allowUsd &&
                 m_Location.GetLocationType() == Location.Type.LocalFile &&
-                Path.GetExtension(m_Location.AbsolutePath).ToLower().StartsWith(".usd"))
+                m_Location.Extension == ".usd")
             {
                 throw new NotImplementedException();
             }
@@ -701,9 +706,9 @@ namespace TiltBrush
                 // and bail at a higher level, and require as a precondition that error == null
                 m_LoadError = null;
 
-                string ext = Path.GetExtension(m_Location.AbsolutePath).ToLower();
+                string ext = m_Location.Extension;
                 if (m_Location.GetLocationType() == Location.Type.LocalFile &&
-                    ext.StartsWith(".usd"))
+                    ext == ".usd")
                 {
                     // Experimental usd loading.
                     go = LoadUsd(warnings);
@@ -735,9 +740,10 @@ namespace TiltBrush
                 }
                 else if (ext == ".svg")
                 {
-                    go = LoadSvg(warnings);
+                    go = LoadSvg(warnings, out SVGParser.SceneInfo sceneInfo);
                     CalcBoundsNonGltf(go);
                     EndCreatePrefab(go, warnings);
+                    go.GetComponent<ObjModelScript>().SvgSceneInfo = sceneInfo;
                 }
                 else
                 {
