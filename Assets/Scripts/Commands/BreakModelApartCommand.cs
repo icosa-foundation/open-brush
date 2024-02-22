@@ -95,7 +95,7 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
-            SelectionManager.m_Instance.DeselectWidgets(new List<GrabWidget>{m_InitialWidget});
+            SelectionManager.m_Instance.DeselectWidgets(new List<GrabWidget> { m_InitialWidget });
             foreach (var path in m_NodePaths)
             {
                 var newWidget = m_InitialWidget.Clone();
