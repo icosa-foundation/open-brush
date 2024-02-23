@@ -1066,3 +1066,47 @@ jobs:
             # For Pico, Beta channels can only get one build, not a separate China / non-China build
             ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 3 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
           fi
+
+  publish_appstore:
+    name: Release to the App Store
+    runs-on: macos-latest
+    needs: [configuration, build]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download iOS Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: iOS Zapbox
+          path: build/iOS
+
+      - name: Fix File Permissions and Run fastlane
+        env:
+          APPLE_CONNECT_EMAIL: ${{ secrets.APPLE_CONNECT_EMAIL }}
+          APPLE_DEVELOPER_EMAIL: ${{ secrets.APPLE_DEVELOPER_EMAIL }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+          MATCH_REPOSITORY: ${{ secrets.MATCH_REPOSITORY }}
+          MATCH_DEPLOY_KEY: ${{ secrets.MATCH_DEPLOY_KEY }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_P8: ${{ secrets.APPSTORE_P8 }}
+
+          IOS_BUILD_PATH: ${{ format('{0}/build/iOS', github.workspace) }}
+          IOS_BUNDLE_ID: foundation.icosa.openbrushzapbox
+          PROJECT_NAME: Open Brush for Zapbox
+        run: |
+          eval "$(ssh-agent -s)"
+          ssh-add - <<< "${MATCH_DEPLOY_KEY}"
+          find $IOS_BUILD_PATH -type f -name "**.sh" -exec chmod +x {} \;
+          bundle install
+          bundle exec fastlane ios release
+
+      - name: Cleanup to avoid storage limit
+        if: always()
+        uses: geekyeggo/delete-artifact@v2
+        with:
+          name: build-iOS
