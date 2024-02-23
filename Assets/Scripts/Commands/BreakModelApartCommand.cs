@@ -101,8 +101,21 @@ namespace TiltBrush
                 var newWidget = m_InitialWidget.Clone();
                 var newModelWidget = newWidget as ModelWidget;
                 if (newModelWidget == null) continue;
-                newModelWidget.Subtree = path;
-                newModelWidget.SyncHierarchyToSubtree();
+                var previousSubtree = newModelWidget.Subtree;
+                string newSubtree;
+                if (string.IsNullOrEmpty(previousSubtree))
+                {
+                    newSubtree = path;
+                }
+                else
+                {
+                    // Join the previous subtree with the new path
+                    // Remove the duplicate last part of the previous subtree
+                    var parts = previousSubtree.Split('/');
+                    newSubtree = string.Join('/', parts.Take(parts.Length - 1)) + path;
+                }
+                newModelWidget.Subtree = newSubtree;
+                newModelWidget.SyncHierarchyToSubtree(previousSubtree);
                 SelectionManager.m_Instance.SelectWidget(newModelWidget);
                 m_NewWidgets.Add(newModelWidget);
             }

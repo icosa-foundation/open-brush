@@ -309,18 +309,31 @@ namespace TiltBrush
             return false;
         }
 
-        public void SyncHierarchyToSubtree()
+        public void SyncHierarchyToSubtree(string previousSubtree = null)
         {
             if (string.IsNullOrEmpty(Subtree)) return;
             // Walk the hierarchy and find the matching node
-            Transform oldRoot = m_ModelInstance;
-            Transform node = m_ModelInstance;
-            var parts = m_Subtree.Split("/");
-            foreach (var part in parts)
+            Transform oldRoot = m_ObjModelScript.transform;
+
+            // Is this a safe assumption?
+            Transform node = oldRoot.transform.GetChild(0);
+
+            // We only want to walk the new part of the hierarchy
+            string subpathToTraverse;
+            if (!string.IsNullOrEmpty(previousSubtree))
             {
-                node = node.Find(part);
-                if (node == null) break;
+                subpathToTraverse = m_Subtree.Substring(previousSubtree.Length);
             }
+            else
+            {
+                subpathToTraverse = m_Subtree;
+            }
+            // Remove the leading slash and first path component
+            subpathToTraverse = subpathToTraverse.Trim('/');
+            subpathToTraverse = subpathToTraverse.Substring(subpathToTraverse.IndexOf('/') + 1);
+
+            Debug.Log($"Finding {subpathToTraverse} in {node.name}");
+            node = node.Find(subpathToTraverse);
             if (node != null)
             {
                 var newRoot = new GameObject();
@@ -330,6 +343,12 @@ namespace TiltBrush
                 m_ObjModelScript = modelScript;
 
                 node.SetParent(newRoot.transform);
+
+                // Hmmmmm.
+                // How about the case where we are splitting a parent with geometry plus some children also with geometry?
+                // When/where do we prune children?
+                // if (oldRoot.GetComponent<>())
+
                 oldRoot.gameObject.SetActive(false); // TODO destroy fails first load so also hide
                 Destroy(oldRoot.gameObject);
 
