@@ -1069,8 +1069,12 @@ jobs:
 
   publish_appstore:
     name: Release to the App Store
-    runs-on: macos-latest
     needs: [configuration, build]
+    runs-on: macos-latest
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
