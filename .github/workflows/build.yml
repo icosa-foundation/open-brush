@@ -891,7 +891,7 @@ jobs:
 
   publish_steam:
     name: Publish Steam Release
-    needs: [configuration, build]
+    needs: [build, signmacos]
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -917,19 +917,29 @@ jobs:
         with:
           name: Windows OpenXR
           path: build_windows_openxr
+      - name: Download Build Artifacts (MacOS Monoscopic Signed)
+        uses: actions/download-artifact@v4
+        with:
+          name: MacOS Monoscopic (signed)
+          path: build_macos_monoscopic
       - name: Upload Build
         run: |
+          cd build_macos_monoscopic
+          tar xvfz OpenBrush.tgz
+          cd -
           pip install -U jinjanator
-          jinjanate Support/steam/app.vdf.j2 > build_windows_openxr/app.vdf
-          jinjanate Support/steam/main_depot.vdf.j2 > build_windows_openxr/main_depot.vdf
+          jinjanate Support/steam/app.vdf.j2 > app.vdf
+          jinjanate Support/steam/main_depot.win.vdf.j2 > build_windows_openxr/main_depot.vdf
+          jinjanate Support/steam/main_depot.mac.vdf.j2 > build_macos_monoscopic/main_depot.vdf
           jinjanate Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
-          steamcmd +login $STEAM_USERNAME +run_app_build $(pwd)/build_windows_openxr/app.vdf +quit
+          steamcmd +login $STEAM_USERNAME +run_app_build $(pwd)/app.vdf +quit
         env:
           STEAM_USERNAME: ${{ vars.STEAM_USERNAME }}
           STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
           VERSION: ${{ needs.configuration.outputs.version }}
           OPEN_BRUSH_APP_ID: ${{ vars.STEAM_APP_ID }}
           OPEN_BRUSH_WINDOWS_DEPOT_ID: ${{ vars.STEAM_WINDOWS_DEPOT_ID }}
+          OPEN_BRUSH_MAC_DEPOT_ID: ${{ vars.STEAM_MAC_DEPOT_ID }}
           OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
           CHANNEL: beta
       - name: Update steam login secret
