@@ -945,6 +945,7 @@ namespace TiltBrush
 
             foreach (var renderer in m_WidgetRenderers)
             {
+                if (renderer == null) continue;
                 var materials = m_NewMaterials[renderer];
                 foreach (var material in materials)
                 {
@@ -963,6 +964,7 @@ namespace TiltBrush
             }
             foreach (var renderer in m_WidgetRenderers)
             {
+                if (renderer == null) continue;
                 var materials = m_NewMaterials[renderer];
                 foreach (var material in materials)
                 {

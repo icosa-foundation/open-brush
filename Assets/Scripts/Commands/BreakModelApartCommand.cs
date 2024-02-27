@@ -30,28 +30,30 @@ namespace TiltBrush
             get => true;
         }
 
-        private static List<Transform> ExtractNextLevel(Transform startNode)
+        private static List<string> ExtractPathsForNextLevel(Transform root)
         {
             var nodes = new List<Transform>();
-            var results = new List<Transform>();
-            foreach (Transform child in startNode)
-            {
-                if (!child.gameObject.activeSelf) continue;
-                nodes.Add(child);
-            }
+            var resultNodes = new List<Transform>();
+            var resultPaths = new List<string>();
+
+            // We should only have a single child
+            var firstChild = root.GetChild(0);
+            nodes.Add(firstChild);
 
             var nextNodes = new List<Transform>();
             int failsafe = 0;
+
             while (
                 (
                     // Skip levels with no child meshes
-                    results.Count < 1 ||
+                    resultPaths.Count < 1 ||
                     // Skip levels with a single non-mesh node
-                    (results.Count == 1 && results[0].GetComponent<MeshFilter>() == null)
+                    (resultPaths.Count == 1 && resultNodes[0].GetComponent<MeshFilter>() == null)
                 )
                 && failsafe < 1000)
             {
-                results.Clear();
+                resultNodes.Clear();
+                resultPaths.Clear();
                 foreach (var node in nodes)
                 {
                     foreach (Transform child in node)
@@ -61,25 +63,57 @@ namespace TiltBrush
                         bool hasMeshChildren = child.GetComponentInChildren<MeshFilter>() != null;
                         if (hasMeshChildren)
                         {
-                            results.Add(child);
+                            resultNodes.Add(child);
+                            string path = GetHierarchyPath(root, child);
+                            resultPaths.Add(path);
                         }
                     }
                 }
+
+                // If we found no meshes, continue to the next level
                 nodes = nextNodes.ToList(); // Clone the list
                 nextNodes.Clear();
                 failsafe++;
             }
-            return results;
+
+            // Special case for leaf nodes that also contain a mesh
+            if (firstChild.GetComponent<MeshFilter>() && firstChild.childCount > 0)
+            {
+                string path = GetHierarchyPath(root, firstChild);
+                resultPaths.Add($"{path}.mesh");
+            }
+            return resultPaths;
+        }
+
+        public List<Transform> GetDirectMeshChildren(Transform root)
+        {
+            var nodes = new List<Transform>();
+            foreach (Transform child in root)
+            {
+                if (!child.gameObject.activeSelf) continue;
+                if (child.GetComponentInChildren<MeshFilter>() != null)
+                {
+                    nodes.Add(child);
+                }
+            }
+            return nodes;
         }
 
         public BreakModelApartCommand(ModelWidget initialWidget, BaseCommand parent = null) : base(parent)
         {
             m_InitialWidget = initialWidget;
             m_NewWidgets = new List<ModelWidget>();
-            List<Transform> results = null;
             var root = initialWidget.GetComponentInChildren<ObjModelScript>().transform;
-            results = ExtractNextLevel(root);
-            m_NodePaths = results.Select(x => GetHierarchyPath(root, x)).ToList();
+            var meshChildren = GetDirectMeshChildren(root);
+            if (meshChildren.Count > 1)
+            {
+                // Shouldn't happen?
+                Debug.LogWarning($"Attempting to break apart mesh with {meshChildren} children");
+            }
+            else if (meshChildren.Count == 1)
+            {
+                m_NodePaths = ExtractPathsForNextLevel(root);
+            }
         }
 
         private static string GetHierarchyPath(Transform root, Transform obj)

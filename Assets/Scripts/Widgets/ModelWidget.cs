@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using UnityEditor.Localization.Plugins.XLIFF.V12;
 
 namespace TiltBrush
 {
@@ -332,27 +335,52 @@ namespace TiltBrush
             subpathToTraverse = subpathToTraverse.Trim('/');
             subpathToTraverse = subpathToTraverse.Substring(subpathToTraverse.IndexOf('/') + 1);
 
-            Debug.Log($"Finding {subpathToTraverse} in {node.name}");
-            node = node.Find(subpathToTraverse);
+            bool excludeChildren = false;
+            if (subpathToTraverse.EndsWith(".mesh"))
+            {
+                subpathToTraverse = subpathToTraverse.Substring(0, subpathToTraverse.Length - 5);
+                excludeChildren = true;
+            }
+            if (node.name == subpathToTraverse)
+            {
+                // We're already at the right node
+                // No need to do anything
+            }
+            else
+            {
+                // node will be null if not found
+                node = node.Find(subpathToTraverse);
+            }
+
             if (node != null)
             {
+                if (excludeChildren)
+                {
+                    foreach (Transform child in node)
+                    {
+                        Destroy(child.gameObject);
+                    }
+                }
                 var newRoot = new GameObject();
                 newRoot.transform.SetParent(transform);
                 newRoot.name = $"LocalFile:{m_Model.RelativePath}#{m_Subtree}";
-                var modelScript = newRoot.AddComponent<ObjModelScript>();
-                m_ObjModelScript = modelScript;
+                m_ObjModelScript = newRoot.AddComponent<ObjModelScript>();
 
                 node.SetParent(newRoot.transform);
 
-                // Hmmmmm.
-                // How about the case where we are splitting a parent with geometry plus some children also with geometry?
-                // When/where do we prune children?
-                // if (oldRoot.GetComponent<>())
-
-                oldRoot.gameObject.SetActive(false); // TODO destroy fails first load so also hide
+                oldRoot.gameObject.SetActive(false); // TODO destroy might fail on first load so also hide
                 Destroy(oldRoot.gameObject);
 
-                modelScript.Init();
+                m_ObjModelScript.Init();
+                if (excludeChildren)
+                {
+                    // Destroyed children aren't destroyed immediately, so we need to assign them manually
+                    var mf = node.GetComponent<MeshFilter>();
+                    var smr = node.GetComponent<SkinnedMeshRenderer>();
+                    m_ObjModelScript.m_MeshChildren = mf != null ? new [] { mf } : Array.Empty<MeshFilter>();
+                    m_ObjModelScript.m_SkinnedMeshChildren = smr != null ? new [] { smr } : Array.Empty<SkinnedMeshRenderer>();
+                }
+
                 CloneInitialMaterials(null);
                 RecalculateColliderBounds();
             }
