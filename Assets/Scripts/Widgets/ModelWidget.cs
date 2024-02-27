@@ -377,8 +377,8 @@ namespace TiltBrush
                     // Destroyed children aren't destroyed immediately, so we need to assign them manually
                     var mf = node.GetComponent<MeshFilter>();
                     var smr = node.GetComponent<SkinnedMeshRenderer>();
-                    m_ObjModelScript.m_MeshChildren = mf != null ? new [] { mf } : Array.Empty<MeshFilter>();
-                    m_ObjModelScript.m_SkinnedMeshChildren = smr != null ? new [] { smr } : Array.Empty<SkinnedMeshRenderer>();
+                    m_ObjModelScript.m_MeshChildren = mf != null ? new[] { mf } : Array.Empty<MeshFilter>();
+                    m_ObjModelScript.m_SkinnedMeshChildren = smr != null ? new[] { smr } : Array.Empty<SkinnedMeshRenderer>();
                 }
 
                 CloneInitialMaterials(null);
