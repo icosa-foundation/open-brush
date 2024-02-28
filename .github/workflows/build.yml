@@ -1174,8 +1174,8 @@ jobs:
             ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 3 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
           fi
 
-  publish_ios_appstore:
-    name: Release to iOS App Store
+  publish_ios_zapbox:
+    name: Publish Zapbox iOS
     needs: [configuration, build]
     runs-on: macos-latest
     if: |
