@@ -61,7 +61,7 @@ namespace TiltBrush
             var collider = GetComponentInChildren<MeshCollider>();
             collider.transform.localScale = Vector3.one * scale * 0.5f; // Compensate for the prefab having a scale of 2
         }
-        
+
         public override void FindClosestPointOnSurface(Vector3 pos, out Vector3 surfacePos, out Vector3 surfaceNorm)
         {
             var collider = GetComponentInChildren<MeshCollider>();

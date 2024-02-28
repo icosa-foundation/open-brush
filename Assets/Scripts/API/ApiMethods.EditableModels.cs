@@ -72,7 +72,7 @@ namespace TiltBrush
             return task.Result;
         }
 
-        private static async Task<ModelWidget>  _ImportModel(string location, bool editable)
+        private static async Task<ModelWidget> _ImportModel(string location, bool editable)
         {
             const string modelsFolder = "Models";
 
