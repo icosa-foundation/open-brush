@@ -243,7 +243,7 @@ namespace TiltBrush
             if (!m_MemoryExceeded)
             {
                 // Only do the memory check in the AppState.Standard.  The AppState.MemoryWarning exits to
-                // AppState.Standard, so interrupting any other state would have bad consequences. 
+                // AppState.Standard, so interrupting any other state would have bad consequences.
                 if (App.CurrentState == App.AppState.Standard)
                 {
                     m_LastCheckedVertCount =
@@ -761,7 +761,7 @@ namespace TiltBrush
         public List<Stroke> GetAllUnselectedActiveStrokes()
         {
             return m_MemoryList.Where(
-                s => s.IsGeometryEnabled && s.Canvas == App.Scene.MainCanvas &&
+                s => s.IsGeometryEnabled && s.Canvas == App.Scene.ActiveCanvas &&
                     (s.m_Type != Stroke.Type.BatchedBrushStroke ||
                     s.m_BatchSubset.m_VertLength > 0)).ToList();
         }

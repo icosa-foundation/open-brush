@@ -204,7 +204,7 @@ namespace TiltBrush
 
         override public void RegisterHighlight()
         {
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
             if (!m_PanelSibling.m_Fixed)
             {
                 base.RegisterHighlight();
