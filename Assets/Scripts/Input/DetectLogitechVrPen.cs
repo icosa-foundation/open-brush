@@ -79,7 +79,7 @@ namespace TiltBrush
 
         public static bool IsLogitechPen(uint deviceIndex)
         {
-            // TODO:Mike The code below shows the process of determining the connected controller is the Logitech stylus, by finding the type of controller.
+            // TODO:Mikesky The code below shows the process of determining the connected controller is the Logitech stylus, by finding the type of controller.
 
             // ETrackedPropertyError error = ETrackedPropertyError.TrackedProp_Success;
             // uint bufferCapacity = OpenVR.System.GetStringTrackedDeviceProperty(
