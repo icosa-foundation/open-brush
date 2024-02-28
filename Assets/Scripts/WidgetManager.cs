@@ -1039,7 +1039,7 @@ namespace TiltBrush
                 for (int i = 0; i < list.Count; ++i)
                 {
                     GrabWidget w = list[i].m_WidgetScript;
-                    if (!w.Pinned && w.transform.parent == App.Scene.MainCanvas.transform &&
+                    if (!w.Pinned && w.transform.parent == App.Scene.ActiveCanvas.transform &&
                         w.gameObject.activeSelf)
                     {
                         widgets.Add(w);

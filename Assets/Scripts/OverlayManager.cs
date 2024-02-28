@@ -637,14 +637,14 @@ namespace TiltBrush
 
         public void RenderLogo(double progress)
         {
-            // TODO:Mike Temp hack to set correct logo progress
+            // TODO:Mikesky Temp hack to set correct logo progress
             if (m_OverlayMode == OverlayMode.Default)
             {
                 m_Overlay.GetComponent<GvrOverlay>().Progress = (float)progress;
                 return;
             }
 
-            // TODO:Mike Old code which is generating an image, then submitting to platform specific compositor.
+            // TODO:Mikesky Old code which is generating an image, then submitting to platform specific compositor.
             RenderTexture.active = m_GUILogo;
             GL.Clear(true, true, m_BackgroundColor);
             GL.PushMatrix();
@@ -676,14 +676,14 @@ namespace TiltBrush
 
         public void SetText(string text)
         {
-            // TODO:Mike Temp hack to set correct logo progress
+            // TODO:Mikesky Temp hack to set correct logo progress
             if (m_OverlayMode == OverlayMode.Default)
             {
                 m_Overlay.GetComponent<GvrOverlay>().MessageStatus = text;
                 return;
             }
 
-            // TODO:Mike Old code which is generating text glyphs, then submitting to compositor
+            // TODO:Mikesky Old code which is generating text glyphs, then submitting to compositor
             var settings = new TextGenerationSettings();
             settings.font = m_Font;
             settings.color = m_TextColor;
