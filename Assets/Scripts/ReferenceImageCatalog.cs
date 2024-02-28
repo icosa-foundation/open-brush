@@ -268,6 +268,19 @@ namespace TiltBrush
             }
         }
 
+        public int FilenameToIndex(string filename)
+        {
+            for (var i = 0; i < m_Images.Count; i++)
+            {
+                var img = m_Images[i];
+                if (img.FileName == filename)
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
         /// Returns an index to a catalog entry, or -1 if the handle is invalid.
         /// The inverse of IndexToHandle.
         /// Indices are not durable, so use the index immediately and do not keep it around.

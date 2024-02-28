@@ -43,7 +43,8 @@ namespace TiltBrush
         private void OnItemSelected(int itemIndex)
         {
             ActiveItemIndex = itemIndex;
-            var iconButton = m_Icons[itemIndex].m_IconScript;
+            int iconIndex = ActiveItemIndex % m_IconCountNavPage;
+            var iconButton = m_Icons[iconIndex].m_IconScript;
             ReferenceImage image = ReferenceImageCatalog.m_Instance.IndexToImage(itemIndex);
             iconButton.SetButtonSelected(true);
             m_OpenerButton.UpdateValue(

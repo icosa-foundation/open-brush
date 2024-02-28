@@ -112,6 +112,18 @@ namespace TiltBrush
                         var imagePickerButton = instance.GetComponent<OpenImagePickerPopupButton>();
                         imagePickerButton.SetDescriptionText(config.label);
                         imagePickerButton.m_PropertyName = propertyName;
+                        string filename = val.String;
+                        int itemIndex = ReferenceImageCatalog.m_Instance.FilenameToIndex(filename);
+                        if (itemIndex != -1)
+                        {
+                            ReferenceImage image = ReferenceImageCatalog.m_Instance.IndexToImage(itemIndex);
+                            imagePickerButton.UpdateValue(
+                                image.Icon,
+                                imagePickerButton.m_PropertyName,
+                                itemIndex,
+                                image.ImageAspect
+                            );
+                        }
                         break;
                     case var value when value == LuaNames.widgetTypeVideo:
                         instance = Instantiate(m_ImagePickerButtonPrefab, transform);
