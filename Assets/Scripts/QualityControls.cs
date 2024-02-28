@@ -120,7 +120,7 @@ namespace TiltBrush
         {
             get
             {
-#if UNITY_ANDROID
+#if UNITY_ANDROID || UNITY_IOS
                 return m_MobileQualityLevels;
 #else
                 return m_QualityLevels;

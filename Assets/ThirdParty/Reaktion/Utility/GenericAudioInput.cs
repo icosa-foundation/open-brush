@@ -44,7 +44,7 @@ public class GenericAudioInput : MonoBehaviour
 
     void OnApplicationPause(bool paused)
     {
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
         if (paused)
         {
             audioSource.Stop();
@@ -58,7 +58,7 @@ public class GenericAudioInput : MonoBehaviour
 
     void StartInput()
     {
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
         var sampleRate = AudioSettings.outputSampleRate;
 
         // Create a clip which is assigned to the default microphone.

@@ -45,6 +45,7 @@ namespace TiltBrush
         Oculus,
         Wave,
         Pico,
+        Zapbox,
     }
 
     // The sdk mode indicates which SDK that we're using to drive the display.
@@ -155,8 +156,10 @@ namespace TiltBrush
             // but their editor platform is still set to Windows.
 #if UNITY_EDITOR && UNITY_ANDROID
             get => Application.platform == RuntimePlatform.Android || SpoofMobileHardware.MobileHardware;
+#elif UNITY_EDITOR && UNITY_IOS
+            get => Application.platform == RuntimePlatform.IPhonePlayer || SpoofMobileHardware.MobileHardware;
 #else
-            get => Application.platform == RuntimePlatform.Android;
+            get => Application.platform == RuntimePlatform.Android || Application.platform == RuntimePlatform.IPhonePlayer;
 #endif
         }
 
@@ -171,7 +174,7 @@ namespace TiltBrush
 
         [Header("Versioning")]
         public string m_VersionNumber; // eg "17.0b", "18.3"
-        public string m_BuildStamp;    // eg "f73783b61", "f73783b61-exp", "(menuitem)"
+        public string m_BuildStamp;    // eg "f73783b61", "f73783b61-exp", "menuitem"
 
         [Header("Misc")]
         public bool m_UseBatchedBrushes;
@@ -506,6 +509,9 @@ namespace TiltBrush
 #if OCULUS_SUPPORTED
                 SystemHeadset headset = Unity.XR.Oculus.Utils.GetSystemHeadsetType();
                 return headset != SystemHeadset.Oculus_Quest;
+#endif // OCULUS_SUPPORTED
+#if ZAPBOX_SUPPORTED
+                return false;
 #endif
                 return SystemInfo.supportsGeometryShaders;
             }
@@ -553,7 +559,7 @@ namespace TiltBrush
                     Application.Quit();
                 }
             }
-#elif !UNITY_ANDROID
+#elif !(UNITY_ANDROID || UNITY_IOS)
             try
             {
                 ParseArgs(System.Environment.GetCommandLineArgs());
