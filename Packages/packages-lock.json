@@ -324,6 +324,16 @@
       "dependencies": {},
       "hash": "dd39e8b23a399938e91a1088a78ef63ca64f2cd8"
     },
+    "com.zappar.xr.zapbox": {
+      "version": "https://github.com/zappar-xr/zapbox-xr-sdk.git#5c75594e81da13a5d54a8e33b983add57b884c50",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.xr.management": "3.2.9",
+        "com.unity.xr.legacyinputhelpers": "2.1.4"
+      },
+      "hash": "5c75594e81da13a5d54a8e33b983add57b884c50"
+    },
     "org.nuget.google.apis": {
       "version": "1.64.0",
       "depth": 0,

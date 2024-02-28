@@ -74,8 +74,8 @@ namespace TiltBrush
         {
             m_Instance = this;
             if (LuaManager.Instance != null) LuaManager.Instance.VisualizerScriptingEnabled = false;
-#if UNITY_ANDROID
-    m_Type = AudioCaptureType.App;
+#if UNITY_ANDROID || UNITY_IOS
+            m_Type = AudioCaptureType.App;
 #else
             m_Type = AudioCaptureType.System;
 #endif

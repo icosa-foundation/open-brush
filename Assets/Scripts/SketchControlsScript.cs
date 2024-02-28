@@ -369,6 +369,8 @@ namespace TiltBrush
         [SerializeField] int m_NumStrokesForSaveIcon = 50;
 
         [NonSerialized] public Color m_GrabHighlightActiveColor;
+        [NonSerialized] public bool m_DisableWorldGrabbing = false;
+
         /// Throwing an object faster than this means it's a "toss". Units are m/s.
         public float m_TossThresholdMeters = 3f;
         /// Angular motion contributes more towards the toss velocity the larger the object is;
@@ -962,6 +964,8 @@ namespace TiltBrush
             m_GrabWidgetState = GrabWidgetState.None;
 
             UpdateDraftingVisibility();
+
+            m_DisableWorldGrabbing = false;
         }
 
         private IEnumerator<Timeslice> DelayedHidePanels(int frames)
@@ -1317,7 +1321,7 @@ namespace TiltBrush
                 && m_GrabBrush.grabbingWorld == false
                 && m_CurrentGazeObject == -1 // free up swipe for use by gaze object
                 && (m_ControlsType != ControlsType.SixDofControllers || InputManager.Brush.IsTrackedObjectValid)
-                // TODO:Mike - very hacky
+                // TODO:Mikesky - very hacky
                 && SketchSurfacePanel.m_Instance.ActiveTool.m_Type != BaseTool.ToolType.MultiCamTool;
 
             if (m_EatToolScaleInput)
@@ -2502,7 +2506,8 @@ namespace TiltBrush
             bool bAllowWorldTransform = m_SketchSurfacePanel.ActiveTool.AllowWorldTransformation() &&
                 (m_GrabWorldState != GrabWorldState.ResetDone) &&
                 (!PointerManager.m_Instance.IsMainPointerCreatingStroke() || App.Instance.IsLoading()) &&
-                App.Instance.IsInStateThatAllowsAnyGrabbing();
+                App.Instance.IsInStateThatAllowsAnyGrabbing() &&
+                !m_DisableWorldGrabbing;
 
             bool bWorldGrabWandPrev = m_GrabWand.grabbingWorld;
             bool bWorldGrabBrushPrev = m_GrabBrush.grabbingWorld;
@@ -3797,7 +3802,7 @@ namespace TiltBrush
         }
 
         /// Reset the scene or the canvas, depending on the current mode
-        void ResetGrabbedPose(bool everything = false)
+        public void ResetGrabbedPose(bool everything = false)
         {
             //update sketch surface position with offset to sweet spot
             m_SketchSurface.transform.position = m_PanelManager.GetSketchSurfaceResetPos();

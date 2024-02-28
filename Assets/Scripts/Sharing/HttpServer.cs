@@ -146,7 +146,7 @@ namespace TiltBrush
 
         /// Adds a handler to the Http server that responds to a given path.
         /// Path should include / at the start - e.g. /load  /files  /pages  etc
-        /// The function takes a request and should return its response as an html string. 
+        /// The function takes a request and should return its response as an html string.
         /// The response does not need to be closed.
         public void AddHttpHandler(string path, Func<HttpListenerRequest, string> handler)
         {
