@@ -1,7 +1,7 @@
 using System.IO;
 using System.Linq;
-using Assets.Oculus.VR.Editor;
 using NUnit.Framework;
+
 namespace TiltBrush
 {
     [TestFixture]
