@@ -59,7 +59,7 @@ platform :ios do
     # See https://github.com/fastlane/fastlane/discussions/17458 for context
     update_code_signing_settings(
       use_automatic_signing: true,
-      path: "#{ENV['IOS_BUILD_PATH']}/iOS/Unity-iPhone.xcodeproj"
+      path: "#{ENV['IOS_BUILD_PATH']}/Unity-iPhone.xcodeproj"
     )
 
     update_code_signing_settings(
@@ -67,13 +67,13 @@ platform :ios do
       team_id: ENV["sigh_#{ENV['IOS_BUNDLE_ID']}_appstore_team-id"],
       code_sign_identity: 'iPhone Distribution',
       targets: 'Unity-iPhone',
-      path: "#{ENV['IOS_BUILD_PATH']}/iOS/Unity-iPhone.xcodeproj",
+      path: "#{ENV['IOS_BUILD_PATH']}/Unity-iPhone.xcodeproj",
       profile_name: ENV["sigh_#{ENV['IOS_BUNDLE_ID']}_appstore_profile-name"],
       profile_uuid: ENV["sigh_#{ENV['IOS_BUNDLE_ID']}_appstore"]
     )
 
     build_app( #alias: gym
-      project: "#{ENV['IOS_BUILD_PATH']}/iOS/Unity-iPhone.xcodeproj",
+      project: "#{ENV['IOS_BUILD_PATH']}/Unity-iPhone.xcodeproj",
       scheme: 'Unity-iPhone',
       xcargs: '-allowProvisioningUpdates'
     )
