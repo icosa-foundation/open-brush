@@ -12,6 +12,12 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          sparse-checkout: |
+            Gemfile
+            Gemfile.lock
+            fastlane
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: 3.2
