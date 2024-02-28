@@ -14,30 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5.0.0
+        with:
+          python-version: '3.12'
       - uses: actions/setup-dotnet@v4.0.0
         with:
-          dotnet-version: '7.0.x'
-      - name: Cache pre-commit directories  # This is also built into the action, but we want to create our own cache (which they can load) because of the hack below. If we remove it, we can remove this cache as well
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pre-commit
-          key: pre-commit-3|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
-      - name: "HACK: manually install dotnet-format into pre-commit's cache"
-        run: |
-          pip install pre-commit
-          set +e
-          echo "Ignore the error below:"
-          pre-commit run dotnet-format # This will fail, so ignore it, but we need it to create the "random" directory for the dotnet-format
-          echo "Don't ignore any error that come after this point"
-          set -e
-          PRE_COMMIT_PATHS="$(echo 'SELECT path FROM repos WHERE repo == "https://github.com/dotnet/format";' | sqlite3 ~/.cache/pre-commit/db.db)"
-          for path in $PRE_COMMIT_PATHS
-          do
-              PRE_COMMIT_PATH="${path}/dotnetenv-default/bin"
-              if [ ! -f ${PRE_COMMIT_PATH}/dotnet-format ]
-              then
-                  dotnet tool install dotnet-format --version "7.*" --add-source https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet7/nuget/v3/index.json --tool-path $PRE_COMMIT_PATH
-              fi
-              echo '{"additional_dependencies": []}' > $PRE_COMMIT_PATH/../.install_state_v1
-          done
-      - uses: pre-commit/action@v3.0.0
+          dotnet-version: '8.0.x'
+      - uses: pre-commit/action@v3.0.1
