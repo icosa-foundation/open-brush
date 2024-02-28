@@ -19,7 +19,7 @@ namespace TiltBrush
         public List<TrTransform> AsSingleTrList() => _Matrices.Select(TrTransform.FromMatrix4x4).ToList();
 
         [MoonSharpHidden]
-        public List<List<TrTransform>> AsMultiTrList() => new(){ AsSingleTrList() };
+        public List<List<TrTransform>> AsMultiTrList() => new() { AsSingleTrList() };
 
         public MatrixListApiWrapper()
         {

@@ -67,16 +67,16 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Returns the identity matrix")]
-        public static MatrixApiWrapper identity => new (Matrix4x4.identity);
+        public static MatrixApiWrapper identity => new(Matrix4x4.identity);
 
         [LuaDocsDescription("Returns a matrix with all elements set to zero")]
-        public static MatrixApiWrapper zero => new (Matrix4x4.zero);
+        public static MatrixApiWrapper zero => new(Matrix4x4.zero);
 
         [LuaDocsDescription("The determinant of the matrix")]
         public float determinant => _Matrix.determinant;
 
         [LuaDocsDescription("The inverse of this matrix")]
-        public MatrixApiWrapper inverse => new (_Matrix.inverse);
+        public MatrixApiWrapper inverse => new(_Matrix.inverse);
 
         [LuaDocsDescription("Checks whether this is an identity matrix")]
         public bool isIdentity => _Matrix.isIdentity;
@@ -104,7 +104,7 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Returns the transpose of this matrix")]
-        public MatrixApiWrapper transpose => new (_Matrix.transpose);
+        public MatrixApiWrapper transpose => new(_Matrix.transpose);
 
         [LuaDocsDescription("The position vector of this matrix")]
         public Vector3ApiWrapper position

@@ -64,17 +64,17 @@ namespace TiltBrush
 
         // Widget Types
 
-            public static string widgetTypeFloat => "float";
-            public static string widgetTypeInt => "int";
-            public static string widgetTypeToggle => "toggle";
-            public static string widgetTypeColor => "color";
-            public static string widgetTypeText => "text";
-            public static string widgetTypeList => "list";
-            public static string widgetTypeLayer => "layer";
-            public static string widgetTypeBrush => "brush";
-            public static string widgetTypeImage => "image";
-            public static string widgetTypeVideo => "video";
-            public static string widgetTypeModel => "model";
+        public static string widgetTypeFloat => "float";
+        public static string widgetTypeInt => "int";
+        public static string widgetTypeToggle => "toggle";
+        public static string widgetTypeColor => "color";
+        public static string widgetTypeText => "text";
+        public static string widgetTypeList => "list";
+        public static string widgetTypeLayer => "layer";
+        public static string widgetTypeBrush => "brush";
+        public static string widgetTypeImage => "image";
+        public static string widgetTypeVideo => "video";
+        public static string widgetTypeModel => "model";
 
         // Special Methods
 
