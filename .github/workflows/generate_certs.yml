@@ -1,6 +1,9 @@
+# yamllint disable rule:line-length
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+---
 name: Generate iOS Certs
 
-on:
+on:  # yamllint disable-line rule:truthy
   workflow_run:
     workflows: ['iOS One-Time Setup']
     types:
