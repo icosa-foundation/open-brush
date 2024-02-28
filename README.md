@@ -192,7 +192,7 @@ The credential identifies the application to the Google servers. Follow these
 steps to create an OAuth credential:
 
 1.  Create a new credential on the Credentials screen.
-1.  Select **OAuth**, and then select **Other**. Take note of the client ID and
+1.  Select **OAuth**, and then select **Desktop App**. Take note of the client ID and
     client secret values that are created for you. Keep the client secret a
     secret!
 
