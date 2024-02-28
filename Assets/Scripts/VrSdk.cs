@@ -39,7 +39,8 @@ namespace TiltBrush
         LogitechPen,
         Cosmos,
         Neo3,
-        Phoenix
+        Phoenix,
+        Zapbox,
     }
 
     //
@@ -128,7 +129,7 @@ namespace TiltBrush
                 InputDevices.deviceConnected += OnUnityXRDeviceConnected;
                 InputDevices.deviceDisconnected += OnUnityXRDeviceDisconnected;
 
-                // TODO:Mike - We need to set a controller style, is it best here or is it best later when controllers register themselves?
+                // TODO:Mikesky - We need to set a controller style, is it best here or is it best later when controllers register themselves?
                 // Does this entire system need a rethink for the 'modularity' of the XR subsystem?
                 InputDevice tryGetUnityXRController = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
                 if (!tryGetUnityXRController.isValid)
@@ -408,7 +409,7 @@ namespace TiltBrush
             return true;
         }
 
-        // TODO:Mike - This function is only used in SteamVR's version of RefreshRoomBoundsCache
+        // TODO:Mikesky - This function is only used in SteamVR's version of RefreshRoomBoundsCache
         // /// Converts from SteamVR axis conventions and units to Unity
         // static private Vector3 UnityFromSteamVr(HmdVector3_t v)
         // {
@@ -439,7 +440,8 @@ namespace TiltBrush
                 style == ControllerStyle.Knuckles ||
                 style == ControllerStyle.Cosmos ||
                 style == ControllerStyle.Neo3 ||
-                style == ControllerStyle.Phoenix;
+                style == ControllerStyle.Phoenix ||
+                style == ControllerStyle.Zapbox;
         }
 
         // Destroy and recreate the ControllerBehavior and ControllerGeometry objects.
@@ -497,7 +499,7 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.OculusTouch:
                     {
-                        // TODO:Mike - comment below is correct, this won't work!
+                        // TODO:Mikesky - comment below is correct, this won't work!
                         // Need a new way to detect between the different headsets.
                         // Note that other controllers that match the touch controller profile
                         // register as OculusTouch, so will fall into the same loop here.
@@ -524,6 +526,9 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.Phoenix:
                     controlsPrefab = m_UnityXRPhoenixControlsPrefab;
+                    break;
+                case ControllerStyle.Zapbox:
+                    controlsPrefab = m_UnityXRQuestControlsPrefab;
                     break;
                 case ControllerStyle.Gvr:
                     controlsPrefab = m_GvrPointerControlsPrefab;
@@ -571,7 +576,7 @@ namespace TiltBrush
         {
             // if (App.Config.m_SdkMode == SdkMode.SteamVR)
             // {
-            //     // TODO:Mike - set to return the default instead.
+            //     // TODO:Mikesky - set to return the default instead.
             //     return new NonVrControllerInfo(behavior);
             //     //return new SteamControllerInfo(behavior);
             // }
@@ -599,7 +604,7 @@ namespace TiltBrush
         {
             bool leftRightSwapped = true;
 
-            // TODO:Mike - swapping controller hands in. The Oculus specific stuff might actually be better than SteamVR here? See main branch.
+            // TODO:Mikesky - swapping controller hands in. The Oculus specific stuff might actually be better than SteamVR here? See main branch.
             if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 UnityXRControllerInfo wandInfo = InputManager.Wand as UnityXRControllerInfo;
@@ -718,6 +723,10 @@ namespace TiltBrush
                         break;
                 }
 #endif
+            }
+            else if (device.name.StartsWith("Zapbox"))
+            {
+                SetControllerStyle(ControllerStyle.Zapbox);
             }
             else
             {
