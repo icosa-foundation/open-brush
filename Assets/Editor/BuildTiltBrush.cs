@@ -22,7 +22,7 @@ using TiltBrush;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEditor.Build.Reporting;
-#if UNITY_EDITOR_OSX && UNITY_IPHONE
+#if UNITY_IPHONE
 using UnityEditor.iOS.Xcode;
 #endif
 using UnityEditor.SceneManagement;
@@ -46,10 +46,10 @@ static class BuildTiltBrush
 {
     // Types, consts, enums
 
-    // The vendor name - used for naming android builds - shouldn't have spaces.
-    public const string kVendorName = "Icosa";
     // The vendor name - used for the company name in builds and fbx output. Can have spaces.
     public const string kDisplayVendorName = "Icosa Foundation";
+    // The vendor name as the reverse DNS - used for naming mobile builds - shouldn't have spaces.
+    public const string kVendorReverseDNS = "foundation.icosa";
 
     // Executable Base
     public const string kGuiBuildExecutableName = "OpenBrush";
@@ -60,9 +60,10 @@ static class BuildTiltBrush
     // OSX Executable
     public const string kGuiBuildOsxExecutableName = kGuiBuildExecutableName + ".app";
     // Android Application Identifier
-    public static string GuiBuildAndroidApplicationIdentifier => $"foundation.{kVendorName}.{kGuiBuildExecutableName}".ToLower();
+    public static string GuiBuildAndroidApplicationIdentifier => $"{kVendorReverseDNS}.{kGuiBuildExecutableName}".ToLower();
     // Android Executable
     public static string GuiBuildAndroidExecutableName => GuiBuildAndroidApplicationIdentifier + ".apk";
+    public static string GuiBuildiOSApplicationIdentifier => $"{kVendorReverseDNS}.{kGuiBuildExecutableName}".ToLower();
 
     public class TiltBuildOptions
     {
@@ -116,6 +117,9 @@ static class BuildTiltBrush
             // OpenXR
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.StandaloneWindows64),
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.Android),
+
+            // Zapbox
+            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Zapbox, BuildTarget.iOS),
 
 #if OCULUS_SUPPORTED
             // Oculus
@@ -297,11 +301,11 @@ static class BuildTiltBrush
             Target = GuiSelectedBuildTarget,
             XrSdk = GuiSelectedSdk,
             Location = GetAppPathForGuiBuild(),
-            Stamp = "(menuitem)",
+            Stamp = "menuitem",
             UnityOptions = GuiDevelopment
                 ? (BuildOptions.AllowDebugging | BuildOptions.Development | BuildOptions.CleanBuildCache)
                 : BuildOptions.None,
-            Description = "(unity editor)",
+            Description = "unity editor",
         };
     }
 
@@ -346,6 +350,9 @@ static class BuildTiltBrush
         {
             case BuildTarget.Android:
                 location += "/" + GuiBuildAndroidExecutableName;
+                break;
+            case BuildTarget.iOS:
+                location += "/" + kGuiBuildExecutableName;
                 break;
             case BuildTarget.StandaloneWindows:
             case BuildTarget.StandaloneWindows64:
@@ -949,12 +956,12 @@ static class BuildTiltBrush
     class TempSetBundleVersion : IDisposable
     {
         string m_prevBundleVersion;
-        public TempSetBundleVersion(string configVersionNumber, string stamp)
+        public TempSetBundleVersion(BuildTarget target, string configVersionNumber, string stamp)
         {
             m_prevBundleVersion = PlayerSettings.bundleVersion;
             // https://stackoverflow.com/a/9741724/194921 for more on the meaning/format of this string
             PlayerSettings.bundleVersion = configVersionNumber;
-            if (!string.IsNullOrEmpty(stamp))
+            if (!string.IsNullOrEmpty(stamp) && target != BuildTarget.iOS)
             {
                 PlayerSettings.bundleVersion += string.Format("-{0}", stamp);
             }
@@ -972,37 +979,55 @@ static class BuildTiltBrush
         private string m_identifier;
         private string m_name;
         private string m_company;
-        private bool m_isAndroid;
-        public TempSetAppNames(bool isAndroid, string Description)
+        private bool m_IsAndroidOrIos;
+        private BuildTarget m_Target;
+        public TempSetAppNames(BuildTarget target, string Description)
         {
-            m_isAndroid = isAndroid;
-            m_identifier = PlayerSettings.GetApplicationIdentifier(BuildTargetGroup.Android);
+            m_Target = target;
+            m_IsAndroidOrIos = m_Target == BuildTarget.Android || m_Target == BuildTarget.iOS;
+            m_identifier = PlayerSettings.GetApplicationIdentifier(TargetToGroup(target));
             m_name = PlayerSettings.productName;
             m_company = PlayerSettings.companyName;
             string new_name = App.kAppDisplayName;
-            string new_identifier = GuiBuildAndroidApplicationIdentifier;
+
+            string new_identifier = m_identifier;
+            switch (m_Target)
+            {
+                case BuildTarget.Android:
+                    new_identifier = GuiBuildAndroidApplicationIdentifier;
+                    break;
+                case BuildTarget.iOS:
+                    new_identifier = GuiBuildiOSApplicationIdentifier;
+                    break;
+                default:
+                    break;
+            }
+
 #if OCULUS_SUPPORTED || USE_QUEST_PACKAGE_NAME
             //Can't change Quest identifier
             new_identifier = "com.Icosa.OpenBrush";
+#elif ZAPBOX_SUPPORTED
+            // Zapbox has a separate listing
+            new_identifier = "foundation.icosa.openbrushzapbox";
 #endif
             if (!String.IsNullOrEmpty(Description))
             {
-                new_name += " (" + Description + ")";
-                new_identifier += Description.Replace("_", "").Replace("#", "").Replace("-", "");
+                new_name += "-(" + Description + ")";
+                new_identifier += "-" + Description.Replace("_", "").Replace("#", "").Replace("-", "");
             }
-            if (m_isAndroid)
+            if (m_IsAndroidOrIos)
             {
-                PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, new_identifier);
+                PlayerSettings.SetApplicationIdentifier(TargetToGroup(target), new_identifier);
             }
             PlayerSettings.productName = new_name;
-            PlayerSettings.companyName = kVendorName;
+            PlayerSettings.companyName = kDisplayVendorName;
         }
 
         public void Dispose()
         {
-            if (m_isAndroid)
+            if (m_IsAndroidOrIos)
             {
-                PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, m_identifier);
+                PlayerSettings.SetApplicationIdentifier(TargetToGroup(m_Target), m_identifier);
             }
             PlayerSettings.productName = m_name;
             PlayerSettings.companyName = m_company;
@@ -1124,6 +1149,9 @@ static class BuildTiltBrush
                 case XrSdkMode.Pico:
                     targetXrPluginsRequired = new string[] { "Unity.XR.PXR.PXR_Loader" };
                     break;
+                case XrSdkMode.Zapbox:
+                    targetXrPluginsRequired = new string[] { "Zappar.XR.ZapboxLoader" };
+                    break;
                 case XrSdkMode.Monoscopic:
                     targetSettings.InitManagerOnStart = false;
                     break;
@@ -1192,7 +1220,7 @@ static class BuildTiltBrush
         public TempSetGraphicsApis(TiltBuildOptions tiltOptions)
         {
             m_Target = tiltOptions.Target;
-            m_graphicsApis = PlayerSettings.GetGraphicsAPIs(tiltOptions.Target);
+            m_graphicsApis = PlayerSettings.GetGraphicsAPIs(m_Target);
             UnityEngine.Rendering.GraphicsDeviceType[] targetGraphicsApisRequired;
 
             switch (tiltOptions.XrSdk)
@@ -1472,8 +1500,8 @@ static class BuildTiltBrush
         using (var unused4 = new TempHookUpSingletons())
         using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))
         using (var unused14 = new TempSetGraphicsApis(tiltOptions))
-        using (var unused6 = new TempSetBundleVersion(App.Config.m_VersionNumber, stamp))
-        using (var unused10 = new TempSetAppNames(target == BuildTarget.Android, tiltOptions.Description))
+        using (var unused6 = new TempSetBundleVersion(target, App.Config.m_VersionNumber, stamp))
+        using (var unused10 = new TempSetAppNames(target, tiltOptions.Description))
         using (var unused7 = new TempSetXrPlugin(tiltOptions))
         using (var unused13 = new TempSetOpenXrFeatureGroup(tiltOptions))
         using (var unused9 = new RestoreFileContents(
@@ -1766,22 +1794,33 @@ static class BuildTiltBrush
                 {
                     // TODO: is it possible to embed loose files on iOS?
                     looseFilesDest = null;
-#if UNITY_EDITOR_OSX && UNITY_IPHONE
+#if UNITY_IPHONE
                     string pbxPath = path + "/Unity-iPhone.xcodeproj/project.pbxproj";
 
                     PBXProject project = new PBXProject();
                     project.ReadFromString(File.ReadAllText(pbxPath));
-                    string pbxTarget = project.TargetGuidByName("Unity-iPhone");
+                    string pbxTarget = project.GetUnityMainTargetGuid();
 
                     // additional framework libs
                     project.AddFrameworkToProject(pbxTarget, "Security.framework", false);
                     project.AddFrameworkToProject(pbxTarget, "CoreData.framework", false);
                     // disable bitcode due to issue with Cardboard plugin (b/27129333)
-                    project.SetBuildProperty(pbxTarget, "ENABLE_BITCODE", "false");
+                    // TODO:Mikesky - I've disabled this disable, does bitcode work now?
+                    //project.SetBuildProperty(pbxTarget, "ENABLE_BITCODE", "false");
 
                     File.WriteAllText(pbxPath, project.WriteToString());
-#else
-                    Die(5, "OS X required for building iOS target.");
+
+                    string plistPath = path + "/Info.plist";
+                    PlistDocument plist = new PlistDocument();
+                    plist.ReadFromFile(plistPath);
+                    PlistElementDict root = plist.root;
+
+                    PlistElementBoolean enable = new (true);
+                    root["UIFileSharingEnabled"] = enable;
+                    root["LSSupportsOpeningDocumentsInPlace"] = enable;
+
+                    //save plist values
+                    plist.WriteToFile(plistPath);
 #endif
                     break;
                 }

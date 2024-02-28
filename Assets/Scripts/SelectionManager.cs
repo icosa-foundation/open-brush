@@ -469,7 +469,7 @@ namespace TiltBrush
                 {
                     widget.RegisterHighlight();
                 }
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
                 App.Scene.SelectionCanvas.RegisterHighlight();
 #endif
             }
@@ -833,15 +833,15 @@ namespace TiltBrush
 
         public void InvertSelection()
         {
-            // Build a list of all the strokes in the main canvas.
+            // Build a list of all the strokes in the active canvas.
             List<Stroke> unselectedStrokes =
                 SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes();
 
-            // Build a list of all the unpinned widgets in the main canvas.
+            // Build a list of all the unpinned widgets in the active canvas.
             List<GrabWidget> unselectedWidgets =
                 WidgetManager.m_Instance.GetAllUnselectedActiveWidgets();
 
-            // Select everything that was in the main canvas.
+            // Select everything that was in the active canvas.
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new InvertSelectionCommand(unselectedStrokes, m_SelectedStrokes,
                     unselectedWidgets, m_SelectedWidgets));
@@ -870,11 +870,11 @@ namespace TiltBrush
 
         public void SelectAll()
         {
-            // Build a list of all the strokes in the main canvas.
+            // Build a list of all the strokes in the active canvas.
             List<Stroke> unselectedStrokes =
                 SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes();
 
-            // Build a list of all the unpinned widgets in the main canvas.
+            // Build a list of all the unpinned widgets in the active canvas.
             List<GrabWidget> unselectedWidgets =
                 WidgetManager.m_Instance.GetAllUnselectedActiveWidgets();
 
