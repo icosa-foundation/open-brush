@@ -781,7 +781,7 @@ namespace TiltBrush
         public List<Stroke> GetAllUnselectedActiveStrokes()
         {
             return m_MemoryList.Where(
-                s => s.IsGeometryEnabled && s.Canvas == App.Scene.MainCanvas &&
+                s => s.IsGeometryEnabled && s.Canvas == App.Scene.ActiveCanvas &&
                     (s.m_Type != Stroke.Type.BatchedBrushStroke ||
                     s.m_BatchSubset.m_VertLength > 0)).ToList();
         }

@@ -184,7 +184,6 @@ namespace TiltBrush
             { (int)KeyboardShortcut.Abort, new[] { Key.Escape } },
 
             { (int)KeyboardShortcut.SaveNew, new[] { Key.S } },
-            { (int)KeyboardShortcut.ExportAll, new[] { Key.A } },
             { (int)KeyboardShortcut.ToggleProfile, new[] { Key.K } },
             // Context-dependent
             { (int)KeyboardShortcut.SwitchCamera, new[] { Key.C } },

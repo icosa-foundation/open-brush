@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
   m_Name: Strings Shared Data
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   m_TableCollectionName: Strings
   m_TableCollectionNameGuidString: c84355079ab3f3e4f8f3812258805f86
   m_Entries:
@@ -3281,6 +3281,22 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 172767995928834048
     m_Key: CONTROLLER_HINT_THUMBPAD_BRUSHSIZE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791089062830080
+    m_Key: ENVIRONMENT_PANEL_RESET_CANVAS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791266398003200
+    m_Key: ENVIRONMENT_PANEL_LOCK_CANVAS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188792931159203840
+    m_Key: ENVIRONMENT_PANEL_UNLOCK_CANVAS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 189087250755706880
+    m_Key: POPUP_UPLOAD_COMPLETE_MOBILE_DESCRIPTION
     m_Metadata:
       m_Items: []
   m_Metadata:
