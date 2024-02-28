@@ -151,7 +151,7 @@ public class IconGenerator : MonoBehaviour
         Init();
         PreviewPolyhedron.m_Instance.m_PolyRecipe.GeneratorType = GeneratorTypes.Grid;
         var gridNames = Enum.GetNames(typeof(GridEnums.GridShapes));
-        PreviewPolyhedron.m_Instance.m_PolyRecipe.GridType = GridEnums.GridTypes.K_3_3_3_3_3_3;
+        PreviewPolyhedron.m_Instance.m_PolyRecipe.GridType = GridEnums.GridTypes.Triangular;
         for (var index = 0; index < gridNames.Length; index++)
         {
             switch ((GridEnums.GridShapes)index)
