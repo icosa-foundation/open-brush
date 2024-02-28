@@ -1966,7 +1966,7 @@ namespace TiltBrush
         {
             string modelsDirectory = ModelLibraryPath();
 
-            // TODO:Mike - Re-enable this check in a few versions,
+            // TODO:Mikesky - Re-enable this check in a few versions,
             // and remove the one in the obj removal loop.
 
             // if (Directory.Exists(modelsDirectory)) { return true; }
@@ -2207,7 +2207,7 @@ namespace TiltBrush
 
         DateTime GetLinkerTime(Assembly assembly, TimeZoneInfo target = null)
         {
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
             var filePath = assembly.Location;
             const int c_PeHeaderOffset = 60;
             const int c_LinkerTimestampOffset = 8;

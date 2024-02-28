@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID || UNITY_IOS
 # undef  FEATURE_CUSTOM_MESH_RENDER
 # define FEATURE_MOBILE_SELECTION
 #else
