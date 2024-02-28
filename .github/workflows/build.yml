@@ -238,6 +238,14 @@ jobs:
             versionSuffix: 1
             extra_defines: PICO_SUPPORTED
 
+          - name: iOS Zapbox
+            targetPlatform: iOS
+            vrsdk: Zapbox
+            cache: iOS
+            extraoptions: -btb-il2cpp
+            extra_defines: ZAPBOX_SUPPORTED
+            packages_to_remove: com.unity.formats.usd
+
     steps:
       - name: Set masking
         run: echo "::add-mask::$UNITY_PASSWORD"
@@ -343,7 +351,7 @@ jobs:
 
       - name: Restore Library/
         id: cache_library
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -353,7 +361,7 @@ jobs:
 
       - name: Restore Library/PackageCache
         id: cache_packagecache
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -384,6 +392,8 @@ jobs:
           if [[ "${{ matrix.targetPlatform}}" == "StandaloneWindows64" ]]; then
             echo "filename=$BASENAME.exe" >> $GITHUB_ENV
           elif [[ "${{ matrix.targetPlatform}}" == "StandaloneLinux64" ]]; then
+            echo "filename=$BASENAME" >> $GITHUB_ENV
+          elif [[ "${{ matrix.targetPlatform}}" == "iOS" ]]; then
             echo "filename=$BASENAME" >> $GITHUB_ENV
           elif [[ "${{ matrix.targetPlatform}}" == "StandaloneOSX" ]]; then
             echo "filename=$BASENAME.app" >> $GITHUB_ENV
@@ -489,6 +499,8 @@ jobs:
       - name: Prepare for packaging (permissions and compression, OSX only)
         if: matrix.targetPlatform == 'StandaloneOSX'
         run: |
+          mv build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/Support "build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/${{ env.filename }}/Contents/"
+          find build -name 'UnityFbxSdkNative.bundle' -delete
           # Compress, but skip the top directories
           tar -c -v -z -f OpenBrush.tgz -C build/${{ matrix.vrsdk }} ${{ matrix.targetPlatform}}
           rm -rf build/${{ matrix.vrsdk }}/*
@@ -515,7 +527,7 @@ jobs:
           echo "diff returned: $CHANGES"
 
       - name: Save Library/PackageCache cache
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@v4
         if: github.ref == 'refs/heads/main' && steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
@@ -542,7 +554,7 @@ jobs:
           du -mcsh Library
 
       - name: Save Library/ cache
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@v4
         if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
@@ -551,9 +563,107 @@ jobs:
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
           key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
+  createdmg:
+    name: Create and Notarize DMG
+    needs: [configuration, build]
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
+          sparse-checkout: |
+            Support/macos
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: MacOS Monoscopic
+          path: build_macos_monoscopic
+
+      # See https://docs.github.com/en/actions/deployment/deploying-xcode-applications/installing-an-apple-certificate-on-macos-runners-for-xcode-development
+      - name: Install the Apple certificate and provisioning profile
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.APPLE_BUILD_CERTIFICATE_BASE64 }}
+          INSTALL_CERTIFICATE_BASE64: ${{ secrets.APPLE_INSTALL_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.APPLE_P12_PASSWORD }}
+          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.APPLE_BUILD_PROVISION_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ secrets.APPLE_KEYCHAIN_PASSWORD }}
+        run: |
+          BUILD_CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          INSTALL_CERTIFICATE_PATH=$RUNNER_TEMP/install_certificate.p12
+          PP_PATH=$RUNNER_TEMP/openbrushmac.provisionprofile
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $BUILD_CERTIFICATE_PATH
+          echo -n "$INSTALL_CERTIFICATE_BASE64" | base64 --decode -o $INSTALL_CERTIFICATE_PATH
+          echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o $PP_PATH
+
+          # create temporary keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          # import certificate to keychain
+          security import $BUILD_CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security import $INSTALL_CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
+
+      - name: Sign the release
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+        run: |
+          tar xvfz build_macos_monoscopic/*tgz
+
+          export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBrush*.app))
+
+          cd StandaloneOSX/
+          codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ secrets.APPLE_TEAM_ID }})" $FILENAME/Contents/Support/ThirdParty/ffmpeg/bin/ffmpeg
+          codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ secrets.APPLE_TEAM_ID }})" $FILENAME
+
+      - name: Create a notarized DMG
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+        run: |
+          export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBrush*.app))
+          mkdir dist
+
+          cp Support/macos/background.png StandaloneOSX/
+          cp Support/macos/background@2x.png StandaloneOSX/
+          pip install jinjanator
+          jinjanate Support/macos/openbrush-dmg.json.j2 > StandaloneOSX/openbrush-dmg.json
+          pushd StandaloneOSX/
+          npx appdmg openbrush-dmg.json ../dist/OpenBrush.dmg
+          popd
+
+          xcrun notarytool submit \
+          --team-id ${{ secrets.APPLE_TEAM_ID }} \
+          --apple-id ${{ secrets.APPLE_ID }} \
+          --password ${{ secrets.APPLE_APPLICATION_SPECIFIC_PASSWORD }} \
+          --wait \
+          dist/OpenBrush.dmg
+
+          xcrun stapler staple dist/OpenBrush.dmg
+
+      - name: Upload notarized dmg
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacOS Monoscopic (DMG)
+          path: |
+            dist/OpenBrush.dmg
+
   release:
     name: Create Github Release
-    needs: [configuration, build]
+    needs: [configuration, build, createdmg]
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' &&
@@ -635,6 +745,12 @@ jobs:
           name: Android Pico
           path: build_android_pico
 
+      - name: Download Build Artifacts (Mac)
+        uses: actions/download-artifact@v4
+        with:
+          name: MacOS Monoscopic (DMG)
+          path: build_monoscopic_macos
+
       - name: Package Artifacts for release
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
@@ -646,6 +762,7 @@ jobs:
           mv build_windows_openxr/StandaloneWindows64/ releases/OpenBrush_Desktop_$VERSION/
           mv build_windows_rift/StandaloneWindows64/ releases/OpenBrush_Rift_$VERSION/
           mv build_windows_mono/StandaloneWindows64/ releases/OpenBrush_Mono_$VERSION/
+          mv build_monoscopic_macos/*.dmg releases/OpenBrush_Mac_Mono_$VERSION.dmg
           cd releases
           zip -r OpenBrush_Desktop_$VERSION.zip OpenBrush_Desktop_$VERSION/
           zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
@@ -730,7 +847,7 @@ jobs:
 
   publish_steam:
     name: Publish Steam Release
-    needs: [configuration, build]
+    needs: [configuration, build, createdmg]
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -745,7 +862,7 @@ jobs:
             Support/steam
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
       - name: Setup steamcmd
-        uses: CyberAndrii/setup-steamcmd@v1.1.5
+        uses: CyberAndrii/setup-steamcmd@v1.2.0
       - name: Restore steam login config
         run: |
           mkdir -p /home/runner/Steam/config
@@ -1056,3 +1173,51 @@ jobs:
             # For Pico, Beta channels can only get one build, not a separate China / non-China build
             ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 3 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
           fi
+
+  publish_ios_appstore:
+    name: Release to iOS App Store
+    needs: [configuration, build]
+    runs-on: macos-latest
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          sparse-checkout: |
+            Gemfile
+            Gemfile.lock
+            fastlane
+
+      - name: Download iOS Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: iOS Zapbox
+          path: build/iOS
+
+      - name: Fix File Permissions and Run fastlane
+        env:
+          APPLE_CONNECT_EMAIL: ${{ secrets.APPLE_CONNECT_EMAIL }}
+          APPLE_DEVELOPER_EMAIL: ${{ secrets.APPLE_DEVELOPER_EMAIL }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+          MATCH_REPOSITORY: ${{ secrets.MATCH_REPOSITORY }}
+          MATCH_DEPLOY_KEY: ${{ secrets.MATCH_DEPLOY_KEY }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_P8: ${{ secrets.APPSTORE_P8 }}
+
+          IOS_BUILD_PATH: ${{ format('{0}/build/iOS', github.workspace) }}
+          IOS_BUNDLE_ID: foundation.icosa.openbrushzapbox
+          PROJECT_NAME: Open Brush for Zapbox
+        run: |
+          eval "$(ssh-agent -s)"
+          ssh-add - <<< "${MATCH_DEPLOY_KEY}"
+          find $IOS_BUILD_PATH -type f -name "**.sh" -exec chmod +x {} \;
+          bundle install
+          bundle exec fastlane ios release
