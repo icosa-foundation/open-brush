@@ -51,13 +51,13 @@ namespace TiltBrush
             GetComponent<Renderer>().material.SetFloat("_Distance", gazeRatio);
         }
 
-        public void UpdateValue(Texture2D tex, string propertyName, int textureIndex)
+        public void UpdateValue(Texture2D tex, string propertyName, int textureIndex, float aspect)
         {
             if (tex != null)
             {
                 if (m_ButtonRenderer != null)
                 {
-                    SetButtonTexture(tex);
+                    SetButtonTexture(tex, aspect);
                 }
                 m_ButtonTexture = tex;
                 GetComponent<MeshRenderer>().material.mainTexture = tex;

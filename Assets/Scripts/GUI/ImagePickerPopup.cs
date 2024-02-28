@@ -32,9 +32,10 @@ namespace TiltBrush
 
         protected override void RefreshIcon(ImageIcon icon, int iconIndex)
         {
-            var image = ReferenceImageCatalog.m_Instance.IndexToImage(iconIndex);
+            ReferenceImage image = ReferenceImageCatalog.m_Instance.IndexToImage(iconIndex);
+            float aspect = image.ImageAspect;
             var itemButton = icon.m_IconScript as ImagePickerItemButton;
-            itemButton.SetPreset(image.Icon, image.FileName, iconIndex);
+            itemButton.SetPreset(image.Icon, image.FileName, iconIndex, aspect);
             itemButton.SetButtonSelected(false);
             itemButton.m_OnItemSelected = OnItemSelected;
         }
@@ -43,7 +44,14 @@ namespace TiltBrush
         {
             ActiveItemIndex = itemIndex;
             var iconButton = m_Icons[itemIndex].m_IconScript;
+            ReferenceImage image = ReferenceImageCatalog.m_Instance.IndexToImage(itemIndex);
             iconButton.SetButtonSelected(true);
+            m_OpenerButton.UpdateValue(
+                image.Icon,
+                m_OpenerButton.m_PropertyName,
+                itemIndex,
+                image.ImageAspect
+            );
             m_OpenerButton.OnItemSelected(itemIndex);
             RequestClose();
         }

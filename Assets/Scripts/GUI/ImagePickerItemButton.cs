@@ -22,10 +22,10 @@ namespace TiltBrush
         private int m_ItemIndex;
         public Action<int> m_OnItemSelected;
 
-        public void SetPreset(Texture2D tex, string imageName, int imageIndex)
+        public void SetPreset(Texture2D tex, string imageName, int imageIndex, float aspect)
         {
             m_ItemIndex = imageIndex;
-            SetButtonTexture(tex);
+            SetButtonTexture(tex, aspect);
             SetDescriptionText(imageName);
         }
 
