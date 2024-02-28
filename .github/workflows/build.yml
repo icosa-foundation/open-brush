@@ -1213,7 +1213,7 @@ jobs:
           APPSTORE_P8: ${{ secrets.APPSTORE_P8 }}
 
           IOS_BUILD_PATH: ${{ format('{0}/build/iOS', github.workspace) }}
-          IOS_BUNDLE_ID: foundation.icosa.openbrushzapbox
+          IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
           PROJECT_NAME: Open Brush for Zapbox
         run: |
           eval "$(ssh-agent -s)"
