@@ -21,6 +21,7 @@ jobs:
           ruby-version: 3.2
           bundler-cache: true
 
+      # Note that this job cannot be rerun because of https://github.com/joshdholtz/fastlane-plugin-github_action/issues/4
       - name: Build iOS
         shell: bash
         run: |
