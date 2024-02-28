@@ -3299,6 +3299,33 @@ MonoBehaviour:
     m_Key: POPUP_UPLOAD_COMPLETE_MOBILE_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 151470525216034816
+    m_Key: KEYBOARD_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  m_EditorClassIdentifier:
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791089062830080
+    m_Key: ENVIRONMENT_PANEL_RESET_CANVAS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791266398003200
+    m_Key: ENVIRONMENT_PANEL_LOCK_CANVAS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188792931159203840
+    m_Key: ENVIRONMENT_PANEL_UNLOCK_CANVAS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 189087250755706880
+    m_Key: POPUP_UPLOAD_COMPLETE_MOBILE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151470525216034816
+    m_Key: KEYBOARD_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

@@ -3493,6 +3493,10 @@ MonoBehaviour:
     m_Localized: Unlock Canvas Position
     m_Metadata:
       m_Items: []
+  - m_Id: 151470525216034816
+    m_Localized: "Enter text"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
