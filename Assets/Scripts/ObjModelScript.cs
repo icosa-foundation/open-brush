@@ -115,7 +115,7 @@ namespace TiltBrush
 
         public void RegisterHighlight()
         {
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
             for (int i = 0; i < m_MeshChildren.Length; i++)
             {
                 App.Instance.SelectionEffect.RegisterMesh(m_MeshChildren[i]);
@@ -126,7 +126,7 @@ namespace TiltBrush
 
         public void UnregisterHighlight()
         {
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
             for (int i = 0; i < m_MeshChildren.Length; i++)
             {
                 App.Instance.SelectionEffect.UnregisterMesh(m_MeshChildren[i]);

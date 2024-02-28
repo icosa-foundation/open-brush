@@ -187,7 +187,7 @@ namespace TiltBrush
                         EnableMic(true);
                     }
 
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
                     //start playing on audio source when mic is ready to go
                     if (Microphone.IsRecording("") && (Microphone.GetPosition("") > 0) && !m_AudioSource.isPlaying)
                     {
@@ -205,7 +205,7 @@ namespace TiltBrush
 
         void EnableMic(bool bEnable)
         {
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
             if (bEnable)
             {
                 m_AudioSource.Stop();
