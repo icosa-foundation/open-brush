@@ -43,7 +43,7 @@ platform :ios do
   lane :beta do
     # Missing Export Compliance can also be set through Deliverfile
     update_info_plist(
-      xcodeproj: "#{ENV['IOS_BUILD_PATH']}/iOS/Unity-iPhone.xcodeproj",
+      xcodeproj: "#{ENV['IOS_BUILD_PATH']}/Unity-iPhone.xcodeproj",
       plist_path: 'Info.plist',
       block: proc do |plist|
         plist['ITSAppUsesNonExemptEncryption'] = false
