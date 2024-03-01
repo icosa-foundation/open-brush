@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.XR;
+using UnityEngine.XR.Management;
 
 #if PICO_SUPPORTED
 using PicoInput = Unity.XR.PXR.PXR_Input;
@@ -580,7 +581,7 @@ namespace TiltBrush
             //     return new NonVrControllerInfo(behavior);
             //     //return new SteamControllerInfo(behavior);
             // }
-            // else 
+            // else
             if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 return new UnityXRControllerInfo(behavior, isLeftHand);
@@ -889,6 +890,12 @@ namespace TiltBrush
                 OVRManager.gpuLevel = level;
             }
 #endif // OCULUS_SUPPORTED
+        }
+
+        public void Initialize()
+        {
+            XRGeneralSettings.Instance.Manager.InitializeLoaderSync();
+            XRGeneralSettings.Instance.Manager.StartSubsystems();
         }
     }
 }
