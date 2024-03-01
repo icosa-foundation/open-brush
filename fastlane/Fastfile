@@ -32,14 +32,18 @@ platform :ios do
   desc "Deliver a new Release build to the App Store"
   lane :release do
     build
-    upload_to_app_store
+    upload_to_app_store(
+        force: true,
+        automatic_release: false,
+        precheck_include_in_app_purchases: false
+    )
   end
 
   desc "Deliver a new Beta build to Apple TestFlight"
   lane :beta do
     # Missing Export Compliance can also be set through Deliverfile
     update_info_plist(
-      xcodeproj: "#{ENV['IOS_BUILD_PATH']}/iOS/Unity-iPhone.xcodeproj",
+      xcodeproj: "#{ENV['IOS_BUILD_PATH']}/Unity-iPhone.xcodeproj",
       plist_path: 'Info.plist',
       block: proc do |plist|
         plist['ITSAppUsesNonExemptEncryption'] = false
