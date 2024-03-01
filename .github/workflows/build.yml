@@ -1175,7 +1175,7 @@ jobs:
   publish_ios_zapbox:
     name: Publish Zapbox iOS
     needs: [configuration, build]
-    runs-on: macos-latest
+    runs-on: macos-13  # As of 2024-03-01, macos-latest still points to Mac OS 12, which has an older XCode and gives ITMS-90725: SDK version issue when we submit.
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
