@@ -598,18 +598,6 @@ namespace TiltBrush
             // Use of ControllerConsoleScript must wait until Start()
             ControllerConsoleScript.m_Instance.AddNewLine(GetStartupString());
 
-            // Allow forcing of monoscopic mode even if launching in XR
-            if (UserConfig.Flags.EnableMonoscopicMode && Config.m_SdkMode == SdkMode.UnityXR)
-            {
-                Config.m_SdkMode = SdkMode.Monoscopic;
-            }
-            else if (!UserConfig.Flags.DisableXrMode)
-            {
-                // We no longer initialize XR SDKs automatically
-                // so we need to do it manually
-                VrSdk.Initialize();
-            }
-
             if (!VrSdk.IsHmdInitialized() && !UserConfig.Flags.EnableMonoscopicMode)
             {
                 // If XR is disabled or fails to initialize

@@ -125,6 +125,18 @@ namespace TiltBrush
 
         void Awake()
         {
+            // Allow forcing of monoscopic mode even if launching in XR
+            if (App.UserConfig.Flags.EnableMonoscopicMode && App.Config.m_SdkMode == SdkMode.UnityXR)
+            {
+                App.Config.m_SdkMode = SdkMode.Monoscopic;
+            }
+            else if (!App.UserConfig.Flags.DisableXrMode)
+            {
+                // We no longer initialize XR SDKs automatically
+                // so we need to do it manually
+                Initialize();
+            }
+
             if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 InputDevices.deviceConnected += OnUnityXRDeviceConnected;
