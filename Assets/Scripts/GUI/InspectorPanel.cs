@@ -13,16 +13,32 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
 {
+    public enum SelectionType
+    {
+        Nothing,
+        Stroke,
+        Image,
+        Video,
+        Model,
+        Guide,
+        Mixed
+    }
 
     public class InspectorPanel : BasePanel
     {
-        public Bounds SelectionBounds { get; set; }
         public GrabWidget LastWidget { get; set; }
         public InspectorTabButton m_InitialTabButton;
+
+        public SelectionType CurrentSelectionType => m_CurrentSelectionType;
+        private SelectionType m_CurrentSelectionType;
+
+        public int CurrentSelectionCount => m_CurrentSelectionCount;
+        private int m_CurrentSelectionCount;
 
         private InspectorBaseTab[] m_Tabs;
         private InspectorTabButton[] m_TabButtons;
@@ -55,28 +71,6 @@ namespace TiltBrush
             }
         }
 
-        void OnSelectionPoseChanged(TrTransform _, TrTransform __)
-        {
-            OnSelectionPoseChanged();
-        }
-
-        void OnSelectionPoseChanged()
-        {
-        }
-
-        protected override void Awake()
-        {
-            base.Awake();
-            App.Scene.SelectionCanvas.PoseChanged += OnSelectionPoseChanged;
-            App.Switchboard.SelectionChanged += OnSelectionChanged;
-        }
-
-        void OnDestroy()
-        {
-            App.Scene.SelectionCanvas.PoseChanged -= OnSelectionPoseChanged;
-            App.Switchboard.SelectionChanged -= OnSelectionChanged;
-        }
-
         void Start()
         {
             HandleTabButtonPressed(m_InitialTabButton);
@@ -84,8 +78,91 @@ namespace TiltBrush
 
         private void OnSelectionChanged()
         {
-            SelectionBounds = App.Scene.SelectionCanvas.GetCanvasBoundingBox();
-            OnSelectionPoseChanged();
+
+            if (SelectionManager.m_Instance.HasSelection)
+            {
+                var selectedWidgets = SelectionManager.m_Instance.GetValidSelectedWidgets();
+
+                bool hasWidgets = selectedWidgets.Count > 0;
+                bool hasStrokes = SelectionManager.m_Instance.SelectedStrokeCount > 0;
+
+
+                if (hasStrokes && hasWidgets)
+                {
+                    m_CurrentSelectionType = SelectionType.Mixed;
+                    m_CurrentSelectionCount = selectedWidgets.Count + SelectionManager.m_Instance.SelectedStrokeCount;
+                }
+                else if (hasStrokes)
+                {
+                    m_CurrentSelectionType = SelectionType.Stroke;
+                    m_CurrentSelectionCount = SelectionManager.m_Instance.SelectedStrokeCount;
+                }
+                else if (hasWidgets)
+                {
+                    var selectedImages = selectedWidgets.Where(w => w is ImageWidget).ToList();
+                    var selectedVideos = selectedWidgets.Where(w => w is VideoWidget).ToList();
+                    var selectedModels = selectedWidgets.Where(w => w is ModelWidget).ToList();
+                    var selectedGuides = selectedWidgets.Where(w => w is StencilWidget).ToList();
+
+                    bool multipleTypes = (selectedImages.Count > 0 ? 1 : 0) +
+                        (selectedVideos.Count > 0 ? 1 : 0) +
+                        (selectedModels.Count > 0 ? 1 : 0) +
+                        (selectedGuides.Count > 0 ? 1 : 0) > 1;
+
+                    if (multipleTypes)
+                    {
+                        m_CurrentSelectionType = SelectionType.Mixed;
+                        m_CurrentSelectionCount = selectedWidgets.Count;
+                    }
+                    else if (selectedImages.Count > 0)
+                    {
+                        m_CurrentSelectionType = SelectionType.Image;
+                        m_CurrentSelectionCount = selectedImages.Count;
+                    }
+                    else if (selectedVideos.Count > 0)
+                    {
+                        m_CurrentSelectionType = SelectionType.Video;
+                        m_CurrentSelectionCount = selectedVideos.Count;
+                    }
+                    else if (selectedModels.Count > 0)
+                    {
+                        m_CurrentSelectionType = SelectionType.Model;
+                        m_CurrentSelectionCount = selectedModels.Count;
+                    }
+                    else if (selectedGuides.Count > 0)
+                    {
+                        m_CurrentSelectionType = SelectionType.Guide;
+                        m_CurrentSelectionCount = selectedGuides.Count;
+                    }
+                }
+                else
+                {
+                    Debug.LogError($"Unexpected selection state");
+                    m_CurrentSelectionType = SelectionType.Nothing;
+                    m_CurrentSelectionCount = 0;
+                }
+            }
+            else
+            {
+                m_CurrentSelectionType = SelectionType.Nothing;
+                m_CurrentSelectionCount = 0;
+            }
+
+            foreach (var tab in AllTabs)
+            {
+                tab.OnSelectionChanged();
+            }
+        }
+
+        protected override void Awake()
+        {
+            base.Awake();
+            App.Switchboard.SelectionChanged += OnSelectionChanged;
+        }
+
+        void OnDestroy()
+        {
+            App.Switchboard.SelectionChanged -= OnSelectionChanged;
         }
 
         public void HandleTabButtonPressed(InspectorTabButton btn)

@@ -1079,11 +1079,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 2221980346532795235, guid: 84cfd798eb0908e42a2e693bdb689dbe,
-        type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: 1.389
-      objectReference: {fileID: 0}
     - target: {fileID: 2763901986707765656, guid: 84cfd798eb0908e42a2e693bdb689dbe,
         type: 3}
       propertyPath: m_OnEditConfirmed.m_PersistentCalls.m_Calls.Array.data[0].m_Target
@@ -1191,11 +1186,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Appearance Tab
       objectReference: {fileID: 0}
-    - target: {fileID: 2961225573496968760, guid: 81e209cac49c8f94ea647bfe16c3c737,
-        type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: 1.3890002
-      objectReference: {fileID: 0}
     - target: {fileID: 8533481234614097233, guid: 81e209cac49c8f94ea647bfe16c3c737,
         type: 3}
       propertyPath: m_RootOrder
@@ -1278,20 +1268,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 9102585478457154342}
     m_Modifications:
-    - target: {fileID: 2198826285601244898, guid: d027c403c58c454458facdada8e95245,
-        type: 3}
-      propertyPath: m_OnEditConfirmed.m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value: 
-      objectReference: {fileID: 114019824221785570}
     - target: {fileID: 3246189343786183972, guid: d027c403c58c454458facdada8e95245,
         type: 3}
       propertyPath: m_Name
       value: Info Tab
-      objectReference: {fileID: 0}
-    - target: {fileID: 5229493799330708216, guid: d027c403c58c454458facdada8e95245,
-        type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: 1.3890008
       objectReference: {fileID: 0}
     - target: {fileID: 9220911665133299952, guid: d027c403c58c454458facdada8e95245,
         type: 3}

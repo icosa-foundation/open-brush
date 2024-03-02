@@ -14,6 +14,7 @@
 
 using UnityEngine;
 
-public class InspectorBaseTab : MonoBehaviour
+public abstract class InspectorBaseTab : MonoBehaviour
 {
+    public abstract void OnSelectionChanged();
 }

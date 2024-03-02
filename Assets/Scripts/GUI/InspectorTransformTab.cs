@@ -18,6 +18,8 @@ using UnityEngine;
 
 public class InspectorTransformTab : InspectorBaseTab
 {
+    public Bounds SelectionBounds { get; set; }
+
     public EditableLabel m_LabelForTranslationX;
     public EditableLabel m_LabelForTranslationY;
     public EditableLabel m_LabelForTranslationZ;
@@ -38,13 +40,11 @@ public class InspectorTransformTab : InspectorBaseTab
     protected void Awake()
     {
         App.Scene.SelectionCanvas.PoseChanged += OnSelectionPoseChanged;
-        App.Switchboard.SelectionChanged += OnSelectionChanged;
     }
 
     void OnDestroy()
     {
         App.Scene.SelectionCanvas.PoseChanged -= OnSelectionPoseChanged;
-        App.Switchboard.SelectionChanged -= OnSelectionChanged;
     }
 
     void OnSelectionPoseChanged(TrTransform _, TrTransform __)
@@ -66,12 +66,15 @@ public class InspectorTransformTab : InspectorBaseTab
         m_LabelForRotationY.SetValue(FormatValue(rotation.y));
         m_LabelForRotationZ.SetValue(FormatValue(rotation.z));
         m_LabelForScale.SetValue(FormatValue(scale));
+
+        SelectionBounds = App.Scene.SelectionCanvas.GetCanvasBoundingBox();
+
     }
 
     private Vector3 CurrentSelectionPos()
     {
         var selectionTr = SelectionManager.m_Instance.SelectionTransform;
-        var translation = selectionTr.MultiplyPoint(m_InspectorPanel.SelectionBounds.center);
+        var translation = selectionTr.MultiplyPoint(SelectionBounds.center);
         return translation;
     }
 
@@ -94,9 +97,8 @@ public class InspectorTransformTab : InspectorBaseTab
         return activeTr;
     }
 
-    private void OnSelectionChanged()
+    public override void OnSelectionChanged()
     {
-        m_InspectorPanel.SelectionBounds = App.Scene.SelectionCanvas.GetCanvasBoundingBox();
         OnSelectionPoseChanged();
     }
 
@@ -141,7 +143,7 @@ public class InspectorTransformTab : InspectorBaseTab
             if (SelectionManager.m_Instance.HasSelection)
             {
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                    new TransformSelectionCommand(newTr, m_InspectorPanel.SelectionBounds.center)
+                    new TransformSelectionCommand(newTr, SelectionBounds.center)
                 );
             }
             else

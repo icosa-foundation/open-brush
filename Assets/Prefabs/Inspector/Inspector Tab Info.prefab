@@ -46,6 +46,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ad95542dfb809564184cc65814c6e8b1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_SummaryText: {fileID: 1116207894238274254}
 --- !u!1 &3679324553085405591
 GameObject:
   m_ObjectHideFlags: 0
@@ -82,7 +83,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.64199996, y: 1.3060006}
+  m_AnchoredPosition: {x: -0.64199996, y: 1.3890008}
   m_SizeDelta: {x: 0.87, y: 0.3}
   m_Pivot: {x: 0, y: 1}
 --- !u!23 &3701305565803417623
@@ -270,9 +271,8 @@ GameObject:
   - component: {fileID: 2035696564891061176}
   - component: {fileID: 8337997549300402521}
   - component: {fileID: 1116207894238274254}
-  - component: {fileID: 2198826285601244898}
   m_Layer: 16
-  m_Name: Label
+  m_Name: Summary Text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -432,33 +432,3 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 8337997549300402521}
   m_maskType: 0
---- !u!114 &2198826285601244898
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3774907253727667514}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1c15fd7e779967043a28eb07f121f330, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Label: {fileID: 1116207894238274254}
-  m_OnEditConfirmed:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: TiltBrush.TransformPanel, Assembly-CSharp
-        m_MethodName: HandleLabelEdited
-        m_Mode: 2
-        m_Arguments:
-          m_ObjectArgument: {fileID: 2198826285601244898}
-          m_ObjectArgumentAssemblyTypeName: EditableLabel, Assembly-CSharp
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  m_LabelTag: TX
-  m_ErrorIcon: {fileID: 0}

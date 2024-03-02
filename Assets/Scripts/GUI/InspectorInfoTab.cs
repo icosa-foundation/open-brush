@@ -13,9 +13,12 @@
 // limitations under the License.
 
 using TiltBrush;
+using TMPro;
 
 public class InspectorInfoTab : InspectorBaseTab
 {
+    public TextMeshPro m_SummaryText;
+
     private InspectorPanel m_InspectorPanel;
 
     void Start()
@@ -23,20 +26,69 @@ public class InspectorInfoTab : InspectorBaseTab
         m_InspectorPanel = GetComponentInParent<InspectorPanel>();
     }
 
-    protected void Awake()
+    public override void OnSelectionChanged()
     {
-        App.Switchboard.SelectionChanged += OnSelectionChanged;
-    }
+        m_SummaryText.text = "";
 
-    void OnDestroy()
-    {
-        App.Switchboard.SelectionChanged -= OnSelectionChanged;
-    }
-
-
-    private void OnSelectionChanged()
-    {
-        m_InspectorPanel.SelectionBounds = App.Scene.SelectionCanvas.GetCanvasBoundingBox();
+        switch (m_InspectorPanel.CurrentSelectionType)
+        {
+            case SelectionType.Nothing:
+                m_SummaryText.text = "Nothing selected";
+                break;
+            case SelectionType.Stroke:
+                if (m_InspectorPanel.CurrentSelectionCount == 1)
+                {
+                    m_SummaryText.text = "1 stroke selected";
+                }
+                else
+                {
+                    m_SummaryText.text = "{m_InspectorPanel.CurrentSelectionCount} strokes selected";
+                }
+                break;
+            case SelectionType.Image:
+                if (m_InspectorPanel.CurrentSelectionCount == 1)
+                {
+                    m_SummaryText.text = "1 image selected";
+                }
+                else
+                {
+                    m_SummaryText.text = "{m_InspectorPanel.CurrentSelectionCount} images selected";
+                }
+                break;
+            case SelectionType.Video:
+                if (m_InspectorPanel.CurrentSelectionCount == 1)
+                {
+                    m_SummaryText.text = "1 video selected";
+                }
+                else
+                {
+                    m_SummaryText.text = "{m_InspectorPanel.CurrentSelectionCount} videos selected";
+                }
+                break;
+            case SelectionType.Model:
+                if (m_InspectorPanel.CurrentSelectionCount == 1)
+                {
+                    m_SummaryText.text = "1 model selected";
+                }
+                else
+                {
+                    m_SummaryText.text = "{m_InspectorPanel.CurrentSelectionCount} models selected";
+                }
+                break;
+            case SelectionType.Guide:
+                if (m_InspectorPanel.CurrentSelectionCount == 1)
+                {
+                    m_SummaryText.text = "1 guide selected";
+                }
+                else
+                {
+                    m_SummaryText.text = "{m_InspectorPanel.CurrentSelectionCount} guides selected";
+                }
+                break;
+            case SelectionType.Mixed:
+                m_SummaryText.text = "{m_InspectorPanel.CurrentSelectionCount} items selected";
+                break;
+        }
     }
 
 }

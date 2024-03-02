@@ -23,20 +23,8 @@ public class InspectorAppearanceTab : InspectorBaseTab
         m_InspectorPanel = GetComponentInParent<InspectorPanel>();
     }
 
-    protected void Awake()
+    public override void OnSelectionChanged()
     {
-        App.Switchboard.SelectionChanged += OnSelectionChanged;
-    }
-
-    void OnDestroy()
-    {
-        App.Switchboard.SelectionChanged -= OnSelectionChanged;
-    }
-
-
-    private void OnSelectionChanged()
-    {
-        m_InspectorPanel.SelectionBounds = App.Scene.SelectionCanvas.GetCanvasBoundingBox();
     }
 
 }
