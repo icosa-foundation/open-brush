@@ -12,24 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Generic;
+using UnityEngine.Serialization;
+
 namespace TiltBrush
 {
     public class InspectorTabButton : ModeButton
     {
-        public enum Type
+        public InspectorBaseTab Tab;
+
+        private InspectorPanel m_InspectorPanel;
+
+        protected override void Start()
         {
-            Transform
+            base.Start();
+            m_InspectorPanel = GetComponentInParent<InspectorPanel>();
         }
 
-        public Type m_ButtonType;
-
-        override protected void OnButtonPressed()
+        protected override void OnButtonPressed()
         {
-            // ReferencePanel referencePanel = m_Manager.GetComponent<ReferencePanel>();
-            // if (referencePanel)
-            // {
-            //     referencePanel.ButtonPressed(m_ButtonType);
-            // }
+            m_InspectorPanel.HandleTabButtonPressed(this);
         }
+
     }
 } // namespace TiltBrush

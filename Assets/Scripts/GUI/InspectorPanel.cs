@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 namespace TiltBrush
@@ -21,6 +23,22 @@ namespace TiltBrush
     {
         public Bounds SelectionBounds { get; set; }
         public GrabWidget LastWidget { get; set; }
+
+        private InspectorBaseTab[] m_Tabs;
+
+        private IEnumerable<InspectorBaseTab> AllTabs
+        {
+            get
+            {
+                {
+                    if (m_Tabs == null)
+                    {
+                        m_Tabs = GetComponentsInChildren<InspectorBaseTab>(includeInactive: true);
+                    }
+                    return m_Tabs;
+                }
+            }
+        }
 
         void OnSelectionPoseChanged(TrTransform _, TrTransform __)
         {
@@ -48,6 +66,21 @@ namespace TiltBrush
         {
             SelectionBounds = App.Scene.SelectionCanvas.GetCanvasBoundingBox();
             OnSelectionPoseChanged();
+        }
+
+        public void HandleTabButtonPressed(InspectorTabButton btn)
+        {
+            foreach (var t in AllTabs)
+            {
+                if (t == btn.Tab)
+                {
+                    t.gameObject.SetActive(true);
+                }
+                else
+                {
+                    t.gameObject.SetActive(false);
+                }
+            }
         }
     }
 }
