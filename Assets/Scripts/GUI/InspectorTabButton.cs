@@ -14,7 +14,7 @@
 
 namespace TiltBrush
 {
-    public class InspectorTabButton : ModeButton
+    public class InspectorTabButton : BaseButton
     {
         public InspectorBaseTab Tab;
 
@@ -30,6 +30,5 @@ namespace TiltBrush
         {
             m_InspectorPanel.HandleTabButtonPressed(this);
         }
-
     }
 } // namespace TiltBrush

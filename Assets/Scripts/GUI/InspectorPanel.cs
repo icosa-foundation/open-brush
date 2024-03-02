@@ -22,8 +22,10 @@ namespace TiltBrush
     {
         public Bounds SelectionBounds { get; set; }
         public GrabWidget LastWidget { get; set; }
+        public InspectorTabButton m_InitialTabButton;
 
         private InspectorBaseTab[] m_Tabs;
+        private InspectorTabButton[] m_TabButtons;
 
         private IEnumerable<InspectorBaseTab> AllTabs
         {
@@ -35,6 +37,20 @@ namespace TiltBrush
                         m_Tabs = GetComponentsInChildren<InspectorBaseTab>(includeInactive: true);
                     }
                     return m_Tabs;
+                }
+            }
+        }
+
+        private IEnumerable<InspectorTabButton> AllTabButtons
+        {
+            get
+            {
+                {
+                    if (m_TabButtons == null)
+                    {
+                        m_TabButtons = GetComponentsInChildren<InspectorTabButton>(includeInactive: true);
+                    }
+                    return m_TabButtons;
                 }
             }
         }
@@ -61,6 +77,11 @@ namespace TiltBrush
             App.Switchboard.SelectionChanged -= OnSelectionChanged;
         }
 
+        void Start()
+        {
+            HandleTabButtonPressed(m_InitialTabButton);
+        }
+
         private void OnSelectionChanged()
         {
             SelectionBounds = App.Scene.SelectionCanvas.GetCanvasBoundingBox();
@@ -69,16 +90,15 @@ namespace TiltBrush
 
         public void HandleTabButtonPressed(InspectorTabButton btn)
         {
+            foreach (var b in AllTabButtons)
+            {
+                b.SetButtonSelected(false);
+            }
+            btn.SetButtonSelected(true);
+
             foreach (var t in AllTabs)
             {
-                if (t == btn.Tab)
-                {
-                    t.gameObject.SetActive(true);
-                }
-                else
-                {
-                    t.gameObject.SetActive(false);
-                }
+                t.gameObject.SetActive(t == btn.Tab);
             }
         }
     }
