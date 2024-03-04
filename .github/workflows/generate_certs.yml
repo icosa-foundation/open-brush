@@ -38,9 +38,9 @@ jobs:
           APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
           APPSTORE_P8: ${{ secrets.APPSTORE_P8 }}
 
-          IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
+          IOS_BUNDLE_ID: ${{ vars.IOS_ZAPBOX_BUNDLE_ID }}
 
-          GH_PAT: ${{ secrets.GH_PAT }}
+          GH_PAT: ${{ secrets.MATCH_PAT }}
           GITHUB_REPOSITORY: ${{ env.GITHUB_REPOSITORY }}
           MATCH_REPOSITORY: ${{ secrets.MATCH_REPOSITORY }}
           MATCH_DEPLOY_KEY: ${{ secrets.MATCH_DEPLOY_KEY }}
