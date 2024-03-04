@@ -13,7 +13,7 @@ on:  # yamllint disable-line rule:truthy
 
 env:
   UNITY_VERSION: "2021.3.30f1"
-
+  PHOTON_PAT: ${{ secrets.PHOTON_PAT }}  # This needs to be here, since you can't use a ${{ secrets }} within an if: condition
 jobs:
   configuration:
     if: |
@@ -334,15 +334,15 @@ jobs:
           rm -rf tmp.plugin tmp.package
 
       - name: Checkout private photon repository if available
-        if: ${{ secrets.PHOTON_PAT }}
+        if: ${{ env.PHOTON_PAT }}
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.PHOTON_PAT }}
+          token: ${{ env.PHOTON_PAT }}
           repository: icosa-mirror/photon-fusion
           path: photon-fusion-mirror/
 
       - name: Copy photon files
-        if: ${{ secrets.PHOTON_PAT }}
+        if: ${{ env.PHOTON_PAT }}
         run: |
           rsync -a --ignore-existing photon-fusion-mirror/ ./
           echo "For debugging: these are the files in Assets/Photon:"
