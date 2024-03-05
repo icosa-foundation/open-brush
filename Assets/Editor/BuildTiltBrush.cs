@@ -924,6 +924,30 @@ static class BuildTiltBrush
         }
     }
 
+    class TempSetPlayerSettings : IDisposable
+    {
+        private UIOrientation m_OrientationSettings;
+        public TempSetPlayerSettings(TiltBuildOptions tiltOptions)
+        {
+            m_OrientationSettings = PlayerSettings.defaultInterfaceOrientation;
+
+            switch(tiltOptions.XrSdk)
+            {
+                case XrSdkMode.Zapbox:
+                    PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        public void Dispose()
+        {
+            PlayerSettings.defaultInterfaceOrientation = m_OrientationSettings;
+            AssetDatabase.SaveAssets();
+        }
+    }
+
     class TempSetScriptingBackend : IDisposable
     {
         private ScriptingImplementation m_prevbackend;
@@ -1503,6 +1527,7 @@ static class BuildTiltBrush
         using (var unused6 = new TempSetBundleVersion(target, App.Config.m_VersionNumber, stamp))
         using (var unused10 = new TempSetAppNames(target, tiltOptions.Description))
         using (var unused7 = new TempSetXrPlugin(tiltOptions))
+        using (var unused15 = new TempSetPlayerSettings(tiltOptions))
         using (var unused13 = new TempSetOpenXrFeatureGroup(tiltOptions))
         using (var unused9 = new RestoreFileContents(
             Path.Combine(Path.GetDirectoryName(Application.dataPath),
