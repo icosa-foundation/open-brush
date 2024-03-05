@@ -1244,14 +1244,7 @@ namespace TiltBrush
                             break;
                         case StraightEdgeGuideScript.Shape.Circle:
                             {
-                                if (App.Config.IsMobileHardware)
-                                {
-                                    nextShape = StraightEdgeGuideScript.Shape.Line;
-                                }
-                                else
-                                {
-                                    nextShape = StraightEdgeGuideScript.Shape.Sphere;
-                                }
+                                nextShape = StraightEdgeGuideScript.Shape.Sphere;
                             }
                             break;
                         case StraightEdgeGuideScript.Shape.Sphere:
