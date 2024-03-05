@@ -15,8 +15,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.XR;
 using UnityEngine.XR.Management;
+using InputDevice = UnityEngine.XR.InputDevice;
 
 #if PICO_SUPPORTED
 using PicoInput = Unity.XR.PXR.PXR_Input;
@@ -125,12 +127,19 @@ namespace TiltBrush
 
         void Awake()
         {
+            bool forceMonoscopic =
+                App.UserConfig.Flags.EnableMonoscopicMode ||
+                Keyboard.current[Key.M].isPressed;
+
+            bool disableXr = App.UserConfig.Flags.DisableXrMode ||
+                Keyboard.current[Key.D].isPressed;
+
             // Allow forcing of monoscopic mode even if launching in XR
-            if (App.UserConfig.Flags.EnableMonoscopicMode && App.Config.m_SdkMode == SdkMode.UnityXR)
+            if (forceMonoscopic && !(App.Config.m_SdkMode == SdkMode.Ods))
             {
                 App.Config.m_SdkMode = SdkMode.Monoscopic;
             }
-            else if (!App.UserConfig.Flags.DisableXrMode)
+            else if (!disableXr)
             {
                 // We no longer initialize XR SDKs automatically
                 // so we need to do it manually
