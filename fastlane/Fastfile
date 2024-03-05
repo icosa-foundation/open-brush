@@ -32,14 +32,18 @@ platform :ios do
   desc "Deliver a new Release build to the App Store"
   lane :release do
     build
-    upload_to_app_store
+    upload_to_app_store(
+        force: true,
+        automatic_release: false,
+        precheck_include_in_app_purchases: false
+    )
   end
 
   desc "Deliver a new Beta build to Apple TestFlight"
   lane :beta do
     # Missing Export Compliance can also be set through Deliverfile
     update_info_plist(
-      xcodeproj: "#{ENV['IOS_BUILD_PATH']}/iOS/Unity-iPhone.xcodeproj",
+      xcodeproj: "#{ENV['IOS_BUILD_PATH']}/Unity-iPhone.xcodeproj",
       plist_path: 'Info.plist',
       block: proc do |plist|
         plist['ITSAppUsesNonExemptEncryption'] = false
@@ -59,7 +63,7 @@ platform :ios do
     # See https://github.com/fastlane/fastlane/discussions/17458 for context
     update_code_signing_settings(
       use_automatic_signing: true,
-      path: "#{ENV['IOS_BUILD_PATH']}/iOS/Unity-iPhone.xcodeproj"
+      path: "#{ENV['IOS_BUILD_PATH']}/Unity-iPhone.xcodeproj"
     )
 
     update_code_signing_settings(
@@ -67,13 +71,13 @@ platform :ios do
       team_id: ENV["sigh_#{ENV['IOS_BUNDLE_ID']}_appstore_team-id"],
       code_sign_identity: 'iPhone Distribution',
       targets: 'Unity-iPhone',
-      path: "#{ENV['IOS_BUILD_PATH']}/iOS/Unity-iPhone.xcodeproj",
+      path: "#{ENV['IOS_BUILD_PATH']}/Unity-iPhone.xcodeproj",
       profile_name: ENV["sigh_#{ENV['IOS_BUNDLE_ID']}_appstore_profile-name"],
       profile_uuid: ENV["sigh_#{ENV['IOS_BUNDLE_ID']}_appstore"]
     )
 
     build_app( #alias: gym
-      project: "#{ENV['IOS_BUILD_PATH']}/iOS/Unity-iPhone.xcodeproj",
+      project: "#{ENV['IOS_BUILD_PATH']}/Unity-iPhone.xcodeproj",
       scheme: 'Unity-iPhone',
       xcargs: '-allowProvisioningUpdates'
     )
