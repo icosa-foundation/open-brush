@@ -1,6 +1,9 @@
+---
+# yamllint disable rule:line-length
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Generate iOS Certs
 
-on:
+on:  # yamllint disable-line rule:truthy
   workflow_run:
     workflows: ['iOS One-Time Setup']
     types:
@@ -9,9 +12,16 @@ on:
 
 jobs:
   generate_certs:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          sparse-checkout: |
+            Gemfile
+            Gemfile.lock
+            fastlane
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: 3.2
@@ -28,9 +38,9 @@ jobs:
           APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
           APPSTORE_P8: ${{ secrets.APPSTORE_P8 }}
 
-          IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
+          IOS_BUNDLE_ID: ${{ vars.IOS_ZAPBOX_BUNDLE_ID }}
 
-          GH_PAT: ${{ secrets.GH_PAT }}
+          GH_PAT: ${{ secrets.MATCH_PAT }}
           GITHUB_REPOSITORY: ${{ env.GITHUB_REPOSITORY }}
           MATCH_REPOSITORY: ${{ secrets.MATCH_REPOSITORY }}
           MATCH_DEPLOY_KEY: ${{ secrets.MATCH_DEPLOY_KEY }}
