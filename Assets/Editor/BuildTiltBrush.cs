@@ -931,7 +931,7 @@ static class BuildTiltBrush
         {
             m_OrientationSettings = PlayerSettings.defaultInterfaceOrientation;
 
-            switch(tiltOptions.XrSdk)
+            switch (tiltOptions.XrSdk)
             {
                 case XrSdkMode.Zapbox:
                     PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
