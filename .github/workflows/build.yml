@@ -492,6 +492,7 @@ jobs:
           targetPlatform: ${{ matrix.targetPlatform }}
           customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/${{ env.filename }} ${{ needs.configuration.outputs.description}} ${{ env.stamp }} ${{ matrix.extraoptions }}
           versioning: Custom
+          androidVersionCode: "${{ needs.configuration.outputs.androidVersionCode }}${{ matrix.versionSuffix }}"
           version: ${{ needs.configuration.outputs.version }}
           buildName: ${{ needs.configuration.outputs.basename }}
           buildsPath: build/${{ matrix.vrsdk }}
