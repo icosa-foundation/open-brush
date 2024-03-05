@@ -1,6 +1,6 @@
+---
 # yamllint disable rule:line-length
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
----
 # Taken from https://github.com/actions/cache/blob/main/tips-and-workarounds.md#force-deletion-of-caches-overriding-default-cache-eviction-policy
 name: cleanup caches by a branch
 on:  # yamllint disable-line rule:truthy
