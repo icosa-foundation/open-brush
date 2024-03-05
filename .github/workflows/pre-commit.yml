@@ -1,5 +1,5 @@
-# yamllint disable rule:line-length
 ---
+# yamllint disable rule:line-length
 name: pre-commit
 
 on:  # yamllint disable-line rule:truthy
