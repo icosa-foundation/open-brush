@@ -27,6 +27,13 @@ repos:
         args:
           - --load-plugins=pylint.extensions.redefined_variable_type,pylint.extensions.bad_builtin
           - --disable=import-error
+  - repo: https://github.com/google/yamlfmt
+    rev: v0.11.0
+    hooks:
+      - id: yamlfmt
+        args:
+          - -conf
+          - .yamlfmt
   - repo: local
     hooks:
       # Use dotnet format already installed on your machine
@@ -34,7 +41,7 @@ repos:
         name: dotnet-format
         language: system
         entry: dotnet format whitespace
-        types_or: ["c#", "vb"]
+        types_or: [c#, vb]
         exclude: ^(Assets/ThirdParty)|(Packages/)|(Assets/Photon/)
         args:
           - --folder
