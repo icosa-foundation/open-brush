@@ -362,7 +362,7 @@ namespace TiltBrush
 
             // If no viewfinder preview is shown, then we need to adjust the time between shots to allow
             // for the flash animation.
-            if (!App.PlatformConfig.EnableMulticamPreview)
+            if (!UserConfig.PerformanceOverrides.EnableMulticamPreview)
             {
                 m_MinTimeBetweenShots =
                     SketchControlsScript.m_Instance.MultiCamCaptureRig.SnapshotFlashDuration;
@@ -631,7 +631,7 @@ namespace TiltBrush
                 transform.rotation = InputManager.Brush.Geometry.CameraAttachPoint.rotation;
 
                 // Does the viewfinder need to face the user?
-                if (!App.PlatformConfig.EnableMulticamPreview)
+                if (!UserConfig.PerformanceOverrides.EnableMulticamPreview)
                 {
                     var camXform = App.VrSdk.GetVrCamera().transform;
                     // Calculate the up and forward vectors so that the up is taken from the orientation of the
@@ -1398,8 +1398,8 @@ namespace TiltBrush
 
             m_SwipeHintCountdown = m_SwipeHintDelay;
             m_CurrentState = State.Enter;
-            SketchControlsScript.m_Instance.MultiCamCaptureRig.EnableScreen(App.PlatformConfig.EnableMulticamPreview);
-            SketchControlsScript.m_Instance.MultiCamCaptureRig.EnableCamera(App.PlatformConfig.EnableMulticamPreview);
+            SketchControlsScript.m_Instance.MultiCamCaptureRig.EnableScreen(UserConfig.PerformanceOverrides.EnableMulticamPreview);
+            SketchControlsScript.m_Instance.MultiCamCaptureRig.EnableCamera(UserConfig.PerformanceOverrides.EnableMulticamPreview);
         }
 
         override public void AssignControllerMaterials(InputManager.ControllerName controller)
@@ -1806,7 +1806,7 @@ namespace TiltBrush
 
             AudioManager.m_Instance.PlayScreenshotSound(transform.position);
 
-            if (!App.Config.PlatformConfig.EnableMulticamPreview)
+            if (!UserConfig.PerformanceOverrides.EnableMulticamPreview)
             {
                 SketchControlsScript.m_Instance.MultiCamCaptureRig.EnableCamera(true);
                 yield return null;
@@ -1842,7 +1842,7 @@ namespace TiltBrush
                     rMgr.RenderToTexture(tmp);
                     wrapper.SuperSampling = ssaaRestore;
                     yield return null;
-                    SketchControlsScript.m_Instance.MultiCamCaptureRig.EnableCamera(App.PlatformConfig.EnableMulticamPreview);
+                    SketchControlsScript.m_Instance.MultiCamCaptureRig.EnableCamera(UserConfig.PerformanceOverrides.EnableMulticamPreview);
 
                     string fullPath = Path.GetFullPath(saveName);
                     System.Object err = null;
@@ -1867,7 +1867,7 @@ namespace TiltBrush
                     OutputWindowScript.ReportFileSaved("Snapshot Saved!", saveName,
                         OutputWindowScript.InfoCardSpawnPos.Brush);
 
-                    if (!App.PlatformConfig.EnableMulticamPreview)
+                    if (!UserConfig.PerformanceOverrides.EnableMulticamPreview)
                     {
                         var multiCam = SketchControlsScript.m_Instance.MultiCamCaptureRig;
                         yield return multiCam.SnapshotFlashAnimation(m_CurrentCameraIndex, tmp);

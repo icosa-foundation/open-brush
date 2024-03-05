@@ -156,7 +156,7 @@ namespace TiltBrush
             get
             {
                 return !m_AutosaveFailed &&
-                    App.PlatformConfig.EnableAutosave &&
+                    UserConfig.PerformanceOverrides.EnableAutosave &&
                     !App.UserConfig.Flags.DisableAutosave;
             }
         }
@@ -717,7 +717,7 @@ namespace TiltBrush
                 }
 
 
-                // It's proving to be rather complex to merge widgets/models etc. 
+                // It's proving to be rather complex to merge widgets/models etc.
                 // For now skip all that when loading additively with the if (!bAdditive) below
                 // This should cover the majority of use cases.
 

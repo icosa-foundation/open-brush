@@ -162,6 +162,46 @@ namespace TiltBrush
         public FlagsConfig Flags;
 
         [Serializable]
+        public struct PerformanceConfig
+        {
+            // Comments show defaults for Mobile / PC
+            public int? HullBrushMaxVertInputs; // 2500 / 400
+            public int? HullBrushMaxKnots; // 6000 / 900
+            public int? ReferenceImagesMaxFileSize; // 2147483647 / 10485760
+            public int? ReferenceImagesMaxDimension; // 2147483647 / 4352
+            public int? ReferenceImagesResizeDimension; // 2147483647 / 1024
+            public int? MemoryWarningVertCount; // 2147483647 / 1000000
+            public bool? UseFileSystemWatcher; // true / false
+            public bool? EnableAutosave; // true / false
+            public float? QuickLoadMaxDistancePerFrame; // 40 / 4
+            public bool? AvoidUploadHandlerFile; // true / false
+            public bool? EnableExportMemoryOptimization; // true / true
+            public bool? EnableMulticamPreview; // true / true
+            public int? MaxSnapshotDimension; // 16000 / 4096
+        }
+
+        public PerformanceConfig Performance;
+
+        public static class PerformanceOverrides
+        {
+            // User overrides
+            private static PerformanceConfig o = App.UserConfig.Performance;
+            public static int HullBrushMaxVertInputs => o.HullBrushMaxVertInputs ?? App.PlatformConfig.HullBrushMaxVertInputs;
+            public static int HullBrushMaxKnots => o.HullBrushMaxKnots ?? App.PlatformConfig.HullBrushMaxKnots;
+            public static float ReferenceImagesMaxFileSize => o.ReferenceImagesMaxFileSize ?? App.PlatformConfig.ReferenceImagesMaxFileSize;
+            public static int ReferenceImagesMaxDimension => o.ReferenceImagesMaxDimension ?? App.PlatformConfig.ReferenceImagesMaxDimension;
+            public static int ReferenceImagesResizeDimension => o.ReferenceImagesResizeDimension ?? App.PlatformConfig.ReferenceImagesResizeDimension;
+            public static int MemoryWarningVertCount => o.MemoryWarningVertCount ?? App.PlatformConfig.MemoryWarningVertCount;
+            public static bool UseFileSystemWatcher => o.UseFileSystemWatcher ?? App.PlatformConfig.UseFileSystemWatcher;
+            public static bool EnableAutosave => o.EnableAutosave ?? App.PlatformConfig.EnableAutosave;
+            public static float QuickLoadMaxDistancePerFrame => o.QuickLoadMaxDistancePerFrame ?? App.PlatformConfig.QuickLoadMaxDistancePerFrame;
+            public static bool AvoidUploadHandlerFile => o.AvoidUploadHandlerFile ?? App.PlatformConfig.AvoidUploadHandlerFile;
+            public static bool EnableExportMemoryOptimization => o.EnableExportMemoryOptimization ?? App.PlatformConfig.EnableExportMemoryOptimization;
+            public static bool EnableMulticamPreview => o.EnableMulticamPreview ?? App.PlatformConfig.EnableMulticamPreview;
+            public static float MaxSnapshotDimension => o.MaxSnapshotDimension ?? App.PlatformConfig.MaxSnapshotDimension;
+        }
+
+        [Serializable]
         public struct DemoConfig
         {
             public bool Enabled;

@@ -180,7 +180,7 @@ namespace TiltBrush
                 SceneSettings.m_Instance.RegisterCamera(m_RightInfo.camera);
             }
 
-            if (!App.Config.PlatformConfig.EnableMulticamPreview)
+            if (!UserConfig.PerformanceOverrides.EnableMulticamPreview)
             {
                 // If we're looking through the viewfinder, we need to make some changes to this camera
                 SetScreenshotResolution(App.UserConfig.Flags.SnapshotWidth > 0
