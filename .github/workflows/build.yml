@@ -1,6 +1,6 @@
+---
 # yamllint disable rule:line-length
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
----
 name: Builds
 
 on:  # yamllint disable-line rule:truthy
@@ -13,11 +13,7 @@ on:  # yamllint disable-line rule:truthy
 
 env:
   UNITY_VERSION: "2021.3.30f1"
-  UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
-  UNITY_EMAIL: ${{ fromJSON(format('["unitytest@mikeage.net", "{0}"]', secrets.UNITY_EMAIL))[secrets.UNITY_SERIAL != null] }}
-  UNITY_PASSWORD: ${{ fromJSON(format('["DoNotStealThis1", "{0}"]', secrets.UNITY_PASSWORD))[secrets.UNITY_SERIAL != null] }}
-  UNITY_LICENSE: ${{ fromJSON('["<?xml version=\"1.0\" encoding=\"UTF-8\"?><root><TimeStamp Value=\"chxldhvc0zh5Vw==\"/>\n    <License id=\"Terms\">\n        <MachineBindings>\n            <Binding Key=\"1\" Value=\"C372866C-B44C-5E48-806F-7583B55F04FB\"/>\n            <Binding Key=\"2\" Value=\"C02F32Y5ML85\"/>\n        </MachineBindings>\n        <MachineID Value=\"LcL/yxIaeUG12OSX31mKDtxcVx8=\"/>\n        <SerialHash Value=\"e25c63636985259e763d40cc9253cdfe6a862ceb\"/>\n        <Features>\n            <Feature Value=\"33\"/>\n            <Feature Value=\"1\"/>\n            <Feature Value=\"12\"/>\n            <Feature Value=\"2\"/>\n            <Feature Value=\"24\"/>\n            <Feature Value=\"3\"/>\n            <Feature Value=\"36\"/>\n            <Feature Value=\"17\"/>\n            <Feature Value=\"19\"/>\n            <Feature Value=\"62\"/>\n        </Features>\n        <DeveloperData Value=\"AQAAAEY0LUtFWUItMzYyOC0zWEI3LVBZVVEtTUI5VQ==\"/>\n        <SerialMasked Value=\"F4-KEYB-3628-3XB7-PYUQ-XXXX\"/>\n        <StartDate Value=\"2023-11-21T00:00:00\"/>\n        <UpdateDate Value=\"2023-11-22T06:03:23\"/>\n        <InitialActivationDate Value=\"2023-11-21T06:03:21\"/>\n        <LicenseVersion Value=\"6.x\"/>\n        <ClientProvidedVersion Value=\"2017.2.0\"/>\n        <AlwaysOnline Value=\"false\"/>\n        <Entitlements>\n            <Entitlement Ns=\"unity_editor\" Tag=\"UnityPersonal\" Type=\"EDITOR\" ValidTo=\"9999-12-31T00:00:00\"/>\n            <Entitlement Ns=\"unity_editor\" Tag=\"DarkSkin\" Type=\"EDITOR_FEATURE\" ValidTo=\"9999-12-31T00:00:00\"/>\n        </Entitlements>\n    </License><Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments\"/><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><Reference URI=\"#Terms\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>9DZF11miRAzx7TIuCxih78B6CXU=</DigestValue></Reference></SignedInfo><SignatureValue>weRQubqMNN61lSZtm/e7S+UDzTPNQjM5aQl/c4aKLH/b2khefpgLfdWneoxdnNopA6+rW6kBqxWt\nhMLdHY+oAOfDsfmMQRTnmQG0Y3G3xh6gjGP1RAIHoLDfFHf+0LQ3FakA2WehcFWPSYeVDrdxm3HW\nqMmdKWooD9i+J4s4rQFTDx9+/G6yjc5KGTyGxIz3c5kxTEkV2qsFPXsauomY9Z8YPKy+cZK7g+Ol\npO+LhtzetgTIlIN/qG8eByjlp6nOuVGdDOIrhNJW+vllNyx0qNWPREadVrhFViI4UXegMFRl5gJc\nrgcrlr/fD+NorDVLfcu7D863QXkkuriILUIq2Q==</SignatureValue></Signature></root>", null]')[secrets.UNITY_SERIAL != null] }}
-  PHOTON_PAT: ${{ secrets.PHOTON_PAT }}
+  PHOTON_PAT: ${{ secrets.PHOTON_PAT }}  # This needs to be here, since you can't use a ${{ secrets }} within an if: condition
 jobs:
   configuration:
     if: |
@@ -44,6 +40,7 @@ jobs:
       basename: ${{ steps.github.outputs.basename }}
       description: ${{ steps.github.outputs.description}}
       itchchannelname: ${{ steps.version.outputs.itchchannelname }}
+      fastlanelane: ${{ steps.version.outputs.fastlanelane}}
       uid: ${{ steps.github.outputs.uid }}
       gid: ${{ steps.github.outputs.gid }}
     steps:
@@ -86,12 +83,14 @@ jobs:
             STAMP=""
             echo "prerelease=false" >> $GITHUB_OUTPUT
             echo "itchchannelname=release" >> $GITHUB_OUTPUT
+            echo "fastlanelane=release" >> $GITHUB_OUTPUT
 
           else
             # This is the first 7 characters of the commit; we do it this way rather than via rev-parse to avoid an 'if' conditional depending on whether it's a PR or push. (unlike git describe, git rev-parse doesn't default to the current HEAD)
             STAMP=$(git describe --tags --match "v[0-9]*.[0-9]*" ${{ github.event.pull_request.head.sha }} | cut -d'-' -f3)
             echo "prerelease=true" >> $GITHUB_OUTPUT
             echo "itchchannelname=beta" >> $GITHUB_OUTPUT
+            echo "fastlanelane=beta" >> $GITHUB_OUTPUT
           fi
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -248,7 +247,7 @@ jobs:
 
     steps:
       - name: Set masking
-        run: echo "::add-mask::$UNITY_PASSWORD"
+        run: echo "::add-mask::DoNotStealThis1"
       - name: Free extra space
         # This takes several minutes, so we only do it where required. As of 12/10/2023, this increases free space from 18GB to 41GB
         if: matrix.targetPlatform == 'Android' || matrix.targetPlatform == 'StandaloneWindows64'
@@ -443,6 +442,10 @@ jobs:
         uses: game-ci/unity-builder@v4
         env:
           VERSION: ${{ needs.configuration.outputs.version}}
+          UNITY_EMAIL: ${{ fromJSON(format('["unitytest@mikeage.net", "{0}"]', vars.UNITY_EMAIL))[secrets.UNITY_SERIAL != null] }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+          UNITY_PASSWORD: ${{ fromJSON(format('["DoNotStealThis1", "{0}"]', secrets.UNITY_PASSWORD))[secrets.UNITY_SERIAL != null] }}
+          UNITY_LICENSE: ${{ fromJSON('["<?xml version=\"1.0\" encoding=\"UTF-8\"?><root><TimeStamp Value=\"chxldhvc0zh5Vw==\"/>\n    <License id=\"Terms\">\n        <MachineBindings>\n            <Binding Key=\"1\" Value=\"C372866C-B44C-5E48-806F-7583B55F04FB\"/>\n            <Binding Key=\"2\" Value=\"C02F32Y5ML85\"/>\n        </MachineBindings>\n        <MachineID Value=\"LcL/yxIaeUG12OSX31mKDtxcVx8=\"/>\n        <SerialHash Value=\"e25c63636985259e763d40cc9253cdfe6a862ceb\"/>\n        <Features>\n            <Feature Value=\"33\"/>\n            <Feature Value=\"1\"/>\n            <Feature Value=\"12\"/>\n            <Feature Value=\"2\"/>\n            <Feature Value=\"24\"/>\n            <Feature Value=\"3\"/>\n            <Feature Value=\"36\"/>\n            <Feature Value=\"17\"/>\n            <Feature Value=\"19\"/>\n            <Feature Value=\"62\"/>\n        </Features>\n        <DeveloperData Value=\"AQAAAEY0LUtFWUItMzYyOC0zWEI3LVBZVVEtTUI5VQ==\"/>\n        <SerialMasked Value=\"F4-KEYB-3628-3XB7-PYUQ-XXXX\"/>\n        <StartDate Value=\"2023-11-21T00:00:00\"/>\n        <UpdateDate Value=\"2023-11-22T06:03:23\"/>\n        <InitialActivationDate Value=\"2023-11-21T06:03:21\"/>\n        <LicenseVersion Value=\"6.x\"/>\n        <ClientProvidedVersion Value=\"2017.2.0\"/>\n        <AlwaysOnline Value=\"false\"/>\n        <Entitlements>\n            <Entitlement Ns=\"unity_editor\" Tag=\"UnityPersonal\" Type=\"EDITOR\" ValidTo=\"9999-12-31T00:00:00\"/>\n            <Entitlement Ns=\"unity_editor\" Tag=\"DarkSkin\" Type=\"EDITOR_FEATURE\" ValidTo=\"9999-12-31T00:00:00\"/>\n        </Entitlements>\n    </License><Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments\"/><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><Reference URI=\"#Terms\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>9DZF11miRAzx7TIuCxih78B6CXU=</DigestValue></Reference></SignedInfo><SignatureValue>weRQubqMNN61lSZtm/e7S+UDzTPNQjM5aQl/c4aKLH/b2khefpgLfdWneoxdnNopA6+rW6kBqxWt\nhMLdHY+oAOfDsfmMQRTnmQG0Y3G3xh6gjGP1RAIHoLDfFHf+0LQ3FakA2WehcFWPSYeVDrdxm3HW\nqMmdKWooD9i+J4s4rQFTDx9+/G6yjc5KGTyGxIz3c5kxTEkV2qsFPXsauomY9Z8YPKy+cZK7g+Ol\npO+LhtzetgTIlIN/qG8eByjlp6nOuVGdDOIrhNJW+vllNyx0qNWPREadVrhFViI4UXegMFRl5gJc\nrgcrlr/fD+NorDVLfcu7D863QXkkuriILUIq2Q==</SignatureValue></Signature></root>", null]')[secrets.UNITY_SERIAL != null] }}
         with:
           allowDirtyBuild: true  # Because of the OVR Update, the build tree might be dirty
           unityVersion: ${{ env.UNITY_VERSION }}
@@ -458,7 +461,7 @@ jobs:
           androidKeystoreName: openbrush.keystore
           androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 || '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' }}
           androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS || 'FakeKey' }}
-          androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME || 'openbrush-non-official' }}
+          androidKeyaliasName: ${{ vars.ANDROID_KEYALIAS_NAME || 'openbrush-non-official' }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS || 'FakeKey' }}
         continue-on-error: true
 
@@ -479,6 +482,10 @@ jobs:
         uses: game-ci/unity-builder@v4
         env:
           VERSION: ${{ needs.configuration.outputs.version}}
+          UNITY_EMAIL: ${{ fromJSON(format('["unitytest@mikeage.net", "{0}"]', vars.UNITY_EMAIL))[secrets.UNITY_SERIAL != null] }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+          UNITY_PASSWORD: ${{ fromJSON(format('["DoNotStealThis1", "{0}"]', secrets.UNITY_PASSWORD))[secrets.UNITY_SERIAL != null] }}
+          UNITY_LICENSE: ${{ fromJSON('["<?xml version=\"1.0\" encoding=\"UTF-8\"?><root><TimeStamp Value=\"chxldhvc0zh5Vw==\"/>\n    <License id=\"Terms\">\n        <MachineBindings>\n            <Binding Key=\"1\" Value=\"C372866C-B44C-5E48-806F-7583B55F04FB\"/>\n            <Binding Key=\"2\" Value=\"C02F32Y5ML85\"/>\n        </MachineBindings>\n        <MachineID Value=\"LcL/yxIaeUG12OSX31mKDtxcVx8=\"/>\n        <SerialHash Value=\"e25c63636985259e763d40cc9253cdfe6a862ceb\"/>\n        <Features>\n            <Feature Value=\"33\"/>\n            <Feature Value=\"1\"/>\n            <Feature Value=\"12\"/>\n            <Feature Value=\"2\"/>\n            <Feature Value=\"24\"/>\n            <Feature Value=\"3\"/>\n            <Feature Value=\"36\"/>\n            <Feature Value=\"17\"/>\n            <Feature Value=\"19\"/>\n            <Feature Value=\"62\"/>\n        </Features>\n        <DeveloperData Value=\"AQAAAEY0LUtFWUItMzYyOC0zWEI3LVBZVVEtTUI5VQ==\"/>\n        <SerialMasked Value=\"F4-KEYB-3628-3XB7-PYUQ-XXXX\"/>\n        <StartDate Value=\"2023-11-21T00:00:00\"/>\n        <UpdateDate Value=\"2023-11-22T06:03:23\"/>\n        <InitialActivationDate Value=\"2023-11-21T06:03:21\"/>\n        <LicenseVersion Value=\"6.x\"/>\n        <ClientProvidedVersion Value=\"2017.2.0\"/>\n        <AlwaysOnline Value=\"false\"/>\n        <Entitlements>\n            <Entitlement Ns=\"unity_editor\" Tag=\"UnityPersonal\" Type=\"EDITOR\" ValidTo=\"9999-12-31T00:00:00\"/>\n            <Entitlement Ns=\"unity_editor\" Tag=\"DarkSkin\" Type=\"EDITOR_FEATURE\" ValidTo=\"9999-12-31T00:00:00\"/>\n        </Entitlements>\n    </License><Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments\"/><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><Reference URI=\"#Terms\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>9DZF11miRAzx7TIuCxih78B6CXU=</DigestValue></Reference></SignedInfo><SignatureValue>weRQubqMNN61lSZtm/e7S+UDzTPNQjM5aQl/c4aKLH/b2khefpgLfdWneoxdnNopA6+rW6kBqxWt\nhMLdHY+oAOfDsfmMQRTnmQG0Y3G3xh6gjGP1RAIHoLDfFHf+0LQ3FakA2WehcFWPSYeVDrdxm3HW\nqMmdKWooD9i+J4s4rQFTDx9+/G6yjc5KGTyGxIz3c5kxTEkV2qsFPXsauomY9Z8YPKy+cZK7g+Ol\npO+LhtzetgTIlIN/qG8eByjlp6nOuVGdDOIrhNJW+vllNyx0qNWPREadVrhFViI4UXegMFRl5gJc\nrgcrlr/fD+NorDVLfcu7D863QXkkuriILUIq2Q==</SignatureValue></Signature></root>", null]')[secrets.UNITY_SERIAL != null] }}
         with:
           allowDirtyBuild: true  # Because of the OVR Update, the build tree might be dirty
           unityVersion: ${{ env.UNITY_VERSION }}
@@ -493,7 +500,7 @@ jobs:
           androidKeystoreName: openbrush.keystore
           androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 || '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' }}
           androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS || 'FakeKey' }}
-          androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME || 'openbrush-non-official' }}
+          androidKeyaliasName: ${{ vars.ANDROID_KEYALIAS_NAME || 'openbrush-non-official' }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS || 'FakeKey' }}
 
       - name: Prepare for packaging (permissions and compression, OSX only)
@@ -627,8 +634,8 @@ jobs:
           export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBrush*.app))
 
           cd StandaloneOSX/
-          codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ secrets.APPLE_TEAM_ID }})" $FILENAME/Contents/Support/ThirdParty/ffmpeg/bin/ffmpeg
-          codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ secrets.APPLE_TEAM_ID }})" $FILENAME
+          codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME/Contents/Support/ThirdParty/ffmpeg/bin/ffmpeg
+          codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME
 
       - name: Create a notarized DMG
         env:
@@ -646,8 +653,8 @@ jobs:
           popd
 
           xcrun notarytool submit \
-          --team-id ${{ secrets.APPLE_TEAM_ID }} \
-          --apple-id ${{ secrets.APPLE_ID }} \
+          --team-id ${{ vars.APPLE_TEAM_ID }} \
+          --apple-id ${{ vars.APPLE_ID }} \
           --password ${{ secrets.APPLE_APPLICATION_SPECIFIC_PASSWORD }} \
           --wait \
           dist/OpenBrush.dmg
@@ -786,7 +793,7 @@ jobs:
     name: Publish changelog from last major build to open-brush-docs
     needs: [configuration, build]
     runs-on: ubuntu-latest
-    if:
+    if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
@@ -835,7 +842,7 @@ jobs:
       - name: Publish release notes
         uses: cpina/github-action-push-to-another-repository@composite-1.5.1
         env:
-          SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+          SSH_DEPLOY_KEY: ${{ secrets.OPENBRUSH_DOCS_SSH_DEPLOY_KEY }}
         with:
           source-directory: 'changelog/'
           target-directory: 'automatic-release-notes/'
@@ -881,11 +888,11 @@ jobs:
           jinjanate Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
           steamcmd +login $STEAM_USERNAME +run_app_build $(pwd)/build_windows_openxr/app.vdf +quit
         env:
-          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+          STEAM_USERNAME: ${{ vars.STEAM_USERNAME }}
           STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
           VERSION: ${{ needs.configuration.outputs.version }}
-          OPEN_BRUSH_APP_ID: 1634870
-          OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
+          OPEN_BRUSH_APP_ID: ${{ vars.STEAM_APP_ID }}
+          OPEN_BRUSH_WINDOWS_DEPOT_ID: ${{ vars.STEAM_WINDOWS_DEPOT_ID }}
           OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
           CHANNEL: beta
       - name: Update steam login secret
@@ -906,8 +913,8 @@ jobs:
     needs: [configuration, build]
     runs-on: windows-latest
     env:
-      PIMAX_APP_ID: ${{ secrets.PIMAX_APP_ID }}
-      PIMAX_USERNAME: ${{ secrets.PIMAX_USERNAME }}
+      PIMAX_APP_ID: ${{ vars.PIMAX_APP_ID }}
+      PIMAX_USERNAME: ${{ vars.PIMAX_USERNAME }}
       PIMAX_PASSWORD: ${{ secrets.PIMAX_PASSWORD }}
       VERSION: ${{ needs.configuration.outputs.version}}
     if: |
@@ -937,10 +944,10 @@ jobs:
     needs: [configuration, build]
     runs-on: windows-latest
     env:
-      VIVEPORT_EMAIL: ${{ secrets.VIVEPORT_EMAIL }}
+      VIVEPORT_EMAIL: ${{ vars.VIVEPORT_EMAIL }}
       VIVEPORT_PASSWORD: ${{ secrets.VIVEPORT_PASSWORD }}
-      VIVEPORT_APPID: ${{ secrets.VIVEPORT_APPID }}
-      VIVEPORT_ORGID: ${{ secrets.VIVEPORT_ORGID }}
+      VIVEPORT_APP_ID: ${{ vars.VIVEPORT_APP_ID }}
+      VIVEPORT_ORG_ID: ${{ vars.VIVEPORT_ORG_ID }}
       VERSION: ${{ needs.configuration.outputs.version}}
     if: |
       github.event_name == 'push' &&
@@ -961,7 +968,7 @@ jobs:
           Set-Location -Path "releases"
           Compress-Archive -Path ./* -DestinationPath OpenBrush_Viveport_${Env:VERSION}.zip
           Invoke-WebRequest -Uri https://assets-global.viveport.com/static-misc/developer-tool/ViveportUploader.exe -OutFile ViveportUploader.exe
-          ./ViveportUploader.exe -email ${Env:VIVEPORT_EMAIL} -password ${Env:VIVEPORT_PASSWORD} -filepath OpenBrush_Viveport_${Env:VERSION}.zip -appid ${Env:VIVEPORT_APPID} -orgid ${Env:VIVEPORT_ORGID} -version ${VERSION}
+          ./ViveportUploader.exe -email ${Env:VIVEPORT_EMAIL} -password ${Env:VIVEPORT_PASSWORD} -filepath OpenBrush_Viveport_${Env:VERSION}.zip -appid ${Env:VIVEPORT_APP_ID} -orgid ${Env:VIVEPORT_ORG_ID} -version ${VERSION}
 
   publish_itch:
     name: Publish Itch.io Release
@@ -1027,7 +1034,7 @@ jobs:
           VERSION: ${{ needs.configuration.outputs.version }}
           PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
           RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
-          OCULUS_QUEST_APP_ID: ${{ secrets.OCULUS_QUEST_APP_ID }}
+          OCULUS_QUEST_APP_ID: ${{ vars.OCULUS_QUEST_APP_ID }}
           OCULUS_QUEST_APP_SECRET: ${{ secrets.OCULUS_QUEST_APP_SECRET }}
         run: |
           mkdir releases
@@ -1046,7 +1053,6 @@ jobs:
             CHANGELOG="${RAW_CHANGELOG}"
             ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}"
           fi
-
 
   publish_oculus_quest1:
     name: Publish Oculus Quest 1 Release
@@ -1068,7 +1074,7 @@ jobs:
           VERSION: ${{ needs.configuration.outputs.version }}
           PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
           RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
-          OCULUS_QUEST_APP_ID: ${{ secrets.OCULUS_QUEST_APP_ID }}
+          OCULUS_QUEST_APP_ID: ${{ vars.OCULUS_QUEST_APP_ID }}
           OCULUS_QUEST_APP_SECRET: ${{ secrets.OCULUS_QUEST_APP_SECRET }}
         run: |
           mkdir releases1
@@ -1087,7 +1093,6 @@ jobs:
             CHANGELOG="${RAW_CHANGELOG}"
             ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest1_$VERSION.apk --channel Beta:quest1only --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}"
           fi
-
 
   publish_oculus_rift:
     name: Publish Oculus Rift Release
@@ -1109,7 +1114,7 @@ jobs:
           VERSION: ${{ needs.configuration.outputs.version }}
           PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
           RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
-          OCULUS_RIFT_APP_ID: ${{ secrets.OCULUS_RIFT_APP_ID }}
+          OCULUS_RIFT_APP_ID: ${{ vars.OCULUS_RIFT_APP_ID }}
           OCULUS_RIFT_APP_SECRET: ${{ secrets.OCULUS_RIFT_APP_SECRET }}
         run: |
           mkdir releases
@@ -1152,7 +1157,7 @@ jobs:
           VERSION: ${{ needs.configuration.outputs.version }}
           PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
           RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
-          PICO_APP_ID: ${{ secrets.PICO_APP_ID }}
+          PICO_APP_ID: ${{ vars.PICO_APP_ID }}
           PICO_APP_SECRET: ${{ secrets.PICO_APP_SECRET }}
         run: |
           mkdir releases
@@ -1174,10 +1179,10 @@ jobs:
             ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 3 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
           fi
 
-  publish_ios_appstore:
-    name: Release to iOS App Store
+  publish_ios_zapbox:
+    name: Publish Zapbox iOS
     needs: [configuration, build]
-    runs-on: macos-latest
+    runs-on: macos-13  # As of 2024-03-01, macos-latest still points to Mac OS 12, which has an older XCode and gives ITMS-90725: SDK version issue when we submit.
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -1196,13 +1201,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: iOS Zapbox
-          path: build/iOS
+          path: build
 
       - name: Fix File Permissions and Run fastlane
         env:
           APPLE_CONNECT_EMAIL: ${{ secrets.APPLE_CONNECT_EMAIL }}
           APPLE_DEVELOPER_EMAIL: ${{ secrets.APPLE_DEVELOPER_EMAIL }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
 
           MATCH_REPOSITORY: ${{ secrets.MATCH_REPOSITORY }}
           MATCH_DEPLOY_KEY: ${{ secrets.MATCH_DEPLOY_KEY }}
@@ -1212,12 +1217,15 @@ jobs:
           APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
           APPSTORE_P8: ${{ secrets.APPSTORE_P8 }}
 
-          IOS_BUILD_PATH: ${{ format('{0}/build/iOS', github.workspace) }}
-          IOS_BUNDLE_ID: foundation.icosa.openbrushzapbox
+          IOS_BUNDLE_ID: ${{ vars.IOS_ZAPBOX_BUNDLE_ID }}
           PROJECT_NAME: Open Brush for Zapbox
+          FASTLANE_LANE: ${{ needs.configuration.outputs.fastlanelane }}
         run: |
           eval "$(ssh-agent -s)"
           ssh-add - <<< "${MATCH_DEPLOY_KEY}"
+          export FILENAME=$(basename $(readlink -f build/iOS/OpenBrush*))
+          export IOS_BUILD_PATH=$(pwd)/build/iOS/${FILENAME}
+
           find $IOS_BUILD_PATH -type f -name "**.sh" -exec chmod +x {} \;
           bundle install
-          bundle exec fastlane ios release
+          bundle exec fastlane ios ${FASTLANE_LANE}
