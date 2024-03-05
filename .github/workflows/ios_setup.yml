@@ -1,3 +1,6 @@
+---
+# yamllint disable rule:line-length
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: iOS One-Time Setup
 
 on: workflow_dispatch
@@ -7,11 +10,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          sparse-checkout: |
+            Gemfile
+            Gemfile.lock
+            fastlane
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: 3.2
           bundler-cache: true
 
+      # Note that this job cannot be rerun because of https://github.com/joshdholtz/fastlane-plugin-github_action/issues/4
       - name: Build iOS
         shell: bash
         run: |
@@ -21,6 +31,6 @@ jobs:
           APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
           APPSTORE_P8: ${{ secrets.APPSTORE_P8 }}
 
-          GH_PAT: ${{ secrets.GH_PAT }}
+          GH_PAT: ${{ secrets.MATCH_PAT }}
           GITHUB_REPOSITORY: ${{ env.GITHUB_REPOSITORY }}
           MATCH_REPOSITORY: ${{ secrets.MATCH_REPOSITORY }}
