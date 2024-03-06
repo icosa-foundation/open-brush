@@ -71,7 +71,7 @@ namespace TiltBrush
 
             // Preserve sculpting modifications when creating new stroke.
             SculptedGeometryData sculptedGeometryData = new SculptedGeometryData(new List<Vector3>(), new List<Vector3>());
-            if (stroke.m_bWasSculpted)
+            if (stroke.m_MeshIsEdited)
             {
                 var batchSubset = stroke.m_BatchSubset;
                 batchSubset.m_ParentBatch.m_Geometry.EnsureGeometryResident();
@@ -91,7 +91,7 @@ namespace TiltBrush
             if (sculptedGeometryData.vertices.Count > 0)
             {
                 stroke.m_BatchSubset.m_ParentBatch.m_Geometry.EnsureGeometryResident();
-                stroke.m_bWasSculpted = true;
+                stroke.m_MeshIsEdited = true;
                 SketchMemoryScript.m_Instance.InsertSculptedGeometry(sculptedGeometryData, stroke);
             }
         }

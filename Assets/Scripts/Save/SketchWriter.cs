@@ -176,7 +176,7 @@ namespace TiltBrush
                     snapshot.layerIndex = canvasToIndexMap[stroke.Canvas];
 
                     // Save any sculpting modifications.
-                    if (stroke.m_bWasSculpted)
+                    if (stroke.m_MeshIsEdited)
                     {
                         int vertStartIndex = stroke.m_BatchSubset.m_StartVertIndex;
                         int vertCount = stroke.m_BatchSubset.m_VertLength;
@@ -577,7 +577,7 @@ namespace TiltBrush
 
                     if (modifiedVertLength > 0)
                     {
-                        stroke.m_bWasSculpted = true;
+                        stroke.m_MeshIsEdited = true;
 
                         List<Vector3> verts = new List<Vector3>();
 

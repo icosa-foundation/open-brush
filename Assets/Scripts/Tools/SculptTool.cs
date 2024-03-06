@@ -112,7 +112,7 @@ namespace TiltBrush
                 // if the vertex pos changed
                 if (Vector3.Distance(newVert, newVertices[i]) > Mathf.Epsilon)
                 {
-                    rGroup.m_Stroke.m_bWasSculpted = true;
+                    rGroup.m_Stroke.m_MeshIsEdited = true;
                     PlayModifyStrokeSound();
                     InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, m_HapticsToggleOn);
 

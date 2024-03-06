@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Object = UnityEngine.Object;
 
 namespace TiltBrush
@@ -58,7 +59,8 @@ namespace TiltBrush
 
         /// True if any sculpting modification was applied to this stroke.
         /// Used for determining whether a stroke's geometry should be saved.
-        public bool m_bWasSculpted = false;
+        [FormerlySerializedAs("m_bWasSculpted")]
+        public bool m_MeshIsEdited = false;
 
         /// The group this stroke is a part of. Cannot be null (as it is a struct).
         public SketchGroupTag Group
@@ -189,7 +191,7 @@ namespace TiltBrush
             // And we can't use field initializers for the linked list creation.
             m_NodeByTime = new LinkedListNode<Stroke>(this);
             m_PlaybackNode = new LinkedListNode<Stroke>(this);
-            m_bWasSculpted = existing.m_bWasSculpted;
+            m_MeshIsEdited = existing.m_MeshIsEdited;
         }
 
         /// Makes a copy of stroke, if one has not already been made.

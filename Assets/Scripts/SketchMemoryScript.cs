@@ -1108,7 +1108,7 @@ namespace TiltBrush
                 int index = 0;
                 foreach (var stroke in m_MemoryList)
                 {
-                    if (stroke.m_bWasSculpted)
+                    if (stroke.m_MeshIsEdited)
                     {
                         InsertSculptedGeometry(m_SavedSculptedGeometry.Dequeue(), stroke);
                     }
