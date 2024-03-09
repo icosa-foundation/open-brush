@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: QualityLevels Mobile
   m_EditorClassIdentifier: 
   m_qualityLevels:
-  - m_Bloom: 0
+  - m_Bloom: 1
     m_Hdr: 0
     m_Fxaa: 0
     m_MsaaLevel: 2
@@ -28,7 +28,7 @@ MonoBehaviour:
     m_MaxSimplificationUserStrokes: 2
     m_GpuLevel: 5
     m_FixedFoveationLevel: 2
-  - m_Bloom: 0
+  - m_Bloom: 1
     m_Hdr: 0
     m_Fxaa: 0
     m_MsaaLevel: 2
@@ -43,7 +43,7 @@ MonoBehaviour:
     m_MaxSimplificationUserStrokes: 2
     m_GpuLevel: 5
     m_FixedFoveationLevel: 1
-  - m_Bloom: 0
+  - m_Bloom: 1
     m_Hdr: 0
     m_Fxaa: 0
     m_MsaaLevel: 2
@@ -58,7 +58,7 @@ MonoBehaviour:
     m_MaxSimplificationUserStrokes: 2
     m_GpuLevel: 5
     m_FixedFoveationLevel: 0
-  - m_Bloom: 0
+  - m_Bloom: 1
     m_Hdr: 0
     m_Fxaa: 0
     m_MsaaLevel: 2
@@ -73,7 +73,7 @@ MonoBehaviour:
     m_MaxSimplificationUserStrokes: 2
     m_GpuLevel: 4
     m_FixedFoveationLevel: 0
-  - m_Bloom: 0
+  - m_Bloom: 1
     m_Hdr: 0
     m_Fxaa: 0
     m_MsaaLevel: 2
@@ -88,7 +88,7 @@ MonoBehaviour:
     m_MaxSimplificationUserStrokes: 2
     m_GpuLevel: 3
     m_FixedFoveationLevel: 0
-  - m_Bloom: 3
+  - m_Bloom: 1
     m_Hdr: 0
     m_Fxaa: 0
     m_MsaaLevel: 2
@@ -103,7 +103,7 @@ MonoBehaviour:
     m_MaxSimplificationUserStrokes: 2
     m_GpuLevel: 5
     m_FixedFoveationLevel: 0
-  - m_Bloom: 3
+  - m_Bloom: 1
     m_Hdr: 0
     m_Fxaa: 0
     m_MsaaLevel: 2
