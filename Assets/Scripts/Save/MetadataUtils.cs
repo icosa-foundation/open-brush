@@ -154,7 +154,10 @@ namespace TiltBrush
                     Pinned = widget.Pinned,
                     Transform = widget.LocalTransform,
                     GroupId = groupIdMapping.GetId(widget.Group),
-                    LayerId = App.Scene.GetIndexOfCanvas(widget.Canvas)
+                    LayerId = App.Scene.GetIndexOfCanvas(widget.Canvas),
+                    Paused = !widget.SoundClipController.Playing,
+                    Time = widget.SoundClipController.Time,
+                    Volume = widget.SoundClipController.Volume
                 };
                 return soundClip;
             }

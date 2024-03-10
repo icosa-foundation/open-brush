@@ -685,7 +685,6 @@ namespace TiltBrush
         // Group ID for widget. 0 for ungrouped items.
         public uint GroupId { get; set; }
         public int LayerId { get; set; }
-        public bool TwoSided { get; set; }
     }
 
     [Serializable]

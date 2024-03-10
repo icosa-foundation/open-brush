@@ -153,7 +153,7 @@ namespace TiltBrush
             var soundClip = SoundClipCatalog.Instance.GetSoundClipByPersistentPath(tiltSoundClip.FilePath);
             if (soundClip == null)
             {
-                soundClip = TiltBrush.SoundClip.CreateDummySoundClip();
+                soundClip = SoundClip.CreateDummySoundClip();
                 ControllerConsoleScript.m_Instance.AddNewLine(
                     $"Could not find sound clip {App.SoundClipLibraryPath()}\\{tiltSoundClip.FilePath}.");
             }
