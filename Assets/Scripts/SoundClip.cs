@@ -240,7 +240,20 @@ namespace TiltBrush
         async Task<AudioClip> LoadClip(string path)
         {
             AudioClip clip = null;
-            using (UnityWebRequest uwr = UnityWebRequestMultimedia.GetAudioClip(path, AudioType.WAV))
+            AudioType audioType = path.ToLower() switch
+            {
+                var a when a.EndsWith(".wav") => AudioType.WAV,
+                var a when a.EndsWith(".mp3") => AudioType.MPEG,
+                var a when a.EndsWith(".ogg") => AudioType.OGGVORBIS,
+                var a when a.EndsWith(".aiff") || a.EndsWith(".aif") => AudioType.AIFF,
+                var a when a.EndsWith(".mod") => AudioType.MOD,
+                var a when a.EndsWith(".it") => AudioType.IT,
+                var a when a.EndsWith(".s3m") => AudioType.S3M,
+                var a when a.EndsWith(".xm") => AudioType.XM,
+                _ => throw new ArgumentOutOfRangeException(nameof(path), $"Unsupported audio type: {path}.")
+            };
+
+            using (UnityWebRequest uwr = UnityWebRequestMultimedia.GetAudioClip(path, audioType))
             {
                 uwr.SendWebRequest();
 
