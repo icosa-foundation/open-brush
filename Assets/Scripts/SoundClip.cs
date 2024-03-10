@@ -280,7 +280,7 @@ namespace TiltBrush
             Height = 128;
             Aspect = 1;
 
-            m_Controller.m_SoundClipAudioSource.mute = true;
+            m_Controller.m_SoundClipAudioSource.mute = false;
             m_Controller.m_SoundClipAudioSource.Play();
 
             if (onCompletion != null)
@@ -309,7 +309,7 @@ namespace TiltBrush
             }
             // A frame does not always seem to be immediately available, so wait until we've hit at least
             // the second frame before continuing.
-            while (m_Controller.m_SoundClipAudioSource.time < 0.1)
+            while (m_Controller == null || m_Controller.m_SoundClipAudioSource.time < 0.1)
             {
                 yield return null;
             }
@@ -338,6 +338,7 @@ namespace TiltBrush
 
         public Texture2D GetWaveform(float saturation, Color col)
         {
+            Thumbnail = new Texture2D(1, 1);
             var width = Thumbnail.width;
             var height = Thumbnail.height;
             var audio = m_Controller.m_SoundClipAudioSource.clip;
@@ -345,23 +346,28 @@ namespace TiltBrush
             float[] samples = new float[audio.samples];
             float[] waveform = new float[width];
             audio.GetData(samples, 0);
-            int packSize = ( audio.samples / width ) + 1;
+            int packSize = (audio.samples / width) + 1;
             int s = 0;
-            for (int i = 0; i < audio.samples; i += packSize) {
+            for (int i = 0; i < audio.samples; i += packSize)
+            {
                 waveform[s] = Mathf.Abs(samples[i]);
                 s++;
             }
 
-            for (int x = 0; x < width; x++) {
-                for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
                     tex.SetPixel(x, y, Color.clear);
                 }
             }
 
-            for (int x = 0; x < waveform.Length; x++) {
-                for (int y = 0; y <= waveform[x] * ((float)height * saturation); y++) {
-                    tex.SetPixel(x, ( height / 2 ) + y, col);
-                    tex.SetPixel(x, ( height / 2 ) - y, col);
+            for (int x = 0; x < waveform.Length; x++)
+            {
+                for (int y = 0; y <= waveform[x] * ((float)height * saturation); y++)
+                {
+                    tex.SetPixel(x, (height / 2) + y, col);
+                    tex.SetPixel(x, (height / 2) - y, col);
                 }
             }
             tex.Apply();

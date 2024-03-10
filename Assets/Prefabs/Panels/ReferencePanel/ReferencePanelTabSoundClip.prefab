@@ -1262,7 +1262,7 @@ MonoBehaviour:
   m_Mesh: {fileID: 48407087727397758}
   m_Property:
     m_Target: {fileID: 8553841389093772640}
-    m_PropertyName: SelectedVideoVolume
+    m_PropertyName: SelectedSoundClipVolume
   m_Range: {x: 0, y: 1}
   m_PowerCurve: 0.5
   references:
@@ -1905,11 +1905,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Property.m_Target
       value: 
-      objectReference: {fileID: 3891058746504678318}
+      objectReference: {fileID: 8553841389093772640}
     - target: {fileID: 7599348944369875173, guid: c2a88d23f4dea5a4aae06f33862c9716,
         type: 3}
       propertyPath: m_Property.m_PropertyName
-      value: hasChanged
+      value: SelectedSoundClipIsPlaying
       objectReference: {fileID: 0}
     - target: {fileID: 7599348944369875173, guid: c2a88d23f4dea5a4aae06f33862c9716,
         type: 3}

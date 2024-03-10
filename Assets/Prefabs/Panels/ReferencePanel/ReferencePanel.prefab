@@ -2276,6 +2276,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: ReferencePanelLibrayButtonSoundClip
       objectReference: {fileID: 0}
+    - target: {fileID: 3979616502385903245, guid: e5780f95f442f3a4da78f2223e188565,
+        type: 3}
+      propertyPath: m_ButtonTexture
+      value: 
+      objectReference: {fileID: 2800000, guid: 32c1b6205fdb5af4996e2a51c4df9eb7, type: 3}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e5780f95f442f3a4da78f2223e188565, type: 3}
 --- !u!4 &7212281109223797171 stripped

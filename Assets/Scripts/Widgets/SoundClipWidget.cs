@@ -17,7 +17,7 @@ using System.IO;
 
 namespace TiltBrush
 {
-    public class SoundClipWidget : MediaWidget
+    public class SoundClipWidget : Media2dWidget
     {
         // AudioState is used to restore the state of a sound clip when loading, or when a SoundClipWidget is
         // restored from being tossed with an undo.
@@ -35,6 +35,8 @@ namespace TiltBrush
         {
             get { return m_SoundClip; }
         }
+
+        public override float? AspectRatio => 1.0f;
 
         public TrTransform SaveTransform
         {
@@ -118,6 +120,8 @@ namespace TiltBrush
                 m_InitialState = null;
             }
             SoundClipController = m_SoundClip.CreateController(this);
+
+            //SoundClipController.m_SoundClipAudioSource.Play();
             SoundClipController.OnSoundClipInitialized += OnSoundClipInitialized;
         }
 

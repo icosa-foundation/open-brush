@@ -76,6 +76,18 @@ MonoBehaviour:
   m_UngrabbableFromInside: 0
   m_MinSize_CS: 0.05
   m_MaxSize_CS: 2000
+  m_NoImageTexture: {fileID: 2800000, guid: 57ec9586d21ff9142abf94cca6f69ef3, type: 3}
+  m_StartScale: 0.1
+  m_ColliderBloat: 0
+  m_MeshScalar: 1
+  m_Background: {fileID: 466610}
+  m_Missing: {fileID: 435884}
+  m_MissingText: {fileID: 10267632}
+  m_MissingQuestionMark: {fileID: 149674}
+  m_QuestionMarkScalar: 1.5
+  m_MinTextSize: 0.6
+  m_TiltMeterCost: 1
+  m_ImageQuad: {fileID: 2357204}
 --- !u!114 &6714732647065839654
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -167,7 +179,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
