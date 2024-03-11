@@ -409,7 +409,7 @@ namespace TiltBrush
                 var loader = new TiltBrushUriLoader(
                     m_localPath, Path.GetDirectoryName(m_localPath), m_useThreadedImageLoad);
                 var options = m_fromPoly ? kPolyGltfImportOptions : kGltfImportOptions;
-                return ImportGltfast.BeginImport(m_localPath);
+                return NewGltfImporter.BeginImport(m_localPath);
             }
 
             protected override GameObject DoUnityThreadWork(IDisposable state__,
@@ -422,13 +422,13 @@ namespace TiltBrush
                 GameObject rootObject = null;
                 using (IDisposable state_ = state__)
                 {
-                    var state = state_ as ImportGltfast.ImportState;
+                    var state = state_ as NewGltfImporter.ImportState;
                     if (state != null)
                     {
                         string assetLocation = Path.GetDirectoryName(m_localPath);
                         // EndImport doesn't try to use the loadImages functionality of UriLoader anyway.
                         // It knows it's on the main thread, so chooses to use Unity's fast loading.
-                        ImportGltfast.GltfImportResult result = ImportGltfast.EndAsyncImport(state);
+                        NewGltfImporter.GltfImportResult result = NewGltfImporter.EndAsyncImport(state);
 
                         if (result != null)
                         {
@@ -505,8 +505,7 @@ namespace TiltBrush
             string assetLocation = Path.GetDirectoryName(localPath);
             try
             {
-
-                Task t = ImportGltfast.StartSyncImport(
+                Task t = NewGltfImporter.StartSyncImport(
                     localPath,
                     assetLocation,
                     this,

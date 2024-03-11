@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using GLTFast;
 using TiltBrushToolkit;
 using UnityEngine;
+using UnityGLTF;
+
 namespace TiltBrush
 {
-    internal class ImportGltfast
+    internal class NewGltfImporter
     {
         public static ImportState BeginImport(string localPath)
         {
@@ -18,6 +18,7 @@ namespace TiltBrush
             var state = new ImportState(AxisConvention.kGltf2);
             return state;
         }
+
         public sealed class ImportState : IDisposable
         {
             // Change-of-basis matrix
@@ -52,7 +53,34 @@ namespace TiltBrush
             return result;
         }
 
-        public static async Task StartSyncImport(
+        public static Task StartSyncImport(string localPath, string assetLocation, Model model, List<string> warnings)
+        {
+            if (App.UserConfig.Import.UseUnityGltf)
+            {
+                return _StartSyncImportUnityGltf(localPath, assetLocation, model, warnings);
+            }
+            else
+            {
+                return _StartSyncImportGltfast(localPath, assetLocation, model, warnings);
+            }
+        }
+
+        public static GameObject LegacyImporter(string localPath, string assetLocation)
+        {
+            var loader = new TiltBrushUriLoader(localPath, assetLocation, loadImages: false);
+
+            var materialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: localPath);
+            var importOptions = new GltfImportOptions
+            {
+                rescalingMode = GltfImportOptions.RescalingMode.CONVERT,
+                scaleFactor = App.METERS_TO_UNITS,
+                recenter = false
+            };
+            ImportGltf.GltfImportResult result = ImportGltf.Import(localPath, loader, materialCollector, importOptions);
+            return LegacyImporter(localPath, assetLocation);
+        }
+
+        internal static async Task _StartSyncImportGltfast(
             string localPath,
             string assetLocation,
             Model model,
@@ -64,33 +92,70 @@ namespace TiltBrush
             var go = new GameObject();
             if (success)
             {
-                success = await gltf.InstantiateMainSceneAsync(go.transform);
+                var settings = new InstantiationSettings
+                {
+                    LightIntensityFactor = 0.1f,
+                    // Mask = ~(ComponentType.Light | ComponentType.Camera)
+                };
+                success = await gltf.InstantiateMainSceneAsync(
+                    new GameObjectInstantiator(gltf, go.transform, null, settings)
+                );
             }
 
             if (success)
             {
-                var result = new GltfImportResult();
-                result.root = go;
-                result.materialCollector = importMaterialCollector;
+                var result = new GltfImportResult
+                {
+                    root = go,
+                    materialCollector = importMaterialCollector
+                };
             }
             else
             {
                 // Fall back to the older import code
-                var loader = new TiltBrushUriLoader(localPath, assetLocation, loadImages: false);
-
-                var materialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: localPath);
-                var importOptions = new GltfImportOptions
-                {
-                    rescalingMode = GltfImportOptions.RescalingMode.CONVERT,
-                    scaleFactor = App.METERS_TO_UNITS,
-                    recenter = false
-                };
-                ImportGltf.GltfImportResult result = ImportGltf.Import(localPath, loader, materialCollector, importOptions);
-                go = result.root;
+                go = LegacyImporter(localPath, assetLocation);
             }
             model.CalcBoundsGltf(go);
             model.EndCreatePrefab(go, warnings);
             if (success) model.AssignMaterialsToCollector(importMaterialCollector);
         }
+
+        internal static async Task _StartSyncImportUnityGltf(
+            string localPath,
+            string assetLocation,
+            Model model,
+            List<string> warnings)
+        {
+            // try
+            {
+                var importMaterialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: localPath);
+
+                ImportOptions options = new ImportOptions();
+                GLTFSceneImporter gltf = new GLTFSceneImporter(localPath, options);
+                gltf.IsMultithreaded = false;
+                gltf.Timeout = 1000;
+                AsyncHelpers.RunSync(() => gltf.LoadSceneAsync());
+                GameObject go = gltf.CreatedObject;
+                var result = new GltfImportResult
+                {
+                    root = go,
+                    materialCollector = importMaterialCollector
+                };
+                // model.m_Valid = true;
+                // model.AssignMaterialsToCollector(importMaterialCollector);
+                model.CalcBoundsGltf(go);
+                model.EndCreatePrefab(go, warnings);
+            }
+            // catch (Exception e)
+            {
+                // Debug.Log($"{e.Message}\n{e.StackTrace}");
+                // Fall back to the older import code
+                // GameObject go = LegacyImporter(localPath, assetLocation);
+                // model.CalcBoundsGltf(go);
+                // model.EndCreatePrefab(go, warnings);
+            }
+        }
+
+
     }
 }
