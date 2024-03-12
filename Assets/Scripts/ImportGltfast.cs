@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
-using GLTF.Schema;
 using GLTFast;
 using TiltBrushToolkit;
 using UnityEngine;
@@ -43,19 +40,6 @@ namespace TiltBrush
             }
         }
 
-        internal class GltfImportResult
-        {
-            public GameObject root;
-            public ImportMaterialCollector materialCollector;
-        }
-
-        public static GltfImportResult EndAsyncImport(ImportState state)
-        {
-            var result = new GltfImportResult();
-            result.root = state.root;
-            return result;
-        }
-
         public static Task StartSyncImport(string localPath, string assetLocation, Model model, List<string> warnings)
         {
             return App.UserConfig.Import.UseUnityGltf ?
@@ -90,18 +74,16 @@ namespace TiltBrush
             {
                 var settings = new InstantiationSettings
                 {
-                    LightIntensityFactor = 0.1f,
-                    // Mask = ~(ComponentType.Light | ComponentType.Camera)
+                    LightIntensityFactor = 0.0001f,
+                    Mask = ~ComponentType.Camera
                 };
                 success = await gltf.InstantiateMainSceneAsync(
                     new GameObjectInstantiator(gltf, go.transform, null, settings)
                 );
             }
 
-            if (!success)
+            if (success)
             {
-                var importMaterialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: localPath);
-                model.AssignMaterialsToCollector(importMaterialCollector);
                 model.CalcBoundsGltf(go);
                 model.EndCreatePrefab(go, warnings);
             }
