@@ -428,13 +428,8 @@ namespace TiltBrush
                         string assetLocation = Path.GetDirectoryName(m_localPath);
                         // EndImport doesn't try to use the loadImages functionality of UriLoader anyway.
                         // It knows it's on the main thread, so chooses to use Unity's fast loading.
-                        NewGltfImporter.GltfImportResult result = NewGltfImporter.EndAsyncImport(state);
-
-                        if (result != null)
-                        {
-                            rootObject = result.root;
-                            importMaterialCollector = result.materialCollector;
-                        }
+                        rootObject = state.root;
+                        importMaterialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: m_localPath);
                     }
                 }
                 IsValid = rootObject != null;
