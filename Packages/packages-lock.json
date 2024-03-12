@@ -66,7 +66,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.cloud.gltfast": {
-      "version": "6.0.1",
+      "version": "6.2.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {
