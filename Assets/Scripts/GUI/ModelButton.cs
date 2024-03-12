@@ -57,6 +57,11 @@ namespace TiltBrush
 
             // Build the actual preview.
             m_ModelPreview = Instantiate(m_Model.m_ModelParent);
+            // Disable model lights when it's a panel preview
+            foreach (var light in m_ModelPreview.GetComponentsInChildren<Light>())
+            {
+                light.enabled = false;
+            }
             HierarchyUtils.RecursivelySetLayer(m_ModelPreview, LayerMask.NameToLayer("Panels"));
             m_ModelPreview.gameObject.SetActive(true);
             var animationComponent = m_ModelPreview.GetComponentInChildren<Animation>();
