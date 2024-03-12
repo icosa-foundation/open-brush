@@ -334,9 +334,10 @@
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "2.0.0",
         "com.unity.modules.imageconversion": "1.0.0",
-        "com.unity.shadergraph": "10.0.0"
+        "com.unity.shadergraph": "10.0.0",
+        "com.unity.mathematics": "1.0.0"
       },
-      "hash": "4ebe065f276025fcd3f1d873d4da55ff46e8e2c6"
+      "hash": "7fd695109fecf370b2e1602ea1d7ba9817fda326"
     },
     "org.nuget.google.apis": {
       "version": "1.64.0",
