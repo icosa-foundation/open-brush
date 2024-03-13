@@ -929,7 +929,7 @@ static class BuildTiltBrush
         private UIOrientation m_OrientationSettings;
         private iOSTargetDevice m_iOSTargetDevice;
         private string m_ProductName;
-        
+
         public TempSetPlayerSettings(TiltBuildOptions tiltOptions)
         {
             m_OrientationSettings = PlayerSettings.defaultInterfaceOrientation;
