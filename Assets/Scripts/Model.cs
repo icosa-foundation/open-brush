@@ -21,6 +21,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using TiltBrushToolkit;
+using Unity.VectorGraphics;
 using Debug = UnityEngine.Debug;
 using UObject = UnityEngine.Object;
 
@@ -45,10 +46,23 @@ namespace TiltBrush
 
             public static Location File(string relativePath)
             {
+                int lastIndex = relativePath.LastIndexOf('#');
+                string path, fragment;
+
+                if (lastIndex == -1)
+                {
+                    path = relativePath;
+                    fragment = null;
+                }
+                else
+                {
+                    path = relativePath.Substring(0, lastIndex);
+                    fragment = relativePath.Substring(lastIndex + 1);
+                }
                 return new Location
                 {
                     type = Type.LocalFile,
-                    path = relativePath
+                    path = path,
                 };
             }
 
@@ -92,6 +106,8 @@ namespace TiltBrush
                 }
             }
 
+            public string Extension => Path.GetExtension(AbsolutePath).ToLower();
+
             public string AssetId
             {
                 get
@@ -110,14 +126,16 @@ namespace TiltBrush
 
             public override string ToString()
             {
+                string str;
                 if (type == Type.PolyAssetId)
                 {
-                    return $"{type}:{id}";
+                    str = $"{type}:{id}";
                 }
                 else
                 {
-                    return $"{type}:{path}";
+                    str = $"{type}:{path}";
                 }
+                return str;
             }
 
             public override bool Equals(object obj)
@@ -471,6 +489,28 @@ namespace TiltBrush
 
         }
 
+        GameObject LoadSvg(List<string> warningsOut, out SVGParser.SceneInfo sceneInfo)
+        {
+            try
+            {
+                var reader = new SvgMeshReader(m_Location.AbsolutePath);
+                var (gameObject, warnings, collector, si) = reader.Import();
+                sceneInfo = si;
+                warningsOut.AddRange(warnings);
+                m_ImportMaterialCollector = collector;
+                m_AllowExport = (m_ImportMaterialCollector != null);
+                return gameObject;
+            }
+            catch (Exception ex)
+            {
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+                sceneInfo = new SVGParser.SceneInfo();
+                return null;
+            }
+        }
+
         ///  Load model using FBX SDK.
         GameObject LoadFbx(List<string> warningsOut)
         {
@@ -545,7 +585,7 @@ namespace TiltBrush
             // Experimental usd loading.
             if (allowUsd &&
                 m_Location.GetLocationType() == Location.Type.LocalFile &&
-                Path.GetExtension(m_Location.AbsolutePath).ToLower().StartsWith(".usd"))
+                m_Location.Extension == ".usd")
             {
                 throw new NotImplementedException();
             }
@@ -659,9 +699,9 @@ namespace TiltBrush
                 // and bail at a higher level, and require as a precondition that error == null
                 m_LoadError = null;
 
-                string ext = Path.GetExtension(m_Location.AbsolutePath).ToLower();
+                string ext = m_Location.Extension;
                 if (m_Location.GetLocationType() == Location.Type.LocalFile &&
-                    ext.StartsWith(".usd"))
+                    ext == ".usd")
                 {
                     // Experimental usd loading.
                     go = LoadUsd(warnings);
@@ -690,6 +730,13 @@ namespace TiltBrush
                     go = LoadPly(warnings);
                     CalcBoundsNonGltf(go);
                     EndCreatePrefab(go, warnings);
+                }
+                else if (ext == ".svg")
+                {
+                    go = LoadSvg(warnings, out SVGParser.SceneInfo sceneInfo);
+                    CalcBoundsNonGltf(go);
+                    EndCreatePrefab(go, warnings);
+                    go.GetComponent<ObjModelScript>().SvgSceneInfo = sceneInfo;
                 }
                 else
                 {

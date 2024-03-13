@@ -372,6 +372,9 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TrTransform[] Transforms { get; set; }
 
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string[] Subtrees { get; set; }
+
         /// Prior to M13, always null.
         /// Post M13, never null or empty; but an empty array is allowed on read.
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]

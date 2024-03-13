@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using UnityEngine;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace TiltBrush
@@ -30,6 +30,13 @@ namespace TiltBrush
         [SerializeField] private Transform m_SceneLightGizmo;
 
         private Model m_Model;
+        private string m_Subtree;
+        public string Subtree
+        {
+            get => m_Subtree;
+            set => m_Subtree = value;
+        }
+
         private Transform m_ModelInstance;
         private ObjModelScript m_ObjModelScript;
         private float m_InitSize_CS;
@@ -145,17 +152,19 @@ namespace TiltBrush
 
         public override GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
         {
-            ModelWidget clone = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
+            ModelWidget clone = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab);
             clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.transform.position = position;
             clone.transform.rotation = rotation;
-            clone.Model = this.Model;
+            clone.Model = Model;
             // We're obviously not loading from a sketch.  This is to prevent the intro animation.
             // TODO: Change variable name to something more explicit of what this flag does.
             clone.m_LoadingFromSketch = true;
             clone.Show(true, false);
             clone.transform.parent = transform.parent;
             clone.SetSignedWidgetSize(size);
+            clone.m_Subtree = m_Subtree;
+            clone.SyncHierarchyToSubtree();
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
 
@@ -286,6 +295,128 @@ namespace TiltBrush
             }
         }
 
+        public bool HasSubModels()
+        {
+            string ext = Model.GetLocation().Extension;
+            if (ext == ".gltf" || ext == ".glb")
+            {
+                return GetMeshes().Length > 1;
+            }
+            else if (m_Model.GetLocation().Extension == ".svg")
+            {
+
+                return m_ObjModelScript.SvgSceneInfo.HasSubShapes();
+            }
+            return false;
+        }
+
+        public void SyncHierarchyToSubtree(string previousSubtree = null)
+        {
+            if (string.IsNullOrEmpty(Subtree)) return;
+            // Walk the hierarchy and find the matching node
+            Transform oldRoot = m_ObjModelScript.transform;
+
+            // Is this a safe assumption?
+            Transform node = oldRoot.transform.GetChild(0);
+
+            // We only want to walk the new part of the hierarchy
+            string subpathToTraverse;
+            if (!string.IsNullOrEmpty(previousSubtree))
+            {
+                subpathToTraverse = m_Subtree.Substring(previousSubtree.Length);
+            }
+            else
+            {
+                subpathToTraverse = m_Subtree;
+            }
+            // Remove the leading slash and first path component
+            subpathToTraverse = subpathToTraverse.Trim('/');
+            subpathToTraverse = subpathToTraverse.Substring(subpathToTraverse.IndexOf('/') + 1);
+
+            bool excludeChildren = false;
+            if (subpathToTraverse.EndsWith(".mesh"))
+            {
+                subpathToTraverse = subpathToTraverse.Substring(0, subpathToTraverse.Length - 5);
+                excludeChildren = true;
+            }
+            if (node.name == subpathToTraverse)
+            {
+                // We're already at the right node
+                // No need to do anything
+            }
+            else
+            {
+                // node will be null if not found
+                node = node.Find(subpathToTraverse);
+            }
+
+            if (node != null)
+            {
+                if (excludeChildren)
+                {
+                    foreach (Transform child in node)
+                    {
+                        Destroy(child.gameObject);
+                    }
+                }
+                var newRoot = new GameObject();
+                newRoot.transform.SetParent(transform);
+                newRoot.name = $"LocalFile:{m_Model.RelativePath}#{m_Subtree}";
+                m_ObjModelScript = newRoot.AddComponent<ObjModelScript>();
+
+                node.SetParent(newRoot.transform);
+
+                oldRoot.gameObject.SetActive(false); // TODO destroy might fail on first load so also hide
+                Destroy(oldRoot.gameObject);
+
+                m_ObjModelScript.Init();
+                if (excludeChildren)
+                {
+                    // Destroyed children aren't destroyed immediately, so we need to assign them manually
+                    var mf = node.GetComponent<MeshFilter>();
+                    var smr = node.GetComponent<SkinnedMeshRenderer>();
+                    m_ObjModelScript.m_MeshChildren = mf != null ? new[] { mf } : Array.Empty<MeshFilter>();
+                    m_ObjModelScript.m_SkinnedMeshChildren = smr != null ? new[] { smr } : Array.Empty<SkinnedMeshRenderer>();
+                }
+
+                CloneInitialMaterials(null);
+                RecalculateColliderBounds();
+            }
+        }
+
+        public Bounds CalcBoundsGltf(GameObject go)
+        {
+            Bounds b = new Bounds();
+            bool first = true;
+            var boundsList = go.GetComponentsInChildren<MeshRenderer>().Select(x => x.bounds).ToList();
+            var skinnedMeshRenderers = go.GetComponentsInChildren<SkinnedMeshRenderer>();
+            boundsList.AddRange(skinnedMeshRenderers.Select(x => x.bounds));
+            foreach (Bounds bounds in boundsList)
+            {
+                if (first)
+                {
+                    b = bounds;
+                    first = false;
+                }
+                else
+                {
+                    b.Encapsulate(bounds);
+                }
+            }
+            return b;
+        }
+
+        public void RecalculateColliderBounds()
+        {
+            var root = m_ObjModelScript.transform;
+            m_MeshBounds = CalcBoundsGltf(root.gameObject);
+            m_BoxCollider.transform.localPosition = m_ObjModelScript.transform.localPosition;
+            m_BoxCollider.transform.localRotation = m_ObjModelScript.transform.localRotation;
+            m_BoxCollider.transform.localScale = m_ObjModelScript.transform.localScale;
+            m_BoxCollider.center = m_MeshBounds.center;
+            m_BoxCollider.size = m_MeshBounds.size;
+        }
+
         public override float GetActivationScore(Vector3 vControllerPos, InputManager.ControllerName name)
         {
             Vector3 vInvTransformedPos = m_BoxCollider.transform.InverseTransformPoint(vControllerPos);
@@ -361,7 +492,20 @@ namespace TiltBrush
             transform.localScale = Vector3.one * m_Size;
             if (m_Model != null && m_Model.m_Valid)
             {
-                m_BoxCollider.size = m_Model.m_MeshBounds.size + m_ContainerBloat;
+                m_BoxCollider.size = MeshBounds.size + m_ContainerBloat;
+            }
+        }
+
+        private Bounds m_MeshBounds;
+        public Bounds MeshBounds
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(m_Subtree))
+                {
+                    return m_Model.m_MeshBounds;
+                }
+                return m_MeshBounds;
             }
         }
 
@@ -480,7 +624,7 @@ namespace TiltBrush
             {
 
                 Task<bool> okTask = CreateModelsFromRelativePath(
-                    modelDatas.FilePath,
+                    modelDatas.FilePath, modelDatas.Subtrees,
                     modelDatas.Transforms, modelDatas.RawTransforms, modelDatas.PinStates,
                     modelDatas.GroupIds, modelDatas.LayerIds);
                 ok = await okTask;
@@ -489,7 +633,7 @@ namespace TiltBrush
             else if (modelDatas.AssetId != null)
             {
                 CreateModelsFromAssetId(
-                    modelDatas.AssetId,
+                    modelDatas.AssetId, modelDatas.Subtrees,
                     modelDatas.RawTransforms, modelDatas.PinStates, modelDatas.GroupIds, modelDatas.LayerIds);
                 ok = true;
             }
@@ -510,15 +654,15 @@ namespace TiltBrush
         /// Returns false if the model can't be loaded -- in this case, caller is responsible
         /// for creating the missing-model placeholder.
         public static async Task<bool> CreateModelsFromRelativePath(
-            string relativePath, TrTransform[] xfs, TrTransform[] rawXfs, bool[] pinStates, uint[] groupIds, int[] layerIds)
+            string relativePath, string[] subtrees, TrTransform[] xfs, TrTransform[] rawXfs, bool[] pinStates, uint[] groupIds, int[] layerIds)
         {
             // Verify model is loaded.  Or, at least, has been tried to be loaded.
             Model model = ModelCatalog.m_Instance.GetModel(relativePath);
-
             if (model == null) { return false; }
 
             if (!model.m_Valid)
             {
+                // Reload the model if it's not valid or if we're loading a subtree.
                 Task t = model.LoadModelAsync();
                 await t;
             }
@@ -534,7 +678,7 @@ namespace TiltBrush
                 {
                     bool pin = (pinStates != null && i < pinStates.Length) ? pinStates[i] : true;
                     uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
-                    CreateModel(model, xfs[i], pin, isNonRawTransform: true, groupId, 0);
+                    CreateModel(model, subtrees[i], xfs[i], pin, isNonRawTransform: true, groupId, 0);
                 }
             }
             if (rawXfs != null)
@@ -545,14 +689,14 @@ namespace TiltBrush
                     bool pin = (pinStates != null && i < pinStates.Length) ? pinStates[i] : true;
                     uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
                     int layerId = (layerIds != null && i < layerIds.Length) ? layerIds[i] : 0;
-                    CreateModel(model, rawXfs[i], pin, isNonRawTransform: false, groupId, layerId);
+                    CreateModel(model, subtrees[i], rawXfs[i], pin, isNonRawTransform: false, groupId, layerId);
                 }
             }
             return true;
         }
 
         /// isNonRawTransform - true if the transform uses the pre-M13 meaning of transform.scale.
-        static void CreateModel(Model model, TrTransform xf, bool pin,
+        static void CreateModel(Model model, string subtree, TrTransform xf, bool pin,
                                 bool isNonRawTransform, uint groupId, int layerId, string assetId = null)
         {
 
@@ -560,6 +704,8 @@ namespace TiltBrush
             modelWidget.transform.localPosition = xf.translation;
             modelWidget.transform.localRotation = xf.rotation;
             modelWidget.Model = model;
+            modelWidget.m_Subtree = subtree;
+            modelWidget.SyncHierarchyToSubtree();
             modelWidget.m_LoadingFromSketch = true;
             modelWidget.Show(true, false);
             if (isNonRawTransform)
@@ -588,7 +734,7 @@ namespace TiltBrush
         }
 
         // Used when loading model assetIds from a serialized format (e.g. Tilt file).
-        static void CreateModelsFromAssetId(string assetId, TrTransform[] rawXfs,
+        static void CreateModelsFromAssetId(string assetId, string[] subtrees, TrTransform[] rawXfs,
                                             bool[] pinStates, uint[] groupIds, int[] layerIds)
         {
             // Request model from Poly and if it doesn't exist, ask to load it.
@@ -610,7 +756,7 @@ namespace TiltBrush
                 bool pin = (i < pinStates.Length) ? pinStates[i] : true;
                 uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
                 int layerId = (layerIds != null && i < layerIds.Length) ? layerIds[i] : 0;
-                CreateModel(model, rawXfs[i], pin, isNonRawTransform: false, groupId, layerId, assetId);
+                CreateModel(model, subtrees[i], rawXfs[i], pin, isNonRawTransform: false, groupId, layerId, assetId);
             }
         }
 

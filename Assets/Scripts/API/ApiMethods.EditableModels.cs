@@ -13,16 +13,36 @@
 // limitations under the License.
 
 using System;
+using System.IO;
+using System.Linq;
 using UnityEngine;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace TiltBrush
 {
     public static partial class ApiMethods
     {
-        [ApiEndpoint("model.import", "Imports a model given a url or a filename in Media Library\\Models (Models loaded from a url are saved locally first)")]
+        [ApiEndpoint("model.webimport", "Imports a model given a url or a filename in Media Library\\Models (Models loaded from a url are saved locally first)")]
+        [ApiEndpoint("import.webmodel", "Same as model.webimport (backwards compatibility for poly.pizza)")]
+        public static Task<ModelWidget> ImportWebModel(string url)
+        {
+            Uri uri;
+            try { uri = new Uri(url); }
+            catch (UriFormatException)
+            { return null; }
+            var ext = uri.Segments.Last().Split('.').Last();
 
+            // Is it a valid 3d model extension?
+            if (ext != "off" && ext != "obj" && ext != "gltf" && ext != "glb" && ext != "fbx" && ext != "svg")
+            {
+                return null;
+            }
+            var destinationPath = Path.Combine("Models", uri.Host);
+            string filename = _DownloadMediaFileFromUrl(uri, destinationPath);
+            return ImportModel(Path.Combine(uri.Host, filename));
+        }
+
+        [ApiEndpoint("model.import", "Imports a model given a url or a filename in Media Library\\Models (Models loaded from a url are saved locally first)")]
         public static async Task<ModelWidget> ImportModel(string location)
         {
             if (location.StartsWith("poly:"))
@@ -32,27 +52,22 @@ namespace TiltBrush
                 return null; // TODO
             }
 
-            if (location.StartsWith("http://") || location.StartsWith("https://"))
-            {
-                // You can't rely on urls ending with a file extension
-                // But try and fall back to assuming web models will be gltf/glb
-                // TODO Try deriving from MIME types
-                if (location.EndsWith(".off") || location.EndsWith(".obj"))
-                {
-                    location = _DownloadMediaFileFromUrl(location, App.ModelLibraryPath());
-                }
-                else
-                {
-                    Uri uri = new Uri(location);
-                    ApiManager.Instance.LoadPolyModel(uri);
-                }
-            }
+            // Normalize path slashes
+            location = location.Replace(@"\\", "/");
+            location = location.Replace(@"//", "/");
+            location = location.Replace(@"\", "/");
+
+            var parts = location.Split("#");
 
             // At this point we've got a relative path to a file in Models
-            string relativePath = location;
+            string relativePath = parts[0];
+            string subtree = null;
+            if (parts.Length > 1)
+            {
+                subtree = location.Substring(relativePath.Length + 1);
+            }
             var tr = _CurrentTransform().TransformBy(Coords.CanvasPose);
             var model = new Model(Model.Location.File(relativePath));
-
 
             Task t = model.LoadModelAsync();
             await t;
@@ -64,6 +79,8 @@ namespace TiltBrush
             if (widget != null)
             {
                 widget.Model = model;
+                widget.Subtree = subtree;
+                widget.SyncHierarchyToSubtree();
                 widget.Show(true);
                 widget.AddSceneLightGizmos();
                 createCommand.SetWidgetCost(widget.GetTiltMeterCost());
