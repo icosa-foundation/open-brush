@@ -20,8 +20,14 @@ namespace UnityGLTF.Plugins
         {
             base.OnAfterImportNode(node, nodeIndex, nodeObject);
             var light = nodeObject.GetComponent<Light>();
-            var lightExtension = node.Extensions["KHR_lights_punctual"] as KHR_LightsPunctualNodeExtension;
-            if (light != null && lightExtension != null)
+            if (light == null ||
+                node.Extensions == null ||
+                !node.Extensions.ContainsKey("KHR_lights_punctual"))
+            {
+                return;
+            }
+
+            if (node.Extensions["KHR_lights_punctual"] is KHR_LightsPunctualNodeExtension lightExtension)
             {
                 var intensity = (float)lightExtension.LightId.Value.Intensity;
                 var range = (float)lightExtension.LightId.Value.Range;

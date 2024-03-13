@@ -20,6 +20,18 @@ MonoBehaviour:
   KHR_materials_clearcoat: 1
   KHR_materials_pbrSpecularGlossiness: 1
   KHR_materials_emissive_strength: 1
+--- !u!114 &-7716978867629807533
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 056f401eae1a4f76b6f580ebf76127a9, type: 3}
+  m_Name: GPUInstancingImport
+  m_EditorClassIdentifier: 
 --- !u!114 &-7373113640993280472
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -169,6 +181,8 @@ MonoBehaviour:
   - {fileID: 1115410688402324010}
   - {fileID: -5020980606651475385}
   - {fileID: 8372111537548844026}
+  - {fileID: -7716978867629807533}
+  - {fileID: 6916234453510156686}
   ExportPlugins:
   - {fileID: 242952683485160214}
   - {fileID: -5728475199642485532}
@@ -293,6 +307,18 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b6d87ebf60834245a388cd150253839d, type: 3}
   m_Name: AnimationPointerExport
+  m_EditorClassIdentifier: 
+--- !u!114 &6916234453510156686
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6843a59b1a844430b7b7c08e8711a6d7, type: 3}
+  m_Name: OpenBrushLightsImport
   m_EditorClassIdentifier: 
 --- !u!114 &7420168740226561727
 MonoBehaviour:

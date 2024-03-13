@@ -27,6 +27,7 @@ namespace TiltBrush
 
         [SerializeField] private float m_MinContainerRatio; // [0, 1]
         [SerializeField] private float m_MaxBloat;
+        [SerializeField] private Transform m_SceneLightGizmo;
 
         private Model m_Model;
         private Transform m_ModelInstance;
@@ -631,6 +632,17 @@ namespace TiltBrush
         override public bool CanSnapToHome()
         {
             return m_Model.m_MeshBounds.center == Vector3.zero;
+        }
+
+        public void AddSceneLightGizmos()
+        {
+            var lights = m_ObjModelScript.transform.GetComponentsInChildren<Light>();
+            foreach (var light in lights)
+            {
+                Transform tr = Instantiate(m_SceneLightGizmo, light.transform);
+                var gizmo = tr.GetComponent<SceneLightGizmo>();
+                gizmo.Setup(light);
+            }
         }
     }
 } // namespace TiltBrush

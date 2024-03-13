@@ -65,6 +65,7 @@ namespace TiltBrush
             {
                 widget.Model = model;
                 widget.Show(true);
+                widget.AddSceneLightGizmos();
                 createCommand.SetWidgetCost(widget.GetTiltMeterCost());
             }
             else

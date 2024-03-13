@@ -508,7 +508,6 @@ namespace TiltBrush
                 );
                 m_AllowExport = true;
                 await t;
-
             }
             catch (Exception ex)
             {

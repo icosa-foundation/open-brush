@@ -170,8 +170,8 @@ namespace TiltBrush
             ModelWidget modelWidget = createCommand.Widget as ModelWidget;
             modelWidget.Model = model;
             modelWidget.Show(true);
+            modelWidget.AddSceneLightGizmos();
             createCommand.SetWidgetCost(modelWidget.GetTiltMeterCost());
-
             WidgetManager.m_Instance.WidgetsDormant = false;
             SketchControlsScript.m_Instance.EatGazeObjectInput();
             SelectionManager.m_Instance.RemoveFromSelection(false);
