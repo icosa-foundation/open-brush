@@ -927,14 +927,21 @@ static class BuildTiltBrush
     class TempSetPlayerSettings : IDisposable
     {
         private UIOrientation m_OrientationSettings;
+        private iOSTargetDevice m_iOSTargetDevice;
+        private string m_ProductName;
+        
         public TempSetPlayerSettings(TiltBuildOptions tiltOptions)
         {
             m_OrientationSettings = PlayerSettings.defaultInterfaceOrientation;
+            m_iOSTargetDevice = PlayerSettings.iOS.targetDevice;
+            m_ProductName = PlayerSettings.productName;
 
             switch (tiltOptions.XrSdk)
             {
                 case XrSdkMode.Zapbox:
                     PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
+                    PlayerSettings.iOS.targetDevice = iOSTargetDevice.iPhoneOnly;
+                    PlayerSettings.productName = "Open Brush for Zapbox";
                     break;
                 default:
                     break;
@@ -944,6 +951,8 @@ static class BuildTiltBrush
         public void Dispose()
         {
             PlayerSettings.defaultInterfaceOrientation = m_OrientationSettings;
+            PlayerSettings.iOS.targetDevice = m_iOSTargetDevice;
+            PlayerSettings.productName = m_ProductName;
             AssetDatabase.SaveAssets();
         }
     }
