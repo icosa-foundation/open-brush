@@ -385,7 +385,7 @@ namespace TiltBrush
             }
             for (int i = 0; i < m_CameraPathWidgets.Count; ++i)
             {
-                if (m_CameraPathWidgets[i].m_WidgetObject.activeSelf)
+                if (m_CameraPathWidgets[i].m_WidgetObject.activeInHierarchy)
                 {
                     yield return m_CameraPathWidgets[i];
                 }
