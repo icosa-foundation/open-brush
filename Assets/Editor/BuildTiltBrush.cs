@@ -926,22 +926,25 @@ static class BuildTiltBrush
 
     class TempSetPlayerSettings : IDisposable
     {
+        private BuildTarget m_Target;
         private UIOrientation m_OrientationSettings;
         private iOSTargetDevice m_iOSTargetDevice;
-        private string m_ProductName;
+        private Texture2D[] m_Icons;
 
         public TempSetPlayerSettings(TiltBuildOptions tiltOptions)
         {
+            m_Target = tiltOptions.Target;
             m_OrientationSettings = PlayerSettings.defaultInterfaceOrientation;
             m_iOSTargetDevice = PlayerSettings.iOS.targetDevice;
-            m_ProductName = PlayerSettings.productName;
+            m_Icons = PlayerSettings.GetIcons(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target)), IconKind.Application);
 
             switch (tiltOptions.XrSdk)
             {
                 case XrSdkMode.Zapbox:
                     PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
                     PlayerSettings.iOS.targetDevice = iOSTargetDevice.iPhoneOnly;
-                    PlayerSettings.productName = "Open Brush for Zapbox";
+                    Texture2D[] newIcons = { Resources.Load<Texture2D>("Icons/Trademarked/TiltBrushLogoZapbox.png") };
+                    PlayerSettings.SetIcons(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target)), newIcons, IconKind.Application);
                     break;
                 default:
                     break;
@@ -952,7 +955,7 @@ static class BuildTiltBrush
         {
             PlayerSettings.defaultInterfaceOrientation = m_OrientationSettings;
             PlayerSettings.iOS.targetDevice = m_iOSTargetDevice;
-            PlayerSettings.productName = m_ProductName;
+            PlayerSettings.SetIcons(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target)), m_Icons, IconKind.Application);
             AssetDatabase.SaveAssets();
         }
     }
