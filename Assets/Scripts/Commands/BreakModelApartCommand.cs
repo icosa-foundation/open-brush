@@ -75,13 +75,6 @@ namespace TiltBrush
                 return count > 0;
             }
 
-            void updatePathList(Transform t)
-            {
-                string path = GetHierarchyPath(root, t);
-                resultPaths.Add(path);
-                Debug.Log($"Adding {t.name} to results. Path: {path}");
-            }
-
             bool isSubPath(string basePath, string potentialSubPath)
             {
                 var baseParts = basePath.Split('/');
@@ -113,20 +106,18 @@ namespace TiltBrush
                 {
                     if (isValidSelf(child) && hasValidDirectChildren(child)) // Both a leaf and a valid node
                     {
-                        updatePathList(child);
+                        resultPaths.Add(GetHierarchyPath(root, child));
                         // Add the children to the next level
                         nextNodes.AddRange(child.Cast<Transform>().ToList());
-                        Debug.Log($"Adding: {child.name} children to nextNodes");
                     }
                     else if (isValidSelf(child)) // A leaf but not a valid node
                     {
-                        updatePathList(child);
+                        resultPaths.Add(GetHierarchyPath(root, child));
                     }
                     else if (hasValidDirectChildren(child)) // Not valid but children are
                     {
                         validButNotAdded.Add(child);
                         nextNodes.AddRange(child.Cast<Transform>().ToList());
-                        Debug.Log($"Adding: {child.name} children to nextNodes");
                     }
                 }
 
@@ -143,7 +134,7 @@ namespace TiltBrush
             // If the while loop has decided we're done. there might still be some valid nodes that we haven't added
             foreach (var child in validButNotAdded)
             {
-                updatePathList(child);
+                resultPaths.Add(GetHierarchyPath(root, child));
             }
 
             // Add the mesh suffix to all nodes if their descendents are also in the list
@@ -157,7 +148,6 @@ namespace TiltBrush
                     if (isSubPath(pathToCompare, path))
                     {
                         resultPaths[i] = $"{path}.mesh";
-                        Debug.Log($"Changing {path} to {resultPaths[i]}");
                         break;
                     }
                 }
