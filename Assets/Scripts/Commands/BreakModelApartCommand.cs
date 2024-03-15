@@ -30,73 +30,141 @@ namespace TiltBrush
             get => true;
         }
 
-        private static List<string> ExtractPathsForNextLevel(Transform root)
+        private static List<string> ExtractPaths(Transform root)
         {
-            var nodes = new List<Transform>();
-            var resultNodes = new List<Transform>();
+            List<Transform> nodes = root.Cast<Transform>().ToList();
             var resultPaths = new List<string>();
-
-            // We should only have a single child
-            var firstChild = root.GetChild(0);
-            nodes.Add(firstChild);
-
             var nextNodes = new List<Transform>();
+            var validButNotAdded = new List<Transform>();
+
+            // Prevent infinite loops
+            const int maxIterations = 1000;
             int failsafe = 0;
 
-            while (
-                (
-                    // Skip levels with no child meshes
-                    resultPaths.Count < 1 ||
-                    // Skip levels with a single non-mesh node
-                    (resultPaths.Count == 1 && resultNodes[0].GetComponent<MeshFilter>() == null)
-                )
-                && failsafe < 1000)
+            bool isValidSelf(Transform node)
             {
-                resultNodes.Clear();
-                resultPaths.Clear();
-                foreach (var node in nodes)
+                // Skip UI elements (SceneLightGizmo presently)
+                if (node.gameObject.layer == LayerMask.NameToLayer("UI")) return false;
+                if (!node.gameObject.activeSelf) return false;
+                // Skip nodes with no valid children
+                if (node.GetComponent<MeshFilter>() == null &&
+                    node.GetComponent<Light>() == null) return false;
+                return true;
+            }
+
+            bool isValid(Transform node)
+            {
+                // Skip UI elements (SceneLightGizmo presently)
+                if (node.gameObject.layer == LayerMask.NameToLayer("UI")) return false;
+                if (!node.gameObject.activeSelf) return false;
+                // Skip nodes with no valid children
+                if (node.GetComponentInChildren<MeshFilter>() == null &&
+                    node.GetComponentInChildren<Light>() == null) return false;
+                return true;
+            }
+
+            bool hasValidDirectChildren(Transform node)
+            {
+                if (node.gameObject.activeInHierarchy == false) return false;
+                int count = 0;
+                foreach (Transform child in node)
                 {
-                    foreach (Transform child in node)
+                    if (!isValid(child)) continue;
+                    count++;
+                }
+                return count > 0;
+            }
+
+            void updatePathList(Transform t)
+            {
+                string path = GetHierarchyPath(root, t);
+                resultPaths.Add(path);
+                Debug.Log($"Adding {t.name} to results. Path: {path}");
+            }
+
+            bool isSubPath(string basePath, string potentialSubPath)
+            {
+                var baseParts = basePath.Split('/');
+                var subParts = potentialSubPath.Split('/');
+
+                // If the potential subpath has more parts than the base path, it can't be a subpath
+                if (subParts.Length > baseParts.Length)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < subParts.Length; i++)
+                {
+                    if (baseParts[i] != subParts[i])
                     {
-                        if (!child.gameObject.activeSelf) continue;
-                        nextNodes.Add(child);
-                        bool hasMeshChildren = child.GetComponentInChildren<MeshFilter>() != null;
-                        if (hasMeshChildren)
-                        {
-                            resultNodes.Add(child);
-                            string path = GetHierarchyPath(root, child);
-                            resultPaths.Add(path);
-                        }
+                        return false;
                     }
                 }
 
+                return true;
+            }
+
+            while (resultPaths.Count < 2 && failsafe < maxIterations)
+            {
+
+                validButNotAdded.Clear();
+
+                foreach (var child in nodes)
+                {
+                    if (isValidSelf(child) && hasValidDirectChildren(child)) // Both a leaf and a valid node
+                    {
+                        updatePathList(child);
+                        // Add the children to the next level
+                        nextNodes.AddRange(child.Cast<Transform>().ToList());
+                        Debug.Log($"Adding: {child.name} children to nextNodes");
+                    }
+                    else if (isValidSelf(child)) // A leaf but not a valid node
+                    {
+                        updatePathList(child);
+                    }
+                    else if (hasValidDirectChildren(child)) // Not valid but children are
+                    {
+                        validButNotAdded.Add(child);
+                        nextNodes.AddRange(child.Cast<Transform>().ToList());
+                        Debug.Log($"Adding: {child.name} children to nextNodes");
+                    }
+                }
+
+                // Break if have no more levels
+                if (nextNodes.Count == 0) break;
+
                 // If we found no meshes, continue to the next level
                 nodes = nextNodes.ToList(); // Clone the list
+
                 nextNodes.Clear();
                 failsafe++;
             }
 
-            // Special case for leaf nodes that also contain a mesh
-            if (firstChild.GetComponent<MeshFilter>() && firstChild.childCount > 0)
+            // If the while loop has decided we're done. there might still be some valid nodes that we haven't added
+            foreach (var child in validButNotAdded)
             {
-                string path = GetHierarchyPath(root, firstChild);
-                resultPaths.Add($"{path}.mesh");
+                updatePathList(child);
             }
-            return resultPaths;
-        }
 
-        public List<Transform> GetDirectMeshChildren(Transform root)
-        {
-            var nodes = new List<Transform>();
-            foreach (Transform child in root)
+            // Add the mesh suffix to all nodes if their descendents are also in the list
+            for (var i = 0; i < resultPaths.Count; i++)
             {
-                if (!child.gameObject.activeSelf) continue;
-                if (child.GetComponentInChildren<MeshFilter>() != null)
+                var path = resultPaths[i];
+                for (var j = 0; j < resultPaths.Count; j++)
                 {
-                    nodes.Add(child);
+                    if (i == j) continue;
+                    var pathToCompare = resultPaths[j];
+                    if (isSubPath(pathToCompare, path))
+                    {
+                        resultPaths[i] = $"{path}.mesh";
+                        Debug.Log($"Changing {path} to {resultPaths[i]}");
+                        break;
+                    }
                 }
             }
-            return nodes;
+
+
+            return resultPaths;
         }
 
         public BreakModelApartCommand(ModelWidget initialWidget, BaseCommand parent = null) : base(parent)
@@ -104,16 +172,7 @@ namespace TiltBrush
             m_InitialWidget = initialWidget;
             m_NewWidgets = new List<ModelWidget>();
             var root = initialWidget.GetComponentInChildren<ObjModelScript>().transform;
-            var meshChildren = GetDirectMeshChildren(root);
-            if (meshChildren.Count > 1)
-            {
-                // Shouldn't happen?
-                Debug.LogWarning($"Attempting to break apart mesh with {meshChildren} children");
-            }
-            else if (meshChildren.Count == 1)
-            {
-                m_NodePaths = ExtractPathsForNextLevel(root);
-            }
+            m_NodePaths = ExtractPaths(root);
         }
 
         private static string GetHierarchyPath(Transform root, Transform obj)

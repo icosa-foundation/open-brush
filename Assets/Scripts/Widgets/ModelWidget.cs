@@ -37,6 +37,8 @@ namespace TiltBrush
             set => m_Subtree = value;
         }
 
+        public event Action ScaleChanged;
+
         private Transform m_ModelInstance;
         private ObjModelScript m_ObjModelScript;
         private float m_InitSize_CS;
@@ -161,6 +163,7 @@ namespace TiltBrush
             // TODO: Change variable name to something more explicit of what this flag does.
             clone.m_LoadingFromSketch = true;
             clone.Show(true, false);
+            clone.AddSceneLightGizmos();
             clone.transform.parent = transform.parent;
             clone.SetSignedWidgetSize(size);
             clone.m_Subtree = m_Subtree;
@@ -208,6 +211,15 @@ namespace TiltBrush
                 // get our asset each time, and do a diff to see if we should reload it.
                 App.PolyAssetCatalog.CatalogChanged -= OnPacCatalogChanged;
                 m_PolyCallbackActive = false;
+            }
+        }
+
+        override protected void SetWidgetSizeInternal(float fScale)
+        {
+            base.SetWidgetSizeInternal(fScale);
+            if (Mathf.Abs(fScale - m_Size) > float.Epsilon)
+            {
+                ScaleChanged?.Invoke();
             }
         }
 
@@ -300,11 +312,12 @@ namespace TiltBrush
             string ext = Model.GetLocation().Extension;
             if (ext == ".gltf" || ext == ".glb")
             {
-                return GetMeshes().Length > 1;
+                int lightCount = m_ObjModelScript.GetComponentsInChildren<SceneLightGizmo>().Length;
+                int meshCount = GetMeshes().Length;
+                return lightCount + meshCount > 1;
             }
             else if (m_Model.GetLocation().Extension == ".svg")
             {
-
                 return m_ObjModelScript.SvgSceneInfo.HasSubShapes();
             }
             return false;
@@ -315,9 +328,7 @@ namespace TiltBrush
             if (string.IsNullOrEmpty(Subtree)) return;
             // Walk the hierarchy and find the matching node
             Transform oldRoot = m_ObjModelScript.transform;
-
-            // Is this a safe assumption?
-            Transform node = oldRoot.transform.GetChild(0);
+            Transform node = oldRoot;
 
             // We only want to walk the new part of the hierarchy
             string subpathToTraverse;
@@ -329,9 +340,7 @@ namespace TiltBrush
             {
                 subpathToTraverse = m_Subtree;
             }
-            // Remove the leading slash and first path component
             subpathToTraverse = subpathToTraverse.Trim('/');
-            subpathToTraverse = subpathToTraverse.Substring(subpathToTraverse.IndexOf('/') + 1);
 
             bool excludeChildren = false;
             if (subpathToTraverse.EndsWith(".mesh"))
@@ -343,6 +352,7 @@ namespace TiltBrush
             {
                 // We're already at the right node
                 // No need to do anything
+                Debug.LogWarning($"Didn't expect to get here...");
             }
             else
             {
@@ -489,6 +499,7 @@ namespace TiltBrush
 
         protected override void UpdateScale()
         {
+            if (this == null) return; // BreakModelApartCommand can destroy us
             transform.localScale = Vector3.one * m_Size;
             if (m_Model != null && m_Model.m_Valid)
             {

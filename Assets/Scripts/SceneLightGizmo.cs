@@ -30,6 +30,14 @@ namespace TiltBrush
         {
             initialLocalScale = transform.localScale;
             Coords.CanvasPoseChanged += OnCanvasPoseChanged;
+            GetComponentInParent<ModelWidget>().ScaleChanged += OnScaleChanged;
+        }
+
+        private void OnDestroy()
+        {
+            Coords.CanvasPoseChanged -= OnCanvasPoseChanged;
+            var widget = GetComponentInParent<ModelWidget>();
+            if (widget != null) widget.ScaleChanged -= OnScaleChanged;
         }
 
         private void OnCanvasPoseChanged(TrTransform prev, TrTransform current)
@@ -37,9 +45,9 @@ namespace TiltBrush
             transform.localScale = initialLocalScale;
         }
 
-        private void OnDestroy()
+        private void OnScaleChanged()
         {
-            Coords.CanvasPoseChanged -= OnCanvasPoseChanged;
+            transform.localScale = initialLocalScale;
         }
 
         public void Setup(Light light)
