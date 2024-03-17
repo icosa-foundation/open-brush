@@ -146,12 +146,16 @@ namespace TiltBrush
             return WidgetManager.m_Instance.GetNthActiveCameraPath(index);
         }
 
-        private static string _DownloadMediaFileFromUrl(string url, string destinationFolder)
+        private static string _DownloadMediaFileFromUrl(string url, string relativeDestinationFolder)
+        {
+            return _DownloadMediaFileFromUrl(new Uri(url), relativeDestinationFolder);
+        }
+
+        private static string _DownloadMediaFileFromUrl(Uri url, string relativeDestinationFolder)
         {
             var request = System.Net.WebRequest.Create(url);
             request.Method = "HEAD";
             var response = request.GetResponse();
-            Uri uri = new Uri(url);
 
             string filename;
             var contentDisposition = response.Headers["Content-Disposition"];
@@ -163,13 +167,31 @@ namespace TiltBrush
             }
             else
             {
-                filename = uri.AbsolutePath.Split('/').Last();
+                filename = url.AbsolutePath.Split('/').Last();
             }
 
-            var path = Path.Combine(App.MediaLibraryPath(), destinationFolder, filename);
+            string AbsoluteDestinationPath = Path.Combine(App.MediaLibraryPath(), relativeDestinationFolder);
+            if (!Directory.Exists(AbsoluteDestinationPath))
+            {
+                Directory.CreateDirectory(AbsoluteDestinationPath);
+            }
+
+            // Check if file already exists
+            // If it does, append sequential numbers to the filename until we get a unique filename
+            string fullDestinationPath = Path.Combine(App.MediaLibraryPath(), relativeDestinationFolder, filename);
+            int fileVersion = 0;
+            string uniqueFilename = filename;
+            while (File.Exists(fullDestinationPath))
+            {
+                fileVersion++;
+                string baseFilename = Path.GetFileNameWithoutExtension(filename);
+                uniqueFilename = $"{baseFilename} ({fileVersion}){Path.GetExtension(filename)}";
+                fullDestinationPath = Path.Combine(App.MediaLibraryPath(), relativeDestinationFolder, uniqueFilename);
+            }
+
             WebClient wc = new WebClient();
-            wc.DownloadFile(uri, path);
-            return filename;
+            wc.DownloadFile(url, fullDestinationPath);
+            return uniqueFilename;
         }
 
         private static void _SpectatorShowHide(string thing, bool state)

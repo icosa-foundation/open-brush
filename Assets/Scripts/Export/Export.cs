@@ -300,7 +300,7 @@ URL=" + kExportDocumentationUrl;
                     settings.UseMainCameraVisibility = false;
                     var context = new ExportContext
                     {
-                        ExportLayers = -1,
+                        ExportLayers = LayerMask.GetMask("MainCanvas")
                     };
                     var layers = App.Scene.LayerCanvases.Select(x => x.transform).ToArray();
                     var unityGltfexporter = new GLTFSceneExporter(layers, context);

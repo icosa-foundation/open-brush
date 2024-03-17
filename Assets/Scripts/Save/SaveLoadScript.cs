@@ -717,7 +717,7 @@ namespace TiltBrush
                 }
 
 
-                // It's proving to be rather complex to merge widgets/models etc. 
+                // It's proving to be rather complex to merge widgets/models etc.
                 // For now skip all that when loading additively with the if (!bAdditive) below
                 // This should cover the majority of use cases.
 
@@ -792,7 +792,10 @@ namespace TiltBrush
         {
             m_LastJsonMetadatError = null;
             var metadata = m_JsonSerializer.Deserialize<SketchMetadata>(jsonReader);
-            MetadataUtils.VerifyMetadataVersion(metadata);
+            if (metadata != null)
+            {
+                MetadataUtils.VerifyMetadataVersion(metadata);
+            }
             return metadata;
         }
 

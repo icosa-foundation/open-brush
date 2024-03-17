@@ -66,7 +66,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.cloud.gltfast": {
-      "version": "6.0.1",
+      "version": "6.2.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -263,7 +263,7 @@
         "com.unity.modules.unitywebrequesttexture": "1.0.0",
         "com.unity.modules.unitywebrequestwww": "1.0.0"
       },
-      "hash": "e46c04cb7ed068ee7f31289530f10fbb478906cc"
+      "hash": "214037a894f7e292687b8ba331f5c959c2bcdd8b"
     },
     "com.unity.xr.core-utils": {
       "version": "2.2.3",
@@ -334,9 +334,10 @@
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "2.0.0",
         "com.unity.modules.imageconversion": "1.0.0",
-        "com.unity.shadergraph": "10.0.0"
+        "com.unity.shadergraph": "10.0.0",
+        "com.unity.mathematics": "1.0.0"
       },
-      "hash": "4ebe065f276025fcd3f1d873d4da55ff46e8e2c6"
+      "hash": "7fd695109fecf370b2e1602ea1d7ba9817fda326"
     },
     "org.nuget.google.apis": {
       "version": "1.64.0",

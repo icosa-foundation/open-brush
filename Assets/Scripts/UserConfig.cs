@@ -233,6 +233,17 @@ namespace TiltBrush
         public BrushConfig Brushes;
 
         [Serializable]
+        public struct ImportConfig
+        {
+            bool? m_UseUnityGltf;
+            public bool UseUnityGltf
+            {
+                get { return m_UseUnityGltf ?? true; }
+                set { m_UseUnityGltf = value; }
+            }
+        }
+
+        [Serializable]
         public struct ExportConfig
         {
             bool? m_ExportBinaryFbx;
@@ -285,6 +296,8 @@ namespace TiltBrush
                 set => m_Formats = value;
             }
         }
+
+        public ImportConfig Import;
         public ExportConfig Export;
 
         [Serializable]
