@@ -401,6 +401,10 @@ namespace TiltBrush
             var boundsList = go.GetComponentsInChildren<MeshRenderer>().Select(x => x.bounds).ToList();
             var skinnedMeshRenderers = go.GetComponentsInChildren<SkinnedMeshRenderer>();
             boundsList.AddRange(skinnedMeshRenderers.Select(x => x.bounds));
+            SceneLightGizmo gizmoPrefab = m_SceneLightGizmo.GetComponent<SceneLightGizmo>();
+            var lightsList = go.GetComponentsInChildren<Light>().Select(light => gizmoPrefab.GetBoundsForLight(light));
+            boundsList.AddRange(lightsList);
+
             foreach (Bounds bounds in boundsList)
             {
                 if (first)

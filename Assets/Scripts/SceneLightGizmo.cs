@@ -100,5 +100,25 @@ namespace TiltBrush
             float newBaseLength = 2f * (originalSideLength * Mathf.Sin(targetAngleRadians / 2f));
             return newBaseLength / baseWidth;
         }
+
+        public Bounds GetBoundsForLight(Light light)
+        {
+            // This is called on the prefab reference - not on an instantiated object
+            // Therefore we need to calculate any scaling that would be applied to the mesh
+            switch (light.type)
+            {
+                case LightType.Directional:
+                    return m_CylinderMesh.GetComponent<MeshFilter>().sharedMesh.bounds;
+                case LightType.Point:
+                    return m_SphereMesh.GetComponent<MeshFilter>().sharedMesh.bounds;
+                case LightType.Spot:
+                    var scale = CalculateScale(2, 2, light.spotAngle);
+                    var bounds = m_ConeMesh.GetComponent<MeshFilter>().sharedMesh.bounds;
+                    var size = new Vector3(bounds.size.x * scale, bounds.size.y * scale, bounds.size.z);
+                    return new Bounds(bounds.center, size);
+                default:
+                    return new Bounds();
+            }
+        }
     }
 }
