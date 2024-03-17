@@ -47,4 +47,24 @@ MonoBehaviour:
   computeShaders:
   - brushGuid: 8e58ceea-7830-49b4-aba9-6215104ab52a
     computeShader: {fileID: 7200000, guid: a8cd83718b2e48db9570f9195dfde315, type: 3}
+  - brushGuid: 4391385a-df73-4396-9e33-31e4e4930b27
+    computeShader: {fileID: 7200000, guid: c5cce34f767f3db479a1683be258b8e4, type: 3}
+  - brushGuid: 0d3889f3-3ede-470c-8af4-f44813306126
+    computeShader: {fileID: 7200000, guid: 67c631d4aac299f4bbaad06dd830312e, type: 3}
+  - brushGuid: 0d3889f3-3ede-470c-8af4-de4813306126
+    computeShader: {fileID: 7200000, guid: 67c631d4aac299f4bbaad06dd830312e, type: 3}
+  - brushGuid: 6a1cf9f9-032c-45ec-9b1d-a6680bee30f7
+    computeShader: {fileID: 7200000, guid: 2daa4d77d81adc84a88e67f8a7b22ac8, type: 3}
+  - brushGuid: 02ffb866-7fb2-4d15-b761-1012cefb1360
+    computeShader: {fileID: 7200000, guid: 08639086614e9d84c87c62cea5ebc7a8, type: 3}
+  - brushGuid: 89d104cd-d012-426b-b5b3-bbaee63ac43c
+    computeShader: {fileID: 7200000, guid: 9286fc34516b4ed428b5c074c07f128c, type: 3}
+  - brushGuid: 70d79cca-b159-4f35-990c-f02193947fe8
+    computeShader: {fileID: 7200000, guid: 80c82c6f735e34b40a27754c927f10e0, type: 3}
+  - brushGuid: d902ed8b-d0d1-476c-a8de-878a79e3a34c
+    computeShader: {fileID: 7200000, guid: 905681b038773f6468da3dc48106f324, type: 3}
+  - brushGuid: 0eb4db27-3f82-408d-b5a1-19ebd7d5b711
+    computeShader: {fileID: 7200000, guid: 695066c57edccb94687a1ff5a018803e, type: 3}
+  - brushGuid: f6e85de3-6dcc-4e7f-87fd-cee8c3d25d51
+    computeShader: {fileID: 7200000, guid: 5314a71638e11ae4499ee1c2cae19c3e, type: 3}
   squeezeAmount: 0.873

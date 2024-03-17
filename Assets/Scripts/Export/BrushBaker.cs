@@ -34,6 +34,12 @@ public class BrushBaker : MonoBehaviour
             return mesh;
         }
 
+        // Get the transformation matrix from the GameObject's transform
+        Matrix4x4 transformMatrix = transform.localToWorldMatrix;
+
+        // Set the matrix as a shader parameter
+        computeShader.SetMatrix("TransformObjectToWorld", transformMatrix);
+
         NativeArray<Vector3> vertices = new NativeArray<Vector3>(mesh.vertices, Allocator.TempJob);
         ComputeBuffer vertexBuffer = new ComputeBuffer(vertices.Length, sizeof(float) * 3);
         vertexBuffer.SetData(vertices);
@@ -46,6 +52,16 @@ public class BrushBaker : MonoBehaviour
         mesh.GetUVs(0, uvs);
         ComputeBuffer uvBuffer = new ComputeBuffer(uvs.Count, sizeof(float) * 3);
         uvBuffer.SetData(uvs);
+
+        // if we need texcoord1
+        if (mesh.uv2.Length > 0)
+        {
+            List<Vector3> uv1s = new List<Vector3>();
+            mesh.GetUVs(1, uv1s);
+            ComputeBuffer uv1Buffer = new ComputeBuffer(uv1s.Count, sizeof(float) * 3);
+            uv1Buffer.SetData(uv1s);
+            computeShader.SetBuffer(0, "uv1Buffer", uv1Buffer);
+        }
 
         computeShader.SetBuffer(0, "vertexBuffer", vertexBuffer);
         computeShader.SetBuffer(0, "normalBuffer", normalBuffer);
