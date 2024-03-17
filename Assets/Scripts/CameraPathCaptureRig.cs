@@ -45,6 +45,7 @@ namespace TiltBrush
             App.Switchboard.CameraPathCreated += RefreshVisibility;
             App.Switchboard.CameraPathKnotChanged += RefreshVisibility;
             App.Switchboard.CurrentCameraPathChanged += RefreshVisibility;
+            App.Scene.LayerCanvasesUpdate += OnLayerCanvasesUpdate;
             App.Scene.MainCanvas.PoseChanged += OnPoseChanged;
         }
 
@@ -57,7 +58,13 @@ namespace TiltBrush
             App.Switchboard.CameraPathCreated -= RefreshVisibility;
             App.Switchboard.CameraPathKnotChanged -= RefreshVisibility;
             App.Switchboard.CurrentCameraPathChanged -= RefreshVisibility;
+            App.Scene.LayerCanvasesUpdate -= OnLayerCanvasesUpdate;
             App.Scene.MainCanvas.PoseChanged -= OnPoseChanged;
+        }
+
+        private void OnLayerCanvasesUpdate()
+        {
+            RefreshVisibility();
         }
 
         public void Init()
@@ -150,7 +157,17 @@ namespace TiltBrush
 
         void RefreshVisibility()
         {
-            m_Object.SetActive(WidgetManager.m_Instance.CameraPathsVisible);
+            if (m_Object != null)
+            {
+                var currentPath = WidgetManager.m_Instance.GetCurrentCameraPath();
+                m_Object.SetActive(
+                    currentPath != null &&
+                    // Current path's layer is visible.
+                    currentPath.m_WidgetObject.activeInHierarchy &&
+                    // Camera paths in general are visible
+                    WidgetManager.m_Instance.CameraPathsVisible
+                );
+            }
             m_Widget.Show(WidgetManager.m_Instance.CanRecordCurrentCameraPath());
         }
 
