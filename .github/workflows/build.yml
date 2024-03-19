@@ -164,87 +164,10 @@ jobs:
       matrix:
         # We don't use an actual matrix because there's more exceptions than actual cases!
         include:
-          - name: Windows OpenXR
-            targetPlatform: StandaloneWindows64
-            vrsdk: OpenXR
-            cache: Windows
-
-          - name: Windows Pimax
-            targetPlatform: StandaloneWindows64
-            vrsdk: OpenXR
-            cache: Windows
-            extra_defines: PIMAX_SUPPORTED
-
-          - name: Windows Rift
-            targetPlatform: StandaloneWindows64
-            vrsdk: Oculus
-            cache: Windows
-            extra_defines: OCULUS_SUPPORTED
-
-          - name: Windows Monoscopic
-            targetPlatform: StandaloneWindows64
-            vrsdk: Monoscopic
-            cache: Windows
-
-          - name: Linux Monoscopic
-            targetPlatform: StandaloneLinux64
-            vrsdk: Monoscopic
-            cache: Linux
-
           - name: MacOS Monoscopic
             targetPlatform: StandaloneOSX
             vrsdk: Monoscopic
             cache: MacOS
-
-          - name: Android OpenXR
-            targetPlatform: Android
-            vrsdk: OpenXR
-            cache: Android_Vulkan
-            extraoptions: -btb-il2cpp
-            versionSuffix: 0
-
-          - name: Oculus Quest (1)
-            targetPlatform: Android
-            vrsdk: OpenXR
-            cache: Android_Vulkan
-            extraoptions: -btb-il2cpp
-            versionSuffix: 0
-            extra_defines: USE_QUEST_PACKAGE_NAME FORCE_QUEST_SUPPORT_DEVICE FORCE_FOCUSAWARE FORCE_HEADTRACKING
-            packages_to_remove: com.meta.xr.sdk.platform com.meta.xr.sdk.utilities
-
-          - name: Oculus Quest (2+)
-            targetPlatform: Android
-            vrsdk: Oculus
-            cache: Android_Vulkan
-            extraoptions: -btb-il2cpp
-            versionSuffix: 1
-            extra_defines: OCULUS_SUPPORTED USE_QUEST_PACKAGE_NAME
-
-          - name: Android Pico
-            targetPlatform: Android
-            vrsdk: Pico
-            cache: Android_GLES
-            extraoptions: -btb-il2cpp
-            versionSuffix: 0
-            extra_defines: PICO_SUPPORTED
-
-          - name: Android Pico (CN)
-            targetPlatform: Android
-            vrsdk: Pico
-            cache: Android_GLES
-            # Pico requested Chinese build that doesn't have google/sketchfab login.
-            extraoptions: -btb-il2cpp -btb-disableAccountLogins
-            versionSuffix: 1
-            extra_defines: PICO_SUPPORTED
-
-          - name: iOS Zapbox
-            targetPlatform: iOS
-            vrsdk: Zapbox
-            cache: iOS
-            extraoptions: -btb-il2cpp
-            extra_defines: ZAPBOX_SUPPORTED
-            packages_to_remove: com.unity.formats.usd
-
     steps:
       - name: Set masking
         run: echo "::add-mask::DoNotStealThis1"
@@ -575,9 +498,12 @@ jobs:
     name: Create and Notarize DMG
     needs: [configuration, build]
     if: |
+      true ||
+      (
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+      )
 
     runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
     steps:
