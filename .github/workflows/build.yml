@@ -530,11 +530,13 @@ jobs:
           BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.APPLE_BUILD_PROVISION_PROFILE_BASE64 }}
           KEYCHAIN_PASSWORD: ${{ secrets.APPLE_KEYCHAIN_PASSWORD }}
         run: |
+          set -x
           BUILD_CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
           INSTALL_CERTIFICATE_PATH=$RUNNER_TEMP/install_certificate.p12
           PP_PATH=$RUNNER_TEMP/openbrushmac.provisionprofile
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
 
+          md5sum $RUNNER_TEMP/*
           echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $BUILD_CERTIFICATE_PATH
           echo -n "$INSTALL_CERTIFICATE_BASE64" | base64 --decode -o $INSTALL_CERTIFICATE_PATH
           echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o $PP_PATH
@@ -556,6 +558,7 @@ jobs:
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
+          set -x
           tar xvfz build_macos_monoscopic/*tgz
 
           export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBrush*.app))
@@ -568,6 +571,7 @@ jobs:
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
+          set -x
           export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBrush*.app))
           mkdir dist
 
