@@ -537,7 +537,6 @@ jobs:
           PP_PATH=$RUNNER_TEMP/openbrushmac.provisionprofile
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
 
-          md5sum $RUNNER_TEMP/*
           echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $BUILD_CERTIFICATE_PATH
           echo -n "$INSTALL_CERTIFICATE_BASE64" | base64 --decode -o $INSTALL_CERTIFICATE_PATH
           echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o $PP_PATH
@@ -554,6 +553,7 @@ jobs:
 
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
+          md5sum $RUNNER_TEMP/* $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/*
 
       - name: Sign the release
         env:
