@@ -855,7 +855,7 @@ jobs:
 
   publish_steam:
     name: Publish Steam Release
-    needs: [configuration, build, createdmg]
+    needs: [configuration, build]
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
