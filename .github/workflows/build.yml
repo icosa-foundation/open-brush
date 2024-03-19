@@ -156,6 +156,7 @@ jobs:
           echo "uid=$(id -u)" >> $GITHUB_OUTPUT
           echo "gid=$(id -g)" >> $GITHUB_OUTPUT
   build:
+    if: false
     name: ${{ matrix.name }}
     needs: configuration
     runs-on: ubuntu-latest
@@ -497,13 +498,7 @@ jobs:
   createdmg:
     name: Create and Notarize DMG
     needs: [configuration, build]
-    if: |
-      true ||
-      (
-      github.event_name == 'push' &&
-      github.repository == 'icosa-foundation/open-brush' &&
-      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
-      )
+    if: ${{ always() }}
 
     runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
     steps:
@@ -520,7 +515,8 @@ jobs:
         with:
           name: MacOS Monoscopic
           path: build_macos_monoscopic
-
+          run-id: 8347344270
+          github-token: ${{ github.token }}
       # See https://docs.github.com/en/actions/deployment/deploying-xcode-applications/installing-an-apple-certificate-on-macos-runners-for-xcode-development
       - name: Install the Apple certificate and provisioning profile
         env:
