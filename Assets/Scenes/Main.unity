@@ -10184,7 +10184,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_SkyboxMaterial: {fileID: 2100000, guid: 502c8257ef70e3f4b9f6b176302930e6, type: 2}
-  m_DefaultEnvironment: {fileID: 11400000, guid: e7ee458a16eae2b48ac405f4ccc693e6,
+  m_DefaultEnvironment: {fileID: 11400000, guid: 5effa9d950f0f5943b60c7dd24471505,
+    type: 2}
+  m_PassthroughEnvironment: {fileID: 11400000, guid: e7ee458a16eae2b48ac405f4ccc693e6,
     type: 2}
 --- !u!114 &652605549
 MonoBehaviour:
