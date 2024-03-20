@@ -33,6 +33,7 @@ public class BrushBaker : MonoBehaviour
         {
             return mesh;
         }
+        if (computeShader == null) return mesh;
 
         // Get the transformation matrix from the GameObject's transform
         Matrix4x4 transformMatrix = transform.localToWorldMatrix;
