@@ -196,6 +196,9 @@ namespace TiltBrush
             if (Unity.XR.Oculus.Utils.GetSystemHeadsetType() != Unity.XR.Oculus.SystemHeadset.Oculus_Quest)
             {
                 Oculus.Platform.Core.Initialize(appId);
+                Oculus.Platform.UserAgeCategory.Get().OnComplete((msg) => {
+                    var unused = msg.Data.AgeCategory;
+                });
             }
 
 #endif // OCULUS_SUPPORTED
