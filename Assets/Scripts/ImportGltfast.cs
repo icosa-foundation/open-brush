@@ -71,8 +71,8 @@ namespace TiltBrush
                 scaleFactor = App.METERS_TO_UNITS,
                 recenter = false
             };
-            ImportGltf.Import(localPath, loader, materialCollector, importOptions);
-            return _ImportUsingLegacyGltf(localPath, assetLocation);
+            ImportGltf.GltfImportResult result = ImportGltf.Import(localPath, loader, materialCollector, importOptions);
+            return result.root;
         }
 
         private static async Task _ImportUsingGltfast(
