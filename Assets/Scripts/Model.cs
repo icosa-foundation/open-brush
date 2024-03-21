@@ -246,6 +246,15 @@ namespace TiltBrush
         {
             // TODO: Maybe throw InvalidOperation if AllowExport==false rather than blowing
             // up with NullReference?
+            if (m_ImportMaterialCollector == null)
+            {
+                var localPath = GetLocation().AbsolutePath;
+                m_ImportMaterialCollector = new ImportMaterialCollector(
+                    Path.GetDirectoryName(localPath),
+                    uniqueSeed: localPath
+                );
+                AssignMaterialsToCollector(m_ImportMaterialCollector);
+            }
             return m_ImportMaterialCollector.GetExportableMaterial(material);
         }
 
@@ -357,6 +366,10 @@ namespace TiltBrush
                     {
                         return false;
                     }
+                    m_ImportMaterialCollector = new ImportMaterialCollector(
+                        Path.GetDirectoryName(m_localPath),
+                        uniqueSeed: m_localPath
+                    );
                     m_meshEnumerator = enumerable.GetEnumerator();
                     m_root.SetActive(false);
                 }
@@ -655,6 +668,8 @@ namespace TiltBrush
                 StartCreatePrefab(go);
             }
 
+            AssignMaterialsToCollector(m_ImportMaterialCollector);
+
             // Even if an exception occurs above, return true because the return value indicates async load
             // is complete.
             return true;
@@ -711,13 +726,10 @@ namespace TiltBrush
                 else if (m_Location.GetLocationType() == Location.Type.PolyAssetId ||
                     ext == ".gltf2" || ext == ".gltf" || ext == ".glb")
                 {
-
-
                     // If we pulled this from Poly, it's going to be a gltf file.
                     Task t = LoadGltf(warnings);
                     await t;
-
-
+                    AssignMaterialsToCollector(m_ImportMaterialCollector);
                 }
                 else if (ext == ".fbx" || ext == ".obj")
                 {
