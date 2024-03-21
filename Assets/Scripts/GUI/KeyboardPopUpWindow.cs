@@ -61,7 +61,7 @@ namespace TiltBrush
 
             if (m_SanitizeFilename)
             {
-                m_KeyboardUI.SantizeFilename();
+                m_KeyboardUI.SanitizeFilename();
             }
         }
     }

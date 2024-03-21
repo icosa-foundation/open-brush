@@ -95,6 +95,7 @@ namespace TiltBrush
                 m_Widget.transform.position = m_SpawnXf.translation;
 
                 // Widget type specific initialization.
+                // Should we have a default case here? Would need testing.
                 if (m_Widget is StencilWidget)
                 {
                     m_Widget.transform.parent = m_Canvas.transform;
@@ -106,6 +107,11 @@ namespace TiltBrush
                     // before it can be turned on.
                 }
                 else if (m_Widget is ImageWidget)
+                {
+                    m_Widget.transform.parent = m_Canvas.transform;
+                    m_Widget.Show(true);
+                }
+                else if (m_Widget is TextWidget)
                 {
                     m_Widget.transform.parent = m_Canvas.transform;
                     m_Widget.Show(true);
