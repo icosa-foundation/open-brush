@@ -31,7 +31,9 @@ namespace UnityGLTF.Plugins
             {
                 var intensity = (float)lightExtension.LightId.Value.Intensity;
                 var range = (float)lightExtension.LightId.Value.Range;
-                if (range <= 0) range = float.MaxValue;
+                // Should be infinite but Unity doesn't support that.
+                // float.MaxValue is too big and Unity interprets it as 0.
+                if (range <= 0) range = 2e+5f;
 
                 switch (light.type)
                 {
