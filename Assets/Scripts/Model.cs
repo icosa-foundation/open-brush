@@ -244,17 +244,7 @@ namespace TiltBrush
         /// Only allowed if AllowExport = true
         public IExportableMaterial GetExportableMaterial(Material material)
         {
-            // TODO: Maybe throw InvalidOperation if AllowExport==false rather than blowing
-            // up with NullReference?
-            if (m_ImportMaterialCollector == null)
-            {
-                var localPath = GetLocation().AbsolutePath;
-                m_ImportMaterialCollector = new ImportMaterialCollector(
-                    Path.GetDirectoryName(localPath),
-                    uniqueSeed: localPath
-                );
-                AssignMaterialsToCollector(m_ImportMaterialCollector);
-            }
+            EnsureCollectorExists();
             return m_ImportMaterialCollector.GetExportableMaterial(material);
         }
 
@@ -729,7 +719,6 @@ namespace TiltBrush
                     // If we pulled this from Poly, it's going to be a gltf file.
                     Task t = LoadGltf(warnings);
                     await t;
-                    AssignMaterialsToCollector(m_ImportMaterialCollector);
                 }
                 else if (ext == ".fbx" || ext == ".obj")
                 {
@@ -953,6 +942,19 @@ namespace TiltBrush
                 {
                     m_ImportMaterialCollector.Add(unityMat);
                 }
+            }
+        }
+
+        public void EnsureCollectorExists()
+        {
+            if (m_ImportMaterialCollector == null)
+            {
+                var localPath = GetLocation().AbsolutePath;
+                m_ImportMaterialCollector = new ImportMaterialCollector(
+                    Path.GetDirectoryName(localPath),
+                    uniqueSeed: localPath
+                );
+                AssignMaterialsToCollector(m_ImportMaterialCollector);
             }
         }
     }

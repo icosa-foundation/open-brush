@@ -24,32 +24,32 @@ namespace TiltBrush
     {
         [ApiEndpoint("model.webimport", "Imports a model given a url or a filename in Media Library\\Models (Models loaded from a url are saved locally first)")]
         [ApiEndpoint("import.webmodel", "Same as model.webimport (backwards compatibility for poly.pizza)")]
-        public static Task<ModelWidget> ImportWebModel(string url)
+        public static void ImportWebModel(string url)
         {
             Uri uri;
             try { uri = new Uri(url); }
             catch (UriFormatException)
-            { return null; }
+            { return; }
             var ext = uri.Segments.Last().Split('.').Last();
 
             // Is it a valid 3d model extension?
             if (ext != "off" && ext != "obj" && ext != "gltf" && ext != "glb" && ext != "fbx" && ext != "svg")
             {
-                return null;
+                return;
             }
             var destinationPath = Path.Combine("Models", uri.Host);
             string filename = _DownloadMediaFileFromUrl(uri, destinationPath);
-            return ImportModel(Path.Combine(uri.Host, filename));
+            ImportModel(Path.Combine(uri.Host, filename));
         }
 
         [ApiEndpoint("model.import", "Imports a model given a url or a filename in Media Library\\Models (Models loaded from a url are saved locally first)")]
-        public static async Task<ModelWidget> ImportModel(string location)
+        public static void ImportModel(string location)
         {
             if (location.StartsWith("poly:"))
             {
                 location = location.Substring(5);
                 ApiManager.Instance.LoadPolyModel(location);
-                return null; // TODO
+                return; // TODO
             }
 
             // Normalize path slashes
@@ -69,8 +69,8 @@ namespace TiltBrush
             var tr = _CurrentTransform().TransformBy(Coords.CanvasPose);
             var model = new Model(Model.Location.File(relativePath));
 
-            Task t = model.LoadModelAsync();
-            await t;
+            AsyncHelpers.RunSync(() => model.LoadModelAsync());
+            model.EnsureCollectorExists();
             CreateWidgetCommand createCommand = new CreateWidgetCommand(
                 WidgetManager.m_Instance.ModelWidgetPrefab, tr, null, forceTransform: true
             );
@@ -88,13 +88,12 @@ namespace TiltBrush
             else
             {
                 Debug.LogWarning("Failed to create EditableModelWidget");
-                return null;
+                return;
             }
 
             WidgetManager.m_Instance.WidgetsDormant = false;
             SketchControlsScript.m_Instance.EatGazeObjectInput();
             SelectionManager.m_Instance.RemoveFromSelection(false);
-            return widget;
         }
     }
 }
