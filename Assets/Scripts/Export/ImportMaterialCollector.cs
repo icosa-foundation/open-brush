@@ -99,12 +99,17 @@ namespace TiltBrush
                 ? TbtSettings.Instance.m_PbrBlendDoubleSided
                 : TbtSettings.Instance.m_PbrOpaqueDoubleSided;
 
-            Color color;
+            Color color = Color.magenta;
+            bool hasColor = false;
             if (unityMaterial.shader.name.StartsWith("UnityGLTF"))
             {
-                color = unityMaterial.GetColor("baseColorFactor");
+                if (unityMaterial.HasColor("baseColorFactor"))
+                {
+                    color = unityMaterial.GetColor("baseColorFactor");
+                    hasColor = true;
+                }
             }
-            else
+            if (!hasColor)
             {
                 color = unityMaterial.color;
             }
