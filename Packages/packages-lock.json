@@ -14,7 +14,7 @@
         "com.syomus.proceduraltoolkit": "0.2.3",
         "com.nition.unity-octree": "0.0.1-preview"
       },
-      "hash": "9b546a7b87f780c514aeb0f16e0cf462eae196a4"
+      "hash": "5e2822ddbbbda5bafdcf764f399bf94b8ae1a8dc"
     },
     "com.ixxy.unitysymmetry": {
       "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=8#upm",
@@ -317,13 +317,6 @@
       },
       "url": "https://packages.unity.com"
     },
-    "moonsharp": {
-      "version": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "dd39e8b23a399938e91a1088a78ef63ca64f2cd8"
-    },
     "com.zappar.xr.zapbox": {
       "version": "https://github.com/zappar-xr/zapbox-xr-sdk.git#5c75594e81da13a5d54a8e33b983add57b884c50",
       "depth": 0,
@@ -333,6 +326,13 @@
         "com.unity.xr.legacyinputhelpers": "2.1.4"
       },
       "hash": "5c75594e81da13a5d54a8e33b983add57b884c50"
+    },
+    "moonsharp": {
+      "version": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "dd39e8b23a399938e91a1088a78ef63ca64f2cd8"
     },
     "org.nuget.google.apis": {
       "version": "1.64.0",
