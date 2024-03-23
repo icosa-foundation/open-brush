@@ -68,6 +68,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_UnityXRCosmosControlsPrefab;
         [SerializeField] private GameObject m_UnityXRNeo3ControlsPrefab;
         [SerializeField] private GameObject m_UnityXRPhoenixControlsPrefab;
+        [SerializeField] private GameObject m_UnityXRZapboxControlsPrefab;
         // Prefab for the old-style Touch controllers, used only for Rift
         [SerializeField] private GameObject m_OculusRiftControlsPrefab;
         // Prefab for the new-style Touch controllers, used for Rift-S and Quest
@@ -195,6 +196,9 @@ namespace TiltBrush
             if (Unity.XR.Oculus.Utils.GetSystemHeadsetType() != Unity.XR.Oculus.SystemHeadset.Oculus_Quest)
             {
                 Oculus.Platform.Core.Initialize(appId);
+                Oculus.Platform.UserAgeCategory.Get().OnComplete((msg) => {
+                    var unused = msg.Data.AgeCategory;
+                });
             }
 
 #endif // OCULUS_SUPPORTED
@@ -528,7 +532,7 @@ namespace TiltBrush
                     controlsPrefab = m_UnityXRPhoenixControlsPrefab;
                     break;
                 case ControllerStyle.Zapbox:
-                    controlsPrefab = m_UnityXRQuestControlsPrefab;
+                    controlsPrefab = m_UnityXRZapboxControlsPrefab;
                     break;
                 case ControllerStyle.Gvr:
                     controlsPrefab = m_GvrPointerControlsPrefab;
