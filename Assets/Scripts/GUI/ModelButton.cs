@@ -184,7 +184,7 @@ namespace TiltBrush
         // the extra description.
         virtual public string UnloadedExtraDescription()
         {
-            return m_LoadHelpText.GetLocalizedString();
+            return m_LoadHelpText.GetLocalizedStringAsync().Result;
         }
         virtual public string LoadedExtraDescription()
         {

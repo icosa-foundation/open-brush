@@ -26,7 +26,7 @@
     "com.unity.xr.oculus": "3.3.0",
     "com.unity.xr.openxr": "1.8.2",
     "moonsharp": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",
-    "com.zappar.xr.zapbox": "https://github.com/zappar-xr/zapbox-xr-sdk.git#5c75594e81da13a5d54a8e33b983add57b884c50",
+    "com.zappar.xr.zapbox": "https://github.com/zappar-xr/zapbox-xr-sdk.git#3296cbf5046369801027a821fe9ff6082431a605",
     "org.nuget.google.apis": "1.64.0",
     "org.nuget.google.apis.auth": "1.64.0",
     "org.nuget.google.apis.core": "https://github.com/icosa-mirror/org.nuget.google.apis.core.git#1.64.0-openbrush",

@@ -36,7 +36,7 @@ namespace TiltBrush
 
         public void SetText()
         {
-            m_Text.text = m_Description.GetLocalizedString();
+            m_Text.text = m_Description.GetLocalizedStringAsync().Result;
 
             // Measure length of button description by getting render bounds when mesh is axis-aligned.
             float fTextWidth = TextMeasureScript.m_Instance.GetTextWidth(

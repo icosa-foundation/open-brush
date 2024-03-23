@@ -234,6 +234,13 @@ namespace TiltBrush
     // TODO:Mikesky - setting MSAA seems to crash quest when in Vulkan
     
     int msaa = QualityControls.m_Instance.MSAALevel;
+
+#if UNITY_IOS && ZAPBOX_SUPPORTED
+    // Force MSAA off on iOS Zapbox - Unity implementation is poor on iOS
+    // which leads to more blits and resolve passes than should be required
+    msaa = 0;
+#endif
+
     // MSAA disabled in QualityControls = 0, but render texture wants 1.
     if (msaa == 0) {
       msaa = 1;
