@@ -176,7 +176,7 @@ namespace TiltBrush
 
         public override string ToString()
         {
-            return $"TrTransform({_TrTransform.translation}, {_TrTransform.rotation}, {_TrTransform.scale})";
+            return $"Transform(position:{_TrTransform.translation}, rotation:{_TrTransform.rotation.eulerAngles}, scale:{_TrTransform.scale})";
         }
 
         [LuaDocsDescription("Get or set the position of this transform")]

@@ -13,7 +13,7 @@ namespace TiltBrush
 
     }
 
-    [LuaDocsDescription("A set of transforms that form a path in 3D space. These form the basis for brush strokes and camera paths")]
+    [LuaDocsDescription("A list of transforms that usually represents a path in 3D space. These form the basis for brush strokes and camera paths")]
     [MoonSharpUserData]
     public class PathApiWrapper : IPathApiWrapper
     {
@@ -147,7 +147,11 @@ namespace TiltBrush
         public int count => _Path?.Count ?? 0;
 
         [LuaDocsDescription("Returns the point at the specified index")]
-        public TransformApiWrapper this[int index] => new TransformApiWrapper(_Path[index]);
+        public TransformApiWrapper this[int index]
+        {
+            get => new(_Path[index]);
+            set => _Path[index] = value._TrTransform;
+        }
 
         [LuaDocsDescription("Returns the last point in this path")]
         public TransformApiWrapper last => new TransformApiWrapper(_Path[^1]);

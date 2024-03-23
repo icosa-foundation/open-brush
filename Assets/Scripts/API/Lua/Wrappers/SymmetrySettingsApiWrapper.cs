@@ -1,4 +1,6 @@
-﻿using MoonSharp.Interpreter;
+﻿using System.Collections.Generic;
+using System.Linq;
+using MoonSharp.Interpreter;
 using UnityEngine;
 namespace TiltBrush
 {
@@ -75,6 +77,81 @@ namespace TiltBrush
                 _Rotation = widgetTr.rotation;
                 _Spin = PointerManager.m_Instance.SymmetryWidget.GetSpin();
                 _Current = this;
+            }
+        }
+
+        [LuaDocsDescription("Creates a new set of symmetry settings based on point symmetry")]
+        [LuaDocsExample("mySymSettings = Symmetry:NewPoint()")]
+        [LuaDocsParameter("type", "The type of point symmetry")]
+        [LuaDocsParameter("order", "The number of repeats around the axis")]
+        public static SymmetrySettingsApiWrapper NewPointSymmetry(SymmetryPointType type, int order)
+        {
+            var instance = new SymmetrySettingsApiWrapper(false)
+            {
+                _Mode = SymmetryMode.Point,
+                _PointType = type,
+                _PointOrder = order
+            };
+            return instance;
+        }
+
+        [LuaDocsDescription("Creates a new set of symmetry settings based on wallpaper symmetry")]
+        [LuaDocsExample("mySymSettings = Symmetry:NewPoint()")]
+        [LuaDocsParameter("type", "The type of point symmetry")]
+        [LuaDocsParameter("order", "The number of repeats around the axis")]
+        public static SymmetrySettingsApiWrapper NewWallpaperSymmetry(
+            SymmetryWallpaperType type,
+            int repeatX, int repeatY,
+            float scale = 1, float scaleX = 1, float scaleY = 1,
+            float skewX = 0, float skewY = 0)
+        {
+            var instance = new SymmetrySettingsApiWrapper(false)
+            {
+                _Mode = SymmetryMode.Wallpaper,
+                _WallpaperType = type,
+                _WallpaperRepeatX = repeatX,
+                _WallpaperRepeatY = repeatY,
+                _WallpaperScale = scale,
+                _WallpaperScaleX = scaleX,
+                _WallpaperScaleY = scaleY,
+                _WallpaperSkewX = skewX,
+                _WallpaperSkewY = skewY
+            };
+            return instance;
+        }
+
+        [LuaDocsDescription("The list of transform matrices for this symmetry mode")]
+        public MatrixListApiWrapper matrices
+        {
+            get
+            {
+                List<Matrix4x4> matrices;
+                if (_IsCurrent)
+                {
+                    matrices = PointerManager.m_Instance.CustomMirrorMatrices;
+                }
+                else
+                {
+                    if (mode == SymmetryMode.Wallpaper)
+                    {
+                        var wallpaperSym = new WallpaperSymmetry((SymmetryGroup.R)wallpaperType,
+                            wallpaperRepeatX, wallpaperRepeatY,
+                            wallpaperScale, wallpaperScaleX, wallpaperScaleY,
+                            wallpaperSkewX, wallpaperSkewY
+                        );
+                        matrices = wallpaperSym.matrices;
+                    }
+                    else if (mode == SymmetryMode.Point)
+                    {
+                        var pointSym = new PointSymmetry((PointSymmetry.Family)pointType, pointOrder, 1f);
+                        matrices = pointSym.matrices;
+                    }
+                    else
+                    {
+                        matrices = new List<Matrix4x4>();
+                    }
+                }
+                return new MatrixListApiWrapper(matrices);
             }
         }
 

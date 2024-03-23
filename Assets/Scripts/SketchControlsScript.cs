@@ -174,6 +174,8 @@ namespace TiltBrush
             SaveAs = 6006,
             OpenColorOptionsPopup = 7000,
             ChangeSnapAngle = 8000,
+            OpenColorPicker = 9000,
+            OpenTexturePicker = 9001,
             MergeBrushStrokes = 10000,
             RepaintOptions = 11500,
             OpenNumericInputPopup = 12000

@@ -2,10 +2,29 @@ Settings = {
     description="Control your pointer with multiple waveforms"
 }
 
+waveformTypes = {
+    "Linear",
+    "Cosine",
+    "Triangle",
+    "Sawtooth",
+    "Square",
+    "Pulse 80%",
+    "Pulse 20%",
+    "Exponent",
+    "Power 2",
+    "Power 0.5",
+    "Parabolic",
+    "Exponential Sawtooth",
+    "Perlin Noise",
+    "White Noise",
+    "Brown Noise",
+    "Blue Noise",
+}
+
 Parameters = {
-    xWave={label="X Waveform Type", type="int", min=0, max=15, default=0},
+    xWave={label="X Waveform", type="list", items=waveformTypes, default="Linear"},
     xFrequency={label="X Frequency", type="float", min=0.01, max=4, default=1},
-    yWave={label="Y Waveform Type", type="int", min=0, max=15, default=1},
+    yWave={label="Y Waveform", type="list", items=waveformTypes, default="Cosine"},
     yFrequency={label="Y Frequency", type="float", min=0.01, max=4, default=1},
     yPhase={label="Y Phase", type="float", min=0.01, max=1, default=0.5},
     scale={label="Scale", type="float", min=0.01, max=2, default=1},
@@ -34,37 +53,37 @@ function Main()
 end
 
 function sampleWave(waveType, time, frequency, previous)
-    if waveType==0 then
+    if waveType=="Linear" then
         return time * frequency
-    elseif waveType==1 then
+    elseif waveType=="Cosine" then
         return Waveform:Cosine(time, frequency)
-    elseif waveType==2 then
+    elseif waveType=="Triangle" then
         return Waveform:Triangle(time, frequency)
-    elseif waveType==3 then
+    elseif waveType=="Sawtooth" then
         return Waveform:Sawtooth(time, frequency)
-    elseif waveType==4 then
+    elseif waveType=="Square" then
         return Waveform:Square(time, frequency)
-    elseif waveType==5 then
+    elseif waveType=="Pulse 80%" then
         return Waveform:Pulse(time, frequency, 0.8)
-    elseif waveType==6 then
+    elseif waveType=="Pulse 20%" then
         return Waveform:Pulse(time, frequency, 0.2)
-    elseif waveType==7 then
+    elseif waveType=="Exponent" then
         return Waveform:Exponent(time, frequency)
-    elseif waveType==8 then
+    elseif waveType=="Power 2" then
         return Waveform:Power(time, frequency, 2)
-    elseif waveType==9 then
+    elseif waveType=="Power 0.5" then
         return Waveform:Power(time, frequency, 0.5)
-    elseif waveType==10 then
+    elseif waveType=="Parabolic" then
         return Waveform:Parabolic(time, frequency)
-    elseif waveType==11 then
+    elseif waveType=="Exponential Sawtooth" then
         return Waveform:ExponentialSawtooth(time, frequency, 2.0)
-    elseif waveType==12 then
+    elseif waveType=="Perlin Noise" then
         return Waveform:PerlinNoise(time, frequency)
-    elseif waveType==13 then
+    elseif waveType=="White Noise" then
         return Waveform:WhiteNoise()
-    elseif waveType==14 then
+    elseif waveType=="Brown Noise" then
         return Waveform:BrownNoise(previous)
-    elseif waveType==15 then
+    elseif waveType=="Blue Noise" then
         return Waveform:BlueNoise(previous)
     else
         return 0

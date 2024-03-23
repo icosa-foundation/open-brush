@@ -1,4 +1,4 @@
-﻿// Copyright 2021 The Open Brush Authors
+﻿// Copyright 2024 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,11 +13,25 @@
 // limitations under the License.
 
 using System;
+using UnityEngine;
 
 namespace TiltBrush
 {
-    public class ColorPickerPopupButton : OptionButton
+    public class ImagePickerItemButton : BaseButton
     {
+        private int m_ItemIndex;
+        public Action<int> m_OnItemSelected;
 
+        public void SetPreset(Texture2D tex, string imageName, int imageIndex, float aspect)
+        {
+            m_ItemIndex = imageIndex;
+            SetButtonTexture(tex, aspect);
+            SetDescriptionText(imageName);
+        }
+
+        override protected void OnButtonPressed()
+        {
+            m_OnItemSelected.Invoke(m_ItemIndex);
+        }
     }
 } // namespace TiltBrush

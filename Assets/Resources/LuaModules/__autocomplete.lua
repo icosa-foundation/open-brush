@@ -1003,6 +1003,101 @@ function Math:Tanh(f) end
 
 
 
+---@class Matrix
+---@field identity Matrix | number[] Returns the identity matrix
+---@field zero Matrix | number[] Returns a matrix with all elements set to zero
+---@field determinant number The determinant of the matrix
+---@field inverse Matrix | number[] The inverse of this matrix
+---@field isIdentity boolean Checks whether this is an identity matrix
+---@field scale Vector3 | number[] Attempts to get a scale value from the matrix
+---@field rotation Rotation | number[] Attempts to get a rotation from this matrix
+---@field transpose Matrix | number[] Returns the transpose of this matrix
+---@field position Vector3 | number[] The position vector of this matrix
+---@field isValidTRS boolean Checks if this matrix is a valid transform matrix
+Matrix = {}
+---@param m00 number 
+---@param m01 number 
+---@param m02 number 
+---@param m03 number 
+---@param m10 number 
+---@param m11 number 
+---@param m12 number 
+---@param m13 number 
+---@param m20 number 
+---@param m21 number 
+---@param m22 number 
+---@param m23 number 
+---@param m30 number 
+---@param m31 number 
+---@param m32 number 
+---@param m33 number 
+---@return Matrix # 
+function Matrix:New(m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33) end
+
+---@param point Vector3 The position to transform
+---@return Vector3 # The transformed position
+function Matrix:MultiplyPoint(point) end
+
+---@param point Vector3 The position to transform
+---@return Vector3 # The transformed position
+function Matrix:MultiplyPoint3x4(point) end
+
+---@param vector Vector3 The direction vector to transform
+---@return Vector3 # The transformed direction vector
+function Matrix:MultiplyVector(vector) end
+
+---@param index number The index of the column to return (0 is the first column)
+---@return Vector4 # 
+function Matrix:GetColumn(index) end
+
+---@param index number The index of the column to set (0 is the first column)
+---@param value Vector4 The value to set
+function Matrix:SetColumn(index, value) end
+
+---@param index number The index of the row to return (0 is the first row)
+---@return Vector4 # 
+function Matrix:GetRow(index) end
+
+---@param index number The index of the row to set (0 is the first row)
+---@param value Vector4 The value to set
+function Matrix:SetRow(index, value) end
+
+---@param pos Vector3 The position
+---@param rot Rotation The rotation
+---@param scale Vector3 The scale
+function Matrix:SetTRS(pos, rot, scale) end
+
+---@param from Vector3 
+---@param to Vector3 
+---@param up Vector3 
+---@return Matrix # 
+function Matrix:LookAt(from, to, up) end
+
+---@param rotation Rotation 
+---@return Matrix # 
+function Matrix:NewRotation(rotation) end
+
+---@param scale Vector3 
+---@return Matrix # 
+function Matrix:NewScaling(scale) end
+
+---@param translation Vector3 
+---@return Matrix # 
+function Matrix:NewTranslation(translation) end
+
+---@param translation Vector3 
+---@param rotation Rotation 
+---@param scale Vector3 
+---@return Matrix # 
+function Matrix:NewTRS(translation, rotation, scale) end
+
+
+
+---@class MatrixList
+---@field count number The number of matrices
+MatrixList = {}
+
+
 ---@class Model
 ---@field index number The index of the active Model Widget
 ---@field layer Layer The layer the model is on
@@ -1691,8 +1786,8 @@ function Svg:DrawDocument(svg, tr) end
 
 ---@class Symmetry
 ---@field current SymmetrySettings The current symmetry settings
----@field brushOffset Vector3 | number[] Gets the offset betwen the current brush position and the symmetry widget
----@field wandOffset Vector3 | number[] Gets the offset betwen the current wand position and the symmetry widget
+---@field brushOffset Vector3 | number[] Gets the offset between the current brush position and the symmetry widget
+---@field wandOffset Vector3 | number[] Gets the offset between the current wand position and the symmetry widget
 Symmetry = {}
 
 function Symmetry:SummonWidget() end
@@ -1762,6 +1857,7 @@ function Symmetry:PathToPolar(path) end
 
 
 ---@class SymmetrySettings
+---@field matrices MatrixList | Matrix[] The list of transform matrices for this symmetry mode
 ---@field mode SymmetryMode The symmetry mode
 ---@field transform Transform The transform of the symmetry widget
 ---@field position Vector3 | number[] The position of the symmetry widget
@@ -1778,6 +1874,22 @@ function Symmetry:PathToPolar(path) end
 ---@field wallpaperSkewX number The skew of the wallpaper symmetry in the X axis
 ---@field wallpaperSkewY number The skew of the wallpaper symmetry in the Y axis
 SymmetrySettings = {}
+---@param type SymmetryPointType The type of point symmetry
+---@param order number The number of repeats around the axis
+---@return SymmetrySettings # 
+function SymmetrySettings:NewPointSymmetry(type, order) end
+
+---@param type SymmetryWallpaperType The type of point symmetry
+---@param repeatX number 
+---@param repeatY number 
+---@param scale? number 
+---@param scaleX? number 
+---@param scaleY? number 
+---@param skewX? number 
+---@param skewY? number 
+---@return SymmetrySettings # 
+function SymmetrySettings:NewWallpaperSymmetry(type, repeatX, repeatY, scale, scaleX, scaleY, skewX, skewY) end
+
 
 ---@return SymmetrySettings # 
 function SymmetrySettings:Duplicate() end
@@ -2200,6 +2312,123 @@ function Vector3:NotEquals(other) end
 ---@param z number The z value
 ---@return boolean # 
 function Vector3:NotEquals(x, y, z) end
+
+
+
+---@class Vector4
+---@field x number The x coordinate
+---@field y number The y coordinate
+---@field z number The z coordinate
+---@field w number The w coordinate
+---@field magnitude number Returns the length of this vector
+---@field sqrMagnitude number Returns the squared length of this vector
+---@field normalized UnityEngine.Vector4 | number[] Returns a vector with the same direction but with a length of 1
+---@field negativeInfinity UnityEngine.Vector4 | number[] A vector of -infinity in all axes
+---@field one UnityEngine.Vector4 | number[] A vector of 1 in all axes
+---@field positiveInfinity UnityEngine.Vector4 | number[] A vector of infinity in all axes
+---@field zero UnityEngine.Vector4 | number[] A vector of 0 in all axes
+Vector4 = {}
+---@param x number The x coordinate
+---@param y number The y coordinate
+---@param z number The w coordinate
+---@param w number 
+---@return Vector4 # 
+function Vector4:New(x, y, z, w) end
+
+---@param other UnityEngine.Vector4 The other vector
+---@return number # 
+function Vector4:Distance(other) end
+
+---@param a UnityEngine.Vector4 The first point
+---@param b UnityEngine.Vector4 The second point
+---@param t number The value between 0 and 1 that controls how far between a and b the new point is
+---@return UnityEngine.Vector4 # A point somewhere between a and b based on the value of t
+function Vector4:Lerp(a, b, t) end
+
+---@param a UnityEngine.Vector4 The first point
+---@param b UnityEngine.Vector4 The second point
+---@param t number The value that controls how far between (or beyond) a and b the new point is
+---@return UnityEngine.Vector4 # A point somewhere between a and b based on the value of t
+function Vector4:LerpUnclamped(a, b, t) end
+
+---@param a UnityEngine.Vector4 The first vector
+---@param b UnityEngine.Vector4 The second vector
+---@return UnityEngine.Vector4 # 
+function Vector4:Max(a, b) end
+
+---@param a UnityEngine.Vector4 The first vector
+---@param b UnityEngine.Vector4 The second vector
+---@return UnityEngine.Vector4 # 
+function Vector4:Min(a, b) end
+
+---@param target UnityEngine.Vector4 The target point
+---@param maxDistanceDelta number The maximum distance to move towards the target point
+---@return UnityEngine.Vector4 # 
+function Vector4:MoveTowards(target, maxDistanceDelta) end
+
+---@param other UnityEngine.Vector4 The other vector
+---@return UnityEngine.Vector4 # 
+function Vector4:Project(other) end
+
+---@param other UnityEngine.Vector4 The other vector
+---@return UnityEngine.Vector4 # 
+function Vector4:ScaleBy(other) end
+
+---@param a UnityEngine.Vector4 The first point
+---@param b UnityEngine.Vector4 The second point
+---@param t number The value that controls how far between (or beyond) a and b the new point is
+---@return UnityEngine.Vector4 # A point somewhere between a and b based on the value of t
+function Vector4:Slerp(a, b, t) end
+
+---@param a UnityEngine.Vector4 The first point
+---@param b UnityEngine.Vector4 The second point
+---@param t number The value that controls how far between (or beyond) a and b the new point is
+---@return UnityEngine.Vector4 # A point somewhere between a and b based on the value of t
+function Vector4:SlerpUnclamped(a, b, t) end
+
+---@param other UnityEngine.Vector4 The other vector
+---@return UnityEngine.Vector4 # 
+function Vector4:Add(other) end
+
+---@param x number The x value
+---@param y number The y value
+---@param z number The z value
+---@return UnityEngine.Vector4 # 
+function Vector4:Add(x, y, z) end
+
+---@param other UnityEngine.Vector4 The vector to subtract
+---@return UnityEngine.Vector4 # 
+function Vector4:Subtract(other) end
+
+---@param x number The x value
+---@param y number The y value
+---@param z number The z value
+---@return UnityEngine.Vector4 # 
+function Vector4:Subtract(x, y, z) end
+
+---@param value number The scalar value
+---@return UnityEngine.Vector4 # 
+function Vector4:Multiply(value) end
+
+---@param x number The x value
+---@param y number The y value
+---@param z number The z value
+---@return UnityEngine.Vector4 # 
+function Vector4:ScaleBy(x, y, z) end
+
+---@param value number The scalar value
+---@return UnityEngine.Vector4 # 
+function Vector4:Divide(value) end
+
+---@param other Vector4 The other vector
+---@return boolean # 
+function Vector4:NotEquals(other) end
+
+---@param x number The x value
+---@param y number The y value
+---@param z number The z value
+---@return boolean # 
+function Vector4:NotEquals(x, y, z) end
 
 
 

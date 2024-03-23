@@ -24,7 +24,11 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Gets a Camera Path by it's index")]
-        public CameraPathApiWrapper this[int index] => new CameraPathApiWrapper(_CameraPaths[index]);
+        public CameraPathApiWrapper this[int index]
+        {
+            get => new(_CameraPaths[index]);
+            set => _CameraPaths[index] = value._CameraPathWidget;
+        }
 
         [LuaDocsDescription("The number of Camera Paths")]
         public int count => _CameraPaths?.Count ?? 0;
