@@ -149,7 +149,7 @@ public class IconGenerator : MonoBehaviour
     void TakeAllGridShapeScreenshots()
     {
         Init();
-        PreviewPolyhedron.m_Instance.m_PolyRecipe.GeneratorType = GeneratorTypes.Grid;
+        PreviewPolyhedron.m_Instance.m_PolyRecipe.GeneratorType = GeneratorTypes.RegularGrids;
         var gridNames = Enum.GetNames(typeof(GridEnums.GridShapes));
         PreviewPolyhedron.m_Instance.m_PolyRecipe.GridType = GridEnums.GridTypes.Triangular;
         for (var index = 0; index < gridNames.Length; index++)
@@ -183,7 +183,7 @@ public class IconGenerator : MonoBehaviour
     {
         var oldPos = cameraPosition;
         Init();
-        PreviewPolyhedron.m_Instance.m_PolyRecipe.GeneratorType = GeneratorTypes.Grid;
+        PreviewPolyhedron.m_Instance.m_PolyRecipe.GeneratorType = GeneratorTypes.RegularGrids;
         var gridNames = Enum.GetNames(typeof(GridEnums.GridTypes));
         PreviewPolyhedron.m_Instance.m_PolyRecipe.GridShape = GridEnums.GridShapes.Plane;
         PreviewPolyhedron.m_Instance.m_PolyRecipe.Param1Int = 2;

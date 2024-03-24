@@ -146,7 +146,11 @@ namespace TiltBrush
             KeplerPoinsot,
             Radial,
             Waterman,
-            Grids,
+            RegularGrids,
+            CatalanGrids,
+            ArchimedeanGrids,
+            TwoUniformGrids,
+            DurerGrids,
             Various
         }
 
@@ -465,7 +469,11 @@ namespace TiltBrush
                     SetButtonTextAndIcon(PolyhydraButtonTypes.UniformType, recipe.UniformPolyType.ToString());
                     break;
 
-                case PolyhydraMainCategories.Grids:
+                case PolyhydraMainCategories.RegularGrids:
+                case PolyhydraMainCategories.CatalanGrids:
+                case PolyhydraMainCategories.ArchimedeanGrids:
+                case PolyhydraMainCategories.TwoUniformGrids:
+                case PolyhydraMainCategories.DurerGrids:
                     ButtonUniformType.gameObject.SetActive(false);
                     ButtonRadialType.gameObject.SetActive(false);
                     ButtonGridType.gameObject.SetActive(true);
@@ -590,7 +598,11 @@ namespace TiltBrush
                     Slider2.SliderType = SliderTypes.Int;
                     break;
 
-                case PolyhydraMainCategories.Grids:
+                case PolyhydraMainCategories.RegularGrids:
+                case PolyhydraMainCategories.CatalanGrids:
+                case PolyhydraMainCategories.ArchimedeanGrids:
+                case PolyhydraMainCategories.TwoUniformGrids:
+                case PolyhydraMainCategories.DurerGrids:
 
                     Slider1.gameObject.SetActive(true);
                     Slider2.gameObject.SetActive(true);
@@ -830,7 +842,11 @@ namespace TiltBrush
             action = action.Replace(" ", "_");
             switch (mainType)
             {
-                case GeneratorTypes.Grid:
+                case GeneratorTypes.RegularGrids:
+                case GeneratorTypes.CatalanGrids:
+                case GeneratorTypes.OneUniformGrids:
+                case GeneratorTypes.TwoUniformGrids:
+                case GeneratorTypes.DurerGrids:
                     return $"ShapeButtons/gridshape_{action}";
                 case GeneratorTypes.Radial:
                     return $"ShapeButtons/radial_{action}";
@@ -875,7 +891,7 @@ namespace TiltBrush
                     path = GetButtonTexturePath(GeneratorTypes.Various, label);
                     return Resources.Load<Texture2D>(path);
                 case PolyhydraButtonTypes.GridShape:
-                    path = GetButtonTexturePath(GeneratorTypes.Grid, label);
+                    path = GetButtonTexturePath(GeneratorTypes.RegularGrids, label);
                     return Resources.Load<Texture2D>(path);
                 case PolyhydraButtonTypes.OperatorType:
                     path = $"IconButtons/{label}";
@@ -985,8 +1001,21 @@ namespace TiltBrush
                 case GeneratorTypes.Johnson:
                     Debug.LogError($"Preset has unsupported generator type: {emd.GeneratorType}");
                     break;
-                case GeneratorTypes.Grid:
-                    m_CurrentMainCategory = PolyhydraMainCategories.Grids;
+                case GeneratorTypes.RegularGrids:
+                case GeneratorTypes.CatalanGrids:
+                case GeneratorTypes.OneUniformGrids:
+                case GeneratorTypes.TwoUniformGrids:
+                case GeneratorTypes.DurerGrids:
+                    m_CurrentMainCategory = emd.GeneratorType switch
+                    {
+
+                        GeneratorTypes.RegularGrids => PolyhydraMainCategories.RegularGrids,
+                        GeneratorTypes.CatalanGrids => PolyhydraMainCategories.CatalanGrids,
+                        GeneratorTypes.OneUniformGrids => PolyhydraMainCategories.ArchimedeanGrids,
+                        GeneratorTypes.TwoUniformGrids => PolyhydraMainCategories.TwoUniformGrids,
+                        GeneratorTypes.DurerGrids => PolyhydraMainCategories.DurerGrids,
+                        _ => throw new ArgumentOutOfRangeException()
+                    };
                     PreviewPolyhedron.m_Instance.m_PolyRecipe.GridType = (GridEnums.GridTypes)Convert.ToInt32(emd.GeneratorParameters["type"]);
                     PreviewPolyhedron.m_Instance.m_PolyRecipe.GridShape = (GridEnums.GridShapes)Convert.ToInt32(emd.GeneratorParameters["shape"]);
                     sliderParamNames = new List<string> { "x", "y" };
@@ -1202,8 +1231,28 @@ namespace TiltBrush
                 case GeneratorTypes.Johnson:
                     Debug.LogError($"Preset has unsupported generator type: {recipe.GeneratorType}");
                     break;
-                case GeneratorTypes.Grid:
-                    m_CurrentMainCategory = PolyhydraMainCategories.Grids;
+                case GeneratorTypes.RegularGrids:
+                    m_CurrentMainCategory = PolyhydraMainCategories.RegularGrids;
+                    Slider1.UpdateValueAbsolute(recipe.Param1Int);
+                    Slider2.UpdateValueAbsolute(recipe.Param2Int);
+                    break;
+                case GeneratorTypes.CatalanGrids:
+                    m_CurrentMainCategory = PolyhydraMainCategories.CatalanGrids;
+                    Slider1.UpdateValueAbsolute(recipe.Param1Int);
+                    Slider2.UpdateValueAbsolute(recipe.Param2Int);
+                    break;
+                case GeneratorTypes.OneUniformGrids:
+                    m_CurrentMainCategory = PolyhydraMainCategories.ArchimedeanGrids;
+                    Slider1.UpdateValueAbsolute(recipe.Param1Int);
+                    Slider2.UpdateValueAbsolute(recipe.Param2Int);
+                    break;
+                case GeneratorTypes.TwoUniformGrids:
+                    m_CurrentMainCategory = PolyhydraMainCategories.TwoUniformGrids;
+                    Slider1.UpdateValueAbsolute(recipe.Param1Int);
+                    Slider2.UpdateValueAbsolute(recipe.Param2Int);
+                    break;
+                case GeneratorTypes.DurerGrids:
+                    m_CurrentMainCategory = PolyhydraMainCategories.DurerGrids;
                     Slider1.UpdateValueAbsolute(recipe.Param1Int);
                     Slider2.UpdateValueAbsolute(recipe.Param2Int);
                     break;
@@ -1668,8 +1717,36 @@ namespace TiltBrush
                 case PolyhydraMainCategories.Waterman:
                     recipe.GeneratorType = GeneratorTypes.Waterman;
                     break;
-                case PolyhydraMainCategories.Grids:
-                    recipe.GeneratorType = GeneratorTypes.Grid;
+                case PolyhydraMainCategories.RegularGrids:
+                    recipe.GeneratorType = GeneratorTypes.RegularGrids;
+                    recipe.GridType = 0;
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.GridType, recipe.GridType.ToString());
+                    recipe.GridShape = 0;
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.GridShape, recipe.GridShape.ToString());
+                    break;
+                case PolyhydraMainCategories.CatalanGrids:
+                    recipe.GeneratorType = GeneratorTypes.CatalanGrids;
+                    recipe.GridType = 0;
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.GridType, recipe.GridType.ToString());
+                    recipe.GridShape = 0;
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.GridShape, recipe.GridShape.ToString());
+                    break;
+                case PolyhydraMainCategories.ArchimedeanGrids:
+                    recipe.GeneratorType = GeneratorTypes.OneUniformGrids;
+                    recipe.GridType = 0;
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.GridType, recipe.GridType.ToString());
+                    recipe.GridShape = 0;
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.GridShape, recipe.GridShape.ToString());
+                    break;
+                case PolyhydraMainCategories.TwoUniformGrids:
+                    recipe.GeneratorType = GeneratorTypes.TwoUniformGrids;
+                    recipe.GridType = 0;
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.GridType, recipe.GridType.ToString());
+                    recipe.GridShape = 0;
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.GridShape, recipe.GridShape.ToString());
+                    break;
+                case PolyhydraMainCategories.DurerGrids:
+                    recipe.GeneratorType = GeneratorTypes.DurerGrids;
                     recipe.GridType = 0;
                     SetButtonTextAndIcon(PolyhydraButtonTypes.GridType, recipe.GridType.ToString());
                     recipe.GridShape = 0;
@@ -1713,6 +1790,30 @@ namespace TiltBrush
         public List<string> GetMainCategoryNames()
         {
             return Enum.GetNames(typeof(PolyhydraMainCategories)).ToList();
+        }
+
+        public List<string> GetGridTypeNames()
+        {
+            List<GridEnums.GridTypes> gridTypeList = null;
+            switch (m_CurrentMainCategory)
+            {
+                case PolyhydraMainCategories.RegularGrids:
+                    gridTypeList = GridEnums.RegularGridTypes;
+                    break;
+                case PolyhydraMainCategories.ArchimedeanGrids:
+                    gridTypeList = GridEnums.ArchimedeanGridTypes;
+                    break;
+                case PolyhydraMainCategories.CatalanGrids:
+                    gridTypeList = GridEnums.CatalanGridTypes;
+                    break;
+                case PolyhydraMainCategories.DurerGrids:
+                    gridTypeList = GridEnums.DurerGridTypes;
+                    break;
+                case PolyhydraMainCategories.TwoUniformGrids:
+                    gridTypeList = GridEnums.TwoUniformGridTypes;
+                    break;
+            }
+            return gridTypeList.Select(x => x.ToString()).ToList();
         }
 
         public List<string> GetUniformPolyNames()

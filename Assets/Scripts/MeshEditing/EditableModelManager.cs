@@ -26,7 +26,12 @@ namespace TiltBrush.MeshEditing
         FileSystem = 0,
         GeometryData = 1,
 
-        Grid = 2,
+        RegularGrids = 2,
+        CatalanGrids = 10,
+        OneUniformGrids = 11,
+        TwoUniformGrids = 12,
+        DurerGrids = 13,
+
         Shapes = 3,
 
         Radial = 4,

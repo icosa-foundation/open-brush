@@ -834,7 +834,11 @@ namespace TiltBrush
                         { "c", recipe.Param2Int },
                     };
                     break;
-                case GeneratorTypes.Grid:
+                case GeneratorTypes.RegularGrids:
+                case GeneratorTypes.CatalanGrids:
+                case GeneratorTypes.OneUniformGrids:
+                case GeneratorTypes.TwoUniformGrids:
+                case GeneratorTypes.DurerGrids:
                     generatorParameters = new Dictionary<string, object>
                     {
                         { "type", recipe.GridType },

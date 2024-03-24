@@ -103,7 +103,11 @@ namespace TiltBrush
                     recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("root"));
                     recipe.Param2Int = Convert.ToInt32(p.GetValueOrDefault("c"));
                     break;
-                case GeneratorTypes.Grid:
+                case GeneratorTypes.RegularGrids:
+                case GeneratorTypes.CatalanGrids:
+                case GeneratorTypes.OneUniformGrids:
+                case GeneratorTypes.TwoUniformGrids:
+                case GeneratorTypes.DurerGrids:
                     recipe.GridType = (GridEnums.GridTypes)Convert.ToInt32(p.GetValueOrDefault("type"));
                     recipe.GridShape = (GridEnums.GridShapes)Convert.ToInt32(p.GetValueOrDefault("shape"));
                     recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("x"));
@@ -218,7 +222,11 @@ namespace TiltBrush
                 case GeneratorTypes.Waterman:
                     poly = WatermanPoly.Build(root: p.Param1Int, c: p.Param2Int, mergeFaces: true);
                     break;
-                case GeneratorTypes.Grid:
+                case GeneratorTypes.RegularGrids:
+                case GeneratorTypes.CatalanGrids:
+                case GeneratorTypes.OneUniformGrids:
+                case GeneratorTypes.TwoUniformGrids:
+                case GeneratorTypes.DurerGrids:
                     poly = Grids.Build(p.GridType, p.GridShape, p.Param1Int, p.Param2Int);
                     poly.ScalingFactor = Mathf.Sqrt(2f) / 2f;
                     break;

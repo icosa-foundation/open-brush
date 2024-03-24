@@ -457,7 +457,7 @@ namespace TiltBrush
             var recipe = new PolyRecipe
             {
                 ColorMethod = ColorMethods.ByRole,
-                GeneratorType = GeneratorTypes.Grid,
+                GeneratorType = GeneratorTypes.RegularGrids,
                 GridType = (GridEnums.GridTypes)Enum.Parse(typeof(GridEnums.GridTypes), type),
                 GridShape = (GridEnums.GridShapes)Enum.Parse(typeof(GridEnums.GridShapes), shape),
                 Param1Int = width,
