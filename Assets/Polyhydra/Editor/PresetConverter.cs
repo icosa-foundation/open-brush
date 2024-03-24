@@ -97,7 +97,7 @@ namespace TiltBrush
                 switch (oldPreset.ShapeType)
                 {
                     case "Grid":
-                        generatorType = GeneratorTypes.Grid;
+                        generatorType = GeneratorTypes.RegularGrids;
                         break;
                     case "Johnson":
                         generatorType = GeneratorTypes.Radial;
@@ -169,45 +169,45 @@ namespace TiltBrush
                             { "c", oldPreset.PrismQ },
                         };
                         break;
-                    case GeneratorTypes.Grid:
+                    case GeneratorTypes.RegularGrids:
                         GridEnums.GridTypes gridType;
                         GridEnums.GridShapes gridShape;
 
                         switch (oldPreset.GridType)
                         {
                             case "Square":
-                                oldPreset.GridType = "K_4_4_4_4";
+                                oldPreset.GridType = "Square";
                                 break;
                             case "Isometric":
-                                oldPreset.GridType = "K_3_3_3_3_3_3";
+                                oldPreset.GridType = "Triangular";
                                 break;
                             case "Hex":
-                                oldPreset.GridType = "K_6_6_6";
+                                oldPreset.GridType = "Hexagonal";
                                 break;
                             case "Polar":
                                 oldPreset.GridShape = "Polar";
-                                oldPreset.GridType = "K_4_4_4_4";
+                                oldPreset.GridType = "Square";
                                 break;
                             case "U_3_6_3_6":
-                                oldPreset.GridType = "K_3_6_3_6";
+                                oldPreset.GridType = "SnubTrihexagonal";
                                 break;
                             case "U_3_3_3_4_4":
-                                oldPreset.GridType = "K_3_3_3_4_4";
+                                oldPreset.GridType = "ElongatedTriangular";
                                 break;
                             case "U_3_3_4_3_4":
-                                oldPreset.GridType = "K_3_3_4_3_4";
+                                oldPreset.GridType = "SnubSquare";
                                 break;
                             case "U_3_12_12":
-                                oldPreset.GridType = "K_3_12_12";
+                                oldPreset.GridType = "Rhombitrihexagonal";
                                 break;
                             case "U_4_8_8":
-                                oldPreset.GridType = "K_4_8_8";
+                                oldPreset.GridType = "Trihexagonal";
                                 break;
                             case "U_3_4_6_4":
-                                oldPreset.GridType = "K_3_4_6_4";
+                                oldPreset.GridType = "TruncatedHexagonal";
                                 break;
                             case "U_4_6_12":
-                                oldPreset.GridType = "K_4_6_12";
+                                oldPreset.GridType = "TruncatedTrihexagonal";
                                 break;
 
                         }
