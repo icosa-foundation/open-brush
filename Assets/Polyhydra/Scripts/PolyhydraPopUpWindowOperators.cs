@@ -86,7 +86,10 @@ namespace TiltBrush
                     PolyMesh.Operation.Yank,
                     PolyMesh.Operation.Squall,
                     PolyMesh.Operation.JoinSquall,
+                    PolyMesh.Operation.Zellige,
+                    PolyMesh.Operation.Girih,
                     PolyMesh.Operation.Cross,
+                    PolyMesh.Operation.SubdivideEdges,
                     PolyMesh.Operation.SplitFaces,
                     PolyMesh.Operation.Gable,
                 }
@@ -118,6 +121,7 @@ namespace TiltBrush
                 {
                     PolyMesh.Operation.FaceOffset,
                     PolyMesh.Operation.FaceScale,
+                    PolyMesh.Operation.FaceInset,
                     PolyMesh.Operation.FaceRotateX,
                     PolyMesh.Operation.FaceRotateY,
                     PolyMesh.Operation.FaceRotateZ,
@@ -136,6 +140,7 @@ namespace TiltBrush
                     PolyMesh.Operation.FillHoles,
                     PolyMesh.Operation.Weld,
                     PolyMesh.Operation.ConvexHull,
+                    PolyMesh.Operation.MergeCoplanar,
                 }
             },
             {
