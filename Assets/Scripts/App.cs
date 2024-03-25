@@ -544,7 +544,7 @@ namespace TiltBrush
                 gameObject.AddComponent<AutoProfiler>();
             }
 
-            m_Manifest = GetMergedManifest(consultUserConfig: true);
+            m_Manifest = GetMergedManifest();
 
             m_HttpServer = GetComponentInChildren<HttpServer>();
             if (!Config.IsMobileHardware)
@@ -2173,15 +2173,12 @@ namespace TiltBrush
             }
         }
 
-        public TiltBrushManifest GetMergedManifest(bool consultUserConfig, bool forceExperimental = false)
+        public TiltBrushManifest GetMergedManifest(bool forceExperimental = false)
         {
             var manifest = m_Manifest;
             if (Config.IsExperimental || forceExperimental)
             {
-                // At build time, we don't want the user config to affect the build output.
-                if ((consultUserConfig
-                    && m_UserConfig.Flags.ShowDangerousBrushes
-                    && m_ManifestExperimental != null) || forceExperimental)
+                if (m_ManifestExperimental != null)
                 {
                     manifest = Instantiate(m_Manifest);
                     manifest.AppendFrom(m_ManifestExperimental);

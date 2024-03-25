@@ -56,16 +56,6 @@ namespace TiltBrush
                 set { m_AdvancedKeyboardShortcuts = value; }
             }
 
-            bool? m_ShowDangerousBrushes;
-            public bool ShowDangerousBrushes
-            {
-                get
-                {
-                    return m_ShowDangerousBrushes ?? Config.IsExperimental;
-                }
-                set { m_ShowDangerousBrushes = value; }
-            }
-
             bool? m_PostEffectsOnCapture;
             public bool PostEffectsOnCaptureValid { get { return m_PostEffectsOnCapture != null; } }
             public bool PostEffectsOnCapture
