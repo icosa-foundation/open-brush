@@ -83,7 +83,7 @@ jobs:
             STAMP=""
             echo "prerelease=false" >> $GITHUB_OUTPUT
             echo "itchchannelname=release" >> $GITHUB_OUTPUT
-            echo "fastlanelane=release" >> $GITHUB_OUTPUT
+            echo "fastlanelane=beta" >> $GITHUB_OUTPUT
 
           else
             # This is the first 7 characters of the commit; we do it this way rather than via rev-parse to avoid an 'if' conditional depending on whether it's a PR or push. (unlike git describe, git rev-parse doesn't default to the current HEAD)
