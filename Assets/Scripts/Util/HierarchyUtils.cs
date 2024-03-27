@@ -22,7 +22,8 @@ namespace TiltBrush
         /// Sets object and all children to a layer.
         public static void RecursivelySetLayer(Transform obj, int layer)
         {
-            if (obj == null) { return; }
+            // Hardcoded exceptions
+            if (obj == null || obj.gameObject.layer == LayerMask.NameToLayer("UI")) { return; }
             obj.gameObject.layer = layer;
             for (int i = 0; i < obj.childCount; ++i)
             {

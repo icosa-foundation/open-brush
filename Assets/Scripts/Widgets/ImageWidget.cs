@@ -249,5 +249,9 @@ namespace TiltBrush
             }
         }
 
+        public bool HasSubShapes()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 } // namespace TiltBrush

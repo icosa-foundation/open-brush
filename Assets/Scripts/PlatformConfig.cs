@@ -73,8 +73,6 @@ namespace TiltBrush
         public bool EnableExportJson;
         // Usd export will crash if the usd libraries aren't available
         public bool EnableExportUsd;
-        // Latk export
-        public bool EnableExportLatk = true;
         // Trade off increased disk-space and export time for reduced memory
         public bool EnableExportMemoryOptimization;
 

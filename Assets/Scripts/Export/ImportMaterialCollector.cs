@@ -99,6 +99,21 @@ namespace TiltBrush
                 ? TbtSettings.Instance.m_PbrBlendDoubleSided
                 : TbtSettings.Instance.m_PbrOpaqueDoubleSided;
 
+            Color color = Color.magenta;
+            bool hasColor = false;
+            if (unityMaterial.shader.name.StartsWith("UnityGLTF"))
+            {
+                if (unityMaterial.HasColor("baseColorFactor"))
+                {
+                    color = unityMaterial.GetColor("baseColorFactor");
+                    hasColor = true;
+                }
+            }
+            if (!hasColor)
+            {
+                color = unityMaterial.color;
+            }
+
             m_MaterialToIem.Add(
                 unityMaterial,
                 new DynamicExportableMaterial(
@@ -107,7 +122,7 @@ namespace TiltBrush
                     uniqueName: MakeDeterministicUniqueName(m_numAdded++, unityMaterial.name),
                     uriBase: m_AssetLocation)
                 {
-                    BaseColorFactor = unityMaterial.color
+                    BaseColorFactor = color
                 });
         }
 
