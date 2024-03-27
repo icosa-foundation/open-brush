@@ -129,7 +129,7 @@ namespace TiltBrush
 
         public void StopRecordingPath(bool saveCapture)
         {
-            string message = saveCapture ? m_PathRecorded.GetLocalizedString() : m_PathCancelled.GetLocalizedString();
+            string message = saveCapture ? m_PathRecorded.GetLocalizedStringAsync().Result : m_PathCancelled.GetLocalizedStringAsync().Result;
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
                 InputManager.ControllerName.Brush, message);
             if (saveCapture)

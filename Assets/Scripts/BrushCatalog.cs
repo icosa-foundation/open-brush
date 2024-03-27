@@ -60,6 +60,7 @@ namespace TiltBrush
         public Texture2D m_GlobalNoiseTexture;
 
         [SerializeField] private Brush m_DefaultBrush;
+        [SerializeField] private Brush m_ZapboxDefaultBrush;
         private bool m_IsLoading;
         private Dictionary<Guid, Brush> m_GuidToBrush;
         private HashSet<Brush> m_AllBrushes;
@@ -82,7 +83,14 @@ namespace TiltBrush
         }
         public Brush DefaultBrush
         {
-            get { return m_DefaultBrush; }
+            get
+            {
+#if ZAPBOX_SUPPORTED
+                // TODO:Mikesky - Fix brush transparency!
+                return m_ZapboxDefaultBrush;
+#endif
+                return m_DefaultBrush;
+            }
         }
         public IEnumerable<Brush> AllBrushes
         {
