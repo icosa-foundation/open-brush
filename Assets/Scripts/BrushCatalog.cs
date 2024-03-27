@@ -104,6 +104,11 @@ namespace TiltBrush
         void Awake()
         {
             m_Instance = this;
+            Init();
+        }
+
+        public void Init()
+        {
             m_GuidToBrush = new Dictionary<Guid, Brush>();
             m_MaterialToBrush = new Dictionary<Material, Brush>();
             m_AllBrushes = new HashSet<Brush>();
@@ -115,7 +120,6 @@ namespace TiltBrush
                 m_MaterialToBrush.Add(m_BlocksMaterials[i].brushDescriptor.Material,
                     m_BlocksMaterials[i].brushDescriptor);
             }
-
             Shader.SetGlobalTexture("_GlobalNoiseTexture", m_GlobalNoiseTexture);
         }
 
@@ -178,7 +182,7 @@ namespace TiltBrush
             }
 
             // Postprocess: put brushes into parse-friendly list
-
+            m_GuiBrushList.Clear();
             foreach (var brush in m_GuidToBrush.Values)
             {
                 if (brush.m_HiddenInGui)
@@ -194,8 +198,6 @@ namespace TiltBrush
         {
             string[] includeTags = App.UserConfig.Brushes.IncludeTags;
             string[] excludeTags = App.UserConfig.Brushes.ExcludeTags;
-
-            Dictionary<string, string[]> test = App.UserConfig.Brushes.AddTagsToBrushes;
 
             if (includeTags == null)
             {

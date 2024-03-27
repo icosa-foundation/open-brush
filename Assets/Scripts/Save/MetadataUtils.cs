@@ -283,7 +283,7 @@ namespace TiltBrush
         // Converts data.Set_deprecated[] to data.ModelIndex[].InSet
         static void Upgrade_Set_ModelIndexInSet(SketchMetadata data)
         {
-            if (data.Set_deprecated == null)
+            if (data == null || data.Set_deprecated == null)
             {
                 return;
             }

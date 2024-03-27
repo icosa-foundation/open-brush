@@ -526,6 +526,8 @@ namespace TiltBrush
         public void SetIsExperimental(bool active)
         {
             PlayerPrefs.SetInt("ExperimentalMode", active ? 1 : 0);
+            BrushCatalog.m_Instance.Init();
+            BrushCatalog.m_Instance.BeginReload();
         }
 
         void Awake()

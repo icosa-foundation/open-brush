@@ -139,7 +139,9 @@ namespace TiltBrush
             // since some buttons are in prefabs rather than in the scene.
             bool selfDestruct = m_AddOverlay;
 
-            if (m_AddOverlay && Config.IsExperimental)
+            // TODO Trace which buttons have this set and decide what to do
+            // If they are the labs panel then fine.
+            if (m_AddOverlay)
             {
                 GameObject overlay = Instantiate(App.Config.m_LabsButtonOverlayPrefab);
                 overlay.transform.SetParent(transform, false);

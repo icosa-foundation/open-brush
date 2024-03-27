@@ -57,7 +57,7 @@ namespace TiltBrush
         // want to have a different config file for your edition of the app.
         public const string kConfigFileName = "Open Brush.cfg";
         // The name of the App folder (In the user's Documents folder) - original Tilt Brush used "Tilt Brush"
-        // If you are forking Open Brush, you may want to leave this as "Open Brush" or not. 
+        // If you are forking Open Brush, you may want to leave this as "Open Brush" or not.
         public const string kAppFolderName = "Open Brush";
         // The data folder used on Google Drive.
         public const string kDriveFolderName = kAppDisplayName;
@@ -545,7 +545,7 @@ namespace TiltBrush
                 gameObject.AddComponent<AutoProfiler>();
             }
 
-            m_Manifest = GetMergedManifest(consultUserConfig: true);
+            m_Manifest = GetMergedManifest();
 
             m_HttpServer = GetComponentInChildren<HttpServer>();
             if (!Config.IsMobileHardware)
@@ -757,15 +757,6 @@ namespace TiltBrush
 
             SwitchState();
 
-#if USD_SUPPORTED
-            if (Config.IsExperimental && !string.IsNullOrEmpty(Config.m_IntroSketchUsdFilename))
-            {
-                var gobject = ImportUsd.ImportWithAnim(Config.m_IntroSketchUsdFilename);
-
-                gobject.transform.SetParent(App.Scene.transform, false);
-            }
-#endif
-
             if (Config.m_AutoProfile || m_UserConfig.Profiling.AutoProfile)
             {
                 StateChanged += AutoProfileOnStartAndQuit;
@@ -929,7 +920,7 @@ namespace TiltBrush
                             {
                                 OnIntroComplete();
                             }
-                            else if (Config.IsExperimental)
+                            else if (UserConfig.Flags.SkipIntro)
                             {
                                 OnIntroComplete();
                                 PanelManager.m_Instance.ReviveFloatingPanelsForStartup();
@@ -2183,15 +2174,12 @@ namespace TiltBrush
             }
         }
 
-        public TiltBrushManifest GetMergedManifest(bool consultUserConfig, bool forceExperimental = false)
+        public TiltBrushManifest GetMergedManifest(bool forceExperimental = false)
         {
             var manifest = m_Manifest;
             if (Config.IsExperimental || forceExperimental)
             {
-                // At build time, we don't want the user config to affect the build output.
-                if ((consultUserConfig
-                    && m_UserConfig.Flags.ShowDangerousBrushes
-                    && m_ManifestExperimental != null) || forceExperimental)
+                if (m_ManifestExperimental != null)
                 {
                     manifest = Instantiate(m_Manifest);
                     manifest.AppendFrom(m_ManifestExperimental);

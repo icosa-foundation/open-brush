@@ -55,7 +55,6 @@ namespace TiltBrush
         public Shader shader;
         public Texture icon;
         public bool cylindrical;
-        public bool experimental; // if true, don't show in demo mode
         public bool hdr;
     }
 
@@ -99,13 +98,7 @@ namespace TiltBrush
             int n = 0;
             for (int i = 0; i < ModeToPickerInfo.Length; i++)
             {
-                if (!ModeToPickerInfo[i].info.experimental &&
-                    ModeToPickerInfo[i].info.hdr == hdr)
-                {
-                    n++;
-                }
-                if (Config.IsExperimental && ModeToPickerInfo[i].info.experimental &&
-                    ModeToPickerInfo[i].info.hdr == hdr)
+                if (ModeToPickerInfo[i].info.hdr == hdr)
                 {
                     n++;
                 }
@@ -163,7 +156,6 @@ namespace TiltBrush
             bool pickerSupportsHdr = (mode == ColorPickerMode.HS_LogV_Polar);
             if (colorIsHdr && !pickerSupportsHdr)
             {
-                // Shouldn't happen except in experimental
                 Debug.LogErrorFormat("Truncating HDR color to LDR");
                 float h, s, v;
                 Color.RGBToHSV(rgb, out h, out s, out v);
@@ -482,15 +474,6 @@ namespace TiltBrush
             {
                 return false;
             }
-            if (Config.IsExperimental)
-            {
-                return true;
-            }
-            if (info.experimental)
-            {
-                return false;
-            }
-
             return true;
         }
 
