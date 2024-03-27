@@ -571,15 +571,14 @@ jobs:
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
           key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
-  createdmg:
-    name: Create and Notarize DMG
-    needs: [configuration, build]
+  signmacos:
+    name: Sign the MacOS .app
+    needs: [build]
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
-
-    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    runs-on: macos-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -639,11 +638,46 @@ jobs:
           codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME/Contents/Plugins/UsdCs.bundle
           codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME/Contents/Plugins/lib_burst_generated.bundle
           codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME
+          cd -
+
+          tar -c -v -z -f OpenBrush.tgz StandaloneOSX
+      - name: Upload signed app
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacOS Monoscopic (signed)
+          path: |
+            OpenBrush.tgz
+
+  createdmg:
+    name: Create and Notarize DMG
+    needs: [signmacos]
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
+          sparse-checkout: |
+            Support/macos
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: MacOS Monoscopic (signed)
+          path: build_macos_monoscopic
 
       - name: Create a notarized DMG
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
+          tar xvfz build_macos_monoscopic/*tgz
+
           export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBrush*.app))
           mkdir dist
 
@@ -857,7 +891,7 @@ jobs:
 
   publish_steam:
     name: Publish Steam Release
-    needs: [configuration, build]
+    needs: [build, signmacos]
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -883,19 +917,29 @@ jobs:
         with:
           name: Windows OpenXR
           path: build_windows_openxr
+      - name: Download Build Artifacts (MacOS Monoscopic Signed)
+        uses: actions/download-artifact@v4
+        with:
+          name: MacOS Monoscopic (signed)
+          path: build_macos_monoscopic
       - name: Upload Build
         run: |
+          cd build_macos_monoscopic
+          tar xvfz OpenBrush.tgz
+          cd -
           pip install -U jinjanator
-          jinjanate Support/steam/app.vdf.j2 > build_windows_openxr/app.vdf
-          jinjanate Support/steam/main_depot.vdf.j2 > build_windows_openxr/main_depot.vdf
+          jinjanate Support/steam/app.vdf.j2 > app.vdf
+          jinjanate Support/steam/main_depot.win.vdf.j2 > build_windows_openxr/main_depot.vdf
+          jinjanate Support/steam/main_depot.mac.vdf.j2 > build_macos_monoscopic/main_depot.vdf
           jinjanate Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
-          steamcmd +login $STEAM_USERNAME +run_app_build $(pwd)/build_windows_openxr/app.vdf +quit
+          steamcmd +login $STEAM_USERNAME +run_app_build $(pwd)/app.vdf +quit
         env:
           STEAM_USERNAME: ${{ vars.STEAM_USERNAME }}
           STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
           VERSION: ${{ needs.configuration.outputs.version }}
           OPEN_BRUSH_APP_ID: ${{ vars.STEAM_APP_ID }}
           OPEN_BRUSH_WINDOWS_DEPOT_ID: ${{ vars.STEAM_WINDOWS_DEPOT_ID }}
+          OPEN_BRUSH_MAC_DEPOT_ID: ${{ vars.STEAM_MAC_DEPOT_ID }}
           OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
           CHANNEL: beta
       - name: Update steam login secret
