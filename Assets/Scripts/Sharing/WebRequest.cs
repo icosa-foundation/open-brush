@@ -352,7 +352,7 @@ namespace TiltBrush
                 RequestDebugLogFile(debugId, "form", temporaryFileName);
 
                 Func<UploadHandler> payloadCreator;
-                if (App.PlatformConfig.AvoidUploadHandlerFile)
+                if (UserConfig.PerformanceOverrides.AvoidUploadHandlerFile)
                 {
                     byte[] fileContents = await Task.Run(() => File.ReadAllBytes(temporaryFileName));
                     payloadCreator = () => new UploadHandlerRaw(fileContents);

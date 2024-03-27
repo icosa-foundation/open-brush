@@ -82,7 +82,7 @@ namespace TiltBrush
                 default:
                     // If we have no filewatcher, we need to check if any files have changed since the user
                     // last had the panel open.
-                    if (!App.PlatformConfig.UseFileSystemWatcher)
+                    if (!UserConfig.PerformanceOverrides.UseFileSystemWatcher)
                     {
                         m_CurrentTab.Catalog.ForceCatalogScan();
                         RefreshPage();

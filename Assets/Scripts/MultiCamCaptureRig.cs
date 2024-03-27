@@ -123,7 +123,7 @@ namespace TiltBrush
 
             // For the mobile version we need to adjust the camera fov so that the frustum exactly matches
             // the view through the viewfinder. The camera is placed at the vr camera position.
-            if (!App.PlatformConfig.EnableMulticamPreview)
+            if (!UserConfig.PerformanceOverrides.EnableMulticamPreview)
             {
                 obj.m_Camera.transform.position = App.VrSdk.GetVrCamera().transform.position;
                 obj.m_Camera.transform.rotation = xf.rotation;

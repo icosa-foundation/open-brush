@@ -88,5 +88,7 @@ namespace TiltBrush
         // A mapping between the framerate and the frame gap between multicam previews.
         // (Leave empty to not have any gaps)
         public AnimationCurve FrameRateToPreviewRenderGap;
+
     }
+
 } // namespace TiltBrush

@@ -463,17 +463,14 @@ namespace TiltBrush
                     SyncType.Upload,
                     SyncedFolderType.MediaLibrary,
                     token));
-                if (!App.Config.IsMobileHardware)
-                {
-                    folderSyncs.Add(AddSyncedFolderAsync(
-                        "Models",
-                        App.ModelLibraryPath(),
-                        mediaLibrary.Id,
-                        SyncType.Upload,
-                        SyncedFolderType.MediaLibrary,
-                        token,
-                        recursive: true));
-                }
+                folderSyncs.Add(AddSyncedFolderAsync(
+                    "Models",
+                    App.ModelLibraryPath(),
+                    mediaLibrary.Id,
+                    SyncType.Upload,
+                    SyncedFolderType.MediaLibrary,
+                    token,
+                    recursive: true));
                 folderSyncs.Add(AddSyncedFolderAsync(
                     "Videos",
                     App.VideoLibraryPath(),
@@ -493,26 +490,23 @@ namespace TiltBrush
                     token));
             }
 
-            if (!App.Config.IsMobileHardware)
+            if (IsFolderOfTypeSynced(SyncedFolderType.Videos))
             {
-                if (IsFolderOfTypeSynced(SyncedFolderType.Videos))
-                {
-                    folderSyncs.Add(AddSyncedFolderAsync(
-                        "Videos",
-                        App.VideosPath(),
-                        deviceRootId,
-                        SyncType.Upload,
-                        SyncedFolderType.Videos,
-                        token,
-                        excludeExtensions: new[] { ".bat", ".usda" }));
-                    folderSyncs.Add(AddSyncedFolderAsync(
-                        "VrVideos",
-                        App.VrVideosPath(),
-                        deviceRootId,
-                        SyncType.Upload,
-                        SyncedFolderType.Videos,
-                        token));
-                }
+                folderSyncs.Add(AddSyncedFolderAsync(
+                    "Videos",
+                    App.VideosPath(),
+                    deviceRootId,
+                    SyncType.Upload,
+                    SyncedFolderType.Videos,
+                    token,
+                    excludeExtensions: new[] { ".bat", ".usda" }));
+                folderSyncs.Add(AddSyncedFolderAsync(
+                    "VrVideos",
+                    App.VrVideosPath(),
+                    deviceRootId,
+                    SyncType.Upload,
+                    SyncedFolderType.Videos,
+                    token));
             }
 
             if (IsFolderOfTypeSynced(SyncedFolderType.Exports))
