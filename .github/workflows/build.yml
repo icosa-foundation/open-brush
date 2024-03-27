@@ -571,15 +571,14 @@ jobs:
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
           key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
-  createdmg:
-    name: Create and Notarize DMG
-    needs: [configuration, build]
+  signmacos:
+    name: Sign the MacOS .app
+    needs: [build]
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
-
-    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    runs-on: macos-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -639,11 +638,46 @@ jobs:
           codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME/Contents/Plugins/UsdCs.bundle
           codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME/Contents/Plugins/lib_burst_generated.bundle
           codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME
+          cd -
+
+          tar -c -v -z -f OpenBrush.tgz StandaloneOSX
+      - name: Upload signed app
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacOS Monoscopic (signed)
+          path: |
+            OpenBrush.tgz
+
+  createdmg:
+    name: Create and Notarize DMG
+    needs: [signmacos]
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
+          sparse-checkout: |
+            Support/macos
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: MacOS Monoscopic (signed)
+          path: build_macos_monoscopic
 
       - name: Create a notarized DMG
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
+          tar xvfz build_macos_monoscopic/*tgz
+
           export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBrush*.app))
           mkdir dist
 
