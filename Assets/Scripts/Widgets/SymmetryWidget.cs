@@ -79,6 +79,17 @@ namespace TiltBrush
             }
         }
 
+        public void Spin(float xSpeed, float ySpeed, float zSpeed)
+        {
+            AngularVelocity_GS = App.Scene.Pose.rotation * new Vector3(xSpeed, ySpeed, zSpeed);
+            m_IsSpinningFreely = true;
+        }
+
+        public Vector3 GetSpin()
+        {
+            return App.Scene.Pose.rotation.TrueInverse() * AngularVelocity_GS;
+        }
+
         public override Vector3 CustomDimension
         {
             get { return m_AngularVelocity_LS; }
@@ -127,6 +138,7 @@ namespace TiltBrush
                     break;
                 case PointerManager.SymmetryMode.TwoHanded:
                 case PointerManager.SymmetryMode.MultiMirror:
+                case PointerManager.SymmetryMode.ScriptedSymmetryMode:
                     m_LeftRightMesh.enabled = false;
                     m_FrontBackMesh.enabled = true;
                     for (int i = 0; i < m_GuideBeams.Length; ++i)
@@ -419,7 +431,7 @@ namespace TiltBrush
                     }
                     lr.gameObject.SetActive(true);
                     // var path = PointerManager.m_Instance.CustomMirrorDomain;
-                    float insetAmount = i == 0 ? .1f : .11f;  // Slightly different inset for the first one so it's visible even if overlapping 
+                    float insetAmount = i == 0 ? .1f : .11f;  // Slightly different inset for the first one so it's visible even if overlapping
                     var path = InsetPolygon(PointerManager.m_Instance.CustomMirrorDomain, insetAmount);
                     var path3d = path.Select(v =>
                     {

@@ -182,6 +182,8 @@ namespace TiltBrush
                     return GetVrInput(VrInput.Button02 /*half_right*/);
                 case SketchCommands.Fly:
                     return IsTrigger();
+                case SketchCommands.ScriptedTool:
+                    return IsTrigger();
             }
 
             return false;

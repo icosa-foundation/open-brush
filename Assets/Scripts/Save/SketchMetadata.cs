@@ -14,6 +14,7 @@
 
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -602,6 +603,8 @@ namespace TiltBrush
         public string Name;
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public bool Visible;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TrTransform Transform { get; set; }
     }
 
     // TODO: deprecate (7.5b-only)
@@ -697,13 +700,6 @@ namespace TiltBrush
         {
             return SceneTransformInRoomSpace != TrTransform.identity;
         }
-        public TrTransform CanvasTransformInSceneSpace = TrTransform.identity;
-        // Callback for JSON.net (name is magic and special)
-        public bool ShouldSerializeCanvasTransformInSceneSpace()
-        {
-            return CanvasTransformInSceneSpace != TrTransform.identity;
-        }
-
         // This was the old name of ThumbnailCameraTransformInRoomSpace.
         [Serializable]
         public struct UnusedSketchTransform

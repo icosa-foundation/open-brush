@@ -450,5 +450,43 @@ namespace TiltBrush
                 }
             }
         }
+
+        public void InjectScriptedWaveform(Color[] fft)
+        {
+            for (int i = 0; i < m_FFTSize; ++i)
+            {
+                m_WaveFormRow[i] = fft[i];
+            }
+            m_WaveFormTexture.SetPixels(0, 0, m_FFTSize, 1, m_WaveFormRow);
+            m_WaveFormTexture.Apply();
+            Shader.SetGlobalTexture("_WaveFormTex", m_WaveFormTexture);
+        }
+
+        public void InjectScriptedFft(float[] fft1, float[] fft2, float[] fft3, float[] fft4)
+        {
+            for (int i = 0; i < m_FFTTextureSize; ++i)
+            {
+                m_FFTRow[i] = new Color(fft1[i], fft2[i], fft3[i], fft4[i]);
+            }
+            m_FFTTexture.SetPixels(0, 0, m_FFTTextureSize, 1, m_FFTRow);
+            m_FFTTexture.Apply();
+            Shader.SetGlobalTexture("_FFTTex", m_FFTTexture);
+        }
+
+        public void InjectScriptedBeats(Vector4 data)
+        {
+            Shader.SetGlobalVector("_BeatOutput", data);
+        }
+
+        public void InjectScriptedBeatAccumulator(Vector4 data)
+        {
+            Shader.SetGlobalVector("_BeatOutputAccum", data);
+        }
+
+        public void InjectBandPeaks(Vector4 data)
+        {
+            Shader.SetGlobalVector("_PeakBandLevels", m_BandPeakLevelsOutput);
+        }
+
     }
 } // namespace TiltBrush

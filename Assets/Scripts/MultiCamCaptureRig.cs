@@ -24,7 +24,8 @@ namespace TiltBrush
         AutoGif,
         TimeGif,
         Video,
-        Num
+        Depth,
+        Num,
     }
 
     [System.Serializable]

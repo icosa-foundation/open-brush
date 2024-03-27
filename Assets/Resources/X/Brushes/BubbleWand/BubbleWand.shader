@@ -18,6 +18,15 @@ Properties {
 	_ScrollRate("Scroll Rate", Float) = 1.0
 	_ScrollJitterIntensity("Scroll Jitter Intensity", Float) = 1.0
 	_ScrollJitterFrequency("Scroll Jitter Frequency", Float) = 1.0
+
+  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
+
+  _Opacity ("Opacity", Range(0, 1)) = 1
+  _ClipStart("Clip Start", Float) = 0
+  _ClipEnd("Clip End", Float) = -1
 }
 
     SubShader {
@@ -30,6 +39,7 @@ Properties {
 		#pragma surface surf StandardSpecular vertex:vert
 		#pragma multi_compile __ AUDIO_REACTIVE
 		#pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
+		#include "Assets/Shaders/Include/TimeOverride.cginc"
 		#include "Assets/Shaders/Include/Brush.cginc"
 		#include "Assets/ThirdParty/Shaders/Noise.cginc"
 
@@ -39,14 +49,18 @@ Properties {
 		float _ScrollJitterIntensity;
 		float _ScrollJitterFrequency;
 
+        uniform float _ClipStart;
+        uniform float _ClipEnd;
+        uniform half _Opacity;
+
 		float4 displace(float4 pos, float timeOffset) {
-			float t = _Time.y*_ScrollRate + timeOffset;
+			float t = GetTime().y*_ScrollRate + timeOffset;
 
-			pos.x += sin(t + _Time.y + pos.z * _ScrollJitterFrequency) * _ScrollJitterIntensity;
-			pos.z += cos(t + _Time.y + pos.x * _ScrollJitterFrequency) * _ScrollJitterIntensity;
-			pos.y += cos(t * 1.2 + _Time.y + pos.x * _ScrollJitterFrequency) * _ScrollJitterIntensity;
+			pos.x += sin(t + GetTime().y + pos.z * _ScrollJitterFrequency) * _ScrollJitterIntensity;
+			pos.z += cos(t + GetTime().y + pos.x * _ScrollJitterFrequency) * _ScrollJitterIntensity;
+			pos.y += cos(t * 1.2 + GetTime().y + pos.x * _ScrollJitterFrequency) * _ScrollJitterIntensity;
 
-			float time = _Time.x;
+			float time = GetTime().x;
 			float d = 30;
 			float freq = .1;
 			float3 disp = float3(1,0,0) * curlX(pos.xyz * freq + time, d);
@@ -60,10 +74,24 @@ Properties {
 			float4 color : Color;
 			float2 tex : TEXCOORD0;
 			float3 viewDir;
+            uint id : SV_VertexID;
 			INTERNAL_DATA
 		};
 
-		void vert (inout appdata_full v, out Input o) {
+		struct appdata_full_plus_id {
+             float4 vertex : POSITION;
+             float4 tangent : TANGENT;
+             float3 normal : NORMAL;
+             float4 texcoord : TEXCOORD0;
+             float4 texcoord1 : TEXCOORD1;
+             float4 texcoord2 : TEXCOORD2;
+             float4 texcoord3 : TEXCOORD3;
+             fixed4 color : COLOR;
+             uint id : SV_VertexID;
+             UNITY_VERTEX_INPUT_INSTANCE_ID
+      };
+
+		void vert (inout appdata_full_plus_id v, out Input o) {
 			PrepForOds(v.vertex);
 
 			float radius = v.texcoord.z;
@@ -84,11 +112,15 @@ Properties {
 			o.color = TbVertToSrgb(o.color);
 			UNITY_INITIALIZE_OUTPUT(Input, o);
 		    o.tex = v.texcoord.xy;
+            o.id = v.id;
 		}
 
 		// Input color is srgb
 		void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
-		    // Hardcode some shiny specular values
+
+			if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
+
+			// Hardcode some shiny specular values
 			o.Smoothness = .9;
 			o.Specular = .6 * SrgbToNative(IN.color).rgb;
 			o.Albedo = 0;
@@ -99,9 +131,11 @@ Properties {
 			rim *= 1-pow(rim,5);
 
 			//Thin slit diffraction texture ramp lookup
-			float3 diffraction = tex2D(_MainTex, half2(rim + _Time.x + o.Normal.y, rim + o.Normal.y)).xyz;
+			float3 diffraction = tex2D(_MainTex, half2(rim + GetTime().x + o.Normal.y, rim + o.Normal.y)).xyz;
 			o.Emission = rim*(.25 * diffraction * rim  + .75 * diffraction * IN.color);
-
+	        o.Emission *= _Opacity;
+	        o.Specular *= _Opacity;
+	        o.Smoothness *= _Opacity;
 		}
 		ENDCG
     }

@@ -25,6 +25,14 @@ Properties {
   _FlameFadeMin ("Fade Flame Min", Float) = 1
   _FlameFadeMax ("Fade Flame Max", Float) = 30
 
+      [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
+
+    _Opacity ("Opacity", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -47,11 +55,16 @@ Category {
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 
       #include "UnityCG.cginc"
+      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
 
       sampler2D _MainTex;
       sampler2D _DisplaceTex;
+
+      uniform float _ClipStart;
+      uniform float _ClipEnd;
+      uniform half _Opacity;
 
       struct appdata_t {
         float4 vertex : POSITION;
@@ -63,6 +76,7 @@ Category {
         float2 texcoord : TEXCOORD0;
 #endif
         float3 worldPos : TEXCOORD1;
+        uint id : SV_VertexID;
       };
 
       struct v2f {
@@ -74,6 +88,7 @@ Category {
         float2 texcoord : TEXCOORD0;
 #endif
         float3 worldPos : TEXCOORD1;
+        uint id : TEXCOORD2;
       };
 
       float4 _MainTex_ST;
@@ -96,12 +111,17 @@ Category {
         o.color = bloomColor(v.color, _EmissionGain);
         o.vertex = UnityObjectToClipPos(v.vertex);
         o.worldPos = mul(unity_ObjectToWorld, v.vertex);
+        o.id = (float2)v.id;
         return o;
       }
 
       // Note: input color is srgb
       fixed4 frag (v2f i) : COLOR
       {
+
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+        if (_Opacity < 1 && Dither8x8(i.vertex.xy) >= _Opacity) discard;
+
         half2 displacement;
         float procedural_line = 0;
         float flame_fade_mix = 0;
@@ -119,8 +139,8 @@ Category {
         half2 uv = i.texcoord;
         uv += displacement;
 
-        half flame1 = tex2D(_MainTex, uv * .7 + half2(-_Time.x * _Scroll1, 0)).x;
-        half flame2 = tex2D(_MainTex, half2(uv.x,1.0-uv.y) + half2(-_Time.x * _Scroll2, -_Time.x * _Scroll2 / 4 )).x;
+        half flame1 = tex2D(_MainTex, uv * .7 + half2(-GetTime().x * _Scroll1, 0)).x;
+        half flame2 = tex2D(_MainTex, half2(uv.x,1.0-uv.y) + half2(-GetTime().x * _Scroll2, -GetTime().x * _Scroll2 / 4 )).x;
 
         half flames = saturate( flame2 + flame1 ) / 2.0;
         flames = smoothstep( 0, 0.8, mask*flames);
@@ -134,7 +154,7 @@ Category {
         float4 color = i.color * tex;
         color = encodeHdr(color.rgb * color.a);
         color = SrgbToNative(color);
-        return color;
+        return color * _Opacity;
       }
       ENDCG
     }

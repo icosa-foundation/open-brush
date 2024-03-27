@@ -145,8 +145,9 @@ namespace TiltBrush
             return LayerMask.NameToLayer("SelectionCanvas");
         }
 
-        void Update()
+        protected override void Update()
         {
+            base.Update();
             // Note this isn't in UpdateAudioVisuals() because we want it to run while the
             // tool is deactivated.
             if (m_ToolAudio)

@@ -16,6 +16,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
+    // TODO Why do we need ToggleButton and ActionToggleButton?
     public class ActionToggleButton : ActionButton
     {
         public bool m_InitialToggleState = false;

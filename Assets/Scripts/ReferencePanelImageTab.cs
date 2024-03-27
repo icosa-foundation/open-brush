@@ -52,7 +52,7 @@ namespace TiltBrush
             }
         }
 
-        [SerializeField] private bool m_AutoLoadImages;
+        [SerializeField] protected bool m_AutoLoadImages;
         private bool m_AllIconTexturesAssigned;
         private bool m_tabAccessed;
 

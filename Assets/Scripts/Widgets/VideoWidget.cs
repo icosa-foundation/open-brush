@@ -133,7 +133,7 @@ namespace TiltBrush
             }
         }
 
-        public static void FromTiltVideo(TiltVideo tiltVideo)
+        public static VideoWidget FromTiltVideo(TiltVideo tiltVideo)
         {
             VideoWidget videoWidget = Instantiate(WidgetManager.m_Instance.VideoWidgetPrefab);
             videoWidget.m_LoadingFromSketch = true;
@@ -171,6 +171,7 @@ namespace TiltBrush
 
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(videoWidget.GetTiltMeterCost(), up: true);
             videoWidget.UpdateScale();
+            return videoWidget;
         }
 
         override public GrabWidget Clone()

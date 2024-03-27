@@ -37,9 +37,9 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("strokes.select", "Select multiple strokes by index.")]
-        public static void SelectStrokes(int start, int end)
+        public static void SelectStrokes(int from, int to)
         {
-            var strokes = SketchMemoryScript.GetStrokesBetween(start, end);
+            var strokes = SketchMemoryScript.GetStrokesBetween(from, to);
             SelectionManager.m_Instance.SelectStrokes(strokes);
         }
 
@@ -128,7 +128,7 @@ namespace TiltBrush
             }
         }
 
-        [ApiEndpoint("selection.points.addnoise", "Moves the position of all control points in the selection using a noise function")]
+        [ApiEndpoint("selection.points.perlin", "Moves the position of all control points in the selection using a noise function")]
         public static void PerlinNoiseSelection(string axis, Vector3 scale)
         {
             Enum.TryParse(axis.ToUpper(), out Axis _axis);
@@ -144,21 +144,27 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("stroke.join", "Joins a stroke with the previous one")]
-        public static void JoinStroke()
+        public static Stroke JoinStroke()
         {
             var stroke1 = SketchMemoryScript.m_Instance.GetStrokeAtIndex(0);
             var stroke2 = SketchMemoryScript.m_Instance.GetStrokeAtIndex(-1);
+            return JoinStrokes(stroke1, stroke2);
+        }
+
+        public static Stroke JoinStrokes(Stroke stroke1, Stroke stroke2)
+        {
             stroke2.m_ControlPoints = stroke2.m_ControlPoints.Concat(stroke1.m_ControlPoints).ToArray();
             stroke2.Uncreate();
             stroke2.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke2.m_ControlPoints.Length).ToArray();
             stroke2.Recreate(null, stroke2.Canvas);
             DeleteStroke(0);
+            return stroke2;
         }
 
         [ApiEndpoint("strokes.join", "Joins all strokes between the two indices (inclusive)")]
-        public static void JoinStrokes(int start, int end)
+        public static Stroke JoinStrokes(int from, int to)
         {
-            var strokesToJoin = SketchMemoryScript.GetStrokesBetween(start, end);
+            var strokesToJoin = SketchMemoryScript.GetStrokesBetween(from, to);
             var firstStroke = strokesToJoin[0];
             firstStroke.m_ControlPoints = strokesToJoin.SelectMany(x => x.m_ControlPoints).ToArray();
             for (int i = 1; i < strokesToJoin.Count; i++)
@@ -170,6 +176,7 @@ namespace TiltBrush
             firstStroke.Uncreate();
             firstStroke.m_ControlPointsToDrop = Enumerable.Repeat(false, firstStroke.m_ControlPoints.Length).ToArray();
             firstStroke.Recreate(null, firstStroke.Canvas);
+            return firstStroke;
         }
 
         [ApiEndpoint("stroke.add", "Adds a point at the current brush position to the specified stroke")]

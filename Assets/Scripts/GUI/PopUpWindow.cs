@@ -87,6 +87,7 @@ namespace TiltBrush
         protected float m_BaseIconScale;
 
         public Action m_OnClose;
+        [NonSerialized] public PopUpWindow m_PreviousPopUp;
 
         public Collider GetCollider() { return m_WindowCollider; }
         public BasePanel GetParentPanel() { return m_ParentPanel; }

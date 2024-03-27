@@ -294,8 +294,8 @@ MonoBehaviour:
   m_GazeActivateSpeed: 8
   m_InitialSpawnPos: {x: 0, y: 0, z: 0}
   m_InitialSpawnRotEulers: {x: 0, y: 0, z: 0}
-  m_WandAttachAngle: 0
-  m_WandAttachYOffset: 0
+  m_WandAttachAngle: 120
+  m_WandAttachYOffset: 2
   m_WandAttachHalfHeight: 1
   m_BeginFixed: 0
   m_CanBeFixedToWand: 1

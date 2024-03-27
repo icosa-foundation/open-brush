@@ -2360,10 +2360,10 @@ namespace TiltBrush
                 data.m_Widget.gameObject.activeSelf && data.m_Widget.IsAvailable();
         }
 
-        public void OpenPanel(BasePanel.PanelType type, TrTransform trSpawnXf)
+        public void OpenPanel(BasePanel.PanelType type, TrTransform trSpawnXf, bool forced = false)
         {
-            if (type != BasePanel.PanelType.SketchSurface && type != BasePanel.PanelType.Color &&
-                type != BasePanel.PanelType.Brush)
+            if ((type != BasePanel.PanelType.SketchSurface && type != BasePanel.PanelType.Color &&
+                type != BasePanel.PanelType.Brush) || forced)
             {
                 TrTransform xfSpawn = trSpawnXf;
                 xfSpawn.scale = 0.0f;
@@ -2371,7 +2371,7 @@ namespace TiltBrush
                 xfTarget.scale = 1.0f;
                 for (int i = 0; i < m_AllPanels.Count; ++i)
                 {
-                    if (m_AllPanels[i].m_Panel.Type == type && m_AllPanels[i].AvailableInCurrentMode)
+                    if (m_AllPanels[i].m_Panel.Type == type && (m_AllPanels[i].AvailableInCurrentMode || forced))
                     {
                         if (m_AllPanels[i].m_Widget)
                         {
@@ -2380,7 +2380,7 @@ namespace TiltBrush
                                 m_AllPanels[i].m_Panel.m_Fixed = false;
                                 m_AllPanels[i].m_Panel.VerifyStateForFloating();
                             }
-                            m_AllPanels[i].m_Widget.InitIntroAnim(xfSpawn, xfTarget, false);
+                            m_AllPanels[i].m_Widget.InitIntroAnim(xfSpawn, xfTarget, false, null, forced);
                             m_AllPanels[i].m_Widget.Show(true);
                             m_LastOpenedPanelIndex = i;
                             if (type != BasePanel.PanelType.Tutorials)
@@ -2390,6 +2390,22 @@ namespace TiltBrush
 
                             PrimeCollisionSimForWidgets(m_AllPanels[i].m_Widget);
                         }
+                    }
+                }
+            }
+        }
+
+        // Used by API
+        public void HidePanel(BasePanel.PanelType panelType)
+        {
+            for (int i = 0; i < m_AllPanels.Count; ++i)
+            {
+                if (m_AllPanels[i].m_Panel.Type == panelType)
+                {
+                    if (m_AllPanels[i].m_Widget)
+                    {
+                        m_AllPanels[i].m_Panel.ResetPanel();
+                        m_AllPanels[i].m_Widget.Show(false, false);
                     }
                 }
             }
@@ -2504,6 +2520,19 @@ namespace TiltBrush
         {
             App.BrushColor.CurrentColor = col;
         }
+
+        public void AttachPanelToWand(BasePanel.PanelType type)
+        {
+            var panel = GetPanelByType(type);
+            panel.AttachToWand();
+        }
+
+        public void DetachPanelFromWand(BasePanel.PanelType type, TrTransform tr)
+        {
+            var panel = GetPanelByType(type);
+            panel.DetachFromWand(tr);
+        }
+
     }
 
 } // namespace TiltBrush

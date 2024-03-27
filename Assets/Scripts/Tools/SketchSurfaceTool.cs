@@ -54,11 +54,22 @@ namespace TiltBrush
         {
             base.UpdateTool();
 
+            // This is where we detect input and initiate drawing
             bool bEnableLine = InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate);
             bEnableLine = bEnableLine && !m_EatInput && m_AllowDrawing && m_SketchSurface.IsSurfaceDrawable();
 
+            if (bEnableLine)
+            {
+                PointerManager.m_Instance.HandleColorJitter();
+            }
+
             // Allow API command to override painting mode
-            bEnableLine = bEnableLine || ApiManager.Instance.ForcePaintingOn;
+            bEnableLine = ApiManager.Instance.ForcePainting switch
+            {
+                ApiManager.ForcePaintingMode.ForcedOn => true,
+                ApiManager.ForcePaintingMode.ForcedOff => false,
+                _ => bEnableLine,
+            };
 
             PointerManager.m_Instance.EnableLine(bEnableLine);
             PointerManager.m_Instance.PointerPressure = 1.0f;

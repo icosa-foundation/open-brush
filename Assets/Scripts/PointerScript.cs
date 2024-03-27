@@ -94,12 +94,45 @@ namespace TiltBrush
 
         private List<PreviewControlPoint> m_PreviewControlPoints; // FIFO queue
         private List<PointerManager.ControlPoint> m_ControlPoints;
+
+        // Used by the API
+        public List<TrTransform> CurrentPath
+        {
+            get
+            {
+                var path = new List<TrTransform>(m_ControlPoints.Count);
+                for (int i = 0; i < m_ControlPoints.Count; i++)
+                {
+                    var cp = m_ControlPoints[i];
+                    var tr = TrTransform.TR(cp.m_Pos, cp.m_Orient);
+                    path.Add(tr);
+                }
+                return path;
+            }
+            set
+            {
+                var startTime = m_ControlPoints[0].m_TimestampMs;
+                var endTime = m_ControlPoints[^1].m_TimestampMs;
+                m_ControlPoints = new List<PointerManager.ControlPoint>(value.Count);
+                for (var i = 0; i < value.Count; i++)
+                {
+                    var tr = value[i];
+                    m_ControlPoints.Add(new PointerManager.ControlPoint
+                    {
+                        m_Pos = tr.translation,
+                        m_Orient = tr.rotation,
+                        m_Pressure = tr.scale,
+                        m_TimestampMs = (uint)Mathf.RoundToInt(Mathf.Lerp(startTime, endTime, i))
+                    });
+                }
+            }
+        }
         private bool m_LastControlPointIsKeeper;
         private Vector3 m_PreviousPosition; //used for audio
 
         private float m_LineDepth;     // depth of stroke, only used in monoscopic mode. Room-space.
         private float m_LineLength_CS; // distance moved for the active line. Canvas-space.
-
+        private float m_MovementSpeed;
         private bool m_ShowDebugControlPoints = false;
         private List<Vector3> m_DebugViewControlPoints;
 
@@ -108,6 +141,9 @@ namespace TiltBrush
         private CanvasScript m_SubscribedCanvas;
 
         // ---- Public properties, accessors, events
+
+        public float LineLength_CS => m_LineLength_CS;
+        public float MovementSpeed => m_MovementSpeed;
 
         public event Action<TiltBrush.BrushDescriptor> OnBrushChange = delegate { };
 
@@ -563,30 +599,29 @@ namespace TiltBrush
             // the active stencil.
             if (PointerManager.m_Instance.MainPointer == this)
             {
-                // Increase stencil lift if we're painting on one.
                 StencilWidget stencil = WidgetManager.m_Instance.ActiveStencil;
+                float fPointerMovement_CS = GetMovementDelta() / Coords.CanvasPose.scale;
+                m_LineLength_CS += fPointerMovement_CS;
+
+                // Increase stencil lift if we're painting on one.
                 if (stencil != null && m_CurrentCreator == null)
                 {
-                    float fPointerMovement_CS = GetMovementDelta() / Coords.CanvasPose.scale;
                     stencil.AdjustLift(fPointerMovement_CS);
-                    m_LineLength_CS += fPointerMovement_CS;
                 }
             }
 
             UpdateLineVisuals();
 
-            // Update desired brush audio
+            m_MovementSpeed = Vector3.Distance(m_PreviousPosition, transform.position) /
+                Time.deltaTime; // Update desired brush audio
             if (m_AudioSources.Length > 0)
             {
-                float fMovementSpeed = Vector3.Distance(m_PreviousPosition, transform.position) /
-                    Time.deltaTime;
-
                 float fVelRangeRange = m_BrushAudioVolumeVelocityRange.y - m_BrushAudioVolumeVelocityRange.x;
-                float fVolumeRatio = Mathf.Clamp01((fMovementSpeed - m_BrushAudioVolumeVelocityRange.x) / fVelRangeRange);
+                float fVolumeRatio = Mathf.Clamp01((m_MovementSpeed - m_BrushAudioVolumeVelocityRange.x) / fVelRangeRange);
                 m_AudioVolumeDesired = fVolumeRatio;
 
                 float fPitchRangeRange = m_BrushAudioPitchVelocityRange.y - m_BrushAudioPitchVelocityRange.x;
-                float fPitchRatio = Mathf.Clamp01((fMovementSpeed - m_BrushAudioPitchVelocityRange.x) / fPitchRangeRange);
+                float fPitchRatio = Mathf.Clamp01((m_MovementSpeed - m_BrushAudioPitchVelocityRange.x) / fPitchRangeRange);
                 m_AudioPitchDesired = m_BrushAudioBasePitch + (fPitchRatio * m_BrushAudioMaxPitchShift);
             }
         }
