@@ -3489,6 +3489,10 @@ MonoBehaviour:
     m_Localized: Unlock Canvas Position
     m_Metadata:
       m_Items: []
+  - m_Id: 176764812224364544
+    m_Localized: Passthrough Hull
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
