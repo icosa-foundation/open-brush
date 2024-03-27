@@ -134,6 +134,12 @@ namespace TiltBrush
             return WidgetManager.m_Instance.ActiveVideoWidgets[index].WidgetScript;
         }
 
+        private static SoundClipWidget _GetActiveSoundClip(int index)
+        {
+            index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveSoundClipWidgets);
+            return WidgetManager.m_Instance.ActiveSoundClipWidgets[index].WidgetScript;
+        }
+
         private static ModelWidget _GetActiveModel(int index)
         {
             index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveModelWidgets);
