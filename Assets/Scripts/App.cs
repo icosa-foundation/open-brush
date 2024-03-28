@@ -932,7 +932,7 @@ namespace TiltBrush
                             {
                                 OnIntroComplete();
                             }
-                            else if (Config.IsExperimental)
+                            else if (UserConfig.Flags.EnableMonoscopicMode || Config.IsExperimental)
                             {
                                 OnIntroComplete();
                                 PanelManager.m_Instance.ReviveFloatingPanelsForStartup();
