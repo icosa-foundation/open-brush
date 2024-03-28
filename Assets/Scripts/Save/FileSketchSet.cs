@@ -23,14 +23,14 @@ using UnityEngine;
 namespace TiltBrush
 {
 
-    public class FileSketchSet : SketchSet
+    public class FileSketchSet : ISketchSet
     {
         static int ICON_LOAD_PER_FRAME = 3;
 
         /// Synchronously read thumbnail. Returns null on error.
-        public static byte[] ReadThumbnail(SceneFileInfo fileinfo)
+        public static byte[] ReadThumbnailAsync(SceneFileInfo fileinfo)
         {
-            using (Stream s = fileinfo.GetReadStream(TiltFile.FN_THUMBNAIL))
+            using (Stream s = fileinfo.GetReadStreamAsync(TiltFile.FN_THUMBNAIL).Result)
             {
                 if (s == null) { return null; }
                 byte[] buffer = new byte[32 * 1024];
@@ -47,7 +47,7 @@ namespace TiltBrush
             }
         }
 
-        private class FileSketch : Sketch, IComparable<FileSketch>
+        private class FileSketch : ISketch, IComparable<FileSketch>
         {
             private DiskSceneFileInfo m_FileInfo;
             private Texture2D m_Icon;
@@ -93,7 +93,7 @@ namespace TiltBrush
 
             private IEnumerable RequestLoadIconAndMetadataCoroutineThreaded()
             {
-                var thumbFuture = new Future<byte[]>(() => ReadThumbnail(m_FileInfo));
+                var thumbFuture = new Future<byte[]>(() => ReadThumbnailAsync(m_FileInfo));
                 byte[] data;
                 while (!thumbFuture.TryGetResult(out data)) { yield return null; }
 
@@ -114,15 +114,15 @@ namespace TiltBrush
                 }
                 if (m_Authors == null)
                 {
-                    var metadataFuture = new Future<SketchMetadata>(() => m_FileInfo.ReadMetadata());
+                    var metadataTask = m_FileInfo.ReadMetadataAsync();
                     SketchMetadata metadata;
-                    while (!metadataFuture.TryGetResult(out metadata))
+                    while (!metadataTask.IsCompleted)
                     {
                         yield return null;
                     }
-                    if (metadata != null)
+                    if (metadataTask.IsCompletedSuccessfully)
                     {
-                        m_Authors = metadata.Authors;
+                        m_Authors = metadataTask.Result.Authors;
                     }
                     else
                     {
@@ -196,7 +196,6 @@ namespace TiltBrush
             }
         }
 
-        protected SketchSetType m_Type;
         protected bool m_ReadyForAccess;
         private List<FileSketch> m_Sketches;
         private Stack<int> m_RequestedLoads;
@@ -209,10 +208,13 @@ namespace TiltBrush
         private bool m_ReadOnly;
         private string m_SketchesPath;
 
-        public SketchSetType Type
-        {
-            get { return m_Type; }
-        }
+        public const string TypeName = "LocalFolder";
+
+        public string SketchSetType => TypeName;
+
+        public string SketchSetInstance => $"{m_SketchesPath}?readonly={m_ReadOnly}";
+
+        public string Title => "Your Sketches";
 
         public bool IsReadyForAccess
         {
@@ -236,7 +238,6 @@ namespace TiltBrush
 
         public FileSketchSet()
         {
-            m_Type = SketchSetType.User;
             m_ReadyForAccess = false;
             m_RequestedLoads = new Stack<int>();
             m_Sketches = new List<FileSketch>();
@@ -248,7 +249,6 @@ namespace TiltBrush
 
         public FileSketchSet(string path)
         {
-            m_Type = SketchSetType.Curated;
             m_ReadyForAccess = false;
             m_RequestedLoads = new Stack<int>();
             m_Sketches = new List<FileSketch>();
@@ -333,7 +333,7 @@ namespace TiltBrush
             m_FileWatcher.NotifyDelete(m_Sketches[toDelete].SceneFileInfo.FullPath);
 
             // Notify the drive sketchset as the deleted file may now be visible there.
-            var driveSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Drive);
+            var driveSet = SketchCatalog.m_Instance.GetSketchSet(GoogleDriveSketchSet.UriString);
             if (driveSet != null)
             {
                 driveSet.NotifySketchChanged(m_Sketches[toDelete].SceneFileInfo.FullPath);
@@ -348,7 +348,7 @@ namespace TiltBrush
             m_FileWatcher.NotifyDelete(m_Sketches[toRename].SceneFileInfo.FullPath);
 
             // Notify the drive sketchset as the deleted file may now be visible there.
-            var driveSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Drive);
+            var driveSet = SketchCatalog.m_Instance.GetSketchSet(GoogleDriveSketchSet.UriString);
             if (driveSet != null)
             {
                 driveSet.NotifySketchChanged(m_Sketches[toRename].SceneFileInfo.FullPath);

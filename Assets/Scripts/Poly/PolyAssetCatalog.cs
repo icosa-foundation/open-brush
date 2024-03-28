@@ -19,6 +19,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 
@@ -642,20 +643,21 @@ namespace TiltBrush
         /// coroutine for each found asset.
         private IEnumerator<Null> PrecacheModelsCoroutine(SceneFileInfo sceneFileInfo, string reason)
         {
-            var getIdsFuture = new Future<List<string>>(() => GetModelIds(sceneFileInfo));
-            List<string> ids;
+            var getIdsTask = GetModelIds(sceneFileInfo);
+
             while (true)
             {
-                try
+                if (getIdsTask.IsCompleted)
                 {
-                    if (getIdsFuture.TryGetResult(out ids)) { break; }
-                }
-                catch (FutureFailed e)
-                {
-                    throw new Exception($"While reading {sceneFileInfo}", e);
+                    if (!getIdsTask.IsCompletedSuccessfully)
+                    {
+                        throw new Exception($"While reading {sceneFileInfo}", getIdsTask.Exception);
+                    }
+                    break;
                 }
                 yield return null;
             }
+            var ids = getIdsTask.Result;
 
             if (ids == null) { yield break; }
             List<IEnumerator<Null>> precacheCoroutines = new List<IEnumerator<Null>>();
@@ -686,36 +688,38 @@ namespace TiltBrush
         /// Returns all non-null asset ids from the passed sketch's metadata.
         /// null return value means "empty list".
         /// Raises exception on error.
-        private static List<string> GetModelIds(SceneFileInfo sceneFileInfo)
+        private static async Task<List<string>> GetModelIds(SceneFileInfo sceneFileInfo)
         {
             // Json deserializing is in a separate method that doesn't access Unity objects so that it
             // can be called on a thread. The json deserializing can be pretty slow and can cause
             // frame drops if performed on the main thread.
-            Stream metadata = SaveLoadScript.GetMetadataReadStream(sceneFileInfo);
-            if (metadata == null)
+            await using (Stream metadata = await SaveLoadScript.GetMetadataReadStreamAsync(sceneFileInfo))
             {
-                if (sceneFileInfo.Exists)
+                if (metadata == null)
                 {
-                    // ??? Let's try to provoke an exception to propagate to the caller
-                    using (var dummy = File.OpenRead(sceneFileInfo.FullPath)) { }
-                    throw new Exception($"Unknown error opening metadata {sceneFileInfo.FullPath}");
+                    if (sceneFileInfo.Exists)
+                    {
+                        // ??? Let's try to provoke an exception to propagate to the caller
+                        using (var dummy = File.OpenRead(sceneFileInfo.FullPath)) { }
+                        throw new Exception($"Unknown error opening metadata {sceneFileInfo.FullPath}");
+                    }
+                    else
+                    {
+                        throw new Exception(
+                            "Reading metadata from nonexistent " +
+                            $"{sceneFileInfo.InfoType} {sceneFileInfo.HumanName}");
+                    }
                 }
-                else
+                using (var jsonReader = new JsonTextReader(new StreamReader(metadata)))
                 {
-                    throw new Exception(
-                        "Reading metadata from nonexistent " +
-                        $"{sceneFileInfo.InfoType} {sceneFileInfo.HumanName}");
+                    var jsonData = SaveLoadScript.m_Instance.DeserializeMetadata(jsonReader);
+                    if (SaveLoadScript.m_Instance.LastMetadataError != null)
+                    {
+                        throw new Exception($"Deserialize error: {SaveLoadScript.m_Instance.LastMetadataError}");
+                    }
+                    if (jsonData.ModelIndex == null) { return null; }
+                    return jsonData.ModelIndex.Select(m => m.AssetId).Where(a => a != null).ToList();
                 }
-            }
-            using (var jsonReader = new JsonTextReader(new StreamReader(metadata)))
-            {
-                var jsonData = SaveLoadScript.m_Instance.DeserializeMetadata(jsonReader);
-                if (SaveLoadScript.m_Instance.LastMetadataError != null)
-                {
-                    throw new Exception($"Deserialize error: {SaveLoadScript.m_Instance.LastMetadataError}");
-                }
-                if (jsonData.ModelIndex == null) { return null; }
-                return jsonData.ModelIndex.Select(m => m.AssetId).Where(a => a != null).ToList();
             }
         }
 

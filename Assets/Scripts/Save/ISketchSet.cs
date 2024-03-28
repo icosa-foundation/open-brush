@@ -20,7 +20,7 @@ namespace TiltBrush
 {
 
     // Not actually useful as only used internally in SketchSets.
-    public interface Sketch
+    public interface ISketch
     {
         SceneFileInfo SceneFileInfo { get; }
         string[] Authors { get; }
@@ -31,9 +31,16 @@ namespace TiltBrush
     /// A collection of sketches from some source (user's local folder, showcase, cloud).
     /// Name, icon and author are available here, and sketches are accessed by getting the
     /// SceneFileInfo.
-    public interface SketchSet
+    public interface ISketchSet
     {
-        SketchSetType Type { get; }
+        // Each Sketch Set should have a type - e.g. 'Poly', 'Icosa', 'LocalFolder', 'Rss', 
+        // which should be the same for all instances of that type.
+        string SketchSetType { get; }
+        // Each Sketch Set should have an instance, that is enough to create a sketch set with.
+        // This could be something like an URL or a path, or a type.
+        string SketchSetInstance { get; }
+
+        string Title { get; }
 
         /// True if the sketch set can be accessed, but does not imply that all the data (like icons, etc)
         /// have been read yet.

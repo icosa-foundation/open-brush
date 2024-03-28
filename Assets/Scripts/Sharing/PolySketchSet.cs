@@ -19,20 +19,27 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 
 namespace TiltBrush
 {
 
     // TODO: Specify tag for which sketches to query (curated, liked etc.)
-    public class PolySketchSet : SketchSet
+    public class PolySketchSet : ISketchSet
     {
+
+        public enum SketchType
+        {
+            Curated,
+            Liked,
+        }
 
         const int kDownloadBufferSize = 1024 * 1024; // 1MB
 
         // Downloading is handled by PolySketchSet which will set the local paths
 
-        private class PolySketch : Sketch
+        private class PolySketch : ISketch
         {
             // This value holds the count of sketches that were downloaded by the sketch set
             // before this one.  It's used during our sort to retain order from Poly, while
@@ -100,21 +107,27 @@ namespace TiltBrush
         private bool m_ActivelyRefreshingSketches;
         private int m_MaximumSceneTriangles;
 
-        private SketchSetType m_Type;
+        private SketchType m_Type;
         private string m_CacheDir;
         private Coroutine m_RefreshCoroutine;
         private float m_CooldownTimer;
         private List<int> m_RequestedIcons = new List<int>();
         private Coroutine m_TextureLoaderCoroutine;
 
-        public SketchSetType Type { get { return m_Type; } }
+
+
+        public const string UriName = "poly:";
+        public string SketchSetType => UriName;
+        public string SketchSetInstance => m_Type == SketchType.Curated ? "Curated" : "Liked";
+
+        public string Title => "Poly";
 
         public VrAssetService VrAssetService
         {
             set { m_AssetService = value; }
         }
 
-        public PolySketchSet(MonoBehaviour parent, SketchSetType type, int maxSceneTriangles,
+        public PolySketchSet(MonoBehaviour parent, SketchType type, int maxSceneTriangles,
                              bool needsLogin = false)
         {
             m_Parent = parent;
@@ -292,7 +305,7 @@ namespace TiltBrush
                     m_RefreshRequested = false;
 
                     // Don't poll the showcase
-                    if (Type == SketchSetType.Curated)
+                    if (m_Type == SketchType.Curated)
                     {
                         yield break;
                     }
@@ -330,7 +343,7 @@ namespace TiltBrush
 
             if (m_CacheDir == null)
             {
-                m_CacheDir = CacheDir(Type);
+                m_CacheDir = CacheDir(m_Type);
                 try
                 {
                     Directory.CreateDirectory(m_CacheDir);
@@ -374,7 +387,7 @@ namespace TiltBrush
 
             // If we don't have a connection to Poly and we're querying the Showcase, use
             // the json metadatas stored in resources, instead of trying to get them from Poly.
-            if (VrAssetService.m_Instance.NoConnection && m_Type == SketchSetType.Curated)
+            if (VrAssetService.m_Instance.NoConnection && m_Type == SketchType.Curated)
             {
                 TextAsset[] textAssets =
                     Resources.LoadAll<TextAsset>(SketchCatalog.kDefaultShowcaseSketchesFolder);
@@ -386,7 +399,7 @@ namespace TiltBrush
             }
             else
             {
-                lister = m_AssetService.ListAssets(Type);
+                lister = m_AssetService.ListAssets(m_Type);
             }
 
             bool changed = false;
@@ -433,11 +446,11 @@ namespace TiltBrush
                 }
                 // Only cull the curated sketches.  If a user likes a sketch that's very high poly count,
                 // there's no feedback to tell them why it didn't show up in their list.  b/123649719
-                if (m_Type == SketchSetType.Curated)
+                if (m_Type == SketchType.Curated)
                 {
                     infos = infos.Where(x => x.GltfTriangleCount < m_MaximumSceneTriangles).ToList();
                 }
-                if (m_Type == SketchSetType.Curated && !assetIds.Keys.Contains(kIntroSketchAssetId))
+                if (m_Type == SketchType.Curated && !assetIds.Keys.Contains(kIntroSketchAssetId))
                 {
                     yield return VrAssetService.m_Instance.InsertSketchInfo(
                         kIntroSketchAssetId, kIntroSketchIndex, infos);
@@ -476,7 +489,7 @@ namespace TiltBrush
                 // Which results in a bad user experience.
                 if ((++pagesFetched & 1) == 0 || lister == null || !lister.HasMore)
                 {
-                    if (Type == SketchSetType.Curated)
+                    if (m_Type == SketchType.Curated)
                     {
                         sketches.Sort(CompareSketchesByTriangleCountAndDownloadIndex);
                     }
@@ -702,18 +715,18 @@ namespace TiltBrush
             }
         }
 
-        private static string CacheDir(SketchSetType type)
+        private static string CacheDir(SketchType type)
         {
             switch (type)
             {
-                case SketchSetType.Liked:
+                case SketchType.Liked:
                     {
                         // Ids are in the format "people/123456" so just pull out the numeric part
                         string id = App.GoogleIdentity.Profile.id;
                         id = id.Substring(id.LastIndexOf('/') + 1);
                         return Path.Combine(Application.persistentDataPath, String.Format("users/{0}/liked", id));
                     }
-                case SketchSetType.Curated:
+                case SketchType.Curated:
                     return Path.Combine(Application.persistentDataPath, "Curated Sketches");
                 default:
                     return null;
@@ -912,9 +925,10 @@ namespace TiltBrush
         // Not part of the interface
         public int? TriangleCount => m_GltfTriangleCount;
 
-        public Stream GetReadStream(string subfileName)
+        public Task<Stream> GetReadStreamAsync(string subfileName)
         {
-            return m_DownloadedFile.GetReadStream(subfileName);
+            return m_DownloadedFile.GetReadStreamAsync(subfileName);
+
         }
 
         // Not part of the interface

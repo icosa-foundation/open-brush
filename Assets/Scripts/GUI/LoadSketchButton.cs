@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using TMPro;
 using UnityEngine;
 
 namespace TiltBrush
@@ -28,6 +29,7 @@ namespace TiltBrush
 
         [SerializeField] private InspectSketchButton m_MenuButton;
         [SerializeField] private GameObject m_Warning;
+        [SerializeField] private TextMeshPro m_SketchName;
         [SerializeField] private Material m_WarningMaterial;
         [SerializeField] private Material m_ErrorMaterial;
 
@@ -38,7 +40,7 @@ namespace TiltBrush
         private float m_DynamicUvTransitionSpeed = 12.0f;
         private float m_DynamicUvTransitionValue;
         private int m_SketchIndex;
-        private SketchSet m_SketchSet;
+        private ISketchSet m_SketchSet;
         private UIComponentManager m_UIComponentManager;
 
         public int SketchIndex
@@ -51,7 +53,7 @@ namespace TiltBrush
             }
         }
 
-        public SketchSet SketchSet
+        public ISketchSet SketchSet
         {
             get { return m_SketchSet; }
             set
@@ -84,12 +86,28 @@ namespace TiltBrush
             get { return m_Warning != null && m_Warning.activeSelf; }
         }
 
+        public string SketchName
+        {
+            set
+            {
+                if (m_SketchName != null)
+                {
+                    m_SketchName.gameObject.SetActive(value != null);
+                    m_SketchName.text = value ?? "";
+                }
+            }
+            get
+            {
+                return (m_SketchName?.gameObject.activeSelf ?? false) ? m_SketchName.text : null;
+            }
+        }
+
         void RefreshDetails()
         {
-            m_MenuButton.SetSketchDetails(m_SketchIndex, SketchSet.Type);
+            m_MenuButton.SetSketchDetails(m_SketchIndex, SketchSet.SketchSetInstance);
 
             m_SizeOk = true;
-            if (m_SketchSet.Type == SketchSetType.Liked)
+            if (m_SketchSet.SketchSetType == PolySketchSet.UriName && m_SketchSet.SketchSetInstance == "Liked")
             {
                 if (m_SketchSet.IsSketchIndexValid(m_SketchIndex))
                 {
@@ -104,6 +122,16 @@ namespace TiltBrush
             if (m_Warning != null)
             {
                 m_Warning.GetComponent<Renderer>().material = m_SizeOk ? m_WarningMaterial : m_ErrorMaterial;
+            }
+            if (m_SketchSet is ResourceCollectionSketchSet collectionSet
+                && m_SketchSet.IsSketchIndexValid(m_SketchIndex)
+                && collectionSet.GetResource(m_SketchIndex) is IResourceCollection collection)
+            {
+                SketchName = collection.Name;
+            }
+            else
+            {
+                SketchName = null;
             }
         }
 
@@ -124,6 +152,7 @@ namespace TiltBrush
             base.Awake();
             m_UIComponentManager = GetComponent<UIComponentManager>();
             WarningVisible = false;
+            SketchName = null;
             m_DynamicUvScale = Vector2.one;
             m_DynamicUvOffset = Vector2.zero;
             m_DynamicUvTransitionValue = 0.0f;
@@ -151,16 +180,29 @@ namespace TiltBrush
         override protected void OnButtonPressed()
         {
             if (!m_SketchSet.GetSketchSceneFileInfo(m_SketchIndex).Available &&
-                m_SketchSet.Type != SketchSetType.Drive)
+                m_SketchSet.SketchSetType != GoogleDriveSketchSet.UriString)
             {
                 return;
             }
 
+            var sketch = m_SketchSet.GetSketchSceneFileInfo(m_SketchIndex);
+            if (sketch is ResourceFileInfo resourceFileInfo)
+            {
+                if (resourceFileInfo.Resource is IResourceCollection collection)
+                {
+                    var sketchSet = new ResourceCollectionSketchSet(collection);
+                    sketchSet.Init();
+                    SketchbookPanel.Instance.PushSketchSet(SketchbookPanel.Instance.SelectedSketchStack, sketchSet);
+                    return;
+                }
+            }
+
             // Sequence on load is:
             // LoadConfirmUnsaved -> LoadWaitOnDownload -> LoadConfirmComplex -> LoadComplexHigh ->  Load
+            // TODO: SketchSet needs to know its own id?
             SketchControlsScript.m_Instance.IssueGlobalCommand(
                 SketchControlsScript.GlobalCommands.LoadConfirmUnsaved,
-                m_SketchIndex, (int)m_SketchSet.Type);
+                m_SketchIndex, SketchbookPanel.Instance.SelectedSketchStack);
             ResetState();
         }
 
@@ -196,7 +238,15 @@ namespace TiltBrush
         {
             base.GainFocus();
             m_DynamicUvTransitionValue = 0.0f;
-            m_MenuButton.gameObject.SetActive(m_SketchSet.Type == SketchSetType.User);
+            bool isWritable = m_SketchSet.SketchSetType == FileSketchSet.TypeName;
+            if (m_SketchSet is ResourceCollectionSketchSet resourceSet)
+            {
+                if (m_SketchSet.GetSketchSceneFileInfo(m_SketchIndex) is ResourceFileInfo fileInfo)
+                {
+                    isWritable |= fileInfo.Resource is IWritableResource;
+                }
+            }
+            m_MenuButton.gameObject.SetActive(isWritable);
             if (!m_SizeOk)
             {
                 SetDescriptionVisualsAvailable(false);

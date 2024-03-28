@@ -20,9 +20,6 @@ namespace TiltBrush
 
     class MenuPopUpWindow : PopUpWindow
     {
-        public override void SetPopupCommandParameters(int iCommandParam, int iCommandParam2)
-        {
-        }
     }
 
 } // namespace TiltBrush

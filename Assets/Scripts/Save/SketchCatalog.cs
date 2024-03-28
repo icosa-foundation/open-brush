@@ -12,40 +12,63 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
 {
-
-    public enum SketchSetType
-    {
-        User,
-        Curated,
-        Liked,
-        Drive,
-    }
-
     // SketchCatalog.Awake must come after App.Awake
     public class SketchCatalog : MonoBehaviour
     {
-        static public SketchCatalog m_Instance;
+        public static SketchCatalog m_Instance;
 
         // This folder contains json files which define where to pull the sketch thumbnail and data
         // from Poly.  These are used to populate the showcase when we can't query Poly.
         // Obviously, if Poly as a database is deleted or moved, accessing these files will fail.
         public const string kDefaultShowcaseSketchesFolder = "DefaultShowcaseSketches";
 
-        private SketchSet[] m_Sets;
+        private PolySketchSet m_polySketchSet;
+        private GoogleDriveSketchSet m_googleDriveSketchSet = new();
 
-        public SketchSet GetSet(SketchSetType eType)
+        private Dictionary<Uri, WeakReference<ISketchSet>> m_Sets = new();
+
+        public ISketchSet GetSketchSet(string uri)
         {
-            return m_Sets[(int)eType];
+            return GetSketchSet(new Uri(uri));
         }
+
+        public ISketchSet GetSketchSet(Uri uri)
+        {
+            ISketchSet sketchSet = null;
+            if (m_Sets.TryGetValue(uri, out WeakReference<ISketchSet> sketchSetRef))
+            {
+                if (sketchSetRef.TryGetTarget(out sketchSet))
+                {
+                    return sketchSet;
+                }
+                m_Sets.Remove(uri);
+            }
+
+            sketchSet = new ResourceCollectionSketchSet(ResourceCollectionFactory.Instance.FetchCollection(uri));
+            sketchSet.Init();
+            if (sketchSet != null)
+            {
+                m_Sets[uri] = new WeakReference<ISketchSet>(sketchSet);
+            }
+            return sketchSet;
+        }
+
 
         void Awake()
         {
             m_Instance = this;
+
+            m_polySketchSet = new PolySketchSet(this, PolySketchSet.SketchType.Curated, 100000);
+            m_Sets[new Uri("poly:")] = new WeakReference<ISketchSet>(m_polySketchSet);
+            m_Sets[new Uri("googledrive:")] = new WeakReference<ISketchSet>(m_googleDriveSketchSet);
 
             if (Application.platform == RuntimePlatform.OSXEditor ||
                 Application.platform == RuntimePlatform.OSXPlayer)
@@ -56,20 +79,16 @@ namespace TiltBrush
                 System.Environment.SetEnvironmentVariable("MONO_MANAGED_WATCHER", "3");
             }
 
-            int maxTriangles = QualityControls.m_Instance.AppQualityLevels.MaxPolySketchTriangles;
-
             InitFeaturedSketchesPath();
-
-            m_Sets = new SketchSet[]
-            {
-                new FileSketchSet(),
-                new FileSketchSet(App.FeaturedSketchesPath()),
-                new PolySketchSet(this, SketchSetType.Liked, maxTriangles, needsLogin: true),
-                new GoogleDriveSketchSet(),
-            };
         }
 
-        public static bool InitFeaturedSketchesPath()
+        void Start()
+        {
+            m_polySketchSet.Init();
+            m_googleDriveSketchSet.Init();
+        }
+
+        private static bool InitFeaturedSketchesPath()
         {
             string featuredPath = App.FeaturedSketchesPath();
             if (!App.InitDirectoryAtPath(featuredPath)) { return false; }
@@ -92,30 +111,34 @@ namespace TiltBrush
             return true;
         }
 
-        void Start()
-        {
-            foreach (SketchSet s in m_Sets)
-            {
-                s.Init();
-            }
-        }
-
         void Update()
         {
-            foreach (SketchSet s in m_Sets)
+            foreach (var entry in m_Sets.ToArray())
             {
-                s.Update();
+                ISketchSet sketchSet;
+                if (entry.Value.TryGetTarget(out sketchSet))
+                {
+                    sketchSet.Update();
+                }
+                else
+                {
+                    m_Sets.Remove(entry.Key);
+                }
             }
         }
 
         public void NotifyUserFileCreated(string fullpath)
         {
-            m_Sets[(int)SketchSetType.User].NotifySketchCreated(fullpath);
+            // TODO: This won't work with more tha one filesketchset.
+            var userSketches = SketchbookPanel.Instance.GetSketchSet(SketchbookPanel.RootSet.Local);
+            userSketches.NotifySketchCreated(fullpath);
         }
 
         public void NotifyUserFileChanged(string fullpath)
         {
-            m_Sets[(int)SketchSetType.User].NotifySketchChanged(fullpath);
+            // TODO: This won't work with more tha one filesketchset.
+            var userSketches = SketchbookPanel.Instance.GetSketchSet(SketchbookPanel.RootSet.Local);
+            userSketches.NotifySketchChanged(fullpath);
         }
     }
 
