@@ -181,11 +181,6 @@ jobs:
             cache: Windows
             extra_defines: OCULUS_SUPPORTED
 
-          - name: Windows Monoscopic
-            targetPlatform: StandaloneWindows64
-            vrsdk: Monoscopic
-            cache: Windows
-
           - name: Linux Monoscopic
             targetPlatform: StandaloneLinux64
             vrsdk: Monoscopic
@@ -765,12 +760,6 @@ jobs:
           name: Windows Rift
           path: build_windows_rift
 
-      - name: Download Build Artifacts (Windows Monoscopic)
-        uses: actions/download-artifact@v4
-        with:
-          name: Windows Monoscopic
-          path: build_windows_mono
-
       - name: Download Build Artifacts (Android OpenXR)
         uses: actions/download-artifact@v4
         with:
@@ -805,7 +794,6 @@ jobs:
           mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64/ releases/OpenBrush_Desktop_$VERSION/
           mv build_windows_rift/StandaloneWindows64/ releases/OpenBrush_Rift_$VERSION/
-          mv build_windows_mono/StandaloneWindows64/ releases/OpenBrush_Mono_$VERSION/
           mv build_monoscopic_macos/*.dmg releases/OpenBrush_Mac_Mono_$VERSION.dmg
           cd releases
           zip -r OpenBrush_Desktop_$VERSION.zip OpenBrush_Desktop_$VERSION/

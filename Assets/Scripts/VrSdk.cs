@@ -15,7 +15,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.XR;
+using UnityEngine.XR.Management;
+using InputDevice = UnityEngine.XR.InputDevice;
 
 #if PICO_SUPPORTED
 using PicoInput = Unity.XR.PXR.PXR_Input;
@@ -125,6 +128,25 @@ namespace TiltBrush
 
         void Awake()
         {
+            bool forceMonoscopic =
+                App.UserConfig.Flags.EnableMonoscopicMode ||
+                Keyboard.current[Key.M].isPressed;
+
+            bool disableXr = App.UserConfig.Flags.DisableXrMode ||
+                Keyboard.current[Key.D].isPressed;
+
+            // Allow forcing of monoscopic mode even if launching in XR
+            if (forceMonoscopic && !(App.Config.m_SdkMode == SdkMode.Ods))
+            {
+                App.Config.m_SdkMode = SdkMode.Monoscopic;
+            }
+            else if (!disableXr)
+            {
+                // We no longer initialize XR SDKs automatically
+                // so we need to do it manually
+                Initialize();
+            }
+
             if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 InputDevices.deviceConnected += OnUnityXRDeviceConnected;
@@ -169,6 +191,9 @@ namespace TiltBrush
 
             m_VrCamera.gameObject.SetActive(true);
             m_VrSystem.SetActive(m_VrCamera.gameObject.activeSelf);
+
+            // Skip the rest of the VR setup if we're not using XR
+            if (App.UserConfig.Flags.DisableXrMode || App.UserConfig.Flags.EnableMonoscopicMode) return;
 
 #if OCULUS_SUPPORTED
             // ---------------------------------------------------------------------------------------- //
@@ -584,7 +609,7 @@ namespace TiltBrush
             //     return new NonVrControllerInfo(behavior);
             //     //return new SteamControllerInfo(behavior);
             // }
-            // else 
+            // else
             if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 return new UnityXRControllerInfo(behavior, isLeftHand);
@@ -893,6 +918,12 @@ namespace TiltBrush
                 OVRManager.gpuLevel = level;
             }
 #endif // OCULUS_SUPPORTED
+        }
+
+        public void Initialize()
+        {
+            XRGeneralSettings.Instance.Manager.InitializeLoaderSync();
+            XRGeneralSettings.Instance.Manager.StartSubsystems();
         }
     }
 }

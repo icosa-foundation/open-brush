@@ -57,7 +57,7 @@ namespace TiltBrush
         // want to have a different config file for your edition of the app.
         public const string kConfigFileName = "Open Brush.cfg";
         // The name of the App folder (In the user's Documents folder) - original Tilt Brush used "Tilt Brush"
-        // If you are forking Open Brush, you may want to leave this as "Open Brush" or not. 
+        // If you are forking Open Brush, you may want to leave this as "Open Brush" or not.
         public const string kAppFolderName = "Open Brush";
         // The data folder used on Google Drive.
         public const string kDriveFolderName = kAppDisplayName;
@@ -599,8 +599,11 @@ namespace TiltBrush
             // Use of ControllerConsoleScript must wait until Start()
             ControllerConsoleScript.m_Instance.AddNewLine(GetStartupString());
 
-            if (!VrSdk.IsHmdInitialized())
+            if (!VrSdk.IsHmdInitialized() && !UserConfig.Flags.EnableMonoscopicMode)
             {
+                // If XR is disabled or fails to initialize
+                // and we haven't enabled monoscopic mode
+                // then fall back to the 2d View-only mode
                 CreateFailedToDetectVrDialog();
             }
             else
@@ -929,7 +932,7 @@ namespace TiltBrush
                             {
                                 OnIntroComplete();
                             }
-                            else if (Config.IsExperimental)
+                            else if (!VrSdk.IsHmdInitialized() || Config.IsExperimental)
                             {
                                 OnIntroComplete();
                                 PanelManager.m_Instance.ReviveFloatingPanelsForStartup();
