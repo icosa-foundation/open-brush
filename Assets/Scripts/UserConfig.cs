@@ -42,11 +42,24 @@ namespace TiltBrush
             public bool HighResolutionSnapshots; // Deprecated
             public bool ShowDroppedFrames;
             public bool LargeMeshSupport;
-            public bool EnableMonoscopicMode;
             public bool DisableXrMode;
 
             public bool EnableApiRemoteCalls;
             public bool EnableApiCorsHeaders;
+
+            bool? m_EnableMonoscopicMode;
+            public bool EnableMonoscopicMode
+            {
+                get
+                {
+#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
+                    return true;
+#else
+                    return m_EnableMonoscopicMode ?? false;
+#endif
+                }
+                set { m_EnableMonoscopicMode = value; }
+            }
 
             bool? m_ShowDangerousBrushes;
             public bool ShowDangerousBrushes
