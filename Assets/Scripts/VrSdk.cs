@@ -192,6 +192,9 @@ namespace TiltBrush
             m_VrCamera.gameObject.SetActive(true);
             m_VrSystem.SetActive(m_VrCamera.gameObject.activeSelf);
 
+            // Skip the rest of the VR setup if we're not using XR
+            if (App.UserConfig.Flags.DisableXrMode || App.UserConfig.Flags.EnableMonoscopicMode) return;
+
 #if OCULUS_SUPPORTED
             // ---------------------------------------------------------------------------------------- //
             // OculusVR
