@@ -924,8 +924,11 @@ namespace TiltBrush
 
         public void Initialize()
         {
-            XRGeneralSettings.Instance.Manager.InitializeLoaderSync();
-            XRGeneralSettings.Instance.Manager.StartSubsystems();
+            // Null checks are for Linux view mode
+            // TODO: Need to investigate exactly why Linux hits an NRE here
+            // When other platforms don't
+            XRGeneralSettings.Instance?.Manager?.InitializeLoaderSync();
+            XRGeneralSettings.Instance?.Manager?.StartSubsystems();
         }
     }
 }
