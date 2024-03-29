@@ -932,7 +932,11 @@ namespace TiltBrush
                             {
                                 OnIntroComplete();
                             }
-                            else if (!VrSdk.IsHmdInitialized() || Config.IsExperimental)
+                            // Note that PR620 will clean this logic up slightly
+                            else if (!VrSdk.IsHmdInitialized() ||
+                                     Config.IsExperimental ||
+                                     UserConfig.Flags.DisableXrMode ||
+                                     UserConfig.Flags.EnableMonoscopicMode)
                             {
                                 OnIntroComplete();
                                 PanelManager.m_Instance.ReviveFloatingPanelsForStartup();
