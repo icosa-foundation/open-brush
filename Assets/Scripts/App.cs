@@ -22,6 +22,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 using Newtonsoft.Json;
+using TMPro;
 #if USD_SUPPORTED
 using Unity.Formats.USD;
 #endif
@@ -1777,14 +1778,14 @@ namespace TiltBrush
         public void CreateFailedToDetectVrDialog(string msg = null, bool allowViewing = true)
         {
             GameObject dialog = Instantiate(m_ErrorDialog);
+            // Ugh
             var textXf = dialog.transform.Find("Text");
-            var textMesh = textXf.GetComponent<TextMesh>();
-            if (msg == null)
+            var textMesh = textXf.GetComponent<TextMeshPro>();
+            if (msg != null)
             {
-                msg = "Failed to detect VR";
-            }
-            textMesh.text = string.Format(@"        Tiltasaurus says...
+                textMesh.text = string.Format(@"        Tiltasaurus says...
                    {0}", msg);
+            }
             var initScript = dialog.GetComponent<InitNoHeadsetMode>();
             initScript.ShowSketchSelectorUi(allowViewing && !StartupError);
         }

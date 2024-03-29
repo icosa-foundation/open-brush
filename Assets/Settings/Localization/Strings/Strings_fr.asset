@@ -3502,6 +3502,17 @@ MonoBehaviour:
       votre taille"
     m_Metadata:
       m_Items: []
+  - m_Id: 217070349893754880
+    m_Localized: "\xC9chec de la d\xE9tection du VR"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 217069105871577088
+    m_Localized: "Vous pouvez continuer sans casque VR. Choisissez un croquis ci-dessous
+      pour entrer en mode visualisation avec les commandes suivantes :\n\nSouris
+      : regardez autour (appuyez sur I pour inverser haut/bas)\nW,A,S,D : avancer/reculer/gauche/droite\nQ,E
+      : monter/descendre\nMaintenez shift pour vous d\xE9placer plus rapidement"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -3560,6 +3560,18 @@ MonoBehaviour:
       zur\xFCckzusetzen"
     m_Metadata:
       m_Items: []
+  - m_Id: 217070349893754880
+    m_Localized: VR-Erkennung fehlgeschlagen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 217069105871577088
+    m_Localized: "Sie k\xF6nnen ohne ein VR-Headset fortfahren. W\xE4hlen Sie unten
+      eine Skizze aus, um den Betrachtungsmodus mit den folgenden Steuerungen zu
+      betreten:\n\nMaus: umsehen (dr\xFCcken Sie I, um oben/unten zu invertieren)\nW,A,S,D:
+      vorw\xE4rts/r\xFCckw\xE4rts/links/rechts bewegen\nQ,E: auf/ab bewegen\nHalten
+      Sie Shift gedr\xFCckt, um schneller zu bewegen"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
