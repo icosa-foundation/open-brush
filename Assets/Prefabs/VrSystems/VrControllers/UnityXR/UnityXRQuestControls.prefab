@@ -53,10 +53,7 @@ MonoBehaviour:
   - {fileID: 114000013332822508}
   m_HapticsDurationScale: 0.02
   m_HapticAmplitudeScale: 0.04
-  m_TriggerActivationRange: {x: 0.15, y: 0.8}
-  m_GripActivationRange: {x: 0.15, y: 0.8}
   m_TouchpadActivationRange: {x: -0.8, y: 0.8}
-  m_LogitechPenActivationRange: {x: 0, y: 1}
   m_WandRotateJoystickPercent: 0.7
 --- !u!1 &1000012863469616
 GameObject:
@@ -69,6 +66,7 @@ GameObject:
   - component: {fileID: 4000010915250370}
   - component: {fileID: 114000013332822508}
   - component: {fileID: 114000013512061632}
+  - component: {fileID: 8758100705238924995}
   - component: {fileID: 5733822967690520026}
   m_Layer: 14
   m_Name: Controller (brush)
@@ -127,6 +125,20 @@ MonoBehaviour:
     type: 2}
   m_TriggerMaterialInactive: {fileID: 2100000, guid: c3c67c655fefce843a4094dbcf752549,
     type: 2}
+--- !u!114 &8758100705238924995
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000012863469616}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45f211c5b2dbd1e40a7dab043c5dc1ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_SartomGeometryPrefab: {fileID: 114143535975472158, guid: ee76615c62b1b404f8a455e8d6ebc43e,
+    type: 3}
 --- !u!114 &5733822967690520026
 MonoBehaviour:
   m_ObjectHideFlags: 0

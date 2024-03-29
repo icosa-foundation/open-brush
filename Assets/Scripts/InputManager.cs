@@ -471,6 +471,19 @@ namespace TiltBrush
                 return;
             }
 
+            // Swap geometry if any of our controllers is a logipen.
+            bool foundLogipen = false;
+            for (int i = 0; i < m_ControllerInfos.Length; ++i)
+            {
+                UnityXRControllerInfo info = m_ControllerInfos[i] as UnityXRControllerInfo;
+                DetectSartom pen = info.Behavior.GetComponent<DetectSartom>();
+                if (pen != null)
+                {
+                    pen.Initialize(0);
+                    foundLogipen = foundLogipen || pen.IsPen;
+                }
+            }
+
             // Update controller infos.
             for (int i = 0; i < m_ControllerInfos.Length; ++i)
             {
