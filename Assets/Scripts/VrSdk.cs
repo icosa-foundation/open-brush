@@ -365,8 +365,10 @@ namespace TiltBrush
 #if OCULUS_SUPPORTED
                 // N points, clockwise winding (but axis is undocumented), undocumented convexity
                 // In practice, it's clockwise looking along Y-
-                points_RS = OVRManager.boundary.GetGeometry(OVRBoundary.BoundaryType.OuterBoundary)
-                    .Select(v => UnityFromOculus(v)).ToArray();
+                points_RS = OVRManager.boundary
+                    ?.GetGeometry(OVRBoundary.BoundaryType.OuterBoundary)
+                    ?.Select(v => UnityFromOculus(v))
+                    .ToArray();
 #else // OCULUS_SUPPORTED
             // if (App.Config.m_SdkMode == SdkMode.SteamVR)
             // {
