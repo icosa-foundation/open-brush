@@ -794,7 +794,7 @@ namespace TiltBrush
             switch (App.Config.m_SdkMode)
             {
                 case SdkMode.UnityXR:
-                    return UnityEngine.XR.Management.XRGeneralSettings.Instance.Manager.activeLoader != null;
+                    return XRGeneralSettings.Instance?.Manager?.activeLoader != null;
                 default:
                     return true;
             }
