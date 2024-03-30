@@ -791,6 +791,9 @@ namespace TiltBrush
 
         // Returns false if SDK Mode uses an HMD, but it is not initialized.
         // Retruns true if SDK does not have an HMD or if it is correctly initialized.
+        // Monoscopic mode returns true for some reason
+        // but we make use of this to trigger the view-only mode so if that's ever fixed
+        // we need to also fix the conditions for triggering view-only mode
         public bool IsHmdInitialized()
         {
             switch (App.Config.m_SdkMode)
