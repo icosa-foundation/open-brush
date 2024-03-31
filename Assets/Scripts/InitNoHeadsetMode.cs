@@ -20,6 +20,7 @@ namespace TiltBrush
     public class InitNoHeadsetMode : MonoBehaviour
     {
 
+        public TextMeshPro m_Heading;
         public GameObject m_SketchLoadingUi;
 
         void Start()

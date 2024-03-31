@@ -1778,15 +1778,13 @@ namespace TiltBrush
         public void CreateFailedToDetectVrDialog(string msg = null, bool allowViewing = true)
         {
             GameObject dialog = Instantiate(m_ErrorDialog);
-            // Ugh
-            var textXf = dialog.transform.Find("Text");
-            var textMesh = textXf.GetComponent<TextMeshPro>();
-            if (msg != null)
-            {
-                textMesh.text = string.Format(@"        Tiltasaurus says...
-                   {0}", msg);
-            }
             var initScript = dialog.GetComponent<InitNoHeadsetMode>();
+            if (!string.IsNullOrEmpty(msg))
+            {
+                var textMesh = initScript.m_Heading;
+                textMesh.text = @$"        Tiltasaurus says...
+                   {msg}";
+            }
             initScript.ShowSketchSelectorUi(allowViewing && !StartupError);
         }
 

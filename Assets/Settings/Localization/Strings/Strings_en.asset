@@ -3497,7 +3497,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 217070349893754880
-    m_Localized: "Failed to detect VR\t"
+    m_Localized: Failed to Detect VR
     m_Metadata:
       m_Items: []
   references:
