@@ -22,7 +22,8 @@ namespace TiltBrush
     public class BreakModelApartCommand : BaseCommand
     {
         private ModelWidget m_InitialWidget;
-        private List<ModelWidget> m_NewWidgets;
+        private List<ModelWidget> m_NewModelWidgets;
+        private List<LightWidget> m_NewLightWidgets;
         private List<string> m_NodePaths;
 
         override public bool NeedsSave
@@ -160,7 +161,8 @@ namespace TiltBrush
         public BreakModelApartCommand(ModelWidget initialWidget, BaseCommand parent = null) : base(parent)
         {
             m_InitialWidget = initialWidget;
-            m_NewWidgets = new List<ModelWidget>();
+            m_NewModelWidgets = new List<ModelWidget>();
+            m_NewLightWidgets = new List<LightWidget>();
             var root = initialWidget.GetComponentInChildren<ObjModelScript>().transform;
             m_NodePaths = ExtractPaths(root);
         }
@@ -181,10 +183,9 @@ namespace TiltBrush
             SelectionManager.m_Instance.DeselectWidgets(new List<GrabWidget> { m_InitialWidget });
             foreach (var path in m_NodePaths)
             {
-                var newWidget = m_InitialWidget.Clone();
-                var newModelWidget = newWidget as ModelWidget;
-                if (newModelWidget == null) continue;
-                var previousSubtree = newModelWidget.Subtree;
+                var newWidget = m_InitialWidget.Clone() as ModelWidget;
+                if (newWidget == null) continue;
+                var previousSubtree = newWidget.Subtree;
                 string newSubtree;
                 if (string.IsNullOrEmpty(previousSubtree))
                 {
@@ -197,18 +198,34 @@ namespace TiltBrush
                     var parts = previousSubtree.Split('/');
                     newSubtree = string.Join('/', parts.Take(parts.Length - 1)) + path;
                 }
-                newModelWidget.Subtree = newSubtree;
-                newModelWidget.SyncHierarchyToSubtree(previousSubtree);
-                SelectionManager.m_Instance.SelectWidget(newModelWidget);
-                m_NewWidgets.Add(newModelWidget);
+                newWidget.Subtree = newSubtree;
+                newWidget.SyncHierarchyToSubtree(previousSubtree);
+
+                // If a ModelWidget contains no more meshes
+                // then try and convert it to multiple LightWidgets
+                if (newWidget.GetComponent<ObjModelScript>().NumMeshes == 0)
+                {
+                    m_NewLightWidgets.AddRange(LightWidget.FromModelWidget(newWidget));
+                }
+                else
+                {
+                    SelectionManager.m_Instance.SelectWidget(newWidget);
+                    m_NewModelWidgets.Add(newWidget);
+                }
             }
             m_InitialWidget.gameObject.SetActive(false);
         }
 
         protected override void OnUndo()
         {
-            SelectionManager.m_Instance.DeselectWidgets(m_NewWidgets);
-            foreach (var widget in m_NewWidgets)
+            SelectionManager.m_Instance.DeselectWidgets(m_NewModelWidgets);
+            foreach (var widget in m_NewModelWidgets)
+            {
+                WidgetManager.m_Instance.UnregisterGrabWidget(widget.gameObject);
+                Object.Destroy(widget.gameObject);
+            }
+            SelectionManager.m_Instance.DeselectWidgets(m_NewLightWidgets);
+            foreach (var widget in m_NewLightWidgets)
             {
                 WidgetManager.m_Instance.UnregisterGrabWidget(widget.gameObject);
                 Object.Destroy(widget.gameObject);
