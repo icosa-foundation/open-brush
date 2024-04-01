@@ -203,7 +203,8 @@ namespace TiltBrush
 
                 // If a ModelWidget contains no more meshes
                 // then try and convert it to multiple LightWidgets
-                if (newWidget.GetComponent<ObjModelScript>().NumMeshes == 0)
+                var objModel = newWidget.GetComponentInChildren<ObjModelScript>();
+                if (objModel != null && objModel.NumMeshes == 0)
                 {
                     m_NewLightWidgets.AddRange(LightWidget.FromModelWidget(newWidget));
                 }
