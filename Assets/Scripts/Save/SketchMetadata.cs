@@ -633,6 +633,23 @@ namespace TiltBrush
     }
 
     [Serializable]
+    public class TiltLights
+    {
+        public Color? LightColor;
+        public float? Intensity;
+        public LightType PunctualLightType;
+        public float? Range;
+        public float? InnerConeAngle;
+        public float? OuterConeAngle;
+
+        public bool Pinned;
+        public TrTransform Transform;
+        // Group ID for widget. 0 for ungrouped items.
+        public uint GroupId { get; set; }
+        public int LayerId { get; set; }
+    }
+
+    [Serializable]
     public class TiltImages75
     {
         /// *.png or *.jpg, should have no path

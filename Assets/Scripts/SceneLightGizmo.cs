@@ -26,18 +26,30 @@ namespace TiltBrush
 
         private Vector3 initialLocalScale;
 
+        public Transform ActiveMeshTransform
+        {
+            get
+            {
+                if (m_ConeMesh.gameObject.activeSelf) return m_ConeMesh;
+                if (m_SphereMesh.gameObject.activeSelf) return m_SphereMesh;
+                if (m_CylinderMesh.gameObject.activeSelf) return m_CylinderMesh;
+                return null;
+            }
+        }
+
         private void Awake()
         {
             initialLocalScale = transform.localScale;
             Coords.CanvasPoseChanged += OnCanvasPoseChanged;
-            GetComponentInParent<ModelWidget>().ScaleChanged += OnScaleChanged;
+            var modelWidget = GetComponentInParent<ModelWidget>();
+            if (modelWidget != null) modelWidget.ScaleChanged += OnScaleChanged;
         }
 
         private void OnDestroy()
         {
             Coords.CanvasPoseChanged -= OnCanvasPoseChanged;
-            var widget = GetComponentInParent<ModelWidget>();
-            if (widget != null) widget.ScaleChanged -= OnScaleChanged;
+            var modelWidget = GetComponentInParent<ModelWidget>();
+            if (modelWidget != null) modelWidget.ScaleChanged -= OnScaleChanged;
         }
 
         private void OnCanvasPoseChanged(TrTransform prev, TrTransform current)
@@ -50,7 +62,7 @@ namespace TiltBrush
             transform.localScale = initialLocalScale;
         }
 
-        public void Setup(Light light)
+        public void SetupLightGizmos(Light light)
         {
             SetColor(light.color, light.intensity);
             switch (light.type)

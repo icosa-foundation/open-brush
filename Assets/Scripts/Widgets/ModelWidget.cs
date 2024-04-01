@@ -27,7 +27,6 @@ namespace TiltBrush
 
         [SerializeField] private float m_MinContainerRatio; // [0, 1]
         [SerializeField] private float m_MaxBloat;
-        [SerializeField] private Transform m_SceneLightGizmo;
 
         private Model m_Model;
         private string m_Subtree;
@@ -401,7 +400,7 @@ namespace TiltBrush
             var boundsList = go.GetComponentsInChildren<MeshRenderer>().Select(x => x.bounds).ToList();
             var skinnedMeshRenderers = go.GetComponentsInChildren<SkinnedMeshRenderer>();
             boundsList.AddRange(skinnedMeshRenderers.Select(x => x.bounds));
-            SceneLightGizmo gizmoPrefab = m_SceneLightGizmo.GetComponent<SceneLightGizmo>();
+            SceneLightGizmo gizmoPrefab = WidgetManager.m_Instance.SceneLightGizmoPrefab;
             var lightsList = go.GetComponentsInChildren<Light>(includeInactive: true).Select(light => gizmoPrefab.GetBoundsForLight(light));
             boundsList.AddRange(lightsList);
 
@@ -800,9 +799,14 @@ namespace TiltBrush
             var lights = m_ObjModelScript.transform.GetComponentsInChildren<Light>();
             foreach (var light in lights)
             {
-                Transform tr = Instantiate(m_SceneLightGizmo, light.transform);
+                // Probably not the right place to do it but we have to it somewhere
+                light.renderMode = LightRenderMode.ForceVertex;
+                Transform tr = Instantiate(
+                    WidgetManager.m_Instance.SceneLightGizmoPrefab.transform,
+                    light.transform
+                );
                 var gizmo = tr.GetComponent<SceneLightGizmo>();
-                gizmo.Setup(light);
+                gizmo.SetupLightGizmos(light);
             }
         }
     }

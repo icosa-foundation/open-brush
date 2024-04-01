@@ -76,7 +76,10 @@ namespace TiltBrush
 
             var meshFilter = t.GetComponent<MeshFilter>();
             var meshRenderer = t.GetComponent<MeshRenderer>();
-            if (meshFilter != null && meshRenderer != null && meshFilter.sharedMesh != null)
+            if (meshFilter != null &&
+                meshRenderer != null &&
+                meshFilter.sharedMesh != null &&
+                meshFilter.gameObject.layer != LayerMask.NameToLayer("UI"))
             {
                 filters.Add(meshFilter);
             }

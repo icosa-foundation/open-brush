@@ -94,35 +94,28 @@ namespace TiltBrush
                 m_Widget = Object.Instantiate(m_Prefab);
                 m_Widget.transform.position = m_SpawnXf.translation;
 
-                // Widget type specific initialization.
-                if (m_Widget is StencilWidget)
+                switch (m_Widget)
                 {
-                    m_Widget.transform.parent = m_Canvas.transform;
-                    m_Widget.Show(true);
-                }
-                else if (m_Widget is ModelWidget)
-                {
-                    // ModelWidget.Show(true) is not called here because the model must be assigned
-                    // before it can be turned on.
-                }
-                else if (m_Widget is ImageWidget)
-                {
-                    m_Widget.transform.parent = m_Canvas.transform;
-                    m_Widget.Show(true);
-                }
-                else if (m_Widget is VideoWidget)
-                {
-                    m_Widget.transform.parent = m_Canvas.transform;
-                    m_Widget.Show(true);
-                }
-                else if (m_Widget is CameraPathWidget)
-                {
-                    m_Widget.transform.parent = m_Canvas.transform;
-                    m_Widget.transform.localPosition = Vector3.zero;
-                    m_Widget.transform.localRotation = Quaternion.identity;
-                    m_Widget.Show(true);
-                    App.Switchboard.TriggerCameraPathCreated();
-                    WidgetManager.m_Instance.CameraPathsVisible = true;
+                    // Widget type specific initialization.
+                    case StencilWidget:
+                    case LightWidget:
+                    case ImageWidget:
+                    case VideoWidget:
+                        m_Widget.transform.parent = m_Canvas.transform;
+                        m_Widget.Show(true);
+                        break;
+                    case ModelWidget:
+                        // ModelWidget.Show(true) is not called here because the model must be assigned
+                        // before it can be turned on.
+                        break;
+                    case CameraPathWidget:
+                        m_Widget.transform.parent = m_Canvas.transform;
+                        m_Widget.transform.localPosition = Vector3.zero;
+                        m_Widget.transform.localRotation = Quaternion.identity;
+                        m_Widget.Show(true);
+                        App.Switchboard.TriggerCameraPathCreated();
+                        WidgetManager.m_Instance.CameraPathsVisible = true;
+                        break;
                 }
 
                 m_Widget.InitIntroAnim(m_SpawnXf, m_EndXf, false, m_DesiredEndForward, m_ForceTransform, m_SnapGridSize, m_SnapAngle);
