@@ -19,8 +19,15 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
 
     // the movement is based on Unity Built-in shader variables
     // _Time.y (t) and _Time.z (t * 2)
-    // we will take the t = 0 in this compute shader
-    float timedoty = 0;
+    // we will take the t = 1 in this compute shader
+
+    // this is a little bit different
+    // _Time.z is used to create a building effect on the mesh
+    // so I have set the time to be 1.0 so the mesh is build finished
+    // in the future, this brush have to interpolate from 0 to 1
+    // in order to rebuild the building effect
+
+    float timedoty = 1;
     float timedotz = timedoty * 2;
 
     float wave = sin(uv0.x - timedotz);
