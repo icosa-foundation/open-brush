@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.XR;
 
 #pragma warning disable 414
 
@@ -101,13 +102,22 @@ public class SENaturalBloomAndDirtyLens : MonoBehaviour
 
 		source.filterMode = FilterMode.Bilinear;
 
-		RenderTexture clampedSource = RenderTexture.GetTemporary(source.width, source.height, 0, fmt);
+		RenderTextureDescriptor desc;
+        if (XRSettings.enabled)
+            desc = XRSettings.eyeTextureDesc;
+        else
+            desc = new RenderTextureDescriptor(Screen.width, Screen.height); // Not XR
+
+		desc.colorFormat = fmt;
+		desc.depthBufferBits = 0;
+
+		RenderTexture clampedSource = RenderTexture.GetTemporary(desc);
 		Graphics.Blit(source, clampedSource, material, 5);
 
 		int initialDivisor = lowQuality ? 4 : 2;
 
-		int rtWidth = source.width / initialDivisor;
-		int rtHeight = source.height / initialDivisor;
+		int rtWidth = clampedSource.width / initialDivisor;
+		int rtHeight = clampedSource.height / initialDivisor;
 
 		RenderTexture downsampled;
 		downsampled = clampedSource;
