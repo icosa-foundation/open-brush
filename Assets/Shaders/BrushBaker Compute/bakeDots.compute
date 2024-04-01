@@ -6,7 +6,7 @@ RWStructuredBuffer<float3> vertexBuffer;
 StructuredBuffer<float3> normalBuffer;
 StructuredBuffer<float4> colorBuffer;
 StructuredBuffer<float3> uvBuffer;
-StructuredBuffer<float3> uv1Buffer;
+StructuredBuffer<float4> uv1Buffer;
 
 float _SqueezeAmount;
 
@@ -16,9 +16,9 @@ static const float kRecipSquareRootOfTwo = 0.70710678;
 void CSMain(uint3 id : SV_DispatchThreadID) {
     float3 vertex = vertexBuffer[id.x];
     float3 uv0 = uvBuffer[id.x];
-    float3 uv1 = uv1Buffer[id.x];
+    float4 uv1 = uv1Buffer[id.x];
 
-    float4 originWS = mul(TransformObjectToWorld, float4(uv1, 1.0));
+    float4 originWS = mul(TransformObjectToWorld, float4(uv1.xyz, 1.0));
     float4 posWS = mul(TransformObjectToWorld, float4(vertex, 1.0));
     float length = distance(originWS.xyz, posWS.xyz);
     length *= kRecipSquareRootOfTwo;
