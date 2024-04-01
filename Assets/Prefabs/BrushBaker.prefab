@@ -45,26 +45,44 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   computeShaders:
-  - brushGuid: 8e58ceea-7830-49b4-aba9-6215104ab52a
+  - name: Mylar
+    shader: {fileID: 4800000, guid: 073d6ba13e511e24bb3ba4f7c8f744ee, type: 3}
+    brushGuid: 8e58ceea-7830-49b4-aba9-6215104ab52a
     computeShader: {fileID: 7200000, guid: a8cd83718b2e48db9570f9195dfde315, type: 3}
-  - brushGuid: 4391385a-df73-4396-9e33-31e4e4930b27
-    computeShader: {fileID: 7200000, guid: c5cce34f767f3db479a1683be258b8e4, type: 3}
-  - brushGuid: 0d3889f3-3ede-470c-8af4-f44813306126
+  - name: Double Tapered Flat
+    shader: {fileID: 4800000, guid: 4496a9baf3f2fc446bbaff38336003df, type: 3}
+    brushGuid: 0d3889f3-3ede-470c-8af4-f44813306126
     computeShader: {fileID: 7200000, guid: 67c631d4aac299f4bbaad06dd830312e, type: 3}
-  - brushGuid: 0d3889f3-3ede-470c-8af4-de4813306126
+  - name: Double Tapered Marker
+    shader: {fileID: 4800000, guid: e412fb1c98a347b4ab08429cbf1d0894, type: 3}
+    brushGuid: 0d3889f3-3ede-470c-8af4-de4813306126
     computeShader: {fileID: 7200000, guid: 67c631d4aac299f4bbaad06dd830312e, type: 3}
-  - brushGuid: 6a1cf9f9-032c-45ec-9b1d-a6680bee30f7
+  - name: Dots
+    shader: {fileID: 4800000, guid: 732f16cce31764a49a67b2c782bf444a, type: 3}
+    brushGuid: 6a1cf9f9-032c-45ec-9b1d-a6680bee30f7
     computeShader: {fileID: 7200000, guid: 2daa4d77d81adc84a88e67f8a7b22ac8, type: 3}
-  - brushGuid: 02ffb866-7fb2-4d15-b761-1012cefb1360
-    computeShader: {fileID: 7200000, guid: 08639086614e9d84c87c62cea5ebc7a8, type: 3}
-  - brushGuid: 89d104cd-d012-426b-b5b3-bbaee63ac43c
-    computeShader: {fileID: 7200000, guid: 9286fc34516b4ed428b5c074c07f128c, type: 3}
-  - brushGuid: 70d79cca-b159-4f35-990c-f02193947fe8
-    computeShader: {fileID: 7200000, guid: 80c82c6f735e34b40a27754c927f10e0, type: 3}
-  - brushGuid: d902ed8b-d0d1-476c-a8de-878a79e3a34c
-    computeShader: {fileID: 7200000, guid: 905681b038773f6468da3dc48106f324, type: 3}
-  - brushGuid: 0eb4db27-3f82-408d-b5a1-19ebd7d5b711
-    computeShader: {fileID: 7200000, guid: 695066c57edccb94687a1ff5a018803e, type: 3}
-  - brushGuid: f6e85de3-6dcc-4e7f-87fd-cee8c3d25d51
-    computeShader: {fileID: 7200000, guid: 5314a71638e11ae4499ee1c2cae19c3e, type: 3}
+  - name: Embers
+    shader: {fileID: 4800000, guid: f62b84c7d6bc5f24487edcd3a458ce88, type: 3}
+    brushGuid: 02ffb866-7fb2-4d15-b761-1012cefb1360
+    computeShader: {fileID: 7200000, guid: df2047dd556be4d47ba22aba4f71c0f5, type: 3}
+  - name: Bubbles
+    shader: {fileID: 4800000, guid: ecfbf36005cdcc94d881047728719bd8, type: 3}
+    brushGuid: 89d104cd-d012-426b-b5b3-bbaee63ac43c
+    computeShader: {fileID: 7200000, guid: bbd51e4e329047f439104cbc04383597, type: 3}
+  - name: Snow
+    shader: {fileID: 4800000, guid: 731f18bedecafd24f8a663a28a1e1b42, type: 3}
+    brushGuid: d902ed8b-d0d1-476c-a8de-878a79e3a34c
+    computeShader: {fileID: 7200000, guid: c7771aa61c3be544eae35185c59c39c4, type: 3}
+  - name: Stars
+    shader: {fileID: 4800000, guid: c5ccca3779289ff49a2768609995604b, type: 3}
+    brushGuid: 0eb4db27-3f82-408d-b5a1-19ebd7d5b711
+    computeShader: {fileID: 7200000, guid: 88c0f5ccf81e44249b28909e1a12e099, type: 3}
+  - name: Smoke
+    shader: {fileID: 4800000, guid: b00f8a3e2356b6144b32fe4a62905a7b, type: 3}
+    brushGuid: 70d79cca-b159-4f35-990c-f02193947fe8
+    computeShader: {fileID: 7200000, guid: ed79d827aabdf284f96a5bac36a050ba, type: 3}
+  - name: Rising Bubbles
+    shader: {fileID: 4800000, guid: c4285dcf87bf5b84d8d4bbec752f1883, type: 3}
+    brushGuid: a8147ce1-005e-abe4-88e8-09a1eaadcc89
+    computeShader: {fileID: 7200000, guid: d5d5ade2144b877458cb85b63f87db45, type: 3}
   squeezeAmount: 0.873

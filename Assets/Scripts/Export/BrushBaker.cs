@@ -13,6 +13,8 @@ public class BrushBaker : MonoBehaviour
     [Serializable]
     public struct ComputeShaderMapping
     {
+        public string name;
+        public Shader shader;
         public string brushGuid;
         public ComputeShader computeShader;
     }
@@ -49,6 +51,12 @@ public class BrushBaker : MonoBehaviour
         ComputeBuffer normalBuffer = new ComputeBuffer(normals.Length, sizeof(float) * 3);
         normalBuffer.SetData(normals);
 
+        // get color buffer as well
+        List<Color> colors = new List<Color>();
+        mesh.GetColors(colors);
+        ComputeBuffer colorBuffer = new ComputeBuffer(colors.Count, sizeof(float) * 4);
+        colorBuffer.SetData(colors);
+
         List<Vector3> uvs = new List<Vector3>();
         mesh.GetUVs(0, uvs);
         ComputeBuffer uvBuffer = new ComputeBuffer(uvs.Count, sizeof(float) * 3);
@@ -66,6 +74,7 @@ public class BrushBaker : MonoBehaviour
 
         computeShader.SetBuffer(0, "vertexBuffer", vertexBuffer);
         computeShader.SetBuffer(0, "normalBuffer", normalBuffer);
+        computeShader.SetBuffer(0, "colorBuffer", colorBuffer);
         computeShader.SetBuffer(0, "uvBuffer", uvBuffer);
         computeShader.SetFloat("_SqueezeAmount", squeezeAmount);
 
