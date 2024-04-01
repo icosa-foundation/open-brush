@@ -1,0 +1,44 @@
+#pragma kernel CSMain
+
+uniform float4x4 TransformObjectToWorld;
+uniform float4x4 TransformWorldToObject;
+
+RWStructuredBuffer<float3> vertexBuffer;
+StructuredBuffer<float3> normalBuffer;
+StructuredBuffer<float4> colorBuffer;
+StructuredBuffer<float3> uvBuffer;
+StructuredBuffer<float4> uv1Buffer;
+
+float _SqueezeAmount;
+
+[numthreads(8, 1, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID) {
+    float3 vertex = vertexBuffer[id.x];
+    float3 normal = normalBuffer[id.x];
+    float3 uv0 = uvBuffer[id.x];
+    float4 uv1 = uv1Buffer[id.x];
+
+    float4 posWS = mul(TransformObjectToWorld, float4(vertex, 1.0));
+    posWS = mul(half4x4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1), posWS);
+
+    float waveform = 0;
+
+    // the movement is based on Unity Built-in shader variables
+    // _Time.y (t)
+    // we will take the t = 0 in this compute shader
+    float timedoty = 0;
+
+    float lifetime = timedoty - uv1.w;
+    float release = saturate(lifetime);
+
+
+    float q = 5;
+    float3 quantPos = ceil(posWS.xyz * q) / q;
+    posWS.xyz = quantPos;
+    posWS.xyz += normal * pow(fmod(lifetime,1),3) * .1;
+
+    float4 posOS = mul(TransformWorldToObject, posWS);
+    vertex = posOS.xyz;
+
+    vertexBuffer[id.x] = vertex;
+}

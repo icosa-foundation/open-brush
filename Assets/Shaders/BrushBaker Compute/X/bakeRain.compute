@@ -12,10 +12,14 @@ float _SqueezeAmount;
 [numthreads(8, 1, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID) {
     float3 vertex = vertexBuffer[id.x];
-    float3 uv = uvBuffer[id.x];
-    const float radius = uv.z;
-    const float squeeze = sin(uv.x * 3.14159);
-    const float3 squeeze_displacement = radius * normalBuffer[id.x] * squeeze;
-    vertex -= squeeze_displacement * _SqueezeAmount;
+    float3 normal = normalBuffer[id.x];
+    float3 uv0 = uvBuffer[id.x];
+
+    // Inflate the tube outward to explode it into
+    // strips - giving us negative space w/o as much overdraw.
+    float bulge = 2.25;
+    float radius = uv0.z;
+    vertex.xyz += normal.xyz * bulge * radius;
+
     vertexBuffer[id.x] = vertex;
 }
