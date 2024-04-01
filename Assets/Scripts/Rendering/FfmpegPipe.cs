@@ -141,14 +141,10 @@ namespace TiltBrush
 
         public static string GetFfmpegExe()
         {
-            // Editor, Mac builds and Windows builds have different paths
+            // Editor and Windows builds have different paths
             // between Application.dataPath and the actual executable
             string traverseToApp = "";
-            if (Application.platform == RuntimePlatform.OSXPlayer)
-            {
-                traverseToApp = "../../";
-            }
-            else if (Application.platform == RuntimePlatform.WindowsPlayer || Application.isEditor)
+            if (Application.platform == RuntimePlatform.WindowsPlayer || Application.isEditor)
             {
                 traverseToApp = "../";
             }

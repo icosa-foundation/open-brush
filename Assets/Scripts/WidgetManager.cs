@@ -385,7 +385,7 @@ namespace TiltBrush
             }
             for (int i = 0; i < m_CameraPathWidgets.Count; ++i)
             {
-                if (m_CameraPathWidgets[i].m_WidgetObject.activeSelf)
+                if (m_CameraPathWidgets[i].m_WidgetObject.activeInHierarchy)
                 {
                     yield return m_CameraPathWidgets[i];
                 }
@@ -1039,7 +1039,7 @@ namespace TiltBrush
                 for (int i = 0; i < list.Count; ++i)
                 {
                     GrabWidget w = list[i].m_WidgetScript;
-                    if (!w.Pinned && w.transform.parent == App.Scene.MainCanvas.transform &&
+                    if (!w.Pinned && w.transform.parent == App.Scene.ActiveCanvas.transform &&
                         w.gameObject.activeSelf)
                     {
                         widgets.Add(w);
