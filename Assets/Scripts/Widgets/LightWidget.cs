@@ -110,6 +110,13 @@ namespace TiltBrush
             }
             return activeLight;
         }
+
+        public TrTransform GetSaveTransform()
+        {
+            var xf = TrTransform.FromLocalTransform(transform);
+            xf.scale = GetSignedWidgetSize();
+            return xf;
+        }
     }
 
 } // namespace TiltBrush

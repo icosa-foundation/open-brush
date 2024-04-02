@@ -736,6 +736,16 @@ namespace TiltBrush
                         WidgetManager.m_Instance.SetDataFromTilt(jsonData.ModelIndex);
                     }
 
+                    if (jsonData.ModelIndex != null)
+                    {
+                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.ModelIndex);
+                    }
+
+                    if (jsonData.LightIndex != null)
+                    {
+                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.LightIndex);
+                    }
+
                     if (jsonData.GuideIndex != null)
                     {
                         foreach (Guides guides in jsonData.GuideIndex)
@@ -750,6 +760,7 @@ namespace TiltBrush
                     // Pass even if null; null is treated as empty
                     CustomColorPaletteStorage.m_Instance.SetColorsFromPalette(jsonData.Palette);
                     // Images are not stored on Poly either.
+                    // TODO - will this assumption still hold with Icosa?
                     if (!(fileInfo is PolySceneFileInfo))
                     {
                         if (ReferenceImageCatalog.m_Instance != null && jsonData.ImageIndex != null)

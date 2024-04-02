@@ -201,6 +201,45 @@ namespace TiltBrush
             return guideIndex.OrderBy(g => g.Type).ToArray();
         }
 
+        public static TiltLights[] GetTiltLights(GroupIdMapping groupIdMapping)
+        {
+            var imports = WidgetManager.m_Instance.LightWidgets
+                .Where(w => w.gameObject.activeSelf).ToArray();
+            if (imports.Length == 0)
+            {
+                return null;
+            }
+
+            var lightIndex = new List<TiltLights>();
+            foreach (var lightWidget in imports)
+            {
+                var light = lightWidget.GetComponentInChildren<Light>();
+                var newEntry = new TiltLights();
+                newEntry.Transform = lightWidget.GetSaveTransform();
+                newEntry.Pinned = lightWidget.Pinned;
+                newEntry.GroupId = groupIdMapping.GetId(lightWidget.Group);
+                newEntry.LayerId = App.Scene.GetIndexOfCanvas(lightWidget.Canvas);
+
+                newEntry.PunctualLightType = light.type;
+                newEntry.Intensity = light.intensity;
+                newEntry.LightColor = light.color;
+
+                if (light.type == LightType.Spot)
+                {
+                    newEntry.InnerConeAngle = light.innerSpotAngle;
+                    newEntry.OuterConeAngle = light.spotAngle;
+                }
+
+                if (light.type == LightType.Point || light.type == LightType.Spot)
+                {
+                    newEntry.Range = light.range;
+                }
+
+                lightIndex.Add(newEntry);
+            }
+            return lightIndex.ToArray();
+        }
+
         public static TiltImages75[] GetTiltImages(GroupIdMapping groupIdMapping)
         {
             var imports = WidgetManager.m_Instance.ImageWidgets

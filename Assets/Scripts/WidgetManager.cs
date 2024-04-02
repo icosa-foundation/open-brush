@@ -725,6 +725,12 @@ namespace TiltBrush
             m_loadingTiltImages75 = value;
         }
 
+        // Used only at .tilt-loading time
+        public void SetDataFromTilt(TiltLights[] value)
+        {
+            m_loadingTiltLights = value;
+        }
+
         public void SetDataFromTilt(CameraPathMetadata[] cameraPaths)
         {
             for (int i = 0; i < cameraPaths.Length; ++i)

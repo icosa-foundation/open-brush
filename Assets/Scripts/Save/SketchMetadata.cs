@@ -762,6 +762,9 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TiltModels75[] ModelIndex { get; set; }
 
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TiltLights[] LightIndex { get; set; }
+
         // Added in 7.5b; never released to public.
         // Write-only so it gets serialized in but not serialized out.
         // Images and ImageIndex will never coexist in the same .tilt, so we can upgrade in place.
