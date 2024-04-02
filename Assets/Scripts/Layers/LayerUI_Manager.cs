@@ -82,7 +82,7 @@ namespace TiltBrush.Layers
                 newWidget.GetComponentInChildren<TMPro.TextMeshPro>().text = layerCanvases[i].name;
                 if (i == 0)
                 {
-                    newWidget.GetComponentInChildren<TMPro.TextMeshPro>().text = $"{m_MainLayerName.GetLocalizedString()}";
+                    newWidget.GetComponentInChildren<TMPro.TextMeshPro>().text = $"{m_MainLayerName.GetLocalizedStringAsync().Result}";
                     newWidget.GetComponentInChildren<DeleteLayerButton>()?.gameObject.SetActive(false);
                     newWidget.GetComponentInChildren<LayerPopupButton>()?.gameObject.SetActive(false);
                     newWidget.GetComponentInChildren<SquashLayerButton>()?.gameObject.SetActive(false);

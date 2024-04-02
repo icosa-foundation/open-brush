@@ -45,6 +45,7 @@ namespace TiltBrush
             App.Switchboard.CameraPathCreated += RefreshVisibility;
             App.Switchboard.CameraPathKnotChanged += RefreshVisibility;
             App.Switchboard.CurrentCameraPathChanged += RefreshVisibility;
+            App.Scene.LayerCanvasesUpdate += OnLayerCanvasesUpdate;
             App.Scene.MainCanvas.PoseChanged += OnPoseChanged;
             App.Scene.captureRig = this.gameObject;
         }
@@ -58,7 +59,13 @@ namespace TiltBrush
             App.Switchboard.CameraPathCreated -= RefreshVisibility;
             App.Switchboard.CameraPathKnotChanged -= RefreshVisibility;
             App.Switchboard.CurrentCameraPathChanged -= RefreshVisibility;
+            App.Scene.LayerCanvasesUpdate -= OnLayerCanvasesUpdate;
             App.Scene.MainCanvas.PoseChanged -= OnPoseChanged;
+        }
+
+        private void OnLayerCanvasesUpdate()
+        {
+            RefreshVisibility();
         }
 
         public void Init()
@@ -125,7 +132,7 @@ namespace TiltBrush
 
         public void StopRecordingPath(bool saveCapture)
         {
-            string message = saveCapture ? m_PathRecorded.GetLocalizedString() : m_PathCancelled.GetLocalizedString();
+            string message = saveCapture ? m_PathRecorded.GetLocalizedStringAsync().Result : m_PathCancelled.GetLocalizedStringAsync().Result;
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
                 InputManager.ControllerName.Brush, message);
             if (saveCapture)
@@ -153,7 +160,17 @@ namespace TiltBrush
 
         void RefreshVisibility()
         {
-            m_Object.SetActive(WidgetManager.m_Instance.CameraPathsVisible);
+            if (m_Object != null)
+            {
+                var currentPath = WidgetManager.m_Instance.GetCurrentCameraPath();
+                m_Object.SetActive(
+                    currentPath != null &&
+                    // Current path's layer is visible.
+                    currentPath.m_WidgetObject.activeInHierarchy &&
+                    // Camera paths in general are visible
+                    WidgetManager.m_Instance.CameraPathsVisible
+                );
+            }
             m_Widget.Show(WidgetManager.m_Instance.CanRecordCurrentCameraPath());
         }
 

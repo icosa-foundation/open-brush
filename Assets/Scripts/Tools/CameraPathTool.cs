@@ -374,7 +374,8 @@ namespace TiltBrush
                 foreach (TypedWidgetData<CameraPathWidget> data in datas)
                 {
                     CameraPathWidget widget = data.WidgetScript;
-                    Debug.AssertFormat(widget != null, "Non-MovementPathWidget in MovementPathWidget list");
+                    Debug.AssertFormat(widget != null, "Non-CameraPathWidget in CameraPathWidget list");
+                    if (!widget.gameObject.activeInHierarchy) continue;
 
                     // Check our tool attach point against the path.  If there is a collision, we're going
                     // to jump the position of our mesh to the point on the path.
