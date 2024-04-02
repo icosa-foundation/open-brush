@@ -40,7 +40,7 @@ namespace TiltBrush
                 gizmo.SetupLightGizmos(light);
                 lightWidget.m_BoxCollider = gizmo.GetComponentInChildren<BoxCollider>(includeInactive: false);
                 lightWidget.m_Mesh = gizmo.ActiveMeshTransform;
-                lightWidget.m_HighlightMeshXfs = new[] { gizmo.ActiveMeshTransform };
+                lightWidget.HighlightMeshXfs = new[] { gizmo.ActiveMeshTransform };
                 light.transform.SetParent(lightWidget.transform, true);
                 lightWidget.name = baseName;
                 HierarchyUtils.RecursivelySetLayer(lightWidget.transform, layer, skipUI: false);
