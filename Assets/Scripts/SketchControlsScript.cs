@@ -4401,26 +4401,10 @@ namespace TiltBrush
                     EatGazeObjectInput();
                     break;
                 case GlobalCommands.FAQ:
-                    //launch external window and tell the user we did so
-                    EatGazeObjectInput();
-                    if (!App.Config.IsMobileHardware)
-                    {
-                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                            InputManager.ControllerName.Brush,
-                            kRemoveHeadsetFyi, fPopScalar: 0.5f);
-                    }
-                    App.OpenURL(m_HelpCenterURL);
+                    OpenURLAndInformUser(m_HelpCenterURL);
                     break;
                 case GlobalCommands.ReleaseNotes:
-                    //launch external window and tell the user we did so
-                    EatGazeObjectInput();
-                    if (!App.Config.IsMobileHardware)
-                    {
-                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                            InputManager.ControllerName.Brush,
-                            kRemoveHeadsetFyi, fPopScalar: 0.5f);
-                    }
-                    App.OpenURL(m_ReleaseNotesURL);
+                    OpenURLAndInformUser(m_ReleaseNotesURL);
                     break;
                 case GlobalCommands.ExportRaw:
                     if (!FileUtils.CheckDiskSpaceWithError(App.UserExportPath()))
@@ -4489,35 +4473,7 @@ namespace TiltBrush
                         break;
                     }
                 case GlobalCommands.About:
-                    EatGazeObjectInput();
-
-                    if (!App.Config.IsMobileHardware)
-                    {
-                        // Launch external window and tell the user we did so/
-                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                            InputManager.ControllerName.Brush,
-                            kRemoveHeadsetFyi, fPopScalar: 0.5f);
-                    }
-
-                    // This call is Windows only.
-                    if ((Application.platform == RuntimePlatform.WindowsPlayer) ||
-                        (Application.platform == RuntimePlatform.WindowsEditor))
-                    {
-                        if (!Application.isEditor)
-                        {
-                            System.Diagnostics.Process.Start("notepad.exe",
-                                Path.Combine(App.PlatformPath(), "NOTICE"));
-                        }
-                        else
-                        {
-                            System.Diagnostics.Process.Start("notepad.exe",
-                                Path.Combine(App.SupportPath(), "ThirdParty/GeneratedThirdPartyNotices.txt"));
-                        }
-                    }
-                    else if (App.Config.IsMobileHardware)
-                    {
-                        App.OpenURL(m_ThirdPartyNoticesURL);
-                    }
+                    OpenURLAndInformUser(m_ThirdPartyNoticesURL);
                     break;
                 case GlobalCommands.StencilsDisabled:
                     SketchMemoryScript.m_Instance.PerformAndRecordCommand(new StencilsVisibleCommand());
@@ -4599,17 +4555,8 @@ namespace TiltBrush
                         break;
                     }
                 case GlobalCommands.ViewOnlineGallery:
-                    {
-                        if (!App.Config.IsMobileHardware)
-                        {
-                            OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                                InputManager.ControllerName.Brush,
-                                kRemoveHeadsetFyi, fPopScalar: 0.5f);
-                        }
-                        App.OpenURL(kTiltBrushGalleryUrl);
-                        EatGazeObjectInput();
-                        break;
-                    }
+                    OpenURLAndInformUser(kTiltBrushGalleryUrl);
+                    break;
                 case GlobalCommands.CancelUpload:
                     VrAssetService.m_Instance.CancelUpload();
                     break;
@@ -4630,19 +4577,12 @@ namespace TiltBrush
                     }
                     break;
                 case GlobalCommands.ShowGoogleDrive:
-                    EatGazeObjectInput();
-                    if (!App.Config.IsMobileHardware)
-                    {
-                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                            InputManager.ControllerName.Brush,
-                            kRemoveHeadsetFyi, fPopScalar: 0.5f);
-                    }
                     string baseDriveUrl = "https://drive.google.com";
                     string driveURL = !App.GoogleIdentity.LoggedIn ? baseDriveUrl :
                         string.Format(
                             "http://accounts.google.com/AccountChooser?Email={0}&continue={1}",
                             App.GoogleIdentity.Profile.email, baseDriveUrl);
-                    App.OpenURL(driveURL);
+                    OpenURLAndInformUser(driveURL);
                     break;
                 case GlobalCommands.GoogleDriveSync:
                     App.DriveSync.SyncEnabled = !App.DriveSync.SyncEnabled;
@@ -4703,24 +4643,10 @@ namespace TiltBrush
                     SaveModel();
                     break;
                 case GlobalCommands.ViewPolyPage:
-                    if (!App.Config.IsMobileHardware)
-                    {
-                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                            InputManager.ControllerName.Brush,
-                            kRemoveHeadsetFyi, fPopScalar: 0.5f);
-                    }
-                    App.OpenURL(kPolyMainPageUri);
-                    EatGazeObjectInput();
+                    OpenURLAndInformUser(kPolyMainPageUri);
                     break;
                 case GlobalCommands.ViewPolyGallery:
-                    if (!App.Config.IsMobileHardware)
-                    {
-                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                            InputManager.ControllerName.Brush,
-                            kRemoveHeadsetFyi, fPopScalar: 0.5f);
-                    }
-                    App.OpenURL(kBlocksGalleryUrl);
-                    EatGazeObjectInput();
+                    OpenURLAndInformUser(kBlocksGalleryUrl);
                     break;
                 case GlobalCommands.ExportListed:
                     StartCoroutine(ExportListAndQuit());
@@ -4871,47 +4797,16 @@ namespace TiltBrush
                     }
                     break;
                 case GlobalCommands.ShowTos:
-                    // Launch external window and tell the user we did so
-                    EatGazeObjectInput();
-                    if (!App.Config.IsMobileHardware)
-                    {
-                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                            InputManager.ControllerName.Brush,
-                            kRemoveHeadsetFyi, fPopScalar: 0.5f);
-                    }
-                    App.OpenURL(m_TosURL);
+                    OpenURLAndInformUser(m_TosURL);
                     break;
                 case GlobalCommands.ShowPrivacy:
-                    // Launch external window and tell the user we did so
-                    EatGazeObjectInput();
-                    if (!App.Config.IsMobileHardware)
-                    {
-                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                            InputManager.ControllerName.Brush,
-                            kRemoveHeadsetFyi, fPopScalar: 0.5f);
-                    }
-                    App.OpenURL(m_PrivacyURL);
+                    OpenURLAndInformUser(m_PrivacyURL);
                     break;
                 case GlobalCommands.ShowQuestSideLoading:
-                    // Launch external window and tell the user we did so
-                    EatGazeObjectInput();
-                    if (!App.Config.IsMobileHardware)
-                    {
-                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                            InputManager.ControllerName.Brush,
-                            kRemoveHeadsetFyi, fPopScalar: 0.5f);
-                    }
-                    App.OpenURL(m_QuestSideLoadingHowToURL);
+                    OpenURLAndInformUser(m_QuestSideLoadingHowToURL);
                     break;
                 case GlobalCommands.ShowContribution:
-                    EatGazeObjectInput();
-                    if (!App.Config.IsMobileHardware)
-                    {
-                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                            InputManager.ControllerName.Brush,
-                            kRemoveHeadsetFyi, fPopScalar: 0.5f);
-                    }
-                    App.OpenURL(m_ContributionURL);
+                    OpenURLAndInformUser(m_ContributionURL);
                     break;
                 case GlobalCommands.UnloadReferenceImageCatalog:
                     ReferenceImageCatalog.m_Instance.UnloadAllImages();
@@ -4939,16 +4834,13 @@ namespace TiltBrush
                     EatGazeObjectInput();
                     break;
                 case GlobalCommands.OpenScriptsCommandsList:
-                    // TODO refactor code above to use this method
-                    OpenUrl($"http://localhost:{App.HttpServer.HttpPort}/help/commands");
+                    OpenURLAndInformUser($"http://localhost:{App.HttpServer.HttpPort}/help/commands");
                     break;
                 case GlobalCommands.OpenScriptsList:
-                    // TODO refactor code above to use this method
-                    OpenUrl($"http://localhost:{App.HttpServer.HttpPort}/scripts");
+                    OpenURLAndInformUser($"http://localhost:{App.HttpServer.HttpPort}/scripts");
                     break;
                 case GlobalCommands.OpenExampleScriptsList:
-                    // TODO refactor code above to use this method
-                    OpenUrl($"http://localhost:{App.HttpServer.HttpPort}/examplescripts");
+                    OpenURLAndInformUser($"http://localhost:{App.HttpServer.HttpPort}/examplescripts");
                     break;
                 case GlobalCommands.RepaintOptions: break; // Intentionally blank.
                 case GlobalCommands.Null: break; // Intentionally blank.
@@ -4977,15 +4869,16 @@ namespace TiltBrush
             }
         }
 
-        private void OpenUrl(string url)
+        public void OpenURLAndInformUser(string url)
         {
+            // On desktop - launch external browser and inform the user
+            // On mobile - the browser appears over the app
             if (!App.Config.IsMobileHardware)
             {
                 OutputWindowScript.m_Instance.CreateInfoCardAtController(
                     InputManager.ControllerName.Brush,
                     kRemoveHeadsetFyi, fPopScalar: 0.5f);
             }
-
             App.OpenURL(url);
             EatGazeObjectInput();
         }
