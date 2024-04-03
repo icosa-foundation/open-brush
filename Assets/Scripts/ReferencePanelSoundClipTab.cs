@@ -124,7 +124,8 @@ namespace TiltBrush
         {
             get
             {
-                return m_SelectedSoundClipWidget != null ? m_SelectedSoundClipWidget.SoundClipController : null; }
+                return m_SelectedSoundClipWidget != null ? m_SelectedSoundClipWidget.SoundClipController : null;
+            }
         }
 
         void RefreshSoundClipControlsVisibility()

@@ -2101,7 +2101,7 @@ namespace TiltBrush
 
             return true;
         }
-        
+
         public static string FeaturedSketchesPath()
         {
             return Path.Combine(Application.persistentDataPath, "Featured Sketches");
@@ -2126,7 +2126,7 @@ namespace TiltBrush
         {
             return Path.Combine(MediaLibraryPath(), "Videos");
         }
-        
+
         public static string SoundClipLibraryPath()
         {
             return Path.Combine(MediaLibraryPath(), "Sound Clips");
