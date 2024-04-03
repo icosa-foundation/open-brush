@@ -298,32 +298,32 @@ namespace TiltBrush
             switch (type)
             {
                 case OverlayType.LoadSketch:
-                    SetText(m_LoadSketchText.GetLocalizedString());
+                    SetText(m_LoadSketchText.GetLocalizedStringAsync().Result);
                     RenderLogo(0);
                     SetOverlayTexture(m_GUILogo);
                     break;
                 case OverlayType.LoadModel:
-                    SetText(m_LoadModelText.GetLocalizedString());
+                    SetText(m_LoadModelText.GetLocalizedStringAsync().Result);
                     RenderLogo(0);
                     SetOverlayTexture(m_GUILogo);
                     break;
                 case OverlayType.LoadGeneric:
-                    SetText(m_LoadGenericText.GetLocalizedString());
+                    SetText(m_LoadGenericText.GetLocalizedStringAsync().Result);
                     RenderLogo(0);
                     SetOverlayTexture(m_GUILogo);
                     break;
                 case OverlayType.LoadImages:
-                    SetText(m_LoadImagesText.GetLocalizedString());
+                    SetText(m_LoadImagesText.GetLocalizedStringAsync().Result);
                     RenderLogo(0);
                     SetOverlayTexture(m_GUILogo);
                     break;
                 case OverlayType.Export:
-                    SetText(m_ExportText.GetLocalizedString());
+                    SetText(m_ExportText.GetLocalizedStringAsync().Result);
                     RenderLogo(0);
                     SetOverlayTexture(m_GUILogo);
                     break;
                 case OverlayType.LoadMedia:
-                    SetText(m_LoadMediaText.GetLocalizedString());
+                    SetText(m_LoadMediaText.GetLocalizedStringAsync().Result);
                     RenderLogo(0);
                     SetOverlayTexture(m_GUILogo);
                     break;
@@ -433,7 +433,7 @@ namespace TiltBrush
                 yield return null; // eat a frame
                 if (showSuccessText)
                 {
-                    SetText(m_SuccessText.GetLocalizedString());
+                    SetText(m_SuccessText.GetLocalizedStringAsync().Result);
                     float successHold = 1.0f;
                     while (successHold >= 0.0f)
                     {
@@ -522,7 +522,7 @@ namespace TiltBrush
 
                 if (showSuccessText)
                 {
-                    SetText(m_SuccessText.GetLocalizedString());
+                    SetText(m_SuccessText.GetLocalizedStringAsync().Result);
                     await Awaiters.Seconds(1f);
                 }
 
@@ -580,7 +580,7 @@ namespace TiltBrush
                 Progress.Report(0.75);
                 if (showSuccessText)
                 {
-                    SetText(m_SuccessText.GetLocalizedString());
+                    SetText(m_SuccessText.GetLocalizedStringAsync().Result);
                     await Awaiters.Seconds(1f);
                 }
 
