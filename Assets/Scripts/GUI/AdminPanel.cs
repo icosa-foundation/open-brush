@@ -63,7 +63,7 @@ namespace TiltBrush
             if (currentLoggedIn == m_UpdateShareButtonState) { return; }
             m_UpdateShareButtonState = currentLoggedIn;
 
-            string text = currentLoggedIn ? "" : m_ShareButtonLoggedOutExtraText.GetLocalizedString();
+            string text = currentLoggedIn ? "" : m_ShareButtonLoggedOutExtraText.GetLocalizedStringAsync().Result;
             m_ShareButton.SetExtraDescriptionText(text);
         }
 
