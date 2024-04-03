@@ -763,7 +763,7 @@ namespace TiltBrush
                     break;
             }
         }
-        
+
         public void ShowSnipJoinToggle(bool isJoin)
         {
             var mat = isJoin ? Materials.ToggleJoin : Materials.ToggleSnip;

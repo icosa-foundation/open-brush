@@ -186,7 +186,7 @@ namespace TiltBrush
 
         [SerializeField] private Material m_ToggleSnip;
         [CatalogMaterial] public Material ToggleSnip { get; private set; }
-        
+
         void Awake()
         {
             m_Instance = this;

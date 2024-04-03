@@ -166,7 +166,7 @@ namespace TiltBrush
                 m_StrokeA = null;
             }
         }
-        
+
         override protected bool IsOn()
         {
             return m_JoinModeOn;
