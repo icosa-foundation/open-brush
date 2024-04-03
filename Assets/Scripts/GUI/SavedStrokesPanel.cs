@@ -50,7 +50,7 @@ namespace TiltBrush
                 m_IconScriptsOnNormalPage.Add(m_IconsOnNormalPage[i].GetComponent<BaseButton>());
             }
         }
-        
+
         public override bool IsInButtonMode(ModeButton button)
         {
             GalleryButton galleryButton = button as GalleryButton;
@@ -58,7 +58,7 @@ namespace TiltBrush
                 ((galleryButton.m_ButtonType == GalleryButton.Type.Local && m_CurrentSketchSet == SketchSetType.User) ||
                 (galleryButton.m_ButtonType == GalleryButton.Type.Drive && m_CurrentSketchSet == SketchSetType.Drive));
         }
-        
+
         override protected void OnUpdateActive()
         {
             // If we're not active, hide all our preview panels
@@ -97,7 +97,7 @@ namespace TiltBrush
                 m_SketchSet.RequestRefresh();
             }
         }
-        
+
         private void OnSketchSetDirty()
         {
             ComputeNumPages();
@@ -130,7 +130,7 @@ namespace TiltBrush
             int normalPages = ((remainingSketches - 1) / m_IconsOnNormalPage.Length) + 1;
             m_NumPages = 1 + normalPages;
         }
-        
+
         void SetVisibleSketchSet(SketchSetType type)
         {
             if (m_CurrentSketchSet != type)
@@ -177,7 +177,7 @@ namespace TiltBrush
                 }
             }
         }
-        
+
         protected override void OnStart()
         {
             // Initialize icons.

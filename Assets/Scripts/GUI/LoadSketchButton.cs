@@ -31,7 +31,7 @@ namespace TiltBrush
         [SerializeField] private Material m_WarningMaterial;
         [SerializeField] private Material m_ErrorMaterial;
         [SerializeField] private bool m_IsMergeStrokesButton;
-        
+
         private bool m_ThumbnailLoaded = false;
         private bool m_SizeOk = true;
         private Vector2 m_DynamicUvScale;
