@@ -28,10 +28,10 @@ namespace TiltBrush
     {
         // public const string kModelLandingPage = "https://api.icosa.gallery/edit/";
         // const string kApiHost = "https://api.icosa.gallery";
-        
+
         public const string kModelLandingPage = "http://192.168.1.228:3000/edit/";
         const string kApiHost = "http://192.168.1.228:8000";
-        
+
         /// A paginated response, for use with GetNextPageAsync()
         public interface Paginated
         {
@@ -228,13 +228,13 @@ namespace TiltBrush
                 $"{kApiHost}/assets", App.IcosaUserId, "POST", compress: false);
 
             var moreParams = new List<(string, string)>();
-            
+
             // Not currently used or supported by the backend
             if (options != null)
             {
                 moreParams.Add(("options", JsonConvert.SerializeObject(options)));
             }
-            
+
             uploader.ProgressObject = progress;
             var reply = await uploader.SendNamedDataAsync(
                 "files", File.OpenRead(zipPath), Path.GetFileName(zipPath), "application/zip",

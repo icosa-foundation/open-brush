@@ -281,7 +281,7 @@ namespace TiltBrush
                 {
                     ui.name.text = App.IcosaUserName;
                     ui.photo.material.mainTexture = App.IcosaUserIcon;
-                }   
+                }
             }
             else
             {

@@ -134,7 +134,7 @@ namespace TiltBrush
         public static string ICOSA_DEVICECODE_URL = "http://192.168.1.228:3000/device";
         // public static string ICOSA_API_BASEPATH = "http://api.icosa.gallery";
         public static string ICOSA_API_BASEPATH = "http://192.168.1.228:8000";
-        
+
         public string IcosaToken
         {
             get => PlayerPrefs.HasKey("IcosaToken") ? PlayerPrefs.GetString("IcosaToken") : null;
@@ -240,7 +240,7 @@ namespace TiltBrush
         [Header("Identities")]
         [SerializeField] private OAuth2Identity m_GoogleIdentity;
         [SerializeField] private OAuth2Identity m_SketchfabIdentity;
-        
+
         // ------------------------------------------------------------
         // Private data
         // ------------------------------------------------------------

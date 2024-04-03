@@ -177,7 +177,7 @@ namespace TiltBrush
             m_DriveSyncing = driveSyncing;
             RefreshBackupProgressText();
         }
-        
+
         private void RefreshIcosaUserInfoUi()
         {
             m_IcosaNameText.text = App.IcosaUserName;
@@ -233,7 +233,7 @@ namespace TiltBrush
                 }
                 yield break;
             }
-    
+
             if (loginTask.Result?.AccessToken == null)
             {
                 // TODO: Show error message.
@@ -261,7 +261,7 @@ namespace TiltBrush
                     LoginFailure();
                 }
                 Debug.Log($"GetUser failed with exception: {getUserTask.Exception}");
-                yield break; 
+                yield break;
             }
 
             var userData = getUserTask.Result;
@@ -273,7 +273,7 @@ namespace TiltBrush
             }
             onSuccess?.Invoke(userData);
         }
-        
+
         private void LoginSuccess(FullUser userData)
         {
             // Call the callback delegate if it's provided (which means this was called from the first coroutine)
@@ -283,7 +283,7 @@ namespace TiltBrush
             RefreshIcosaUserInfoUi();
             HideIcosaLogin();
         }
-        
+
         private void LoginFailure()
         {
             HideIcosaLogin();
@@ -373,7 +373,7 @@ namespace TiltBrush
                     }
 
                     App.OpenURL(App.ICOSA_DEVICECODE_URL);
-                    ShowIcosaLogin();   
+                    ShowIcosaLogin();
                     m_Persistent = true;
                     break;
                 case SketchControlsScript.GlobalCommands.AccountInfo:

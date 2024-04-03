@@ -540,7 +540,7 @@ namespace TiltBrush
         private static async Task<IcosaStatus> GetIcosaStatus()
         {
             // UserConfig override
-            if (App.UserConfig.Flags.DisableIcosa || App.Instance.IcosaToken==null)
+            if (App.UserConfig.Flags.DisableIcosa || App.Instance.IcosaToken == null)
             {
                 return IcosaStatus.Disabled;
             }

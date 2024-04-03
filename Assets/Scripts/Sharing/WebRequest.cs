@@ -230,10 +230,10 @@ namespace TiltBrush
 
         private string m_Uri;
         private string m_Method;
-        
+
         private OAuth2Identity m_Identity;
         private string m_LoginToken;
-        
+
         private byte[] m_Result = null;
         private int m_UploadedBytes = 0;
         private float? m_PreUploadProgress = null;
@@ -304,7 +304,7 @@ namespace TiltBrush
             m_Uri = uri;
             m_Identity = identity;
         }
-        
+
         // identity may be null, in which case no authentication takes place
         public WebRequest(string uri, string loginToken,
                           string method = UnityWebRequest.kHttpVerbGET, bool compress = false)
