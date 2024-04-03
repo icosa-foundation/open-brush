@@ -75,7 +75,7 @@ namespace TiltBrush
                 lr.gameObject.SetActive(true);
                 lr.transform.position = surfacePos;
                 lr.transform.rotation = Quaternion.LookRotation(surfaceNorm, Vector3.up);
-                lr.SetPositions(new []
+                lr.SetPositions(new[]
                 {
                     surfacePos,
                     origin
