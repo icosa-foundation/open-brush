@@ -42,7 +42,7 @@ namespace TiltBrush
             {
                 try
                 {
-                    var locString = m_LocalizedToggleOnDescription.GetLocalizedString();
+                    var locString = m_LocalizedToggleOnDescription.GetLocalizedStringAsync().Result;
                     return locString;
                 }
                 catch
@@ -58,7 +58,7 @@ namespace TiltBrush
             {
                 try
                 {
-                    var locString = m_LocalizedPopup.GetLocalizedString();
+                    var locString = m_LocalizedPopup.GetLocalizedStringAsync().Result;
                     return locString;
                 }
                 catch
