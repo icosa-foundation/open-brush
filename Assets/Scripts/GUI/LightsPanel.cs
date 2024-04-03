@@ -480,11 +480,11 @@ namespace TiltBrush
             switch (mode)
             {
                 case LightMode.Ambient:
-                    return m_AmbientLightName.GetLocalizedString();
+                    return m_AmbientLightName.GetLocalizedStringAsync().Result;
                 case LightMode.Shadow:
-                    return m_ShadowLightName.GetLocalizedString();
+                    return m_ShadowLightName.GetLocalizedStringAsync().Result;
                 case LightMode.NoShadow:
-                    return m_NoShadowLightName.GetLocalizedString();
+                    return m_NoShadowLightName.GetLocalizedStringAsync().Result;
             }
             return "";
         }
