@@ -2160,11 +2160,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Property.m_Target
       value: 
-      objectReference: {fileID: 76723185672001994}
+      objectReference: {fileID: 4781164090320310020}
     - target: {fileID: 7599348944369875173, guid: c2a88d23f4dea5a4aae06f33862c9716,
         type: 3}
       propertyPath: m_Property.m_PropertyName
-      value: hasChanged
+      value: SelectedVideoIsPlaying
       objectReference: {fileID: 0}
     - target: {fileID: 7599348944369875173, guid: c2a88d23f4dea5a4aae06f33862c9716,
         type: 3}
