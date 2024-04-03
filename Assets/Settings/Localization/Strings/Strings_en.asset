@@ -3500,6 +3500,10 @@ MonoBehaviour:
     m_Localized: Failed to Detect VR
     m_Metadata:
       m_Items: []
+  - m_Id: 218558579745579008
+    m_Localized: 'More info on using Open Brush without VR:'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

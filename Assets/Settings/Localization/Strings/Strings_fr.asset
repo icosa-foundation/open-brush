@@ -3513,6 +3513,10 @@ MonoBehaviour:
       : monter/descendre\nMaintenez shift pour vous d\xE9placer plus rapidement"
     m_Metadata:
       m_Items: []
+  - m_Id: 218558579745579008
+    m_Localized: 'Plus d''informations sur l''utilisation d''Open Brush sans VR :'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -3531,6 +3531,11 @@ MonoBehaviour:
       \uC788\uC73C\uBA74 \uB354 \uBE68\uB9AC \uC774\uB3D9\uD569\uB2C8\uB2E4"
     m_Metadata:
       m_Items: []
+  - m_Id: 218558579745579008
+    m_Localized: "VR \uC5C6\uC774 Open Brush \uC0AC\uC6A9\uC5D0 \uB300\uD55C \uC790\uC138\uD55C
+      \uC815\uBCF4:"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

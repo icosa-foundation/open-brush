@@ -3544,6 +3544,10 @@ MonoBehaviour:
       mover arriba/abajo\nMant\xE9n presionado shift para moverte m\xE1s r\xE1pido"
     m_Metadata:
       m_Items: []
+  - m_Id: 218558579745579008
+    m_Localized: "M\xE1s informaci\xF3n sobre c\xF3mo usar Open Brush sin VR:"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
