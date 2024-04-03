@@ -22,9 +22,4 @@ public class InspectorAppearanceTab : InspectorBaseTab
     {
         m_InspectorPanel = GetComponentInParent<InspectorPanel>();
     }
-
-    public override void OnSelectionChanged()
-    {
-    }
-
 }

@@ -31,11 +31,13 @@ namespace TiltBrush
 
     public class InspectorPanel : BasePanel
     {
-        public GrabWidget LastWidget { get; set; }
         public InspectorTabButton m_InitialTabButton;
 
         public SelectionType CurrentSelectionType => m_CurrentSelectionType;
         private SelectionType m_CurrentSelectionType;
+
+        public TrTransform CurrentSelection => m_CurrentSelection;
+        private TrTransform m_CurrentSelection;
 
         public int CurrentSelectionCount => m_CurrentSelectionCount;
         private int m_CurrentSelectionCount;
@@ -76,16 +78,28 @@ namespace TiltBrush
             HandleTabButtonPressed(m_InitialTabButton);
         }
 
+        private void OnSelectionPoseChanged(TrTransform prev, TrTransform current)
+        {
+            foreach (var tab in AllTabs)
+            {
+                tab.OnSelectionPoseChanged();
+            }
+        }
+
         private void OnSelectionChanged()
         {
-
-            if (SelectionManager.m_Instance.HasSelection)
+            if (!SelectionManager.m_Instance.HasSelection)
             {
+                m_CurrentSelectionType = SelectionType.Nothing;
+                m_CurrentSelectionCount = 0;
+            }
+            else
+            {
+                m_CurrentSelection = SelectionManager.m_Instance.SelectionTransform;
                 var selectedWidgets = SelectionManager.m_Instance.GetValidSelectedWidgets();
 
                 bool hasWidgets = selectedWidgets.Count > 0;
                 bool hasStrokes = SelectionManager.m_Instance.SelectedStrokeCount > 0;
-
 
                 if (hasStrokes && hasWidgets)
                 {
@@ -142,11 +156,6 @@ namespace TiltBrush
                     m_CurrentSelectionCount = 0;
                 }
             }
-            else
-            {
-                m_CurrentSelectionType = SelectionType.Nothing;
-                m_CurrentSelectionCount = 0;
-            }
 
             foreach (var tab in AllTabs)
             {
@@ -158,11 +167,13 @@ namespace TiltBrush
         {
             base.Awake();
             App.Switchboard.SelectionChanged += OnSelectionChanged;
+            App.Scene.SelectionCanvas.PoseChanged += OnSelectionPoseChanged;
         }
 
         void OnDestroy()
         {
             App.Switchboard.SelectionChanged -= OnSelectionChanged;
+            App.Scene.SelectionCanvas.PoseChanged -= OnSelectionPoseChanged;
         }
 
         public void HandleTabButtonPressed(InspectorTabButton btn)
@@ -176,6 +187,7 @@ namespace TiltBrush
             foreach (var t in AllTabs)
             {
                 t.gameObject.SetActive(t == btn.Tab);
+                t.TabButton = btn;
             }
         }
     }

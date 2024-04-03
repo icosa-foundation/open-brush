@@ -12,9 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
+using TiltBrush;
 using UnityEngine;
 
 public abstract class InspectorBaseTab : MonoBehaviour
 {
-    public abstract void OnSelectionChanged();
+    [NonSerialized] public InspectorTabButton TabButton;
+
+    public virtual void OnSelectionChanged()
+    { }
+
+    public virtual void OnSelectionPoseChanged()
+    { }
 }

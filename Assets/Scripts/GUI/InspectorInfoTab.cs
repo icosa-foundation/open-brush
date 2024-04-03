@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Generic;
+using System.Linq;
 using TiltBrush;
 using TMPro;
 
@@ -30,21 +32,38 @@ public class InspectorInfoTab : InspectorBaseTab
     {
         m_SummaryText.text = "";
 
+        var groups = new HashSet<int>(SelectionManager.m_Instance.SelectedStrokes
+            .Select(stroke => stroke.Group.GetHashCode())
+            .Where(x => x != 0)
+        );
+
+        groups.UnionWith(new HashSet<int>(
+            SelectionManager.m_Instance.SelectedWidgets
+                .Select(widget => widget.Group.GetHashCode())
+                .Where(x => x != 0)
+            )
+        );
+
         switch (m_InspectorPanel.CurrentSelectionType)
         {
             case SelectionType.Nothing:
                 m_SummaryText.text = "Nothing selected";
                 break;
+
             case SelectionType.Stroke:
-                if (m_InspectorPanel.CurrentSelectionCount == 1)
+                var strokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
+                if (strokes.Count == 1)
                 {
+                    var stroke = strokes[0];
                     m_SummaryText.text = "1 stroke selected";
+                    m_SummaryText.text += $"{stroke.Group}";
                 }
                 else
                 {
-                    m_SummaryText.text = "{m_InspectorPanel.CurrentSelectionCount} strokes selected";
+                    m_SummaryText.text = $"{strokes.Count()} strokes selected";
                 }
                 break;
+
             case SelectionType.Image:
                 if (m_InspectorPanel.CurrentSelectionCount == 1)
                 {
@@ -55,6 +74,7 @@ public class InspectorInfoTab : InspectorBaseTab
                     m_SummaryText.text = "{m_InspectorPanel.CurrentSelectionCount} images selected";
                 }
                 break;
+
             case SelectionType.Video:
                 if (m_InspectorPanel.CurrentSelectionCount == 1)
                 {
@@ -65,6 +85,7 @@ public class InspectorInfoTab : InspectorBaseTab
                     m_SummaryText.text = "{m_InspectorPanel.CurrentSelectionCount} videos selected";
                 }
                 break;
+
             case SelectionType.Model:
                 if (m_InspectorPanel.CurrentSelectionCount == 1)
                 {
@@ -75,6 +96,7 @@ public class InspectorInfoTab : InspectorBaseTab
                     m_SummaryText.text = "{m_InspectorPanel.CurrentSelectionCount} models selected";
                 }
                 break;
+
             case SelectionType.Guide:
                 if (m_InspectorPanel.CurrentSelectionCount == 1)
                 {
@@ -85,9 +107,19 @@ public class InspectorInfoTab : InspectorBaseTab
                     m_SummaryText.text = "{m_InspectorPanel.CurrentSelectionCount} guides selected";
                 }
                 break;
+
             case SelectionType.Mixed:
                 m_SummaryText.text = "{m_InspectorPanel.CurrentSelectionCount} items selected";
                 break;
+        }
+
+        if (groups.Count == 1)
+        {
+            m_SummaryText.text += $" (Group: {groups.First()})";
+        }
+        else if (groups.Count > 1)
+        {
+            m_SummaryText.text += $"In {groups.Count} groups)";
         }
     }
 

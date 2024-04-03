@@ -37,28 +37,12 @@ public class InspectorTransformTab : InspectorBaseTab
         m_InspectorPanel = GetComponentInParent<InspectorPanel>();
     }
 
-    protected void Awake()
+    public override void OnSelectionPoseChanged()
     {
-        App.Scene.SelectionCanvas.PoseChanged += OnSelectionPoseChanged;
-    }
-
-    void OnDestroy()
-    {
-        App.Scene.SelectionCanvas.PoseChanged -= OnSelectionPoseChanged;
-    }
-
-    void OnSelectionPoseChanged(TrTransform _, TrTransform __)
-    {
-        OnSelectionPoseChanged();
-    }
-
-    void OnSelectionPoseChanged()
-    {
-        var translation = CurrentSelectionPos();
-
-        var selectionTr = SelectionManager.m_Instance.SelectionTransform;
-        var rotation = selectionTr.rotation.eulerAngles;
-        var scale = selectionTr.scale;
+        var tr = m_InspectorPanel.CurrentSelection;
+        var translation = tr.MultiplyPoint(SelectionBounds.center);
+        var rotation = tr.rotation.eulerAngles;
+        var scale = tr.scale;
         m_LabelForTranslationX.SetValue(FormatValue(translation.x));
         m_LabelForTranslationY.SetValue(FormatValue(translation.y));
         m_LabelForTranslationZ.SetValue(FormatValue(translation.z));
@@ -66,35 +50,7 @@ public class InspectorTransformTab : InspectorBaseTab
         m_LabelForRotationY.SetValue(FormatValue(rotation.y));
         m_LabelForRotationZ.SetValue(FormatValue(rotation.z));
         m_LabelForScale.SetValue(FormatValue(scale));
-
         SelectionBounds = App.Scene.SelectionCanvas.GetCanvasBoundingBox();
-
-    }
-
-    private Vector3 CurrentSelectionPos()
-    {
-        var selectionTr = SelectionManager.m_Instance.SelectionTransform;
-        var translation = selectionTr.MultiplyPoint(SelectionBounds.center);
-        return translation;
-    }
-
-    private TrTransform GetPreferredTransform()
-    {
-        TrTransform activeTr = TrTransform.identity;
-
-        // Prefer the selection if one exists
-        if (SelectionManager.m_Instance.HasSelection)
-        {
-            m_InspectorPanel.LastWidget = null;
-            activeTr = SelectionManager.m_Instance.SelectionTransform;
-        }
-        // otherwise use the last widget that was interacted with
-        else if (m_InspectorPanel.LastWidget != null && m_InspectorPanel.LastWidget.Canvas != null)
-        {
-            m_InspectorPanel.LastWidget = SketchControlsScript.m_Instance.CurrentGrabWidget ?? m_InspectorPanel.LastWidget;
-            activeTr = m_InspectorPanel.LastWidget.LocalTransform;
-        }
-        return activeTr;
     }
 
     public override void OnSelectionChanged()
@@ -110,7 +66,7 @@ public class InspectorTransformTab : InspectorBaseTab
 
     public void HandleLabelEdited(EditableLabel label)
     {
-        var newTr = GetPreferredTransform();
+        var newTr = TrTransform.identity;
 
         if (float.TryParse(label.LastTextInput, out float value))
         {
@@ -140,19 +96,9 @@ public class InspectorTransformTab : InspectorBaseTab
                     break;
             }
 
-            if (SelectionManager.m_Instance.HasSelection)
-            {
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                    new TransformSelectionCommand(newTr, SelectionBounds.center)
-                );
-            }
-            else
-            {
-                var pivot = m_InspectorPanel.LastWidget.LocalTransform.translation;
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                    new TransformItemsCommand(null, new List<GrabWidget> { m_InspectorPanel.LastWidget }, newTr, pivot)
-                );
-            }
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new TransformSelectionCommand(newTr, SelectionBounds.center)
+            );
         }
         else
         {

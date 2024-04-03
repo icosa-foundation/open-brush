@@ -93,7 +93,7 @@ MonoBehaviour:
   m_UseGazeRotation: 1
   m_MaxGazeRotation: 20
   m_GazeActivateSpeed: 8
-  m_InitialSpawnPos: {x: 4, y: 15, z: 5}
+  m_InitialSpawnPos: {x: 2, y: 15, z: 2}
   m_InitialSpawnRotEulers: {x: 0, y: 0, z: 0}
   m_WandAttachAngle: 0
   m_WandAttachYOffset: 0
@@ -1019,11 +1019,6 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 9102585478457154342}
     m_Modifications:
-    - target: {fileID: 86595576702817681, guid: 84cfd798eb0908e42a2e693bdb689dbe,
-        type: 3}
-      propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value: 
-      objectReference: {fileID: 114019824221785570}
     - target: {fileID: 654005862458299371, guid: 84cfd798eb0908e42a2e693bdb689dbe,
         type: 3}
       propertyPath: m_RootOrder
@@ -1084,11 +1079,6 @@ PrefabInstance:
       propertyPath: m_OnEditConfirmed.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
       objectReference: {fileID: 114019824221785570}
-    - target: {fileID: 4367755957558521206, guid: 84cfd798eb0908e42a2e693bdb689dbe,
-        type: 3}
-      propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value: 
-      objectReference: {fileID: 114019824221785570}
     - target: {fileID: 6177343325820483716, guid: 84cfd798eb0908e42a2e693bdb689dbe,
         type: 3}
       propertyPath: m_OnEditConfirmed.m_PersistentCalls.m_Calls.Array.data[0].m_Target
@@ -1099,16 +1089,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Transform Tab
       objectReference: {fileID: 0}
-    - target: {fileID: 6805430388242177387, guid: 84cfd798eb0908e42a2e693bdb689dbe,
+    - target: {fileID: 6622812158597502527, guid: 84cfd798eb0908e42a2e693bdb689dbe,
         type: 3}
-      propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value: 
-      objectReference: {fileID: 114019824221785570}
-    - target: {fileID: 7031421944014043524, guid: 84cfd798eb0908e42a2e693bdb689dbe,
-        type: 3}
-      propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value: 
-      objectReference: {fileID: 114019824221785570}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7523245897347694073, guid: 84cfd798eb0908e42a2e693bdb689dbe,
         type: 3}
       propertyPath: m_OnEditConfirmed.m_PersistentCalls.m_Calls.Array.data[0].m_Target
@@ -1185,6 +1170,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Appearance Tab
+      objectReference: {fileID: 0}
+    - target: {fileID: 2636446038884126853, guid: 81e209cac49c8f94ea647bfe16c3c737,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8533481234614097233, guid: 81e209cac49c8f94ea647bfe16c3c737,
         type: 3}
@@ -1272,6 +1262,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Info Tab
+      objectReference: {fileID: 0}
+    - target: {fileID: 3246189343786183972, guid: d027c403c58c454458facdada8e95245,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9220911665133299952, guid: d027c403c58c454458facdada8e95245,
         type: 3}
