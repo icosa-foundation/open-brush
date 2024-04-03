@@ -139,7 +139,7 @@ namespace TiltBrush
             {
                 try
                 {
-                    var locString = m_EnvironmentDescription.GetLocalizedString();
+                    var locString = m_EnvironmentDescription.GetLocalizedStringAsync().Result;
                     return locString;
                 }
                 catch
