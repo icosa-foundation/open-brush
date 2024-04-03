@@ -3573,7 +3573,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 218558579745579008
-    m_Localized: "Mehr Informationen zur Verwendung von Open Brush ohne VR:\t"
+    m_Localized: Mehr Informationen zur Verwendung von Open Brush ohne VR
     m_Metadata:
       m_Items: []
   references:
