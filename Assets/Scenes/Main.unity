@@ -10774,7 +10774,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_GlobalNoiseTexture: {fileID: 2800000, guid: 13d389131c327b94f84fbac121bf6f8f,
     type: 3}
-  m_DefaultBrush: {fileID: 11400000, guid: eb608f68fb3036b47be357a021ed7618, type: 2}
+  m_DefaultBrush: {fileID: 11400000, guid: b802f6ef146800b4bb78e9c705622cad, type: 2}
+  m_ZapboxDefaultBrush: {fileID: 11400000, guid: eb608f68fb3036b47be357a021ed7618,
+    type: 2}
   m_BlocksMaterials:
   - brushDescriptor: {fileID: 11400000, guid: 0e87b49c65463a343a448a556d7d6c3e, type: 2}
   - brushDescriptor: {fileID: 11400000, guid: d6c87eafa4cdba042933c1b4f6da46f7, type: 2}
