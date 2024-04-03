@@ -63,6 +63,7 @@ namespace TiltBrush
 
         [SerializeField] private Brush m_DefaultBrush;
         private bool m_CatalogChanged;
+        [SerializeField] private Brush m_ZapboxDefaultBrush;
         private bool m_IsLoading;
         private Dictionary<Guid, Brush> m_GuidToBrush;
         private HashSet<Brush> m_AllBrushes;
@@ -116,6 +117,18 @@ namespace TiltBrush
         public bool IsBrushBuiltIn(BrushDescriptor brush)
         {
             return m_BuiltinBrushes.ContainsKey(brush.m_Guid);
+        }
+        
+        public Brush DefaultBrush
+        {
+            get
+            {
+#if ZAPBOX_SUPPORTED
+                // TODO:Mikesky - Fix brush transparency!
+                return m_ZapboxDefaultBrush;
+#endif
+                return m_DefaultBrush;
+            }
         }
 
         public bool IsBrushInLibrary(BrushDescriptor brush)

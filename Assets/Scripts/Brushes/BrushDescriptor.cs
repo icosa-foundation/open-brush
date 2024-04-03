@@ -105,7 +105,7 @@ namespace TiltBrush
 
                 try
                 {
-                    var locString = m_LocalizedDescription.GetLocalizedString();
+                    var locString = m_LocalizedDescription.GetLocalizedStringAsync().Result;
                     return locString;
                 }
                 catch

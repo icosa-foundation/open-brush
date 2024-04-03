@@ -22,7 +22,7 @@ using TiltBrush;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEditor.Build.Reporting;
-#if UNITY_IPHONE
+#if UNITY_IOS
 using UnityEditor.iOS.Xcode;
 #endif
 using UnityEditor.SceneManagement;
@@ -924,6 +924,54 @@ static class BuildTiltBrush
         }
     }
 
+    class TempSetPlayerSettings : IDisposable
+    {
+        private BuildTarget m_Target;
+        private UIOrientation m_OrientationSettings;
+        private iOSTargetDevice m_iOSTargetDevice;
+        private Texture2D[] m_Icons;
+
+        public TempSetPlayerSettings(TiltBuildOptions tiltOptions)
+        {
+            m_Target = tiltOptions.Target;
+            m_OrientationSettings = PlayerSettings.defaultInterfaceOrientation;
+            m_iOSTargetDevice = PlayerSettings.iOS.targetDevice;
+            m_Icons = PlayerSettings.GetIcons(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target)), IconKind.Any);
+
+            switch (tiltOptions.XrSdk)
+            {
+                case XrSdkMode.Zapbox:
+                    PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
+                    PlayerSettings.iOS.targetDevice = iOSTargetDevice.iPhoneOnly;
+                    var zapboxIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Trademarked/TiltBrushLogoZapbox.png");
+
+                    Texture2D[] newIcons = { zapboxIcon };
+
+                    var buildTarget = UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target));
+
+                    PlayerSettings.SetIcons(buildTarget, newIcons, IconKind.Any);
+#if UNITY_IOS
+                    PlayerSettings.SetIcons(buildTarget, newIcons, IconKind.Notification);
+                    PlayerSettings.SetIcons(buildTarget, newIcons, IconKind.Settings);
+                    PlayerSettings.SetIcons(buildTarget, newIcons, IconKind.Spotlight);
+                    PlayerSettings.SetIcons(buildTarget, newIcons, IconKind.Notification);
+                    PlayerSettings.SetIcons(buildTarget, newIcons, IconKind.Store);
+#endif
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        public void Dispose()
+        {
+            PlayerSettings.defaultInterfaceOrientation = m_OrientationSettings;
+            PlayerSettings.iOS.targetDevice = m_iOSTargetDevice;
+            PlayerSettings.SetIcons(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target)), m_Icons, IconKind.Any);
+            AssetDatabase.SaveAssets();
+        }
+    }
+
     class TempSetScriptingBackend : IDisposable
     {
         private ScriptingImplementation m_prevbackend;
@@ -1503,6 +1551,7 @@ static class BuildTiltBrush
         using (var unused6 = new TempSetBundleVersion(target, App.Config.m_VersionNumber, stamp))
         using (var unused10 = new TempSetAppNames(target, tiltOptions.Description))
         using (var unused7 = new TempSetXrPlugin(tiltOptions))
+        using (var unused15 = new TempSetPlayerSettings(tiltOptions))
         using (var unused13 = new TempSetOpenXrFeatureGroup(tiltOptions))
         using (var unused9 = new RestoreFileContents(
             Path.Combine(Path.GetDirectoryName(Application.dataPath),
@@ -1794,7 +1843,7 @@ static class BuildTiltBrush
                 {
                     // TODO: is it possible to embed loose files on iOS?
                     looseFilesDest = null;
-#if UNITY_IPHONE
+#if UNITY_IOS
                     string pbxPath = path + "/Unity-iPhone.xcodeproj/project.pbxproj";
 
                     PBXProject project = new PBXProject();
