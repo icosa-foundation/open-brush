@@ -16,8 +16,8 @@ namespace TiltBrush.FrameAnimation
 {
     public class ReduceFrameCommand : BaseCommand
     {
-        private (int,int) m_TimelineLocation;
-        private (int,int) m_InsertingAt;
+        private (int, int) m_TimelineLocation;
+        private (int, int) m_InsertingAt;
         AnimationUI_Manager m_Manager;
         bool m_ExpandTimeline;
         bool m_JustMoved = true;
@@ -25,21 +25,21 @@ namespace TiltBrush.FrameAnimation
 
         public ReduceFrameCommand()
         {
-           m_Manager = App.Scene.animationUI_manager;
-           m_TimelineLocation = m_Manager.GetCanvasLocation(App.Scene.ActiveCanvas);
+            m_Manager = App.Scene.animationUI_manager;
+            m_TimelineLocation = m_Manager.GetCanvasLocation(App.Scene.ActiveCanvas);
         }
 
         public override bool NeedsSave => true;
 
         protected override void OnRedo()
         {
-            m_InsertingAt = m_Manager.ReduceKeyFrame(m_TimelineLocation.Item1,m_TimelineLocation.Item2);
+            m_InsertingAt = m_Manager.ReduceKeyFrame(m_TimelineLocation.Item1, m_TimelineLocation.Item2);
         }
 
         protected override void OnUndo()
         {
             if (m_InsertingAt.Item1 == -1 || m_InsertingAt.Item2 == -1) return;
-            m_Manager.ExtendKeyFrame(m_InsertingAt.Item1,m_InsertingAt.Item2);
+            m_Manager.ExtendKeyFrame(m_InsertingAt.Item1, m_InsertingAt.Item2);
         }
     }
 } // namespace TiltBrush.FrameAnimation

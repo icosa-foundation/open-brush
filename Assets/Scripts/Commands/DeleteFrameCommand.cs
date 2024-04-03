@@ -16,8 +16,8 @@ namespace TiltBrush.FrameAnimation
 {
     public class DeleteFrameCommand : BaseCommand
     {
-        private (int,int) m_TimelineLocation;
-        private (int,int) m_InsertingAt;
+        private (int, int) m_TimelineLocation;
+        private (int, int) m_InsertingAt;
         AnimationUI_Manager m_Manager;
         bool m_ExpandTimeline;
         bool m_JustMoved = true;
@@ -26,24 +26,24 @@ namespace TiltBrush.FrameAnimation
 
         public DeleteFrameCommand()
         {
-           m_Manager = App.Scene.animationUI_manager;
-           m_TimelineLocation = m_Manager.GetCanvasLocation(App.Scene.ActiveCanvas);
+            m_Manager = App.Scene.animationUI_manager;
+            m_TimelineLocation = m_Manager.GetCanvasLocation(App.Scene.ActiveCanvas);
         }
 
         public override bool NeedsSave => true;
 
         protected override void OnRedo()
         {
-            m_DeletedFrame = m_Manager.RemoveKeyFrame(m_TimelineLocation.Item1,m_TimelineLocation.Item2);
+            m_DeletedFrame = m_Manager.RemoveKeyFrame(m_TimelineLocation.Item1, m_TimelineLocation.Item2);
         }
 
         protected override void OnUndo()
         {
-            for (int i = 0; i< m_DeletedFrame.Length;i++)
+            for (int i = 0; i < m_DeletedFrame.Length; i++)
             {
                 if (m_DeletedFrame.Location.Item2 + i >= m_Manager.Timeline[m_DeletedFrame.Location.Item1].Frames.Count)
                 {
-                     m_Manager.Timeline[m_DeletedFrame.Location.Item1].Frames.Add(m_DeletedFrame.Frame);
+                    m_Manager.Timeline[m_DeletedFrame.Location.Item1].Frames.Add(m_DeletedFrame.Frame);
                 }
                 else
                 {
@@ -51,7 +51,7 @@ namespace TiltBrush.FrameAnimation
                 }
             }
             m_Manager.ResetTimeline();
-            m_Manager.SelectTimelineFrame(m_DeletedFrame.Location.Item1,m_DeletedFrame.Location.Item2);
+            m_Manager.SelectTimelineFrame(m_DeletedFrame.Location.Item1, m_DeletedFrame.Location.Item2);
         }
     }
 } // namespace TiltBrush.FrameAnimation

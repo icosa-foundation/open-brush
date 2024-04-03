@@ -18,9 +18,9 @@ namespace TiltBrush.FrameAnimation
     {
         protected override void OnButtonPressed()
         {
-             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                new DuplicateFrameCommand()
-            );
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+               new DuplicateFrameCommand()
+           );
         }
     }
 } // namespace TiltBrush.FrameAnimation

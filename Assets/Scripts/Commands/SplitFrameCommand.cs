@@ -16,8 +16,8 @@ namespace TiltBrush.FrameAnimation
 {
     public class SplitFrameCommand : BaseCommand
     {
-        private (int,int) m_TimelineLocation;
-        private (int,int) m_SplittingIndex;
+        private (int, int) m_TimelineLocation;
+        private (int, int) m_SplittingIndex;
         AnimationUI_Manager m_Manager;
         bool m_ExpandTimeline;
         bool m_JustMoved = true;
@@ -26,22 +26,22 @@ namespace TiltBrush.FrameAnimation
 
         public SplitFrameCommand()
         {
-           m_Manager = App.Scene.animationUI_manager;
-           m_TimelineLocation = m_Manager.GetCanvasLocation(App.Scene.ActiveCanvas);
+            m_Manager = App.Scene.animationUI_manager;
+            m_TimelineLocation = m_Manager.GetCanvasLocation(App.Scene.ActiveCanvas);
         }
 
         public override bool NeedsSave => true;
 
         protected override void OnRedo()
         {
-            m_SplittingIndex = m_Manager.splitKeyFrame(m_TimelineLocation.Item1,m_TimelineLocation.Item2);
+            m_SplittingIndex = m_Manager.splitKeyFrame(m_TimelineLocation.Item1, m_TimelineLocation.Item2);
         }
 
         protected override void OnUndo()
         {
             if (m_SplittingIndex.Item1 == -1 || m_SplittingIndex.Item2 == -1) return;
 
-            int followingLength = m_Manager.GetFrameLength(m_SplittingIndex.Item1,m_SplittingIndex.Item2);
+            int followingLength = m_Manager.GetFrameLength(m_SplittingIndex.Item1, m_SplittingIndex.Item2);
             CanvasScript previousCanvas = m_Manager.Timeline[m_SplittingIndex.Item1].Frames[m_SplittingIndex.Item2 - 1].Canvas;
 
             for (int i = 0; i < followingLength; i++)
@@ -50,7 +50,7 @@ namespace TiltBrush.FrameAnimation
                 differentFrame.Canvas = previousCanvas;
                 m_Manager.Timeline[m_SplittingIndex.Item1].Frames[m_SplittingIndex.Item2 + i] = differentFrame;
             }
-            m_Manager.SelectTimelineFrame(m_SplittingIndex.Item1,m_SplittingIndex.Item2);
+            m_Manager.SelectTimelineFrame(m_SplittingIndex.Item1, m_SplittingIndex.Item2);
             m_Manager.FillandCleanTimeline();
             m_Manager.ResetTimeline();
         }

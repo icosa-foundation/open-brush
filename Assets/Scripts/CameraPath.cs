@@ -158,7 +158,7 @@ namespace TiltBrush
         public List<KnotSegment> Segments;
 
         public bool belongsToAnimation = false;
-        public (int,int) timelineLocation = (-1,-1);
+        public (int, int) timelineLocation = (-1, -1);
 
         private Transform m_Widget;
         private float m_SegmentRadius;

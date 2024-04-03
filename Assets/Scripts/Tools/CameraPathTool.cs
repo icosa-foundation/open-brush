@@ -401,7 +401,7 @@ namespace TiltBrush
                     // path, they should be able to extend the length of the path.  That is, add a new knot
                     // off the respective end.
                     bool currentWidget = (currentData == null) ? false : currentData.m_WidgetScript == widget;
-                    if (currentWidget && (m_Mode == Mode.AddPositionKnot || m_Mode == Mode.AddAnimationPositionKnot ))
+                    if (currentWidget && (m_Mode == Mode.AddPositionKnot || m_Mode == Mode.AddAnimationPositionKnot))
                     {
                         if (widget.Path.PathLoops)
                         {

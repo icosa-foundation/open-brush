@@ -106,12 +106,12 @@ namespace TiltBrush
         [SerializeField] GameObject m_WidgetPinPrefab;
         [SerializeField] ImageWidget m_ImageWidgetPrefab;
         [SerializeField] VideoWidget m_VideoWidgetPrefab;
-        [FormerlySerializedAs("m_MovementPathWidgetPrefab")] [SerializeField] CameraPathWidget mCameraPathWidgetPrefab;
-        [FormerlySerializedAs("m_MovementPathPositionKnotPrefab")] [SerializeField] private GameObject mCameraPathPositionKnotPrefab;
-        [FormerlySerializedAs("m_MovementPathRotationKnotPrefab")] [SerializeField] private GameObject mCameraPathRotationKnotPrefab;
-        [FormerlySerializedAs("m_MovementPathSpeedKnotPrefab")] [SerializeField] private GameObject mCameraPathSpeedKnotPrefab;
-        [FormerlySerializedAs("m_MovementPathFovKnotPrefab")] [SerializeField] private GameObject mCameraPathFovKnotPrefab;
-        [FormerlySerializedAs("m_MovementPathKnotSegmentPrefab")] [SerializeField] private GameObject mCameraPathKnotSegmentPrefab;
+        [FormerlySerializedAs("m_MovementPathWidgetPrefab")][SerializeField] CameraPathWidget mCameraPathWidgetPrefab;
+        [FormerlySerializedAs("m_MovementPathPositionKnotPrefab")][SerializeField] private GameObject mCameraPathPositionKnotPrefab;
+        [FormerlySerializedAs("m_MovementPathRotationKnotPrefab")][SerializeField] private GameObject mCameraPathRotationKnotPrefab;
+        [FormerlySerializedAs("m_MovementPathSpeedKnotPrefab")][SerializeField] private GameObject mCameraPathSpeedKnotPrefab;
+        [FormerlySerializedAs("m_MovementPathFovKnotPrefab")][SerializeField] private GameObject mCameraPathFovKnotPrefab;
+        [FormerlySerializedAs("m_MovementPathKnotSegmentPrefab")][SerializeField] private GameObject mCameraPathKnotSegmentPrefab;
         [SerializeField] private GrabWidgetHome m_Home;
         [SerializeField] private GameObject m_HomeHintLinePrefab;
         [SerializeField] float m_WidgetSnapAngle = 15.0f;

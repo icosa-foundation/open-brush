@@ -42,7 +42,8 @@ namespace TiltBrush.FrameAnimation
             SetDescriptionActive(true);
         }
 
-        public override void ButtonReleased() {
+        public override void ButtonReleased()
+        {
             var uiManager = GetComponentInParent<AnimationUI_Manager>();
             uiManager.TimelineSlideDown(false);
         }

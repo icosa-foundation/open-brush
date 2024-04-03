@@ -40,7 +40,7 @@ namespace TiltBrush
             // Availability visuals.
             if (m_Mode != CameraPathTool.Mode.AddAnimationPositionKnot)
             {
-              
+
                 bool wasAvailable = IsAvailable();
                 bool available = WidgetManager.m_Instance.AnyActiveAnimationPathHasAKnot();
 

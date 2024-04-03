@@ -18,8 +18,8 @@ namespace TiltBrush.FrameAnimation
 {
     public class AddFrameCommand : BaseCommand
     {
-        private (int,int) m_TimelineLocation;
-        private (int,int) m_InsertingAt;
+        private (int, int) m_TimelineLocation;
+        private (int, int) m_InsertingAt;
         AnimationUI_Manager m_Manager;
 
         bool m_ExpandTimeline;
@@ -29,23 +29,23 @@ namespace TiltBrush.FrameAnimation
 
         public AddFrameCommand()
         {
-           m_Manager = App.Scene.animationUI_manager;
-           m_TimelineLocation = m_Manager.GetCanvasLocation(App.Scene.ActiveCanvas);
+            m_Manager = App.Scene.animationUI_manager;
+            m_TimelineLocation = m_Manager.GetCanvasLocation(App.Scene.ActiveCanvas);
         }
 
         public override bool NeedsSave => true;
 
         protected override void OnRedo()
         {
-            m_InsertingAt = m_Manager.AddKeyFrame(m_TimelineLocation.Item1,m_TimelineLocation.Item2);
+            m_InsertingAt = m_Manager.AddKeyFrame(m_TimelineLocation.Item1, m_TimelineLocation.Item2);
         }
 
         protected override void OnUndo()
         {
-            Object.Destroy( m_Manager.Timeline[m_InsertingAt.Item1].Frames[m_InsertingAt.Item2].Canvas);
+            Object.Destroy(m_Manager.Timeline[m_InsertingAt.Item1].Frames[m_InsertingAt.Item2].Canvas);
             m_Manager.Timeline[m_InsertingAt.Item1].Frames.RemoveAt(m_InsertingAt.Item2);
             m_Manager.FillTimeline();
-            m_Manager.SelectTimelineFrame(m_TimelineLocation.Item1,m_TimelineLocation.Item2);
+            m_Manager.SelectTimelineFrame(m_TimelineLocation.Item1, m_TimelineLocation.Item2);
         }
     }
 } // namespace TiltBrush.FrameAnimation

@@ -16,8 +16,8 @@ namespace TiltBrush.FrameAnimation
 {
     public class MoveFrameCommand : BaseCommand
     {
-        private (int,int) m_TimelineLocation;
-        private (int,int) m_MovingTo;
+        private (int, int) m_TimelineLocation;
+        private (int, int) m_MovingTo;
         AnimationUI_Manager m_Manager;
         bool m_ExpandTimeline;
         bool m_JustMoved = true;
@@ -26,8 +26,8 @@ namespace TiltBrush.FrameAnimation
 
         public MoveFrameCommand(bool movingRight)
         {
-           m_Manager = App.Scene.animationUI_manager;
-           m_TimelineLocation = m_Manager.GetCanvasLocation(App.Scene.ActiveCanvas);
+            m_Manager = App.Scene.animationUI_manager;
+            m_TimelineLocation = m_Manager.GetCanvasLocation(App.Scene.ActiveCanvas);
             m_MoveRight = movingRight;
         }
 
@@ -35,13 +35,13 @@ namespace TiltBrush.FrameAnimation
 
         protected override void OnRedo()
         {
-            m_MovingTo = m_Manager.MoveKeyFrame(m_MoveRight,m_TimelineLocation.Item1,m_TimelineLocation.Item2);
+            m_MovingTo = m_Manager.MoveKeyFrame(m_MoveRight, m_TimelineLocation.Item1, m_TimelineLocation.Item2);
         }
 
         protected override void OnUndo()
         {
             if (m_MovingTo.Item1 == -1 || m_MovingTo.Item2 == -1) return;
-            m_Manager.MoveKeyFrame(!m_MoveRight,m_MovingTo.Item1,m_MovingTo.Item2);
+            m_Manager.MoveKeyFrame(!m_MoveRight, m_MovingTo.Item1, m_MovingTo.Item2);
         }
     }
 } // namespace TiltBrush.FrameAnimation

@@ -776,7 +776,7 @@ namespace TiltBrush.FrameAnimation
         public (int, int) MoveKeyFrame(bool moveRight, int trackNum = -1, int frameNum = -1)
         {
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
-            (int, int ) nextIndex = GetFollowingFrameIndex(index.Item1, index.Item2);
+            (int, int) nextIndex = GetFollowingFrameIndex(index.Item1, index.Item2);
             bool failure = false;
 
             if (moveRight)
@@ -830,7 +830,7 @@ namespace TiltBrush.FrameAnimation
         public void AddKeyFrame(int trackNum)
         {
             (int, int) index = (trackNum, Timeline[trackNum].Frames.Count - 1);
-            (int, int ) nextIndex = GetFollowingFrameIndex(index.Item1, index.Item2);
+            (int, int) nextIndex = GetFollowingFrameIndex(index.Item1, index.Item2);
 
             if (nextIndex.Item2 >= Timeline[nextIndex.Item1].Frames.Count)
             {
@@ -848,8 +848,8 @@ namespace TiltBrush.FrameAnimation
         public (int, int) AddKeyFrame(int trackNum = -1, int frameNum = -1)
         {
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
-            (int, int ) insertingAt;
-            (int, int ) nextIndex = GetFollowingFrameIndex(index.Item1, index.Item2);
+            (int, int) insertingAt;
+            (int, int) nextIndex = GetFollowingFrameIndex(index.Item1, index.Item2);
 
             if (nextIndex.Item2 >= Timeline[nextIndex.Item1].Frames.Count)
             {

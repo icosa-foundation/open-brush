@@ -16,8 +16,8 @@ namespace TiltBrush.FrameAnimation
 {
     public class DuplicateFrameCommand : BaseCommand
     {
-        private (int,int) m_TimelineLocation;
-        private (int,int) m_DuplicatingIndex;
+        private (int, int) m_TimelineLocation;
+        private (int, int) m_DuplicatingIndex;
         AnimationUI_Manager m_Manager;
         bool m_ExpandTimeline;
         bool m_JustMoved = true;
@@ -26,23 +26,23 @@ namespace TiltBrush.FrameAnimation
 
         public DuplicateFrameCommand()
         {
-           m_Manager = App.Scene.animationUI_manager;
-           m_TimelineLocation = m_Manager.GetCanvasLocation(App.Scene.ActiveCanvas);
+            m_Manager = App.Scene.animationUI_manager;
+            m_TimelineLocation = m_Manager.GetCanvasLocation(App.Scene.ActiveCanvas);
         }
 
         public override bool NeedsSave => true;
 
         protected override void OnRedo()
         {
-            m_DuplicatingIndex = m_Manager.duplicateKeyFrame(m_TimelineLocation.Item1,m_TimelineLocation.Item2);
+            m_DuplicatingIndex = m_Manager.duplicateKeyFrame(m_TimelineLocation.Item1, m_TimelineLocation.Item2);
         }
 
         protected override void OnUndo()
         {
             if (m_DuplicatingIndex.Item1 == -1 || m_DuplicatingIndex.Item2 == -1) return;
-            m_Manager.RemoveKeyFrame(m_DuplicatingIndex.Item1,m_DuplicatingIndex.Item2);
+            m_Manager.RemoveKeyFrame(m_DuplicatingIndex.Item1, m_DuplicatingIndex.Item2);
             m_Manager.FillandCleanTimeline();
-            m_Manager.SelectTimelineFrame(m_DuplicatingIndex.Item1,m_DuplicatingIndex.Item2 - 1);
+            m_Manager.SelectTimelineFrame(m_DuplicatingIndex.Item1, m_DuplicatingIndex.Item2 - 1);
             m_Manager.ResetTimeline();
         }
     }

@@ -750,11 +750,11 @@ namespace TiltBrush
             widget.SetPathAnimation(cameraPath.belongsAnimation);
             if (cameraPath.belongsAnimation && App.Scene.animationUI_manager != null)
             {
-                (int,int) Loc = cameraPath.timelineLoc;
-                App.Scene.animationUI_manager.AddAnimationPath(widget,Loc.Item1,Loc.Item2);
+                (int, int) Loc = cameraPath.timelineLoc;
+                App.Scene.animationUI_manager.AddAnimationPath(widget, Loc.Item1, Loc.Item2);
                 foreach (Transform child in widget.gameObject.transform)
                 {
-                        child.gameObject.SetActive(true);
+                    child.gameObject.SetActive(true);
                 }
             }
         }
