@@ -142,7 +142,7 @@ namespace TiltBrush
             {
                 try
                 {
-                    var locString = m_LocalizedPanelDescription.GetLocalizedString();
+                    var locString = m_LocalizedPanelDescription.GetLocalizedStringAsync().Result;
                     return locString;
                 }
                 catch
