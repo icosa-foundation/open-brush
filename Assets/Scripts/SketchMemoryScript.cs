@@ -822,7 +822,7 @@ namespace TiltBrush
         }
 
         // Repaint in doesn't relate to the repaint command
-        public IEnumerator<float> RepaintCoroutine(List<string> brushesToRepaint = null, bool silent=false)
+        public IEnumerator<float> RepaintCoroutine(List<string> brushesToRepaint = null, bool silent = false)
         {
             int numStrokes = m_MemoryList.Count;
             int strokesRepainted = 0;
@@ -915,7 +915,7 @@ namespace TiltBrush
                 ControllerConsoleScript.m_Instance.AddNewLine("Sketch rebuilt! Vertex count: " +
                     totalPrevVerts.ToString() + " -> " + totalVerts.ToString());
             }
-            
+
             m_RepaintCoroutine = null;
         }
 

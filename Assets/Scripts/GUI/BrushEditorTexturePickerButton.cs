@@ -39,7 +39,7 @@ namespace TiltBrush
             }
             base.OnButtonPressed();
 
-            popup = (BrushEditorTexturePopUpWindow) ParentPanel.PanelPopUp;
+            popup = (BrushEditorTexturePopUpWindow)ParentPanel.PanelPopUp;
             popup.ActiveTextureIndex = _textureIndex;
             popup.OpenerButton = this;
             // TODO - match buttons to textures so we can make the right one active

@@ -83,8 +83,8 @@ public class UserVariantBrush
         [JsonProperty(Required = Required.Always)] public string VariantOf;
         [JsonProperty(Required = Required.Always)] public string GUID;
         public string Author;
-        [JsonProperty(Required = Required.Always)] [MapTo("m_DurableName")] public string Name;
-        [JsonProperty(Required = Required.Always)] [MapTo("m_Description")] public string Description;
+        [JsonProperty(Required = Required.Always)][MapTo("m_DurableName")] public string Name;
+        [JsonProperty(Required = Required.Always)][MapTo("m_Description")] public string Description;
         [JsonConverter(typeof(StringEnumConverter))] public CopyRestrictions CopyRestrictions;
         public string ButtonIcon;
 
@@ -100,7 +100,7 @@ public class UserVariantBrush
             [MapTo("m_AudioReactive")] public bool? IsAudioReactive;
             [CanBeNull] private string ButtonAudio;
         }
-        [CanBeNull] [SubSection] public AudioProperties Audio;
+        [CanBeNull][SubSection] public AudioProperties Audio;
 
         [Serializable]
         public class MaterialProperties
@@ -114,7 +114,7 @@ public class UserVariantBrush
             [MapTo("m_TileRate")] public float? TileRate;
             [MapTo("m_UseBloomSwatchOnColorPicker")] public bool? UseBloomSwatchOnColorPicker;
         }
-        [CanBeNull] [SubSection] public MaterialProperties Material;
+        [CanBeNull][SubSection] public MaterialProperties Material;
 
         [Serializable]
         public class SizeProperties
@@ -124,7 +124,7 @@ public class UserVariantBrush
             [MapTo("m_SizeVariance")] public float? SizeVariance;
             [MapTo("m_PreviewPressureSizeMin")] public float? PreviewPressureSizeMin;
         }
-        [CanBeNull] [SubSection] public SizeProperties Size;
+        [CanBeNull][SubSection] public SizeProperties Size;
 
         [Serializable]
         public class ColorProperties
@@ -134,7 +134,7 @@ public class UserVariantBrush
             [MapTo("m_ColorLuminanceMin")] public float? LuminanceMin;
             [MapTo("m_ColorSaturationMax")] public float? SaturationMax;
         }
-        [CanBeNull] [SubSection] public ColorProperties Color;
+        [CanBeNull][SubSection] public ColorProperties Color;
 
         [Serializable]
         public class ParticleProperties
@@ -144,7 +144,7 @@ public class UserVariantBrush
             [MapTo("m_ParticleInitialRotationRange")] public float? InitialRotationRange;
             [MapTo("m_RandomizeAlpha")] public bool? RandomizeAlpha;
         }
-        [CanBeNull] [SubSection] public ParticleProperties Particle;
+        [CanBeNull][SubSection] public ParticleProperties Particle;
 
         [Serializable]
         public class QuadBatchProperties
@@ -154,7 +154,7 @@ public class UserVariantBrush
             [MapTo("m_PositionVariance")] public float? PositionVariance;
             [MapTo("m_SizeRatio")] public float[] SizeRatio;
         }
-        [CanBeNull] [SubSection] public QuadBatchProperties QuadBatch;
+        [CanBeNull][SubSection] public QuadBatchProperties QuadBatch;
 
         [Serializable]
         public class TubeProperties
@@ -162,7 +162,7 @@ public class UserVariantBrush
             [MapTo("m_SolidMinLengthMeters_PS")] public float? MinLength;
             [MapTo("m_TubeStoreRadiusInTexcoord0Z")] public bool? StoreRadiusInTexCoord;
         }
-        [CanBeNull] [SubSection] public TubeProperties Tube;
+        [CanBeNull][SubSection] public TubeProperties Tube;
 
         [Serializable]
         public class MiscProperties
@@ -173,7 +173,7 @@ public class UserVariantBrush
             [MapTo("m_BoundsPadding")] public float? BoundsPadding;
             [MapTo("m_PlayBackAtStrokeGranularity")] public bool? PlaybackAtStrokeGranularity;
         }
-        [CanBeNull] [SubSection] public MiscProperties Misc;
+        [CanBeNull][SubSection] public MiscProperties Misc;
 
         [Serializable]
         public class ExportProperties
@@ -181,7 +181,7 @@ public class UserVariantBrush
             [MapTo("m_EmissiveFactor")] public float? EmissiveFactor;
             [MapTo("m_AllowExport")] public bool? AllowExport;
         }
-        [CanBeNull] [SubSection] public ExportProperties Export;
+        [CanBeNull][SubSection] public ExportProperties Export;
 
         [Serializable]
         public class SimplificationProperties
@@ -193,7 +193,7 @@ public class UserVariantBrush
             [MapTo("m_TailPointStep")] public int? TailPointStep;
             [MapTo("m_MiddlePointStep")] public int? MiddlePointStep;
         }
-        [CanBeNull] [SubSection] public SimplificationProperties Simplification;
+        [CanBeNull][SubSection] public SimplificationProperties Simplification;
         public int BrushDescriptionVersion = kBrushDescriptionVersion;
     }
 
@@ -859,7 +859,7 @@ public class UserVariantBrush
             var propertyType = shader.GetPropertyType(i);
             string propertyName = shader.GetPropertyName(i);
 
-            if (propertyType==ShaderPropertyType.Texture)
+            if (propertyType == ShaderPropertyType.Texture)
             {
                 if (textureRefs.ContainsKey(propertyName))
                 {

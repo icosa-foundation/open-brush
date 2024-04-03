@@ -23,7 +23,7 @@ namespace TiltBrush
     {
 
         [NonSerialized] public int ActiveTextureIndex;
-        
+
         protected EditBrushPanel ParentPanel
         {
             get
@@ -38,14 +38,14 @@ namespace TiltBrush
                 return ParentPanel.AvailableTextures.Count();
             }
         }
-        
+
         [NonSerialized] public BrushEditorTexturePickerButton OpenerButton;
 
         protected override void InitIcon(ImageIcon icon)
         {
             icon.m_Valid = true;
         }
-        
+
         protected override void RefreshIcon(ImageIcon icon, int iconIndex)
         {
             EditBrushEditorTextureButton iconButton = icon.m_IconScript as EditBrushEditorTextureButton;
@@ -65,14 +65,14 @@ namespace TiltBrush
             }
 
             base.Init(rParent, sText);
-            
+
             // Set active icon
             int activeIconIndex = ActiveTextureIndex % m_IconCountNavPage;
             var iconButton = m_Icons[activeIconIndex].m_IconScript;
             iconButton.SetButtonSelected(true);
-            
+
         }
-        
+
         public void SetActiveTextureButtonSelected(int buttonIndex)
         {
             var iconButton = m_Icons[buttonIndex].m_IconScript;

@@ -215,7 +215,7 @@ namespace TiltBrush
             {
                 cat[desc.m_Guid] = desc;
             }
-            
+
             foreach (BrushDescriptor desc in BrushCatalog.m_Instance.AllBrushes.Where(x => x.UserVariantBrush != null))
             {
                 cat.Add(desc.m_Guid, desc);

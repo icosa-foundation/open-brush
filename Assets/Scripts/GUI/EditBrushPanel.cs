@@ -350,13 +350,13 @@ namespace TiltBrush
         {
             BaseUpdate();
             var previewMesh = StrokePreview.GetComponent<MeshFilter>().mesh;
-            if (currentStroke!= null && (previewMesh == null || previewMesh.vertexCount < 3))
+            if (currentStroke != null && (previewMesh == null || previewMesh.vertexCount < 3))
             {
                 try
                 {
                     StrokePreview.GetComponent<MeshFilter>().sharedMesh = currentStroke.m_BatchSubset.m_ParentBatch.gameObject.GetComponent<MeshFilter>().sharedMesh;
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     // TODO it's harmless NREs that fix themselves next call but should probably still do something better here.
                 }
@@ -375,7 +375,7 @@ namespace TiltBrush
             tr.localPosition = pos;
         }
 
-        private void AddSlider(string propertyName, float unscaledValue, int widgetIndex, Vector2 range, int? vectorComponent=null)
+        private void AddSlider(string propertyName, float unscaledValue, int widgetIndex, Vector2 range, int? vectorComponent = null)
         {
             var sliderTr = Instantiate(SliderPrefab, gameObject.transform, true);
             var slider = sliderTr.GetComponent<EditBrushSlider>();

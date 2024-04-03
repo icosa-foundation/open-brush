@@ -25,7 +25,7 @@ namespace TiltBrush
     {
         [SerializeField] private Texture2D m_PreviewBGTexture;
         [SerializeField] private GameObject m_AudioReactiveIcon;
-        [FormerlySerializedAs("m_ExperimentalIcon")] [SerializeField] private GameObject m_BrushTypeIcon;
+        [FormerlySerializedAs("m_ExperimentalIcon")][SerializeField] private GameObject m_BrushTypeIcon;
         [SerializeField] private Material m_ExperimentalMaterial;
         [SerializeField] private Material m_LibraryMaterial;
 

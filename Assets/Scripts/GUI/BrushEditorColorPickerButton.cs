@@ -42,7 +42,7 @@ namespace TiltBrush
             {
                 m_ObjectsToHideBehindPopups[i].SetActive(false);
             }
-        
+
             var popupText = m_Description;
             BasePanel panel = m_Manager.GetPanelForPopUps();
             panel.CreatePopUp(m_Command, m_CommandParam, m_CommandParam2, m_PopupOffset, m_PopupText);
@@ -58,7 +58,7 @@ namespace TiltBrush
                 popup.CustomColorPalette.ColorPicked += OnColorPickedAsFinal;
             }
         }
-        
+
         public override void SetColor(Color color)
         {
             // Override this and ignore the color changes from the UI system
@@ -69,7 +69,7 @@ namespace TiltBrush
         {
             GetComponent<Renderer>().material.SetFloat("_Distance", gazeRatio);
         }
-        
+
         void OnPopUpClose()
         {
             for (int i = 0; i < m_ObjectsToHideBehindPopups.Length; ++i)
@@ -77,7 +77,7 @@ namespace TiltBrush
                 m_ObjectsToHideBehindPopups[i].SetActive(true);
             }
         }
-        
+
         void OnColorPicked(Color color)
         {
             ParentPanel.ColorChanged(ColorPropertyName, color, this);
@@ -88,7 +88,7 @@ namespace TiltBrush
         {
             Debug.Log($"ColorFinalized");
         }
-        
+
         void OnColorPickedAsFinal(Color color)
         {
             // Not used?

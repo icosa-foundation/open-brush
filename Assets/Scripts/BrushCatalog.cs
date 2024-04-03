@@ -117,7 +117,7 @@ namespace TiltBrush
         {
             return m_BuiltinBrushes.ContainsKey(brush.m_Guid);
         }
-        
+
         public bool IsBrushInLibrary(BrushDescriptor brush)
         {
             return !m_BuiltinBrushes.ContainsKey(brush.m_Guid) &&
@@ -329,7 +329,7 @@ namespace TiltBrush
                 StringComparison comparison = StringComparison.CurrentCultureIgnoreCase;
                 return m_AllBrushes.FirstOrDefault(descriptor => descriptor.Description.Equals(searchString, comparison));
             }
-	}
+        }
 
         public void HandleChangedBrushes()
         {
