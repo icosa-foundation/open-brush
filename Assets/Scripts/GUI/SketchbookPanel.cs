@@ -33,14 +33,14 @@ namespace TiltBrush
         [SerializeField] private Texture2D m_UnknownImageTexture;
         [SerializeField] private TextMeshPro m_PanelTextPro;
         [SerializeField] private LocalizedString m_PanelTextStandard;
-        public string PanelTextStandard { get { return m_PanelTextStandard.GetLocalizedString(); } }
+        public string PanelTextStandard { get { return m_PanelTextStandard.GetLocalizedStringAsync().Result; } }
         [SerializeField] private LocalizedString m_PanelTextShowcase;
-        public string PanelTextShowcase { get { return m_PanelTextShowcase.GetLocalizedString(); } }
+        public string PanelTextShowcase { get { return m_PanelTextShowcase.GetLocalizedStringAsync().Result; } }
 
         [SerializeField] private LocalizedString m_PanelTextLiked;
-        public string PanelTextLiked { get { return m_PanelTextLiked.GetLocalizedString(); } }
+        public string PanelTextLiked { get { return m_PanelTextLiked.GetLocalizedStringAsync().Result; } }
         [SerializeField] private LocalizedString m_PanelTextDrive;
-        public string PanelTextDrive { get { return m_PanelTextDrive.GetLocalizedString(); } }
+        public string PanelTextDrive { get { return m_PanelTextDrive.GetLocalizedStringAsync().Result; } }
         [SerializeField] private GameObject m_NoSketchesMessage;
         [SerializeField] private GameObject m_NoDriveSketchesMessage;
         [SerializeField] private GameObject m_NoLikesMessage;

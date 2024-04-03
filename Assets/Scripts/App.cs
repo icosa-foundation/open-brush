@@ -209,6 +209,7 @@ namespace TiltBrush
 
         // Previously Experimental-Mode only
         [SerializeField] private TiltBrushManifest m_ManifestExperimental;
+        [SerializeField] private TiltBrushManifest m_ZapboxManifest;
 
         [SerializeField] private SelectionEffect m_SelectionEffect;
 
@@ -2212,6 +2213,9 @@ namespace TiltBrush
                     manifest.AppendFrom(m_ManifestExperimental);
                 }
             }
+#if ZAPBOX_SUPPORTED
+            manifest = m_ZapboxManifest;
+#endif
             return manifest;
         }
 
