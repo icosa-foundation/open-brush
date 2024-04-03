@@ -118,7 +118,7 @@ namespace TiltBrush
         {
             return m_BuiltinBrushes.ContainsKey(brush.m_Guid);
         }
-        
+
         public Brush DefaultBrush
         {
             get
