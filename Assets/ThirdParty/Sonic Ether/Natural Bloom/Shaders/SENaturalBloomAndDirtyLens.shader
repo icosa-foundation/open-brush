@@ -21,17 +21,17 @@ Shader "Hidden/SENaturalBloomAndDirtyLens" {
 
 #define DEPTH_FIX
 
-		UNITY_DECLARE_SCREENSPACE_TEXTURE(_MainTex);
-		UNITY_DECLARE_SCREENSPACE_TEXTURE(_Bloom0);
-		UNITY_DECLARE_SCREENSPACE_TEXTURE(_Bloom1);
-		UNITY_DECLARE_SCREENSPACE_TEXTURE(_Bloom2);
-		UNITY_DECLARE_SCREENSPACE_TEXTURE(_Bloom3);
-		UNITY_DECLARE_SCREENSPACE_TEXTURE(_Bloom4);
-		UNITY_DECLARE_SCREENSPACE_TEXTURE(_Bloom5);
-		UNITY_DECLARE_SCREENSPACE_TEXTURE(_Bloom6);
-		UNITY_DECLARE_SCREENSPACE_TEXTURE(_Bloom7);
-		UNITY_DECLARE_SCREENSPACE_TEXTURE(_LensDirt);
-		UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthTexture);
+		sampler2D _MainTex;
+		sampler2D _Bloom0;
+		sampler2D _Bloom1;
+		sampler2D _Bloom2;
+		sampler2D _Bloom3;
+		sampler2D _Bloom4;
+		sampler2D _Bloom5;
+		sampler2D _Bloom6;
+		sampler2D _Bloom7;
+		sampler2D _LensDirt;
+		sampler2D _CameraDepthTexture;
 		
 		uniform float4 _MainTex_TexelSize;
 		
@@ -55,17 +55,11 @@ Shader "Hidden/SENaturalBloomAndDirtyLens" {
         #if UNITY_UV_STARTS_AT_TOP
 			float4 uv2 : TEXCOORD1;
 		#endif
-
-			UNITY_VERTEX_OUTPUT_STEREO
 		};	
 		 
 		v2f_simple vertBloom ( appdata_img v )
 		{
 			v2f_simple o;
-
-			UNITY_SETUP_INSTANCE_ID(v);
-          	UNITY_INITIALIZE_OUTPUT(v2f_simple, o);
-          	UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 			
 			o.pos = UnityObjectToClipPos (v.vertex);
         	o.uv = float4(v.texcoord.xy, 1, 1);		
@@ -93,7 +87,7 @@ Shader "Hidden/SENaturalBloomAndDirtyLens" {
 
 		float4 GetViewSpacePosition(float2 coord)
 		{
-			float depth = SAMPLE_DEPTH_TEXTURE_LOD(_CameraDepthTexture, float4(coord.x, coord.y, 0.0, 0.0)).x;
+			float depth = tex2Dlod(_CameraDepthTexture, float4(coord.x, coord.y, 0.0, 0.0)).x;
 			
 			#if defined(UNITY_REVERSED_Z)
 			depth = 1.0 - depth;
@@ -130,8 +124,6 @@ Shader "Hidden/SENaturalBloomAndDirtyLens" {
 		
 		float4 fragBlendBloomWithScene ( v2f_simple i ) : COLOR
 		{	
-			UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
-
         	#if UNITY_UV_STARTS_AT_TOP
 				float2 coord = i.uv2.xy;
 			#else
@@ -139,19 +131,19 @@ Shader "Hidden/SENaturalBloomAndDirtyLens" {
 			#endif
 			
 			// Get various source textures
-			float4 color =  decodeHdr(UNITY_SAMPLE_SCREENSPACE_TEXTURE(_MainTex, coord));
+			float4 color =  decodeHdr(tex2D(_MainTex, coord));
 			float3 origColor = color.rgb;
-			fixed3 lens = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_LensDirt, coord).rgb;
+			fixed3 lens = tex2D(_LensDirt, coord).rgb;
 			float lensLum = dot(lens, Fixed3(0.33333));
 			
-			float4 b0s = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom0, coord);
-			float4 b1s = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom1, coord);
-			float4 b2s = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom2, coord);
-			float4 b3s = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom3, coord);
-			float4 b4s = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom4, coord);
-			float4 b5s = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom5, coord);
-			float4 b6s = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom6, coord);
-			float4 b7s = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom7, coord);
+			float4 b0s = tex2D(_Bloom0, coord);
+			float4 b1s = tex2D(_Bloom1, coord);
+			float4 b2s = tex2D(_Bloom2, coord);
+			float4 b3s = tex2D(_Bloom3, coord);
+			float4 b4s = tex2D(_Bloom4, coord);
+			float4 b5s = tex2D(_Bloom5, coord);
+			float4 b6s = tex2D(_Bloom6, coord);
+			float4 b7s = tex2D(_Bloom7, coord);
 
 			fixed3 b0 = b0s.rgb;
 			fixed3 b1 = b1s.rgb;
@@ -162,7 +154,7 @@ Shader "Hidden/SENaturalBloomAndDirtyLens" {
 			fixed3 b6 = b6s.rgb;
 			fixed3 b7 = b7s.rgb;
 
-			float depthp = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, coord).x;
+			float depthp = tex2D(_CameraDepthTexture, coord).x;
 			float depth = Linear01Depth(depthp);
 
 			float blurredFogFactor0 = (DecDepth(b0s.a, b0s.rgb));
@@ -307,40 +299,39 @@ Shader "Hidden/SENaturalBloomAndDirtyLens" {
 //			float2 lensCoord9 = (((lensCoord0 * 2.0 - 1.0) / -1.1) * 0.5 + 0.5);
 //			float2 lensCoord10 = (((lensCoord0 * 2.0 - 1.0) / -2.1) * 0.5 + 0.5);
 //			 
-//			color.rgb += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom1, lensCoord0).rgb * 0.2 * 0.0005f;
-//			color.rgb += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom1, lensCoord1).rgb * 0.2 * 0.001f;
-//			color.rgb += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom1, lensCoord2).rgb * 0.2 * 0.0003f;
-//			color.rgb += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom1, lensCoord3).rgb * 0.2 * 0.0008f;
-//			color.rgb += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom1, lensCoord4).rgb * 0.2 * 0.0002f;
-//			color.rgb += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom1, lensCoord5).rgb * 0.2 * 0.0007f;
-//			color.rgb += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom1, lensCoord6).rgb * 0.2 * 0.0007f;
-//			color.rgb += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom1, lensCoord7).rgb * 0.2 * 0.0007f;
-//			color.rgb += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom1, lensCoord8).rgb * 0.2 * 0.0007f;
-//			color.rgb += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom1, lensCoord9).rgb * 0.2 * 0.0007f;
-//			color.rgb += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom1, lensCoord10).rgb * 0.2 * 0.0007f;
+//			color.rgb += tex2D(_Bloom1, lensCoord0).rgb * 0.2 * 0.0005f;
+//			color.rgb += tex2D(_Bloom1, lensCoord1).rgb * 0.2 * 0.001f;
+//			color.rgb += tex2D(_Bloom1, lensCoord2).rgb * 0.2 * 0.0003f;
+//			color.rgb += tex2D(_Bloom1, lensCoord3).rgb * 0.2 * 0.0008f;
+//			color.rgb += tex2D(_Bloom1, lensCoord4).rgb * 0.2 * 0.0002f;
+//			color.rgb += tex2D(_Bloom1, lensCoord5).rgb * 0.2 * 0.0007f;
+//			color.rgb += tex2D(_Bloom1, lensCoord6).rgb * 0.2 * 0.0007f;
+//			color.rgb += tex2D(_Bloom1, lensCoord7).rgb * 0.2 * 0.0007f;
+//			color.rgb += tex2D(_Bloom1, lensCoord8).rgb * 0.2 * 0.0007f;
+//			color.rgb += tex2D(_Bloom1, lensCoord9).rgb * 0.2 * 0.0007f;
+//			color.rgb += tex2D(_Bloom1, lensCoord10).rgb * 0.2 * 0.0007f;
 
 			return color;
 		} 
 		
 		float4 fragBloomLQ ( v2f_simple i ) : COLOR
 		{	
-			UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
         	#if UNITY_UV_STARTS_AT_TOP
 				float2 coord = i.uv2.xy;
 			#else
 				float2 coord = i.uv.xy;
 			#endif
-			float4 color =  decodeHdr(UNITY_SAMPLE_SCREENSPACE_TEXTURE(_MainTex, coord));
-			fixed3 lens = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_LensDirt, coord).rgb;
+			float4 color =  decodeHdr(tex2D(_MainTex, coord));
+			fixed3 lens = tex2D(_LensDirt, coord).rgb;
 			
-			fixed3 b0 = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom0, coord).rgb;
-			fixed3 b1 = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom1, coord).rgb;
-			fixed3 b2 = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom2, coord).rgb;
-			fixed3 b3 = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom3, coord).rgb;
-			fixed3 b4 = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom4, coord).rgb;
-//			fixed3 b5 = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom5, coord).rgb;
-//			fixed3 b6 = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom6, coord).rgb;
-//			fixed3 b7 = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_Bloom7, coord).rgb;
+			fixed3 b0 = tex2D(_Bloom0, coord).rgb;
+			fixed3 b1 = tex2D(_Bloom1, coord).rgb;
+			fixed3 b2 = tex2D(_Bloom2, coord).rgb;
+			fixed3 b3 = tex2D(_Bloom3, coord).rgb;
+			fixed3 b4 = tex2D(_Bloom4, coord).rgb;
+//			fixed3 b5 = tex2D(_Bloom5, coord).rgb;
+//			fixed3 b6 = tex2D(_Bloom6, coord).rgb;
+//			fixed3 b7 = tex2D(_Bloom7, coord).rgb;
 			
 //			return float4(b0.rgb, 1.0);
 			
@@ -385,17 +376,11 @@ Shader "Hidden/SENaturalBloomAndDirtyLens" {
 			float4 uv21 : TEXCOORD1;
 			float4 uv22 : TEXCOORD2;
 			float4 uv23 : TEXCOORD3;
-
-			UNITY_VERTEX_OUTPUT_STEREO
 		};
 		
 		v2f_tap vert4Tap ( appdata_img v )
 		{
 			v2f_tap o;
-
-			UNITY_SETUP_INSTANCE_ID(v);
-          	UNITY_INITIALIZE_OUTPUT(v2f_tap, o);
-          	UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
 			o.pos = UnityObjectToClipPos (v.vertex);
         	o.uv20 = float4(v.texcoord.xy + _MainTex_TexelSize.xy * float2(0.5h, 0.5h), 0.0, 0.0);				
@@ -407,14 +392,12 @@ Shader "Hidden/SENaturalBloomAndDirtyLens" {
 		}		
 		
 		float4 fragDownsample ( v2f_tap i ) : COLOR
-		{
-			UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
-
-			float4 color = UNITY_SAMPLE_SCREENSPACE_TEXTURE (_MainTex, i.uv20.xy);
+		{				
+			float4 color = tex2D (_MainTex, i.uv20.xy);
 			return color;
-			color += decodeHdr(UNITY_SAMPLE_SCREENSPACE_TEXTURE (_MainTex, i.uv21.xy));
-			color += decodeHdr(UNITY_SAMPLE_SCREENSPACE_TEXTURE (_MainTex, i.uv22.xy));
-			color += decodeHdr(UNITY_SAMPLE_SCREENSPACE_TEXTURE (_MainTex, i.uv23.xy));
+			color += decodeHdr(tex2D (_MainTex, i.uv21.xy));
+			color += decodeHdr(tex2D (_MainTex, i.uv22.xy));
+			color += decodeHdr(tex2D (_MainTex, i.uv23.xy));
 			color *= 0.25;
 			return color;
 		}
@@ -435,18 +418,11 @@ Shader "Hidden/SENaturalBloomAndDirtyLens" {
 			float4 pos : SV_POSITION;
 			float4 uv : TEXCOORD0;
 			float4 offs : TEXCOORD1;
-
-			UNITY_VERTEX_OUTPUT_STEREO
 		};		
 		
 		v2f_withBlurCoords8 vertBlurHorizontal (appdata_img v)
 		{
 			v2f_withBlurCoords8 o;
-
-			UNITY_SETUP_INSTANCE_ID(v);
-          	UNITY_INITIALIZE_OUTPUT(v2f_withBlurCoords8, o);
-          	UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-
 			o.pos = UnityObjectToClipPos (v.vertex);
 			
 			o.uv = float4(v.texcoord.xy,1,1);
@@ -459,11 +435,6 @@ Shader "Hidden/SENaturalBloomAndDirtyLens" {
 		v2f_withBlurCoords8 vertBlurVertical (appdata_img v)
 		{
 			v2f_withBlurCoords8 o;
-
-			UNITY_SETUP_INSTANCE_ID(v);
-          	UNITY_INITIALIZE_OUTPUT(v2f_withBlurCoords8, o);
-          	UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-
 			o.pos = UnityObjectToClipPos (v.vertex);
 			
 			o.uv = float4(v.texcoord.xy,1,1);
@@ -477,7 +448,6 @@ Shader "Hidden/SENaturalBloomAndDirtyLens" {
 
 		float4 fragBlur8 ( v2f_withBlurCoords8 i ) : COLOR
 		{
-			UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
 //			float2 uv = i.uv.xy; 
 //			float2 netFilterWidth = i.offs.xy;  
 //			float2 coords = uv - netFilterWidth * 3.0;  
@@ -485,7 +455,7 @@ Shader "Hidden/SENaturalBloomAndDirtyLens" {
 //			float4 color = 0;
 //  			for( int l = 0; l < 7; l++ )  
 //  			{   
-//				float4 tap = decodeHdr(UNITY_SAMPLE_SCREENSPACE_TEXTURE(_MainTex, coords));
+//				float4 tap = decodeHdr(tex2D(_MainTex, coords));
 //				color += tap * curve4[l];
 //				coords += netFilterWidth;
 //  			}
@@ -497,7 +467,7 @@ Shader "Hidden/SENaturalBloomAndDirtyLens" {
 			const float weights[3] = {0.22702f, 0.31624f, 0.07087f};
 			
 			float4 color = float4(0.0, 0.0, 0.0, 0.0);
-			float4 cs = decodeHdr(UNITY_SAMPLE_SCREENSPACE_TEXTURE(_MainTex, uv));
+			float4 cs = decodeHdr(tex2D(_MainTex, uv));
 			//return cs;
 			color = cs * weights[0];
 			//float depth = color.a * (Luminance(color.rgb) * 1.0 + 2.0) * weights[0];
@@ -507,8 +477,8 @@ Shader "Hidden/SENaturalBloomAndDirtyLens" {
 			
 			for (int l = 1; l < 3; l++)
 			{
-				float4 tap1 = decodeHdr(UNITY_SAMPLE_SCREENSPACE_TEXTURE(_MainTex, uv + offsets[l] * i.offs.xy * 1.0));
-				float4 tap2 = decodeHdr(UNITY_SAMPLE_SCREENSPACE_TEXTURE(_MainTex, uv - offsets[l] * i.offs.xy * 1.0));
+				float4 tap1 = decodeHdr(tex2D(_MainTex, uv + offsets[l] * i.offs.xy * 1.0));
+				float4 tap2 = decodeHdr(tex2D(_MainTex, uv - offsets[l] * i.offs.xy * 1.0));
 				color += tap1 * weights[l] + tap2 * weights[l];
 				//depth += tap1.a * (Luminance(tap1.rgb) + 2.0) * weights[l] + tap2.a * (Luminance(tap2.rgb) + 2.0) * weights[l];
 				//depth += DecDepth(tap1.a, tap1.rgb) * weights[l] + DecDepth(tap2.a, tap2.rgb) * weights[l];
@@ -524,18 +494,16 @@ Shader "Hidden/SENaturalBloomAndDirtyLens" {
 		
 		float4 fragClampSourceAndEncodeFogFactor ( v2f_simple i ) : COLOR
 		{
-			UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
-
 			float4 color = float4(0.0, 0.0, 0.0, 1.0);
-			color.rgb = decodeHdr(UNITY_SAMPLE_SCREENSPACE_TEXTURE(_MainTex, i.uv)).rgb;
+			color.rgb = decodeHdr(tex2D(_MainTex, i.uv.xy)).rgb;
 			
 			color.rgb = clamp(color.rgb, float3(0.0, 0.0, 0.0), float3(100000000.0, 100000000.0, 100000000.0));
 
 
 
 
-			//color.a = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv.xy).x / (Luminance(color.rgb) * 1.0 + 2.0);
-			float depth = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv.xy).x;
+			//color.a = tex2D(_CameraDepthTexture, i.uv.xy).x / (Luminance(color.rgb) * 1.0 + 2.0);
+			float depth = tex2D(_CameraDepthTexture, i.uv.xy).x;
 			float dist = LinearEyeDepth(depth);
 			float fogFactor = 0.0;
 			if (_DepthBlendFunction == 0)
