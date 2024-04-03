@@ -29,7 +29,8 @@ def create_notice_file(project_dir):
         root = os.path.join(project_dir, "Assets/ThirdParty")
         if not os.path.exists(root):
             raise BuildFailed("Cannot generate NOTICE: missing %s" % root)
-        for r, _, fs in os.walk(root):
+        for r, d, fs in os.walk(root):
+            d.sort()
             for f in fs:
                 if f.lower() in (
                     "notice",
@@ -41,8 +42,9 @@ def create_notice_file(project_dir):
         root = os.path.join(project_dir, "Assets/ThirdParty/NuGet/Packages")
         if not os.path.exists(root):
             raise BuildFailed("Cannot generate NOTICE: missing %s" % root)
-        for r, _, fs in os.walk(root):
-            for f in fs:
+        for r, d, fs in os.walk(root):
+            d.sort()
+            for f in sorted(fs):
                 if f.lower() in ("notice", "notice.md", "notice.txt"):
                     m = re.match(r"\D+", os.path.basename(r))
                     if m:
