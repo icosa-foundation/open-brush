@@ -24,11 +24,8 @@ namespace TiltBrush
     {
         public GameObject m_PanelPrefab;
         public bool m_ModeVr;
-        public bool m_ModeVrExperimental;
-        public bool m_ModeQuestExperimental;
         public bool m_ModeMono;
         public bool m_ModeQuest;
-        public bool m_ModeGvr;
         public bool m_Basic;
         public bool m_Advanced;
 
@@ -36,13 +33,9 @@ namespace TiltBrush
         {
             switch (mode)
             {
-                case SdkMode.UnityXR when Config.IsExperimental && App.Config.IsMobileHardware:
-                    return m_ModeQuestExperimental;
-                case SdkMode.UnityXR when Config.IsExperimental && !App.Config.IsMobileHardware:
-                    return m_ModeVrExperimental;
-                case SdkMode.UnityXR when !Config.IsExperimental && App.Config.IsMobileHardware:
+                case SdkMode.UnityXR when App.Config.IsMobileHardware:
                     return m_ModeQuest;
-                case SdkMode.UnityXR when !Config.IsExperimental && !App.Config.IsMobileHardware:
+                case SdkMode.UnityXR when !App.Config.IsMobileHardware:
                     return m_ModeVr;
                 case SdkMode.Monoscopic:
                     return m_ModeMono;
