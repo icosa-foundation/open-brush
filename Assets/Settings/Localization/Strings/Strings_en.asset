@@ -1257,11 +1257,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 68768010396041216
-    m_Localized: Turn Experimental Mode On
+    m_Localized: Enable Experimental Brushes
     m_Metadata:
       m_Items: []
   - m_Id: 68768580896882688
-    m_Localized: Turn Experimental Mode Off
+    m_Localized: Disable Experimental Brushes
     m_Metadata:
       m_Items: []
   - m_Id: 68773633749745664

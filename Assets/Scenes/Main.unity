@@ -3652,7 +3652,7 @@ MonoBehaviour:
   m_EnableGlbVersion2: 1
   m_DebugUpload: 1
   m_TbtSettings: {fileID: 11400000, guid: 86eb32a1d469be44a99294025e7795de, type: 2}
-  m_ReplaceBrushesOnLoad: 1
+  m_ReplaceBrushesOnLoad: 0
   m_BrushReplacementMap: []
   m_IntroSketchUsdFilename: 
   m_IntroSketchSpeed: 1
@@ -10708,35 +10708,30 @@ MonoBehaviour:
       shader: {fileID: 4800000, guid: f9a08f3ab0b238144b0879d7e2f23a95, type: 3}
       icon: {fileID: 2800000, guid: bc3c505962723cf44a605851212f406e, type: 3}
       cylindrical: 1
-      experimental: 0
       hdr: 0
   - mode: 1
     info:
       shader: {fileID: 4800000, guid: 364d9b04fdb9b704bb3629008701d08e, type: 3}
       icon: {fileID: 2800000, guid: 83ef8e3ba97ff0547b7be2042945a3b7, type: 3}
       cylindrical: 0
-      experimental: 0
       hdr: 0
   - mode: 2
     info:
       shader: {fileID: 4800000, guid: 6261961f4821a79409739fd23c0c9afd, type: 3}
       icon: {fileID: 2800000, guid: 49bb25c6aaecebd4db489bf5e3f45052, type: 3}
       cylindrical: 0
-      experimental: 1
       hdr: 0
   - mode: 3
     info:
       shader: {fileID: 4800000, guid: 91c5170cd03857741b3200cd3c996595, type: 3}
       icon: {fileID: 2800000, guid: 2950926868f0c9b4db5a871ce378909c, type: 3}
       cylindrical: 1
-      experimental: 1
       hdr: 0
   - mode: 4
     info:
       shader: {fileID: 4800000, guid: 86a7aa4de119e334986bfae53f8889dd, type: 3}
       icon: {fileID: 2800000, guid: f3301a86069400c44bb6d99e01af3ff6, type: 3}
       cylindrical: 1
-      experimental: 1
       hdr: 1
   m_NumColors: 7
 --- !u!114 &652605566
@@ -29742,7 +29737,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 778caecccd06f444ba3d7b451cfa06e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_UxExplorationPrefab: {fileID: 0}
   m_PanelMap:
   - m_PanelPrefab: {fileID: 0}
     m_ModeVr: 0
@@ -29812,13 +29806,13 @@ MonoBehaviour:
     m_Advanced: 0
   - m_PanelPrefab: {fileID: 176644, guid: 82e9561ccc4f9d646b8d328e8a736c62, type: 3}
     m_ModeVr: 0
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 1
-    m_ModeMono: 1
+    m_ModeVrExperimental: 0
+    m_ModeQuestExperimental: 0
+    m_ModeMono: 0
     m_ModeQuest: 0
     m_ModeGvr: 0
     m_Basic: 0
-    m_Advanced: 1
+    m_Advanced: 0
   - m_PanelPrefab: {fileID: 1543516286980528, guid: 8143a5d07ca44f3469740c23ad742c85,
       type: 3}
     m_ModeVr: 0

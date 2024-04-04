@@ -66,8 +66,6 @@ namespace TiltBrush
 
         public const string kPlayerPrefAdvancedMode = "AdvancedMode";
 
-        [SerializeField] protected GameObject m_UxExplorationPrefab;
-
         [SerializeField] protected PanelMapKey[] m_PanelMap;
 
         [SerializeField] float m_WandPanelsRotationFeedbackInterval = 20.0f;
@@ -470,15 +468,6 @@ namespace TiltBrush
 
             m_PanelsCustomized = false;
             m_AdvancedModeRevealActive = false;
-
-            if (Config.IsExperimental)
-            {
-                // If we've got a UX exploration prefab, instantiate it here.
-                if (m_UxExplorationPrefab != null)
-                {
-                    m_UxExploration = Instantiate(m_UxExplorationPrefab);
-                }
-            }
 
             TintWandPaneVisuals(true);
 
@@ -1101,15 +1090,6 @@ namespace TiltBrush
 
         public void UpdatePanels()
         {
-            if (Config.IsExperimental)
-            {
-                if (m_UxExploration != null)
-                {
-                    LockUxExplorationToController();
-                    return;
-                }
-            }
-
             UnityEngine.Profiling.Profiler.BeginSample("PanelManager.UpdatePanels");
             // Lock panels to the controller if we've got 6dof controls.
             if (SketchControlsScript.m_Instance.ActiveControlsType ==
@@ -1665,16 +1645,6 @@ namespace TiltBrush
             if (m_WandPaneVisualsState != PaneVisualsState.Hidden)
             {
                 m_WandPaneVisualsState = PaneVisualsState.ShowingToHidden;
-            }
-        }
-
-        public void LockUxExplorationToController()
-        {
-            if (Config.IsExperimental)
-            {
-                Transform baseTransform = InputManager.Wand.Geometry.MainAxisAttachPoint;
-                m_UxExploration.transform.position = baseTransform.position;
-                m_UxExploration.transform.rotation = baseTransform.rotation;
             }
         }
 

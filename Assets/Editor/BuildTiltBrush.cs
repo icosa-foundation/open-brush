@@ -1435,7 +1435,7 @@ static class BuildTiltBrush
         using (var unused = new TempHookUpSingletons())
         {
             // Set consultUserConfig = false to keep user config from affecting the build output.
-            TiltBrushManifest manifest = App.Instance.GetMergedManifest(consultUserConfig: false);
+            TiltBrushManifest manifest = App.Instance.GetMergedManifest(forceExperimental: true);
 
             StringBuilder s = new StringBuilder();
             foreach (BrushDescriptor desc in manifest.UniqueBrushes())
@@ -1547,8 +1547,7 @@ static class BuildTiltBrush
             // to be run at build-time (ie when nobody has called Start(), Awake()).
             // TempHookupSingletons() has done just enough initialization to make it happy.
             // Also set consultUserConfig = false to keep user config from affecting the build output.
-            TiltBrushManifest manifest = App.Instance.GetMergedManifest(
-                consultUserConfig: false, forceExperimental: true);
+            TiltBrushManifest manifest = App.Instance.GetMergedManifest(forceExperimental: true);
 
             // Some sanity checks
             {

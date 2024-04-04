@@ -928,11 +928,8 @@ namespace TiltBrush
             m_CurrentGazeObject = -1;
             m_EatInputGazeObject = false;
 
+            // Previously set to 0 in experimental builds
             int hidePanelsDelay = 1;
-            if (Config.IsExperimental)
-            {
-                hidePanelsDelay = 0;
-            }
 
             StartCoroutine(DelayedHidePanels(hidePanelsDelay));
 
@@ -1334,18 +1331,13 @@ namespace TiltBrush
         {
             UnityEngine.Profiling.Profiler.BeginSample("SketchControlScript.UpdateStandardInput");
             //debug keys
-            if (Config.IsExperimental)
+            if (App.UserConfig.Flags.AdvancedKeyboardShortcuts)
             {
                 var camTool = SketchSurfacePanel.m_Instance.ActiveTool as MultiCamTool;
 
                 if (InputManager.m_Instance.GetKeyboardShortcutDown(InputManager.KeyboardShortcut.SaveNew))
                 {
                     IssueGlobalCommand(GlobalCommands.SaveNew, 1);
-                }
-                else if (InputManager.m_Instance.GetKeyboardShortcutDown(
-                    InputManager.KeyboardShortcut.ExportAll))
-                {
-                    IssueGlobalCommand(GlobalCommands.ExportAll);
                 }
                 else if (InputManager.m_Instance.GetKeyboardShortcutDown(
                     InputManager.KeyboardShortcut.SwitchCamera) && camTool != null)
@@ -3973,27 +3965,23 @@ namespace TiltBrush
         private void SaveModel()
         {
 #if USD_SUPPORTED
-            if (Config.IsExperimental)
-            {
+            var current = SaveLoadScript.m_Instance.SceneFile;
+            string basename = (current.Valid)
+                ? Path.GetFileNameWithoutExtension(current.FullPath)
+                : "Untitled";
+            string directoryName = FileUtils.GenerateNonexistentFilename(
+                App.ModelLibraryPath(), basename, "");
 
-                var current = SaveLoadScript.m_Instance.SceneFile;
-                string basename = (current.Valid)
-                    ? Path.GetFileNameWithoutExtension(current.FullPath)
-                    : "Untitled";
-                string directoryName = FileUtils.GenerateNonexistentFilename(
-                    App.ModelLibraryPath(), basename, "");
-
-                string usdname = Path.Combine(directoryName, basename + ".usd");
-                // TODO: export selection only, though this is still only experimental. The blocking
-                // issue to implement this is that the export collector needs to expose this as an option.
-                //
-                // SelectionManager.m_Instance.HasSelection
-                //    ? SelectionManager.m_Instance.SelectedStrokes
-                //    : null
-                ExportUsd.ExportPayload(usdname);
-                OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                    InputManager.ControllerName.Brush, "Model created!");
-            }
+            string usdname = Path.Combine(directoryName, basename + ".usd");
+            // TODO: export selection only, though this is still only experimental. The blocking
+            // issue to implement this is that the export collector needs to expose this as an option.
+            //
+            // SelectionManager.m_Instance.HasSelection
+            //    ? SelectionManager.m_Instance.SelectedStrokes
+            //    : null
+            ExportUsd.ExportPayload(usdname);
+            OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                InputManager.ControllerName.Brush, "Model created!");
 #endif
         }
 
@@ -4487,11 +4475,10 @@ namespace TiltBrush
                     SketchSurfacePanel.m_Instance.EatToolsInput();
                     break;
                 case GlobalCommands.StraightEdgeShape:
-                    if (Config.IsExperimental)
-                    {
-                        PointerManager.m_Instance.StraightEdgeGuide.SetTempShape(
-                            (StraightEdgeGuideScript.Shape)iParam1);
-                    }
+                    // Previously experimental mode only.
+                    // Untested and currently untriggerable.
+                    PointerManager.m_Instance.StraightEdgeGuide.SetTempShape(
+                        (StraightEdgeGuideScript.Shape)iParam1);
                     break;
                 case GlobalCommands.DeleteSketch:
                     {
@@ -4906,13 +4893,11 @@ namespace TiltBrush
                 case GlobalCommands.YouTubeChat: return m_YouTubeChatWidget != null;
                 case GlobalCommands.StencilsDisabled: return m_WidgetManager.StencilsDisabled;
                 case GlobalCommands.StraightEdgeShape:
-                    if (Config.IsExperimental)
-                    {
-                        return PointerManager.m_Instance.StraightEdgeGuide.TempShape == (StraightEdgeGuideScript.Shape)iParam ||
-                            (PointerManager.m_Instance.StraightEdgeGuide.TempShape == StraightEdgeGuideScript.Shape.None
-                            && PointerManager.m_Instance.StraightEdgeGuide.CurrentShape == (StraightEdgeGuideScript.Shape)iParam);
-                    }
-                    else return false;
+                    // Previously experimental mode only.
+                    // Untested and currently untriggerable.
+                    return PointerManager.m_Instance.StraightEdgeGuide.TempShape == (StraightEdgeGuideScript.Shape)iParam ||
+                        (PointerManager.m_Instance.StraightEdgeGuide.TempShape == StraightEdgeGuideScript.Shape.None
+                        && PointerManager.m_Instance.StraightEdgeGuide.CurrentShape == (StraightEdgeGuideScript.Shape)iParam);
                 case GlobalCommands.Disco: return LightsControlScript.m_Instance.DiscoMode;
                 case GlobalCommands.ToggleGroupStrokesAndWidgets: return SelectionManager.m_Instance.SelectionIsInOneGroup;
                 case GlobalCommands.ToggleProfiling: return UnityEngine.Profiling.Profiler.enabled;
