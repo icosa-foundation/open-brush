@@ -626,7 +626,7 @@ MonoBehaviour:
   m_CommandParam: -1
   m_CommandParam2: -1
   m_RequiresPopup: 1
-  m_CenterPopupOnButton: 0
+  m_CenterPopupOnButton: 1
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: SETTINGS_PANEL_HELP_BUTTON_POPUP
   m_LocalizedPopup:
