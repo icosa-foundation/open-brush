@@ -851,9 +851,9 @@ MonoBehaviour:
   m_PanelPopUpMap:
   - m_PopUpPrefab: {fileID: 1577505780274820, guid: f0becab4eefa8c94aa53e6a2e4f12630,
       type: 3}
-    m_Command: 33
-  - m_PopUpPrefab: {fileID: 125142, guid: 7009260f148146a47b18e9c43e3802a2, type: 3}
     m_Command: 1000
+  - m_PopUpPrefab: {fileID: 125142, guid: 7009260f148146a47b18e9c43e3802a2, type: 3}
+    m_Command: 33
   m_PanelDescription: 
   m_LocalizedPanelDescription:
     m_TableReference:
