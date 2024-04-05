@@ -128,6 +128,12 @@ namespace TiltBrush
             return WidgetManager.m_Instance.ActiveImageWidgets[index].WidgetScript;
         }
 
+        private static LightWidget _GetActiveLight(int index)
+        {
+            index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveLightWidgets);
+            return WidgetManager.m_Instance.ActiveLightWidgets[index].WidgetScript;
+        }
+
         private static VideoWidget _GetActiveVideo(int index)
         {
             index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveVideoWidgets);

@@ -1547,6 +1547,8 @@ namespace TiltBrush
 
         public List<TypedWidgetData<ImageWidget>> ActiveImageWidgets =>
             m_ImageWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+        public List<TypedWidgetData<LightWidget>> ActiveLightWidgets =>
+            m_LightWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<ModelWidget>> ActiveModelWidgets =>
             m_ModelWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<VideoWidget>> ActiveVideoWidgets =>

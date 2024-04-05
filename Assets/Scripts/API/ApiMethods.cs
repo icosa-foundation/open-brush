@@ -478,6 +478,12 @@ namespace TiltBrush
             _PositionWidget(_GetActiveImage(index), position);
         }
 
+        [ApiEndpoint("light.position", "Move a light to the given coordinates")]
+        public static void PositionLight(int index, Vector3 position)
+        {
+            _PositionWidget(_GetActiveLight(index), position);
+        }
+
         // WIP
         // [ApiEndpoint("video.import", "Imports a video given a url or a filename in Media Library\\Videos")]
         // public static void ImportVideo(string location)

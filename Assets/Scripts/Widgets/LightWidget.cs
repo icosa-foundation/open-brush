@@ -20,6 +20,18 @@ namespace TiltBrush
 {
     public class LightWidget : MediaWidget
     {
+        protected override void Awake()
+        {
+            base.Awake();
+            transform.localScale = Vector3.one * Coords.CanvasPose.scale;
+            m_ContainerBloat /= App.ActiveCanvas.Pose.scale;
+
+            // Set a new batchId on this light so it can be picked up in GPU intersections.
+            m_BatchId = GpuIntersector.GetNextBatchId();
+            WidgetManager.m_Instance.AddWidgetToBatchMap(this, m_BatchId);
+            Debug.Log($"Widget {name} assigned batchId {m_BatchId}");
+        }
+
         public static List<LightWidget> FromModelWidget(ModelWidget modelWidget)
         {
             var go = modelWidget.gameObject;
@@ -62,6 +74,57 @@ namespace TiltBrush
         public override string GetExportName()
         {
             return this.name;
+        }
+
+        public override GrabWidget Clone()
+        {
+            return Clone(transform.position, transform.rotation, m_Size);
+        }
+
+        public override GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
+        {
+            LightWidget clone = Instantiate(WidgetManager.m_Instance.LightWidgetPrefab);
+            clone.m_PreviousCanvas = m_PreviousCanvas;
+            clone.transform.position = position;
+            clone.transform.rotation = rotation;
+            // We want to lie about our intro transition amount.
+            clone.m_ShowTimer = clone.m_ShowDuration;
+            clone.transform.parent = transform.parent;
+            clone.Show(true, false);
+            clone.SetSignedWidgetSize(size);
+            clone.CloneInitialMaterials(this);
+            HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
+
+            clone.transform.parent = App.Instance.m_CanvasTransform;
+            clone.transform.localScale = Vector3.one;
+
+            var light = clone.SetLightType(GetComponentInChildren<Light>().type);
+
+            clone.Show(bShow: true, bPlayAudio: false);
+            light.color = light.color;
+            light.intensity = light.intensity;
+            light.range = light.range;
+            light.spotAngle = light.spotAngle;
+            light.innerSpotAngle = light.innerSpotAngle;
+            clone.SetPinned(Pinned);
+            clone.Group = Group;
+            var gizmo = Instantiate(WidgetManager.m_Instance.SceneLightGizmoPrefab, transform);
+            gizmo.SetupLightGizmos(light);
+
+            CanvasScript canvas = transform.parent.GetComponent<CanvasScript>();
+            if (canvas != null)
+            {
+                var materials = clone.GetComponentsInChildren<Renderer>().SelectMany(x => x.materials);
+                foreach (var material in materials)
+                {
+                    foreach (string keyword in canvas.BatchManager.MaterialKeywords)
+                    {
+                        material.EnableKeyword(keyword);
+                    }
+                }
+            }
+
+            return clone;
         }
 
         public static void FromTiltLight(TiltLights tiltLight)
