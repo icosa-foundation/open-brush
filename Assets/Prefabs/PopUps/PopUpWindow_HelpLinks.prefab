@@ -165,7 +165,7 @@ GameObject:
   - component: {fileID: 114998092889480470}
   - component: {fileID: 114303534374012010}
   m_Layer: 16
-  m_Name: PopUpWindow_Help
+  m_Name: PopUpWindow_HelpLinks
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
