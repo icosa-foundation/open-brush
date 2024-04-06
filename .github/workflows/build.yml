@@ -882,7 +882,7 @@ jobs:
           SSH_DEPLOY_KEY: ${{ secrets.OPENBRUSH_DOCS_SSH_DEPLOY_KEY }}
         with:
           source-directory: 'changelog/'
-          target-directory: 'automatic-release-notes/'
+          target-directory: 'release-history/'
           destination-github-username: 'icosa-foundation'
           destination-repository-name: 'open-brush-docs'
           user-name: 'release-note-bot'
