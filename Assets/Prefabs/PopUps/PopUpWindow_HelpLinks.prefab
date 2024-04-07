@@ -165,7 +165,7 @@ GameObject:
   - component: {fileID: 114998092889480470}
   - component: {fileID: 114303534374012010}
   m_Layer: 16
-  m_Name: PopUpWindow_HelpMobile
+  m_Name: PopUpWindow_HelpLinks
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -462,7 +462,7 @@ MonoBehaviour:
   m_Command: 70
   m_CommandParam: -1
   m_CommandParam2: -1
-  m_RequiresPopup: 1
+  m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
@@ -638,7 +638,7 @@ MonoBehaviour:
   m_Command: 81
   m_CommandParam: -1
   m_CommandParam2: -1
-  m_RequiresPopup: 1
+  m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
@@ -814,7 +814,7 @@ MonoBehaviour:
   m_Command: 33
   m_CommandParam: -1
   m_CommandParam2: -1
-  m_RequiresPopup: 1
+  m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
@@ -990,7 +990,7 @@ MonoBehaviour:
   m_Command: 80
   m_CommandParam: -1
   m_CommandParam2: -1
-  m_RequiresPopup: 1
+  m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
