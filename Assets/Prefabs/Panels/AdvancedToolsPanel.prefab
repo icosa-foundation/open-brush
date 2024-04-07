@@ -806,9 +806,8 @@ MonoBehaviour:
   - m_PopUpPrefab: {fileID: 1758786797962018, guid: e2dd9f64d28858a468b61151cbf090d6,
       type: 3}
     m_Command: 14
-  - m_PopUpPrefab: {fileID: 1758786797962018, guid: 04751ea8307825e4bb7657eb20f9bfc5,
-      type: 3}
-    m_Command: 67
+  - m_PopUpPrefab: {fileID: 197348, guid: 41a9315e35469455cbb17380475173b6, type: 3}
+    m_Command: 5
   - m_PopUpPrefab: {fileID: 1386358278955912, guid: be80cc928a63c8c4aa97d1e0d06e965d,
       type: 3}
     m_Command: 32
@@ -2787,6 +2786,11 @@ PrefabInstance:
       propertyPath: m_Center.y
       value: -0.18588668
       objectReference: {fileID: 0}
+    - target: {fileID: 114495678799595950, guid: 9b674e23f212f5a40b5d981d3ba5f4e2,
+        type: 3}
+      propertyPath: m_ShowOnToolType
+      value: 21
+      objectReference: {fileID: 0}
     - target: {fileID: 8146683654292829881, guid: 9b674e23f212f5a40b5d981d3ba5f4e2,
         type: 3}
       propertyPath: m_DescriptionText
@@ -2806,11 +2810,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
       value: GUID:c84355079ab3f3e4f8f3812258805f86
-      objectReference: {fileID: 0}
-    - target: {fileID: 114495678799595950, guid: 9b674e23f212f5a40b5d981d3ba5f4e2,
-        type: 3}
-      propertyPath: m_ShowOnToolType
-      value: 21
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9b674e23f212f5a40b5d981d3ba5f4e2, type: 3}
