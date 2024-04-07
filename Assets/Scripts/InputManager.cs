@@ -59,7 +59,7 @@ namespace TiltBrush
             LockToController,
             Scale,
             Sensitivity,
-            Reset,
+            Reset, // Advanced Keyboard Shortcut mode only
             Undo,
             Redo,
             Delete,
@@ -108,22 +108,21 @@ namespace TiltBrush
             Delete,
             Abort,
 
-            SaveNew,
-            ExportAll,
-            SwitchCamera,
+            SaveNew, // Advanced Keyboard Shortcut mode only
+            SwitchCamera, // Advanced Keyboard Shortcut mode only
             _Unused_1,
             _Unused_4,
-            ViewOnly,
-            ToggleScreenMirroring,
-            PreviousTool,
-            NextTool,
+            ViewOnly,              // Advanced Keyboard Shortcut mode only
+            ToggleScreenMirroring, // Advanced Keyboard Shortcut mode only
+            PreviousTool,          // Advanced Keyboard Shortcut mode only
+            NextTool,              // Advanced Keyboard Shortcut mode only
             _Unused_2,
             _Unused_3,
-            CycleSymmetryMode,
-            Export,
-            StoreHeadTransform,
-            RecallHeadTransform,
-            ToggleLightType,
+            CycleSymmetryMode,   // Advanced Keyboard Shortcut mode only
+            Export,              // Advanced Keyboard Shortcut mode only
+            StoreHeadTransform,  // Advanced Keyboard Shortcut mode only
+            RecallHeadTransform, // Advanced Keyboard Shortcut mode only
+            ToggleLightType,     // Advanced Keyboard Shortcut mode only
 
             CheckStrokes,
 
@@ -138,11 +137,11 @@ namespace TiltBrush
 
             PositionMonoCamera,
 
-            ToggleHeadStationaryOrWobble,
-            ToggleHeadStationaryOrFollow,
+            ToggleHeadStationaryOrWobble, // Advanced Keyboard Shortcut mode only
+            ToggleHeadStationaryOrFollow, // Advanced Keyboard Shortcut mode only
 
-            DecreaseSlowFollowSmoothing,
-            IncreaseSlowFollowSmoothing,
+            DecreaseSlowFollowSmoothing, // Advanced Keyboard Shortcut mode only
+            IncreaseSlowFollowSmoothing, // Advanced Keyboard Shortcut mode only
 
             ToggleGVRAudio,
 
@@ -151,14 +150,14 @@ namespace TiltBrush
             ExtendDemoTimer,
             InstantUpload,
 
-            TossWidget,
+            TossWidget, // Advanced Keyboard Shortcut mode only
 
-            ToggleProfile,
+            ToggleProfile, // Advanced Keyboard Shortcut mode only
             CameraMoveLeft,
             CameraMoveRight,
             CameraMoveUp,
             CameraMoveDown,
-            FlyMode,
+            FlyMode, // Advanced Keyboard Shortcut mode only
             InvertLook,
             SprintMode
         }
@@ -177,23 +176,23 @@ namespace TiltBrush
             { (int)KeyboardShortcut.AdvanceTimeline, new[] { Key.Equals } },
             { (int)KeyboardShortcut.TimelineHome, new[] { Key.Home } },
             { (int)KeyboardShortcut.TimelineEnd, new[] { Key.End } },
-            { (int)KeyboardShortcut.Reset, new[] { Key.Space } },
+            { (int)KeyboardShortcut.Reset, new[] { Key.Space } },             // Advanced Keyboard Shortcut mode only
             { (int)KeyboardShortcut.Undo, new[] { Key.Z } },
             { (int)KeyboardShortcut.Redo, new[] { Key.X } },
             { (int)KeyboardShortcut.Delete, new[] { Key.Delete } },
             { (int)KeyboardShortcut.Abort, new[] { Key.Escape } },
 
-            { (int)KeyboardShortcut.SaveNew, new[] { Key.S } },
-            { (int)KeyboardShortcut.ToggleProfile, new[] { Key.K } },
+            { (int)KeyboardShortcut.SaveNew, new[] { Key.S } },               // Advanced Keyboard Shortcut mode only
+            { (int)KeyboardShortcut.ToggleProfile, new[] { Key.K } },         // Advanced Keyboard Shortcut mode only
             // Context-dependent
-            { (int)KeyboardShortcut.SwitchCamera, new[] { Key.C } },
-            { (int)KeyboardShortcut.ViewOnly, new[] { Key.H } },
-            { (int)KeyboardShortcut.ToggleScreenMirroring, new[] { Key.M } },
-            { (int)KeyboardShortcut.PreviousTool, new[] { Key.LeftArrow } },
-            { (int)KeyboardShortcut.NextTool, new[] { Key.RightArrow } },
-            { (int)KeyboardShortcut.CycleSymmetryMode, new[] { Key.F2 } },
-            { (int)KeyboardShortcut.Export, new[] { Key.E } },
-            { (int)KeyboardShortcut.StoreHeadTransform, new[] { Key.O } }, // Also checks for shift
+            { (int)KeyboardShortcut.SwitchCamera, new[] { Key.C } },          // Advanced Keyboard Shortcut mode only
+            { (int)KeyboardShortcut.ViewOnly, new[] { Key.H } },              // Advanced Keyboard Shortcut mode only
+            { (int)KeyboardShortcut.ToggleScreenMirroring, new[] { Key.M } }, // Advanced Keyboard Shortcut mode only
+            { (int)KeyboardShortcut.PreviousTool, new[] { Key.LeftArrow } },  // Advanced Keyboard Shortcut mode only
+            { (int)KeyboardShortcut.NextTool, new[] { Key.RightArrow } },     // Advanced Keyboard Shortcut mode only
+            { (int)KeyboardShortcut.CycleSymmetryMode, new[] { Key.F2 } },    // Advanced Keyboard Shortcut mode only
+            { (int)KeyboardShortcut.Export, new[] { Key.E } },                // Advanced Keyboard Shortcut mode only
+            { (int)KeyboardShortcut.StoreHeadTransform, new[] { Key.O } },    // Also checks for shift. Advanced Keyboard Shortcut mode only
             { (int)KeyboardShortcut.RecallHeadTransform, new[] { Key.O } },
             { (int)KeyboardShortcut.ToggleLightType, new[] { Key.P } },
 
@@ -210,15 +209,15 @@ namespace TiltBrush
 
             { (int)KeyboardShortcut.PositionMonoCamera, new[] { Key.LeftAlt, Key.RightAlt } },
 
-            { (int)KeyboardShortcut.ToggleHeadStationaryOrWobble, new[] { Key.Q } },
-            { (int)KeyboardShortcut.ToggleHeadStationaryOrFollow, new[] { Key.W } },
+            { (int)KeyboardShortcut.ToggleHeadStationaryOrWobble, new[] { Key.Q } }, // Advanced Keyboard Shortcut mode only
+            { (int)KeyboardShortcut.ToggleHeadStationaryOrFollow, new[] { Key.W } }, // Advanced Keyboard Shortcut mode only
 
-            { (int)KeyboardShortcut.DecreaseSlowFollowSmoothing, new[] { Key.E } },
-            { (int)KeyboardShortcut.IncreaseSlowFollowSmoothing, new[] { Key.R } },
+            { (int)KeyboardShortcut.DecreaseSlowFollowSmoothing, new[] { Key.E } },  // Advanced Keyboard Shortcut mode only
+            { (int)KeyboardShortcut.IncreaseSlowFollowSmoothing, new[] { Key.R } },  // Advanced Keyboard Shortcut mode only
 
             { (int)KeyboardShortcut.ToggleGVRAudio, new[] { Key.Backquote } },
 
-            { (int)KeyboardShortcut.TossWidget, new[] { Key.Y } },
+            { (int)KeyboardShortcut.TossWidget, new[] { Key.Y } },                   // Advanced Keyboard Shortcut mode only
         };
 
         // Separate keymap for when we launch but no VR headset is detected.
@@ -230,7 +229,7 @@ namespace TiltBrush
             { (int)KeyboardShortcut.CameraMoveRight, new[] { Key.D } },
             { (int)KeyboardShortcut.CameraMoveUp, new[] { Key.Q } },
             { (int)KeyboardShortcut.CameraMoveDown, new[] { Key.E } },
-            { (int)KeyboardShortcut.FlyMode, new[] { Key.F } },
+            { (int)KeyboardShortcut.FlyMode, new[] { Key.F } }, // Advanced Keyboard Shortcut mode only
             { (int)KeyboardShortcut.InvertLook, new[] { Key.I } },
             { (int)KeyboardShortcut.SprintMode, new[] { Key.LeftShift } },
         };

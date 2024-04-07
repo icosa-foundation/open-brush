@@ -22,6 +22,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 using Newtonsoft.Json;
+using TMPro;
 #if USD_SUPPORTED
 using Unity.Formats.USD;
 #endif
@@ -545,7 +546,7 @@ namespace TiltBrush
                 gameObject.AddComponent<AutoProfiler>();
             }
 
-            m_Manifest = GetMergedManifest(consultUserConfig: true);
+            m_Manifest = GetMergedManifest();
 
             m_HttpServer = GetComponentInChildren<HttpServer>();
             if (!Config.IsMobileHardware)
@@ -599,8 +600,11 @@ namespace TiltBrush
             // Use of ControllerConsoleScript must wait until Start()
             ControllerConsoleScript.m_Instance.AddNewLine(GetStartupString());
 
-            if (!VrSdk.IsHmdInitialized())
+            if (!VrSdk.IsHmdInitialized() && !UserConfig.Flags.EnableMonoscopicMode)
             {
+                // If XR is disabled or fails to initialize
+                // and we haven't enabled monoscopic mode
+                // then fall back to the 2d View-only mode
                 CreateFailedToDetectVrDialog();
             }
             else
@@ -756,15 +760,6 @@ namespace TiltBrush
             ShowControllers = App.UserConfig.Flags.ShowControllers;
 
             SwitchState();
-
-#if USD_SUPPORTED
-            if (Config.IsExperimental && !string.IsNullOrEmpty(Config.m_IntroSketchUsdFilename))
-            {
-                var gobject = ImportUsd.ImportWithAnim(Config.m_IntroSketchUsdFilename);
-
-                gobject.transform.SetParent(App.Scene.transform, false);
-            }
-#endif
 
             if (Config.m_AutoProfile || m_UserConfig.Profiling.AutoProfile)
             {
@@ -929,7 +924,10 @@ namespace TiltBrush
                             {
                                 OnIntroComplete();
                             }
-                            else if (Config.IsExperimental)
+                            else if (!VrSdk.IsHmdInitialized() ||
+                                     UserConfig.Flags.SkipIntro ||
+                                     UserConfig.Flags.DisableXrMode ||
+                                     UserConfig.Flags.EnableMonoscopicMode)
                             {
                                 OnIntroComplete();
                                 PanelManager.m_Instance.ReviveFloatingPanelsForStartup();
@@ -1772,15 +1770,13 @@ namespace TiltBrush
         public void CreateFailedToDetectVrDialog(string msg = null, bool allowViewing = true)
         {
             GameObject dialog = Instantiate(m_ErrorDialog);
-            var textXf = dialog.transform.Find("Text");
-            var textMesh = textXf.GetComponent<TextMesh>();
-            if (msg == null)
-            {
-                msg = "Failed to detect VR";
-            }
-            textMesh.text = string.Format(@"        Tiltasaurus says...
-                   {0}", msg);
             var initScript = dialog.GetComponent<InitNoHeadsetMode>();
+            if (!string.IsNullOrEmpty(msg))
+            {
+                var textMesh = initScript.m_Heading;
+                textMesh.text = @$"        Tiltasaurus says...
+                   {msg}";
+            }
             initScript.ShowSketchSelectorUi(allowViewing && !StartupError);
         }
 
@@ -2185,15 +2181,12 @@ namespace TiltBrush
             }
         }
 
-        public TiltBrushManifest GetMergedManifest(bool consultUserConfig, bool forceExperimental = false)
+        public TiltBrushManifest GetMergedManifest(bool forceExperimental = false)
         {
             var manifest = m_Manifest;
             if (Config.IsExperimental || forceExperimental)
             {
-                // At build time, we don't want the user config to affect the build output.
-                if ((consultUserConfig
-                    && m_UserConfig.Flags.ShowDangerousBrushes
-                    && m_ManifestExperimental != null) || forceExperimental)
+                if (m_ManifestExperimental != null)
                 {
                     manifest = Instantiate(m_Manifest);
                     manifest.AppendFrom(m_ManifestExperimental);
