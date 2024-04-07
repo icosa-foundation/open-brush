@@ -260,9 +260,11 @@ public class PreviewPolyhedron : MonoBehaviour
         if (m_BuildMeshCoroutine != null)
         {
             Debug.LogWarning("Coroutine already exists. Aborting.");
-            return;
+            //return;
         }
-        m_BuildMeshCoroutine = StartCoroutine(RunOffMainThread(DoMakePolyHedron, AssignMesh, FailedMakePolyhedron));
+        DoMakePolyHedron();
+        AssignMesh();
+        //m_BuildMeshCoroutine = StartCoroutine(RunOffMainThread(DoMakePolyHedron, AssignMesh, FailedMakePolyhedron));
     }
 
     public void ImmediateMakePolyhedron()
