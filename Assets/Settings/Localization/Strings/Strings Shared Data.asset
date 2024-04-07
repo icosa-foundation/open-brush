@@ -3326,6 +3326,18 @@ MonoBehaviour:
     m_Key: KEYBOARD_PANEL_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 217069105871577088
+    m_Key: VIEW_MODE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 217070349893754880
+    m_Key: VR_NOT_DETECTED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 218558579745579008
+    m_Key: MONOSCOPIC_HELP
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
