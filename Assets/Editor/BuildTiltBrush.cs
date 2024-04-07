@@ -111,9 +111,6 @@ static class BuildTiltBrush
     private static readonly List<KeyValuePair<XrSdkMode, BuildTarget>> kValidSdkTargets
         = new List<KeyValuePair<XrSdkMode, BuildTarget>>()
         {
-            // Mono
-            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Monoscopic, BuildTarget.StandaloneWindows64),
-
             // OpenXR
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.StandaloneWindows64),
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.Android),
@@ -204,7 +201,6 @@ static class BuildTiltBrush
         set
         {
             EditorPrefs.SetString(kMenuPluginPref, value.ToString());
-            Menu.SetChecked(kMenuPluginMono, value == XrSdkMode.Monoscopic);
             Menu.SetChecked(kMenuPluginOpenXr, value == XrSdkMode.OpenXR);
 #if OCULUS_SUPPORTED
             Menu.SetChecked(kMenuPluginOculus, value == XrSdkMode.Oculus);
@@ -391,19 +387,6 @@ static class BuildTiltBrush
     }
 
     //=======  SDKs =======
-
-    [MenuItem(kMenuPluginMono, isValidateFunction: false, priority: 100)]
-    static void MenuItem_Plugin_Mono()
-    {
-        GuiSelectedSdk = XrSdkMode.Monoscopic;
-    }
-
-    [MenuItem(kMenuPluginMono, isValidateFunction: true)]
-    static bool MenuItem_Plugin_Mono_Validate()
-    {
-        Menu.SetChecked(kMenuPluginMono, GuiSelectedSdk == XrSdkMode.Monoscopic);
-        return true;
-    }
 
     [MenuItem(kMenuPluginOpenXr, isValidateFunction: false, priority: 110)]
     static void MenuItem_Plugin_OpenXr()
@@ -627,17 +610,6 @@ static class BuildTiltBrush
                 return BuildTargetGroup.iOS;
             default:
                 throw new ArgumentException("buildTarget");
-        }
-    }
-
-    static public SdkMode XrTargetToSdk(XrSdkMode mode)
-    {
-        switch (mode)
-        {
-            case XrSdkMode.Monoscopic:
-                return SdkMode.Monoscopic;
-            default:
-                return SdkMode.UnityXR;
         }
     }
 
@@ -1200,9 +1172,6 @@ static class BuildTiltBrush
                 case XrSdkMode.Zapbox:
                     targetXrPluginsRequired = new string[] { "Zappar.XR.ZapboxLoader" };
                     break;
-                case XrSdkMode.Monoscopic:
-                    targetSettings.InitManagerOnStart = false;
-                    break;
                 default:
                     break;
             }
@@ -1466,7 +1435,7 @@ static class BuildTiltBrush
         using (var unused = new TempHookUpSingletons())
         {
             // Set consultUserConfig = false to keep user config from affecting the build output.
-            TiltBrushManifest manifest = App.Instance.GetMergedManifest(consultUserConfig: false);
+            TiltBrushManifest manifest = App.Instance.GetMergedManifest(forceExperimental: true);
 
             StringBuilder s = new StringBuilder();
             foreach (BrushDescriptor desc in manifest.UniqueBrushes())
@@ -1558,8 +1527,7 @@ static class BuildTiltBrush
                 "ProjectSettings/GraphicsSettings.asset")))
         {
             var config = App.Config;
-            // TODO: can we think of a better way of switching to mono/something else in the future?
-            config.m_SdkMode = XrTargetToSdk(xrSdk);
+            config.m_SdkMode = SdkMode.UnityXR;
             config.m_AutoProfile = tiltOptions.AutoProfile;
             config.m_BuildStamp = stamp;
             //config.OnValidate(xrSdk, TargetToGroup(target));
@@ -1579,8 +1547,7 @@ static class BuildTiltBrush
             // to be run at build-time (ie when nobody has called Start(), Awake()).
             // TempHookupSingletons() has done just enough initialization to make it happy.
             // Also set consultUserConfig = false to keep user config from affecting the build output.
-            TiltBrushManifest manifest = App.Instance.GetMergedManifest(
-                consultUserConfig: false, forceExperimental: true);
+            TiltBrushManifest manifest = App.Instance.GetMergedManifest(forceExperimental: true);
 
             // Some sanity checks
             {
