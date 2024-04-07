@@ -636,49 +636,49 @@ namespace TiltBrush
                 }
             }
 
-                if (!bAdditive)
+            if (!bAdditive)
+            {
+                var environment = EnvironmentCatalog.m_Instance
+                    .GetEnvironment(new Guid(jsonData.EnvironmentPreset));
+                if (environment != null)
                 {
-                    var environment = EnvironmentCatalog.m_Instance
-                        .GetEnvironment(new Guid(jsonData.EnvironmentPreset));
-                    if (environment != null)
+                    SceneSettings.m_Instance.RecordSkyColorsForFading();
+                    if (jsonData.Environment != null)
                     {
-                        SceneSettings.m_Instance.RecordSkyColorsForFading();
-                        if (jsonData.Environment != null)
-                        {
-                            SceneSettings.m_Instance.SetCustomEnvironment(jsonData.Environment, environment);
-                        }
-                        SceneSettings.m_Instance.SetDesiredPreset(
-                            environment, forceTransition: true,
-                            keepSceneTransform: true, hasCustomLights: jsonData.Lights != null
-                        );
-                        // This will have been overwritten by Set
-                        if (jsonData.Environment != null && jsonData.Environment.Skybox != null)
-                        {
-                            SceneSettings.m_Instance.LoadCustomSkybox(jsonData.Environment.Skybox);
-                        }
+                        SceneSettings.m_Instance.SetCustomEnvironment(jsonData.Environment, environment);
                     }
-                    else
+                    SceneSettings.m_Instance.SetDesiredPreset(
+                        environment, forceTransition: true,
+                        keepSceneTransform: true, hasCustomLights: jsonData.Lights != null
+                    );
+                    // This will have been overwritten by Set
+                    if (jsonData.Environment != null && jsonData.Environment.Skybox != null)
                     {
-                        Debug.LogWarningFormat("Unknown environment preset {0}",
-                            jsonData.EnvironmentPreset);
+                        SceneSettings.m_Instance.LoadCustomSkybox(jsonData.Environment.Skybox);
                     }
-                    App.Instance.SetOdsCameraTransforms(jsonData.ThumbnailCameraTransformInRoomSpace,
-                        jsonData.SceneTransformInRoomSpace);
-                    App.Scene.Pose = jsonData.SceneTransformInRoomSpace;
-                    App.Scene.ResetLayers(true);
-                    Coords.CanvasLocalPose = TrTransform.identity;
-                    if (jsonData.CanvasTransformInSceneSpace != TrTransform.identity)
+                }
+                else
+                {
+                    Debug.LogWarningFormat("Unknown environment preset {0}",
+                        jsonData.EnvironmentPreset);
+                }
+                App.Instance.SetOdsCameraTransforms(jsonData.ThumbnailCameraTransformInRoomSpace,
+                    jsonData.SceneTransformInRoomSpace);
+                App.Scene.Pose = jsonData.SceneTransformInRoomSpace;
+                App.Scene.ResetLayers(true);
+                Coords.CanvasLocalPose = TrTransform.identity;
+                if (jsonData.CanvasTransformInSceneSpace != TrTransform.identity)
+                {
+                    Debug.LogWarning("This file has an unsupported, experimental Canvas Transform specified.");
+                    // Was experimental mode. Needs testing.
+                    // Saves sketches are unlikely to trigger this under normal usage
+                    if (false)
                     {
-                        Debug.LogWarning("This file has an unsupported, experimental Canvas Transform specified.");
-                        // Was experimental mode. Needs testing.
-                        // Saves sketches are unlikely to trigger this under normal usage
-                        if (false)
-                        {
-                            Coords.CanvasLocalPose = jsonData.CanvasTransformInSceneSpace;
-                        }
+                        Coords.CanvasLocalPose = jsonData.CanvasTransformInSceneSpace;
                     }
-                    LastThumbnail_SS = App.Scene.Pose.inverse *
-                        jsonData.ThumbnailCameraTransformInRoomSpace;
+                }
+                LastThumbnail_SS = App.Scene.Pose.inverse *
+                    jsonData.ThumbnailCameraTransformInRoomSpace;
 
             }
 
