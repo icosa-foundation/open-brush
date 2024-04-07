@@ -42,18 +42,33 @@ namespace TiltBrush
             public bool HighResolutionSnapshots; // Deprecated
             public bool ShowDroppedFrames;
             public bool LargeMeshSupport;
+            public bool EnableMonoscopicMode;
+
+            private bool? m_DisableXrMode;
+            public bool DisableXrMode
+            {
+                get
+                {
+#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
+                    return true;
+#else
+                    return m_DisableXrMode ?? false;
+#endif
+                }
+                set { m_DisableXrMode = value; }
+            }
 
             public bool EnableApiRemoteCalls;
             public bool EnableApiCorsHeaders;
 
-            bool? m_ShowDangerousBrushes;
-            public bool ShowDangerousBrushes
+            bool? m_AdvancedKeyboardShortcuts;
+            public bool AdvancedKeyboardShortcuts
             {
                 get
                 {
-                    return m_ShowDangerousBrushes ?? Config.IsExperimental;
+                    return m_AdvancedKeyboardShortcuts ?? false;
                 }
-                set { m_ShowDangerousBrushes = value; }
+                set { m_AdvancedKeyboardShortcuts = value; }
             }
 
             bool? m_PostEffectsOnCapture;
@@ -88,6 +103,13 @@ namespace TiltBrush
             {
                 get { return m_ShowControllers ?? true; }
                 set { m_ShowControllers = value; }
+            }
+
+            bool? m_SkipIntro;
+            public bool SkipIntro
+            {
+                get { return m_SkipIntro ?? false; }
+                set { m_SkipIntro = value; }
             }
 
             int? m_SnapshotHeight;

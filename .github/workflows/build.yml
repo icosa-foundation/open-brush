@@ -181,17 +181,12 @@ jobs:
             cache: Windows
             extra_defines: OCULUS_SUPPORTED
 
-          - name: Windows Monoscopic
-            targetPlatform: StandaloneWindows64
-            vrsdk: Monoscopic
-            cache: Windows
-
-          - name: Linux Monoscopic
+          - name: Linux
             targetPlatform: StandaloneLinux64
-            vrsdk: Monoscopic
+            vrsdk: Monoscopic  # All builds include monoscopic, but this one has no additional XrSdk, so we'll keep the name monoscopic
             cache: Linux
 
-          - name: MacOS Monoscopic
+          - name: MacOS
             targetPlatform: StandaloneOSX
             vrsdk: Monoscopic
             cache: MacOS
@@ -591,8 +586,8 @@ jobs:
       - name: Download Build Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: MacOS Monoscopic
-          path: build_macos_monoscopic
+          name: MacOS
+          path: build_macos
 
       # See https://docs.github.com/en/actions/deployment/deploying-xcode-applications/installing-an-apple-certificate-on-macos-runners-for-xcode-development
       - name: Install the Apple certificate and provisioning profile
@@ -629,7 +624,7 @@ jobs:
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
-          tar xvfz build_macos_monoscopic/*tgz
+          tar xvfz build_macos/*tgz
 
           export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBrush*.app))
 
@@ -644,7 +639,7 @@ jobs:
       - name: Upload signed app
         uses: actions/upload-artifact@v4
         with:
-          name: MacOS Monoscopic (signed)
+          name: MacOS (signed)
           path: |
             OpenBrush.tgz
 
@@ -669,14 +664,14 @@ jobs:
       - name: Download Build Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: MacOS Monoscopic (signed)
-          path: build_macos_monoscopic
+          name: MacOS (signed)
+          path: build_macos
 
       - name: Create a notarized DMG
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
-          tar xvfz build_macos_monoscopic/*tgz
+          tar xvfz build_macos/*tgz
 
           export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBrush*.app))
           mkdir dist
@@ -701,7 +696,7 @@ jobs:
       - name: Upload notarized dmg
         uses: actions/upload-artifact@v4
         with:
-          name: MacOS Monoscopic (DMG)
+          name: MacOS (DMG)
           path: |
             dist/OpenBrush.dmg
 
@@ -765,12 +760,6 @@ jobs:
           name: Windows Rift
           path: build_windows_rift
 
-      - name: Download Build Artifacts (Windows Monoscopic)
-        uses: actions/download-artifact@v4
-        with:
-          name: Windows Monoscopic
-          path: build_windows_mono
-
       - name: Download Build Artifacts (Android OpenXR)
         uses: actions/download-artifact@v4
         with:
@@ -792,8 +781,8 @@ jobs:
       - name: Download Build Artifacts (Mac)
         uses: actions/download-artifact@v4
         with:
-          name: MacOS Monoscopic (DMG)
-          path: build_monoscopic_macos
+          name: MacOS (DMG)
+          path: build_macos
 
       - name: Package Artifacts for release
         env:
@@ -805,15 +794,12 @@ jobs:
           mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64/ releases/OpenBrush_Desktop_$VERSION/
           mv build_windows_rift/StandaloneWindows64/ releases/OpenBrush_Rift_$VERSION/
-          mv build_windows_mono/StandaloneWindows64/ releases/OpenBrush_Mono_$VERSION/
-          mv build_monoscopic_macos/*.dmg releases/OpenBrush_Mac_Mono_$VERSION.dmg
+          mv build_macos/*.dmg releases/OpenBrush_Mac_$VERSION.dmg
           cd releases
           zip -r OpenBrush_Desktop_$VERSION.zip OpenBrush_Desktop_$VERSION/
           zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
-          zip -r OpenBrush_Mono_$VERSION.zip OpenBrush_Mono_$VERSION/
           rm -rf OpenBrush_Desktop_$VERSION
           rm -rf OpenBrush_Rift_$VERSION
-          rm -rf OpenBrush_Mono_$VERSION
 
       - name: Publish
         uses: softprops/action-gh-release@v2
@@ -869,20 +855,29 @@ jobs:
               "pr_template": "- #{{TITLE}} ([PR ##{{NUMBER}}](#{{URL}}) by @#{{AUTHOR}})\n"
             }
 
+      - name: Get the current contents of the docs repository
+        uses: actions/checkout@v4
+        with:
+          repository: icosa-foundation/open-brush-docs
+          path: open-brush-docs
+          ref: master
+          fetch-depth: 0
+          sparse-checkout: |
+            release-history/
+
       - name: Create Changelog file
         env:
           CHANGELOG: ${{ steps.changelog.outputs.changelog }}
         run: |
-          mkdir -p changelog/
-          echo "$CHANGELOG" | tee changelog/automatic-changelog.md
+          echo "$CHANGELOG" | tee open-brush-docs/release-history/automatic-changelog.md
 
       - name: Publish release notes
         uses: cpina/github-action-push-to-another-repository@composite-1.5.1
         env:
           SSH_DEPLOY_KEY: ${{ secrets.OPENBRUSH_DOCS_SSH_DEPLOY_KEY }}
         with:
-          source-directory: 'changelog/'
-          target-directory: 'automatic-release-notes/'
+          source-directory: 'open-brush-docs/release-history/'
+          target-directory: 'release-history/'
           destination-github-username: 'icosa-foundation'
           destination-repository-name: 'open-brush-docs'
           user-name: 'release-note-bot'
@@ -917,20 +912,20 @@ jobs:
         with:
           name: Windows OpenXR
           path: build_windows_openxr
-      - name: Download Build Artifacts (MacOS Monoscopic Signed)
+      - name: Download Build Artifacts (MacOS Signed)
         uses: actions/download-artifact@v4
         with:
-          name: MacOS Monoscopic (signed)
-          path: build_macos_monoscopic
+          name: MacOS (signed)
+          path: build_macos
       - name: Upload Build
         run: |
-          cd build_macos_monoscopic
+          cd build_macos
           tar xvfz OpenBrush.tgz
           cd -
           pip install -U jinjanator
           jinjanate Support/steam/app.vdf.j2 > app.vdf
           jinjanate Support/steam/main_depot.win.vdf.j2 > build_windows_openxr/main_depot.vdf
-          jinjanate Support/steam/main_depot.mac.vdf.j2 > build_macos_monoscopic/main_depot.vdf
+          jinjanate Support/steam/main_depot.mac.vdf.j2 > build_macos/main_depot.vdf
           jinjanate Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
           steamcmd +login $STEAM_USERNAME +run_app_build $(pwd)/app.vdf +quit
         env:
