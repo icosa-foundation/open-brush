@@ -19,8 +19,9 @@ namespace TiltBrush
 {
     public class InitNoHeadsetMode : MonoBehaviour
     {
-
+        public TextMeshPro m_Heading;
         public GameObject m_SketchLoadingUi;
+        public string m_NonXRHelpURL;
 
         void Start()
         {
@@ -75,6 +76,11 @@ namespace TiltBrush
         public void ShowSketchSelectorUi(bool active = true)
         {
             m_SketchLoadingUi.SetActive(active);
+        }
+
+        public void HandleHelpButton()
+        {
+            SketchControlsScript.m_Instance.OpenURLAndInformUser(m_NonXRHelpURL);
         }
     }
 }

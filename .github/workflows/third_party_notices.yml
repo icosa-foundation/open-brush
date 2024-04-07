@@ -1,0 +1,19 @@
+---
+# yamllint disable rule:line-length
+name: Check for updated Third Party Notices
+
+on:  # yamllint disable-line rule:truthy
+  pull_request:
+
+jobs:
+  third-party-notices:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5.1.0
+        with:
+          python-version: '3.12'
+      - name: Run the generator
+        run: |
+          python Support/Python/unitybuild/generate_notice.py
+          git diff --exit-code
