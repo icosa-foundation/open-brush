@@ -855,19 +855,28 @@ jobs:
               "pr_template": "- #{{TITLE}} ([PR ##{{NUMBER}}](#{{URL}}) by @#{{AUTHOR}})\n"
             }
 
+      - name: Get the current contents of the docs repository
+        uses: actions/checkout@v4
+        with:
+          repository: icosa-foundation/open-brush-docs
+          path: open-brush-docs
+          ref: master
+          fetch-depth: 0
+          sparse-checkout: |
+            release-history/
+
       - name: Create Changelog file
         env:
           CHANGELOG: ${{ steps.changelog.outputs.changelog }}
         run: |
-          mkdir -p changelog/
-          echo "$CHANGELOG" | tee changelog/automatic-changelog.md
+          echo "$CHANGELOG" | tee open-brush-docs/release-history/automatic-changelog.md
 
       - name: Publish release notes
         uses: cpina/github-action-push-to-another-repository@composite-1.5.1
         env:
           SSH_DEPLOY_KEY: ${{ secrets.OPENBRUSH_DOCS_SSH_DEPLOY_KEY }}
         with:
-          source-directory: 'changelog/'
+          source-directory: 'open-brush-docs/release-history/'
           target-directory: 'release-history/'
           destination-github-username: 'icosa-foundation'
           destination-repository-name: 'open-brush-docs'
