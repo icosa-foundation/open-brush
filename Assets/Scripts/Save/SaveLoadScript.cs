@@ -670,7 +670,9 @@ namespace TiltBrush
                     if (jsonData.CanvasTransformInSceneSpace != TrTransform.identity)
                     {
                         Debug.LogWarning("This file has an unsupported, experimental Canvas Transform specified.");
-                        if (Config.IsExperimental)
+                        // Was experimental mode. Needs testing.
+                        // Saves sketches are unlikely to trigger this under normal usage
+                        if (false)
                         {
                             Coords.CanvasLocalPose = jsonData.CanvasTransformInSceneSpace;
                         }
