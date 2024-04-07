@@ -9,7 +9,7 @@ public class ViewModeUI : MonoBehaviour
 
     void Awake()
     {
-        m_UiRoot.SetActive(!App.VrSdk.IsHmdInitialized());
+        m_UiRoot.SetActive(!App.VrSdk.IsHmdInitialized() || App.Config.m_SdkMode == SdkMode.Monoscopic);
     }
 
     public void HandleCloseButton()
