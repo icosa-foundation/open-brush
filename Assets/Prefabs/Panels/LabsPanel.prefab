@@ -906,6 +906,9 @@ MonoBehaviour:
   - m_PopUpPrefab: {fileID: 1758786797962018, guid: 04751ea8307825e4bb7657eb20f9bfc5,
       type: 3}
     m_Command: 15
+  - m_PopUpPrefab: {fileID: 1758786797962018, guid: 04751ea8307825e4bb7657eb20f9bfc5,
+      type: 3}
+    m_Command: 15
   - m_PopUpPrefab: {fileID: 197348, guid: 0b67b393c84aac94a9efae92ce22fa99, type: 3}
     m_Command: 5011
   m_PanelDescription: LABS_PANEL_DESCRIPTION
