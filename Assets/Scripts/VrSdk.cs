@@ -15,7 +15,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.XR;
+using UnityEngine.XR.Management;
+using InputDevice = UnityEngine.XR.InputDevice;
 
 #if PICO_SUPPORTED
 using PicoInput = Unity.XR.PXR.PXR_Input;
@@ -125,6 +128,25 @@ namespace TiltBrush
 
         void Awake()
         {
+            bool forceMonoscopic =
+                App.UserConfig.Flags.EnableMonoscopicMode ||
+                Keyboard.current[Key.M].isPressed;
+
+            bool disableXr = App.UserConfig.Flags.DisableXrMode ||
+                Keyboard.current[Key.D].isPressed;
+
+            // Allow forcing of monoscopic mode even if launching in XR
+            if (forceMonoscopic && !(App.Config.m_SdkMode == SdkMode.Ods))
+            {
+                App.Config.m_SdkMode = SdkMode.Monoscopic;
+            }
+            else if (!disableXr)
+            {
+                // We no longer initialize XR SDKs automatically
+                // so we need to do it manually
+                Initialize();
+            }
+
             if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 InputDevices.deviceConnected += OnUnityXRDeviceConnected;
@@ -169,6 +191,9 @@ namespace TiltBrush
 
             m_VrCamera.gameObject.SetActive(true);
             m_VrSystem.SetActive(m_VrCamera.gameObject.activeSelf);
+
+            // Skip the rest of the VR setup if we're not using XR
+            if (App.UserConfig.Flags.DisableXrMode || App.UserConfig.Flags.EnableMonoscopicMode) return;
 
 #if OCULUS_SUPPORTED
             // ---------------------------------------------------------------------------------------- //
@@ -340,8 +365,10 @@ namespace TiltBrush
 #if OCULUS_SUPPORTED
                 // N points, clockwise winding (but axis is undocumented), undocumented convexity
                 // In practice, it's clockwise looking along Y-
-                points_RS = OVRManager.boundary.GetGeometry(OVRBoundary.BoundaryType.OuterBoundary)
-                    .Select(v => UnityFromOculus(v)).ToArray();
+                points_RS = OVRManager.boundary
+                    ?.GetGeometry(OVRBoundary.BoundaryType.OuterBoundary)
+                    ?.Select(v => UnityFromOculus(v))
+                    .ToArray();
 #else // OCULUS_SUPPORTED
             // if (App.Config.m_SdkMode == SdkMode.SteamVR)
             // {
@@ -584,7 +611,7 @@ namespace TiltBrush
             //     return new NonVrControllerInfo(behavior);
             //     //return new SteamControllerInfo(behavior);
             // }
-            // else 
+            // else
             if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 return new UnityXRControllerInfo(behavior, isLeftHand);
@@ -764,12 +791,15 @@ namespace TiltBrush
 
         // Returns false if SDK Mode uses an HMD, but it is not initialized.
         // Retruns true if SDK does not have an HMD or if it is correctly initialized.
+        // Monoscopic mode returns true for some reason
+        // but we make use of this to trigger the view-only mode so if that's ever fixed
+        // we need to also fix the conditions for triggering view-only mode
         public bool IsHmdInitialized()
         {
             switch (App.Config.m_SdkMode)
             {
                 case SdkMode.UnityXR:
-                    return UnityEngine.XR.Management.XRGeneralSettings.Instance.Manager.activeLoader != null;
+                    return XRGeneralSettings.Instance?.Manager?.activeLoader != null;
                 default:
                     return true;
             }
@@ -893,6 +923,15 @@ namespace TiltBrush
                 OVRManager.gpuLevel = level;
             }
 #endif // OCULUS_SUPPORTED
+        }
+
+        public void Initialize()
+        {
+            // Null checks are for Linux view mode
+            // TODO: Need to investigate exactly why Linux hits an NRE here
+            // When other platforms don't
+            XRGeneralSettings.Instance?.Manager?.InitializeLoaderSync();
+            XRGeneralSettings.Instance?.Manager?.StartSubsystems();
         }
     }
 }

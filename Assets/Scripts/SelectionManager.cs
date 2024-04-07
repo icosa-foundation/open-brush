@@ -486,9 +486,9 @@ namespace TiltBrush
         {
             bool showSelection = ShouldShowSelectedStrokes;
 
-            if (Config.IsExperimental)
+            if (!App.Config.m_UseBatchedBrushes)
             {
-                // Strokes of type BrushStroke currently only exist in experimental builds.
+                // Strokes of type BrushStroke currently only exist when batching is off
                 // The list of selected strokes might be quite long, so we want to avoid iterating it.
                 foreach (Stroke stroke in m_SelectedStrokes)
                 {
