@@ -483,10 +483,7 @@ namespace TiltBrush
         GameObject LoadUsd(List<string> warnings)
         {
 #if USD_SUPPORTED
-            if (Config.IsExperimental)
-            {
-                return ImportUsd.Import(m_Location.AbsolutePath, out warnings);
-            }
+            return ImportUsd.Import(m_Location.AbsolutePath, out warnings);
 #endif
             m_LoadError = new LoadError("usd not supported");
             return null;
@@ -645,7 +642,7 @@ namespace TiltBrush
 
             bool allowUsd = false;
 #if USD_SUPPORTED
-            allowUsd = Config.IsExperimental;
+            allowUsd = true;
 #endif
 
             // Experimental usd loading.

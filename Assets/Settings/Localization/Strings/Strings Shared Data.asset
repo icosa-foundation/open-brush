@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
   m_Name: Strings Shared Data
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_TableCollectionName: Strings
   m_TableCollectionNameGuidString: c84355079ab3f3e4f8f3812258805f86
   m_Entries:
@@ -3297,6 +3297,18 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 189087250755706880
     m_Key: POPUP_UPLOAD_COMPLETE_MOBILE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 217069105871577088
+    m_Key: VIEW_MODE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 217070349893754880
+    m_Key: VR_NOT_DETECTED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 218558579745579008
+    m_Key: MONOSCOPIC_HELP
     m_Metadata:
       m_Items: []
   m_Metadata:

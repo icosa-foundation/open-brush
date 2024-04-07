@@ -489,42 +489,6 @@ namespace TiltBrush
                 // If we're not locking to a controller, update our transforms now, instead of in LateUpdate.
                 UpdateTransformsFromControllers();
             }
-
-#if JOGGING_ENABLED
-    if (Config.IsExperimental) {
-      // Add jogging motion.
-      Vector3 currentHeadPosition = ViewpointScript.Head.position;
-      if (m_JogLastHeadPosition != Vector3.zero) {
-        Vector3 headMotion = currentHeadPosition - m_JogLastHeadPosition;
-
-        TrTransform newScene = Coords.ScenePose;
-        float motionFactor = Vector3.Dot(headMotion, m_TeleportTargetVector);
-        motionFactor = (motionFactor - m_MotionMinThreshhold) / (m_MotionMaxThreshhold - m_MotionMinThreshhold);
-        motionFactor = Mathf.SmoothStep(0, 1, motionFactor) * (m_MotionMaxThreshhold - m_MotionMinThreshhold);
-        newScene.translation -= m_MotionSpeedup * motionFactor * m_TeleportTargetVector.normalized;
-
-        if (headMotion.y > m_JogMinThreshold) {
-          m_JogStage = JogState.JoggingUp;
-        }
-        if (m_JogStage != JogState.NotJogging) {
-          newScene.translation -= m_JogSpeed * m_TeleportTargetVector;
-          if (m_JogStage == JogState.JoggingUp && headMotion.y < 0) {
-            m_JogStage = JogState.JoggingDown;
-          } else if (m_JogStage == JogState.JoggingDown && headMotion.y >= 0) {
-            m_JogStage = JogState.NotJogging;
-          }
-        }
-
-        // newScene might have gotten just a little bit invalid.
-        // Enforce the invariant that teleport always sends you
-        // to a scene which is MakeValidPose(scene)
-        newScene = SketchControlsScript.MakeValidScenePose(newScene, BoundsRadius);
-        Coords.ScenePose = newScene;
-      }
-      m_JogLastHeadPosition = currentHeadPosition;
-    }
-#endif
-
         }
 
         override public void LateUpdateTool()

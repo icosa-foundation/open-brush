@@ -285,7 +285,7 @@ namespace TiltBrush
             if (rBrush != null)
             {
                 sBrushDescription = rBrush.Description;
-                if (Config.IsExperimental && !string.IsNullOrEmpty(rBrush.m_DescriptionExtra))
+                if (!string.IsNullOrEmpty(rBrush.m_DescriptionExtra))
                 {
                     sBrushDescription = string.Format(
                         "{0} ({1})", rBrush.Description, rBrush.m_DescriptionExtra);
