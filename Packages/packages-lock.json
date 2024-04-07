@@ -7,17 +7,17 @@
       "dependencies": {}
     },
     "com.ixxy.polyhydra.core": {
-      "version": "https://github.com/IxxyXR/polyhydra-core.git?nocache=13#upm",
+      "version": "https://github.com/IxxyXR/polyhydra-core.git#upm",
       "depth": 0,
       "source": "git",
       "dependencies": {
         "com.syomus.proceduraltoolkit": "0.2.3",
         "com.nition.unity-octree": "0.0.1-preview"
       },
-      "hash": "f19733c103207970576cab8de446ee253b57a05a"
+      "hash": "7f16dc1400a9185073cb1a8b561928751cdb43c4"
     },
     "com.ixxy.unitysymmetry": {
-      "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=8#upm",
+      "version": "https://github.com/IxxyXR/unity-symmetry.git#upm",
       "depth": 0,
       "source": "git",
       "dependencies": {},
@@ -263,7 +263,7 @@
         "com.unity.modules.unitywebrequesttexture": "1.0.0",
         "com.unity.modules.unitywebrequestwww": "1.0.0"
       },
-      "hash": "e46c04cb7ed068ee7f31289530f10fbb478906cc"
+      "hash": "214037a894f7e292687b8ba331f5c959c2bcdd8b"
     },
     "com.unity.xr.core-utils": {
       "version": "2.2.3",
