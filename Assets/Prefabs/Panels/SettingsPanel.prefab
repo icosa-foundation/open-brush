@@ -849,7 +849,7 @@ MonoBehaviour:
   m_MeshCollider: {fileID: 6569620}
   m_ParticleBounds: {x: 0, y: 0, z: 0}
   m_PanelPopUpMap:
-  - m_PopUpPrefab: {fileID: 1330139964700006, guid: 8e5788c6293aee146b001d47a0947366,
+  - m_PopUpPrefab: {fileID: 1577505780274820, guid: aa4ede7afc03f5a4b817dc74f61b8422,
       type: 3}
     m_Command: 33
   - m_PopUpPrefab: {fileID: 125142, guid: 7009260f148146a47b18e9c43e3802a2, type: 3}
@@ -2187,7 +2187,7 @@ MonoBehaviour:
   m_CommandParam: -1
   m_CommandParam2: -1
   m_RequiresPopup: 1
-  m_CenterPopupOnButton: 0
+  m_CenterPopupOnButton: 1
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: SETTINGS_PANEL_HELP_BUTTON_POPUP
   m_LocalizedPopup:

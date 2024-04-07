@@ -207,7 +207,7 @@ namespace TiltBrush
 
         override protected void OnUpdate()
         {
-            if (Debug.isDebugBuild && Config.IsExperimental)
+            if (App.UserConfig.Flags.AdvancedKeyboardShortcuts)
             {
                 if (InputManager.m_Instance.GetKeyboardShortcutDown(
                     InputManager.KeyboardShortcut.ToggleHeadStationaryOrWobble))
@@ -269,7 +269,7 @@ namespace TiltBrush
                         break;
                     case Mode.SlowFollow:
                         {
-                            if (Debug.isDebugBuild && Config.IsExperimental)
+                            if (App.UserConfig.Flags.AdvancedKeyboardShortcuts)
                             {
                                 if (InputManager.m_Instance.GetKeyboardShortcutDown(
                                     InputManager.KeyboardShortcut.DecreaseSlowFollowSmoothing))

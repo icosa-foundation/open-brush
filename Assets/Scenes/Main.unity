@@ -1924,12 +1924,12 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2032315650}
-  m_Father: {fileID: 1008953366}
+  m_Father: {fileID: 2084734315}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 79, y: 138}
+  m_AnchoredPosition: {x: 55.054993, y: 55.054993}
   m_SizeDelta: {x: 50, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &66695122
@@ -3652,7 +3652,7 @@ MonoBehaviour:
   m_EnableGlbVersion2: 1
   m_DebugUpload: 1
   m_TbtSettings: {fileID: 11400000, guid: 86eb32a1d469be44a99294025e7795de, type: 2}
-  m_ReplaceBrushesOnLoad: 1
+  m_ReplaceBrushesOnLoad: 0
   m_BrushReplacementMap: []
   m_IntroSketchUsdFilename: 
   m_IntroSketchSpeed: 1
@@ -10715,35 +10715,30 @@ MonoBehaviour:
       shader: {fileID: 4800000, guid: f9a08f3ab0b238144b0879d7e2f23a95, type: 3}
       icon: {fileID: 2800000, guid: bc3c505962723cf44a605851212f406e, type: 3}
       cylindrical: 1
-      experimental: 0
       hdr: 0
   - mode: 1
     info:
       shader: {fileID: 4800000, guid: 364d9b04fdb9b704bb3629008701d08e, type: 3}
       icon: {fileID: 2800000, guid: 83ef8e3ba97ff0547b7be2042945a3b7, type: 3}
       cylindrical: 0
-      experimental: 0
       hdr: 0
   - mode: 2
     info:
       shader: {fileID: 4800000, guid: 6261961f4821a79409739fd23c0c9afd, type: 3}
       icon: {fileID: 2800000, guid: 49bb25c6aaecebd4db489bf5e3f45052, type: 3}
       cylindrical: 0
-      experimental: 1
       hdr: 0
   - mode: 3
     info:
       shader: {fileID: 4800000, guid: 91c5170cd03857741b3200cd3c996595, type: 3}
       icon: {fileID: 2800000, guid: 2950926868f0c9b4db5a871ce378909c, type: 3}
       cylindrical: 1
-      experimental: 1
       hdr: 0
   - mode: 4
     info:
       shader: {fileID: 4800000, guid: 86a7aa4de119e334986bfae53f8889dd, type: 3}
       icon: {fileID: 2800000, guid: f3301a86069400c44bb6d99e01af3ff6, type: 3}
       cylindrical: 1
-      experimental: 1
       hdr: 1
   m_NumColors: 7
 --- !u!114 &652605566
@@ -14018,12 +14013,12 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1344159570}
-  m_Father: {fileID: 1008953366}
+  m_Father: {fileID: 2084734315}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 193.51004, y: 138}
+  m_AnchoredPosition: {x: 169.56503, y: 55.054993}
   m_SizeDelta: {x: 50, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &993616878
@@ -14325,10 +14320,7 @@ RectTransform:
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1382731250}
-  - {fileID: 66695121}
-  - {fileID: 993616877}
-  - {fileID: 1158145242}
+  - {fileID: 2084734315}
   m_Father: {fileID: 8282789105019930893}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -14361,15 +14353,15 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1008953365}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_UiScaleMode: 0
+  m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
+  m_ReferenceResolution: {x: 1366, y: 768}
   m_ScreenMatchMode: 0
   m_MatchWidthOrHeight: 0
   m_PhysicalUnit: 3
@@ -16387,12 +16379,12 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 140066843}
-  m_Father: {fileID: 1008953366}
+  m_Father: {fileID: 2084734315}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 308.01996, y: 138}
+  m_AnchoredPosition: {x: 284.07495, y: 55.054993}
   m_SizeDelta: {x: 50, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1158145243
@@ -18707,12 +18699,12 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 582806602}
-  m_Father: {fileID: 1008953366}
+  m_Father: {fileID: 2084734315}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 193.51004, y: 252.51999}
+  m_AnchoredPosition: {x: 169.56503, y: 169.57498}
   m_SizeDelta: {x: 50, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1382731251
@@ -21951,7 +21943,7 @@ RectTransform:
   m_GameObject: {fileID: 1590074096}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.5, y: 1.5, z: 2.2022}
+  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 822889419}
@@ -21960,7 +21952,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -37.5, y: -37.5}
+  m_AnchoredPosition: {x: -60, y: -60}
   m_SizeDelta: {x: 50, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1590074098
@@ -29752,383 +29744,262 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 778caecccd06f444ba3d7b451cfa06e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_UxExplorationPrefab: {fileID: 0}
   m_PanelMap:
   - m_PanelPrefab: {fileID: 0}
     m_ModeVr: 0
-    m_ModeVrExperimental: 0
-    m_ModeQuestExperimental: 0
     m_ModeMono: 0
     m_ModeQuest: 0
-    m_ModeGvr: 0
     m_Basic: 0
     m_Advanced: 0
   - m_PanelPrefab: {fileID: 1000012735434356, guid: c6dbb15c5329b944497772a3599dd74c,
       type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 1
     m_ModeMono: 1
     m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 1
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 118774, guid: c736e99e0a7c16340b761d84a4e808d4, type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 0
-    m_ModeQuestExperimental: 0
     m_ModeMono: 1
     m_ModeQuest: 0
-    m_ModeGvr: 0
     m_Basic: 1
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 0}
     m_ModeVr: 0
-    m_ModeVrExperimental: 0
-    m_ModeQuestExperimental: 0
     m_ModeMono: 0
     m_ModeQuest: 0
-    m_ModeGvr: 0
     m_Basic: 0
     m_Advanced: 0
   - m_PanelPrefab: {fileID: 1101360102585764085, guid: fa1eb8dde798ea54e95ddf4744cc180e,
       type: 3}
     m_ModeVr: 0
-    m_ModeVrExperimental: 0
-    m_ModeQuestExperimental: 1
     m_ModeMono: 0
     m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 1
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 1865477934442706, guid: b57c606c7c23d6547b7b136a53c8118c,
       type: 3}
     m_ModeVr: 0
-    m_ModeVrExperimental: 0
-    m_ModeQuestExperimental: 1
     m_ModeMono: 0
     m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 1
     m_Advanced: 0
   - m_PanelPrefab: {fileID: 152754, guid: 1f98c5464e57ca042986684865c6c8e0, type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 0
     m_ModeMono: 1
     m_ModeQuest: 0
-    m_ModeGvr: 0
     m_Basic: 1
     m_Advanced: 0
-  - m_PanelPrefab: {fileID: 176644, guid: 82e9561ccc4f9d646b8d328e8a736c62, type: 3}
+  - m_PanelPrefab: {fileID: 0}
     m_ModeVr: 0
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 1
-    m_ModeMono: 1
+    m_ModeMono: 0
     m_ModeQuest: 0
-    m_ModeGvr: 0
     m_Basic: 0
-    m_Advanced: 1
+    m_Advanced: 0
   - m_PanelPrefab: {fileID: 1543516286980528, guid: 8143a5d07ca44f3469740c23ad742c85,
       type: 3}
     m_ModeVr: 0
-    m_ModeVrExperimental: 0
-    m_ModeQuestExperimental: 1
     m_ModeMono: 0
     m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 1002243801905128, guid: d544a96827bc4554993b25909f237c88,
       type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 1
     m_ModeMono: 1
     m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 1
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 199434, guid: ec8bfc3daf3140a40b74246785710580, type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 0
     m_ModeMono: 1
     m_ModeQuest: 0
-    m_ModeGvr: 0
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 109932, guid: 11a71a8b70e19254abe00d5e569f428c, type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 0
     m_ModeMono: 1
     m_ModeQuest: 0
-    m_ModeGvr: 0
     m_Basic: 1
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 8342536447398316161, guid: 16ea55ab72c703c449db50dfbaffc5f5,
       type: 3}
     m_ModeVr: 0
-    m_ModeVrExperimental: 0
-    m_ModeQuestExperimental: 1
     m_ModeMono: 0
     m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 1
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 1119189097058054, guid: 847238bd90b3e504492e50630277ef33,
       type: 3}
     m_ModeVr: 0
-    m_ModeVrExperimental: 0
-    m_ModeQuestExperimental: 0
     m_ModeMono: 0
     m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 1
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 160214, guid: dd236f92a2697d449b2a758b7b42ec17, type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 0
     m_ModeMono: 1
     m_ModeQuest: 0
-    m_ModeGvr: 0
     m_Basic: 1
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 192154, guid: 540f829b5f1ea7743be79be2582e1a38, type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 1
     m_ModeMono: 1
     m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 141494, guid: 0053ac08708148641bd0b629e8e3e2e5, type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 0
     m_ModeMono: 1
     m_ModeQuest: 0
-    m_ModeGvr: 0
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 159900, guid: c5747cd6fc6d92b4b941d58d649877ef, type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 1
     m_ModeMono: 1
     m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 162374, guid: 1cb57c13fa6b529488ff10d4d47cd359, type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 1
     m_ModeMono: 1
     m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 176644, guid: 898df100b7777cd40b9e51b8df90ddfd, type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 1
     m_ModeMono: 1
     m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 1770738498669030, guid: 657b9653200e3f64ca3fd359d83c79cf,
       type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 1
     m_ModeMono: 1
     m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 176644, guid: a7d344d3f87214b40adfb90fb5ab01f5, type: 3}
     m_ModeVr: 0
-    m_ModeVrExperimental: 0
-    m_ModeQuestExperimental: 0
     m_ModeMono: 0
     m_ModeQuest: 0
-    m_ModeGvr: 0
     m_Basic: 0
     m_Advanced: 0
   - m_PanelPrefab: {fileID: 141494, guid: a71be6f60d7230c46b3f4c851f6f5933, type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 0
     m_ModeMono: 1
     m_ModeQuest: 0
-    m_ModeGvr: 0
     m_Basic: 0
     m_Advanced: 1
-  - m_PanelPrefab: {fileID: 118774, guid: ccf3c045c4caee34386327d7023b10cf, type: 3}
+  - m_PanelPrefab: {fileID: 0}
     m_ModeVr: 0
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 1
     m_ModeMono: 0
     m_ModeQuest: 0
-    m_ModeGvr: 0
     m_Basic: 1
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 1284305836696064, guid: 9e8a7ecc535b86c42a6d0752d1590e9f,
       type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 0
     m_ModeMono: 1
     m_ModeQuest: 0
-    m_ModeGvr: 0
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 1769143079597906, guid: dcbd812f016610942a11d04c69dc3a7c,
       type: 3}
     m_ModeVr: 0
-    m_ModeVrExperimental: 0
-    m_ModeQuestExperimental: 1
     m_ModeMono: 0
     m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 1
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 1000816559363234, guid: f5b291cbc819737469486452ea6748b8,
       type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 0
     m_ModeMono: 1
     m_ModeQuest: 0
-    m_ModeGvr: 0
     m_Basic: 1
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 1272310558547734, guid: 6f8d5fd33c3621841bfcab343300ec72,
       type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 0
     m_ModeMono: 1
     m_ModeQuest: 0
-    m_ModeGvr: 0
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 1185791771697282, guid: 757ae00c043360a4bae0ebf6c3ef5254,
       type: 3}
     m_ModeVr: 0
-    m_ModeVrExperimental: 0
-    m_ModeQuestExperimental: 1
     m_ModeMono: 0
     m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 1736516471272333392, guid: 0bc38db0c1bbe92458ab389448255167,
       type: 3}
     m_ModeVr: 0
-    m_ModeVrExperimental: 0
-    m_ModeQuestExperimental: 1
     m_ModeMono: 0
     m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 199434, guid: da22f81315a0e724887dc7c8b38b71b4, type: 3}
     m_ModeVr: 0
-    m_ModeVrExperimental: 0
-    m_ModeQuestExperimental: 1
     m_ModeMono: 0
     m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 4470684113445036128, guid: 67d9c3f0bfc633440901c0281f11b46e,
       type: 3}
     m_ModeVr: 0
-    m_ModeVrExperimental: 0
-    m_ModeQuestExperimental: 1
     m_ModeMono: 0
     m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 1513704753240124, guid: 16a494a2ae54cba4d94ef4c0515bdaee,
       type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 1
     m_ModeMono: 1
     m_ModeQuest: 1
-    m_ModeGvr: 0
     m_Basic: 0
     m_Advanced: 1
-  - m_PanelPrefab: {fileID: 176644, guid: a7d344d3f87214b40adfb90fb5ab01f5, type: 3}
+  - m_PanelPrefab: {fileID: 0}
     m_ModeVr: 0
-    m_ModeVrExperimental: 0
-    m_ModeQuestExperimental: 0
     m_ModeMono: 0
     m_ModeQuest: 0
-    m_ModeGvr: 0
     m_Basic: 0
     m_Advanced: 0
   - m_PanelPrefab: {fileID: 1272310558547734, guid: 38a4b95a5f6824c41994709bfbd012ad,
       type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 0
     m_ModeMono: 1
     m_ModeQuest: 0
-    m_ModeGvr: 0
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 199434, guid: 87deb34c3f9672645984b6032a6c1f8d, type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 1
     m_ModeMono: 1
     m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 199434, guid: de22d465caf3f20419b98ce5290a7e57, type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 1
     m_ModeMono: 1
     m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 199434, guid: 6dafd36d9488aba4a998d2ef69ea2553, type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 1
     m_ModeMono: 1
     m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 176644, guid: d620d9effac3e6c4eaae746d85edf13c, type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 1
     m_ModeMono: 1
     m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 160214, guid: 2b8f8dc5c7f70ba4eaf8f6a7181d8fc7, type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 1
     m_ModeMono: 1
     m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 0
     m_Advanced: 1
   m_WandPanelsRotationFeedbackInterval: 20
@@ -30450,7 +30321,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1802399861}
   - component: {fileID: 1802399860}
-  - component: {fileID: 1802399859}
   - component: {fileID: 1802399858}
   - component: {fileID: 1802399862}
   m_Layer: 5
@@ -30477,29 +30347,6 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
---- !u!114 &1802399859
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1802399857}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_UiScaleMode: 0
-  m_ReferencePixelsPerUnit: 100
-  m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
-  m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0
-  m_PhysicalUnit: 3
-  m_FallbackScreenDPI: 96
-  m_DefaultSpriteDPI: 96
-  m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 0
 --- !u!223 &1802399860
 Canvas:
   m_ObjectHideFlags: 0
@@ -34335,6 +34182,46 @@ Transform:
   m_Father: {fileID: 1043378877}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: -180, z: 0}
+--- !u!1 &2084734314
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2084734315}
+  m_Layer: 5
+  m_Name: Touchscreen Keys Overlay
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &2084734315
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2084734314}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.75, y: 0.75, z: 0.75}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1382731250}
+  - {fileID: 66695121}
+  - {fileID: 993616877}
+  - {fileID: 1158145242}
+  m_Father: {fileID: 1008953366}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 288.58, y: 279.5}
+  m_SizeDelta: {x: 750, y: 500}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &2088774266
 GameObject:
   m_ObjectHideFlags: 0
@@ -35039,10 +34926,10 @@ RectTransform:
   m_Father: {fileID: 1802399861}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 493.5, y: 346}
-  m_SizeDelta: {x: 75, y: 75}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2129205351
 MonoBehaviour:
