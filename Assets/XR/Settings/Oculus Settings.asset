@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Oculus Settings
   m_EditorClassIdentifier: 
   m_StereoRenderingModeDesktop: 0
-  m_StereoRenderingModeAndroid: 0
+  m_StereoRenderingModeAndroid: 2
   SharedDepthBuffer: 1
   DepthSubmission: 1
   DashSupport: 1
