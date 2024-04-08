@@ -8093,11 +8093,13 @@ MonoBehaviour:
 
     Quality Level: ~~
 
-    # FPS High: ~~~~ (> ~~)
+    #
+    FPS High: ~~~~ (> ~~)
 
     # GPU Low: ~~~~ (< ~~.~~)
 
-    # FPS Low: ~~~~ (< ~~)
+    # FPS Low: ~~~~ (<
+    ~~)
 
     # GPU High: ~~~~ (> ~~.~~)
 
@@ -29620,7 +29622,8 @@ MonoBehaviour:
   m_QuestSideLoadingHowToURL: https://docs.openbrush.app/user-guide/using-reference-images-on-oculus-quest
   m_ContributionPromoText: 'Open Brush is a free app entirely run by volunteers.
 
-    If you enjoy the app, please consider donating in the settings menu!'
+    If
+    you enjoy the app, please consider donating in the settings menu!'
   m_ContributionURL: https://opencollective.com/icosa
   m_WorldTransformMinScale: 0.1
   m_WorldTransformMaxScale: 10
@@ -29974,6 +29977,12 @@ MonoBehaviour:
     m_ModeQuest: 1
     m_Basic: 0
     m_Advanced: 1
+  - m_PanelPrefab: {fileID: 199434, guid: c745e82c911f0df4d8abea9c33e3ae6f, type: 3}
+    m_ModeVr: 1
+    m_ModeMono: 1
+    m_ModeQuest: 1
+    m_Basic: 0
+    m_Advanced: 1
   - m_PanelPrefab: {fileID: 199434, guid: 6dafd36d9488aba4a998d2ef69ea2553, type: 3}
     m_ModeVr: 1
     m_ModeMono: 1
@@ -29990,24 +29999,6 @@ MonoBehaviour:
     m_ModeVr: 1
     m_ModeMono: 1
     m_ModeQuest: 1
-    m_Basic: 0
-    m_Advanced: 1
-  - m_PanelPrefab: {fileID: 176644, guid: 82e9561ccc4f9d646b8d328e8a736c62, type: 3}
-    m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 1
-    m_ModeMono: 1
-    m_ModeQuest: 0
-    m_ModeGvr: 0
-    m_Basic: 0
-    m_Advanced: 1
-  - m_PanelPrefab: {fileID: 199434, guid: c745e82c911f0df4d8abea9c33e3ae6f, type: 3}
-    m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 1
-    m_ModeMono: 1
-    m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 0
     m_Advanced: 1
   m_WandPanelsRotationFeedbackInterval: 20

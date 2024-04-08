@@ -107,7 +107,6 @@ namespace TiltBrush
             }
             return null;
         }
-        public Brush DefaultBrush => m_DefaultBrush;
 
         public IEnumerable<Brush> AllBrushes => KeepOrderDistinct(
           m_BuiltinBrushes.Values.Concat(m_LibraryBrushes.Values.Concat(m_SceneBrushes.Values)));
