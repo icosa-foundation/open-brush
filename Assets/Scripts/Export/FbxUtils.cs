@@ -55,61 +55,69 @@ namespace TiltBrush
         }
 
 #if FBX_SUPPORTED
-  // FbxDouble3
+        // FbxDouble3
 
-  public static Vector3 ToUVector3(this FbxDouble3 d) {
-    return new Vector3((float)d.X, (float)d.Y, (float)d.Z);
-  }
+        public static Vector3 ToUVector3(this FbxDouble3 d)
+        {
+            return new Vector3((float)d.X, (float)d.Y, (float)d.Z);
+        }
 
-  // FbxVector4
+        // FbxVector4
 
-  public static Vector3 ToUVector3(this FbxVector4 d) {
-    return new Vector3((float)d.X, (float)d.Y, (float)d.Z);
-  }
+        public static Vector3 ToUVector3(this FbxVector4 d)
+        {
+            return new Vector3((float)d.X, (float)d.Y, (float)d.Z);
+        }
 
-  public static Vector4 ToUVector4(this FbxVector4 d) {
-    return new Vector4((float)d.X, (float)d.Y, (float)d.Z, (float)d.W);
-  }
+        public static Vector4 ToUVector4(this FbxVector4 d)
+        {
+            return new Vector4((float)d.X, (float)d.Y, (float)d.Z, (float)d.W);
+        }
 
-  // FbxDouble4
+        // FbxDouble4
 
-  public static Vector3 ToUVector3(this FbxDouble4 d) {
-    return new Vector3((float)d.X, (float)d.Y, (float)d.Z);
-  }
+        public static Vector3 ToUVector3(this FbxDouble4 d)
+        {
+            return new Vector3((float)d.X, (float)d.Y, (float)d.Z);
+        }
 
-  public static Vector4 ToUVector4(this FbxDouble4 d) {
-    return new Vector4((float)d.X, (float)d.Y, (float)d.Z, (float)d.W);
-  }
+        public static Vector4 ToUVector4(this FbxDouble4 d)
+        {
+            return new Vector4((float)d.X, (float)d.Y, (float)d.Z, (float)d.W);
+        }
 
-  // FbxQuaternion
+        // FbxQuaternion
 
-  public static Quaternion ToUQuaternion(this FbxQuaternion fbx) {
-    var q = new Quaternion();
-    // the indexing order of FbxQuaternion is undocumented; w=3
-    // was determined empirically.
-    q.x = (float)fbx.GetAt(0);
-    q.y = (float)fbx.GetAt(1);
-    q.z = (float)fbx.GetAt(2);
-    q.w = (float)fbx.GetAt(3);
-    return q;
-  }
+        public static Quaternion ToUQuaternion(this FbxQuaternion fbx)
+        {
+            var q = new Quaternion();
+            // the indexing order of FbxQuaternion is undocumented; w=3
+            // was determined empirically.
+            q.x = (float)fbx.GetAt(0);
+            q.y = (float)fbx.GetAt(1);
+            q.z = (float)fbx.GetAt(2);
+            q.w = (float)fbx.GetAt(3);
+            return q;
+        }
 
-  public static FbxQuaternion ToFbxQuaternion(this Quaternion q) {
-    return new FbxQuaternion(q.x, q.y, q.z, q.w);
-  }
+        public static FbxQuaternion ToFbxQuaternion(this Quaternion q)
+        {
+            return new FbxQuaternion(q.x, q.y, q.z, q.w);
+        }
 
-  // FbxAMatrix
+        // FbxAMatrix
 
-  /// Does not do any coordinate-convention switching.
-  public static void ToTRS(
-      this FbxAMatrix input,
-      out Vector3 translation,
-      out Quaternion rotation,
-      out Vector3 scale) {
-    translation = input.GetT().ToUVector3();
-    rotation = input.GetQ().ToUQuaternion();
-    scale = input.GetS().ToUVector3();
-  }
+        /// Does not do any coordinate-convention switching.
+        public static void ToTRS(
+            this FbxAMatrix input,
+            out Vector3 translation,
+            out Quaternion rotation,
+            out Vector3 scale)
+        {
+            translation = input.GetT().ToUVector3();
+            rotation = input.GetQ().ToUQuaternion();
+            scale = input.GetS().ToUVector3();
+        }
 #endif
     }
 

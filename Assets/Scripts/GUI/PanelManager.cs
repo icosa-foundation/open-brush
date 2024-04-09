@@ -2325,8 +2325,9 @@ namespace TiltBrush
 
         public void OpenPanel(BasePanel.PanelType type, TrTransform trSpawnXf)
         {
-            if (type != BasePanel.PanelType.SketchSurface && type != BasePanel.PanelType.Color &&
-                type != BasePanel.PanelType.Brush)
+            if ((type != BasePanel.PanelType.SketchSurface
+                && type != BasePanel.PanelType.Color
+                && type != BasePanel.PanelType.Brush))
             {
                 TrTransform xfSpawn = trSpawnXf;
                 xfSpawn.scale = 0.0f;
@@ -2353,6 +2354,22 @@ namespace TiltBrush
 
                             PrimeCollisionSimForWidgets(m_AllPanels[i].m_Widget);
                         }
+                    }
+                }
+            }
+        }
+
+        // Used by API
+        public void HidePanel(BasePanel.PanelType panelType)
+        {
+            for (int i = 0; i < m_AllPanels.Count; ++i)
+            {
+                if (m_AllPanels[i].m_Panel.Type == panelType)
+                {
+                    if (m_AllPanels[i].m_Widget)
+                    {
+                        m_AllPanels[i].m_Panel.ResetPanel();
+                        m_AllPanels[i].m_Widget.Show(false, false);
                     }
                 }
             }
