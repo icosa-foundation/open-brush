@@ -2359,22 +2359,6 @@ namespace TiltBrush
             }
         }
 
-        // Used by API
-        public void HidePanel(BasePanel.PanelType panelType)
-        {
-            for (int i = 0; i < m_AllPanels.Count; ++i)
-            {
-                if (m_AllPanels[i].m_Panel.Type == panelType)
-                {
-                    if (m_AllPanels[i].m_Widget)
-                    {
-                        m_AllPanels[i].m_Panel.ResetPanel();
-                        m_AllPanels[i].m_Widget.Show(false, false);
-                    }
-                }
-            }
-        }
-
         public bool IsPanelOpen(BasePanel.PanelType type)
         {
             for (int i = 0; i < m_AllPanels.Count; ++i)
