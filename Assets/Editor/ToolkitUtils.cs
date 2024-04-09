@@ -186,22 +186,24 @@ namespace TiltBrush
         }
 
 #if FBX_SUPPORTED
-  [MenuItem("Open Brush/Toolkit/Export FBX")]
-  private static void ExportBrushStrokesFbx() {
-    var current = SaveLoadScript.m_Instance.SceneFile;
-    string basename = (current.Valid)
-      ? Path.GetFileNameWithoutExtension(current.FullPath).Replace(" ", "_")
-      : "Untitled";
+        [MenuItem("Open Brush/Toolkit/Export FBX")]
+        private static void ExportBrushStrokesFbx()
+        {
+            var current = SaveLoadScript.m_Instance.SceneFile;
+            string basename = (current.Valid)
+              ? Path.GetFileNameWithoutExtension(current.FullPath).Replace(" ", "_")
+              : "Untitled";
 
-    string directoryName = FileUtils.GenerateNonexistentFilename(
-      App.UserExportPath(), basename, "");
-    if (!FileUtils.InitializeDirectoryWithUserError(directoryName,
-                                                    "Failed to export")) {
-      return;
-    }
-    string fbxName = Path.Combine(directoryName, basename + ".fbx");
-    ExportFbx.Export(fbxName, ExportFbx.kFbxAscii);
-  }
+            string directoryName = FileUtils.GenerateNonexistentFilename(
+              App.UserExportPath(), basename, "");
+            if (!FileUtils.InitializeDirectoryWithUserError(directoryName,
+                                                            "Failed to export"))
+            {
+                return;
+            }
+            string fbxName = Path.Combine(directoryName, basename + ".fbx");
+            ExportFbx.Export(fbxName, ExportFbx.kFbxAscii);
+        }
 #endif
 
         // Collects all brushes and their assets, and exports them into a folder that can be copied into into Tilt Brush Toolkit's Unity SDK
