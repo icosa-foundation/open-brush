@@ -3288,7 +3288,7 @@ MonoBehaviour:
   m_Command: 15
   m_CommandParam: -1
   m_CommandParam2: -1
-  m_RequiresPopup: 1
+  m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0.5, z: 0}
   m_PopupText: 
