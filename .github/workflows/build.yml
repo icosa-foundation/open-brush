@@ -917,6 +917,11 @@ jobs:
         with:
           name: MacOS (signed)
           path: build_macos
+      - name: Download Build Artifacts (Linux)
+        uses: actions/download-artifact@v4
+        with:
+          name: Linux
+          path: build_linux
       - name: Upload Build
         run: |
           cd build_macos
@@ -926,6 +931,7 @@ jobs:
           jinjanate Support/steam/app.vdf.j2 > app.vdf
           jinjanate Support/steam/main_depot.win.vdf.j2 > build_windows_openxr/main_depot.vdf
           jinjanate Support/steam/main_depot.mac.vdf.j2 > build_macos/main_depot.vdf
+          jinjanate Support/steam/main_depot.linux.vdf.j2 > build_linux/main_depot.vdf
           jinjanate Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
           steamcmd +login $STEAM_USERNAME +run_app_build $(pwd)/app.vdf +quit
         env:
@@ -935,6 +941,7 @@ jobs:
           OPEN_BRUSH_APP_ID: ${{ vars.STEAM_APP_ID }}
           OPEN_BRUSH_WINDOWS_DEPOT_ID: ${{ vars.STEAM_WINDOWS_DEPOT_ID }}
           OPEN_BRUSH_MAC_DEPOT_ID: ${{ vars.STEAM_MAC_DEPOT_ID }}
+          OPEN_BRUSH_LINUX_DEPOT_ID: ${{ vars.STEAM_LINUX_DEPOT_ID }}
           OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
           CHANNEL: beta
       - name: Update steam login secret

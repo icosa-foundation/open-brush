@@ -1,0 +1,25 @@
+"DepotBuildConfig"
+{
+    // # Set your assigned depot ID here
+    "DepotID" "{{ OPEN_BRUSH_LINUX_DEPOT_ID }}"
+
+    "ContentRoot" "build_linux/StandaloneLinux64"
+
+    "FileMapping"
+    {
+        // Include all files in the build output directory (ContentRoot)
+        "LocalPath" "*"
+
+        // Destination is the main install directory
+        "DepotPath" "."
+
+        // If LocalPath contains wildcards, setting this means that all
+        // matching files within subdirectories of LocalPath will also
+        // be included.
+        "recursive" "1"
+    }
+
+    // but exclude all symbol files
+    "FileExclusion" "*.pdb"
+    "FileExclusion" "build_log.txt"
+}
