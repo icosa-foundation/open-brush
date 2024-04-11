@@ -107,6 +107,7 @@ namespace TiltBrush
                 for (int i = 0; i < m_Icons.Length; ++i)
                 {
                     var imageIcon = m_Icons[i] as BackgroundImageIcon;
+                    var btn = imageIcon.Button as LoadBackgroundImageButton;
                     if (!imageIcon.TextureAssigned)
                     {
                         int iMapIndex = m_IndexOffset + i;
@@ -114,7 +115,7 @@ namespace TiltBrush
                         Texture2D rTexture = BackgroundImageCatalog.m_Instance.GetImageIcon(iMapIndex, out aspect);
                         if (rTexture != null)
                         {
-                            imageIcon.Button.SetButtonTexture(rTexture, aspect);
+                            btn.Set360ButtonTexture(rTexture, aspect);
                             imageIcon.TextureAssigned = true;
                         }
                         else

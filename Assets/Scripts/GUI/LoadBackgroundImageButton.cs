@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using UnityEngine;
 namespace TiltBrush
 {
 
@@ -52,5 +53,14 @@ namespace TiltBrush
                 SetButtonAvailable(available);
             }
         }
+
+        public void Set360ButtonTexture(Texture2D rTexture, float aspect = -1)
+        {
+            float isStereo = aspect > 1f ? 0f : 1f;
+            m_CurrentButtonTexture = rTexture;
+            m_ButtonRenderer.material.mainTexture = rTexture;
+            m_ButtonRenderer.material.SetFloat("_Stereoscopic", isStereo);
+        }
+
     }
 } // namespace TiltBrush
