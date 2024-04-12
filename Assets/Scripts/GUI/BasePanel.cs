@@ -1511,7 +1511,7 @@ namespace TiltBrush
 
             if (explicitPosition)
             {
-                popUp.transform.position = position;
+                popUp.transform.localPosition = position;
             }
             else
             {

@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+
 namespace TiltBrush
 {
     public class OpenListPickerPopupButton : BaseButton
@@ -52,7 +53,7 @@ namespace TiltBrush
                 float zOffset = App.Config.m_SdkMode == SdkMode.Monoscopic ? 0.3f : -0.3f;
                 panel.CreatePopUp(
                     m_ListPickerPopup.gameObject,
-                    transform.position + Vector3.forward * zOffset,
+                    transform.position + (transform.rotation * Vector3.forward * zOffset),
                     true, true
                 );
                 ResetState();
