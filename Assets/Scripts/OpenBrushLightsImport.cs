@@ -38,12 +38,15 @@ namespace UnityGLTF.Plugins
                 switch (light.type)
                 {
                     case LightType.Directional:
-                        light.intensity = intensity * 0.01f;
+                        light.intensity = intensity * 0.001f;
                         break;
                     case LightType.Point:
+                        light.range = range;
+                        light.intensity = intensity * 0.00001f;
+                        break;
                     case LightType.Spot:
                         light.range = range;
-                        light.intensity = intensity * 0.0001f;
+                        light.intensity = intensity * 0.00001f;
                         break;
                 }
             }
