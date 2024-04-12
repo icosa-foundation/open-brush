@@ -84,10 +84,10 @@ def process_request(request):
     # Catch OSError and re-raise with a more informative message
     try:
         im.save(request["destination"])
-    except OSError as e:
+    except OSError as ex:
         raise OSError(
-            f"Error saving {request['destination']}: {e.strerror} (code {e.errno})"
-        )
+            f"Error saving {request['destination']}: {ex.strerror} (code {ex.errno})"
+        ) from ex
 
 
 def main():
