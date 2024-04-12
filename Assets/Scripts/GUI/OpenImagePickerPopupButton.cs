@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -22,6 +23,19 @@ namespace TiltBrush
         public Transform m_ImagePickerPopup;
         public string m_PropertyName;
         public int ImageIndex { get; set; }
+
+        // Scripts can define a limited set of images to display in the picker
+        public List<ReferenceImage> ImageSet;
+
+        public ReferenceImage GetImage(int index)
+        {
+            if (ImageSet == null)
+            {
+                return ReferenceImageCatalog.m_Instance.IndexToImage(index);
+            }
+            return ImageSet[index];
+        }
+
         [SerializeField] private UnityEvent<OpenImagePickerPopupButton> m_AfterPopupAction;
 
         protected override void OnButtonPressed()
@@ -32,7 +46,7 @@ namespace TiltBrush
                 float zOffset = App.Config.m_SdkMode == SdkMode.Monoscopic ? 0.3f : -0.3f;
                 panel.CreatePopUp(
                     m_ImagePickerPopup.gameObject,
-                    transform.position + Vector3.forward * zOffset,
+                    transform.position + (transform.rotation * Vector3.forward * zOffset),
                     true, true
                 );
                 ResetState();
@@ -71,6 +85,19 @@ namespace TiltBrush
         {
             ImageIndex = itemIndex;
             m_AfterPopupAction?.Invoke(this);
+        }
+        public int GetImageCount()
+        {
+            return ImageSet.Count;
+        }
+
+        public int FilenameToIndex(string filename)
+        {
+            if (ImageSet == null)
+            {
+                return ReferenceImageCatalog.m_Instance.FilenameToIndex(filename);
+            }
+            return ImageSet.FindIndex(image => image.FileName == filename);
         }
     }
 } // namespace TiltBrush
