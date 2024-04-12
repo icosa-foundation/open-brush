@@ -372,8 +372,7 @@ namespace TiltBrush
                 newRoot.transform.SetParent(transform);
                 newRoot.name = $"LocalFile:{m_Model.RelativePath}#{m_Subtree}";
                 m_ObjModelScript = newRoot.AddComponent<ObjModelScript>();
-
-                node.SetParent(newRoot.transform);
+                node.SetParent(newRoot.transform, worldPositionStays: true);
 
                 oldRoot.gameObject.SetActive(false); // TODO destroy might fail on first load so also hide
                 Destroy(oldRoot.gameObject);
@@ -393,19 +392,43 @@ namespace TiltBrush
             }
         }
 
-        public Bounds CalcBoundsGltf(GameObject go)
+        public void RecalculateColliderBounds()
         {
+            var widgetTransform = m_ObjModelScript.transform.parent;
+
+            // Save the widget's original transform
+            var oldParent = widgetTransform.parent;
+            var oldPosition = widgetTransform.localPosition;
+            var oldRotation = widgetTransform.localRotation;
+            var oldScale = widgetTransform.localScale;
+
+            // Move it to the origin
+            widgetTransform.SetParent(null);
+            widgetTransform.localPosition = Vector3.zero;
+            widgetTransform.localRotation = Quaternion.identity;
+            widgetTransform.localScale = Vector3.one;
+
+            // Reset the collider gameobject transform
+            m_BoxCollider.transform.localPosition = Vector3.zero;
+            m_BoxCollider.transform.localRotation = Quaternion.identity;
+            m_BoxCollider.transform.localScale = Vector3.one;
+
+            // Collect the renderers
+            var meshRenderers = m_ObjModelScript
+                .m_MeshChildren
+                .Select(x => x.GetComponent<MeshRenderer>());
+            var skinnedMeshRenderers = m_ObjModelScript.m_SkinnedMeshChildren;
+
+            // Calculate the bounds
             Bounds b = new Bounds();
             bool first = true;
-            var boundsList = go.GetComponentsInChildren<MeshRenderer>().Select(x => x.bounds).ToList();
-            var skinnedMeshRenderers = go.GetComponentsInChildren<SkinnedMeshRenderer>();
+            var boundsList = meshRenderers.Select(x => x.bounds).ToList();
             boundsList.AddRange(skinnedMeshRenderers.Select(x => x.bounds));
-            SceneLightGizmo gizmoPrefab = WidgetManager.m_Instance.SceneLightGizmoPrefab;
-            var lightsList = go.GetComponentsInChildren<Light>(includeInactive: true).Select(light => gizmoPrefab.GetBoundsForLight(light));
-            boundsList.AddRange(lightsList);
 
-            foreach (Bounds bounds in boundsList)
+            for (var i = 0; i < boundsList.Count; i++)
             {
+                var bounds = boundsList[i];
+
                 if (first)
                 {
                     b = bounds;
@@ -416,18 +439,16 @@ namespace TiltBrush
                     b.Encapsulate(bounds);
                 }
             }
-            return b;
-        }
 
-        public void RecalculateColliderBounds()
-        {
-            var root = m_ObjModelScript.transform;
-            m_MeshBounds = CalcBoundsGltf(root.gameObject);
-            m_BoxCollider.transform.localPosition = m_ObjModelScript.transform.localPosition;
-            m_BoxCollider.transform.localRotation = m_ObjModelScript.transform.localRotation;
-            m_BoxCollider.transform.localScale = m_ObjModelScript.transform.localScale;
-            m_BoxCollider.center = m_MeshBounds.center;
+            m_MeshBounds = b;
+            m_BoxCollider.transform.localPosition = m_MeshBounds.center;
             m_BoxCollider.size = m_MeshBounds.size;
+
+            // Restore the widget's original transform
+            widgetTransform.SetParent(oldParent);
+            widgetTransform.localPosition = oldPosition;
+            widgetTransform.localRotation = oldRotation;
+            widgetTransform.localScale = oldScale;
         }
 
         public override float GetActivationScore(Vector3 vControllerPos, InputManager.ControllerName name)
@@ -808,6 +829,14 @@ namespace TiltBrush
                 var gizmo = tr.GetComponent<SceneLightGizmo>();
                 gizmo.SetupLightGizmos(light);
             }
+        }
+
+        public void UpdateBatchInfo()
+        {
+            // Set a new batchId on this model so it can be picked up in GPU intersections.
+            m_BatchId = GpuIntersector.GetNextBatchId();
+            HierarchyUtils.RecursivelySetMaterialBatchID(m_ModelInstance, m_BatchId);
+            WidgetManager.m_Instance.AddWidgetToBatchMap(this, m_BatchId);
         }
     }
 } // namespace TiltBrush

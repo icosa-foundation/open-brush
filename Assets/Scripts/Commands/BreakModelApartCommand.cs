@@ -199,7 +199,10 @@ namespace TiltBrush
                     newSubtree = string.Join('/', parts.Take(parts.Length - 1)) + path;
                 }
                 newWidget.Subtree = newSubtree;
+                newWidget.name = $"{newWidget.name} Subtree:{path}";
                 newWidget.SyncHierarchyToSubtree(previousSubtree);
+                newWidget.RegisterHighlight();
+                newWidget.UpdateBatchInfo();
 
                 // If a ModelWidget contains no more meshes
                 // then try and convert it to multiple LightWidgets
