@@ -90,27 +90,30 @@ namespace TiltBrush
             return new Vector3(pos.x * scale.x, pos.y * scale.y, pos.z * scale.z);
         }
 
-        private static void _PositionWidget(GrabWidget widget, Vector3 position)
+        private static void _SetWidgetPosition(GrabWidget widget, Vector3 position)
         {
+            var tr = widget.LocalTransform;
+            tr.translation = position;
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                new MoveWidgetCommand(
-                    widget,
-                    TrTransform.T(position),
-                    widget.CustomDimension,
-                    true
-                )
+                new MoveWidgetCommand(widget, tr, widget.CustomDimension, true)
             );
         }
 
-        private static void _ScaleWidget(GrabWidget widget, float scale)
+        private static void _SetWidgetRotation(GrabWidget widget, Vector3 rotation)
         {
+            var tr = widget.LocalTransform;
+            tr.rotation = Quaternion.Euler(rotation);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                new MoveWidgetCommand(
-                    widget,
-                    TrTransform.S(scale),
-                    widget.CustomDimension,
-                    true
-                )
+                new MoveWidgetCommand(widget, tr, widget.CustomDimension, true)
+            );
+        }
+
+        private static void _SetWidgetScale(GrabWidget widget, float scale)
+        {
+            var tr = widget.LocalTransform;
+            tr.scale = scale;
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new MoveWidgetCommand(widget, tr, widget.CustomDimension, true)
             );
         }
 
