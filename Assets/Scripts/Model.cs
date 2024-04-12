@@ -518,19 +518,22 @@ namespace TiltBrush
             m_LoadError = new LoadError("fbx not supported");
             return null;
 #else
-    try {
-      var reader = new FbxReader(m_Location.AbsolutePath);
-      var (gameObject, warnings, collector) = reader.Import();
-      warningsOut.AddRange(warnings);
-      m_ImportMaterialCollector = collector;
-      m_AllowExport = (m_ImportMaterialCollector != null);
-      return gameObject;
-    } catch (Exception ex) {
-      m_LoadError = new LoadError("Invalid data", ex.Message);
-      m_AllowExport = false;
-      Debug.LogException(ex);
-      return null;
-    }
+            try
+            {
+                var reader = new FbxReader(m_Location.AbsolutePath);
+                var (gameObject, warnings, collector) = reader.Import();
+                warningsOut.AddRange(warnings);
+                m_ImportMaterialCollector = collector;
+                m_AllowExport = (m_ImportMaterialCollector != null);
+                return gameObject;
+            }
+            catch (Exception ex)
+            {
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+                return null;
+            }
 #endif
         }
 

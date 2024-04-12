@@ -245,6 +245,5 @@ namespace TiltBrush
                 cam.cullingMask = ~(~cam.cullingMask | mask);
             }
         }
-
     }
 }
