@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.watertrans.glyphloader": "https://github.com/icosa-mirror/GlyphLoader-Unity.git#upm",
     "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
     "com.meta.xr.sdk.platform": "56.0.0-preview",
     "com.meta.xr.sdk.utilities": "https://github.com/icosa-mirror/com.meta.xr.sdk.core.git#56.0.0-openbrush",
