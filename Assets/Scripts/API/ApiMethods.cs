@@ -370,6 +370,33 @@ namespace TiltBrush
             return image;
         }
 
+        [ApiEndpoint("text.add", "Adds a text widget to the sketch")]
+        public static void AddText(string text)
+        {
+            var tr = TrTransform.TR(
+                ApiManager.Instance.BrushPosition,
+                ApiManager.Instance.BrushRotation
+            );
+
+            var cmd = new CreateWidgetCommand(
+                WidgetManager.m_Instance.TextWidgetPrefab, tr, null, true
+            );
+
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+
+            var textWidget = cmd.Widget as TextWidget;
+            if (textWidget != null)
+            {
+                textWidget.Text = text;
+                textWidget.Show(true);
+                cmd.SetWidgetCost(textWidget.GetTiltMeterCost());
+            }
+
+            WidgetManager.m_Instance.WidgetsDormant = false;
+            SketchControlsScript.m_Instance.EatGazeObjectInput();
+            SelectionManager.m_Instance.RemoveFromSelection(false);
+        }
+
         [ApiEndpoint("video.import", "Imports a video given a url or a filename in Media Library\\Videos")]
         public static VideoWidget ImportVideo(string location)
         {
