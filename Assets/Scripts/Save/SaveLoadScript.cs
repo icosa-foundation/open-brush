@@ -263,13 +263,17 @@ namespace TiltBrush
         }
 
         // Create a name that is guaranteed not to exist.
-        public string GenerateNewUntitledFilename(string directory, string extension)
+        public string GenerateNewFilename(string desiredFilename, string directory, string extension)
         {
             int iIndex = m_LastNonexistentFileIndex;
             int iSanity = 9999;
             while (iSanity > 0)
             {
-                string attempt = UNTITLED_PREFIX + iIndex.ToString();
+                string attempt = desiredFilename;
+                if (iIndex > 0)
+                {
+                    attempt += "_" + iIndex;
+                }
                 --iSanity;
                 ++iIndex;
 
@@ -280,35 +284,23 @@ namespace TiltBrush
                     return attempt;
                 }
             }
-
             Debug.Assert(false, "Could not generate a name");
             return null;
+        }
+
+
+        // Create a name that is guaranteed not to exist.
+        public string GenerateNewUntitledFilename(string directory, string extension)
+        {
+            string filename = UNTITLED_PREFIX;
+            return GenerateNewFilename(filename, directory, extension);
         }
 
         // Create a Tiltasaurus based name that is guaranteed not to exist.
         public string GenerateNewTiltasaurusFilename(string directory, string extension)
         {
-            int iIndex = 0;
-            int iSanity = 9999;
-            while (iSanity > 0)
-            {
-                string attempt = TILTASAURUS_PREFIX + Tiltasaurus.m_Instance.Prompt;
-                if (iIndex > 0)
-                {
-                    attempt += "_" + iIndex.ToString();
-                }
-                --iSanity;
-                ++iIndex;
-
-                attempt = Path.Combine(directory, attempt) + extension;
-                if (!File.Exists(attempt) && !Directory.Exists(attempt))
-                {
-                    return attempt;
-                }
-            }
-
-            Debug.Assert(false, "Could not generate a name");
-            return null;
+            string filename = TILTASAURUS_PREFIX + Tiltasaurus.m_Instance.Prompt;
+            return GenerateNewFilename(filename, directory, extension);
         }
 
         public void SaveOverwriteOrNewIfNotAllowed()
@@ -355,11 +347,21 @@ namespace TiltBrush
             }
         }
 
-        public DiskSceneFileInfo GetNewNameSceneFileInfo(bool tiltasaurusMode = false)
+        public DiskSceneFileInfo GetNewNameSceneFileInfo(bool tiltasaurusMode = false, string filename = null)
         {
-            DiskSceneFileInfo fileInfo = tiltasaurusMode
-                ? new DiskSceneFileInfo(GenerateNewTiltasaurusFilename(m_SaveDir, TILT_SUFFIX))
-                : new DiskSceneFileInfo(GenerateNewUntitledFilename(m_SaveDir, TILT_SUFFIX));
+            string uniquePath;
+            // If no filename is passed in then generate one
+            if (string.IsNullOrWhiteSpace(filename))
+            {
+                uniquePath = tiltasaurusMode
+                    ? GenerateNewTiltasaurusFilename(m_SaveDir, TILT_SUFFIX)
+                    : GenerateNewUntitledFilename(m_SaveDir, TILT_SUFFIX);
+            }
+            else
+            {
+                uniquePath = GenerateNewFilename(filename, m_SaveDir, TILT_SUFFIX);
+            }
+            DiskSceneFileInfo fileInfo = new DiskSceneFileInfo(uniquePath);
             if (m_LastSceneFile.Valid)
             {
                 fileInfo.SourceId = TransferredSourceIdFrom(m_LastSceneFile);
@@ -407,9 +409,7 @@ namespace TiltBrush
 
         public IEnumerator<Timeslice> SaveAs(string filename)
         {
-            string path = Path.Join(m_SaveDir, filename);
-            Debug.Log($"SaveAs: {path}");
-            return SaveLow(GetSceneFileInfoFromName(path));
+            return SaveLow(GetNewNameSceneFileInfo(false, filename));
         }
 
         /// In order to for this to work properly:
