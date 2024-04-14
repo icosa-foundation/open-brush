@@ -119,18 +119,7 @@ namespace TiltBrush
         [LuaDocsParameter("color", "The color of the extrusion")]
         public void Extrude(float depth, ColorApiWrapper color = null)
         {
-            var extruder = _ImageWidget.GetComponent<SpriteExtruder>();
-            if (depth <= 0)
-            {
-                extruder.Clear();
-            }
-            else
-            {
-                color ??= new ColorApiWrapper(Color.gray);
-                extruder.extrudeColor = color._Color;
-                extruder.backDistance = depth;
-                extruder.Generate();
-            }
+            _ImageWidget.SetExtrusion(depth, color._Color);
         }
 
         [LuaDocsDescription("Encodes the image as a form")]

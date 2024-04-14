@@ -281,6 +281,8 @@ namespace TiltBrush
                     val.GroupIds[i] = ordered[i].groupId;
                     val.LayerIds[i] = ordered[i].layerId;
                     val.TwoSidedFlags[i] = ordered[i].twoSided;
+                    val.ExtrusionDepth[i] = ordered[i].extrusionDepth;
+                    val.ExtrusionColor[i] = ordered[i].extrusionColor;
                 }
                 imageIndex.Add(val);
             }

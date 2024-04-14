@@ -651,6 +651,8 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public int[] LayerIds { get; set; }
         public bool[] TwoSidedFlags { get; set; }
+        public float ExtrusionDepth { get; set; }
+        public Color ExtrusionColor { get; set; }
     }
 
     [Serializable]

@@ -14,6 +14,7 @@
 
 using UnityEngine;
 using System.IO;
+using Unity.VectorGraphics;
 
 namespace TiltBrush
 {
@@ -189,6 +190,28 @@ namespace TiltBrush
             get { return m_ReferenceImage; }
         }
 
+        public void SetExtrusion(float depth, Color color)
+        {
+            SpriteRenderer spriteRenderer = gameObject.GetComponentInChildren<SpriteRenderer>();
+            if (depth > 0)
+            {
+                spriteRenderer.enabled = true;
+                var importer = new RuntimeSVGImporter();
+                var sprite = importer.ImportAsVectorSprite(m_ReferenceImage.FilePath);
+                spriteRenderer.sprite = sprite;
+                var extruder = gameObject.GetComponentInChildren<SpriteExtruder>();
+                extruder.AssignSprite(sprite);
+                extruder.extrudeColor = color;
+                extruder.frontDistance = 0;
+                extruder.backDistance = depth;
+                extruder.Generate();
+            }
+            else
+            {
+                spriteRenderer.enabled = false;
+            }
+        }
+
         public bool IsImageValid()
         {
             return m_ReferenceImage != null && m_ReferenceImage.Valid;
@@ -213,6 +236,8 @@ namespace TiltBrush
             var groupIds = tiltImage.GroupIds;
             var layerIds = tiltImage.LayerIds;
             var twoSidedFlags = tiltImage.TwoSidedFlags;
+            var extrusionDepth = tiltImage.ExtrusionDepth;
+            var extrusionColor = tiltImage.ExtrusionColor;
             for (int i = 0; i < tiltImage.Transforms.Length; ++i)
             {
                 ImageWidget image = Instantiate(WidgetManager.m_Instance.ImageWidgetPrefab);
@@ -229,6 +254,7 @@ namespace TiltBrush
                     image.SetMissing(tiltImage.AspectRatio, tiltImage.FileName);
                 }
                 image.SetSignedWidgetSize(tiltImage.Transforms[i].scale);
+                image.SetExtrusion(extrusionDepth, extrusionColor);
                 image.Show(bShow: true, bPlayAudio: false);
                 image.transform.localPosition = tiltImage.Transforms[i].translation;
                 image.transform.localRotation = tiltImage.Transforms[i].rotation;
