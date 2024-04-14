@@ -18,6 +18,7 @@ using System.IO;
 using System.Linq;
 using Unity.VectorGraphics;
 using UnityEngine;
+
 namespace TiltBrush
 {
     public static class DrawStrokes
