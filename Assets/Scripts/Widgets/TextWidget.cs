@@ -14,12 +14,21 @@
 
 using TMPro;
 using UnityEngine;
+using UnityEngine.TextCore.Text;
 
 namespace TiltBrush
 {
+    public enum TextWidgetMode
+    {
+        TextMeshPro,
+        Geometry
+    }
+
     public class TextWidget : Media2dWidget
     {
         public TextMeshPro m_TextMeshPro;
+        public MeshRenderer m_MeshRenderer;
+        public MeshFilter m_MeshFilter;
 
         public override float? AspectRatio =>
             m_TextMeshPro.renderedWidth / m_TextMeshPro.renderedHeight;
@@ -29,6 +38,47 @@ namespace TiltBrush
             base.UpdateScale();
             UpdateCollider();
         }
+
+        public void AssignFont(TMP_FontAsset fontAsset)
+        {
+            m_TextMeshPro.font = fontAsset;
+        }
+
+        public void AssignFont(string path)
+        {
+            var fontAsset = SvgTextUtils.ConvertOpenTypeToTMPro(path);
+            m_TextMeshPro.font = fontAsset;
+        }
+
+        public void AssignMesh(Mesh mesh)
+        {
+            Mode = TextWidgetMode.Geometry;
+            m_MeshFilter.mesh = mesh;
+        }
+
+        public TextWidgetMode Mode
+        {
+            get
+            {
+                return m_TextMeshPro.enabled ?
+                    TextWidgetMode.TextMeshPro : TextWidgetMode.Geometry;
+            }
+            set
+            {
+                switch (value)
+                {
+                    case TextWidgetMode.TextMeshPro:
+                        m_TextMeshPro.enabled = true;
+                        m_MeshRenderer.enabled = false;
+                        break;
+                    case TextWidgetMode.Geometry:
+                        m_TextMeshPro.enabled = false;
+                        m_MeshRenderer.enabled = true;
+                        break;
+                }
+            }
+        }
+
 
         public string Text
         {
@@ -107,6 +157,7 @@ namespace TiltBrush
             textWidget.TextColor = tiltText.FillColor;
             textWidget.StrokeColor = tiltText.StrokeColor;
             textWidget.Text = tiltText.Text;
+            textWidget.Mode = tiltText.Mode;
             textWidget.Group = App.GroupManager.GetGroupFromId(tiltText.GroupId);
             textWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltText.LayerId));
 

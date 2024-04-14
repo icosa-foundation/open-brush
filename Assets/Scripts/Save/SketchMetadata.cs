@@ -651,8 +651,8 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public int[] LayerIds { get; set; }
         public bool[] TwoSidedFlags { get; set; }
-        public float ExtrusionDepth { get; set; }
-        public Color ExtrusionColor { get; set; }
+        public float[] ExtrusionDepths { get; set; }
+        public Color[] ExtrusionColors { get; set; }
     }
 
     [Serializable]
@@ -670,6 +670,7 @@ namespace TiltBrush
         public Color StrokeColor { get; set; }
         public string Font { get; set; }
         public float ExtrudeDepth { get; set; }
+        public TextWidgetMode Mode { get; set; }
         public bool Pinned { get; set; }
         public uint GroupId { get; set; }
         public int LayerId { get; set; }

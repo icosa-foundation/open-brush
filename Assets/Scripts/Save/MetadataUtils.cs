@@ -28,6 +28,8 @@ namespace TiltBrush
             public uint groupId;
             public int layerId;
             public bool twoSided;
+            public float extrusionDepth;
+            public Color extrusionColor;
         }
 
         /// Sanitizes potentially-invalid data coming from the .tilt file.
@@ -155,8 +157,9 @@ namespace TiltBrush
                     Pinned = widget.Pinned,
                     GroupId = groupIdMapping.GetId(widget.Group),
                     StrokeColor = widget.StrokeColor,
-                    Font = "Oswald-Regular", // Not currently used
-                    ExtrudeDepth = 0 // Not currently used
+                    Font = "Oswald-Regular",
+                    ExtrudeDepth = 0,
+                    Mode = widget.Mode,
                 };
                 return text;
             }
@@ -273,6 +276,8 @@ namespace TiltBrush
                 val.GroupIds = new uint[ordered.Length];
                 val.LayerIds = new int[ordered.Length];
                 val.TwoSidedFlags = new bool[ordered.Length];
+                val.ExtrusionDepths = new float[ordered.Length];
+                val.ExtrusionColors = new Color[ordered.Length];
                 for (int i = 0; i < ordered.Length; ++i)
                 {
                     val.PinStates[i] = ordered[i].pinned;
@@ -281,8 +286,8 @@ namespace TiltBrush
                     val.GroupIds[i] = ordered[i].groupId;
                     val.LayerIds[i] = ordered[i].layerId;
                     val.TwoSidedFlags[i] = ordered[i].twoSided;
-                    val.ExtrusionDepth[i] = ordered[i].extrusionDepth;
-                    val.ExtrusionColor[i] = ordered[i].extrusionColor;
+                    val.ExtrusionDepths[i] = ordered[i].extrusionDepth;
+                    val.ExtrusionColors[i] = ordered[i].extrusionColor;
                 }
                 imageIndex.Add(val);
             }

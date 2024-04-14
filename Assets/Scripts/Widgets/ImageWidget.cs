@@ -236,8 +236,8 @@ namespace TiltBrush
             var groupIds = tiltImage.GroupIds;
             var layerIds = tiltImage.LayerIds;
             var twoSidedFlags = tiltImage.TwoSidedFlags;
-            var extrusionDepth = tiltImage.ExtrusionDepth;
-            var extrusionColor = tiltImage.ExtrusionColor;
+            var extrusionDepths = tiltImage.ExtrusionDepths;
+            var extrusionColors = tiltImage.ExtrusionColors;
             for (int i = 0; i < tiltImage.Transforms.Length; ++i)
             {
                 ImageWidget image = Instantiate(WidgetManager.m_Instance.ImageWidgetPrefab);
@@ -254,7 +254,7 @@ namespace TiltBrush
                     image.SetMissing(tiltImage.AspectRatio, tiltImage.FileName);
                 }
                 image.SetSignedWidgetSize(tiltImage.Transforms[i].scale);
-                image.SetExtrusion(extrusionDepth, extrusionColor);
+                image.SetExtrusion(extrusionDepths[i], extrusionColors[i]);
                 image.Show(bShow: true, bPlayAudio: false);
                 image.transform.localPosition = tiltImage.Transforms[i].translation;
                 image.transform.localRotation = tiltImage.Transforms[i].rotation;
