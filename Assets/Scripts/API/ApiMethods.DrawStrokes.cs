@@ -127,8 +127,8 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "draw.opentypetext",
-            "Same as draw text but uses an opentype font (the path can be anywhere in your Open Brush Media Library)",
-            "hello world,Fonts/Roboto-Regular.ttf"
+            "Same as draw text but uses an opentype font (the font should be in a Fonts folder in your Open Brush folder)",
+            "hello world,hello world,calibri.ttf"
         )]
         public static void OpenTypeText(string text, string fontPath)
         {

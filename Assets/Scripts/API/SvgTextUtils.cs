@@ -26,7 +26,7 @@ namespace TiltBrush
         {
             Color color = Color.white;
 
-            fontPath = Path.Combine(App.MediaLibraryPath(), fontPath);
+            fontPath = Path.Combine(App.UserPath(), "Fonts", fontPath);
 
             float unit = 1f;
 
