@@ -60,7 +60,11 @@ namespace TiltBrush
             DrawStrokes.DrawNestedTrList(allTrList, tr, null, brushScale, rawStroke);
         }
 
-        [ApiEndpoint("draw.paths", "Draws a series of paths at the current brush position [[[x1,y1,z1],[x2,y2,z2], etc...]]. Does not move the brush position")]
+        [ApiEndpoint(
+            "draw.paths",
+            "Draws a series of paths at the current brush position [[[x1,y1,z1],[x2,y2,z2], etc...]]. Does not move the brush position",
+            "[[0,0,0],[1,0,0],[1,1,0]],[[0,0,-1],[-1,0,-1],[-1,1,-1]]"
+        )]
         public static void DrawPaths(string jsonString)
         {
             var origin = TrTransform.T(ApiManager.Instance.BrushPosition);
@@ -68,7 +72,11 @@ namespace TiltBrush
             _DrawFromFloatList(paths, origin);
         }
 
-        [ApiEndpoint("draw.path", "Draws a path at the current brush position [x1,y1,z1],[x2,y2,z2], etc.... Does not move the brush position")]
+        [ApiEndpoint(
+            "draw.path",
+            "Draws a path at the current brush position [x1,y1,z1],[x2,y2,z2], etc.... Does not move the brush position",
+            "[0,0,0],[1,0,0],[1,1,0],[0,1,0]"
+        )]
         public static void DrawPath(string jsonString)
         {
             var origin = ApiManager.Instance.BrushPosition;
@@ -76,7 +84,11 @@ namespace TiltBrush
             _DrawSinglePath(path, origin);
         }
 
-        [ApiEndpoint("draw.stroke", "Draws an exact brush stroke as recorded in another app")]
+        [ApiEndpoint(
+            "draw.stroke",
+            "Draws an exact brush stroke including orientation and pressure",
+            "[0,0,0,0,180,90,.75],[1,0,0,0,180,90,.75],[1,1,0,0,180,90,.75],[0,1,0,0,180,90,.75]"
+        )]
         public static void DrawStroke(string jsonString)
         {
             // TODO Use brush rotation
@@ -91,30 +103,56 @@ namespace TiltBrush
             _DrawFromFloatList(floatPaths, tr, brushScale, rawStroke);
         }
 
-        [ApiEndpoint("draw.polygon", "Draws a polygon at the current brush position. Does not move the brush position")]
+        [ApiEndpoint(
+            "draw.polygon",
+            "Draws a polygon at the current brush position. Does not move the brush position",
+            "5,2.5,45"
+        )]
         public static void DrawPolygon(int sides, float radius, float angle)
         {
             var tr = TrTransform.TRS(ApiManager.Instance.BrushPosition, Quaternion.Euler(0, 0, angle), radius);
             DrawStrokes.DrawPolygon(sides, tr);
         }
 
-        [ApiEndpoint("draw.text", "Draws the characters supplied at the current brush position")]
+        [ApiEndpoint(
+            "draw.text",
+            "Draws the characters supplied at the current brush position",
+            "hello world"
+        )]
         public static void Text(string text)
         {
             var trMatrix = TrTransform.T(ApiManager.Instance.BrushPosition);
             DrawStrokes.DrawText(text, trMatrix);
         }
 
-        [ApiEndpoint("draw.svg", "Draws the path supplied as an SVG Path string at the current brush position")]
+        [ApiEndpoint(
+            "draw.opentypetext",
+            "Same as draw text but uses an opentype font (the path can be anywhere in your Open Brush Media Library)",
+            "hello world,Fonts/Roboto-Regular.ttf"
+        )]
+        public static void OpenTypeText(string text, string fontPath)
+        {
+            var trMatrix = TrTransform.T(ApiManager.Instance.BrushPosition);
+            SvgTextUtils.DrawOpenTypeText(text, fontPath, trMatrix);
+        }
+
+        [ApiEndpoint(
+            "draw.svg",
+            "Draws the path supplied as an SVG Path string at the current brush position",
+            "M 184,199 116,170 53,209.6 60,136.2 4.3,88"
+        )]
         public static void SvgPath(string svgPathString)
         {
             // SVG paths are usually scaled rather large so scale down 100x
             var trMatrix = TrTransform.TRS(ApiManager.Instance.BrushPosition, Quaternion.identity, 0.01f);
             DrawStrokes.DrawSvgPathString(svgPathString, trMatrix);
-
         }
 
-        [ApiEndpoint("brush.type", "Changes the brush. brushType can either be the brush name or it's guid. brushes are listed in the /help screen")]
+        [ApiEndpoint(
+            "brush.type",
+            "Changes the brush. brushType can either be the brush name or it's guid. brushes are listed in the /help screen",
+            "ink"
+        )]
         public static void Brush(string brushType)
         {
             var brushDescriptor = LookupBrushDescriptor(brushType);
@@ -162,7 +200,11 @@ namespace TiltBrush
             return brushDescriptor;
         }
 
-        [ApiEndpoint("color.add.hsv", "Adds the supplied values to the current color. Values are hue, saturation and value")]
+        [ApiEndpoint(
+            "color.add.hsv",
+            "Adds the supplied values to the current color. Values are hue, saturation and value",
+            "0.1,0.2,0.3"
+        )]
         public static void AddColorHSV(Vector3 hsv)
         {
             float h, s, v;
@@ -174,25 +216,41 @@ namespace TiltBrush
             );
         }
 
-        [ApiEndpoint("color.add.rgb", "Adds the supplied values to the current color. Values are red green and blue")]
+        [ApiEndpoint(
+            "color.add.rgb",
+            "Adds the supplied values to the current color. Values are red green and blue",
+            "0.1,0.2,0.3"
+        )]
         public static void AddColorRGB(Vector3 rgb)
         {
             App.BrushColor.CurrentColor += new Color(rgb.x, rgb.y, rgb.z);
         }
 
-        [ApiEndpoint("color.set.rgb", "Sets the current color. Values are red, green and blue")]
+        [ApiEndpoint(
+            "color.set.rgb",
+            "Sets the current color. Values are red, green and blue",
+            "0.1,0.2,0.3"
+        )]
         public static void SetColorRGB(Vector3 rgb)
         {
             App.BrushColor.CurrentColor = new Color(rgb.x, rgb.y, rgb.z);
         }
 
-        [ApiEndpoint("color.set.hsv", "Sets the current color. Values are hue, saturation and value")]
+        [ApiEndpoint(
+            "color.set.hsv",
+            "Sets the current color. Values are hue, saturation and value",
+            "0.1,0.2,0.3"
+        )]
         public static void SetColorHSV(Vector3 hsv)
         {
             App.BrushColor.CurrentColor = Color.HSVToRGB(hsv.x, hsv.y, hsv.z);
         }
 
-        [ApiEndpoint("color.set.html", "Sets the current color. colorString can either be a hex value or a css color name.")]
+        [ApiEndpoint(
+            "color.set.html",
+            "Sets the current color. colorString can either be a hex value or a css color name.",
+            "darkblue"
+        )]
         public static void SetColorHTML(string color)
         {
             Color c;
@@ -209,19 +267,31 @@ namespace TiltBrush
             }
         }
 
-        [ApiEndpoint("brush.size.set", "Sets the current brush size")]
+        [ApiEndpoint(
+            "brush.size.set",
+            "Sets the current brush size",
+            "0.5"
+        )]
         public static void BrushSizeSet(float size)
         {
             PointerManager.m_Instance.MainPointer.BrushSize01 = size;
         }
 
-        [ApiEndpoint("brush.size.add", "Changes the current brush size by 'amount'")]
+        [ApiEndpoint(
+            "brush.size.add",
+            "Changes the current brush size by the given amount",
+            "0.1"
+        )]
         public static void BrushSizeAdd(float amount)
         {
             PointerManager.m_Instance.MainPointer.BrushSize01 += amount;
         }
 
-        [ApiEndpoint("draw.camerapath", "Draws along a camera path with the current brush settings")]
+        [ApiEndpoint(
+            "draw.camerapath",
+            "Draws along a camera path with the current brush settings",
+            "0"
+        )]
         public static void DrawCameraPath(int index, float step)
         {
             CameraPathWidget widget = _GetActiveCameraPath(index);

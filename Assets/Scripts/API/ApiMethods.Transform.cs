@@ -18,13 +18,21 @@ namespace TiltBrush
 {
     public static partial class ApiMethods
     {
-        [ApiEndpoint("snap.angle", "Sets the current snapping angle. Angle must be a supported value (15, 30, 45, 60, 75 or 90)")]
+        [ApiEndpoint(
+            "snap.angle",
+            "Sets the current snapping angle. Angle must be a supported value (15, 30, 45, 60, 75 or 90)",
+            "15"
+        )]
         public static void SetSnapAngle(string angle)
         {
             SelectionManager.m_Instance.SetSnappingAngle(angle);
         }
 
-        [ApiEndpoint("snap.grid", "Sets the current snapping grid. Size must be a supported value (0.1, 0.25, 0.5 ,1, 2, 3, 5")]
+        [ApiEndpoint(
+            "snap.grid",
+            "Sets the current snapping grid. Size must be a supported value (0.1, 0.25, 0.5 ,1, 2, 3, 5",
+            "5"
+        )]
         public static void SetSnapGrid(string size)
         {
             SelectionManager.m_Instance.SetSnappingGridSize(size);
@@ -42,7 +50,11 @@ namespace TiltBrush
             TransformItems.SnapSelectionToGrid();
         }
 
-        [ApiEndpoint("selection.align", "Aligns all selected objects to the given axis using their minimum, center or maximum points")]
+        [ApiEndpoint(
+            "selection.align",
+            "Aligns all selected objects to the given axis using their minimum, center or maximum points",
+            "x,center"
+        )]
         public static void AlignSelected(string axis, string alignBy)
         {
             axis = axis.ToLower().Trim();
