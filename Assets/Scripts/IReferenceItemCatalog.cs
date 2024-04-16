@@ -22,5 +22,6 @@ namespace TiltBrush
         bool IsScanning { get; }
         event Action CatalogChanged;
         void ForceCatalogScan();
+        void ChangeDirectory(string path);
     }
 } // namespace TiltBrush

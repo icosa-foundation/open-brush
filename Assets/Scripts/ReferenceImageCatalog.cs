@@ -34,7 +34,8 @@ namespace TiltBrush
         private int m_TexturesCreatedThisFrame;
 
         protected FileWatcher m_FileWatcher;
-        protected string m_ReferenceDirectory;
+        protected string m_CurrentImagesDirectory;
+        public string CurrentImagesDirectory => m_CurrentImagesDirectory;
 
         protected List<ReferenceImage> m_Images;
         protected Stack<int> m_RequestedLoads; // it's okay if this contains duplicates
@@ -68,19 +69,23 @@ namespace TiltBrush
 
             App.InitMediaLibraryPath();
             App.InitReferenceImagePath(m_DefaultImages);
-            m_ReferenceDirectory = App.ReferenceImagePath();
+            ImageCache.DeleteObsoleteCaches();
+            ChangeDirectory(App.ReferenceImagePath());
+        }
 
-            if (Directory.Exists(m_ReferenceDirectory))
+        public void ChangeDirectory(string newPath)
+        {
+            m_CurrentImagesDirectory = newPath;
+
+            if (Directory.Exists(m_CurrentImagesDirectory))
             {
-                m_FileWatcher = new FileWatcher(m_ReferenceDirectory);
+                m_FileWatcher = new FileWatcher(m_CurrentImagesDirectory);
                 m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
                 m_FileWatcher.FileChanged += OnChanged;
                 m_FileWatcher.FileCreated += OnChanged;
                 m_FileWatcher.FileDeleted += OnChanged;
                 m_FileWatcher.EnableRaisingEvents = true;
             }
-
-            ImageCache.DeleteObsoleteCaches();
 
             m_Images = new List<ReferenceImage>();
             ProcessReferenceDirectory(userOverlay: false);
@@ -356,7 +361,7 @@ namespace TiltBrush
             try
             {
                 // GetFiles returns full paths, surprisingly enough.
-                foreach (var filePath in Directory.GetFiles(m_ReferenceDirectory))
+                foreach (var filePath in Directory.GetFiles(m_CurrentImagesDirectory))
                 {
                     string ext = Path.GetExtension(filePath).ToLower();
                     if (!ValidExtension(ext)) { continue; }

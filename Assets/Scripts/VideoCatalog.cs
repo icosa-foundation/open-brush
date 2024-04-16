@@ -27,6 +27,8 @@ namespace TiltBrush
         [SerializeField] private string[] m_supportedVideoExtensions;
 
         private FileWatcher m_FileWatcher;
+        private string m_CurrentVideoDirectory;
+        public string CurrentVideoDirectory => m_CurrentVideoDirectory;
         private List<ReferenceVideo> m_Videos;
         private bool m_ScanningDirectory;
         private bool m_DirectoryScanRequired;
@@ -44,15 +46,20 @@ namespace TiltBrush
         {
             App.InitMediaLibraryPath();
             App.InitVideoLibraryPath(m_DefaultVideos);
+            ChangeDirectory(App.VideoLibraryPath());
+        }
 
+        public void ChangeDirectory(string newPath)
+        {
+            m_CurrentVideoDirectory = newPath;
             m_Videos = new List<ReferenceVideo>();
             m_ChangedFiles = new HashSet<string>();
 
             StartCoroutine(ScanReferenceDirectory());
 
-            if (Directory.Exists(App.VideoLibraryPath()))
+            if (Directory.Exists(m_CurrentVideoDirectory))
             {
-                m_FileWatcher = new FileWatcher(App.VideoLibraryPath());
+                m_FileWatcher = new FileWatcher(m_CurrentVideoDirectory);
                 m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
                 m_FileWatcher.FileChanged += OnDirectoryChanged;
                 m_FileWatcher.FileCreated += OnDirectoryChanged;
@@ -135,7 +142,7 @@ namespace TiltBrush
 
             var existing = new HashSet<string>(m_Videos.Select(x => x.AbsolutePath));
             var detected = new HashSet<string>(
-                Directory.GetFiles(App.VideoLibraryPath(), "*.*", SearchOption.AllDirectories).Where(x => m_supportedVideoExtensions.Contains(Path.GetExtension(x))));
+                Directory.GetFiles(m_CurrentVideoDirectory, "*.*", SearchOption.AllDirectories).Where(x => m_supportedVideoExtensions.Contains(Path.GetExtension(x))));
             var toDelete = existing.Except(detected).Concat(changedSet).ToArray();
             var toScan = detected.Except(existing).Concat(changedSet).ToArray();
 

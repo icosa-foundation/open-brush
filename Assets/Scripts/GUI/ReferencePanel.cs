@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 using TMPro;
@@ -28,8 +29,11 @@ namespace TiltBrush
         [SerializeField] private ReferencePanelTab[] m_Tabs;
         [SerializeField] private MeshRenderer[] m_ExtraBorders;
         [SerializeField] private GameObject m_RefreshingSpinner;
+        [SerializeField] private TextOptionButton m_DirectoryChooserPopupButton;
         private ReferencePanelTab m_CurrentTab;
         private int m_EnabledCount = 0;
+        private string[] m_CurrentSubdirectories;
+        public string[] CurrentSubdirectories => m_CurrentSubdirectories;
 
         public Texture2D UnknownImageTexture
         {
@@ -49,6 +53,7 @@ namespace TiltBrush
                 return m_CurrentTab.Buttons;
             }
         }
+        public ReferencePanelTab CurrentTab => m_CurrentTab;
 
         public override bool IsInButtonMode(ModeButton button)
         {
@@ -206,7 +211,37 @@ namespace TiltBrush
 
             m_NoData.gameObject.SetActive(m_CurrentTab.Catalog.ItemCount == 0);
 
+            InitDirectoryChooserPopupButton();
+
             base.RefreshPage();
+        }
+
+        private void InitDirectoryChooserPopupButton()
+        {
+            string currentDir = null;
+
+            switch (m_CurrentTab.ReferenceButtonType)
+            {
+                case ReferenceButton.Type.Images:
+                    currentDir = ReferenceImageCatalog.m_Instance.CurrentImagesDirectory;
+                    break;
+                case ReferenceButton.Type.BackgroundImages:
+                    currentDir = BackgroundImageCatalog.m_Instance.CurrentImagesDirectory;
+                    break;
+                case ReferenceButton.Type.Models:
+                    currentDir = ModelCatalog.m_Instance.CurrentModelsDirectory;
+                    break;
+                case ReferenceButton.Type.Videos:
+                    currentDir = VideoCatalog.Instance.CurrentVideoDirectory;
+                    break;
+                default:
+                    break;
+            }
+
+            if (currentDir == null) return;
+            var truncatedPath = currentDir.Substring(App.MediaLibraryPath().Length);
+            m_DirectoryChooserPopupButton.ButtonLabel = $"{truncatedPath}";
+            m_CurrentSubdirectories = Directory.GetDirectories(currentDir);
         }
 
         void OnCatalogChanged()
@@ -238,5 +273,9 @@ namespace TiltBrush
             return m_CurrentTab.RaycastAgainstMeshCollider(ray, out hitInfo, dist);
         }
 
+        public void ChangeFolderForCurrentTab(string path)
+        {
+            m_CurrentTab.Catalog.ChangeDirectory(path);
+        }
     }
 } // namespace TiltBrush

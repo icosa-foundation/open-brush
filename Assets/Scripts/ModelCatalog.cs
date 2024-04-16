@@ -43,7 +43,8 @@ namespace TiltBrush
         private List<string> m_OrderedModelNames;
         private bool m_FolderChanged;
         private FileWatcher m_FileWatcher;
-        private string m_ModelsDirectory;
+        private string m_CurrentModelsDirectory;
+        public string CurrentModelsDirectory => m_CurrentModelsDirectory;
         private string m_ChangedFile;
 
         public bool IsScanning
@@ -88,12 +89,16 @@ namespace TiltBrush
         {
             App.InitMediaLibraryPath();
             App.InitModelLibraryPath(m_DefaultModels);
+            ChangeDirectory(App.ModelLibraryPath());
+        }
 
-            m_ModelsDirectory = App.ModelLibraryPath();
+        public void ChangeDirectory(string newPath)
+        {
+            m_CurrentModelsDirectory = newPath;
 
-            if (Directory.Exists(m_ModelsDirectory))
+            if (Directory.Exists(m_CurrentModelsDirectory))
             {
-                m_FileWatcher = new FileWatcher(m_ModelsDirectory);
+                m_FileWatcher = new FileWatcher(m_CurrentModelsDirectory);
                 m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
                 m_FileWatcher.FileChanged += OnChanged;
                 m_FileWatcher.FileCreated += OnChanged;
@@ -173,7 +178,7 @@ namespace TiltBrush
             }
             m_ModelsByRelativePath.Clear();
 
-            ProcessDirectory(m_ModelsDirectory, oldModels);
+            ProcessDirectory(m_CurrentModelsDirectory, oldModels);
 
             if (oldModels.Count > 0)
             {

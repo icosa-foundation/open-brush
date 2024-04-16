@@ -29,20 +29,21 @@ namespace TiltBrush
 
             App.InitMediaLibraryPath();
             App.InitBackgroundImagesPath(m_DefaultImages);
-            m_ReferenceDirectory = App.BackgroundImagesLibraryPath();
+            ChangeDirectory(App.BackgroundImagesLibraryPath());
+        }
 
-            if (Directory.Exists(m_ReferenceDirectory))
+        public void ChangeDirectory(string newPath)
+        {
+            m_CurrentImagesDirectory = newPath;
+            if (Directory.Exists(m_CurrentImagesDirectory))
             {
-                m_FileWatcher = new FileWatcher(m_ReferenceDirectory);
+                m_FileWatcher = new FileWatcher(m_CurrentImagesDirectory);
                 m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
                 m_FileWatcher.FileChanged += OnChanged;
                 m_FileWatcher.FileCreated += OnChanged;
                 m_FileWatcher.FileDeleted += OnChanged;
                 m_FileWatcher.EnableRaisingEvents = true;
             }
-
-            ImageCache.DeleteObsoleteCaches();
-
             m_Images = new List<ReferenceImage>();
             ProcessReferenceDirectory(userOverlay: false);
         }
