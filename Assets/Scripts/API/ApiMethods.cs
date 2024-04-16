@@ -595,6 +595,16 @@ namespace TiltBrush
         }
 
         [ApiEndpoint(
+            "image.extrude",
+            "Sets an image to be extruded by a given depth and color. Set depth to 0 to remove extrusion.",
+            "0.5, 0.5, 0.5, 1")]
+        public static void ExtrudeImage(int index, float depth, Color color)
+        {
+            var imageWidget = _GetActiveImage(index);
+            imageWidget.SetExtrusion(depth, color);
+        }
+
+        [ApiEndpoint(
             "environment.type",
             "Sets the current environment",
             "pistachio"

@@ -33,6 +33,23 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, -1, -1);
         }
 
+        [ApiEndpoint(
+            "save.as",
+            "Saves the current scene under a new name. (No need to include the .tilt suffix)",
+            "newSketch"
+
+        )]
+        public static void SaveAs(string filename)
+        {
+            string suffix = SaveLoadScript.TILT_SUFFIX;
+            if (filename.EndsWith(suffix))
+            {
+                filename = filename.Substring(0, filename.Length - suffix.Length);
+            }
+            var rEnum = SketchControlsScript.GlobalCommands.SaveAs;
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, sParam: filename);
+        }
+
         [ApiEndpoint("save.new", "Saves the current scene in a new slot")]
         public static void SaveNew()
         {
