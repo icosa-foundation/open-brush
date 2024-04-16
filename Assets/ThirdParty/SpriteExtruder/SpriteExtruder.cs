@@ -21,7 +21,6 @@ public class SpriteExtruder : MonoBehaviour
         sr.enabled = true;
         int width = Mathf.RoundToInt(sprite.bounds.size.x * sprite.pixelsPerUnit);
         int height = Mathf.RoundToInt(sprite.bounds.size.y * sprite.pixelsPerUnit);
-        Debug.Log($"width: {width}, height: {height}");
         tex = new Texture2D(width, height);
     }
 
