@@ -169,5 +169,18 @@ namespace TiltBrush
         {
             return $"Text: {m_TextMeshPro.text}";
         }
+
+        // TODO
+        public void SetExtrusion(float depth, Color color)
+        {
+            if (depth > 0)
+            {
+                Mode = TextWidgetMode.Geometry;
+            }
+            else
+            {
+                Mode = TextWidgetMode.TextMeshPro;
+            }
+        }
     }
 } // namespace TiltBrush
