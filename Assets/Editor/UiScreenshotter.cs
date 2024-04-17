@@ -110,7 +110,7 @@ namespace TiltBrush
             {
                 PointerManager.m_Instance.SetBrushForAllPointers(brush);
                 await Task.Delay(100);
-                DrawStrokes.DrawSingleTrList(path, TrTransform.T(origin), 1f, 0.2f, true);
+                DrawStrokes.DrawNestedTrList(new List<IEnumerable<TrTransform>> { path }, TrTransform.T(origin));
                 SaveCurrentView(cam, $"brush-{brush.DurableName}.png", 1024, 1024);
                 ApiMethods.DeleteStroke(0);
             }

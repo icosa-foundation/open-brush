@@ -357,7 +357,11 @@ namespace TiltBrush
             Vector3 directionVector = ApiManager.Instance.BrushRotation * Vector3.forward;
             var end = directionVector * distance;
             var path = new List<List<TrTransform>> { new List<TrTransform> { TrTransform.identity, TrTransform.T(end) } };
-            DrawStrokes.DrawNestedTrList(path, TrTransform.T(ApiManager.Instance.BrushPosition));
+            DrawStrokes.DrawNestedTrList(
+                path,
+                TrTransform.T(ApiManager.Instance.BrushPosition),
+                smoothing: ApiManager.Instance.PathSmoothing
+            );
             ApiManager.Instance.BrushPosition += end;
         }
 

@@ -23,7 +23,7 @@ namespace TiltBrush
 {
     public static partial class ApiMethods
     {
-        public static void _DrawFromFloatList(List<List<List<float>>> floatPaths, TrTransform tr, float brushScale = 1f, bool rawStroke = false)
+        public static List<List<TrTransform>> _FloatListToNestedPaths(List<List<List<float>>> floatPaths)
         {
             var allTrList = new List<List<TrTransform>>(floatPaths.Count);
             for (var i = 0; i < floatPaths.Count; i++)
@@ -57,7 +57,7 @@ namespace TiltBrush
                 }
                 allTrList.Add(trList);
             }
-            DrawStrokes.DrawNestedTrList(allTrList, tr, null, brushScale, rawStroke);
+            return allTrList;
         }
 
         [ApiEndpoint(
@@ -68,8 +68,13 @@ namespace TiltBrush
         public static void DrawPaths(string jsonString)
         {
             var origin = TrTransform.T(ApiManager.Instance.BrushPosition);
-            var paths = JsonConvert.DeserializeObject<List<List<List<float>>>>($"[{jsonString}]");
-            _DrawFromFloatList(paths, origin);
+            List<List<List<float>>> floatlist = JsonConvert.DeserializeObject<List<List<List<float>>>>($"[{jsonString}]");
+            var paths = _FloatListToNestedPaths(floatlist);
+            DrawStrokes.DrawNestedTrList(
+                paths,
+                origin,
+                smoothing: ApiManager.Instance.PathSmoothing
+            );
         }
 
         [ApiEndpoint(
@@ -81,7 +86,10 @@ namespace TiltBrush
         {
             var origin = ApiManager.Instance.BrushPosition;
             var path = JsonConvert.DeserializeObject<List<List<float>>>($"[{jsonString}]");
-            _DrawSinglePath(path, origin);
+            var floatPaths = new List<List<List<float>>> { path };
+            var tr = TrTransform.TRS(origin, Quaternion.identity, 1f);
+            var paths = _FloatListToNestedPaths(floatPaths);
+            DrawStrokes.DrawNestedTrList(paths, tr, smoothing: ApiManager.Instance.PathSmoothing);
         }
 
         [ApiEndpoint(
@@ -91,16 +99,10 @@ namespace TiltBrush
         )]
         public static void DrawStroke(string jsonString)
         {
-            // TODO Use brush rotation
             var strokeData = JsonConvert.DeserializeObject<List<List<float>>>($"[{jsonString}]");
-            _DrawSinglePath(strokeData, Vector3.zero, rawStroke: true);
-        }
-
-        public static void _DrawSinglePath(List<List<float>> floatPath, Vector3 origin, float scale = 1f, float brushScale = 1f, bool rawStroke = false)
-        {
-            var floatPaths = new List<List<List<float>>> { floatPath };
-            var tr = TrTransform.TRS(origin, Quaternion.identity, scale);
-            _DrawFromFloatList(floatPaths, tr, brushScale, rawStroke);
+            var floatPaths = new List<List<List<float>>> { strokeData };
+            var paths = _FloatListToNestedPaths(floatPaths);
+            DrawStrokes.DrawNestedTrList(paths, TrTransform.identity, smoothing: 0);
         }
 
         [ApiEndpoint(
@@ -111,7 +113,23 @@ namespace TiltBrush
         public static void DrawPolygon(int sides, float radius, float angle)
         {
             var tr = TrTransform.TRS(ApiManager.Instance.BrushPosition, Quaternion.Euler(0, 0, angle), radius);
-            DrawStrokes.DrawPolygon(sides, tr);
+            var path = new List<TrTransform>(sides);
+            for (float i = 0; i <= sides; i++)
+            {
+                var theta = Mathf.PI * (i / sides) * 2f;
+                theta += Mathf.Deg2Rad;
+                var point = new Vector3(
+                    Mathf.Cos(theta),
+                    Mathf.Sin(theta),
+                    0
+                );
+                point = ApiManager.Instance.BrushRotation * point;
+                path.Add(TrTransform.T(point));
+            }
+            DrawStrokes.DrawNestedTrList(
+                new List<List<TrTransform>> { path }, tr,
+                smoothing: ApiManager.Instance.PathSmoothing
+            );
         }
 
         [ApiEndpoint(
@@ -121,8 +139,13 @@ namespace TiltBrush
         )]
         public static void Text(string text)
         {
-            var trMatrix = TrTransform.T(ApiManager.Instance.BrushPosition);
-            DrawStrokes.DrawText(text, trMatrix);
+            var tr = TrTransform.T(ApiManager.Instance.BrushPosition);
+            var textToStroke = new TextToStrokes(ApiManager.Instance.TextFont);
+            DrawStrokes.DrawNestedTrList(
+                textToStroke.Build(text),
+                tr,
+                smoothing: ApiManager.Instance.PathSmoothing
+            );
         }
 
         [ApiEndpoint(
@@ -132,8 +155,10 @@ namespace TiltBrush
         )]
         public static void OpenTypeText(string text, string fontPath)
         {
-            var trMatrix = TrTransform.T(ApiManager.Instance.BrushPosition);
-            SvgTextUtils.DrawOpenTypeText(text, fontPath, trMatrix);
+            var tr = TrTransform.T(ApiManager.Instance.BrushPosition);
+            var svg = SvgTextUtils.GenerateSvgOutlineForText(text, fontPath);
+            (List<List<TrTransform>> paths, List<Color> colors) = DrawStrokes.SvgDocumentToNestedPaths(svg);
+            DrawStrokes.DrawNestedTrList(paths, tr, colors);
         }
 
         [ApiEndpoint(
@@ -141,11 +166,18 @@ namespace TiltBrush
             "Draws the path supplied as an SVG Path string at the current brush position",
             "M 184,199 116,170 53,209.6 60,136.2 4.3,88"
         )]
-        public static void SvgPath(string svgPathString)
+        public static void SvgPath(string svgPath)
         {
             // SVG paths are usually scaled rather large so scale down 100x
-            var trMatrix = TrTransform.TRS(ApiManager.Instance.BrushPosition, Quaternion.identity, 0.01f);
-            DrawStrokes.DrawSvgPathString(svgPathString, trMatrix);
+            float scale = 100f;
+            var tr = TrTransform.TRS(ApiManager.Instance.BrushPosition, Quaternion.identity, 1f / scale);
+            var paths = DrawStrokes.SvgPathStringToApiPaths(svgPath);
+            DrawStrokes.DrawNestedTrList(
+                paths,
+                tr,
+                brushScale: scale,
+                smoothing: ApiManager.Instance.PathSmoothing
+            );
         }
 
         [ApiEndpoint(
@@ -296,7 +328,12 @@ namespace TiltBrush
         {
             CameraPathWidget widget = _GetActiveCameraPath(index);
             CameraPath path = widget.Path;
-            DrawStrokes.DrawCameraPath(path, step);
+            var points = path.AsTrList(step);
+            DrawStrokes.DrawNestedTrList(
+                new List<List<TrTransform>> { points },
+                TrTransform.identity,
+                smoothing: ApiManager.Instance.PathSmoothing
+            );
         }
     }
 

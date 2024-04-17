@@ -52,12 +52,6 @@ namespace TiltBrush
             return svg.ToString();
         }
 
-        public static void DrawOpenTypeText(string text, string fontPath, TrTransform tr)
-        {
-            var svg = GenerateSvgOutlineForText(text, fontPath);
-            DrawStrokes.DrawSvg(svg, tr);
-        }
-
         public static Mesh GenerateOpenTypeTextMesh(string text, string fontPath, float extrusionDepth, TrTransform tr)
         {
             var svg = GenerateSvgOutlineForText(text, fontPath);
