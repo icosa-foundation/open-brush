@@ -228,6 +228,11 @@ namespace TiltBrush
             }
 
             m_FolderChanged = false;
+
+            if (CatalogChanged != null)
+            {
+                CatalogChanged();
+            }
         }
 
         public void ForceCatalogScan()
