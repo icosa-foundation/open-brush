@@ -21,6 +21,8 @@ namespace TiltBrush
     public class BackgroundImageCatalog : ReferenceImageCatalog
     {
         static public BackgroundImageCatalog m_Instance;
+        protected string m_CurrentBackgroundImagesDirectory;
+        public string CurrentBackgroundImagesDirectory => m_CurrentBackgroundImagesDirectory;
 
         void Awake()
         {
@@ -32,12 +34,12 @@ namespace TiltBrush
             ChangeToHomeDirectory();
         }
 
-        public void ChangeDirectory(string newPath)
+        public override void ChangeDirectory(string newPath)
         {
-            m_CurrentImagesDirectory = newPath;
-            if (Directory.Exists(m_CurrentImagesDirectory))
+            m_CurrentBackgroundImagesDirectory = newPath;
+            if (Directory.Exists(m_CurrentBackgroundImagesDirectory))
             {
-                m_FileWatcher = new FileWatcher(m_CurrentImagesDirectory);
+                m_FileWatcher = new FileWatcher(m_CurrentBackgroundImagesDirectory);
                 m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
                 m_FileWatcher.FileChanged += OnChanged;
                 m_FileWatcher.FileCreated += OnChanged;
@@ -48,22 +50,28 @@ namespace TiltBrush
             ProcessReferenceDirectory(userOverlay: false);
         }
 
-        public void ChangeToHomeDirectory()
+        public override void ChangeToHomeDirectory()
         {
             ChangeDirectory(App.BackgroundImagesLibraryPath());
         }
 
-        public void ChangeDirectoryOneUp()
+        public override void ChangeDirectoryOneUp()
         {
-            var currentDir = new DirectoryInfo(m_CurrentImagesDirectory);
+            var currentDir = new DirectoryInfo(m_CurrentBackgroundImagesDirectory);
             ChangeDirectory(currentDir.Parent.FullName);
         }
 
-        public bool IsHomeDirectory() => m_CurrentImagesDirectory == App.BackgroundImagesLibraryPath();
+        public override bool IsHomeDirectory() => m_CurrentBackgroundImagesDirectory == App.BackgroundImagesLibraryPath();
 
         protected override bool ValidExtension(string ext)
         {
             return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".hdr";
         }
+
+        protected override void ProcessReferenceDirectory(bool userOverlay = true)
+        {
+            _ProcessReferenceDirectory_Impl(m_CurrentBackgroundImagesDirectory, userOverlay);
+        }
+
     }
 } // namespace TiltBrush

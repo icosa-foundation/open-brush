@@ -229,7 +229,7 @@ namespace TiltBrush
                     currentDir = ReferenceImageCatalog.m_Instance.CurrentImagesDirectory;
                     break;
                 case ReferenceButton.Type.BackgroundImages:
-                    currentDir = BackgroundImageCatalog.m_Instance.CurrentImagesDirectory;
+                    currentDir = BackgroundImageCatalog.m_Instance.CurrentBackgroundImagesDirectory;
                     break;
                 case ReferenceButton.Type.Models:
                     currentDir = ModelCatalog.m_Instance.CurrentModelsDirectory;

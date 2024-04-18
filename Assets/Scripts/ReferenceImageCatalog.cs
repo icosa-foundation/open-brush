@@ -73,7 +73,7 @@ namespace TiltBrush
             ChangeToHomeDirectory();
         }
 
-        public void ChangeDirectory(string newPath)
+        public virtual void ChangeDirectory(string newPath)
         {
             m_CurrentImagesDirectory = newPath;
 
@@ -91,18 +91,18 @@ namespace TiltBrush
             ProcessReferenceDirectory(userOverlay: false);
         }
 
-        public void ChangeToHomeDirectory()
+        public virtual void ChangeToHomeDirectory()
         {
             ChangeDirectory(App.ReferenceImagePath());
         }
 
-        public void ChangeDirectoryOneUp()
+        public virtual void ChangeDirectoryOneUp()
         {
             var currentDir = new DirectoryInfo(m_CurrentImagesDirectory);
             ChangeDirectory(currentDir.Parent.FullName);
         }
 
-        public bool IsHomeDirectory() => m_CurrentImagesDirectory == App.ReferenceImagePath();
+        public virtual bool IsHomeDirectory() => m_CurrentImagesDirectory == App.ReferenceImagePath();
 
         // This is not persistent state; it avoids allocating a transient Stack every frame
         private Stack<int> Update__temporarystack = new Stack<int>();
@@ -349,9 +349,14 @@ namespace TiltBrush
             }
         }
 
+        protected virtual void ProcessReferenceDirectory(bool userOverlay = true)
+        {
+            _ProcessReferenceDirectory_Impl(m_CurrentImagesDirectory, userOverlay);
+        }
+
         // Update m_Images with latest contents of reference directory.
         // Preserves items if they're still in the directory.
-        protected void ProcessReferenceDirectory(bool userOverlay = true)
+        protected void _ProcessReferenceDirectory_Impl(string imageDir, bool userOverlay = true)
         {
             m_DirNeedsProcessing = false;
             var oldImagesByPath = m_Images.ToDictionary(image => image.FilePath);
@@ -374,7 +379,7 @@ namespace TiltBrush
             try
             {
                 // GetFiles returns full paths, surprisingly enough.
-                foreach (var filePath in Directory.GetFiles(m_CurrentImagesDirectory))
+                foreach (var filePath in Directory.GetFiles(imageDir))
                 {
                     string ext = Path.GetExtension(filePath).ToLower();
                     if (!ValidExtension(ext)) { continue; }
