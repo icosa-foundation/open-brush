@@ -298,13 +298,22 @@ namespace TiltBrush
         {
             if (m_CurrentTab.Catalog.IsHomeDirectory())
             {
-                m_DirectoryHomeButton.gameObject.SetActive(false);
-                m_DirectoryUpButton.gameObject.SetActive(false);
+                m_DirectoryHomeButton.SetButtonAvailable(false);
+                m_DirectoryUpButton.SetButtonAvailable(false);
             }
             else
             {
-                m_DirectoryHomeButton.gameObject.SetActive(true);
-                m_DirectoryUpButton.gameObject.SetActive(true);
+                m_DirectoryHomeButton.SetButtonAvailable(true);
+                m_DirectoryUpButton.SetButtonAvailable(true);
+            }
+
+            if (CurrentSubdirectories.Length == 0)
+            {
+                m_DirectoryChooserPopupButton.SetButtonAvailable(false);
+            }
+            else
+            {
+                m_DirectoryChooserPopupButton.SetButtonAvailable(true);
             }
         }
     }
