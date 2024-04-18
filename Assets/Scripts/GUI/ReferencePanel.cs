@@ -30,6 +30,8 @@ namespace TiltBrush
         [SerializeField] private MeshRenderer[] m_ExtraBorders;
         [SerializeField] private GameObject m_RefreshingSpinner;
         [SerializeField] private TextOptionButton m_DirectoryChooserPopupButton;
+        [SerializeField] private ActionButton m_DirectoryHomeButton;
+        [SerializeField] private ActionButton m_DirectoryUpButton;
         private ReferencePanelTab m_CurrentTab;
         private int m_EnabledCount = 0;
         private string[] m_CurrentSubdirectories;
@@ -212,6 +214,7 @@ namespace TiltBrush
             m_NoData.gameObject.SetActive(m_CurrentTab.Catalog.ItemCount == 0);
 
             InitDirectoryChooserPopupButton();
+            UpdateDirectoryNavigationUI();
 
             base.RefreshPage();
         }
@@ -276,6 +279,33 @@ namespace TiltBrush
         public void ChangeFolderForCurrentTab(string path)
         {
             m_CurrentTab.Catalog.ChangeDirectory(path);
+            UpdateDirectoryNavigationUI();
+        }
+
+        public void HomeFolderForCurrentTab(string path)
+        {
+            m_CurrentTab.Catalog.ChangeToHomeDirectory();
+            UpdateDirectoryNavigationUI();
+        }
+
+        public void NavigateUpForCurrentTab(string path)
+        {
+            m_CurrentTab.Catalog.ChangeDirectoryOneUp();
+            UpdateDirectoryNavigationUI();
+        }
+
+        public void UpdateDirectoryNavigationUI()
+        {
+            if (m_CurrentTab.Catalog.IsHomeDirectory())
+            {
+                m_DirectoryHomeButton.gameObject.SetActive(false);
+                m_DirectoryUpButton.gameObject.SetActive(false);
+            }
+            else
+            {
+                m_DirectoryHomeButton.gameObject.SetActive(true);
+                m_DirectoryUpButton.gameObject.SetActive(true);
+            }
         }
     }
 } // namespace TiltBrush

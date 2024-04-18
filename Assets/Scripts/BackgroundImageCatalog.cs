@@ -29,7 +29,7 @@ namespace TiltBrush
 
             App.InitMediaLibraryPath();
             App.InitBackgroundImagesPath(m_DefaultImages);
-            ChangeDirectory(App.BackgroundImagesLibraryPath());
+            ChangeToHomeDirectory();
         }
 
         public void ChangeDirectory(string newPath)
@@ -47,6 +47,19 @@ namespace TiltBrush
             m_Images = new List<ReferenceImage>();
             ProcessReferenceDirectory(userOverlay: false);
         }
+
+        public void ChangeToHomeDirectory()
+        {
+            ChangeDirectory(App.BackgroundImagesLibraryPath());
+        }
+
+        public void ChangeDirectoryOneUp()
+        {
+            var currentDir = new DirectoryInfo(m_CurrentImagesDirectory);
+            ChangeDirectory(currentDir.Parent.FullName);
+        }
+
+        public bool IsHomeDirectory() => m_CurrentImagesDirectory == App.BackgroundImagesLibraryPath();
 
         protected override bool ValidExtension(string ext)
         {

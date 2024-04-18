@@ -46,7 +46,7 @@ namespace TiltBrush
         {
             App.InitMediaLibraryPath();
             App.InitVideoLibraryPath(m_DefaultVideos);
-            ChangeDirectory(App.VideoLibraryPath());
+            ChangeToHomeDirectory();
         }
 
         public void ChangeDirectory(string newPath)
@@ -67,6 +67,19 @@ namespace TiltBrush
                 m_FileWatcher.EnableRaisingEvents = true;
             }
         }
+
+        public void ChangeToHomeDirectory()
+        {
+            ChangeDirectory(App.VideoLibraryPath());
+        }
+
+        public void ChangeDirectoryOneUp()
+        {
+            var currentDir = new DirectoryInfo(m_CurrentVideoDirectory);
+            ChangeDirectory(currentDir.Parent.FullName);
+        }
+
+        public bool IsHomeDirectory() => m_CurrentVideoDirectory == App.VideoLibraryPath();
 
         public event Action CatalogChanged;
         public int ItemCount

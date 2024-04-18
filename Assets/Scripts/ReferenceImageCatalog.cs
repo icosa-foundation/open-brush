@@ -70,7 +70,7 @@ namespace TiltBrush
             App.InitMediaLibraryPath();
             App.InitReferenceImagePath(m_DefaultImages);
             ImageCache.DeleteObsoleteCaches();
-            ChangeDirectory(App.ReferenceImagePath());
+            ChangeToHomeDirectory();
         }
 
         public void ChangeDirectory(string newPath)
@@ -90,6 +90,19 @@ namespace TiltBrush
             m_Images = new List<ReferenceImage>();
             ProcessReferenceDirectory(userOverlay: false);
         }
+
+        public void ChangeToHomeDirectory()
+        {
+            ChangeDirectory(App.ReferenceImagePath());
+        }
+
+        public void ChangeDirectoryOneUp()
+        {
+            var currentDir = new DirectoryInfo(m_CurrentImagesDirectory);
+            ChangeDirectory(currentDir.Parent.FullName);
+        }
+
+        public bool IsHomeDirectory() => m_CurrentImagesDirectory == App.ReferenceImagePath();
 
         // This is not persistent state; it avoids allocating a transient Stack every frame
         private Stack<int> Update__temporarystack = new Stack<int>();

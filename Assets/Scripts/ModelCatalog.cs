@@ -46,6 +46,7 @@ namespace TiltBrush
         private string m_CurrentModelsDirectory;
         public string CurrentModelsDirectory => m_CurrentModelsDirectory;
         private string m_ChangedFile;
+        private bool m_RecurseDirectories = false;
 
         public bool IsScanning
         {
@@ -89,7 +90,7 @@ namespace TiltBrush
         {
             App.InitMediaLibraryPath();
             App.InitModelLibraryPath(m_DefaultModels);
-            ChangeDirectory(App.ModelLibraryPath());
+            ChangeToHomeDirectory();
         }
 
         public void ChangeDirectory(string newPath)
@@ -112,6 +113,19 @@ namespace TiltBrush
             m_OrderedModelNames = new List<string>();
             LoadModels();
         }
+
+        public void ChangeToHomeDirectory()
+        {
+            ChangeDirectory(App.ModelLibraryPath());
+        }
+
+        public void ChangeDirectoryOneUp()
+        {
+            var currentDir = new DirectoryInfo(m_CurrentModelsDirectory);
+            ChangeDirectory(currentDir.Parent.FullName);
+        }
+
+        public bool IsHomeDirectory() => m_CurrentModelsDirectory == App.ModelLibraryPath();
 
         private void OnChanged(object source, FileSystemEventArgs e)
         {
@@ -237,7 +251,6 @@ namespace TiltBrush
         {
             if (Directory.Exists(sPath))
             {
-                //look for .obj files
                 string[] aFiles = Directory.GetFiles(sPath);
                 // Models we download from Poly are called ".gltf2", but ".gltf" is more standard
                 string[] extensions = { ".obj", ".fbx", ".gltf2", ".gltf", ".glb", ".ply" };
@@ -267,11 +280,14 @@ namespace TiltBrush
                     }
                 }
 
-                //recursion
-                string[] aSubdirectories = Directory.GetDirectories(sPath);
-                for (int i = 0; i < aSubdirectories.Length; ++i)
+                if (m_RecurseDirectories)
                 {
-                    ProcessDirectory(aSubdirectories[i], oldModels);
+                    //recursion
+                    string[] aSubdirectories = Directory.GetDirectories(sPath);
+                    for (int i = 0; i < aSubdirectories.Length; ++i)
+                    {
+                        ProcessDirectory(aSubdirectories[i], oldModels);
+                    }
                 }
             }
         }
