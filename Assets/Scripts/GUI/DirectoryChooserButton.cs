@@ -38,6 +38,7 @@ namespace TiltBrush
         public override void ButtonPressed(RaycastHit rHitInfo)
         {
             base.ButtonPressed(rHitInfo);
+            m_Panel.CloseActivePopUp(false);
             m_Panel.ChangeFolderForCurrentTab(m_DirectoryInfo.FullName);
         }
     }
