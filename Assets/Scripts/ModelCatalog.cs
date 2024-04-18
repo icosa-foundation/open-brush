@@ -272,9 +272,8 @@ namespace TiltBrush
                     string sExtension = Path.GetExtension(aFiles[i]).ToLower();
                     if (extensions.Contains(sExtension))
                     {
-                        Model rNewModel = null;
-                        // XXX Use file:/// for async www calls, otherwise it is not needed.
-                        string path = /*"file:///" + */ aFiles[i].Replace("\\", "/");
+                        Model rNewModel;
+                        string path = aFiles[i].Replace("\\", "/");
                         try
                         {
                             rNewModel = oldModels[path];
@@ -288,9 +287,10 @@ namespace TiltBrush
                     }
                 }
 
+                // We used to recurse for models but we now have directory navigation
+                // I'm keeping this around for now
                 if (m_RecurseDirectories)
                 {
-                    //recursion
                     string[] aSubdirectories = Directory.GetDirectories(sPath);
                     for (int i = 0; i < aSubdirectories.Length; ++i)
                     {
