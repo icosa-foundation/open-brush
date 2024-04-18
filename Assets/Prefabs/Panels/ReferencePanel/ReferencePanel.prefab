@@ -1996,6 +1996,11 @@ PrefabInstance:
       objectReference: {fileID: 2800000, guid: 251a8ebc071ebde49b2c8d5494ca57cb, type: 3}
     - target: {fileID: 7879899076693153277, guid: 0963942396a615f4fb1b390436e881b8,
         type: 3}
+      propertyPath: m_DescriptionText
+      value: Back to Home folder
+      objectReference: {fileID: 0}
+    - target: {fileID: 7879899076693153277, guid: 0963942396a615f4fb1b390436e881b8,
+        type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.size
       value: 1
       objectReference: {fileID: 0}
@@ -2629,8 +2634,13 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: 9eaa1a5598b1c00479f068d4b66a422d,
         type: 3}
+      propertyPath: m_DescriptionText
+      value: Pick a Subfolder
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: 9eaa1a5598b1c00479f068d4b66a422d,
+        type: 3}
       propertyPath: m_CenterPopupOnButton
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2630224399012238907, guid: 9eaa1a5598b1c00479f068d4b66a422d,
         type: 3}
@@ -3154,6 +3164,11 @@ PrefabInstance:
       propertyPath: m_ButtonTexture
       value: 
       objectReference: {fileID: 2800000, guid: e88e8e089c5b48548a0eaace64b2723b, type: 3}
+    - target: {fileID: 7879899076693153277, guid: 0963942396a615f4fb1b390436e881b8,
+        type: 3}
+      propertyPath: m_DescriptionText
+      value: Up one folder
+      objectReference: {fileID: 0}
     - target: {fileID: 7879899076693153277, guid: 0963942396a615f4fb1b390436e881b8,
         type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.size
