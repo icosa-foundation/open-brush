@@ -300,20 +300,28 @@ namespace TiltBrush
             {
                 m_DirectoryHomeButton.SetButtonAvailable(false);
                 m_DirectoryUpButton.SetButtonAvailable(false);
+
+                m_DirectoryHomeButton.SetDescriptionUnavailable(true);
+                m_DirectoryUpButton.SetDescriptionUnavailable(true);
             }
             else
             {
                 m_DirectoryHomeButton.SetButtonAvailable(true);
                 m_DirectoryUpButton.SetButtonAvailable(true);
+
+                m_DirectoryHomeButton.SetDescriptionUnavailable(false);
+                m_DirectoryUpButton.SetDescriptionUnavailable(false);
             }
 
             if (CurrentSubdirectories.Length == 0)
             {
                 m_DirectoryChooserPopupButton.SetButtonAvailable(false);
+                m_DirectoryChooserPopupButton.SetDescriptionUnavailable(true);
             }
             else
             {
                 m_DirectoryChooserPopupButton.SetButtonAvailable(true);
+                m_DirectoryChooserPopupButton.SetDescriptionUnavailable(false);
             }
         }
     }
