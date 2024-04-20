@@ -13,39 +13,41 @@
 // limitations under the License.
 
 using UnityEngine;
-
 namespace TiltBrush
 {
-    class PopUpWindow_DirectoryChooser : PopUpWindow
+    class PopUpWindow_DirectoryChooser : PagingPopUpWindow
     {
-        public Transform m_DirectoryChooserButtonPrefab;
-        public Transform m_DirectoryChooserButtonParent;
         private float m_ButtonSpacing = -0.15f;
         private float m_ButtonYLimit = -1.4f;
 
-        public override void Init(GameObject rParent, string sText)
+        protected override int m_DataCount
         {
-            base.Init(rParent, sText);
-            var parentPanel = rParent.GetComponent<ReferencePanel>();
-            if (parentPanel != null)
+            get
             {
-                var directories = parentPanel.CurrentSubdirectories;
-                var currentPos = new Vector3(0, 0, 0);
-                foreach (var directory in directories)
+                // This gets called early, so we need to init m_ParentPanel ourselves
+                if (m_ParentPanel == null)
                 {
-                    var btnTransform = Instantiate(m_DirectoryChooserButtonPrefab, m_DirectoryChooserButtonParent);
-                    btnTransform.gameObject.SetActive(true);
-                    btnTransform.localPosition = currentPos;
-                    btnTransform.localRotation = Quaternion.identity;
-                    btnTransform.localScale = Vector3.one * 0.6f;
-                    var btn = btnTransform.GetComponent<DirectoryChooserButton>();
-                    btn.SetDirectory(directory);
-                    btn.m_Popup = this;
-                    btn.m_Panel = parentPanel;
-                    currentPos.y += m_ButtonSpacing;
-                    if (currentPos.y < m_ButtonYLimit) break;
+                    m_ParentPanel = GetComponentInParent<BasePanel>();
                 }
+                var parentPanel = m_ParentPanel as ReferencePanel;
+                return parentPanel.CurrentSubdirectories.Length;
             }
+        }
+
+        protected override void RefreshIcon(ImageIcon icon, int iCatalog)
+        {
+            // Misleadingly named:
+            // ImageIcon actually refers to a button gameobject and button script
+            var parentPanel = m_ParentPanel as ReferencePanel;
+            var btn = icon.m_IconScript as DirectoryChooserButton;
+            btn.SetDirectory(parentPanel.CurrentSubdirectories[iCatalog]);
+            btn.m_Popup = this;
+            btn.m_Panel = parentPanel;
+        }
+
+        protected override void InitIcon(ImageIcon icon)
+        {
+            icon.m_Valid = true;
         }
     }
 }
