@@ -26,5 +26,7 @@ namespace TiltBrush
         void ChangeToHomeDirectory();
         void ChangeDirectoryOneUp();
         bool IsHomeDirectory();
+        string HomeDirectory { get; }
+        bool IsSubDirectoryOfHome();
     }
 } // namespace TiltBrush

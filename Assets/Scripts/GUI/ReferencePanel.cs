@@ -110,6 +110,10 @@ namespace TiltBrush
             {
                 m_RefreshingSpinner.SetActive(m_CurrentTab != null && m_CurrentTab.Catalog.IsScanning);
             }
+
+            // Doing this every frame is a bit wasteful
+            // but the button being interacted with didn't update correctly
+            UpdateNavButtonState();
         }
 
         public override void OnWidgetHide()
@@ -211,40 +215,58 @@ namespace TiltBrush
             }
             m_NumPages = m_CurrentTab.PageCount;
 
-            m_NoData.gameObject.SetActive(m_CurrentTab.Catalog.ItemCount == 0);
-
-            InitDirectoryChooserPopupButton();
-            UpdateDirectoryNavigationUI();
-
-            base.RefreshPage();
-        }
-
-        private void InitDirectoryChooserPopupButton()
-        {
-            string currentDir = null;
-
-            switch (m_CurrentTab.ReferenceButtonType)
+            string currentDir = m_CurrentTab.ReferenceButtonType switch
             {
-                case ReferenceButton.Type.Images:
-                    currentDir = ReferenceImageCatalog.m_Instance.CurrentImagesDirectory;
-                    break;
-                case ReferenceButton.Type.BackgroundImages:
-                    currentDir = BackgroundImageCatalog.m_Instance.CurrentBackgroundImagesDirectory;
-                    break;
-                case ReferenceButton.Type.Models:
-                    currentDir = ModelCatalog.m_Instance.CurrentModelsDirectory;
-                    break;
-                case ReferenceButton.Type.Videos:
-                    currentDir = VideoCatalog.Instance.CurrentVideoDirectory;
-                    break;
-                default:
-                    break;
-            }
+                ReferenceButton.Type.Images => ReferenceImageCatalog.m_Instance.CurrentImagesDirectory,
+                ReferenceButton.Type.BackgroundImages => BackgroundImageCatalog.m_Instance.CurrentBackgroundImagesDirectory,
+                ReferenceButton.Type.Models => ModelCatalog.m_Instance.CurrentModelsDirectory,
+                ReferenceButton.Type.Videos => VideoCatalog.Instance.CurrentVideoDirectory
+            };
 
-            if (currentDir == null) return;
             var truncatedPath = currentDir.Substring(App.MediaLibraryPath().Length);
             m_DirectoryChooserPopupButton.ButtonLabel = $"{truncatedPath}";
             m_CurrentSubdirectories = Directory.GetDirectories(currentDir);
+
+            UpdateNavButtonState();
+            base.RefreshPage();
+        }
+
+        private void UpdateNavButtonState()
+        {
+            if (m_CurrentTab.Catalog.IsSubDirectoryOfHome() && !m_CurrentTab.Catalog.IsHomeDirectory())
+            {
+                m_DirectoryHomeButton.SetButtonAvailable(true);
+                m_DirectoryUpButton.SetButtonAvailable(true);
+
+                m_DirectoryHomeButton.SetDescriptionUnavailable(false);
+                m_DirectoryUpButton.SetDescriptionUnavailable(false);
+            }
+            else
+            {
+                m_DirectoryHomeButton.SetButtonAvailable(false);
+                m_DirectoryUpButton.SetButtonAvailable(false);
+
+                m_DirectoryHomeButton.SetDescriptionUnavailable(true);
+                m_DirectoryUpButton.SetDescriptionUnavailable(true);
+            }
+
+            if (m_CurrentSubdirectories.Length == 0)
+            {
+                m_DirectoryChooserPopupButton.SetButtonAvailable(false);
+                m_DirectoryChooserPopupButton.SetDescriptionUnavailable(true);
+            }
+            else
+            {
+                m_DirectoryChooserPopupButton.SetButtonAvailable(true);
+                m_DirectoryChooserPopupButton.SetDescriptionUnavailable(false);
+            }
+
+            // Only show for truly empty directories
+            m_NoData.gameObject.SetActive(
+                m_CurrentTab.Catalog.ItemCount == 0 &&
+                !m_CurrentTab.Catalog.IsHomeDirectory() &&
+                m_CurrentSubdirectories.Length == 0
+            );
         }
 
         void OnCatalogChanged()
@@ -279,49 +301,24 @@ namespace TiltBrush
         public void ChangeFolderForCurrentTab(string path)
         {
             m_CurrentTab.Catalog.ChangeDirectory(path);
-            UpdateDirectoryNavigationUI();
+        }
+
+        public void ChangeRelativeFolderForCurrentTab(string relativePath)
+        {
+            var path = Path.Join(m_CurrentTab.Catalog.HomeDirectory, relativePath);
+            m_CurrentTab.Catalog.ChangeDirectory(path);
         }
 
         public void HomeFolderForCurrentTab(string path)
         {
             m_CurrentTab.Catalog.ChangeToHomeDirectory();
-            UpdateDirectoryNavigationUI();
         }
 
-        public void NavigateUpForCurrentTab(string path)
+        public void NavigateUpForCurrentTab()
         {
-            m_CurrentTab.Catalog.ChangeDirectoryOneUp();
-            UpdateDirectoryNavigationUI();
-        }
-
-        public void UpdateDirectoryNavigationUI()
-        {
-            if (m_CurrentTab.Catalog.IsHomeDirectory())
+            if (m_CurrentTab.Catalog.IsSubDirectoryOfHome() && !m_CurrentTab.Catalog.IsHomeDirectory())
             {
-                m_DirectoryHomeButton.SetButtonAvailable(false);
-                m_DirectoryUpButton.SetButtonAvailable(false);
-
-                m_DirectoryHomeButton.SetDescriptionUnavailable(true);
-                m_DirectoryUpButton.SetDescriptionUnavailable(true);
-            }
-            else
-            {
-                m_DirectoryHomeButton.SetButtonAvailable(true);
-                m_DirectoryUpButton.SetButtonAvailable(true);
-
-                m_DirectoryHomeButton.SetDescriptionUnavailable(false);
-                m_DirectoryUpButton.SetDescriptionUnavailable(false);
-            }
-
-            if (CurrentSubdirectories.Length == 0)
-            {
-                m_DirectoryChooserPopupButton.SetButtonAvailable(false);
-                m_DirectoryChooserPopupButton.SetDescriptionUnavailable(true);
-            }
-            else
-            {
-                m_DirectoryChooserPopupButton.SetButtonAvailable(true);
-                m_DirectoryChooserPopupButton.SetDescriptionUnavailable(false);
+                m_CurrentTab.Catalog.ChangeDirectoryOneUp();
             }
         }
     }

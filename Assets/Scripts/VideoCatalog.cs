@@ -79,7 +79,13 @@ namespace TiltBrush
             ChangeDirectory(currentDir.Parent.FullName);
         }
 
-        public bool IsHomeDirectory() => m_CurrentVideoDirectory == App.VideoLibraryPath();
+        public string HomeDirectory => App.VideoLibraryPath();
+        public bool IsHomeDirectory() => m_CurrentVideoDirectory == HomeDirectory;
+
+        public bool IsSubDirectoryOfHome()
+        {
+            return m_CurrentVideoDirectory.StartsWith(HomeDirectory);
+        }
 
         public event Action CatalogChanged;
         public int ItemCount

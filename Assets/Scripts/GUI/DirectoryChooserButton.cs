@@ -44,7 +44,7 @@ namespace TiltBrush
 
         protected override void SetMaterialColor(Color rColor)
         {
-            // Nothing to do
+            // m_TextLabel.color = rColor;
         }
     }
 }

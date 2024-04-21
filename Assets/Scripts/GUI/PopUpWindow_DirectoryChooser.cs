@@ -17,32 +17,29 @@ namespace TiltBrush
 {
     class PopUpWindow_DirectoryChooser : PagingPopUpWindow
     {
-        private float m_ButtonSpacing = -0.15f;
-        private float m_ButtonYLimit = -1.4f;
+        private ReferencePanel m_ParentReferencePanel;
 
-        protected override int m_DataCount
+        // m_DataCount can get called early, so we need to init m_ParentReferencePanel ourselves
+        private ReferencePanel GetParentReferencePanel()
         {
-            get
+            if (m_ParentReferencePanel == null)
             {
-                // This gets called early, so we need to init m_ParentPanel ourselves
-                if (m_ParentPanel == null)
-                {
-                    m_ParentPanel = GetComponentInParent<BasePanel>();
-                }
-                var parentPanel = m_ParentPanel as ReferencePanel;
-                return parentPanel.CurrentSubdirectories.Length;
+                m_ParentReferencePanel = GetComponentInParent<ReferencePanel>();
             }
+            return m_ParentReferencePanel;
         }
 
+        protected override int m_DataCount => GetParentReferencePanel().CurrentSubdirectories.Length;
+
+        // Misleadingly named:
+        // ImageIcon actually refers to a button gameobject and button script
         protected override void RefreshIcon(ImageIcon icon, int iCatalog)
         {
-            // Misleadingly named:
-            // ImageIcon actually refers to a button gameobject and button script
-            var parentPanel = m_ParentPanel as ReferencePanel;
             var btn = icon.m_IconScript as DirectoryChooserButton;
-            btn.SetDirectory(parentPanel.CurrentSubdirectories[iCatalog]);
+            var parent = GetParentReferencePanel();
+            btn.SetDirectory(parent.CurrentSubdirectories[iCatalog]);
             btn.m_Popup = this;
-            btn.m_Panel = parentPanel;
+            btn.m_Panel = parent;
         }
 
         protected override void InitIcon(ImageIcon icon)

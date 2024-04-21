@@ -124,8 +124,13 @@ namespace TiltBrush
             var currentDir = new DirectoryInfo(m_CurrentModelsDirectory);
             ChangeDirectory(currentDir.Parent.FullName);
         }
+        public string HomeDirectory => App.ModelLibraryPath();
+        public bool IsHomeDirectory() => m_CurrentModelsDirectory == HomeDirectory;
 
-        public bool IsHomeDirectory() => m_CurrentModelsDirectory == App.ModelLibraryPath();
+        public bool IsSubDirectoryOfHome()
+        {
+            return m_CurrentModelsDirectory.StartsWith(HomeDirectory);
+        }
 
         private void OnChanged(object source, FileSystemEventArgs e)
         {

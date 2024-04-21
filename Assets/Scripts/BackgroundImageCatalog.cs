@@ -61,7 +61,13 @@ namespace TiltBrush
             ChangeDirectory(currentDir.Parent.FullName);
         }
 
-        public override bool IsHomeDirectory() => m_CurrentBackgroundImagesDirectory == App.BackgroundImagesLibraryPath();
+        public override string HomeDirectory => App.BackgroundImagesLibraryPath();
+        public override bool IsHomeDirectory() => m_CurrentBackgroundImagesDirectory == HomeDirectory;
+
+        public override bool IsSubDirectoryOfHome()
+        {
+            return m_CurrentBackgroundImagesDirectory.StartsWith(HomeDirectory);
+        }
 
         protected override bool ValidExtension(string ext)
         {

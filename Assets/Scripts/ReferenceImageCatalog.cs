@@ -102,7 +102,17 @@ namespace TiltBrush
             ChangeDirectory(currentDir.Parent.FullName);
         }
 
-        public virtual bool IsHomeDirectory() => m_CurrentImagesDirectory == App.ReferenceImagePath();
+        public virtual string HomeDirectory => App.ReferenceImagePath();
+
+        public virtual bool IsHomeDirectory()
+        {
+            return m_CurrentImagesDirectory == HomeDirectory;
+        }
+
+        public virtual bool IsSubDirectoryOfHome()
+        {
+            return m_CurrentImagesDirectory.StartsWith(HomeDirectory);
+        }
 
         // This is not persistent state; it avoids allocating a transient Stack every frame
         private Stack<int> Update__temporarystack = new Stack<int>();

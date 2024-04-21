@@ -136,7 +136,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7657350995434470025}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -452,6 +452,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Sliced Button
+      objectReference: {fileID: 0}
+    - target: {fileID: 8550303440375555915, guid: 274bb5f0c30dba14f8390b2848326116,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8596510312989206979, guid: 274bb5f0c30dba14f8390b2848326116,
         type: 3}
