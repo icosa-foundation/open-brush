@@ -298,27 +298,29 @@ namespace TiltBrush
             return m_CurrentTab.RaycastAgainstMeshCollider(ray, out hitInfo, dist);
         }
 
-        public void ChangeFolderForCurrentTab(string path)
+        public void ChangeDirectoryForCurrentTab(string path)
         {
+            m_CurrentTab.PageIndex = 0;
             m_CurrentTab.Catalog.ChangeDirectory(path);
         }
 
         public void ChangeRelativeFolderForCurrentTab(string relativePath)
         {
             var path = Path.Join(m_CurrentTab.Catalog.HomeDirectory, relativePath);
-            m_CurrentTab.Catalog.ChangeDirectory(path);
+            ChangeDirectoryForCurrentTab(path);
         }
 
         public void HomeFolderForCurrentTab(string path)
         {
-            m_CurrentTab.Catalog.ChangeToHomeDirectory();
+            ChangeDirectoryForCurrentTab(m_CurrentTab.Catalog.HomeDirectory);
         }
 
         public void NavigateUpForCurrentTab()
         {
             if (m_CurrentTab.Catalog.IsSubDirectoryOfHome() && !m_CurrentTab.Catalog.IsHomeDirectory())
             {
-                m_CurrentTab.Catalog.ChangeDirectoryOneUp();
+                var currentDir = new DirectoryInfo(m_CurrentTab.Catalog.GetCurrentDirectory());
+                ChangeDirectoryForCurrentTab(currentDir.Parent.FullName);
             }
         }
     }

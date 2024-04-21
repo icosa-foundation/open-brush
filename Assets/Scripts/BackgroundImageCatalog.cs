@@ -31,7 +31,7 @@ namespace TiltBrush
 
             App.InitMediaLibraryPath();
             App.InitBackgroundImagesPath(m_DefaultImages);
-            ChangeToHomeDirectory();
+            ChangeDirectory(HomeDirectory);
         }
 
         public override void ChangeDirectory(string newPath)
@@ -48,17 +48,6 @@ namespace TiltBrush
             }
             m_Images = new List<ReferenceImage>();
             ProcessReferenceDirectory(userOverlay: false);
-        }
-
-        public override void ChangeToHomeDirectory()
-        {
-            ChangeDirectory(App.BackgroundImagesLibraryPath());
-        }
-
-        public override void ChangeDirectoryOneUp()
-        {
-            var currentDir = new DirectoryInfo(m_CurrentBackgroundImagesDirectory);
-            ChangeDirectory(currentDir.Parent.FullName);
         }
 
         public override string HomeDirectory => App.BackgroundImagesLibraryPath();

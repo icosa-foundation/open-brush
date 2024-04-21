@@ -70,7 +70,7 @@ namespace TiltBrush
             App.InitMediaLibraryPath();
             App.InitReferenceImagePath(m_DefaultImages);
             ImageCache.DeleteObsoleteCaches();
-            ChangeToHomeDirectory();
+            ChangeDirectory(HomeDirectory);
         }
 
         public virtual void ChangeDirectory(string newPath)
@@ -89,17 +89,6 @@ namespace TiltBrush
 
             m_Images = new List<ReferenceImage>();
             ProcessReferenceDirectory(userOverlay: false);
-        }
-
-        public virtual void ChangeToHomeDirectory()
-        {
-            ChangeDirectory(App.ReferenceImagePath());
-        }
-
-        public virtual void ChangeDirectoryOneUp()
-        {
-            var currentDir = new DirectoryInfo(m_CurrentImagesDirectory);
-            ChangeDirectory(currentDir.Parent.FullName);
         }
 
         public virtual string HomeDirectory => App.ReferenceImagePath();
@@ -337,6 +326,7 @@ namespace TiltBrush
             iMin = Mathf.Max(0, iMin);
             iMax = Mathf.Min(m_Images.Count, iMax);
 
+            Debug.Log($"iMin: {iMin}, iMax: {iMax}, m_Images: {m_Images.Count}");
             var newRequests = m_RequestedLoads
                 .Concat(Enumerable.Range(iMin, iMax - iMin))
                 .Distinct()
@@ -386,6 +376,7 @@ namespace TiltBrush
                 m_ChangedFile = null;
             }
             m_Images.Clear();
+            Debug.Log($"Clearing images in directory {imageDir}");
 
             // Changed file may be deleted from the directory so indices are invalidated.
             m_RequestedLoads.Clear();
@@ -411,6 +402,7 @@ namespace TiltBrush
             }
             catch (DirectoryNotFoundException) { }
 
+            Debug.Log($"m_Images: {m_Images.Count}");
             if (oldImagesByPath.Count > 0)
             {
                 foreach (var entry in oldImagesByPath)

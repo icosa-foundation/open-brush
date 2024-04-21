@@ -90,7 +90,7 @@ namespace TiltBrush
         {
             App.InitMediaLibraryPath();
             App.InitModelLibraryPath(m_DefaultModels);
-            ChangeToHomeDirectory();
+            ChangeDirectory(HomeDirectory);
         }
 
         public void ChangeDirectory(string newPath)
@@ -114,16 +114,6 @@ namespace TiltBrush
             LoadModels();
         }
 
-        public void ChangeToHomeDirectory()
-        {
-            ChangeDirectory(App.ModelLibraryPath());
-        }
-
-        public void ChangeDirectoryOneUp()
-        {
-            var currentDir = new DirectoryInfo(m_CurrentModelsDirectory);
-            ChangeDirectory(currentDir.Parent.FullName);
-        }
         public string HomeDirectory => App.ModelLibraryPath();
         public bool IsHomeDirectory() => m_CurrentModelsDirectory == HomeDirectory;
 

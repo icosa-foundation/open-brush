@@ -46,7 +46,7 @@ namespace TiltBrush
         {
             App.InitMediaLibraryPath();
             App.InitVideoLibraryPath(m_DefaultVideos);
-            ChangeToHomeDirectory();
+            ChangeDirectory(HomeDirectory);
         }
 
         public void ChangeDirectory(string newPath)
@@ -66,17 +66,6 @@ namespace TiltBrush
                 m_FileWatcher.FileDeleted += OnDirectoryChanged;
                 m_FileWatcher.EnableRaisingEvents = true;
             }
-        }
-
-        public void ChangeToHomeDirectory()
-        {
-            ChangeDirectory(App.VideoLibraryPath());
-        }
-
-        public void ChangeDirectoryOneUp()
-        {
-            var currentDir = new DirectoryInfo(m_CurrentVideoDirectory);
-            ChangeDirectory(currentDir.Parent.FullName);
         }
 
         public string HomeDirectory => App.VideoLibraryPath();

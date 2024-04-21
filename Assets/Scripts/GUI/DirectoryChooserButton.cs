@@ -39,7 +39,7 @@ namespace TiltBrush
         {
             base.ButtonPressed(rHitInfo);
             m_Panel.CloseActivePopUp(false);
-            m_Panel.ChangeFolderForCurrentTab(m_DirectoryInfo.FullName);
+            m_Panel.ChangeDirectoryForCurrentTab(m_DirectoryInfo.FullName);
         }
 
         protected override void SetMaterialColor(Color rColor)

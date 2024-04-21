@@ -23,8 +23,6 @@ namespace TiltBrush
         event Action CatalogChanged;
         void ForceCatalogScan();
         void ChangeDirectory(string path);
-        void ChangeToHomeDirectory();
-        void ChangeDirectoryOneUp();
         bool IsHomeDirectory();
         string HomeDirectory { get; }
         bool IsSubDirectoryOfHome();

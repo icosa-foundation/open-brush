@@ -80,6 +80,7 @@ namespace TiltBrush
             {
                 if (m_AutoLoadImages)
                 {
+                    Debug.Log($"Page: {PageIndex} iMin: {m_IndexOffset}, m_Icons.Length: {m_Icons.Length}, ItemCount: {Catalog.ItemCount}");
                     ReferenceImageCatalog.m_Instance.RequestLoadImages(m_IndexOffset,
                         m_IndexOffset + m_Icons.Length);
                 }
