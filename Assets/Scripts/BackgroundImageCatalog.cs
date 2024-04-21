@@ -79,5 +79,10 @@ namespace TiltBrush
             _ProcessReferenceDirectory_Impl(m_CurrentBackgroundImagesDirectory, userOverlay);
         }
 
+        public override string GetCurrentDirectory()
+        {
+            return m_CurrentBackgroundImagesDirectory;
+        }
+
     }
 } // namespace TiltBrush

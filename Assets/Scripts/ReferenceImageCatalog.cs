@@ -114,6 +114,11 @@ namespace TiltBrush
             return m_CurrentImagesDirectory.StartsWith(HomeDirectory);
         }
 
+        public virtual string GetCurrentDirectory()
+        {
+            return m_CurrentImagesDirectory;
+        }
+
         // This is not persistent state; it avoids allocating a transient Stack every frame
         private Stack<int> Update__temporarystack = new Stack<int>();
 

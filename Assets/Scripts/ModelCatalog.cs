@@ -132,6 +132,11 @@ namespace TiltBrush
             return m_CurrentModelsDirectory.StartsWith(HomeDirectory);
         }
 
+        public string GetCurrentDirectory()
+        {
+            return m_CurrentModelsDirectory;
+        }
+
         private void OnChanged(object source, FileSystemEventArgs e)
         {
             m_FolderChanged = true;
@@ -195,8 +200,8 @@ namespace TiltBrush
                 }
                 m_ChangedFile = null;
             }
-            m_ModelsByRelativePath.Clear();
 
+            m_ModelsByRelativePath.Clear();
             ProcessDirectory(m_CurrentModelsDirectory, oldModels);
 
             if (oldModels.Count > 0)

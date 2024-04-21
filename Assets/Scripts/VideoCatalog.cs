@@ -87,6 +87,11 @@ namespace TiltBrush
             return m_CurrentVideoDirectory.StartsWith(HomeDirectory);
         }
 
+        public string GetCurrentDirectory()
+        {
+            return m_CurrentVideoDirectory;
+        }
+
         public event Action CatalogChanged;
         public int ItemCount
         {

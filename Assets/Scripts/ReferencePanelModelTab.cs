@@ -32,6 +32,7 @@ namespace TiltBrush
         }
 
         private int m_LastPageIndexForLoad = -1;
+        private string m_LastDirectoryForLoad;
 
         public override IReferenceItemCatalog Catalog
         {
@@ -58,9 +59,10 @@ namespace TiltBrush
             {
                 // Destroy previews so only the thumbnail is visible.
                 // Only do this when the page changes, to avoid thrashing the game state.
-                if (m_LastPageIndexForLoad != PageIndex)
+                if (m_LastPageIndexForLoad != PageIndex || m_LastDirectoryForLoad != Catalog.GetCurrentDirectory())
                 {
                     m_LastPageIndexForLoad = PageIndex;
+                    m_LastDirectoryForLoad = Catalog.GetCurrentDirectory();
                     for (int i = 0; i < m_Icons.Length; i++)
                     {
                         (m_Icons[i].Button as ModelButton).DestroyModelPreview();

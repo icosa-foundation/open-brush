@@ -28,5 +28,6 @@ namespace TiltBrush
         bool IsHomeDirectory();
         string HomeDirectory { get; }
         bool IsSubDirectoryOfHome();
+        public string GetCurrentDirectory();
     }
 } // namespace TiltBrush
