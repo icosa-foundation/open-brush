@@ -14,8 +14,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Xml;
 using Newtonsoft.Json;
 using UnityEngine;
 
@@ -161,8 +163,66 @@ namespace TiltBrush
             DrawStrokes.DrawNestedTrList(paths, tr, colors);
         }
 
+        private static bool IsFullSvgDocument(string input)
+        {
+            using (XmlReader reader = XmlReader.Create(new StringReader(input)))
+            {
+                try
+                {
+                    while (reader.Read())
+                    {
+                        if (reader.NodeType == XmlNodeType.Element && reader.Name.Equals("svg", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return true; // Found the <svg> element
+                        }
+                        // Break early if not the expected start elements to avoid parsing entire document
+                        if (reader.NodeType == XmlNodeType.Element && !reader.Name.Equals("xml", StringComparison.OrdinalIgnoreCase))
+                        {
+                            break;
+                        }
+                    }
+                }
+                catch (XmlException)
+                {
+                    // Handle case where input is not well-formed XML
+                    return false;
+                }
+            }
+            return false; // No <svg> element found at the beginning of the document
+        }
+
+
         [ApiEndpoint(
             "draw.svg",
+            "Draws an entire SVG document"
+        )]
+        public static void Svg(string svg)
+        {
+            // SVG paths are usually scaled rather large so scale down 100x
+            float scale = 100f;
+            var tr = TrTransform.TRS(ApiManager.Instance.BrushPosition, Quaternion.identity, 1f / scale);
+            List<List<TrTransform>> paths;
+            List<Color> colors;
+
+            if (!IsFullSvgDocument(svg))
+            {
+                // For backwards compatibility, also support SVG path strings
+                SvgPath(svg);
+                return;
+            }
+
+            (paths, colors) = DrawStrokes.SvgDocumentToNestedPaths(svg);
+            DrawStrokes.DrawNestedTrList(
+                paths,
+                tr,
+                colors: colors,
+                brushScale: scale,
+                smoothing: ApiManager.Instance.PathSmoothing
+            );
+        }
+
+        [ApiEndpoint(
+            "draw.svg.path",
             "Draws the path supplied as an SVG Path string at the current brush position",
             "M 184,199 116,170 53,209.6 60,136.2 4.3,88"
         )]
