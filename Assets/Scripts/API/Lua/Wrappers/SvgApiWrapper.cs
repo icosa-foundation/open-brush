@@ -56,10 +56,11 @@ namespace TiltBrush
         [LuaDocsExample("Svg:Draw('<svg>...</svg>')")]
         [LuaDocsParameter("svg", "A text string that is a valid SVG document")]
         [LuaDocsParameter("tr", "The transform (position, rotation and scale) to apply to the result")]
-        public static void DrawDocument(string svg, TrTransform tr = default)
+        [LuaDocsParameter("includeColors", "Whether to use the colors from the SVG document")]
+        public static void DrawDocument(string svg, TrTransform tr = default, bool includeColors = false)
         {
-            var paths = DrawStrokes.SvgDocumentToNestedPaths(svg).paths;
-            DrawStrokes.DrawNestedTrList(paths, tr, smoothing: 0.1f);
+            var (paths, colors) = DrawStrokes.SvgDocumentToNestedPaths(svg, includeColors: includeColors);
+            DrawStrokes.DrawNestedTrList(paths, tr, smoothing: 0.1f, colors: colors);
         }
     }
 }

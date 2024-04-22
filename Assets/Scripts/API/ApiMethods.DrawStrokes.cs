@@ -196,7 +196,7 @@ namespace TiltBrush
             "draw.svg",
             "Draws an entire SVG document"
         )]
-        public static void Svg(string svg)
+        public static void DrawSvg(string svg)
         {
             // SVG paths are usually scaled rather large so scale down 100x
             float scale = 100f;
@@ -207,11 +207,11 @@ namespace TiltBrush
             if (!IsFullSvgDocument(svg))
             {
                 // For backwards compatibility, also support SVG path strings
-                SvgPath(svg);
+                DrawSvgPath(svg);
                 return;
             }
 
-            (paths, colors) = DrawStrokes.SvgDocumentToNestedPaths(svg);
+            (paths, colors) = DrawStrokes.SvgDocumentToNestedPaths(svg, offsetPerPath: -0.001f, includeColors: true);
             DrawStrokes.DrawNestedTrList(
                 paths,
                 tr,
@@ -226,7 +226,7 @@ namespace TiltBrush
             "Draws the path supplied as an SVG Path string at the current brush position",
             "M 184,199 116,170 53,209.6 60,136.2 4.3,88"
         )]
-        public static void SvgPath(string svgPath)
+        public static void DrawSvgPath(string svgPath)
         {
             // SVG paths are usually scaled rather large so scale down 100x
             float scale = 100f;

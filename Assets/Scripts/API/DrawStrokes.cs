@@ -37,7 +37,8 @@ namespace TiltBrush
             int pathIndex = 0;
             for (var i = 0; i < paths.Count; i++)
             {
-                var color = colors != null ? colors[i] : App.BrushColor.CurrentColor;
+                var color = colors == null || i >= colors.Count ?
+                    App.BrushColor.CurrentColor : colors[i];
                 var item = paths[i];
                 if (item == null) continue;
                 var path = item.ToList();
@@ -134,7 +135,7 @@ namespace TiltBrush
                 for (var j = 0; j < geom.Vertices.Length; j++)
                 {
                     var v = geom.Vertices[j];
-                    verts.Add(TrTransform.T(new Vector3(v.x, v.y, offset))); // SVG is Y down, Unity is Y up
+                    verts.Add(TrTransform.T(new Vector3(v.x, -v.y, offset))); // SVG is Y down, Unity is Y up
                 }
                 svgPolyline.Add(verts);
                 if (includeColors)
