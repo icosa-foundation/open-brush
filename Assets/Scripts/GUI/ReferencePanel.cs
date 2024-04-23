@@ -35,6 +35,8 @@ namespace TiltBrush
         private ReferencePanelTab m_CurrentTab;
         private int m_EnabledCount = 0;
         private string[] m_CurrentSubdirectories;
+        private bool m_FolderNavButtonsNeedUpdate;
+
         public string[] CurrentSubdirectories => m_CurrentSubdirectories;
 
         public Texture2D UnknownImageTexture
@@ -111,9 +113,11 @@ namespace TiltBrush
                 m_RefreshingSpinner.SetActive(m_CurrentTab != null && m_CurrentTab.Catalog.IsScanning);
             }
 
-            // Doing this every frame is a bit wasteful
-            // but the button being interacted with didn't update correctly
-            UpdateNavButtonState();
+            if (m_FolderNavButtonsNeedUpdate)
+            {
+                UpdateNavButtonState();
+                m_FolderNavButtonsNeedUpdate = false;
+            }
         }
 
         public override void OnWidgetHide()
@@ -227,8 +231,8 @@ namespace TiltBrush
             m_DirectoryChooserPopupButton.ButtonLabel = $"{truncatedPath}";
             m_CurrentSubdirectories = Directory.GetDirectories(currentDir);
 
-            UpdateNavButtonState();
             base.RefreshPage();
+            m_FolderNavButtonsNeedUpdate = true;
         }
 
         private void UpdateNavButtonState()
@@ -301,6 +305,7 @@ namespace TiltBrush
         public void ChangeDirectoryForCurrentTab(string path)
         {
             m_CurrentTab.PageIndex = 0;
+            GotoPage(m_CurrentTab.PageIndex);
             m_CurrentTab.Catalog.ChangeDirectory(path);
         }
 

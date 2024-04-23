@@ -326,7 +326,6 @@ namespace TiltBrush
             iMin = Mathf.Max(0, iMin);
             iMax = Mathf.Min(m_Images.Count, iMax);
 
-            Debug.Log($"iMin: {iMin}, iMax: {iMax}, m_Images: {m_Images.Count}");
             var newRequests = m_RequestedLoads
                 .Concat(Enumerable.Range(iMin, iMax - iMin))
                 .Distinct()
@@ -376,7 +375,6 @@ namespace TiltBrush
                 m_ChangedFile = null;
             }
             m_Images.Clear();
-            Debug.Log($"Clearing images in directory {imageDir}");
 
             // Changed file may be deleted from the directory so indices are invalidated.
             m_RequestedLoads.Clear();
@@ -402,7 +400,6 @@ namespace TiltBrush
             }
             catch (DirectoryNotFoundException) { }
 
-            Debug.Log($"m_Images: {m_Images.Count}");
             if (oldImagesByPath.Count > 0)
             {
                 foreach (var entry in oldImagesByPath)
