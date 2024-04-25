@@ -28,6 +28,8 @@ Shader "Custom/360PanoramaWarp"
             {
                 float4 vertex : POSITION;
                 float3 normal : NORMAL;
+
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct v2f
@@ -36,6 +38,8 @@ Shader "Custom/360PanoramaWarp"
                 float3 worldViewDir : TEXCOORD1;
                 float warpAlpha : TEXCOORD2;
                 float4 vertex : SV_POSITION;
+
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             float4 _SpecularColor;
@@ -49,6 +53,11 @@ Shader "Custom/360PanoramaWarp"
             v2f vert(appdata v)
             {
                 v2f o;
+
+                UNITY_SETUP_INSTANCE_ID(v);
+                UNITY_INITIALIZE_OUTPUT(v2f, o);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
                 float4 zeroPos = mul(unity_ObjectToWorld, float4(0.0, 0.0, 0.0, 1.0));
                 float distToZero = length(_WorldSpaceCameraPos - zeroPos.xyz);
                 float dd = (distToZero - _WarpParams.x) / (_WarpParams.y - _WarpParams.x);
