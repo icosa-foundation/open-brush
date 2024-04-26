@@ -2,7 +2,7 @@ Shader "Custom/360PanoramaWarp"
 {
     Properties
     {
-		[MaterialToggle] _Stereoscopic("Stereoscopic",float) = 1.0
+        [MaterialToggle] _Stereoscopic("Stereoscopic",float) = 1.0
         _MainTex ("Texture", 2D) = "white" {}
         _WarpParams ("Warp Parameters", Vector) = (1.5, 0.5, 0.3, 0.1)
         _SpecularColor ("Specular Color", Color) = (1,1,1,1)
@@ -44,7 +44,7 @@ Shader "Custom/360PanoramaWarp"
 
             float4 _SpecularColor;
             float _Shininess;
-			float _Stereoscopic;
+            float _Stereoscopic;
 
             sampler2D _MainTex;
             float4 _MainTex_ST;
@@ -55,7 +55,7 @@ Shader "Custom/360PanoramaWarp"
                 v2f o;
 
                 UNITY_SETUP_INSTANCE_ID(v);
-                UNITY_INITIALIZE_OUTPUT(v2f, o);
+                    UNITY_INITIALIZE_OUTPUT(v2f, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
                 float4 zeroPos = mul(unity_ObjectToWorld, float4(0.0, 0.0, 0.0, 1.0));
@@ -70,36 +70,36 @@ Shader "Custom/360PanoramaWarp"
             }
 
             inline float2 ToRadialCoords(float3 coords)
-			{
-				float3 normalizedCoords = normalize(coords);
-				float latitude = acos(normalizedCoords.y);
-				float longitude = atan2(normalizedCoords.z, normalizedCoords.x);
+            {
+                float3 normalizedCoords = normalize(coords);
+                float latitude = acos(normalizedCoords.y);
+                float longitude = atan2(normalizedCoords.z, normalizedCoords.x);
 
                 float2 sphereCoords;
                 if (_Stereoscopic == 1)
                 {
-				    sphereCoords = float2(longitude, latitude) * float2(1.0 / UNITY_PI, 0.5 / UNITY_PI);
-				    sphereCoords.y = fmod(sphereCoords.y * 2.0 + 1.0, 1.0) - 0.5;
-				    return float2(1.0, 0.5) - sphereCoords;
+                    sphereCoords = float2(longitude, latitude) * float2(1.0 / UNITY_PI, 0.5 / UNITY_PI);
+                    sphereCoords.y = fmod(sphereCoords.y * 2.0 + 1.0, 1.0) - 0.5;
+                    return float2(1.0, 0.5) - sphereCoords;
                 }
                 else
                 {
-				    sphereCoords = float2(longitude, latitude) * float2(1.0 / UNITY_PI, 1.0 / UNITY_PI);
-				    return float2(1.0, 1.0) - sphereCoords;
+                    sphereCoords = float2(longitude, latitude) * float2(1.0 / UNITY_PI, 1.0 / UNITY_PI);
+                    return float2(1.0, 1.0) - sphereCoords;
                 }
-			}
+            }
 
             float3 panoMap(float3 vdir, float4 _MainTex_ST)
             {
                 float2 uv = ToRadialCoords(vdir);
                 if (_Stereoscopic == 1)
                 {
-	    			uv = uv * fixed2(1.0, 0.5) + fixed2(0, unity_StereoEyeIndex * 0.5);
+                    uv = uv * fixed2(1.0, 0.5) + fixed2(0, unity_StereoEyeIndex * 0.5);
                 }
 
                 uv.x = uv.x * _MainTex_ST.x + _MainTex_ST.z;
                 uv.y = uv.y * _MainTex_ST.y + _MainTex_ST.w;
-				return tex2D(_MainTex, uv, ddx(0), ddy(0));
+                return tex2D(_MainTex, uv, ddx(0), ddy(0));
             }
 
 
