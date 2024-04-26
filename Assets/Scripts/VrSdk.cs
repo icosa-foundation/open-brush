@@ -273,6 +273,8 @@ namespace TiltBrush
                 Application.onBeforeRender -= OnNewPoses;
                 InputDevices.deviceConnected -= OnUnityXRDeviceConnected;
                 InputDevices.deviceDisconnected -= OnUnityXRDeviceDisconnected;
+                XRGeneralSettings.Instance?.Manager?.StopSubsystems();
+                XRGeneralSettings.Instance?.Manager?.DeinitializeLoader();
             }
         }
 
