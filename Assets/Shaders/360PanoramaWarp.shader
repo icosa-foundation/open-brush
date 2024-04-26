@@ -105,6 +105,8 @@ Shader "Custom/360PanoramaWarp"
 
             fixed4 frag(v2f i) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
+
                 float3 nn = normalize(i.worldNormal);
                 float3 ndir = normalize(i.worldViewDir);
                 float3 sampleDir = i.warpAlpha * ndir + (1.0 - i.warpAlpha) * nn;
