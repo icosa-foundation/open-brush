@@ -40,7 +40,7 @@ namespace TiltBrush
         // The other is post-m13 and contains raw transforms (original model's pivot and size)
         private Dictionary<string, TrTransform[]> m_MissingModelsByRelativePath;
 
-        private List<string> m_OrderedModelNames;
+        private Dictionary<string, List<string>> m_OrderedModelNames;
         private bool m_FolderChanged;
         private FileWatcher m_FileWatcher;
         private string m_CurrentModelsDirectory;
@@ -90,6 +90,10 @@ namespace TiltBrush
         {
             App.InitMediaLibraryPath();
             App.InitModelLibraryPath(m_DefaultModels);
+            m_ModelsByRelativePath = new Dictionary<string, Model>();
+            m_MissingNormalizedModelsByRelativePath = new Dictionary<string, TrTransform[]>();
+            m_MissingModelsByRelativePath = new Dictionary<string, TrTransform[]>();
+            m_OrderedModelNames = new Dictionary<string, List<string>>();
             ChangeDirectory(HomeDirectory);
         }
 
@@ -107,11 +111,7 @@ namespace TiltBrush
                 m_FileWatcher.EnableRaisingEvents = true;
             }
 
-            m_ModelsByRelativePath = new Dictionary<string, Model>();
-            m_MissingNormalizedModelsByRelativePath = new Dictionary<string, TrTransform[]>();
-            m_MissingModelsByRelativePath = new Dictionary<string, TrTransform[]>();
-            m_OrderedModelNames = new List<string>();
-            LoadModels();
+            LoadModelsForNewDirectory();
         }
 
         public string HomeDirectory => App.ModelLibraryPath();
@@ -174,11 +174,12 @@ namespace TiltBrush
 
         public Model GetModelAtIndex(int i)
         {
-            return m_ModelsByRelativePath[m_OrderedModelNames[i]];
+            return m_ModelsByRelativePath[m_OrderedModelNames[m_CurrentModelsDirectory][i]];
         }
 
         public void LoadModels()
         {
+            Debug.Log($"LoadModels");
             var oldModels = new Dictionary<string, Model>(m_ModelsByRelativePath);
 
             // If we changed a file, pretend like we don't have it.
@@ -208,10 +209,10 @@ namespace TiltBrush
                 Resources.UnloadUnusedAssets();
             }
 
-            m_OrderedModelNames = m_ModelsByRelativePath.Keys.ToList();
-            m_OrderedModelNames.Sort();
+            m_OrderedModelNames[m_CurrentModelsDirectory] = m_ModelsByRelativePath.Keys.ToList();
+            m_OrderedModelNames[m_CurrentModelsDirectory].Sort();
 
-            foreach (string relativePath in m_OrderedModelNames)
+            foreach (string relativePath in m_OrderedModelNames[m_CurrentModelsDirectory])
             {
                 if (m_MissingModelsByRelativePath.ContainsKey(relativePath))
                 {
@@ -229,6 +230,40 @@ namespace TiltBrush
 
             m_FolderChanged = false;
 
+            if (CatalogChanged != null)
+            {
+                CatalogChanged();
+            }
+        }
+
+        public void LoadModelsForNewDirectory()
+        {
+            var oldModels = new Dictionary<string, Model>(m_ModelsByRelativePath);
+            ProcessDirectory(m_CurrentModelsDirectory, oldModels);
+            // Convert m_CurrentModelsDirectory to a path relative to HomeDirectory
+            var modelsInCurrentFolder = m_ModelsByRelativePath.Keys.Where(m =>
+            {
+                var dirPath = Path.GetDirectoryName(Path.Join(HomeDirectory, m));
+                return dirPath == m_CurrentModelsDirectory;
+            }).ToList();
+            modelsInCurrentFolder.Sort();
+            m_OrderedModelNames[m_CurrentModelsDirectory] = modelsInCurrentFolder;
+
+            foreach (string relativePath in m_OrderedModelNames[m_CurrentModelsDirectory])
+            {
+                if (m_MissingModelsByRelativePath.ContainsKey(relativePath))
+                {
+                    ModelWidget.CreateModelsFromRelativePath(
+                        relativePath, null, m_MissingModelsByRelativePath[relativePath], null, null, null);
+                    m_MissingModelsByRelativePath.Remove(relativePath);
+                }
+                if (m_MissingNormalizedModelsByRelativePath.ContainsKey(relativePath))
+                {
+                    ModelWidget.CreateModelsFromRelativePath(
+                        relativePath, m_MissingNormalizedModelsByRelativePath[relativePath], null, null, null, null);
+                    m_MissingModelsByRelativePath.Remove(relativePath);
+                }
+            }
             if (CatalogChanged != null)
             {
                 CatalogChanged();
@@ -283,7 +318,8 @@ namespace TiltBrush
                         {
                             rNewModel = new Model(Model.Location.File(WidgetManager.GetModelSubpath(path)));
                         }
-                        m_ModelsByRelativePath.Add(rNewModel.RelativePath, rNewModel);
+                        // Should we skip this loop earlier if m_ModelsByRelativePath already contains the key?
+                        m_ModelsByRelativePath.TryAdd(rNewModel.RelativePath, rNewModel);
                     }
                 }
 
