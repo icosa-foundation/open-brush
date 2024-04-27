@@ -55,7 +55,7 @@ namespace TiltBrush
 
         public int ItemCount
         {
-            get { return m_ModelsByRelativePath.Count; }
+            get { return m_OrderedModelNames[m_CurrentModelsDirectory].Count; }
         }
 
         public IEnumerable<TiltModels75> MissingModels
