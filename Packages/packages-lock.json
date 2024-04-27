@@ -57,7 +57,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.burst": {
-      "version": "1.8.4",
+      "version": "1.8.11",
       "depth": 1,
       "source": "registry",
       "dependencies": {
@@ -65,8 +65,18 @@
       },
       "url": "https://packages.unity.com"
     },
+    "com.unity.cloud.draco": {
+      "version": "5.1.3",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.burst": "1.8.11",
+        "com.unity.mathematics": "1.3.1"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.cloud.gltfast": {
-      "version": "6.2.0",
+      "version": "6.4.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -74,6 +84,15 @@
         "com.unity.modules.unitywebrequest": "1.0.0",
         "com.unity.mathematics": "1.3.1",
         "com.unity.burst": "1.8.4"
+      },
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.cloud.ktx": {
+      "version": "3.4.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.modules.unitywebrequest": "1.0.0"
       },
       "url": "https://packages.unity.com"
     },
@@ -142,6 +161,16 @@
       "depth": 1,
       "source": "registry",
       "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.meshopt.decompress": {
+      "version": "0.1.0-preview.6",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.mathematics": "1.2.1",
+        "com.unity.burst": "1.4.11"
+      },
       "url": "https://packages.unity.com"
     },
     "com.unity.mobile.android-logcat": {
