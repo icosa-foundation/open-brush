@@ -33,23 +33,33 @@ Shader "Brush/Special/Intersection" {
 #pragma vertex vert
 #pragma fragment frag
 
+#include "UnityCG.cginc"
 #include "Assets/Shaders/Include/Brush.cginc"
 #include "Assets/Shaders/Include/PackInt.cginc"
 
       struct appdata_t {
         float4 vertex : POSITION;
         float4 triangleids : TEXCOORD4;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
         float4 vertex : POSITION;
         float4 triangleids : TEXCOORD4;
         half4 color : COLOR;
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       v2f vert(appdata_t v)
       {
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
         o.vertex = UnityObjectToClipPos(v.vertex);
         o.color = half4(0, 0, 0, 0);
         o.triangleids = v.triangleids;

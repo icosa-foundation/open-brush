@@ -42,6 +42,8 @@ CGINCLUDE
     float4 vertex : POSITION;
     float3 normal : NORMAL;
     float2 texcoord : TEXCOORD0;
+
+    UNITY_VERTEX_INPUT_INSTANCE_ID
   };
 
   struct v2f {
@@ -50,11 +52,17 @@ CGINCLUDE
     float3 normal : TEXCOORD2;
     float2 texcoord : TEXCOORD3;
     float4 screenPos : TEXCOORD4;
+
+    UNITY_VERTEX_OUTPUT_STEREO
   };
 
   v2f vert (appdata_t v)
   {
     v2f o;
+
+    UNITY_SETUP_INSTANCE_ID(v);
+    UNITY_INITIALIZE_OUTPUT(v2f, o);
+    UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
     // Shrink the stencil slightly to prevent z fighting when the user is drawing on top of it.
     float stencilShrinkAmount = .005f;
