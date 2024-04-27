@@ -15,7 +15,6 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using IsoMesh;
-using JetBrains.Annotations;
 using UnityEngine;
 
 namespace TiltBrush
