@@ -4,7 +4,8 @@ Shader "Custom/360PanoramaWarp"
     {
         [MaterialToggle] _Stereoscopic("Stereoscopic",float) = 1.0
         _MainTex ("Texture", 2D) = "white" {}
-        _WarpParams ("Warp Parameters", Vector) = (1.5, 0.5, 0.3, 0.1)
+        _WarpStart ("Warp Start Distance", Float) = 1.5
+        _WarpEnd ("Warp End Distance", Float) = 0.5
         _SpecularColor ("Specular Color", Color) = (1,1,1,1)
         _Shininess ("Shininess", Float) = 20.0
     }
@@ -35,6 +36,7 @@ Shader "Custom/360PanoramaWarp"
             struct v2f
             {
                 float3 worldNormal : TEXCOORD0;
+                float3 normal : NORMAL;
                 float3 worldViewDir : TEXCOORD1;
                 float warpAlpha : TEXCOORD2;
                 float4 vertex : SV_POSITION;
@@ -49,6 +51,8 @@ Shader "Custom/360PanoramaWarp"
             sampler2D _MainTex;
             float4 _MainTex_ST;
             float4 _WarpParams;
+            float _WarpStart;
+            float _WarpEnd;
 
             v2f vert(appdata v)
             {
@@ -60,12 +64,13 @@ Shader "Custom/360PanoramaWarp"
 
                 float4 zeroPos = mul(unity_ObjectToWorld, float4(0.0, 0.0, 0.0, 1.0));
                 float distToZero = length(_WorldSpaceCameraPos - zeroPos.xyz);
-                float dd = (distToZero - _WarpParams.x) / (_WarpParams.y - _WarpParams.x);
+                float dd = (distToZero - _WarpStart) / (_WarpEnd - _WarpStart);
                 o.warpAlpha = clamp(dd, 0.0, 1.0);
                 float4 worldPos = mul(unity_ObjectToWorld, v.vertex);
                 o.worldViewDir = worldPos.xyz - _WorldSpaceCameraPos;
                 o.vertex = UnityObjectToClipPos(v.vertex);
                 o.worldNormal = mul((float3x3)unity_ObjectToWorld, v.normal);
+                o.normal = v.normal;
                 return o;
             }
 
@@ -109,10 +114,10 @@ Shader "Custom/360PanoramaWarp"
 
                 float3 nn = normalize(i.worldNormal);
                 float3 ndir = normalize(i.worldViewDir);
-                float3 sampleDir = i.warpAlpha * ndir + (1.0 - i.warpAlpha) * nn;
+                float3 sampleDir = i.warpAlpha * ndir + (1.0 - i.warpAlpha) * i.normal;
                 float3 color = panoMap(sampleDir, _MainTex_ST);
 
-                float3 lightDir = normalize(float3(-1.5, -1, -1)); // Example light direction
+                float3 lightDir = normalize(float3(-1.5, -1, -1));
                 float3 reflectDir = reflect(-lightDir, nn);
                 float spec = pow(max(dot(reflectDir, ndir), 0.0), _Shininess);
                 float3 specular = _SpecularColor.rgb * spec;
