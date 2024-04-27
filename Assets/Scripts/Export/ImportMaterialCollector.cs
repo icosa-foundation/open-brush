@@ -67,29 +67,32 @@ namespace TiltBrush
         }
 
 #if FBX_SUPPORTED
-  // Used for FBX imports
-  public void Add(
-      Material unityMaterial,
-      bool transparent, string baseColorUri, FbxSurfaceLambert fbxMaterial) {
-    if (baseColorUri != null) {
-      Debug.Assert(File.Exists(Path.Combine(m_AssetLocation, baseColorUri)));
-    }
+        // Used for FBX imports
+        public void Add(
+            Material unityMaterial,
+            bool transparent, string baseColorUri, FbxSurfaceLambert fbxMaterial)
+        {
+            if (baseColorUri != null)
+            {
+                Debug.Assert(File.Exists(Path.Combine(m_AssetLocation, baseColorUri)));
+            }
 
-    TbtSettings.PbrMaterialInfo pbrInfo = transparent
-        ? TbtSettings.Instance.m_PbrBlendDoubleSided
-        : TbtSettings.Instance.m_PbrOpaqueDoubleSided;
+            TbtSettings.PbrMaterialInfo pbrInfo = transparent
+                ? TbtSettings.Instance.m_PbrBlendDoubleSided
+                : TbtSettings.Instance.m_PbrOpaqueDoubleSided;
 
-    m_MaterialToIem.Add(
-        unityMaterial,
-        new DynamicExportableMaterial(
-            parent: pbrInfo.descriptor,
-            durableName: fbxMaterial.GetName(),
-            uniqueName: MakeDeterministicUniqueName(m_numAdded++, fbxMaterial.GetName()),
-            uriBase: m_AssetLocation) {
-                BaseColorFactor = unityMaterial.GetColor("_Color"),
-                BaseColorTex = baseColorUri,
-            });
-  }
+            m_MaterialToIem.Add(
+                unityMaterial,
+                new DynamicExportableMaterial(
+                    parent: pbrInfo.descriptor,
+                    durableName: fbxMaterial.GetName(),
+                    uniqueName: MakeDeterministicUniqueName(m_numAdded++, fbxMaterial.GetName()),
+                    uriBase: m_AssetLocation)
+                {
+                    BaseColorFactor = unityMaterial.GetColor("_Color"),
+                    BaseColorTex = baseColorUri,
+                });
+        }
 #endif
 
         // Used for GLTFast
