@@ -508,6 +508,11 @@ namespace TiltBrush
             // See if this is the first time
             HasPlayedBefore = PlayerPrefs.GetInt(kPlayerPrefHasPlayedBefore, 0) == 1;
 
+#if ZAPBOX_SUPPORTED
+            // TODO:Mikesky - fix zapbox support.
+            HasPlayedBefore = true;
+#endif
+
             // Copy files into Support directory
             CopySupportFiles();
 

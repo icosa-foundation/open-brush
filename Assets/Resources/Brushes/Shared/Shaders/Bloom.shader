@@ -56,6 +56,8 @@ Category {
       fixed4 color : COLOR;
       float2 texcoord : TEXCOORD0;
       uint id : SV_VertexID;
+
+      UNITY_VERTEX_INPUT_INSTANCE_ID
     };
 
     struct v2f {
@@ -63,6 +65,8 @@ Category {
       float4 color : COLOR;
       float2 texcoord : TEXCOORD0;
       float2 id : TEXCOORD2;
+
+      UNITY_VERTEX_OUTPUT_STEREO
     };
 
     v2f vert (appdata_t v)
@@ -70,6 +74,11 @@ Category {
       PrepForOds(v.vertex);
       v.color = TbVertToSrgb(v.color);
       v2f o;
+
+      UNITY_SETUP_INSTANCE_ID(v);
+      UNITY_INITIALIZE_OUTPUT(v2f, o);
+      UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
       o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
       o.color = bloomColor(v.color, _EmissionGain);
 #ifdef AUDIO_REACTIVE

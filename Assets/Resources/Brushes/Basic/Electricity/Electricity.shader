@@ -51,6 +51,8 @@ CGINCLUDE
     float2 texcoord0 : TEXCOORD0;
     float3 texcoord1 : TEXCOORD1;
     uint id : SV_VertexID;
+
+    UNITY_VERTEX_INPUT_INSTANCE_ID
   };
 
   sampler2D _MainTex;
@@ -66,6 +68,8 @@ CGINCLUDE
     fixed4 color : COLOR;
     float2 texcoord : TEXCOORD0;
     uint id : TEXCOORD2;
+
+    UNITY_VERTEX_OUTPUT_STEREO
   };
 
   float3 displacement(float3 pos, float mod) {
@@ -93,6 +97,11 @@ CGINCLUDE
     PrepForOds(v.vertex);
     v.color = TbVertToSrgb(v.color);
     v2f o;
+
+    UNITY_SETUP_INSTANCE_ID(v);
+    UNITY_INITIALIZE_OUTPUT(v2f, o);
+    UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
     float envelope = sin(v.texcoord0.x * (3.14159));
     float envelopePow =  (1-pow(1  - envelope, 10));
 

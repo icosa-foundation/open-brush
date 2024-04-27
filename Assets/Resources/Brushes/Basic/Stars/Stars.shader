@@ -70,6 +70,8 @@ Category {
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
         uint id : TEXCOORD2;
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       v2f vert (ParticleVertexWithSpread_t v)
@@ -77,6 +79,11 @@ Category {
         v.color = TbVertToSrgb(v.color);
         const float PI = 3.14159265359;
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
         float birthTime = v.texcoord.w;
         float rotation = v.texcoord.z;
         float halfSize = GetParticleHalfSize(v.corner.xyz, v.center, birthTime);

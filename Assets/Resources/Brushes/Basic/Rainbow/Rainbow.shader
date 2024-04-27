@@ -60,6 +60,8 @@ Category {
       float3 normal : NORMAL;
       float2 texcoord : TEXCOORD0;
       uint id : SV_VertexID;
+
+      UNITY_VERTEX_INPUT_INSTANCE_ID
     };
 
     struct v2f {
@@ -67,6 +69,8 @@ Category {
       fixed4 color : COLOR;
       float2 texcoord : TEXCOORD0;
       uint id : TEXCOORD2;
+
+      UNITY_VERTEX_OUTPUT_STEREO
     };
 
     float4 _MainTex_ST;
@@ -78,6 +82,11 @@ Category {
       v.color = TbVertToSrgb(v.color);
 
       v2f o;
+
+      UNITY_SETUP_INSTANCE_ID(v);
+      UNITY_INITIALIZE_OUTPUT(v2f, o);
+      UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
       o.pos = UnityObjectToClipPos(v.vertex);
       o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
       o.color = v.color;
@@ -96,7 +105,7 @@ Category {
       // Create parametric colors
       half4 tex = float4(0,0,0,1);
       half row_y = fmod(uvs.y,1);
-       
+
       float time = frac( GetTime().z * 0.2 ) * 5;
       float rowOffset = floor( time );
 

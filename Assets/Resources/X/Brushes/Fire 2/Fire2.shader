@@ -77,6 +77,8 @@ Category {
 #endif
         float3 worldPos : TEXCOORD1;
         uint id : SV_VertexID;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
@@ -89,6 +91,8 @@ Category {
 #endif
         float3 worldPos : TEXCOORD1;
         uint id : TEXCOORD2;
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       float4 _MainTex_ST;
@@ -104,9 +108,14 @@ Category {
       {
         PrepForOds(v.vertex);
 
-  
+
         v.color = TbVertToSrgb(v.color);
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
         o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
         o.color = bloomColor(v.color, _EmissionGain);
         o.vertex = UnityObjectToClipPos(v.vertex);
@@ -126,7 +135,7 @@ Category {
         float procedural_line = 0;
         float flame_fade_mix = 0;
 
-        displacement = tex2D( _DisplaceTex, i.texcoord ).xy; 
+        displacement = tex2D( _DisplaceTex, i.texcoord ).xy;
         displacement =  displacement * 2.0 - 1.0;
         displacement *= _DisplacementIntensity;
 

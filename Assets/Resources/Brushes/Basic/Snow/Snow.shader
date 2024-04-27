@@ -69,6 +69,8 @@ Category {
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
         uint id : TEXCOORD2;
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       float4 _MainTex_ST;
@@ -81,6 +83,11 @@ Category {
       v2f vert (ParticleVertexWithSpread_t v)
       {
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
         v.color = TbVertToSrgb(v.color);
         float birthTime = v.texcoord.w;
         float rotation = v.texcoord.z;

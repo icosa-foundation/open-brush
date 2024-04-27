@@ -47,6 +47,8 @@ Shader "TiltBrush/MobileDiffuse" {
           float2 uv1 : TEXCOORD1;
           half3 normal : NORMAL;
           float4 color : COLOR;
+
+          UNITY_VERTEX_INPUT_INSTANCE_ID
         };
 
         struct v2f {
@@ -56,6 +58,8 @@ Shader "TiltBrush/MobileDiffuse" {
           half3 worldNormal : NORMAL;
           UNITY_FOG_COORDS(2)
           SHADOW_COORDS(3) // put shadows data into TEXCOORD3
+
+          UNITY_VERTEX_OUTPUT_STEREO
         };
 
         sampler2D _MainTex;
@@ -67,6 +71,10 @@ Shader "TiltBrush/MobileDiffuse" {
         v2f vert (appdata_t v) {
           v2f o;
 
+          UNITY_SETUP_INSTANCE_ID(v);
+          UNITY_INITIALIZE_OUTPUT(v2f, o);
+          UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+          
           o.pos = UnityObjectToClipPos(v.vertex);
           o.uv0 = TRANSFORM_TEX(v.uv0, _MainTex);
           o.uv1 = TRANSFORM_TEX(v.uv1, _LightMap);

@@ -83,6 +83,8 @@ Category {
 				float2 texcoord : TEXCOORD0;
 				float4 worldPos : TEXCOORD1;
                 uint id : TEXCOORD2;
+
+				UNITY_VERTEX_OUTPUT_STEREO
 			};
 
 
@@ -92,6 +94,10 @@ Category {
 				v.color = TbVertToSrgb(v.color);
 
 				v2f o;
+
+				UNITY_SETUP_INSTANCE_ID(v);
+          		UNITY_INITIALIZE_OUTPUT(v2f, o);
+          		UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
 				// Inflate the tube outward to explode it into
 				// strips - giving us negative space w/o as much overdraw.

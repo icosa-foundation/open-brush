@@ -2325,8 +2325,9 @@ namespace TiltBrush
 
         public void OpenPanel(BasePanel.PanelType type, TrTransform trSpawnXf, bool forced = false)
         {
-            if ((type != BasePanel.PanelType.SketchSurface && type != BasePanel.PanelType.Color &&
-                type != BasePanel.PanelType.Brush) || forced)
+            if ((type != BasePanel.PanelType.SketchSurface
+                && type != BasePanel.PanelType.Color
+                && type != BasePanel.PanelType.Brush) || forced)
             {
                 TrTransform xfSpawn = trSpawnXf;
                 xfSpawn.scale = 0.0f;

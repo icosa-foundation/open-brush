@@ -51,6 +51,8 @@ SubShader {
             float2 texcoord : TEXCOORD0;
             float4 color : COLOR;
             uint id : SV_VertexID;
+
+            UNITY_VERTEX_INPUT_INSTANCE_ID
         };
 
         struct v2f {
@@ -59,6 +61,8 @@ SubShader {
             float4 color : COLOR;
             float2 id : TEXCOORD2;
             UNITY_FOG_COORDS(1)
+
+            UNITY_VERTEX_OUTPUT_STEREO
         };
 
         v2f vert (appdata_t v)
@@ -66,6 +70,10 @@ SubShader {
             PrepForOds(v.vertex);
 
             v2f o;
+
+            UNITY_SETUP_INSTANCE_ID(v);
+            UNITY_INITIALIZE_OUTPUT(v2f, o);
+            UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
             o.pos = UnityObjectToClipPos(v.vertex);
             o.texcoord = v.texcoord;

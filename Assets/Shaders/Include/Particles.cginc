@@ -52,6 +52,8 @@ struct ParticleVertexWithSpread_t {
   float4 texcoord : TEXCOORD0;  // xy: texcoord   z: rotation   w: birth time
   float3 origin : TEXCOORD1;    // pos: location of the knot (particle "sprays" from this)
   uint id : SV_VertexID;
+
+  UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 // } NOTOOLKIT
 // TOOLKIT: #define ParticleVertexWithSpread_t ParticleVertex_t
@@ -64,6 +66,8 @@ struct ParticleVertex_t {
   fixed4 color : COLOR;
   float4 texcoord : TEXCOORD0;  // xy: texcoord   z: rotation   w: birth time
   uint id : SV_VertexID;
+
+  UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
 // Rotates the corner of a square quad centered at the origin
