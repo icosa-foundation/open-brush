@@ -32,6 +32,7 @@ namespace TiltBrush
         [SerializeField] private TextOptionButton m_DirectoryChooserPopupButton;
         [SerializeField] private ActionButton m_DirectoryHomeButton;
         [SerializeField] private ActionButton m_DirectoryUpButton;
+        [SerializeField] private TextMeshPro m_InfoText;
         private ReferencePanelTab m_CurrentTab;
         private int m_EnabledCount = 0;
         private string[] m_CurrentSubdirectories;
@@ -228,11 +229,15 @@ namespace TiltBrush
             };
 
             var truncatedPath = currentDir.Substring(App.MediaLibraryPath().Length);
-            m_DirectoryChooserPopupButton.ButtonLabel = $"{truncatedPath}";
-            m_CurrentSubdirectories = Directory.GetDirectories(currentDir);
+            if (m_DirectoryChooserPopupButton != null)
+            {
+                m_DirectoryChooserPopupButton.ButtonLabel = $"{truncatedPath}";
+                m_CurrentSubdirectories = Directory.GetDirectories(currentDir);
+            }
 
             base.RefreshPage();
-            m_FolderNavButtonsNeedUpdate = true;
+            m_FolderNavButtonsNeedUpdate = m_DirectoryChooserPopupButton != null;
+            UpdateInfoText();
         }
 
         private void UpdateNavButtonState()
@@ -265,10 +270,10 @@ namespace TiltBrush
                 m_DirectoryChooserPopupButton.SetDescriptionUnavailable(false);
             }
 
-            // Only show for truly empty directories
+            // Only show for truly empty home directory
             m_NoData.gameObject.SetActive(
+                m_CurrentTab.Catalog.IsHomeDirectory() &&
                 m_CurrentTab.Catalog.ItemCount == 0 &&
-                !m_CurrentTab.Catalog.IsHomeDirectory() &&
                 m_CurrentSubdirectories.Length == 0
             );
         }
@@ -307,6 +312,15 @@ namespace TiltBrush
             m_CurrentTab.PageIndex = 0;
             GotoPage(m_CurrentTab.PageIndex);
             m_CurrentTab.Catalog.ChangeDirectory(path);
+        }
+
+        private void UpdateInfoText()
+        {
+            if (m_InfoText != null)
+            {
+                // TODO localize
+                m_InfoText.text = $"{m_CurrentTab.Catalog.ItemCount} Files {m_CurrentSubdirectories.Length} Subfolders";
+            }
         }
 
         public void ChangeRelativeFolderForCurrentTab(string relativePath)

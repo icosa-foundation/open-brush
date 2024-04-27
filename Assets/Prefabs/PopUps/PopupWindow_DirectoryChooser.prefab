@@ -201,10 +201,10 @@ MonoBehaviour:
     type: 3}
   m_UnknownImageTexture: {fileID: 2800000, guid: 10e6597ea7e087d47a77c957649c5a36,
     type: 3}
-  m_IconSpacing: 0.18
+  m_IconSpacing: 0.2
   m_IconGridWidthFullPage: 1
-  m_IconGridHeightFullPage: 8
-  m_IconCountNavPage: 8
+  m_IconGridHeightFullPage: 6
+  m_IconCountNavPage: 6
 --- !u!65 &7589188267440993657
 BoxCollider:
   m_ObjectHideFlags: 0
