@@ -150,6 +150,9 @@ namespace TiltBrush
             {
                 TiltVideo video = new TiltVideo
                 {
+                    // Annoyingly Images now use forward slash and a leading dot. So this is inconsistent.
+                    // Switching videos would have led to backwards incompatible changes in .tilt files
+                    // or an annoying legacy
                     FilePath = widget.Video.PersistentPath,
                     AspectRatio = widget.Video.Aspect,
                     Pinned = widget.Pinned,
@@ -240,7 +243,7 @@ namespace TiltBrush
             {
                 var val = new TiltImages75
                 {
-                    Path = elem.Key,
+                    FilePath = elem.Key,
                     FileName = Path.GetFileName(elem.Key),
                     AspectRatio = aspectRatios[elem.Key]
                 };

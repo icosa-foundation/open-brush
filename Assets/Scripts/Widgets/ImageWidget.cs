@@ -211,9 +211,9 @@ namespace TiltBrush
         public static void FromTiltImage(TiltImages75 tiltImage)
         {
 
-            var refImage = string.IsNullOrEmpty(tiltImage.Path) ?
+            var refImage = string.IsNullOrEmpty(tiltImage.FilePath) ?
                 ReferenceImageCatalog.m_Instance.FileNameToImage(tiltImage.FileName) :
-                ReferenceImageCatalog.m_Instance.RelativePathToImage(tiltImage.Path);
+                ReferenceImageCatalog.m_Instance.RelativePathToImage(tiltImage.FilePath);
             var groupIds = tiltImage.GroupIds;
             var layerIds = tiltImage.LayerIds;
             var twoSidedFlags = tiltImage.TwoSidedFlags;
