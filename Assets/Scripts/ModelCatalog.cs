@@ -111,7 +111,7 @@ namespace TiltBrush
                 m_FileWatcher.EnableRaisingEvents = true;
             }
 
-            LoadModelsForNewDirectory();
+            LoadModelsForNewDirectory(m_CurrentModelsDirectory);
         }
 
         public string HomeDirectory => App.ModelLibraryPath();
@@ -179,7 +179,6 @@ namespace TiltBrush
 
         public void LoadModels()
         {
-            Debug.Log($"LoadModels");
             var oldModels = new Dictionary<string, Model>(m_ModelsByRelativePath);
 
             // If we changed a file, pretend like we don't have it.
@@ -236,20 +235,20 @@ namespace TiltBrush
             }
         }
 
-        public void LoadModelsForNewDirectory()
+        public void LoadModelsForNewDirectory(string path)
         {
             var oldModels = new Dictionary<string, Model>(m_ModelsByRelativePath);
-            ProcessDirectory(m_CurrentModelsDirectory, oldModels);
-            // Convert m_CurrentModelsDirectory to a path relative to HomeDirectory
-            var modelsInCurrentFolder = m_ModelsByRelativePath.Keys.Where(m =>
+            ProcessDirectory(path, oldModels);
+            // Convert directory to a path relative to HomeDirectory
+            var modelsInDirectory = m_ModelsByRelativePath.Keys.Where(m =>
             {
                 var dirPath = Path.GetDirectoryName(Path.Join(HomeDirectory, m));
-                return dirPath == m_CurrentModelsDirectory;
+                return dirPath == path;
             }).ToList();
-            modelsInCurrentFolder.Sort();
-            m_OrderedModelNames[m_CurrentModelsDirectory] = modelsInCurrentFolder;
+            modelsInDirectory.Sort();
+            m_OrderedModelNames[path] = modelsInDirectory;
 
-            foreach (string relativePath in m_OrderedModelNames[m_CurrentModelsDirectory])
+            foreach (string relativePath in m_OrderedModelNames[path])
             {
                 if (m_MissingModelsByRelativePath.ContainsKey(relativePath))
                 {
@@ -343,6 +342,13 @@ namespace TiltBrush
         {
             Model m;
             m_ModelsByRelativePath.TryGetValue(relativePath, out m);
+            if (m == null)
+            {
+                // The directory probably hasn't been processed yet
+                string relativeDirPath = Path.GetDirectoryName(relativePath);
+                LoadModelsForNewDirectory(Path.Combine(HomeDirectory, relativeDirPath));
+                m_ModelsByRelativePath.TryGetValue(relativePath, out m);
+            }
             return m;
         }
     }
