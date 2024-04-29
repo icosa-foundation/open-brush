@@ -110,7 +110,7 @@ namespace TiltBrush
 
         // Path relative to Catalog's HomeDirectory with forward slashes.
         public string RelativePath =>
-            $".{FileFullPath.Substring(ReferenceImageCatalog.m_Instance.HomeDirectory.Length)}".Replace("\\","/");
+            $".{FileFullPath.Substring(ReferenceImageCatalog.m_Instance.HomeDirectory.Length)}".Replace("\\", "/");
 
         public ReferenceImage(string path)
         {
