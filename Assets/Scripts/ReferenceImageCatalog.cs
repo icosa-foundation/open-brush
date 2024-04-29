@@ -441,6 +441,22 @@ namespace TiltBrush
             return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".svg";
         }
 
+        public ReferenceImage RelativePathToImage(string relativePath)
+        {
+            // Protect against path traversal below HomeDirectory
+            string fullPath = Path.GetFullPath(Path.Combine(HomeDirectory, relativePath));
+            if (!fullPath.StartsWith(HomeDirectory, StringComparison.OrdinalIgnoreCase)) return null;
+
+            // TODO change to a dictionary to avoid O(n) lookup
+            var refImage = m_Images.FirstOrDefault(x => x.FileFullPath == fullPath);
+            if (refImage == null)
+            {
+                refImage = new ReferenceImage(fullPath);
+                m_Images.Add(refImage);
+            }
+            return refImage;
+        }
+
         // Pass a file name with no path components. Matching is purely based on name.
         // Returns null on error.
 
