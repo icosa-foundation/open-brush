@@ -89,8 +89,8 @@ Shader "Custom/360PanoramaWarp"
                 }
                 else
                 {
-                    sphereCoords = float2(longitude, latitude) * float2(1.0 / UNITY_PI, 1.0 / UNITY_PI);
-                    return float2(1.0, 1.0) - sphereCoords;
+                    sphereCoords = float2(longitude, latitude) * 1.0 / UNITY_PI;
+                    return float2(sphereCoords.x * 0.5 + 0.5, 1 - sphereCoords.y);
                 }
             }
 
@@ -99,11 +99,11 @@ Shader "Custom/360PanoramaWarp"
                 float2 uv = ToRadialCoords(vdir);
                 if (_Stereoscopic == 1)
                 {
-                    uv = uv * fixed2(1.0, 0.5) + fixed2(0, unity_StereoEyeIndex * 0.5);
+                    uv *= fixed2(1.0, 0.5) + fixed2(0, unity_StereoEyeIndex * 0.5);
                 }
 
-                uv.x = uv.x * _MainTex_ST.x + _MainTex_ST.z;
-                uv.y = uv.y * _MainTex_ST.y + _MainTex_ST.w;
+                uv.x *= _MainTex_ST.x + _MainTex_ST.z;
+                uv.y *= _MainTex_ST.y + _MainTex_ST.w;
                 return tex2D(_MainTex, uv, ddx(0), ddy(0));
             }
 
