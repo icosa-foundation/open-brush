@@ -43,6 +43,7 @@ namespace TiltBrush.Layers
         {
             m_StartingCanvasIndex = 0;
             ResetUI();
+            m_RefreshNavButtons = true;
         }
 
         private void ResetUI()
