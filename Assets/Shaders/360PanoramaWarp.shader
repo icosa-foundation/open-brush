@@ -85,7 +85,7 @@ Shader "Custom/360PanoramaWarp"
                 {
                     sphereCoords = float2(longitude, latitude) * float2(1.0 / UNITY_PI, 0.5 / UNITY_PI);
                     sphereCoords.y = fmod(sphereCoords.y * 2.0 + 1.0, 1.0) - 0.5;
-                    return float2(1.0, 0.5) - sphereCoords;
+                    return float2(sphereCoords.x * 0.5 + 0.5, 0.5 - sphereCoords.y);
                 }
                 else
                 {
