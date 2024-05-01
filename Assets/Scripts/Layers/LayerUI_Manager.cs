@@ -36,7 +36,7 @@ namespace TiltBrush.Layers
         private bool m_RefreshNavButtons;
 
         private int WidgetsPerPage => m_Widgets.Count;
-        private int LastPageIndex => m_Canvases.Count / WidgetsPerPage;
+        private int LastPageIndex => (m_Canvases.Count + WidgetsPerPage - 1) / WidgetsPerPage - 1;
         private int CurrentPageIndex => m_StartingCanvasIndex / WidgetsPerPage;
 
         private void Start()
