@@ -99,7 +99,7 @@ Shader "Custom/360PanoramaWarp"
                 float2 uv = ToRadialCoords(vdir);
                 if (_Stereoscopic == 1)
                 {
-                    uv *= fixed2(1.0, 0.5) + fixed2(0, unity_StereoEyeIndex * 0.5);
+                    uv = uv * fixed2(1.0, 0.5) + fixed2(0, unity_StereoEyeIndex * 0.5);
                 }
 
                 uv.x *= _MainTex_ST.x + _MainTex_ST.z;
