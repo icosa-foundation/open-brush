@@ -19,7 +19,7 @@ Properties {
   _ColorY("Color Y", Color) = (0,1,0,1)
   _ColorZ("Color Z", Color) = (0,0,1,1)
 
-  _Opacity("Opacity", Range(0,1)) = 1
+  _Dissolve("Dissolve", Range(0,1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
 }
@@ -44,7 +44,7 @@ SubShader {
 
     uniform float _ClipStart;
     uniform float _ClipEnd;
-    uniform half _Opacity;
+    uniform half _Dissolve;
 
     struct appdata_t {
       float4 vertex : POSITION;
@@ -86,7 +86,7 @@ SubShader {
     fixed4 frag (v2f i) : SV_Target
     {
       if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-      if (_Opacity < 1 && Dither8x8(i.vertex.xy) >= _Opacity) discard;
+      if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
 
       float3 n = normalize(cross(ddy(i.worldPos), ddx(i.worldPos)));
       i.color.xyz = float3(

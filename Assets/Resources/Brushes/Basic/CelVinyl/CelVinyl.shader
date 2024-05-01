@@ -18,7 +18,7 @@ Shader "Brush/Special/CelVinyl" {
     _Color("Color", Color) = (1,1,1,1)
     _Cutoff ("Alpha Cutoff", Range (0,1)) = 0.5
 
-    _Opacity ("Opacity", Range(0, 1)) = 1
+    _Dissolve ("Dissolve", Range(0, 1)) = 1
   	_ClipStart("Clip Start", Float) = 0
 	  _ClipEnd("Clip End", Float) = -1
   }
@@ -48,7 +48,7 @@ Shader "Brush/Special/CelVinyl" {
 
         uniform float _ClipStart;
         uniform float _ClipEnd;
-        uniform half _Opacity;
+        uniform half _Dissolve;
 
         struct appdata_t {
             float4 vertex : POSITION;
@@ -91,7 +91,7 @@ Shader "Brush/Special/CelVinyl" {
         {
 
           if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-          if (_Opacity < 1 && Dither8x8(i.pos.xy) >= _Opacity) discard;
+          if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
 
           fixed4 tex = tex2D(_MainTex, i.texcoord) * i.color;
           UNITY_APPLY_FOG(i.fogCoord, tex);

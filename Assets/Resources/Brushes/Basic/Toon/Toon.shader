@@ -17,7 +17,7 @@ Properties {
   _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
   _OutlineMax("Maximum outline size", Range(0, .5)) = .005
 
-  _Opacity("Opacity", Range(0,1)) = 1
+  _Dissolve("Dissolve", Range(0,1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
 }
@@ -38,7 +38,7 @@ CGINCLUDE
 
   uniform float _ClipStart;
   uniform float _ClipEnd;
-  uniform half _Opacity;
+  uniform half _Dissolve;
 
   struct appdata_t {
     float4 vertex : POSITION;
@@ -134,7 +134,7 @@ CGINCLUDE
   fixed4 fragBlack (v2f i) : SV_Target
   {
     if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-    if (_Opacity < 1 && Dither8x8(i.pos.xy) >= _Opacity) discard;
+    if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
 
     float4 color = float4(0,0,0,1);
     UNITY_APPLY_FOG(i.fogCoord, color);
@@ -145,7 +145,7 @@ CGINCLUDE
   fixed4 fragColor (v2f i) : SV_Target
   {
     if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-    if (_Opacity < 1 && Dither8x8(i.pos.xy) >= _Opacity) discard;
+    if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
 
     UNITY_APPLY_FOG(i.fogCoord, i.color);
     FRAG_MOBILESELECT(i.color)

@@ -28,6 +28,7 @@ Properties {
   _TimeSpeed("Time Speed", Float) = 1.0
 
   _Opacity ("Opacity", Range(0, 1)) = 1
+  _Dissolve ("Dissolve", Range(0, 1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
 }
@@ -63,6 +64,7 @@ Category {
 
       uniform float _ClipStart;
       uniform float _ClipEnd;
+      uniform half _Dissolve;
       uniform half _Opacity;
 
       struct v2f {
@@ -153,6 +155,7 @@ Category {
       fixed4 frag (v2f i) : SV_Target
       {
         if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+        if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
 
         float4 tex = tex2D(_MainTex, i.texcoord);
 

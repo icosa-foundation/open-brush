@@ -17,7 +17,7 @@ Properties {
   _MainTex ("Particle Texture", 2D) = "white" {}
   _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
 
-  _Opacity ("Opacity", Range(0, 1)) = 1
+  _Dissolve("Dissolve", Range(0, 1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
 }
@@ -49,7 +49,7 @@ Category {
 
     uniform float _ClipStart;
     uniform float _ClipEnd;
-    uniform half _Opacity;
+    uniform half _Dissolve;
 
     struct appdata_t {
       float4 vertex : POSITION;
@@ -94,14 +94,14 @@ Category {
     {
       if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
       // It's hard to get alpha curves right so use dithering for hdr shaders
-      if (_Opacity < 1 && Dither8x8(i.pos.xy) >= _Opacity) discard;
+      if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
 
       float4 color = i.color * tex2D(_MainTex, i.texcoord);
       color = float4(color.rgb * color.a, 1.0);
       color = SrgbToNative(color);
       color = encodeHdr(color.rgb);
       FRAG_MOBILESELECT(color)
-      return color * _Opacity;
+      return color * _Dissolve;
     }
 
   ENDCG

@@ -17,7 +17,7 @@ Properties {
   _MainTex ("Particle Texture", 2D) = "white" {}
   _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
 
-  _Opacity ("Opacity", Range(0, 1)) = 1
+  _Dissolve("Dissolve", Range(0, 1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
 }
@@ -50,7 +50,7 @@ Category {
 
       uniform float _ClipStart;
       uniform float _ClipEnd;
-      uniform half _Opacity;
+      uniform half _Dissolve;
 
       struct appdata_t {
         float4 vertex : POSITION;
@@ -92,7 +92,7 @@ Category {
       {
 
         if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-        if (_Opacity < 1 && Dither8x8(i.vertex.xy) >= _Opacity) discard;
+        if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
 
         i.texcoord.x -= _BeatOutputAccum.x;
         i.texcoord.y += i.texcoord.x;
@@ -102,7 +102,7 @@ Category {
         i.texcoord.y += wav;
         float4 c = i.color * tex2D(_MainTex, i.texcoord);
         c = encodeHdr(c.rgb * c.a);
-        return c * _Opacity;
+        return c * _Dissolve;
       }
       ENDCG
     }

@@ -22,7 +22,7 @@ Properties {
   _Smoothness("Smoothness", Range(0, 1)) = 0.5
   _Metallic("Metallic", Range(0, 1)) = 0
 
-  _Opacity("Opacity", Range(0, 1)) = 1
+  _Dissolve("Dissolve", Range(0, 1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
 }
@@ -51,7 +51,7 @@ SubShader {
 
     uniform float _ClipStart;
     uniform float _ClipEnd;
-    uniform half _Opacity;
+    uniform half _Dissolve;
 
     struct appdata {
       float4 vertex : POSITION;
@@ -118,7 +118,7 @@ SubShader {
     float4 frag(v2f i) : SV_TARGET {
 
       if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-      if (_Opacity < 1 && Dither8x8(i.pos.xy) >= _Opacity) discard;
+      if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
 
       // Apply shadows
       UNITY_LIGHT_ATTENUATION(attenuation, i, i.worldPos);

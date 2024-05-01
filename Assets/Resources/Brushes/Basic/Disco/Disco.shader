@@ -25,7 +25,7 @@ Shader "Brush/Disco" {
     _TimeBlend("Time Blend", Float) = 0
     _TimeSpeed("Time Speed", Float) = 1.0
 
-    _Opacity("Opacity", Range(0,1)) = 1
+    _Dissolve("_Dissolve", Range(0,1)) = 1
     _ClipStart("Clip Start", Float) = 0
     _ClipEnd("Clip End", Float) = -1
   }
@@ -71,7 +71,7 @@ Shader "Brush/Disco" {
 
     uniform float _ClipStart;
     uniform float _ClipEnd;
-    uniform half _Opacity;
+    uniform half _Dissolve;
 
     void vert (inout appdata_full_plus_id v, out Input o) {
       UNITY_INITIALIZE_OUTPUT(Input, o);
@@ -104,7 +104,7 @@ Shader "Brush/Disco" {
     void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
       if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
-      if (_Opacity < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Opacity) discard;
+      if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
 
       fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);
       o.Albedo = tex.rgb * _Color.rgb * IN.color.rgb;

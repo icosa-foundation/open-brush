@@ -23,7 +23,7 @@ Properties {
   _TimeBlend("Time Blend", Float) = 0
   _TimeSpeed("Time Speed", Float) = 1.0
 
-  _Opacity ("Opacity", Range(0, 1)) = 1
+  _Dissolve("Dissolve", Range(0, 1)) = 1
   _ClipStart("Clip Start", Float) = 0
   _ClipEnd("Clip End", Float) = -1
 }
@@ -63,7 +63,7 @@ Category {
 
       uniform float _ClipStart;
       uniform float _ClipEnd;
-      uniform half _Opacity;
+      uniform half _Dissolve;
 
       struct v2f {
         float4 vertex : SV_POSITION;
@@ -116,7 +116,7 @@ Category {
       {
         if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
       // It's hard to get alpha curves right so use dithering for hdr shaders
-      if (_Opacity < 1 && Dither8x8(i.vertex.xy) >= _Opacity) discard;
+      if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
 
         float4 texCol = tex2D(_MainTex, i.texcoord);
         float4 color = i.color * texCol;
@@ -126,7 +126,7 @@ Category {
         color.rgb = GetSelectionColor() * texCol.r;
         color.a = texCol.a;
 #endif
-        return color * _Opacity;
+        return color * _Dissolve;
       }
       ENDCG
     }

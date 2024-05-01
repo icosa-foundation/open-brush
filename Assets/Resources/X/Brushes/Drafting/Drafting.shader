@@ -17,6 +17,7 @@ Shader "Brush/Special/Drafting" {
     _MainTex ("Texture", 2D) = "white" {}
 
     _Opacity ("Opacity", Range(0, 1)) = 1
+    _Dissolve ("Dissolve", Range(0, 1)) = 1
 	  _ClipStart("Clip Start", Float) = 0
 	  _ClipEnd("Clip End", Float) = -1
   }
@@ -48,6 +49,7 @@ Shader "Brush/Special/Drafting" {
 
       uniform float _ClipStart;
       uniform float _ClipEnd;
+      uniform half _Dissolve;
       uniform half _Opacity;
 
       struct appdata_t {
@@ -88,7 +90,7 @@ Shader "Brush/Special/Drafting" {
       fixed4 frag (v2f i) : COLOR {
 
         if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-
+        if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
 
         half4 c = i.color * tex2D(_MainTex, i.texcoord );
         c = encodeHdr(c.rgb * c.a * _Opacity);
