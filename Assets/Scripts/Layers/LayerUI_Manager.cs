@@ -60,20 +60,19 @@ namespace TiltBrush.Layers
                     continue;
                 }
                 widget.SetActive(true);
+
                 var canvas = m_Canvases[canvasIndex];
-                widget.GetComponentInChildren<TMPro.TextMeshPro>().text = canvas.name;
-                if (canvasIndex == 0)
-                {
-                    widget.GetComponentInChildren<TMPro.TextMeshPro>().text = $"{m_MainLayerName.GetLocalizedStringAsync().Result}";
-                    widget.GetComponentInChildren<DeleteLayerButton>()?.gameObject.SetActive(false);
-                    widget.GetComponentInChildren<LayerPopupButton>()?.gameObject.SetActive(false);
-                    widget.GetComponentInChildren<SquashLayerButton>()?.gameObject.SetActive(false);
-                    widget.GetComponentInChildren<RenameLayerButton>()?.gameObject.SetActive(false);
-                }
-                widget.GetComponentInChildren<FocusLayerButton>().SetButtonActivation(canvas == App.ActiveCanvas);
-                widget.GetComponentInChildren<FocusLayerButton>().SetButtonActivation(canvas == App.ActiveCanvas);
+
+                string layerName = canvasIndex > 0 ? canvas.name : $"{m_MainLayerName.GetLocalizedStringAsync().Result}";
+                widget.GetComponentInChildren<TMPro.TextMeshPro>().text = layerName;
+
                 // Active button means hidden layer
                 widget.GetComponentInChildren<ToggleVisibilityLayerButton>().SetButtonActivation(!canvas.isActiveAndEnabled);
+                widget.GetComponentInChildren<FocusLayerButton>().SetButtonActivation(canvas == App.ActiveCanvas);
+
+                widget.GetComponentInChildren<SquashLayerButton>(includeInactive: true).gameObject.SetActive(canvasIndex != 0);
+                widget.GetComponentInChildren<LayerPopupButton>(includeInactive: true).gameObject.SetActive(canvasIndex != 0);
+
                 foreach (var btn in widget.GetComponentsInChildren<OptionButton>())
                 {
                     btn.m_CommandParam = canvasIndex;
