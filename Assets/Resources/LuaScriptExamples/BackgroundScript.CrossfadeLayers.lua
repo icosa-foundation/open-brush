@@ -13,17 +13,17 @@ function Start()
     fadeProgress = 0
     for i = 0, Sketch.layers.count - 1 do
         Sketch.layers[i].allowStrokeAnimation = true
-        Sketch.layers[i]:SetShaderFloat("_Opacity", 0)
+        Sketch.layers[i]:SetShaderFloat("_Dissolve", 0)
     end
-    Sketch.layers[0]:SetShaderFloat("_Opacity", 1)
+    Sketch.layers[0]:SetShaderFloat("_Dissolve", 1)
 end
 
 function Main()
     if Sketch.layers.count < 2 then return end
     layerOut = Sketch.layers[currentLayerNumber]
     layerIn = Sketch.layers[nextLayerNumber]
-    layerOut:SetShaderFloat("_Opacity", 1 - fadeProgress)
-    layerIn:SetShaderFloat("_Opacity", fadeProgress)
+    layerOut:SetShaderFloat("_Dissolve", 1 - fadeProgress)
+    layerIn:SetShaderFloat("_Dissolve", fadeProgress)
     fadeProgress = fadeProgress + Parameters.speed
     if fadeProgress >= 1 then
         fadeProgress = 0
