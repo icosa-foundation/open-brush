@@ -1,4 +1,4 @@
-﻿// Copyright 2022 The Open Brush Authors
+// Copyright 2024 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Linq;
+using TiltBrush.Layers;
 
-namespace TiltBrush.Layers
+namespace TiltBrush
 {
-    public class AddLayerButton : BaseButton
+    public class LayersPanel : BasePanel
     {
-        protected override void OnButtonPressed()
+
+        private LayerUI_Manager m_LayerUI_Manager;
+
+        void Awake()
         {
-            var UiManager = GetComponentInParent<LayerUI_Manager>();
-            base.OnButtonPressed();
-            UiManager.AddLayer();
+            m_LayerUI_Manager = GetComponent<LayerUI_Manager>();
+        }
+
+        public override void GotoPage(int iIndex)
+        {
+            m_LayerUI_Manager.GotoPage(iIndex);
+        }
+
+        public override void AdvancePage(int iAmount)
+        {
+            m_LayerUI_Manager.AdvancePage(iAmount);
         }
     }
 }
