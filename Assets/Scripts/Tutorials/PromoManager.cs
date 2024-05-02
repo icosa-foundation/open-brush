@@ -78,8 +78,8 @@ namespace TiltBrush
         public float BrushSizeHintShowDistance { get { return m_BrushSizeHintShowDistance; } }
         public float BrushSizeHintPreventSwipeAmount { get { return m_BrushSizeHintPreventSwipeAmount; } }
         public float BrushSizeHintCancelSwipeAmount { get { return m_BrushSizeHintCancelSwipeAmount; } }
-        public string GrabPanelHintText { get { return m_GrabPanelHintText.GetLocalizedString(); } }
-        public string TossPanelHintText { get { return m_TossPanelHintText.GetLocalizedString(); } }
+        public string GrabPanelHintText { get { return m_GrabPanelHintText.GetLocalizedStringAsync().Result; } }
+        public string TossPanelHintText { get { return m_TossPanelHintText.GetLocalizedStringAsync().Result; } }
 
         public IEnumerable<BasePromo> RequestedPromos { get { return m_RequestedPromos; } }
 

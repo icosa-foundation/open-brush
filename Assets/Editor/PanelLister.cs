@@ -23,7 +23,7 @@ public class PanelLister : MonoBehaviour
         panelList.AppendLine($"m_Advanced\tm_Basic\tm_ModeGvr\tm_ModeMono\tm_ModeQuest\tm_ModeVr\tm_PanelPrefab\tm_ModeVrExperimental");
         foreach (var panel in m_PanelMap)
         {
-            panelList.AppendLine($"{panel.m_Advanced}\t{panel.m_Basic}\t{panel.m_ModeGvr}\t{panel.m_ModeMono}\t{panel.m_ModeQuest}\t{panel.m_ModeVr}\t{panel.m_PanelPrefab}\t{panel.m_ModeVrExperimental}");
+            panelList.AppendLine($"{panel.m_Advanced}\t{panel.m_Basic}\t{panel.m_ModeMono}\t{panel.m_ModeQuest}\t{panel.m_ModeVr}\t{panel.m_PanelPrefab}");
         }
 
 

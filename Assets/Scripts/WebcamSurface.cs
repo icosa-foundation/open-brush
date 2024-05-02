@@ -27,14 +27,14 @@ public class WebcamSurface : MonoBehaviour
     public ActionButton PreviousDeviceButton;
     public ActionButton NextDeviceButton;
 
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
     private WebCamDevice[] _Devices;
     private WebCamTexture _webcam;
 #endif
 
     void Start()
     {
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
         _Devices = WebCamTexture.devices;
 #endif
         UpdateButtonState();
@@ -54,7 +54,7 @@ public class WebcamSurface : MonoBehaviour
 
     private void UpdateDevice()
     {
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
         if (_webcam != null)
         {
             _webcam.Stop();
@@ -74,7 +74,7 @@ public class WebcamSurface : MonoBehaviour
 
     private void UpdateButtonState()
     {
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
         NextDeviceButton.gameObject.SetActive(deviceIndex < _Devices.Length - 1);
         PreviousDeviceButton.gameObject.SetActive(deviceIndex > 0);
 #endif
@@ -82,7 +82,7 @@ public class WebcamSurface : MonoBehaviour
 
     private void OnDestroy()
     {
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
         if (_webcam != null)
         {
             _webcam.Stop();
@@ -93,7 +93,7 @@ public class WebcamSurface : MonoBehaviour
 
     public void HandleChangeDevice(int increment)
     {
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
         deviceIndex += increment;
         deviceIndex = Mathf.Clamp(deviceIndex, 0, _Devices.Length - 1);
         UpdateButtonState();

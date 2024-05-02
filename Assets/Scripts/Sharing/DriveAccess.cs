@@ -115,6 +115,10 @@ namespace TiltBrush
                     return "Linux-unknown";
                 case RuntimePlatform.Android:
                     return GetAndroidId();
+                case RuntimePlatform.IPhonePlayer:
+                    // TODO:Mikesky - iOS ID generation
+                    Debug.LogError("Host id not implemented for iOS");
+                    return "iOS-unknown";
                 default:
                     return GetPcId();
             }

@@ -72,6 +72,11 @@ Shader "Point Cloud/Point"
             #endif
 
                 Varyings o;
+
+                UNITY_SETUP_INSTANCE_ID(v);
+                UNITY_INITIALIZE_OUTPUT(Varyings, o);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
                 o.position = UnityObjectToClipPos(pos);
                 o.color = col;
             #ifdef _DISTANCE_ON

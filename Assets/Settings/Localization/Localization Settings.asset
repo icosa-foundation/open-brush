@@ -15,6 +15,7 @@ MonoBehaviour:
   m_StartupSelectors:
   - rid: 6394126504158822400
   - rid: 6394126504544960519
+  - rid: 4892135759526756352
   - rid: 6394126504158822402
   m_AvailableLocales:
     rid: 6394126504158822403
@@ -33,6 +34,9 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
+    - rid: 4892135759526756352
+      type: {class: SystemLocaleSelector, ns: UnityEngine.Localization.Settings, asm: Unity.Localization}
+      data: 
     - rid: 6394126504158822400
       type: {class: CommandLineLocaleSelector, ns: UnityEngine.Localization.Settings,
         asm: Unity.Localization}
@@ -46,6 +50,7 @@ MonoBehaviour:
           m_Code: en
     - rid: 6394126504158822403
       type: {class: LocalesProvider, ns: UnityEngine.Localization.Settings, asm: Unity.Localization}
+      data: 
     - rid: 6394126504158822404
       type: {class: LocalizedAssetDatabase, ns: UnityEngine.Localization.Settings,
         asm: Unity.Localization}
@@ -136,18 +141,23 @@ MonoBehaviour:
     - rid: 6394126504158822411
       type: {class: DictionarySource, ns: UnityEngine.Localization.SmartFormat.Extensions,
         asm: Unity.Localization}
+      data: 
     - rid: 6394126504158822412
       type: {class: ValueTupleSource, ns: UnityEngine.Localization.SmartFormat.Extensions,
         asm: Unity.Localization}
+      data: 
     - rid: 6394126504158822413
       type: {class: XmlSource, ns: UnityEngine.Localization.SmartFormat.Extensions,
         asm: Unity.Localization}
+      data: 
     - rid: 6394126504158822414
       type: {class: ReflectionSource, ns: UnityEngine.Localization.SmartFormat.Extensions,
         asm: Unity.Localization}
+      data: 
     - rid: 6394126504158822415
       type: {class: DefaultSource, ns: UnityEngine.Localization.SmartFormat.Extensions,
         asm: Unity.Localization}
+      data: 
     - rid: 6394126504158822416
       type: {class: PluralLocalizationFormatter, ns: UnityEngine.Localization.SmartFormat.Extensions,
         asm: Unity.Localization}

@@ -133,7 +133,8 @@ namespace TiltBrush
                     break;
                 case OverlayState.Hidden:
                 case OverlayState.Visible:
-                default: break;
+                default:
+                    break;
             }
         }
 
@@ -298,32 +299,32 @@ namespace TiltBrush
             switch (type)
             {
                 case OverlayType.LoadSketch:
-                    SetText(m_LoadSketchText.GetLocalizedString());
+                    SetText(m_LoadSketchText.GetLocalizedStringAsync().Result);
                     RenderLogo(0);
                     SetOverlayTexture(m_GUILogo);
                     break;
                 case OverlayType.LoadModel:
-                    SetText(m_LoadModelText.GetLocalizedString());
+                    SetText(m_LoadModelText.GetLocalizedStringAsync().Result);
                     RenderLogo(0);
                     SetOverlayTexture(m_GUILogo);
                     break;
                 case OverlayType.LoadGeneric:
-                    SetText(m_LoadGenericText.GetLocalizedString());
+                    SetText(m_LoadGenericText.GetLocalizedStringAsync().Result);
                     RenderLogo(0);
                     SetOverlayTexture(m_GUILogo);
                     break;
                 case OverlayType.LoadImages:
-                    SetText(m_LoadImagesText.GetLocalizedString());
+                    SetText(m_LoadImagesText.GetLocalizedStringAsync().Result);
                     RenderLogo(0);
                     SetOverlayTexture(m_GUILogo);
                     break;
                 case OverlayType.Export:
-                    SetText(m_ExportText.GetLocalizedString());
+                    SetText(m_ExportText.GetLocalizedStringAsync().Result);
                     RenderLogo(0);
                     SetOverlayTexture(m_GUILogo);
                     break;
                 case OverlayType.LoadMedia:
-                    SetText(m_LoadMediaText.GetLocalizedString());
+                    SetText(m_LoadMediaText.GetLocalizedStringAsync().Result);
                     RenderLogo(0);
                     SetOverlayTexture(m_GUILogo);
                     break;
@@ -433,7 +434,7 @@ namespace TiltBrush
                 yield return null; // eat a frame
                 if (showSuccessText)
                 {
-                    SetText(m_SuccessText.GetLocalizedString());
+                    SetText(m_SuccessText.GetLocalizedStringAsync().Result);
                     float successHold = 1.0f;
                     while (successHold >= 0.0f)
                     {
@@ -522,7 +523,7 @@ namespace TiltBrush
 
                 if (showSuccessText)
                 {
-                    SetText(m_SuccessText.GetLocalizedString());
+                    SetText(m_SuccessText.GetLocalizedStringAsync().Result);
                     await Awaiters.Seconds(1f);
                 }
 
@@ -580,7 +581,7 @@ namespace TiltBrush
                 Progress.Report(0.75);
                 if (showSuccessText)
                 {
-                    SetText(m_SuccessText.GetLocalizedString());
+                    SetText(m_SuccessText.GetLocalizedStringAsync().Result);
                     await Awaiters.Seconds(1f);
                 }
 
@@ -637,14 +638,14 @@ namespace TiltBrush
 
         public void RenderLogo(double progress)
         {
-            // TODO:Mike Temp hack to set correct logo progress
+            // TODO:Mikesky Temp hack to set correct logo progress
             if (m_OverlayMode == OverlayMode.Default)
             {
                 m_Overlay.GetComponent<GvrOverlay>().Progress = (float)progress;
                 return;
             }
 
-            // TODO:Mike Old code which is generating an image, then submitting to platform specific compositor.
+            // TODO:Mikesky Old code which is generating an image, then submitting to platform specific compositor.
             RenderTexture.active = m_GUILogo;
             GL.Clear(true, true, m_BackgroundColor);
             GL.PushMatrix();
@@ -676,14 +677,14 @@ namespace TiltBrush
 
         public void SetText(string text)
         {
-            // TODO:Mike Temp hack to set correct logo progress
+            // TODO:Mikesky Temp hack to set correct logo progress
             if (m_OverlayMode == OverlayMode.Default)
             {
                 m_Overlay.GetComponent<GvrOverlay>().MessageStatus = text;
                 return;
             }
 
-            // TODO:Mike Old code which is generating text glyphs, then submitting to compositor
+            // TODO:Mikesky Old code which is generating text glyphs, then submitting to compositor
             var settings = new TextGenerationSettings();
             settings.font = m_Font;
             settings.color = m_TextColor;

@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 
@@ -117,6 +118,39 @@ namespace TiltBrush
             get
             {
                 return HasSelection;
+            }
+        }
+
+        public bool UngroupingAllowed
+        {
+            get
+            {
+                return SelectionIsInOneGroup || SelectionIsCompositeImport;
+            }
+        }
+
+        public bool SelectionIsCompositeImport
+        {
+            get
+            {
+                if (m_SelectedWidgets.Count != 1) return false;
+                GrabWidget widget = m_SelectedWidgets.First();
+                if (widget is ModelWidget modelWidget)
+                {
+                    return modelWidget.HasSubModels();
+                }
+
+                if (widget is ImageWidget imageWidget)
+                {
+                    string ext = Path.GetExtension(imageWidget.ReferenceImage.FileName).ToLower();
+                    if (ext == ".svg")
+                    {
+                        return imageWidget.HasSubShapes();
+                    }
+                    return false;
+                }
+
+                return false;
             }
         }
 
@@ -434,9 +468,9 @@ namespace TiltBrush
         {
             bool showSelection = ShouldShowSelectedStrokes;
 
-            if (Config.IsExperimental)
+            if (!App.Config.m_UseBatchedBrushes)
             {
-                // Strokes of type BrushStroke currently only exist in experimental builds.
+                // Strokes of type BrushStroke currently only exist when batching is off
                 // The list of selected strokes might be quite long, so we want to avoid iterating it.
                 foreach (Stroke stroke in m_SelectedStrokes)
                 {
@@ -469,7 +503,7 @@ namespace TiltBrush
                 {
                     widget.RegisterHighlight();
                 }
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
                 App.Scene.SelectionCanvas.RegisterHighlight();
 #endif
             }
@@ -833,15 +867,15 @@ namespace TiltBrush
 
         public void InvertSelection()
         {
-            // Build a list of all the strokes in the main canvas.
+            // Build a list of all the strokes in the active canvas.
             List<Stroke> unselectedStrokes =
                 SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes();
 
-            // Build a list of all the unpinned widgets in the main canvas.
+            // Build a list of all the unpinned widgets in the active canvas.
             List<GrabWidget> unselectedWidgets =
                 WidgetManager.m_Instance.GetAllUnselectedActiveWidgets();
 
-            // Select everything that was in the main canvas.
+            // Select everything that was in the active canvas.
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new InvertSelectionCommand(unselectedStrokes, m_SelectedStrokes,
                     unselectedWidgets, m_SelectedWidgets));
@@ -870,11 +904,11 @@ namespace TiltBrush
 
         public void SelectAll()
         {
-            // Build a list of all the strokes in the main canvas.
+            // Build a list of all the strokes in the active canvas.
             List<Stroke> unselectedStrokes =
                 SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes();
 
-            // Build a list of all the unpinned widgets in the main canvas.
+            // Build a list of all the unpinned widgets in the active canvas.
             List<GrabWidget> unselectedWidgets =
                 WidgetManager.m_Instance.GetAllUnselectedActiveWidgets();
 
@@ -894,16 +928,24 @@ namespace TiltBrush
                 return;
             }
 
-            // If all the selected strokes are in one group, ungroup by setting the new group to None.
-            // Otherwise, create a new group by setting the target group parameter to null.
-            bool selectionIsInOneGroup = SelectionIsInOneGroup;
-            SketchGroupTag? targetGroup =
-                selectionIsInOneGroup ? SketchGroupTag.None : (SketchGroupTag?)null;
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                new GroupStrokesAndWidgetsCommand(m_SelectedStrokes, m_SelectedWidgets, targetGroup: targetGroup));
+            if (SelectionIsCompositeImport)
+            {
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                    new BreakModelApartCommand(m_SelectedWidgets.First() as ModelWidget));
+            }
+            else
+            {
+                // If all the selected strokes are in one group, ungroup by setting the new group to None.
+                // Otherwise, create a new group by setting the target group parameter to null.
+                bool selectionIsInOneGroup = SelectionIsInOneGroup;
+                SketchGroupTag? targetGroup =
+                    selectionIsInOneGroup ? SketchGroupTag.None : (SketchGroupTag?)null;
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                    new GroupStrokesAndWidgetsCommand(m_SelectedStrokes, m_SelectedWidgets, targetGroup: targetGroup));
 
-            OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                InputManager.ControllerName.Brush, selectionIsInOneGroup ? "Ungrouped!" : "Grouped!");
+                OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                    InputManager.ControllerName.Brush, selectionIsInOneGroup ? "Ungrouped!" : "Grouped!");
+            }
             var pos = InputManager.m_Instance.GetControllerPosition(InputManager.ControllerName.Brush);
             AudioManager.m_Instance.PlayGroupedSound(pos);
         }

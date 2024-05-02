@@ -84,6 +84,9 @@ namespace TiltBrush
                 case ControllerStyle.Phoenix:
                     bindingGroup = actionSet.PicoControllerScheme.bindingGroup;
                     break;
+                case ControllerStyle.Zapbox:
+                    bindingGroup = actionSet.ZapboxControllerScheme.bindingGroup;
+                    break;
                 default:
                     break;
             }

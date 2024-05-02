@@ -178,6 +178,9 @@ namespace TiltBrush
                 {
                     case ControllerStyle.OculusTouch:
                     case ControllerStyle.Knuckles:
+                    case ControllerStyle.Phoenix:
+                    case ControllerStyle.Neo3:
+                    case ControllerStyle.Zapbox:
                         App.Instance.SelectionEffect.RegisterMesh(
                             ControllerGeometry.JoystickPad.GetComponent<MeshFilter>());
                         break;

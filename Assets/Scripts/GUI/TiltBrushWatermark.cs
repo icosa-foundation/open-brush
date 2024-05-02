@@ -46,10 +46,6 @@ namespace TiltBrush
                 if (CameraConfig.Watermark && !App.Config.IsMobileHardware)
                 {
                     m_WatermarkStyle = WatermarkStyle.Standard;
-                    if (Config.IsExperimental)
-                    {
-                        m_WatermarkStyle = WatermarkStyle.Labs;
-                    }
                 }
             }
 

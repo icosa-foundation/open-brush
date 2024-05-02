@@ -579,9 +579,9 @@ MonoBehaviour:
   m_BlockUndoRedo: 0
   m_IsLongPressPopUp: 0
   m_OrderedPageButtons: []
-  m_PrevButton: {fileID: 0}
+  m_PrevButton: {fileID: 1990516768702390}
   m_NextButton: {fileID: 0}
-  m_Title: {fileID: 0}
+  m_Title: {fileID: 8578634322448871378}
   m_SaveButton: {fileID: 114705786332752742}
   m_Title_Saving: Save your sketch?
   m_Title_NoSaving: Proceed?

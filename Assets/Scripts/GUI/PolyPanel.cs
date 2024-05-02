@@ -32,11 +32,11 @@ namespace TiltBrush
         [SerializeField] private TextMeshPro m_PanelTextSubtitle;
         [SerializeField] private TextMeshPro m_PanelTextUserSubtitle;
         [SerializeField] private LocalizedString m_PanelTextStandard;
-        public string PanelTextStandard { get { return m_PanelTextStandard.GetLocalizedString(); } }
+        public string PanelTextStandard { get { return m_PanelTextStandard.GetLocalizedStringAsync().Result; } }
         [SerializeField] private LocalizedString m_PanelTextFeatured;
-        public string PanelTextFeatured { get { return m_PanelTextFeatured.GetLocalizedString(); } }
+        public string PanelTextFeatured { get { return m_PanelTextFeatured.GetLocalizedStringAsync().Result; } }
         [SerializeField] private LocalizedString m_PanelTextLiked; // Liked Models
-        public string PanelTextLiked { get { return m_PanelTextLiked.GetLocalizedString(); } }
+        public string PanelTextLiked { get { return m_PanelTextLiked.GetLocalizedStringAsync().Result; } }
         [SerializeField] private Renderer m_PolyGalleryRenderer;
         [SerializeField] private GameObject m_NoObjectsMessage;
         [SerializeField] private GameObject m_InternetError;

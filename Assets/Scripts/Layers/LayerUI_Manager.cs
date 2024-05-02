@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -26,47 +27,67 @@ namespace TiltBrush.Layers
 
         [SerializeField] private LocalizedString m_MainLayerName;
         [SerializeField] private LocalizedString m_AdditionalLayerName;
+        [SerializeField] private NavButton m_PreviousPageButton;
+        [SerializeField] private NavButton m_NextPageButton;
 
         public List<GameObject> m_Widgets;
         private List<CanvasScript> m_Canvases;
+        private int m_StartingCanvasIndex;
+        private bool m_RefreshNavButtons;
+
+        private int WidgetsPerPage => m_Widgets.Count;
+        private int LastPageIndex => (m_Canvases.Count + WidgetsPerPage - 1) / WidgetsPerPage - 1;
+        private int CurrentPageIndex => m_StartingCanvasIndex / WidgetsPerPage;
 
         private void Start()
         {
+            m_StartingCanvasIndex = 0;
             ResetUI();
+            m_RefreshNavButtons = true;
         }
 
         private void ResetUI()
         {
-            m_Canvases = new List<CanvasScript>();
-            var canvases = App.Scene.LayerCanvases.ToArray();
+            m_Canvases = App.Scene.LayerCanvases.ToList();
+
             for (int i = 0; i < m_Widgets.Count; i++)
             {
                 var widget = m_Widgets[i];
-                if (i >= canvases.Length)
+                int canvasIndex = i + m_StartingCanvasIndex;
+                if (canvasIndex >= m_Canvases.Count)
                 {
                     widget.SetActive(false);
                     continue;
                 }
                 widget.SetActive(true);
-                var canvas = canvases[i];
-                widget.GetComponentInChildren<TMPro.TextMeshPro>().text = canvas.name;
-                if (i == 0)
-                {
-                    widget.GetComponentInChildren<TMPro.TextMeshPro>().text = $"{m_MainLayerName.GetLocalizedString()}";
-                    widget.GetComponentInChildren<DeleteLayerButton>()?.gameObject.SetActive(false);
-                    widget.GetComponentInChildren<LayerPopupButton>()?.gameObject.SetActive(false);
-                    widget.GetComponentInChildren<SquashLayerButton>()?.gameObject.SetActive(false);
-                    widget.GetComponentInChildren<RenameLayerButton>()?.gameObject.SetActive(false);
-                }
-                widget.GetComponentInChildren<FocusLayerButton>().SetButtonActivation(canvas == App.ActiveCanvas);
-                widget.GetComponentInChildren<FocusLayerButton>().SetButtonActivation(canvas == App.ActiveCanvas);
+
+                var canvas = m_Canvases[canvasIndex];
+
+                string layerName = canvasIndex > 0 ? canvas.name : $"{m_MainLayerName.GetLocalizedStringAsync().Result}";
+                widget.GetComponentInChildren<TMPro.TextMeshPro>().text = layerName;
+
                 // Active button means hidden layer
                 widget.GetComponentInChildren<ToggleVisibilityLayerButton>().SetButtonActivation(!canvas.isActiveAndEnabled);
+                widget.GetComponentInChildren<FocusLayerButton>().SetButtonActivation(canvas == App.ActiveCanvas);
+
+                widget.GetComponentInChildren<SquashLayerButton>(includeInactive: true).gameObject.SetActive(canvasIndex != 0);
+                widget.GetComponentInChildren<LayerPopupButton>(includeInactive: true).gameObject.SetActive(canvasIndex != 0);
+
                 foreach (var btn in widget.GetComponentsInChildren<OptionButton>())
                 {
-                    btn.m_CommandParam = i;
+                    btn.m_CommandParam = canvasIndex;
                 }
-                m_Canvases.Add(canvas);
+            }
+        }
+
+        private void LateUpdate()
+        {
+            if (m_RefreshNavButtons)
+            {
+                // Can't do this in RefreshUI because the it doesn't take effect if the button is being interacted with
+                m_PreviousPageButton.SetButtonAvailable(CurrentPageIndex > 0);
+                m_NextPageButton.SetButtonAvailable(CurrentPageIndex < LastPageIndex);
+                m_RefreshNavButtons = false;
             }
         }
 
@@ -130,18 +151,19 @@ namespace TiltBrush.Layers
 
         private void ActiveSceneChanged(CanvasScript prev, CanvasScript current)
         {
-            onActiveSceneChanged?.Invoke(GetWidgetFromCanvas(current));
+            int canvasIndex = m_Canvases.IndexOf(current);
+            int widgetIndex = canvasIndex - m_StartingCanvasIndex;
+            if (widgetIndex > 0 && widgetIndex < m_Widgets.Count)
+            {
+                onActiveSceneChanged?.Invoke(m_Widgets[widgetIndex]);
+            }
+            var desiredPageIndex = canvasIndex / WidgetsPerPage;
+            GotoPage(desiredPageIndex);
         }
 
         private CanvasScript GetCanvasFromWidget(GameObject widget)
         {
-            return m_Canvases[m_Widgets.IndexOf(widget)];
-        }
-
-        private GameObject GetWidgetFromCanvas(CanvasScript canvas)
-        {
-            var index = m_Canvases.IndexOf(canvas);
-            return index >= 0 ? m_Widgets[index] : null;
+            return m_Canvases[m_Widgets.IndexOf(widget) + m_StartingCanvasIndex];
         }
 
         public void HandleCopySelectionToCurrentLayer()
@@ -162,6 +184,18 @@ namespace TiltBrush.Layers
                     targetCanvas: App.ActiveCanvas
                 )
             );
+        }
+
+        public void GotoPage(int iIndex)
+        {
+            m_StartingCanvasIndex = Mathf.Clamp(iIndex, 0, LastPageIndex) * WidgetsPerPage;
+            ResetUI();
+            m_RefreshNavButtons = true;
+        }
+
+        public void AdvancePage(int iAmount)
+        {
+            GotoPage(CurrentPageIndex + iAmount);
         }
     }
 }
