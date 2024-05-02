@@ -852,7 +852,7 @@ MonoBehaviour:
   m_InitialSpawnPos: {x: 4.61, y: 12, z: 5.34}
   m_InitialSpawnRotEulers: {x: 37.18, y: 63.12, z: 0}
   m_WandAttachAngle: 240
-  m_WandAttachYOffset: 0.75
+  m_WandAttachYOffset: 1.2
   m_WandAttachHalfHeight: 1.2
   m_BeginFixed: 1
   m_CanBeFixedToWand: 1

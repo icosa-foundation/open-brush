@@ -65,16 +65,25 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 11448696, guid: 0053ac08708148641bd0b629e8e3e2e5, type: 3}
       propertyPath: m_PanelPopUpMap.Array.size
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 11448696, guid: 0053ac08708148641bd0b629e8e3e2e5, type: 3}
       propertyPath: m_PanelPopUpMap.Array.data[0].m_Command
       value: 82
       objectReference: {fileID: 0}
     - target: {fileID: 11448696, guid: 0053ac08708148641bd0b629e8e3e2e5, type: 3}
+      propertyPath: m_PanelPopUpMap.Array.data[1].m_Command
+      value: 5800
+      objectReference: {fileID: 0}
+    - target: {fileID: 11448696, guid: 0053ac08708148641bd0b629e8e3e2e5, type: 3}
       propertyPath: m_PanelPopUpMap.Array.data[0].m_PopUpPrefab
       value: 
       objectReference: {fileID: 1867976667913174, guid: f454fbf43a220d645a14594cb79db0af,
+        type: 3}
+    - target: {fileID: 11448696, guid: 0053ac08708148641bd0b629e8e3e2e5, type: 3}
+      propertyPath: m_PanelPopUpMap.Array.data[1].m_PopUpPrefab
+      value: 
+      objectReference: {fileID: 1106918886213026712, guid: ffa805ad00d819549862fa54772bbab9,
         type: 3}
     - target: {fileID: 1000011504539966, guid: 0053ac08708148641bd0b629e8e3e2e5, type: 3}
       propertyPath: m_IsActive
