@@ -108,6 +108,10 @@ namespace TiltBrush
         /// This property is only for those who need to load the image data from disk.
         public string FilePath { get { return m_Path; } }
 
+        // Path relative to Catalog's HomeDirectory with forward slashes.
+        public string RelativePath =>
+            $".{FileFullPath.Substring(ReferenceImageCatalog.m_Instance.HomeDirectory.Length)}".Replace("\\", "/");
+
         public ReferenceImage(string path)
         {
             m_Path = path;

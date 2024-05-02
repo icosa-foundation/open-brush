@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using UnityEngine;
 
 namespace TiltBrush
 {
@@ -27,11 +28,13 @@ namespace TiltBrush
             }
             public override void Refresh(int iCatalog)
             {
-                ModelButton.SetPreset(ModelCatalog.m_Instance.GetModelAtIndex(iCatalog), iCatalog);
+                var model = ModelCatalog.m_Instance.GetModelAtIndex(iCatalog);
+                ModelButton.SetPreset(model, iCatalog);
             }
         }
 
         private int m_LastPageIndexForLoad = -1;
+        private string m_LastDirectoryForLoad;
 
         public override IReferenceItemCatalog Catalog
         {
@@ -58,9 +61,11 @@ namespace TiltBrush
             {
                 // Destroy previews so only the thumbnail is visible.
                 // Only do this when the page changes, to avoid thrashing the game state.
-                if (m_LastPageIndexForLoad != PageIndex)
+                var currentDir = Catalog.GetCurrentDirectory();
+                if (m_LastPageIndexForLoad != PageIndex || m_LastDirectoryForLoad != currentDir)
                 {
                     m_LastPageIndexForLoad = PageIndex;
+                    m_LastDirectoryForLoad = currentDir;
                     for (int i = 0; i < m_Icons.Length; i++)
                     {
                         (m_Icons[i].Button as ModelButton).DestroyModelPreview();

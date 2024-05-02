@@ -180,7 +180,7 @@ GameObject:
   - component: {fileID: 2624272951161731143}
   - component: {fileID: 2323353000080118199}
   m_Layer: 16
-  m_Name: TextActionButton
+  m_Name: TextOptionButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -277,7 +277,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 2630224399012238907}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5048fb3b23fb4d30993bded0678f8c43, type: 3}
+  m_Script: {fileID: 11500000, guid: 3d9f8be89ad34c6e82b5721be6c40c4a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
@@ -314,9 +314,35 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Action:
-    m_PersistentCalls:
-      m_Calls: []
+  m_Command: 0
+  m_CommandParam: -1
+  m_CommandParam2: -1
+  m_RequiresPopup: 0
+  m_CenterPopupOnButton: 0
+  m_PopupOffset: {x: 0, y: 0, z: 0}
+  m_PopupText: 
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_ToggleOnDescription: 
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_ToggleOnTexture: {fileID: 0}
+  m_AllowUnavailable: 0
+  m_LinkedUIObject: {fileID: 0}
   m_Highlight: {fileID: 7087301103453726921}
   m_ButtonLabel: 
   m_ColorSelected: {r: 0, g: 0, b: 0, a: 0}
@@ -334,6 +360,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4774244057288012162}
   - component: {fileID: 2766287218697250671}
+  - component: {fileID: 5431139491862965100}
   - component: {fileID: 4506741420675531107}
   m_Layer: 16
   m_Name: Text (TMP)
@@ -404,6 +431,14 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!222 &5431139491862965100
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4583691017407991961}
+  m_CullTransparentMesh: 0
 --- !u!114 &4506741420675531107
 MonoBehaviour:
   m_ObjectHideFlags: 0
