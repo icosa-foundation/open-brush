@@ -724,6 +724,10 @@ jobs:
                     "labels": ["feature", "enhancement"]
                 },
                 {
+                    "title": "## 🎨 UI / UX",
+                    "labels": ["ux"]
+                },
+                {
                     "title": "## 🐛 Fixes",
                     "labels": ["fix", "bugfix"]
                 },
@@ -841,6 +845,10 @@ jobs:
                 {
                     "title": "## 🚀 Features",
                     "labels": ["feature", "enhancement"]
+                },
+                {
+                    "title": "## 🎨 UI / UX",
+                    "labels": ["ux"]
                 },
                 {
                     "title": "## 🐛 Fixes",
