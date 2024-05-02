@@ -1,0 +1,128 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2530997363061912793
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 167830897998540590}
+  - component: {fileID: 5059187324052258821}
+  m_Layer: 0
+  m_Name: BrushBaker
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &167830897998540590
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2530997363061912793}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5059187324052258821
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2530997363061912793}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d368cec5bd044465b36255fcc3090a66, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  computeShaders:
+  - name: Mylar
+    shader: {fileID: 4800000, guid: 073d6ba13e511e24bb3ba4f7c8f744ee, type: 3}
+    brushGuid: 8e58ceea-7830-49b4-aba9-6215104ab52a
+    computeShader: {fileID: 7200000, guid: a8cd83718b2e48db9570f9195dfde315, type: 3}
+  - name: Double Tapered Flat
+    shader: {fileID: 4800000, guid: 4496a9baf3f2fc446bbaff38336003df, type: 3}
+    brushGuid: 0d3889f3-3ede-470c-8af4-f44813306126
+    computeShader: {fileID: 7200000, guid: 67c631d4aac299f4bbaad06dd830312e, type: 3}
+  - name: Double Tapered Marker
+    shader: {fileID: 4800000, guid: e412fb1c98a347b4ab08429cbf1d0894, type: 3}
+    brushGuid: 0d3889f3-3ede-470c-8af4-de4813306126
+    computeShader: {fileID: 7200000, guid: 67c631d4aac299f4bbaad06dd830312e, type: 3}
+  - name: Dots
+    shader: {fileID: 4800000, guid: 732f16cce31764a49a67b2c782bf444a, type: 3}
+    brushGuid: 6a1cf9f9-032c-45ec-9b1d-a6680bee30f7
+    computeShader: {fileID: 7200000, guid: 2daa4d77d81adc84a88e67f8a7b22ac8, type: 3}
+  - name: Embers
+    shader: {fileID: 4800000, guid: f62b84c7d6bc5f24487edcd3a458ce88, type: 3}
+    brushGuid: 02ffb866-7fb2-4d15-b761-1012cefb1360
+    computeShader: {fileID: 7200000, guid: df2047dd556be4d47ba22aba4f71c0f5, type: 3}
+  - name: Bubbles
+    shader: {fileID: 4800000, guid: ecfbf36005cdcc94d881047728719bd8, type: 3}
+    brushGuid: 89d104cd-d012-426b-b5b3-bbaee63ac43c
+    computeShader: {fileID: 7200000, guid: bbd51e4e329047f439104cbc04383597, type: 3}
+  - name: Snow
+    shader: {fileID: 4800000, guid: 731f18bedecafd24f8a663a28a1e1b42, type: 3}
+    brushGuid: d902ed8b-d0d1-476c-a8de-878a79e3a34c
+    computeShader: {fileID: 7200000, guid: c7771aa61c3be544eae35185c59c39c4, type: 3}
+  - name: Stars
+    shader: {fileID: 4800000, guid: c5ccca3779289ff49a2768609995604b, type: 3}
+    brushGuid: 0eb4db27-3f82-408d-b5a1-19ebd7d5b711
+    computeShader: {fileID: 7200000, guid: 88c0f5ccf81e44249b28909e1a12e099, type: 3}
+  - name: Smoke
+    shader: {fileID: 4800000, guid: b00f8a3e2356b6144b32fe4a62905a7b, type: 3}
+    brushGuid: 70d79cca-b159-4f35-990c-f02193947fe8
+    computeShader: {fileID: 7200000, guid: ed79d827aabdf284f96a5bac36a050ba, type: 3}
+  - name: Rising Bubbles
+    shader: {fileID: 4800000, guid: c4285dcf87bf5b84d8d4bbec752f1883, type: 3}
+    brushGuid: a8147ce1-005e-abe4-88e8-09a1eaadcc89
+    computeShader: {fileID: 7200000, guid: d5d5ade2144b877458cb85b63f87db45, type: 3}
+  - name: LightWire
+    shader: {fileID: 4800000, guid: 3b4cc34a39a839049b4387ce42e3b56c, type: 3}
+    brushGuid: 4391aaaa-df81-4396-9e33-31e4e4930b27
+    computeShader: {fileID: 7200000, guid: f1766ed0ee9b8634d9ad77ef8ec34e0d, type: 3}
+  - name: Disco
+    shader: {fileID: 4800000, guid: 2d606fd47b43446739974645ed823957, type: 3}
+    brushGuid: 4391aaaa-df73-4396-9e33-31e4e4930b27
+    computeShader: {fileID: 7200000, guid: 612bca9f4c2f46e4da8c23150c4fcac5, type: 3}
+  - name: Electricity
+    shader: {fileID: 4800000, guid: 698f6f8dc012a8b4e9d6f36db04f0dd3, type: 3}
+    brushGuid: f6e85de3-6dcc-4e7f-87fd-cee8c3d25d51
+    computeShader: {fileID: 7200000, guid: 94bcafbff8d69c044a155b7a7254904b, type: 3}
+  - name: HyperGrid
+    shader: {fileID: 4800000, guid: a2fa29912c23a774898a1b8b236ed79d, type: 3}
+    brushGuid: 6a1cf9f9-032c-45ec-9b6e-a6680bee32e9
+    computeShader: {fileID: 7200000, guid: cfa508c5ac021eb4484efcd508d86f28, type: 3}
+  - name: Sparks
+    shader: {fileID: 4800000, guid: f10b4ff7ab4b8bc49b4cabd89f56378f, type: 3}
+    brushGuid: 50e99447-3861-05f4-697d-a1b96e771b98
+    computeShader: {fileID: 7200000, guid: 95faa217ff7d8694fafbe2851266042a, type: 3}
+  - name: BubbleWand
+    shader: {fileID: 4800000, guid: 0291fdb46401c4826bc02d7ec6d76cbb, type: 3}
+    brushGuid: EBA3F993-F9A1-4D35-B84E-BB08F48981A4
+    computeShader: {fileID: 7200000, guid: 81ca801fea8092f41be21fb73d2f30d4, type: 3}
+  - name: DanceFloor
+    shader: {fileID: 4800000, guid: 14968e66fc8cfe441b31a7c23a07897c, type: 3}
+    brushGuid: 6a1cf9f9-032c-45ec-311e-a6680bee32e9
+    computeShader: {fileID: 7200000, guid: db29274d68efa2048a8c96cb6cac4f90, type: 3}
+  - name: KeijiroTube
+    shader: {fileID: 4800000, guid: 54cf55a2c62eff1458edd3f1e68d0f0a, type: 3}
+    brushGuid: f8ba3d18-01fc-4d7b-b2d9-b99d10b8e7cf
+    computeShader: {fileID: 7200000, guid: 7aaef9828dec8e745a7078f169541071, type: 3}
+  - name: WaveformParticles
+    shader: {fileID: 4800000, guid: e12e59eb54a018044abc88e7ccf3d195, type: 3}
+    brushGuid: 6a1cf9f9-032c-45ec-9b6e-a6680bee30f7
+    computeShader: {fileID: 7200000, guid: a79673b84c7f0ce4cac3f2d9d312b765, type: 3}
+  - name: Rain
+    shader: {fileID: 4800000, guid: a7b2cc37e7b92574483d5e8e4d08ecb7, type: 3}
+    brushGuid: 03a529e1-f519-3dd4-582d-2d5cd92c3f4f
+    computeShader: {fileID: 7200000, guid: 177e3315ef9abb4419da277431781388, type: 3}
+  squeezeAmount: 0.873

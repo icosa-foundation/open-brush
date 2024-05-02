@@ -1,0 +1,78 @@
+#pragma kernel CSMain
+
+uniform float4x4 TransformObjectToWorld;
+
+RWStructuredBuffer<float3> vertexBuffer;
+StructuredBuffer<float3> normalBuffer;
+StructuredBuffer<float4> colorBuffer;
+StructuredBuffer<float3> uvBuffer;
+
+float _SqueezeAmount;
+
+static const float kRecipSquareRootOfTwo = 0.70710678;
+
+
+[numthreads(8, 1, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID) {
+    float3 vertex = vertexBuffer[id.x];
+    float3 normal = normalBuffer[id.x];
+    float4 color = colorBuffer[id.x];
+    float3 uv0 = uvBuffer[id.x];
+
+    // according to paricles.cginc, the originWS for ParticleVertexWithSpread_t 
+    // is the normal.xyz instead of uv1
+    float4 originWS = mul(TransformObjectToWorld, float4(normal.xyz, 1.0));
+    // float4 originWS = mul(TransformObjectToWorld, float4(uv1, 1.0));
+
+    float4 posWS = mul(TransformObjectToWorld, float4(vertex, 1.0));
+    float length = distance(originWS.xyz, posWS.xyz);
+    length *= kRecipSquareRootOfTwo;
+
+    // if (uv0.x + uv0.y == 0) then (-length, -length, 0)
+    // if (uv0.x + uv0.y == 2) then (length, length, 0)
+    // if (uv0.x + uv0.y == 1 && uv0.x - uv0.y == -1) then (length, -length, 0)
+    // if (uv0.x + uv0.y == 1 && uv0.x - uv0.y == 1) then (-length, length, 0)
+
+    float uv0Sum = uv0.x + uv0.y;
+    float uv0Dif = uv0.x - uv0.y;
+
+    float3 preBillboard = float3(-length, length, 0);
+
+    if (uv0Sum == 0)
+    {
+        preBillboard = float3(-length, -length, 0);
+    }
+    else if (uv0Sum == 2)
+    {
+        preBillboard = float3(length, length, 0);
+    }
+    else if (uv0Dif == -1)
+    {
+        preBillboard = float3(length, -length, 0);
+    }
+
+    // the movement is based on Unity Built-in shader variables
+    // _Time.y (t)
+    // we will take the t = 0 in this compute shader
+    float timedoty = 0;
+
+
+    // // leaving this parameters here for generating animated mesh in the future
+    
+    // float seed = color.a;
+    // float t01 = fmod(timedoty * 0.6 + seed * 10, 1);
+    // float4 dispVec = float4(2.0, 6.0, 0.0, 0.0) * t01;
+
+    // dispVec.x += sin(t01 * 5 + seed * 100 + timedoty + originWS.z) * 0.3;
+    // dispVec.y += (fmod(seed * 100, 1) - 0.5) * 6.0 * t01;
+    // dispVec.z += cos(t01 * 5 + seed * 100 + timedoty + originWS.x) * 0.3;
+
+    // dispVec *= 0.1;
+    // dispVec *= length(TransformObjectToWorld[0].xyz);
+
+    // vertex += dispVec;
+
+
+    vertex = originWS.xyz + preBillboard;
+    vertexBuffer[id.x] = vertex;
+}
