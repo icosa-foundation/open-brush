@@ -159,7 +159,6 @@ namespace TiltBrush
             CommandExamples["import.image"] = "TiltBrushLogo.png";
             CommandExamples["import.video"] = "animated-logo.mp4";
             App.Instance.StateChanged += RunStartupScript;
-
         }
 
         public void ResetBrushTransform()

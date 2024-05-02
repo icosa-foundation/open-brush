@@ -1,0 +1,23 @@
+#pragma kernel CSMain
+
+uniform float4x4 TransformObjectToWorld;
+
+RWStructuredBuffer<float3> vertexBuffer;
+StructuredBuffer<float3> normalBuffer;
+StructuredBuffer<float4> colorBuffer;
+StructuredBuffer<float3> uvBuffer;
+
+float _SqueezeAmount;
+
+[numthreads(8, 1, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID) {
+    float3 vertex = vertexBuffer[id.x];
+    float3 normal = normalBuffer[id.x];
+    float3 uv0 = uvBuffer[id.x];
+
+    float displacementExponent = 2.84;
+    float displacementAmount = 1.45;
+    vertex += normal * pow(uv0.x, displacementExponent) * displacementAmount;
+
+    vertexBuffer[id.x] = vertex;
+}
