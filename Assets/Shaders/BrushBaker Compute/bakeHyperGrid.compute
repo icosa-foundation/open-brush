@@ -1,0 +1,36 @@
+#pragma kernel CSMain
+
+uniform float4x4 TransformObjectToWorld;
+uniform float4x4 TransformWorldToObject;
+
+RWStructuredBuffer<float3> vertexBuffer;
+StructuredBuffer<float3> normalBuffer;
+StructuredBuffer<float4> colorBuffer;
+StructuredBuffer<float3> uvBuffer;
+StructuredBuffer<float4> uv1Buffer;
+
+float _SqueezeAmount;
+
+[numthreads(8, 1, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID) {
+    float3 vertex = vertexBuffer[id.x];
+    float3 uv0 = uvBuffer[id.x];
+    float4 uv1 = uv1Buffer[id.x];
+
+    // Subtract out the Canvas space pose to keep the verts from popping around while
+    // transforming (e.g. apply quantization in an immutable space).
+    float4 posWS = mul(TransformObjectToWorld, float4(vertex, 1.0));
+    posWS = mul(half4x4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1), posWS);
+
+    // for AltspaceVR(or any other apps) to scale the hypergrid but maintain snapping on the grid
+    half size = length(half3(TransformObjectToWorld[0].x, TransformObjectToWorld[1].x, TransformObjectToWorld[2].x)) * length(uv1.xyz);
+
+    half q = (1.0f / size) * .5;
+    half3 quantPos = ceil(posWS.xyz * q) / q;
+    posWS.xyz = quantPos;
+    posWS = mul(half4x4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1), posWS);
+    float4 posOS = mul(TransformWorldToObject, posWS);
+    vertex = posOS.xyz;
+
+    vertexBuffer[id.x] = vertex;
+}

@@ -1243,9 +1243,7 @@ namespace TiltBrush
                             nextShape = StraightEdgeGuideScript.Shape.Circle;
                             break;
                         case StraightEdgeGuideScript.Shape.Circle:
-                            {
-                                nextShape = StraightEdgeGuideScript.Shape.Sphere;
-                            }
+                            nextShape = StraightEdgeGuideScript.Shape.Sphere;
                             break;
                         case StraightEdgeGuideScript.Shape.Sphere:
                             nextShape = StraightEdgeGuideScript.Shape.Line;
