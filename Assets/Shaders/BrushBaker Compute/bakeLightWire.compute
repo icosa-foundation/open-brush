@@ -1,0 +1,25 @@
+#pragma kernel CSMain
+
+uniform float4x4 TransformObjectToWorld;
+
+RWStructuredBuffer<float3> vertexBuffer;
+StructuredBuffer<float3> normalBuffer;
+StructuredBuffer<float4> colorBuffer;
+StructuredBuffer<float3> uvBuffer;
+
+float _SqueezeAmount;
+
+[numthreads(8, 1, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID) {
+    float3 vertex = vertexBuffer[id.x];
+    float3 normal = normalBuffer[id.x];
+    float3 uv0 = uvBuffer[id.x];
+
+    float t;
+    float envelope = sin ( fmod ( uv0.x * 2, 1.0f) * 3.14159);
+    float lights = envelope < .15 ? 1 : 0;
+    float radius = uv0.z * 0.9;
+    vertex.xyz += normal * lights * radius;
+
+    vertexBuffer[id.x] = vertex;
+}

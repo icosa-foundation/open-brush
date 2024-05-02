@@ -4900,7 +4900,7 @@ namespace TiltBrush
                         (PointerManager.m_Instance.StraightEdgeGuide.TempShape == StraightEdgeGuideScript.Shape.None
                         && PointerManager.m_Instance.StraightEdgeGuide.CurrentShape == (StraightEdgeGuideScript.Shape)iParam);
                 case GlobalCommands.Disco: return LightsControlScript.m_Instance.DiscoMode;
-                case GlobalCommands.ToggleGroupStrokesAndWidgets: return SelectionManager.m_Instance.SelectionIsInOneGroup;
+                case GlobalCommands.ToggleGroupStrokesAndWidgets: return SelectionManager.m_Instance.UngroupingAllowed;
                 case GlobalCommands.ToggleProfiling: return UnityEngine.Profiling.Profiler.enabled;
                 case GlobalCommands.ToggleCameraPostEffects: return CameraConfig.PostEffects;
                 case GlobalCommands.ToggleWatermark: return CameraConfig.Watermark;
@@ -5054,6 +5054,7 @@ namespace TiltBrush
                 SceneSettings.m_Instance.EnvironmentChanged ||
                 LightsControlScript.m_Instance.LightsChanged ||
                 m_WidgetManager.ModelWidgets.Any(w => w.gameObject.activeSelf) ||
+                m_WidgetManager.LightWidgets.Any(w => w.gameObject.activeSelf) ||
                 m_WidgetManager.StencilWidgets.Any(w => w.gameObject.activeSelf) ||
                 m_WidgetManager.ImageWidgets.Any(w => w.gameObject.activeSelf) ||
                 m_WidgetManager.VideoWidgets.Any(w => w.gameObject.activeSelf) ||
