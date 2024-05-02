@@ -31,10 +31,11 @@ namespace TiltBrush
         private ReferenceImage m_ReferenceImage;
         private bool m_TextureAcquired;
 
-        /// A string which can be passed to ReferenceImageCatalog.FileNameToIndex.
-        /// Currently, this is a file _name_.
         public string FileName =>
             m_ReferenceImage?.FileName ?? m_MissingInfo?.fileName ?? Unused("Error");
+
+        public string RelativePath =>
+            m_ReferenceImage?.RelativePath ?? m_MissingInfo?.fileName ?? Unused("Error");
 
         /// width / height
         public override float? AspectRatio =>
@@ -111,7 +112,7 @@ namespace TiltBrush
             }
             else
             {
-                return Path.GetFileNameWithoutExtension(FileName);
+                return Path.GetFileNameWithoutExtension(RelativePath);
             }
         }
 
@@ -209,7 +210,10 @@ namespace TiltBrush
 
         public static void FromTiltImage(TiltImages75 tiltImage)
         {
-            var refImage = ReferenceImageCatalog.m_Instance.FileNameToImage(tiltImage.FileName);
+
+            var refImage = string.IsNullOrEmpty(tiltImage.FilePath) ?
+                ReferenceImageCatalog.m_Instance.FileNameToImage(tiltImage.FileName) :
+                ReferenceImageCatalog.m_Instance.RelativePathToImage(tiltImage.FilePath);
             var groupIds = tiltImage.GroupIds;
             var layerIds = tiltImage.LayerIds;
             var twoSidedFlags = tiltImage.TwoSidedFlags;
@@ -249,5 +253,9 @@ namespace TiltBrush
             }
         }
 
+        public bool HasSubShapes()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 } // namespace TiltBrush

@@ -52,12 +52,16 @@ Category {
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
         float4 texcoord1 : TEXCOORD1;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
         float4 pos : SV_POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       float4 _MainTex_ST;
@@ -66,6 +70,11 @@ Category {
       {
         v.color = TbVertToSrgb(v.color);
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
         // Subtract out the Canvas space pose to keep the verts from popping around while
         // transforming (e.g. apply quantization in an immutable space).
         float4 worldPos = mul(unity_ObjectToWorld, v.vertex);

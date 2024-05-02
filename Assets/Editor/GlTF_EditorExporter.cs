@@ -233,7 +233,7 @@ namespace TiltBrush
         {
             System.Diagnostics.Process proc = new System.Diagnostics.Process();
             proc.StartInfo = new System.Diagnostics.ProcessStartInfo(
-                command, string.Join(" ", commandArgs));
+                command, string.Join(" ", commandArgs.Select(arg => $"\"{arg}\"")));
             proc.StartInfo.RedirectStandardOutput = true;
             proc.StartInfo.RedirectStandardError = true;
             proc.StartInfo.UseShellExecute = false;
