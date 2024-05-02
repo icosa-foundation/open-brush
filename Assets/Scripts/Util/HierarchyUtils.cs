@@ -20,17 +20,13 @@ namespace TiltBrush
     public static class HierarchyUtils
     {
         /// Sets object and all children to a layer.
-        public static void RecursivelySetLayer(Transform obj, int layer, bool skipUI = true)
+        public static void RecursivelySetLayer(Transform obj, int layer)
         {
-            // Hardcoded exceptions
-            if (
-                obj == null ||
-                (skipUI && obj.gameObject.layer == LayerMask.NameToLayer("UI"))
-            ) { return; }
+            if (obj == null) { return; }
             obj.gameObject.layer = layer;
             for (int i = 0; i < obj.childCount; ++i)
             {
-                RecursivelySetLayer(obj.GetChild(i), layer, skipUI);
+                RecursivelySetLayer(obj.GetChild(i), layer);
             }
         }
 

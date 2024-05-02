@@ -15,7 +15,6 @@
 using UnityEngine;
 using System.Collections.Generic;
 using GLTFast.Schema;
-using Unity.VectorGraphics;
 
 namespace TiltBrush
 {
@@ -39,7 +38,6 @@ namespace TiltBrush
         {
             get { return m_MeshChildren.Length + m_SkinnedMeshChildren.Length; }
         }
-        public SVGParser.SceneInfo SvgSceneInfo { get; set; }
 
         public int GetNumVertsInMeshes()
         {
@@ -76,10 +74,7 @@ namespace TiltBrush
 
             var meshFilter = t.GetComponent<MeshFilter>();
             var meshRenderer = t.GetComponent<MeshRenderer>();
-            if (meshFilter != null &&
-                meshRenderer != null &&
-                meshFilter.sharedMesh != null &&
-                meshFilter.gameObject.layer != LayerMask.NameToLayer("UI"))
+            if (meshFilter != null && meshRenderer != null && meshFilter.sharedMesh != null)
             {
                 filters.Add(meshFilter);
             }

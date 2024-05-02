@@ -88,16 +88,7 @@ namespace TiltBrush
 
         [SerializeField] protected BoxCollider m_BoxCollider;
         [SerializeField] protected Transform m_Mesh;
-        [SerializeField] private Transform[] m_HighlightMeshXfs;
-        protected Transform[] HighlightMeshXfs
-        {
-            get => m_HighlightMeshXfs;
-            set
-            {
-                m_HighlightMeshXfs = value;
-                UpdateHighlightMeshFilters();
-            }
-        }
+        [SerializeField] protected Transform[] m_HighlightMeshXfs;
 
         [SerializeField] protected float m_ValidSnapRotationStickyAngle;
 
@@ -700,7 +691,13 @@ namespace TiltBrush
 
         virtual protected void Awake()
         {
-            UpdateHighlightMeshFilters();
+            // TODO : Why do we serialize transforms when we pull the mesh filter out
+            // and never use the transform?  We should just serialize the filters.
+            if (m_HighlightMeshXfs != null)
+            {
+                m_HighlightMeshFilters = m_HighlightMeshXfs.Select(x => x.GetComponent<MeshFilter>()).ToArray();
+            }
+
             m_CurrentState = State.Invisible;
             Activate(false);
             m_NonScaleChild = gameObject.GetComponent<NonScaleChild>();
@@ -730,16 +727,6 @@ namespace TiltBrush
             }
 
             RegisterWithWidgetManager();
-        }
-
-        public void UpdateHighlightMeshFilters()
-        {
-            // TODO : Why do we serialize transforms when we pull the mesh filter out
-            // and never use the transform?  We should just serialize the filters.
-            if (HighlightMeshXfs != null)
-            {
-                m_HighlightMeshFilters = HighlightMeshXfs.Select(x => x.GetComponent<MeshFilter>()).ToArray();
-            }
         }
 
         virtual protected void Start()
@@ -958,7 +945,6 @@ namespace TiltBrush
 
             foreach (var renderer in m_WidgetRenderers)
             {
-                if (renderer == null) continue;
                 var materials = m_NewMaterials[renderer];
                 foreach (var material in materials)
                 {
@@ -977,7 +963,6 @@ namespace TiltBrush
             }
             foreach (var renderer in m_WidgetRenderers)
             {
-                if (renderer == null) continue;
                 var materials = m_NewMaterials[renderer];
                 foreach (var material in materials)
                 {

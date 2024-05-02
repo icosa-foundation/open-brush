@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#if LATK_SUPPORTED
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
@@ -244,3 +245,4 @@ namespace TiltBrush
     }
 
 }
+#endif
