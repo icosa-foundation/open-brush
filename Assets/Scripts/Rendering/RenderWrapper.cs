@@ -23,6 +23,12 @@ using UObject = UnityEngine.Object;
 #pragma warning disable 649, 414
 #endif
 
+// TODO:Mikesky - For some reason, offscreen rendering to m_hdrTarget is losing depth on XR.
+// Unity's docs say this should be fine, so it may be a Unity bug.
+// Investigate if this is fixed in newer Unity versions
+// The temp fix is to no longer cull primary camera, and only display the offscreen render during
+// a recording session, which is very rare and not likely to be using depth.
+
 namespace TiltBrush
 {
 
@@ -200,9 +206,12 @@ namespace TiltBrush
             // Store the clear and culling mask to restore after rendering.
             m_cameraClearFlags = srcCam.clearFlags;
             m_cameraCullingMask = srcCam.cullingMask;
-            srcCam.cullingMask = 0;
-            srcCam.clearFlags = CameraClearFlags.Nothing;
             srcCam.allowHDR = GetTargetFormat() != RenderTextureFormat.ARGB32;
+
+            // TODO:Mikesky - See top of file.
+            // srcCam.cullingMask = 0;
+            // srcCam.clearFlags = CameraClearFlags.Nothing;
+
 #endif
 
             if (ReadBackTextures != null && m_readbackTextureFrame != Time.frameCount)
@@ -456,7 +465,8 @@ namespace TiltBrush
                 }
                 else
                 {
-                    Graphics.Blit(m_hdrTarget, destination);
+                    // TODO:Mikesky - See top of file.
+                    Graphics.Blit(source, destination);
                     // Generate the outline mask for later use in the post fx chain
                     if (m_StencilToMaskMaterial)
                     {
@@ -469,9 +479,10 @@ namespace TiltBrush
                         // Only need the selection mask if the selection effect is enabled
                         if (App.Instance.SelectionEffect.RenderHighlight())
                         {
-                            Graphics.Blit(m_hdrTarget, destination);
-                            Graphics.Blit(destination, m_hdrTarget, m_StencilToMaskMaterial);
-                            Graphics.Blit(m_hdrTarget, m_MaskTarget);
+                            // TODO:Mikesky - See top of file.
+                            Graphics.Blit(source, destination);
+                            Graphics.Blit(destination, source, m_StencilToMaskMaterial);
+                            Graphics.Blit(source, m_MaskTarget);
                         }
                     }
                 }
