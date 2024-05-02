@@ -46,7 +46,7 @@ def process_request(request):
     """Process a single downsample-and-copy request"""
     im = PIL.Image.open(request["source"])
     if "P" in im.mode:
-        assert False, "Unexpected: png with indexed color"
+        assert False, f"Unexpected: png with indexed color: {request['source']}"
         # Un-palettize
         im = im.convert()
 
@@ -59,7 +59,7 @@ def process_request(request):
     assert im.width >= desired_width
     assert im.height >= desired_height
 
-    bpp = {"RGBA": 4, "RGB": 3}[im.mode]
+    bpp = {"RGBA": 4, "RGB": 3, "L": 1}[im.mode]
     request["input_bytes"] = im.width * im.height * bpp
     request["output_bytes"] = desired_width * desired_height * bpp
 
@@ -74,7 +74,20 @@ def process_request(request):
     if not os.path.isdir(outdir):
         os.makedirs(outdir)
 
-    im.save(request["destination"])
+    # If the image is a jpeg then strip off the alpha channel
+    if (
+        request["destination"].endswith(".jpg")
+        or request["destination"].endswith(".jpeg")
+    ) and im.mode == "RGBA":
+        im = im.convert("RGB")
+
+    # Catch OSError and re-raise with a more informative message
+    try:
+        im.save(request["destination"])
+    except OSError as ex:
+        raise OSError(
+            f"Error saving {request['destination']}: {ex.strerror} (code {ex.errno})"
+        ) from ex
 
 
 def main():

@@ -16,10 +16,6 @@ Shader "Brush/Special/Slice" {
 Properties {
     _MainTex ("Particle Texture", 2D) = "white" {}
     _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
-
-    _Opacity ("Opacity", Range(0, 1)) = 1
-	_ClipStart("Clip Start", Float) = 0
-	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -47,29 +43,31 @@ Category {
                 // fixed4 color : COLOR;
                 // float3 normal : NORMAL;
                 float3 texcoord : TEXCOORD0;
-                uint id : SV_VertexID;
+
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct v2f {
                 float4 vertex : POSITION;
                 // fixed4 color : COLOR;
                 float3 texcoord : TEXCOORD0;
-                uint id : TEXCOORD2;
+
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             float4 _MainTex_ST;
             half _EmissionGain;
 
-            uniform float _ClipStart;
-            uniform float _ClipEnd;
-            uniform half _Opacity;
-
             v2f vert (appdata_t v)
             {
                 v2f o;
+
+                UNITY_SETUP_INSTANCE_ID(v);
+                UNITY_INITIALIZE_OUTPUT(v2f, o);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
                 o.vertex = UnityObjectToClipPos(v.vertex);
                 o.texcoord = v.texcoord;
-                o.id = (float2)v.id;
                 return o;
             }
 
@@ -81,9 +79,6 @@ Category {
 
             fixed4 frag (v2f i) : COLOR
             {
-                if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-
-
                 //float rubbishRand = random(i.texcoord.xz);
                 //clip(rubbishRand-.9);
 
@@ -91,7 +86,7 @@ Category {
                 float hue = fmod(i.texcoord.z * 5, 6);
                 float3 base_rgb = hue06_to_base_rgb(hue);
                 tex.rgb = cy_to_rgb(base_rgb, i.texcoord.x, i.texcoord.y);
-                tex.a = _Opacity;
+                tex.a = .3;
 
                 // With MSAA enabled, RGB values in tex are > 1.0, but was not intented.
                 return saturate(tex);

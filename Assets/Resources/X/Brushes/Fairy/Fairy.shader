@@ -16,15 +16,6 @@ Shader "Brush/Special/Fairy" {
 Properties {
   _MainTex ("Particle Texture", 2D) = "white" {}
     _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
-
-    [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
-  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
-  _TimeBlend("Time Blend", Float) = 0
-  _TimeSpeed("Time Speed", Float) = 1.0
-
-  _Opacity ("Opacity", Range(0, 1)) = 1
-	_ClipStart("Clip Start", Float) = 0
-	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -46,30 +37,27 @@ Category {
 
       #pragma target 3.0
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
       #include "Assets/ThirdParty/Shaders/Noise.cginc"
 
       sampler2D _MainTex;
 
-      uniform float _ClipStart;
-      uniform float _ClipEnd;
-      uniform half _Opacity;
-
       struct appdata_t {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float3 normal : NORMAL;
         float2 texcoord : TEXCOORD0;
-        uint id : SV_VertexID;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
-        uint id : TEXCOORD2;
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       float4 _MainTex_ST;
@@ -81,20 +69,19 @@ Category {
         v.color = TbVertToSrgb(v.color);
 
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
         o.vertex = UnityObjectToClipPos(v.vertex);
         o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
         o.color = v.color;
-        o.id = (float2)v.id;
         return o;
       }
 
       // Input color is srgb
       fixed4 frag (v2f i) : COLOR {
-
-        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-        if (_Opacity < 1 && Dither8x8(i.vertex.xy) >= _Opacity) discard;
-
-
         float scale1 = 3;
         float scale2 = 3;
 
@@ -158,13 +145,13 @@ Category {
         // fade the dots in and out with variety
         float fadespeed = lerp(.25, 1.25, random(rc));
         float fadephase = random(rc) * 2 * 3.14;
-        float time = sin(GetTime().z * fadespeed + fadephase) / 2 + .5;
+        float time = sin(_Time.z * fadespeed + fadephase) / 2 + .5;
         lum *= lerp(0, 1, time);
 
         fixed4 color;
         color.a = 1;
         color.rgb = lum*bloomColor(i.color,lum*_EmissionGain);
-        return color * _Opacity;
+        return color;
       }
       ENDCG
     }

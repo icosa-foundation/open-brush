@@ -14,9 +14,6 @@
 
 Shader "Brush/Special/Wireframe" {
 Properties {
-  _Opacity ("Opacity", Range(0, 1)) = 1
-	_ClipStart("Clip Start", Float) = 0
-	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -41,21 +38,19 @@ Category {
         fixed4 color : COLOR;
         float3 normal : NORMAL;
         float2 texcoord : TEXCOORD0;
-        uint id : SV_VertexID;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
-        uint id : TEXCOORD2;
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       float4 _MainTex_ST;
-
-      uniform float _ClipStart;
-      uniform float _ClipEnd;
-      uniform half _Opacity;
 
       v2f vert (appdata_t v)
       {
@@ -63,17 +58,18 @@ Category {
 
         v2f o;
 
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
         o.texcoord = v.texcoord;
         o.color = v.color;
         o.vertex = UnityObjectToClipPos(v.vertex);
-        o.id = (float2)v.id;
         return o;
       }
 
       fixed4 frag (v2f i) : COLOR
       {
-        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-
 
         half w = 0;
 #ifdef AUDIO_REACTIVE
@@ -87,8 +83,7 @@ Category {
 #endif
         //float angle = atan2(i.texcoord.x, i.texcoord.y);
         //w += ( abs(angle - (3.14/4.0)) < .05) ? 1 : 0;
-        float4 color = i.color * w;
-        return color * _Opacity;
+        return i.color * w;
       }
       ENDCG
     }

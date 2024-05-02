@@ -23,16 +23,7 @@ Properties {
 
   _DisplacementIntensity("Displacement", Float) = .1
 
-  _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
-
-  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
-  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
-  _TimeBlend("Time Blend", Float) = 0
-  _TimeSpeed("Time Speed", Float) = 1.0
-
-  _Opacity ("Opacity", Range(0, 1)) = 1
-	_ClipStart("Clip Start", Float) = 0
-	_ClipEnd("Clip End", Float) = -1
+    _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
 }
 
 Category {
@@ -57,23 +48,19 @@ Category {
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
       #include "Assets/Shaders/Include/MobileSelection.cginc"
 
       sampler2D _MainTex;
 
-      uniform float _ClipStart;
-      uniform float _ClipEnd;
-      uniform half _Opacity;
-
       struct appdata_t {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float3 normal : NORMAL;
         float2 texcoord : TEXCOORD0;
-        uint id : SV_VertexID;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
@@ -81,7 +68,8 @@ Category {
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
         float3 worldPos : TEXCOORD1;
-        uint id : TEXCOORD2;
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       float4 _MainTex_ST;
@@ -97,11 +85,15 @@ Category {
         PrepForOds(v.vertex);
 
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
         o.worldPos = mul(unity_ObjectToWorld, v.vertex);
         o.vertex = UnityObjectToClipPos(v.vertex);
         o.color = v.color;
         o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
-        o.id = (float2)v.id;
         return o;
       }
 
@@ -113,9 +105,6 @@ Category {
 
       fixed4 frag (v2f i) : COLOR
       {
-        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-
-
         // Workaround for b/30500118, caused by b/30504121
         i.color.a = saturate(i.color.a);
 
@@ -137,9 +126,9 @@ Category {
         // Calculate uvs for each line
         half3 us, vs;
         {
-          us = A * i.texcoord.x - aRate * GetTime().y;
+          us = A * i.texcoord.x - aRate * _Time.y;
 
-          half3 tmp = M*A * i.texcoord.x - bRate * GetTime().y;
+          half3 tmp = M*A * i.texcoord.x - bRate * _Time.y;
           tmp = abs(frac(tmp) - 0.5);
           vs = i.texcoord.y + .4 * i.color.a * half3(1,-1,1) * tmp;
           vs = saturate(lerp((vs - .5) * 4, vs,  sin( (3.14159/2) * i.color.a)));
@@ -161,8 +150,7 @@ Category {
 #if SELECTION_ON
         c.rgb = GetSelectionColor() * tex;
 #endif
-        float4 color = encodeHdr(c.rgb * c.a);
-        return color * _Opacity;
+        return encodeHdr(c.rgb * c.a);
       }
 
       ENDCG

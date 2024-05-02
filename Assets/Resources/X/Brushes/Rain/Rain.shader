@@ -18,15 +18,6 @@ Properties {
 	_NumSides("Number of Sides", Float) = 5
 	_Speed("Speed", Float) = 1
 	_Bulge("Displacement Amount", Float) = 2.25
-
-	  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
-  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
-  _TimeBlend("Time Blend", Float) = 0
-  _TimeSpeed("Time Speed", Float) = 1.0
-
-  _Opacity ("Opacity", Range(0, 1)) = 1
-  _ClipStart("Clip Start", Float) = 0
-  _ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -50,7 +41,6 @@ Category {
 			#pragma target 3.0
 
 			#include "UnityCG.cginc"
-			#include "Assets/Shaders/Include/TimeOverride.cginc"
 			#include "Assets/Shaders/Include/Brush.cginc"
 			#include "Assets/Shaders/Include/Hdr.cginc"
 
@@ -60,20 +50,12 @@ Category {
 			float _Speed;
 			float _Bulge;
 
-            uniform float _ClipStart;
-            uniform float _ClipEnd;
-            uniform half _Opacity;
-
-			struct appdata_full_plus_id {
+			struct appdata_t {
 				float4 vertex : POSITION;
-				float4 tangent : TANGENT;
-				float3 normal : NORMAL;
-				float4 texcoord : TEXCOORD0;
-				float4 texcoord1 : TEXCOORD1;
-				float4 texcoord2 : TEXCOORD2;
-				float4 texcoord3 : TEXCOORD3;
 				fixed4 color : COLOR;
-				uint id : SV_VertexID;
+				float3 normal : NORMAL;
+				float2 texcoord : TEXCOORD0;
+
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
@@ -82,16 +64,21 @@ Category {
 				fixed4 color : COLOR;
 				float2 texcoord : TEXCOORD0;
 				float4 worldPos : TEXCOORD1;
-                uint id : TEXCOORD2;
+
+				UNITY_VERTEX_OUTPUT_STEREO
 			};
 
 
-			v2f vert (appdata_full_plus_id v)
+			v2f vert (appdata_full v)
 			{
 				PrepForOds(v.vertex);
 				v.color = TbVertToSrgb(v.color);
 
 				v2f o;
+
+				UNITY_SETUP_INSTANCE_ID(v);
+          		UNITY_INITIALIZE_OUTPUT(v2f, o);
+          		UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
 				// Inflate the tube outward to explode it into
 				// strips - giving us negative space w/o as much overdraw.
@@ -103,7 +90,6 @@ Category {
 				o.vertex = UnityObjectToClipPos(v.vertex);
 				o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
 				o.color = TbVertToNative(v.color);
-                o.id = (float2)v.id;
 				return o;
 			}
 
@@ -116,12 +102,8 @@ Category {
 			// Input color is srgb
 			fixed4 frag (v2f i) : COLOR
 			{
-
-				if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-
-
 				float u_scale = _Speed;
-				float t = fmod(GetTime().y * 4 * u_scale, u_scale);
+				float t = fmod(_Time.y * 4 * u_scale, u_scale);
 
 				// Rescale U coord in range 0 : u_scale.
 				// Note that we subtract "t" because we want to move the origin (i.e. the "0" value)
@@ -145,9 +127,9 @@ Category {
 				float row_id = (int) (uvs.y *(_NumSides));
 				float rand = rand_1_05(row_id.xx);
 
-				// Randomize by row ID, add GetTime() offset by row and add an offset back into U
+				// Randomize by row ID, add _Time offset by row and add an offset back into U
 				// so the strips don't animate together
-				u += rand * GetTime().y * 2.75 * u_scale;
+				u += rand * _Time.y * 2.75 * u_scale;
 
 				// Wrap the u coordinate in the 0:u_scale range.
 				// If we don't do this, then the strokes we offset previously
@@ -170,7 +152,7 @@ Category {
 
 				color = encodeHdr(finalColor.rgb * finalColor.a);
 				color = SrgbToNative(color);
-				return color * _Opacity;
+				return color;
 			}
 			ENDCG
 		}

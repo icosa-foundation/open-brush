@@ -21,15 +21,6 @@ Properties {
 	_StretchDistortionExponent ("Stretch Distortion Exponent", Float) = 3
 	_NumSides ("Number of Sides", Float) = 5
 	_Speed ("Speed", Float) = 1
-
-	[Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
-    _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
-    _TimeBlend("Time Blend", Float) = 0
-    _TimeSpeed("Time Speed", Float) = 1.0
-
-    _Opacity ("Opacity", Range(0, 1)) = 1
-	_ClipStart("Clip Start", Float) = 0
-	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -53,7 +44,6 @@ Category {
 			#pragma target 3.0
 
 			#include "UnityCG.cginc"
-			#include "Assets/Shaders/Include/TimeOverride.cginc"
 			#include "Assets/Shaders/Include/Brush.cginc"
 			#include "Assets/Shaders/Include/Hdr.cginc"
 
@@ -64,14 +54,16 @@ Category {
 				fixed4 color : COLOR;
 				float3 normal : NORMAL;
 				float2 texcoord : TEXCOORD0;
-                uint id : SV_VertexID;
+
+				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
 			struct v2f {
 				float4 vertex : POSITION;
 				fixed4 color : COLOR;
 				float2 texcoord : TEXCOORD0;
-                uint id : TEXCOORD2;
+
+				UNITY_VERTEX_OUTPUT_STEREO
 			};
 
 			float4 _MainTex_ST;
@@ -82,10 +74,6 @@ Category {
 			float _NumSides;
 			float _Speed;
 
-            uniform float _ClipStart;
-			uniform float _ClipEnd;
-			uniform half _Opacity;
-
 			v2f vert (appdata_t v)
 			{
 				PrepForOds(v.vertex);
@@ -93,10 +81,14 @@ Category {
 
 				v2f o;
 
+				UNITY_SETUP_INSTANCE_ID(v);
+          		UNITY_INITIALIZE_OUTPUT(v2f, o);
+          		UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
 				// This multiplier is a magic number but it's still not right. Is there a better
 				// multiplciation for this (not using fmod) so I can count on the "lifetime" being contstant?
 				/*
-				float t01 = fmod(GetTime().y * 0.95, 1);
+				float t01 = fmod(_Time.y * 0.95, 1);
 				float3 incolor = v.color.rgb;
 				v.color.rgb *= incolor * pow(1 - t01, 2) * 10;
 				*/
@@ -106,7 +98,6 @@ Category {
 				o.vertex = UnityObjectToClipPos(v.vertex);
 				o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
 				o.color = TbVertToNative(v.color);
-                o.id = (float2)v.id;
 				return o;
 			}
 
@@ -118,8 +109,6 @@ Category {
 
 			fixed4 frag (v2f i) : COLOR
 			{
-                if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-                if (_Opacity < 1 && Dither8x8(i.vertex.xy) >= _Opacity) discard;
 
 				// Distort U coord to taste. This makes the effect to "slow down" towards the end of the stroke
 				// by clumping UV's closer together toward the beginning of the stroke
@@ -127,7 +116,7 @@ Category {
 
 				// Rescale time to go between 0 : u_scale, where u_scale is the range of warped u coords on the stroke
 				float u_scale = _Speed;
-				float t = fmod(GetTime().w * u_scale, u_scale);
+				float t = fmod(_Time.w * u_scale, u_scale);
 
 				// Rescale U coord in range 0 : u_scale.
 				// Note that we subtract "t" because we want to move the origin (i.e. the "0" value)
@@ -175,7 +164,7 @@ Category {
 				float4 color = i.color * tex * bloom;
 				color = encodeHdr(color.rgb * color.a);
 				color = SrgbToNative(color);
-				return color * _Opacity;
+				return color;
 			}
 			ENDCG
 		}

@@ -21,15 +21,6 @@ Properties {
   _ScrollJitterIntensity("Scroll Jitter Intensity", Float) = 1.0
   _ScrollJitterFrequency("Scroll Jitter Frequency", Float) = 1.0
   _SpreadRate ("Spread Rate", Range(0.3, 5)) = 1.539
-
-  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
-  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
-  _TimeBlend("Time Blend", Float) = 0
-  _TimeSpeed("Time Speed", Float) = 1.0
-
-  _Opacity ("Opacity", Range(0, 1)) = 1
-  _ClipStart("Clip Start", Float) = 0
-  _ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -52,7 +43,6 @@ Category {
       #pragma target 3.0
 
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Particles.cginc"
       #include "Assets/Shaders/Include/MobileSelection.cginc"
@@ -60,15 +50,12 @@ Category {
       sampler2D _MainTex;
       fixed4 _TintColor;
 
-      uniform float _ClipStart;
-      uniform float _ClipEnd;
-      uniform half _Opacity;
-
       struct v2f {
         float4 vertex : SV_POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
-        uint id : TEXCOORD2;
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       float4 _MainTex_ST;
@@ -81,6 +68,11 @@ Category {
       v2f vert (ParticleVertexWithSpread_t v)
       {
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
         v.color = TbVertToSrgb(v.color);
         float birthTime = v.texcoord.w;
         float rotation = v.texcoord.z;
@@ -90,11 +82,11 @@ Category {
         float4 center_WS = mul(unity_ObjectToWorld, center);
 
         // Custom vertex animation
-        float scrollAmount = GetTime().y;
+        float scrollAmount = _Time.y;
         float t = fmod(scrollAmount * _ScrollRate + v.color.a, 1);
         float4 dispVec = (t - .5f) * float4(_ScrollDistance, 0.0);
-        dispVec.x += sin(t * _ScrollJitterFrequency + GetTime().y) * _ScrollJitterIntensity;
-        dispVec.z += cos(t * _ScrollJitterFrequency * .5 + GetTime().y) * _ScrollJitterIntensity;
+        dispVec.x += sin(t * _ScrollJitterFrequency + _Time.y) * _ScrollJitterIntensity;
+        dispVec.z += cos(t * _ScrollJitterFrequency * .5 + _Time.y) * _ScrollJitterIntensity;
         dispVec.xyz = spreadProgress * dispVec * kDecimetersToWorldUnits;
         center_WS += mul(xf_CS, dispVec);
 
@@ -111,22 +103,18 @@ Category {
         o.vertex = mul(UNITY_MATRIX_VP, corner_WS);
         o.color.a = pow(1 - abs(2*(t - .5)), 3);
         o.texcoord = TRANSFORM_TEX(v.texcoord.xy, _MainTex);
-        o.id = (float2)v.id;
         return o;
       }
 
       // Input color is srgb
       fixed4 frag (v2f i) : SV_Target
       {
-        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-
         float4 texCol = tex2D(_MainTex, i.texcoord);
         float4 color = SrgbToNative(2.0f * i.color * _TintColor * texCol);
 #if SELECTION_ON
         color.rgb = GetSelectionColor() * texCol.r;
         color.a = texCol.a;
 #endif
-        color.a *= _Opacity;
         return color;
       }
       ENDCG

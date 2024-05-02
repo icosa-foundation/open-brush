@@ -21,10 +21,6 @@ Properties {
   _MainTex("Texture", 2D) = "white" {}
   _Smoothness("Smoothness", Range(0, 1)) = 0.5
   _Metallic("Metallic", Range(0, 1)) = 0
-
-  _Opacity("Opacity", Range(0, 1)) = 1
-	_ClipStart("Clip Start", Float) = 0
-	_ClipEnd("Clip End", Float) = -1
 }
 
 SubShader {
@@ -40,7 +36,6 @@ SubShader {
     #pragma multi_compile _ SHADOWS_SCREEN
     #pragma target 4.0
 
-    #include "Assets/Shaders/Include/Brush.cginc"
     #include "AutoLight.cginc"
     #include "UnityPBSLighting.cginc"
 
@@ -49,15 +44,12 @@ SubShader {
     sampler2D _MainTex;
     float4 _MainTex_ST;
 
-    uniform float _ClipStart;
-    uniform float _ClipEnd;
-    uniform half _Opacity;
-
     struct appdata {
       float4 vertex : POSITION;
       float2 uv : TEXCOORD0;
       float4 color : Color;
-      uint id : SV_VertexID;
+
+      UNITY_VERTEX_INPUT_INSTANCE_ID
     };
 
     struct v2f {
@@ -66,12 +58,18 @@ SubShader {
       float3 normal : TEXCOORD1;
       float3 worldPos : TEXCOORD2;
       float4 color : TEXCOORD3;
-      float2 id : TEXCOORD4;
       SHADOW_COORDS(5)
+
+      UNITY_VERTEX_OUTPUT_STEREO
     };
 
     v2f vert(appdata v) {
       v2f o;
+
+      UNITY_SETUP_INSTANCE_ID(v);
+      UNITY_INITIALIZE_OUTPUT(v2f, o);
+      UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
       o.uv = v.uv  * _MainTex_ST.xy + _MainTex_ST.zw;
       o.pos = UnityObjectToClipPos(v.vertex);
       o.worldPos = mul(unity_ObjectToWorld, v.vertex);
@@ -80,7 +78,6 @@ SubShader {
 
       // normal is set in geom method
 
-      o.id = (float2)v.id;
       return o;
     }
 
@@ -107,10 +104,6 @@ SubShader {
     }
 
     float4 frag(v2f i) : SV_TARGET {
-
-      if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-      if (_Opacity < 1 && Dither8x8(i.pos.xy) >= _Opacity) discard;
-
       // Apply shadows
       UNITY_LIGHT_ATTENUATION(attenuation, i, i.worldPos);
       float3 lightColor = _LightColor0.rgb * attenuation;

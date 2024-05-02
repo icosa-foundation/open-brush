@@ -15,7 +15,6 @@
 Shader "Brush/Multiplicative" {
 Properties {
   _MainTex ("Texture", 2D) = "white" {}
-  _Opacity ("Opacity", Range(0, 1)) = 1
 }
 
 Category {
@@ -43,45 +42,42 @@ Category {
         fixed4 color : COLOR;
         float3 normal : NORMAL;
         float2 texcoord : TEXCOORD0;
-        uint id : SV_VertexID;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
-        uint id : TEXCOORD2;
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       float4 _MainTex_ST;
-
-      uniform float _ClipStart;
-      uniform float _ClipEnd;
-      uniform half _Opacity;
 
       v2f vert (appdata_t v)
       {
         PrepForOds(v.vertex);
 
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+        
         o.vertex = UnityObjectToClipPos(v.vertex);
         o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
                                 o.color = v.color;
-        o.id = (float2)v.id;
         return o;
       }
 
       fixed4 frag (v2f i) : COLOR
       {
-        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-
-
          half4 c = tex2D(_MainTex, i.texcoord );
          c = i.color * c;
                                 // TODO: investigate doing this in the blend mode
-        c = lerp(1, c, c.a);
-        c.a *= _Opacity;
-        return c;
+        return lerp(1, c, c.a);
       }
       ENDCG
     }

@@ -16,15 +16,6 @@ Shader "Brush/Special/HyperGrid" {
 Properties {
   _TintColor ("Tint Color", Color) = (0.5,0.5,0.5,0.5)
   _MainTex ("Particle Texture", 2D) = "white" {}
-
-  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
-  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
-  _TimeBlend("Time Blend", Float) = 0
-  _TimeSpeed("Time Speed", Float) = 1.0
-
-  _Opacity ("Opacity", Range(0, 1)) = 1
-	_ClipStart("Clip Start", Float) = 0
-	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -48,7 +39,6 @@ Category {
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
       #pragma multi_compile __ SELECTION_ON
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
       #include "Assets/ThirdParty/Shaders/Noise.cginc"
@@ -57,23 +47,21 @@ Category {
       sampler2D _MainTex;
       fixed4 _TintColor;
 
-      uniform float _ClipStart;
-      uniform float _ClipEnd;
-      uniform half _Opacity;
-
       struct appdata_t {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
         float4 texcoord1 : TEXCOORD1;
-        uint id : SV_VertexID;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
         float4 pos : SV_POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
-        uint id : TEXCOORD2;
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       float4 _MainTex_ST;
@@ -82,6 +70,11 @@ Category {
       {
         v.color = TbVertToSrgb(v.color);
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
         // Subtract out the Canvas space pose to keep the verts from popping around while
         // transforming (e.g. apply quantization in an immutable space).
         float4 worldPos = mul(unity_ObjectToWorld, v.vertex);
@@ -90,7 +83,7 @@ Category {
 
         float waveform = 0;
 
-        float lifetime = GetTime().y - v.texcoord1.w;
+        float lifetime = _Time.y - v.texcoord1.w;
         float size = length(v.texcoord1.xyz);
         float release = saturate(lifetime);
 
@@ -108,21 +101,17 @@ Category {
 
         o.color = 2 * v.color + v.color.yzxw * _BeatOutput.x;
         o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
-        o.id = (float2)v.id;
         return o;
       }
 
       // Input color is srgb
       fixed4 frag (v2f i) : SV_Target
       {
-        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-
-
         float4 c = i.color * _TintColor * tex2D(_MainTex, i.texcoord);
         c = encodeHdr(c.rgb * c.a);
         c = SrgbToNative(c);
         FRAG_MOBILESELECT(c)
-        return c * _Opacity;
+        return c;
       }
       ENDCG
     }

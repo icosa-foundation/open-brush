@@ -17,9 +17,6 @@ Properties {
     _MainTex ("Texture", 2D) = "white" {}
     _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
 
-    _Opacity("Opacity", Range(0,1)) = 1
-    _ClipStart("Clip Start", Float) = 0
-	_ClipEnd("Clip End", Float) = -1
 }
 
 SubShader {
@@ -41,23 +38,21 @@ SubShader {
         sampler2D _MainTex;
         float _Cutoff;
 
-        uniform float _ClipStart;
-        uniform float _ClipEnd;
-        uniform half _Opacity;
-
         struct appdata_t {
             float4 vertex : POSITION;
             float2 texcoord : TEXCOORD0;
             float4 color : COLOR;
-            uint id : SV_VertexID;
+
+            UNITY_VERTEX_INPUT_INSTANCE_ID
         };
 
         struct v2f {
             float4 vertex : POSITION;
             float2 texcoord : TEXCOORD0;
             float4 color : COLOR;
-            uint id : TEXCOORD2;
             UNITY_FOG_COORDS(1)
+
+            UNITY_VERTEX_OUTPUT_STEREO
         };
 
         v2f vert (appdata_t v)
@@ -66,19 +61,20 @@ SubShader {
 
             v2f o;
 
+            UNITY_SETUP_INSTANCE_ID(v);
+            UNITY_INITIALIZE_OUTPUT(v2f, o);
+            UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
+
             o.vertex = UnityObjectToClipPos(v.vertex);
             o.texcoord = v.texcoord;
             o.color = TbVertToNative(v.color);
             UNITY_TRANSFER_FOG(o, o.vertex);
-            o.id = (float2)v.id;
             return o;
         }
 
         fixed4 frag (v2f i) : COLOR
         {
-            if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-            if (_Opacity < 1 && Dither8x8(i.vertex.xy) >= _Opacity) discard;
-
 			UNITY_APPLY_FOG(i.fogCoord, i.color);
             fixed4 c = tex2D(_MainTex, i.texcoord) * i.color;
 
