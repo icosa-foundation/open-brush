@@ -1,31 +1,23 @@
-﻿// Copyright 2024 The Open Brush Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-using System;
-using UnityEngine;
-using TMPro;
-
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 namespace TiltBrush
 {
-    public class TextActionButton : ActionButton
+    public class TextOptionButton : OptionButton
     {
         public GameObject m_Highlight;
         public string m_ButtonLabel;
         public Color m_ColorSelected;
         public Color m_ColorDeselected;
+
+        public string ButtonLabel
+        {
+            get => m_ButtonLabel;
+            set
+            {
+                m_ButtonLabel = value;
+                SetTextLabel();
+            }
+        }
 
 
         protected override void Awake()

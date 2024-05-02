@@ -14,6 +14,7 @@
 
 using UnityEngine;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace TiltBrush
@@ -153,6 +154,9 @@ namespace TiltBrush
             {
                 TiltVideo video = new TiltVideo
                 {
+                    // Annoyingly Images now use forward slash and a leading dot. So this is inconsistent.
+                    // Switching videos would have led to backwards incompatible changes in .tilt files
+                    // or an annoying legacy
                     FilePath = widget.Video.PersistentPath,
                     AspectRatio = widget.Video.Aspect,
                     Pinned = widget.Pinned,
@@ -251,20 +255,20 @@ namespace TiltBrush
 
             // From the list of image widgets in the sketch, create a map that contains a unique
             // entry per image, with associated metadata (transform and pin state) stored as arrays.
-            Dictionary<string, List<WidgetMetadata>> imagesByFileName =
+            Dictionary<string, List<WidgetMetadata>> imagesByPath =
                 new Dictionary<string, List<WidgetMetadata>>();
             Dictionary<string, float> aspectRatios = new Dictionary<string, float>();
             foreach (var image in imports)
             {
-                string fileName = image.FileName;
+                string path = image.RelativePath;
                 if (image.AspectRatio == null)
                 {
                     Debug.LogError("Trying to save partially-initialized image {fileName}");
                 }
-                if (!imagesByFileName.ContainsKey(fileName))
+                if (!imagesByPath.ContainsKey(path))
                 {
-                    imagesByFileName[fileName] = new List<WidgetMetadata>();
-                    aspectRatios[fileName] = image.AspectRatio ?? 1;
+                    imagesByPath[path] = new List<WidgetMetadata>();
+                    aspectRatios[path] = image.AspectRatio ?? 1;
                 }
                 WidgetMetadata newEntry = new WidgetMetadata();
                 newEntry.xf = image.SaveTransform;
@@ -273,16 +277,17 @@ namespace TiltBrush
                 newEntry.groupId = groupIdMapping.GetId(image.Group);
                 newEntry.layerId = App.Scene.GetIndexOfCanvas(image.Canvas);
                 newEntry.twoSided = image.TwoSided;
-                imagesByFileName[fileName].Add(newEntry);
+                imagesByPath[path].Add(newEntry);
             }
 
             // Build the save metadata from our unique map.
             List<TiltImages75> imageIndex = new List<TiltImages75>();
-            foreach (var elem in imagesByFileName)
+            foreach (var elem in imagesByPath)
             {
                 var val = new TiltImages75
                 {
-                    FileName = elem.Key,
+                    FilePath = elem.Key,
+                    FileName = Path.GetFileName(elem.Key),
                     AspectRatio = aspectRatios[elem.Key]
                 };
 

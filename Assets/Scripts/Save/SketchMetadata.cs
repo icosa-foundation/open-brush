@@ -654,6 +654,8 @@ namespace TiltBrush
     {
         /// *.png or *.jpg, should have no path
         public string FileName { get; set; }
+        /// FileName plus path relative to images directory
+        public string FilePath { get; set; }
         /// width / height
         public float AspectRatio { get; set; }
         // True if image should be pinned on load. Added in M15.
