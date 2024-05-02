@@ -463,7 +463,19 @@ namespace TiltBrush
         [ApiEndpoint("model.position", "Move a model to the given coordinates")]
         public static void PositionModel(int index, Vector3 position)
         {
-            _PositionWidget(_GetActiveModel(index), position);
+            _SetWidgetPosition(_GetActiveModel(index), position);
+        }
+
+        [ApiEndpoint("model.rotation", "Set a model's rotation to the given angles")]
+        public static void RotateModel(int index, Vector3 rotation)
+        {
+            _SetWidgetRotation(_GetActiveModel(index), rotation);
+        }
+
+        [ApiEndpoint("model.scale", "Set a model's scale to the amount")]
+        public static void RotateModel(int index, float scale)
+        {
+            _SetWidgetScale(_GetActiveModel(index), scale);
         }
 
         [ApiEndpoint("brush.forcepainting", "When on, overrides the trigger so the brush is always painting")]
@@ -475,7 +487,31 @@ namespace TiltBrush
         [ApiEndpoint("image.position", "Move an image to the given coordinates")]
         public static void PositionImage(int index, Vector3 position)
         {
-            _PositionWidget(_GetActiveImage(index), position);
+            _SetWidgetPosition(_GetActiveImage(index), position);
+        }
+
+        [ApiEndpoint("image.rotation", "Set a images rotation to the given angles")]
+        public static void RotateImage(int index, Vector3 rotation)
+        {
+            _SetWidgetRotation(_GetActiveImage(index), rotation);
+        }
+
+        [ApiEndpoint("image.scale", "Set a images scale to the amount")]
+        public static void RotateImage(int index, float scale)
+        {
+            _SetWidgetScale(_GetActiveModel(index), scale);
+        }
+
+        [ApiEndpoint("light.position", "Move a light to the given coordinates")]
+        public static void PositionLight(int index, Vector3 position)
+        {
+            _SetWidgetPosition(_GetActiveLight(index), position);
+        }
+
+        [ApiEndpoint("light.rotation", "Set a light's rotation to the given angles")]
+        public static void RotateLight(int index, Vector3 rotation)
+        {
+            _SetWidgetRotation(_GetActiveLight(index), rotation);
         }
 
         // WIP
