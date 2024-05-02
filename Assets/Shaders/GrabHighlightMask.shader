@@ -47,20 +47,28 @@ Category {
       struct appdata_t {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
         float4 vertex : POSITION;
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       v2f vert (appdata_t v) {
         v2f o;
-      o.vertex = UnityObjectToClipPos(v.vertex);
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+        o.vertex = UnityObjectToClipPos(v.vertex);
         return o;
       }
 
       void frag (v2f i, out fixed4 col : SV_Target) {
-     col = float4(1,1,1,1);
+        col = float4(1,1,1,1);
       }
       ENDCG
       }

@@ -133,7 +133,8 @@ namespace TiltBrush
                     break;
                 case OverlayState.Hidden:
                 case OverlayState.Visible:
-                default: break;
+                default:
+                    break;
             }
         }
 
