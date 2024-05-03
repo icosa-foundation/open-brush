@@ -1,0 +1,72 @@
+#pragma kernel CSMain
+
+uniform float4x4 TransformObjectToWorld;
+
+RWStructuredBuffer<float3> vertexBuffer;
+StructuredBuffer<float3> normalBuffer;
+StructuredBuffer<float4> colorBuffer;
+StructuredBuffer<float3> uvBuffer;
+StructuredBuffer<float4> uv1Buffer;
+
+float _SqueezeAmount;
+
+static const float kRecipSquareRootOfTwo = 0.70710678;
+
+[numthreads(8, 1, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID) {
+    float3 vertex = vertexBuffer[id.x];
+    float3 uv0 = uvBuffer[id.x];
+    float4 uv1 = uv1Buffer[id.x];
+
+    float4 originWS = mul(TransformObjectToWorld, float4(uv1.xyz, 1.0));
+    float4 posWS = mul(TransformObjectToWorld, float4(vertex, 1.0));
+    float length = distance(originWS.xyz, posWS.xyz);
+    length *= kRecipSquareRootOfTwo;
+
+    // if (6 * uv0.x + 10 * uv0.y == 0 or 6 or 10 or 16) then (length, length, 0)
+    // if (uv0.x + uv0.y == 8) then (-length, -length, 0)
+    // if (uv0.x + uv0.y == 3 or 13) then (length, -length, 0)
+    // if (uv0.x + uv0.y == 5 or 11) then (-length, length, 0)
+
+    float uv0Sum = 6 * uv0.x + 10 * uv0.y;
+
+    float3 preBillboard = float3(length, -length, 0);
+
+    if (uv0Sum == 5 || uv0Sum == 11)
+    {
+        preBillboard = float3(-length, length, 0);
+    }
+    else if (uv0Sum == 8)
+    {
+        preBillboard = float3(-length, -length, 0);
+    }
+    else if (uv0Sum == 0 || uv0Sum == 6 || uv0Sum == 10 || uv0Sum == 16)
+    {
+        preBillboard = float3(length, length, 0);
+    }
+    else if (uv0Sum == 3 || uv0Sum == 13)
+    {
+        preBillboard = float3(length, -length, 0);
+    }
+
+    // the movement is based on Unity Built-in shader variables
+    // _Time.y (t) and _Time.x (t/20)
+    // we will take the t = 0 in this compute shader
+    float timedoty = 0;
+    float timedotx = timedoty / 20;
+
+    
+    // // leaving this parameters here for generating animated mesh in the future
+
+    // float time = timedotx * 5;
+    // float d = 30;
+    // float freq = 0.1;
+    // float3 disp = float3(1, 0, 0) * curlX(originWS.xyz * freq + time, d);
+    // disp += float3(0,1,0) * curlY(originWS.xyz * freq + time, d);
+    // disp += float3(0,0,1) * curlZ(originWS.xyz * freq + time, d);
+    // disp = disp * 5 * 0.1;
+    // vertex += disp;
+
+    vertex = originWS.xyz + preBillboard;
+    vertexBuffer[id.x] = vertex;
+}

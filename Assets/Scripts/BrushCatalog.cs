@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#if OCULUS_SUPPORTED || ZAPBOX_SUPPORTED
+#define PASSTHROUGH_SUPPORTED
+#endif
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -196,13 +200,17 @@ namespace TiltBrush
 
         public Brush[] GetTagFilteredBrushList()
         {
-            string[] includeTags = App.UserConfig.Brushes.IncludeTags;
-            string[] excludeTags = App.UserConfig.Brushes.ExcludeTags;
+            List<string> includeTags = App.UserConfig.Brushes.IncludeTags.ToList();
+            List<string> excludeTags = App.UserConfig.Brushes.ExcludeTags.ToList();
 
-            if (includeTags == null)
+            if (includeTags == null || includeTags.Count == 0)
             {
                 Debug.LogError("There will be no brushes because there are no 'include' tags.");
             }
+
+#if !PASSTHROUGH_SUPPORTED
+            excludeTags.Add("passthrough");
+#endif
 
             // Filter m_GuiBrushList down to those that are both 'included' and not 'excluded'
             Brush[] filteredList = m_GuiBrushList.Where((brush) =>
