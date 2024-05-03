@@ -1,0 +1,82 @@
+#pragma kernel CSMain
+
+uniform float4x4 TransformObjectToWorld;
+
+RWStructuredBuffer<float3> vertexBuffer;
+StructuredBuffer<float3> normalBuffer;
+StructuredBuffer<float4> colorBuffer;
+StructuredBuffer<float3> uvBuffer;
+StructuredBuffer<float4> uv1Buffer;
+
+float _SqueezeAmount;
+
+static const float kRecipSquareRootOfTwo = 0.70710678;
+
+
+[numthreads(8, 1, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID) {
+    float3 vertex = vertexBuffer[id.x];
+    float3 normal = normalBuffer[id.x];
+    float3 uv0 = uvBuffer[id.x];
+    float4 uv1 = uv1Buffer[id.x];
+
+    // according to paricles.cginc, the originWS for ParticleVertexWithSpread_t 
+    // is the normal.xyz instead of uv1
+    float4 originWS = mul(TransformObjectToWorld, float4(normal.xyz, 1.0));
+    // float4 originWS = mul(TransformObjectToWorld, float4(uv1, 1.0));
+
+    float4 posWS = mul(TransformObjectToWorld, float4(vertex, 1.0));
+    float length = distance(originWS.xyz, posWS.xyz);
+    length *= kRecipSquareRootOfTwo;
+
+    // if (uv0.x + uv0.y == 0) then (-length, -length, 0)
+    // if (uv0.x + uv0.y == 2) then (length, length, 0)
+    // if (uv0.x + uv0.y == 1 && uv0.x - uv0.y == -1) then (length, -length, 0)
+    // if (uv0.x + uv0.y == 1 && uv0.x - uv0.y == 1) then (-length, length, 0)
+
+    float uv0Sum = uv0.x + uv0.y;
+    float uv0Dif = uv0.x - uv0.y;
+
+    float3 preBillboard = float3(-length, length, 0);
+
+    if (uv0Sum == 0)
+    {
+        preBillboard = float3(-length, -length, 0);
+    }
+    else if (uv0Sum == 2)
+    {
+        preBillboard = float3(length, length, 0);
+    }
+    else if (uv0Dif == -1)
+    {
+        preBillboard = float3(length, -length, 0);
+    }
+
+    // the movement is based on Unity Built-in shader variables
+    // _Time.y (t) and _Time.x (t/20)
+    // we will take the t = 0 in this compute shader
+    float timedoty = 0;
+    float timedotx = timedoty / 20;
+
+    
+    // // leaving this parameters here for generating animated mesh in the future
+    
+    // //  ----------- Nicholas: this part haven't tested yet ----------------
+    // float seed = color.a;
+    // float t01 = fmod(timedoty * 0.1 + seed * 10, 1);
+    // float t2 = timedoty / 3;
+    // float scrollJitterFrequency = 5;
+    // float scrollJitterIntensity = 0.2;
+    // float3 scrollDistance = new float3(0.5, 5, 0);
+    // float4 dispVec = new float4(scrollDistance, 0,0) * t01;
+    // dispVec.x += sin(t01 * scrollJitterFrequency + seed * 10 + t2 + originWS.z) * scrollJitterIntensity;
+    // dispVec.y += (fmod(seed * 100, 1) - 0.5) * scrollDistance.y * t01;
+    // dispVec.z += cos(t01 * scrollJitterFrequency + seed * 7 + t2 + originWS.x) * scrollJitterIntensity;
+
+    // vertex += dispVec;
+
+    // // ---------------------------------------------------------------------
+
+    vertex = originWS.xyz + preBillboard;
+    vertexBuffer[id.x] = vertex;
+}
