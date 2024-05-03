@@ -13,22 +13,22 @@
       "dependencies": {},
       "hash": "4f87195d54ccefe076678cb83a296b3f0428fc53"
     },
-    "com.meta.xr.sdk.platform": {
-      "version": "56.0.0-preview",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {
-        "com.meta.xr.sdk.utilities": "56.0.0-preview",
-        "com.unity.ugui": "1.0.0"
-      },
-      "url": "https://npm.developer.oculus.com"
-    },
-    "com.meta.xr.sdk.utilities": {
-      "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.core.git#56.0.0-openbrush",
+    "com.meta.xr.sdk.core": {
+      "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.core.git#60.0.0-openbrush",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "57bad66c67cd72a31898a1d29dae4d4201ef36c1"
+      "hash": "0feb415034b094e4622efa4e5b3f2c87ded2d2f3"
+    },
+    "com.meta.xr.sdk.platform": {
+      "version": "60.0.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.meta.xr.sdk.core": "60.0.0",
+        "com.unity.ugui": "1.0.0"
+      },
+      "url": "https://npm.developer.oculus.com"
     },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
@@ -203,6 +203,15 @@
       "depth": 0,
       "source": "registry",
       "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.recorder": {
+      "version": "4.0.2",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.timeline": "1.0.0"
+      },
       "url": "https://packages.unity.com"
     },
     "com.unity.render-pipelines.core": {
