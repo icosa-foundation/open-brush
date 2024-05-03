@@ -18,7 +18,7 @@ MonoBehaviour:
   ReferenceImagesMaxDimension: 4352
   ReferenceImagesResizeDimension: 1024
   MemoryWarningVertCount: 1000000
-  UseFileSystemWatcher: 0
+  UseFileSystemWatcher: 1
   EnableAutosave: 0
   QuickLoadMaxDistancePerFrame: 4
   IntroSketchPrefab: {fileID: 1843608203, guid: ddfd362fa9a8d5840bf47df17d2eba8a,

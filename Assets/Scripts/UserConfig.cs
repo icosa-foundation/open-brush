@@ -261,7 +261,7 @@ namespace TiltBrush
             bool? m_UseUnityGltf;
             public bool UseUnityGltf
             {
-                get { return m_UseUnityGltf ?? true; }
+                get { return m_UseUnityGltf ?? false; }
                 set { m_UseUnityGltf = value; }
             }
         }
