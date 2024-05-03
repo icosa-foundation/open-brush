@@ -1,5 +1,6 @@
 ﻿using MoonSharp.Interpreter;
 using UnityEngine;
+
 namespace TiltBrush
 {
     [LuaDocsDescription("A 3D model widget")]
@@ -72,7 +73,7 @@ namespace TiltBrush
         [LuaDocsExample(@"Model:Import(""Andy.obj"")")]
         [LuaDocsParameter(@"filename", "The filename of the model to be imported")]
         [LuaDocsReturnValue(@"Returns the Model instance")]
-        public static ModelApiWrapper Import(string filename) => new ModelApiWrapper(ApiMethods.ImportModel(filename).Result);
+        public static ModelApiWrapper Import(string filename) => new ModelApiWrapper(ApiMethods.ImportModel(filename));
 
         [LuaDocsDescription(@"Adds this model to the current selection")]
         [LuaDocsExample(@"myModel:Select()")]

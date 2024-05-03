@@ -25,7 +25,6 @@ using Unity.VectorGraphics;
 using Debug = UnityEngine.Debug;
 using UObject = UnityEngine.Object;
 
-
 namespace TiltBrush
 {
 
@@ -729,12 +728,6 @@ namespace TiltBrush
                 else if (ext == ".ply")
                 {
                     go = LoadPly(warnings);
-                    CalcBoundsNonGltf(go);
-                    EndCreatePrefab(go, warnings);
-                }
-                else if (ext == ".svg")
-                {
-                    go = LoadSvg(warnings);
                     CalcBoundsNonGltf(go);
                     EndCreatePrefab(go, warnings);
                 }

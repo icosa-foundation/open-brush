@@ -863,7 +863,7 @@ namespace TiltBrush
         public static void _SymmetrySetRotation(Quaternion rotation)
         {
             var widget = PointerManager.m_Instance.SymmetryWidget;
-            _SetWidgetRotation(widget, widget.transform.position, rotation);
+            _SetWidgetRotation(widget, rotation);
         }
 
         public static void _SymmetrySetTransform(Vector3 position, Quaternion rotation)
@@ -994,8 +994,8 @@ namespace TiltBrush
         [ApiEndpoint("light.rotation", "Set a light's rotation to the given angles")]
         public static void RotateLight(int index, Vector3 rotation)
         {
-            _SetWidgetRotation(_GetActiveLight(index), rotation);
-            _SetWidgetTransform(_GetActiveImage(index), position);
+            // TODO
+            //_SetWidgetRotation(_GetActiveLight(index), rotation);
         }
 
         [ApiEndpoint(
@@ -1186,7 +1186,8 @@ namespace TiltBrush
         )]
         public static void PositionGuide(int index, Vector3 position)
         {
-            _SetWidgetTransform(_GetActiveStencil(index), position);
+            // TODO
+            //_SetWidgetTransform(_GetActiveStencil(index), position);
         }
 
         [ApiEndpoint(

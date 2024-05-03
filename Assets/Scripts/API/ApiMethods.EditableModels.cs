@@ -16,7 +16,6 @@ using System;
 using System.IO;
 using System.Linq;
 using UnityEngine;
-using System.Threading.Tasks;
 
 namespace TiltBrush
 {
@@ -50,14 +49,18 @@ namespace TiltBrush
             ImportModel(Path.Combine(uri.Host, filename));
         }
 
-        [ApiEndpoint("model.import", "Imports a model given a url or a filename in Media Library\\Models (Models loaded from a url are saved locally first)")]
-        public static void ImportModel(string location)
+        [ApiEndpoint(
+            "model.import",
+            "Imports a model given a url or a filename in Media Library\\Models (Models loaded from a url are saved locally first)",
+            "Andy\\Andy.obj"
+        )]
+        public static ModelWidget ImportModel(string location)
         {
             if (location.StartsWith("poly:"))
             {
                 location = location.Substring(5);
                 ApiManager.Instance.LoadPolyModel(location);
-                return; // TODO
+                return null; // TODO
             }
 
             // Normalize path slashes
@@ -96,12 +99,14 @@ namespace TiltBrush
             else
             {
                 Debug.LogWarning("Failed to create EditableModelWidget");
-                return;
+                return null;
             }
 
             WidgetManager.m_Instance.WidgetsDormant = false;
             SketchControlsScript.m_Instance.EatGazeObjectInput();
             SelectionManager.m_Instance.RemoveFromSelection(false);
+
+            return widget;
         }
     }
 }
