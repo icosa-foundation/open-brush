@@ -3283,6 +3283,10 @@ MonoBehaviour:
     m_Key: CONTROLLER_HINT_THUMBPAD_BRUSHSIZE
     m_Metadata:
       m_Items: []
+  - m_Id: 176764812224364544
+    m_Key: BRUSH_PASSTHROUGHHULL
+    m_Metadata:
+      m_Items: []
   - m_Id: 188791089062830080
     m_Key: ENVIRONMENT_PANEL_RESET_CANVAS
     m_Metadata:

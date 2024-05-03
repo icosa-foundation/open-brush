@@ -3508,6 +3508,10 @@ MonoBehaviour:
     m_Localized: More info on using Open Brush without VR
     m_Metadata:
       m_Items: []
+  - m_Id: 176764812224364544
+    m_Localized: Passthrough Hull
+    m_Metadata:
+      m_Items: []
   - m_Id: 224363142209691648
     m_Localized: Pick a Subfolder
     m_Metadata:
