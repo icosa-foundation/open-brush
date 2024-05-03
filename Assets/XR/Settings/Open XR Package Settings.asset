@@ -559,6 +559,8 @@ MonoBehaviour:
   - {fileID: 4073621059260807014}
   m_renderMode: 0
   m_depthSubmissionMode: 1
+  m_optimizeBufferDiscards: 0
+  m_symmetricProjection: 0
 --- !u!114 &-792796085665928788
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -674,6 +676,23 @@ MonoBehaviour:
   company: Unity
   priority: 0
   required: 0
+--- !u!114 &-147410222034222949
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5a1f07dc5afe854f9f12a4194aca3fb, type: 3}
+  m_Name: VisionOS
+  m_EditorClassIdentifier: 
+  features: []
+  m_renderMode: 1
+  m_depthSubmissionMode: 0
+  m_optimizeBufferDiscards: 0
+  m_symmetricProjection: 0
 --- !u!114 &-57994259809233075
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -706,13 +725,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9f0ebc320a151d3408ea1e9fce54d40e, type: 3}
   m_Name: Open XR Package Settings
   m_EditorClassIdentifier: 
-  Keys: 01000000070000000d0000000e00000004000000
+  Keys: 01000000070000000d0000000e0000000400000024000000
   Values:
   - {fileID: 7381656899648225167}
   - {fileID: -1294329756112899549}
   - {fileID: 9061466112958658113}
   - {fileID: 5710753191044472963}
   - {fileID: 2540959591261858297}
+  - {fileID: -147410222034222949}
 --- !u!114 &574840683824583675
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -888,6 +908,8 @@ MonoBehaviour:
   features: []
   m_renderMode: 1
   m_depthSubmissionMode: 0
+  m_optimizeBufferDiscards: 0
+  m_symmetricProjection: 0
 --- !u!114 &2554124788269052071
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -959,6 +981,11 @@ MonoBehaviour:
     manifestName: cambria
     enabled: 1
   forceRemoveInternetPermission: 1
+  symmetricProjection: 0
+  systemSplashScreen: {fileID: 0}
+  optimizeBufferDiscards: 1
+  lateLatchingMode: 0
+  lateLatchingDebug: 0
 --- !u!114 &3442458366111397828
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1132,6 +1159,8 @@ MonoBehaviour:
   - {fileID: -8850364997158714336}
   m_renderMode: 0
   m_depthSubmissionMode: 1
+  m_optimizeBufferDiscards: 0
+  m_symmetricProjection: 0
 --- !u!114 &6163247034252501667
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1256,6 +1285,8 @@ MonoBehaviour:
   - {fileID: -177044242218828340}
   m_renderMode: 0
   m_depthSubmissionMode: 2
+  m_optimizeBufferDiscards: 0
+  m_symmetricProjection: 0
 --- !u!114 &7584001526195082204
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1351,6 +1382,8 @@ MonoBehaviour:
   features: []
   m_renderMode: 0
   m_depthSubmissionMode: 0
+  m_optimizeBufferDiscards: 0
+  m_symmetricProjection: 0
 --- !u!114 &9128593777916537170
 MonoBehaviour:
   m_ObjectHideFlags: 0
