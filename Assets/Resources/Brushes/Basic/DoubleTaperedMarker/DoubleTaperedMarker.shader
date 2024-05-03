@@ -45,6 +45,8 @@ Category {
         fixed4 color : COLOR;
         float2 texcoord0 : TEXCOORD0;
         float3 texcoord1 : TEXCOORD1; //per vert offset vector
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
@@ -52,6 +54,8 @@ Category {
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
         UNITY_FOG_COORDS(1)
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       v2f vert (appdata_t v)
@@ -63,6 +67,11 @@ Category {
         //
 
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
         float envelope = sin(v.texcoord0.x * 3.14159);
         float widthMultiplier = 1 - envelope;
         v.vertex.xyz += -v.texcoord1 * widthMultiplier;

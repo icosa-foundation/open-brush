@@ -30,6 +30,8 @@ Shader "Custom/AudioReactiveIcon" {
       #pragma target 3.0
       #pragma multi_compile __ AUDIO_REACTIVE
       #pragma multi_compile __ HDR_EMULATED HDR_SIMPLE
+
+      #include "UnityCG.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
 
@@ -42,16 +44,25 @@ Shader "Custom/AudioReactiveIcon" {
       struct appdata_t {
         float4 vertex : POSITION;
         float2 texcoord : TEXCOORD0;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
         float4 vertex : POSITION;
         float2 texcoord : TEXCOORD0;
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       v2f vert (appdata_t v)
       {
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
 #ifdef AUDIO_REACTIVE
         v.vertex.xyz += v.vertex.xyz * .2;
         v.vertex.z += -.2;
