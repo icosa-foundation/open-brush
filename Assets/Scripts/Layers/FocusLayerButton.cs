@@ -36,6 +36,7 @@ namespace TiltBrush.Layers
 
         public void SyncButtonStateWithWidget(GameObject activeLayerWidget)
         {
+            if (activeLayerWidget == null) return;
             SetButtonActivation(activeLayerWidget == transform.parent.gameObject);
         }
 

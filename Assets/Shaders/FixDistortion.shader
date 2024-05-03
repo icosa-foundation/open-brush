@@ -47,10 +47,17 @@ Shader "Custom/FixDistortion" {
         float4 position : SV_POSITION;
         float2 uv : TEXCOORD0;
         float4 worldPos : TEXCOORD1;
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       fragment_input vert(appdata_img v) {
         fragment_input o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(fragment_input, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
         o.position = UnityObjectToClipPos(v.vertex);
         o.uv = MultiplyUV(UNITY_MATRIX_TEXTURE0, v.texcoord);
         o.worldPos = mul(unity_ObjectToWorld, v.vertex);

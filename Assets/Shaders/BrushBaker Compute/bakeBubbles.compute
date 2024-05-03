@@ -1,0 +1,82 @@
+#pragma kernel CSMain
+
+#include "../../ThirdParty/Shaders/Noise.cginc"
+
+uniform float4x4 TransformObjectToWorld;
+
+RWStructuredBuffer<float3> vertexBuffer;
+StructuredBuffer<float3> normalBuffer;
+StructuredBuffer<float4> colorBuffer;
+StructuredBuffer<float3> uvBuffer;
+
+float _SqueezeAmount;
+
+static const float kRecipSquareRootOfTwo = 0.70710678;
+
+
+[numthreads(8, 1, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID) {
+    float3 vertex = vertexBuffer[id.x];
+    float3 normal = normalBuffer[id.x];
+    float3 uv0 = uvBuffer[id.x];
+
+    // according to paricles.cginc, the originWS for ParticleVertexWithSpread_t 
+    // is the normal.xyz instead of uv1
+    float4 originWS = mul(TransformObjectToWorld, float4(normal.xyz, 1.0));
+    // float4 originWS = mul(TransformObjectToWorld, float4(uv1, 1.0));
+
+    float4 posWS = mul(TransformObjectToWorld, float4(vertex, 1.0));
+    float length = distance(originWS.xyz, posWS.xyz);
+    length *= kRecipSquareRootOfTwo;
+
+    // if (uv0.x + uv0.y == 0) then (-length, -length, 0)
+    // if (uv0.x + uv0.y == 2) then (length, length, 0)
+    // if (uv0.x + uv0.y == 1 && uv0.x - uv0.y == -1) then (length, -length, 0)
+    // if (uv0.x + uv0.y == 1 && uv0.x - uv0.y == 1) then (-length, length, 0)
+
+    float uv0Sum = uv0.x + uv0.y;
+    float uv0Dif = uv0.x - uv0.y;
+
+    float3 preBillboard = float3(-length, length, 0);
+
+    if (uv0Sum == 0)
+    {
+        preBillboard = float3(-length, -length, 0);
+    }
+    else if (uv0Sum == 2)
+    {
+        preBillboard = float3(length, length, 0);
+    }
+    else if (uv0Dif == -1)
+    {
+        preBillboard = float3(length, -length, 0);
+    }
+
+    // the movement is based on Unity Built-in shader variables
+    // _Time.y (t) and _Time.x (t/20)
+    // we will take the t = 0 in this compute shader
+    float timedoty = 0;
+    float timedotx = timedoty / 20;
+
+    
+    // // leaving this parameters here for generating animated mesh in the future
+
+    // float t = timedoty * 0.5 + 1;
+    // float3 jitter = float3(0, 0, 0);
+    
+    // jitter.x = sin(t +       timedoty + originWS.z * 0.2);
+    // jitter.y = cos(t +       timedoty + originWS.x * 0.2);
+    // jitter.z = cos(t * 1.2 + timedoty + originWS.x * 0.2);
+    // jitter *= 0.02;
+
+    // float3 v = (originWS.xyz + jitter) * 0.1 + timedotx * 5;
+    // float d = 30;
+
+    // // Using noise.cginc
+    // float3 curl = float3(curlX(v, d), curlY(v, d), curlZ(v, d)) * 10;
+    // originWS.xyz += (jitter + curl) * 0.1;
+
+
+    vertex = originWS.xyz + preBillboard;
+    vertexBuffer[id.x] = vertex;
+}
