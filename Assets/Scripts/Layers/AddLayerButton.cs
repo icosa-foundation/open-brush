@@ -21,7 +21,6 @@ namespace TiltBrush.Layers
         protected override void OnButtonPressed()
         {
             var UiManager = GetComponentInParent<LayerUI_Manager>();
-            // if (App.Scene.LayerCanvases.Count() >= 7) return;
             base.OnButtonPressed();
             UiManager.AddLayer();
         }
