@@ -740,7 +740,7 @@ GameObject:
   - component: {fileID: 6299537005687282328}
   - component: {fileID: 2050387273726649813}
   m_Layer: 0
-  m_Name: VrSystem
+  m_Name: XRRig
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -779,7 +779,7 @@ MonoBehaviour:
   m_OriginBaseGameObject: {fileID: 1000014130305538}
   m_CameraFloorOffsetObject: {fileID: 528820638706216730}
   m_RequestedTrackingOriginMode: 0
-  m_CameraYOffset: 1.36144
+  m_CameraYOffset: 1.1176
 --- !u!114 &2050387273726649813
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -833,7 +833,7 @@ Transform:
   m_GameObject: {fileID: 528820638706216730}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.36144, z: 0}
+  m_LocalPosition: {x: 0, y: 1.1176, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
