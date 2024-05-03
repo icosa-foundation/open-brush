@@ -17003,13 +17003,13 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1671124695}
     m_Modifications:
+    - target: {fileID: 1000014130305538, guid: dedd7823645ca60468aca5f2ff1b9a7f, type: 3}
+      propertyPath: m_Name
+      value: XRRig
+      objectReference: {fileID: 0}
     - target: {fileID: 4000011324248280, guid: dedd7823645ca60468aca5f2ff1b9a7f, type: 3}
       propertyPath: m_RootOrder
       value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4000013585580318, guid: dedd7823645ca60468aca5f2ff1b9a7f, type: 3}
-      propertyPath: m_RootOrder
-      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 4000013585580318, guid: dedd7823645ca60468aca5f2ff1b9a7f, type: 3}
       propertyPath: m_LocalPosition.x
