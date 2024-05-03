@@ -16,6 +16,11 @@
 #define PASSTHROUGH_SUPPORTED
 #endif
 
+
+#if OCULUS_SUPPORTED || ZAPBOX_SUPPORTED
+#define PASSTHROUGH_SUPPORTED
+#endif
+
 using System;
 using System.Collections.Generic;
 using System.Linq;

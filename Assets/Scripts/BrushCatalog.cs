@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#if OCULUS_SUPPORTED || ZAPBOX_SUPPORTED
+#define PASSTHROUGH_SUPPORTED
+#endif
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -204,7 +208,7 @@ namespace TiltBrush
                 Debug.LogError("There will be no brushes because there are no 'include' tags.");
             }
 
-#if !OCULUS_SUPPORTED
+#if !PASSTHROUGH_SUPPORTED
             excludeTags.Add("passthrough");
 #endif
 
