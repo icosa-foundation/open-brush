@@ -34,7 +34,8 @@ namespace TiltBrush
         private int m_TexturesCreatedThisFrame;
 
         protected FileWatcher m_FileWatcher;
-        protected string m_ReferenceDirectory;
+        protected string m_CurrentImagesDirectory;
+        public string CurrentImagesDirectory => m_CurrentImagesDirectory;
 
         protected List<ReferenceImage> m_Images;
         protected Stack<int> m_RequestedLoads; // it's okay if this contains duplicates
@@ -68,11 +69,17 @@ namespace TiltBrush
 
             App.InitMediaLibraryPath();
             App.InitReferenceImagePath(m_DefaultImages);
-            m_ReferenceDirectory = App.ReferenceImagePath();
+            ImageCache.DeleteObsoleteCaches();
+            ChangeDirectory(HomeDirectory);
+        }
 
-            if (Directory.Exists(m_ReferenceDirectory))
+        public virtual void ChangeDirectory(string newPath)
+        {
+            m_CurrentImagesDirectory = newPath;
+
+            if (Directory.Exists(m_CurrentImagesDirectory))
             {
-                m_FileWatcher = new FileWatcher(m_ReferenceDirectory);
+                m_FileWatcher = new FileWatcher(m_CurrentImagesDirectory);
                 m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
                 m_FileWatcher.FileChanged += OnChanged;
                 m_FileWatcher.FileCreated += OnChanged;
@@ -80,10 +87,25 @@ namespace TiltBrush
                 m_FileWatcher.EnableRaisingEvents = true;
             }
 
-            ImageCache.DeleteObsoleteCaches();
-
             m_Images = new List<ReferenceImage>();
             ProcessReferenceDirectory(userOverlay: false);
+        }
+
+        public virtual string HomeDirectory => App.ReferenceImagePath();
+
+        public virtual bool IsHomeDirectory()
+        {
+            return m_CurrentImagesDirectory == HomeDirectory;
+        }
+
+        public virtual bool IsSubDirectoryOfHome()
+        {
+            return m_CurrentImagesDirectory.StartsWith(HomeDirectory);
+        }
+
+        public virtual string GetCurrentDirectory()
+        {
+            return m_CurrentImagesDirectory;
         }
 
         // This is not persistent state; it avoids allocating a transient Stack every frame
@@ -344,9 +366,14 @@ namespace TiltBrush
             }
         }
 
+        protected virtual void ProcessReferenceDirectory(bool userOverlay = true)
+        {
+            _ProcessReferenceDirectory_Impl(m_CurrentImagesDirectory, userOverlay);
+        }
+
         // Update m_Images with latest contents of reference directory.
         // Preserves items if they're still in the directory.
-        protected void ProcessReferenceDirectory(bool userOverlay = true)
+        protected void _ProcessReferenceDirectory_Impl(string imageDir, bool userOverlay = true)
         {
             m_DirNeedsProcessing = false;
             var oldImagesByPath = m_Images.ToDictionary(image => image.FilePath);
@@ -369,7 +396,7 @@ namespace TiltBrush
             try
             {
                 // GetFiles returns full paths, surprisingly enough.
-                foreach (var filePath in Directory.GetFiles(m_ReferenceDirectory))
+                foreach (var filePath in Directory.GetFiles(imageDir))
                 {
                     string ext = Path.GetExtension(filePath).ToLower();
                     if (!ValidExtension(ext)) { continue; }
@@ -425,6 +452,22 @@ namespace TiltBrush
         protected virtual bool ValidExtension(string ext)
         {
             return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".svg";
+        }
+
+        public ReferenceImage RelativePathToImage(string relativePath)
+        {
+            // Protect against path traversal below HomeDirectory
+            string fullPath = Path.GetFullPath(Path.Combine(HomeDirectory, relativePath));
+            if (!fullPath.StartsWith(HomeDirectory, StringComparison.OrdinalIgnoreCase)) return null;
+
+            // TODO change to a dictionary to avoid O(n) lookup
+            var refImage = m_Images.FirstOrDefault(x => x.FileFullPath == fullPath);
+            if (refImage == null)
+            {
+                refImage = new ReferenceImage(fullPath);
+                m_Images.Add(refImage);
+            }
+            return refImage;
         }
 
         // Pass a file name with no path components. Matching is purely based on name.

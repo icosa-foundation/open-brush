@@ -39,7 +39,7 @@ namespace TiltBrush
             m_collector = new ImportMaterialCollector(mDir, m_path);
         }
 
-        public (GameObject, List<string> warnings, ImportMaterialCollector) Import()
+        public (GameObject, List<string> warnings, ImportMaterialCollector, SVGParser.SceneInfo) Import()
         {
             GameObject go = new GameObject();
             var mf = go.AddComponent<MeshFilter>();
@@ -68,6 +68,9 @@ namespace TiltBrush
                 Debug.LogError("Failed importing " + path + ". " + e.Message);
                 return null;
             }
+            var collider = go.AddComponent<BoxCollider>();
+            collider.size = mf.mesh.bounds.size;
+            return (go, warnings.Distinct().ToList(), m_collector, sceneInfo);
         }
     }
 } // namespace TiltBrush

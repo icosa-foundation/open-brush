@@ -153,6 +153,7 @@ namespace TiltBrush
                 -1,
                 Path.Combine(App.UserSketchPath(), filename)
             );
+            PanelManager.m_Instance.ToggleSketchbookPanels(true);
         }
 
         [ApiEndpoint(
@@ -412,7 +413,7 @@ namespace TiltBrush
         }
 
         // TODO explicit group/ungroup
-        [ApiEndpoint("selection.group", "Groups the current selection")]
+        [ApiEndpoint("selection.group", "Groups (or ungroups) the current selection")]
         public static void ToggleGroupStrokesAndWidgets()
         {
             var rEnum = SketchControlsScript.GlobalCommands.ToggleGroupStrokesAndWidgets;

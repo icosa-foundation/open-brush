@@ -293,24 +293,28 @@ namespace TiltBrush
                 bool bThisIconActive = false;
                 ImageIcon rIcon = m_Icons[i];
 
-                if (bButtonsAvailable && rIcon.m_Valid &&
-                    BasePanel.DoesRayHitCollider(rCastRay, rIcon.m_IconScript.GetCollider()))
+                var collider = rIcon.m_IconScript.GetCollider();
+                if (collider != null)
                 {
-                    bool bWasButtonPressed = rIcon.m_IconScript.IsPressed();
-                    rIcon.m_IconScript.UpdateButtonState(inputValid);
-                    if (rIcon.m_IconScript.IsPressed() && !bWasButtonPressed)
+                    if (bButtonsAvailable && rIcon.m_Valid &&
+                        BasePanel.DoesRayHitCollider(rCastRay, collider))
                     {
-                        //on press, refresh the buttons
-                        RefreshPage();
+                        bool bWasButtonPressed = rIcon.m_IconScript.IsPressed();
+                        rIcon.m_IconScript.UpdateButtonState(inputValid);
+                        if (rIcon.m_IconScript.IsPressed() && !bWasButtonPressed)
+                        {
+                            //on press, refresh the buttons
+                            RefreshPage();
+                        }
+
+                        bThisIconActive = true;
                     }
 
-                    bThisIconActive = true;
-                }
-
-                if (!bThisIconActive)
-                {
-                    //reset state of button because we're not messing with it
-                    rIcon.m_IconScript.ResetState();
+                    if (!bThisIconActive)
+                    {
+                        //reset state of button because we're not messing with it
+                        rIcon.m_IconScript.ResetState();
+                    }
                 }
             }
 

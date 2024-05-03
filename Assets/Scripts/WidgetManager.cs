@@ -106,6 +106,8 @@ namespace TiltBrush
         [SerializeField] ImageWidget m_ImageWidgetPrefab;
         [SerializeField] VideoWidget m_VideoWidgetPrefab;
         [SerializeField] TextWidget m_TextWidgetPrefab;
+        [SerializeField] LightWidget m_LightWidgetPrefab;
+        [SerializeField] SceneLightGizmo m_SceneLightGizmoPrefab;
         [SerializeField] CameraPathWidget m_CameraPathWidgetPrefab;
         [SerializeField] private GameObject m_CameraPathPositionKnotPrefab;
         [SerializeField] private GameObject m_CameraPathRotationKnotPrefab;
@@ -142,6 +144,7 @@ namespace TiltBrush
         // Widgets will be in the most specific list.
         private List<GrabWidgetData> m_GrabWidgets;
         private List<TypedWidgetData<ModelWidget>> m_ModelWidgets;
+        private List<TypedWidgetData<LightWidget>> m_LightWidgets;
         private List<TypedWidgetData<StencilWidget>> m_StencilWidgets;
         private List<TypedWidgetData<ImageWidget>> m_ImageWidgets;
         private List<TypedWidgetData<TextWidget>> m_TextWidgets;
@@ -155,6 +158,7 @@ namespace TiltBrush
         public event Action RefreshPinAndUnpinAction;
 
         private TiltModels75[] m_loadingTiltModels75;
+        private TiltLights[] m_loadingTiltLights;
         private TiltImages75[] m_loadingTiltImages75;
         private TiltVideo[] m_loadingTiltVideos;
 
@@ -299,6 +303,7 @@ namespace TiltBrush
 
             m_GrabWidgets = new List<GrabWidgetData>();
             m_ModelWidgets = new List<TypedWidgetData<ModelWidget>>();
+            m_LightWidgets = new List<TypedWidgetData<LightWidget>>();
             m_StencilWidgets = new List<TypedWidgetData<StencilWidget>>();
             m_ImageWidgets = new List<TypedWidgetData<ImageWidget>>();
             m_TextWidgets = new List<TypedWidgetData<TextWidget>>();
@@ -330,6 +335,8 @@ namespace TiltBrush
         public ImageWidget ImageWidgetPrefab { get { return m_ImageWidgetPrefab; } }
         public VideoWidget VideoWidgetPrefab { get { return m_VideoWidgetPrefab; } }
         public TextWidget TextWidgetPrefab { get { return m_TextWidgetPrefab; } }
+        public LightWidget LightWidgetPrefab { get { return m_LightWidgetPrefab; } }
+        public SceneLightGizmo SceneLightGizmoPrefab { get { return m_SceneLightGizmoPrefab; } }
         public CameraPathWidget CameraPathWidgetPrefab { get { return m_CameraPathWidgetPrefab; } }
         public GameObject CameraPathPositionKnotPrefab { get { return m_CameraPathPositionKnotPrefab; } }
         public GameObject CameraPathRotationKnotPrefab { get { return m_CameraPathRotationKnotPrefab; } }
@@ -364,6 +371,13 @@ namespace TiltBrush
                 if (m_ModelWidgets[i].m_WidgetObject.activeSelf)
                 {
                     yield return m_ModelWidgets[i];
+                }
+            }
+            for (int i = 0; i < m_LightWidgets.Count; ++i)
+            {
+                if (m_LightWidgets[i].m_WidgetObject.activeSelf)
+                {
+                    yield return m_LightWidgets[i];
                 }
             }
             for (int i = 0; i < m_StencilWidgets.Count; ++i)
@@ -408,7 +422,11 @@ namespace TiltBrush
             get
             {
                 IEnumerable<GrabWidgetData> ret = m_ModelWidgets;
-                return ret.Concat(m_ImageWidgets).Concat(m_VideoWidgets).Concat(m_TextWidgets);
+                return ret
+                    .Concat(m_ImageWidgets)
+                    .Concat(m_VideoWidgets)
+                    .Concat(m_TextWidgets)
+                    .Concat(m_LightWidgets);
             }
         }
 
@@ -595,6 +613,7 @@ namespace TiltBrush
                 m_ImageWidgets.Count > 0 ||
                 m_TextWidgets.Count > 0 ||
                 m_VideoWidgets.Count > 0 ||
+                (m_LightWidgets.Count > 0) ||
                 (!m_StencilsDisabled && m_StencilWidgets.Count > 0);
         }
 
@@ -699,6 +718,12 @@ namespace TiltBrush
         public void SetDataFromTilt(TiltImages75[] value)
         {
             m_loadingTiltImages75 = value;
+        }
+
+        // Used only at .tilt-loading time
+        public void SetDataFromTilt(TiltLights[] value)
+        {
+            m_loadingTiltLights = value;
         }
 
         public void SetDataFromTilt(CameraPathMetadata[] cameraPaths)
@@ -966,6 +991,16 @@ namespace TiltBrush
             }
         }
 
+        public IEnumerable<LightWidget> LightWidgets
+        {
+            get
+            {
+                return m_LightWidgets
+                    .Select(w => w == null ? null : w.WidgetScript)
+                    .Where(w => w != null);
+            }
+        }
+
         public IEnumerable<VideoWidget> VideoWidgets
         {
             get
@@ -1044,6 +1079,7 @@ namespace TiltBrush
             List<GrabWidget> widgets = new List<GrabWidget>();
             if (canvas == null) return widgets; // Return empty list
             GetUnselectedActiveWidgetsInList(m_ModelWidgets);
+            GetUnselectedActiveWidgetsInList(m_LightWidgets);
             GetUnselectedActiveWidgetsInList(m_ImageWidgets);
             GetUnselectedActiveWidgetsInList(m_TextWidgets);
             GetUnselectedActiveWidgetsInList(m_VideoWidgets);
@@ -1075,6 +1111,7 @@ namespace TiltBrush
                 m_CanBeUnpinnedWidgets.Clear();
 
                 RefreshPinUnpinWidgetList(m_ModelWidgets);
+                RefreshPinUnpinWidgetList(m_LightWidgets);
                 RefreshPinUnpinWidgetList(m_ImageWidgets);
                 RefreshPinUnpinWidgetList(m_TextWidgets);
                 RefreshPinUnpinWidgetList(m_VideoWidgets);
@@ -1143,6 +1180,10 @@ namespace TiltBrush
             {
                 m_ModelWidgets.Add(new TypedWidgetData<ModelWidget>(mw));
             }
+            else if (generic is LightWidget light)
+            {
+                m_LightWidgets.Add(new TypedWidgetData<LightWidget>(light));
+            }
             else if (generic is StencilWidget stencil)
             {
                 m_StencilWidgets.Add(new TypedWidgetData<StencilWidget>(stencil));
@@ -1206,6 +1247,7 @@ namespace TiltBrush
             }
 
             if (RemoveFrom(m_ModelWidgets, rWidget)) { return; }
+            if (RemoveFrom(m_LightWidgets, rWidget)) { return; }
             if (RemoveFrom(m_StencilWidgets, rWidget)) { return; }
             if (RemoveFrom(m_ImageWidgets, rWidget)) { return; }
             if (RemoveFrom(m_TextWidgets, rWidget)) { return; }
@@ -1382,6 +1424,7 @@ namespace TiltBrush
         public void DestroyAllWidgets()
         {
             DestroyWidgetList(m_ModelWidgets);
+            DestroyWidgetList(m_LightWidgets);
             DestroyWidgetList(m_ImageWidgets);
             DestroyWidgetList(m_TextWidgets);
             DestroyWidgetList(m_VideoWidgets);
@@ -1456,6 +1499,14 @@ namespace TiltBrush
 
             ModelCatalog.m_Instance.PrintMissingModelWarnings();
 
+            if (m_loadingTiltLights != null)
+            {
+                foreach (var light in m_loadingTiltLights)
+                {
+                    LightWidget.FromTiltLight(light);
+                }
+                m_loadingTiltLights = null;
+            }
             if (m_loadingTiltImages75 != null)
             {
                 foreach (TiltImages75 import in m_loadingTiltImages75)
@@ -1553,6 +1604,8 @@ namespace TiltBrush
             m_ImageWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<TextWidget>> ActiveTextWidgets =>
             m_TextWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+        public List<TypedWidgetData<LightWidget>> ActiveLightWidgets =>
+            m_LightWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<ModelWidget>> ActiveModelWidgets =>
             m_ModelWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<VideoWidget>> ActiveVideoWidgets =>

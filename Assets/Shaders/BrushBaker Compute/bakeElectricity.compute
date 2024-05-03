@@ -1,0 +1,66 @@
+#pragma kernel CSMain
+
+#include "../../ThirdParty/Shaders/Noise.cginc"
+
+uniform float4x4 TransformObjectToWorld;
+
+RWStructuredBuffer<float3> vertexBuffer;
+StructuredBuffer<float3> normalBuffer;
+StructuredBuffer<float4> colorBuffer;
+StructuredBuffer<float3> uvBuffer;
+StructuredBuffer<float4> uv1Buffer;
+
+float _SqueezeAmount;
+
+[numthreads(8, 1, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID) {
+    float3 vertex = vertexBuffer[id.x];
+    float3 uv0 = uvBuffer[id.x];
+    float4 uv1 = uv1Buffer[id.x];
+
+    half envelope = sin(uv0.x * 3.14159);
+    half envelopePow =  (1-pow(1  - envelope, 10));
+
+    half3 offsetFromMiddleToEdge_CS = uv1.xyz;
+    half widthiness_CS = length(offsetFromMiddleToEdge_CS) / .02;
+    half3 midpointPos_CS = vertex.xyz - offsetFromMiddleToEdge_CS;
+    vertex = midpointPos_CS + offsetFromMiddleToEdge_CS * envelopePow;
+
+    // the movement is based on Unity Built-in shader variables
+    // _Time.y (t) and _Time.x (t/20)
+    // we will take the t = 0 in this compute shader
+
+    // // leaving this parameters here for generating animated mesh in the future
+
+    // float timedoty = 0;
+    // float timedotw = timedoty * 3;
+    
+    // // Note: Electricity is a multiple render passes shader
+    // //       each pass will have a different offset
+   
+    // // mod is the offset of the wave. Values from the source Project: 1, 1.333, 1.77
+    // float mod = 1; 
+    
+    // float time = timedotw;
+    // float d = 30;
+    // float freq = .1 + mod;
+    // float3 pos = midpointPos_CS / widthiness_CS;
+    // float3 disp = float3(1,0,0) * curlX(pos * freq + time, d);
+    // disp += float3(0,1,0) * curlY(pos * freq + time, d);
+    // disp += float3(0,0,1) * curlZ(pos * freq + time, d);
+
+    // time = timedotw*1.777;
+    // d = 100;
+    // freq = .2 + mod;
+    // float3 disp2 = float3(1,0,0) * curlX(pos * freq + time, d);
+    // disp2 += float3(0,1,0) * curlY(pos * freq + time, d);
+    // disp2 += float3(0,0,1) * curlZ(pos * freq + time, d);
+    // disp = disp * 3 + disp2 * 7;
+
+    // disp *= widthiness_CS;
+
+    // float displacementIntensity = 2;
+    // vertex += disp * displacementIntensity * envelopePow;
+
+    vertexBuffer[id.x] = vertex;
+}

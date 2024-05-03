@@ -130,28 +130,30 @@ namespace TiltBrush
             return new Vector3(pos.x * scale.x, pos.y * scale.y, pos.z * scale.z);
         }
 
-        private static void _SetWidgetTransform(GrabWidget widget, Vector3 position, Quaternion rotation = default)
+        private static void _SetWidgetPosition(GrabWidget widget, Vector3 position)
         {
-            var tr = TrTransform.TR(position, rotation);
+            var tr = widget.LocalTransform;
+            tr.translation = position;
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                new MoveWidgetCommand(
-                    widget,
-                    tr,
-                    widget.CustomDimension,
-                    true
-                )
+                new MoveWidgetCommand(widget, tr, widget.CustomDimension, true)
             );
         }
 
-        private static void _ScaleWidget(GrabWidget widget, float scale)
+        private static void _SetWidgetRotation(GrabWidget widget, Vector3 rotation)
         {
+            var tr = widget.LocalTransform;
+            tr.rotation = Quaternion.Euler(rotation);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                new MoveWidgetCommand(
-                    widget,
-                    TrTransform.S(scale),
-                    widget.CustomDimension,
-                    true
-                )
+                new MoveWidgetCommand(widget, tr, widget.CustomDimension, true)
+            );
+        }
+
+        private static void _SetWidgetScale(GrabWidget widget, float scale)
+        {
+            var tr = widget.LocalTransform;
+            tr.scale = scale;
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new MoveWidgetCommand(widget, tr, widget.CustomDimension, true)
             );
         }
 
@@ -173,6 +175,12 @@ namespace TiltBrush
         {
             index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveImageWidgets);
             return WidgetManager.m_Instance.ActiveTextWidgets[index].WidgetScript;
+        }
+
+        private static LightWidget _GetActiveLight(int index)
+        {
+            index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveLightWidgets);
+            return WidgetManager.m_Instance.ActiveLightWidgets[index].WidgetScript;
         }
 
         private static VideoWidget _GetActiveVideo(int index)
@@ -199,13 +207,17 @@ namespace TiltBrush
             return WidgetManager.m_Instance.GetNthActiveCameraPath(index);
         }
 
-        private static string _DownloadMediaFileFromUrl(string url, string destinationFolder)
+        private static string _DownloadMediaFileFromUrl(string url, string relativeDestinationFolder)
+        {
+            return _DownloadMediaFileFromUrl(new Uri(url), relativeDestinationFolder);
+        }
+
+        private static string _DownloadMediaFileFromUrl(Uri url, string relativeDestinationFolder)
         {
             var request = System.Net.WebRequest.CreateHttp(url);
             request.UserAgent = ApiManager.WEBREQUEST_USER_AGENT;
             request.Method = "HEAD";
             var response = request.GetResponse();
-            Uri uri = new Uri(url);
 
             string filename;
             var contentDisposition = response.Headers["Content-Disposition"];
@@ -217,7 +229,26 @@ namespace TiltBrush
             }
             else
             {
-                filename = uri.AbsolutePath.Split('/').Last();
+                filename = url.AbsolutePath.Split('/').Last();
+            }
+
+            string AbsoluteDestinationPath = Path.Combine(App.MediaLibraryPath(), relativeDestinationFolder);
+            if (!Directory.Exists(AbsoluteDestinationPath))
+            {
+                Directory.CreateDirectory(AbsoluteDestinationPath);
+            }
+
+            // Check if file already exists
+            // If it does, append sequential numbers to the filename until we get a unique filename
+            string fullDestinationPath = Path.Combine(App.MediaLibraryPath(), relativeDestinationFolder, filename);
+            int fileVersion = 0;
+            string uniqueFilename = filename;
+            while (File.Exists(fullDestinationPath))
+            {
+                fileVersion++;
+                string baseFilename = Path.GetFileNameWithoutExtension(filename);
+                uniqueFilename = $"{baseFilename} ({fileVersion}){Path.GetExtension(filename)}";
+                fullDestinationPath = Path.Combine(App.MediaLibraryPath(), relativeDestinationFolder, uniqueFilename);
             }
 
             // TODO - make this smarter
@@ -227,8 +258,8 @@ namespace TiltBrush
                 var path = Path.Combine(App.MediaLibraryPath(), destinationFolder, filename);
                 WebClient wc = new WebClient();
                 wc.Headers.Add("user-agent", ApiManager.WEBREQUEST_USER_AGENT);
-                wc.DownloadFile(uri, path);
-                return filename;
+                wc.DownloadFile(url, path);
+                return uniqueFilename;
             }
             return null;
         }
