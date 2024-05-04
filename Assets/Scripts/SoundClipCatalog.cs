@@ -27,10 +27,14 @@ namespace TiltBrush
         [SerializeField] private string[] m_supportedSoundClipExtensions;
 
         private FileWatcher m_FileWatcher;
-        private List<SoundClip> m_SoundClips;
         private bool m_ScanningDirectory;
         private bool m_DirectoryScanRequired;
         private HashSet<string> m_ChangedFiles;
+
+        private List<SoundClip> m_SoundClips;
+        private string m_CurrentSoundClipDirectory;
+        public string CurrentSoundClipDirectory => m_CurrentSoundClipDirectory;
+        private List<SoundClip> m_SoundClip;
 
         public bool IsScanning => m_ScanningDirectory;
 
@@ -179,13 +183,43 @@ namespace TiltBrush
             return m_SoundClips.FirstOrDefault(x => x.PersistentPath == path);
         }
 
-
         public void DebugListSoundClips()
         {
             foreach (var clip in m_SoundClips)
             {
                 Debug.Log(clip);
             }
+        }
+
+        public void ChangeDirectory(string newPath)
+        {
+            m_CurrentSoundClipDirectory = newPath;
+            m_SoundClips = new List<SoundClip>();
+            m_ChangedFiles = new HashSet<string>();
+
+            StartCoroutine(ScanReferenceDirectory());
+
+            if (Directory.Exists(m_CurrentSoundClipDirectory))
+            {
+                m_FileWatcher = new FileWatcher(m_CurrentSoundClipDirectory);
+                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
+                m_FileWatcher.FileChanged += OnDirectoryChanged;
+                m_FileWatcher.FileCreated += OnDirectoryChanged;
+                m_FileWatcher.FileDeleted += OnDirectoryChanged;
+                m_FileWatcher.EnableRaisingEvents = true;
+            }
+        }
+
+        public string HomeDirectory => App.VideoLibraryPath();
+        public bool IsHomeDirectory() => m_CurrentSoundClipDirectory == HomeDirectory;
+
+        public bool IsSubDirectoryOfHome()
+        {
+            return m_CurrentSoundClipDirectory.StartsWith(HomeDirectory);
+        }
+        public string GetCurrentDirectory()
+        {
+            return m_CurrentSoundClipDirectory;
         }
 
     }
