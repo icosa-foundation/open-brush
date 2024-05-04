@@ -3512,10 +3512,6 @@ MonoBehaviour:
     m_Localized: Pick a Subfolder
     m_Metadata:
       m_Items: []
-  - m_Id: 176764812224364544
-    m_Localized: Passthrough Hull
-    m_Metadata:
-      m_Items: []
   - m_Id: 177558531188809728
     m_Localized: 'Passthrough:'
     m_Metadata:
