@@ -1070,7 +1070,7 @@ namespace TiltBrush.FrameAnimation
 
         public void TimelineSlide(float Value)
         {
-            gameObject.GetComponent<TiltBrush.Layers.LayerUI_Manager>().OnDisable();
+            gameObject.GetComponent<TiltBrush.Layers.AnimationLayerUI_Manager>().OnDisable();
             m_FrameOn = ((float)(Value + m_TimelineOffset) / m_SliderFrameSize);
 
             int timelineLength = GetTimelineLength();
@@ -1092,7 +1092,7 @@ namespace TiltBrush.FrameAnimation
 
             float max = m_SliderFrameSize * (float)timelineLength - 1;
             m_TimelineOffset = Math.Clamp(m_TimelineOffset, 0, max < 0 ? 0 : max);
-            gameObject.GetComponent<TiltBrush.Layers.LayerUI_Manager>().OnEnable();
+            gameObject.GetComponent<TiltBrush.Layers.AnimationLayerUI_Manager>().OnEnable();
         }
 
         public void StartAnimation()

@@ -19,7 +19,7 @@ namespace TiltBrush.Layers
         protected override void OnButtonPressed()
         {
             base.OnButtonPressed();
-            GetComponentInParent<LayerUI_Manager>().DeleteLayerGeneral();
+            GetComponentInParent<AnimationLayerUI_Manager>().DeleteLayerGeneral();
         }
 
     }

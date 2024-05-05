@@ -235,7 +235,7 @@ namespace TiltBrush
                 newEntry.Transform = lightWidget.GetSaveTransform();
                 newEntry.Pinned = lightWidget.Pinned;
                 newEntry.GroupId = groupIdMapping.GetId(lightWidget.Group);
-                newEntry.LayerId = App.Scene.GetIndexOfCanvas(lightWidget.Canvas);
+                (newEntry.LayerId, newEntry.FrameId) = App.Scene.GetIndexOfCanvas(lightWidget.Canvas);
 
                 newEntry.PunctualLightType = light.type;
                 newEntry.Intensity = light.intensity;

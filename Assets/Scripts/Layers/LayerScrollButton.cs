@@ -26,7 +26,7 @@ namespace TiltBrush.Layers
         [SerializeField] public bool upDirection = false;
         protected override void OnButtonPressed()
         {
-            var UiManager = GetComponentInParent<LayerUI_Manager>();
+            var UiManager = GetComponentInParent<AnimationLayerUI_Manager>();
             // if (App.Scene.LayerCanvases.Count() >= 7) return;
             base.OnButtonPressed();
             UiManager.scrollDirection(upDirection);

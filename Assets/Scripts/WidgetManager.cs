@@ -105,12 +105,6 @@ namespace TiltBrush
         [SerializeField] GameObject m_WidgetPinPrefab;
         [SerializeField] ImageWidget m_ImageWidgetPrefab;
         [SerializeField] VideoWidget m_VideoWidgetPrefab;
-        [FormerlySerializedAs("m_MovementPathWidgetPrefab")][SerializeField] CameraPathWidget mCameraPathWidgetPrefab;
-        [FormerlySerializedAs("m_MovementPathPositionKnotPrefab")][SerializeField] private GameObject mCameraPathPositionKnotPrefab;
-        [FormerlySerializedAs("m_MovementPathRotationKnotPrefab")][SerializeField] private GameObject mCameraPathRotationKnotPrefab;
-        [FormerlySerializedAs("m_MovementPathSpeedKnotPrefab")][SerializeField] private GameObject mCameraPathSpeedKnotPrefab;
-        [FormerlySerializedAs("m_MovementPathFovKnotPrefab")][SerializeField] private GameObject mCameraPathFovKnotPrefab;
-        [FormerlySerializedAs("m_MovementPathKnotSegmentPrefab")][SerializeField] private GameObject mCameraPathKnotSegmentPrefab;
         [SerializeField] LightWidget m_LightWidgetPrefab;
         [SerializeField] SceneLightGizmo m_SceneLightGizmoPrefab;
         [SerializeField] CameraPathWidget m_CameraPathWidgetPrefab;
@@ -337,12 +331,6 @@ namespace TiltBrush
         public ModelWidget ModelWidgetPrefab { get { return m_ModelWidgetPrefab; } }
         public ImageWidget ImageWidgetPrefab { get { return m_ImageWidgetPrefab; } }
         public VideoWidget VideoWidgetPrefab { get { return m_VideoWidgetPrefab; } }
-        public CameraPathWidget CameraPathWidgetPrefab { get { return mCameraPathWidgetPrefab; } }
-        public GameObject CameraPathPositionKnotPrefab { get { return mCameraPathPositionKnotPrefab; } }
-        public GameObject CameraPathRotationKnotPrefab { get { return mCameraPathRotationKnotPrefab; } }
-        public GameObject CameraPathSpeedKnotPrefab { get { return mCameraPathSpeedKnotPrefab; } }
-        public GameObject CameraPathFovKnotPrefab { get { return mCameraPathFovKnotPrefab; } }
-        public GameObject CameraPathKnotSegmentPrefab { get { return mCameraPathKnotSegmentPrefab; } }
         public LightWidget LightWidgetPrefab { get { return m_LightWidgetPrefab; } }
         public SceneLightGizmo SceneLightGizmoPrefab { get { return m_SceneLightGizmoPrefab; } }
         public CameraPathWidget CameraPathWidgetPrefab { get { return m_CameraPathWidgetPrefab; } }
@@ -557,7 +545,7 @@ namespace TiltBrush
         public CameraPathWidget CreatePathWidget()
         {
             CreateWidgetCommand command =
-                new CreateWidgetCommand(mCameraPathWidgetPrefab, TrTransform.identity);
+                new CreateWidgetCommand(CameraPathWidgetPrefab, TrTransform.identity);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
             return m_CameraPathWidgets.Last().WidgetScript;
         }
