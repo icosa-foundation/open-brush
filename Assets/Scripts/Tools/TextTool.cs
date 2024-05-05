@@ -74,6 +74,7 @@ namespace TiltBrush
                     if (textWidget != null)
                     {
                         textWidget.Text = "Text Widget";
+                        textWidget.TextColor = PointerManager.m_Instance.PointerColor;
                         textWidget.Show(true);
                         cmd.SetWidgetCost(textWidget.GetTiltMeterCost());
                     }
@@ -83,11 +84,13 @@ namespace TiltBrush
                     SelectionManager.m_Instance.RemoveFromSelection(false);
                     AudioManager.m_Instance.ShowHideWidget(true, transform.position);
                     m_CurrentWidget = textWidget;
+                    var panel = (KeyboardPanel)PanelManager.m_Instance.OpenPanel(BasePanel.PanelType.Keyboard, tr);
+                    panel.m_OnClose = _ => textWidget.Text = KeyboardPanel.m_LastInput;
                 }
             }
             if (m_CurrentWidget != null)
             {
-                m_CurrentWidget.Text = KeyboardPopUpWindow.m_LastInput;
+                m_CurrentWidget.Text = KeyboardPanel.m_LastInput;
             }
             PointerManager.m_Instance.SetMainPointerPosition(rAttachPoint.position);
         }

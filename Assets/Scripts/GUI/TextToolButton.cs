@@ -19,15 +19,5 @@ namespace TiltBrush
 
     public class TextToolButton : ToolButton
     {
-        override protected void OnButtonPressed()
-        {
-            base.OnButtonPressed();
-            BasePanel panel = m_Manager.GetPanelForPopUps();
-            panel.CreatePopUp(SketchControlsScript.GlobalCommands.OpenTextInputPopup, -1, -1, "Hello");
-            // panel.PanelPopUp.m_OnClose += () =>
-            // {
-            //     TextTool.m_CurrentWidget.Text = KeyboardPopUpWindow.m_LastInput;
-            // };
-        }
     }
 } // namespace TiltBrush

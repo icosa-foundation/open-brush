@@ -45,7 +45,8 @@ namespace TiltBrush
             m_TextMeshPro.ForceMeshUpdate();
             var size = m_TextMeshPro.GetRenderedValues(true);
             // No idea why the 1.3 and 0.9 is necessary, but it is.
-            m_BoxCollider.transform.localScale = new Vector3(size.x * 1.3f, size.y * 0.9f, m_BoxCollider.transform.localScale.z);
+            // m_BoxCollider.transform.localScale = new Vector3(size.x * 1.3f, size.y * 0.9f, m_BoxCollider.transform.localScale.z);
+            m_BoxCollider.transform.localScale = new Vector3(size.x, size.y, m_BoxCollider.transform.localScale.z);
         }
 
         public Color TextColor
