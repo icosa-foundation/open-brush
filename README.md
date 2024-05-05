@@ -72,7 +72,7 @@ Get the Open Brush open-source application running on your own devices.
 
 ### Prerequisites
 
-*   [Unity 2021.3.30f1](unityhub://2021.3.30f1/b4360d7cdac4)
+*   [Unity 2022.3.27f1](unityhub://2022.3.27f1/73effa14754f)
 *   [Python 3](https://www.python.org/downloads/) (Optional —
     needed only if you wish to run the scripts in the `Support/bin` directory)
     Tested with Python 3.8.
