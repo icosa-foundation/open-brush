@@ -105,10 +105,6 @@ namespace TiltBrush
                         m_Widget.transform.parent = m_Canvas.transform;
                         m_Widget.Show(true);
                         break;
-                    case ModelWidget:
-                        // ModelWidget.Show(true) is not called here because the model must be assigned
-                        // before it can be turned on.
-                        break;
                     case CameraPathWidget:
                         m_Widget.transform.parent = m_Canvas.transform;
                         m_Widget.transform.localPosition = Vector3.zero;
@@ -122,6 +118,10 @@ namespace TiltBrush
                         em.LoadingFromSketch = true;
                         m_Widget.transform.parent = m_Canvas.transform;
                         m_Widget.LocalTransform = m_EndXf;
+                        break;
+                    case ModelWidget:
+                        // ModelWidget.Show(true) is not called here because the model must be assigned
+                        // before it can be turned on.
                         break;
                 }
 

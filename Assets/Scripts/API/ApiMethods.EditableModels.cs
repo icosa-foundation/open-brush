@@ -22,8 +22,6 @@ using Polyhydra.Core;
 using Polyhydra.Wythoff;
 using TiltBrush.MeshEditing;
 using UnityEngine;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace TiltBrush
 {
@@ -58,24 +56,58 @@ namespace TiltBrush
             return widget;
         }
 
-        [ApiEndpoint("editablemodel.import", "Imports a model as editable; given a url, a filename in Media Library\\Models or Google Poly ID")]
+        [ApiEndpoint(
+            "editablemodel.import",
+            "Imports a model as editable; given a url, a filename in Media Library\\Models or Google Poly ID",
+            "Andy\\Andy.obj"
+        )]
         public static ModelWidget ImportEditableModel(string location)
         {
-            var task = _ImportModel(location, true);
-            return task.Result;
+            return _ImportModel(location, true);
         }
 
-        [ApiEndpoint("model.import", "Imports a model given a url or a filename in Media Library\\Models (Models loaded from a url are saved locally first)")]
+        [ApiEndpoint(
+            "model.webimport",
+            "Imports a model given a url or a filename in Media Library\\Models (Models loaded from a url are saved locally first)",
+            "Andy\\Andy.obj"
+        )]
+        [ApiEndpoint(
+            "import.webmodel",
+            "Same as model.webimport (backwards compatibility for poly.pizza)",
+            "Andy\\Andy.obj"
+        )]
+        public static void ImportWebModel(string url)
+        {
+            Uri uri;
+            try { uri = new Uri(url); }
+            catch (UriFormatException)
+            {
+                return;
+            }
+            var ext = uri.Segments.Last().Split('.').Last();
+
+            // Is it a valid 3d model extension?
+            if (ext != "off" && ext != "obj" && ext != "gltf" && ext != "glb" && ext != "fbx" && ext != "svg")
+            {
+                return;
+            }
+            var destinationPath = Path.Combine("Models", uri.Host);
+            string filename = _DownloadMediaFileFromUrl(uri, destinationPath);
+            ImportModel(Path.Combine(uri.Host, filename));
+        }
+
+        [ApiEndpoint(
+            "model.import",
+            "Imports a model given a url or a filename in Media Library\\Models (Models loaded from a url are saved locally first)",
+            "Andy\\Andy.obj"
+        )]
         public static ModelWidget ImportModel(string location)
         {
-            var task = _ImportModel(location, false);
-            return task.Result;
+            return _ImportModel(location, false);
         }
 
-        private static async Task<ModelWidget> _ImportModel(string location, bool editable)
+        public static ModelWidget _ImportModel(string location, bool editable)
         {
-            const string modelsFolder = "Models";
-
             if (location.StartsWith("poly:"))
             {
                 location = location.Substring(5);
@@ -83,26 +115,23 @@ namespace TiltBrush
                 return null; // TODO
             }
 
-            if (location.StartsWith("http://") || location.StartsWith("https://"))
-            {
-                // You can't rely on urls ending with a file extension
-                // But try and fall back to assuming web models will be gltf/glb
-                // TODO Try deriving from MIME types
-                if (location.EndsWith(".off") || location.EndsWith(".obj"))
-                {
-                    location = _DownloadMediaFileFromUrl(location, App.ModelLibraryPath());
-                }
-                else
-                {
-                    Uri uri = new Uri(location);
-                    ApiManager.Instance.LoadPolyModel(uri);
-                }
-            }
+            // Normalize path slashes
+            location = location.Replace(@"\\", "/");
+            location = location.Replace(@"//", "/");
+            location = location.Replace(@"\", "/");
+
+            var parts = location.Split("#");
 
             // At this point we've got a relative path to a file in Models
-            string relativePath = location;
-            var tr = _CurrentTransform().TransformBy(App.Scene.ActiveCanvas.Pose);
+            string relativePath = parts[0];
+            string subtree = null;
+            if (parts.Length > 1)
+            {
+                subtree = location.Substring(relativePath.Length + 1);
+            }
+            var tr = _CurrentTransform().TransformBy(Coords.CanvasPose);
             var model = new Model(Model.Location.File(relativePath));
+
             if (editable)
             {
                 model.LoadEditableModel();
@@ -129,8 +158,8 @@ namespace TiltBrush
             }
             else
             {
-                Task t = model.LoadModelAsync();
-                await t;
+                AsyncHelpers.RunSync(() => model.LoadModelAsync());
+                model.EnsureCollectorExists();
                 CreateWidgetCommand createCommand = new CreateWidgetCommand(
                     WidgetManager.m_Instance.ModelWidgetPrefab, tr, null, forceTransform: true
                 );
@@ -139,7 +168,10 @@ namespace TiltBrush
                 if (widget != null)
                 {
                     widget.Model = model;
+                    widget.Subtree = subtree;
+                    widget.SyncHierarchyToSubtree();
                     widget.Show(true);
+                    widget.AddSceneLightGizmos();
                     createCommand.SetWidgetCost(widget.GetTiltMeterCost());
                 }
                 else

@@ -114,7 +114,7 @@ namespace TiltBrush
             if (modelDatas.FilePath != null)
             {
                 var task = CreateModelsFromRelativePath(
-                    modelDatas.FilePath,
+                    modelDatas.FilePath, null,
                     modelDatas.Transforms, modelDatas.RawTransforms, modelDatas.PinStates,
                     modelDatas.GroupIds, modelDatas.LayerIds);
                 ok = task.IsCompletedSuccessfully;
@@ -163,7 +163,7 @@ namespace TiltBrush
                 bool pin = (i < pinStates.Length) ? pinStates[i] : true;
                 uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
                 int layerId = (layerIds != null && i < layerIds.Length) ? layerIds[i] : 0;
-                CreateModel(model, rawXfs[i], pin, isNonRawTransform: false, groupId, layerId, assetId: assetId);
+                CreateModel(model, null, rawXfs[i], pin, isNonRawTransform: false, groupId, layerId, assetId: assetId);
             }
         }
 
