@@ -738,65 +738,65 @@ namespace TiltBrush
                     WidgetManager.m_Instance.SetDataFromTilt(jsonData.ModelIndex);
                 }
 
-                    if (jsonData.ModelIndex != null)
-                    {
-                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.ModelIndex);
-                    }
-
-                    if (jsonData.LightIndex != null)
-                    {
-                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.LightIndex);
-                    }
-
-                    if (jsonData.GuideIndex != null)
-                    {
-                        foreach (Guides guides in jsonData.GuideIndex)
-                        {
-                            StencilWidget.FromGuideIndex(guides);
-                        }
-                    }
-                    if (jsonData.Lights != null)
-                    {
-                        LightsControlScript.m_Instance.CustomLights = jsonData.Lights;
-                    }
-                    // Pass even if null; null is treated as empty
-                    CustomColorPaletteStorage.m_Instance.SetColorsFromPalette(jsonData.Palette);
-                    // Images are not stored on Poly either.
-                    // TODO - will this assumption still hold with Icosa?
-                    if (!(fileInfo is PolySceneFileInfo))
-                    {
-                        if (ReferenceImageCatalog.m_Instance != null && jsonData.ImageIndex != null)
-                        {
-                            WidgetManager.m_Instance.SetDataFromTilt(jsonData.ImageIndex);
-                        }
-                        if (VideoCatalog.Instance != null && jsonData.Videos != null)
-                        {
-                            WidgetManager.m_Instance.SetDataFromTilt(jsonData.Videos);
-                        }
-                    }
-                    if (jsonData.Mirror != null)
-                    {
-                        PointerManager.m_Instance.SymmetryWidgetFromMirror(jsonData.Mirror);
-                    }
-                    if (jsonData.CameraPaths != null)
-                    {
-                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.CameraPaths);
-                    }
-                    if (fileInfo is GoogleDriveSketchSet.GoogleDriveFileInfo gdInfo)
-                    {
-                        gdInfo.SourceId = jsonData.SourceId;
-                    }
-                    if (WidgetManager.m_Instance.CreatingMediaWidgets)
-                    {
-                        StartCoroutine(
-                            OverlayManager.m_Instance.RunInCompositor(
-                                OverlayType.LoadMedia,
-                                WidgetManager.m_Instance.CreateMediaWidgetsFromLoadDataCoroutine(),
-                                0.5f));
-                    }
-                    m_LastSceneFile = fileInfo;
+                if (jsonData.ModelIndex != null)
+                {
+                    WidgetManager.m_Instance.SetDataFromTilt(jsonData.ModelIndex);
                 }
-            
+
+                if (jsonData.LightIndex != null)
+                {
+                    WidgetManager.m_Instance.SetDataFromTilt(jsonData.LightIndex);
+                }
+
+                if (jsonData.GuideIndex != null)
+                {
+                    foreach (Guides guides in jsonData.GuideIndex)
+                    {
+                        StencilWidget.FromGuideIndex(guides);
+                    }
+                }
+                if (jsonData.Lights != null)
+                {
+                    LightsControlScript.m_Instance.CustomLights = jsonData.Lights;
+                }
+                // Pass even if null; null is treated as empty
+                CustomColorPaletteStorage.m_Instance.SetColorsFromPalette(jsonData.Palette);
+                // Images are not stored on Poly either.
+                // TODO - will this assumption still hold with Icosa?
+                if (!(fileInfo is PolySceneFileInfo))
+                {
+                    if (ReferenceImageCatalog.m_Instance != null && jsonData.ImageIndex != null)
+                    {
+                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.ImageIndex);
+                    }
+                    if (VideoCatalog.Instance != null && jsonData.Videos != null)
+                    {
+                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.Videos);
+                    }
+                }
+                if (jsonData.Mirror != null)
+                {
+                    PointerManager.m_Instance.SymmetryWidgetFromMirror(jsonData.Mirror);
+                }
+                if (jsonData.CameraPaths != null)
+                {
+                    WidgetManager.m_Instance.SetDataFromTilt(jsonData.CameraPaths);
+                }
+                if (fileInfo is GoogleDriveSketchSet.GoogleDriveFileInfo gdInfo)
+                {
+                    gdInfo.SourceId = jsonData.SourceId;
+                }
+                if (WidgetManager.m_Instance.CreatingMediaWidgets)
+                {
+                    StartCoroutine(
+                        OverlayManager.m_Instance.RunInCompositor(
+                            OverlayType.LoadMedia,
+                            WidgetManager.m_Instance.CreateMediaWidgetsFromLoadDataCoroutine(),
+                            0.5f));
+                }
+                m_LastSceneFile = fileInfo;
+            }
+
             /* TODO unpick merge
                 if (jsonData.GuideIndex != null)
                 {
