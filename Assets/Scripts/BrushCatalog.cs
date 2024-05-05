@@ -198,12 +198,12 @@ namespace TiltBrush
         }
 
 
-        public Brush[] GetTagFilteredBrushList(IEnumerable<string> includeTags = null, IEnumerable<string> excludeTags = null)
+        public Brush[] GetTagFilteredBrushList(List<string> includeTags = null, List<string> excludeTags = null)
         {
-            includeTags ??= App.UserConfig.Brushes.IncludeTags;
-            excludeTags ??= App.UserConfig.Brushes.ExcludeTags;
+            includeTags ??= App.UserConfig.Brushes.IncludeTags.ToList();
+            excludeTags ??= App.UserConfig.Brushes.ExcludeTags.ToList();
 
-            if (includeTags == null || includeTags.Count == 0)
+            if (!includeTags.Any())
             {
                 Debug.LogError("There will be no brushes because there are no 'include' tags.");
             }
