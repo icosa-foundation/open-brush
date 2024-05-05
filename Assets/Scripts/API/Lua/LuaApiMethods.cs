@@ -10,7 +10,7 @@ namespace TiltBrush
     {
         public static void DrawPath(IPathApiWrapper path)
         {
-            DrawStrokes.DrawSingleTrList(path.AsSingleTrList(), TrTransform.identity);
+            DrawStrokes.DrawNestedTrList(path.AsMultiTrList(), TrTransform.identity);
         }
 
         public static void DrawPaths(IPathApiWrapper paths)

@@ -17,7 +17,7 @@ Properties {
   _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
   _OutlineMax("Maximum outline size", Range(0, .5)) = .005
 
-  _Opacity("Opacity", Range(0,1)) = 1
+  _Dissolve("Dissolve", Range(0,1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
 }
@@ -38,7 +38,7 @@ CGINCLUDE
 
   uniform float _ClipStart;
   uniform float _ClipEnd;
-  uniform half _Opacity;
+  uniform half _Dissolve;
 
   struct appdata_t {
     float4 vertex : POSITION;
@@ -46,6 +46,8 @@ CGINCLUDE
     float3 normal : NORMAL;
     float3 texcoord : TEXCOORD0;
     uint id : SV_VertexID;
+
+    UNITY_VERTEX_INPUT_INSTANCE_ID
   };
 
   struct v2f {
@@ -54,6 +56,8 @@ CGINCLUDE
     float2 texcoord : TEXCOORD0;
     uint id : TEXCOORD2;
     UNITY_FOG_COORDS(1)
+
+    UNITY_VERTEX_OUTPUT_STEREO
   };
 
   v2f vertInflate (appdata_t v, float inflate)
@@ -61,6 +65,11 @@ CGINCLUDE
     PrepForOds(v.vertex);
 
     v2f o;
+
+    UNITY_SETUP_INSTANCE_ID(v);
+    UNITY_INITIALIZE_OUTPUT(v2f, o);
+    UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
     float outlineEnabled = inflate;
     float radius = v.texcoord.z;
     inflate *= radius * .4;
@@ -125,7 +134,7 @@ CGINCLUDE
   fixed4 fragBlack (v2f i) : SV_Target
   {
     if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-    if (_Opacity < 1 && Dither8x8(i.pos.xy) >= _Opacity) discard;
+    if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
 
     float4 color = float4(0,0,0,1);
     UNITY_APPLY_FOG(i.fogCoord, color);
@@ -136,7 +145,7 @@ CGINCLUDE
   fixed4 fragColor (v2f i) : SV_Target
   {
     if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-    if (_Opacity < 1 && Dither8x8(i.pos.xy) >= _Opacity) discard;
+    if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
 
     UNITY_APPLY_FOG(i.fogCoord, i.color);
     FRAG_MOBILESELECT(i.color)

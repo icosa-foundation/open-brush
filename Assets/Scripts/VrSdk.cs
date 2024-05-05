@@ -11,6 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+#if OCULUS_SUPPORTED || ZAPBOX_SUPPORTED
+#define PASSTHROUGH_SUPPORTED
+#endif
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -225,6 +230,9 @@ namespace TiltBrush
                     var unused = msg.Data.AgeCategory;
                 });
             }
+#if PASSTHROUGH_SUPPORTED
+            OVRManager.eyeFovPremultipliedAlphaModeEnabled = false;
+#endif
 
 #endif // OCULUS_SUPPORTED
 
@@ -273,6 +281,8 @@ namespace TiltBrush
                 Application.onBeforeRender -= OnNewPoses;
                 InputDevices.deviceConnected -= OnUnityXRDeviceConnected;
                 InputDevices.deviceDisconnected -= OnUnityXRDeviceDisconnected;
+                XRGeneralSettings.Instance?.Manager?.StopSubsystems();
+                XRGeneralSettings.Instance?.Manager?.DeinitializeLoader();
             }
         }
 

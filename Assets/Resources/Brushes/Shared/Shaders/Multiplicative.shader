@@ -16,6 +16,9 @@ Shader "Brush/Multiplicative" {
 Properties {
   _MainTex ("Texture", 2D) = "white" {}
   _Opacity ("Opacity", Range(0, 1)) = 1
+  _Dissolve ("Dissolve", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -44,6 +47,8 @@ Category {
         float3 normal : NORMAL;
         float2 texcoord : TEXCOORD0;
         uint id : SV_VertexID;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
@@ -51,12 +56,15 @@ Category {
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
         uint id : TEXCOORD2;
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       float4 _MainTex_ST;
 
       uniform float _ClipStart;
       uniform float _ClipEnd;
+      uniform half _Dissolve;
       uniform half _Opacity;
 
       v2f vert (appdata_t v)
@@ -64,6 +72,11 @@ Category {
         PrepForOds(v.vertex);
 
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
         o.vertex = UnityObjectToClipPos(v.vertex);
         o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
                                 o.color = v.color;
@@ -74,7 +87,7 @@ Category {
       fixed4 frag (v2f i) : COLOR
       {
         if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-
+        if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
 
          half4 c = tex2D(_MainTex, i.texcoord );
          c = i.color * c;

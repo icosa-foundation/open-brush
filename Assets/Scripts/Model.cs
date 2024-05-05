@@ -22,9 +22,9 @@ using System.Linq;
 using TiltBrush.MeshEditing;
 using System.Threading.Tasks;
 using TiltBrushToolkit;
+using Unity.VectorGraphics;
 using Debug = UnityEngine.Debug;
 using UObject = UnityEngine.Object;
-
 
 namespace TiltBrush
 {
@@ -52,10 +52,23 @@ namespace TiltBrush
 
             public static Location File(string relativePath)
             {
+                int lastIndex = relativePath.LastIndexOf('#');
+                string path, fragment;
+
+                if (lastIndex == -1)
+                {
+                    path = relativePath;
+                    fragment = null;
+                }
+                else
+                {
+                    path = relativePath.Substring(0, lastIndex);
+                    fragment = relativePath.Substring(lastIndex + 1);
+                }
                 return new Location
                 {
                     type = Type.LocalFile,
-                    path = relativePath
+                    path = path,
                 };
             }
 
@@ -122,6 +135,8 @@ namespace TiltBrush
                 }
             }
 
+            public string Extension => Path.GetExtension(AbsolutePath).ToLower();
+
             public string AssetId
             {
                 get
@@ -140,14 +155,16 @@ namespace TiltBrush
 
             public override string ToString()
             {
+                string str;
                 if (type == Type.PolyAssetId || type == Type.Generated)
                 {
-                    return $"{type}:{id}";
+                    str = $"{type}:{id}";
                 }
                 else
                 {
-                    return $"{type}:{path}";
+                    str = $"{type}:{path}";
                 }
+                return str;
             }
 
             public override bool Equals(object obj)
@@ -260,8 +277,7 @@ namespace TiltBrush
         /// Only allowed if AllowExport = true
         public IExportableMaterial GetExportableMaterial(Material material)
         {
-            // TODO: Maybe throw InvalidOperation if AllowExport==false rather than blowing
-            // up with NullReference?
+            EnsureCollectorExists();
             return m_ImportMaterialCollector.GetExportableMaterial(material);
         }
 
@@ -377,6 +393,10 @@ namespace TiltBrush
                     {
                         return false;
                     }
+                    m_ImportMaterialCollector = new ImportMaterialCollector(
+                        Path.GetDirectoryName(m_localPath),
+                        uniqueSeed: m_localPath
+                    );
                     m_meshEnumerator = enumerable.GetEnumerator();
                     m_root.SetActive(false);
                 }
@@ -447,7 +467,7 @@ namespace TiltBrush
                 var loader = new TiltBrushUriLoader(
                     m_localPath, Path.GetDirectoryName(m_localPath), m_useThreadedImageLoad);
                 var options = m_fromPoly ? kPolyGltfImportOptions : kGltfImportOptions;
-                return ImportGltfast.BeginImport(m_localPath);
+                return NewGltfImporter.BeginImport(m_localPath);
             }
 
             protected override GameObject DoUnityThreadWork(IDisposable state__,
@@ -460,19 +480,14 @@ namespace TiltBrush
                 GameObject rootObject = null;
                 using (IDisposable state_ = state__)
                 {
-                    var state = state_ as ImportGltfast.ImportState;
+                    var state = state_ as NewGltfImporter.ImportState;
                     if (state != null)
                     {
                         string assetLocation = Path.GetDirectoryName(m_localPath);
                         // EndImport doesn't try to use the loadImages functionality of UriLoader anyway.
                         // It knows it's on the main thread, so chooses to use Unity's fast loading.
-                        ImportGltfast.GltfImportResult result = ImportGltfast.EndAsyncImport(state);
-
-                        if (result != null)
-                        {
-                            rootObject = result.root;
-                            importMaterialCollector = result.materialCollector;
-                        }
+                        rootObject = state.root;
+                        importMaterialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: m_localPath);
                     }
                 }
                 IsValid = rootObject != null;
@@ -550,12 +565,38 @@ namespace TiltBrush
             }
         }
 
-        GameObject LoadSvg(List<string> warningsOut)
+        GameObject LoadSvg(List<string> warningsOut, out SVGParser.SceneInfo sceneInfo)
         {
-
             try
             {
                 var reader = new SvgMeshReader(m_Location.AbsolutePath);
+                var (gameObject, warnings, collector, si) = reader.Import();
+                sceneInfo = si;
+                warningsOut.AddRange(warnings);
+                m_ImportMaterialCollector = collector;
+                m_AllowExport = (m_ImportMaterialCollector != null);
+                return gameObject;
+            }
+            catch (Exception ex)
+            {
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+                sceneInfo = new SVGParser.SceneInfo();
+                return null;
+            }
+        }
+
+        ///  Load model using FBX SDK.
+        GameObject LoadFbx(List<string> warningsOut)
+        {
+#if !FBX_SUPPORTED
+            m_LoadError = new LoadError("fbx not supported");
+            return null;
+#else
+            try
+            {
+                var reader = new FbxReader(m_Location.AbsolutePath);
                 var (gameObject, warnings, collector) = reader.Import();
                 warningsOut.AddRange(warnings);
                 m_ImportMaterialCollector = collector;
@@ -569,29 +610,6 @@ namespace TiltBrush
                 Debug.LogException(ex);
                 return null;
             }
-
-        }
-
-        ///  Load model using FBX SDK.
-        GameObject LoadFbx(List<string> warningsOut)
-        {
-#if !FBX_SUPPORTED
-            m_LoadError = new LoadError("fbx not supported");
-            return null;
-#else
-    try {
-      var reader = new FbxReader(m_Location.AbsolutePath);
-      var (gameObject, warnings, collector) = reader.Import();
-      warningsOut.AddRange(warnings);
-      m_ImportMaterialCollector = collector;
-      m_AllowExport = (m_ImportMaterialCollector != null);
-      return gameObject;
-    } catch (Exception ex) {
-      m_LoadError = new LoadError("Invalid data", ex.Message);
-      m_AllowExport = false;
-      Debug.LogException(ex);
-      return null;
-    }
 #endif
         }
 
@@ -601,8 +619,7 @@ namespace TiltBrush
             string assetLocation = Path.GetDirectoryName(localPath);
             try
             {
-
-                Task t = ImportGltfast.StartSyncImport(
+                Task t = NewGltfImporter.StartSyncImport(
                     localPath,
                     assetLocation,
                     this,
@@ -610,7 +627,6 @@ namespace TiltBrush
                 );
                 m_AllowExport = true;
                 await t;
-
             }
             catch (Exception ex)
             {
@@ -648,7 +664,7 @@ namespace TiltBrush
             // Experimental usd loading.
             if (allowUsd &&
                 m_Location.GetLocationType() == Location.Type.LocalFile &&
-                Path.GetExtension(m_Location.AbsolutePath).ToLower().StartsWith(".usd"))
+                m_Location.Extension == ".usd")
             {
                 throw new NotImplementedException();
             }
@@ -718,6 +734,8 @@ namespace TiltBrush
                 StartCreatePrefab(go, false);
             }
 
+            AssignMaterialsToCollector(m_ImportMaterialCollector);
+
             // Even if an exception occurs above, return true because the return value indicates async load
             // is complete.
             return true;
@@ -782,9 +800,9 @@ namespace TiltBrush
                 // and bail at a higher level, and require as a precondition that error == null
                 m_LoadError = null;
 
-                string ext = Path.GetExtension(m_Location.AbsolutePath).ToLower();
+                string ext = m_Location.Extension;
                 if (m_Location.GetLocationType() == Location.Type.LocalFile &&
-                    ext.StartsWith(".usd"))
+                    ext == ".usd")
                 {
                     // Experimental usd loading.
                     go = LoadUsd(warnings);
@@ -794,13 +812,9 @@ namespace TiltBrush
                 else if (m_Location.GetLocationType() == Location.Type.PolyAssetId ||
                     ext == ".gltf2" || ext == ".gltf" || ext == ".glb")
                 {
-
-
                     // If we pulled this from Poly, it's going to be a gltf file.
                     Task t = LoadGltf(warnings);
                     await t;
-
-
                 }
                 else if (editable && ext == ".obj" || nofbx)
                 {
@@ -824,7 +838,10 @@ namespace TiltBrush
                 }
                 else if (ext == ".svg")
                 {
-                    go = LoadSvg(warnings);
+                    go = LoadSvg(warnings, out SVGParser.SceneInfo sceneInfo);
+                    CalcBoundsNonGltf(go);
+                    EndCreatePrefab(go, warnings);
+                    go.GetComponent<ObjModelScript>().SvgSceneInfo = sceneInfo;
                 }
                 else
                 {
@@ -1033,6 +1050,19 @@ namespace TiltBrush
                 {
                     m_ImportMaterialCollector.Add(unityMat);
                 }
+            }
+        }
+
+        public void EnsureCollectorExists()
+        {
+            if (m_ImportMaterialCollector == null)
+            {
+                var localPath = GetLocation().AbsolutePath;
+                m_ImportMaterialCollector = new ImportMaterialCollector(
+                    Path.GetDirectoryName(localPath),
+                    uniqueSeed: localPath
+                );
+                AssignMaterialsToCollector(m_ImportMaterialCollector);
             }
         }
     }

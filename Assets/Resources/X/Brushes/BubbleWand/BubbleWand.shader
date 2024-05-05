@@ -25,6 +25,7 @@ Properties {
   _TimeSpeed("Time Speed", Float) = 1.0
 
   _Opacity ("Opacity", Range(0, 1)) = 1
+  _Dissolve ("Dissolve", Range(0, 1)) = 1
   _ClipStart("Clip Start", Float) = 0
   _ClipEnd("Clip End", Float) = -1
 }
@@ -51,6 +52,7 @@ Properties {
 
         uniform float _ClipStart;
         uniform float _ClipEnd;
+		uniform half _Dissolve;
         uniform half _Opacity;
 
 		float4 displace(float4 pos, float timeOffset) {
@@ -119,6 +121,7 @@ Properties {
 		void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
 			if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
+			if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
 
 			// Hardcode some shiny specular values
 			o.Smoothness = .9;

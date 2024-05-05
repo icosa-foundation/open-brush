@@ -22,7 +22,7 @@ Properties {
   _TimeBlend("Time Blend", Float) = 0
   _TimeSpeed("Time Speed", Float) = 1.0
 
-  _Opacity ("Opacity", Range(0, 1)) = 1
+  _Dissolve("Dissolve", Range(0, 1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
 }
@@ -55,7 +55,7 @@ Category {
 
       uniform float _ClipStart;
       uniform float _ClipEnd;
-      uniform half _Opacity;
+      uniform half _Dissolve;
 
       struct appdata_t {
         float4 vertex : POSITION;
@@ -63,6 +63,8 @@ Category {
         float3 normal : NORMAL;
         float2 texcoord : TEXCOORD0;
         uint id : SV_VertexID;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
@@ -70,6 +72,8 @@ Category {
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
         uint id : TEXCOORD2;
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       float4 _MainTex_ST;
@@ -81,6 +85,11 @@ Category {
         v.color = TbVertToSrgb(v.color);
 
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
         o.vertex = UnityObjectToClipPos(v.vertex);
         o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
         o.color = v.color;
@@ -92,7 +101,7 @@ Category {
       fixed4 frag (v2f i) : COLOR {
 
         if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-        if (_Opacity < 1 && Dither8x8(i.vertex.xy) >= _Opacity) discard;
+        if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
 
 
         float scale1 = 3;
@@ -164,7 +173,7 @@ Category {
         fixed4 color;
         color.a = 1;
         color.rgb = lum*bloomColor(i.color,lum*_EmissionGain);
-        return color * _Opacity;
+        return color * _Dissolve;
       }
       ENDCG
     }

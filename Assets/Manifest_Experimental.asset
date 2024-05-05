@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 23720096ebad012489fb3db6e44e0a4c, type: 3}
   m_Name: Manifest_Experimental
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   Brushes:
   - {fileID: 11400000, guid: b24b145ee272a9345b7f0142039120ea, type: 2}
   - {fileID: 11400000, guid: daece1ae471373c41bd0ebe7f9e9ce4f, type: 2}
@@ -67,6 +67,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 95219c84db13d7c49b0bae92b5f8dc9c, type: 2}
   - {fileID: 11400000, guid: b9280b7e789abdd49bd5d85c5554afd3, type: 2}
   - {fileID: 11400000, guid: 69fc4ed00cead5b47b3dd3fb4d6096c9, type: 2}
+  - {fileID: 11400000, guid: d25091db0e878ba458b54227b23cad57, type: 2}
   Environments:
   - {fileID: 11400000, guid: c4b465a813a79c044874468d6e60f26c, type: 2}
+  Locales: []
   CompatibilityBrushes: []

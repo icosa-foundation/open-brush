@@ -23,6 +23,7 @@ Properties {
   _TimeSpeed("Time Speed", Float) = 1.0
 
   _Opacity ("Opacity", Range(0, 1)) = 1
+  _Dissolve ("Dissolve", Range(0, 1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
 }
@@ -58,6 +59,7 @@ Category {
 
       uniform float _ClipStart;
       uniform float _ClipEnd;
+      uniform half _Dissolve;
       uniform half _Opacity;
 
       struct appdata_t {
@@ -67,6 +69,8 @@ Category {
         float4 texcoord1 : TEXCOORD1;
         float3 tangent : TANGENT;
         uint id : SV_VertexID;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
@@ -76,6 +80,8 @@ Category {
         float3 worldPos : TEXCOORD1;
         float lifetime : TEXCOORD2;
         uint id : TEXCOORD3;
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       float4 _MainTex_ST;
@@ -85,6 +91,11 @@ Category {
         PrepForOds(v.vertex);
 
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
         float4 worldPos = mul(unity_ObjectToWorld, v.vertex);
         float3 perVertOffset = v.texcoord1.xyz;
         float lifetime = GetTime().y - v.texcoord1.w;
@@ -119,7 +130,7 @@ Category {
       fixed4 frag (v2f i) : SV_Target
       {
         if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-
+        if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
 
         float4 c = i.color * _TintColor * tex2D(_MainTex, i.texcoord);
         c = encodeHdr(c.rgb * c.a);

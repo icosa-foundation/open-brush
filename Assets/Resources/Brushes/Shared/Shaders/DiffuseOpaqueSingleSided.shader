@@ -17,7 +17,7 @@ Shader "Brush/DiffuseOpaqueSingleSided" {
 Properties {
   _Color ("Main Color", Color) = (1,1,1,1)
 
-  _Opacity("Opacity", Range(0,1)) = 1
+  _Dissolve("Dissolve", Range(0,1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
 }
@@ -39,7 +39,7 @@ SubShader {
 
   uniform float _ClipStart;
   uniform float _ClipEnd;
-  uniform half _Opacity;
+  uniform half _Dissolve;
 
   struct Input {
     float4 color : COLOR;
@@ -70,7 +70,7 @@ SubShader {
   void surf (Input IN, inout SurfaceOutput o) {
 
     if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
-    if (_Opacity < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Opacity) discard;
+    if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
 
     o.Albedo = _Color * IN.color.rgb;
     SURF_FRAG_MOBILESELECT(o);

@@ -14,6 +14,17 @@ public class SpriteExtruder : MonoBehaviour
 
     private Texture tex;
 
+    public void AssignSprite(Sprite sprite)
+    {
+        var sr = GetComponentInChildren<SpriteRenderer>();
+        sr.sprite = sprite;
+        sr.enabled = true;
+        int width = Mathf.RoundToInt(sprite.bounds.size.x * sprite.pixelsPerUnit);
+        int height = Mathf.RoundToInt(sprite.bounds.size.y * sprite.pixelsPerUnit);
+        tex = new Texture2D(width, height);
+    }
+
+    [ContextMenu("Generate")]
     public void Generate()
     {
         float ppu = 100;

@@ -18,7 +18,7 @@ Shader "Brush/Special/LeakyPen" {
 		_SecondaryTex("Diffuse Tex", 2D) = "white" {}
 		_Cutoff("Alpha cutoff", Range(0,1)) = 0.5
 
-		_Opacity("Opacity", Range(0,1)) = 1
+		_Dissolve("Dissolve", Range(0,1)) = 1
 	    _ClipStart("Clip Start", Float) = 0
 	    _ClipEnd("Clip End", Float) = -1
 	}
@@ -42,7 +42,7 @@ Shader "Brush/Special/LeakyPen" {
 
 			uniform float _ClipStart;
 			uniform float _ClipEnd;
-			uniform half _Opacity;
+			uniform half _Dissolve;
 
 			struct Input {
 				float2 uv_MainTex;
@@ -75,7 +75,7 @@ Shader "Brush/Special/LeakyPen" {
 			void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
 				if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
-                if (_Opacity < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Opacity) discard;
+                if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
 
 				float3 secondary_tex = tex2D(_MainTex, IN.uv_SecondaryTex).rgb;
 

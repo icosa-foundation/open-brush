@@ -48,6 +48,9 @@ namespace TiltBrush
         private int m_FullSizeReferences = 0;
         private float m_ImageAspect; // only valid if ImageState == Ready
         private string m_Path;
+        private SVGParser.SceneInfo _SvgSceneInfo;
+
+        // public bool IsComposite => _SvgSceneInfo.Scene.Root.getsh
 
         public string FileName { get { return Path.GetFileName(m_Path); } }
         public string FileFullPath { get { return m_Path; } }
@@ -109,6 +112,10 @@ namespace TiltBrush
         /// This property is only for those who need to load the image data from disk.
         public string FilePath { get { return m_Path; } }
 
+        // Path relative to Catalog's HomeDirectory with forward slashes.
+        public string RelativePath =>
+            $".{FileFullPath.Substring(ReferenceImageCatalog.m_Instance.HomeDirectory.Length)}".Replace("\\", "/");
+
         public ReferenceImage(string path)
         {
             m_Path = path;
@@ -127,6 +134,7 @@ namespace TiltBrush
                 {
                     // TODO Move into the async code path?
                     var importer = new RuntimeSVGImporter();
+                    _SvgSceneInfo = importer.ParseToSceneInfo(File.ReadAllText(FilePath));
                     m_FullSize = importer.ImportAsTexture(FilePath);
                     ImageCache.SaveImageCache(m_FullSize, FilePath);
                 }

@@ -375,6 +375,9 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TrTransform[] Transforms { get; set; }
 
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string[] Subtrees { get; set; }
+
         /// Prior to M13, always null.
         /// Post M13, never null or empty; but an empty array is allowed on read.
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
@@ -705,10 +708,29 @@ namespace TiltBrush
     }
 
     [Serializable]
+    public class TiltLights
+    {
+        public Color? LightColor;
+        public float? Intensity;
+        public LightType PunctualLightType;
+        public float? Range;
+        public float? InnerConeAngle;
+        public float? OuterConeAngle;
+
+        public bool Pinned;
+        public TrTransform Transform;
+        // Group ID for widget. 0 for ungrouped items.
+        public uint GroupId { get; set; }
+        public int LayerId { get; set; }
+    }
+
+    [Serializable]
     public class TiltImages75
     {
         /// *.png or *.jpg, should have no path
         public string FileName { get; set; }
+        /// FileName plus path relative to images directory
+        public string FilePath { get; set; }
         /// width / height
         public float AspectRatio { get; set; }
         // True if image should be pinned on load. Added in M15.
@@ -723,12 +745,29 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public int[] LayerIds { get; set; }
         public bool[] TwoSidedFlags { get; set; }
+        public float[] ExtrusionDepths { get; set; }
+        public Color[] ExtrusionColors { get; set; }
     }
 
     [Serializable]
     public class Mirror
     {
         public TrTransform Transform { get; set; }
+    }
+
+    [Serializable]
+    public class TiltText
+    {
+        public TrTransform Transform { get; set; }
+        public string Text { get; set; }
+        public Color FillColor { get; set; }
+        public Color StrokeColor { get; set; }
+        public string Font { get; set; }
+        public float ExtrudeDepth { get; set; }
+        public TextWidgetMode Mode { get; set; }
+        public bool Pinned { get; set; }
+        public uint GroupId { get; set; }
+        public int LayerId { get; set; }
     }
 
     [Serializable]
@@ -1077,6 +1116,9 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TiltModels75[] ModelIndex { get; set; }
 
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TiltLights[] LightIndex { get; set; }
+
         // Added in 7.5b; never released to public.
         // Write-only so it gets serialized in but not serialized out.
         // Images and ImageIndex will never coexist in the same .tilt, so we can upgrade in place.
@@ -1129,5 +1171,8 @@ namespace TiltBrush
         public string ApplicationName { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string ApplicationVersion { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TiltText[] TextWidgets { get; set; }
     }
 } // namespace TiltBrush

@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-    [LuaDocsDescription("A reference image widget")]
+    [LuaDocsDescription("An image widget")]
     [MoonSharpUserData]
     public class ImageApiWrapper
     {
@@ -72,11 +72,34 @@ namespace TiltBrush
             set => transform = TrTransform.TRS(transform.translation, transform.rotation, value);
         }
 
-        [LuaDocsDescription("Imports an image widget based on the specified location")]
+        [LuaDocsDescription("Whether the widget is visible or not")]
+        public bool visible
+        {
+            get => _ImageWidget.IsHiding();
+            set => _ImageWidget.Show(value);
+        }
+
+        [LuaDocsDescription("The aspect ration of the image")]
+        public float aspect => _ImageWidget.ReferenceImage.ImageAspect;
+
+        [LuaDocsDescription("The filename of the image")]
+        public string filename => _ImageWidget.FileName;
+
+        [LuaDocsDescription("Get a pixel color from the image")]
+        [LuaDocsExample(@"myColor = myImage:GetPixel(10, 20)")]
+        [LuaDocsParameter("x", "The x coordinate of the pixel")]
+        [LuaDocsParameter("x", "The y coordinate of the pixel")]
+        [LuaDocsReturnValue("The pixel color")]
+        public ColorApiWrapper GetPixel(int x, int y)
+        {
+            return new ColorApiWrapper(_ImageWidget.ReferenceImage.FullSize.GetPixel(x, y));
+        }
+
+        [LuaDocsDescription("Imports an image widget based on the specified filename")]
         [LuaDocsExample(@"Image:Import(""test.png"")")]
-        [LuaDocsParameter("location", "The location of the image")]
+        [LuaDocsParameter("filename", "The filename of the image")]
         [LuaDocsReturnValue("The imported image widget")]
-        public static ImageApiWrapper Import(string location) => new(ApiMethods.ImportImage(location));
+        public static ImageApiWrapper Import(string filename) => new(ApiMethods.ImportImage(filename));
 
         [LuaDocsDescription("Selects the image widget")]
         [LuaDocsExample(@"myImage:Select()")]
@@ -96,18 +119,7 @@ namespace TiltBrush
         [LuaDocsParameter("color", "The color of the extrusion")]
         public void Extrude(float depth, ColorApiWrapper color = null)
         {
-            var extruder = _ImageWidget.GetComponent<SpriteExtruder>();
-            if (depth <= 0)
-            {
-                extruder.Clear();
-            }
-            else
-            {
-                color ??= new ColorApiWrapper(Color.gray);
-                extruder.extrudeColor = color._Color;
-                extruder.backDistance = depth;
-                extruder.Generate();
-            }
+            _ImageWidget.SetExtrusion(depth, color._Color);
         }
 
         [LuaDocsDescription("Encodes the image as a form")]

@@ -25,6 +25,7 @@ Properties {
   _TimeSpeed("Time Speed", Float) = 1.0
 
   _Opacity ("Opacity", Range(0, 1)) = 1
+  _Dissolve ("Dissolve", Range(0, 1)) = 1
   _ClipStart("Clip Start", Float) = 0
   _ClipEnd("Clip End", Float) = -1
 }
@@ -62,6 +63,7 @@ Category {
 
             uniform float _ClipStart;
             uniform float _ClipEnd;
+			uniform half _Dissolve;
             uniform half _Opacity;
 
 			struct appdata_full_plus_id {
@@ -83,6 +85,8 @@ Category {
 				float2 texcoord : TEXCOORD0;
 				float4 worldPos : TEXCOORD1;
                 uint id : TEXCOORD2;
+
+				UNITY_VERTEX_OUTPUT_STEREO
 			};
 
 
@@ -92,6 +96,10 @@ Category {
 				v.color = TbVertToSrgb(v.color);
 
 				v2f o;
+
+				UNITY_SETUP_INSTANCE_ID(v);
+          		UNITY_INITIALIZE_OUTPUT(v2f, o);
+          		UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
 				// Inflate the tube outward to explode it into
 				// strips - giving us negative space w/o as much overdraw.
@@ -116,9 +124,8 @@ Category {
 			// Input color is srgb
 			fixed4 frag (v2f i) : COLOR
 			{
-
 				if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-
+                if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
 
 				float u_scale = _Speed;
 				float t = fmod(GetTime().y * 4 * u_scale, u_scale);

@@ -18,28 +18,17 @@ using System.IO;
 using System.Linq;
 using Unity.VectorGraphics;
 using UnityEngine;
+
 namespace TiltBrush
 {
     public static class DrawStrokes
     {
-
-        public static void DrawSingleTrList(
-            IEnumerable<TrTransform> path,
-            TrTransform tr,
-            float brushScale = 1f,
-            float smoothing = 0.2f,
-            bool rawStrokes = false)
-        {
-            DrawNestedTrList(new List<IEnumerable<TrTransform>> { path }, tr, null, brushScale, rawStrokes, smoothing);
-        }
-
         public static void DrawNestedTrList(
             IEnumerable<IEnumerable<TrTransform>> pathEnumerable,
             TrTransform tr,
             List<Color> colors = null,
             float brushScale = 1f,
-            bool rawStrokes = false,
-            float smoothing = 0.2f,
+            float smoothing = 0,
             uint group = GroupManager.kIdSketchGroupTagNone)
         {
             var paths = pathEnumerable.ToList();
@@ -48,14 +37,15 @@ namespace TiltBrush
             int pathIndex = 0;
             for (var i = 0; i < paths.Count; i++)
             {
-                var color = colors != null ? colors[i] : App.BrushColor.CurrentColor;
+                var color = colors == null || i >= colors.Count ?
+                    App.BrushColor.CurrentColor : colors[i];
                 var item = paths[i];
                 if (item == null) continue;
                 var path = item.ToList();
                 // Single joined paths
                 if (path.Count < 2) continue;
                 int cpCount = path.Count - 1;
-                if (!rawStrokes) cpCount *= 3; // Three control points per original vertex
+                if (smoothing > 0) cpCount *= 3; // Three control points per original vertex
                 var controlPoints = new List<PointerManager.ControlPoint>(cpCount);
 
                 for (var vertexIndex = 0; vertexIndex < path.Count - 1; vertexIndex++)
@@ -76,21 +66,18 @@ namespace TiltBrush
                         });
                     }
 
-                    if (rawStrokes)
-                    {
-                        addPoint(position);
-                    }
-                    else
+                    addPoint(position);
+                    if (smoothing > 0)
                     {
                         // smoothing controls much to pull extra vertices towards the middle
                         // 0.25 smooths corners a lot, 0.1 is tighter
-                        addPoint(position + (nextPosition - position));
-                        // addPoint(position + (nextPosition - position) * smoothing);
-                        // addPoint(position + (nextPosition - position) * .5f);
-                        // addPoint(position + (nextPosition - position) * (1 - smoothing));
+                        addPoint(position);
+                        addPoint(position + (nextPosition - position) * smoothing);
+                        addPoint(position + (nextPosition - position) * .5f);
+                        addPoint(position + (nextPosition - position) * (1 - smoothing));
                     }
-
                 }
+
                 var stroke = new Stroke
                 {
                     m_Type = Stroke.Type.NotCreated,
@@ -120,47 +107,17 @@ namespace TiltBrush
             }
         }
 
-        public static void DrawPolygon(int sides, TrTransform tr = default)
-        {
-            var path = new List<TrTransform>(sides);
-            for (float i = 0; i <= sides; i++)
-            {
-                var theta = Mathf.PI * (i / sides) * 2f;
-                theta += Mathf.Deg2Rad;
-                var point = new Vector3(
-                    Mathf.Cos(theta),
-                    Mathf.Sin(theta),
-                    0
-                );
-                point = ApiManager.Instance.BrushRotation * point;
-                path.Add(TrTransform.T(point));
-            }
-            DrawNestedTrList(new List<List<TrTransform>> { path }, tr);
-        }
-
-        public static void DrawText(string text, TrTransform tr)
-        {
-            var textToStroke = new TextToStrokes(ApiManager.Instance.TextFont);
-            DrawNestedTrList(textToStroke.Build(text), tr);
-        }
-
-        public static void DrawSvgPathString(string svgPathString, TrTransform tr)
-        {
-            DrawNestedTrList(SvgPathStringToApiPaths(svgPathString), tr);
-        }
-
-        public static void DrawSvg(string svg, TrTransform tr)
-        {
-            DrawNestedTrList(SvgDocumentToNestedPaths(svg).paths, tr);
-        }
-
         public static List<List<TrTransform>> SvgPathStringToApiPaths(string svgPathString)
         {
             var svgText = $"<svg xmlns=\"http: //www.w3.org/2000/svg\"><path d=\"{svgPathString}\"/></svg>";
             return SvgDocumentToNestedPaths(svgText).paths;
         }
 
-        public static (List<List<TrTransform>> paths, List<Color> colors) SvgDocumentToNestedPaths(string svgText, float offsetPerPath = 0, bool includeColors = false)
+        public static (List<List<TrTransform>> paths, List<Color> colors) SvgDocumentToNestedPaths(
+            string svgText,
+            float offsetPerPath = 0,
+            bool includeColors = false
+        )
         {
             svgText = _PreProcessSvg(svgText);
             var geoms = _ParseSvg(svgText);
@@ -211,12 +168,6 @@ namespace TiltBrush
                 ConvexOutlinesOnly = convexOutlinesOnly,
             };
             return VectorUtils.TessellateScene(sceneInfo.Scene, tessellationOptions);
-        }
-
-        public static void DrawCameraPath(CameraPath path, float step, TrTransform tr = default)
-        {
-            var points = path.AsTrList(step);
-            DrawNestedTrList(new List<List<TrTransform>> { points }, tr);
         }
     }
 }

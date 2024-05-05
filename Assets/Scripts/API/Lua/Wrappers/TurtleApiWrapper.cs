@@ -19,7 +19,8 @@ namespace TiltBrush
         public static void Draw(float amount) => ApiMethods.BrushDraw(amount);
         public static void DrawPolygon(int sides, float radius = 1, float angle = 0) => ApiMethods.DrawPolygon(sides, radius, angle);
         public static void DrawText(string text) => ApiMethods.Text(text);
-        public static void DrawSvg(string svg) => ApiMethods.SvgPath(svg);
+        public static void DrawSvgPath(string svgPath) => ApiMethods.DrawSvgPath(svgPath);
+        public static void DrawSvg(string svg) => ApiMethods.DrawSvg(svg);
         public static void TurnY(float angle) => ApiMethods.BrushYaw(angle);
         public static void TurnX(float angle) => ApiMethods.BrushPitch(angle);
         public static void TurnZ(float angle) => ApiMethods.BrushRoll(angle);

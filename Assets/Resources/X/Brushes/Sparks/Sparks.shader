@@ -27,7 +27,7 @@ Properties {
     _TimeBlend("Time Blend", Float) = 0
     _TimeSpeed("Time Speed", Float) = 1.0
 
-    _Opacity ("Opacity", Range(0, 1)) = 1
+    _Dissolve("Dissolve", Range(0, 1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
 }
@@ -65,6 +65,8 @@ Category {
 				float3 normal : NORMAL;
 				float2 texcoord : TEXCOORD0;
                 uint id : SV_VertexID;
+
+				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
 			struct v2f {
@@ -72,6 +74,8 @@ Category {
 				fixed4 color : COLOR;
 				float2 texcoord : TEXCOORD0;
                 uint id : TEXCOORD2;
+
+				UNITY_VERTEX_OUTPUT_STEREO
 			};
 
 			float4 _MainTex_ST;
@@ -84,7 +88,7 @@ Category {
 
             uniform float _ClipStart;
 			uniform float _ClipEnd;
-			uniform half _Opacity;
+			uniform half _Dissolve;
 
 			v2f vert (appdata_t v)
 			{
@@ -92,6 +96,10 @@ Category {
 				v.color = TbVertToSrgb(v.color);
 
 				v2f o;
+
+				UNITY_SETUP_INSTANCE_ID(v);
+          		UNITY_INITIALIZE_OUTPUT(v2f, o);
+          		UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
 				// This multiplier is a magic number but it's still not right. Is there a better
 				// multiplciation for this (not using fmod) so I can count on the "lifetime" being contstant?
@@ -119,7 +127,7 @@ Category {
 			fixed4 frag (v2f i) : COLOR
 			{
                 if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-                if (_Opacity < 1 && Dither8x8(i.vertex.xy) >= _Opacity) discard;
+                if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
 
 				// Distort U coord to taste. This makes the effect to "slow down" towards the end of the stroke
 				// by clumping UV's closer together toward the beginning of the stroke
@@ -175,7 +183,7 @@ Category {
 				float4 color = i.color * tex * bloom;
 				color = encodeHdr(color.rgb * color.a);
 				color = SrgbToNative(color);
-				return color * _Opacity;
+				return color * _Dissolve;
 			}
 			ENDCG
 		}

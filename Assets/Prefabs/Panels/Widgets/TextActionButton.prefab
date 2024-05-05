@@ -283,7 +283,25 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Action
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 0}
@@ -303,6 +321,9 @@ MonoBehaviour:
   m_ButtonLabel: 
   m_ColorSelected: {r: 0, g: 0, b: 0, a: 0}
   m_ColorDeselected: {r: 0, g: 0, b: 0, a: 0}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &4583691017407991961
 GameObject:
   m_ObjectHideFlags: 0
@@ -313,7 +334,6 @@ GameObject:
   m_Component:
   - component: {fileID: 4774244057288012162}
   - component: {fileID: 2766287218697250671}
-  - component: {fileID: 5431139491862965100}
   - component: {fileID: 4506741420675531107}
   m_Layer: 16
   m_Name: Text (TMP)
@@ -384,14 +404,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!222 &5431139491862965100
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4583691017407991961}
-  m_CullTransparentMesh: 0
 --- !u!114 &4506741420675531107
 MonoBehaviour:
   m_ObjectHideFlags: 0

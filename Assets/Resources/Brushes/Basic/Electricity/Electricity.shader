@@ -23,7 +23,7 @@ Properties {
   _TimeBlend("Time Blend", Float) = 0
   _TimeSpeed("Time Speed", Float) = 1.0
 
-    _Opacity ("Opacity", Range(0, 1)) = 1
+    _Dissolve("Dissolve", Range(0, 1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
 }
@@ -51,6 +51,8 @@ CGINCLUDE
     float2 texcoord0 : TEXCOORD0;
     float3 texcoord1 : TEXCOORD1;
     uint id : SV_VertexID;
+
+    UNITY_VERTEX_INPUT_INSTANCE_ID
   };
 
   sampler2D _MainTex;
@@ -59,13 +61,15 @@ CGINCLUDE
 
   uniform float _ClipStart;
   uniform float _ClipEnd;
-  uniform half _Opacity;
+  uniform half _Dissolve;
 
   struct v2f {
     float4 vertex : POSITION;
     fixed4 color : COLOR;
     float2 texcoord : TEXCOORD0;
     uint id : TEXCOORD2;
+
+    UNITY_VERTEX_OUTPUT_STEREO
   };
 
   float3 displacement(float3 pos, float mod) {
@@ -93,6 +97,11 @@ CGINCLUDE
     PrepForOds(v.vertex);
     v.color = TbVertToSrgb(v.color);
     v2f o;
+
+    UNITY_SETUP_INSTANCE_ID(v);
+    UNITY_INITIALIZE_OUTPUT(v2f, o);
+    UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
     float envelope = sin(v.texcoord0.x * (3.14159));
     float envelopePow =  (1-pow(1  - envelope, 10));
 
@@ -157,7 +166,7 @@ CGINCLUDE
   {
     if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
     // It's hard to get alpha curves right so use dithering for hdr shaders
-    if (_Opacity < 1 && Dither8x8(i.vertex.xy) >= _Opacity) discard;
+    if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
 
     // interior procedural line
 #if SHARP_AND_BLOOMY
@@ -183,7 +192,7 @@ CGINCLUDE
     // It doesn't matter which of these is first since they can't both be active at the same time;
     // but only one ordering will compile because of the return types.
     float4 color = encodeHdr(unencoded);
-    return SrgbToNative(color * _Opacity);
+    return SrgbToNative(color * _Dissolve);
   }
 ENDCG
 

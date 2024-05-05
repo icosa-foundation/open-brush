@@ -18,7 +18,7 @@ Shader "Brush/Special/CelVinyl" {
     _Color("Color", Color) = (1,1,1,1)
     _Cutoff ("Alpha Cutoff", Range (0,1)) = 0.5
 
-    _Opacity ("Opacity", Range(0, 1)) = 1
+    _Dissolve ("Dissolve", Range(0, 1)) = 1
   	_ClipStart("Clip Start", Float) = 0
 	  _ClipEnd("Clip End", Float) = -1
   }
@@ -48,13 +48,15 @@ Shader "Brush/Special/CelVinyl" {
 
         uniform float _ClipStart;
         uniform float _ClipEnd;
-        uniform half _Opacity;
+        uniform half _Dissolve;
 
         struct appdata_t {
             float4 vertex : POSITION;
             float2 texcoord : TEXCOORD0;
             float4 color : COLOR;
             uint id : SV_VertexID;
+
+            UNITY_VERTEX_INPUT_INSTANCE_ID
         };
 
         struct v2f {
@@ -63,6 +65,8 @@ Shader "Brush/Special/CelVinyl" {
             float4 color : COLOR;
             uint id : TEXCOORD2;
             UNITY_FOG_COORDS(1)
+
+            UNITY_VERTEX_OUTPUT_STEREO
         };
 
         v2f vert (appdata_t v)
@@ -70,6 +74,10 @@ Shader "Brush/Special/CelVinyl" {
           PrepForOds(v.vertex);
 
           v2f o;
+
+          UNITY_SETUP_INSTANCE_ID(v);
+          UNITY_INITIALIZE_OUTPUT(v2f, o);
+          UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
           o.pos = UnityObjectToClipPos(v.vertex);
           o.texcoord = v.texcoord;
@@ -83,7 +91,7 @@ Shader "Brush/Special/CelVinyl" {
         {
 
           if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-          if (_Opacity < 1 && Dither8x8(i.pos.xy) >= _Opacity) discard;
+          if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
 
           fixed4 tex = tex2D(_MainTex, i.texcoord) * i.color;
           UNITY_APPLY_FOG(i.fogCoord, tex);

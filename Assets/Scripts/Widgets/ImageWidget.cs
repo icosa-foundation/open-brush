@@ -14,6 +14,7 @@
 
 using UnityEngine;
 using System.IO;
+using Unity.VectorGraphics;
 
 namespace TiltBrush
 {
@@ -31,10 +32,11 @@ namespace TiltBrush
         private ReferenceImage m_ReferenceImage;
         private bool m_TextureAcquired;
 
-        /// A string which can be passed to ReferenceImageCatalog.FileNameToIndex.
-        /// Currently, this is a file _name_.
         public string FileName =>
             m_ReferenceImage?.FileName ?? m_MissingInfo?.fileName ?? Unused("Error");
+
+        public string RelativePath =>
+            m_ReferenceImage?.RelativePath ?? m_MissingInfo?.fileName ?? Unused("Error");
 
         /// width / height
         public override float? AspectRatio =>
@@ -111,7 +113,7 @@ namespace TiltBrush
             }
             else
             {
-                return Path.GetFileNameWithoutExtension(FileName);
+                return Path.GetFileNameWithoutExtension(RelativePath);
             }
         }
 
@@ -189,6 +191,28 @@ namespace TiltBrush
             get { return m_ReferenceImage; }
         }
 
+        public void SetExtrusion(float depth, Color color)
+        {
+            SpriteRenderer spriteRenderer = gameObject.GetComponentInChildren<SpriteRenderer>();
+            if (depth > 0)
+            {
+                spriteRenderer.enabled = true;
+                var importer = new RuntimeSVGImporter();
+                var sprite = importer.ImportAsVectorSprite(m_ReferenceImage.FilePath);
+                spriteRenderer.sprite = sprite;
+                var extruder = gameObject.GetComponentInChildren<SpriteExtruder>();
+                extruder.AssignSprite(sprite);
+                extruder.extrudeColor = color;
+                extruder.frontDistance = 0;
+                extruder.backDistance = depth;
+                extruder.Generate();
+            }
+            else
+            {
+                spriteRenderer.enabled = false;
+            }
+        }
+
         public bool IsImageValid()
         {
             return m_ReferenceImage != null && m_ReferenceImage.Valid;
@@ -209,10 +233,15 @@ namespace TiltBrush
 
         public static void FromTiltImage(TiltImages75 tiltImage)
         {
-            var refImage = ReferenceImageCatalog.m_Instance.FileNameToImage(tiltImage.FileName);
+
+            var refImage = string.IsNullOrEmpty(tiltImage.FilePath) ?
+                ReferenceImageCatalog.m_Instance.FileNameToImage(tiltImage.FileName) :
+                ReferenceImageCatalog.m_Instance.RelativePathToImage(tiltImage.FilePath);
             var groupIds = tiltImage.GroupIds;
             var layerIds = tiltImage.LayerIds;
             var twoSidedFlags = tiltImage.TwoSidedFlags;
+            var extrusionDepths = tiltImage.ExtrusionDepths;
+            var extrusionColors = tiltImage.ExtrusionColors;
             for (int i = 0; i < tiltImage.Transforms.Length; ++i)
             {
                 ImageWidget image = Instantiate(WidgetManager.m_Instance.ImageWidgetPrefab);
@@ -229,6 +258,7 @@ namespace TiltBrush
                     image.SetMissing(tiltImage.AspectRatio, tiltImage.FileName);
                 }
                 image.SetSignedWidgetSize(tiltImage.Transforms[i].scale);
+                image.SetExtrusion(extrusionDepths[i], extrusionColors[i]);
                 image.Show(bShow: true, bPlayAudio: false);
                 image.transform.localPosition = tiltImage.Transforms[i].translation;
                 image.transform.localRotation = tiltImage.Transforms[i].rotation;
@@ -249,5 +279,9 @@ namespace TiltBrush
             }
         }
 
+        public bool HasSubShapes()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 } // namespace TiltBrush

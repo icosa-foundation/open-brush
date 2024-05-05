@@ -39,7 +39,7 @@ namespace TiltBrush
             m_collector = new ImportMaterialCollector(mDir, m_path);
         }
 
-        public (GameObject, List<string> warnings, ImportMaterialCollector) Import()
+        public (GameObject, List<string> warnings, ImportMaterialCollector, SVGParser.SceneInfo) Import()
         {
             GameObject go = new GameObject();
             var mf = go.AddComponent<MeshFilter>();
@@ -47,27 +47,22 @@ namespace TiltBrush
             var mat = RuntimeSVGImporter.MaterialForSVG(false);
             mr.materials = new[] { mat };
             m_collector.AddSvgIem(mr.materials[0]);
-            Mesh mesh = ImportAsMesh(m_path);
-            mf.mesh = mesh;
-            var collider = go.AddComponent<BoxCollider>();
-            collider.size = mesh.bounds.size;
-            return (go, warnings.Distinct().ToList(), m_collector);
-        }
-
-
-        Mesh ImportAsMesh(string path)
-        {
+            mf.mesh = null;
+            SVGParser.SceneInfo sceneInfo;
             try
             {
                 var importer = new RuntimeSVGImporter();
-                var mesh = importer.ImportAsMesh(path);
-                return mesh;
+                sceneInfo = importer.ImportAsSceneInfo(m_path);
+                mf.mesh = importer.SceneInfoToMesh(sceneInfo);
             }
             catch (Exception e)
             {
-                Debug.LogError("Failed importing " + path + ". " + e.Message);
-                return null;
+                Debug.LogError("Failed importing " + m_path + ". " + e.Message);
+                return (go, m_warnings, m_collector, new SVGParser.SceneInfo());
             }
+            var collider = go.AddComponent<BoxCollider>();
+            collider.size = mf.mesh.bounds.size;
+            return (go, warnings.Distinct().ToList(), m_collector, sceneInfo);
         }
     }
 } // namespace TiltBrush

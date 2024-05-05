@@ -112,11 +112,17 @@ namespace TiltBrush
                         var imagePickerButton = instance.GetComponent<OpenImagePickerPopupButton>();
                         imagePickerButton.SetDescriptionText(config.label);
                         imagePickerButton.m_PropertyName = propertyName;
+                        if (config.items != null)
+                        {
+                            imagePickerButton.ImageSet = config.items.Select(
+                                x => ReferenceImageCatalog.m_Instance.FileNameToImage(x.String)
+                            ).ToList();
+                        }
                         string filename = val.String;
-                        int itemIndex = ReferenceImageCatalog.m_Instance.FilenameToIndex(filename);
+                        int itemIndex = imagePickerButton.FilenameToIndex(filename);
                         if (itemIndex != -1)
                         {
-                            ReferenceImage image = ReferenceImageCatalog.m_Instance.IndexToImage(itemIndex);
+                            ReferenceImage image = imagePickerButton.GetImage(itemIndex);
                             imagePickerButton.UpdateValue(
                                 image.Icon,
                                 imagePickerButton.m_PropertyName,
@@ -185,7 +191,7 @@ namespace TiltBrush
         public void HandleImagePickerParameterChanged(OpenImagePickerPopupButton btn)
         {
             var script = LuaManager.Instance.GetActiveScript(m_ApiCategory);
-            string imageFileName = ReferenceImageCatalog.m_Instance.IndexToImage(btn.ImageIndex).FileName;
+            string imageFileName = btn.GetImage(btn.ImageIndex).FileName;
             LuaManager.Instance.SetScriptParam(script, btn.m_PropertyName, DynValue.NewString(imageFileName));
         }
 

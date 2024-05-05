@@ -40,16 +40,27 @@ namespace TiltBrush
 
         [LuaDocsDescription("Draws an SVG path string")]
         [LuaDocsExample("Svg:DrawPathString('M 100 100 L 200 200')")]
-        [LuaDocsParameter("svg", "The SVG path string to draw")]
+        [LuaDocsParameter("svgPath", "The SVG path string to draw")]
         [LuaDocsParameter("tr", "The transform to apply to the result")]
-        public static void DrawPathString(string svg, TransformApiWrapper tr = null) =>
-            DrawStrokes.DrawSvgPathString(svg, (tr ?? TransformApiWrapper.identity)._TrTransform);
+        public static void DrawPathString(string svgPath, TransformApiWrapper tr = null)
+        {
+            var paths = DrawStrokes.SvgPathStringToApiPaths(svgPath);
+            DrawStrokes.DrawNestedTrList(
+                paths,
+                (tr ?? TransformApiWrapper.identity)._TrTransform,
+                smoothing: ApiManager.Instance.PathSmoothing
+            );
+        }
 
         [LuaDocsDescription("Draws an SVG document")]
         [LuaDocsExample("Svg:Draw('<svg>...</svg>')")]
         [LuaDocsParameter("svg", "A text string that is a valid SVG document")]
         [LuaDocsParameter("tr", "The transform (position, rotation and scale) to apply to the result")]
-        public static void DrawDocument(string svg, TrTransform tr = default) =>
-            DrawStrokes.DrawSvg(svg, tr);
+        [LuaDocsParameter("includeColors", "Whether to use the colors from the SVG document")]
+        public static void DrawDocument(string svg, TrTransform tr = default, bool includeColors = false)
+        {
+            var (paths, colors) = DrawStrokes.SvgDocumentToNestedPaths(svg, includeColors: includeColors);
+            DrawStrokes.DrawNestedTrList(paths, tr, smoothing: 0.1f, colors: colors);
+        }
     }
 }

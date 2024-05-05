@@ -16,7 +16,7 @@ Shader "Brush/Special/TubeToonInverted" {
 Properties {
   _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
 
-  _Opacity("Opacity", Range(0,1)) = 1
+  _Dissolve("Dissolve", Range(0,1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
 }
@@ -33,7 +33,7 @@ CGINCLUDE
 
   uniform float _ClipStart;
   uniform float _ClipEnd;
-  uniform half _Opacity;
+  uniform half _Dissolve;
 
   struct appdata_t {
     float4 vertex : POSITION;
@@ -41,6 +41,8 @@ CGINCLUDE
     float3 normal : NORMAL;
     float2 texcoord : TEXCOORD0;
     uint id : SV_VertexID;
+
+    UNITY_VERTEX_INPUT_INSTANCE_ID
   };
 
   struct v2f {
@@ -48,6 +50,8 @@ CGINCLUDE
     fixed4 color : COLOR;
     float2 texcoord : TEXCOORD0;
     uint id : TEXCOORD2;
+
+    UNITY_VERTEX_OUTPUT_STEREO
   };
 
   v2f vertInflate (appdata_t v, float inflate)
@@ -55,6 +59,11 @@ CGINCLUDE
     PrepForOds(v.vertex);
 
     v2f o;
+
+    UNITY_SETUP_INSTANCE_ID(v);
+    UNITY_INITIALIZE_OUTPUT(v2f, o);
+    UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
     v.vertex.xyz += v.normal.xyz * inflate;
     o.vertex = UnityObjectToClipPos(v.vertex);
     o.color = v.color;
@@ -82,14 +91,14 @@ CGINCLUDE
   fixed4 fragBlack (v2f i) : SV_Target
   {
     if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-    if (_Opacity < 1 && Dither8x8(i.vertex.xy) >= _Opacity) discard;
+    if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
     return float4(0,0,0,1);
   }
 
   fixed4 fragColor (v2f i) : SV_Target
   {
     if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-    if (_Opacity < 1 && Dither8x8(i.vertex.xy) >= _Opacity) discard;
+    if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
     return i.color;
   }
 

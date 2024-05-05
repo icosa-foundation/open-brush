@@ -66,6 +66,7 @@ namespace TiltBrush
         [NonSerialized] public Vector3 BrushOrigin = new Vector3(0, 13, 3);
         [NonSerialized] public Quaternion BrushInitialRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
         [NonSerialized] public Vector3 BrushPosition = new Vector3(0, 13, 3); // Good origin for monoscopic
+        [NonSerialized] public float PathSmoothing = 0.1f;
         [NonSerialized] public Quaternion BrushRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
         [NonSerialized] public ForcePaintingMode ForcePainting;
         [NonSerialized] public ForcePaintingMode PreviousForcePaintingMode;
@@ -113,65 +114,7 @@ namespace TiltBrush
                 // m_FileWatcher.FileDeleted += OnScriptsDirectoryChanged; TODO
                 m_FileWatcher.EnableRaisingEvents = true;
             }
-            if (CommandExamples == null)
-            {
-                CommandExamples = new Dictionary<string, string>();
-            }
-            CommandExamples["draw.paths"] = "[[0,0,0],[1,0,0],[1,1,0]],[[0,0,-1],[-1,0,-1],[-1,1,-1]]";
-            CommandExamples["draw.path"] = "[0,0,0],[1,0,0],[1,1,0],[0,1,0]";
-            CommandExamples["draw.stroke"] = "[0,0,0,0,180,90,.75],[1,0,0,0,180,90,.75],[1,1,0,0,180,90,.75],[0,1,0,0,180,90,.75]";
-            CommandExamples["listenfor.strokes"] = "http://localhost:8000/";
-            CommandExamples["draw.polygon"] = "5,1,0";
-            CommandExamples["draw.text"] = "hello";
-            CommandExamples["draw.svg"] = "M 184,199 116,170 53,209.6 60,136.2 4.3,88";
-            CommandExamples["draw.camerapath"] = "0";
-            CommandExamples["brush.type"] = "ink";
-            CommandExamples["color.add.hsv"] = "0.1,0.2,0.3";
-            CommandExamples["color.add.rgb"] = "0.1,0.2,0.3";
-            CommandExamples["color.set.rgb"] = "0.1,0.2,0.3";
-            CommandExamples["color.set.hsv"] = "0.1,0.2,0.3";
-            CommandExamples["color.set.html"] = "darkblue";
-            CommandExamples["brush.size.set"] = ".5";
-            CommandExamples["brush.size.add"] = ".1";
-            CommandExamples["spectator.move.to"] = "1,1,1";
-            CommandExamples["spectator.move.by"] = "1,1,1";
-            CommandExamples["spectator.turn.y"] = "45";
-            CommandExamples["spectator.turn.x"] = "45";
-            CommandExamples["spectator.turn.z"] = "45";
-            CommandExamples["spectator.direction"] = "45,45,0";
-            CommandExamples["spectator.look.at"] = "1,2,3";
-            CommandExamples["spectator.mode"] = "circular";
-            CommandExamples["spectator.show"] = "panels";
-            CommandExamples["spectator.hide"] = "widgets";
-            CommandExamples["user.move.to"] = "1,1,1";
-            CommandExamples["user.move.by"] = "1,1,1";
-            CommandExamples["brush.move.to"] = "1,1,1";
-            CommandExamples["brush.move.by"] = "1,1,1";
-            CommandExamples["brush.move"] = "1";
-            CommandExamples["brush.draw"] = "1";
-            CommandExamples["brush.turn.y"] = "45";
-            CommandExamples["brush.turn.x"] = "45";
-            CommandExamples["brush.turn.z"] = "45";
-            CommandExamples["brush.look.at"] = "1,1,1";
-            CommandExamples["stroke.delete"] = "0";
-            CommandExamples["stroke.select"] = "0";
-            CommandExamples["strokes.select"] = "0,3";
-            CommandExamples["selection.trim"] = "2";
-            CommandExamples["selection.points.addnoise"] = "x,0.5";
-            CommandExamples["selection.points.quantize"] = "0.1";
-            CommandExamples["strokes.join"] = "0,2";
-            CommandExamples["stroke.add"] = "0";
-            CommandExamples["load.user"] = "0";
-            CommandExamples["load.curated"] = "0";
-            CommandExamples["load.liked"] = "0";
-            CommandExamples["load.drive"] = "0";
-            CommandExamples["load.named"] = "Untitled_0.tilt";
-            CommandExamples["showfolder.sketch"] = "0";
-            CommandExamples["import.model"] = "Andy\\Andy.obj";
-            CommandExamples["import.image"] = "TiltBrushLogo.png";
-            CommandExamples["import.video"] = "animated-logo.mp4";
             App.Instance.StateChanged += RunStartupScript;
-
         }
 
         public void ResetBrushTransform()
@@ -735,7 +678,7 @@ namespace TiltBrush
             foreach (var listenerUrl in m_OutgoingApiListeners)
             {
                 string getUri = $"{listenerUrl}?{command.Key}={command.Value}";
-                if (getUri.Length < 512)  // Actually limit is 2083 but let's be conservative 
+                if (getUri.Length < 512)  // Actually limit is 2083 but let's be conservative
                 {
                     StartCoroutine(GetRequest(getUri));
                 }

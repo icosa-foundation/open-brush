@@ -23,7 +23,7 @@ namespace TiltBrush
         [NonSerialized] public int ActiveItemIndex;
         [NonSerialized] public OpenImagePickerPopupButton m_OpenerButton;
 
-        protected override int m_DataCount => ReferenceImageCatalog.m_Instance.ItemCount;
+        protected override int m_DataCount => m_OpenerButton.GetImageCount();
 
         protected override void InitIcon(ImageIcon icon)
         {
@@ -32,7 +32,7 @@ namespace TiltBrush
 
         protected override void RefreshIcon(ImageIcon icon, int iconIndex)
         {
-            ReferenceImage image = ReferenceImageCatalog.m_Instance.IndexToImage(iconIndex);
+            ReferenceImage image = GetReferenceImage(iconIndex);
             float aspect = image.ImageAspect;
             var itemButton = icon.m_IconScript as ImagePickerItemButton;
             itemButton.SetPreset(image.Icon, image.FileName, iconIndex, aspect);
@@ -40,12 +40,17 @@ namespace TiltBrush
             itemButton.m_OnItemSelected = OnItemSelected;
         }
 
+        private ReferenceImage GetReferenceImage(int iconIndex)
+        {
+            return m_OpenerButton.GetImage(iconIndex);
+        }
+
         private void OnItemSelected(int itemIndex)
         {
             ActiveItemIndex = itemIndex;
             int iconIndex = ActiveItemIndex % m_IconCountNavPage;
             var iconButton = m_Icons[iconIndex].m_IconScript;
-            ReferenceImage image = ReferenceImageCatalog.m_Instance.IndexToImage(itemIndex);
+            ReferenceImage image = m_OpenerButton.GetImage(itemIndex);
             iconButton.SetButtonSelected(true);
             m_OpenerButton.UpdateValue(
                 image.Icon,

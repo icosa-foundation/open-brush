@@ -3283,6 +3283,10 @@ MonoBehaviour:
     m_Key: CONTROLLER_HINT_THUMBPAD_BRUSHSIZE
     m_Metadata:
       m_Items: []
+  - m_Id: 176764812224364544
+    m_Key: BRUSH_PASSTHROUGHHULL
+    m_Metadata:
+      m_Items: []
   - m_Id: 188791089062830080
     m_Key: ENVIRONMENT_PANEL_RESET_CANVAS
     m_Metadata:
@@ -3309,6 +3313,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 218558579745579008
     m_Key: MONOSCOPIC_HELP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 224363142209691648
+    m_Key: DirectoryChooserPopupButton
     m_Metadata:
       m_Items: []
   m_Metadata:

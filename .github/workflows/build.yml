@@ -630,8 +630,9 @@ jobs:
 
           cd StandaloneOSX/
           codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME/Contents/Support/ThirdParty/ffmpeg/bin/ffmpeg
-          codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME/Contents/Plugins/UsdCs.bundle
-          codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME/Contents/Plugins/lib_burst_generated.bundle
+          for bundle in $FILENAME/Contents/Plugins/*.bundle; do
+              codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $bundle
+          done
           codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME
           cd -
 
@@ -724,6 +725,10 @@ jobs:
                     "labels": ["feature", "enhancement"]
                 },
                 {
+                    "title": "## 🎨 UI / UX",
+                    "labels": ["ux"]
+                },
+                {
                     "title": "## 🐛 Fixes",
                     "labels": ["fix", "bugfix"]
                 },
@@ -778,6 +783,12 @@ jobs:
           name: Android Pico
           path: build_android_pico
 
+      - name: Download Build Artifacts (Linux)
+        uses: actions/download-artifact@v4
+        with:
+          name: Linux
+          path: build_linux
+
       - name: Download Build Artifacts (Mac)
         uses: actions/download-artifact@v4
         with:
@@ -795,11 +806,13 @@ jobs:
           mv build_windows_openxr/StandaloneWindows64/ releases/OpenBrush_Desktop_$VERSION/
           mv build_windows_rift/StandaloneWindows64/ releases/OpenBrush_Rift_$VERSION/
           mv build_macos/*.dmg releases/OpenBrush_Mac_$VERSION.dmg
+          mv build_linux/StandaloneLinux64/ releases/OpenBrush_Linux_$VERSION/
           cd releases
           zip -r OpenBrush_Desktop_$VERSION.zip OpenBrush_Desktop_$VERSION/
-          zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
           rm -rf OpenBrush_Desktop_$VERSION
+          zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
           rm -rf OpenBrush_Rift_$VERSION
+          zip -r OpenBrush_Linux_$VERSION.zip OpenBrush_Linux_$VERSION/
 
       - name: Publish
         uses: softprops/action-gh-release@v2
@@ -833,6 +846,10 @@ jobs:
                 {
                     "title": "## 🚀 Features",
                     "labels": ["feature", "enhancement"]
+                },
+                {
+                    "title": "## 🎨 UI / UX",
+                    "labels": ["ux"]
                 },
                 {
                     "title": "## 🐛 Fixes",
@@ -917,6 +934,11 @@ jobs:
         with:
           name: MacOS (signed)
           path: build_macos
+      - name: Download Build Artifacts (Linux)
+        uses: actions/download-artifact@v4
+        with:
+          name: Linux
+          path: build_linux
       - name: Upload Build
         run: |
           cd build_macos
@@ -926,6 +948,7 @@ jobs:
           jinjanate Support/steam/app.vdf.j2 > app.vdf
           jinjanate Support/steam/main_depot.win.vdf.j2 > build_windows_openxr/main_depot.vdf
           jinjanate Support/steam/main_depot.mac.vdf.j2 > build_macos/main_depot.vdf
+          jinjanate Support/steam/main_depot.linux.vdf.j2 > build_linux/main_depot.vdf
           jinjanate Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
           steamcmd +login $STEAM_USERNAME +run_app_build $(pwd)/app.vdf +quit
         env:
@@ -935,7 +958,8 @@ jobs:
           OPEN_BRUSH_APP_ID: ${{ vars.STEAM_APP_ID }}
           OPEN_BRUSH_WINDOWS_DEPOT_ID: ${{ vars.STEAM_WINDOWS_DEPOT_ID }}
           OPEN_BRUSH_MAC_DEPOT_ID: ${{ vars.STEAM_MAC_DEPOT_ID }}
-          OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
+          OPEN_BRUSH_LINUX_DEPOT_ID: ${{ vars.STEAM_LINUX_DEPOT_ID }}
+          OPEN_BRUSH_WINDOWS_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
           CHANNEL: beta
       - name: Update steam login secret
         run: |
