@@ -29,41 +29,41 @@ namespace TiltBrush
         private static TiltBrushManifest brushManifest;
         private static TiltBrushManifest brushManifestX;
 
-    
-    [MenuItem("Tilt/Info/Check Brush Textures")]
-    static void CheckBrushTextures()
-    {
-        Object[] defaultBrushes = Resources.LoadAll("Brushes", typeof(BrushDescriptor)).ToArray();
-        var experimentalBrushes = Resources.LoadAll("X/Brushes", typeof(BrushDescriptor)).ToArray();
-        var allBrushes = defaultBrushes.Concat(experimentalBrushes);
 
-        var checkedMaterials = new HashSet<Material>();
-        
-        foreach (BrushDescriptor brush in allBrushes)
+        [MenuItem("Tilt/Info/Check Brush Textures")]
+        static void CheckBrushTextures()
         {
-            if (brush.Material == null) continue;
-            Debug.Log($"Checking {brush.Material.name}");
-            if (!checkedMaterials.Contains(brush.Material))
+            Object[] defaultBrushes = Resources.LoadAll("Brushes", typeof(BrushDescriptor)).ToArray();
+            var experimentalBrushes = Resources.LoadAll("X/Brushes", typeof(BrushDescriptor)).ToArray();
+            var allBrushes = defaultBrushes.Concat(experimentalBrushes);
+
+            var checkedMaterials = new HashSet<Material>();
+
+            foreach (BrushDescriptor brush in allBrushes)
             {
-                var textureProps = brush.Material.GetTexturePropertyNames();
-                foreach (var textureProp in textureProps)
+                if (brush.Material == null) continue;
+                Debug.Log($"Checking {brush.Material.name}");
+                if (!checkedMaterials.Contains(brush.Material))
                 {
-                    var texture = brush.Material.GetTexture(textureProp);
-                    if (texture!=null && !texture.isReadable)
+                    var textureProps = brush.Material.GetTexturePropertyNames();
+                    foreach (var textureProp in textureProps)
                     {
-                        Debug.LogWarning($"{brush.Material.name} {textureProp} needs read/write enabled");
+                        var texture = brush.Material.GetTexture(textureProp);
+                        if (texture != null && !texture.isReadable)
+                        {
+                            Debug.LogWarning($"{brush.Material.name} {textureProp} needs read/write enabled");
+                        }
+                        else
+                        {
+                            Debug.Log($"{textureProp} checked");
+                        }
                     }
-                    else
-                    {
-                        Debug.Log($"{textureProp} checked");
-                    }
+                    checkedMaterials.Add(brush.Material);
                 }
-                checkedMaterials.Add(brush.Material);
             }
         }
-    }
 
-    
+
         [MenuItem("Open Brush/Info/Brush Lister")]
         static void ListBrushes()
         {
