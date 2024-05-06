@@ -532,7 +532,7 @@ jobs:
       - name: Upload build/
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.name }}
+          name: ${{ matrix.name }} ${{ matrix.flavors.title }}
           path: |
             build/${{ matrix.vrsdk }}
             !build/Pico/*.symbols.zip
