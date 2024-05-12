@@ -179,6 +179,17 @@ namespace TiltBrush
                 },
                 {
                     ""name"": """",
+                    ""id"": ""5c58c242-5273-46f2-b8a1-883bedf76707"",
+                    ""path"": ""<XRController>{RightHand}/thumbstick/x"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Oculus Touch Controller"",
+                    ""action"": ""TriggerAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""c70e565b-1c0f-4d60-b284-ccdec2fd856d"",
                     ""path"": ""<XRController>{RightHand}/triggerPressed"",
                     ""interactions"": """",
