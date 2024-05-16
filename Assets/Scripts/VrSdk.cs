@@ -230,9 +230,6 @@ namespace TiltBrush
                     var unused = msg.Data.AgeCategory;
                 });
             }
-#if PASSTHROUGH_SUPPORTED
-            OVRManager.eyeFovPremultipliedAlphaModeEnabled = false;
-#endif
 
 #endif // OCULUS_SUPPORTED
 
