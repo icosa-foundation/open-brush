@@ -11,6 +11,30 @@ PrefabInstance:
       propertyPath: m_Name
       value: AdminPanel_Mobile
       objectReference: {fileID: 0}
+    - target: {fileID: 4286627721716940, guid: f5b291cbc819737469486452ea6748b8, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4286627721716940, guid: f5b291cbc819737469486452ea6748b8, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4286627721716940, guid: f5b291cbc819737469486452ea6748b8, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4334957410348514, guid: f5b291cbc819737469486452ea6748b8, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4334957410348514, guid: f5b291cbc819737469486452ea6748b8, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4334957410348514, guid: f5b291cbc819737469486452ea6748b8, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4482757564845618, guid: f5b291cbc819737469486452ea6748b8, type: 3}
       propertyPath: m_RootOrder
       value: 0
