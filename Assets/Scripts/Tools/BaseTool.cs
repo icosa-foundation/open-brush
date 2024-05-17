@@ -47,6 +47,7 @@ namespace TiltBrush
             EmptyTool,
             CameraPathTool,
             FlyTool,
+            TexturePaintTool = 5900,
             SnipTool = 11000,
             JoinTool = 11001
         }
