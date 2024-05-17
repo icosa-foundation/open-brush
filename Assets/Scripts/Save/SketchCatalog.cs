@@ -63,10 +63,11 @@ namespace TiltBrush
 
             m_Sets = new SketchSet[]
             {
-                new FileSketchSet(),
-                new FileSketchSet(App.FeaturedSketchesPath()),
+                new FileSketchSet(SketchSetType.User),
+                new FileSketchSet(SketchSetType.Curated),
                 new PolySketchSet(this, SketchSetType.Liked, maxTriangles, needsLogin: true),
                 new GoogleDriveSketchSet(),
+                new FileSketchSet(SketchSetType.SavedStrokes)
             };
         }
 

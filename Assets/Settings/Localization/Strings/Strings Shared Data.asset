@@ -3315,6 +3315,10 @@ MonoBehaviour:
     m_Key: DirectoryChooserPopupButton
     m_Metadata:
       m_Items: []
+  - m_Id: 234808679492837376
+    m_Key: PANEL_REFERENCE_SAVED_STROKE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

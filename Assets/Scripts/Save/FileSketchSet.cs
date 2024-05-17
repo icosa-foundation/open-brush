@@ -234,28 +234,31 @@ namespace TiltBrush
             get { return m_Sketches.Count; }
         }
 
-        public FileSketchSet()
+        public FileSketchSet(SketchSetType sketchSetType)
         {
-            m_Type = SketchSetType.User;
+            m_Type = sketchSetType;
             m_ReadyForAccess = false;
             m_RequestedLoads = new Stack<int>();
             m_Sketches = new List<FileSketch>();
             m_ToAdd = Queue.Synchronized(new Queue());
             m_ToDelete = Queue.Synchronized(new Queue());
-            m_ReadOnly = false;
-            m_SketchesPath = App.UserSketchPath();
-        }
-
-        public FileSketchSet(string path)
-        {
-            m_Type = SketchSetType.Curated;
-            m_ReadyForAccess = false;
-            m_RequestedLoads = new Stack<int>();
-            m_Sketches = new List<FileSketch>();
-            m_ToAdd = Queue.Synchronized(new Queue());
-            m_ToDelete = Queue.Synchronized(new Queue());
-            m_ReadOnly = true;
-            m_SketchesPath = path;
+            switch (m_Type)
+            {
+                case SketchSetType.Curated:
+                    m_ReadOnly = true;
+                    m_SketchesPath = App.FeaturedSketchesPath();
+                    break;
+                case SketchSetType.SavedStrokes:
+                    m_ReadOnly = false;
+                    m_SketchesPath = App.SavedStrokesPath();
+                    break;
+                case SketchSetType.User:
+                    m_ReadOnly = false;
+                    m_SketchesPath = App.UserSketchPath();
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
         }
 
         public bool IsSketchIndexValid(int iIndex)
@@ -363,7 +366,6 @@ namespace TiltBrush
         public virtual void Init()
         {
             ProcessDirectory(m_SketchesPath);
-            ProcessDirectory(App.SavedStrokesPath());
             m_ReadyForAccess = true;
 
             // No real reason to do this; SaveLoadScript creates the directory itself

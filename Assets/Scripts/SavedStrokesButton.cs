@@ -24,24 +24,22 @@ namespace TiltBrush
         {
             base.OnButtonPressed();
 
-            SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.SavedStrokes);
-            SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(m_Index);
-            if (rInfo != null)
+            if (m_SavedStrokeFile != null)
             {
                 var prevLayer = App.Scene.ActiveCanvas;
                 var tempLayer = App.Scene.AddLayerNow();
-                PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
-                if (SaveLoadScript.m_Instance.Load(rInfo, true))
+                // PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
+                if (SaveLoadScript.m_Instance.Load(m_SavedStrokeFile.FileInfo, true))
                 {
-                    SketchMemoryScript.m_Instance.SetPlaybackMode(SketchMemoryScript.PlaybackMode.Timestamps, 1);
+                    SketchMemoryScript.m_Instance.SetPlaybackMode(SketchMemoryScript.PlaybackMode.Distance, 54);
                     SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true, false, false);
-                    App.Instance.SetDesiredState(App.AppState.QuickLoad);
+                    // App.Instance.SetDesiredState(App.AppState.QuickLoad);
                 }
                 var strokes = SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes();
                 var widgets = WidgetManager.m_Instance.GetAllUnselectedActiveWidgets();
                 var group = App.GroupManager.NewUnusedGroup();
-                for (int i = 0; i < strokes.Count; i++) {strokes[i].Group = group;}
-                for (int i = 0; i < widgets.Count; i++) {widgets[i].Group = group;}
+                for (int i = 0; i < strokes.Count; i++) { strokes[i].Group = group; }
+                for (int i = 0; i < widgets.Count; i++) { widgets[i].Group = group; }
                 SquashLayerCommand cmd = new SquashLayerCommand(tempLayer, prevLayer);
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
             }
@@ -51,7 +49,7 @@ namespace TiltBrush
         {
             if (m_SavedStrokeFile != null)
             {
-                SetDescriptionText(m_SavedStrokeFile.HumanName);
+                SetDescriptionText(m_SavedStrokeFile.FileInfo.HumanName);
             }
         }
 
@@ -64,16 +62,5 @@ namespace TiltBrush
                 SetButtonTexture(m_SavedStrokeFile.Thumbnail);
             }
         }
-    }
-    public class SavedStrokeFile
-    {
-        public SavedStrokeFile(SceneFileInfo sceneFileInfo, Texture2D thumbnail)
-        {
-            HumanName = sceneFileInfo.HumanName;
-            Thumbnail = thumbnail;
-        }
-
-        public string HumanName { get; set; }
-        public Texture2D Thumbnail { get; set; }
     }
 }

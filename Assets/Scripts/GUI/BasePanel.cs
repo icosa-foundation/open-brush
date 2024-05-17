@@ -108,7 +108,6 @@ namespace TiltBrush
             BrushLab,
             WebcamPanel = 5200,
             Scripts = 6000,
-            SavedStrokesPanel = 6500,
             SnapSettings = 8000,
             StencilSettings = 20200,
             LayersPanel = 15000,

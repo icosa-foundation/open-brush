@@ -137,6 +137,10 @@ namespace TiltBrush
         private IEnumerator<object> ScanReferenceDirectory()
         {
             var catalog = SketchCatalog.m_Instance.GetSet(SketchSetType.SavedStrokes);
+            if (!catalog.IsReadyForAccess)
+            {
+                catalog.Init();
+            }
             for (int i = 0; i < catalog.NumSketches; i++)
             {
                 var sketchFileInfo = catalog.GetSketchSceneFileInfo(i);

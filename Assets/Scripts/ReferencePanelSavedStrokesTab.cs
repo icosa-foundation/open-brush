@@ -55,15 +55,15 @@ namespace TiltBrush
 
         public override IReferenceItemCatalog Catalog
         {
-            get { return VideoCatalog.Instance; }
+            get { return SavedStrokesCatalog.Instance; }
         }
         public override ReferenceButton.Type ReferenceButtonType
         {
-            get { return ReferenceButton.Type.Videos; }
+            get { return ReferenceButton.Type.SavedStrokes; }
         }
         protected override Type ButtonType
         {
-            get { return typeof(VideoButton); }
+            get { return typeof(SavedStrokesButton); }
         }
         protected override Type IconType
         {
