@@ -2918,7 +2918,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Save selected strokes to model catalog
+  m_DescriptionText: Save selected strokes to media catalog
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: 
