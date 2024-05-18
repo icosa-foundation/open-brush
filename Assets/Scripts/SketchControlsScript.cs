@@ -4060,39 +4060,64 @@ namespace TiltBrush
         }
 
 
-        public void GenerateBoundingBoxSaveIcon()
+        public void GenerateBoundingBoxSaveIcon(bool selectionOnly = false)
         {
             Vector3 vNewCamPos;
+            List<CanvasScript> canvases = new List<CanvasScript> { App.Scene.SelectionCanvas };
+            List<bool> canvasVisibility = new List<bool>();
+
+            var layerCanvases = App.Scene.LayerCanvases;
+            if (selectionOnly)
             {
-                Bounds rCanvasBounds = App.Scene.AllCanvases
-                    .Select(canvas => canvas.GetCanvasBoundingBox())
-                    .Aggregate((b1, b2) =>
-                    {
-                        b1.Encapsulate(b2);
-                        return b1;
-                    });
-
-                //position the camera at the center of the canvas bounds
-                vNewCamPos = rCanvasBounds.center;
-
-                //back the camera up, along -z until we can see the extent of the bounds
-                float fCanvasWidth = rCanvasBounds.max.x - rCanvasBounds.min.x;
-                float fCanvasHeight = rCanvasBounds.max.y - rCanvasBounds.min.y;
-                float fLargerExtent = Mathf.Max(fCanvasHeight, fCanvasWidth);
-
-                //half fov for camera
-                float fHalfFOV = m_SaveIconTool.ScreenshotManager.LeftEye.fieldOfView * 0.5f;
-
-                //TODO: find the real reason this isn't working as it should
-                float fMagicNumber = 1.375f;
-
-                //set new cam position and zero out orientation
-                float fBackupDistance = (fLargerExtent * 0.5f)
-                    * Mathf.Tan(Mathf.Deg2Rad * fHalfFOV) * fMagicNumber;
-                vNewCamPos.z = rCanvasBounds.min.z - fBackupDistance;
+                // Hide the other canvases and store their visibility
+                foreach (var canvas in layerCanvases)
+                {
+                    canvasVisibility.Add(canvas.gameObject.activeSelf);
+                    canvas.gameObject.SetActive(false);
+                }
+            }
+            else
+            {
+                canvases.AddRange(layerCanvases);
             }
 
+            Bounds rCanvasBounds = canvases
+                .Select(canvas => canvas.GetCanvasBoundingBox())
+                .Aggregate((b1, b2) =>
+                {
+                    b1.Encapsulate(b2);
+                    return b1;
+                });
+
+            //position the camera at the center of the canvas bounds
+            vNewCamPos = rCanvasBounds.center;
+
+            //back the camera up, along -z until we can see the extent of the bounds
+            float fCanvasWidth = rCanvasBounds.max.x - rCanvasBounds.min.x;
+            float fCanvasHeight = rCanvasBounds.max.y - rCanvasBounds.min.y;
+            float fLargerExtent = Mathf.Max(fCanvasHeight, fCanvasWidth);
+
+            //half fov for camera
+            float fHalfFOV = m_SaveIconTool.ScreenshotManager.LeftEye.fieldOfView * 0.5f;
+
+            //TODO: find the real reason this isn't working as it should
+            float fMagicNumber = 1.375f;
+
+            //set new cam position and zero out orientation
+            float fBackupDistance = (fLargerExtent * 0.5f)
+                * Mathf.Tan(Mathf.Deg2Rad * fHalfFOV) * fMagicNumber;
+            vNewCamPos.z = rCanvasBounds.min.z - fBackupDistance;
+
             m_SaveIconTool.ProgrammaticCaptureSaveIcon(vNewCamPos, Quaternion.identity);
+
+            if (selectionOnly)
+            {
+                int i = 0;
+                foreach (var canvas in layerCanvases)
+                {
+                    canvas.gameObject.SetActive(canvasVisibility[i++]);
+                }
+            }
         }
 
         private void MergeBrushStrokes(SceneFileInfo fileInfo)
@@ -4199,14 +4224,11 @@ namespace TiltBrush
                     }
                 case GlobalCommands.SaveSelected:
                     {
-                        if (!FileUtils.CheckDiskSpaceWithError(App.UserSketchPath()))
+                        if (!FileUtils.CheckDiskSpaceWithError(App.SavedStrokesPath()))
                         {
                             return;
                         }
-                        if (iParam1 == 1)
-                        {
-                            GenerateBoundingBoxSaveIcon();
-                        }
+                        GenerateBoundingBoxSaveIcon(selectionOnly: true);
                         StartCoroutine(SaveLoadScript.m_Instance.SaveSelected());
                         EatGazeObjectInput();
                         break;
@@ -5037,7 +5059,9 @@ namespace TiltBrush
                 case GlobalCommands.ResetAllPanels: return m_PanelManager.PanelsHaveBeenCustomized();
                 case GlobalCommands.Duplicate: return ClipboardManager.Instance.CanCopy;
                 case GlobalCommands.ToggleGroupStrokesAndWidgets: return SelectionManager.m_Instance.SelectionCanBeGrouped;
-                case GlobalCommands.SaveModel: return SelectionManager.m_Instance.HasSelection;
+                case GlobalCommands.SaveModel:
+                case GlobalCommands.SaveSelected:
+                    return SelectionManager.m_Instance.HasSelection;
                 case GlobalCommands.SummonMirror:
                     return PointerManager.m_Instance.CurrentSymmetryMode !=
                         SymmetryMode.None;

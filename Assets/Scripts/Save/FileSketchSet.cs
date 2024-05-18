@@ -194,6 +194,15 @@ namespace TiltBrush
             {
                 return rCompareSketch.m_FileInfo.CreationTime.CompareTo(m_FileInfo.CreationTime);
             }
+
+            public void ForceLoadThumbnail()
+            {
+                var data = ReadThumbnail(SceneFileInfo);
+                var icon = new Texture2D(128, 128, TextureFormat.RGB24, true);
+                icon.LoadImage(data);
+                icon.Apply();
+                m_Icon = icon;
+            }
         }
 
         protected SketchSetType m_Type;
@@ -365,7 +374,10 @@ namespace TiltBrush
 
         public virtual void Init()
         {
-            ProcessDirectory(m_SketchesPath);
+            if (!m_Sketches.Any())
+            {
+                ProcessDirectory(m_SketchesPath);
+            }
             m_ReadyForAccess = true;
 
             // No real reason to do this; SaveLoadScript creates the directory itself
@@ -487,6 +499,12 @@ namespace TiltBrush
                     m_RequestedLoads.Push(iSketch);
                 }
             }
+        }
+
+        public Texture2D ForceLoadThumbnail(int index)
+        {
+            m_Sketches[index].ForceLoadThumbnail();
+            return m_Sketches[index].Icon;
         }
 
         private void ProcessDirectory(string path)

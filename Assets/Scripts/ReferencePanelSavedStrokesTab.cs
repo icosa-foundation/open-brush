@@ -31,9 +31,16 @@ namespace TiltBrush
 
             public override void Refresh(int catalogIndex)
             {
-                Button.SetButtonTexture(Parent.UnknownImageTexture, 1);
                 var savedStrokesFile = SavedStrokesCatalog.Instance.GetSavedStrokeFileAtIndex(catalogIndex);
                 SavedStrokesButton.SavedStrokeFile = savedStrokesFile;
+                var icon = savedStrokesFile.Thumbnail;
+                if (icon == null)
+                {
+                    savedStrokesFile.ForceLoadThumbnail();
+                    icon = savedStrokesFile.Thumbnail;
+                }
+
+                Button.SetButtonTexture(icon, 1);
                 SavedStrokesButton.RefreshDescription();
 
                 if (savedStrokesFile != null)

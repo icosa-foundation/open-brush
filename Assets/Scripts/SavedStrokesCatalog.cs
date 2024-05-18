@@ -145,12 +145,9 @@ namespace TiltBrush
             {
                 var sketchFileInfo = catalog.GetSketchSceneFileInfo(i);
                 if (!sketchFileInfo.FullPath.StartsWith(m_CurrentSavedStrokesDirectory)) continue;
-                Texture2D icon;
-                string[] _;
-                string __;
-                catalog.GetSketchIcon(i, out icon, out _, out __);
-                var fileRef = new SavedStrokeFile(sketchFileInfo, icon);
-                m_SavedStrokeFiles.Add(fileRef);
+                catalog.GetSketchIcon(i, out var icon, out _, out _);
+                var savedStrokeFile = new SavedStrokeFile(i, sketchFileInfo, icon);
+                m_SavedStrokeFiles.Add(savedStrokeFile);
             }
 
             m_ScanningDirectory = false;
