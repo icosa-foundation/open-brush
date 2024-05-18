@@ -3516,6 +3516,14 @@ MonoBehaviour:
     m_Localized: Saved Strokes
     m_Metadata:
       m_Items: []
+  - m_Id: 235160207315525632
+    m_Localized: Save selected strokes to media library
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235163428054458368
+    m_Localized: Saved Strokes
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

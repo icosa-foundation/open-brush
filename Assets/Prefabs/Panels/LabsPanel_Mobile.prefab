@@ -1334,7 +1334,7 @@ GameObject:
   - component: {fileID: 7523014010361271187}
   - component: {fileID: 7573592490920664127}
   m_Layer: 16
-  m_Name: PanelButton_SaveModel
+  m_Name: PanelButton_SaveStrokes
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1432,12 +1432,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Save selected strokes to media catalog
+  m_DescriptionText: Save selected strokes to media library
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 235160207315525632
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -1454,7 +1454,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: b7fb5e24817634c4eb185b6d24afa87c, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: fec43d52a2edc4846ad3536f1b9182e9, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -1463,7 +1463,7 @@ MonoBehaviour:
   m_ZAdjustClick: 0.05
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
-  m_AddOverlay: 1
+  m_AddOverlay: 0
   m_Command: 6500
   m_CommandParam: -1
   m_CommandParam2: -1
