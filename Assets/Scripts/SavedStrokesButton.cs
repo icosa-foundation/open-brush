@@ -28,12 +28,10 @@ namespace TiltBrush
             {
                 var prevLayer = App.Scene.ActiveCanvas;
                 var tempLayer = App.Scene.AddLayerNow();
-                // PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
                 if (SaveLoadScript.m_Instance.Load(m_SavedStrokeFile.FileInfo, true))
                 {
                     SketchMemoryScript.m_Instance.SetPlaybackMode(SketchMemoryScript.PlaybackMode.Distance, 54);
                     SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true, false, false);
-                    // App.Instance.SetDesiredState(App.AppState.QuickLoad);
                 }
                 var strokes = SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes();
                 var widgets = WidgetManager.m_Instance.GetAllUnselectedActiveWidgets();
