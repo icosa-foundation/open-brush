@@ -43,6 +43,7 @@ jobs:
       fastlanelane: ${{ steps.version.outputs.fastlanelane}}
       uid: ${{ steps.github.outputs.uid }}
       gid: ${{ steps.github.outputs.gid }}
+      flavors: ${{ steps.flavors.outputs.flavors }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -155,14 +156,28 @@ jobs:
           fi
           echo "uid=$(id -u)" >> $GITHUB_OUTPUT
           echo "gid=$(id -g)" >> $GITHUB_OUTPUT
+
+      - name: Determine whether to build Development builds or not
+        id: flavors
+        run: |
+          set -x
+          if [[ $(git log --format=%B ${{ github.event.pull_request.head.sha }} -1) == *'[CI BUILD DEV]'* ]]
+          then
+            echo 'flavors=[{"development": true, "title": "Development"}, {"development": false}]' >> $GITHUB_OUTPUT
+
+          else
+            echo 'flavors=[{"development": false}]' >> $GITHUB_OUTPUT
+          fi
+
   build:
-    name: ${{ matrix.name }}
+    name: ${{ matrix.name }} ${{ matrix.flavors.title }}
     needs: configuration
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # We don't use an actual matrix because there's more exceptions than actual cases!
+        flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
+        name: [Windows OpenXR, Windows Pimax, Windows Rift, Linux, MacOS, Android OpenXR, Oculus Quest (1), Oculus Quest (2+), Android Pico, Android Pico (CN), iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
         include:
           - name: Windows OpenXR
             targetPlatform: StandaloneWindows64
@@ -275,7 +290,7 @@ jobs:
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
 
       - name: Install Pimax unity package
-        if: matrix.name == 'Windows Pimax'
+        if: startsWith(matrix.name, 'Windows Pimax')
         run: |
           # version 0.6.3
           # Same as above, but adapted to work for Pimax instead.
@@ -401,6 +416,11 @@ jobs:
         run: |
           echo "stamp=-btb-stamp ${{needs.configuration.outputs.stamp}}" >> $GITHUB_ENV
 
+      - name: Enable Development Mode
+        if: ${{ matrix.flavors.development == true }}
+        run: |
+          echo "btbbopts=-btb-bopt Development" >> $GITHUB_ENV
+
       - name: Update version
         env:
           VERSION: ${{ needs.configuration.outputs.version}}
@@ -445,7 +465,7 @@ jobs:
           allowDirtyBuild: true  # Because of the OVR Update, the build tree might be dirty
           unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: ${{ matrix.targetPlatform }}
-          customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/${{ env.filename }} ${{ needs.configuration.outputs.description}} ${{ env.stamp }} ${{ matrix.extraoptions }}
+          customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/${{ env.filename }} ${{ needs.configuration.outputs.description}} ${{ env.stamp }} ${{ env.btbbopts }} ${{ matrix.extraoptions }}
           versioning: Custom
           androidVersionCode: "${{ needs.configuration.outputs.androidVersionCode }}${{ matrix.versionSuffix }}"
           version: ${{ needs.configuration.outputs.version }}
@@ -485,7 +505,7 @@ jobs:
           allowDirtyBuild: true  # Because of the OVR Update, the build tree might be dirty
           unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: ${{ matrix.targetPlatform }}
-          customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/${{ env.filename }} ${{ needs.configuration.outputs.description}} ${{ env.stamp }} ${{ matrix.extraoptions }}
+          customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/${{ env.filename }} ${{ needs.configuration.outputs.description}} ${{ env.stamp }} ${{ env.btbbopts }} ${{ matrix.extraoptions }}
           versioning: Custom
           androidVersionCode: "${{ needs.configuration.outputs.androidVersionCode }}${{ matrix.versionSuffix }}"
           version: ${{ needs.configuration.outputs.version }}
@@ -512,7 +532,7 @@ jobs:
       - name: Upload build/
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.name }}
+          name: ${{ matrix.name }} ${{ matrix.flavors.title }}
           path: |
             build/${{ matrix.vrsdk }}
             !build/Pico/*.symbols.zip
