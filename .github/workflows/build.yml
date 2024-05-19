@@ -455,6 +455,7 @@ jobs:
       - name: Build project
         uses: Wandalen/wretry.action@v3
         env:
+          GIT_CLONE_PROTECTION_ACTIVE: false
           VERSION: ${{ needs.configuration.outputs.version}}
           UNITY_EMAIL: ${{ fromJSON(format('["unitytest@mikeage.net", "{0}"]', vars.UNITY_EMAIL))[secrets.UNITY_SERIAL != null] }}
           UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
