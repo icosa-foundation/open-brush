@@ -3346,6 +3346,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 8533497137806158463}
     m_Modifications:
+    - target: {fileID: 6491599919484524684, guid: 818cdd60f3752df4fbaa528f87416d0a,
+        type: 3}
+      propertyPath: m_ButtonTexture
+      value: 
+      objectReference: {fileID: 2800000, guid: 1d8bd93c66660a049b45b5f4941fbec7, type: 3}
     - target: {fileID: 6593344973932434806, guid: 818cdd60f3752df4fbaa528f87416d0a,
         type: 3}
       propertyPath: m_Name
