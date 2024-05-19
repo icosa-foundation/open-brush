@@ -1,11 +1,12 @@
-# Open Brush - Tilt Brush Evolved
+# Open Brush - Art From All Angles
 
-[![Support us on Open Collective!](https://img.shields.io/opencollective/all/icosa?logo=open-collective&label=Support%20us%20on%20Open%20Collective%21)](https://opencollective.com/icosa)
-[![All GitHub releases](https://img.shields.io/github/downloads/icosa-foundation/open-brush/total?label=GitHub%20downloads)](https://github.com/icosa-foundation/open-brush/releases/latest)
-[![Twitter](https://img.shields.io/badge/follow-%40openbrushapp-blue.svg?style=flat&logo=twitter)](https://twitter.com/openbrushapp)
-[![Discord](https://discordapp.com/api/guilds/783806589991780412/embed.png?style=shield)](https://discord.gg/W7NCEYnEfy)
 ![Current Version](https://img.shields.io/github/v/release/icosa-foundation/open-brush)
 ![Prerelease Version](https://img.shields.io/github/v/release/icosa-foundation/open-brush?include_prereleases&label=prerelease)
+[![Crowdin](https://badges.crowdin.net/openbrushapp/localized.svg)](https://crowdin.com/project/openbrushapp)
+[![Support us on Open Collective!](https://img.shields.io/opencollective/all/icosa?logo=open-collective&label=Support%20us%20on%20Open%20Collective%21)](https://opencollective.com/icosa)
+[![X](https://img.shields.io/badge/follow-%40openbrushapp-blue.svg?style=flat&logo=x)](https://x.com/openbrushapp)
+[![Discord](https://discordapp.com/api/guilds/783806589991780412/embed.png?style=shield)](https://discord.gg/W7NCEYnEfy)
+
 
 [![Open Brush Banner](open-brush.png)](https://openbrush.app)
 
@@ -20,15 +21,16 @@ As the original repo is archived we cannot submit PRs, so feel free to submit th
 [Roadmap](https://github.com/orgs/icosa-foundation/projects/1)  
 [Please join the Icosa Discord and get involved!](https://discord.com/invite/W7NCEYnEfy)  
 [List of tutorials, write-ups and other things from the community](https://docs.google.com/document/d/1gjoYp4y-1qlE3a7fvXVxGR3ioj3nMfgprmTHQ-bpq0k/)  
-**[Support us on Open Collective!](https://opencollective.com/icosa)**  
+[Support us on Open Collective](https://opencollective.com/icosa)  
 
 ## Downloads
-### Stores (Did we mention it's free?)
+### Stores
 - [SideQuest](https://sidequestvr.com/app/2852/open-brush)
 - [Oculus App Lab](https://www.oculus.com/experiences/quest/3600360710032222)
 - [Steam](https://store.steampowered.com/app/1634870/Open_Brush)
 - [Oculus Rift](https://www.oculus.com/experiences/rift/5227489953989768)
 - [Viveport Desktop](https://www.viveport.com/f1f3d00b-cf8a-443f-825e-4fea2dd3b005)
+- [Pico](https://store-global.picoxr.com/global/detail/1/7246792261630050310)
 - [itch.io](https://openbrush.itch.io/openbrush)
 ### GitHub
 - [Formal GitHub Releases](https://github.com/icosa-foundation/open-brush/releases/latest)

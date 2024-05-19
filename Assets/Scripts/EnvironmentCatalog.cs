@@ -27,6 +27,9 @@ namespace TiltBrush
         public Material m_SkyboxMaterial;
 
         [SerializeField] private TiltBrush.Environment m_DefaultEnvironment;
+
+        [SerializeField] private TiltBrush.Environment m_PassthroughEnvironment;
+
         private bool m_IsLoading;
         private Dictionary<Guid, Environment> m_GuidToEnvironment;
 
@@ -36,7 +39,15 @@ namespace TiltBrush
         }
         public Environment DefaultEnvironment
         {
-            get { return m_DefaultEnvironment; }
+            get
+            {
+#if ZAPBOX_SUPPORTED
+                // Load into passthrough straight away.
+                return m_PassthroughEnvironment;
+#endif
+                return m_DefaultEnvironment;
+
+            }
         }
 
         void Awake()

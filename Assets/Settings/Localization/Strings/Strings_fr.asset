@@ -1194,7 +1194,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 68768010396041216
-    m_Localized: "Activer le mode exp\xE9rimental"
+    m_Localized: "Activer les pinceaux exp\xE9rimentaux"
     m_Metadata:
       m_Items: []
   - m_Id: 68768580896882688
@@ -3500,6 +3500,21 @@ MonoBehaviour:
   - m_Id: 86607720842289152
     m_Localized: "Saisissez plus appuyez sur le bouton X ou A\npour r\xE9initialiser
       votre taille"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 217070349893754880
+    m_Localized: "\xC9chec de la d\xE9tection du VR"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 217069105871577088
+    m_Localized: "Vous pouvez continuer sans casque VR. Choisissez un croquis ci-dessous
+      pour entrer en mode visualisation avec les commandes suivantes :\n\nSouris
+      : regardez autour (appuyez sur I pour inverser haut/bas)\nW,A,S,D : avancer/reculer/gauche/droite\nQ,E
+      : monter/descendre\nMaintenez shift pour vous d\xE9placer plus rapidement"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 218558579745579008
+    m_Localized: Plus d'informations sur l'utilisation d'Open Brush sans VR
     m_Metadata:
       m_Items: []
   references:

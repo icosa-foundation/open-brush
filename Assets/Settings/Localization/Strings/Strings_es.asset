@@ -1207,11 +1207,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 68768010396041216
-    m_Localized: Activar modo experimental
+    m_Localized: Habilitar pinceles experimentales
     m_Metadata:
       m_Items: []
   - m_Id: 68768580896882688
-    m_Localized: Desactivar modo experimental
+    m_Localized: Deshabilitar pinceles experimentales
     m_Metadata:
       m_Items: []
   - m_Id: 68773633749745664
@@ -3531,6 +3531,21 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 86607720842289152
     m_Localized: "Usa el disparador y luego pulsa X o A\npara restablecer tu tama\xF1o"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 217070349893754880
+    m_Localized: No se pudo detectar el VR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 217069105871577088
+    m_Localized: "Puedes continuar sin un casco de realidad virtual. Elige un boceto
+      abajo para entrar al Modo de Visualizaci\xF3n con los siguientes controles:\n\nRat\xF3n:
+      mirar alrededor (presiona I para invertir arriba/abajo)\nW,A,S,D: mover adelante/atr\xE1s/izquierda/derecha\nQ,E:
+      mover arriba/abajo\nMant\xE9n presionado shift para moverte m\xE1s r\xE1pido"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 218558579745579008
+    m_Localized: "M\xE1s informaci\xF3n sobre c\xF3mo usar Open Brush sin VR"
     m_Metadata:
       m_Items: []
   references:

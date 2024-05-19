@@ -41,14 +41,23 @@ Shader "Custom/LightWidget" {
             struct Input {
                 float4 vertex : POSITION;
                 float3 normal : NORMAL;
+
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
             struct v2f {
                 float4 pos : SV_POSITION;
                 float4 posWorld : TEXCOORD0;
                 float3 normalDir : TEXCOORD1;
+
+                UNITY_VERTEX_OUTPUT_STEREO
             };
+
             v2f vert (Input v) {
-                v2f o = (v2f)0;
+                v2f o;
+
+                UNITY_SETUP_INSTANCE_ID(v);
+                UNITY_INITIALIZE_OUTPUT(v2f, o);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
                 // Smash along the z axis based on a 0-1 ratio
                 v.vertex.z = v.vertex.z - v.vertex.z * _FlattenAmount;

@@ -526,19 +526,14 @@ namespace TiltBrush
         public void SetIsExperimental(bool active)
         {
             PlayerPrefs.SetInt("ExperimentalMode", active ? 1 : 0);
+            BrushCatalog.m_Instance.Init();
+            BrushCatalog.m_Instance.BeginReload();
         }
 
         void Awake()
         {
             m_SingletonState = this;
             m_WasExperimentalAtStartup = GetIsExperimental();
-
-            // Force mono to experimental and quit.
-            if (m_SdkMode == SdkMode.Monoscopic && !m_WasExperimentalAtStartup)
-            {
-                SetIsExperimental(true);
-                Application.Quit();
-            }
 
 #if UNITY_EDITOR
             if (!string.IsNullOrEmpty(m_FakeCommandLineArgsInEditor))

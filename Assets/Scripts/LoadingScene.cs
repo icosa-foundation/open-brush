@@ -74,14 +74,14 @@ namespace TiltBrush
             {
                 if (!UserHasManageExternalStoragePermission())
                 {
-                    m_Overlay.MessageStatus = m_RequestAndroidFolderPermissions.GetLocalizedString();
+                    m_Overlay.MessageStatus = m_RequestAndroidFolderPermissions.GetLocalizedStringAsync().Result;
                     AskForManageStoragePermission();
                     while (!UserHasManageExternalStoragePermission())
                     {
                         yield return new WaitForEndOfFrame();
                     }
 
-                    m_Overlay.MessageStatus = m_LoadingText.GetLocalizedString();
+                    m_Overlay.MessageStatus = m_LoadingText.GetLocalizedStringAsync().Result;
                 }
             }
 #endif

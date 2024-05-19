@@ -22,7 +22,7 @@ using TiltBrush;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEditor.Build.Reporting;
-#if UNITY_IPHONE
+#if UNITY_IOS
 using UnityEditor.iOS.Xcode;
 #endif
 using UnityEditor.SceneManagement;
@@ -111,9 +111,6 @@ static class BuildTiltBrush
     private static readonly List<KeyValuePair<XrSdkMode, BuildTarget>> kValidSdkTargets
         = new List<KeyValuePair<XrSdkMode, BuildTarget>>()
         {
-            // Mono
-            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Monoscopic, BuildTarget.StandaloneWindows64),
-
             // OpenXR
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.StandaloneWindows64),
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.Android),
@@ -204,7 +201,6 @@ static class BuildTiltBrush
         set
         {
             EditorPrefs.SetString(kMenuPluginPref, value.ToString());
-            Menu.SetChecked(kMenuPluginMono, value == XrSdkMode.Monoscopic);
             Menu.SetChecked(kMenuPluginOpenXr, value == XrSdkMode.OpenXR);
 #if OCULUS_SUPPORTED
             Menu.SetChecked(kMenuPluginOculus, value == XrSdkMode.Oculus);
@@ -391,19 +387,6 @@ static class BuildTiltBrush
     }
 
     //=======  SDKs =======
-
-    [MenuItem(kMenuPluginMono, isValidateFunction: false, priority: 100)]
-    static void MenuItem_Plugin_Mono()
-    {
-        GuiSelectedSdk = XrSdkMode.Monoscopic;
-    }
-
-    [MenuItem(kMenuPluginMono, isValidateFunction: true)]
-    static bool MenuItem_Plugin_Mono_Validate()
-    {
-        Menu.SetChecked(kMenuPluginMono, GuiSelectedSdk == XrSdkMode.Monoscopic);
-        return true;
-    }
 
     [MenuItem(kMenuPluginOpenXr, isValidateFunction: false, priority: 110)]
     static void MenuItem_Plugin_OpenXr()
@@ -627,17 +610,6 @@ static class BuildTiltBrush
                 return BuildTargetGroup.iOS;
             default:
                 throw new ArgumentException("buildTarget");
-        }
-    }
-
-    static public SdkMode XrTargetToSdk(XrSdkMode mode)
-    {
-        switch (mode)
-        {
-            case XrSdkMode.Monoscopic:
-                return SdkMode.Monoscopic;
-            default:
-                return SdkMode.UnityXR;
         }
     }
 
@@ -924,6 +896,54 @@ static class BuildTiltBrush
         }
     }
 
+    class TempSetPlayerSettings : IDisposable
+    {
+        private BuildTarget m_Target;
+        private UIOrientation m_OrientationSettings;
+        private iOSTargetDevice m_iOSTargetDevice;
+        private Texture2D[] m_Icons;
+
+        public TempSetPlayerSettings(TiltBuildOptions tiltOptions)
+        {
+            m_Target = tiltOptions.Target;
+            m_OrientationSettings = PlayerSettings.defaultInterfaceOrientation;
+            m_iOSTargetDevice = PlayerSettings.iOS.targetDevice;
+            m_Icons = PlayerSettings.GetIcons(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target)), IconKind.Any);
+
+            switch (tiltOptions.XrSdk)
+            {
+                case XrSdkMode.Zapbox:
+                    PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
+                    PlayerSettings.iOS.targetDevice = iOSTargetDevice.iPhoneOnly;
+                    var zapboxIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Trademarked/TiltBrushLogoZapbox.png");
+
+                    Texture2D[] newIcons = { zapboxIcon };
+
+                    var buildTarget = UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target));
+
+                    PlayerSettings.SetIcons(buildTarget, newIcons, IconKind.Any);
+#if UNITY_IOS
+                    PlayerSettings.SetIcons(buildTarget, newIcons, IconKind.Notification);
+                    PlayerSettings.SetIcons(buildTarget, newIcons, IconKind.Settings);
+                    PlayerSettings.SetIcons(buildTarget, newIcons, IconKind.Spotlight);
+                    PlayerSettings.SetIcons(buildTarget, newIcons, IconKind.Notification);
+                    PlayerSettings.SetIcons(buildTarget, newIcons, IconKind.Store);
+#endif
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        public void Dispose()
+        {
+            PlayerSettings.defaultInterfaceOrientation = m_OrientationSettings;
+            PlayerSettings.iOS.targetDevice = m_iOSTargetDevice;
+            PlayerSettings.SetIcons(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target)), m_Icons, IconKind.Any);
+            AssetDatabase.SaveAssets();
+        }
+    }
+
     class TempSetScriptingBackend : IDisposable
     {
         private ScriptingImplementation m_prevbackend;
@@ -1151,9 +1171,6 @@ static class BuildTiltBrush
                     break;
                 case XrSdkMode.Zapbox:
                     targetXrPluginsRequired = new string[] { "Zappar.XR.ZapboxLoader" };
-                    break;
-                case XrSdkMode.Monoscopic:
-                    targetSettings.InitManagerOnStart = false;
                     break;
                 default:
                     break;
@@ -1418,7 +1435,7 @@ static class BuildTiltBrush
         using (var unused = new TempHookUpSingletons())
         {
             // Set consultUserConfig = false to keep user config from affecting the build output.
-            TiltBrushManifest manifest = App.Instance.GetMergedManifest(consultUserConfig: false);
+            TiltBrushManifest manifest = App.Instance.GetMergedManifest(forceExperimental: true);
 
             StringBuilder s = new StringBuilder();
             foreach (BrushDescriptor desc in manifest.UniqueBrushes())
@@ -1503,14 +1520,14 @@ static class BuildTiltBrush
         using (var unused6 = new TempSetBundleVersion(target, App.Config.m_VersionNumber, stamp))
         using (var unused10 = new TempSetAppNames(target, tiltOptions.Description))
         using (var unused7 = new TempSetXrPlugin(tiltOptions))
+        using (var unused15 = new TempSetPlayerSettings(tiltOptions))
         using (var unused13 = new TempSetOpenXrFeatureGroup(tiltOptions))
         using (var unused9 = new RestoreFileContents(
             Path.Combine(Path.GetDirectoryName(Application.dataPath),
                 "ProjectSettings/GraphicsSettings.asset")))
         {
             var config = App.Config;
-            // TODO: can we think of a better way of switching to mono/something else in the future?
-            config.m_SdkMode = XrTargetToSdk(xrSdk);
+            config.m_SdkMode = SdkMode.UnityXR;
             config.m_AutoProfile = tiltOptions.AutoProfile;
             config.m_BuildStamp = stamp;
             //config.OnValidate(xrSdk, TargetToGroup(target));
@@ -1530,8 +1547,7 @@ static class BuildTiltBrush
             // to be run at build-time (ie when nobody has called Start(), Awake()).
             // TempHookupSingletons() has done just enough initialization to make it happy.
             // Also set consultUserConfig = false to keep user config from affecting the build output.
-            TiltBrushManifest manifest = App.Instance.GetMergedManifest(
-                consultUserConfig: false, forceExperimental: true);
+            TiltBrushManifest manifest = App.Instance.GetMergedManifest(forceExperimental: true);
 
             // Some sanity checks
             {
@@ -1794,7 +1810,7 @@ static class BuildTiltBrush
                 {
                     // TODO: is it possible to embed loose files on iOS?
                     looseFilesDest = null;
-#if UNITY_IPHONE
+#if UNITY_IOS
                     string pbxPath = path + "/Unity-iPhone.xcodeproj/project.pbxproj";
 
                     PBXProject project = new PBXProject();

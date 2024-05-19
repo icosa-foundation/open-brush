@@ -249,8 +249,7 @@ def calculate_pos_error(cp0, cp1, middle_cps):
         t = (cp._dist - cp0._dist) / strip_length
         pos_interpolated = t * cp0._pos + (1 - t) * cp1._pos
         pos_error = np.linalg.norm((pos_interpolated - cp._pos))
-        if pos_error > max_pos_error:
-            max_pos_error = pos_error
+        max_pos_error = max(max_pos_error, pos_error)
 
     return max_pos_error
 

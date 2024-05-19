@@ -670,7 +670,9 @@ namespace TiltBrush
                     if (jsonData.CanvasTransformInSceneSpace != TrTransform.identity)
                     {
                         Debug.LogWarning("This file has an unsupported, experimental Canvas Transform specified.");
-                        if (Config.IsExperimental)
+                        // Was experimental mode. Needs testing.
+                        // Saves sketches are unlikely to trigger this under normal usage
+                        if (false)
                         {
                             Coords.CanvasLocalPose = jsonData.CanvasTransformInSceneSpace;
                         }
@@ -717,7 +719,7 @@ namespace TiltBrush
                 }
 
 
-                // It's proving to be rather complex to merge widgets/models etc. 
+                // It's proving to be rather complex to merge widgets/models etc.
                 // For now skip all that when loading additively with the if (!bAdditive) below
                 // This should cover the majority of use cases.
 
@@ -736,6 +738,16 @@ namespace TiltBrush
                         WidgetManager.m_Instance.SetDataFromTilt(jsonData.ModelIndex);
                     }
 
+                    if (jsonData.ModelIndex != null)
+                    {
+                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.ModelIndex);
+                    }
+
+                    if (jsonData.LightIndex != null)
+                    {
+                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.LightIndex);
+                    }
+
                     if (jsonData.GuideIndex != null)
                     {
                         foreach (Guides guides in jsonData.GuideIndex)
@@ -750,6 +762,7 @@ namespace TiltBrush
                     // Pass even if null; null is treated as empty
                     CustomColorPaletteStorage.m_Instance.SetColorsFromPalette(jsonData.Palette);
                     // Images are not stored on Poly either.
+                    // TODO - will this assumption still hold with Icosa?
                     if (!(fileInfo is PolySceneFileInfo))
                     {
                         if (ReferenceImageCatalog.m_Instance != null && jsonData.ImageIndex != null)
@@ -792,7 +805,10 @@ namespace TiltBrush
         {
             m_LastJsonMetadatError = null;
             var metadata = m_JsonSerializer.Deserialize<SketchMetadata>(jsonReader);
-            MetadataUtils.VerifyMetadataVersion(metadata);
+            if (metadata != null)
+            {
+                MetadataUtils.VerifyMetadataVersion(metadata);
+            }
             return metadata;
         }
 

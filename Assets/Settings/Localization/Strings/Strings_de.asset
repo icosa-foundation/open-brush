@@ -1252,7 +1252,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 68768010396041216
-    m_Localized: Experimentiermodus anschalten
+    m_Localized: Experimentelle Pinsel aktivieren
     m_Metadata:
       m_Items: []
   - m_Id: 68768580896882688
@@ -3558,6 +3558,22 @@ MonoBehaviour:
   - m_Id: 86607720842289152
     m_Localized: "Greif und dr\xFCcke dann den X- oder A-Knopf, um deine Gr\xF6\xDFe
       zur\xFCckzusetzen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 217070349893754880
+    m_Localized: VR-Erkennung fehlgeschlagen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 217069105871577088
+    m_Localized: "Sie k\xF6nnen ohne ein VR-Headset fortfahren. W\xE4hlen Sie unten
+      eine Skizze aus, um den Betrachtungsmodus mit den folgenden Steuerungen zu
+      betreten:\n\nMaus: umsehen (dr\xFCcken Sie I, um oben/unten zu invertieren)\nW,A,S,D:
+      vorw\xE4rts/r\xFCckw\xE4rts/links/rechts bewegen\nQ,E: auf/ab bewegen\nHalten
+      Sie Shift gedr\xFCckt, um schneller zu bewegen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 218558579745579008
+    m_Localized: Mehr Informationen zur Verwendung von Open Brush ohne VR
     m_Metadata:
       m_Items: []
   references:

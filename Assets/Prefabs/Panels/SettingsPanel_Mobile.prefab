@@ -622,11 +622,11 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Command: 30
+  m_Command: 33
   m_CommandParam: -1
   m_CommandParam2: -1
   m_RequiresPopup: 1
-  m_CenterPopupOnButton: 0
+  m_CenterPopupOnButton: 1
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: SETTINGS_PANEL_HELP_BUTTON_POPUP
   m_LocalizedPopup:
@@ -1555,27 +1555,9 @@ MonoBehaviour:
   m_MeshCollider: {fileID: 65899513144291816}
   m_ParticleBounds: {x: 0, y: 0, z: 0}
   m_PanelPopUpMap:
-  - m_PopUpPrefab: {fileID: 1577505780274820, guid: f0becab4eefa8c94aa53e6a2e4f12630,
-      type: 3}
-    m_Command: 30
-  - m_PopUpPrefab: {fileID: 1867976667913174, guid: f454fbf43a220d645a14594cb79db0af,
-      type: 3}
-    m_Command: 20
-  - m_PopUpPrefab: {fileID: 1867976667913174, guid: f454fbf43a220d645a14594cb79db0af,
-      type: 3}
-    m_Command: 70
-  - m_PopUpPrefab: {fileID: 1867976667913174, guid: f454fbf43a220d645a14594cb79db0af,
+  - m_PopUpPrefab: {fileID: 1577505780274820, guid: aa4ede7afc03f5a4b817dc74f61b8422,
       type: 3}
     m_Command: 33
-  - m_PopUpPrefab: {fileID: 1867976667913174, guid: f454fbf43a220d645a14594cb79db0af,
-      type: 3}
-    m_Command: 80
-  - m_PopUpPrefab: {fileID: 1867976667913174, guid: f454fbf43a220d645a14594cb79db0af,
-      type: 3}
-    m_Command: 81
-  - m_PopUpPrefab: {fileID: 1867976667913174, guid: f454fbf43a220d645a14594cb79db0af,
-      type: 3}
-    m_Command: 100
   - m_PopUpPrefab: {fileID: 125142, guid: 7009260f148146a47b18e9c43e3802a2, type: 3}
     m_Command: 1000
   m_PanelDescription: 
@@ -2110,7 +2092,7 @@ MonoBehaviour:
   m_Command: 20
   m_CommandParam: -1
   m_CommandParam2: -1
-  m_RequiresPopup: 1
+  m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
@@ -3454,7 +3436,7 @@ MonoBehaviour:
   m_Command: 100
   m_CommandParam: -1
   m_CommandParam2: -1
-  m_RequiresPopup: 1
+  m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 

@@ -15,9 +15,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
-using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;
+using UnityGLTF;
 
 namespace TiltBrush
 {
@@ -41,7 +42,7 @@ URL=" + kExportDocumentationUrl;
         {
             string child = FileUtils.GenerateNonexistentFilename(parent, basename: ext, extension: "");
             if (!FileUtils.InitializeDirectoryWithUserError(
-                child, "Failed to create export directory for " + ext))
+                    child, "Failed to create export directory for " + ext))
             {
                 return null;
             }
@@ -101,6 +102,29 @@ URL=" + kExportDocumentationUrl;
             }
         }
 
+        static bool IsExportEnabled(string format)
+        {
+            // I couldn't figure out how to get the default value from the config file for a dictionary with a getter/setter
+            // so I'm handling defaults here.
+            var formats = App.UserConfig.Export.Formats;
+            if (formats == null)
+            {
+                formats = new Dictionary<string, bool>
+                {
+                    { "fbx", true },
+                    { "glb", true },
+                    { "newglb", false },
+                    { "json", false },
+                    { "latk", false },
+                    { "obj", true },
+                    { "stl", false },
+                    { "usd", false },
+                    { "wrl", false },
+                };
+            }
+            return formats.GetValueOrDefault(format);
+        }
+
         public static void ExportScene()
         {
             var current = SaveLoadScript.m_Instance.SceneFile;
@@ -110,37 +134,58 @@ URL=" + kExportDocumentationUrl;
 
             string parent = FileUtils.GenerateNonexistentFilename(App.UserExportPath(), basename, "");
             if (!FileUtils.InitializeDirectoryWithUserError(
-                parent, "Failed to create export directory"))
-            {
-                return;
-            }
+                    parent, "Failed to create export directory")) return;
 
             // Set up progress bar.
             var progress = new Progress();
-            if (App.PlatformConfig.EnableExportJson) { progress.SetWork("json"); }
+            if (App.PlatformConfig.EnableExportJson && IsExportEnabled("json"))
+            {
+                progress.SetWork("json");
+            }
 #if FBX_SUPPORTED
-    if (App.PlatformConfig.EnableExportFbx) { progress.SetWork("fbx"); }
+            if (App.PlatformConfig.EnableExportFbx && IsExportEnabled("fbx"))
+            {
+                progress.SetWork("fbx");
+            }
+            if (IsExportEnabled("obj"))
+            {
+                progress.SetWork("obj");
+            }
 #endif
+
 #if USD_SUPPORTED
-            if (App.PlatformConfig.EnableExportUsd) { progress.SetWork("usd"); }
+            if (App.PlatformConfig.EnableExportUsd && IsExportEnabled("usd"))
+            {
+                progress.SetWork("usd");
+            }
 #endif
-#if LATK_SUPPORTED
-            if (App.PlatformConfig.EnableExportLatk) { progress.SetWork("latk"); }
-#endif
-            if (Config.IsExperimental)
+
+            if (IsExportEnabled("latk"))
+            {
+                progress.SetWork("latk");
+            }
+
+            if (IsExportEnabled("wrl"))
             {
                 progress.SetWork("wrl");
-                progress.SetWork("stl");
-#if FBX_SUPPORTED
-      progress.SetWork("obj");
-#endif
             }
-            if (App.PlatformConfig.EnableExportGlb) { progress.SetWork("glb"); }
+
+            if (IsExportEnabled("stl"))
+            {
+                progress.SetWork("stl");
+            }
+
+            if (App.PlatformConfig.EnableExportGlb)
+            {
+                if (IsExportEnabled("glb")) { progress.SetWork("glb"); }
+                if (IsExportEnabled("newglb")) { progress.SetWork("newglb"); }
+            }
 
             string filename;
 
-            if (App.PlatformConfig.EnableExportJson &&
+            if (App.PlatformConfig.EnableExportJson && IsExportEnabled("json") &&
                 (filename = MakeExportPath(parent, basename, "json")) != null)
+            {
                 using (var unused = new AutoTimer("raw export"))
                 {
                     OverlayManager.m_Instance.UpdateProgress(0.1f);
@@ -149,49 +194,63 @@ URL=" + kExportDocumentationUrl;
                     // Also write the metadata that would normally go in the .tilt file
                     SketchSnapshot.ExportMetadata(filename.Replace(".json", ".metadata.json"));
                 }
-            progress.CompleteWork("json");
+                progress.CompleteWork("json");
+            }
 
 #if FBX_SUPPORTED
-    if (App.PlatformConfig.EnableExportFbx &&
-        (filename = MakeExportPath(parent, basename, "fbx")) != null)
-    using (var unused = new AutoTimer("fbx export")) {
-      OverlayManager.m_Instance.UpdateProgress(0.3f);
-      ExportFbx.Export(filename,
-          App.UserConfig.Export.ExportBinaryFbx ? ExportFbx.kFbxBinary : ExportFbx.kFbxAscii,
-          App.UserConfig.Export.ExportFbxVersion);
-      OverlayManager.m_Instance.UpdateProgress(0.5f);
-    }
-    progress.CompleteWork("fbx");
+            if (App.PlatformConfig.EnableExportFbx && IsExportEnabled("fbx") &&
+                (filename = MakeExportPath(parent, basename, "fbx")) != null)
+            {
+                using (var unused = new AutoTimer("fbx export"))
+                {
+                    OverlayManager.m_Instance.UpdateProgress(0.3f);
+                    ExportFbx.Export(filename,
+                        App.UserConfig.Export.ExportBinaryFbx ? ExportFbx.kFbxBinary : ExportFbx.kFbxAscii,
+                        App.UserConfig.Export.ExportFbxVersion);
+                    OverlayManager.m_Instance.UpdateProgress(0.5f);
+                }
+                progress.CompleteWork("fbx");
+            }
+
+            if (IsExportEnabled("obj") && App.PlatformConfig.EnableExportFbx &&
+                (filename = MakeExportPath(parent, basename, "obj")) != null)
+            {
+                // This has never been tested with the new fbx export style and may not work
+                ExportFbx.Export(filename, ExportFbx.kObj);
+                progress.CompleteWork("obj");
+            }
 #endif
 
 #if USD_SUPPORTED
-            if (App.PlatformConfig.EnableExportUsd &&
+            if (App.PlatformConfig.EnableExportUsd && IsExportEnabled("usd") &&
                 (filename = MakeExportPath(parent, basename, "usd")) != null)
+            {
                 using (var unused = new AutoTimer("usd export"))
                 {
                     ExportUsd.ExportPayload(filename);
                 }
-            progress.CompleteWork("usd");
+                progress.CompleteWork("usd");
+            }
 #endif
 
-#if LATK_SUPPORTED
-            if (App.PlatformConfig.EnableExportLatk &&
+            if (IsExportEnabled("latk") &&
                 (filename = MakeExportPath(parent, basename, "latk")) != null)
+            {
                 using (var unused = new AutoTimer("latk export"))
                 {
                     ExportLatk.Export(filename);
                 }
-            progress.CompleteWork("latk");
-#endif
+                progress.CompleteWork("latk");
+            }
 
-            if (Config.IsExperimental &&
+            if (IsExportEnabled("wrl") &&
                 (filename = MakeExportPath(parent, basename, "wrl")) != null)
             {
                 ExportVrml.Export(filename);
                 progress.CompleteWork("wrl");
             }
 
-            if (Config.IsExperimental &&
+            if (IsExportEnabled("stl") &&
                 (filename = MakeExportPath(parent, basename, "stl")) != null)
             {
                 try
@@ -205,17 +264,7 @@ URL=" + kExportDocumentationUrl;
                 progress.CompleteWork("stl");
             }
 
-#if FBX_SUPPORTED
-    if (Config.IsExperimental &&
-        App.PlatformConfig.EnableExportFbx &&
-        (filename = MakeExportPath(parent, basename, "obj")) != null) {
-      // This has never been tested with the new fbx export style and may not work
-      ExportFbx.Export(filename, ExportFbx.kObj);
-      progress.CompleteWork("obj");
-    }
-#endif
-
-            if (App.PlatformConfig.EnableExportGlb)
+            if (App.PlatformConfig.EnableExportGlb && IsExportEnabled("glb"))
             {
                 string extension = App.Config.m_EnableGlbVersion2 ? "glb" : "glb1";
                 int gltfVersion = App.Config.m_EnableGlbVersion2 ? 2 : 1;
@@ -224,24 +273,45 @@ URL=" + kExportDocumentationUrl;
                 {
                     using (var unused = new AutoTimer("glb export"))
                     {
-                        OverlayManager.m_Instance.UpdateProgress(0.7f);
-                        var exporter = new ExportGlTF();
+                        OverlayManager.m_Instance.UpdateProgress(0.6f);
+
                         // TBT doesn't need (or want) brush textures in the output because it replaces all
                         // the materials, so it's fine to keep those http:. However, Sketchfab doesn't support
                         // http textures so if uploaded, this glb will have missing textures.
+                        var exporter = new ExportGlTF();
                         exporter.ExportBrushStrokes(
                             filename, AxisConvention.kGltf2, binary: true, doExtras: false,
                             includeLocalMediaContent: true,
                             gltfVersion: gltfVersion,
                             selfContained: true
                         );
-                        progress.CompleteWork("glb");
                     }
                 }
+                progress.CompleteWork("glb");
+            }
+
+            if (App.PlatformConfig.EnableExportGlb && IsExportEnabled("newglb"))
+            {
+                string extension = "glb";
+                using (var unused = new AutoTimer("glb export"))
+                {
+                    OverlayManager.m_Instance.UpdateProgress(0.7f);
+                    var settings = GLTFSettings.GetOrCreateSettings();
+                    settings.UseMainCameraVisibility = false;
+                    var context = new ExportContext
+                    {
+                        ExportLayers = LayerMask.GetMask("MainCanvas")
+                    };
+                    var layers = App.Scene.LayerCanvases.Select(x => x.transform).ToArray();
+                    var unityGltfexporter = new GLTFSceneExporter(layers, context);
+                    unityGltfexporter.SaveGLB(Path.Combine(parent, $"newglb"), $"{basename}.{extension}");
+                }
+                progress.CompleteWork("newglb");
             }
 
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                InputManager.ControllerName.Brush, basename + $" {LocalizationSettings.StringDatabase.GetLocalizedString(kExportSuccess)}");
+                InputManager.ControllerName.Brush, basename +
+                $" {LocalizationSettings.StringDatabase.GetLocalizedString(kExportSuccess)}");
             ControllerConsoleScript.m_Instance.AddNewLine("Located in " + App.UserExportPath());
 
             string readmeFilename = Path.Combine(App.UserExportPath(), kExportReadmeName);
@@ -251,5 +321,4 @@ URL=" + kExportDocumentationUrl;
             }
         }
     }
-
 } // namespace TiltBrush
