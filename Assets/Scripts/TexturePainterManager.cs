@@ -13,22 +13,25 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using Es.InkPainter;
 using UnityEngine;
+using Math = Es.InkPainter.Math;
 
 namespace TiltBrush
 {
     public class TexturePainterManager : MonoBehaviour
     {
+        public Texture2D DefaultCanvasTexture;
+        public float m_BrushSize = 0.1f;
         public Brush brush;
 
         [NonSerialized] public static TexturePainterManager m_Instance;
-        [NonSerialized] public TexturePaintTool m_Tool;
-        [NonSerialized] public Quaternion m_OrientationAdjust;
 
         private bool m_EnableLine;
         private TrTransform m_PointerTransform;
-        private float m_BrushSize = 0.1f;
+
+
 
         public float PointerPressure { get; set; }
 
@@ -43,27 +46,79 @@ namespace TiltBrush
             {
                 Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
                 Vector3 pos = rAttachPoint.position;
-                Quaternion rot = rAttachPoint.rotation * m_OrientationAdjust;
+                Vector3 vec = rAttachPoint.forward;
 
-                var ray = new Ray(pos, rot * Vector3.forward);
-                //DebugVisualization.ShowDirection(ray.origin, ray.direction);
                 bool success = true;
                 RaycastHit hitInfo;
-                if (Physics.Raycast(ray, out hitInfo))
+
+                LayerMask texturePaintLayer = LayerMask.GetMask("TexturePaint");
+                LayerMask mainCanvasLayer = LayerMask.GetMask("MainCanvas");
+
+                if (Physics.Raycast(pos, vec, out hitInfo, 4f, texturePaintLayer))
                 {
-                    var paintObject = hitInfo.transform.GetComponent<InkCanvas>();
                     brush.Scale = m_BrushSize * PointerPressure;
-                    Debug.Log($"Brush size: {brush.Scale} painter: {paintObject} hitInfo: {hitInfo}");
-                    paintObject.Paint(brush, hitInfo);
+                    brush.RotateAngle = Mathf.PerlinNoise(Time.time, 0) * 360f;
+                    InkCanvas canvas = hitInfo.transform.GetComponent<InkCanvas>();
+                    if (canvas != null)
+                    {
+                        DebugVisualization.ShowPosition(hitInfo.point);
+                        canvas.Paint(brush, hitInfo);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"No paint object on: {hitInfo.transform}");
+                    }
+                }
+                else if (Physics.Raycast(pos, vec, out hitInfo, 10f, mainCanvasLayer))
+                {
+                    var hitObject = hitInfo.transform.gameObject;
+
+                    // Is this part of a ModelWidget?
+                    var modelWidget = hitObject.GetComponentInParent<ModelWidget>();
+                    if (modelWidget == null)
+                    {
+                        Debug.LogWarning($"{hitInfo.transform} is not part of a ModelWidget");
+                        return;
+                    }
+
+                    var objModelScript = modelWidget.GetComponentInChildren<ObjModelScript>();
+                    foreach (var mesh in objModelScript.m_MeshChildren)
+                    {
+                        InkCanvas canvas = mesh.gameObject.GetComponent<InkCanvas>();
+                        if (canvas == null)
+                        {
+                            mesh.GetComponent<MeshRenderer>().material.mainTexture = DefaultCanvasTexture;
+
+                            var paintSet = new List<InkCanvas.PaintSet>
+                            {
+                                new(
+                                    mainTextureName: "_MainTex",
+                                    normalTextureName: "_BumpMap",
+                                    heightTextureName: "_HeightMap",
+                                    useMainPaint: true,
+                                    useNormalPaint: false,
+                                    useHeightPaint: false
+                                )
+                            };
+                            mesh.gameObject.AddInkCanvas(paintSet);
+                            mesh.gameObject.layer = LayerMask.NameToLayer("TexturePaint");
+                        }
+
+                        var collider = mesh.gameObject.GetComponent<MeshCollider>();
+                        if (collider == null)
+                        {
+                            mesh.gameObject.AddComponent<MeshCollider>();
+                        }
+                    }
                 }
                 else
                 {
-                    Debug.Log("No hit");
+                    Debug.LogWarning("No hit");
                 }
             }
         }
 
-        public bool EnableLine(bool enable)
+        public bool EnablePainting(bool enable)
         {
             m_EnableLine = enable;
             brush.Color = PointerManager.m_Instance.m_lastChosenColor;

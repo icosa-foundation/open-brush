@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using UnityEngine;
 
 namespace TiltBrush
@@ -60,7 +61,7 @@ namespace TiltBrush
             base.EnableTool(bEnable);
             if (!bEnable)
             {
-                TexturePainterManager.m_Instance.EnableLine(false);
+                TexturePainterManager.m_Instance.EnablePainting(false);
                 WidgetManager.m_Instance.ResetActiveStencil();
             }
             m_PaintingActive = false;
@@ -71,7 +72,6 @@ namespace TiltBrush
             return false;
         }
 
-        static Quaternion sm_OrientationAdjust = Quaternion.Euler(new Vector3(0, -90, 0));
         override public void UpdateTool()
         {
             // Don't call base.UpdateTool() because we have a different 'stop eating input' check
@@ -103,7 +103,6 @@ namespace TiltBrush
 
             m_brushUndoButtonHeld = m_brushUndoButtonTapInvalid && m_brushUndoButton;
 
-
             if (m_EatInput && !m_brushTrigger)
                 m_EatInput = false;
 
@@ -112,10 +111,24 @@ namespace TiltBrush
 
             m_PaintingActive = !m_EatInput && !m_ToolHidden && (m_brushTrigger || (m_PaintingActive && m_wandTrigger));
 
-            TexturePainterManager.m_Instance.EnableLine(m_PaintingActive);
-            TexturePainterManager.m_Instance.m_OrientationAdjust = sm_OrientationAdjust;
-            TexturePainterManager.m_Instance.m_Tool = this;
+            TexturePainterManager.m_Instance.EnablePainting(m_PaintingActive);
             TexturePainterManager.m_Instance.PointerPressure = m_brushTriggerRatio;
+
+            Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
+            Vector3 pos = rAttachPoint.position;
+            Vector3 vec = -rAttachPoint.forward;
+            PointerManager.m_Instance.SetMainPointerPosition(pos);
+            PointerManager.m_Instance.SetMainPointerForward(vec);
+        }
+
+        private void OnDrawGizmos()
+        {
+            Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
+            Vector3 pos = rAttachPoint.position;
+            Vector3 vec = rAttachPoint.forward;
+            Gizmos.DrawRay(pos, vec);
+            Debug.DrawLine(pos, pos + vec * 2f, Color.red);
+
         }
 
         override public void AssignControllerMaterials(InputManager.ControllerName controller)

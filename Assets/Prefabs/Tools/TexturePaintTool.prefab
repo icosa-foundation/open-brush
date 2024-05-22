@@ -66,16 +66,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e34c0b4064234a37a505a0db888d0a2f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  DefaultCanvasTexture: {fileID: 2800000, guid: b527583d47daaf9468ec44c12df92335,
+    type: 3}
+  m_BrushSize: 0.03
   brush:
-    brushTexture: {fileID: 2800000, guid: 6092e34c8de5a054bad8c1f4824f959a, type: 3}
+    brushTexture: {fileID: 2800000, guid: 2e19e00607021a3459e1b0deb597a4b5, type: 3}
     brushNormalTexture: {fileID: 0}
     brushHeightTexture: {fileID: 0}
-    brushScale: 1
+    brushScale: 0.025
     rotateAngle: 0
     brushNormalBlend: 0
     brushHeightBlend: 0
     brushColor: {r: 1, g: 1, b: 1, a: 0}
-    colorBlendType: 0
+    colorBlendType: 1
     normalBlendType: 0
     heightBlendType: 0
 --- !u!1001 &6725322028796640316
