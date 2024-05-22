@@ -548,7 +548,7 @@ namespace TiltBrush
             string uri = String.Format("{0}{1}", ApiHost, kGetVersionUri);
             try
             {
-                var api = new LoginApi($"{App.ICOSA_API_BASEPATH}");
+                var api = new LoginApi($"{App.ICOSA_API_URL}");
                 var result = new Dictionary<string, string> { { "version", "v1" } }; // TODO: get version from API
                 string version = result["version"];
                 if (version == kIcosaApiVersion)
@@ -718,7 +718,7 @@ namespace TiltBrush
             // response.uri is not very useful; it is an API uri that gives you json of asset details.
             // Also, the 3d-models URI might show that the asset is still processing. We can poll their
             // API and find out when it's done and pop up the window then?
-            string uri = $"{IcosaService.kModelLandingPage}{App.IcosaUserId}/{response.ToString()}";
+            string uri = $"{App.ICOSA_WEBSITE_URL}/edit/{App.IcosaUserId}/{response.ToString()}";
             return (uri, 0);
         }
 

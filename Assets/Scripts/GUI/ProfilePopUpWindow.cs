@@ -218,7 +218,7 @@ namespace TiltBrush
         private IEnumerator LoginCoroutine(string code)
         {
             var config = new Configuration();
-            var loginApi = new LoginApi(App.ICOSA_API_BASEPATH);
+            var loginApi = new LoginApi(App.ICOSA_API_URL);
             loginApi.Configuration = config;
             var loginTask = loginApi.DeviceLoginLoginDeviceLoginPostAsync(code);
             yield return new WaitUntil(() => loginTask.IsCompleted);
@@ -247,7 +247,7 @@ namespace TiltBrush
 
         private IEnumerator FetchUserDataCoroutine(Action<FullUser> onSuccess)
         {
-            var usersApi = new UsersApi(App.ICOSA_API_BASEPATH);
+            var usersApi = new UsersApi(App.ICOSA_API_URL);
             var config = new Configuration { AccessToken = App.Instance.IcosaToken };
             usersApi.Configuration = config;
             var getUserTask = usersApi.GetUsersMeUsersMeGetAsync();
@@ -372,7 +372,7 @@ namespace TiltBrush
                         );
                     }
 
-                    App.OpenURL(App.ICOSA_DEVICECODE_URL);
+                    App.OpenURL($"{App.ICOSA_WEBSITE_URL}/device");
                     ShowIcosaLogin();
                     m_Persistent = true;
                     break;

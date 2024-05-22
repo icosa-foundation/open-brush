@@ -131,10 +131,9 @@ namespace TiltBrush
         public static OAuth2Identity GoogleIdentity => m_Instance.m_GoogleIdentity;
         public static OAuth2Identity SketchfabIdentity => m_Instance.m_SketchfabIdentity;
 
-        // public static string ICOSA_DEVICECODE_URL = "http://icosa.gallery/device";
-        public static string ICOSA_DEVICECODE_URL = "http://192.168.1.228:3000/device";
-        // public static string ICOSA_API_BASEPATH = "http://api.icosa.gallery";
-        public static string ICOSA_API_BASEPATH = "http://192.168.1.228:8000";
+        // TODO Make these overridable
+        public static string ICOSA_WEBSITE_URL = "https://icosa.ixxy.co.uk";
+        public static string ICOSA_API_URL = "https://icosa-api.ixxy.co.uk";
 
         public string IcosaToken
         {

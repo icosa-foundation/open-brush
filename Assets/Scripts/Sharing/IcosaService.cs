@@ -26,12 +26,6 @@ namespace TiltBrush
 {
     class IcosaService
     {
-        // public const string kModelLandingPage = "https://api.icosa.gallery/edit/";
-        // const string kApiHost = "https://api.icosa.gallery";
-
-        public const string kModelLandingPage = "http://192.168.1.228:3000/edit/";
-        const string kApiHost = "http://192.168.1.228:8000";
-
         /// A paginated response, for use with GetNextPageAsync()
         public interface Paginated
         {
@@ -225,7 +219,7 @@ namespace TiltBrush
 
             // No compression because it's a compressed .zip already
             WebRequest uploader = new WebRequest(
-                $"{kApiHost}/assets", m_accessToken, "POST", compress: false);
+                $"{App.ICOSA_API_URL}/assets", m_accessToken, "POST", compress: false);
 
             var moreParams = new List<(string, string)>();
 

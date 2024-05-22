@@ -461,7 +461,7 @@ namespace TiltBrush
                     www.downloadHandler = new DownloadHandlerBuffer();
                     if (m_LoginToken != null)
                     {
-                        www.SetRequestHeader("Authorization", $"Bearer {m_LoginToken}");
+                        www.SetRequestHeader("Authorization", $"bearer {m_LoginToken}");
                     }
                     else if (m_Identity != null)
                     {
