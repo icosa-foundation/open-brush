@@ -225,7 +225,7 @@ namespace TiltBrush
 
             // No compression because it's a compressed .zip already
             WebRequest uploader = new WebRequest(
-                $"{kApiHost}/assets", App.IcosaUserId, "POST", compress: false);
+                $"{kApiHost}/assets", m_accessToken, "POST", compress: false);
 
             var moreParams = new List<(string, string)>();
 
