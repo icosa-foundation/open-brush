@@ -212,7 +212,6 @@ namespace TiltBrush
         /// Pass:
         ///   temporaryDirectory - if passed, caller is responsible for cleaning it up
         public async Task<CreateResponse> CreateModel(
-            string name,
             string zipPath, IProgress<double> progress, CancellationToken token,
             Options options = null, string temporaryDirectory = null)
         {

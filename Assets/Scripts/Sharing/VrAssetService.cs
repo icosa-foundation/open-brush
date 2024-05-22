@@ -697,22 +697,26 @@ namespace TiltBrush
             // TODO(b/146892613): we're not uploading this at the moment. Should we be?
             // If we don't, we can probably remove this step...?
             SetUploadProgress(UploadStep.CreateTilt, 0);
-            await CreateTiltForUploadAsync(fileInfo);
+            var thumbnail = await CreateTiltForUploadAsync(fileInfo);
             token.ThrowIfCancellationRequested();
 
             // Create a copy of the .tilt file in tempUploadDir.
             string tempTiltPath = Path.Combine(tempUploadDir, "sketch.tilt");
             File.Copy(fileInfo.FullPath, tempTiltPath);
 
-            // Collect files into a .zip file, including the .tilt file.
+            // Save thumbnail as a png to temp path
+            string tempThumbnailPath = Path.Combine(tempUploadDir, "thumbnail.png");
+            File.WriteAllBytes(tempThumbnailPath, thumbnail);
+
+            // Collect files into a .zip file, including the .tilt file and thumbnail
             string zipName = Path.Combine(tempUploadDir, "archive.zip");
-            var filesToZip = exportResults.exportedFiles.ToList().Append(tempTiltPath);
+            var filesToZip = exportResults.exportedFiles.ToList().Append(tempTiltPath).Append(tempThumbnailPath);
             await CreateZipFileAsync(zipName, tempUploadDir, filesToZip.ToArray(), token);
 
             var service = new IcosaService(App.Instance.IcosaToken);
             var progress = new Progress<double>(d => SetUploadProgress(UploadStep.UploadElements, d));
             var response = await service.CreateModel(
-                fileInfo.HumanName, zipName, progress, token, options, tempUploadDir);
+                zipName, progress, token, options, tempUploadDir);
             // TODO(b/146892613): return the UID and stick it into the .tilt file?
             // Or do we not care since we aren't recording provenance and remixing
 
