@@ -718,7 +718,7 @@ namespace TiltBrush
             // response.uri is not very useful; it is an API uri that gives you json of asset details.
             // Also, the 3d-models URI might show that the asset is still processing. We can poll their
             // API and find out when it's done and pop up the window then?
-            string uri = $"{App.ICOSA_WEBSITE_URL}/edit/{App.IcosaUserId}/{response.ToString()}";
+            string uri = $"{App.ICOSA_WEBSITE_URL}/edit/{response.upload_job}";
             return (uri, 0);
         }
 
