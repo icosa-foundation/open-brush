@@ -670,9 +670,12 @@ namespace TiltBrush
         {
             DiskSceneFileInfo fileInfo = GetWritableFile();
 
+            var currentScene = SaveLoadScript.m_Instance.SceneFile;
+            string uploadName = currentScene.Valid ? currentScene.HumanName : kGltfName;
+
             SetUploadProgress(UploadStep.CreateGltf, 0);
             // Do the glTF straight away as it relies on the meshes, not the stroke descriptions.
-            string gltfFile = Path.Combine(tempUploadDir, kGltfName);
+            string gltfFile = Path.Combine(tempUploadDir, uploadName);
             var exportResults = await OverlayManager.m_Instance.RunInCompositorAsync(
                 OverlayType.Export, fadeDuration: 0.5f,
                 action: () => new ExportGlTF().ExportBrushStrokes(
