@@ -35414,11 +35414,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4448098198181112101, guid: 8f43f6836f36551408dcb302c4512c6e,
-        type: 3}
-      propertyPath: m_BrushSize
-      value: 0.03
-      objectReference: {fileID: 0}
     - target: {fileID: 4944062844482009959, guid: 8f43f6836f36551408dcb302c4512c6e,
         type: 3}
       propertyPath: m_Name
