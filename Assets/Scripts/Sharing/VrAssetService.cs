@@ -708,7 +708,6 @@ namespace TiltBrush
             string zipName = Path.Combine(tempUploadDir, "archive.zip");
             var filesToZip = exportResults.exportedFiles.ToList().Append(tempTiltPath);
             await CreateZipFileAsync(zipName, tempUploadDir, filesToZip.ToArray(), token);
-            var uploadLength = new FileInfo(zipName).Length;
 
             var service = new IcosaService(App.Instance.IcosaToken);
             var progress = new Progress<double>(d => SetUploadProgress(UploadStep.UploadElements, d));
