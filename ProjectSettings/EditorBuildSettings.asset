@@ -22,7 +22,10 @@ EditorBuildSettings:
       type: 2}
     com.unity.localization.settings: {fileID: 11400000, guid: feef587f0ac641c4ab7d9e44e7eea888,
       type: 2}
+    com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: ab2835e534f9f1c469e5cf62c0220e34,
+      type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 07092d12b03adbd49b1ade5f5742e72e,
       type: 2}
     com.unity.xr.openxr.settings4: {fileID: 11400000, guid: f1ebaba0fe484c1469e1bc54ab8d82e1,
       type: 2}
+  m_UseUCBPForAssetBundles: 0
