@@ -21,7 +21,5 @@ jobs:
           dotnet-version: '8.0.x'
       - name: Run pre-commit with retries
         uses: Wandalen/wretry.action@v3
-        env:
-          GIT_CLONE_PROTECTION_ACTIVE: false
         with:
           action: pre-commit/action@v3.0.1
