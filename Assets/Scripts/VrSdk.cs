@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#if OCULUS_SUPPORTED || ZAPBOX_SUPPORTED
-#define PASSTHROUGH_SUPPORTED
-#endif
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -81,6 +77,9 @@ namespace TiltBrush
         [SerializeField] private GameObject m_OculusRiftControlsPrefab;
         // Prefab for the new-style Touch controllers, used for Rift-S and Quest
         [SerializeField] private GameObject m_OculusQuestControlsPrefab;
+        // Pico SDK
+        [SerializeField] private GameObject m_PicoXRNeo3ControlsPrefab;
+        [SerializeField] private GameObject m_PicoXRPhoenixControlsPrefab;
         [SerializeField] private GameObject m_GvrPointerControlsPrefab;
         [SerializeField] private GameObject m_NonVrControlsPrefab;
 
@@ -561,9 +560,15 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.Neo3:
                     controlsPrefab = m_UnityXRNeo3ControlsPrefab;
+#if PICO_SUPPORTED
+                    controlsPrefab = m_PicoXRNeo3ControlsPrefab;
+#endif // PICO_SUPPORTED
                     break;
                 case ControllerStyle.Phoenix:
                     controlsPrefab = m_UnityXRPhoenixControlsPrefab;
+#if PICO_SUPPORTED
+                    controlsPrefab = m_PicoXRPhoenixControlsPrefab;
+#endif // PICO_SUPPORTED
                     break;
                 case ControllerStyle.Zapbox:
                     controlsPrefab = m_UnityXRZapboxControlsPrefab;

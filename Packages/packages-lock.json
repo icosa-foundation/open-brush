@@ -346,6 +346,16 @@
       },
       "url": "https://packages.unity.com"
     },
+    "com.unity.xr.openxr.picoxr": {
+      "version": "https://github.com/icosa-mirror/com.unity.xr.openxr.picoxr.git#1.2.0-openbrush",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.xr.core-utils": "2.2.0",
+        "com.unity.xr.openxr": "1.7.0"
+      },
+      "hash": "0c6e35dbf6045e392f34ac5d3130ca9e6758887e"
+    },
     "com.zappar.xr.zapbox": {
       "version": "https://github.com/zappar-xr/zapbox-xr-sdk.git#3296cbf5046369801027a821fe9ff6082431a605",
       "depth": 0,
