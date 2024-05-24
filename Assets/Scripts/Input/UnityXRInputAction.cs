@@ -1111,7 +1111,17 @@ namespace TiltBrush
             ""devices"": [
                 {
                     ""devicePath"": ""<PXR_Controller>"",
-                    ""isOptional"": false,
+                    ""isOptional"": true,
+                    ""isOR"": false
+                },
+                {
+                    ""devicePath"": ""<PICONeo3Controller>"",
+                    ""isOptional"": true,
+                    ""isOR"": false
+                },
+                {
+                    ""devicePath"": ""<PICO4TouchController>"",
+                    ""isOptional"": true,
                     ""isOR"": false
                 }
             ]

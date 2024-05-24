@@ -743,6 +743,14 @@ namespace TiltBrush
             {
                 SetControllerStyle(ControllerStyle.Wmr);
             }
+            else if (device.name.StartsWith("PICO4 Touch Controller"))
+            {
+                SetControllerStyle(ControllerStyle.Phoenix);
+            }
+            else if (device.name.StartsWith("PICO Neo3 Touch Controller"))
+            {
+                SetControllerStyle(ControllerStyle.Neo3);
+            }
             else if (device.name.Contains("PICO Controller"))
             {
                 // Controller name isn't specified in Pico's device layout
