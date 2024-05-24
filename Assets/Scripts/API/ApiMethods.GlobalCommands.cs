@@ -13,6 +13,9 @@
 // limitations under the License.
 
 using System.IO;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
+using UnityEngine;
 
 namespace TiltBrush
 {
@@ -40,13 +43,45 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 1);
         }
 
-        // TODO
-        // [ApiEndpoint("upload", "Saves the current scene and uploads it to Poly/Icosa")]
-        // public static void SaveAndUpload()
-        // {
-        //     var rEnum = SketchControlsScript.GlobalCommands.SaveAndUpload;
-        //     SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
-        // }
+        [ApiEndpoint("icosa.login", "Login to the Icosa Gallery")]
+        public static void IcosaLogin(string username, string password)
+        {
+            var config = new Configuration();
+            var loginApi = new LoginApi(App.ICOSA_API_URL);
+            loginApi.Configuration = config;
+            var token = loginApi.LoginLoginPost(username, password);
+            App.Instance.IcosaToken = token.AccessToken;
+
+            if (token != null)
+            {
+                var usersApi = new UsersApi(App.ICOSA_API_URL);
+                config = new Configuration { AccessToken = App.Instance.IcosaToken };
+                usersApi.Configuration = config;
+                var userData = usersApi.GetUsersMeUsersMeGet();
+
+                if (userData != null)
+                {
+                    App.IcosaUserName = userData.Displayname;
+                    App.IcosaUserId = userData.Id;
+                }
+            }
+        }
+
+        [ApiEndpoint("icosa.logout", "Logout of the Icosa Gallery")]
+        public static void IcosaLogout()
+        {
+            App.IcosaUserName = null;
+            App.IcosaUserId = null;
+            App.IcosaUserIcon = null;
+            App.Instance.IcosaToken = null;
+        }
+
+        [ApiEndpoint("icosa.upload", "Uploads it to the Icosa Gallery")]
+        public static void IcosaUpload()
+        {
+            var rEnum = SketchControlsScript.GlobalCommands.UploadToGenericCloud;
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, (int)Cloud.Icosa);
+        }
 
         [ApiEndpoint("export.all", "Exports all the scenes in the users's sketch folder")]
         public static void ExportAll()
