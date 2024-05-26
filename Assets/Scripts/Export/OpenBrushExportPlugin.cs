@@ -34,7 +34,7 @@ namespace TiltBrush
 
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
-            SelectionManager.m_Instance.ClearActiveSelection();
+            SelectionManager.m_Instance?.ClearActiveSelection();
             _meshesToBatches = new Dictionary<int, Batch>();
         }
 
@@ -122,7 +122,9 @@ namespace TiltBrush
                 BeforeLayerExport(transform);
             }
 
-            if (!App.UserConfig.Export.KeepStrokes && App.UserConfig.Export.ExportStrokeMetadata)
+            if (!Application.isPlaying &&
+                !App.UserConfig.Export.KeepStrokes &&
+                App.UserConfig.Export.ExportStrokeMetadata)
             {
                 // We'll need a way to find the batch for each mesh later
                 var batch = transform.GetComponent<Batch>();
