@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using UnityEngine.Localization;
+using UnityEngine;
+
 namespace TiltBrush
 {
 
@@ -19,17 +22,30 @@ namespace TiltBrush
     {
         public ReferenceImage ReferenceImage { get; set; }
 
+        [SerializeField] private LocalizedString m_ErrorHelpText;
+
+
+
         public void RefreshDescription()
         {
             if (ReferenceImage != null)
             {
-                SetDescriptionText(ReferenceImage.FileName);
+
+                if (!ReferenceImage.Valid)
+                {
+                    SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName), ImageErrorExtraDescription());
+                }
+                else
+                {
+                    SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName));
+                }
+
             }
         }
 
         override protected void OnButtonPressed()
         {
-            if (ReferenceImage == null)
+            if (ReferenceImage == null || !ReferenceImage.Valid)
             {
                 return;
             }
@@ -56,18 +72,11 @@ namespace TiltBrush
         override public void ResetState()
         {
             base.ResetState();
+        }
 
-            // Make ourselves unavailable if our image has an error.
-            bool available = false;
-            if (ReferenceImage != null)
-            {
-                available = ReferenceImage.NotLoaded || ReferenceImage.Valid;
-            }
-
-            if (available != IsAvailable())
-            {
-                SetButtonAvailable(available);
-            }
+        public string ImageErrorExtraDescription()
+        {
+            return m_ErrorHelpText.GetLocalizedStringAsync().Result;
         }
     }
 } // namespace TiltBrush

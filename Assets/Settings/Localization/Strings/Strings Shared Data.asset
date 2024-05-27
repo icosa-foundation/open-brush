@@ -3315,6 +3315,10 @@ MonoBehaviour:
     m_Key: DirectoryChooserPopupButton
     m_Metadata:
       m_Items: []
+  - m_Id: 238556149774557184
+    m_Key: PANEL_REFERENCE_ICONIMAGE_LOADERRORTEXT
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
