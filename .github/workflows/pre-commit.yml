@@ -32,7 +32,7 @@ jobs:
       - name: Run pre-commit dotnet-format, with retries
         uses: Wandalen/wretry.action@v3
         with:
-          command: pre-commit run dotnet-format --show-diff-on-failure --color=always --all-files
+          command: pre-commit run dotnet-format --show-diff-on-failure --color=always --all-files || { git checkout -- . ; exit 1 ; }  # In case dotnet-format fails, reset the changes it made. This way, we can differentiate between a NuGet failure and a real formatting issue
       - name: Remove dotnet-format from the list of pre-commit jobs to run (since we already ran it)
         run: yq eval 'del(.repos[] | select(.hooks[].id == "dotnet-format"))' -i .pre-commit-config.yaml
       - name: Run the rest of pre-commit
