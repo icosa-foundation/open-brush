@@ -25,22 +25,24 @@ namespace TiltBrush
         [SerializeField] private LocalizedString m_ErrorHelpText;
 
 
-
+        // this is commented out and moved into ResetState() because
+        // for a new image (ie., one that isn't in the cache yet), !ReferenceImage.Valid, even if the size is valid (ie less than the max size)
+        // TODO: figure out if it's bad to move this into ResetState()
         public void RefreshDescription()
         {
-            if (ReferenceImage != null)
-            {
+            /* if (ReferenceImage != null)
+             {
 
-                if (!ReferenceImage.Valid)
-                {
-                    SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName), ImageErrorExtraDescription());
-                }
-                else
-                {
-                    SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName));
-                }
+                 if (!ReferenceImage.Valid)
+                 {
+                     SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName), ImageErrorExtraDescription());
+                 }
+                 else
+                 {
+                     SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName));
+                 }
 
-            }
+             }*/
         }
 
         override protected void OnButtonPressed()
@@ -72,6 +74,20 @@ namespace TiltBrush
         override public void ResetState()
         {
             base.ResetState();
+
+            if (ReferenceImage == null)
+            {
+                return;
+            }
+
+            if (!ReferenceImage.Valid)
+            {
+                SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName), ImageErrorExtraDescription());
+            }
+            else
+            {
+                SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName));
+            }
         }
 
         public string ImageErrorExtraDescription()
