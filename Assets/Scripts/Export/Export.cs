@@ -266,6 +266,7 @@ URL=" + kExportDocumentationUrl;
 
             if (App.PlatformConfig.EnableExportGlb && IsExportEnabled("glb"))
             {
+                // Legacy GLTF export
                 string extension = App.Config.m_EnableGlbVersion2 ? "glb" : "glb1";
                 int gltfVersion = App.Config.m_EnableGlbVersion2 ? 2 : 1;
                 filename = MakeExportPath(parent, basename, extension);
@@ -292,6 +293,7 @@ URL=" + kExportDocumentationUrl;
 
             if (App.PlatformConfig.EnableExportGlb && IsExportEnabled("newglb"))
             {
+                // 'New' GLTF export using UnityGLTF
                 string extension = "glb";
                 using (var unused = new AutoTimer("glb export"))
                 {
