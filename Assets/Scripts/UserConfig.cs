@@ -290,6 +290,7 @@ namespace TiltBrush
                 set { m_ExportStrokeTimestamp = value; }
             }
 
+            // Used by UnityGLTF exporter
             bool? m_ExportStrokeMetadata;
             public bool ExportStrokeMetadata
             {
@@ -297,6 +298,7 @@ namespace TiltBrush
                 set { m_ExportStrokeMetadata = value; }
             }
 
+            // Used by UnityGLTF exporter
             bool? m_KeepStrokes;
             public bool KeepStrokes
             {
@@ -304,11 +306,20 @@ namespace TiltBrush
                 set { m_KeepStrokes = value; }
             }
 
+            // Used by UnityGLTF exporter
             bool? m_KeepGroups;
             public bool KeepGroups
             {
                 get { return m_KeepGroups ?? true; }
                 set { m_KeepGroups = value; }
+            }
+
+            // Used by UnityGLTF exporter
+            private bool? m_ExportEnvironment;
+            public bool ExportEnvironment
+            {
+                get { return m_ExportEnvironment ?? false; }
+                set { m_ExportEnvironment = value; }
             }
 
             private Dictionary<string, bool> m_Formats;

@@ -3652,6 +3652,7 @@ MonoBehaviour:
   m_EnableGlbVersion2: 1
   m_DebugUpload: 1
   m_TbtSettings: {fileID: 11400000, guid: 86eb32a1d469be44a99294025e7795de, type: 2}
+  m_UnityGLTFSettings: {fileID: 1, guid: 4bcbc565b83276a46b0353b376d2a77d, type: 2}
   m_ReplaceBrushesOnLoad: 0
   m_BrushReplacementMap: []
   m_IntroSketchUsdFilename: 
