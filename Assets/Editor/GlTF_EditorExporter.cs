@@ -20,9 +20,13 @@ using System.Text.RegularExpressions;
 using System.Text;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using SimpleJSON;
 using UnityEditor;
+using UnityEditor.ShaderGraph.Serialization;
 using UnityEngine;
 using UnityGLTF;
+using UnityGLTF.Extensions;
 using UObject = UnityEngine.Object;
 
 namespace TiltBrush
@@ -164,6 +168,9 @@ namespace TiltBrush
 
             // Get the environment
             TiltBrushManifest manifest = AssetDatabase.LoadAssetAtPath<TiltBrushManifest>("Assets/Manifest.asset");
+            JToken colorToJArray(Color c) => JToken.FromObject(new { c.r, c.g, c.b, c.a });
+            JToken vector3ToJArray(Vector3 c) => JToken.FromObject(new { c.x, c.y, c.z });
+            var envJson = new JObject();
             foreach (Environment env in manifest.Environments)
             {
                 // Copy over the RenderSettings
@@ -171,6 +178,48 @@ namespace TiltBrush
 
                 // Set up the environment
                 string envGuid = env.m_Guid.ToString("D");
+                var envJsonItem = new JObject();
+                envJsonItem["name"] = env.name;
+                envJsonItem["description"] = env.m_EnvironmentDescription.GetLocalizedString();
+                envJsonItem["guid"] = envGuid;
+                var envRenderSettingsJson = new JObject();
+                envRenderSettingsJson["fogEnabled"] = env.m_RenderSettings.m_FogEnabled;
+                envRenderSettingsJson["fogColor"] = colorToJArray(env.m_RenderSettings.m_FogColor);
+                envRenderSettingsJson["fogDensity"] = env.m_RenderSettings.m_FogDensity;
+                envRenderSettingsJson["fogStartDistance"] = env.m_RenderSettings.m_FogStartDistance;
+                envRenderSettingsJson["fogEndDistance"] = env.m_RenderSettings.m_FogEndDistance;
+                envRenderSettingsJson["clearColor"] = colorToJArray(env.m_RenderSettings.m_ClearColor);
+                envRenderSettingsJson["ambientColor"] = colorToJArray(env.m_RenderSettings.m_AmbientColor);
+                envRenderSettingsJson["skyboxExposure"] = env.m_RenderSettings.m_SkyboxExposure;
+                envRenderSettingsJson["skyboxTint"] = colorToJArray(env.m_RenderSettings.m_SkyboxTint);
+                envRenderSettingsJson["environmentPrefab"] = env.m_RenderSettings.m_EnvironmentPrefab;
+                envRenderSettingsJson["environmentReverbZone"] = env.m_RenderSettings.m_EnvironmentReverbZonePrefab;
+                envRenderSettingsJson["skyboxCubemap"] = env.m_RenderSettings.m_SkyboxCubemap.ToString();
+                envRenderSettingsJson["reflectionCubemap"] = env.m_RenderSettings.m_ReflectionCubemap.ToString();
+                envRenderSettingsJson["reflectionIntensity"] = env.m_RenderSettings.m_ReflectionIntensity;
+                envJsonItem["renderSettings"] = envRenderSettingsJson;
+                var envLights = new JArray();
+                foreach (var light in env.m_Lights)
+                {
+                    var envLight = new JObject();
+                    envLight["color"] = colorToJArray(light.Color);
+                    envLight["position"] = vector3ToJArray(light.m_Position);
+                    envLight["rotation"] = vector3ToJArray(light.m_Rotation.eulerAngles);
+                    envLight["type"] = light.m_Type.ToString();
+                    envLight["range"] = light.m_Range;
+                    envLight["spotAngle"] = light.m_SpotAngle;
+                    envLight["shadowsEnabled"] = light.m_ShadowsEnabled;
+                    envLights.Add(envLight);
+
+                }
+                envJsonItem["lights"] = envLights;
+                envJsonItem["teleportBoundsHalfWidth"] = env.m_TeleportBoundsHalfWidth;
+                envJsonItem["controllerXRayHeight"] = env.m_ControllerXRayHeight;
+                envJsonItem["widgetHome"] = vector3ToJArray(env.m_WidgetHome);
+                envJsonItem["skyboxColorA"] = colorToJArray(env.m_SkyboxColorA);
+                envJsonItem["skyboxColorB"] = colorToJArray(env.m_SkyboxColorB);
+                envJson[envGuid] = envJsonItem;
+
                 Debug.LogFormat("Exporting environment: {0}", env.m_RenderSettings.m_EnvironmentPrefab);
                 GameObject envPrefab = Resources.Load<GameObject>(env.m_RenderSettings.m_EnvironmentPrefab);
                 GameObject envGameObject = UObject.Instantiate(envPrefab);
@@ -199,11 +248,15 @@ namespace TiltBrush
                 settings.UseMainCameraVisibility = false;
                 var context = new ExportContext();
                 var unityGltfexporter = new GLTFSceneExporter(envGameObject.transform, context);
-                unityGltfexporter.SaveGLTFandBin(directoryName, basename + ".gltf");
+                unityGltfexporter.SaveGLB(directoryName, basename + ".glb");
 
                 // DestroyImmediate is required because editor mode never runs object garbage collection.
                 UObject.DestroyImmediate(envGameObject);
             }
+
+            string jsonString = envJson.ToString();
+            string path = Path.Combine(environmentExportPath, "environments.json");
+            File.WriteAllText(path, jsonString);
 
             // Restore the original RenderSettings
             Environment.SetRenderSettings(originalRenderSettings);
