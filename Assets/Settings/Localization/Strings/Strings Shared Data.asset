@@ -3319,6 +3319,10 @@ MonoBehaviour:
     m_Key: PANEL_REFERENCE_ICONIMAGE_LOADERRORTEXT
     m_Metadata:
       m_Items: []
+  - m_Id: 238935604850335744
+    m_Key: PANEL_REFERENCE_ICONBACKGROUNDIMAGE_LOADERRORTEXT
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
