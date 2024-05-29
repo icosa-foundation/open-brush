@@ -4494,9 +4494,19 @@ namespace TiltBrush
                     {
                         var sketchSetType = (SketchSetType)iParam2;
                         SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
+                        string newName = sParam;
+                        if (string.IsNullOrEmpty(newName))
+                        {
+                            newName = KeyboardPopUpWindow.m_LastInput;
+                            if (string.IsNullOrEmpty(newName))
+                            {
+                                break;
+                            }
+                        }
+
                         if (sketchSetType == SketchSetType.User)
                         {
-                            sketchSet.RenameSketch(iParam1, KeyboardPopUpWindow.m_LastInput);
+                            sketchSet.RenameSketch(iParam1, newName);
                         }
                         DismissPopupOnCurrentGazeObject(false);
                         break;

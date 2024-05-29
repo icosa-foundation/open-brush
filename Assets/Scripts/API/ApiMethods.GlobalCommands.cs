@@ -43,6 +43,15 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 1);
         }
 
+        [ApiEndpoint("save.as", "Saves the current scene with the given name")]
+        public static void SaveAs(string filename)
+        {
+            var rEnum = SketchControlsScript.GlobalCommands.SaveNew;
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 1);
+            rEnum = SketchControlsScript.GlobalCommands.RenameSketch;
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 0, (int)SketchSetType.User, sParam: filename);
+        }
+
         [ApiEndpoint("icosa.login", "Login to the Icosa Gallery")]
         public static void IcosaLogin(string username, string password)
         {
@@ -297,8 +306,8 @@ namespace TiltBrush
         public static void ShowSketchFolder(int index)
         {
             var rEnum = SketchControlsScript.GlobalCommands.ShowSketchFolder;
-            // TODO 0 is User folder. Do we need to support the other SketchSetTypes?
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, index, 0);
+            // TODO Do we need to support the other SketchSetTypes?
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, index, (int)SketchSetType.User);
         }
 
         // TODO Why no "enabled" counterpart?
