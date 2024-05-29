@@ -193,6 +193,9 @@ namespace TiltBrush
             Color skyColorB = payload.env.skyColorB;
             Vector3 skyGradientDir = payload.env.skyGradientDir;
 
+            // var camPose = SketchControlsScript.m_Instance.GetSaveIconTool().LastSaveCameraRigState.GetLossyTrTransform();
+            var pose = App.Scene.Pose;
+
             // Scene-level extras:
             exporter.G.extras["TB_EnvironmentGuid"] = payload.env.guid.ToString("D");
             exporter.G.extras["TB_Environment"] = payload.env.description;
@@ -204,6 +207,9 @@ namespace TiltBrush
                 exportFromUnity * skyGradientDir);
             exporter.G.extras["TB_FogColor"] = CommaFormattedFloatRGB(payload.env.fogColor);
             exporter.G.extras["TB_FogDensity"] = payload.env.fogDensity.ToString();
+            exporter.G.extras["TB_PoseTranslation"] = CommaFormattedVector3(pose.translation);
+            exporter.G.extras["TB_PoseRotation"] = CommaFormattedVector3(pose.rotation.eulerAngles);
+            exporter.G.extras["TB_PoseScale"] = pose.scale;
 
             // TODO: remove when Poly starts using the new color data
             exporter.G.extras["TB_SkyColorHorizon"] = CommaFormattedFloatRGB(skyColorA);
