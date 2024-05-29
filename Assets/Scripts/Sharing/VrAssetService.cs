@@ -54,7 +54,7 @@ namespace TiltBrush
     {
         // Constants
 
-        const string kGltfName = "sketch.gltf";
+        const string kDefaultName = "sketch";
 
         public const string kApiHost = "https://api.icosa.gallery";
         private const string kAssetLandingPage = "https://icosa.gallery/uploads";
@@ -671,18 +671,18 @@ namespace TiltBrush
             DiskSceneFileInfo fileInfo = GetWritableFile();
 
             var currentScene = SaveLoadScript.m_Instance.SceneFile;
-            string uploadName = currentScene.Valid ? currentScene.HumanName : kGltfName;
+            string uploadName = currentScene.Valid ? currentScene.HumanName : kDefaultName;
+            string gltfUploadName = $"{uploadName}.gltf";
 
             SetUploadProgress(UploadStep.CreateGltf, 0);
             // Do the glTF straight away as it relies on the meshes, not the stroke descriptions.
-            string gltfFile = Path.Combine(tempUploadDir, uploadName);
+            string gltfFile = Path.Combine(tempUploadDir, gltfUploadName);
             var exportResults = await OverlayManager.m_Instance.RunInCompositorAsync(
                 OverlayType.Export, fadeDuration: 0.5f,
                 action: () => new ExportGlTF().ExportBrushStrokes(
                     gltfFile,
-                    AxisConvention.kGltf2, binary: false, doExtras: false,
+                    AxisConvention.kGltf2, binary: false, doExtras: true,
                     includeLocalMediaContent: true, gltfVersion: 2,
-                    // TODO: selfContained: false was Poly setting but is it what we want to do now?
                     selfContained: true));
             if (!exportResults.success)
             {
@@ -701,7 +701,7 @@ namespace TiltBrush
             token.ThrowIfCancellationRequested();
 
             // Create a copy of the .tilt file in tempUploadDir.
-            string tempTiltPath = Path.Combine(tempUploadDir, "sketch.tilt");
+            string tempTiltPath = Path.Combine(tempUploadDir, $"{uploadName}.tilt");
             File.Copy(fileInfo.FullPath, tempTiltPath);
 
             // Save thumbnail as a png to temp path
@@ -735,7 +735,7 @@ namespace TiltBrush
 
             SetUploadProgress(UploadStep.CreateGltf, 0);
             // Do the glTF straight away as it relies on the meshes, not the stroke descriptions.
-            string gltfFile = Path.Combine(tempUploadDir, kGltfName);
+            string gltfFile = Path.Combine(tempUploadDir, $"{kDefaultName}.gltf");
             var exportResults = await OverlayManager.m_Instance.RunInCompositorAsync(
                 OverlayType.Export, fadeDuration: 0.5f,
                 action: () => new ExportGlTF().ExportBrushStrokes(
