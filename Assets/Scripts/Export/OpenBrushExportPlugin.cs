@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using GLTF.Schema;
 using Newtonsoft.Json.Linq;
+using Unity.VectorGraphics;
 using UnityEngine;
 using UnityGLTF;
 using UnityGLTF.Plugins;
@@ -286,6 +287,33 @@ namespace TiltBrush
         public override void AfterSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
             gltfRoot.Asset.Generator = $"Open Brush UnityGLTF Exporter {App.Config.m_VersionNumber}.{App.Config.m_BuildStamp})";
+
+            JToken ColorToJArray(Color c) => JToken.FromObject(new { c.r, c.g, c.b, c.a });
+            JToken Vector3ToJArray(Vector3 c) => JToken.FromObject(new { c.x, c.y, c.z });
+
+            var metadata = new SketchSnapshot().GetSketchMetadata();
+
+            var settings = SceneSettings.m_Instance;
+            Environment env = settings.GetDesiredPreset();
+            var extras = new JObject();
+
+            var pose = metadata.SceneTransformInRoomSpace;
+            extras["TB_EnvironmentGuid"] = env.m_Guid.ToString("D");
+            extras["TB_Environment"] = env.Description;
+            extras["TB_UseGradient"] = settings.InGradient ? "true" : "false";
+            extras["TB_SkyColorA"] = ColorToJArray(settings.SkyColorA);
+            extras["TB_SkyColorB"] = ColorToJArray(settings.SkyColorB);
+            Matrix4x4 exportFromUnity = AxisConvention.GetFromUnity(AxisConvention.kGltf2);
+            extras["TB_SkyGradientDirection"] = Vector3ToJArray(
+                exportFromUnity * (settings.GradientOrientation * Vector3.up));
+            extras["TB_FogColor"] = ColorToJArray(settings.FogColor);
+            extras["TB_FogDensity"] = settings.FogDensity;
+            extras["TB_PoseTranslation"] = Vector3ToJArray(pose.translation);
+            extras["TB_PoseRotation"] = Vector3ToJArray(pose.rotation.eulerAngles);
+            extras["TB_PoseScale"] = pose.scale;
+            // Experimental
+            // extras["TB_metadata"] = JObject.FromObject(metadata);
+            gltfRoot.Extras = extras;
         }
 
         private static void SafeDestroy(Object o)
