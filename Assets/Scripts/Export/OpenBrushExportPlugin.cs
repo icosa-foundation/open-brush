@@ -122,9 +122,8 @@ namespace TiltBrush
             {
                 BeforeLayerExport(transform);
             }
-
-            if (!Application.isPlaying &&
-                !App.UserConfig.Export.KeepStrokes &&
+            if (!Application.isPlaying) return;
+            if (!App.UserConfig.Export.KeepStrokes &&
                 App.UserConfig.Export.ExportStrokeMetadata)
             {
                 // We'll need a way to find the batch for each mesh later
@@ -180,6 +179,7 @@ namespace TiltBrush
                 AfterLayerExport(transform);
             }
 
+            if (!Application.isPlaying) return;
             if (App.UserConfig.Export.KeepStrokes && App.UserConfig.Export.ExportStrokeMetadata)
             {
                 var brush = transform.GetComponent<BaseBrushScript>();
@@ -229,6 +229,7 @@ namespace TiltBrush
 
         public override void AfterPrimitiveExport(GLTFSceneExporter exporter, Mesh mesh, MeshPrimitive primitive, int index)
         {
+            if (!Application.isPlaying) return;
             if (App.UserConfig.Export.ExportStrokeMetadata)
             {
                 if (App.UserConfig.Export.KeepStrokes)
@@ -286,6 +287,7 @@ namespace TiltBrush
 
         public override void AfterSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
+            if (!Application.isPlaying) return;
             gltfRoot.Asset.Generator = $"Open Brush UnityGLTF Exporter {App.Config.m_VersionNumber}.{App.Config.m_BuildStamp})";
 
             JToken ColorToJArray(Color c) => JToken.FromObject(new { c.r, c.g, c.b, c.a });
