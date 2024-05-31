@@ -205,7 +205,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5065176065482752
-    m_Localized: "\uC124\uC815"
+    m_Localized: Quit
     m_Metadata:
       m_Items: []
   - m_Id: 5065289022283776
@@ -229,7 +229,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5066003496804352
-    m_Localized: "\uC2A4\uCF00\uCE58 \uC9C0\uC6B0\uAE30"
+    m_Localized: Quit
     m_Metadata:
       m_Items: []
   - m_Id: 5066113400152064

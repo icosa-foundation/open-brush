@@ -56,7 +56,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5065176065482752
-    m_Key: ADMIN_PANEL_SETTINGS_BUTTON_DESCRIPTION
+    m_Key: ADMIN_PANEL_QUIT_BUTTON_DESCRIPTION
     m_Metadata:
       m_Items: []
   - m_Id: 5065040224559104

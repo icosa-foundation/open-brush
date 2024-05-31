@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 38a861d4a23e44d29a964fa9517458e1, type: 3}
   m_Name: QrCodeTrackingFeature Android
   m_EditorClassIdentifier: 
-  m_enabled: 0
+  m_enabled: 1
   nameUi: QR Code Tracking (Experimental)
-  version: 0.19.1
+  version: 0.19.1.1
   featureIdInternal: com.qualcomm.snapdragon.spaces.qrcodetracking
   openxrExtensionStrings: XR_QCOMX_marker_tracking
   company: Qualcomm
@@ -138,7 +138,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_enabled: 0
   nameUi: Base Runtime
-  version: 0.19.1
+  version: 0.19.1.1
   featureIdInternal: com.qualcomm.snapdragon.spaces.base
   openxrExtensionStrings: XR_QCOM_component_versioning XR_FB_display_refresh_rate
     XR_KHR_android_thread_settings
@@ -282,9 +282,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d9f28604357aa423280cce3487eaa981, type: 3}
   m_Name: SpatialAnchorsFeature Android
   m_EditorClassIdentifier: 
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Spatial Anchors
-  version: 0.19.1
+  version: 0.19.1.1
   featureIdInternal: com.qualcomm.snapdragon.spaces.spatialanchors
   openxrExtensionStrings: XR_MSFT_spatial_anchor XR_MSFT_spatial_anchor_persistence
     XR_QCOM_spatial_anchor_persistence_extent
@@ -552,9 +552,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e2479fa37ffc4a3c947342fe19e48b14, type: 3}
   m_Name: SpatialMeshingFeature Android
   m_EditorClassIdentifier: 
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Spatial Meshing (Experimental)
-  version: 0.19.1
+  version: 0.19.1.1
   featureIdInternal: com.qualcomm.snapdragon.spaces.sceneunderstanding
   openxrExtensionStrings: XR_MSFT_scene_understanding
   company: Qualcomm
@@ -574,7 +574,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_enabled: 1
   nameUi: Microsoft Mixed Reality Motion Controller Profile
-  version: 0.19.1
+  version: 0.19.1.1
   featureIdInternal: com.unity.openxr.feature.input.microsoftmotioncontroller
   openxrExtensionStrings: 
   company: Qualcomm
@@ -661,6 +661,7 @@ MonoBehaviour:
   - {fileID: 3729635443001478327}
   - {fileID: -8049897441354217187}
   - {fileID: 8954414679973675533}
+  - {fileID: 3923225277677434306}
   - {fileID: 6503477508607858306}
   - {fileID: 1744635257003483118}
   - {fileID: -4431914812882349843}
@@ -891,7 +892,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_enabled: 1
   nameUi: Base Runtime
-  version: 0.19.1
+  version: 0.19.1.1
   featureIdInternal: com.qualcomm.snapdragon.spaces.base
   openxrExtensionStrings: XR_QCOM_component_versioning XR_FB_display_refresh_rate
     XR_KHR_android_thread_settings
@@ -907,7 +908,7 @@ MonoBehaviour:
   UseCustomController: 0
   ExportHeadless: 0
   AlternateStartActivity: 
-  SkipPermissionChecks: 0
+  SkipPermissionChecks: 1
 --- !u!114 &1263590293311991825
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -960,9 +961,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2dea66e4d7ae49b49f6af51ea3cf905e, type: 3}
   m_Name: PlaneDetectionFeature Android
   m_EditorClassIdentifier: 
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Plane Detection
-  version: 0.19.1
+  version: 0.19.1.1
   featureIdInternal: com.qualcomm.snapdragon.spaces.planedetection
   openxrExtensionStrings: XR_QCOM_plane_detection XR_MSFT_scene_understanding
   company: Qualcomm
@@ -1002,9 +1003,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7eb03d48a4e23493fba7b405178b6b3d, type: 3}
   m_Name: ImageTrackingFeature Android
   m_EditorClassIdentifier: 
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Image Tracking
-  version: 0.19.1
+  version: 0.19.1.1
   featureIdInternal: com.qualcomm.snapdragon.spaces.imagetracking
   openxrExtensionStrings: XR_QCOM_image_tracking
   company: Qualcomm
@@ -1226,6 +1227,27 @@ MonoBehaviour:
   company: Unity
   priority: 0
   required: 0
+--- !u!114 &3923225277677434306
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efa78685d2359408d9e46e52dd1291ba, type: 3}
+  m_Name: HandTrackingFeature Android
+  m_EditorClassIdentifier: 
+  m_enabled: 0
+  nameUi: Hand Tracking
+  version: 0.16.0
+  featureIdInternal: com.qualcomm.snapdragon.spaces.handtracking
+  openxrExtensionStrings: 
+  company: Qualcomm
+  priority: 0
+  required: 0
+  AutoStart: 1
 --- !u!114 &4073621059260807014
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1392,9 +1414,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fd1a99ebd75e49d1bc4152cccc8e2550, type: 3}
   m_Name: HitTestingFeature Android
   m_EditorClassIdentifier: 
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Hit Testing
-  version: 0.19.1
+  version: 0.19.1.1
   featureIdInternal: com.qualcomm.snapdragon.spaces.raycasting
   openxrExtensionStrings: XR_QCOM_ray_casting
   company: Qualcomm
@@ -1522,7 +1544,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_enabled: 0
   nameUi: Image Tracking
-  version: 0.19.1
+  version: 0.19.1.1
   featureIdInternal: com.qualcomm.snapdragon.spaces.imagetracking
   openxrExtensionStrings: XR_QCOM_image_tracking
   company: Qualcomm
@@ -1602,9 +1624,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22ae41aadce15674187d35d57afdf758, type: 3}
   m_Name: CameraAccessFeature Android
   m_EditorClassIdentifier: 
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Camera Access (Experimental)
-  version: 0.19.1
+  version: 0.19.1.1
   featureIdInternal: com.qualcomm.snapdragon.spaces.cameraaccess
   openxrExtensionStrings: XR_QCOMX_camera_frame_access XR_KHR_convert_timespec_time
   company: Qualcomm
@@ -1625,7 +1647,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_enabled: 0
   nameUi: Hand Tracking (Deprecated)
-  version: 0.19.1
+  version: 0.19.1.1
   featureIdInternal: com.qualcomm.snapdragon.spaces.handtracking.deprecated
   openxrExtensionStrings: XR_EXT_hand_tracking XR_QCOM_hand_tracking_gesture
   company: Qualcomm

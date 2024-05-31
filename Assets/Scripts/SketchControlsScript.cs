@@ -143,6 +143,7 @@ namespace TiltBrush
             SignOutConfirm,
             ReadOnlyNotice,
             ShowContribution,
+            //Quit,
 
             // Open Brush Reserved Enums 1000-1999
             LanguagePopup = 1000,
@@ -4284,6 +4285,13 @@ namespace TiltBrush
                     AudioManager.m_Instance.PlayTrashSound(vTrashSoundPos);
                     PromoManager.m_Instance.RequestAdvancedPanelsPromo();
                     break;
+                    /*
+                case GlobalCommands.Quit:
+                    {
+                        QuitApp();
+                    }
+                    break;
+                    */
                 case GlobalCommands.SymmetryPlane:
                     if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.SinglePlane)
                     {
@@ -5159,6 +5167,11 @@ namespace TiltBrush
                 case GlobalCommands.GoogleDriveSync:
                     return App.GoogleIdentity.LoggedIn;
                 case GlobalCommands.RecordCameraPath: return m_WidgetManager.CameraPathsVisible;
+                /*
+                case GlobalCommands.Quit: 
+                    return QuitApp();
+                */
+
             }
             return true;
         }

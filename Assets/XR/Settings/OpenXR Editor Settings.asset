@@ -17,3 +17,5 @@ MonoBehaviour:
   - featureSets: []
   - featureSets:
     - com.qualcomm.snapdragon.spaces
+    - com.qualcomm.snapdragon.spaces.experimental
+  m_vulkanAdditionalGraphicsQueue: 0

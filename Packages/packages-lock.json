@@ -30,12 +30,21 @@
       "dependencies": {},
       "hash": "57bad66c67cd72a31898a1d29dae4d4201ef36c1"
     },
-    "com.qualcomm.snapdragon.spaces": {
-      "version": "file:../ThirdParty/com.qualcomm.snapdragon.spaces-0.19.1.tgz",
+    "com.qualcomm.qcht.unity.interactions": {
+      "version": "file:C:/Users/Helifax/Desktop/Snapdragon_Spaces_SDK_0_19_1_1_for_Unity/Unity Package/com.qualcomm.qcht.unity.interactions-4.1.4.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
-        "com.unity.xr.openxr": "1.9.1",
+        "com.unity.xr.openxr": "1.8.2",
+        "com.unity.xr.interaction.toolkit": "2.4.3"
+      }
+    },
+    "com.qualcomm.snapdragon.spaces": {
+      "version": "file:C:/Users/Helifax/Desktop/Snapdragon_Spaces_SDK_0_19_1_1_for_Unity/Unity Package/com.qualcomm.snapdragon.spaces-0.19.1.1.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {
+        "com.unity.xr.openxr": "1.8.2",
         "com.unity.xr.arfoundation": "4.2.7",
         "com.unity.xr.interaction.toolkit": "2.3.2"
       }
