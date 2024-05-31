@@ -2,14 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     android:installLocation="auto"
     xmlns:tools="http://schemas.android.com/tools">
-    
-     <queries>
-        <package android:name="com.qualcomm.qti.openxrruntime"/>
-    </queries>
-    <uses-permission android:name="com.qualcomm.qti.qxr.QXRServiceClientPermission" />
-    <queries>
-        <package android:name="com.qualcomm.qti.spaces.services"/>
-    </queries>
 
     <application
         android:allowBackup="false"
@@ -22,7 +14,6 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
                 <category android:name="com.oculus.intent.category.VR"/>
-                <category android:name="com.qti.intent.category.SNAPDRAGON_VR"/>
             </intent-filter>
         </activity>
         <meta-data android:name="unityplayer.SkipPermissionsDialog" android:value="true" />
@@ -30,5 +21,4 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove"/>
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="com.oculus.permission.USE_SCENE" />
-    <uses-permission android:name="com.qualcomm.qti.qxr.QXRServiceClientPermission" />
 </manifest>
