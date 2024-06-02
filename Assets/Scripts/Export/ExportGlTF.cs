@@ -207,13 +207,18 @@ namespace TiltBrush
                 exportFromUnity * skyGradientDir);
             exporter.G.extras["TB_FogColor"] = CommaFormattedFloatRGB(payload.env.fogColor);
             exporter.G.extras["TB_FogDensity"] = payload.env.fogDensity.ToString();
+
+            exporter.G.extras["TB_AmbientLightColor"] = CommaFormattedFloatRGB(payload.lights.ambientColor);
+            exporter.G.extras["TB_SceneLight0Color"] = CommaFormattedFloatRGB(payload.lights.lights[0].lightColor);
+            exporter.G.extras["TB_SceneLight0Rotation"] = CommaFormattedVector3(
+                payload.lights.lights[0].xform.rotation.eulerAngles);
+            exporter.G.extras["TB_SceneLight1Color"] = CommaFormattedFloatRGB(payload.lights.lights[1].lightColor);
+            exporter.G.extras["TB_SceneLight1Rotation"] = CommaFormattedVector3(
+                payload.lights.lights[1].xform.rotation.eulerAngles);
+
             exporter.G.extras["TB_PoseTranslation"] = CommaFormattedVector3(pose.translation);
             exporter.G.extras["TB_PoseRotation"] = CommaFormattedVector3(pose.rotation.eulerAngles);
             exporter.G.extras["TB_PoseScale"] = pose.scale;
-
-            // TODO: remove when Poly starts using the new color data
-            exporter.G.extras["TB_SkyColorHorizon"] = CommaFormattedFloatRGB(skyColorA);
-            exporter.G.extras["TB_SkyColorZenith"] = CommaFormattedFloatRGB(skyColorB);
         }
 
         // Returns a GlTF_Node; null means "there is no node for this group".

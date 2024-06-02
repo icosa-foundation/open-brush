@@ -180,7 +180,6 @@ namespace TiltBrush
                 string envGuid = env.m_Guid.ToString("D");
                 var envJsonItem = new JObject();
                 envJsonItem["name"] = env.name;
-                envJsonItem["description"] = env.m_EnvironmentDescription.GetLocalizedString();
                 envJsonItem["guid"] = envGuid;
                 var envRenderSettingsJson = new JObject();
                 envRenderSettingsJson["fogEnabled"] = env.m_RenderSettings.m_FogEnabled;
@@ -194,8 +193,10 @@ namespace TiltBrush
                 envRenderSettingsJson["skyboxTint"] = colorToJArray(env.m_RenderSettings.m_SkyboxTint);
                 envRenderSettingsJson["environmentPrefab"] = env.m_RenderSettings.m_EnvironmentPrefab;
                 envRenderSettingsJson["environmentReverbZone"] = env.m_RenderSettings.m_EnvironmentReverbZonePrefab;
-                envRenderSettingsJson["skyboxCubemap"] = env.m_RenderSettings.m_SkyboxCubemap.ToString();
-                envRenderSettingsJson["reflectionCubemap"] = env.m_RenderSettings.m_ReflectionCubemap.ToString();
+                envRenderSettingsJson["skyboxCubemap"] = env.m_RenderSettings.m_SkyboxCubemap != null ?
+                    env.m_RenderSettings.m_SkyboxCubemap.name : "";
+                envRenderSettingsJson["reflectionCubemap"] = env.m_RenderSettings.m_ReflectionCubemap != null ?
+                    env.m_RenderSettings.m_ReflectionCubemap.name : "";
                 envRenderSettingsJson["reflectionIntensity"] = env.m_RenderSettings.m_ReflectionIntensity;
                 envJsonItem["renderSettings"] = envRenderSettingsJson;
                 var envLights = new JArray();

@@ -56,8 +56,8 @@ namespace TiltBrush
 
         const string kDefaultName = "sketch";
 
-        public const string kApiHost = "https://api.icosa.gallery";
-        private const string kAssetLandingPage = "https://icosa.gallery/uploads";
+        private string kApiHost => App.ICOSA_API_URL;
+        private string kAssetLandingPage => $"{App.ICOSA_WEBSITE_URL}/uploads";
 
         private const string kListAssetsUri = "/v1/assets";
         private const string kUserAssetsUri = "/v1/users/me/assets";
@@ -234,7 +234,7 @@ namespace TiltBrush
         public static VrAssetService m_Instance;
 
         // Currently this always returns the standard API host when running unit tests
-        public static string ApiHost
+        public string ApiHost
         {
             get
             {
@@ -537,7 +537,7 @@ namespace TiltBrush
             m_IcosaStatus = await GetIcosaStatus();
         }
 
-        private static async Task<IcosaStatus> GetIcosaStatus()
+        private async Task<IcosaStatus> GetIcosaStatus()
         {
             // UserConfig override
             if (App.UserConfig.Flags.DisableIcosa || App.Instance.IcosaToken == null)
@@ -545,7 +545,7 @@ namespace TiltBrush
                 return IcosaStatus.Disabled;
             }
 
-            string uri = String.Format("{0}{1}", ApiHost, kGetVersionUri);
+            string uri = ApiHost;
             try
             {
                 var api = new LoginApi($"{App.ICOSA_API_URL}");

@@ -96,7 +96,7 @@ namespace TiltBrush
 
             OAuth2Identity identity = null;
 
-            if (!m_URI.StartsWith(VrAssetService.ApiHost))
+            if (!m_URI.StartsWith(VrAssetService.m_Instance.ApiHost))
             {
                 m_Asset.SetRootElement(UnityWebRequest.EscapeURL(m_URI), m_URI);
             }
