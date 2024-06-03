@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     android:installLocation="auto"
     xmlns:tools="http://schemas.android.com/tools">
-
     <application
         android:allowBackup="false"
         tools:replace="android:allowBackup"
@@ -16,9 +15,7 @@
                 <category android:name="com.oculus.intent.category.VR"/>
             </intent-filter>
         </activity>
-        <meta-data android:name="unityplayer.SkipPermissionsDialog" android:value="true" />
+        <meta-data android:name="unityplayer.SkipPermissionsDialog" android:value="false" />
     </application>
     <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove"/>
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="com.oculus.permission.USE_SCENE" />
 </manifest>
