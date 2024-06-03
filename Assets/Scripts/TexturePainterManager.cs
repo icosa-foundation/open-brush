@@ -38,6 +38,10 @@ namespace TiltBrush
 
         void Update()
         {
+            if (SketchSurfacePanel.m_Instance.ActiveToolType != BaseTool.ToolType.TexturePaintTool)
+            {
+                return;
+            }
             Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
             Vector3 pos = rAttachPoint.position;
             Vector3 vec = rAttachPoint.forward;
