@@ -42,6 +42,21 @@ namespace TiltBrush
             ImportModel(Path.Combine(uri.Host, filename));
         }
 
+        [ApiEndpoint("model.paintable", "Sets a model to be paintable")]
+        public static void MakeModelPaintable(int index)
+        {
+            var modelWidget = _GetActiveModel(index);
+            var cmd = new EnableTexturePaintingCommand(modelWidget);
+            if (cmd.Widget != null)
+            {
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+            }
+            else
+            {
+                Debug.LogWarning($"{modelWidget.transform} is not a valid paint target");
+            }
+        }
+
         [ApiEndpoint("model.import", "Imports a model given a url or a filename in Media Library\\Models (Models loaded from a url are saved locally first)")]
         public static void ImportModel(string location)
         {

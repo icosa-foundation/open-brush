@@ -13,14 +13,12 @@
 // limitations under the License.
 
 using System;
-using System.Collections.Generic;
 using Es.InkPainter;
 using UnityEngine;
-using Math = Es.InkPainter.Math;
 
 namespace TiltBrush
 {
-    public class TexturePainterManager : MonoBehaviour
+    public class TexturePainterManager : MonoBehaviour, ITextureBrushController
     {
         public Texture2D DefaultCanvasTexture;
         public float m_BrushSize = 0.1f;
@@ -30,8 +28,6 @@ namespace TiltBrush
 
         private bool m_EnableLine;
         private TrTransform m_PointerTransform;
-
-
 
         public float PointerPressure { get; set; }
 
@@ -72,43 +68,15 @@ namespace TiltBrush
                 else if (Physics.Raycast(pos, vec, out hitInfo, 10f, mainCanvasLayer))
                 {
                     var hitObject = hitInfo.transform.gameObject;
-
-                    // Is this part of a ModelWidget?
-                    var modelWidget = hitObject.GetComponentInParent<ModelWidget>();
-                    if (modelWidget == null)
+                    var widget = hitObject.GetComponentInParent<GrabWidget>();
+                    var cmd = new EnableTexturePaintingCommand(widget);
+                    if (cmd.Widget != null)
                     {
-                        Debug.LogWarning($"{hitInfo.transform} is not part of a ModelWidget");
-                        return;
+                        SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
                     }
-
-                    var objModelScript = modelWidget.GetComponentInChildren<ObjModelScript>();
-                    foreach (var mesh in objModelScript.m_MeshChildren)
+                    else
                     {
-                        InkCanvas canvas = mesh.gameObject.GetComponent<InkCanvas>();
-                        if (canvas == null)
-                        {
-                            mesh.GetComponent<MeshRenderer>().material.mainTexture = DefaultCanvasTexture;
-
-                            var paintSet = new List<InkCanvas.PaintSet>
-                            {
-                                new(
-                                    mainTextureName: "_MainTex",
-                                    normalTextureName: "_BumpMap",
-                                    heightTextureName: "_HeightMap",
-                                    useMainPaint: true,
-                                    useNormalPaint: false,
-                                    useHeightPaint: false
-                                )
-                            };
-                            mesh.gameObject.AddInkCanvas(paintSet);
-                            mesh.gameObject.layer = LayerMask.NameToLayer("TexturePaint");
-                        }
-
-                        var collider = mesh.gameObject.GetComponent<MeshCollider>();
-                        if (collider == null)
-                        {
-                            mesh.gameObject.AddComponent<MeshCollider>();
-                        }
+                        Debug.LogWarning($"{hitInfo.transform} is not a valid paint target");
                     }
                 }
                 else
@@ -133,6 +101,11 @@ namespace TiltBrush
         public float GetBrushSize01(InputManager.ControllerName _)
         {
             return m_BrushSize;
+        }
+
+        public void SetBrushTexture(RenderTexture brushTexture)
+        {
+            brush.BrushTexture = brushTexture;
         }
     }
 }

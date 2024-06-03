@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 3173322028079712179}
   - component: {fileID: 8292323255091234966}
-  - component: {fileID: 4448098198181112101}
   m_Layer: 14
   m_Name: TexturePaintTool
   m_TagString: Untagged
@@ -54,33 +53,6 @@ MonoBehaviour:
   m_HapticInterval: 0.2
   m_HapticSizeUp: 0.08
   m_HapticSizeDown: 0.06
---- !u!114 &4448098198181112101
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4944062844482009959}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e34c0b4064234a37a505a0db888d0a2f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  DefaultCanvasTexture: {fileID: 2800000, guid: b527583d47daaf9468ec44c12df92335,
-    type: 3}
-  m_BrushSize: 0.03
-  brush:
-    brushTexture: {fileID: 2800000, guid: 2e19e00607021a3459e1b0deb597a4b5, type: 3}
-    brushNormalTexture: {fileID: 0}
-    brushHeightTexture: {fileID: 0}
-    brushScale: 0.025
-    rotateAngle: 0
-    brushNormalBlend: 0
-    brushHeightBlend: 0
-    brushColor: {r: 1, g: 1, b: 1, a: 0}
-    colorBlendType: 1
-    normalBlendType: 0
-    heightBlendType: 0
 --- !u!1001 &6725322028796640316
 PrefabInstance:
   m_ObjectHideFlags: 0
