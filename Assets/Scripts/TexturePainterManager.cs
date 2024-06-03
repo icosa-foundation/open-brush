@@ -41,6 +41,9 @@ namespace TiltBrush
             Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
             Vector3 pos = rAttachPoint.position;
             Vector3 vec = rAttachPoint.forward;
+            Quaternion rot = rAttachPoint.rotation;
+            // Get the rotation around the forward vector
+            float angle = rot.eulerAngles.z;
 
             bool success = true;
             RaycastHit hitInfo;
@@ -50,13 +53,13 @@ namespace TiltBrush
 
             if (Physics.Raycast(pos, vec, out hitInfo, 4f, texturePaintLayer))
             {
-                brush.Scale = m_BrushSize * 0.05f; // Arbitrary scale factor
+                brush.Scale = m_BrushSize * PointerPressure * 0.05f; // Arbitrary scale factor
                 brush.ImageAlphaMultiplier = PointerPressure;
-                //brush.RotateAngle = Mathf.PerlinNoise(Time.time, 0) * 360f;
+                brush.RotateAngle = angle;
                 InkCanvas canvas = hitInfo.transform.GetComponent<InkCanvas>();
                 if (canvas != null)
                 {
-                    DebugVisualization.ShowPosition(hitInfo.point);
+                    DebugVisualization.ShowPosition(hitInfo.point, 0.1f);
                     if (m_EnableLine)
                     {
                         canvas.Paint(brush, hitInfo);
