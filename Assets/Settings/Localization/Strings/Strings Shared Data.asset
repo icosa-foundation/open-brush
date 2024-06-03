@@ -3315,6 +3315,10 @@ MonoBehaviour:
     m_Key: DirectoryChooserPopupButton
     m_Metadata:
       m_Items: []
+  - m_Id: 241026419819896832
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_TEXTURE_PAINT
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

@@ -780,6 +780,7 @@ Transform:
   - {fileID: 4067220476156272}
   - {fileID: 5274126955665001040}
   - {fileID: 2209524245202693102}
+  - {fileID: 8875174733857598839}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 37.184097, y: 63.1294, z: 0}
@@ -2604,7 +2605,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 68763796961820672
+      m_KeyId: 241026419819896832
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -2621,7 +2622,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 007c1059d8fd84e499d8042ca5ba016f, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: e00bfb39088ff7147aaf4b8f5d8c21a3, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
@@ -2963,4 +2964,79 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4073457010706892, guid: 9b674e23f212f5a40b5d981d3ba5f4e2,
     type: 3}
   m_PrefabInstance: {fileID: 5277953009267508124}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &6768547704821750734
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 4661729169517730}
+    m_Modifications:
+    - target: {fileID: 2793430388649047737, guid: b9d39b32b94b7de4fafef7ce724ddf4e,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2793430388649047737, guid: b9d39b32b94b7de4fafef7ce724ddf4e,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.75
+      objectReference: {fileID: 0}
+    - target: {fileID: 2793430388649047737, guid: b9d39b32b94b7de4fafef7ce724ddf4e,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.24400002
+      objectReference: {fileID: 0}
+    - target: {fileID: 2793430388649047737, guid: b9d39b32b94b7de4fafef7ce724ddf4e,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 2793430388649047737, guid: b9d39b32b94b7de4fafef7ce724ddf4e,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2793430388649047737, guid: b9d39b32b94b7de4fafef7ce724ddf4e,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2793430388649047737, guid: b9d39b32b94b7de4fafef7ce724ddf4e,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2793430388649047737, guid: b9d39b32b94b7de4fafef7ce724ddf4e,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2793430388649047737, guid: b9d39b32b94b7de4fafef7ce724ddf4e,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2793430388649047737, guid: b9d39b32b94b7de4fafef7ce724ddf4e,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2793430388649047737, guid: b9d39b32b94b7de4fafef7ce724ddf4e,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2796574721660272355, guid: b9d39b32b94b7de4fafef7ce724ddf4e,
+        type: 3}
+      propertyPath: m_Name
+      value: Texture Paint Tray
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: b9d39b32b94b7de4fafef7ce724ddf4e, type: 3}
+--- !u!4 &8875174733857598839 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2793430388649047737, guid: b9d39b32b94b7de4fafef7ce724ddf4e,
+    type: 3}
+  m_PrefabInstance: {fileID: 6768547704821750734}
   m_PrefabAsset: {fileID: 0}

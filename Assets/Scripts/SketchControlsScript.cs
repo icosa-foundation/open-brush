@@ -151,6 +151,7 @@ namespace TiltBrush
             OpenLayerOptionsPopup = 5201,
             RenameLayer = 5202,
             OpenDirectorChooserPopup = 5800,
+            MakePaintable = 5900,
             OpenScriptsCommandsList = 6000,
             OpenScriptsList = 6001,
             OpenExampleScriptsList = 6002,
