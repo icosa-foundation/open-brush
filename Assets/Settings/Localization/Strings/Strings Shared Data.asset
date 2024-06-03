@@ -3319,6 +3319,10 @@ MonoBehaviour:
     m_Key: ADVANCEDTOOLS_PANEL_BUTTON_TEXTURE_PAINT
     m_Metadata:
       m_Items: []
+  - m_Id: 241060493515120640
+    m_Key: ADVANCEDTOOLS_PANEL_TEXTURE_PAINT_TRAY_MAKE_PAINTABLE
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

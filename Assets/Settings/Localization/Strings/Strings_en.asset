@@ -3516,6 +3516,10 @@ MonoBehaviour:
     m_Localized: Texture Paint
     m_Metadata:
       m_Items: []
+  - m_Id: 241060493515120640
+    m_Localized: Make Paintable
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

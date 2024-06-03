@@ -116,5 +116,15 @@ namespace TiltBrush
         {
             brush.BrushTexture = brushTexture;
         }
+
+        public bool CanBeMadePaintable(GrabWidget grabWidget)
+        {
+            if (grabWidget == null) return false;
+            return grabWidget.GetComponentInChildren<InkCanvas>() == null &&
+                (
+                    grabWidget is ModelWidget ||
+                    grabWidget is StencilWidget
+                );
+        }
     }
 }
