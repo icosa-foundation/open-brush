@@ -21,7 +21,7 @@ namespace TiltBrush
     public class TexturePainterManager : MonoBehaviour, ITextureBrushController
     {
         public Texture2D DefaultCanvasTexture;
-        public float m_BrushSize = 0.1f;
+        public float m_BrushSize = 0.5f;
         public Brush brush;
 
         [NonSerialized] public static TexturePainterManager m_Instance;
@@ -38,64 +38,70 @@ namespace TiltBrush
 
         void Update()
         {
-            if (m_EnableLine)
+            Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
+            Vector3 pos = rAttachPoint.position;
+            Vector3 vec = rAttachPoint.forward;
+
+            bool success = true;
+            RaycastHit hitInfo;
+
+            LayerMask texturePaintLayer = LayerMask.GetMask("TexturePaint");
+            LayerMask mainCanvasLayer = LayerMask.GetMask("MainCanvas");
+
+            if (Physics.Raycast(pos, vec, out hitInfo, 4f, texturePaintLayer))
             {
-                Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
-                Vector3 pos = rAttachPoint.position;
-                Vector3 vec = rAttachPoint.forward;
-
-                bool success = true;
-                RaycastHit hitInfo;
-
-                LayerMask texturePaintLayer = LayerMask.GetMask("TexturePaint");
-                LayerMask mainCanvasLayer = LayerMask.GetMask("MainCanvas");
-
-                if (Physics.Raycast(pos, vec, out hitInfo, 4f, texturePaintLayer))
+                brush.Scale = m_BrushSize * 0.05f; // Arbitrary scale factor
+                brush.ImageAlphaMultiplier = PointerPressure;
+                //brush.RotateAngle = Mathf.PerlinNoise(Time.time, 0) * 360f;
+                InkCanvas canvas = hitInfo.transform.GetComponent<InkCanvas>();
+                if (canvas != null)
                 {
-                    brush.Scale = m_BrushSize * PointerPressure;
-                    brush.RotateAngle = Mathf.PerlinNoise(Time.time, 0) * 360f;
-                    InkCanvas canvas = hitInfo.transform.GetComponent<InkCanvas>();
-                    if (canvas != null)
+                    DebugVisualization.ShowPosition(hitInfo.point);
+                    if (m_EnableLine)
                     {
-                        DebugVisualization.ShowPosition(hitInfo.point);
                         canvas.Paint(brush, hitInfo);
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"No paint object on: {hitInfo.transform}");
-                    }
-                }
-                else if (Physics.Raycast(pos, vec, out hitInfo, 10f, mainCanvasLayer))
-                {
-                    var hitObject = hitInfo.transform.gameObject;
-                    var widget = hitObject.GetComponentInParent<GrabWidget>();
-                    var cmd = new EnableTexturePaintingCommand(widget);
-                    if (cmd.Widget != null)
-                    {
-                        SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"{hitInfo.transform} is not a valid paint target");
                     }
                 }
                 else
                 {
-                    Debug.LogWarning("No hit");
+                    Debug.LogWarning($"No paint object on: {hitInfo.transform}");
                 }
+            }
+            // else if (Physics.Raycast(pos, vec, out hitInfo, 10f, mainCanvasLayer))
+            // {
+            //     var hitObject = hitInfo.transform.gameObject;
+            //     var widget = hitObject.GetComponentInParent<GrabWidget>();
+            //     var cmd = new EnableTexturePaintingCommand(widget);
+            //     if (cmd.Widget != null)
+            //     {
+            //         SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+            //     }
+            //     else
+            //     {
+            //         Debug.LogWarning($"{hitInfo.transform} is not a valid paint target");
+            //     }
+            // }
+            else
+            {
+                Debug.LogWarning("No hit");
             }
         }
 
         public bool EnablePainting(bool enable)
         {
+            if (!enable)
+            {
+                brush.ResetSpacingCalculation();
+            }
             m_EnableLine = enable;
-            brush.Color = PointerManager.m_Instance.m_lastChosenColor;
+            brush.Color = PointerManager.m_Instance.PointerColor;
             return m_EnableLine;
         }
 
         public void AdjustBrushSize01(float mAdjustSizeScalar)
         {
             m_BrushSize += mAdjustSizeScalar;
+            m_BrushSize = Mathf.Clamp(m_BrushSize, 0.1f, 1f);
         }
 
         public float GetBrushSize01(InputManager.ControllerName _)

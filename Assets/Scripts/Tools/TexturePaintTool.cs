@@ -62,6 +62,7 @@ namespace TiltBrush
             if (!bEnable)
             {
                 TexturePainterManager.m_Instance.EnablePainting(false);
+                TexturePainterManager.m_Instance.EnablePainting(false);
                 WidgetManager.m_Instance.ResetActiveStencil();
             }
             m_PaintingActive = false;
@@ -109,8 +110,8 @@ namespace TiltBrush
             if (m_ExitOnAbortCommand && InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Abort))
                 m_RequestExit = true;
 
+            bool wasPainting = m_PaintingActive;
             m_PaintingActive = !m_EatInput && !m_ToolHidden && (m_brushTrigger || (m_PaintingActive && m_wandTrigger));
-
             TexturePainterManager.m_Instance.EnablePainting(m_PaintingActive);
             TexturePainterManager.m_Instance.PointerPressure = m_brushTriggerRatio;
 

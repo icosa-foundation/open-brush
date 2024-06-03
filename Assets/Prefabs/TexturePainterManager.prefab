@@ -146,7 +146,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   DefaultCanvasTexture: {fileID: 2800000, guid: b527583d47daaf9468ec44c12df92335,
     type: 3}
-  m_BrushSize: 0.03
+  m_BrushSize: 0.5
   brush:
     brushTexture: {fileID: 2800000, guid: 2e19e00607021a3459e1b0deb597a4b5, type: 3}
     brushNormalTexture: {fileID: 0}
@@ -157,8 +157,8 @@ MonoBehaviour:
     brushNormalBlend: 0
     brushHeightBlend: 0
     brushColor: {r: 1, g: 1, b: 1, a: 0}
-    imageAlphaMultiplier: 0
-    colorBlendType: 1
+    imageAlphaMultiplier: 1
+    colorBlendType: 0
     normalBlendType: 0
     heightBlendType: 0
 --- !u!114 &9139114884053377900
@@ -174,10 +174,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   brushShader: {fileID: 4800000, guid: c6058beef3b954dd281f8b7c11216858, type: 3}
-  color: {r: 1, g: 1, b: 1, a: 1}
+  color: {r: 0.60701793, g: 0.2216981, b: 1, a: 1}
   opacity: 1
-  softness: 0.5
-  aspect: 1
+  softness: 0.239
+  aspect: 0.448
   angle: 0
   textureSize: 256
   debugQuad: {fileID: 3625462579880062282}

@@ -24,6 +24,7 @@ namespace TiltBrush
         private GrabWidget m_Widget;
         private GrabWidget m_OriginalWidget;
         private bool m_Initialized;
+        private List<InkCanvas.PaintSet> m_PaintSet;
 
         public GrabWidget Widget => m_Widget;
 
@@ -44,6 +45,18 @@ namespace TiltBrush
             {
                 m_Widget = widget;
             }
+            m_PaintSet = new List<InkCanvas.PaintSet>
+            {
+                new(
+                    mainTextureName: "_MainTex",
+                    normalTextureName: "_BumpMap",
+                    heightTextureName: "_HeightMap",
+                    useMainPaint: true,
+                    useNormalPaint: false,
+                    useHeightPaint: false
+                )
+            };
+
         }
 
         protected override void OnRedo()
@@ -58,6 +71,7 @@ namespace TiltBrush
             m_OriginalWidget.gameObject.SetActive(false);
 
             if (m_Initialized) return;
+
             switch (m_Widget)
             {
                 case ModelWidget:
@@ -65,45 +79,46 @@ namespace TiltBrush
                         var objModelScript = m_Widget.GetComponentInChildren<ObjModelScript>();
                         foreach (var mesh in objModelScript.m_MeshChildren)
                         {
-                            InkCanvas canvas = mesh.gameObject.GetComponent<InkCanvas>();
-                            if (canvas == null)
-                            {
-                                mesh.GetComponent<MeshRenderer>().material.mainTexture = TexturePainterManager.m_Instance.DefaultCanvasTexture;
-
-                                var paintSet = new List<InkCanvas.PaintSet>
-                                {
-                                    new(
-                                        mainTextureName: "_MainTex",
-                                        normalTextureName: "_BumpMap",
-                                        heightTextureName: "_HeightMap",
-                                        useMainPaint: true,
-                                        useNormalPaint: false,
-                                        useHeightPaint: false
-                                    )
-                                };
-                                mesh.gameObject.AddInkCanvas(paintSet);
-                                mesh.gameObject.layer = LayerMask.NameToLayer("TexturePaint");
-                            }
-
-                            var collider = mesh.gameObject.GetComponent<MeshCollider>();
-                            if (collider == null)
-                            {
-                                mesh.gameObject.AddComponent<MeshCollider>();
-                            }
+                            AddInkCanvas(mesh.gameObject);
                         }
                         break;
                     }
+
                 case ImageWidget:
-                    // TODO
+                    var imageWidget = m_Widget as ImageWidget;
+                    AddInkCanvas(imageWidget.gameObject);
                     break;
+
                 case StencilWidget:
-                    // TODO
+                    var stencilWidget = m_Widget as StencilWidget;
+                    AddInkCanvas(stencilWidget.gameObject);
                     break;
+
                 default:
                     Debug.LogWarning($"{m_Widget.name} is not a valid paint target");
                     return;
             }
             m_Initialized = true;
+        }
+        private void AddInkCanvas(GameObject gameObject)
+        {
+            gameObject.GetComponent<MeshRenderer>().material.mainTexture = TexturePainterManager.m_Instance.DefaultCanvasTexture;
+            var canvas = gameObject.GetComponent<InkCanvas>();
+            if (canvas == null)
+            {
+                gameObject.AddInkCanvas(m_PaintSet);
+                gameObject.layer = LayerMask.NameToLayer("TexturePaint");
+            }
+            var collider = gameObject.GetComponent<Collider>();
+            if (!(collider is MeshCollider))
+            {
+                Object.Destroy(collider);
+                collider = null;
+            }
+            if (collider == null)
+            {
+                gameObject.AddComponent<MeshCollider>();
+            }
         }
 
         protected override void OnUndo()
@@ -112,6 +127,5 @@ namespace TiltBrush
             m_OriginalWidget.gameObject.SetActive(true);
             m_Widget.gameObject.SetActive(false);
         }
-
     }
 } // namespace TiltBrush
