@@ -69,28 +69,6 @@ namespace TiltBrush
                         canvas.Paint(brush, hitInfo);
                     }
                 }
-                else
-                {
-                    Debug.LogWarning($"No paint object on: {hitInfo.transform}");
-                }
-            }
-            // else if (Physics.Raycast(pos, vec, out hitInfo, 10f, mainCanvasLayer))
-            // {
-            //     var hitObject = hitInfo.transform.gameObject;
-            //     var widget = hitObject.GetComponentInParent<GrabWidget>();
-            //     var cmd = new EnableTexturePaintingCommand(widget);
-            //     if (cmd.Widget != null)
-            //     {
-            //         SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
-            //     }
-            //     else
-            //     {
-            //         Debug.LogWarning($"{hitInfo.transform} is not a valid paint target");
-            //     }
-            // }
-            else
-            {
-                Debug.LogWarning("No hit");
             }
         }
 
