@@ -303,6 +303,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 114828844590133850, guid: f5b291cbc819737469486452ea6748b8,
         type: 3}
+      propertyPath: m_AdvancedModeHintObject
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 114828844590133850, guid: f5b291cbc819737469486452ea6748b8,
+        type: 3}
       propertyPath: m_PanelPopUpMap.Array.data[2].m_PopUpPrefab
       value: 
       objectReference: {fileID: 1269800539083404, guid: 8c11503e6d0a24d409b1d8c992652d3b,
