@@ -155,10 +155,12 @@ namespace TiltBrush
         {
             get
             {
-                return !m_AutosaveFailed &&
-                    App.PlatformConfig.EnableAutosave &&
-                    !App.UserConfig.Flags.DisableAutosave;
+            	return false;
+                //return !m_AutosaveFailed &&
+                //    App.PlatformConfig.EnableAutosave &&
+                //    !App.UserConfig.Flags.DisableAutosave;
             }
+   
         }
 
         public TrTransform? LastThumbnail_SS { get; set; }
