@@ -225,7 +225,8 @@ namespace TiltBrush
                 ReferenceButton.Type.Images => ReferenceImageCatalog.m_Instance.CurrentImagesDirectory,
                 ReferenceButton.Type.BackgroundImages => BackgroundImageCatalog.m_Instance.CurrentBackgroundImagesDirectory,
                 ReferenceButton.Type.Models => ModelCatalog.m_Instance.CurrentModelsDirectory,
-                ReferenceButton.Type.Videos => VideoCatalog.Instance.CurrentVideoDirectory
+                ReferenceButton.Type.Videos => VideoCatalog.Instance.CurrentVideoDirectory,
+                ReferenceButton.Type.SavedStrokes => SavedStrokesCatalog.Instance.CurrentSavedStrokesDirectory
             };
 
             var truncatedPath = currentDir.Substring(App.MediaLibraryPath().Length);
