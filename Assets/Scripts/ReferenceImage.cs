@@ -19,6 +19,8 @@ using System.Linq;
 using Unity.VectorGraphics;
 using Superla.RadianceHDR;
 using UnityEngine;
+using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
 
 namespace TiltBrush
 {
@@ -37,6 +39,10 @@ namespace TiltBrush
             // Same meaning as Future.State.Error
             // Invariant: m_coroutine == null
             Error,
+            // This is the only specific error message right now. ("Image too large to load")
+            // For other errors (e.g unknown format), we set Error state and display a generic error message "Image failed to load"
+            // ImageUtils.cs throws more specific errors, and we could implement them here as well in the future.
+            ErrorImageTooLarge
         }
 
         // See ImageState for invariants
@@ -48,6 +54,10 @@ namespace TiltBrush
         private float m_ImageAspect; // only valid if ImageState == Ready
         private string m_Path;
         private SVGParser.SceneInfo _SvgSceneInfo;
+
+        private LocalizedString m_ErrorImageTooLargeHelpText = new LocalizedString("Strings", "PANEL_REFERENCE_ICONIMAGE_LOADERRORTEXT");
+        private LocalizedString m_ErrorGenericHelpText = new LocalizedString("Strings", "PANEL_REFERENCE_ICONIMAGE_GENERICERRORTEXT");
+
 
         // public bool IsComposite => _SvgSceneInfo.Scene.Root.getsh
 
@@ -68,6 +78,23 @@ namespace TiltBrush
                     // In case someone asks for the aspect ratio of the error icon
                     return 1;
                 }
+            }
+        }
+
+        // returns null if no error in image
+        public string ImageErrorExtraDescription()
+        {
+            if (m_State != ImageState.Error && m_State != ImageState.ErrorImageTooLarge)
+            {
+                return null;
+            }
+            else if (m_State == ImageState.Error)
+            {
+                return m_ErrorGenericHelpText.GetLocalizedStringAsync().Result;
+            }
+            else
+            {
+                return m_ErrorImageTooLargeHelpText.GetLocalizedStringAsync().Result;
             }
         }
 
@@ -93,7 +120,8 @@ namespace TiltBrush
                 switch (m_State)
                 {
                     case ImageState.Ready: return m_Icon;
-                    case ImageState.Error: return ReferenceImageCatalog.m_Instance.ErrorImage;
+                    case ImageState.Error:
+                    case ImageState.ErrorImageTooLarge: return ReferenceImageCatalog.m_Instance.ErrorImage;
                     default:
                     case ImageState.Uninitialized:
                     case ImageState.NotReady: return null;
@@ -290,7 +318,7 @@ namespace TiltBrush
                 // If this file is too large for the platform, don't load it.
                 if (!ValidateFileSize())
                 {
-                    m_State = ImageState.Error;
+                    m_State = ImageState.ErrorImageTooLarge;
                     ControllerConsoleScript.m_Instance.AddNewLine(
                         FileName + " is too large and could not be loaded.",
                         true);
@@ -550,6 +578,8 @@ namespace TiltBrush
             else
             {
                 // Problem reading the file?
+                // images with state ImageState.Error display a generic error message 'Image failed to load' when hovering over them in the reference panel
+                // TODO: use more specific error messages (e.g "Too large dimensions", "Unknown format") that are set in ImageUtils.cs? (that is called by ThreadedImageReader.cs)
                 m_State = ImageState.Error;
                 reader = null;
                 yield break;

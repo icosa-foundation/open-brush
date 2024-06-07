@@ -22,18 +22,17 @@ namespace TiltBrush
     {
         public ReferenceImage ReferenceImage { get; set; }
 
-        [SerializeField] private LocalizedString m_ErrorHelpText;
-
         public void RefreshDescription()
         {
             if (ReferenceImage != null)
             {
 
-                // Problem: image can have error for other reasons too, not just for being too large
-                // displays "Image too large to load" under the file name.
-                if (ReferenceImage.Icon == ReferenceImageCatalog.m_Instance.ErrorImage)
+                // null if image doesn't have error
+                string errorMessage = ReferenceImage.ImageErrorExtraDescription();
+
+                if (errorMessage != null)
                 {
-                    SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName), ImageErrorExtraDescription());
+                    SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName), errorMessage);
                 }
                 else
                 {
@@ -86,11 +85,6 @@ namespace TiltBrush
             }
 
             RefreshDescription();
-        }
-
-        public string ImageErrorExtraDescription()
-        {
-            return m_ErrorHelpText.GetLocalizedStringAsync().Result;
         }
     }
 } // namespace TiltBrush
