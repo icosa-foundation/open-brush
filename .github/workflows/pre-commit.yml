@@ -19,4 +19,21 @@ jobs:
       - uses: actions/setup-dotnet@v4.0.0
         with:
           dotnet-version: '8.0.x'
-      - uses: pre-commit/action@v3.0.1
+      - name: Install pre-commit
+        run: python -m pip install pre-commit
+        shell: bash
+      - name: Cache pre-commit environments
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-3|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: Setup pre-commit environments
+        run: pre-commit run
+      - name: Run pre-commit dotnet-format, with retries
+        uses: Wandalen/wretry.action@v3
+        with:
+          command: pre-commit run dotnet-format --show-diff-on-failure --color=always --all-files || { git checkout -- . ; exit 1 ; }  # In case dotnet-format fails, reset the changes it made. This way, we can differentiate between a NuGet failure and a real formatting issue
+      - name: Remove dotnet-format from the list of pre-commit jobs to run (since we already ran it)
+        run: yq eval 'del(.repos[] | select(.hooks[].id == "dotnet-format"))' -i .pre-commit-config.yaml
+      - name: Run the rest of pre-commit
+        run: pre-commit run --show-diff-on-failure --color=always --all-files
