@@ -327,22 +327,20 @@ namespace TiltBrush
                 (m_CurrentSketchSet == SketchSetType.Drive) && (m_SketchSet.NumSketches <= 0));
 
             // Show sign in popup if signed out for liked or drive sketchsets
-            bool showNotLoggedIn = !App.GoogleIdentity.LoggedIn &&
-                (m_CurrentSketchSet == SketchSetType.Liked ||
-                m_CurrentSketchSet == SketchSetType.Drive);
-            refreshIcons = refreshIcons && !showNotLoggedIn;
-            m_NotLoggedInMessage.SetActive(showNotLoggedIn && m_CurrentSketchSet == SketchSetType.Liked);
-            m_NotLoggedInDriveMessage.SetActive(showNotLoggedIn &&
-                m_CurrentSketchSet == SketchSetType.Drive);
+            bool showIcosaNotLoggedIn = !App.IcosaIsLoggedIn && m_CurrentSketchSet == SketchSetType.Liked;
+            bool showGoogleNotLoggedIn = !App.GoogleIdentity.LoggedIn && m_CurrentSketchSet == SketchSetType.Drive;
+            refreshIcons = refreshIcons && !showIcosaNotLoggedIn;
+            m_NotLoggedInMessage.SetActive(showIcosaNotLoggedIn && m_CurrentSketchSet == SketchSetType.Liked);
+            m_NotLoggedInDriveMessage.SetActive(showGoogleNotLoggedIn);
 
             // Show no likes text & gallery button if we don't have liked sketches.
             m_NoLikesMessage.SetActive(
                 (m_CurrentSketchSet == SketchSetType.Liked) &&
                 (m_SketchSet.NumSketches <= 0) &&
                 !m_SketchSet.IsActivelyRefreshingSketches &&
-                App.GoogleIdentity.LoggedIn);
+                App.IcosaIsLoggedIn);
 
-            // Show Contacting Server if we're talking to Poly.
+            // Show Contacting Server if we're talking to Drive.
             m_ContactingServerMessage.SetActive(
                 (requiresPoly ||
                 m_CurrentSketchSet == SketchSetType.Drive) &&

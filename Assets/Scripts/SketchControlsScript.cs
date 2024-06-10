@@ -4990,8 +4990,8 @@ namespace TiltBrush
             // Re-set the quality level to reset simplification level
             QualityControls.m_Instance.QualityLevel = QualityControls.m_Instance.QualityLevel;
 
-            App.PolyAssetCatalog.ClearLoadingQueue();
-            App.PolyAssetCatalog.UnloadUnusedModels();
+            App.IcosaAssetCatalog.ClearLoadingQueue();
+            App.IcosaAssetCatalog.UnloadUnusedModels();
         }
 
         private bool WorldIsReset(bool toSavedXf)

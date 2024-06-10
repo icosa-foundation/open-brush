@@ -37,12 +37,12 @@ namespace TiltBrush
             {
                 Invalid,
                 LocalFile,
-                PolyAssetId
+                IcosaAssetId
             }
 
             private Type type;
             private string path;
-            private string id; // Only valid when the type is PolyAssetId.
+            private string id; // Only valid when the type is IcosaAssetId.
 
             public static Location File(string relativePath)
             {
@@ -66,11 +66,11 @@ namespace TiltBrush
                 };
             }
 
-            public static Location PolyAsset(string assetId, string path)
+            public static Location IcosaAsset(string assetId, string path)
             {
                 return new Location
                 {
-                    type = Type.PolyAssetId,
+                    type = Type.IcosaAssetId,
                     path = path,
                     id = assetId
                 };
@@ -90,7 +90,7 @@ namespace TiltBrush
                     {
                         case Type.LocalFile:
                             return Path.Combine(App.ModelLibraryPath(), path).Replace("\\", "/");
-                        case Type.PolyAssetId:
+                        case Type.IcosaAssetId:
                             return path.Replace("\\", "/");
                     }
                     return null;
@@ -112,8 +112,8 @@ namespace TiltBrush
             {
                 get
                 {
-                    if (type == Type.PolyAssetId) { return id; }
-                    throw new Exception("Invalid Poly asset id request");
+                    if (type == Type.IcosaAssetId) { return id; }
+                    throw new Exception("Invalid Icosa asset id request");
                 }
             }
 
@@ -127,7 +127,7 @@ namespace TiltBrush
             public override string ToString()
             {
                 string str;
-                if (type == Type.PolyAssetId)
+                if (type == Type.IcosaAssetId)
                 {
                     str = $"{type}:{id}";
                 }
@@ -416,20 +416,20 @@ namespace TiltBrush
         class GltfModelBuilder : ModelBuilder
         {
             private readonly bool m_useThreadedImageLoad;
-            private readonly bool m_fromPoly;
+            private readonly bool m_fromIcosa;
 
             public GltfModelBuilder(Location location, bool useThreadedImageLoad)
                 : base(location.AbsolutePath)
             {
                 m_useThreadedImageLoad = useThreadedImageLoad;
-                m_fromPoly = (location.GetLocationType() == Location.Type.PolyAssetId);
+                m_fromIcosa = (location.GetLocationType() == Location.Type.IcosaAssetId);
             }
 
             protected override IDisposable DoBackgroundThreadWork()
             {
                 var loader = new TiltBrushUriLoader(
                     m_localPath, Path.GetDirectoryName(m_localPath), m_useThreadedImageLoad);
-                var options = m_fromPoly ? kPolyGltfImportOptions : kGltfImportOptions;
+                var options = m_fromIcosa ? kPolyGltfImportOptions : kGltfImportOptions;
                 return NewGltfImporter.BeginImport(m_localPath);
             }
 
@@ -592,9 +592,9 @@ namespace TiltBrush
             {
                 throw new NotImplementedException();
             }
-            else if (m_Location.GetLocationType() == Location.Type.PolyAssetId)
+            else if (m_Location.GetLocationType() == Location.Type.IcosaAssetId)
             {
-                // If we pulled this from Poly, it's going to be a gltf file.
+                // If we pulled this from Icosa, it's going to be a gltf file.
                 m_builder = new GltfModelBuilder(m_Location, useThreadedImageLoad);
             }
             else
@@ -713,10 +713,10 @@ namespace TiltBrush
                     CalcBoundsNonGltf(go);
                     EndCreatePrefab(go, warnings);
                 }
-                else if (m_Location.GetLocationType() == Location.Type.PolyAssetId ||
+                else if (m_Location.GetLocationType() == Location.Type.IcosaAssetId ||
                     ext == ".gltf2" || ext == ".gltf" || ext == ".glb")
                 {
-                    // If we pulled this from Poly, it's going to be a gltf file.
+                    // If we pulled this from Icosa, it's going to be a gltf file.
                     Task t = LoadGltf(warnings);
                     await t;
                 }
@@ -869,8 +869,8 @@ namespace TiltBrush
                     yield return OverlayManager.m_Instance.RunInCompositor(
                         OverlayType.LoadModel, LoadModel, 0.25f);
                     break;
-                case Location.Type.PolyAssetId:
-                    App.PolyAssetCatalog.RequestModelLoad(this, reason);
+                case Location.Type.IcosaAssetId:
+                    App.IcosaAssetCatalog.RequestModelLoad(this, reason);
                     yield return null;
                     while (!m_Valid && !m_LoadError.HasValue)
                     {
@@ -899,7 +899,7 @@ namespace TiltBrush
 
         public bool IsCached()
         {
-            return m_Location.GetLocationType() == Location.Type.PolyAssetId &&
+            return m_Location.GetLocationType() == Location.Type.IcosaAssetId &&
                 Directory.Exists(m_Location.AbsolutePath);
         }
 
@@ -927,7 +927,7 @@ namespace TiltBrush
             {
                 case Model.Location.Type.LocalFile:
                     return Path.GetFileNameWithoutExtension(RelativePath);
-                case Model.Location.Type.PolyAssetId:
+                case Model.Location.Type.IcosaAssetId:
                     return AssetId;
             }
             return "Unknown";

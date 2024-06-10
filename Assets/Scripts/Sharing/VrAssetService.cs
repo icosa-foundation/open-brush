@@ -20,6 +20,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 using Newtonsoft.Json.Linq;
 using Org.OpenAPITools.Api;
 using Org.OpenAPITools.Client;
@@ -35,10 +36,10 @@ namespace TiltBrush
     [Serializable]
     public enum Cloud
     {
-        None,
-        Poly,
-        Sketchfab,
-        Icosa
+        None = 0,
+        // Poly = 1,
+        Sketchfab = 2,
+        Icosa = 3,
     }
 
     [Serializable]
@@ -59,16 +60,13 @@ namespace TiltBrush
         private string kApiHost => App.ICOSA_API_URL;
         private string kAssetLandingPage => $"{App.ICOSA_WEBSITE_URL}/uploads";
 
-        private const string kListAssetsUri = "/v1/assets";
-        private const string kUserAssetsUri = "/v1/users/me/assets";
-        private const string kUserLikesUri = "/v1/users/me/likedassets";
-        private const string kGetVersionUri = "/$discovery/rest?version=v1";
-
-        public static string kIcosaApiKey => App.Config.GoogleSecrets?.ApiKey;
+        private const string kListAssetsUri = "/poly/assets";
+        private const string kUserAssetsUri = "/users/me/assets";
+        private const string kUserLikesUri = "/users/me/likedassets";
 
         public const string kCreativeCommonsLicense = "CREATIVE_COMMONS_BY";
 
-        // Icosa API used by Tilt Brush.
+        // Icosa API used by Open Brush.
         // If Icosa doesn't support this version, don't try to talk to Icosa and prompt the user to upgrade.
         private const string kIcosaApiVersion = "v1";
 
@@ -278,8 +276,8 @@ namespace TiltBrush
                 {
                     // The null == null case is handled earlier
                     WebRequest request = new WebRequest(
-                        $"{apiHost}{kListAssetsUri}/{assetId}?key={kIcosaApiKey}",
-                        App.GoogleIdentity, UnityWebRequest.kHttpVerbGET);
+                        $"{apiHost}{kListAssetsUri}/{assetId}",
+                        App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
                     return (await request.SendAsync()).JObject?["accountId"].ToString() == userId;
                 }
                 catch (VrAssetServiceException)
@@ -307,6 +305,7 @@ namespace TiltBrush
 
         [SerializeField] private int m_AssetsPerPage;
         [SerializeField] public float m_SketchbookRefreshInterval;
+        public bool m_UseLocalFeaturedSketches = true;
 
         private float m_UploadProgress;
         private bool m_LastUploadFailed;
@@ -315,8 +314,6 @@ namespace TiltBrush
         private bool m_UserCanceledLastUpload;
         private string m_LastUploadCompleteUrl;
         TaskAndCts<(string url, long bytes)> m_UploadTask = null;
-
-        // Icosa account id associated with the Google identity
         private string m_IcosaAccountId;
 
         private enum IcosaStatus
@@ -540,7 +537,7 @@ namespace TiltBrush
         private async Task<IcosaStatus> GetIcosaStatus()
         {
             // UserConfig override
-            if (App.UserConfig.Flags.DisableIcosa || App.Instance.IcosaToken == null)
+            if (App.UserConfig.Flags.DisableIcosa)
             {
                 return IcosaStatus.Disabled;
             }
@@ -828,36 +825,38 @@ namespace TiltBrush
             }
             else
             {
-                uri = String.Format("{0}{1}/{2}?key={3}", ApiHost, kListAssetsUri, assetId, kIcosaApiKey);
+                uri = String.Format("{0}{1}/{2}", ApiHost, kListAssetsUri, assetId);
             }
             return new AssetGetter(uri, assetId, type, reason);
         }
 
+        private string CombineQueryParams(string uriPath, string additionalParams)
+        {
+            string separator = uriPath.Contains("?") ? "&" : "?";
+            return $"{uriPath}{separator}{additionalParams}";
+        }
+
         public AssetLister ListAssets(SketchSetType type)
         {
-            string filter = null;
+            string filteredUriPath = null;
             string errorMessage = null;
             switch (type)
             {
                 case SketchSetType.Liked:
-                    if (!App.GoogleIdentity.LoggedIn)
+                    if (!App.IcosaIsLoggedIn)
                     {
                         return null;
                     }
-                    filter = $"{kUserLikesUri}?format=TILT&orderBy=LIKED_TIME&key={kIcosaApiKey}";
+                    filteredUriPath = CombineQueryParams(kUserLikesUri, "format=TILT&orderBy=LIKED_TIME");
                     errorMessage = "Failed to access your liked sketches.";
                     break;
                 case SketchSetType.Curated:
-                    if (string.IsNullOrEmpty(kIcosaApiKey))
-                    {
-                        return null;
-                    }
-                    filter = $"{kListAssetsUri}?format=TILT&curated=true&orderBy=NEWEST&key={kIcosaApiKey}";
+                    filteredUriPath = CombineQueryParams(kListAssetsUri, "format=TILT&curated=true&orderBy=NEWEST");
                     errorMessage = "Failed to access featured sketches.";
                     break;
             }
 
-            string uri = $"{ApiHost}{filter}&pageSize={m_AssetsPerPage}";
+            string uri = $"{ApiHost}{filteredUriPath}&pageSize={m_AssetsPerPage}";
             return new AssetLister(uri, errorMessage);
         }
 
@@ -865,8 +864,8 @@ namespace TiltBrush
         public IEnumerator<object> InsertSketchInfo(
             string assetId, int index, List<IcosaSceneFileInfo> infos)
         {
-            string uri = String.Format("{0}{1}/{2}?key={3}", ApiHost, kListAssetsUri, assetId, kIcosaApiKey);
-            WebRequest request = new WebRequest(uri, App.GoogleIdentity, UnityWebRequest.kHttpVerbGET);
+            string uri = String.Format("{0}{1}/{2}", ApiHost, kListAssetsUri, assetId);
+            WebRequest request = new WebRequest(uri, App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
             using (var cr = request.SendAsync().AsIeNull())
             {
                 while (!request.Done)
@@ -903,8 +902,8 @@ namespace TiltBrush
                     uri = $"{ApiHost}{kUserAssetsUri}?format=GLTF2&orderBy=NEWEST&pageSize={m_AssetsPerPage}";
                     break;
                 case IcosaSetType.Featured:
-                    uri = $"{ApiHost}{kListAssetsUri}?key={kIcosaApiKey}" +
-                        $"&format=GLTF2&curated=true&orderBy=NEWEST&pageSize={m_AssetsPerPage}";
+                    uri = $"{ApiHost}{kListAssetsUri}" +
+                        $"?format=GLTF2&curated=true&orderBy=NEWEST&pageSize={m_AssetsPerPage}";
                     break;
             }
             return new AssetLister(uri, "Failed to connect to Icosa.");
@@ -914,8 +913,8 @@ namespace TiltBrush
         public IEnumerator LoadTiltFile(string id)
         {
             string path = Path.GetTempFileName();
-            string uri = String.Format("{0}{1}/{2}?key={3}", ApiHost, kListAssetsUri, id, kIcosaApiKey);
-            WebRequest request = new WebRequest(uri, App.GoogleIdentity, UnityWebRequest.kHttpVerbGET);
+            string uri = String.Format("{0}{1}/{2}", ApiHost, kListAssetsUri, id);
+            WebRequest request = new WebRequest(uri, App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
             using (var cr = request.SendAsync().AsIeNull())
             {
                 while (!request.Done)

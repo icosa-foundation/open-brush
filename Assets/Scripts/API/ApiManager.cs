@@ -811,14 +811,14 @@ namespace TiltBrush
         {
             // Same as calling Model.RequestModelPreload -> RequestModelLoadInternal, except
             // this won't ignore the request if the load-into-memory previously failed.
-            App.PolyAssetCatalog.RequestModelLoad(assetId, reason);
+            App.IcosaAssetCatalog.RequestModelLoad(assetId, reason);
 
             // It is possible from this section forward that the user may have moved on to a different page
             // on the Poly panel, which is why we use a local copy of 'model' rather than m_Model.
             Model model;
             // A model in the catalog will become non-null once the gltf has been downloaded or is in the
             // cache.
-            while ((model = App.PolyAssetCatalog.GetModel(assetId)) == null)
+            while ((model = App.IcosaAssetCatalog.GetModel(assetId)) == null)
             {
                 yield return null;
             }

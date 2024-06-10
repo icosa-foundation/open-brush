@@ -634,7 +634,7 @@ namespace TiltBrush
                         App.Config.m_EnableReferenceModelExport &&
                         ExportableModelWidgets.Any(
                             w => w.gameObject.activeSelf &&
-                                w.Model.GetLocation().GetLocationType() == Model.Location.Type.PolyAssetId);
+                                w.Model.GetLocation().GetLocationType() == Model.Location.Type.IcosaAssetId);
             }
         }
 
@@ -1413,19 +1413,19 @@ namespace TiltBrush
                     // Kick off a bunch of loads...
                     foreach (var assetId in assetIds)
                     {
-                        if (App.PolyAssetCatalog.GetAssetLoadState(assetId)
-                            != PolyAssetCatalog.AssetLoadState.Loaded)
+                        if (App.IcosaAssetCatalog.GetAssetLoadState(assetId)
+                            != IcosaAssetCatalog.AssetLoadState.Loaded)
                         {
-                            App.PolyAssetCatalog.RequestModelLoad(assetId, "tiltload");
+                            App.IcosaAssetCatalog.RequestModelLoad(assetId, "tiltload");
                         }
                     }
                     // ... and wait for them to complete
                     // No widgets have been created yet, so we can't use AreMediaWidgetsStillLoading.
                     bool IsLoading(string assetId)
                     {
-                        var state = App.PolyAssetCatalog.GetAssetLoadState(assetId);
-                        return (state == PolyAssetCatalog.AssetLoadState.Downloading ||
-                            state == PolyAssetCatalog.AssetLoadState.Loading);
+                        var state = App.IcosaAssetCatalog.GetAssetLoadState(assetId);
+                        return (state == IcosaAssetCatalog.AssetLoadState.Downloading ||
+                            state == IcosaAssetCatalog.AssetLoadState.Loading);
                     }
                     while (assetIds.Any(IsLoading))
                     {
@@ -1486,16 +1486,16 @@ namespace TiltBrush
         {
             if (CreatingMediaWidgets) { return true; }
             // Widgets have been created, but some may not have their data yet
-            PolyAssetCatalog pac = App.PolyAssetCatalog;
+            IcosaAssetCatalog pac = App.IcosaAssetCatalog;
             foreach (var gwd in m_ModelWidgets)
             {
                 Model.Location loc = gwd.WidgetScript.Model.GetLocation();
-                if (loc.GetLocationType() == Model.Location.Type.PolyAssetId)
+                if (loc.GetLocationType() == Model.Location.Type.IcosaAssetId)
                 {
                     switch (pac.GetAssetLoadState(loc.AssetId))
                     {
-                        case PolyAssetCatalog.AssetLoadState.Downloading:
-                        case PolyAssetCatalog.AssetLoadState.Loading:
+                        case IcosaAssetCatalog.AssetLoadState.Downloading:
+                        case IcosaAssetCatalog.AssetLoadState.Loading:
                             return true;
                     }
                 }

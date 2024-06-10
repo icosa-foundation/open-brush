@@ -26,22 +26,25 @@ namespace TiltBrush
     {
         private string m_Uri;
         private string m_ErrorMessage;
-        private string m_PageToken;
+        private int m_PageIndex = -1;
 
-        public bool HasMore { get { return m_PageToken != null; } }
+        public bool HasMore { get { return m_PageIndex != -1; } }
 
         public AssetLister(string uri, string errorMessage)
         {
             m_Uri = uri;
             m_ErrorMessage = errorMessage;
+            m_PageIndex = 0;
         }
 
         public IEnumerator<object> NextPage(List<IcosaSceneFileInfo> files)
         {
-            string uri = m_PageToken == null ? m_Uri
-                : String.Format("{0}&page_token={1}", m_Uri, m_PageToken);
+            if (m_PageIndex == -1) { yield break; }
+            m_PageIndex++;
+            string uri = m_PageIndex == 0 ? m_Uri
+                : String.Format("{0}&page={1}", m_Uri, m_PageIndex);
 
-            WebRequest request = new WebRequest(uri, App.GoogleIdentity, UnityWebRequest.kHttpVerbGET);
+            WebRequest request = new WebRequest(uri, App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
             using (var cr = request.SendAsync().AsIeNull())
             {
                 while (!request.Done)
@@ -59,30 +62,30 @@ namespace TiltBrush
                 }
             }
 
-            Future<JObject> f = new Future<JObject>(() => JObject.Parse(request.Result));
-            JObject json;
-            while (!f.TryGetResult(out json)) { yield return null; }
+            Future<JArray> f = new Future<JArray>(() => JArray.Parse(request.Result));
+            JArray assets;
+            while (!f.TryGetResult(out assets)) { yield return null; }
 
-            var assets = json["assets"];
             if (assets != null)
             {
                 foreach (var asset in assets)
                 {
                     var info = new IcosaSceneFileInfo(asset);
                     info.Author = asset["displayName"].ToString();
-                    ;
                     files.Add(info);
                 }
             }
-            JToken jPageToken = json["nextPageToken"];
-            m_PageToken = jPageToken != null ? jPageToken.ToString() : null;
+
+            // Set page token to -1 when we hit the last page
+            m_PageIndex = assets.Count > 0 ? m_PageIndex : -1;
         }
 
-        public IEnumerator<Null> NextPage(List<PolyAssetCatalog.AssetDetails> files,
+        public IEnumerator<Null> NextPage(List<IcosaAssetCatalog.AssetDetails> files,
                                           string thumbnailSuffix)
         {
-            string uri = m_PageToken == null ? m_Uri
-                : String.Format("{0}&page_token={1}", m_Uri, m_PageToken);
+            if (m_PageIndex == -1) { yield break; }
+            string uri = m_PageIndex == 0 ? m_Uri
+                : String.Format("{0}&page_token={1}", m_Uri, m_PageIndex);
 
             WebRequest request = new WebRequest(uri, App.GoogleIdentity, UnityWebRequest.kHttpVerbGET);
             using (var cr = request.SendAsync().AsIeNull())
@@ -142,7 +145,7 @@ namespace TiltBrush
                     }
                     lastAsset = asset;
                     string accountName = asset["authorName"]?.ToString() ?? "Unknown";
-                    files.Add(new PolyAssetCatalog.AssetDetails(asset, accountName, thumbnailSuffix));
+                    files.Add(new IcosaAssetCatalog.AssetDetails(asset, accountName, thumbnailSuffix));
                 }
                 catch (NullReferenceException)
                 {
@@ -152,8 +155,7 @@ namespace TiltBrush
                 yield return null;
             }
 
-            JToken jPageToken = json["nextPageToken"];
-            m_PageToken = jPageToken != null ? jPageToken.ToString() : null;
+            m_PageIndex++;
         }
     }
 } // namespace TiltBrush

@@ -170,15 +170,15 @@ namespace TiltBrush
                 }
             }
 
-            private bool? m_PolyModelPreload;
-            public bool PolyModelPreloadValid => m_PolyModelPreload.HasValue;
-            public bool PolyModelPreload
+            private bool? m_IcosaModelPreload;
+            public bool PolyModelPreloadValid => m_IcosaModelPreload.HasValue;
+            public bool IcosaModelPreload
             {
                 get
                 {
-                    return m_PolyModelPreload ?? App.PlatformConfig.EnablePolyPreload;
+                    return m_IcosaModelPreload ?? App.PlatformConfig.EnablePolyPreload;
                 }
-                set { m_PolyModelPreload = value; }
+                set { m_IcosaModelPreload = value; }
             }
         }
 

@@ -64,7 +64,7 @@ namespace TiltBrush
             {
                 new FileSketchSet(),
                 new FileSketchSet(App.FeaturedSketchesPath()),
-                new PolySketchSet(this, SketchSetType.Liked, maxTriangles, needsLogin: true),
+                new IcosaSketchSet(this, SketchSetType.Liked, maxTriangles, needsLogin: true),
                 new GoogleDriveSketchSet(),
             };
         }

@@ -31,7 +31,7 @@ namespace TiltBrush
     {
         private bool m_Ready;
         private string m_URI;
-        private PolyRawAsset m_Asset;
+        private IcosaRawAsset m_Asset;
         private JsonSerializer m_JsonSerializer;
 
         /// Converts a property from snake case to camel case.
@@ -73,7 +73,7 @@ namespace TiltBrush
             get { return m_Ready; }
         }
 
-        public PolyRawAsset Asset
+        public IcosaRawAsset Asset
         {
             get { return m_Asset; }
         }
@@ -84,7 +84,7 @@ namespace TiltBrush
                            string reason)
         {
             m_URI = uri;
-            m_Asset = new PolyRawAsset(assetId, assetType);
+            m_Asset = new IcosaRawAsset(assetId, assetType);
             m_JsonSerializer = new JsonSerializer();
             m_JsonSerializer.ContractResolver = new SnakeToCamelPropertyNameContractResolver();
             Reason = reason;
@@ -102,17 +102,9 @@ namespace TiltBrush
             }
             else
             {
-
-                identity = App.GoogleIdentity;
-
-                if (string.IsNullOrEmpty(App.Config.GoogleSecrets?.ApiKey))
-                {
-                    IsCanceled = true;
-                    yield break;
-                }
                 m_Ready = false;
 
-                WebRequest initialRequest = new WebRequest(m_URI, App.GoogleIdentity, UnityWebRequest.kHttpVerbGET);
+                WebRequest initialRequest = new WebRequest(m_URI, App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
                 using (var cr = initialRequest.SendAsync().AsIeNull())
                 {
                     while (!initialRequest.Done)
@@ -138,6 +130,13 @@ namespace TiltBrush
                     Future<JObject> f = new Future<JObject>(() => JObject.Parse(initialRequest.Result));
                     JObject json;
                     while (!f.TryGetResult(out json)) { yield return null; }
+
+                    var polyPizzaUrl = json["Download"];
+                    if (polyPizzaUrl == null)
+                    {
+                        Debug.LogErrorFormat("Failed to find download url for {0}", m_URI);
+                        yield break;
+                    }
 
                     if (json.Count == 0)
                     {
@@ -222,7 +221,7 @@ namespace TiltBrush
             // Download all resource assets.
             foreach (var e in m_Asset.ResourceElements)
             {
-                request = new WebRequest(e.dataURL, App.GoogleIdentity);
+                request = new WebRequest(e.dataURL, App.Instance.IcosaToken);
                 using (var cr = request.SendAsync().AsIeNull())
                 {
                     while (!request.Done)

@@ -164,7 +164,7 @@ GameObject:
   - component: {fileID: 11474066}
   - component: {fileID: 114370098467888466}
   m_Layer: 16
-  m_Name: PolyPanel
+  m_Name: IcosaPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -259,17 +259,17 @@ MonoBehaviour:
   m_ClampToBounds: 1
   m_ReticleBounds: {x: 2.55, y: 2.35, z: 0}
   m_BorderSphereHighlightRadius: 2.5
-  m_PositioningSpheresBounds: {x: 1, y: 0}
+  m_PositioningSpheresBounds: {x: 1, y: 1}
   m_PositioningSphereRadius: 0.4
   m_UseGazeRotation: 1
   m_MaxGazeRotation: 20
   m_GazeActivateSpeed: 8
-  m_InitialSpawnPos: {x: 0, y: 0, z: 0}
+  m_InitialSpawnPos: {x: -7, y: 15, z: 6}
   m_InitialSpawnRotEulers: {x: 0, y: 0, z: 0}
   m_WandAttachAngle: 0
   m_WandAttachYOffset: 0
   m_WandAttachHalfHeight: 1.3
-  m_BeginFixed: 0
+  m_BeginFixed: 1
   m_CanBeFixedToWand: 1
   m_CanBeDetachedFromWand: 1
   m_PopUpGazeDuration: 0.2
@@ -856,7 +856,15 @@ MonoBehaviour:
   m_UnloadedTexture: {fileID: 2800000, guid: 92139e46e58d3924fb8e16ba42a0145f, type: 3}
   m_LoadedTexture: {fileID: 2800000, guid: e9a34c5f95833b248b106d4f7d83d9ad, type: 3}
   m_ErrorTexture: {fileID: 2800000, guid: 0c91e975bed1cd948a150b672f3fec48, type: 3}
-  m_LoadHelpText: Click to Load
+  m_LoadHelpText:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_LoadingOverlay: {fileID: 1000011887412796}
   references:
     version: 2
@@ -1857,7 +1865,15 @@ MonoBehaviour:
   m_UnloadedTexture: {fileID: 2800000, guid: 92139e46e58d3924fb8e16ba42a0145f, type: 3}
   m_LoadedTexture: {fileID: 2800000, guid: e9a34c5f95833b248b106d4f7d83d9ad, type: 3}
   m_ErrorTexture: {fileID: 2800000, guid: 0c91e975bed1cd948a150b672f3fec48, type: 3}
-  m_LoadHelpText: Click to Load
+  m_LoadHelpText:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_LoadingOverlay: {fileID: 1000012134891236}
   references:
     version: 2
@@ -2043,7 +2059,15 @@ MonoBehaviour:
   m_UnloadedTexture: {fileID: 2800000, guid: 92139e46e58d3924fb8e16ba42a0145f, type: 3}
   m_LoadedTexture: {fileID: 2800000, guid: e9a34c5f95833b248b106d4f7d83d9ad, type: 3}
   m_ErrorTexture: {fileID: 2800000, guid: 0c91e975bed1cd948a150b672f3fec48, type: 3}
-  m_LoadHelpText: Click to Load
+  m_LoadHelpText:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_LoadingOverlay: {fileID: 1000014145540092}
   references:
     version: 2
@@ -3122,7 +3146,15 @@ MonoBehaviour:
   m_UnloadedTexture: {fileID: 2800000, guid: 92139e46e58d3924fb8e16ba42a0145f, type: 3}
   m_LoadedTexture: {fileID: 2800000, guid: e9a34c5f95833b248b106d4f7d83d9ad, type: 3}
   m_ErrorTexture: {fileID: 2800000, guid: 0c91e975bed1cd948a150b672f3fec48, type: 3}
-  m_LoadHelpText: Click to Load
+  m_LoadHelpText:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_LoadingOverlay: {fileID: 1000010298050724}
   references:
     version: 2
@@ -4414,7 +4446,15 @@ MonoBehaviour:
   m_UnloadedTexture: {fileID: 2800000, guid: 92139e46e58d3924fb8e16ba42a0145f, type: 3}
   m_LoadedTexture: {fileID: 2800000, guid: e9a34c5f95833b248b106d4f7d83d9ad, type: 3}
   m_ErrorTexture: {fileID: 2800000, guid: 0c91e975bed1cd948a150b672f3fec48, type: 3}
-  m_LoadHelpText: Click to Load
+  m_LoadHelpText:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_LoadingOverlay: {fileID: 1000014019108166}
   references:
     version: 2
@@ -5541,7 +5581,15 @@ MonoBehaviour:
   m_UnloadedTexture: {fileID: 2800000, guid: 92139e46e58d3924fb8e16ba42a0145f, type: 3}
   m_LoadedTexture: {fileID: 2800000, guid: e9a34c5f95833b248b106d4f7d83d9ad, type: 3}
   m_ErrorTexture: {fileID: 2800000, guid: 0c91e975bed1cd948a150b672f3fec48, type: 3}
-  m_LoadHelpText: Click to Load
+  m_LoadHelpText:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_LoadingOverlay: {fileID: 1000013864904278}
   references:
     version: 2
