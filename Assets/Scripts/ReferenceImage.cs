@@ -42,7 +42,7 @@ namespace TiltBrush
             // This is the only specific error message right now. ("Image too large to load")
             // For other errors (e.g unknown format), we set Error state and display a generic error message "Image failed to load"
             // ImageUtils.cs throws more specific errors, and we could implement them here as well in the future.
-            ErrorImageTooLarge
+            ErrorImageTooLarge = 31000
         }
 
         // See ImageState for invariants
