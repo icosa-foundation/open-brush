@@ -43,7 +43,7 @@ namespace TiltBrush
         }
         override protected void OnButtonPressed()
         {
-            if (ReferenceImage == null || !ReferenceImage.Valid)
+            if (ReferenceImage == null)
             {
                 return;
             }
