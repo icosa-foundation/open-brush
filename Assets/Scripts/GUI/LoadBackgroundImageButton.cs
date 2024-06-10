@@ -22,26 +22,24 @@ namespace TiltBrush
     {
         public ReferenceImage ReferenceImage { get; set; }
 
-        [SerializeField] private LocalizedString m_ErrorHelpText;
-
-        // this is commented out and moved into ResetState() because
-        // for a new image (ie., one that isn't in the cache yet), !ReferenceImage.Valid, even if the size is valid (ie less than the max size)
-        // TODO: figure out if it's bad to move this into ResetState()
         public void RefreshDescription()
         {
-            /* if (ReferenceImage != null)
-             {
+            if (ReferenceImage != null)
+            {
 
-                 if (!ReferenceImage.Valid)
-                 {
-                     SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName), ImageErrorExtraDescription());
-                 }
-                 else
-                 {
-                     SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName));
-                 }
+                // null if image doesn't have error
+                string errorMessage = ReferenceImage.ImageErrorExtraDescription();
 
-             }*/
+                if (errorMessage != null)
+                {
+                    SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName), errorMessage);
+                }
+                else
+                {
+                    SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName));
+                }
+
+            }
         }
         override protected void OnButtonPressed()
         {
@@ -56,19 +54,19 @@ namespace TiltBrush
         {
             base.ResetState();
 
-            if (ReferenceImage == null)
+            // Make ourselves unavailable if our image has an error.
+            bool available = false;
+            if (ReferenceImage != null)
             {
-                return;
+                available = ReferenceImage.NotLoaded || ReferenceImage.Valid;
             }
 
-            if (!ReferenceImage.Valid)
+            if (available != IsAvailable())
             {
-                SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName), ImageErrorExtraDescription());
+                SetButtonAvailable(available);
             }
-            else
-            {
-                SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName));
-            }
+
+            RefreshDescription();
         }
 
         public void Set360ButtonTexture(Texture2D rTexture, float aspect = -1)
@@ -77,12 +75,6 @@ namespace TiltBrush
             m_CurrentButtonTexture = rTexture;
             m_ButtonRenderer.material.mainTexture = rTexture;
             m_ButtonRenderer.material.SetFloat("_Stereoscopic", isStereo);
-        }
-
-
-        public string ImageErrorExtraDescription()
-        {
-            return m_ErrorHelpText.GetLocalizedStringAsync().Result;
         }
 
     }
