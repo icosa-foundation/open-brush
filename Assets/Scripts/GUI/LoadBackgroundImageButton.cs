@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using UnityEngine;
+using UnityEngine.Localization;
+
 namespace TiltBrush
 {
 
@@ -24,10 +26,21 @@ namespace TiltBrush
         {
             if (ReferenceImage != null)
             {
-                SetDescriptionText(ReferenceImage.FileName);
+
+                // null if image doesn't have error
+                string errorMessage = ReferenceImage.ImageErrorExtraDescription();
+
+                if (errorMessage != null)
+                {
+                    SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName), errorMessage);
+                }
+                else
+                {
+                    SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName));
+                }
+
             }
         }
-
         override protected void OnButtonPressed()
         {
             if (ReferenceImage == null)
@@ -52,6 +65,8 @@ namespace TiltBrush
             {
                 SetButtonAvailable(available);
             }
+
+            RefreshDescription();
         }
 
         public void Set360ButtonTexture(Texture2D rTexture, float aspect = -1)
