@@ -1065,7 +1065,7 @@ jobs:
   publish_oculus_quest:
     name: Publish Oculus Quest 2+ Release
     needs: [configuration, build]
-    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -1091,7 +1091,7 @@ jobs:
 
           cd releases
           unzip symbols.zip
-          curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
+          curl -L 'https://www.oculus.com/download_app/?id=5159709737372459' -o ovr-platform-util
           chmod 755 ovr-platform-util
 
           if [ "$PRERELEASE" == "false" ]
@@ -1105,7 +1105,7 @@ jobs:
   publish_oculus_quest1:
     name: Publish Oculus Quest 1 Release
     needs: [configuration, build]
-    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -1131,7 +1131,7 @@ jobs:
 
           cd releases1
           unzip symbols.zip
-          curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
+          curl -L 'https://www.oculus.com/download_app/?id=5159709737372459' -o ovr-platform-util
           chmod 755 ovr-platform-util
 
           if [ "$PRERELEASE" == "false" ]
@@ -1145,7 +1145,7 @@ jobs:
   publish_oculus_rift:
     name: Publish Oculus Rift Release
     needs: [configuration, build]
-    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -1169,7 +1169,7 @@ jobs:
           mv build_windows_rift/StandaloneWindows64/ releases/OpenBrush_Rift_$VERSION/
           cd releases
           zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
-          curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
+          curl -L 'https://www.oculus.com/download_app/?id=5159709737372459' -o ovr-platform-util
           chmod 755 ovr-platform-util
 
           if [ "$PRERELEASE" == "false" ]
