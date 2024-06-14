@@ -32,7 +32,8 @@ namespace TiltBrush
         Cylinder,
         InteriorDome,
         Pyramid,
-        Ellipsoid
+        Ellipsoid,
+        Custom
     }
 
     [Serializable]
@@ -104,6 +105,7 @@ namespace TiltBrush
         [SerializeField] GameObject m_WidgetPinPrefab;
         [SerializeField] ImageWidget m_ImageWidgetPrefab;
         [SerializeField] VideoWidget m_VideoWidgetPrefab;
+        [SerializeField] TextWidget m_TextWidgetPrefab;
         [SerializeField] LightWidget m_LightWidgetPrefab;
         [SerializeField] SceneLightGizmo m_SceneLightGizmoPrefab;
         [SerializeField] CameraPathWidget m_CameraPathWidgetPrefab;
@@ -145,6 +147,7 @@ namespace TiltBrush
         private List<TypedWidgetData<LightWidget>> m_LightWidgets;
         private List<TypedWidgetData<StencilWidget>> m_StencilWidgets;
         private List<TypedWidgetData<ImageWidget>> m_ImageWidgets;
+        private List<TypedWidgetData<TextWidget>> m_TextWidgets;
         private List<TypedWidgetData<VideoWidget>> m_VideoWidgets;
         private List<TypedWidgetData<CameraPathWidget>> m_CameraPathWidgets;
 
@@ -303,6 +306,7 @@ namespace TiltBrush
             m_LightWidgets = new List<TypedWidgetData<LightWidget>>();
             m_StencilWidgets = new List<TypedWidgetData<StencilWidget>>();
             m_ImageWidgets = new List<TypedWidgetData<ImageWidget>>();
+            m_TextWidgets = new List<TypedWidgetData<TextWidget>>();
             m_VideoWidgets = new List<TypedWidgetData<VideoWidget>>();
             m_CameraPathWidgets = new List<TypedWidgetData<CameraPathWidget>>();
 
@@ -330,6 +334,7 @@ namespace TiltBrush
         public ModelWidget ModelWidgetPrefab { get { return m_ModelWidgetPrefab; } }
         public ImageWidget ImageWidgetPrefab { get { return m_ImageWidgetPrefab; } }
         public VideoWidget VideoWidgetPrefab { get { return m_VideoWidgetPrefab; } }
+        public TextWidget TextWidgetPrefab { get { return m_TextWidgetPrefab; } }
         public LightWidget LightWidgetPrefab { get { return m_LightWidgetPrefab; } }
         public SceneLightGizmo SceneLightGizmoPrefab { get { return m_SceneLightGizmoPrefab; } }
         public CameraPathWidget CameraPathWidgetPrefab { get { return m_CameraPathWidgetPrefab; } }
@@ -389,6 +394,13 @@ namespace TiltBrush
                     yield return m_ImageWidgets[i];
                 }
             }
+            for (int i = 0; i < m_TextWidgets.Count; ++i)
+            {
+                if (m_TextWidgets[i].m_WidgetObject.activeSelf)
+                {
+                    yield return m_TextWidgets[i];
+                }
+            }
             for (int i = 0; i < m_VideoWidgets.Count; ++i)
             {
                 if (m_VideoWidgets[i].m_WidgetObject.activeSelf)
@@ -413,6 +425,7 @@ namespace TiltBrush
                 return ret
                     .Concat(m_ImageWidgets)
                     .Concat(m_VideoWidgets)
+                    .Concat(m_TextWidgets)
                     .Concat(m_LightWidgets);
             }
         }
@@ -515,23 +528,6 @@ namespace TiltBrush
             return GetNthActiveCameraPath(pathIndex) == m_CurrentCameraPath.WidgetScript;
         }
 
-        public int? GetIndexOfCameraPath(CameraPathWidget path)
-        {
-            int index = 0;
-            for (int i = 0; i < m_CameraPathWidgets.Count; ++i)
-            {
-                if (m_CameraPathWidgets[i].m_WidgetObject.activeSelf)
-                {
-                    if (m_CameraPathWidgets[i].WidgetScript == path)
-                    {
-                        return index;
-                    }
-                    ++index;
-                }
-            }
-            return null;
-        }
-
         public CameraPathWidget CreatePathWidget()
         {
             CreateWidgetCommand command =
@@ -613,11 +609,11 @@ namespace TiltBrush
 
         public bool HasSelectableWidgets()
         {
-            return
-                (m_ModelWidgets.Count > 0) ||
+            return m_ModelWidgets.Count > 0 ||
+                m_ImageWidgets.Count > 0 ||
+                m_TextWidgets.Count > 0 ||
+                m_VideoWidgets.Count > 0 ||
                 (m_LightWidgets.Count > 0) ||
-                (m_ImageWidgets.Count > 0) ||
-                (m_VideoWidgets.Count > 0) ||
                 (!m_StencilsDisabled && m_StencilWidgets.Count > 0);
         }
 
@@ -737,6 +733,15 @@ namespace TiltBrush
                 CameraPathWidget.CreateFromSaveData(cameraPaths[i]);
             }
         }
+
+        public void SetDataFromTilt(TiltText[] tiltText)
+        {
+            for (int i = 0; i < tiltText.Length; ++i)
+            {
+                TextWidget.FromTiltText(tiltText[i]);
+            }
+        }
+
 
         public void SetDataFromTilt(TiltVideo[] value)
         {
@@ -1006,6 +1011,16 @@ namespace TiltBrush
             }
         }
 
+        public IEnumerable<TextWidget> TextWidgets
+        {
+            get
+            {
+                return m_TextWidgets
+                    .Select(w => w == null ? null : w.WidgetScript)
+                    .Where(w => w != null);
+            }
+        }
+
         public IEnumerable<ModelWidget> NonExportableModelWidgets
         {
             get
@@ -1058,12 +1073,15 @@ namespace TiltBrush
             }
         }
 
-        public List<GrabWidget> GetAllUnselectedActiveWidgets()
+        // If canvas is null then return all widgets
+        public List<GrabWidget> GetAllUnselectedActiveWidgets(CanvasScript canvas)
         {
             List<GrabWidget> widgets = new List<GrabWidget>();
+            if (canvas == null) return widgets; // Return empty list
             GetUnselectedActiveWidgetsInList(m_ModelWidgets);
             GetUnselectedActiveWidgetsInList(m_LightWidgets);
             GetUnselectedActiveWidgetsInList(m_ImageWidgets);
+            GetUnselectedActiveWidgetsInList(m_TextWidgets);
             GetUnselectedActiveWidgetsInList(m_VideoWidgets);
             if (!m_StencilsDisabled)
             {
@@ -1076,9 +1094,9 @@ namespace TiltBrush
                 for (int i = 0; i < list.Count; ++i)
                 {
                     GrabWidget w = list[i].m_WidgetScript;
-                    if (!w.Pinned && w.transform.parent == App.Scene.ActiveCanvas.transform &&
-                        w.gameObject.activeSelf)
+                    if (!w.Pinned && w.gameObject.activeSelf)
                     {
+                        if (w.transform.parent != canvas.transform) continue;
                         widgets.Add(w);
                     }
                 }
@@ -1095,6 +1113,7 @@ namespace TiltBrush
                 RefreshPinUnpinWidgetList(m_ModelWidgets);
                 RefreshPinUnpinWidgetList(m_LightWidgets);
                 RefreshPinUnpinWidgetList(m_ImageWidgets);
+                RefreshPinUnpinWidgetList(m_TextWidgets);
                 RefreshPinUnpinWidgetList(m_VideoWidgets);
                 RefreshPinUnpinWidgetList(m_StencilWidgets);
 
@@ -1173,6 +1192,10 @@ namespace TiltBrush
             {
                 m_ImageWidgets.Add(new TypedWidgetData<ImageWidget>(image));
             }
+            else if (generic is TextWidget textWidget)
+            {
+                m_TextWidgets.Add(new TypedWidgetData<TextWidget>(textWidget));
+            }
             else if (generic is VideoWidget video)
             {
                 m_VideoWidgets.Add(new TypedWidgetData<VideoWidget>(video));
@@ -1227,9 +1250,38 @@ namespace TiltBrush
             if (RemoveFrom(m_LightWidgets, rWidget)) { return; }
             if (RemoveFrom(m_StencilWidgets, rWidget)) { return; }
             if (RemoveFrom(m_ImageWidgets, rWidget)) { return; }
+            if (RemoveFrom(m_TextWidgets, rWidget)) { return; }
             if (RemoveFrom(m_VideoWidgets, rWidget)) { return; }
             if (RemoveFrom(m_CameraPathWidgets, rWidget)) { return; }
             RemoveFrom(m_GrabWidgets, rWidget);
+        }
+
+        public TextWidget GetNearestTextWidget(Vector3 pos, float maxDepth)
+        {
+            var widgetList = ActiveTextWidgets.Select(x => x.m_WidgetScript);
+            return GetNearestGrabWidget(pos, maxDepth, widgetList) as TextWidget;
+        }
+
+        public GrabWidget GetNearestGrabWidget(Vector3 pos, float maxDepth, IEnumerable<GrabWidget> widgetList)
+        {
+            GrabWidget bestWidget = null;
+            float leastDistance = float.MaxValue;
+            foreach (var widget in widgetList)
+            {
+                Vector3 dropper_QS;
+                Vector3 dropper_GS = pos;
+                Matrix4x4 xfQuadFromGlobal = widget.transform.worldToLocalMatrix;
+                dropper_QS = xfQuadFromGlobal.MultiplyPoint3x4(dropper_GS);
+                if (Mathf.Abs(dropper_QS.z) < leastDistance
+                    && Mathf.Abs(dropper_QS.x) <= 0.5f
+                    && Mathf.Abs(dropper_QS.y) <= 0.5f
+                    && Mathf.Abs(dropper_QS.z) <= maxDepth / Mathf.Abs(widget.GetSignedWidgetSize()))
+                {
+                    bestWidget = widget;
+                    leastDistance = Mathf.Abs(dropper_QS.z);
+                }
+            }
+            return bestWidget;
         }
 
         public ImageWidget GetNearestImage(Vector3 pos, float maxDepth, ref Vector3 sampleLoc)
@@ -1374,6 +1426,7 @@ namespace TiltBrush
             DestroyWidgetList(m_ModelWidgets);
             DestroyWidgetList(m_LightWidgets);
             DestroyWidgetList(m_ImageWidgets);
+            DestroyWidgetList(m_TextWidgets);
             DestroyWidgetList(m_VideoWidgets);
             DestroyWidgetList(m_StencilWidgets);
             DestroyWidgetList(m_CameraPathWidgets, false);
@@ -1402,6 +1455,7 @@ namespace TiltBrush
         ///   the Model will be automatically replaced with the loaded Model some time later.
         public IEnumerator<Null> CreateMediaWidgetsFromLoadDataCoroutine()
         {
+            // TODO reduce code duplication with the next two if blocks
             if (m_loadingTiltModels75 != null)
             {
                 OverlayManager.m_Instance.RefuseProgressBarChanges(true);
@@ -1435,14 +1489,16 @@ namespace TiltBrush
 
                 for (int i = 0; i < m_loadingTiltModels75.Length; i++)
                 {
-                    ModelWidget.CreateFromSaveData(m_loadingTiltModels75[i]);
+                    ModelWidget.CreateModelFromSaveData(m_loadingTiltModels75[i]);
                     OverlayManager.m_Instance.UpdateProgress(
                         (float)(i + 1) / m_loadingTiltModels75.Length, true);
                 }
                 OverlayManager.m_Instance.RefuseProgressBarChanges(false);
                 m_loadingTiltModels75 = null;
             }
+
             ModelCatalog.m_Instance.PrintMissingModelWarnings();
+
             if (m_loadingTiltLights != null)
             {
                 foreach (var light in m_loadingTiltLights)
@@ -1546,6 +1602,8 @@ namespace TiltBrush
 
         public List<TypedWidgetData<ImageWidget>> ActiveImageWidgets =>
             m_ImageWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+        public List<TypedWidgetData<TextWidget>> ActiveTextWidgets =>
+            m_TextWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<LightWidget>> ActiveLightWidgets =>
             m_LightWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<ModelWidget>> ActiveModelWidgets =>
@@ -1554,6 +1612,14 @@ namespace TiltBrush
             m_VideoWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<CameraPathWidget>> ActiveCameraPathWidgets =>
             m_CameraPathWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+        public List<TypedWidgetData<StencilWidget>> ActiveStencilWidgets =>
+            m_StencilWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+
+        public int GetActiveWidgetIndex(ImageWidget widget) => ActiveImageWidgets.WithIndex().First(x => x.item.WidgetScript == widget).index;
+        public int GetActiveWidgetIndex(ModelWidget widget) => ActiveModelWidgets.WithIndex().First(x => x.item.WidgetScript == widget).index;
+        public int GetActiveWidgetIndex(VideoWidget widget) => ActiveVideoWidgets.WithIndex().First(x => x.item.WidgetScript == widget).index;
+        public int GetActiveWidgetIndex(CameraPathWidget widget) => ActiveCameraPathWidgets.WithIndex().First(x => x.item.WidgetScript == widget).index;
+        public int GetActiveWidgetIndex(StencilWidget widget) => ActiveStencilWidgets.WithIndex().First(x => x.item.WidgetScript == widget).index;
 
     }
 }

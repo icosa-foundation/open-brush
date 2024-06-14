@@ -16,6 +16,15 @@ Shader "Brush/Visualizer/WaveformPulse" {
 
 Properties {
   _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+
+    [Toggle] _OverrideTime ("Overriden Time", Float) = 1.0
+    _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+    _TimeBlend("Time Blend", Float) = 0
+    _TimeSpeed("Time Speed", Float) = 1.0
+
+  _Dissolve("Dissolve", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 SubShader {
@@ -33,6 +42,7 @@ SubShader {
   // Faster compiles
   #pragma skip_variants INSTANCING_ON
 
+    #include "Assets/Shaders/Include/TimeOverride.cginc"
   #include "Assets/Shaders/Include/Brush.cginc"
   #include "Assets/Shaders/Include/MobileSelection.cginc"
 
@@ -44,6 +54,7 @@ SubShader {
     half3 normal : NORMAL;
     fixed4 color : COLOR;
     float4 tangent : TANGENT;
+    uint id : SV_VertexID;
     UNITY_VERTEX_INPUT_INSTANCE_ID
   };
 
@@ -52,20 +63,31 @@ SubShader {
     float2 tex : TEXCOORD0;
     float3 viewDir;
     float3 worldNormal;
+    uint id : SV_VertexID;
+    float4 screenPos;
     INTERNAL_DATA
   };
 
   float _EmissionGain;
 
+  uniform float _ClipStart;
+  uniform float _ClipEnd;
+  uniform half _Dissolve;
+
   void vert (inout appdata i, out Input o) {
     PrepForOds(i.vertex);
     UNITY_INITIALIZE_OUTPUT(Input, o);
     o.color = TbVertToSrgb(o.color);
-    o.tex = i.texcoord;
+    o.id = (float2)i.id;
   }
 
   // Input color is srgb
   void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
+
+    if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
+    // It's hard to get alpha curves right so use dithering for hdr shaders
+    if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
+
     o.Smoothness = .8;
     o.Specular = .05;
     float audioMultiplier = 1;
@@ -74,7 +96,7 @@ SubShader {
     IN.tex.x -= _BeatOutputAccum.z;
     IN.color += IN.color * _BeatOutput.w * .25;
 #else
-    IN.tex.x -= _Time.x*15;
+    IN.tex.x -= GetTime().x*15;
 #endif
     IN.tex.x = fmod( abs(IN.tex.x),1);
     float neon = saturate(pow( 10 * saturate(.2 - IN.tex.x),5) * audioMultiplier);
@@ -83,6 +105,10 @@ SubShader {
     half rim = 1.0 - saturate(dot (normalize(IN.viewDir), n));
     bloom *= pow(1-rim,5);
     o.Emission = SrgbToNative(bloom * neon);
+    o.Alpha *= _Dissolve;
+    o.Emission *= _Dissolve;
+    o.Albedo *= _Dissolve;
+    o.Specular *= _Dissolve;
     SURF_FRAG_MOBILESELECT(o);
   }
   ENDCG

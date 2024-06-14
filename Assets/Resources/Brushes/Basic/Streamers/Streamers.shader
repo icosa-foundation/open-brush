@@ -19,6 +19,15 @@ Properties {
   _Scroll2 ("Scroll2", Float) = 0
   _DisplacementIntensity("Displacement", Float) = .1
   _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+
+    [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
+
+  _Dissolve("Dissolve", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -43,17 +52,23 @@ Category {
       #pragma target 3.0 // Required -> compiler error: too many instructions for SM 2.0
 
       #include "UnityCG.cginc"
+      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
       #include "Assets/Shaders/Include/MobileSelection.cginc"
 
       sampler2D _MainTex;
 
+      uniform float _ClipStart;
+      uniform float _ClipEnd;
+      uniform half _Dissolve;
+
       struct appdata_t {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float3 normal : NORMAL;
         float2 texcoord : TEXCOORD0;
+        uint id : SV_VertexID;
 
         UNITY_VERTEX_INPUT_INSTANCE_ID
       };
@@ -63,6 +78,7 @@ Category {
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
         float4 worldPos : TEXCOORD1;
+        uint id : TEXCOORD2;
 
         UNITY_VERTEX_OUTPUT_STEREO
       };
@@ -88,6 +104,7 @@ Category {
         o.pos = UnityObjectToClipPos(v.vertex);
         o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
         o.color = v.color;
+        o.id = (float2)v.id;
         return o;
       }
 
@@ -100,13 +117,17 @@ Category {
       // Input color is srgb
       fixed4 frag (v2f i) : COLOR
       {
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+        // It's hard to get alpha curves right so use dithering for hdr shaders
+        if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+
         // Create parametric flowing UV's
         half2 uvs = i.texcoord;
         float row_id = floor(uvs.y * 5);
         float row_rand = rand_1_05(row_id.xx);
         uvs.x += row_rand * 200;
 
-        half2 sins = sin(uvs.x * half2(10,23) + _Time.z * half2(5,3));
+        half2 sins = sin(uvs.x * half2(10,23) + GetTime().z * half2(5,3));
         uvs.y = 5 * uvs.y + dot(half2(.05, -.05), sins);
 
 #ifdef AUDIO_REACTIVE
@@ -116,7 +137,7 @@ Category {
 #else
         // Scrolling UVs
         uvs.x *= .5 + row_rand * .3;
-        uvs.x -= _Time.y * (1 + fmod(row_id * 1.61803398875, 1) - 0.5);
+        uvs.x -= GetTime().y * (1 + fmod(row_id * 1.61803398875, 1) - 0.5);
 #endif
 
         // Sample final texture
@@ -139,7 +160,7 @@ Category {
         color = encodeHdr(color.rgb * color.a);
         color = SrgbToNative(color);
         FRAG_MOBILESELECT(color)
-        return color;
+        return color * _Dissolve;
       }
       ENDCG
     }
