@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using GLTF.Schema;
 using Newtonsoft.Json.Linq;
-using Unity.VectorGraphics;
 using UnityEngine;
 using UnityGLTF;
 using UnityGLTF.Plugins;
