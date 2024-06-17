@@ -35,6 +35,11 @@ namespace TiltBrush
 
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
+            GltfExportStandinManager.m_Instance.CreateCameraStandins();
+            if (App.UserConfig.Export.ExportCustomSkybox)
+            {
+                GltfExportStandinManager.m_Instance.CreateSkyStandin();
+            }
             SelectionManager.m_Instance?.ClearActiveSelection();
             _meshesToBatches = new Dictionary<int, Batch>();
         }
@@ -288,6 +293,12 @@ namespace TiltBrush
         public override void AfterSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
             if (!Application.isPlaying) return;
+            GltfExportStandinManager.m_Instance.DestroyCameraStandins();
+            if (App.UserConfig.Export.ExportCustomSkybox)
+            {
+                GltfExportStandinManager.m_Instance.DestroySkyStandin();
+            }
+
             gltfRoot.Asset.Generator = $"Open Brush UnityGLTF Exporter {App.Config.m_VersionNumber}.{App.Config.m_BuildStamp})";
 
             JToken ColorToJArray(Color c) => JToken.FromObject(new { c.r, c.g, c.b, c.a });

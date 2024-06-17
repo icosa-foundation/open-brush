@@ -12,23 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
-    public class CreateAnimationClips
+    public class GltfExportStandinManager : MonoBehaviour
     {
-        private static List<GameObject> temporaryCameras;
-        static void Create()
+        [SerializeField] public Transform m_TemporarySkySphere;
+        [NonSerialized] public static GltfExportStandinManager m_Instance;
+        private List<GameObject> m_TemporaryCameras;
+
+        void Awake()
         {
-            temporaryCameras = new List<GameObject>();
+            m_Instance = this;
+        }
+
+        public void CreateCameraStandins()
+        {
+            m_TemporaryCameras = new List<GameObject>();
             var cameraPathWidgets = WidgetManager.m_Instance.CameraPathWidgets.ToArray();
             foreach (var widget in cameraPathWidgets)
             {
                 var layer = widget.m_WidgetScript.Canvas;
-                var cam = GameObject.Instantiate(new GameObject(), layer.transform);
+                var cam = Instantiate(new GameObject(), layer.transform);
                 cam.AddComponent<Camera>();
                 AnimatorOverrideController overrideController = new AnimatorOverrideController();
                 Animator animator = cam.AddComponent<Animator>();
@@ -64,16 +74,28 @@ namespace TiltBrush
                 clip.SetCurve("", typeof(Transform), "localRotation.w", posCurves[3]);
 
                 overrideController["DefaultAnimation"] = clip;
-                temporaryCameras.Add(cam);
+                m_TemporaryCameras.Add(cam);
             }
         }
 
-        static void Destroy()
+        public void DestroyCameraStandins()
         {
-            foreach (var cam in temporaryCameras)
+            foreach (var cam in m_TemporaryCameras)
             {
-                GameObject.Destroy(cam);
+                Destroy(cam);
             }
+        }
+
+        public void CreateSkyStandin()
+        {
+            // TODO check if we need box vs sphere etc
+            m_TemporarySkySphere.GetComponent<MeshRenderer>().material = RenderSettings.skybox;
+            m_TemporarySkySphere.gameObject.SetActive(false);
+        }
+
+        public void DestroySkyStandin()
+        {
+            m_TemporarySkySphere.gameObject.SetActive(false);
         }
     }
 }
