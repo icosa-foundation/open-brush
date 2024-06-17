@@ -146,6 +146,28 @@ namespace TiltBrush
                 .OrderBy(ByModelLocation).ToArray();
         }
 
+        public static TiltSoundClip[] GetTiltSoundClip(GroupIdMapping groupIdMapping)
+        {
+            return WidgetManager.m_Instance.SoundClipWidgets.Where(x => x.gameObject.activeSelf).Select(x => ConvertSoundClipWidgetToTiltSoundClip(x)).ToArray();
+
+            TiltSoundClip ConvertSoundClipWidgetToTiltSoundClip(SoundClipWidget widget)
+            {
+                TiltSoundClip soundClip = new TiltSoundClip
+                {
+                    FilePath = widget.SoundClip.PersistentPath,
+                    AspectRatio = widget.SoundClip.Aspect,
+                    Pinned = widget.Pinned,
+                    Transform = widget.LocalTransform,
+                    GroupId = groupIdMapping.GetId(widget.Group),
+                    LayerId = App.Scene.GetIndexOfCanvas(widget.Canvas),
+                    Paused = !widget.SoundClipController.Playing,
+                    Time = widget.SoundClipController.Time,
+                    Volume = widget.SoundClipController.Volume
+                };
+                return soundClip;
+            }
+        }
+
         public static TiltVideo[] GetTiltVideos(GroupIdMapping groupIdMapping)
         {
             return WidgetManager.m_Instance.VideoWidgets.Where(x => x.gameObject.activeSelf).Select(x => ConvertVideoToTiltVideo(x)).ToArray();
