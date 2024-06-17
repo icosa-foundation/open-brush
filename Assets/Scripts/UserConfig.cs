@@ -322,6 +322,14 @@ namespace TiltBrush
                 set { m_ExportEnvironment = value; }
             }
 
+            // Used by UnityGLTF exporter
+            private bool? m_ExportCustomSkybox;
+            public bool ExportCustomSkybox
+            {
+                get { return m_ExportCustomSkybox ?? false; }
+                set { m_ExportCustomSkybox = value; }
+            }
+
             private Dictionary<string, bool> m_Formats;
             [JsonProperty]
             public Dictionary<string, bool> Formats
