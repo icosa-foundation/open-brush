@@ -26,21 +26,94 @@ namespace TiltBrush
     {
         private Dictionary<int, Batch> _meshesToBatches;
 
+        // List of gameobject names to ignore during export
         private List<string> _ignoreList = new()
         {
             "SnapGrid3D",
-            "Preview Light"
+            "Preview Light",
+
         };
+        private List<Camera> m_CameraPathsCameras;
 
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
-            GltfExportStandinManager.m_Instance.CreateCameraStandins();
             if (App.UserConfig.Export.ExportCustomSkybox)
             {
                 GltfExportStandinManager.m_Instance.CreateSkyStandin();
             }
             SelectionManager.m_Instance?.ClearActiveSelection();
             _meshesToBatches = new Dictionary<int, Batch>();
+            GenerateCameraPathsCameras();
+        }
+
+        private void GenerateCameraPathsCameras()
+        {
+            m_CameraPathsCameras = new List<Camera>();
+            var cameraPathWidgets = WidgetManager.m_Instance.CameraPathWidgets.ToArray();
+            for (var i = 0; i < cameraPathWidgets.Length; i++)
+            {
+                var widget = cameraPathWidgets[i];
+                var layer = widget.m_WidgetScript.Canvas;
+                var go = GameObject.Instantiate(new GameObject(), layer.transform);
+                go.name = $"CameraPath_{i}_{widget.m_WidgetScript.name}";
+                var cam = go.AddComponent<Camera>();
+                m_CameraPathsCameras.Add(cam);
+            }
+        }
+
+        private void ExportCameraPaths(GLTFSceneExporter exporter)
+        {
+            var cameraPathWidgets = WidgetManager.m_Instance.CameraPathWidgets.ToArray();
+            for (var i = 0; i < cameraPathWidgets.Length; i++)
+            {
+                var cam = m_CameraPathsCameras[i];
+                var widget = cameraPathWidgets[i];
+
+                GLTFAnimation anim = new GLTFAnimation();
+                anim.Name = cam.gameObject.name;
+
+                var posKnots = widget.WidgetScript.Path.PositionKnots;
+                var posTimes = new float[posKnots.Count];
+                var posValues = new object[posKnots.Count];
+                for (var j = 0; j < posKnots.Count; j++)
+                {
+                    var knot = posKnots[j];
+                    var xf = knot.KnotXf;
+                    var t = knot.PathT.T;
+                    posTimes[j] = t;
+                    posValues[j] = xf.position;
+                }
+                exporter.AddAnimationData(cam.gameObject, "translation", anim, posTimes, posValues);
+
+                var rotKnots = widget.WidgetScript.Path.RotationKnots;
+                var rotTimes = new float[rotKnots.Count];
+                var rotValues = new object[rotKnots.Count];
+                for (var j = 0; j < rotKnots.Count; j++)
+                {
+                    var knot = rotKnots[j];
+                    var xf = knot.KnotXf;
+                    var t = knot.PathT.T;
+                    posTimes[j] = t;
+                    posValues[j] = xf.rotation;
+                }
+                exporter.AddAnimationData(cam.gameObject, "rotation", anim, posTimes, posValues);
+
+                var fovKnots = widget.WidgetScript.Path.FovKnots;
+                var fovTimes = new float[fovKnots.Count];
+                var fovValues = new object[fovKnots.Count];
+                for (var j = 0; j < fovKnots.Count; j++)
+                {
+                    var knot = fovKnots[j];
+                    var xf = knot.KnotXf;
+                    var t = knot.PathT.T;
+                    posTimes[j] = t;
+                    posValues[j] = xf.rotation;
+                }
+                exporter.AddAnimationData(cam, "field of view", anim, fovTimes, fovValues);
+
+                exporter.GetRoot().Animations.Add(anim);
+                GameObject.Destroy(cam);
+            }
         }
 
         private Transform GetOrCreateGroupTransform(CanvasScript layer, int group)
@@ -292,7 +365,8 @@ namespace TiltBrush
         public override void AfterSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
             if (!Application.isPlaying) return;
-            GltfExportStandinManager.m_Instance.DestroyCameraStandins();
+
+            ExportCameraPaths(exporter);
             if (App.UserConfig.Export.ExportCustomSkybox)
             {
                 GltfExportStandinManager.m_Instance.DestroySkyStandin();
