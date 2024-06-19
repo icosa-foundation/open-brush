@@ -530,6 +530,17 @@ namespace TiltBrush
             BrushCatalog.m_Instance.BeginReload();
         }
 
+        public bool GetSimplePlayerPref(string prefName)
+        {
+            return PlayerPrefs.HasKey(prefName) && PlayerPrefs.GetInt(prefName) == 1;
+        }
+
+        public void SetSimplePlayerPref(string prefName, bool value)
+        {
+            PlayerPrefs.SetInt(prefName, value ? 1 : 0);
+            App.UserConfig.Export.ExportEnvironment = true;
+        }
+
         void Awake()
         {
             m_SingletonState = this;
