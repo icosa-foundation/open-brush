@@ -14,10 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   HullBrushMaxVertInputs: 400
   HullBrushMaxKnots: 900
-  ReferenceImagesMaxFileSize: 10485760
-  ReferenceImagesMaxDimension: 4352
-  ReferenceImagesResizeDimension: 1024
-  MemoryWarningVertCount: 1000000
+  ReferenceImagesMaxFileSize: 2147483647
+  ReferenceImagesMaxDimension: 2147483647
+  ReferenceImagesResizeDimension: 2147483647
+  MemoryWarningVertCount: 2147483647
   UseFileSystemWatcher: 1
   EnableAutosave: 0
   QuickLoadMaxDistancePerFrame: 4
@@ -29,7 +29,6 @@ MonoBehaviour:
   EnableExportGlb: 1
   EnableExportJson: 0
   EnableExportUsd: 0
-  EnableExportLatk: 1
   EnableExportMemoryOptimization: 1
   EnableMulticamPreview: 1
   EnabledMulticamStyles: 000000000100000002000000
