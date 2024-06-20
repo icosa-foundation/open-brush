@@ -592,6 +592,13 @@ namespace TiltBrush
             var rEnum = SketchControlsScript.GlobalCommands.RecordCameraPath;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
+
+        [ApiEndpoint("camerapath.setactive", "Sets the active camera path")]
+        public static void SetActiveCameraPath(int index)
+        {
+            var widget = _GetActiveCameraPath(index);
+            WidgetManager.m_Instance.SetCurrentCameraPath(widget);
+        }
     }
 }
 
