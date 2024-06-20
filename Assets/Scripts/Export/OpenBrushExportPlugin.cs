@@ -25,14 +25,6 @@ namespace TiltBrush
     public class OpenBrushExportPluginConfig : GLTFExportPluginContext
     {
         private Dictionary<int, Batch> _meshesToBatches;
-
-        // List of gameobject names to ignore during export
-        private List<string> _ignoreList = new()
-        {
-            "SnapGrid3D",
-            "Preview Light",
-
-        };
         private List<Camera> m_CameraPathsCameras;
 
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
@@ -148,18 +140,6 @@ namespace TiltBrush
         public void BeforeLayerExport(Transform transform)
         {
             var canvas = transform.GetComponent<CanvasScript>();
-            foreach (Transform child in transform)
-            {
-                if (_ignoreList.Contains(child.name))
-                {
-                    child.tag = "EditorOnly";
-                }
-
-                if (child.GetComponent<StencilWidget>() != null)
-                {
-                    child.tag = "EditorOnly";
-                }
-            }
 
             if (App.UserConfig.Export.KeepStrokes)
             {
@@ -191,6 +171,18 @@ namespace TiltBrush
                 }
                 canvas.BatchManager.FlushMeshUpdates();
             }
+        }
+
+        public override bool ShouldNodeExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Transform transform)
+        {
+            Type[] excludedTypes =
+            {
+                typeof(BaseBrushScript), // Brush preview strokes (does this break non-batched exports?)
+                typeof(SnapGrid3D),
+                typeof(StencilWidget),
+                typeof(CameraPathWidget)
+            };
+            return excludedTypes.Any(t => transform.GetComponent(t) != null);
         }
 
         public override void BeforeNodeExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Transform transform, Node node)
