@@ -481,13 +481,13 @@ namespace TiltBrush
             return null;
         }
 
-        public virtual List<string> GetExtraDirectories(string currentDirectory)
+        public virtual Dictionary<string, string> GetExtraDirectories(string currentDirectory)
         {
             if (currentDirectory == HomeDirectory)
             {
-                return App.UserConfig.Import.ExtraImageDirectories ?? new List<string>();
+                return App.UserConfig.Import.ExtraImageDirectories ?? new Dictionary<string, string>();
             }
-            return new List<string>();
+            return new Dictionary<string, string>();
         }
     }
 } // namespace TiltBrush

@@ -207,13 +207,13 @@ namespace TiltBrush
             }
         }
 
-        public List<string> GetExtraDirectories(string currentDirectory)
+        public Dictionary<string, string> GetExtraDirectories(string currentDirectory)
         {
             if (currentDirectory == HomeDirectory)
             {
-                return App.UserConfig.Import.ExtraVideoDirectories ?? new List<string>();
+                return App.UserConfig.Import.ExtraVideoDirectories ?? new Dictionary<string, string>();
             }
-            return new List<string>();
+            return new Dictionary<string, string>();
         }
     }
 }
