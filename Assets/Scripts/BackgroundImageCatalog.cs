@@ -73,5 +73,14 @@ namespace TiltBrush
             return m_CurrentBackgroundImagesDirectory;
         }
 
+        public override List<string> GetExtraDirectories(string currentDirectory)
+        {
+            if (currentDirectory == HomeDirectory)
+            {
+                return App.UserConfig.Import.ExtraBackgroundImageDirectories ?? new List<string>();
+            }
+            return new List<string>();
+        }
+
     }
 } // namespace TiltBrush

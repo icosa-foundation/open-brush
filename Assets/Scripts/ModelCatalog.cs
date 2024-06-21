@@ -351,5 +351,14 @@ namespace TiltBrush
             }
             return m;
         }
+
+        public List<string> GetExtraDirectories(string currentDirectory)
+        {
+            if (currentDirectory == HomeDirectory)
+            {
+                return App.UserConfig.Import.ExtraModelDirectories ?? new List<string>();
+            }
+            return new List<string>();
+        }
     }
 } // namespace TiltBrush

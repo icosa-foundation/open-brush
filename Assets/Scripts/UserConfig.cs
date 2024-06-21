@@ -263,6 +263,34 @@ namespace TiltBrush
                 get { return m_UseUnityGltf ?? false; }
                 set { m_UseUnityGltf = value; }
             }
+
+            List<string> m_ExtraImageDirectories;
+            public List<string> ExtraImageDirectories
+            {
+                get { return m_ExtraImageDirectories; }
+                set { m_ExtraImageDirectories = value; }
+            }
+
+            List<string> m_ExtraModelDirectories;
+            public List<string> ExtraModelDirectories
+            {
+                get { return m_ExtraModelDirectories; }
+                set { m_ExtraModelDirectories = value; }
+            }
+
+            List<string> m_ExtraVideoDirectories;
+            public List<string> ExtraVideoDirectories
+            {
+                get { return m_ExtraVideoDirectories; }
+                set { m_ExtraVideoDirectories = value; }
+            }
+
+            List<string> m_ExtraBackgroundImageDirectories;
+            public List<string> ExtraBackgroundImageDirectories
+            {
+                get { return m_ExtraBackgroundImageDirectories; }
+                set { m_ExtraBackgroundImageDirectories = value; }
+            }
         }
 
         [Serializable]

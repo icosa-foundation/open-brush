@@ -199,7 +199,6 @@ namespace TiltBrush
             return m_Videos.FirstOrDefault(x => x.PersistentPath == path);
         }
 
-
         public void DebugListVideos()
         {
             foreach (var video in m_Videos)
@@ -208,5 +207,13 @@ namespace TiltBrush
             }
         }
 
+        public List<string> GetExtraDirectories(string currentDirectory)
+        {
+            if (currentDirectory == HomeDirectory)
+            {
+                return App.UserConfig.Import.ExtraVideoDirectories ?? new List<string>();
+            }
+            return new List<string>();
+        }
     }
 }

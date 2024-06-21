@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 
 namespace TiltBrush
 {
@@ -27,5 +28,6 @@ namespace TiltBrush
         string HomeDirectory { get; }
         bool IsSubDirectoryOfHome();
         public string GetCurrentDirectory();
+        List<string> GetExtraDirectories(string currentDirectory);
     }
 } // namespace TiltBrush

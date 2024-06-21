@@ -233,6 +233,7 @@ namespace TiltBrush
             {
                 m_DirectoryChooserPopupButton.ButtonLabel = $"{truncatedPath}";
                 m_CurrentSubdirectories = Directory.GetDirectories(currentDir);
+                m_CurrentSubdirectories.AddRange(m_CurrentTab.Catalog.GetExtraDirectories(currentDir));
             }
 
             base.RefreshPage();
