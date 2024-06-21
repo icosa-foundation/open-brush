@@ -29,7 +29,7 @@ namespace TiltBrush
             return m_ParentReferencePanel;
         }
 
-        protected override int m_DataCount => GetParentReferencePanel().CurrentSubdirectories.Length;
+        protected override int m_DataCount => GetParentReferencePanel().CurrentSubdirectories.Count;
 
         // Misleadingly named:
         // ImageIcon actually refers to a button gameobject and button script

@@ -35,10 +35,10 @@ namespace TiltBrush
         [SerializeField] private TextMeshPro m_InfoText;
         private ReferencePanelTab m_CurrentTab;
         private int m_EnabledCount = 0;
-        private string[] m_CurrentSubdirectories;
+        private List<string> m_CurrentSubdirectories;
         private bool m_FolderNavButtonsNeedUpdate;
 
-        public string[] CurrentSubdirectories => m_CurrentSubdirectories;
+        public List<string> CurrentSubdirectories => m_CurrentSubdirectories;
 
         public Texture2D UnknownImageTexture
         {
@@ -232,7 +232,7 @@ namespace TiltBrush
             if (m_DirectoryChooserPopupButton != null)
             {
                 m_DirectoryChooserPopupButton.ButtonLabel = $"{truncatedPath}";
-                m_CurrentSubdirectories = Directory.GetDirectories(currentDir);
+                m_CurrentSubdirectories = Directory.GetDirectories(currentDir).ToList();
                 m_CurrentSubdirectories.AddRange(m_CurrentTab.Catalog.GetExtraDirectories(currentDir));
             }
 
@@ -260,7 +260,7 @@ namespace TiltBrush
                 m_DirectoryUpButton.SetDescriptionUnavailable(true);
             }
 
-            if (m_CurrentSubdirectories.Length == 0)
+            if (m_CurrentSubdirectories.Count == 0)
             {
                 m_DirectoryChooserPopupButton.SetButtonAvailable(false);
                 m_DirectoryChooserPopupButton.SetDescriptionUnavailable(true);
@@ -275,7 +275,7 @@ namespace TiltBrush
             m_NoData.gameObject.SetActive(
                 m_CurrentTab.Catalog.IsHomeDirectory() &&
                 m_CurrentTab.Catalog.ItemCount == 0 &&
-                m_CurrentSubdirectories.Length == 0
+                m_CurrentSubdirectories.Count == 0
             );
         }
 
@@ -320,7 +320,7 @@ namespace TiltBrush
             if (m_InfoText != null)
             {
                 // TODO localize
-                m_InfoText.text = $"{m_CurrentTab.Catalog.ItemCount} Files {m_CurrentSubdirectories.Length} Subfolders";
+                m_InfoText.text = $"{m_CurrentTab.Catalog.ItemCount} Files {m_CurrentSubdirectories.Count} Subfolders";
             }
         }
 
