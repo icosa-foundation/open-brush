@@ -12,7 +12,7 @@ on:  # yamllint disable-line rule:truthy
       - "v*"
 
 env:
-  UNITY_VERSION: "2021.3.30f1"
+  UNITY_VERSION: "2022.3.34f1"
   PHOTON_PAT: ${{ secrets.PHOTON_PAT }}  # This needs to be here, since you can't use a ${{ secrets }} within an if: condition
 jobs:
   configuration:
@@ -260,7 +260,7 @@ jobs:
         run: echo "::add-mask::DoNotStealThis1"
       - name: Free extra space
         # This takes several minutes, so we only do it where required. As of 12/10/2023, this increases free space from 18GB to 41GB
-        if: matrix.targetPlatform == 'Android' || matrix.targetPlatform == 'StandaloneWindows64'
+        if: matrix.targetPlatform == 'Android' || matrix.targetPlatform == 'StandaloneWindows64' || matrix.targetPlatform == 'StandaloneLinux64'
         run: |
           echo "Initial free space"
           df -h /
