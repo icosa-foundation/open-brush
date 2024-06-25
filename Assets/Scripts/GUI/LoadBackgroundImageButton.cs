@@ -54,7 +54,7 @@ namespace TiltBrush
             }
 
 
-            SceneSettings.m_Instance.LoadCustomSkyboxFromCache(ReferenceImage.FileName);
+            SceneSettings.m_Instance.LoadCustomSkyboxFromCache(ReferenceImage.FilePath);
         }
 
         override public void ResetState()

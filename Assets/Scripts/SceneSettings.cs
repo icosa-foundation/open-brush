@@ -250,13 +250,14 @@ namespace TiltBrush
             }
         }
 
-        public void LoadCustomSkyboxFromCache(string filename)
+        // note: this takes in the full file path, instead of just the name
+        public void LoadCustomSkyboxFromCache(string filepath)
         {
-            Texture2D tex = ImageCache.LoadImageCache(filename);
+            Texture2D tex = ImageCache.LoadImageCache(filepath);
 
             if (tex == null)
             {
-                LoadCustomSkybox(filename);
+                LoadCustomSkybox(Path.GetFileName(filepath));
             }
             else
             {
