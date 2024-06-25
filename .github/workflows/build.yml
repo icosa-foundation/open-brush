@@ -1,6 +1,6 @@
+---
 # yamllint disable rule:line-length
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
----
 name: Builds
 
 on:  # yamllint disable-line rule:truthy
@@ -12,13 +12,8 @@ on:  # yamllint disable-line rule:truthy
       - "v*"
 
 env:
-  UNITY_VERSION: "2021.3.30f1"
-  UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-  UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-  UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
-  # If UNITY_SERIAL is not set, then use a hardcoded license. Otherwise, don't set this, so the game-ci actions will use EMAIL/PASS/SERIAL
-  UNITY_LICENSE: ${{ fromJSON('["<?xml version=\"1.0\" encoding=\"UTF-8\"?><root>\n    <License id=\"Terms\">\n        <MachineBindings>\n            <Binding Key=\"1\" Value=\"576562626572264761624c65526f7578\"/>\n            <Binding Key=\"2\" Value=\"576562626572264761624c65526f7578\"/>\n        </MachineBindings>\n        <MachineID Value=\"D7nTUnjNAmtsUMcnoyrqkgIbYdM=\"/>\n        <SerialHash Value=\"56bce8b03146a1a47339b2bc8a7a40af276146b9\"/>\n        <Features>\n            <Feature Value=\"33\"/>\n            <Feature Value=\"1\"/>\n            <Feature Value=\"12\"/>\n            <Feature Value=\"2\"/>\n            <Feature Value=\"24\"/>\n            <Feature Value=\"3\"/>\n            <Feature Value=\"36\"/>\n            <Feature Value=\"17\"/>\n            <Feature Value=\"19\"/>\n            <Feature Value=\"62\"/>\n        </Features>\n        <DeveloperData Value=\"AQAAAEY0LURFWjQtVVk1TS04M1lULTNOWVAtNEtXNg==\"/>\n        <SerialMasked Value=\"F4-DEZ4-UY5M-83YT-3NYP-XXXX\"/>\n        <StartDate Value=\"2021-01-27T00:00:00\"/>\n        <UpdateDate Value=\"2021-05-06T05:54:38\"/>\n        <InitialActivationDate Value=\"2021-01-27T07:00:51\"/>\n        <LicenseVersion Value=\"6.x\"/>\n        <ClientProvidedVersion Value=\"2019.4.25f1\"/>\n        <AlwaysOnline Value=\"false\"/>\n        <Entitlements>\n            <Entitlement Ns=\"unity_editor\" Tag=\"UnityPersonal\" Type=\"EDITOR\" ValidTo=\"9999-12-31T00:00:00\"/>\n            <Entitlement Ns=\"unity_editor\" Tag=\"DarkSkin\" Type=\"EDITOR_FEATURE\" ValidTo=\"9999-12-31T00:00:00\"/>\n        </Entitlements>\n    </License>\n<Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments\"/><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><Reference URI=\"#Terms\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>xCBKYap0JQVBqX22jba4k5Da5t0=</DigestValue></Reference></SignedInfo><SignatureValue>n8eYH6Exi6mpw6onE5blxgQY1bAb+NLrsblMlFLUTPVTGw5KmugyVHedyZiI47D3nZVK/FpGaVxJ\n2xcNBr8yR1lfQrakloAZhvlCTiNi/O8N+6aHGZgyi/5+2SLqj0E/ZB+bVlTaSioLy/cF6iOt0d0T\nvW+VEdhht9iWrKKeNBakcXGccX5tQhJFaTR8aYevp0t0TMz3cfGPhs5qDivufqoFl34Y6qa8HjAC\n+OvrlD0TIgMyev+czK0KMIRsT/euOoyOHupXb93BuiMWceRIqf4mYvPKJbhx15Zy3uxHbsF6lV8q\nGah5JCb8iGRTDmG2JzMg6pXCjiznPFNk4Tkl7Q==</SignatureValue></Signature></root>", null]')[secrets.UNITY_SERIAL != null] }}
-
+  UNITY_VERSION: "2022.3.34f1"
+  PHOTON_PAT: ${{ secrets.PHOTON_PAT }}  # This needs to be here, since you can't use a ${{ secrets }} within an if: condition
 jobs:
   configuration:
     if: |
@@ -35,6 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version}}
+      androidVersionCode: ${{ steps.version.outputs.androidVersionCode }}
       stamp: ${{ steps.version.outputs.stamp }}
       prerelease: ${{ steps.version.outputs.prerelease }}
       previousrelease: ${{ steps.rawchangelogdata.outputs.previousrelease }}
@@ -44,6 +40,10 @@ jobs:
       basename: ${{ steps.github.outputs.basename }}
       description: ${{ steps.github.outputs.description}}
       itchchannelname: ${{ steps.version.outputs.itchchannelname }}
+      fastlanelane: ${{ steps.version.outputs.fastlanelane}}
+      uid: ${{ steps.github.outputs.uid }}
+      gid: ${{ steps.github.outputs.gid }}
+      flavors: ${{ steps.flavors.outputs.flavors }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -84,17 +84,23 @@ jobs:
             STAMP=""
             echo "prerelease=false" >> $GITHUB_OUTPUT
             echo "itchchannelname=release" >> $GITHUB_OUTPUT
+            echo "fastlanelane=beta" >> $GITHUB_OUTPUT
 
           else
             # This is the first 7 characters of the commit; we do it this way rather than via rev-parse to avoid an 'if' conditional depending on whether it's a PR or push. (unlike git describe, git rev-parse doesn't default to the current HEAD)
             STAMP=$(git describe --tags --match "v[0-9]*.[0-9]*" ${{ github.event.pull_request.head.sha }} | cut -d'-' -f3)
             echo "prerelease=true" >> $GITHUB_OUTPUT
             echo "itchchannelname=beta" >> $GITHUB_OUTPUT
+            echo "fastlanelane=beta" >> $GITHUB_OUTPUT
           fi
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "stamp=$STAMP" >> $GITHUB_OUTPUT
-          echo "Version $VERSION stamp=$STAMP"
+          MAJOR=$(echo $VERSION | cut -d '.' -f 1)
+          MINOR=$(echo $VERSION | cut -d '.' -f 2)
+          ANDROID_VERSION_CODE=$((MAJOR * 1000000 + MINOR * 1000 + PATCH_VERSION))
+          echo "androidVersionCode=$ANDROID_VERSION_CODE" >> $GITHUB_OUTPUT
+          echo "Version $VERSION stamp=$STAMP androidVersionCode=$ANDROID_VERSION_CODE"
       - name: Calculate Release tags for Changelog and raw changelog
         id: rawchangelogdata
         env:
@@ -148,14 +154,30 @@ jobs:
             IDENTIFIER=$(echo ${DESCRIPTION} | sed -e 's/[\/#_-]//g')
             echo "basename=OpenBrush-${IDENTIFIER}" >> $GITHUB_OUTPUT
           fi
+          echo "uid=$(id -u)" >> $GITHUB_OUTPUT
+          echo "gid=$(id -g)" >> $GITHUB_OUTPUT
+
+      - name: Determine whether to build Development builds or not
+        id: flavors
+        run: |
+          set -x
+          if [[ $(git log --format=%B ${{ github.event.pull_request.head.sha }} -1) == *'[CI BUILD DEV]'* ]]
+          then
+            echo 'flavors=[{"development": true, "title": "Development"}, {"development": false}]' >> $GITHUB_OUTPUT
+
+          else
+            echo 'flavors=[{"development": false}]' >> $GITHUB_OUTPUT
+          fi
+
   build:
-    name: ${{ matrix.name }}
+    name: ${{ matrix.name }} ${{ matrix.flavors.title }}
     needs: configuration
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # We don't use an actual matrix because there's more exceptions than actual cases!
+        flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
+        name: [Windows OpenXR, Windows Pimax, Windows Rift, Linux, MacOS, Android OpenXR, Oculus Quest (1), Oculus Quest (2+), Android Pico, Android Pico (CN), iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
         include:
           - name: Windows OpenXR
             targetPlatform: StandaloneWindows64
@@ -166,23 +188,20 @@ jobs:
             targetPlatform: StandaloneWindows64
             vrsdk: OpenXR
             cache: Windows
+            extra_defines: PIMAX_SUPPORTED
 
           - name: Windows Rift
             targetPlatform: StandaloneWindows64
             vrsdk: Oculus
             cache: Windows
+            extra_defines: OCULUS_SUPPORTED
 
-          - name: Windows Monoscopic
-            targetPlatform: StandaloneWindows64
-            vrsdk: Monoscopic
-            cache: Windows
-
-          - name: Linux Monoscopic
+          - name: Linux
             targetPlatform: StandaloneLinux64
-            vrsdk: Monoscopic
+            vrsdk: Monoscopic  # All builds include monoscopic, but this one has no additional XrSdk, so we'll keep the name monoscopic
             cache: Linux
 
-          - name: MacOS Monoscopic
+          - name: MacOS
             targetPlatform: StandaloneOSX
             vrsdk: Monoscopic
             cache: MacOS
@@ -192,18 +211,32 @@ jobs:
             vrsdk: OpenXR
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
+            versionSuffix: 0
 
-          - name: Oculus Quest
+          - name: Oculus Quest (1)
+            targetPlatform: Android
+            vrsdk: OpenXR
+            cache: Android_Vulkan
+            extraoptions: -btb-il2cpp
+            versionSuffix: 0
+            extra_defines: USE_QUEST_PACKAGE_NAME FORCE_QUEST_SUPPORT_DEVICE FORCE_FOCUSAWARE FORCE_HEADTRACKING
+            packages_to_remove: com.meta.xr.sdk.platform com.meta.xr.sdk.utilities
+
+          - name: Oculus Quest (2+)
             targetPlatform: Android
             vrsdk: Oculus
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
+            versionSuffix: 1
+            extra_defines: OCULUS_SUPPORTED USE_QUEST_PACKAGE_NAME
 
           - name: Android Pico
             targetPlatform: Android
             vrsdk: Pico
             cache: Android_GLES
             extraoptions: -btb-il2cpp
+            versionSuffix: 0
+            extra_defines: PICO_SUPPORTED
 
           - name: Android Pico (CN)
             targetPlatform: Android
@@ -211,11 +244,23 @@ jobs:
             cache: Android_GLES
             # Pico requested Chinese build that doesn't have google/sketchfab login.
             extraoptions: -btb-il2cpp -btb-disableAccountLogins
+            versionSuffix: 1
+            extra_defines: PICO_SUPPORTED
+
+          - name: iOS Zapbox
+            targetPlatform: iOS
+            vrsdk: Zapbox
+            cache: iOS
+            extraoptions: -btb-il2cpp
+            extra_defines: ZAPBOX_SUPPORTED
+            packages_to_remove: com.unity.formats.usd
 
     steps:
+      - name: Set masking
+        run: echo "::add-mask::DoNotStealThis1"
       - name: Free extra space
         # This takes several minutes, so we only do it where required. As of 12/10/2023, this increases free space from 18GB to 41GB
-        if: matrix.targetPlatform == 'Android' || matrix.targetPlatform == 'StandaloneWindows64'
+        if: matrix.targetPlatform == 'Android' || matrix.targetPlatform == 'StandaloneWindows64' || matrix.targetPlatform == 'StandaloneLinux64'
         run: |
           echo "Initial free space"
           df -h /
@@ -225,17 +270,17 @@ jobs:
           echo "Listing 100 largest packages"
           dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
           echo "Removing unneeded large packages"
-          sudo apt-get update
-          sudo apt-get remove -y '^ghc-.*' '^dotnet-.*' azure-cli 'google-cloud-*' powershell google-chrome-stable firefox microsoft-edge-stable 'php.*' 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' default-jre-headless  # Removes ~5GB
-          sudo apt-get autoremove -y
-          sudo apt-get clean
+          sudo apt update
+          sudo apt remove -y '^ghc-.*' '^dotnet-.*' azure-cli powershell google-chrome-stable firefox microsoft-edge-stable 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' default-jre-headless  # Removes ~7GB  # Adding 'google-cloud-*' removes another 750MB but takes about a minute; not worth it
+          sudo apt autoremove -y
+          sudo apt clean
           df -h /
           echo "Listing 100 largest remaining packages"
           dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
           echo "Removing remaining large directories"
-          rm -rf /usr/share/dotnet/  # Removes ~1GB
           df -h /
-          rm -rf "$AGENT_TOOLSDIRECTORY"  # Removes ~11GB
+          rm -rf /usr/share/dotnet/  # Removes ~1GB
+          rm -rf "$AGENT_TOOLSDIRECTORY"  # Removes ~6GB
           echo "Disk space after cleanup"
           df -h /
 
@@ -245,7 +290,7 @@ jobs:
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
 
       - name: Install Pimax unity package
-        if: matrix.name == 'Windows Pimax'
+        if: startsWith(matrix.name, 'Windows Pimax')
         run: |
           # version 0.6.3
           # Same as above, but adapted to work for Pimax instead.
@@ -273,6 +318,8 @@ jobs:
           mkdir Packages/com.unity.xr.picoxr
           wget -q https://sdk.picovr.com/developer-platform/sdk/PICO%20Unity%20Integration%20SDK%20v211.zip -O package.zip
           unzip package.zip -d Packages/com.unity.xr.picoxr
+          # Pico has a GUID conflict because they copied code from Oculus. Delete the offending .meta file from our mutable Pico SDK.
+          rm Packages/com.unity.xr.picoxr/Platform/Scripts/Models/Common.cs.meta
 
       - name: Install TextMesh Pro package
         run: |
@@ -296,8 +343,24 @@ jobs:
           cp -R 'tmp.package/Assets/TextMesh Pro' Assets/
           rm -rf tmp.plugin tmp.package
 
+      - name: Checkout private photon repository if available
+        if: ${{ env.PHOTON_PAT }}
+        uses: actions/checkout@v4
+        with:
+          token: ${{ env.PHOTON_PAT }}
+          repository: icosa-mirror/photon-fusion
+          path: photon-fusion-mirror/
+
+      - name: Copy photon files
+        if: ${{ env.PHOTON_PAT }}
+        run: |
+          rsync -a --ignore-existing photon-fusion-mirror/ ./
+          echo "For debugging: these are the files in Assets/Photon:"
+          find Assets/Photon
+
       - name: Restore Library/
-        uses: actions/cache/restore@v3
+        id: cache_library
+        uses: actions/cache/restore@v4
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -306,46 +369,57 @@ jobs:
           key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
       - name: Restore Library/PackageCache
-        uses: actions/cache/restore@v3
+        id: cache_packagecache
+        uses: actions/cache/restore@v4
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
           path: Library/PackageCache
-          key: Library_PackageCache_${{ env.UNITY_VERSION }}
+          key: Library_PackageCache_${{ env.UNITY_VERSION }}_${{ hashFiles('Packages/packages-lock.json') }}
+          restore-keys: |
+            Library_PackageCache_${{ env.UNITY_VERSION }}
+            Library_PackageCache
 
-      - name: Set filename (for Windows)
-        if: matrix.targetPlatform == 'StandaloneWindows64'
-        env:
-          BASENAME: ${{ needs.configuration.outputs.basename}}
-        run:
-          echo "filename=$BASENAME.exe" >> $GITHUB_ENV
+      - name: Remove problematic packages
+        if: ${{ matrix.packages_to_remove }}
+        run: |
+          cp Packages/manifest.json{,.bak}
+          cp Packages/packages-lock.json{,.bak}
+          for PACKAGE in ${{ matrix.packages_to_remove }}; do
+            cat Packages/manifest.json | jq 'del( .dependencies ["'${PACKAGE}'"] )' > Packages/manifest.json.new
+            mv Packages/manifest.json.new Packages/manifest.json
+            cat Packages/packages-lock.json | jq 'del( .dependencies ["'${PACKAGE}'"] )' > Packages/packages-lock.json.new
+            mv Packages/packages-lock.json.new Packages/packages-lock.json
+          done
+          diff -u Packages/manifest.json.bak Packages/manifest.json || true
+          diff -u Packages/packages-lock.json.bak Packages/packages-lock.json || true
 
-      - name: Set filename (for Linux)
-        if: matrix.targetPlatform == 'StandaloneLinux64'
+      - name: Set output filename
         env:
-          BASENAME: ${{ needs.configuration.outputs.basename}}
-        run:
-          echo "filename=$BASENAME" >> $GITHUB_ENV
-
-      - name: Set filename (for OSX)
-        if: matrix.targetPlatform == 'StandaloneOSX'
-        env:
-          BASENAME: ${{ needs.configuration.outputs.basename}}
-        run:
-          echo "filename=$BASENAME.app" >> $GITHUB_ENV
-
-      - name: Set filename (for Android)
-        if: matrix.targetPlatform == 'Android'
-        env:
-          BASENAME: ${{ needs.configuration.outputs.basename}}
-        run:
-          echo "filename=com.Icosa.$BASENAME.apk" >> $GITHUB_ENV
+          BASENAME: ${{ needs.configuration.outputs.basename }}
+        run: |
+          if [[ "${{ matrix.targetPlatform}}" == "StandaloneWindows64" ]]; then
+            echo "filename=$BASENAME.exe" >> $GITHUB_ENV
+          elif [[ "${{ matrix.targetPlatform}}" == "StandaloneLinux64" ]]; then
+            echo "filename=$BASENAME" >> $GITHUB_ENV
+          elif [[ "${{ matrix.targetPlatform}}" == "iOS" ]]; then
+            echo "filename=$BASENAME" >> $GITHUB_ENV
+          elif [[ "${{ matrix.targetPlatform}}" == "StandaloneOSX" ]]; then
+            echo "filename=$BASENAME.app" >> $GITHUB_ENV
+          elif [[ "${{ matrix.targetPlatform}}" == "Android" ]]; then
+            echo "filename=com.Icosa.$BASENAME.apk" >> $GITHUB_ENV
+          fi
 
       - name: Set build stamp
         if: ${{ needs.configuration.outputs.stamp }}
         # We checkout the merge commit, but for the purpose of the tag, use the version from the PR, not the merge commit, which is rather hard to find later. We skip the version tag, since this comes from the code and can't be easily overwritten
         run: |
           echo "stamp=-btb-stamp ${{needs.configuration.outputs.stamp}}" >> $GITHUB_ENV
+
+      - name: Enable Development Mode
+        if: ${{ matrix.flavors.development == true }}
+        run: |
+          echo "btbbopts=-btb-bopt Development" >> $GITHUB_ENV
 
       - name: Update version
         env:
@@ -371,67 +445,83 @@ jobs:
         run: |
           sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
 
-      - name: Set OCULUS_SUPPORTED in csc.rsp
-        if: matrix.vrsdk == 'Oculus'
+      - name: Update build matrix specific defines in csc.rsp
+        if: ${{ matrix.extra_defines }}
         run: |
-          echo -e "\n-define:OCULUS_SUPPORTED" | tee -a Assets/csc.rsp
-
-      - name: Set PICO_SUPPORTED in csc.rsp
-        if: matrix.vrsdk == 'Pico'
-        run: |
-          echo -e "\n-define:PICO_SUPPORTED" | tee -a Assets/csc.rsp
-
-      - name: Set PIMAX_SUPPORTED in csc.rsp
-        if: matrix.name == 'Windows Pimax'
-        run: |
-          echo -e "\n-define:PIMAX_SUPPORTED" | tee -a Assets/csc.rsp
+          for DEFINE in ${{ matrix.extra_defines }}; do
+            echo -e "\n-define:$DEFINE" | tee -a Assets/csc.rsp
+          done
 
       - name: Build project
-        uses: game-ci/unity-builder@v3
+        uses: Wandalen/wretry.action@v3
         env:
           VERSION: ${{ needs.configuration.outputs.version}}
+          UNITY_EMAIL: ${{ fromJSON(format('["unitytest@mikeage.net", "{0}"]', vars.UNITY_EMAIL))[secrets.UNITY_SERIAL != null] }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+          UNITY_PASSWORD: ${{ fromJSON(format('["DoNotStealThis1", "{0}"]', secrets.UNITY_PASSWORD))[secrets.UNITY_SERIAL != null] }}
+          UNITY_LICENSE: ${{ fromJSON('["<?xml version=\"1.0\" encoding=\"UTF-8\"?><root><TimeStamp Value=\"chxldhvc0zh5Vw==\"/>\n    <License id=\"Terms\">\n        <MachineBindings>\n            <Binding Key=\"1\" Value=\"C372866C-B44C-5E48-806F-7583B55F04FB\"/>\n            <Binding Key=\"2\" Value=\"C02F32Y5ML85\"/>\n        </MachineBindings>\n        <MachineID Value=\"LcL/yxIaeUG12OSX31mKDtxcVx8=\"/>\n        <SerialHash Value=\"e25c63636985259e763d40cc9253cdfe6a862ceb\"/>\n        <Features>\n            <Feature Value=\"33\"/>\n            <Feature Value=\"1\"/>\n            <Feature Value=\"12\"/>\n            <Feature Value=\"2\"/>\n            <Feature Value=\"24\"/>\n            <Feature Value=\"3\"/>\n            <Feature Value=\"36\"/>\n            <Feature Value=\"17\"/>\n            <Feature Value=\"19\"/>\n            <Feature Value=\"62\"/>\n        </Features>\n        <DeveloperData Value=\"AQAAAEY0LUtFWUItMzYyOC0zWEI3LVBZVVEtTUI5VQ==\"/>\n        <SerialMasked Value=\"F4-KEYB-3628-3XB7-PYUQ-XXXX\"/>\n        <StartDate Value=\"2023-11-21T00:00:00\"/>\n        <UpdateDate Value=\"2023-11-22T06:03:23\"/>\n        <InitialActivationDate Value=\"2023-11-21T06:03:21\"/>\n        <LicenseVersion Value=\"6.x\"/>\n        <ClientProvidedVersion Value=\"2017.2.0\"/>\n        <AlwaysOnline Value=\"false\"/>\n        <Entitlements>\n            <Entitlement Ns=\"unity_editor\" Tag=\"UnityPersonal\" Type=\"EDITOR\" ValidTo=\"9999-12-31T00:00:00\"/>\n            <Entitlement Ns=\"unity_editor\" Tag=\"DarkSkin\" Type=\"EDITOR_FEATURE\" ValidTo=\"9999-12-31T00:00:00\"/>\n        </Entitlements>\n    </License><Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments\"/><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><Reference URI=\"#Terms\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>9DZF11miRAzx7TIuCxih78B6CXU=</DigestValue></Reference></SignedInfo><SignatureValue>weRQubqMNN61lSZtm/e7S+UDzTPNQjM5aQl/c4aKLH/b2khefpgLfdWneoxdnNopA6+rW6kBqxWt\nhMLdHY+oAOfDsfmMQRTnmQG0Y3G3xh6gjGP1RAIHoLDfFHf+0LQ3FakA2WehcFWPSYeVDrdxm3HW\nqMmdKWooD9i+J4s4rQFTDx9+/G6yjc5KGTyGxIz3c5kxTEkV2qsFPXsauomY9Z8YPKy+cZK7g+Ol\npO+LhtzetgTIlIN/qG8eByjlp6nOuVGdDOIrhNJW+vllNyx0qNWPREadVrhFViI4UXegMFRl5gJc\nrgcrlr/fD+NorDVLfcu7D863QXkkuriILUIq2Q==</SignatureValue></Signature></root>", null]')[secrets.UNITY_SERIAL != null] }}
         with:
-          allowDirtyBuild: true  # Because of the OVR Update, the build tree might be dirty
-          unityVersion: ${{ env.UNITY_VERSION }}
-          targetPlatform: ${{ matrix.targetPlatform }}
-          customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }} ${{ needs.configuration.outputs.description}} ${{ env.stamp }} ${{ matrix.extraoptions }}
-          versioning: Custom
-          version: ${{ needs.configuration.outputs.version }}
-          buildMethod: BuildTiltBrush.CommandLine
-          androidKeystoreName: openbrush.keystore
-          androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 || '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' }}
-          androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS || 'FakeKey' }}
-          androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME || 'openbrush-non-official' }}
-          androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS || 'FakeKey' }}
+          retry_condition: steps._this.outputs.engineExitCode == 1
+          action: game-ci/unity-builder@v4
+          with: |
+            allowDirtyBuild: true  # Because of the OVR Update, the build tree might be dirty
+            unityVersion: ${{ env.UNITY_VERSION }}
+            targetPlatform: ${{ matrix.targetPlatform }}
+            customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/${{ env.filename }} ${{ needs.configuration.outputs.description}} ${{ env.stamp }} ${{ env.btbbopts }} ${{ matrix.extraoptions }}
+            versioning: Custom
+            androidVersionCode: "${{ needs.configuration.outputs.androidVersionCode }}${{ matrix.versionSuffix }}"
+            version: ${{ needs.configuration.outputs.version }}
+            buildName: ${{ needs.configuration.outputs.basename }}
+            buildsPath: build/${{ matrix.vrsdk }}
+            chownFilesTo: ${{ needs.configuration.outputs.uid }}:${{ needs.configuration.outputs.gid }}
+            buildMethod: BuildTiltBrush.CommandLine
+            androidKeystoreName: openbrush.keystore
+            androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 || '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' }}
+            androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS || 'FakeKey' }}
+            androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME || 'openbrush-non-official' }}
+            androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS || 'FakeKey' }}
 
       - name: Prepare for packaging (permissions and compression, OSX only)
         if: matrix.targetPlatform == 'StandaloneOSX'
         run: |
-          # Change owner back to the builder user; docker, by default, leaves these files as owned by root, so we can't do the chmod.
-          # (The chmod itself is also attempted in the unity-builder image, but because the paths don't match, they don't find our filename)
-          docker run -v $(pwd)/build:/mnt alpine chown $(id -u).$(id -g) -R /mnt/
-          chmod a+x build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }}/Contents/MacOS/*
+          mv build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/Support "build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/${{ env.filename }}/Contents/"
+          find build -name 'UnityFbxSdkNative.bundle' -delete
           # Compress, but skip the top directories
-          tar -c -v -z -f OpenBrush.tgz -C build ${{ matrix.targetPlatform}}-${{ matrix.vrsdk }}
-          rm -rf build/*
-          mv OpenBrush.tgz build/
+          tar -c -v -z -f OpenBrush.tgz -C build/${{ matrix.vrsdk }} ${{ matrix.targetPlatform}}
+          rm -rf build/${{ matrix.vrsdk }}/*
+          mv OpenBrush.tgz build/${{ matrix.vrsdk }}/
 
       - name: Upload build/
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.name }}
-          path: build
+          name: ${{ matrix.name }} ${{ matrix.flavors.title }}
+          path: |
+            build/${{ matrix.vrsdk }}
+            !build/Pico/*.symbols.zip
+            !build/**/*_BackUpThisFolder_ButDontShipItWithYourGame
+
+      - name: Check if packages-lock.json has changed or if it's cacheable
+        id: check_packagecache
+        run: |
+          # Check if there are any changes to the packages-lock.json file
+          set +e
+          git diff --exit-code -- Packages/packages-lock.json
+          CHANGES="$?"
+          set -e
+          echo "changes=$CHANGES" >> $GITHUB_OUTPUT
+          echo "diff returned: $CHANGES"
 
       - name: Save Library/PackageCache cache
-        uses: actions/cache/save@v3
-        if: github.ref == 'refs/heads/main'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
+        uses: actions/cache/save@v4
+        if: github.ref == 'refs/heads/main' && steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
           path: Library/PackageCache
-          key: Library_PackageCache_${{ env.UNITY_VERSION }}
+          key: Library_PackageCache_${{ env.UNITY_VERSION }}_${{ hashFiles('Packages/packages-lock.json') }}
 
       - name: Clean Library before caching
+        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         run: |
           # Remove the large files from the Library directory that we know we'll rebuild. As our il2cpp caches are huge and barely fit in the Github quota, it's better not to save an unneeded 1GB of space (or so). If a new Unity version is taken, this may need to be updated
           # Debugging
@@ -449,8 +539,8 @@ jobs:
           du -mcsh Library
 
       - name: Save Library/ cache
-        uses: actions/cache/save@v3
-        if: github.ref == 'refs/heads/main'
+        uses: actions/cache/save@v4
+        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -458,9 +548,144 @@ jobs:
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
           key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
+  signmacos:
+    name: Sign the MacOS .app
+    needs: [build]
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
+          sparse-checkout: |
+            Support/macos
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: MacOS
+          path: build_macos
+
+      # See https://docs.github.com/en/actions/deployment/deploying-xcode-applications/installing-an-apple-certificate-on-macos-runners-for-xcode-development
+      - name: Install the Apple certificate and provisioning profile
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.APPLE_BUILD_CERTIFICATE_BASE64 }}
+          INSTALL_CERTIFICATE_BASE64: ${{ secrets.APPLE_INSTALL_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.APPLE_P12_PASSWORD }}
+          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.APPLE_BUILD_PROVISION_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ secrets.APPLE_KEYCHAIN_PASSWORD }}
+        run: |
+          BUILD_CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          INSTALL_CERTIFICATE_PATH=$RUNNER_TEMP/install_certificate.p12
+          PP_PATH=$RUNNER_TEMP/openbrushmac.provisionprofile
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $BUILD_CERTIFICATE_PATH
+          echo -n "$INSTALL_CERTIFICATE_BASE64" | base64 --decode -o $INSTALL_CERTIFICATE_PATH
+          echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o $PP_PATH
+
+          # create temporary keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          # import certificate to keychain
+          security import $BUILD_CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security import $INSTALL_CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
+
+      - name: Sign the release
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+        run: |
+          tar xvfz build_macos/*tgz
+
+          export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBrush*.app))
+
+          cd StandaloneOSX/
+          codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME/Contents/Support/ThirdParty/ffmpeg/bin/ffmpeg
+          for bundle in $FILENAME/Contents/Plugins/*.bundle; do
+              codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $bundle
+          done
+          codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME
+          cd -
+
+          tar -c -v -z -f OpenBrush.tgz StandaloneOSX
+      - name: Upload signed app
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacOS (signed)
+          path: |
+            OpenBrush.tgz
+
+  createdmg:
+    name: Create and Notarize DMG
+    needs: [signmacos]
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
+          sparse-checkout: |
+            Support/macos
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: MacOS (signed)
+          path: build_macos
+
+      - name: Create a notarized DMG
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+        run: |
+          tar xvfz build_macos/*tgz
+
+          export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBrush*.app))
+          mkdir dist
+
+          cp Support/macos/background.png StandaloneOSX/
+          cp Support/macos/background@2x.png StandaloneOSX/
+          pip install jinjanator
+          jinjanate Support/macos/openbrush-dmg.json.j2 > StandaloneOSX/openbrush-dmg.json
+          pushd StandaloneOSX/
+          npx appdmg openbrush-dmg.json ../dist/OpenBrush.dmg
+          popd
+
+          xcrun notarytool submit \
+          --team-id ${{ vars.APPLE_TEAM_ID }} \
+          --apple-id ${{ vars.APPLE_ID }} \
+          --password ${{ secrets.APPLE_APPLICATION_SPECIFIC_PASSWORD }} \
+          --wait \
+          dist/OpenBrush.dmg
+
+          xcrun stapler staple dist/OpenBrush.dmg
+
+      - name: Upload notarized dmg
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacOS (DMG)
+          path: |
+            dist/OpenBrush.dmg
+
   release:
     name: Create Github Release
-    needs: [configuration, build]
+    needs: [configuration, build, createdmg]
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' &&
@@ -480,6 +705,10 @@ jobs:
                 {
                     "title": "## 🚀 Features",
                     "labels": ["feature", "enhancement"]
+                },
+                {
+                    "title": "## 🎨 UI / UX",
+                    "labels": ["ux"]
                 },
                 {
                     "title": "## 🐛 Fixes",
@@ -507,34 +736,46 @@ jobs:
         run: echo "$CHANGELOG"
 
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Windows OpenXR
           path: build_windows_openxr
 
       - name: Download Build Artifacts (Windows Rift)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Windows Rift
           path: build_windows_rift
 
-      - name: Download Build Artifacts (Windows Monoscopic)
-        uses: actions/download-artifact@v3
+      - name: Download Build Artifacts (Android OpenXR)
+        uses: actions/download-artifact@v4
         with:
-          name: Windows Monoscopic
-          path: build_windows_mono
+          name: Android OpenXR
+          path: build_android_openxr
 
-      - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v3
+      - name: Download Build Artifacts (Oculus Quest 2+)
+        uses: actions/download-artifact@v4
         with:
-          name: Oculus Quest
+          name: Oculus Quest (2+)
           path: build_oculus_quest
 
       - name: Download Build Artifacts (Pico)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Android Pico
           path: build_android_pico
+
+      - name: Download Build Artifacts (Linux)
+        uses: actions/download-artifact@v4
+        with:
+          name: Linux
+          path: build_linux
+
+      - name: Download Build Artifacts (Mac)
+        uses: actions/download-artifact@v4
+        with:
+          name: MacOS (DMG)
+          path: build_macos
 
       - name: Package Artifacts for release
         env:
@@ -542,20 +783,21 @@ jobs:
         run: |
           mkdir releases
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
+          mv build_android_openxr/*/com.Icosa.OpenBrush*apk releases/OpenBrush_OpenXR_$VERSION.apk
           mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
-          mv build_windows_openxr/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_$VERSION/
-          mv build_windows_rift/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_$VERSION/
-          mv build_windows_mono/StandaloneWindows64-Monoscopic/ releases/OpenBrush_Mono_$VERSION/
+          mv build_windows_openxr/StandaloneWindows64/ releases/OpenBrush_Desktop_$VERSION/
+          mv build_windows_rift/StandaloneWindows64/ releases/OpenBrush_Rift_$VERSION/
+          mv build_macos/*.dmg releases/OpenBrush_Mac_$VERSION.dmg
+          mv build_linux/StandaloneLinux64/ releases/OpenBrush_Linux_$VERSION/
           cd releases
           zip -r OpenBrush_Desktop_$VERSION.zip OpenBrush_Desktop_$VERSION/
-          zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
-          zip -r OpenBrush_Mono_$VERSION.zip OpenBrush_Mono_$VERSION/
           rm -rf OpenBrush_Desktop_$VERSION
+          zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
           rm -rf OpenBrush_Rift_$VERSION
-          rm -rf OpenBrush_Mono_$VERSION
+          zip -r OpenBrush_Linux_$VERSION.zip OpenBrush_Linux_$VERSION/
 
       - name: Publish
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -569,7 +811,7 @@ jobs:
     name: Publish changelog from last major build to open-brush-docs
     needs: [configuration, build]
     runs-on: ubuntu-latest
-    if:
+    if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
@@ -586,6 +828,10 @@ jobs:
                 {
                     "title": "## 🚀 Features",
                     "labels": ["feature", "enhancement"]
+                },
+                {
+                    "title": "## 🎨 UI / UX",
+                    "labels": ["ux"]
                 },
                 {
                     "title": "## 🐛 Fixes",
@@ -608,20 +854,29 @@ jobs:
               "pr_template": "- #{{TITLE}} ([PR ##{{NUMBER}}](#{{URL}}) by @#{{AUTHOR}})\n"
             }
 
+      - name: Get the current contents of the docs repository
+        uses: actions/checkout@v4
+        with:
+          repository: icosa-foundation/open-brush-docs
+          path: open-brush-docs
+          ref: master
+          fetch-depth: 0
+          sparse-checkout: |
+            release-history/
+
       - name: Create Changelog file
         env:
           CHANGELOG: ${{ steps.changelog.outputs.changelog }}
         run: |
-          mkdir -p changelog/
-          echo "$CHANGELOG" | tee changelog/automatic-changelog.md
+          echo "$CHANGELOG" | tee open-brush-docs/release-history/automatic-changelog.md
 
       - name: Publish release notes
         uses: cpina/github-action-push-to-another-repository@composite-1.5.1
         env:
-          SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+          SSH_DEPLOY_KEY: ${{ secrets.OPENBRUSH_DOCS_SSH_DEPLOY_KEY }}
         with:
-          source-directory: 'changelog/'
-          target-directory: 'automatic-release-notes/'
+          source-directory: 'open-brush-docs/release-history/'
+          target-directory: 'release-history/'
           destination-github-username: 'icosa-foundation'
           destination-repository-name: 'open-brush-docs'
           user-name: 'release-note-bot'
@@ -630,7 +885,7 @@ jobs:
 
   publish_steam:
     name: Publish Steam Release
-    needs: [configuration, build]
+    needs: [build, signmacos]
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -641,33 +896,52 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          sparse-checkout: |
+            Support/steam
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
       - name: Setup steamcmd
-        uses: CyberAndrii/setup-steamcmd@v1.1.5
+        uses: CyberAndrii/setup-steamcmd@v1.2.0
       - name: Restore steam login config
         run: |
           mkdir -p /home/runner/Steam/config
           echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - > /home/runner/Steam/config/config.vdf
           md5sum /home/runner/Steam/config/config.vdf
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Windows OpenXR
           path: build_windows_openxr
+      - name: Download Build Artifacts (MacOS Signed)
+        uses: actions/download-artifact@v4
+        with:
+          name: MacOS (signed)
+          path: build_macos
+      - name: Download Build Artifacts (Linux)
+        uses: actions/download-artifact@v4
+        with:
+          name: Linux
+          path: build_linux
       - name: Upload Build
         run: |
-          pip install -U j2cli
-          j2 Support/steam/app.vdf.j2 > build_windows_openxr/app.vdf
-          j2 Support/steam/main_depot.vdf.j2 > build_windows_openxr/main_depot.vdf
-          j2 Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
-          steamcmd +login $STEAM_USERNAME +run_app_build $(pwd)/build_windows_openxr/app.vdf +quit
+          cd build_macos
+          tar xvfz OpenBrush.tgz
+          cd -
+          pip install -U jinjanator
+          jinjanate Support/steam/app.vdf.j2 > app.vdf
+          jinjanate Support/steam/main_depot.win.vdf.j2 > build_windows_openxr/main_depot.vdf
+          jinjanate Support/steam/main_depot.mac.vdf.j2 > build_macos/main_depot.vdf
+          jinjanate Support/steam/main_depot.linux.vdf.j2 > build_linux/main_depot.vdf
+          jinjanate Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
+          steamcmd +login $STEAM_USERNAME +run_app_build $(pwd)/app.vdf +quit
         env:
-          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+          STEAM_USERNAME: ${{ vars.STEAM_USERNAME }}
           STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
           VERSION: ${{ needs.configuration.outputs.version }}
-          OPEN_BRUSH_APP_ID: 1634870
-          OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
-          OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
+          OPEN_BRUSH_APP_ID: ${{ vars.STEAM_APP_ID }}
+          OPEN_BRUSH_WINDOWS_DEPOT_ID: ${{ vars.STEAM_WINDOWS_DEPOT_ID }}
+          OPEN_BRUSH_MAC_DEPOT_ID: ${{ vars.STEAM_MAC_DEPOT_ID }}
+          OPEN_BRUSH_LINUX_DEPOT_ID: ${{ vars.STEAM_LINUX_DEPOT_ID }}
+          OPEN_BRUSH_WINDOWS_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
           CHANNEL: beta
       - name: Update steam login secret
         run: |
@@ -676,7 +950,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.SECRET_UPDATER_PAT }}
       - name: Save logs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: steamcmd logs
@@ -687,8 +961,8 @@ jobs:
     needs: [configuration, build]
     runs-on: windows-latest
     env:
-      PIMAX_APP_ID: ${{ secrets.PIMAX_APP_ID }}
-      PIMAX_USERNAME: ${{ secrets.PIMAX_USERNAME }}
+      PIMAX_APP_ID: ${{ vars.PIMAX_APP_ID }}
+      PIMAX_USERNAME: ${{ vars.PIMAX_USERNAME }}
       PIMAX_PASSWORD: ${{ secrets.PIMAX_PASSWORD }}
       VERSION: ${{ needs.configuration.outputs.version}}
     if: |
@@ -698,7 +972,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows Pimax)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Windows Pimax
           path: build_windows_pimax
@@ -706,7 +980,7 @@ jobs:
       - name: Publish Pimax Builds
         run: |
           New-Item "releases" -Type Directory
-          Move-Item -Path build_windows_pimax/StandaloneWindows64-OpenXR/* releases/
+          Move-Item -Path build_windows_pimax/StandaloneWindows64/* releases/
           Set-Location -Path "releases"
           Compress-Archive -Path ./* -DestinationPath OpenBrush_Pimax_${Env:VERSION}.zip
           Invoke-WebRequest -Uri https://dl.appstore.pimax.com/tools/pimax-dev-util.exe -OutFile pimax-dev-util.exe
@@ -718,10 +992,10 @@ jobs:
     needs: [configuration, build]
     runs-on: windows-latest
     env:
-      VIVEPORT_EMAIL: ${{ secrets.VIVEPORT_EMAIL }}
+      VIVEPORT_EMAIL: ${{ vars.VIVEPORT_EMAIL }}
       VIVEPORT_PASSWORD: ${{ secrets.VIVEPORT_PASSWORD }}
-      VIVEPORT_APPID: ${{ secrets.VIVEPORT_APPID }}
-      VIVEPORT_ORGID: ${{ secrets.VIVEPORT_ORGID }}
+      VIVEPORT_APP_ID: ${{ vars.VIVEPORT_APP_ID }}
+      VIVEPORT_ORG_ID: ${{ vars.VIVEPORT_ORG_ID }}
       VERSION: ${{ needs.configuration.outputs.version}}
     if: |
       github.event_name == 'push' &&
@@ -730,7 +1004,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Windows OpenXR
           path: build_windows_openxr
@@ -738,11 +1012,11 @@ jobs:
       - name: Publish Viveport Builds
         run: |
           New-Item "releases" -Type Directory
-          Move-Item -Path build_windows_openxr/StandaloneWindows64-OpenXR/* releases/
+          Move-Item -Path build_windows_openxr/StandaloneWindows64/* releases/
           Set-Location -Path "releases"
           Compress-Archive -Path ./* -DestinationPath OpenBrush_Viveport_${Env:VERSION}.zip
           Invoke-WebRequest -Uri https://assets-global.viveport.com/static-misc/developer-tool/ViveportUploader.exe -OutFile ViveportUploader.exe
-          ./ViveportUploader.exe -email ${Env:VIVEPORT_EMAIL} -password ${Env:VIVEPORT_PASSWORD} -filepath OpenBrush_Viveport_${Env:VERSION}.zip -appid ${Env:VIVEPORT_APPID} -orgid ${Env:VIVEPORT_ORGID} -version ${VERSION}
+          ./ViveportUploader.exe -email ${Env:VIVEPORT_EMAIL} -password ${Env:VIVEPORT_PASSWORD} -filepath OpenBrush_Viveport_${Env:VERSION}.zip -appid ${Env:VIVEPORT_APP_ID} -orgid ${Env:VIVEPORT_ORG_ID} -version ${VERSION}
 
   publish_itch:
     name: Publish Itch.io Release
@@ -761,22 +1035,22 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Windows OpenXR
           path: build_windows_openxr
 
-      - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v3
+      - name: Download Build Artifacts (Oculus Quest 2+)
+        uses: actions/download-artifact@v4
         with:
-          name: Oculus Quest
+          name: Oculus Quest (2+)
           path: build_oculus_quest
 
       - name: Package Artifacts for release
         run: |
           mkdir releases
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
-          mv build_windows_openxr/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_$VERSION/
+          mv build_windows_openxr/StandaloneWindows64/ releases/OpenBrush_Desktop_$VERSION/
       - name: Publish Windows
         uses: josephbmanley/butler-publish-itchio-action@master
         env:
@@ -789,48 +1063,89 @@ jobs:
           PACKAGE: releases/OpenBrush_Quest_${{ needs.configuration.outputs.version }}.apk
 
   publish_oculus_quest:
-    name: Publish Oculus Quest Release
+    name: Publish Oculus Quest 2+ Release
     needs: [configuration, build]
-    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
-      - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v3
+      - name: Download Build Artifacts (Oculus Quest 2+)
+        uses: actions/download-artifact@v4
         with:
-          name: Oculus Quest
+          name: Oculus Quest (2+)
           path: build_oculus_quest
       - name: Publish Oculus Builds
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
           PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
           RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
-          OCULUS_QUEST_APP_ID: ${{ secrets.OCULUS_QUEST_APP_ID }}
+          OCULUS_QUEST_APP_ID: ${{ vars.OCULUS_QUEST_APP_ID }}
           OCULUS_QUEST_APP_SECRET: ${{ secrets.OCULUS_QUEST_APP_SECRET }}
         run: |
           mkdir releases
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
           mv build_oculus_quest/*/com.Icosa.OpenBrush*.symbols.zip releases/symbols.zip
+
           cd releases
           unzip symbols.zip
-          curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
+          curl -L 'https://www.oculus.com/download_app/?id=5159709737372459' -o ovr-platform-util
           chmod 755 ovr-platform-util
 
           if [ "$PRERELEASE" == "false" ]
           then
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel LIVE --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so'
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel LIVE:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --age-group MIXED_AGES
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}"
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group MIXED_AGES
+          fi
+
+  publish_oculus_quest1:
+    name: Publish Oculus Quest 1 Release
+    needs: [configuration, build]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Download Build Artifacts (Oculus Quest 1)
+        uses: actions/download-artifact@v4
+        with:
+          name: Oculus Quest (1)
+          path: build_oculus_quest1
+      - name: Publish Oculus Builds
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
+          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
+          OCULUS_QUEST_APP_ID: ${{ vars.OCULUS_QUEST_APP_ID }}
+          OCULUS_QUEST_APP_SECRET: ${{ secrets.OCULUS_QUEST_APP_SECRET }}
+        run: |
+          mkdir releases1
+          mv build_oculus_quest1/*/com.Icosa.OpenBrush*apk releases1/OpenBrush_Quest1_$VERSION.apk
+          mv build_oculus_quest1/*/com.Icosa.OpenBrush*.symbols.zip releases1/symbols.zip
+
+          cd releases1
+          unzip symbols.zip
+          curl -L 'https://www.oculus.com/download_app/?id=5159709737372459' -o ovr-platform-util
+          chmod 755 ovr-platform-util
+
+          if [ "$PRERELEASE" == "false" ]
+          then
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest1_$VERSION.apk --channel LIVE:quest1only --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --age-group MIXED_AGES
+          else
+            CHANGELOG="${RAW_CHANGELOG}"
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest1_$VERSION.apk --channel Beta:quest1only --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group MIXED_AGES
           fi
 
   publish_oculus_rift:
     name: Publish Oculus Rift Release
     needs: [configuration, build]
-    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -838,7 +1153,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows Rift)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Windows Rift
           path: build_windows_rift
@@ -847,14 +1162,14 @@ jobs:
           VERSION: ${{ needs.configuration.outputs.version }}
           PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
           RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
-          OCULUS_RIFT_APP_ID: ${{ secrets.OCULUS_RIFT_APP_ID }}
+          OCULUS_RIFT_APP_ID: ${{ vars.OCULUS_RIFT_APP_ID }}
           OCULUS_RIFT_APP_SECRET: ${{ secrets.OCULUS_RIFT_APP_SECRET }}
         run: |
           mkdir releases
-          mv build_windows_rift/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_$VERSION/
+          mv build_windows_rift/StandaloneWindows64/ releases/OpenBrush_Rift_$VERSION/
           cd releases
           zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
-          curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
+          curl -L 'https://www.oculus.com/download_app/?id=5159709737372459' -o ovr-platform-util
           chmod 755 ovr-platform-util
 
           if [ "$PRERELEASE" == "false" ]
@@ -864,3 +1179,101 @@ jobs:
             CHANGELOG="${RAW_CHANGELOG}"
             ./ovr-platform-util upload-rift-build --app-id ${OCULUS_RIFT_APP_ID} --app-secret ${OCULUS_RIFT_APP_SECRET} --build-dir OpenBrush_Rift_$VERSION --launch-file OpenBrush.exe --channel BETA --version $VERSION --firewall_exceptions true --redistributables 822786567843179,1675031999409058,2657209094360789 --notes "${CHANGELOG}"
           fi
+
+  publish_pico:
+    name: Publish Pico Releases
+    needs: [configuration, build]
+    runs-on: ubuntu-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Download Build Artifacts (Android Pico)
+        uses: actions/download-artifact@v4
+        with:
+          name: Android Pico
+          path: build_android_pico
+      - name: Download Build Artifacts (Android Pico CN)
+        uses: actions/download-artifact@v4
+        with:
+          name: Android Pico (CN)
+          path: build_android_pico_cn
+      - name: Publish Pico Builds
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
+          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
+          PICO_APP_ID: ${{ vars.PICO_APP_ID }}
+          PICO_APP_SECRET: ${{ secrets.PICO_APP_SECRET }}
+        run: |
+          mkdir releases
+          mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
+          mv build_android_pico_cn/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_CN_$VERSION.apk
+
+          cd releases
+          # pico-cli v1.0.3
+          curl -L 'https://p16-platform-static-va.ibyteimg.com/tos-maliva-i-jo6vmmv194-us/linux-noncn/202304111056/pico-cli?r=1681181814847245000' -o pico-cli
+          chmod 755 pico-cli
+
+          if [ "$PRERELEASE" == "false" ]
+          then
+            # The order here matters, because the Chinese build has a slightly higher version code due to the suffix of 1 vs 0
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 2 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_CN_$VERSION.apk --channel 1 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
+          else
+            # For Pico, Beta channels can only get one build, not a separate China / non-China build
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 3 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
+          fi
+
+  publish_ios_zapbox:
+    name: Publish Zapbox iOS
+    needs: [configuration, build]
+    runs-on: macos-13  # As of 2024-03-01, macos-latest still points to Mac OS 12, which has an older XCode and gives ITMS-90725: SDK version issue when we submit.
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          sparse-checkout: |
+            Gemfile
+            Gemfile.lock
+            fastlane
+
+      - name: Download iOS Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: iOS Zapbox
+          path: build
+
+      - name: Fix File Permissions and Run fastlane
+        env:
+          APPLE_CONNECT_EMAIL: ${{ secrets.APPLE_CONNECT_EMAIL }}
+          APPLE_DEVELOPER_EMAIL: ${{ secrets.APPLE_DEVELOPER_EMAIL }}
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+
+          MATCH_REPOSITORY: ${{ secrets.MATCH_REPOSITORY }}
+          MATCH_DEPLOY_KEY: ${{ secrets.MATCH_DEPLOY_KEY }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_P8: ${{ secrets.APPSTORE_P8 }}
+
+          IOS_BUNDLE_ID: ${{ vars.IOS_ZAPBOX_BUNDLE_ID }}
+          PROJECT_NAME: Open Brush for Zapbox
+          FASTLANE_LANE: ${{ needs.configuration.outputs.fastlanelane }}
+        run: |
+          eval "$(ssh-agent -s)"
+          ssh-add - <<< "${MATCH_DEPLOY_KEY}"
+          export FILENAME=$(basename $(readlink -f build/iOS/OpenBrush*))
+          export IOS_BUILD_PATH=$(pwd)/build/iOS/${FILENAME}
+
+          find $IOS_BUILD_PATH -type f -name "**.sh" -exec chmod +x {} \;
+          bundle install
+          bundle exec fastlane ios ${FASTLANE_LANE}

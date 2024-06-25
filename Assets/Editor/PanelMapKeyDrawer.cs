@@ -63,30 +63,19 @@ namespace TiltBrush
 
                 NextRect(baseX, pos.y, 10, baseHeight, 12);
                 EditorGUI.PropertyField(drawRect, prop.FindPropertyRelative("m_ModeVr"), GUIContent.none);
-                NextRect(baseX, pos.y, 30, baseHeight, 30);
-                EditorGUI.LabelField(drawRect, new GUIContent("VR"));
-
-                NextRect(baseX, pos.y, 10, baseHeight, 12);
-                EditorGUI.PropertyField(drawRect, prop.FindPropertyRelative("m_ModeVrExperimental"),
-                    GUIContent.none);
-                NextRect(baseX, pos.y, 30, baseHeight, 30);
-                EditorGUI.LabelField(drawRect, new GUIContent("Exp"));
-
-                NextRect(baseX, pos.y, 10, baseHeight, 12);
-                EditorGUI.PropertyField(drawRect, prop.FindPropertyRelative("m_ModeMono"), GUIContent.none);
-                NextRect(baseX, pos.y, 30, baseHeight, 30);
-                EditorGUI.LabelField(drawRect, new GUIContent("Mo", "Monoscopic"));
+                NextRect(baseX, pos.y, 40, baseHeight, 40);
+                EditorGUI.LabelField(drawRect, new GUIContent("PCVR"));
 
                 NextRect(baseX, pos.y, 10, baseHeight, 12);
                 EditorGUI.PropertyField(drawRect, prop.FindPropertyRelative("m_ModeQuest"),
                     GUIContent.none);
-                NextRect(baseX, pos.y, 30, baseHeight, 30);
-                EditorGUI.LabelField(drawRect, new GUIContent("OQ", "Oculus Quest"));
+                NextRect(baseX, pos.y, 40, baseHeight, 40);
+                EditorGUI.LabelField(drawRect, new GUIContent("Quest", "Oculus Quest"));
 
                 NextRect(baseX, pos.y, 10, baseHeight, 12);
-                EditorGUI.PropertyField(drawRect, prop.FindPropertyRelative("m_ModeGvr"), GUIContent.none);
-                NextRect(baseX, pos.y, 30, baseHeight, 30);
-                EditorGUI.LabelField(drawRect, new GUIContent("GVR"));
+                EditorGUI.PropertyField(drawRect, prop.FindPropertyRelative("m_ModeMono"), GUIContent.none);
+                NextRect(baseX, pos.y, 40, baseHeight, 60);
+                EditorGUI.LabelField(drawRect, new GUIContent("Mono", "Monoscopic"));
 
                 NextRect(baseX, pos.y, 10, baseHeight, 12);
                 EditorGUI.PropertyField(drawRect, prop.FindPropertyRelative("m_Basic"), GUIContent.none);

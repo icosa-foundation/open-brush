@@ -1257,11 +1257,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 68768010396041216
-    m_Localized: Turn Experimental Mode On
+    m_Localized: Enable Experimental Brushes
     m_Metadata:
       m_Items: []
   - m_Id: 68768580896882688
-    m_Localized: Turn Experimental Mode Off
+    m_Localized: Disable Experimental Brushes
     m_Metadata:
       m_Items: []
   - m_Id: 68773633749745664
@@ -1433,7 +1433,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76086604699590656
-    m_Localized: Exit Open Brush to finish publishing
+    m_Localized: Click to Finish Publishing
     m_Metadata:
       m_Items: []
   - m_Id: 76094622149435392
@@ -3101,7 +3101,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 106429517453328384
-    m_Localized: "Background Images"
+    m_Localized: Background Images
     m_Metadata:
       m_Items: []
   - m_Id: 95221400803737600
@@ -3450,6 +3450,78 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 147811113256255488
     m_Localized: Language
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151489918612377600
+    m_Localized: Video Recording is not supported on this device.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151490030713540608
+    m_Localized: 'You can create a video of your sketch by opening it on a Mac or
+      PC. Search for "Exporting video" on our docs website: https://docs.openbrush.app
+      for a step by step guide.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 170004956477833216
+    m_Localized: Please give Open Brush file access to save your creations!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 172767995928834048
+    m_Localized: 'Swipe To Adjust
+
+      Brush Size'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 189087250755706880
+    m_Localized: To avoid error 403 on Sketchfab when publishing - change visibility
+      to public (free Sketchfab accounts can't publish private models)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791089062830080
+    m_Localized: Reset Canvas Position
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791266398003200
+    m_Localized: Lock Canvas Position
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188792931159203840
+    m_Localized: Unlock Canvas Position
+    m_Metadata:
+      m_Items: []
+  - m_Id: 217069105871577088
+    m_Localized: "You can continue without a VR headset. Choose a sketch below to
+      enter Viewing Mode with the following controls:\n\nMouse: look around (press
+      I to invert up/down) \nW,A,S,D: move forward/back/left/right\nQ,E: move up/down\nHold
+      shift to move faster\n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 217070349893754880
+    m_Localized: Failed to Detect VR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 218558579745579008
+    m_Localized: More info on using Open Brush without VR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 176764812224364544
+    m_Localized: Passthrough Hull
+    m_Metadata:
+      m_Items: []
+  - m_Id: 224363142209691648
+    m_Localized: Pick a Subfolder
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238556149774557184
+    m_Localized: Image too large to load
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238935604850335744
+    m_Localized: Image too large to load
+    m_Metadata:
+      m_Items: []
+  - m_Id: 242372529028341760
+    m_Localized: Image failed to load
     m_Metadata:
       m_Items: []
   references:

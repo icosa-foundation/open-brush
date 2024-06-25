@@ -1,22 +1,22 @@
 ---
 repos:
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.17.0
+    rev: v1.35.1
     hooks:
       - id: yamllint
   - repo: https://github.com/psf/black
-    rev: 22.3.0
+    rev: 24.3.0
     hooks:
       - id: black
         files: ^Support/
         language_version: python3
   - repo: https://github.com/pycqa/flake8
-    rev: 3.9.0
+    rev: 7.0.0
     hooks:
       - id: flake8
         files: ^Support/
   - repo: https://github.com/PyCQA/pylint.git
-    rev: v2.15.5
+    rev: v3.1.0
     hooks:
       - id: pylint
         name: pylint
@@ -27,12 +27,22 @@ repos:
         args:
           - --load-plugins=pylint.extensions.redefined_variable_type,pylint.extensions.bad_builtin
           - --disable=import-error
-  - repo: https://github.com/dotnet/format
-    rev: "a2c1431dabf2229052cf598f86f31bc3eac5bc7b"  # Main as of 2022-12-05
+  - repo: https://github.com/google/yamlfmt
+    rev: v0.11.0
     hooks:
+      - id: yamlfmt
+        args:
+          - -conf
+          - .yamlfmt
+  - repo: local
+    hooks:
+      # Use dotnet format already installed on your machine
       - id: dotnet-format
-        exclude: ^(Assets/ThirdParty)|(Packages/)
-        entry: dotnet-format whitespace
+        name: dotnet-format
+        language: system
+        entry: dotnet format whitespace
+        types_or: [c#, vb]
+        exclude: ^(Assets/ThirdParty)|(Packages/)|(Assets/Photon/)
         args:
           - --folder
           - --include

@@ -60,8 +60,7 @@ def create():
         git("status")
     except subprocess.CalledProcessError:
         return NullVcs()
-    else:
-        return GitVcs()
+    return GitVcs()
 
 
 class VcsBase:  # pylint: disable=too-few-public-methods
@@ -130,7 +129,8 @@ class GitVcs(VcsBase):  # pylint: disable=too-few-public-methods
           <sha>
           <sha>+<local changes>
         <sha> is a sha of the lastest GoB commit included in the current build.
-        <local changes> is a tiny description of any changes in the build that aren't on GoB."""
+        <local changes> is a tiny description of any changes in the build that aren't on GoB.
+        """
         try:
             status = git("status --porcelain", cwd=input_directory)
         except subprocess.CalledProcessError as e:

@@ -36,6 +36,9 @@ namespace TiltBrush
         public static SketchMemoryScript m_Instance;
 
         public event Action OperationStackChanged;
+        public Action<BaseCommand> CommandPerformed;
+        public Action<BaseCommand> CommandUndo;
+        public Action<BaseCommand> CommandRedo;
 
         public GameObject m_UndoBatchMeshPrefab;
         public GameObject m_UndoBatchMesh;
@@ -240,7 +243,7 @@ namespace TiltBrush
             if (!m_MemoryExceeded)
             {
                 // Only do the memory check in the AppState.Standard.  The AppState.MemoryWarning exits to
-                // AppState.Standard, so interrupting any other state would have bad consequences. 
+                // AppState.Standard, so interrupting any other state would have bad consequences.
                 if (App.CurrentState == App.AppState.Standard)
                 {
                     m_LastCheckedVertCount =
@@ -340,7 +343,7 @@ namespace TiltBrush
                     PerformAndRecordCommand(m_RepaintStrokeParent);
                     m_RepaintStrokeParent = null;
                 }
-                OperationStackChanged();
+                OperationStackChanged?.Invoke();
             }
         }
 
@@ -371,7 +374,7 @@ namespace TiltBrush
             return duplicate;
         }
 
-        public void PerformAndRecordCommand(BaseCommand command, bool discardIfNotMerged = false)
+        public void PerformAndRecordCommand(BaseCommand command, bool discardIfNotMerged = false, bool invoke = true)
         {
             SketchSurfacePanel.m_Instance.m_LastCommand = command;
             bool discardCommand = discardIfNotMerged;
@@ -395,7 +398,12 @@ namespace TiltBrush
             }
             delta.Redo();
             m_OperationStack.Push(command);
-            OperationStackChanged();
+            OperationStackChanged?.Invoke();
+
+            if (invoke)
+            {
+                CommandPerformed?.Invoke(command);
+            }
         }
 
         // TODO: deprecate in favor of PerformAndRecordCommand
@@ -414,7 +422,8 @@ namespace TiltBrush
                 command = top;
             }
             m_OperationStack.Push(command);
-            OperationStackChanged();
+            OperationStackChanged?.Invoke();
+            CommandPerformed?.Invoke(command);
         }
 
         /// Returns approximate latest timestamp from the stroke list (including deleted strokes).
@@ -752,7 +761,7 @@ namespace TiltBrush
         public List<Stroke> GetAllUnselectedActiveStrokes()
         {
             return m_MemoryList.Where(
-                s => s.IsGeometryEnabled && s.Canvas == App.Scene.MainCanvas &&
+                s => s.IsGeometryEnabled && s.Canvas == App.Scene.ActiveCanvas &&
                     (s.m_Type != Stroke.Type.BatchedBrushStroke ||
                     s.m_BatchSubset.m_VertLength > 0)).ToList();
         }
@@ -788,7 +797,7 @@ namespace TiltBrush
                 }
             }
             m_OperationStack.Clear();
-            if (OperationStackChanged != null) { OperationStackChanged(); }
+            OperationStackChanged?.Invoke();
             m_LastOperationStackCount = 0;
             m_MemoryList.Clear();
             App.GroupManager.ResetGroups();
@@ -904,20 +913,30 @@ namespace TiltBrush
             m_RepaintCoroutine = null;
         }
 
-        public void StepBack()
+        public void StepBack(bool invoke = true)
         {
             var comm = m_OperationStack.Pop();
             comm.Undo();
             m_RedoStack.Push(comm);
-            OperationStackChanged();
+            OperationStackChanged?.Invoke();
+
+            if (invoke)
+            {
+                CommandUndo?.Invoke(comm);
+            }
         }
 
-        public void StepForward()
+        public void StepForward(bool invoke = true)
         {
             var comm = m_RedoStack.Pop();
             comm.Redo();
             m_OperationStack.Push(comm);
-            OperationStackChanged();
+            OperationStackChanged?.Invoke();
+
+            if (invoke)
+            {
+                CommandRedo?.Invoke(comm);
+            }
         }
 
         public static IEnumerable<Stroke> AllStrokes()

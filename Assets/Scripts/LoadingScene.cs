@@ -15,6 +15,11 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Localization;
+
+#if UNITY_ANDROID
+using UnityEngine.Android;
+#endif
 
 namespace TiltBrush
 {
@@ -27,11 +32,17 @@ namespace TiltBrush
         // Amount of the progress bar taken up by the scene load
         [SerializeField] private float m_SceneLoadRatio;
 
+        [SerializeField] private LocalizedString m_LoadingText;
+        [SerializeField] private LocalizedString m_RequestAndroidFolderPermissions;
+
         // We have a slightly faked loading position that will always increase
         // The fake loading rate is the minimum amount it will increase in one second, the reciprocal of
         // m_MaximumLoadingTime
         private float m_FakeLoadingRate;
         private float m_CurrentLoadingPosition;
+#if UNITY_ANDROID
+        private bool m_FolderPermissionOverride = false;
+#endif
 
         private IEnumerator Start()
         {
@@ -57,6 +68,23 @@ namespace TiltBrush
             UpdateProgress(0, 0, 0);
 
             DontDestroyOnLoad(gameObject);
+
+#if UNITY_ANDROID
+            if (Application.platform == RuntimePlatform.Android)
+            {
+                if (!UserHasManageExternalStoragePermission())
+                {
+                    m_Overlay.MessageStatus = m_RequestAndroidFolderPermissions.GetLocalizedStringAsync().Result;
+                    AskForManageStoragePermission();
+                    while (!UserHasManageExternalStoragePermission())
+                    {
+                        yield return new WaitForEndOfFrame();
+                    }
+
+                    m_Overlay.MessageStatus = m_LoadingText.GetLocalizedStringAsync().Result;
+                }
+            }
+#endif
 
             AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("Main");
             while (!asyncLoad.isDone)
@@ -91,5 +119,45 @@ namespace TiltBrush
             m_CurrentLoadingPosition = Mathf.Max(m_CurrentLoadingPosition, position);
             m_Overlay.Progress = m_CurrentLoadingPosition;
         }
+
+#if UNITY_ANDROID
+        private bool UserHasManageExternalStoragePermission()
+        {
+            bool isExternalStorageManager = false;
+            try
+            {
+                AndroidJavaClass environmentClass = new AndroidJavaClass("android.os.Environment");
+                isExternalStorageManager = environmentClass.CallStatic<bool>("isExternalStorageManager");
+            }
+            catch (AndroidJavaException e)
+            {
+                Debug.LogError("Java Exception caught and ignored: " + e.Message);
+                Debug.LogError("Assuming this means this device doesn't support isExternalStorageManager.");
+            }
+            return m_FolderPermissionOverride || isExternalStorageManager;
+        }
+
+        private void AskForManageStoragePermission()
+        {
+            try
+            {
+                using var unityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                using AndroidJavaObject currentActivityObject = unityClass.GetStatic<AndroidJavaObject>("currentActivity");
+                string packageName = currentActivityObject.Call<string>("getPackageName");
+                using var uriClass = new AndroidJavaClass("android.net.Uri");
+                using AndroidJavaObject uriObject = uriClass.CallStatic<AndroidJavaObject>("fromParts", "package", packageName, null);
+                using var intentObject = new AndroidJavaObject("android.content.Intent", "android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION", uriObject);
+                intentObject.Call<AndroidJavaObject>("addCategory", "android.intent.category.DEFAULT");
+                currentActivityObject.Call("startActivity", intentObject);
+            }
+            catch (AndroidJavaException e)
+            {
+                // TODO: only skip this if it's of type act=android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION
+                m_FolderPermissionOverride = true;
+                Debug.LogError("Java Exception caught and ignored: " + e.Message);
+                Debug.LogError("Assuming this means we don't need android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION (e.g., Android SDK < 30)");
+            }
+        }
+#endif
     }
 } // namespace TiltBrush

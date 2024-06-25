@@ -291,7 +291,6 @@ def info(message):
 
 
 def main():
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--run", help="Run Tilt Brush on the remote device.", action="store_true"

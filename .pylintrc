@@ -1,5 +1,5 @@
 [MESSAGES CONTROL]
-disable=bad-indentation,missing-class-docstring,missing-module-docstring,missing-function-docstring,invalid-name,fixme,line-too-long,duplicate-code,unspecified-encoding,consider-using-f-string,consider-using-with
+disable=bad-indentation,missing-class-docstring,missing-module-docstring,missing-function-docstring,invalid-name,fixme,line-too-long,duplicate-code,unspecified-encoding,consider-using-f-string,consider-using-with,broad-exception-raised
 
 extension-pkg-whitelist=math,zlib,struct
 # Temporary, until https://github.com/PyCQA/pylint/issues/4297 is resolved

@@ -362,8 +362,8 @@ namespace TiltBrush
                         bool newIsMono = false;
                         bool newIsIl2cpp = false;
 
-                        // Android requires IL2CPP
-                        if (BuildTiltBrush.GuiSelectedBuildTarget == BuildTarget.Android)
+                        // Mobile requires IL2CPP
+                        if (BuildTiltBrush.GuiSelectedBuildTarget == BuildTarget.Android || BuildTiltBrush.GuiSelectedBuildTarget == BuildTarget.iOS)
                         {
                             newIsIl2cpp = true;
                             GUILayout.Toggle(newIsIl2cpp, "IL2CPP", toggleOpt);

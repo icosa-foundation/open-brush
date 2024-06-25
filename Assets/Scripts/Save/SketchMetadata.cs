@@ -372,6 +372,9 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TrTransform[] Transforms { get; set; }
 
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string[] Subtrees { get; set; }
+
         /// Prior to M13, always null.
         /// Post M13, never null or empty; but an empty array is allowed on read.
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
@@ -630,10 +633,29 @@ namespace TiltBrush
     }
 
     [Serializable]
+    public class TiltLights
+    {
+        public Color? LightColor;
+        public float? Intensity;
+        public LightType PunctualLightType;
+        public float? Range;
+        public float? InnerConeAngle;
+        public float? OuterConeAngle;
+
+        public bool Pinned;
+        public TrTransform Transform;
+        // Group ID for widget. 0 for ungrouped items.
+        public uint GroupId { get; set; }
+        public int LayerId { get; set; }
+    }
+
+    [Serializable]
     public class TiltImages75
     {
         /// *.png or *.jpg, should have no path
         public string FileName { get; set; }
+        /// FileName plus path relative to images directory
+        public string FilePath { get; set; }
         /// width / height
         public float AspectRatio { get; set; }
         // True if image should be pinned on load. Added in M15.
@@ -741,6 +763,9 @@ namespace TiltBrush
         /// Added in 7.5
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TiltModels75[] ModelIndex { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TiltLights[] LightIndex { get; set; }
 
         // Added in 7.5b; never released to public.
         // Write-only so it gets serialized in but not serialized out.

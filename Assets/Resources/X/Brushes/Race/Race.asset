@@ -21,6 +21,7 @@ MonoBehaviour:
   m_Tags:
   - experimental
   - audioreactive
+  - broken
   m_Nondeterministic: 0
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0

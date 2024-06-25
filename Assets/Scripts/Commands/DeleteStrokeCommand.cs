@@ -18,7 +18,7 @@ namespace TiltBrush
 {
     public class DeleteStrokeCommand : BaseCommand
     {
-        private Stroke m_TargetStroke;
+        public Stroke m_TargetStroke;
         private bool m_SilenceFirstAudio;
 
         private Vector3 CommandAudioPosition

@@ -296,12 +296,11 @@ namespace TiltBrush
                 SketchMemoryScript.m_Instance.ClearMemory();
             }
 
-            if (Config.IsExperimental)
+            // Previously was on in experimental builds only.
+            // Maybe investigate making this a user setting?
+            if (App.Config.m_ReplaceBrushesOnLoad)
             {
-                if (App.Config.m_ReplaceBrushesOnLoad)
-                {
-                    brushList = brushList.Select(guid => App.Config.GetReplacementBrush(guid)).ToArray();
-                }
+                brushList = brushList.Select(guid => App.Config.GetReplacementBrush(guid)).ToArray();
             }
 
             oldGroupToNewGroup = new Dictionary<int, int>();

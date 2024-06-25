@@ -16,7 +16,7 @@ using UnityEditor;
 
 namespace TiltBrush
 {
-#if UNITY_ANDROID
+#if UNITY_ANDROID || UNITY_IOS
 [InitializeOnLoadAttribute]
 public class SetStereoRenderPath {
 

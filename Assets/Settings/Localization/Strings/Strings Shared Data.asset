@@ -540,7 +540,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 287897575133184
-    m_Key: LOADING_SCENE_OVERLAY_MESSAGE
+    m_Key: LOADING_SCENE_OVERLAY_LOADING
     m_Metadata:
       m_Items: []
   - m_Id: 7892854560759808
@@ -3261,6 +3261,70 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 147811113256255488
     m_Key: SETTINGS_PANEL_LOCALE_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151489918612377600
+    m_Key: POPUP_RECORD_UNSUPPORTED_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151490030713540608
+    m_Key: POPUP_RECORD_UNSUPPORTED_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 170004956477833216
+    m_Key: LOADING_SCENE_OVERLAY_ANDROIDPERMISSIONS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 172767995928834048
+    m_Key: CONTROLLER_HINT_THUMBPAD_BRUSHSIZE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 176764812224364544
+    m_Key: BRUSH_PASSTHROUGHHULL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791089062830080
+    m_Key: ENVIRONMENT_PANEL_RESET_CANVAS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791266398003200
+    m_Key: ENVIRONMENT_PANEL_LOCK_CANVAS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188792931159203840
+    m_Key: ENVIRONMENT_PANEL_UNLOCK_CANVAS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 189087250755706880
+    m_Key: POPUP_UPLOAD_COMPLETE_MOBILE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 217069105871577088
+    m_Key: VIEW_MODE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 217070349893754880
+    m_Key: VR_NOT_DETECTED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 218558579745579008
+    m_Key: MONOSCOPIC_HELP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 224363142209691648
+    m_Key: DirectoryChooserPopupButton
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238556149774557184
+    m_Key: PANEL_REFERENCE_ICONIMAGE_LOADERRORTEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238935604850335744
+    m_Key: PANEL_REFERENCE_ICONBACKGROUNDIMAGE_LOADERRORTEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 242372529028341760
+    m_Key: PANEL_REFERENCE_ICONIMAGE_GENERICERRORTEXT
     m_Metadata:
       m_Items: []
   m_Metadata:

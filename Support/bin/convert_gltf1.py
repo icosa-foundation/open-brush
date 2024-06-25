@@ -219,7 +219,7 @@ def convert(
         # Convert to pbr material
         values = material.pop("values", {})
         if "BaseColorFactor" in values:
-            for (guid, alpha_mode) in PBR_BRUSH_DESCRIPTORS:
+            for guid, alpha_mode in PBR_BRUSH_DESCRIPTORS:
                 if guid in vertex_shader_uri:
                     material["alphaMode"] = alpha_mode
 
@@ -290,7 +290,7 @@ def check_for_forbidden_values(value, forbidden, primitives=None):
     if primitives is None:
         primitives = set([int, int, float, str, str])
     if type(value) in (dict, collections.OrderedDict):
-        for (k, v) in value.items():
+        for k, v in value.items():
             # It's okay for the name to be in the forbidden list
             if k != "name":
                 check_for_forbidden_values(v, forbidden)

@@ -244,8 +244,8 @@ MonoBehaviour:
   m_CommandParam: -1
   m_CommandParam2: -1
   m_RequiresPopup: 1
-  m_CenterPopupOnButton: 0
-  m_PopupOffset: {x: 0, y: 0, z: 0}
+  m_CenterPopupOnButton: 1
+  m_PopupOffset: {x: -0.5, y: 0, z: 0}
   m_PopupText: Delete Sketch?
   m_LocalizedPopup:
     m_TableReference:
@@ -958,8 +958,8 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 6da5cd89204da99468e34a61cc7ad99d, type: 3}
-  m_AtlasTexture: 1
+  m_ButtonTexture: {fileID: 2800000, guid: dc68ef18518a0f746aee1ec8812953af, type: 3}
+  m_AtlasTexture: 0
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 1
@@ -972,7 +972,7 @@ MonoBehaviour:
   m_CommandParam: -1
   m_CommandParam2: -1
   m_RequiresPopup: 1
-  m_CenterPopupOnButton: 0
+  m_CenterPopupOnButton: 1
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: POPUP_SKETCHMENU_BUTTON_DESCRIPTION_RENAME_SKETCH
   m_LocalizedPopup:

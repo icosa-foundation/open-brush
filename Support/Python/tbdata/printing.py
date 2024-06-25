@@ -249,8 +249,7 @@ def calculate_pos_error(cp0, cp1, middle_cps):
         t = (cp._dist - cp0._dist) / strip_length
         pos_interpolated = t * cp0._pos + (1 - t) * cp1._pos
         pos_error = np.linalg.norm((pos_interpolated - cp._pos))
-        if pos_error > max_pos_error:
-            max_pos_error = pos_error
+        max_pos_error = max(max_pos_error, pos_error)
 
     return max_pos_error
 
@@ -422,7 +421,8 @@ def remove_stray_strokes(
 
 def get_most_similar_factors(n):
     """Factorize n into two numbers.
-    Returns the best pair, in the sense that the numbers are the closest to each other."""
+    Returns the best pair, in the sense that the numbers are the closest to each other.
+    """
     i = int(n**0.5 + 0.5)
     while n % i != 0:
         i -= 1
@@ -507,7 +507,7 @@ def tilt_colors_to_image(
     # The sort used here only matters to humans when they look at the images
     colors_and_counts = sorted(iter(counter.items()), key=by_color_similarity)
     # colors_and_counts = sorted(counter.iteritems(), key=by_decreasing_usage)
-    for (color, count) in colors_and_counts:
+    for color, count in colors_and_counts:
         colors_array[i : i + count] = color
         i += count
     colors_array.shape = (height, width, 3)
@@ -585,7 +585,7 @@ def simplify_colors(
     # Create table mapping unquantized rgb8 to quantized rgbaf
     old_to_new = {}
     idx = 0
-    for (old_color, group) in itertools.groupby(iter_rgb8(im)):
+    for old_color, group in itertools.groupby(iter_rgb8(im)):
         assert old_color not in old_to_new
         old_to_new[old_color] = rgb8_to_rgbaf(get_imq_color(idx))
         idx += len(list(group))
@@ -619,7 +619,7 @@ def iter_aggregated_by_color(json_filename):
         return m.c[0]
 
     meshes = iter_meshes(json_filename)
-    for (_, group) in itertools.groupby(sorted(meshes, key=by_color), key=by_color):
+    for _, group in itertools.groupby(sorted(meshes, key=by_color), key=by_color):
         yield TiltBrushMesh.from_meshes(group)
 
 
@@ -629,7 +629,7 @@ def write_simple_obj(mesh, outf_name):
     for v in mesh.v:
         tmpf.write("v %f %f %f\n" % v)
 
-    for (t1, t2, t3) in mesh.tri:
+    for t1, t2, t3 in mesh.tri:
         t1 += 1
         t2 += 1
         t3 += 1

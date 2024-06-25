@@ -17,7 +17,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-
+    [System.Serializable]
     public class StrokeData
     {
         public Color m_Color;

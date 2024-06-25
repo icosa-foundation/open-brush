@@ -42,18 +42,33 @@ namespace TiltBrush
             public bool HighResolutionSnapshots; // Deprecated
             public bool ShowDroppedFrames;
             public bool LargeMeshSupport;
+            public bool EnableMonoscopicMode;
+
+            private bool? m_DisableXrMode;
+            public bool DisableXrMode
+            {
+                get
+                {
+#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
+                    return true;
+#else
+                    return m_DisableXrMode ?? false;
+#endif
+                }
+                set { m_DisableXrMode = value; }
+            }
 
             public bool EnableApiRemoteCalls;
             public bool EnableApiCorsHeaders;
 
-            bool? m_ShowDangerousBrushes;
-            public bool ShowDangerousBrushes
+            bool? m_AdvancedKeyboardShortcuts;
+            public bool AdvancedKeyboardShortcuts
             {
                 get
                 {
-                    return m_ShowDangerousBrushes ?? Config.IsExperimental;
+                    return m_AdvancedKeyboardShortcuts ?? false;
                 }
-                set { m_ShowDangerousBrushes = value; }
+                set { m_AdvancedKeyboardShortcuts = value; }
             }
 
             bool? m_PostEffectsOnCapture;
@@ -88,6 +103,13 @@ namespace TiltBrush
             {
                 get { return m_ShowControllers ?? true; }
                 set { m_ShowControllers = value; }
+            }
+
+            bool? m_SkipIntro;
+            public bool SkipIntro
+            {
+                get { return m_SkipIntro ?? false; }
+                set { m_SkipIntro = value; }
             }
 
             int? m_SnapshotHeight;
@@ -233,6 +255,17 @@ namespace TiltBrush
         public BrushConfig Brushes;
 
         [Serializable]
+        public struct ImportConfig
+        {
+            bool? m_UseUnityGltf;
+            public bool UseUnityGltf
+            {
+                get { return m_UseUnityGltf ?? false; }
+                set { m_UseUnityGltf = value; }
+            }
+        }
+
+        [Serializable]
         public struct ExportConfig
         {
             bool? m_ExportBinaryFbx;
@@ -255,7 +288,38 @@ namespace TiltBrush
                 get { return m_ExportStrokeTimestamp ?? true; }
                 set { m_ExportStrokeTimestamp = value; }
             }
+
+            bool? m_ExportStrokeMetadata;
+            public bool ExportStrokeMetadata
+            {
+                get { return m_ExportStrokeMetadata ?? false; }
+                set { m_ExportStrokeMetadata = value; }
+            }
+
+            bool? m_KeepStrokes;
+            public bool KeepStrokes
+            {
+                get { return m_KeepStrokes ?? false; }
+                set { m_KeepStrokes = value; }
+            }
+
+            bool? m_KeepGroups;
+            public bool KeepGroups
+            {
+                get { return m_KeepGroups ?? true; }
+                set { m_KeepGroups = value; }
+            }
+
+            private Dictionary<string, bool> m_Formats;
+            [JsonProperty]
+            public Dictionary<string, bool> Formats
+            {
+                get { return m_Formats ?? null; }
+                set => m_Formats = value;
+            }
         }
+
+        public ImportConfig Import;
         public ExportConfig Export;
 
         [Serializable]

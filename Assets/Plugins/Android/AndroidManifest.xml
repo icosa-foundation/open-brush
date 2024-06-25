@@ -16,6 +16,9 @@
             </intent-filter>
         </activity>
         <meta-data android:name="unityplayer.SkipPermissionsDialog" android:value="false" />
+        <meta-data android:name="pvr.app.type" android:value="vr" />
     </application>
     <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove"/>
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="com.oculus.permission.USE_SCENE" />
 </manifest>

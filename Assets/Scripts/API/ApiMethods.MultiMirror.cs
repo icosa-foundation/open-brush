@@ -97,15 +97,6 @@ namespace TiltBrush
             PointerManager.m_Instance.CalculateMirrors();
         }
 
-        [ApiEndpoint("symmetry.colorshift.enable",
-        description: "Enables or disables symmetry color shift",
-        exampleUsage: "on")]
-        public static void SymmetryColorShiftEnabled(bool enabled)
-        {
-            PointerManager.m_Instance.m_SymmetryColorShiftEnabled = enabled;
-            PointerManager.m_Instance.CalculateMirrors();
-        }
-
         [ApiEndpoint("symmetry.colorshift.hue",
         description: "Sets the custom wallpaper color shift hue (mode is one of SineWave, SquareWave, SawtoothWave, TriangleWave, Noise)",
         exampleUsage: "Noise,1,2")]

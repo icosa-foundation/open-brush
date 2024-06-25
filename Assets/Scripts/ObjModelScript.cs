@@ -15,6 +15,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using GLTFast.Schema;
+using Unity.VectorGraphics;
 
 namespace TiltBrush
 {
@@ -38,6 +39,7 @@ namespace TiltBrush
         {
             get { return m_MeshChildren.Length + m_SkinnedMeshChildren.Length; }
         }
+        public SVGParser.SceneInfo SvgSceneInfo { get; set; }
 
         public int GetNumVertsInMeshes()
         {
@@ -74,7 +76,10 @@ namespace TiltBrush
 
             var meshFilter = t.GetComponent<MeshFilter>();
             var meshRenderer = t.GetComponent<MeshRenderer>();
-            if (meshFilter != null && meshRenderer != null && meshFilter.sharedMesh != null)
+            if (meshFilter != null &&
+                meshRenderer != null &&
+                meshFilter.sharedMesh != null &&
+                meshFilter.gameObject.layer != LayerMask.NameToLayer("UI"))
             {
                 filters.Add(meshFilter);
             }
@@ -115,7 +120,7 @@ namespace TiltBrush
 
         public void RegisterHighlight()
         {
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
             for (int i = 0; i < m_MeshChildren.Length; i++)
             {
                 App.Instance.SelectionEffect.RegisterMesh(m_MeshChildren[i]);
@@ -126,7 +131,7 @@ namespace TiltBrush
 
         public void UnregisterHighlight()
         {
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
             for (int i = 0; i < m_MeshChildren.Length; i++)
             {
                 App.Instance.SelectionEffect.UnregisterMesh(m_MeshChildren[i]);

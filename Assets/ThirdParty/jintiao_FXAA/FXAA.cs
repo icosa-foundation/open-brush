@@ -7,6 +7,7 @@ public class FXAA : MonoBehaviour
 {
 	public Material mat;
 
+#if !UNITY_IOS
 	private void OnRenderImage(RenderTexture source, RenderTexture destination)
 	{
 		if (mat == null)
@@ -14,4 +15,5 @@ public class FXAA : MonoBehaviour
 
 		Graphics.Blit(source, destination, mat);
 	}
+#endif
 }

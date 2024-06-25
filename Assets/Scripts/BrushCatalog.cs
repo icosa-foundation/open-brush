@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#if OCULUS_SUPPORTED || ZAPBOX_SUPPORTED
+#define PASSTHROUGH_SUPPORTED
+#endif
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -60,6 +64,7 @@ namespace TiltBrush
         public Texture2D m_GlobalNoiseTexture;
 
         [SerializeField] private Brush m_DefaultBrush;
+        [SerializeField] private Brush m_ZapboxDefaultBrush;
         private bool m_IsLoading;
         private Dictionary<Guid, Brush> m_GuidToBrush;
         private HashSet<Brush> m_AllBrushes;
@@ -82,7 +87,14 @@ namespace TiltBrush
         }
         public Brush DefaultBrush
         {
-            get { return m_DefaultBrush; }
+            get
+            {
+#if ZAPBOX_SUPPORTED
+                // TODO:Mikesky - Fix brush transparency!
+                return m_ZapboxDefaultBrush;
+#endif
+                return m_DefaultBrush;
+            }
         }
         public IEnumerable<Brush> AllBrushes
         {
@@ -96,6 +108,11 @@ namespace TiltBrush
         void Awake()
         {
             m_Instance = this;
+            Init();
+        }
+
+        public void Init()
+        {
             m_GuidToBrush = new Dictionary<Guid, Brush>();
             m_MaterialToBrush = new Dictionary<Material, Brush>();
             m_AllBrushes = new HashSet<Brush>();
@@ -107,7 +124,6 @@ namespace TiltBrush
                 m_MaterialToBrush.Add(m_BlocksMaterials[i].brushDescriptor.Material,
                     m_BlocksMaterials[i].brushDescriptor);
             }
-
             Shader.SetGlobalTexture("_GlobalNoiseTexture", m_GlobalNoiseTexture);
         }
 
@@ -170,7 +186,7 @@ namespace TiltBrush
             }
 
             // Postprocess: put brushes into parse-friendly list
-
+            m_GuiBrushList.Clear();
             foreach (var brush in m_GuidToBrush.Values)
             {
                 if (brush.m_HiddenInGui)
@@ -184,15 +200,17 @@ namespace TiltBrush
 
         public Brush[] GetTagFilteredBrushList()
         {
-            string[] includeTags = App.UserConfig.Brushes.IncludeTags;
-            string[] excludeTags = App.UserConfig.Brushes.ExcludeTags;
+            List<string> includeTags = App.UserConfig.Brushes.IncludeTags.ToList();
+            List<string> excludeTags = App.UserConfig.Brushes.ExcludeTags.ToList();
 
-            Dictionary<string, string[]> test = App.UserConfig.Brushes.AddTagsToBrushes;
-
-            if (includeTags == null)
+            if (includeTags == null || includeTags.Count == 0)
             {
                 Debug.LogError("There will be no brushes because there are no 'include' tags.");
             }
+
+#if !PASSTHROUGH_SUPPORTED
+            excludeTags.Add("passthrough");
+#endif
 
             // Filter m_GuiBrushList down to those that are both 'included' and not 'excluded'
             Brush[] filteredList = m_GuiBrushList.Where((brush) =>

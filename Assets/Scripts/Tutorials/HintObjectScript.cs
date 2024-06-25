@@ -67,7 +67,7 @@ namespace TiltBrush
             CreateStemNodes();
             UpdateScale(0.0f);
 
-            SetHintText(m_HintDescription.GetLocalizedString());
+            SetHintText(m_HintDescription.GetLocalizedStringAsync().Result);
         }
 
         public void Activate(bool bActivate)
@@ -225,6 +225,11 @@ namespace TiltBrush
                 vScale = m_BaseScale * fScale;
             }
             transform.localScale = vScale;
+
+            if (m_Stem != null)
+            {
+                m_Stem.enabled = fScale != 0.0f;
+            }
         }
 
         void CreateStemNodes()

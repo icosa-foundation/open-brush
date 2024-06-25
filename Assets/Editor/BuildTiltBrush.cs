@@ -22,7 +22,7 @@ using TiltBrush;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEditor.Build.Reporting;
-#if UNITY_EDITOR_OSX && UNITY_IPHONE
+#if UNITY_IOS
 using UnityEditor.iOS.Xcode;
 #endif
 using UnityEditor.SceneManagement;
@@ -41,14 +41,15 @@ using Environment = System.Environment;
 //----------------------------------------------------------------------------------------
 // All output from this class is prefixed with "_btb_" to facilitate extracting
 // it from Unity's very noisy and spammy Editor.log file.
+
 static class BuildTiltBrush
 {
     // Types, consts, enums
 
-    // The vendor name - used for naming android builds - shouldn't have spaces.
-    public const string kVendorName = "Icosa";
     // The vendor name - used for the company name in builds and fbx output. Can have spaces.
     public const string kDisplayVendorName = "Icosa Foundation";
+    // The vendor name as the reverse DNS - used for naming mobile builds - shouldn't have spaces.
+    public const string kVendorReverseDNS = "foundation.icosa";
 
     // Executable Base
     public const string kGuiBuildExecutableName = "OpenBrush";
@@ -59,9 +60,10 @@ static class BuildTiltBrush
     // OSX Executable
     public const string kGuiBuildOsxExecutableName = kGuiBuildExecutableName + ".app";
     // Android Application Identifier
-    public static string GuiBuildAndroidApplicationIdentifier => $"foundation.{kVendorName}.{kGuiBuildExecutableName}".ToLower();
+    public static string GuiBuildAndroidApplicationIdentifier => $"{kVendorReverseDNS}.{kGuiBuildExecutableName}".ToLower();
     // Android Executable
     public static string GuiBuildAndroidExecutableName => GuiBuildAndroidApplicationIdentifier + ".apk";
+    public static string GuiBuildiOSApplicationIdentifier => $"{kVendorReverseDNS}.{kGuiBuildExecutableName}".ToLower();
 
     public class TiltBuildOptions
     {
@@ -109,12 +111,12 @@ static class BuildTiltBrush
     private static readonly List<KeyValuePair<XrSdkMode, BuildTarget>> kValidSdkTargets
         = new List<KeyValuePair<XrSdkMode, BuildTarget>>()
         {
-            // Mono
-            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Monoscopic, BuildTarget.StandaloneWindows64),
-
             // OpenXR
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.StandaloneWindows64),
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.Android),
+
+            // Zapbox
+            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Zapbox, BuildTarget.iOS),
 
 #if OCULUS_SUPPORTED
             // Oculus
@@ -144,6 +146,7 @@ static class BuildTiltBrush
         new CopyRequest("Support/README.txt") { omitForAndroid = true },
         new CopyRequest("Support/exportManifest.json"),
         new CopyRequest("Support/bin/renderVideo.cmd") { omitForAndroid = true },
+        new CopyRequest("Support/bin/renderVideo.sh") { omitForAndroid = true },
         new CopyRequest("Support/whiteTextureMap.png"),
         // No longer needed, now that these are hosted
         // new CopyRequest("Support/GlTFShaders"),
@@ -198,7 +201,6 @@ static class BuildTiltBrush
         set
         {
             EditorPrefs.SetString(kMenuPluginPref, value.ToString());
-            Menu.SetChecked(kMenuPluginMono, value == XrSdkMode.Monoscopic);
             Menu.SetChecked(kMenuPluginOpenXr, value == XrSdkMode.OpenXR);
 #if OCULUS_SUPPORTED
             Menu.SetChecked(kMenuPluginOculus, value == XrSdkMode.Oculus);
@@ -295,11 +297,11 @@ static class BuildTiltBrush
             Target = GuiSelectedBuildTarget,
             XrSdk = GuiSelectedSdk,
             Location = GetAppPathForGuiBuild(),
-            Stamp = "(menuitem)",
+            Stamp = "menuitem",
             UnityOptions = GuiDevelopment
                 ? (BuildOptions.AllowDebugging | BuildOptions.Development | BuildOptions.CleanBuildCache)
                 : BuildOptions.None,
-            Description = "(unity editor)",
+            Description = "unity editor",
         };
     }
 
@@ -345,6 +347,9 @@ static class BuildTiltBrush
             case BuildTarget.Android:
                 location += "/" + GuiBuildAndroidExecutableName;
                 break;
+            case BuildTarget.iOS:
+                location += "/" + kGuiBuildExecutableName;
+                break;
             case BuildTarget.StandaloneWindows:
             case BuildTarget.StandaloneWindows64:
                 location += "/" + kGuiBuildWindowsExecutableName;
@@ -382,19 +387,6 @@ static class BuildTiltBrush
     }
 
     //=======  SDKs =======
-
-    [MenuItem(kMenuPluginMono, isValidateFunction: false, priority: 100)]
-    static void MenuItem_Plugin_Mono()
-    {
-        GuiSelectedSdk = XrSdkMode.Monoscopic;
-    }
-
-    [MenuItem(kMenuPluginMono, isValidateFunction: true)]
-    static bool MenuItem_Plugin_Mono_Validate()
-    {
-        Menu.SetChecked(kMenuPluginMono, GuiSelectedSdk == XrSdkMode.Monoscopic);
-        return true;
-    }
 
     [MenuItem(kMenuPluginOpenXr, isValidateFunction: false, priority: 110)]
     static void MenuItem_Plugin_OpenXr()
@@ -618,17 +610,6 @@ static class BuildTiltBrush
                 return BuildTargetGroup.iOS;
             default:
                 throw new ArgumentException("buildTarget");
-        }
-    }
-
-    static public SdkMode XrTargetToSdk(XrSdkMode mode)
-    {
-        switch (mode)
-        {
-            case XrSdkMode.Monoscopic:
-                return SdkMode.Monoscopic;
-            default:
-                return SdkMode.UnityXR;
         }
     }
 
@@ -873,7 +854,19 @@ static class BuildTiltBrush
             keystoreName, keystorePass,
             keyaliasName, keyaliasPass))
         {
-            DoBuild(tiltOptions);
+            try
+            {
+                DoBuild(tiltOptions);
+            }
+            catch (Exception Ex)
+            {
+                string oneLineMessage = Ex.Message.Replace("\n", " ");
+                Debug.LogErrorFormat("::error ::Build failed with Exception <<{0}>>", oneLineMessage);
+                Debug.LogError($"{Ex.StackTrace}\n\n");
+                // For some reason, Unity exits if we rethrow this (or never caught it), but with an exit code of 0. So instead, we'll explicitly exit here
+                // throw;
+                Die(6, oneLineMessage);
+            }
         }
     }
 
@@ -900,6 +893,54 @@ static class BuildTiltBrush
         public void Dispose()
         {
             PlayerSettings.SetScriptingDefineSymbolsForGroup(m_group, m_prevSymbols);
+        }
+    }
+
+    class TempSetPlayerSettings : IDisposable
+    {
+        private BuildTarget m_Target;
+        private UIOrientation m_OrientationSettings;
+        private iOSTargetDevice m_iOSTargetDevice;
+        private Texture2D[] m_Icons;
+
+        public TempSetPlayerSettings(TiltBuildOptions tiltOptions)
+        {
+            m_Target = tiltOptions.Target;
+            m_OrientationSettings = PlayerSettings.defaultInterfaceOrientation;
+            m_iOSTargetDevice = PlayerSettings.iOS.targetDevice;
+            m_Icons = PlayerSettings.GetIcons(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target)), IconKind.Any);
+
+            switch (tiltOptions.XrSdk)
+            {
+                case XrSdkMode.Zapbox:
+                    PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
+                    PlayerSettings.iOS.targetDevice = iOSTargetDevice.iPhoneOnly;
+                    var zapboxIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Trademarked/TiltBrushLogoZapbox.png");
+
+                    Texture2D[] newIcons = { zapboxIcon };
+
+                    var buildTarget = UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target));
+
+                    PlayerSettings.SetIcons(buildTarget, newIcons, IconKind.Any);
+#if UNITY_IOS
+                    PlayerSettings.SetIcons(buildTarget, newIcons, IconKind.Notification);
+                    PlayerSettings.SetIcons(buildTarget, newIcons, IconKind.Settings);
+                    PlayerSettings.SetIcons(buildTarget, newIcons, IconKind.Spotlight);
+                    PlayerSettings.SetIcons(buildTarget, newIcons, IconKind.Notification);
+                    PlayerSettings.SetIcons(buildTarget, newIcons, IconKind.Store);
+#endif
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        public void Dispose()
+        {
+            PlayerSettings.defaultInterfaceOrientation = m_OrientationSettings;
+            PlayerSettings.iOS.targetDevice = m_iOSTargetDevice;
+            PlayerSettings.SetIcons(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target)), m_Icons, IconKind.Any);
+            AssetDatabase.SaveAssets();
         }
     }
 
@@ -935,12 +976,12 @@ static class BuildTiltBrush
     class TempSetBundleVersion : IDisposable
     {
         string m_prevBundleVersion;
-        public TempSetBundleVersion(string configVersionNumber, string stamp)
+        public TempSetBundleVersion(BuildTarget target, string configVersionNumber, string stamp)
         {
             m_prevBundleVersion = PlayerSettings.bundleVersion;
             // https://stackoverflow.com/a/9741724/194921 for more on the meaning/format of this string
             PlayerSettings.bundleVersion = configVersionNumber;
-            if (!string.IsNullOrEmpty(stamp))
+            if (!string.IsNullOrEmpty(stamp) && target != BuildTarget.iOS)
             {
                 PlayerSettings.bundleVersion += string.Format("-{0}", stamp);
             }
@@ -958,37 +999,55 @@ static class BuildTiltBrush
         private string m_identifier;
         private string m_name;
         private string m_company;
-        private bool m_isAndroid;
-        public TempSetAppNames(bool isAndroid, string Description)
+        private bool m_IsAndroidOrIos;
+        private BuildTarget m_Target;
+        public TempSetAppNames(BuildTarget target, string Description)
         {
-            m_isAndroid = isAndroid;
-            m_identifier = PlayerSettings.GetApplicationIdentifier(BuildTargetGroup.Android);
+            m_Target = target;
+            m_IsAndroidOrIos = m_Target == BuildTarget.Android || m_Target == BuildTarget.iOS;
+            m_identifier = PlayerSettings.GetApplicationIdentifier(TargetToGroup(target));
             m_name = PlayerSettings.productName;
             m_company = PlayerSettings.companyName;
             string new_name = App.kAppDisplayName;
-            string new_identifier = GuiBuildAndroidApplicationIdentifier;
-#if OCULUS_SUPPORTED
+
+            string new_identifier = m_identifier;
+            switch (m_Target)
+            {
+                case BuildTarget.Android:
+                    new_identifier = GuiBuildAndroidApplicationIdentifier;
+                    break;
+                case BuildTarget.iOS:
+                    new_identifier = GuiBuildiOSApplicationIdentifier;
+                    break;
+                default:
+                    break;
+            }
+
+#if OCULUS_SUPPORTED || USE_QUEST_PACKAGE_NAME
             //Can't change Quest identifier
             new_identifier = "com.Icosa.OpenBrush";
+#elif ZAPBOX_SUPPORTED
+            // Zapbox has a separate listing
+            new_identifier = "foundation.icosa.openbrushzapbox";
 #endif
             if (!String.IsNullOrEmpty(Description))
             {
-                new_name += " (" + Description + ")";
-                new_identifier += Description.Replace("_", "").Replace("#", "").Replace("-", "");
+                new_name += "-(" + Description + ")";
+                new_identifier += "-" + Description.Replace("_", "").Replace("#", "").Replace("-", "");
             }
-            if (m_isAndroid)
+            if (m_IsAndroidOrIos)
             {
-                PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, new_identifier);
+                PlayerSettings.SetApplicationIdentifier(TargetToGroup(target), new_identifier);
             }
             PlayerSettings.productName = new_name;
-            PlayerSettings.companyName = kVendorName;
+            PlayerSettings.companyName = kDisplayVendorName;
         }
 
         public void Dispose()
         {
-            if (m_isAndroid)
+            if (m_IsAndroidOrIos)
             {
-                PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, m_identifier);
+                PlayerSettings.SetApplicationIdentifier(TargetToGroup(m_Target), m_identifier);
             }
             PlayerSettings.productName = m_name;
             PlayerSettings.companyName = m_company;
@@ -1110,8 +1169,8 @@ static class BuildTiltBrush
                 case XrSdkMode.Pico:
                     targetXrPluginsRequired = new string[] { "Unity.XR.PXR.PXR_Loader" };
                     break;
-                case XrSdkMode.Monoscopic:
-                    targetSettings.InitManagerOnStart = false;
+                case XrSdkMode.Zapbox:
+                    targetXrPluginsRequired = new string[] { "Zappar.XR.ZapboxLoader" };
                     break;
                 default:
                     break;
@@ -1178,7 +1237,7 @@ static class BuildTiltBrush
         public TempSetGraphicsApis(TiltBuildOptions tiltOptions)
         {
             m_Target = tiltOptions.Target;
-            m_graphicsApis = PlayerSettings.GetGraphicsAPIs(tiltOptions.Target);
+            m_graphicsApis = PlayerSettings.GetGraphicsAPIs(m_Target);
             UnityEngine.Rendering.GraphicsDeviceType[] targetGraphicsApisRequired;
 
             switch (tiltOptions.XrSdk)
@@ -1376,7 +1435,7 @@ static class BuildTiltBrush
         using (var unused = new TempHookUpSingletons())
         {
             // Set consultUserConfig = false to keep user config from affecting the build output.
-            TiltBrushManifest manifest = App.Instance.GetMergedManifest(consultUserConfig: false);
+            TiltBrushManifest manifest = App.Instance.GetMergedManifest(forceExperimental: true);
 
             StringBuilder s = new StringBuilder();
             foreach (BrushDescriptor desc in manifest.UniqueBrushes())
@@ -1458,17 +1517,17 @@ static class BuildTiltBrush
         using (var unused4 = new TempHookUpSingletons())
         using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))
         using (var unused14 = new TempSetGraphicsApis(tiltOptions))
-        using (var unused6 = new TempSetBundleVersion(App.Config.m_VersionNumber, stamp))
-        using (var unused10 = new TempSetAppNames(target == BuildTarget.Android, tiltOptions.Description))
+        using (var unused6 = new TempSetBundleVersion(target, App.Config.m_VersionNumber, stamp))
+        using (var unused10 = new TempSetAppNames(target, tiltOptions.Description))
         using (var unused7 = new TempSetXrPlugin(tiltOptions))
+        using (var unused15 = new TempSetPlayerSettings(tiltOptions))
         using (var unused13 = new TempSetOpenXrFeatureGroup(tiltOptions))
         using (var unused9 = new RestoreFileContents(
             Path.Combine(Path.GetDirectoryName(Application.dataPath),
                 "ProjectSettings/GraphicsSettings.asset")))
         {
             var config = App.Config;
-            // TODO: can we think of a better way of switching to mono/something else in the future?
-            config.m_SdkMode = XrTargetToSdk(xrSdk);
+            config.m_SdkMode = SdkMode.UnityXR;
             config.m_AutoProfile = tiltOptions.AutoProfile;
             config.m_BuildStamp = stamp;
             //config.OnValidate(xrSdk, TargetToGroup(target));
@@ -1488,8 +1547,7 @@ static class BuildTiltBrush
             // to be run at build-time (ie when nobody has called Start(), Awake()).
             // TempHookupSingletons() has done just enough initialization to make it happy.
             // Also set consultUserConfig = false to keep user config from affecting the build output.
-            TiltBrushManifest manifest = App.Instance.GetMergedManifest(
-                consultUserConfig: false, forceExperimental: true);
+            TiltBrushManifest manifest = App.Instance.GetMergedManifest(forceExperimental: true);
 
             // Some sanity checks
             {
@@ -1720,29 +1778,6 @@ static class BuildTiltBrush
     // Returns null if no errors; otherwise a string with what went wrong.
     private static string FormatBuildReport(BuildReport report)
     {
-        // This format is required by the game-ci build action
-        Console.WriteLine(
-                $"{Environment.NewLine}" +
-                $"###########################{Environment.NewLine}" +
-                $"#      Build results      #{Environment.NewLine}" +
-                $"###########################{Environment.NewLine}" +
-                $"{Environment.NewLine}" +
-                $"Duration: {report.summary.totalTime.ToString()}{Environment.NewLine}" +
-                $"Warnings: {report.summary.totalWarnings.ToString()}{Environment.NewLine}"
-        );
-        // We have some "errors" that show up on Mac and Linux (IOException copying FBX and USD) that are ignored. The builds succeed, but for some reason they get reported anyway. To avoid confusing the analysis, print a 0 even if we have errors logged, provided that the build passed
-        if (report.summary.result == BuildResult.Succeeded)
-        {
-            Console.WriteLine($"Errors: 0{Environment.NewLine}");
-        }
-        else
-        {
-            Console.WriteLine($"Errors: {report.summary.totalErrors.ToString()}{Environment.NewLine}");
-        }
-        Console.WriteLine(
-                $"Size: {report.summary.totalSize.ToString()} bytes{Environment.NewLine}" +
-                $"{Environment.NewLine}"
-        );
         if (report.summary.result == BuildResult.Succeeded)
         {
             return null;
@@ -1775,22 +1810,33 @@ static class BuildTiltBrush
                 {
                     // TODO: is it possible to embed loose files on iOS?
                     looseFilesDest = null;
-#if UNITY_EDITOR_OSX && UNITY_IPHONE
+#if UNITY_IOS
                     string pbxPath = path + "/Unity-iPhone.xcodeproj/project.pbxproj";
 
                     PBXProject project = new PBXProject();
                     project.ReadFromString(File.ReadAllText(pbxPath));
-                    string pbxTarget = project.TargetGuidByName("Unity-iPhone");
+                    string pbxTarget = project.GetUnityMainTargetGuid();
 
                     // additional framework libs
                     project.AddFrameworkToProject(pbxTarget, "Security.framework", false);
                     project.AddFrameworkToProject(pbxTarget, "CoreData.framework", false);
                     // disable bitcode due to issue with Cardboard plugin (b/27129333)
-                    project.SetBuildProperty(pbxTarget, "ENABLE_BITCODE", "false");
+                    // TODO:Mikesky - I've disabled this disable, does bitcode work now?
+                    //project.SetBuildProperty(pbxTarget, "ENABLE_BITCODE", "false");
 
                     File.WriteAllText(pbxPath, project.WriteToString());
-#else
-                    Die(5, "OS X required for building iOS target.");
+
+                    string plistPath = path + "/Info.plist";
+                    PlistDocument plist = new PlistDocument();
+                    plist.ReadFromFile(plistPath);
+                    PlistElementDict root = plist.root;
+
+                    PlistElementBoolean enable = new (true);
+                    root["UIFileSharingEnabled"] = enable;
+                    root["LSSupportsOpeningDocumentsInPlace"] = enable;
+
+                    //save plist values
+                    plist.WriteToFile(plistPath);
 #endif
                     break;
                 }

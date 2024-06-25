@@ -58,7 +58,7 @@ def main():
         convert(arg)
 
     if args.all_jpg:
-        for (r, _, fs) in os.walk("."):
+        for r, _, fs in os.walk("."):
             for f in fs:
                 if f.endswith(".jpg"):
                     fullf = os.path.join(r, f)

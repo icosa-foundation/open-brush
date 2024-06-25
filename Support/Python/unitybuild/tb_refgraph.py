@@ -33,7 +33,7 @@ def _get_command_lookup(project_dir):
         assert re.match(r"^[a-zA-Z_]+$", v), "Doesn't look like an enum name: %r" % (v,)
     to_index = {}
     to_name = {}
-    for (i, v) in enumerate(vals):
+    for i, v in enumerate(vals):
         for key in (v, v.lower(), i, str(i)):
             to_index[key] = i
             to_name[key] = v
@@ -42,14 +42,14 @@ def _get_command_lookup(project_dir):
 
 def _iter_prefab_and_scene(project_dir):
     pat = re.compile(r".*\.(unity|prefab)$")
-    for (r, _, fs) in os.walk(os.path.join(project_dir, "Assets")):
+    for r, _, fs in os.walk(os.path.join(project_dir, "Assets")):
         for f in fs:
             if pat.match(f):
                 yield os.path.join(r, f)
 
 
 def _iter_cs(project_dir):
-    for (r, _, fs) in os.walk(os.path.join(project_dir, "Assets")):
+    for r, _, fs in os.walk(os.path.join(project_dir, "Assets")):
         for f in fs:
             if f.endswith(".cs"):
                 yield os.path.join(r, f)

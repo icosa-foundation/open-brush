@@ -1,0 +1,37 @@
+#pragma kernel CSMain
+
+uniform float4x4 TransformObjectToWorld;
+
+RWStructuredBuffer<float3> vertexBuffer;
+StructuredBuffer<float3> normalBuffer;
+StructuredBuffer<float4> colorBuffer;
+StructuredBuffer<float3> uvBuffer;
+
+float _SqueezeAmount;
+
+[numthreads(8, 1, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID) {
+    float3 vertex = vertexBuffer[id.x];
+    float3 normal = normalBuffer[id.x];
+    float3 uv0 = uvBuffer[id.x];
+
+    // the movement is based on Unity Built-in shader variables
+    // _Time.y (t) and _Time.z (t * 2)
+    // we will take the t = 0 in this compute shader
+    float timedoty = 0;
+    float timedotz = timedoty * 2;
+
+    // default values without Audio Reactivity
+    float t = timedotz;
+    float uTileRate = 10;
+    float waveIntensity = 0.6f;
+    float radius = uv0.z;
+
+    // Ensure the t parameter wraps (1.0 becomes 0.0) to avoid cracks at the seam.
+    float theta = fmod(uv0.y, 1);
+    vertex += pow(1 -(sin(t + uv0.x * uTileRate + theta * 10) + 1),2)
+                    * normal.xyz * waveIntensity
+                    * radius;
+
+    vertexBuffer[id.x] = vertex;
+}

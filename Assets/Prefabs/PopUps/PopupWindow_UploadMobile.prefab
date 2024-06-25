@@ -539,7 +539,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Exit Open Brush
+  m_text: Click to Finish Publishing
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
   m_sharedMaterial: {fileID: 2133298, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
@@ -1003,7 +1003,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1000013096383082, guid: 4d2503fe0d5c9ae48a510658ac9df4a9, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1000013114340806, guid: 4d2503fe0d5c9ae48a510658ac9df4a9, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1000014041336086, guid: 4d2503fe0d5c9ae48a510658ac9df4a9, type: 3}
       propertyPath: m_IsActive
@@ -1053,6 +1057,27 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 34748761131250936, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
+        type: 3}
+      propertyPath: m_text
+      value: To avoid error 403 on Sketchfab when publishing - change visibility
+        to public (free Sketchfab accounts can't publish private models)
+      objectReference: {fileID: 0}
+    - target: {fileID: 34748761131250936, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
+        type: 3}
+      propertyPath: m_fontSize
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 34748761131250936, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
+        type: 3}
+      propertyPath: m_margin.w
+      value: -0.2722435
+      objectReference: {fileID: 0}
+    - target: {fileID: 34748761131250936, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
+        type: 3}
+      propertyPath: m_fontSizeBase
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 612561239130847434, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
         type: 3}
       propertyPath: m_text
@@ -1066,7 +1091,22 @@ PrefabInstance:
     - target: {fileID: 970682864746106188, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1946674739864310761, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
+        type: 3}
+      propertyPath: managedReferences[3215294302546034713].m_Localized.m_TableEntryReference.m_KeyId
+      value: 189087250755706880
+      objectReference: {fileID: 0}
+    - target: {fileID: 5173511161803795244, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.0035
+      objectReference: {fileID: 0}
+    - target: {fileID: 5173511161803795244, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: 5386564173593758542, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
         type: 3}

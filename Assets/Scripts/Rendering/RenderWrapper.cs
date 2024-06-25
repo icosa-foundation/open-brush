@@ -17,11 +17,17 @@ using System.Collections.Generic;
 using UnityEngine;
 using UObject = UnityEngine.Object;
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID || UNITY_IOS
 // In the android build you get warnings about unused variables, because they code that uses them 
 // is only enabled for desktop. This disables those warnings.
 #pragma warning disable 649, 414
 #endif
+
+// TODO:Mikesky - For some reason, offscreen rendering to m_hdrTarget is losing depth on XR.
+// Unity's docs say this should be fine, so it may be a Unity bug.
+// Investigate if this is fixed in newer Unity versions
+// The temp fix is to no longer cull primary camera, and only display the offscreen render during
+// a recording session, which is very rare and not likely to be using depth.
 
 namespace TiltBrush
 {
@@ -194,15 +200,18 @@ namespace TiltBrush
                 return;
             }
 
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
             Camera srcCam = GetComponent<Camera>();
 
             // Store the clear and culling mask to restore after rendering.
             m_cameraClearFlags = srcCam.clearFlags;
             m_cameraCullingMask = srcCam.cullingMask;
-            srcCam.cullingMask = 0;
-            srcCam.clearFlags = CameraClearFlags.Nothing;
             srcCam.allowHDR = GetTargetFormat() != RenderTextureFormat.ARGB32;
+
+            // TODO:Mikesky - See top of file.
+            // srcCam.cullingMask = 0;
+            // srcCam.clearFlags = CameraClearFlags.Nothing;
+
 #endif
 
             if (ReadBackTextures != null && m_readbackTextureFrame != Time.frameCount)
@@ -230,10 +239,17 @@ namespace TiltBrush
             m_isRecording = (VideoRecorderUtils.ActiveVideoRecording != null) &&
                 VideoRecorderUtils.ActiveVideoRecording.IsCapturing;
 
-#if UNITY_ANDROID
-    // TODO:Mike - setting MSAA seems to crash quest when in Vulkan
+#if UNITY_ANDROID || UNITY_IOS
+    // TODO:Mikesky - setting MSAA seems to crash quest when in Vulkan
     
     int msaa = QualityControls.m_Instance.MSAALevel;
+
+#if UNITY_IOS && ZAPBOX_SUPPORTED
+    // Force MSAA off on iOS Zapbox - Unity implementation is poor on iOS
+    // which leads to more blits and resolve passes than should be required
+    msaa = 0;
+#endif
+
     // MSAA disabled in QualityControls = 0, but render texture wants 1.
     if (msaa == 0) {
       msaa = 1;
@@ -432,7 +448,7 @@ namespace TiltBrush
         // Post-effect to blit temp framebuffer to downstream effects.
         // -------------------------------------------------------------------------------------------- //
         // This must be excluded from the build, even a no-op post effect negatively impacts performance.
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
         public void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
             // We could skip the offscreen render when anti-aliasing is disabled.
@@ -449,7 +465,8 @@ namespace TiltBrush
                 }
                 else
                 {
-                    Graphics.Blit(m_hdrTarget, destination);
+                    // TODO:Mikesky - See top of file.
+                    Graphics.Blit(source, destination);
                     // Generate the outline mask for later use in the post fx chain
                     if (m_StencilToMaskMaterial)
                     {
@@ -462,9 +479,10 @@ namespace TiltBrush
                         // Only need the selection mask if the selection effect is enabled
                         if (App.Instance.SelectionEffect.RenderHighlight())
                         {
-                            Graphics.Blit(m_hdrTarget, destination);
-                            Graphics.Blit(destination, m_hdrTarget, m_StencilToMaskMaterial);
-                            Graphics.Blit(m_hdrTarget, m_MaskTarget);
+                            // TODO:Mikesky - See top of file.
+                            Graphics.Blit(source, destination);
+                            Graphics.Blit(destination, source, m_StencilToMaskMaterial);
+                            Graphics.Blit(source, m_MaskTarget);
                         }
                     }
                 }
@@ -483,6 +501,6 @@ namespace TiltBrush
 
 } // namespace TiltBrush
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID || UNITY_IOS
 #pragma warning restore 649, 414
 #endif

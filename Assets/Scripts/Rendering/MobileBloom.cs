@@ -162,6 +162,9 @@ public class MobileBloom : MonoBehaviour
 
     private void Update()
     {
+#if UNITY_IOS
+        return;
+#endif
         if (!m_Camera.enabled) { return; }
         int other = (m_Eye + 1) & 1;
 

@@ -141,7 +141,7 @@ class ReferenceGraph:  # pylint: disable=too-few-public-methods
             self.guid_to_name[command] = command
 
         command_edges = list(tb.iter_command_edges(self.project_dir))
-        for (file_name, command) in command_edges:
+        for file_name, command in command_edges:
             try:
                 file_guid = name_to_guid[file_name]
             except KeyError:
@@ -167,10 +167,10 @@ class ReferenceGraph:  # pylint: disable=too-few-public-methods
         self.name_to_guid = {}
         # For convenience, also add lowercased-versions
         # (but this is incorrect on case-sensitive filesystems)
-        for (g, n) in self.guid_to_name.items():
+        for g, n in self.guid_to_name.items():
             self.name_to_guid[n.lower()] = g
         # True capitalization takes precedence
-        for (g, n) in self.guid_to_name.items():
+        for g, n in self.guid_to_name.items():
             self.name_to_guid[n] = g
 
         # TILT BRUSH SPECIFIC:

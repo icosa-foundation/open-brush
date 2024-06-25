@@ -131,7 +131,7 @@ namespace TiltBrush
                     {
                         ActiveCanvasChanged?.Invoke(prev, m_ActiveCanvas);
                         // This will be incredibly irritating, but until we have some other feedback...
-                        // TODO:Mike - replace this popup (console?)
+                        // TODO:Mikesky - replace this popup (console?)
                         // OutputWindowScript.m_Instance.CreateInfoCardAtController(
                         //     InputManager.ControllerName.Brush,
                         //     string.Format("Canvas is now {0}", ActiveCanvas.gameObject.name),

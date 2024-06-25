@@ -80,7 +80,7 @@ namespace TiltBrush
             {
                 try
                 {
-                    var locString = m_LocalizedDescription.GetLocalizedString();
+                    var locString = m_LocalizedDescription.GetLocalizedStringAsync().Result;
                     return locString;
                 }
                 catch
@@ -96,7 +96,7 @@ namespace TiltBrush
             {
                 try
                 {
-                    var locString = m_LocalizedDescriptionExtra.GetLocalizedString();
+                    var locString = m_LocalizedDescriptionExtra.GetLocalizedStringAsync().Result;
                     return locString;
                 }
                 catch

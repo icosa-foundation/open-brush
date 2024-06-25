@@ -2098,22 +2098,18 @@ namespace TiltBrush
             {
                 return;
             }
-            // Limit shipping version to a single gif preset
-            if (Config.IsExperimental)
+            m_iGifPreset = (m_iGifPreset + i + m_AutoGifPresets.Length) % m_AutoGifPresets.Length;
+
+            var preset = m_AutoGifPresets[m_iGifPreset];
+
+            // Apply the preset
+            var text = m_Cameras[1].m_OffsetTransform.Find("Text");
+            if (text != null)
             {
-                m_iGifPreset = (m_iGifPreset + i + m_AutoGifPresets.Length) % m_AutoGifPresets.Length;
-
-                var preset = m_AutoGifPresets[m_iGifPreset];
-
-                // Apply the preset
-                var text = m_Cameras[1].m_OffsetTransform.Find("Text");
-                if (text != null)
+                var tmpro = text.GetComponent<TMPro.TextMeshPro>();
+                if (tmpro != null)
                 {
-                    var tmpro = text.GetComponent<TMPro.TextMeshPro>();
-                    if (tmpro != null)
-                    {
-                        tmpro.text = preset.name;
-                    }
+                    tmpro.text = preset.name;
                 }
             }
         }

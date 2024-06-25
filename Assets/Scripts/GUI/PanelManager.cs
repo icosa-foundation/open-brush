@@ -24,10 +24,8 @@ namespace TiltBrush
     {
         public GameObject m_PanelPrefab;
         public bool m_ModeVr;
-        public bool m_ModeVrExperimental;
         public bool m_ModeMono;
         public bool m_ModeQuest;
-        public bool m_ModeGvr;
         public bool m_Basic;
         public bool m_Advanced;
 
@@ -35,26 +33,17 @@ namespace TiltBrush
         {
             switch (mode)
             {
-                case SdkMode.UnityXR:
-                    if (Config.IsExperimental)
-                    {
-                        return m_ModeVrExperimental;
-                    }
-                    if (App.Config.IsMobileHardware)
-                    {
-                        return m_ModeQuest;
-                    }
+                case SdkMode.UnityXR when App.Config.IsMobileHardware:
+                    return m_ModeQuest;
+                case SdkMode.UnityXR when !App.Config.IsMobileHardware:
                     return m_ModeVr;
                 case SdkMode.Monoscopic:
                     return m_ModeMono;
+                case SdkMode.Ods when App.VrSdk.GetControllerDof() != VrSdk.DoF.None:
+                    return m_ModeMono;
                 default:
-                    if (App.VrSdk.GetControllerDof() != VrSdk.DoF.None)
-                    {
-                        return m_ModeMono;
-                    }
-                    break;
+                    return false;
             }
-            return false;
         }
     }
 
@@ -69,8 +58,6 @@ namespace TiltBrush
         static public PanelManager m_Instance;
 
         public const string kPlayerPrefAdvancedMode = "AdvancedMode";
-
-        [SerializeField] protected GameObject m_UxExplorationPrefab;
 
         [SerializeField] protected PanelMapKey[] m_PanelMap;
 
@@ -474,15 +461,6 @@ namespace TiltBrush
 
             m_PanelsCustomized = false;
             m_AdvancedModeRevealActive = false;
-
-            if (Config.IsExperimental)
-            {
-                // If we've got a UX exploration prefab, instantiate it here.
-                if (m_UxExplorationPrefab != null)
-                {
-                    m_UxExploration = Instantiate(m_UxExplorationPrefab);
-                }
-            }
 
             TintWandPaneVisuals(true);
 
@@ -1105,15 +1083,6 @@ namespace TiltBrush
 
         public void UpdatePanels()
         {
-            if (Config.IsExperimental)
-            {
-                if (m_UxExploration != null)
-                {
-                    LockUxExplorationToController();
-                    return;
-                }
-            }
-
             UnityEngine.Profiling.Profiler.BeginSample("PanelManager.UpdatePanels");
             // Lock panels to the controller if we've got 6dof controls.
             if (SketchControlsScript.m_Instance.ActiveControlsType ==
@@ -1669,16 +1638,6 @@ namespace TiltBrush
             if (m_WandPaneVisualsState != PaneVisualsState.Hidden)
             {
                 m_WandPaneVisualsState = PaneVisualsState.ShowingToHidden;
-            }
-        }
-
-        public void LockUxExplorationToController()
-        {
-            if (Config.IsExperimental)
-            {
-                Transform baseTransform = InputManager.Wand.Geometry.MainAxisAttachPoint;
-                m_UxExploration.transform.position = baseTransform.position;
-                m_UxExploration.transform.rotation = baseTransform.rotation;
             }
         }
 
@@ -2366,8 +2325,9 @@ namespace TiltBrush
 
         public void OpenPanel(BasePanel.PanelType type, TrTransform trSpawnXf)
         {
-            if (type != BasePanel.PanelType.SketchSurface && type != BasePanel.PanelType.Color &&
-                type != BasePanel.PanelType.Brush)
+            if ((type != BasePanel.PanelType.SketchSurface
+                && type != BasePanel.PanelType.Color
+                && type != BasePanel.PanelType.Brush))
             {
                 TrTransform xfSpawn = trSpawnXf;
                 xfSpawn.scale = 0.0f;
