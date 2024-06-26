@@ -91,12 +91,7 @@ jobs:
             STAMP=$(git describe --tags --match "v[0-9]*.[0-9]*" ${{ github.event.pull_request.head.sha }} | cut -d'-' -f3)
             echo "prerelease=true" >> $GITHUB_OUTPUT
             echo "itchchannelname=beta" >> $GITHUB_OUTPUT
-            if [[ ${{ github.ref }} == refs/heads/main ]]
-            then
-              echo "fastlanelane=beta" >> $GITHUB_OUTPUT
-            else
-              echo "fastlanelane=build" >> $GITHUB_OUTPUT
-            fi
+            echo "fastlanelane=beta" >> $GITHUB_OUTPUT
           fi
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -1237,7 +1232,9 @@ jobs:
     needs: [configuration, build]
     runs-on: macos-14  # ARM64 workers. Change this back to -latest when they get promoted
     if: |
-      github.repository == 'icosa-foundation/open-brush'
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
