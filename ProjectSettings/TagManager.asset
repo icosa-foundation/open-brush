@@ -31,7 +31,7 @@ TagManager:
   - GpuIntersection
   - PinnedStencilObject
   - Overlay
-  - 
+  - TempRenderTex
   - 
   - 
   - 

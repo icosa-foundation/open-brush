@@ -358,6 +358,33 @@ namespace TiltBrush
             return image;
         }
 
+        [ApiEndpoint("text.add", "Adds a text widget to the sketch")]
+        public static void AddText(string text)
+        {
+            var tr = TrTransform.TR(
+                ApiManager.Instance.BrushPosition,
+                ApiManager.Instance.BrushRotation
+            );
+
+            var cmd = new CreateWidgetCommand(
+                WidgetManager.m_Instance.TextWidgetPrefab, tr, null, true
+            );
+
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+
+            var textWidget = cmd.Widget as TextWidget;
+            if (textWidget != null)
+            {
+                textWidget.Text = text;
+                textWidget.Show(true);
+                cmd.SetWidgetCost(textWidget.GetTiltMeterCost());
+            }
+
+            WidgetManager.m_Instance.WidgetsDormant = false;
+            SketchControlsScript.m_Instance.EatGazeObjectInput();
+            SelectionManager.m_Instance.RemoveFromSelection(false);
+        }
+
         [ApiEndpoint("image.import", "Imports an image given a url or a filename in Media Library\\Images (Images loaded from a url are saved locally first)")]
         public static void ImportImage(string location)
         {
@@ -512,6 +539,36 @@ namespace TiltBrush
         public static void RotateLight(int index, Vector3 rotation)
         {
             _SetWidgetRotation(_GetActiveLight(index), rotation);
+        }
+
+        [ApiEndpoint("text.position", "Move a text widget to the given coordinates")]
+        public static void PositionText(int index, Vector3 position)
+        {
+            _SetWidgetPosition(_GetActiveTextWidget(index), position);
+        }
+
+        [ApiEndpoint("text.rotation", "Set a text widget's rotation to the given angles")]
+        public static void RotateText(int index, Vector3 rotation)
+        {
+            _SetWidgetRotation(_GetActiveTextWidget(index), rotation);
+        }
+
+        [ApiEndpoint("text.scale", "Set a text widget's scale")]
+        public static void ScaleText(int index, float scale)
+        {
+            _SetWidgetScale(_GetActiveTextWidget(index), scale);
+        }
+
+        [ApiEndpoint("text.setText", "Changes the text on a text widget")]
+        public static void ChangeTextContent(int index, string text)
+        {
+            _GetActiveTextWidget(index).Text = text;
+        }
+
+        [ApiEndpoint("text.setColor", "Changes the color on a text widget")]
+        public static void ChangeTextColor(int index, Vector3 color)
+        {
+            _GetActiveTextWidget(index).TextColor = new Color(color.x, color.y, color.z);
         }
 
         // WIP
