@@ -342,32 +342,41 @@ namespace TiltBrush
             // Only handle brush materials
             if (!material.shader.name.StartsWith("Brush/")) return;
 
-            // Strip the (Instance) suffix from the material node name
-            materialNode.Name = materialNode.Name.Replace("(Instance)", "").Trim();
-            materialNode.Name = $"ob-{materialNode.Name}";
+            // TODO - This assumes that every brush has a unique material with a unique name
+            // Currently, this is true, but it may not always be the case
+            var brushes = BrushCatalog.m_Instance.AllBrushes
+                .Where(b => b.Material.name == material.name)
+                .ToList();
 
-            var brush = BrushCatalog.m_Instance.AllBrushes.FirstOrDefault(b => b.DurableName == materialNode.Name);
-
-            if (brush != null)
+            switch (brushes.Count)
             {
-                var manifest = BrushCatalog.m_Instance.GetBrush(brush.m_Guid);
+                case 0:
+                    Debug.LogError($"No matching brush found for material {material.name}");
+                    return;
+                case > 1:
+                    Debug.LogError($"Multiple brushes with the same material name: {material.name}");
+                    return;
+            }
 
-                switch (manifest.m_BlendMode)
-                {
-                    case ExportableMaterialBlendMode.AdditiveBlend:
-                        AddExtension(materialNode, EXT_blend_operations.Add);
-                        materialNode.AlphaMode = AlphaMode.BLEND;
-                        materialNode.DoubleSided = true;
-                        break;
-                    case ExportableMaterialBlendMode.AlphaMask:
-                        materialNode.AlphaMode = AlphaMode.MASK;
-                        materialNode.DoubleSided = true;
-                        break;
-                    case ExportableMaterialBlendMode.AlphaBlend:
-                        materialNode.AlphaMode = AlphaMode.BLEND;
-                        materialNode.DoubleSided = true;
-                        break;
-                }
+            var brush = brushes[0];
+            var manifest = BrushCatalog.m_Instance.GetBrush(brush.m_Guid);
+
+            materialNode.Name = $"ob-{manifest.DurableName}";
+            // Do we need to override the regular UnityGLTF logic here?
+            materialNode.DoubleSided = manifest.m_RenderBackfaces;
+
+            switch (manifest.m_BlendMode)
+            {
+                case ExportableMaterialBlendMode.AdditiveBlend:
+                    AddExtension(materialNode, EXT_blend_operations.Add);
+                    materialNode.AlphaMode = AlphaMode.BLEND;
+                    break;
+                case ExportableMaterialBlendMode.AlphaMask:
+                    materialNode.AlphaMode = AlphaMode.MASK;
+                    break;
+                case ExportableMaterialBlendMode.AlphaBlend:
+                    materialNode.AlphaMode = AlphaMode.BLEND;
+                    break;
             }
         }
 
