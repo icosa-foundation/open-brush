@@ -182,7 +182,7 @@ namespace TiltBrush
                 typeof(StencilWidget),
                 typeof(CameraPathWidget)
             };
-            return excludedTypes.Any(t => transform.GetComponent(t) != null);
+            return !excludedTypes.Any(t => transform.GetComponent(t) != null);
         }
 
         public override void BeforeNodeExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Transform transform, Node node)
