@@ -177,12 +177,13 @@ namespace TiltBrush
         {
             Type[] excludedTypes =
             {
-                typeof(BaseBrushScript), // Brush preview strokes (does this break non-batched exports?)
                 typeof(SnapGrid3D),
                 typeof(StencilWidget),
                 typeof(CameraPathWidget)
             };
-            return !excludedTypes.Any(t => transform.GetComponent(t) != null);
+            bool hasExcludedComponent = excludedTypes.Any(t => transform.GetComponent(t) != null);
+            bool excludedName = false; // TODO
+            return !hasExcludedComponent && !excludedName;
         }
 
         public override void BeforeNodeExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Transform transform, Node node)
