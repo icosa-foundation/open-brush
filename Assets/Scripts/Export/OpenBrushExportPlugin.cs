@@ -348,9 +348,26 @@ namespace TiltBrush
 
             var brush = BrushCatalog.m_Instance.AllBrushes.FirstOrDefault(b => b.DurableName == materialNode.Name);
 
-            if (brush != null && brush.BlendMode == ExportableMaterialBlendMode.AdditiveBlend)
+            if (brush != null)
             {
-                AddExtension(materialNode, EXT_blend_operations.Add);
+                var manifest = BrushCatalog.m_Instance.GetBrush(brush.m_Guid);
+
+                switch (manifest.m_BlendMode)
+                {
+                    case ExportableMaterialBlendMode.AdditiveBlend:
+                        AddExtension(materialNode, EXT_blend_operations.Add);
+                        materialNode.AlphaMode = AlphaMode.BLEND;
+                        materialNode.DoubleSided = true;
+                        break;
+                    case ExportableMaterialBlendMode.AlphaMask:
+                        materialNode.AlphaMode = AlphaMode.MASK;
+                        materialNode.DoubleSided = true;
+                        break;
+                    case ExportableMaterialBlendMode.AlphaBlend:
+                        materialNode.AlphaMode = AlphaMode.BLEND;
+                        materialNode.DoubleSided = true;
+                        break;
+                }
             }
         }
 
