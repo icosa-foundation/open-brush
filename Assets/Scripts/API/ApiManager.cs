@@ -68,6 +68,9 @@ namespace TiltBrush
         [NonSerialized] public Dictionary<string, string> CommandExamples;
         public string m_startupScriptName = "startup.sketchscript";
 
+        // Need to set this on the main thread because of localiztion
+        private string m_BrushesJson;
+
         public string UserScriptsPath() { return m_UserScriptsPath; }
 
         void Awake()
@@ -79,6 +82,7 @@ namespace TiltBrush
             App.HttpServer.AddHttpHandler($"/help/brushes", InfoCallback);
             App.HttpServer.AddRawHttpHandler("/cameraview", CameraViewCallback);
             PopulateApi();
+
             m_UserScripts = new Dictionary<string, string>();
             m_ExampleScripts = new Dictionary<string, string>();
             m_CommandStatuses = new Dictionary<string, string>();
@@ -86,6 +90,7 @@ namespace TiltBrush
             PopulateUserScripts();
             BrushTransformStack = new Stack<(Vector3, Quaternion)>();
             ResetBrushTransform();
+
             if (!Directory.Exists(m_UserScriptsPath))
             {
                 Directory.CreateDirectory(m_UserScriptsPath);
@@ -157,6 +162,16 @@ namespace TiltBrush
             CommandExamples["import.image"] = "TiltBrushLogo.png";
             CommandExamples["import.video"] = "animated-logo.mp4";
             App.Instance.StateChanged += RunStartupScript;
+        }
+
+        void Start()
+        {
+            // HTTP API String substitutions
+            // Don't move to Awake() as that runs too early
+            string[] brushNameList = BrushCatalog.m_Instance.GetTagFilteredBrushList()
+                .Select(ApiFriendlyBrushName)
+                .ToArray();
+            m_BrushesJson = JsonConvert.SerializeObject(brushNameList, Formatting.Indented);
         }
 
         public void ResetBrushTransform()
@@ -524,31 +539,33 @@ namespace TiltBrush
         {
 
             // TODO Document these
+            html = html.Replace("{{brushesJson}}", m_BrushesJson);
 
-            string[] brushNameList = BrushCatalog.m_Instance.AllBrushes
-                .Where(x => x.Description != "")
-                .Where(x => x.m_SupersededBy == null)
-                .Select(x => x.Description.Replace(" ", "").Replace(".", "").Replace("(", "").Replace(")", ""))
-                .ToArray();
-            string brushesJson = JsonConvert.SerializeObject(brushNameList);
-            html = html.Replace("{{brushesJson}}", brushesJson);
-
-            string pointFamilies = JsonConvert.SerializeObject(Enum.GetNames(typeof(SymmetryGroup.R)));
+            string pointFamilies = JsonConvert.SerializeObject(Enum.GetNames(typeof(SymmetryGroup.R)), Formatting.Indented);
             html = html.Replace("{{pointFamiliesJson}}", pointFamilies);
 
-            string wallpaperGroups = JsonConvert.SerializeObject(Enum.GetNames(typeof(PointSymmetry.Family)));
+            string wallpaperGroups = JsonConvert.SerializeObject(Enum.GetNames(typeof(PointSymmetry.Family)), Formatting.Indented);
             html = html.Replace("{{wallpaperGroupsJson}}", wallpaperGroups);
 
             string[] environmentNameList = EnvironmentCatalog.m_Instance.AllEnvironments
                 .Select(x => x.Description.Replace(" ", ""))
                 .ToArray();
-            string environmentsJson = JsonConvert.SerializeObject(environmentNameList);
+            string environmentsJson = JsonConvert.SerializeObject(environmentNameList, Formatting.Indented);
             html = html.Replace("{{environmentsJson}}", environmentsJson);
 
-            string commandsJson = JsonConvert.SerializeObject(ListApiCommands());
+            string commandsJson = JsonConvert.SerializeObject(ListApiCommands(), Formatting.Indented);
             html = html.Replace("{{commandsJson}}", commandsJson);
 
             return html;
+        }
+
+        public static string ApiFriendlyBrushName(BrushDescriptor brush)
+        {
+            return brush.Description
+                .Replace(" ", "")
+                .Replace(".", "")
+                .Replace("(", "")
+                .Replace(")", "");
         }
 
         public void ReceiveWebSocketMessage(WebSocketMessage message)
@@ -662,7 +679,7 @@ namespace TiltBrush
             foreach (var listenerUrl in m_OutgoingApiListeners)
             {
                 string getUri = $"{listenerUrl}?{command.Key}={command.Value}";
-                if (getUri.Length < 512)  // Actually limit is 2083 but let's be conservative 
+                if (getUri.Length < 512)  // Actually limit is 2083 but let's be conservative
                 {
                     StartCoroutine(GetRequest(getUri));
                 }

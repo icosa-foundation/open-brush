@@ -26,7 +26,7 @@ namespace TiltBrush
         [ApiEndpoint("draw.paths", "Draws a series of paths at the current brush position [[[x1,y1,z1],[x2,y2,z2], etc...]]. Does not move the brush position")]
         public static void DrawPaths(string jsonString)
         {
-            // TODO Use brush rotation 
+            // TODO Use brush rotation
             var origin = ApiManager.Instance.BrushPosition;
             var paths = JsonConvert.DeserializeObject<List<List<List<float>>>>($"[{jsonString}]");
             DrawStrokes.MultiPathsToStrokes(paths, origin);
@@ -108,14 +108,9 @@ namespace TiltBrush
                 try
                 {
                     brushDescriptor = BrushCatalog.m_Instance.AllBrushes
-                        .First(x => x.Description
-                            .Replace(" ", "")
-                            .Replace(".", "")
-                            .Replace("(", "")
-                            .Replace(")", "")
-                            .ToLower() == brushType);
+                        .First(x => ApiManager.ApiFriendlyBrushName(x).ToLower() == brushType);
                 }
-                catch (InvalidOperationException e)
+                catch (InvalidOperationException)
                 {
                     Debug.LogError($"No brush found called: {brushType}");
                 }
@@ -124,10 +119,6 @@ namespace TiltBrush
             if (brushDescriptor != null)
             {
                 PointerManager.m_Instance.SetBrushForAllPointers(brushDescriptor);
-            }
-            else
-            {
-                Debug.LogError($"No brush found with the name or guid: {brushType}");
             }
         }
 
