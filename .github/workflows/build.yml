@@ -259,8 +259,7 @@ jobs:
       - name: Set masking
         run: echo "::add-mask::DoNotStealThis1"
       - name: Free extra space
-        # This takes several minutes, so we only do it where required. As of 12/10/2023, this increases free space from 18GB to 41GB
-        if: matrix.targetPlatform == 'Android' || matrix.targetPlatform == 'StandaloneWindows64' || matrix.targetPlatform == 'StandaloneLinux64'
+        # As of 06/07/2024, this increases free space from 21GB to 38GB
         run: |
           echo "Initial free space"
           df -h /
