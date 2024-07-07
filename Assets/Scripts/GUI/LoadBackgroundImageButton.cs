@@ -47,7 +47,14 @@ namespace TiltBrush
             {
                 return;
             }
-            SceneSettings.m_Instance.LoadCustomSkybox(ReferenceImage.FileName);
+            if (ReferenceImage.NotLoaded)
+            {
+                // Load-on-demand.
+                ReferenceImage.SynchronousLoad();
+            }
+
+
+            SceneSettings.m_Instance.LoadCustomSkyboxFromCache(ReferenceImage.FilePath);
         }
 
         override public void ResetState()
