@@ -205,6 +205,7 @@ jobs:
             targetPlatform: StandaloneOSX
             vrsdk: Monoscopic
             cache: MacOS
+            packages_to_remove: com.meta.xr.sdk.core
 
           - name: Android OpenXR
             targetPlatform: Android
