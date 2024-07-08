@@ -22,7 +22,4 @@
     <uses-permission android:name="android.permission.READ_PHONE_STATE" tools:node="remove"/>
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="com.oculus.permission.USE_SCENE" />
-    <uses-feature
-            android:name="com.oculus.feature.CONTEXTUAL_BOUNDARYLESS_APP"
-            android:required="true" />
 </manifest>
