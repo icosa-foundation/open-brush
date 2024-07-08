@@ -76,6 +76,8 @@ public class BuildTiltBrushPostProcess
                     "/manifest",
                     "uses-feature",
                     "com.oculus.feature.CONTEXTUAL_BOUNDARYLESS_APP",
+                    true,
+                    true,
                     "required", "true"
             );
 #endif
