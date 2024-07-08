@@ -12,7 +12,7 @@ on:  # yamllint disable-line rule:truthy
       - "v*"
 
 env:
-  UNITY_VERSION: "2021.3.30f1"
+  UNITY_VERSION: "2022.3.34f1"
   PHOTON_PAT: ${{ secrets.PHOTON_PAT }}  # This needs to be here, since you can't use a ${{ secrets }} within an if: condition
 jobs:
   configuration:
@@ -259,8 +259,7 @@ jobs:
       - name: Set masking
         run: echo "::add-mask::DoNotStealThis1"
       - name: Free extra space
-        # This takes several minutes, so we only do it where required. As of 12/10/2023, this increases free space from 18GB to 41GB
-        if: matrix.targetPlatform == 'Android' || matrix.targetPlatform == 'StandaloneWindows64'
+        # As of 06/07/2024, this increases free space from 21GB to 38GB
         run: |
           echo "Initial free space"
           df -h /
@@ -1065,7 +1064,7 @@ jobs:
   publish_oculus_quest:
     name: Publish Oculus Quest 2+ Release
     needs: [configuration, build]
-    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -1091,7 +1090,7 @@ jobs:
 
           cd releases
           unzip symbols.zip
-          curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
+          curl -L 'https://www.oculus.com/download_app/?id=5159709737372459' -o ovr-platform-util
           chmod 755 ovr-platform-util
 
           if [ "$PRERELEASE" == "false" ]
@@ -1105,7 +1104,7 @@ jobs:
   publish_oculus_quest1:
     name: Publish Oculus Quest 1 Release
     needs: [configuration, build]
-    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -1131,7 +1130,7 @@ jobs:
 
           cd releases1
           unzip symbols.zip
-          curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
+          curl -L 'https://www.oculus.com/download_app/?id=5159709737372459' -o ovr-platform-util
           chmod 755 ovr-platform-util
 
           if [ "$PRERELEASE" == "false" ]
@@ -1145,7 +1144,7 @@ jobs:
   publish_oculus_rift:
     name: Publish Oculus Rift Release
     needs: [configuration, build]
-    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -1169,7 +1168,7 @@ jobs:
           mv build_windows_rift/StandaloneWindows64/ releases/OpenBrush_Rift_$VERSION/
           cd releases
           zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
-          curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
+          curl -L 'https://www.oculus.com/download_app/?id=5159709737372459' -o ovr-platform-util
           chmod 755 ovr-platform-util
 
           if [ "$PRERELEASE" == "false" ]
@@ -1230,7 +1229,7 @@ jobs:
   publish_ios_zapbox:
     name: Publish Zapbox iOS
     needs: [configuration, build]
-    runs-on: macos-13  # As of 2024-03-01, macos-latest still points to Mac OS 12, which has an older XCode and gives ITMS-90725: SDK version issue when we submit.
+    runs-on: macos-14  # ARM64 workers. Change this back to -latest when they get promoted
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -1251,7 +1250,14 @@ jobs:
           name: iOS Zapbox
           path: build
 
-      - name: Fix File Permissions and Run fastlane
+      - name: Fix File Permissions
+        run: |
+          export FILENAME=$(basename $(readlink -f build/iOS/OpenBrush*))
+          export IOS_BUILD_PATH=$(pwd)/build/iOS/${FILENAME}
+
+          find $IOS_BUILD_PATH -type f -name "*.sh" -exec chmod +x {} \;
+
+      - name: Run fastlane
         env:
           APPLE_CONNECT_EMAIL: ${{ secrets.APPLE_CONNECT_EMAIL }}
           APPLE_DEVELOPER_EMAIL: ${{ secrets.APPLE_DEVELOPER_EMAIL }}
@@ -1274,6 +1280,12 @@ jobs:
           export FILENAME=$(basename $(readlink -f build/iOS/OpenBrush*))
           export IOS_BUILD_PATH=$(pwd)/build/iOS/${FILENAME}
 
-          find $IOS_BUILD_PATH -type f -name "**.sh" -exec chmod +x {} \;
           bundle install
           bundle exec fastlane ios ${FASTLANE_LANE}
+
+      - name: Save logs
+        uses: actions/upload-artifact@v4
+        if: ${{ failure() }}
+        with:
+          name: fastlane logs
+          path: /Users/runner/Library/Logs/gym/

@@ -20,6 +20,8 @@ EditorBuildSettings:
       type: 2}
     com.unity.input.settings: {fileID: 11400000, guid: 62987a061b20ae345a45e835010db90d,
       type: 2}
+    com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 482f183e0a6aac94da9c4a526325285e,
+      type: 3}
     com.unity.localization.settings: {fileID: 11400000, guid: feef587f0ac641c4ab7d9e44e7eea888,
       type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 07092d12b03adbd49b1ade5f5742e72e,
