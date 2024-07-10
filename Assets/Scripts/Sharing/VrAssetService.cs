@@ -57,10 +57,9 @@ namespace TiltBrush
 
         const string kDefaultName = "sketch";
 
-        private string kApiHost => App.ICOSA_API_URL;
         private string kAssetLandingPage => $"{App.ICOSA_WEBSITE_URL}/uploads";
 
-        private const string kListAssetsUri = "/poly/assets";
+        private const string kListAssetsUri = "/assets";
         private const string kUserAssetsUri = "/users/me/assets";
         private const string kUserLikesUri = "/users/me/likedassets";
 
@@ -238,7 +237,7 @@ namespace TiltBrush
             {
                 string cfg = App.UserConfig?.Sharing.VrAssetServiceHostOverride;
                 if (!string.IsNullOrEmpty(cfg)) { return cfg; }
-                return kApiHost;
+                return App.ICOSA_API_URL;
             }
         }
 
