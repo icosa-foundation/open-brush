@@ -69,13 +69,13 @@ public class BuildTiltBrushPostProcess
             );
 #endif
 
-#if ENABLE_CONTEXTUAL_BOUNDARYLESS_APP
-            UnityEngine.Debug.Log("Add com.oculus.feature.CONTEXTUAL_BOUNDARYLESS_APP");
+#if ENABLE_BOUNDARYLESS_APP
+            UnityEngine.Debug.Log("Add com.oculus.feature.BOUNDARYLESS_APP");
             AddOrRemoveTag(doc,
                     androidNamespaceURI,
                     "/manifest",
                     "uses-feature",
-                    "com.oculus.feature.CONTEXTUAL_BOUNDARYLESS_APP",
+                    "com.oculus.feature.BOUNDARYLESS_APP",
                     true,
                     true,
                     "required", "true"
