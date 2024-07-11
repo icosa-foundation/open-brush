@@ -299,7 +299,7 @@ namespace TiltBrush
         }
 
         // identity may be null, in which case no authentication takes place
-        public WebRequest(string uri, string loginToken,
+        public WebRequest(string uri, string loginToken = null,
                           string method = UnityWebRequest.kHttpVerbGET, bool compress = false)
         {
             if (string.IsNullOrEmpty(uri))
