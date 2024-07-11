@@ -221,13 +221,6 @@ namespace TiltBrush
 #endif
         }
 
-        /// Convenience method
-        public static Task<Reply> GetAsync(string uri)
-        {
-            return new WebRequest(uri, App.GoogleIdentity, UnityWebRequest.kHttpVerbGET)
-                .SendAsync();
-        }
-
         private string m_Uri;
         private string m_Method;
 
