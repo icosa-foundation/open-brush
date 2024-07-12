@@ -561,6 +561,11 @@ namespace TiltBrush
 
         public static string ApiFriendlyBrushName(BrushDescriptor brush)
         {
+            if (brush.Description == null)
+            {
+                Debug.LogWarning($"Brush {brush.m_DurableName} has no description");
+                return "";
+            }
             return brush.Description
                 .Replace(" ", "")
                 .Replace(".", "")
