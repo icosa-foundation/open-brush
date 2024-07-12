@@ -430,6 +430,10 @@ namespace TiltBrush
                 var loader = new TiltBrushUriLoader(
                     m_localPath, Path.GetDirectoryName(m_localPath), m_useThreadedImageLoad);
                 var options = m_fromIcosa ? kPolyGltfImportOptions : kGltfImportOptions;
+                if (m_fromIcosa)
+                {
+                    return ImportGltf.BeginImport(m_localPath, loader, options);
+                }
                 return NewGltfImporter.BeginImport(m_localPath);
             }
 
@@ -438,23 +442,52 @@ namespace TiltBrush
                                                             out ImportMaterialCollector
                                                                 importMaterialCollector)
             {
-                meshEnumerable = null;
-                importMaterialCollector = null;
                 GameObject rootObject = null;
-                using (IDisposable state_ = state__)
+                if (m_fromIcosa)
                 {
-                    var state = state_ as NewGltfImporter.ImportState;
+                    var state = state__ as ImportGltf.ImportState;
                     if (state != null)
                     {
                         string assetLocation = Path.GetDirectoryName(m_localPath);
                         // EndImport doesn't try to use the loadImages functionality of UriLoader anyway.
                         // It knows it's on the main thread, so chooses to use Unity's fast loading.
-                        rootObject = state.root;
-                        importMaterialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: m_localPath);
+                        var loader = new TiltBrushUriLoader(m_localPath, assetLocation, loadImages: false);
+                        ImportGltf.GltfImportResult result =
+                            ImportGltf.EndImport(
+                                state, loader,
+                                new ImportMaterialCollector(assetLocation, uniqueSeed: m_localPath),
+                                out meshEnumerable);
+
+                        if (result != null)
+                        {
+                            rootObject = result.root;
+                            importMaterialCollector = (ImportMaterialCollector)result.materialCollector;
+                        }
                     }
+                    IsValid = rootObject != null;
+                    meshEnumerable = null;
+                    importMaterialCollector = null;
+                    return rootObject;
                 }
-                IsValid = rootObject != null;
-                return rootObject;
+                else
+                {
+                    meshEnumerable = null;
+                    importMaterialCollector = null;
+                    using (IDisposable state_ = state__)
+                    {
+                        var state = state_ as NewGltfImporter.ImportState;
+                        if (state != null)
+                        {
+                            string assetLocation = Path.GetDirectoryName(m_localPath);
+                            // EndImport doesn't try to use the loadImages functionality of UriLoader anyway.
+                            // It knows it's on the main thread, so chooses to use Unity's fast loading.
+                            rootObject = state.root;
+                            importMaterialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: m_localPath);
+                        }
+                    }
+                    IsValid = rootObject != null;
+                    return rootObject;
+                }
             }
         } // GltfModelBuilder
 

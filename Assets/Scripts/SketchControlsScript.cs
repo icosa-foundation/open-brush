@@ -27,10 +27,10 @@ namespace TiltBrush
 
     public class SketchControlsScript : MonoBehaviour
     {
+        // TODO L10n
         public const string kRemoveHeadsetFyi = "Remove headset to view.";
-        const string kTiltBrushGalleryUrl = "https://icosa.gallery";
-        const string kBlocksGalleryUrl = "https://poly.google.com/blocks";
-        const string kPolyMainPageUri = "https://poly.google.com";
+        private string m_OpenBrushGalleryUrl = $"{App.ICOSA_WEBSITE_URL}/openbrush";
+        private string m_BlocksGalleryUrl = $"{App.ICOSA_WEBSITE_URL}/blocks";
 
         static public SketchControlsScript m_Instance;
         static bool sm_enableGrabHaptics = true;
@@ -4576,7 +4576,7 @@ namespace TiltBrush
                         break;
                     }
                 case GlobalCommands.ViewOnlineGallery:
-                    OpenURLAndInformUser(kTiltBrushGalleryUrl);
+                    OpenURLAndInformUser(m_OpenBrushGalleryUrl);
                     break;
                 case GlobalCommands.CancelUpload:
                     VrAssetService.m_Instance.CancelUpload();
@@ -4664,10 +4664,10 @@ namespace TiltBrush
                     SaveModel();
                     break;
                 case GlobalCommands.ViewPolyPage:
-                    OpenURLAndInformUser(kPolyMainPageUri);
+                    OpenURLAndInformUser(App.ICOSA_WEBSITE_URL);
                     break;
                 case GlobalCommands.ViewPolyGallery:
-                    OpenURLAndInformUser(kBlocksGalleryUrl);
+                    OpenURLAndInformUser(m_BlocksGalleryUrl);
                     break;
                 case GlobalCommands.ExportListed:
                     StartCoroutine(ExportListAndQuit());

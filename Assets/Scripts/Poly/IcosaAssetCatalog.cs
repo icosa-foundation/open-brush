@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using UnityEngine;
-using UnityEngine.Networking;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -84,16 +83,31 @@ namespace TiltBrush
                 JToken json, string accountName, string thumbnailSuffix)
             {
                 m_Owner = App.IcosaAssetCatalog;
-                HumanName = json["Title"].ToString();
-                AssetId = json["ID"].ToString();
+                HumanName = json["displayName"].ToString();
+                // AssetId = json["name"].ToString().Substring(7); // strip out "assets/"
+                // AssetId = json["ID"].ToString();
+                AssetId = json["url"].ToString();
                 AccountName = accountName;
-                ModelRotation = Quaternion.identity;
+                var rotation = json["presentationParams"]?["orientingRotation"];
+                if (rotation != null)
+                {
+                    ModelRotation = new Quaternion(
+                        rotation["x"]?.Value<float>() ?? 0,
+                        rotation["y"]?.Value<float>() ?? 0,
+                        rotation["z"]?.Value<float>() ?? 0,
+                        rotation["w"]?.Value<float>() ?? 0
+                    );
+                }
+                else
+                {
+                    ModelRotation = null;
+                }
+
                 m_Thumbnail = new Texture2D(4, 4, TextureFormat.ARGB32, false);
-                // Thumbnail URL can be a .webp, but if so we rely on there also being a jpg version
-                m_ThumbnailUrl = json["Thumbnail"].ToString().Replace(".webp", ".jpg");
+                m_ThumbnailUrl = json["thumbnail"]["url"].ToString();
                 if (!string.IsNullOrEmpty(thumbnailSuffix))
                 {
-                    m_ThumbnailUrl = string.Format("{0}{1}", m_ThumbnailUrl, thumbnailSuffix);
+                    m_ThumbnailUrl = string.Format("{0}={1}", m_ThumbnailUrl, thumbnailSuffix);
                 }
                 if (!kLazyLoadThumbnail)
                 {
@@ -150,10 +164,7 @@ namespace TiltBrush
                 if (thumbnailBytes == null)
                 {
                     await m_Owner.m_thumbnailFetchLimiter.WaitAsync();
-                    WebRequest www = new WebRequest(thumbnailUrl,
-                        App.GoogleIdentity,
-                        UnityWebRequest.kHttpVerbGET);
-
+                    WebRequest www = new WebRequest(thumbnailUrl);
                     await www.SendAsync();
 
                     while (m_Owner.m_thumbnailReadLimiter.IsBlocked())
@@ -276,7 +287,7 @@ namespace TiltBrush
         public void RequestRefresh(IcosaSetType type)
         {
             // We don't update featured except on startup.
-            if (type != IcosaSetType.Featured && App.GoogleIdentity.LoggedIn)
+            if (type != IcosaSetType.Featured && (App.IcosaIsLoggedIn || App.GoogleIdentity.LoggedIn))
             {
                 m_AssetSetByType[type].m_RefreshRequested = true;
             }
@@ -896,7 +907,7 @@ namespace TiltBrush
 
         void RefreshFetchCoroutines()
         {
-            if (App.GoogleIdentity.Profile != null)
+            if (App.IcosaIsLoggedIn)
             {
                 m_AssetSetByType[IcosaSetType.User].m_RefreshRequested = true;
                 m_AssetSetByType[IcosaSetType.Liked].m_RefreshRequested = true;

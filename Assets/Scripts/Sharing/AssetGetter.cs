@@ -90,11 +90,9 @@ namespace TiltBrush
             Reason = reason;
         }
 
-        // Initiates the contact with Poly.
+        // Initiates the contact with Icosa
         public IEnumerator<Null> GetAssetCoroutine()
         {
-
-            OAuth2Identity identity = null;
 
             if (!m_URI.StartsWith(VrAssetService.m_Instance.ApiHost))
             {
@@ -104,7 +102,7 @@ namespace TiltBrush
             {
                 m_Ready = false;
 
-                WebRequest initialRequest = new WebRequest(m_URI, App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
+                WebRequest initialRequest = new WebRequest(m_URI);
                 using (var cr = initialRequest.SendAsync().AsIeNull())
                 {
                     while (!initialRequest.Done)
@@ -130,13 +128,6 @@ namespace TiltBrush
                     Future<JObject> f = new Future<JObject>(() => JObject.Parse(initialRequest.Result));
                     JObject json;
                     while (!f.TryGetResult(out json)) { yield return null; }
-
-                    var polyPizzaUrl = json["Download"];
-                    if (polyPizzaUrl == null)
-                    {
-                        Debug.LogErrorFormat("Failed to find download url for {0}", m_URI);
-                        yield break;
-                    }
 
                     if (json.Count == 0)
                     {
@@ -198,7 +189,7 @@ namespace TiltBrush
             }
 
             // Download root asset.
-            var request = new WebRequest(m_Asset.RootDataURL, identity);
+            var request = new WebRequest(m_Asset.RootDataURL);
             using (var cr = request.SendAsync().AsIeNull())
             {
                 while (!request.Done)
@@ -221,7 +212,7 @@ namespace TiltBrush
             // Download all resource assets.
             foreach (var e in m_Asset.ResourceElements)
             {
-                request = new WebRequest(e.dataURL, App.Instance.IcosaToken);
+                request = new WebRequest(e.dataURL);
                 using (var cr = request.SendAsync().AsIeNull())
                 {
                     while (!request.Done)

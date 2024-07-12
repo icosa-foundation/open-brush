@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
+using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
@@ -49,7 +50,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_NoShowcaseMessage;
         [SerializeField] private GameObject m_ContactingServerMessage;
         [SerializeField] private GameObject m_OutOfDateMessage;
-        [SerializeField] private GameObject m_NoPolyConnectionMessage;
+        [FormerlySerializedAs("m_NoPolyConnectionMessage")][SerializeField] private GameObject m_NoIcosaConnectionMessage;
         [SerializeField] private Renderer m_OnlineGalleryButtonRenderer;
         [SerializeField] private GameObject[] m_IconsOnFirstPage;
         [SerializeField] private GameObject[] m_IconsOnNormalPage;
@@ -299,15 +300,18 @@ namespace TiltBrush
             // Base Refresh updates the modal parts of the panel, and we always want those refreshed.
             base.RefreshPage();
 
-            bool requiresPoly = m_CurrentSketchSet == SketchSetType.Liked;
+            bool requiresIcosa = m_CurrentSketchSet == SketchSetType.Liked;
+            bool requiresGoogle = m_CurrentSketchSet == SketchSetType.Drive;
 
-            bool polyDown = VrAssetService.m_Instance.NoConnection && requiresPoly;
-            m_NoPolyConnectionMessage.SetActive(polyDown);
+            bool icosaDown = VrAssetService.m_Instance.NoConnection && requiresIcosa;
+            m_NoIcosaConnectionMessage.SetActive(icosaDown);
 
-            bool outOfDate = !polyDown && !VrAssetService.m_Instance.Available && requiresPoly;
+            m_NoIcosaConnectionMessage.SetActive(icosaDown);
+
+            bool outOfDate = !icosaDown && !VrAssetService.m_Instance.Available && requiresIcosa;
             m_OutOfDateMessage.SetActive(outOfDate);
 
-            if (outOfDate || polyDown)
+            if (outOfDate || icosaDown)
             {
                 m_NoSketchesMessage.SetActive(false);
                 m_NoDriveSketchesMessage.SetActive(false);
@@ -340,12 +344,14 @@ namespace TiltBrush
                 !m_SketchSet.IsActivelyRefreshingSketches &&
                 App.IcosaIsLoggedIn);
 
-            // Show Contacting Server if we're talking to Drive.
+            // Show Contacting Server if we're talking to Drive or Icosa
             m_ContactingServerMessage.SetActive(
-                (requiresPoly ||
-                m_CurrentSketchSet == SketchSetType.Drive) &&
-                (m_SketchSet.NumSketches <= 0) &&
-                (m_SketchSet.IsActivelyRefreshingSketches && App.GoogleIdentity.LoggedIn));
+                m_SketchSet.NumSketches <= 0
+                && m_SketchSet.IsActivelyRefreshingSketches
+                && (
+                    (requiresIcosa && App.IcosaIsLoggedIn) ||
+                    (requiresGoogle && App.GoogleIdentity.LoggedIn)
+                ));
 
             // Show Showcase error if we're in Showcase and don't have sketches.
             m_NoShowcaseMessage.SetActive(

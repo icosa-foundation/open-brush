@@ -304,7 +304,7 @@ namespace TiltBrush
 
         [SerializeField] private int m_AssetsPerPage;
         [SerializeField] public float m_SketchbookRefreshInterval;
-        public bool m_UseLocalFeaturedSketches = true;
+        public bool m_UseLocalFeaturedSketches = false;
 
         private float m_UploadProgress;
         private bool m_LastUploadFailed;

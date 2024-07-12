@@ -391,7 +391,7 @@ namespace TiltBrush
 
             bool changed = false;
             int pagesFetched = 0;
-            while (lister == null || lister.HasMore)
+            while (lister == null || lister.HasMore || assetIds.Count == 0)
             {
                 if (sketches.Count >= 180)
                 {
@@ -768,25 +768,23 @@ namespace TiltBrush
         // See go/vr-assets-service-api
         public IcosaSceneFileInfo(JToken json)
         {
-            m_AssetId = json["id"].ToString();
-            m_HumanName = json["name"]?.ToString() ?? "Untitled";
+            m_AssetId = json["name"].ToString().Substring(7); // strip 'assets/' from start
+            m_HumanName = json["displayName"].ToString();
 
-            var format = json["formats"]?.FirstOrDefault(x => x["format"].ToString() == "TILT")?["url"];
-            m_TiltFileUrl = format?.ToString();
-            m_IconUrl = json["thumbnail"]?.ToString();
-            m_License = json["visibility"]?.ToString() ?? "PRIVATE";
-            Author = json["ownername"]?.ToString() ?? "Unknown Author";
+            var format = json["formats"].First(x => x["formatType"].ToString() == "TILT")["root"];
+            m_TiltFileUrl = format["url"].ToString();
+            m_IconUrl = json["thumbnail"]?["url"]?.ToString();
+            m_License = json["license"]?.ToString();
 
-            // TODO
-            m_GltfTriangleCount = 1;
-            // // Some assets (old ones? broken ones?) are missing the "formatComplexity" field
-            // var gltfFormat = json["formats"].First(x => x["format"].ToString() == "GLTF");
-            // string gltfTriCount = gltfFormat?["formatComplexity"]?["triangleCount"]?.ToString();
-            // if (gltfTriCount == null)
-            // {
-            //     Debug.Log($"{m_AssetId} has no tricount");
-            // }
-            // m_GltfTriangleCount = Int32.Parse(gltfTriCount ?? "1");
+
+            // Some assets (old ones? broken ones?) are missing the "formatComplexity" field
+            var gltfFormat = json["formats"].First(x => x["formatType"].ToString() == "GLTF");
+            string gltfTriCount = gltfFormat?["formatComplexity"]?["triangleCount"]?.ToString();
+            if (gltfTriCount == null)
+            {
+                Debug.Log($"{m_AssetId} has no tricount");
+            }
+            m_GltfTriangleCount = Int32.Parse(gltfTriCount ?? "1");
 
             m_DownloadedFile = null;
             m_IconDownloaded = false;
