@@ -826,22 +826,27 @@ namespace TiltBrush
             for (int i = m_LoadQueue.Count - 1; i >= 0; --i)
             {
                 Model model = m_LoadQueue[i].Model;
-                if (!model.IsLoading())
-                {
-                    // If the overlay is up, hitching is okay; so avoid the slow threaded image load.
-                    bool useThreadedImageLoad =
-                        OverlayManager.m_Instance.CurrentOverlayState == OverlayState.Hidden;
-                    model.LoadModelAsync(useThreadedImageLoad);
-                }
-                else
-                {
-                    if (model.TryLoadModel())
-                    {
-                        m_LoadQueue.RemoveAt(i);
-                        m_IsLoadingMemo = null;
-                        m_NotifyListeners = true;
-                    }
-                }
+                model.LoadModel();
+                m_LoadQueue.RemoveAt(i);
+                m_IsLoadingMemo = null;
+                m_NotifyListeners = true;
+                // if (!model.IsLoading())
+                // {
+                //     // If the overlay is up, hitching is okay; so avoid the slow threaded image load.
+                //     bool useThreadedImageLoad =
+                //         OverlayManager.m_Instance.CurrentOverlayState == OverlayState.Hidden;
+                //     // model.LoadModelAsync(useThreadedImageLoad);
+                //     model.LoadModel();
+                // }
+                // else
+                // {
+                //     if (model.TryLoadModel(true))
+                //     {
+                //         m_LoadQueue.RemoveAt(i);
+                //         m_IsLoadingMemo = null;
+                //         m_NotifyListeners = true;
+                //     }
+                // }
             }
             UnityEngine.Profiling.Profiler.EndSample();
         }
@@ -863,8 +868,10 @@ namespace TiltBrush
                 m_AssetSetByType[type].m_Models = models;
             }
             AssetLister lister = VrAssetService.m_Instance.ListAssets(type);
-            while (lister.HasMore || models.Count == 0)
+            bool firstPass = true;
+            while (lister.HasMore || firstPass)
             {
+                firstPass = false;
                 using (var cr = lister.NextPage(models, m_ThumbnailSuffix))
                 {
                     while (true)

@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace TiltBrush
@@ -37,8 +38,7 @@ namespace TiltBrush
 
         public IEnumerator<object> NextPage(List<IcosaSceneFileInfo> files)
         {
-            string uri = m_PageToken == null ? m_Uri
-                : String.Format("{0}&page_token={1}", m_Uri, m_PageToken);
+            string uri = m_PageToken == null ? m_Uri : $"{m_Uri}&pageToken={m_PageToken}";
 
             WebRequest request = new WebRequest(uri, App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
             using (var cr = request.SendAsync().AsIeNull())
@@ -72,15 +72,13 @@ namespace TiltBrush
                     files.Add(info);
                 }
             }
-            JToken jPageToken = json["nextPageToken"];
-            m_PageToken = jPageToken != null ? jPageToken.ToString() : null;
+            m_PageToken = json["nextPageToken"]?.ToString();
         }
 
         public IEnumerator<Null> NextPage(List<IcosaAssetCatalog.AssetDetails> files,
                                           string thumbnailSuffix)
         {
-            string uri = m_PageToken == null ? m_Uri
-                : String.Format("{0}&page_token={1}", m_Uri, m_PageToken);
+            string uri = m_PageToken == null ? m_Uri : $"{m_Uri}&pageToken={m_PageToken}";
 
             WebRequest request = new WebRequest(uri, App.Instance.IcosaToken);
             using (var cr = request.SendAsync().AsIeNull())
@@ -144,8 +142,7 @@ namespace TiltBrush
                 yield return null;
             }
 
-            JToken jPageToken = json["nextPageToken"];
-            m_PageToken = jPageToken != null ? jPageToken.ToString() : null;
+            m_PageToken = json["nextPageToken"]?.ToString();
         }
     }
 } // namespace TiltBrush
