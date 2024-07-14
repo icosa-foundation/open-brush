@@ -35,7 +35,7 @@ namespace TiltBrush
     public enum Cloud
     {
         None = 0,
-        // Poly = 1,
+        Google = 1,
         Sketchfab = 2,
         Icosa = 3,
     }
@@ -378,13 +378,6 @@ namespace TiltBrush
 
         void Start()
         {
-            if (!string.IsNullOrEmpty(App.UserConfig.Sharing.IcosaApiRoot) ||
-                !string.IsNullOrEmpty(App.UserConfig.Sharing.IcosaHomePage))
-            {
-                Debug.LogFormat("Overriding VrAssetService Api Host: {0}  Landing Page: {1}",
-                    IcosaApiRoot, IcosaHomePage);
-            }
-
             // If auto profiling is enabled, disable automatic Icosa downloading.
             if (!App.UserConfig.Profiling.AutoProfile)
             {
