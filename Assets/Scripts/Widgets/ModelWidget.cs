@@ -370,7 +370,17 @@ namespace TiltBrush
                 }
                 var newRoot = new GameObject();
                 newRoot.transform.SetParent(transform);
-                newRoot.name = $"LocalFile:{m_Model.RelativePath}#{m_Subtree}";
+                switch (m_Model.GetLocation().GetLocationType())
+                {
+                    case Model.Location.Type.LocalFile:
+                        newRoot.name = $"LocalFile:{m_Model.RelativePath}#{m_Subtree}";
+                        break;
+                    case Model.Location.Type.IcosaAssetId:
+                        newRoot.name = $"RemoteFile:{m_Model.AssetId}#{m_Subtree}";
+                        break;
+                    case Model.Location.Type.Invalid:
+                        throw new InvalidOperationException("Invalid model location type");
+                }
                 m_ObjModelScript = newRoot.AddComponent<ObjModelScript>();
                 node.SetParent(newRoot.transform, worldPositionStays: true);
 
