@@ -40,7 +40,7 @@ namespace TiltBrush
         {
             string uri = m_PageToken == null ? m_Uri : $"{m_Uri}&pageToken={m_PageToken}";
 
-            WebRequest request = new WebRequest(uri, App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
+            WebRequest request = new WebRequest(uri, App.Instance.IcosaToken);
             using (var cr = request.SendAsync().AsIeNull())
             {
                 while (!request.Done)
