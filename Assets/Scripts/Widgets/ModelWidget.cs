@@ -309,7 +309,7 @@ namespace TiltBrush
         public bool HasSubModels()
         {
             string ext = Model.GetLocation().Extension;
-            if (ext == ".gltf" || ext == ".glb")
+            if (ext == ".gltf" || ext == ".gltf2" || ext == ".glb")
             {
                 int lightCount = m_ObjModelScript.GetComponentsInChildren<SceneLightGizmo>().Length;
                 int meshCount = GetMeshes().Length;
