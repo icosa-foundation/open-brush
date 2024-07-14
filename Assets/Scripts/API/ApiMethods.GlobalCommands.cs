@@ -15,7 +15,6 @@
 using System.IO;
 using Org.OpenAPITools.Api;
 using Org.OpenAPITools.Client;
-using UnityEngine;
 
 namespace TiltBrush
 {
@@ -56,15 +55,17 @@ namespace TiltBrush
         public static void IcosaLogin(string username, string password)
         {
             var config = new Configuration();
-            var loginApi = new LoginApi(App.ICOSA_API_URL);
+            var loginApi = new LoginApi(VrAssetService.m_Instance.IcosaApiRoot);
+            config.BasePath = VrAssetService.m_Instance.IcosaApiRoot;
             loginApi.Configuration = config;
             var token = loginApi.LoginLoginPost(username, password);
             App.Instance.IcosaToken = token.AccessToken;
 
             if (token != null)
             {
-                var usersApi = new UsersApi(App.ICOSA_API_URL);
+                var usersApi = new UsersApi(VrAssetService.m_Instance.IcosaApiRoot);
                 config = new Configuration { AccessToken = App.Instance.IcosaToken };
+                config.BasePath = VrAssetService.m_Instance.IcosaApiRoot;
                 usersApi.Configuration = config;
                 var userData = usersApi.GetUsersMeUsersMeGet();
 

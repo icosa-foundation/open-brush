@@ -131,10 +131,6 @@ namespace TiltBrush
         public static OAuth2Identity GoogleIdentity => m_Instance.m_GoogleIdentity;
         public static OAuth2Identity SketchfabIdentity => m_Instance.m_SketchfabIdentity;
 
-        // TODO Make these overridable
-        public static string ICOSA_WEBSITE_URL = "https://icosa-api-django.ixxy.co.uk";
-        public static string ICOSA_API_URL = "https://icosa-api-django.ixxy.co.uk/api/v1";
-
         public string IcosaToken
         {
             get => PlayerPrefs.HasKey("IcosaToken") ? PlayerPrefs.GetString("IcosaToken") : null;

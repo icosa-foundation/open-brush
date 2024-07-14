@@ -14,7 +14,6 @@
 
 using System;
 using System.Collections;
-using System.Numerics;
 using Org.OpenAPITools.Api;
 using Org.OpenAPITools.Client;
 using Org.OpenAPITools.Model;
@@ -218,7 +217,8 @@ namespace TiltBrush
         private IEnumerator LoginCoroutine(string code)
         {
             var config = new Configuration();
-            var loginApi = new LoginApi(App.ICOSA_API_URL);
+            var loginApi = new LoginApi(VrAssetService.m_Instance.IcosaApiRoot);
+            config.BasePath = VrAssetService.m_Instance.IcosaApiRoot;
             loginApi.Configuration = config;
             var loginTask = loginApi.DeviceLoginLoginDeviceLoginPostAsync(code);
             yield return new WaitUntil(() => loginTask.IsCompleted);
@@ -247,8 +247,9 @@ namespace TiltBrush
 
         private IEnumerator FetchUserDataCoroutine(Action<FullUser> onSuccess)
         {
-            var usersApi = new UsersApi(App.ICOSA_API_URL);
+            var usersApi = new UsersApi(VrAssetService.m_Instance.IcosaApiRoot);
             var config = new Configuration { AccessToken = App.Instance.IcosaToken };
+            config.BasePath = VrAssetService.m_Instance.IcosaApiRoot;
             usersApi.Configuration = config;
             var getUserTask = usersApi.GetUsersMeUsersMeGetAsync();
             yield return new WaitUntil(() => getUserTask.IsCompleted);
@@ -372,7 +373,7 @@ namespace TiltBrush
                         );
                     }
 
-                    App.OpenURL($"{App.ICOSA_WEBSITE_URL}/device");
+                    App.OpenURL($"{VrAssetService.m_Instance.IcosaHomePage}/device");
                     ShowIcosaLogin();
                     m_Persistent = true;
                     break;

@@ -94,7 +94,7 @@ namespace TiltBrush
         public IEnumerator<Null> GetAssetCoroutine()
         {
 
-            if (!m_URI.StartsWith(VrAssetService.m_Instance.ApiHost))
+            if (!m_URI.StartsWith(VrAssetService.m_Instance.IcosaApiRoot))
             {
                 m_Asset.SetRootElement(UnityWebRequest.EscapeURL(m_URI), m_URI);
             }

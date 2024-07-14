@@ -346,8 +346,8 @@ namespace TiltBrush
         public struct SharingConfig
         {
             // For Poly testing allow us to use a different API host and landing page URL.
-            [JsonProperty("VrAssetServiceHost")] public string VrAssetServiceHostOverride;
-            [JsonProperty("VrAssetServiceUrl")] public string VrAssetServiceUrlOverride;
+            [FormerlySerializedAs("VrAssetServiceHostOverride")][JsonProperty("VrAssetServiceHost")] public string IcosaApiRoot;
+            [FormerlySerializedAs("VrAssetServiceUrlOverride")][JsonProperty("VrAssetServiceUrl")] public string IcosaHomePage;
         }
         public SharingConfig Sharing;
 

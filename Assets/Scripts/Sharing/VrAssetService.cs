@@ -20,10 +20,8 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
 using Newtonsoft.Json.Linq;
 using Org.OpenAPITools.Api;
-using Org.OpenAPITools.Client;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -56,8 +54,6 @@ namespace TiltBrush
         // Constants
 
         const string kDefaultName = "sketch";
-
-        private string kAssetLandingPage => $"{App.ICOSA_WEBSITE_URL}/uploads";
 
         private const string kListAssetsUri = "/assets";
         private const string kUserAssetsUri = "/users/me/assets";
@@ -231,15 +227,27 @@ namespace TiltBrush
         public static VrAssetService m_Instance;
 
         // Currently this always returns the standard API host when running unit tests
-        public string ApiHost
+        public string IcosaApiRoot
         {
             get
             {
-                string cfg = App.UserConfig?.Sharing.VrAssetServiceHostOverride;
+                string cfg = App.UserConfig?.Sharing.IcosaApiRoot;
                 if (!string.IsNullOrEmpty(cfg)) { return cfg; }
-                return App.ICOSA_API_URL;
+                return "https://icosa.gallery/api/v1";
             }
         }
+
+        public string IcosaHomePage
+        {
+            get
+            {
+                string cfg = App.UserConfig.Sharing.IcosaHomePage;
+                if (!string.IsNullOrEmpty(cfg)) { return cfg; }
+                return "https://icosa.gallery";
+            }
+        }
+
+        private string IcosaUploadPage => $"{IcosaHomePage}/uploads";
 
         /// Returns true if Icosa would accept a PATCH of the specified asset
         /// from the specified user.
@@ -354,16 +362,6 @@ namespace TiltBrush
             get { return m_LastUploadCompleteUrl; }
         }
 
-        private string AssetLandingPage
-        {
-            get
-            {
-                string cfg = App.UserConfig.Sharing.VrAssetServiceUrlOverride;
-                if (!string.IsNullOrEmpty(cfg)) { return cfg; }
-                return kAssetLandingPage;
-            }
-        }
-
         // Cannot be an UploadProgress setter because the getter's type is different.
         // pct is how much of that step has been completed.
         private void SetUploadProgress(UploadStep step, double pct)
@@ -380,11 +378,11 @@ namespace TiltBrush
 
         void Start()
         {
-            if (!string.IsNullOrEmpty(App.UserConfig.Sharing.VrAssetServiceHostOverride) ||
-                !string.IsNullOrEmpty(App.UserConfig.Sharing.VrAssetServiceUrlOverride))
+            if (!string.IsNullOrEmpty(App.UserConfig.Sharing.IcosaApiRoot) ||
+                !string.IsNullOrEmpty(App.UserConfig.Sharing.IcosaHomePage))
             {
                 Debug.LogFormat("Overriding VrAssetService Api Host: {0}  Landing Page: {1}",
-                    ApiHost, AssetLandingPage);
+                    IcosaApiRoot, IcosaHomePage);
             }
 
             // If auto profiling is enabled, disable automatic Icosa downloading.
@@ -541,10 +539,10 @@ namespace TiltBrush
                 return IcosaStatus.Disabled;
             }
 
-            string uri = ApiHost;
+            string uri = IcosaApiRoot;
             try
             {
-                var api = new LoginApi($"{App.ICOSA_API_URL}");
+                var api = new LoginApi(IcosaApiRoot);
                 var result = new Dictionary<string, string> { { "version", "v1" } }; // TODO: get version from API
                 string version = result["version"];
                 if (version == kIcosaApiVersion)
@@ -720,7 +718,7 @@ namespace TiltBrush
             // response.uri is not very useful; it is an API uri that gives you json of asset details.
             // Also, the 3d-models URI might show that the asset is still processing. We can poll their
             // API and find out when it's done and pop up the window then?
-            string uri = $"{App.ICOSA_WEBSITE_URL}/edit/{response.upload_job}";
+            string uri = $"{VrAssetService.m_Instance.IcosaHomePage}/edit/{response.upload_job}";
             return (uri, 0);
         }
 
@@ -824,7 +822,7 @@ namespace TiltBrush
             }
             else
             {
-                uri = String.Format("{0}{1}/{2}", ApiHost, kListAssetsUri, assetId);
+                uri = String.Format("{0}{1}/{2}", IcosaApiRoot, kListAssetsUri, assetId);
             }
             return new AssetGetter(uri, assetId, type, reason);
         }
@@ -855,7 +853,7 @@ namespace TiltBrush
                     break;
             }
 
-            string uri = $"{ApiHost}{filteredUriPath}&pageSize={m_AssetsPerPage}";
+            string uri = $"{IcosaApiRoot}{filteredUriPath}&pageSize={m_AssetsPerPage}";
             return new AssetLister(uri, errorMessage);
         }
 
@@ -863,7 +861,7 @@ namespace TiltBrush
         public IEnumerator<object> InsertSketchInfo(
             string assetId, int index, List<IcosaSceneFileInfo> infos)
         {
-            string uri = String.Format("{0}{1}/{2}", ApiHost, kListAssetsUri, assetId);
+            string uri = String.Format("{0}{1}/{2}", IcosaApiRoot, kListAssetsUri, assetId);
             WebRequest request = new WebRequest(uri, App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
             using (var cr = request.SendAsync().AsIeNull())
             {
@@ -895,13 +893,13 @@ namespace TiltBrush
             switch (type)
             {
                 case IcosaSetType.Liked:
-                    uri = $"{ApiHost}{kUserLikesUri}?format=GLTF2&orderBy=LIKED_TIME&pageSize={m_AssetsPerPage}";
+                    uri = $"{IcosaApiRoot}{kUserLikesUri}?format=GLTF2&orderBy=LIKED_TIME&pageSize={m_AssetsPerPage}";
                     break;
                 case IcosaSetType.User:
-                    uri = $"{ApiHost}{kUserAssetsUri}?format=GLTF2&orderBy=NEWEST&pageSize={m_AssetsPerPage}";
+                    uri = $"{IcosaApiRoot}{kUserAssetsUri}?format=GLTF2&orderBy=NEWEST&pageSize={m_AssetsPerPage}";
                     break;
                 case IcosaSetType.Featured:
-                    uri = $"{ApiHost}{kListAssetsUri}" +
+                    uri = $"{IcosaApiRoot}{kListAssetsUri}" +
                         $"?format=GLTF2&curated=true&orderBy=NEWEST&pageSize={m_AssetsPerPage}";
                     break;
             }
@@ -912,7 +910,7 @@ namespace TiltBrush
         public IEnumerator LoadTiltFile(string id)
         {
             string path = Path.GetTempFileName();
-            string uri = String.Format("{0}{1}/{2}", ApiHost, kListAssetsUri, id);
+            string uri = String.Format("{0}{1}/{2}", IcosaApiRoot, kListAssetsUri, id);
             WebRequest request = new WebRequest(uri, App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
             using (var cr = request.SendAsync().AsIeNull())
             {

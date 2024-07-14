@@ -29,8 +29,9 @@ namespace TiltBrush
     {
         // TODO L10n
         public const string kRemoveHeadsetFyi = "Remove headset to view.";
-        private string m_OpenBrushGalleryUrl = $"{App.ICOSA_WEBSITE_URL}/openbrush";
-        private string m_BlocksGalleryUrl = $"{App.ICOSA_WEBSITE_URL}/blocks";
+
+        private string m_OpenBrushGalleryUrl = $"{VrAssetService.m_Instance.IcosaHomePage}/openbrush";
+        private string m_BlocksGalleryUrl = $"{VrAssetService.m_Instance.IcosaHomePage}/blocks";
 
         static public SketchControlsScript m_Instance;
         static bool sm_enableGrabHaptics = true;
@@ -98,8 +99,8 @@ namespace TiltBrush
             Duplicate,
             ToggleGroupStrokesAndWidgets,
             SaveModel,
-            ViewPolyPage,
-            ViewPolyGallery,
+            ViewIcosaHomePage,
+            ViewBlocksGallery,
             ExportListed,
             RenderCameraPath,
             ToggleProfiling,
@@ -4663,10 +4664,10 @@ namespace TiltBrush
                 case GlobalCommands.SaveModel:
                     SaveModel();
                     break;
-                case GlobalCommands.ViewPolyPage:
-                    OpenURLAndInformUser(App.ICOSA_WEBSITE_URL);
+                case GlobalCommands.ViewIcosaHomePage:
+                    OpenURLAndInformUser(VrAssetService.m_Instance.IcosaHomePage);
                     break;
-                case GlobalCommands.ViewPolyGallery:
+                case GlobalCommands.ViewBlocksGallery:
                     OpenURLAndInformUser(m_BlocksGalleryUrl);
                     break;
                 case GlobalCommands.ExportListed:
