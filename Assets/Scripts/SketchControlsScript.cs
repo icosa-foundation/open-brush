@@ -30,8 +30,8 @@ namespace TiltBrush
         // TODO L10n
         public const string kRemoveHeadsetFyi = "Remove headset to view.";
 
-        private string m_OpenBrushGalleryUrl = $"{VrAssetService.m_Instance.IcosaHomePage}/openbrush";
-        private string m_BlocksGalleryUrl = $"{VrAssetService.m_Instance.IcosaHomePage}/blocks";
+        private string m_OpenBrushGalleryUrl => $"{VrAssetService.m_Instance.IcosaHomePage}/openbrush";
+        private string m_BlocksGalleryUrl => $"{VrAssetService.m_Instance.IcosaHomePage}/blocks";
 
         static public SketchControlsScript m_Instance;
         static bool sm_enableGrabHaptics = true;

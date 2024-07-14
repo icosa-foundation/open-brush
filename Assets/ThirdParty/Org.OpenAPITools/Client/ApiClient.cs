@@ -147,7 +147,7 @@ namespace Org.OpenAPITools.Client
                     throw new ApiException((int)request.responseCode, request.error, text);
                 }
             }
-            
+
             if (type != typeof(System.Object) && request.responseCode >= 200 && request.responseCode < 300)
             {
                 throw new UnexpectedResponseException(request, type);
@@ -417,7 +417,7 @@ namespace Org.OpenAPITools.Client
                 {
                     await tsc.Task;
                 }
-                
+
                 if (request.result == UnityWebRequest.Result.ConnectionError ||
                     request.result == UnityWebRequest.Result.DataProcessingError)
                 {

@@ -539,9 +539,9 @@ namespace TiltBrush
                 return IcosaStatus.Disabled;
             }
 
-            string uri = IcosaApiRoot;
             try
             {
+                // TODO need a do-nothing endpoint we can use for this
                 var api = new LoginApi(IcosaApiRoot);
                 var result = new Dictionary<string, string> { { "version", "v1" } }; // TODO: get version from API
                 string version = result["version"];
