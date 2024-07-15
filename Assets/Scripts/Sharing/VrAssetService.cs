@@ -886,14 +886,14 @@ namespace TiltBrush
             switch (type)
             {
                 case IcosaSetType.Liked:
-                    uri = $"{IcosaApiRoot}{kUserLikesUri}?format=GLTF2&orderBy=LIKED_TIME&pageSize={m_AssetsPerPage}";
+                    uri = $"{IcosaApiRoot}{kUserLikesUri}?format=BLOCKS&orderBy=LIKED_TIME&pageSize={m_AssetsPerPage}";
                     break;
                 case IcosaSetType.User:
-                    uri = $"{IcosaApiRoot}{kUserAssetsUri}?format=GLTF2&orderBy=NEWEST&pageSize={m_AssetsPerPage}";
+                    uri = $"{IcosaApiRoot}{kUserAssetsUri}?format=BLOCKS&orderBy=NEWEST&pageSize={m_AssetsPerPage}";
                     break;
                 case IcosaSetType.Featured:
                     uri = $"{IcosaApiRoot}{kListAssetsUri}" +
-                        $"?format=GLTF2&curated=true&orderBy=NEWEST&pageSize={m_AssetsPerPage}";
+                        $"?format=BLOCKS&curated=true&orderBy=NEWEST&pageSize={m_AssetsPerPage}";
                     break;
             }
             return new AssetLister(uri, "Failed to connect to Icosa.");
