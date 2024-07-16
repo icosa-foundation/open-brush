@@ -229,15 +229,17 @@ namespace TiltBrush
             }
 
             uploader.ProgressObject = progress;
-            var reply = await uploader.SendNamedDataAsync(
+            WebRequest.Reply reply = await uploader.SendNamedDataAsync(
                 "files", File.OpenRead(zipPath), Path.GetFileName(zipPath), "application/zip",
                 moreParams: moreParams, token, temporaryDirectory);
             return reply.Deserialize<CreateResponse>();
         }
+
         [Serializable, UsedImplicitly]
         public struct CreateResponse
         {
             public string upload_job;
+            public string edit_url;
         }
     }
 } // namespace TiltBrush

@@ -702,7 +702,7 @@ namespace TiltBrush
 
             var service = new IcosaService(App.Instance.IcosaToken);
             var progress = new Progress<double>(d => SetUploadProgress(UploadStep.UploadElements, d));
-            var response = await service.CreateModel(
+            IcosaService.CreateResponse response = await service.CreateModel(
                 zipName, progress, token, options, tempUploadDir);
             // TODO(b/146892613): return the UID and stick it into the .tilt file?
             // Or do we not care since we aren't recording provenance and remixing
@@ -711,7 +711,7 @@ namespace TiltBrush
             // response.uri is not very useful; it is an API uri that gives you json of asset details.
             // Also, the 3d-models URI might show that the asset is still processing. We can poll their
             // API and find out when it's done and pop up the window then?
-            string uri = $"{VrAssetService.m_Instance.IcosaHomePage}/edit/{response.upload_job}";
+            string uri = $"{response.edit_url}";
             return (uri, 0);
         }
 
