@@ -31,7 +31,7 @@ namespace TiltBrush
     {
         private bool m_Ready;
         private string m_URI;
-        private PolyRawAsset m_Asset;
+        private IcosaRawAsset m_Asset;
         private JsonSerializer m_JsonSerializer;
 
         /// Converts a property from snake case to camel case.
@@ -73,7 +73,7 @@ namespace TiltBrush
             get { return m_Ready; }
         }
 
-        public PolyRawAsset Asset
+        public IcosaRawAsset Asset
         {
             get { return m_Asset; }
         }
@@ -84,35 +84,25 @@ namespace TiltBrush
                            string reason)
         {
             m_URI = uri;
-            m_Asset = new PolyRawAsset(assetId, assetType);
+            m_Asset = new IcosaRawAsset(assetId, assetType);
             m_JsonSerializer = new JsonSerializer();
             m_JsonSerializer.ContractResolver = new SnakeToCamelPropertyNameContractResolver();
             Reason = reason;
         }
 
-        // Initiates the contact with Poly.
+        // Initiates the contact with Icosa
         public IEnumerator<Null> GetAssetCoroutine()
         {
 
-            OAuth2Identity identity = null;
-
-            if (!m_URI.StartsWith(VrAssetService.ApiHost))
+            if (!m_URI.StartsWith(VrAssetService.m_Instance.IcosaApiRoot))
             {
                 m_Asset.SetRootElement(UnityWebRequest.EscapeURL(m_URI), m_URI);
             }
             else
             {
-
-                identity = App.GoogleIdentity;
-
-                if (string.IsNullOrEmpty(App.Config.GoogleSecrets?.ApiKey))
-                {
-                    IsCanceled = true;
-                    yield break;
-                }
                 m_Ready = false;
 
-                WebRequest initialRequest = new WebRequest(m_URI, App.GoogleIdentity, UnityWebRequest.kHttpVerbGET);
+                WebRequest initialRequest = new WebRequest(m_URI);
                 using (var cr = initialRequest.SendAsync().AsIeNull())
                 {
                     while (!initialRequest.Done)
@@ -199,7 +189,7 @@ namespace TiltBrush
             }
 
             // Download root asset.
-            var request = new WebRequest(m_Asset.RootDataURL, identity);
+            var request = new WebRequest(m_Asset.RootDataURL);
             using (var cr = request.SendAsync().AsIeNull())
             {
                 while (!request.Done)
@@ -222,7 +212,7 @@ namespace TiltBrush
             // Download all resource assets.
             foreach (var e in m_Asset.ResourceElements)
             {
-                request = new WebRequest(e.dataURL, App.GoogleIdentity);
+                request = new WebRequest(e.dataURL);
                 using (var cr = request.SendAsync().AsIeNull())
                 {
                     while (!request.Done)

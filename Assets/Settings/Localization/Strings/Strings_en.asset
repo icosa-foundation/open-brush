@@ -3462,6 +3462,16 @@ MonoBehaviour:
       for a step by step guide.'
     m_Metadata:
       m_Items: []
+  - m_Id: 164911761917042688
+    m_Localized: 'Sign in to an Icosa account to allow
+
+                                        uploading to Icosa.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911966586494976
+    m_Localized: Share to Icosa
+    m_Metadata:
+      m_Items: []
   - m_Id: 170004956477833216
     m_Localized: Please give Open Brush file access to save your creations!
     m_Metadata:

@@ -14,8 +14,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Newtonsoft.Json.Linq;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace TiltBrush
@@ -36,12 +36,11 @@ namespace TiltBrush
             m_ErrorMessage = errorMessage;
         }
 
-        public IEnumerator<object> NextPage(List<PolySceneFileInfo> files)
+        public IEnumerator<object> NextPage(List<IcosaSceneFileInfo> files)
         {
-            string uri = m_PageToken == null ? m_Uri
-                : String.Format("{0}&page_token={1}", m_Uri, m_PageToken);
+            string uri = m_PageToken == null ? m_Uri : $"{m_Uri}&pageToken={m_PageToken}";
 
-            WebRequest request = new WebRequest(uri, App.GoogleIdentity, UnityWebRequest.kHttpVerbGET);
+            WebRequest request = new WebRequest(uri, App.Instance.IcosaToken);
             using (var cr = request.SendAsync().AsIeNull())
             {
                 while (!request.Done)
@@ -68,23 +67,20 @@ namespace TiltBrush
             {
                 foreach (var asset in assets)
                 {
-                    var info = new PolySceneFileInfo(asset);
+                    var info = new IcosaSceneFileInfo(asset);
                     info.Author = asset["displayName"].ToString();
-                    ;
                     files.Add(info);
                 }
             }
-            JToken jPageToken = json["nextPageToken"];
-            m_PageToken = jPageToken != null ? jPageToken.ToString() : null;
+            m_PageToken = json["nextPageToken"]?.ToString();
         }
 
-        public IEnumerator<Null> NextPage(List<PolyAssetCatalog.AssetDetails> files,
+        public IEnumerator<Null> NextPage(List<IcosaAssetCatalog.AssetDetails> files,
                                           string thumbnailSuffix)
         {
-            string uri = m_PageToken == null ? m_Uri
-                : String.Format("{0}&page_token={1}", m_Uri, m_PageToken);
+            string uri = m_PageToken == null ? m_Uri : $"{m_Uri}&pageToken={m_PageToken}";
 
-            WebRequest request = new WebRequest(uri, App.GoogleIdentity, UnityWebRequest.kHttpVerbGET);
+            WebRequest request = new WebRequest(uri, App.Instance.IcosaToken);
             using (var cr = request.SendAsync().AsIeNull())
             {
                 while (!request.Done)
@@ -108,13 +104,11 @@ namespace TiltBrush
             if (json.Count == 0) { yield break; }
 
             JToken lastAsset = null;
-            var assets = json["assets"] ?? json["userAssets"];
-            foreach (JToken possibleAsset in assets)
+            var assets = json["assets"];
+            foreach (JObject asset in assets)
             {
                 try
                 {
-                    // User assets are nested in an 'asset' node.
-                    JToken asset = possibleAsset["asset"] ?? possibleAsset;
                     if (asset["visibility"].ToString() == "PRIVATE")
                     {
                         continue;
@@ -122,10 +116,6 @@ namespace TiltBrush
 
                     // We now don't filter the liked Poly objects, but we don't want to return liked Tilt Brush
                     // sketches so in this section we filter out anything with a Tilt file in it.
-                    // Also, although currently all Poly objects have a GLTF representation we should probably
-                    // not rely on that continuing, so we discard anything that doesn't have a GLTF (1)
-                    // representation. We look for PGLTF and GLTF as for a lot of objects Poly is returning
-                    // PGLTF without GLTF.
                     bool skipObject = false;
                     foreach (var format in asset["formats"])
                     {
@@ -142,7 +132,7 @@ namespace TiltBrush
                     }
                     lastAsset = asset;
                     string accountName = asset["authorName"]?.ToString() ?? "Unknown";
-                    files.Add(new PolyAssetCatalog.AssetDetails(asset, accountName, thumbnailSuffix));
+                    files.Add(new IcosaAssetCatalog.AssetDetails(asset, accountName, thumbnailSuffix));
                 }
                 catch (NullReferenceException)
                 {
@@ -152,8 +142,7 @@ namespace TiltBrush
                 yield return null;
             }
 
-            JToken jPageToken = json["nextPageToken"];
-            m_PageToken = jPageToken != null ? jPageToken.ToString() : null;
+            m_PageToken = json["nextPageToken"]?.ToString();
         }
     }
 } // namespace TiltBrush
