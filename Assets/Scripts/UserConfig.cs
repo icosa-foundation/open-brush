@@ -345,7 +345,6 @@ namespace TiltBrush
         [Serializable]
         public struct SharingConfig
         {
-            // For Poly testing allow us to use a different API host and landing page URL.
             public string IcosaApiRoot;
             public string IcosaHomePage;
         }
