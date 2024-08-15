@@ -19,9 +19,10 @@ MonoBehaviour:
   m_CompensateForScreenOrientation: 1
   m_BackgroundBehavior: 0
   m_EditorInputBehaviorInPlayMode: 0
+  m_InputActionPropertyDrawerMode: 0
   m_DefaultDeadzoneMin: 0.125
   m_DefaultDeadzoneMax: 0.925
-  m_DefaultButtonPressPoint: 0.125
+  m_DefaultButtonPressPoint: 0.05
   m_ButtonReleaseThreshold: 1
   m_DefaultTapTime: 0.2
   m_DefaultSlowTapTime: 0.5
