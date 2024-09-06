@@ -155,11 +155,11 @@
                 },
                 {
                     "name": "",
-                    "id": "5c58c242-5273-46f2-b8a1-883bedf76707",
-                    "path": "<XRController>{RightHand}/thumbstick/x",
+                    "id": "59b3c356-caf1-4b59-aa0b-32e5a3cfb5b1",
+                    "path": "/user/hand/right/input/tip_logitech/force",
                     "interactions": "",
                     "processors": "",
-                    "groups": "Oculus Touch Controller",
+                    "groups": "",
                     "action": "TriggerAxis",
                     "isComposite": false,
                     "isPartOfComposite": false
