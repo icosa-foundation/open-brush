@@ -478,7 +478,7 @@ namespace TiltBrush
                 DetectSartom pen = info.Behavior.GetComponent<DetectSartom>();
                 if (pen != null)
                 {
-                    pen.Initialize(0);
+                    pen.Initialize(i);
                     foundLogipen = foundLogipen || pen.IsPen;
                 }
             }
