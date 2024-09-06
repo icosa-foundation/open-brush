@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using OVR.OpenVR;
 using UnityEngine;
 
 namespace TiltBrush
@@ -79,33 +80,8 @@ namespace TiltBrush
 
         public static bool IsLogitechPen(uint deviceIndex)
         {
-            // HACK
-            return true;
-            // TODO:Mikesky The code below shows the process of determining the connected controller is the Logitech stylus, by finding the type of controller.
-
-            // ETrackedPropertyError error = ETrackedPropertyError.TrackedProp_Success;
-            // uint bufferCapacity = OpenVR.System.GetStringTrackedDeviceProperty(
-            //     deviceIndex,
-            //     ETrackedDeviceProperty.Prop_ControllerType_String,
-            //     null,
-            //     0,
-            //     ref error);
-            // System.Text.StringBuilder buffer = new System.Text.StringBuilder((int)bufferCapacity);
-            // OpenVR.System.GetStringTrackedDeviceProperty(
-            //     deviceIndex,
-            //     ETrackedDeviceProperty.Prop_ControllerType_String,
-            //     buffer,
-            //     bufferCapacity,
-            //     ref error);
-            // string s = buffer.ToString();
-            // if (error == ETrackedPropertyError.TrackedProp_Success)
-            // {
-            //     if (s.StartsWith("logitech_stylus"))
-            //     {
-            //         return true;
-            //     }
-            // }
-            return false;
+            var deviceName = OVRPlugin.GetCurrentInteractionProfileName((OVRPlugin.Hand)deviceIndex);
+            return deviceName.EndsWith("mx_ink_stylus_logitech");
         }
     }
 } // namespace TiltBrush
