@@ -49,7 +49,8 @@ namespace TiltBrush
 
         public void OnSliderChanged(Vector3 value)
         {
-            PointerManager.m_Instance.MainPointer.BrushSize01 = value.y;
+            PointerManager.m_Instance.SetAllPointersBrushSize01(value.z);
+            PointerManager.m_Instance.MarkAllBrushSizeUsed();
         }
     }
 
