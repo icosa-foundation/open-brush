@@ -75,6 +75,7 @@ MonoBehaviour:
   m_AnimateSpeed: 8
   m_AnimateRange: {x: 0, y: 1}
   m_ShowOnToolType: 10
+  m_BrushSizeSlider: {fileID: 584482961708206757}
   references:
     version: 2
     RefIds: []
@@ -427,7 +428,7 @@ PrefabInstance:
     - target: {fileID: 4471627121253417836, guid: 93b04d984a8fd234eb4a7227567865a7,
         type: 3}
       propertyPath: m_Name
-      value: AdvancedSliderV
+      value: Brush Size Slider
       objectReference: {fileID: 0}
     - target: {fileID: 4471627121253688460, guid: 93b04d984a8fd234eb4a7227567865a7,
         type: 3}
@@ -484,6 +485,18 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 93b04d984a8fd234eb4a7227567865a7, type: 3}
+--- !u!114 &584482961708206757 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2514466698640951438, guid: 93b04d984a8fd234eb4a7227567865a7,
+    type: 3}
+  m_PrefabInstance: {fileID: 3096697584449339947}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42c914c85d400664c9df3239aafbec71, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &1510895170789172903 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4471627121253688460, guid: 93b04d984a8fd234eb4a7227567865a7,
