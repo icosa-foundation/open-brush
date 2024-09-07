@@ -393,7 +393,7 @@ PrefabInstance:
     - target: {fileID: 2514466698640951438, guid: 93b04d984a8fd234eb4a7227567865a7,
         type: 3}
       propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
-      value: 5065710952488960
+      value: 172767995928834048
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 93b04d984a8fd234eb4a7227567865a7,
         type: 3}
