@@ -23,22 +23,22 @@
       "dependencies": {},
       "hash": "4f87195d54ccefe076678cb83a296b3f0428fc53"
     },
-    "com.meta.xr.sdk.platform": {
-      "version": "56.0.0-preview",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {
-        "com.meta.xr.sdk.utilities": "56.0.0-preview",
-        "com.unity.ugui": "1.0.0"
-      },
-      "url": "https://npm.developer.oculus.com"
-    },
-    "com.meta.xr.sdk.utilities": {
-      "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.core.git#56.0.0-openbrush",
+    "com.meta.xr.sdk.core": {
+      "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.core.git#66.0.0-openbrush",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "57bad66c67cd72a31898a1d29dae4d4201ef36c1"
+      "hash": "25b32e5b6dacc484be3eed179ea3d2d21d55b9d1"
+    },
+    "com.meta.xr.sdk.platform": {
+      "version": "60.0.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.meta.xr.sdk.core": "60.0.0",
+        "com.unity.ugui": "1.0.0"
+      },
+      "url": "https://npm.developer.oculus.com"
     },
     "com.nition.unity-octree": {
       "version": "0.0.1-preview",
@@ -66,14 +66,17 @@
       "version": "1.0.0",
       "depth": 0,
       "source": "builtin",
-      "dependencies": {}
+      "dependencies": {
+        "com.unity.modules.tilemap": "1.0.0",
+        "com.unity.modules.uielements": "1.0.0"
+      }
     },
     "com.unity.addressables": {
-      "version": "1.20.5",
+      "version": "1.21.21",
       "depth": 1,
       "source": "registry",
       "dependencies": {
-        "com.unity.scriptablebuildpipeline": "1.20.2",
+        "com.unity.scriptablebuildpipeline": "1.21.23",
         "com.unity.modules.assetbundle": "1.0.0",
         "com.unity.modules.imageconversion": "1.0.0",
         "com.unity.modules.jsonserialize": "1.0.0",
@@ -83,11 +86,12 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.burst": {
-      "version": "1.8.11",
+      "version": "1.8.15",
       "depth": 1,
       "source": "registry",
       "dependencies": {
-        "com.unity.mathematics": "1.2.1"
+        "com.unity.mathematics": "1.2.1",
+        "com.unity.modules.jsonserialize": "1.0.0"
       },
       "url": "https://packages.unity.com"
     },
@@ -155,7 +159,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.visualstudio": {
-      "version": "2.0.20",
+      "version": "2.0.22",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -164,20 +168,20 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.inputsystem": {
-      "version": "https://github.com/icosa-mirror/com.unity.inputsystem.git#open-brush",
+      "version": "https://github.com/icosa-mirror/com.unity.inputsystem.git#1.8.2-openbrush",
       "depth": 0,
       "source": "git",
       "dependencies": {
         "com.unity.modules.uielements": "1.0.0"
       },
-      "hash": "94931e6b1511c1e0bc5f9cc6571e3b3e87582f08"
+      "hash": "c47c0d12ee0afaabbed5ed1572470d881097dc18"
     },
     "com.unity.localization": {
-      "version": "1.4.2",
+      "version": "1.5.2",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.addressables": "1.20.5",
+        "com.unity.addressables": "1.21.9",
         "com.unity.nuget.newtonsoft-json": "3.0.2"
       },
       "url": "https://packages.unity.com"
@@ -200,14 +204,14 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.mobile.android-logcat": {
-      "version": "1.3.2",
+      "version": "1.4.2",
       "depth": 0,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
     "com.unity.nuget.mono-cecil": {
-      "version": "1.10.2",
+      "version": "1.11.4",
       "depth": 0,
       "source": "registry",
       "dependencies": {},
@@ -227,37 +231,47 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+    "com.unity.recorder": {
+      "version": "4.0.3",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.timeline": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.render-pipelines.core": {
-      "version": "12.1.12",
+      "version": "14.0.11",
       "depth": 2,
       "source": "builtin",
       "dependencies": {
         "com.unity.ugui": "1.0.0",
         "com.unity.modules.physics": "1.0.0",
+        "com.unity.modules.terrain": "1.0.0",
         "com.unity.modules.jsonserialize": "1.0.0"
       }
     },
     "com.unity.scriptablebuildpipeline": {
-      "version": "1.20.2",
+      "version": "1.21.23",
       "depth": 2,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
     "com.unity.searcher": {
-      "version": "4.9.1",
+      "version": "4.9.2",
       "depth": 2,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
     "com.unity.shadergraph": {
-      "version": "12.1.12",
+      "version": "14.0.11",
       "depth": 1,
       "source": "builtin",
       "dependencies": {
-        "com.unity.render-pipelines.core": "12.1.12",
-        "com.unity.searcher": "4.9.1"
+        "com.unity.render-pipelines.core": "14.0.11",
+        "com.unity.searcher": "4.9.2"
       }
     },
     "com.unity.test-framework": {
@@ -272,7 +286,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.textmeshpro": {
-      "version": "3.0.6",
+      "version": "3.0.9",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -281,7 +295,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.timeline": {
-      "version": "1.6.5",
+      "version": "1.7.6",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -321,7 +335,7 @@
       "hash": "214037a894f7e292687b8ba331f5c959c2bcdd8b"
     },
     "com.unity.xr.core-utils": {
-      "version": "2.2.3",
+      "version": "2.3.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -340,7 +354,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.xr.management": {
-      "version": "4.3.3",
+      "version": "4.4.1",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -352,22 +366,22 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.xr.oculus": {
-      "version": "3.3.0",
+      "version": "4.2.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.xr.management": "4.2.0"
+        "com.unity.xr.management": "4.4.0"
       },
       "url": "https://packages.unity.com"
     },
     "com.unity.xr.openxr": {
-      "version": "1.8.2",
+      "version": "1.10.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.xr.management": "4.0.1",
+        "com.unity.xr.management": "4.4.0",
         "com.unity.xr.legacyinputhelpers": "2.1.2",
-        "com.unity.inputsystem": "1.4.4",
+        "com.unity.inputsystem": "1.6.3",
         "com.unity.xr.core-utils": "2.1.1"
       },
       "url": "https://packages.unity.com"
@@ -598,17 +612,6 @@
     "com.unity.modules.uielements": {
       "version": "1.0.0",
       "depth": 0,
-      "source": "builtin",
-      "dependencies": {
-        "com.unity.modules.ui": "1.0.0",
-        "com.unity.modules.imgui": "1.0.0",
-        "com.unity.modules.jsonserialize": "1.0.0",
-        "com.unity.modules.uielementsnative": "1.0.0"
-      }
-    },
-    "com.unity.modules.uielementsnative": {
-      "version": "1.0.0",
-      "depth": 1,
       "source": "builtin",
       "dependencies": {
         "com.unity.modules.ui": "1.0.0",
