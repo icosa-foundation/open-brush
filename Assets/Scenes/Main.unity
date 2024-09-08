@@ -38,7 +38,6 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 8900000, guid: 378efb751ea39e14cb1fd93f49ead278, type: 3}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &4
 LightmapSettings:
@@ -3697,6 +3696,10 @@ MonoBehaviour:
   m_SliderDescriptionOneLinePrefab: {fileID: 1997325689525770, guid: 9ace601e68a20524c91fc986e38b4d55,
     type: 3}
   m_SliderDescriptionTwoLinesPrefab: {fileID: 1075103291083872, guid: 9473e6ac1bd905b42b3ab718e61edaa2,
+    type: 3}
+  m_VerticalSliderDescriptionOneLinePrefab: {fileID: 1997325689525770, guid: fffc394d878a99d468781b50d53e5edb,
+    type: 3}
+  m_VerticalSliderDescriptionTwoLinesPrefab: {fileID: 1075103291083872, guid: d0ce8c56faa567f438b1a68b3565a078,
     type: 3}
   m_PreviewCubeDescriptionOneLinePrefab: {fileID: 1083040994653220, guid: 4008b21a5ab500743beaafe495d976a7,
     type: 3}

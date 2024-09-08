@@ -44,6 +44,11 @@ namespace TiltBrush
         {
             m_IsAvailable = available;
             SetDescriptionVisualsAvailable(m_IsAvailable);
+            if (m_Orientation == Orientation.Vertical)
+            {
+                // Fix distortion due to the parent having a non-uniform scale.
+                m_Description.transform.localScale = Vector3.one;
+            }
         }
 
         override protected void Awake()
@@ -63,11 +68,6 @@ namespace TiltBrush
             m_Description.transform.position = m_Nob.transform.position;
             m_Description.transform.rotation = m_Nob.transform.rotation;
             m_Description.transform.parent = m_Nob.transform;
-            if (m_Orientation == Orientation.Vertical)
-            {
-                m_Description.transform.Rotate(0, 0, 90);
-                m_Description.transform.localScale = Vector3.one;
-            }
         }
 
         override public void SetColor(Color color)

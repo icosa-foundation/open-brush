@@ -387,13 +387,18 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2514466698640951438, guid: 93b04d984a8fd234eb4a7227567865a7,
         type: 3}
+      propertyPath: m_DescriptionText
+      value: BRUSH_SETTINGS_TRAY_BRUSH_SIZE
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 93b04d984a8fd234eb4a7227567865a7,
+        type: 3}
       propertyPath: onUpdateValue.m_PersistentCalls.m_Calls.Array.size
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 93b04d984a8fd234eb4a7227567865a7,
         type: 3}
       propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
-      value: 172767995928834048
+      value: 276171365497266176
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 93b04d984a8fd234eb4a7227567865a7,
         type: 3}
