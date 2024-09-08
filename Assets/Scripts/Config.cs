@@ -66,8 +66,9 @@ namespace TiltBrush
     {
         None = -1,
         Button = 0,
-        Slider,
-        PreviewCube,
+        Slider = 1,
+        PreviewCube = 2,
+        VerticalSlider = 3,
     }
 
     /// Script Ordering:
@@ -223,6 +224,8 @@ namespace TiltBrush
         [SerializeField] GameObject m_ButtonDescriptionThreeLinesPrefab;
         [SerializeField] GameObject m_SliderDescriptionOneLinePrefab;
         [SerializeField] GameObject m_SliderDescriptionTwoLinesPrefab;
+        [SerializeField] GameObject m_VerticalSliderDescriptionOneLinePrefab;
+        [SerializeField] GameObject m_VerticalSliderDescriptionTwoLinesPrefab;
         [SerializeField] GameObject m_PreviewCubeDescriptionOneLinePrefab;
         [SerializeField] GameObject m_PreviewCubeDescriptionTwoLinesPrefab;
 
@@ -251,6 +254,16 @@ namespace TiltBrush
                             return Instantiate(m_SliderDescriptionOneLinePrefab);
                         case 2:
                             return Instantiate(m_SliderDescriptionTwoLinesPrefab);
+                        default:
+                            throw new Exception($"{type} description does not have a ${numberOfLines} line variant");
+                    }
+                case DescriptionType.VerticalSlider:
+                    switch (numberOfLines)
+                    {
+                        case 1:
+                            return Instantiate(m_VerticalSliderDescriptionOneLinePrefab);
+                        case 2:
+                            return Instantiate(m_VerticalSliderDescriptionTwoLinesPrefab);
                         default:
                             throw new Exception($"{type} description does not have a ${numberOfLines} line variant");
                     }

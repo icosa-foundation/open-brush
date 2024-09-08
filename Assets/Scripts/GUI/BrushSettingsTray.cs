@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+﻿// Copyright 2024 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections;
 using UnityEngine;
 
 namespace TiltBrush
 {
     public class BrushSettingsTray : BaseTray
     {
+        [SerializeField] private AdvancedSlider m_BrushSizeSlider;
 
-        override protected void Start()
+        protected override void Awake()
+        {
+            base.Awake();
+            App.Switchboard.BrushSizeChanged += UpdateSliderToMatchCurrentSize;
+        }
+
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+            App.Switchboard.ToolChanged -= UpdateSliderToMatchCurrentSize;
+        }
+
+        private void UpdateSliderToMatchCurrentSize()
+        {
+            m_BrushSizeSlider.SetInitialValueAndUpdate(
+                PointerManager.m_Instance.MainPointer.BrushSize01
+            );
+        }
+
+        protected override void Start()
         {
             base.Start();
 
@@ -37,19 +55,18 @@ namespace TiltBrush
             // m_Mesh.SetActive(true);
             // m_Collider.enabled = true;
 
-            transform.GetComponentInChildren<AdvancedSlider>().SetInitialValueAndUpdate(
-                PointerManager.m_Instance.MainPointer.BrushSize01
-            );
+            UpdateSliderToMatchCurrentSize();
         }
 
         protected override void OnToolChanged()
         {
-            // No op
+            UpdateSliderToMatchCurrentSize();
         }
 
         public void OnSliderChanged(Vector3 value)
         {
-            PointerManager.m_Instance.MainPointer.BrushSize01 = value.y;
+            PointerManager.m_Instance.SetAllPointersBrushSize01(value.z);
+            PointerManager.m_Instance.MarkAllBrushSizeUsed();
         }
     }
 
