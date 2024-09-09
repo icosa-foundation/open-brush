@@ -232,7 +232,7 @@ jobs:
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
             versionSuffix: 1
-            extra_defines: OCULUS_SUPPORTED USE_QUEST_PACKAGE_NAME
+            extra_defines: OCULUS_SUPPORTED USE_QUEST_PACKAGE_NAME ENABLE_CONTEXTUAL_BOUNDARYLESS_APP
 
           - name: Android Pico
             targetPlatform: Android
