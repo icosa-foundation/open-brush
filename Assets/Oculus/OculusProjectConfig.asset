@@ -26,7 +26,7 @@ MonoBehaviour:
   eyeTrackingSupport: 0
   virtualKeyboardSupport: 0
   sceneSupport: 1
-  boundaryVisibilitySupport: 0
+  boundaryVisibilitySupport: 1
   disableBackups: 0
   enableNSCConfig: 0
   securityXmlPath: 
