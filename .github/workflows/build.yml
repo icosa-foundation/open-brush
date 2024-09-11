@@ -1183,10 +1183,11 @@ jobs:
           rm -rf "$AGENT_TOOLSDIRECTORY"
           echo "Disk space after cleanup"
           df -h
-          find /Applications/Xcode* -name "*.app" -exec du -sh {} \;  # Shows Xcode app sizes
+          find /Applications/Xcode* -name "*.app" -exec du -mcsh {} \;  # Shows Xcode app sizes
           # Delete all Xcode versions except /Applications/Xcode_15.4.app/
-          find /Applications/Xcode* -maxdepth 0 -type d ! -name 'Xcode_15.4.app' -exec rm -rf {} \;
+          find /Applications/Xcode_* -maxdepth 0 -type d ! -name 'Xcode_15.4.app' -exec rm -rf {} \;
           df -h
+          find /Applications/Xcode* -name "*.app" -exec du -mcsh {} \;  # Shows Xcode app sizes
 
       - name: Download iOS Artifact
         uses: actions/download-artifact@v4
