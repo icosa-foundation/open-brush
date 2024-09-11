@@ -1233,7 +1233,7 @@ jobs:
   publish_ios_zapbox:
     name: Publish Zapbox iOS
     needs: [configuration, build]
-    runs-on: macos-14  # ARM64 workers. Change this back to -latest when they get promoted
+    runs-on: macos-latest
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -1247,6 +1247,19 @@ jobs:
             Gemfile
             Gemfile.lock
             fastlane
+
+      - name: Free extra space
+        # As of 02/08/2024, this increases free space from 21GB to 47GB
+        run: |
+          echo "Initial free space"
+          df -h
+          rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "Disk space after cleanup of \$AGENT_TOOLSDIRECTORY"
+          df -h
+          echo "Deleting all Xcode versions except 15.4"
+          find /Applications/Xcode_* -maxdepth 0 -type d ! -name 'Xcode_15.4.app' -exec rm -rf {} \;
+          df -h
+          find /Applications/Xcode* -name "*.app" -exec du -mcsh {} \;  # Shows Xcode app sizes
 
       - name: Download iOS Artifact
         uses: actions/download-artifact@v4
