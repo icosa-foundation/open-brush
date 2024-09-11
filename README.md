@@ -26,7 +26,7 @@ As the original repo is archived we cannot submit PRs, so feel free to submit th
 ## Downloads
 ### Stores
 - [SideQuest](https://sidequestvr.com/app/2852/open-brush)
-- [Oculus App Lab](https://www.oculus.com/experiences/quest/3600360710032222)
+- [Meta Horizon (Quest)](https://www.oculus.com/experiences/quest/3600360710032222)
 - [Steam](https://store.steampowered.com/app/1634870/Open_Brush)
 - [Oculus Rift](https://www.oculus.com/experiences/rift/5227489953989768)
 - [Viveport Desktop](https://www.viveport.com/f1f3d00b-cf8a-443f-825e-4fea2dd3b005)
