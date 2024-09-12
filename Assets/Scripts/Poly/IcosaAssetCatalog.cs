@@ -102,7 +102,7 @@ namespace TiltBrush
                 }
 
                 m_Thumbnail = new Texture2D(4, 4, TextureFormat.ARGB32, false);
-                m_ThumbnailUrl = json["thumbnail"]["url"].ToString();
+                m_ThumbnailUrl = json?["thumbnail"]?["url"]?.ToString();
                 if (!string.IsNullOrEmpty(thumbnailSuffix))
                 {
                     m_ThumbnailUrl = string.Format("{0}={1}", m_ThumbnailUrl, thumbnailSuffix);
