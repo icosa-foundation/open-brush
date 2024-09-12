@@ -114,7 +114,7 @@ namespace TiltBrush
                         continue;
                     }
 
-                    // We now don't filter the liked Poly objects, but we don't want to return liked Tilt Brush
+                    // We now don't filter the liked Icosa objects, but we don't want to return liked Tilt Brush
                     // sketches so in this section we filter out anything with a Tilt file in it.
                     bool skipObject = false;
                     foreach (var format in asset["formats"])
