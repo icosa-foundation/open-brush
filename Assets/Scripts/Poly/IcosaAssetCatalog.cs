@@ -284,8 +284,8 @@ namespace TiltBrush
 
         public void RequestRefresh(IcosaSetType type)
         {
-            // We don't update featured except on startup.
-            if (type != IcosaSetType.Featured && (App.IcosaIsLoggedIn || App.GoogleIdentity.LoggedIn))
+            // We don't update featured except on startup
+            if (type != IcosaSetType.Featured && App.IcosaIsLoggedIn)
             {
                 m_AssetSetByType[type].m_RefreshRequested = true;
             }
