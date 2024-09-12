@@ -778,10 +778,6 @@ namespace TiltBrush
             // Some assets (old ones? broken ones?) are missing the "formatComplexity" field
             var gltfFormat = json["formats"].First(x => x["formatType"].ToString() == "GLTF");
             string gltfTriCount = gltfFormat?["formatComplexity"]?["triangleCount"]?.ToString();
-            if (gltfTriCount == null)
-            {
-                Debug.Log($"{m_AssetId} has no tricount");
-            }
             m_GltfTriangleCount = Int32.Parse(gltfTriCount ?? "1");
 
             m_DownloadedFile = null;
