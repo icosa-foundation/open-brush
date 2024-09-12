@@ -300,12 +300,10 @@ namespace TiltBrush
             // Base Refresh updates the modal parts of the panel, and we always want those refreshed.
             base.RefreshPage();
 
-            bool requiresIcosa = m_CurrentSketchSet == SketchSetType.Liked;
+            bool requiresIcosa = m_CurrentSketchSet == SketchSetType.Liked || m_CurrentSketchSet == SketchSetType.Curated;
             bool requiresGoogle = m_CurrentSketchSet == SketchSetType.Drive;
 
             bool icosaDown = VrAssetService.m_Instance.NoConnection && requiresIcosa;
-            m_NoIcosaConnectionMessage.SetActive(icosaDown);
-
             m_NoIcosaConnectionMessage.SetActive(icosaDown);
 
             bool outOfDate = !icosaDown && !VrAssetService.m_Instance.Available && requiresIcosa;
