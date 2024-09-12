@@ -465,7 +465,6 @@ namespace TiltBrush
                     }
                     else
                     {
-                        Debug.Log($"Adding {info.HumanName} {info.AssetId}");
                         sketches.Add(sketch);
                         assetIds.Add(info.AssetId, sketch);
                     }
