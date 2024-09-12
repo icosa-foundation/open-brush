@@ -97,7 +97,7 @@ namespace TiltBrush
                 Icons.Add(icon);
             }
 
-            m_CurrentSet = IcosaSetType.Featured;
+            m_CurrentSet = IcosaSetType.User;
 
             // Make sure Poly gallery button starts at greyscale when panel is initialized
             m_PolyGalleryRenderer.material.SetFloat("_Grayscale", 1);
