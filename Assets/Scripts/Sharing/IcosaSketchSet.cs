@@ -461,9 +461,7 @@ namespace TiltBrush
                     }
                     if (assetIds.ContainsKey(info.AssetId))
                     {
-                        Debug.Log($"Duplicate {info.HumanName} {info.AssetId}");
-                        Debug.LogErrorFormat("VR Asset Service has returned two objects with asset id '{0}'.",
-                            info.AssetId);
+                        Debug.LogWarning($"VR Asset Service has returned two objects for: {info.AssetId} {info.HumanName}");
                     }
                     else
                     {
