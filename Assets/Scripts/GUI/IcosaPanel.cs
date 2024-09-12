@@ -124,6 +124,7 @@ namespace TiltBrush
             m_NoLikesMessage.SetActive(false);
             m_NoAuthoredModelsMessage.SetActive(false);
             m_NotLoggedInMessage.SetActive(false);
+            m_InternetError.SetActive(false);
             if (VrAssetService.m_Instance.NoConnection)
             {
                 m_NoPolyConnectionMessage.SetActive(true);
