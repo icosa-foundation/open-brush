@@ -84,9 +84,7 @@ namespace TiltBrush
             {
                 m_Owner = App.IcosaAssetCatalog;
                 HumanName = json["displayName"].ToString();
-                // AssetId = json["name"].ToString().Substring(7); // strip out "assets/"
-                // AssetId = json["ID"].ToString();
-                AssetId = json["url"].ToString();
+                AssetId = json["assetId"].ToString();
                 AccountName = accountName;
                 var rotation = json["presentationParams"]?["orientingRotation"];
                 if (rotation != null)
