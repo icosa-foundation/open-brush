@@ -193,8 +193,8 @@ namespace TiltBrush
                 }
             }
 
-            bool internetError =
-                App.IcosaAssetCatalog.NumCloudModels(IcosaSetType.Featured) == 0;
+            // Use featured model count as a proxy for "icosa is working"
+            bool internetError = App.IcosaAssetCatalog.NumCloudModels(IcosaSetType.Featured) == 0;
             m_InternetError.SetActive(internetError);
 
             RefreshPanelText();
