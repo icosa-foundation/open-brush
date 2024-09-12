@@ -501,7 +501,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7691576060649472
-    m_Localized: Poly Library
+    m_Localized: Icosa Library
     m_Metadata:
       m_Items: []
   - m_Id: 7691821452599296
@@ -3465,7 +3465,7 @@ MonoBehaviour:
   - m_Id: 164911761917042688
     m_Localized: 'Sign in to an Icosa account to allow
 
-                                        uploading to Icosa.'
+      uploading to Icosa.'
     m_Metadata:
       m_Items: []
   - m_Id: 164911966586494976
