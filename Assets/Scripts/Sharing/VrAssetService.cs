@@ -882,21 +882,26 @@ namespace TiltBrush
 
         public AssetLister ListAssets(IcosaSetType type)
         {
-            string uri = null;
+            string uri = IcosaApiRoot;
+
             switch (type)
             {
                 case IcosaSetType.Liked:
-                    uri = $"{IcosaApiRoot}{kUserLikesUri}?format=BLOCKS&orderBy=LIKED_TIME&pageSize={m_AssetsPerPage}";
+                    uri += $"{kUserLikesUri}?orderBy=LIKED_TIME";
                     break;
                 case IcosaSetType.User:
-                    uri = $"{IcosaApiRoot}{kUserAssetsUri}?format=BLOCKS&orderBy=NEWEST&pageSize={m_AssetsPerPage}";
+                    uri += $"{kUserAssetsUri}?orderBy=NEWEST";
                     break;
                 case IcosaSetType.Featured:
-                    uri = $"{IcosaApiRoot}{kListAssetsUri}" +
-                        $"?format=BLOCKS&curated=true&orderBy=NEWEST&pageSize={m_AssetsPerPage}";
+                    // Old way - newest curated
+                    // uri += $"{kListAssetsUri}" + $"?curated=true&orderBy=NEWEST";
+                    // For now try just sorting by "best"
+                    uri += $"{kListAssetsUri}" + $"?orderBy=BEST";
+                    // Something like orderBy=TRENDING would be good - BEST but weighted by recency
                     break;
             }
-            return new AssetLister(uri, "Failed to connect to Icosa.");
+            uri += $"&format=GLTF2&pageSize={m_AssetsPerPage}";
+            return new AssetLister(uri, errorMessage: "Failed to connect to Icosa.");
         }
 
         // Download a tilt file to a temporary file and load it
