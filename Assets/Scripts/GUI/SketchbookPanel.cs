@@ -579,10 +579,12 @@ namespace TiltBrush
                             lines.Add(icon.Description);
 
                             SceneFileInfo info = m_SketchSet.GetSketchSceneFileInfo(iSketchIndex);
-                            if (info is IcosaSceneFileInfo polyInfo &&
-                                polyInfo.License != VrAssetService.kCreativeCommonsLicense)
+                            if (info is IcosaSceneFileInfo polyInfo && polyInfo.License != VrAssetService.kCreativeCommonsLicense)
                             {
-                                lines.Add(String.Format("© {0}", authors[0]));
+                                if (authors != null && authors.Length > 0)
+                                {
+                                    lines.Add($"© {authors[0]}");
+                                }
                                 lines.Add("All Rights Reserved");
                             }
                             else
