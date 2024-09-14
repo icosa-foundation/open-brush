@@ -27,8 +27,9 @@ namespace TiltBrush
         private string m_Uri;
         private string m_ErrorMessage;
         private string m_PageToken;
+        private int m_pageLimit = 10;
 
-        public bool HasMore { get { return m_PageToken != null; } }
+        public bool HasMore { get { return m_PageToken != null && Int16.Parse(m_PageToken) < m_pageLimit; } }
 
         public AssetLister(string uri, string errorMessage)
         {
