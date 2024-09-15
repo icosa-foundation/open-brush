@@ -10173,7 +10173,6 @@ Transform:
   - {fileID: 1251041024}
   - {fileID: 128408298}
   - {fileID: 8282789105019930893}
-  - {fileID: 621655958}
   - {fileID: 402490430}
   - {fileID: 621655958}
   - {fileID: 1804317401}
@@ -10447,12 +10446,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 400000, guid: 95a90b84ee174bd489f097b871d49986,
     type: 3}
   m_PrefabInstance: {fileID: 2135251106}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &621655958 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7492514809118701361, guid: 4cc8817a1d87e2247a553ebb5a78735a,
-    type: 3}
-  m_PrefabInstance: {fileID: 7492514809570787495}
   m_PrefabAsset: {fileID: 0}
 --- !u!4 &621655958 stripped
 Transform:
@@ -31457,9 +31450,6 @@ MonoBehaviour:
       type: 3}
   - m_Type: 0
     m_StencilPrefab: {fileID: 7435273578356639229, guid: 5f54d1338beef174ea5bd7dbe2262304,
-      type: 3}
-  - m_Type: 9
-    m_StencilPrefab: {fileID: 114000010150538192, guid: ecebdb0665594e5fa660d0791b73b7f9,
       type: 3}
   - m_Type: 9
     m_StencilPrefab: {fileID: 114000010150538192, guid: ecebdb0665594e5fa660d0791b73b7f9,
