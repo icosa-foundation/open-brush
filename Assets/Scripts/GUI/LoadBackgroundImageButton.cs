@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.IO;
 using UnityEngine;
+using UnityEngine.Localization;
+
 namespace TiltBrush
 {
 
@@ -24,17 +27,38 @@ namespace TiltBrush
         {
             if (ReferenceImage != null)
             {
-                SetDescriptionText(ReferenceImage.FileName);
+
+                // null if image doesn't have error
+                string errorMessage = ReferenceImage.ImageErrorExtraDescription();
+
+                if (errorMessage != null)
+                {
+                    SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName), errorMessage);
+                }
+                else
+                {
+                    SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName));
+                }
+
             }
         }
-
         override protected void OnButtonPressed()
         {
             if (ReferenceImage == null)
             {
                 return;
             }
-            SceneSettings.m_Instance.LoadCustomSkybox(ReferenceImage.FileName);
+            if (ReferenceImage.NotLoaded)
+            {
+                // Load-on-demand.
+                ReferenceImage.SynchronousLoad();
+            }
+
+
+            // TODO we had problems with seams when using the cached image.
+            // Likely related to mipmaps but I couldn't track down the cause.
+            // SceneSettings.m_Instance.LoadCustomSkyboxFromCache(ReferenceImage.FilePath);
+            SceneSettings.m_Instance.LoadCustomSkybox(Path.GetFileName(ReferenceImage.FilePath));
         }
 
         override public void ResetState()
@@ -52,6 +76,8 @@ namespace TiltBrush
             {
                 SetButtonAvailable(available);
             }
+
+            RefreshDescription();
         }
 
         public void Set360ButtonTexture(Texture2D rTexture, float aspect = -1)
