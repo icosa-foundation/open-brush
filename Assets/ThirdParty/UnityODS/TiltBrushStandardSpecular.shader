@@ -59,6 +59,15 @@ Shader "TiltBrush/Standard (Specular setup)"
 #define TB_VERT_ADD VertexOutputForwardAdd
 #endif
 
+// Has a non-empty shadow caster output struct (it's an error to have empty structs on some platforms...)
+#if !defined(V2F_SHADOW_CASTER_NOPOS_IS_EMPTY) || defined(UNITY_STANDARD_USE_SHADOW_UVS)
+#define UNITY_STANDARD_USE_SHADOW_OUTPUT_STRUCT 1
+#endif
+
+#ifdef UNITY_STEREO_INSTANCING_ENABLED
+#define UNITY_STANDARD_USE_STEREO_SHADOW_OUTPUT_STRUCT 1
+#endif
+
   ENDCG
 
   SubShader
@@ -176,7 +185,7 @@ Shader "TiltBrush/Standard (Specular setup)"
       #include "UnityStandardShadow.cginc"
 
       void vertShadowCasterTB(VertexInput v
-	    , out float4 opos : SV_POSITION
+
 	    #ifdef UNITY_STANDARD_USE_SHADOW_OUTPUT_STRUCT
 	    , out VertexOutputShadowCaster o
 	    #endif
@@ -186,7 +195,7 @@ Shader "TiltBrush/Standard (Specular setup)"
       )
       {
         PrepForOds(v.vertex);
-        vertShadowCaster(v, opos
+        vertShadowCaster(v
     #ifdef UNITY_STANDARD_USE_SHADOW_OUTPUT_STRUCT
                                         ,o
     #endif
@@ -417,7 +426,6 @@ Shader "TiltBrush/Standard (Specular setup)"
 
       #include "UnityStandardShadow.cginc"
       void vertShadowCasterTB(VertexInput v
-	    , out float4 opos : SV_POSITION
 	    #ifdef UNITY_STANDARD_USE_SHADOW_OUTPUT_STRUCT
 	    , out VertexOutputShadowCaster o
 	    #endif
@@ -427,7 +435,7 @@ Shader "TiltBrush/Standard (Specular setup)"
       )
       {
         PrepForOds(v.vertex);
-        vertShadowCaster(v, opos
+        vertShadowCaster(v
     #ifdef UNITY_STANDARD_USE_SHADOW_OUTPUT_STRUCT
                                         ,o
     #endif

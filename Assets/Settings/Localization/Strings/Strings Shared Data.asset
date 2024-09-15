@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
   m_Name: Strings Shared Data
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   m_TableCollectionName: Strings
   m_TableCollectionNameGuidString: c84355079ab3f3e4f8f3812258805f86
   m_Entries:
@@ -3321,6 +3321,18 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 241060493515120640
     m_Key: ADVANCEDTOOLS_PANEL_TEXTURE_PAINT_TRAY_MAKE_PAINTABLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238556149774557184
+    m_Key: PANEL_REFERENCE_ICONIMAGE_LOADERRORTEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238935604850335744
+    m_Key: PANEL_REFERENCE_ICONBACKGROUNDIMAGE_LOADERRORTEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 242372529028341760
+    m_Key: PANEL_REFERENCE_ICONIMAGE_GENERICERRORTEXT
     m_Metadata:
       m_Items: []
   m_Metadata:
