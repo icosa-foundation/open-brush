@@ -36,7 +36,7 @@ Properties {
 		Cull off ZWrite Off
 
 		CGPROGRAM
-		#pragma target 3.0
+		#pragma target 4.0
 		#pragma surface surf StandardSpecular vertex:vert
 		#pragma multi_compile __ AUDIO_REACTIVE
 		#pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
@@ -122,7 +122,7 @@ Properties {
 		void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
 			if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
-			if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy) >= _Dissolve) discard;
+			if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
 
 			// Hardcode some shiny specular values
 			o.Smoothness = .9;
