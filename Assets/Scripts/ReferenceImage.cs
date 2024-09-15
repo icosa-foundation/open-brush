@@ -344,6 +344,14 @@ namespace TiltBrush
                 // TODO Move into the async code path?
                 var importer = new RuntimeSVGImporter();
                 var tex = importer.ImportAsTexture(FilePath);
+
+                if (!ValidateDimensions(tex.width, tex.height, App.PlatformConfig.ReferenceImagesMaxDimension))
+                {
+                    m_State = ImageState.ErrorImageTooLarge;
+                    Object.Destroy(tex);
+                    return true;
+                }
+
                 ImageCache.SaveImageCache(tex, FilePath);
                 m_ImageAspect = (float)tex.width / tex.height;
                 int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
@@ -370,6 +378,14 @@ namespace TiltBrush
                 RadianceHDRTexture hdr = new RadianceHDRTexture(fileData);
                 Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
                 tex = hdr.texture;
+
+                if (!ValidateDimensions(tex.width, tex.height, App.PlatformConfig.ReferenceImagesMaxDimension))
+                {
+                    m_State = ImageState.ErrorImageTooLarge;
+                    Object.Destroy(tex);
+                    return true;
+                }
+
                 ImageCache.SaveImageCache(tex, FilePath);
                 m_ImageAspect = (float)tex.width / tex.height;
                 int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
@@ -495,6 +511,14 @@ namespace TiltBrush
                     // from WWW.LoadImageIntoTexture
                     Texture2D inTex = new Texture2D(2, 2, TextureFormat.RGBA32, true);
                     loader.LoadImageIntoTexture(inTex);
+
+                    if (!ValidateDimensions(inTex.width, inTex.height, App.PlatformConfig.ReferenceImagesMaxDimension))
+                    {
+                        m_State = ImageState.ErrorImageTooLarge;
+                        Object.Destroy(inTex);
+                        yield break;
+                    }
+
                     DownsizeTexture(inTex, ref m_Icon, ReferenceImageCatalog.MAX_ICON_TEX_DIMENSION);
                     m_Icon.wrapMode = TextureWrapMode.Clamp;
                     m_ImageAspect = (float)inTex.width / inTex.height;
@@ -548,6 +572,18 @@ namespace TiltBrush
                 if (imageLoad != null)
                 {
                     ControllerConsoleScript.m_Instance.AddNewLine(imageLoad.Message, true);
+                    if (imageLoad.imageLoadErrorCode == ImageLoadError.ImageLoadErrorCode.ImageTooLargeError)
+                    {
+                        m_State = ImageState.ErrorImageTooLarge;
+                    }
+                    else
+                    {
+                        m_State = ImageState.Error;
+                    }
+
+                    reader = null;
+                    yield break;
+
                 }
             }
 
@@ -578,8 +614,6 @@ namespace TiltBrush
             else
             {
                 // Problem reading the file?
-                // images with state ImageState.Error display a generic error message 'Image failed to load' when hovering over them in the reference panel
-                // TODO: use more specific error messages (e.g "Too large dimensions", "Unknown format") that are set in ImageUtils.cs? (that is called by ThreadedImageReader.cs)
                 m_State = ImageState.Error;
                 reader = null;
                 yield break;
@@ -593,6 +627,21 @@ namespace TiltBrush
         {
             FileInfo info = new FileInfo(m_Path);
             return info.Length <= App.PlatformConfig.ReferenceImagesMaxFileSize;
+        }
+
+        private bool ValidateDimensions(int imageWidth, int imageHeight, int maxDimension)
+        {
+
+            // Cast to long as maxDimension is big enough on desktop to overflow
+            if (imageWidth * imageHeight > ((long)maxDimension * (long)maxDimension))
+            {
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+
         }
 
         public string GetExportName()

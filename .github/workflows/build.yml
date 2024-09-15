@@ -10,13 +10,16 @@ on:  # yamllint disable-line rule:truthy
       - "**"
     tags:
       - "v*"
+  schedule:
+    - cron: "34 19 * * sat"  # Weekly, Saturday at 19:34 UTC
 
 env:
-  UNITY_VERSION: "2021.3.30f1"
+  UNITY_VERSION: "2022.3.34f1"
   PHOTON_PAT: ${{ secrets.PHOTON_PAT }}  # This needs to be here, since you can't use a ${{ secrets }} within an if: condition
 jobs:
   configuration:
     if: |
+      (github.event_name == 'schedule') ||
       (github.event_name == 'pull_request') ||
       (
         github.event_name == 'push' &&
@@ -205,6 +208,7 @@ jobs:
             targetPlatform: StandaloneOSX
             vrsdk: Monoscopic
             cache: MacOS
+            packages_to_remove: com.meta.xr.sdk.core
 
           - name: Android OpenXR
             targetPlatform: Android
@@ -259,28 +263,27 @@ jobs:
       - name: Set masking
         run: echo "::add-mask::DoNotStealThis1"
       - name: Free extra space
-        # This takes several minutes, so we only do it where required. As of 12/10/2023, this increases free space from 18GB to 41GB
-        if: matrix.targetPlatform == 'Android' || matrix.targetPlatform == 'StandaloneWindows64'
+        # As of 02/08/2024, this increases free space from 21GB to 47GB
         run: |
           echo "Initial free space"
           df -h /
           echo "Removing all pre-loaded docker images"
-          docker rmi $(docker image ls -aq)  # Removes ~6GB
+          docker rmi $(docker image ls -aq)  # Removes ~3GB
           df -h /
           echo "Listing 100 largest packages"
           dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
           echo "Removing unneeded large packages"
           sudo apt update
-          sudo apt remove -y '^ghc-.*' '^dotnet-.*' azure-cli powershell google-chrome-stable firefox microsoft-edge-stable 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' default-jre-headless  # Removes ~7GB  # Adding 'google-cloud-*' removes another 750MB but takes about a minute; not worth it
+          sudo apt remove -y '^ghc-.*' '^dotnet-.*' azure-cli powershell google-chrome-stable firefox microsoft-edge-stable 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' default-jre-headless  mono-devel libgl1-mesa-dri # Removes ~6GB
           sudo apt autoremove -y
           sudo apt clean
           df -h /
-          echo "Listing 100 largest remaining packages"
-          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
-          echo "Removing remaining large directories"
+          echo "Removing Android"
+          sudo rm -rf /usr/local/lib/android # Removes ~9GB
           df -h /
+          echo "Removing remaining large directories"
           rm -rf /usr/share/dotnet/  # Removes ~1GB
-          rm -rf "$AGENT_TOOLSDIRECTORY"  # Removes ~6GB
+          rm -rf "$AGENT_TOOLSDIRECTORY"  # Removes ~7GB
           echo "Disk space after cleanup"
           df -h /
 
@@ -550,7 +553,7 @@ jobs:
 
   signmacos:
     name: Sign the MacOS .app
-    needs: [build]
+    needs: [configuration, build]
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -628,7 +631,7 @@ jobs:
 
   createdmg:
     name: Create and Notarize DMG
-    needs: [signmacos]
+    needs: [configuration, signmacos]
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -695,7 +698,7 @@ jobs:
     steps:
       - name: "Build Changelog"
         id: changelog
-        uses: mikepenz/release-changelog-builder-action@v4
+        uses: mikepenz/release-changelog-builder-action@v5
         with:
           fromTag: "${{ needs.configuration.outputs.previousrelease }}"
           toTag: "${{ needs.configuration.outputs.currentrelease }}"
@@ -818,7 +821,7 @@ jobs:
     steps:
       - name: "Build Changelog"
         id: changelog
-        uses: mikepenz/release-changelog-builder-action@v4
+        uses: mikepenz/release-changelog-builder-action@v5
         with:
           fromTag: "${{ needs.configuration.outputs.previousfullrelease }}"
           toTag: "${{ needs.configuration.outputs.currentrelease }}"
@@ -885,7 +888,7 @@ jobs:
 
   publish_steam:
     name: Publish Steam Release
-    needs: [build, signmacos]
+    needs: [configuration, build, signmacos]
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -945,7 +948,7 @@ jobs:
           CHANNEL: beta
       - name: Update steam login secret
         run: |
-          base64 -i /home/runner/Steam/config/config.vdf | gh secret set -R icosa-foundation/open-brush STEAM_CONFIG_VDF
+          base64 -i /home/runner/Steam/config/config.vdf | gh secret set --visibility all --org icosa-foundation STEAM_CONFIG_VDF
           md5sum /home/runner/Steam/config/config.vdf
         env:
           GITHUB_TOKEN: ${{ secrets.SECRET_UPDATER_PAT }}
@@ -1065,7 +1068,7 @@ jobs:
   publish_oculus_quest:
     name: Publish Oculus Quest 2+ Release
     needs: [configuration, build]
-    runs-on: ubuntu-latest
+    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -1091,7 +1094,7 @@ jobs:
 
           cd releases
           unzip symbols.zip
-          curl -L 'https://www.oculus.com/download_app/?id=5159709737372459' -o ovr-platform-util
+          curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
           chmod 755 ovr-platform-util
 
           if [ "$PRERELEASE" == "false" ]
@@ -1105,7 +1108,7 @@ jobs:
   publish_oculus_quest1:
     name: Publish Oculus Quest 1 Release
     needs: [configuration, build]
-    runs-on: ubuntu-latest
+    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -1131,7 +1134,7 @@ jobs:
 
           cd releases1
           unzip symbols.zip
-          curl -L 'https://www.oculus.com/download_app/?id=5159709737372459' -o ovr-platform-util
+          curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
           chmod 755 ovr-platform-util
 
           if [ "$PRERELEASE" == "false" ]
@@ -1145,7 +1148,7 @@ jobs:
   publish_oculus_rift:
     name: Publish Oculus Rift Release
     needs: [configuration, build]
-    runs-on: ubuntu-latest
+    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -1169,7 +1172,7 @@ jobs:
           mv build_windows_rift/StandaloneWindows64/ releases/OpenBrush_Rift_$VERSION/
           cd releases
           zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
-          curl -L 'https://www.oculus.com/download_app/?id=5159709737372459' -o ovr-platform-util
+          curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
           chmod 755 ovr-platform-util
 
           if [ "$PRERELEASE" == "false" ]
@@ -1230,7 +1233,7 @@ jobs:
   publish_ios_zapbox:
     name: Publish Zapbox iOS
     needs: [configuration, build]
-    runs-on: macos-13  # As of 2024-03-01, macos-latest still points to Mac OS 12, which has an older XCode and gives ITMS-90725: SDK version issue when we submit.
+    runs-on: macos-latest
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -1245,13 +1248,33 @@ jobs:
             Gemfile.lock
             fastlane
 
+      - name: Free extra space
+        # As of 02/08/2024, this increases free space from 21GB to 47GB
+        run: |
+          echo "Initial free space"
+          df -h
+          rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "Disk space after cleanup of \$AGENT_TOOLSDIRECTORY"
+          df -h
+          echo "Deleting all Xcode versions except 15.4"
+          find /Applications/Xcode_* -maxdepth 0 -type d ! -name 'Xcode_15.4.app' -exec rm -rf {} \;
+          df -h
+          find /Applications/Xcode* -name "*.app" -exec du -mcsh {} \;  # Shows Xcode app sizes
+
       - name: Download iOS Artifact
         uses: actions/download-artifact@v4
         with:
           name: iOS Zapbox
           path: build
 
-      - name: Fix File Permissions and Run fastlane
+      - name: Fix File Permissions
+        run: |
+          export FILENAME=$(basename $(readlink -f build/iOS/OpenBrush*))
+          export IOS_BUILD_PATH=$(pwd)/build/iOS/${FILENAME}
+
+          find $IOS_BUILD_PATH -type f -name "*.sh" -exec chmod +x {} \;
+
+      - name: Run fastlane
         env:
           APPLE_CONNECT_EMAIL: ${{ secrets.APPLE_CONNECT_EMAIL }}
           APPLE_DEVELOPER_EMAIL: ${{ secrets.APPLE_DEVELOPER_EMAIL }}
@@ -1274,6 +1297,12 @@ jobs:
           export FILENAME=$(basename $(readlink -f build/iOS/OpenBrush*))
           export IOS_BUILD_PATH=$(pwd)/build/iOS/${FILENAME}
 
-          find $IOS_BUILD_PATH -type f -name "**.sh" -exec chmod +x {} \;
           bundle install
           bundle exec fastlane ios ${FASTLANE_LANE}
+
+      - name: Save logs
+        uses: actions/upload-artifact@v4
+        if: ${{ failure() }}
+        with:
+          name: fastlane logs
+          path: /Users/runner/Library/Logs/gym/
