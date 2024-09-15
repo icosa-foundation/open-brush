@@ -98,7 +98,9 @@ namespace TiltBrush
         //    out of date for a frame when controllers change.
         private VrControllers m_VrControls;
         public VrControllers VrControls { get { return m_VrControls; } }
-
+#if OCULUS_SUPPORTED
+        [NonSerialized] public OVRManager m_OvrManager;
+#endif
         private bool m_HasVrFocus = true;
 
         private Bounds? m_RoomBoundsAabbCached;
@@ -209,10 +211,10 @@ namespace TiltBrush
             // ---------------------------------------------------------------------------------------- //
             // OculusVR
             // ---------------------------------------------------------------------------------------- //
-            OVRManager manager = gameObject.AddComponent<OVRManager>();
-            manager.trackingOriginType = OVRManager.TrackingOrigin.Stage;
-            manager.useRecommendedMSAALevel = false;
-            manager.isInsightPassthroughEnabled = true;
+            m_OvrManager = gameObject.AddComponent<OVRManager>();
+            m_OvrManager.trackingOriginType = OVRManager.TrackingOrigin.Stage;
+            m_OvrManager.useRecommendedMSAALevel = false;
+            m_OvrManager.isInsightPassthroughEnabled = true;
 
             // adding components to the VR Camera needed for fading view and getting controller poses.
             m_VrCamera.gameObject.AddComponent<OculusCameraFade>();
@@ -235,9 +237,6 @@ namespace TiltBrush
                     var unused = msg.Data.AgeCategory;
                 });
             }
-#if PASSTHROUGH_SUPPORTED
-            OVRManager.eyeFovPremultipliedAlphaModeEnabled = false;
-#endif
 
 #endif // OCULUS_SUPPORTED
 
