@@ -130,7 +130,7 @@ Category {
       fixed4 frag (v2f i) : SV_Target
       {
         if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-        if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+        if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
 
         float4 c = i.color * _TintColor * tex2D(_MainTex, i.texcoord);
         c = encodeHdr(c.rgb * c.a);

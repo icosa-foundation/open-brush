@@ -77,6 +77,7 @@ Properties {
 			float2 tex : TEXCOORD0;
 			float3 viewDir;
             uint id : SV_VertexID;
+			float4 screenPos;
 			INTERNAL_DATA
 		};
 
@@ -121,7 +122,7 @@ Properties {
 		void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
 			if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
-			if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+			if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy) >= _Dissolve) discard;
 
 			// Hardcode some shiny specular values
 			o.Smoothness = .9;
