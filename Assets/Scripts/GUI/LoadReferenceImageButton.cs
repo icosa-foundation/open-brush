@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using UnityEngine.Localization;
+using UnityEngine;
+
 namespace TiltBrush
 {
 
@@ -23,7 +26,19 @@ namespace TiltBrush
         {
             if (ReferenceImage != null)
             {
-                SetDescriptionText(ReferenceImage.FileName);
+
+                // null if image doesn't have error
+                string errorMessage = ReferenceImage.ImageErrorExtraDescription();
+
+                if (errorMessage != null)
+                {
+                    SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName), errorMessage);
+                }
+                else
+                {
+                    SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName));
+                }
+
             }
         }
 
@@ -68,6 +83,8 @@ namespace TiltBrush
             {
                 SetButtonAvailable(available);
             }
+
+            RefreshDescription();
         }
     }
 } // namespace TiltBrush
