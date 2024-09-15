@@ -250,6 +250,33 @@ namespace TiltBrush
             }
         }
 
+        // note: this takes in the full file path, instead of just the name
+        public void LoadCustomSkyboxFromCache(string filepath)
+        {
+            Texture2D tex = ImageCache.LoadImageCache(filepath);
+
+            if (tex == null)
+            {
+                LoadCustomSkybox(Path.GetFileName(filepath));
+            }
+            else
+            {
+                float aspectRatio = tex.width / tex.height;
+                if (aspectRatio > 1.5)
+                {
+                    m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomSkybox");
+                }
+                else
+                {
+                    m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomStereoSkybox");
+                }
+                m_CustomSkyboxMaterial.mainTexture = tex;
+                m_CustomSkyboxMaterial.SetColor("_Tint", Color.gray);
+                RenderSettings.skybox = m_CustomSkyboxMaterial;
+                RenderSettings.ambientMode = AmbientMode.Skybox;
+            }
+        }
+
         public Quaternion GradientOrientation
         {
             get { return m_GradientSkew; }
