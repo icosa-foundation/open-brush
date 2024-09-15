@@ -841,7 +841,10 @@ namespace TiltBrush
                     errorMessage = "Failed to access your liked sketches.";
                     break;
                 case SketchSetType.Curated:
-                    filteredUriPath = CombineQueryParams(kListAssetsUri, "format=TILT&curated=true&orderBy=NEWEST");
+                    // Old way - newest curated
+                    // filteredUriPath = CombineQueryParams(kListAssetsUri, "format=TILT&curated=true&orderBy=NEWEST");
+                    // For now try just sorting by "best"
+                    filteredUriPath = CombineQueryParams(kListAssetsUri, "format=TILT&orderBy=BEST");
                     errorMessage = "Failed to access featured sketches.";
                     break;
             }
