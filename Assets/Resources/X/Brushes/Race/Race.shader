@@ -100,7 +100,7 @@ Category {
       fixed4 frag (v2f i) : COLOR {
 
         if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-        if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+        if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
 
         // copied from Digital.shader with a modification on the chance
         // that a tile will connect with its neighbor

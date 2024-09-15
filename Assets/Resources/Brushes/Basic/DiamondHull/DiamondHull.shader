@@ -52,6 +52,7 @@ Shader "Brush/Special/DiamondHull" {
       uniform half _Opacity;
 
       struct Input {
+        float4 vertex : SV_POSITION;
         float4 color : Color;
         float2 tex : TEXCOORD0;
         float3 viewDir;
@@ -182,7 +183,7 @@ Shader "Brush/Special/DiamondHull" {
       void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
         if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
-        if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+        if (_Dissolve < 1 && Dither8x8(IN.vertex.xy) >= _Dissolve) discard;
 
         // Hardcode some shiny specular values
         o.Smoothness = .8;

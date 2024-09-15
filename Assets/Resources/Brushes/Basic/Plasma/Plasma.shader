@@ -125,7 +125,7 @@ Category {
       fixed4 frag (v2f i) : COLOR
       {
         if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-        if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+        if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
 
         // Workaround for b/30500118, caused by b/30504121
         i.color.a = saturate(i.color.a);

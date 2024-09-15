@@ -1,8 +1,8 @@
 {
   "dependencies": {
     "com.ixxy.polyhydra.core": "https://github.com/IxxyXR/polyhydra-core.git#upm",
-    "com.watertrans.glyphloader": "https://github.com/icosa-mirror/GlyphLoader-Unity.git#upm",
     "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
+    "com.watertrans.glyphloader": "https://github.com/icosa-mirror/GlyphLoader-Unity.git#upm",
     "com.meta.xr.sdk.core": "https://github.com/icosa-mirror/com.meta.xr.sdk.core.git#66.0.0-openbrush",
     "com.meta.xr.sdk.platform": "60.0.0",
     "com.unity.2d.sprite": "1.0.0",
