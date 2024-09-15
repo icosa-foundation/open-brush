@@ -79,7 +79,7 @@ platform :ios do
     build_app( #alias: gym
       project: "#{ENV['IOS_BUILD_PATH']}/Unity-iPhone.xcodeproj",
       scheme: 'Unity-iPhone',
-      xcargs: '-allowProvisioningUpdates'
+      xcargs: '-allowProvisioningUpdates OTHER_LDFLAGS="-ld_classic"'
     )
   end
 
