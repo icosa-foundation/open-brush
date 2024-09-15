@@ -175,6 +175,7 @@ namespace TiltBrush
                             // In some cases, we should look for a different format as backup.
                             if (requestedType == VrAssetFormat.GLTF2)
                             {
+                                Debug.LogWarning($"No GLTF2 format found for {m_Asset.Id}. Trying GLTF1.");
                                 requestedType = VrAssetFormat.GLTF;
                             }
                             else
