@@ -9,9 +9,6 @@ public class VrStylusHandler : StylusHandler
     [SerializeField] private GameObject _cluster_middle;
     [SerializeField] private GameObject _cluster_back;
 
-    [SerializeField] private GameObject _left_touch_controller;
-    [SerializeField] private GameObject _right_touch_controller;
-
     private bool _inUiInteraction = false;
 
     public bool InUiInteraction
@@ -83,17 +80,6 @@ public class VrStylusHandler : StylusHandler
 
         // Select the right/left hand stylus pose to be used
         string MX_Ink_Pose = _stylus.isOnRightHand ? MX_Ink_Pose_Right : MX_Ink_Pose_Left;
-
-        // Hide the touch controller that is currently inactive, depends on stylus handededness (see stylus settings in VR shell UI)
-        try
-        {
-            _right_touch_controller.SetActive(!_stylus.isOnRightHand || !_stylus.isActive);
-            _left_touch_controller.SetActive(_stylus.isOnRightHand || !_stylus.isActive);
-        }
-        catch (Exception e)
-        {
-            Debug.LogError(e.Message);
-        }
 
         if (OVRPlugin.GetActionStatePose(MX_Ink_Pose, out OVRPlugin.Posef handPose))
         {
