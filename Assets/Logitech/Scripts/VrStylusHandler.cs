@@ -55,7 +55,7 @@ public class VrStylusHandler : StylusHandler
     private bool _tipHasVibrated = false;
     private bool _middleHasVibrated = false;
     private bool _doubleTapHasVibrated = false;
-    private float _hapticClickDuration = 0.1f;
+    private float _hapticClickDuration = 0.01f;
     private float _hapticClickAmplitude = 0.9f;
     private float _hapticClickMinThreshold = 0.2f;
 
