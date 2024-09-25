@@ -59,7 +59,7 @@ namespace TiltBrush
         private List<float> m_FrameTimes;
         private const int k_NumFrames = 75 * 6; // enough space for six seconds of samples.
         private Coroutine m_UpdateCoroutine;
-        private int[] m_ValidFramerates = { 90, 75, 60, 1 };
+        private int[] m_ValidFramerates = { 90, 75, 60, 40, 1 };
         private List<Sample> m_Samples = new List<Sample>();
 
         public static ProfilingManager Instance
@@ -216,6 +216,7 @@ namespace TiltBrush
             string branch = GitUtils.GetGitBranchName();
             message.AppendLine($"Git branch: {branch}");
 #endif
+            message.AppendLine($"Build: {App.GetStartupString()}");
             message.AppendLine($"Profile name: {profileName} Filename: {fileName} Human name: {humanName}");
 
             if (App.UserConfig.Profiling.PerfgateOutput)

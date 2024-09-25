@@ -473,7 +473,7 @@ namespace TiltBrush
             Resources.UnloadUnusedAssets();
         }
 
-        static string GetStartupString()
+        public static string GetStartupString()
         {
             string str = $"{App.kAppDisplayName} {Config.m_VersionNumber}";
 
