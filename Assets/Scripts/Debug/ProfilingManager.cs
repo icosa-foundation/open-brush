@@ -216,6 +216,7 @@ namespace TiltBrush
             string branch = GitUtils.GetGitBranchName();
             message.AppendLine($"Git branch: {branch}");
 #endif
+            message.AppendLine($"Build: {App.GetStartupString()}");
             message.AppendLine($"Profile name: {profileName} Filename: {fileName} Human name: {humanName}");
 
             if (App.UserConfig.Profiling.PerfgateOutput)
