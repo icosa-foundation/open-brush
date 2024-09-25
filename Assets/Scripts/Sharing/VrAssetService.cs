@@ -21,6 +21,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using Org.OpenAPITools.Api;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -33,9 +34,10 @@ namespace TiltBrush
     [Serializable]
     public enum Cloud
     {
-        None,
-        Poly,
-        Sketchfab
+        None = 0,
+        Google = 1,
+        Sketchfab = 2,
+        Icosa = 3,
     }
 
     [Serializable]
@@ -51,26 +53,20 @@ namespace TiltBrush
     {
         // Constants
 
-        const string kGltfName = "sketch.gltf";
+        const string kDefaultName = "sketch";
 
-        public const string kApiHost = "https://poly.googleapis.com";
-        private const string kAssetLandingPage = "https://vr.google.com/sketches/uploads/publish/";
-
-        private const string kListAssetsUri = "/v1/assets";
-        private const string kUserAssetsUri = "/v1/users/me/assets";
-        private const string kUserLikesUri = "/v1/users/me/likedassets";
-        private const string kGetVersionUri = "/$discovery/rest?version=v1";
-
-        public static string kPolyApiKey => App.Config.GoogleSecrets?.ApiKey;
+        private const string kListAssetsUri = "/assets";
+        private const string kUserAssetsUri = "/users/me/assets";
+        private const string kUserLikesUri = "/users/me/likedassets";
 
         public const string kCreativeCommonsLicense = "CREATIVE_COMMONS_BY";
 
-        // Poly API used by Tilt Brush.
-        // If Poly doesn't support this version, don't try to talk to Poly and prompt the user to upgrade.
-        private const string kPolyApiVersion = "v1";
+        // Icosa API used by Open Brush.
+        // If Icosa doesn't support this version, don't try to talk to Icosa and prompt the user to upgrade.
+        private const string kIcosaApiVersion = "v1";
 
         /// Change-of-basis transform
-        public static readonly TrTransform kPolyFromUnity;
+        public static readonly TrTransform kIcosaFromUnity;
 
         private static Dictionary<string, string> kGltfMimetypes = new Dictionary<string, string>
         {
@@ -96,7 +92,7 @@ namespace TiltBrush
         }
 
         // These are progress values at the start of each step.
-        // TODO(b/146892613): have a different set for Poly vs Sketchfab?
+        // TODO(b/146892613): have a different set for Icosa vs Sketchfab?
         private static double[] kProgressSteps =
         {
             0.01, // UploadStep.CreateGltf -- progress > 0 means we have begun
@@ -231,24 +227,36 @@ namespace TiltBrush
         public static VrAssetService m_Instance;
 
         // Currently this always returns the standard API host when running unit tests
-        public static string ApiHost
+        public string IcosaApiRoot
         {
             get
             {
-                string cfg = App.UserConfig?.Sharing.VrAssetServiceHostOverride;
+                string cfg = App.UserConfig?.Sharing.IcosaApiRoot;
                 if (!string.IsNullOrEmpty(cfg)) { return cfg; }
-                return kApiHost;
+                return "https://icosa.gallery/api/v1";
             }
         }
 
-        /// Returns true if Poly would accept a PATCH of the specified asset
+        public string IcosaHomePage
+        {
+            get
+            {
+                string cfg = App.UserConfig.Sharing.IcosaHomePage;
+                if (!string.IsNullOrEmpty(cfg)) { return cfg; }
+                return "https://icosa.gallery";
+            }
+        }
+
+        private string IcosaUploadPage => $"{IcosaHomePage}/uploads";
+
+        /// Returns true if Icosa would accept a PATCH of the specified asset
         /// from the specified user.
         ///
         /// Pass:
         ///   type -
         ///     Where you found the assetId. Necessary because of some shortcuts
         ///     taken by the implementation.
-        ///   userId - Poly user id of the currently-logged-in OAuth user. Get it
+        ///   userId - Icosa user id of the currently-logged-in OAuth user. Get it
         ///     with GetAccountIdAsync().
         public static async Task<bool> IsMutableAssetIdAsync(
             FileInfoType type, string assetId, string userId, string apiHost)
@@ -267,7 +275,7 @@ namespace TiltBrush
                 // Assumption: this asset is mutable because it's unlikely for a cloud-based .tilt
                 // to be in the user's Sketches/ folder. Local sketches always become un-published
                 // and mutable assets when uploaded (remember, publishing makes a copy).
-                // If someone grabbed a .tilt from their Poly asset cache and put it in Sketches/
+                // If someone grabbed a .tilt from their Icosa asset cache and put it in Sketches/
                 // that would break this assumption and I'm not sure what would happen.
                 if (userId == null) { return false; }
                 // It's mutable, but check whether it's mutable by _us_.
@@ -275,8 +283,8 @@ namespace TiltBrush
                 {
                     // The null == null case is handled earlier
                     WebRequest request = new WebRequest(
-                        $"{apiHost}{kListAssetsUri}/{assetId}?key={kPolyApiKey}",
-                        App.GoogleIdentity, UnityWebRequest.kHttpVerbGET);
+                        $"{apiHost}{kListAssetsUri}/{assetId}",
+                        App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
                     return (await request.SendAsync()).JObject?["accountId"].ToString() == userId;
                 }
                 catch (VrAssetServiceException)
@@ -294,16 +302,17 @@ namespace TiltBrush
 
         static VrAssetService()
         {
-            Matrix4x4 polyFromUnity = AxisConvention.GetFromUnity(AxisConvention.kGltfAccordingToPoly);
+            Matrix4x4 polyFromUnity = AxisConvention.GetFromUnity(AxisConvention.kGltfAccordingToIcosa);
 
             // Provably non-lossy: the mat4 is purely TRS, and the S is uniform
-            kPolyFromUnity = TrTransform.FromMatrix4x4(polyFromUnity);
+            kIcosaFromUnity = TrTransform.FromMatrix4x4(polyFromUnity);
         }
 
         // Instance API
 
         [SerializeField] private int m_AssetsPerPage;
         [SerializeField] public float m_SketchbookRefreshInterval;
+        public bool m_UseLocalFeaturedSketches = false;
 
         private float m_UploadProgress;
         private bool m_LastUploadFailed;
@@ -312,21 +321,19 @@ namespace TiltBrush
         private bool m_UserCanceledLastUpload;
         private string m_LastUploadCompleteUrl;
         TaskAndCts<(string url, long bytes)> m_UploadTask = null;
+        private string m_IcosaAccountId;
 
-        // Poly account id associated with the Google identity
-        private string m_PolyAccountId;
-
-        private enum PolyStatus
+        private enum IcosaStatus
         {
             Ok,
             Disabled,
             NoConnection
         }
-        private PolyStatus m_PolyStatus;
+        private IcosaStatus m_IcosaStatus;
 
-        public bool Available => m_PolyStatus == PolyStatus.Ok;
+        public bool Available => m_IcosaStatus == IcosaStatus.Ok;
 
-        public bool NoConnection => m_PolyStatus == PolyStatus.NoConnection;
+        public bool NoConnection => m_IcosaStatus == IcosaStatus.NoConnection;
 
         public float UploadProgress => m_UploadProgress;
 
@@ -355,16 +362,6 @@ namespace TiltBrush
             get { return m_LastUploadCompleteUrl; }
         }
 
-        private string AssetLandingPage
-        {
-            get
-            {
-                string cfg = App.UserConfig.Sharing.VrAssetServiceUrlOverride;
-                if (!string.IsNullOrEmpty(cfg)) { return cfg; }
-                return kAssetLandingPage;
-            }
-        }
-
         // Cannot be an UploadProgress setter because the getter's type is different.
         // pct is how much of that step has been completed.
         private void SetUploadProgress(UploadStep step, double pct)
@@ -381,21 +378,14 @@ namespace TiltBrush
 
         void Start()
         {
-            if (!string.IsNullOrEmpty(App.UserConfig.Sharing.VrAssetServiceHostOverride) ||
-                !string.IsNullOrEmpty(App.UserConfig.Sharing.VrAssetServiceUrlOverride))
-            {
-                Debug.LogFormat("Overriding VrAssetService Api Host: {0}  Landing Page: {1}",
-                    ApiHost, AssetLandingPage);
-            }
-
-            // If auto profiling is enabled, disable automatic Poly downloading.
+            // If auto profiling is enabled, disable automatic Icosa downloading.
             if (!App.UserConfig.Profiling.AutoProfile)
             {
-                VerifyPolyConnectionAndCheckApiVersionAsync();
+                VerifyIcosaConnectionAndCheckApiVersionAsync();
             }
             else
             {
-                m_PolyStatus = PolyStatus.Disabled;
+                m_IcosaStatus = IcosaStatus.Disabled;
             }
         }
 
@@ -464,9 +454,18 @@ namespace TiltBrush
                     AudioManager.m_Instance.UploadLoop(true);
                     var timer = System.Diagnostics.Stopwatch.StartNew();
                     m_UploadTask = new TaskAndCts<(string url, long bytes)>();
-                    Debug.Assert(backend == Cloud.Sketchfab);
-                    m_UploadTask.Task = UploadCurrentSketchSketchfabAsync(m_UploadTask.Token, tempUploadDir.Value,
-                        isDemoUpload);
+
+                    switch (backend)
+                    {
+                        case Cloud.Icosa:
+                            m_UploadTask.Task = UploadCurrentSketchIcosaAsync(m_UploadTask.Token, tempUploadDir.Value,
+                                isDemoUpload);
+                            break;
+                        case Cloud.Sketchfab:
+                            m_UploadTask.Task = UploadCurrentSketchSketchfabAsync(m_UploadTask.Token, tempUploadDir.Value,
+                                isDemoUpload);
+                            break;
+                    }
                     var (url, totalUploadLength) = await m_UploadTask.Task;
                     m_LastUploadCompleteUrl = url;
                     ControllerConsoleScript.m_Instance.AddNewLine("Upload succeeded!");
@@ -520,46 +519,44 @@ namespace TiltBrush
             m_UploadTask?.Cancel();
         }
 
-        private async void VerifyPolyConnectionAndCheckApiVersionAsync()
+        private async void VerifyIcosaConnectionAndCheckApiVersionAsync()
         {
-            m_PolyStatus = await GetPolyStatus();
+            m_IcosaStatus = await GetIcosaStatus();
         }
 
-        private static async Task<PolyStatus> GetPolyStatus()
+        private async Task<IcosaStatus> GetIcosaStatus()
         {
-            return PolyStatus.Disabled;
-
             // UserConfig override
-            if (App.UserConfig.Flags.DisablePoly ||
-                string.IsNullOrEmpty(App.Config.GoogleSecrets?.ApiKey))
+            if (App.UserConfig.Flags.DisableIcosa)
             {
-                return PolyStatus.Disabled;
+                return IcosaStatus.Disabled;
             }
 
-            string uri = String.Format("{0}{1}", ApiHost, kGetVersionUri);
             try
             {
-                var result = (await new WebRequest(uri, App.GoogleIdentity).SendAsync()).JObject;
-                string version = result["version"].Value<string>();
-                if (version == kPolyApiVersion)
+                // TODO need a do-nothing endpoint we can use for this
+                var api = new LoginApi(IcosaApiRoot);
+                var result = new Dictionary<string, string> { { "version", "v1" } }; // TODO: get version from API
+                string version = result["version"];
+                if (version == kIcosaApiVersion)
                 {
-                    return PolyStatus.Ok;
+                    return IcosaStatus.Ok;
                 }
                 else
                 {
-                    Debug.LogWarning($"Poly requires API {version} > {kPolyApiVersion}");
-                    return PolyStatus.Disabled;
+                    Debug.LogWarning($"Icosa requires API {version} > {kIcosaApiVersion}");
+                    return IcosaStatus.Disabled;
                 }
             }
             catch (VrAssetServiceException e)
             {
-                Debug.LogWarning($"Error connecting to Poly: {e}");
-                return PolyStatus.NoConnection;
+                Debug.LogWarning($"Error connecting to Icosa: {e}");
+                return IcosaStatus.NoConnection;
             }
             catch (Exception e)
             {
-                Debug.LogError($"Internal error connecting to Poly: {e}");
-                return PolyStatus.NoConnection;
+                Debug.LogError($"Internal error connecting to Icosa: {e}");
+                return IcosaStatus.NoConnection;
             }
         }
 
@@ -654,6 +651,70 @@ namespace TiltBrush
             }
         }
 
+        // TODO: Refactor. This is largely the same as UploadCurrentSketchSketchFabAsync aside from a few url changes and the response.
+        private async Task<(string, long)> UploadCurrentSketchIcosaAsync(
+            CancellationToken token, string tempUploadDir, bool _)
+        {
+            DiskSceneFileInfo fileInfo = GetWritableFile();
+
+            var currentScene = SaveLoadScript.m_Instance.SceneFile;
+            string uploadName = currentScene.Valid ? currentScene.HumanName : kDefaultName;
+            string gltfUploadName = $"{uploadName}.gltf";
+
+            SetUploadProgress(UploadStep.CreateGltf, 0);
+            // Do the glTF straight away as it relies on the meshes, not the stroke descriptions.
+            string gltfFile = Path.Combine(tempUploadDir, gltfUploadName);
+            var exportResults = await OverlayManager.m_Instance.RunInCompositorAsync(
+                OverlayType.Export, fadeDuration: 0.5f,
+                action: () => new ExportGlTF().ExportBrushStrokes(
+                    gltfFile,
+                    AxisConvention.kGltf2, binary: false, doExtras: true,
+                    includeLocalMediaContent: true, gltfVersion: 2,
+                    selfContained: true));
+            if (!exportResults.success)
+            {
+                throw new VrAssetServiceException("Internal error creating upload data.");
+            }
+
+            // Construct options to set the background color to the current environment's clear color.
+            Color bgColor = SceneSettings.m_Instance.CurrentEnvironment.m_RenderSettings.m_ClearColor;
+            IcosaService.Options options = null;
+            // options.SetBackgroundColor(bgColor);
+
+            // TODO(b/146892613): we're not uploading this at the moment. Should we be?
+            // If we don't, we can probably remove this step...?
+            SetUploadProgress(UploadStep.CreateTilt, 0);
+            var thumbnail = await CreateTiltForUploadAsync(fileInfo);
+            token.ThrowIfCancellationRequested();
+
+            // Create a copy of the .tilt file in tempUploadDir.
+            string tempTiltPath = Path.Combine(tempUploadDir, $"{uploadName}.tilt");
+            File.Copy(fileInfo.FullPath, tempTiltPath);
+
+            // Save thumbnail as a png to temp path
+            string tempThumbnailPath = Path.Combine(tempUploadDir, "thumbnail.png");
+            File.WriteAllBytes(tempThumbnailPath, thumbnail);
+
+            // Collect files into a .zip file, including the .tilt file and thumbnail
+            string zipName = Path.Combine(tempUploadDir, "archive.zip");
+            var filesToZip = exportResults.exportedFiles.ToList().Append(tempTiltPath).Append(tempThumbnailPath);
+            await CreateZipFileAsync(zipName, tempUploadDir, filesToZip.ToArray(), token);
+
+            var service = new IcosaService(App.Instance.IcosaToken);
+            var progress = new Progress<double>(d => SetUploadProgress(UploadStep.UploadElements, d));
+            IcosaService.CreateResponse response = await service.CreateModel(
+                zipName, progress, token, options, tempUploadDir);
+            // TODO(b/146892613): return the UID and stick it into the .tilt file?
+            // Or do we not care since we aren't recording provenance and remixing
+
+            // TODO(b/146892613): figure out this flow
+            // response.uri is not very useful; it is an API uri that gives you json of asset details.
+            // Also, the 3d-models URI might show that the asset is still processing. We can poll their
+            // API and find out when it's done and pop up the window then?
+            string uri = $"{response.edit_url}";
+            return (uri, 0);
+        }
+
         private async Task<(string, long)> UploadCurrentSketchSketchfabAsync(
             CancellationToken token, string tempUploadDir, bool _)
         {
@@ -661,7 +722,7 @@ namespace TiltBrush
 
             SetUploadProgress(UploadStep.CreateGltf, 0);
             // Do the glTF straight away as it relies on the meshes, not the stroke descriptions.
-            string gltfFile = Path.Combine(tempUploadDir, kGltfName);
+            string gltfFile = Path.Combine(tempUploadDir, $"{kDefaultName}.gltf");
             var exportResults = await OverlayManager.m_Instance.RunInCompositorAsync(
                 OverlayType.Export, fadeDuration: 0.5f,
                 action: () => new ExportGlTF().ExportBrushStrokes(
@@ -754,45 +815,52 @@ namespace TiltBrush
             }
             else
             {
-                uri = String.Format("{0}{1}/{2}?key={3}", ApiHost, kListAssetsUri, assetId, kPolyApiKey);
+                uri = String.Format("{0}{1}/{2}", IcosaApiRoot, kListAssetsUri, assetId);
             }
             return new AssetGetter(uri, assetId, type, reason);
         }
 
+        private string CombineQueryParams(string uriPath, string additionalParams)
+        {
+            string separator = uriPath.Contains("?") ? "&" : "?";
+            return $"{uriPath}{separator}{additionalParams}";
+        }
+
         public AssetLister ListAssets(SketchSetType type)
         {
-            string filter = null;
+            string filteredUriPath = null;
             string errorMessage = null;
             switch (type)
             {
+                // TODO Add User sketches
+                // TODO Allow non-CC-BY sketches to be loaded as read-only
                 case SketchSetType.Liked:
-                    if (!App.GoogleIdentity.LoggedIn)
+                    if (!App.IcosaIsLoggedIn)
                     {
                         return null;
                     }
-                    filter = $"{kUserLikesUri}?format=TILT&orderBy=LIKED_TIME&key={kPolyApiKey}";
+                    filteredUriPath = CombineQueryParams(kUserLikesUri, "format=TILT&orderBy=LIKED_TIME");
                     errorMessage = "Failed to access your liked sketches.";
                     break;
                 case SketchSetType.Curated:
-                    if (string.IsNullOrEmpty(kPolyApiKey))
-                    {
-                        return null;
-                    }
-                    filter = $"{kListAssetsUri}?format=TILT&curated=true&orderBy=NEWEST&key={kPolyApiKey}";
+                    // Old way - newest curated
+                    // filteredUriPath = CombineQueryParams(kListAssetsUri, "format=TILT&curated=true&orderBy=NEWEST");
+                    // For now try just sorting by "best"
+                    filteredUriPath = CombineQueryParams(kListAssetsUri, "format=TILT&orderBy=BEST");
                     errorMessage = "Failed to access featured sketches.";
                     break;
             }
 
-            string uri = $"{ApiHost}{filter}&pageSize={m_AssetsPerPage}";
+            string uri = $"{IcosaApiRoot}{filteredUriPath}&pageSize={m_AssetsPerPage}";
             return new AssetLister(uri, errorMessage);
         }
 
         // Get a specific sketch and insert it into the listed sketches at the specified index.
         public IEnumerator<object> InsertSketchInfo(
-            string assetId, int index, List<PolySceneFileInfo> infos)
+            string assetId, int index, List<IcosaSceneFileInfo> infos)
         {
-            string uri = String.Format("{0}{1}/{2}?key={3}", ApiHost, kListAssetsUri, assetId, kPolyApiKey);
-            WebRequest request = new WebRequest(uri, App.GoogleIdentity, UnityWebRequest.kHttpVerbGET);
+            string uri = String.Format("{0}{1}/{2}", IcosaApiRoot, kListAssetsUri, assetId);
+            WebRequest request = new WebRequest(uri, App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
             using (var cr = request.SendAsync().AsIeNull())
             {
                 while (!request.Done)
@@ -814,34 +882,39 @@ namespace TiltBrush
             Future<JObject> f = new Future<JObject>(() => JObject.Parse(request.Result));
             JObject json;
             while (!f.TryGetResult(out json)) { yield return null; }
-            infos.Insert(index, new PolySceneFileInfo(json.Root));
+            infos.Insert(index, new IcosaSceneFileInfo(json.Root));
         }
 
-        public AssetLister ListAssets(PolySetType type)
+        public AssetLister ListAssets(IcosaSetType type)
         {
-            string uri = null;
+            string uri = IcosaApiRoot;
+
             switch (type)
             {
-                case PolySetType.Liked:
-                    uri = $"{ApiHost}{kUserLikesUri}?format=GLTF2&orderBy=LIKED_TIME&pageSize={m_AssetsPerPage}";
+                case IcosaSetType.Liked:
+                    uri += $"{kUserLikesUri}?orderBy=LIKED_TIME";
                     break;
-                case PolySetType.User:
-                    uri = $"{ApiHost}{kUserAssetsUri}?format=GLTF2&orderBy=NEWEST&pageSize={m_AssetsPerPage}";
+                case IcosaSetType.User:
+                    uri += $"{kUserAssetsUri}?orderBy=NEWEST";
                     break;
-                case PolySetType.Featured:
-                    uri = $"{ApiHost}{kListAssetsUri}?key={kPolyApiKey}" +
-                        $"&format=GLTF2&curated=true&orderBy=NEWEST&pageSize={m_AssetsPerPage}";
+                case IcosaSetType.Featured:
+                    // Old way - newest curated
+                    // uri += $"{kListAssetsUri}" + $"?curated=true&orderBy=NEWEST";
+                    // For now try just sorting by "best"
+                    uri += $"{kListAssetsUri}" + $"?orderBy=BEST";
+                    // Something like orderBy=TRENDING would be good - BEST but weighted by recency
                     break;
             }
-            return new AssetLister(uri, "Failed to connect to Poly.");
+            uri += $"&format=GLTF2&pageSize={m_AssetsPerPage}";
+            return new AssetLister(uri, errorMessage: "Failed to connect to Icosa.");
         }
 
         // Download a tilt file to a temporary file and load it
         public IEnumerator LoadTiltFile(string id)
         {
             string path = Path.GetTempFileName();
-            string uri = String.Format("{0}{1}/{2}?key={3}", ApiHost, kListAssetsUri, id, kPolyApiKey);
-            WebRequest request = new WebRequest(uri, App.GoogleIdentity, UnityWebRequest.kHttpVerbGET);
+            string uri = String.Format("{0}{1}/{2}", IcosaApiRoot, kListAssetsUri, id);
+            WebRequest request = new WebRequest(uri, App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
             using (var cr = request.SendAsync().AsIeNull())
             {
                 while (!request.Done)
@@ -858,7 +931,7 @@ namespace TiltBrush
                 }
             }
             JObject json = JObject.Parse(request.Result);
-            var info = new PolySceneFileInfo(json);
+            var info = new IcosaSceneFileInfo(json);
             using (UnityWebRequest www = UnityWebRequest.Get(info.TiltFileUrl))
             {
                 yield return www.SendWebRequest();

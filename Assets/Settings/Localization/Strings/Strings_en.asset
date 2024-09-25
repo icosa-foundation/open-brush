@@ -501,7 +501,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7691576060649472
-    m_Localized: Poly Library
+    m_Localized: Icosa Library
     m_Metadata:
       m_Items: []
   - m_Id: 7691821452599296
@@ -3460,6 +3460,16 @@ MonoBehaviour:
     m_Localized: 'You can create a video of your sketch by opening it on a Mac or
       PC. Search for "Exporting video" on our docs website: https://docs.openbrush.app
       for a step by step guide.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911761917042688
+    m_Localized: 'Sign in to an Icosa account to allow
+
+      uploading to Icosa.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911966586494976
+    m_Localized: Share to Icosa
     m_Metadata:
       m_Items: []
   - m_Id: 170004956477833216

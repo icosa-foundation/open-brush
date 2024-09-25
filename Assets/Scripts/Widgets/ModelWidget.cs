@@ -140,7 +140,7 @@ namespace TiltBrush
 
             if (m_PolyCallbackActive)
             {
-                App.PolyAssetCatalog.CatalogChanged -= OnPacCatalogChanged;
+                App.IcosaAssetCatalog.CatalogChanged -= OnPacCatalogChanged;
                 m_PolyCallbackActive = false;
             }
             // Set our model to null so its usage count is decremented.
@@ -185,7 +185,7 @@ namespace TiltBrush
 
             if (!clone.Model.m_Valid)
             {
-                App.PolyAssetCatalog.CatalogChanged += clone.OnPacCatalogChanged;
+                App.IcosaAssetCatalog.CatalogChanged += clone.OnPacCatalogChanged;
                 clone.m_PolyCallbackActive = true;
             }
             clone.CloneInitialMaterials(this);
@@ -200,7 +200,7 @@ namespace TiltBrush
 
         public void OnPacCatalogChanged()
         {
-            Model model = App.PolyAssetCatalog.GetModel(AssetId);
+            Model model = App.IcosaAssetCatalog.GetModel(AssetId);
             if (model != null && model.m_Valid)
             {
                 Model = model;
@@ -208,7 +208,7 @@ namespace TiltBrush
 
                 // TODO: We may not want to do this, eventually.  Perhaps we continue to receive messages,
                 // get our asset each time, and do a diff to see if we should reload it.
-                App.PolyAssetCatalog.CatalogChanged -= OnPacCatalogChanged;
+                App.IcosaAssetCatalog.CatalogChanged -= OnPacCatalogChanged;
                 m_PolyCallbackActive = false;
             }
         }
@@ -309,7 +309,7 @@ namespace TiltBrush
         public bool HasSubModels()
         {
             string ext = Model.GetLocation().Extension;
-            if (ext == ".gltf" || ext == ".glb")
+            if (ext == ".gltf" || ext == ".gltf2" || ext == ".glb")
             {
                 int lightCount = m_ObjModelScript.GetComponentsInChildren<SceneLightGizmo>().Length;
                 int meshCount = GetMeshes().Length;
@@ -370,7 +370,17 @@ namespace TiltBrush
                 }
                 var newRoot = new GameObject();
                 newRoot.transform.SetParent(transform);
-                newRoot.name = $"LocalFile:{m_Model.RelativePath}#{m_Subtree}";
+                switch (m_Model.GetLocation().GetLocationType())
+                {
+                    case Model.Location.Type.LocalFile:
+                        newRoot.name = $"LocalFile:{m_Model.RelativePath}#{m_Subtree}";
+                        break;
+                    case Model.Location.Type.IcosaAssetId:
+                        newRoot.name = $"RemoteFile:{m_Model.AssetId}#{m_Subtree}";
+                        break;
+                    case Model.Location.Type.Invalid:
+                        throw new InvalidOperationException("Invalid model location type");
+                }
                 m_ObjModelScript = newRoot.AddComponent<ObjModelScript>();
                 node.SetParent(newRoot.transform, worldPositionStays: true);
 
@@ -761,7 +771,7 @@ namespace TiltBrush
 
             if (assetId != null && !model.m_Valid)
             {
-                App.PolyAssetCatalog.CatalogChanged += modelWidget.OnPacCatalogChanged;
+                App.IcosaAssetCatalog.CatalogChanged += modelWidget.OnPacCatalogChanged;
                 modelWidget.m_PolyCallbackActive = true;
             }
             modelWidget.Group = App.GroupManager.GetGroupFromId(groupId);
@@ -773,16 +783,16 @@ namespace TiltBrush
                                             bool[] pinStates, uint[] groupIds, int[] layerIds)
         {
             // Request model from Poly and if it doesn't exist, ask to load it.
-            Model model = App.PolyAssetCatalog.GetModel(assetId);
+            Model model = App.IcosaAssetCatalog.GetModel(assetId);
             if (model == null)
             {
                 // This Model is transient; the Widget will replace it with a good Model from the PAC
                 // as soon as the PAC loads it.
-                model = new Model(Model.Location.PolyAsset(assetId, null));
+                model = new Model(Model.Location.IcosaAsset(assetId, null));
             }
             if (!model.m_Valid)
             {
-                App.PolyAssetCatalog.RequestModelLoad(assetId, "widget");
+                App.IcosaAssetCatalog.RequestModelLoad(assetId, "widget");
             }
 
             // Create a widget for each transform.

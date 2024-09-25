@@ -115,7 +115,7 @@ namespace TiltBrush
 
         public static CanvasScript ActiveCanvas => Scene.ActiveCanvas;
 
-        public static PolyAssetCatalog PolyAssetCatalog => m_Instance.m_PolyAssetCatalog;
+        public static IcosaAssetCatalog IcosaAssetCatalog => m_Instance.m_IcosaAssetCatalog;
 
         public static Switchboard Switchboard => m_Instance.m_Switchboard;
 
@@ -130,6 +130,17 @@ namespace TiltBrush
 
         public static OAuth2Identity GoogleIdentity => m_Instance.m_GoogleIdentity;
         public static OAuth2Identity SketchfabIdentity => m_Instance.m_SketchfabIdentity;
+
+        public string IcosaToken
+        {
+            get => PlayerPrefs.HasKey("IcosaToken") ? PlayerPrefs.GetString("IcosaToken") : null;
+            set => PlayerPrefs.SetString("IcosaToken", value);
+        }
+        public static bool IcosaIsLoggedIn => !string.IsNullOrEmpty(App.Instance.IcosaToken);
+
+        public static string IcosaUserName;
+        public static string IcosaUserId;
+        public static Texture IcosaUserIcon;
 
         public static GoogleUserSettings GoogleUserSettings => m_Instance.m_GoogleUserSettings;
 
@@ -153,9 +164,10 @@ namespace TiltBrush
         {
             switch (cloud)
             {
-                case Cloud.Poly: return GoogleIdentity;
+                case Cloud.Google: return GoogleIdentity;
                 case Cloud.Sketchfab: return SketchfabIdentity;
-                default: throw new InvalidOperationException($"No identity for {cloud}");
+                case Cloud.Icosa: throw new InvalidOperationException("Icosa does not use OAuth2");
+                default: throw new InvalidOperationException($"No OAuth2 identity for {cloud}");
             }
         }
 
@@ -242,7 +254,7 @@ namespace TiltBrush
         private string m_UserPath;
         private string m_OldUserPath;
 
-        private PolyAssetCatalog m_PolyAssetCatalog;
+        private IcosaAssetCatalog m_IcosaAssetCatalog;
         private Switchboard m_Switchboard;
         private BrushColorController m_BrushColorController;
         private GroupManager m_GroupManager;
@@ -536,8 +548,8 @@ namespace TiltBrush
             m_Switchboard = new Switchboard();
             m_GroupManager = new GroupManager();
 
-            m_PolyAssetCatalog = GetComponent<PolyAssetCatalog>();
-            m_PolyAssetCatalog.Init();
+            m_IcosaAssetCatalog = GetComponent<IcosaAssetCatalog>();
+            m_IcosaAssetCatalog.Init();
 
             m_BrushColorController = GetComponent<BrushColorController>();
 
@@ -886,7 +898,7 @@ namespace TiltBrush
                 }
             }
 
-            m_PolyAssetCatalog.UpdateCatalog();
+            m_IcosaAssetCatalog.UpdateCatalog();
 
             //update state
             switch (m_CurrentAppState)
@@ -2337,5 +2349,12 @@ namespace TiltBrush
             }
         }
 
+        public void LogoutIcosa()
+        {
+            IcosaUserName = null;
+            IcosaUserId = null;
+            IcosaUserIcon = null;
+            IcosaToken = null;
+        }
     } // class App
 }     // namespace TiltBrush

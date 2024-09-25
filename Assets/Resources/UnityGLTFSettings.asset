@@ -112,6 +112,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5066402b4fbd41e79ab3d7023cca96c5, type: 3}
   m_Name: MaterialVariantsPlugin
   m_EditorClassIdentifier: 
+--- !u!114 &-2913368442722201512
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 473c2b5b3de547139304b32beee641e9, type: 3}
+  m_Name: AnimationPointerImport
+  m_EditorClassIdentifier: 
 --- !u!114 &-1701294651066981149
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -183,6 +195,7 @@ MonoBehaviour:
   - {fileID: 8372111537548844026}
   - {fileID: -7716978867629807533}
   - {fileID: 6916234453510156686}
+  - {fileID: -2913368442722201512}
   ExportPlugins:
   - {fileID: 242952683485160214}
   - {fileID: -5728475199642485532}
@@ -194,7 +207,6 @@ MonoBehaviour:
   - {fileID: -7373113640993280472}
   - {fileID: 7420168740226561727}
   - {fileID: -6755212205620999988}
-  - {fileID: 8207833083978872644}
   - {fileID: -682178813687408182}
   exportNames: 1
   exportFullPath: 0
