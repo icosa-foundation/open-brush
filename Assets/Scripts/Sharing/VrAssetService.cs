@@ -832,6 +832,8 @@ namespace TiltBrush
             string errorMessage = null;
             switch (type)
             {
+                // TODO Add User sketches
+                // TODO Allow non-CC-BY sketches to be loaded as read-only
                 case SketchSetType.Liked:
                     if (!App.IcosaIsLoggedIn)
                     {
