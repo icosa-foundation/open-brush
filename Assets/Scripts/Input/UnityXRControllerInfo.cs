@@ -58,15 +58,16 @@ namespace TiltBrush
             {
                 actionSet.Brush.Enable();
                 actionSet.Wand.Disable();
-                
+
                 try
                 {
-                _logitechMxInk = UnityEngine.Object.FindObjectsOfType<VrStylusHandler>()[0];
+                    _logitechMxInk = UnityEngine.Object.FindObjectsOfType<VrStylusHandler>()[0];
                 }
-                catch(Exception){
+                catch (Exception)
+                {
                     _logitechMxInk = null;
                 }
-                
+
             }
             else
             {
@@ -188,7 +189,8 @@ namespace TiltBrush
 
         public override float GetGripValue()
         {
-             if (_logitechMxInk && _logitechMxInk.CurrentState.isActive){
+            if (_logitechMxInk && _logitechMxInk.CurrentState.isActive)
+            {
                 return _logitechMxInk.CurrentState.cluster_front_value ? 1.0f : 0;
             }
             return FindAction("GripAxis").ReadValue<float>();
@@ -201,7 +203,8 @@ namespace TiltBrush
 
         public override float GetTriggerValue()
         {
-            if (_logitechMxInk && _logitechMxInk.CurrentState.isActive){
+            if (_logitechMxInk && _logitechMxInk.CurrentState.isActive)
+            {
                 return Math.Max(_logitechMxInk.CurrentState.tip_value, _logitechMxInk.CurrentState.cluster_middle_value);
             }
 
@@ -248,17 +251,17 @@ namespace TiltBrush
                     return FindAction("PadButton").IsPressed();
                 case VrInput.Trigger:
                     if (_logitechMxInk && _logitechMxInk.CurrentState.isActive)
-                        return  _logitechMxInk.CurrentState.cluster_middle_value>0.2 ||  _logitechMxInk.CurrentState.tip_value>0.2;
+                        return _logitechMxInk.CurrentState.cluster_middle_value > 0.2 || _logitechMxInk.CurrentState.tip_value > 0.2;
                     return FindAction("TriggerAxis").IsPressed();
                 case VrInput.Grip:
                     if (_logitechMxInk && _logitechMxInk.CurrentState.isActive)
-                        return  _logitechMxInk.CurrentState.cluster_front_value;
+                        return _logitechMxInk.CurrentState.cluster_front_value;
                     return FindAction("GripAxis").IsPressed();
                 case VrInput.Button01:
                 case VrInput.Button04:
                 case VrInput.Button06:
                     if (_logitechMxInk && _logitechMxInk.CurrentState.isActive)
-                        return  _logitechMxInk.CurrentState.cluster_back_value;
+                        return _logitechMxInk.CurrentState.cluster_back_value;
                     return FindAction("PrimaryButton").IsPressed();
                 case VrInput.Button02:
                 case VrInput.Button03:
