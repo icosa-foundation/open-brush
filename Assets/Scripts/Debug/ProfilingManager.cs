@@ -156,7 +156,7 @@ namespace TiltBrush
                 string dateTime = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
                 filename = string.Format("Profile_{0}.data", dateTime);
             }
-            return Path.Combine(Application.persistentDataPath, filename);
+            return filename;
         }
 
         // Grabs the frame times and any functions being profiled.
@@ -212,6 +212,12 @@ namespace TiltBrush
                 ? SaveLoadScript.m_Instance.GetLastFileHumanName()
                 : App.UserConfig.Profiling.ProfileName;
             message.AppendLine("TBProfile: START");
+#if UNITY_EDITOR
+            string branch = GitUtils.GetGitBranchName();
+            message.AppendLine($"Git branch: {branch}");
+#endif
+            message.AppendLine($"Profile name: {profileName} Filename: {fileName} Human name: {humanName}");
+
             if (App.UserConfig.Profiling.PerfgateOutput)
             {
                 PerfgateOutput(message, m_FrameTimes.ToArray(), numBatches, numTriangles, file);
@@ -230,6 +236,11 @@ namespace TiltBrush
             message.AppendLine("TBProfile: END");
 
             Debug.Log(message.ToString());
+
+            string path = Path.Join(
+                App.UserPath(),
+                $"{GetProfilingFilename()}_summary.txt");
+            File.WriteAllText(path, message.ToString());
         }
 
         private void HumanReadableOutput(StringBuilder output, Statistics.Summary stats, int numBatches,
