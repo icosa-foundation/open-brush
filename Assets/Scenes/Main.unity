@@ -3697,6 +3697,10 @@ MonoBehaviour:
     type: 3}
   m_SliderDescriptionTwoLinesPrefab: {fileID: 1075103291083872, guid: 9473e6ac1bd905b42b3ab718e61edaa2,
     type: 3}
+  m_VerticalSliderDescriptionOneLinePrefab: {fileID: 1997325689525770, guid: fffc394d878a99d468781b50d53e5edb,
+    type: 3}
+  m_VerticalSliderDescriptionTwoLinesPrefab: {fileID: 1075103291083872, guid: d0ce8c56faa567f438b1a68b3565a078,
+    type: 3}
   m_PreviewCubeDescriptionOneLinePrefab: {fileID: 1083040994653220, guid: 4008b21a5ab500743beaafe495d976a7,
     type: 3}
   m_PreviewCubeDescriptionTwoLinesPrefab: {fileID: 1083040994653220, guid: a8af8f97b474d2247a17f4c6d100630a,
