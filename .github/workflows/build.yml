@@ -136,7 +136,7 @@ jobs:
         env:
           PRERELEASE: ${{ steps.version.outputs.prerelease }}
         run: |
-          # For a PR action (i.e., syncronize / open), the value of github.ref will be refs/pull/1234/merge
+          # For a PR action (i.e., synchronize / open), the value of github.ref will be refs/pull/1234/merge
           # For a push action, it will be either refs/heads/foo_branch_name OR refs/tags/v1234.
           # We want to use the base name for pushes of tags or to main, the PR number for PRs, and the branch name for named branches.
           if [[ "$PRERELEASE" == "false" || ${{ github.ref }} == refs/heads/main ]]
