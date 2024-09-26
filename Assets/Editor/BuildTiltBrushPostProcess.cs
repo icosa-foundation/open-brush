@@ -69,6 +69,19 @@ public class BuildTiltBrushPostProcess
             );
 #endif
 
+#if ENABLE_CONTEXTUAL_BOUNDARYLESS_APP
+            UnityEngine.Debug.Log("Add com.oculus.feature.CONTEXTUAL_BOUNDARYLESS_APP");
+            AddOrRemoveTag(doc,
+                    androidNamespaceURI,
+                    "/manifest",
+                    "uses-feature",
+                    "com.oculus.feature.CONTEXTUAL_BOUNDARYLESS_APP",
+                    true,
+                    true,
+                    "required", "true"
+            );
+#endif
+
 #if FORCE_HEADTRACKING
             UnityEngine.Debug.Log("Add android.hardware.vr.headtracking");
             AddOrRemoveTag(doc,
