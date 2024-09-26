@@ -43,17 +43,13 @@ namespace TiltBrush
         {
             base.Start();
 
-            if (true)
+            var rightDeviceName = OVRPlugin.GetCurrentInteractionProfileName(OVRPlugin.Hand.HandRight);
+            Debug.Log($"rightDeviceName: {rightDeviceName}");
+            bool needsBrushSizeUi = rightDeviceName.EndsWith("mx_ink_stylus_logitech");
+            if (needsBrushSizeUi)
             {
                 DoAnimateIn();
             }
-
-            // m_AnimateIn = true;
-            // Vector3 localScale = transform.localScale;
-            // localScale.x = m_AnimateRange.y;
-            // transform.localScale = localScale;
-            // m_Mesh.SetActive(true);
-            // m_Collider.enabled = true;
 
             UpdateSliderToMatchCurrentSize();
         }
