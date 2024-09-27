@@ -52,7 +52,7 @@ namespace TiltBrush
                     ""name"": ""TriggerButton"",
                     ""type"": ""Button"",
                     ""id"": ""6ed563ff-a250-4d2f-8b14-d1fe360a2470"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -133,7 +133,7 @@ namespace TiltBrush
                     ""name"": ""PrimaryTouch"",
                     ""type"": ""Button"",
                     ""id"": ""9c7136cb-868c-49dc-ac53-cebeefd3de69"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -142,7 +142,7 @@ namespace TiltBrush
                     ""name"": ""PrimaryButton"",
                     ""type"": ""Button"",
                     ""id"": ""7e497fba-b632-4c20-b4a7-e1aa457cd785"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -151,7 +151,7 @@ namespace TiltBrush
                     ""name"": ""SecondaryTouch"",
                     ""type"": ""Button"",
                     ""id"": ""b63ff496-95b8-4da7-b3fe-3dc8a3151097"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -180,8 +180,41 @@ namespace TiltBrush
                 },
                 {
                     ""name"": """",
+                    ""id"": ""b117b600-7e3c-497f-92a6-6b87ad15020f"",
+                    ""path"": ""<LogitechMxInkController>/clusterMiddleButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""TriggerAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f90d37f9-75d2-4b94-88f6-ef3f9c1a092f"",
+                    ""path"": ""<LogitechMxInkController>/tip"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""TriggerAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""c70e565b-1c0f-4d60-b284-ccdec2fd856d"",
                     ""path"": ""<XRController>{RightHand}/triggerPressed"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""TriggerButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""299fa3b4-8514-4597-9158-94021ac9e174"",
+                    ""path"": ""<LogitechMxInkController>/{TriggerButton}"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
@@ -235,6 +268,17 @@ namespace TiltBrush
                 },
                 {
                     ""name"": """",
+                    ""id"": ""b0b36847-bf68-48bb-836e-d429414b3b10"",
+                    ""path"": ""<LogitechMxInkController>/{GripButton}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""GripAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""34e41acb-65d2-4ab3-b058-f2c13687d92d"",
                     ""path"": ""<XRController>{RightHand}/gripPressed"",
                     ""interactions"": """",
@@ -274,6 +318,17 @@ namespace TiltBrush
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""SecondaryButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""d18550df-2a8b-46e9-956b-04bf15013a74"",
+                    ""path"": ""<LogitechMxInkController>/{PrimaryButton}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PrimaryButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
