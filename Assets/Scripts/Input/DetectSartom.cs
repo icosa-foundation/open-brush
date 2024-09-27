@@ -18,6 +18,7 @@ namespace TiltBrush
 {
     public class DetectSartom : MonoBehaviour
     {
+#if OCULUS_SUPPORTED
         [SerializeField] private ControllerGeometry m_SartomGeometryPrefab;
 
         public bool IsPen
@@ -82,5 +83,6 @@ namespace TiltBrush
             var rightDeviceName = OVRPlugin.GetCurrentInteractionProfileName((OVRPlugin.Hand)deviceIndex);
             return rightDeviceName.EndsWith("mx_ink_stylus_logitech");
         }
+#endif
     }
 } // namespace TiltBrush
