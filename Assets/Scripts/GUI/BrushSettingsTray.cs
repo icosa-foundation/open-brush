@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.XR;
 
 namespace TiltBrush
 {
@@ -31,7 +33,26 @@ namespace TiltBrush
             base.OnDestroy();
             App.Switchboard.ToolChanged -= UpdateSliderToMatchCurrentSize;
         }
+        private void ListenForConnectedDevices()
+        {
+            List<InputDevice> devices = new List<InputDevice>();
+            InputDevices.GetDevices(devices);
+            foreach (InputDevice device in devices)
+            {
+                DeviceConnected(device);
+            }
+        }
+        private void DeviceConnected(InputDevice device)
+        {
+            Debug.Log($"Device name: {device.name}");
+            bool needsBrushSizeUi = device.name.StartsWith("Logitech MX Ink");
+            if (needsBrushSizeUi)
+            {
+                DoAnimateIn();
+            }
 
+            UpdateSliderToMatchCurrentSize();
+        }
         private void UpdateSliderToMatchCurrentSize()
         {
             m_BrushSizeSlider.SetInitialValueAndUpdate(
@@ -42,16 +63,7 @@ namespace TiltBrush
         protected override void Start()
         {
             base.Start();
-
-            var rightDeviceName = OVRPlugin.GetCurrentInteractionProfileName(OVRPlugin.Hand.HandRight);
-            Debug.Log($"rightDeviceName: {rightDeviceName}");
-            bool needsBrushSizeUi = rightDeviceName.EndsWith("mx_ink_stylus_logitech");
-            if (needsBrushSizeUi)
-            {
-                DoAnimateIn();
-            }
-
-            UpdateSliderToMatchCurrentSize();
+            ListenForConnectedDevices();
         }
 
         protected override void OnToolChanged()
