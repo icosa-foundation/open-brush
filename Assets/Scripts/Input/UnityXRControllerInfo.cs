@@ -189,10 +189,12 @@ namespace TiltBrush
 
         public override float GetGripValue()
         {
+#if OCULUS_SUPPORTED
             if (_logitechMxInk && _logitechMxInk.CurrentState.isActive)
             {
                 return _logitechMxInk.CurrentState.cluster_front_value ? 1.0f : 0;
             }
+#endif
             return FindAction("GripAxis").ReadValue<float>();
         }
 
@@ -203,11 +205,12 @@ namespace TiltBrush
 
         public override float GetTriggerValue()
         {
+#if OCULUS_SUPPORTED
             if (_logitechMxInk && _logitechMxInk.CurrentState.isActive)
             {
                 return Math.Max(_logitechMxInk.CurrentState.tip_value, _logitechMxInk.CurrentState.cluster_middle_value);
             }
-
+#endif
             return FindAction("TriggerAxis").ReadValue<float>();
         }
 
@@ -250,18 +253,24 @@ namespace TiltBrush
                 case VrInput.Touchpad:
                     return FindAction("PadButton").IsPressed();
                 case VrInput.Trigger:
+#if OCULUS_SUPPORTED
                     if (_logitechMxInk && _logitechMxInk.CurrentState.isActive)
                         return _logitechMxInk.CurrentState.cluster_middle_value > 0.2 || _logitechMxInk.CurrentState.tip_value > 0.2;
+#endif
                     return FindAction("TriggerAxis").IsPressed();
                 case VrInput.Grip:
+#if OCULUS_SUPPORTED
                     if (_logitechMxInk && _logitechMxInk.CurrentState.isActive)
                         return _logitechMxInk.CurrentState.cluster_front_value;
+#endif
                     return FindAction("GripAxis").IsPressed();
                 case VrInput.Button01:
                 case VrInput.Button04:
                 case VrInput.Button06:
+#if OCULUS_SUPPORTED
                     if (_logitechMxInk && _logitechMxInk.CurrentState.isActive)
                         return _logitechMxInk.CurrentState.cluster_back_value;
+#endif
                     return FindAction("PrimaryButton").IsPressed();
                 case VrInput.Button02:
                 case VrInput.Button03:
