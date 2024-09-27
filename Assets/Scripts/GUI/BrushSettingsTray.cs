@@ -43,9 +43,15 @@ namespace TiltBrush
         {
             base.Start();
 
+            bool needsBrushSizeUi = false;
+
+#if OCULUS_SUPPORTED
+            const string suffix = "mx_ink_stylus_logitech";
+            var leftDeviceName = OVRPlugin.GetCurrentInteractionProfileName(OVRPlugin.Hand.HandLeft);
             var rightDeviceName = OVRPlugin.GetCurrentInteractionProfileName(OVRPlugin.Hand.HandRight);
-            Debug.Log($"rightDeviceName: {rightDeviceName}");
-            bool needsBrushSizeUi = rightDeviceName.EndsWith("mx_ink_stylus_logitech");
+            needsBrushSizeUi = leftDeviceName.EndsWith(suffix) || rightDeviceName.EndsWith(suffix);
+#endif
+
             if (needsBrushSizeUi)
             {
                 DoAnimateIn();
