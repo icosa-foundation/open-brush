@@ -49,6 +49,7 @@ namespace TiltBrush
         Neo3,
         Phoenix,
         Zapbox,
+        LogitechMxInk
     }
 
     //
@@ -82,6 +83,7 @@ namespace TiltBrush
         // Prefab for the new-style Touch controllers, used for Rift-S and Quest
         [SerializeField] private GameObject m_OculusQuestControlsPrefab;
         [SerializeField] private GameObject m_GvrPointerControlsPrefab;
+        [SerializeField] private GameObject m_LogitechMxInkControlsPrefab;
         [SerializeField] private GameObject m_NonVrControlsPrefab;
 
         // This is the object "Camera (eye)"
@@ -573,6 +575,9 @@ namespace TiltBrush
                 case ControllerStyle.Gvr:
                     controlsPrefab = m_GvrPointerControlsPrefab;
                     break;
+                case ControllerStyle.LogitechMxInk:
+                    controlsPrefab = m_LogitechMxInkControlsPrefab;
+                    break;
                 case ControllerStyle.Unset:
                 default:
                     controlsPrefab = null;
@@ -725,7 +730,12 @@ namespace TiltBrush
 
         private void SetUnityXRControllerStyle(InputDevice device)
         {
-            if (device.name.Contains("Oculus Touch"))
+            if (device.name.Contains("Logitech MX Ink"))
+            {
+                //Temporal, waiting for stylus prefab
+                SetControllerStyle(ControllerStyle.OculusTouch);
+            }
+            else if (device.name.Contains("Oculus Touch"))
             {
                 SetControllerStyle(ControllerStyle.OculusTouch);
             }
