@@ -19640,6 +19640,8 @@ MonoBehaviour:
     type: 3}
   m_GvrPointerControlsPrefab: {fileID: 1118433077968626, guid: 5afb9e0174eb44346ad642958130e294,
     type: 3}
+  m_LogitechMxInkControlsPrefab: {fileID: 1000010438099326, guid: dc370ed6d37f7c141bf13df38965130b,
+    type: 3}
   m_NonVrControlsPrefab: {fileID: 1000011856084730, guid: 9d7a5b25efc95cd429ec738e0ccd19df,
     type: 3}
   m_VrCamera: {fileID: 17776371}
