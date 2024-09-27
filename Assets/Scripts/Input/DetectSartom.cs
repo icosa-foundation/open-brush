@@ -18,9 +18,9 @@ namespace TiltBrush
 {
     public class DetectSartom : MonoBehaviour
     {
-#if OCULUS_SUPPORTED
         [SerializeField] private ControllerGeometry m_SartomGeometryPrefab;
 
+#if OCULUS_SUPPORTED
         public bool IsPen
         {
             get { return m_IsPen; }
