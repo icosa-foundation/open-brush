@@ -5,6 +5,7 @@ using UnityEngine.Rendering;
 
 public class LineDrawing : MonoBehaviour
 {
+#if OCULUS_SUPPORTED
     private List<GameObject> _lines = new List<GameObject>();
     private LineRenderer _currentLine;
     private List<float> _currentLineWidths = new List<float>(); //list to store line widths
@@ -156,4 +157,5 @@ public class LineDrawing : MonoBehaviour
             _doubleTapDetected = false;
         }
     }
+#endif
 }

@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 
+#if OCULUS_SUPPORTED
 public struct StylusInputs
 {
     public float tip_value;
@@ -16,9 +17,11 @@ public struct StylusInputs
     public bool isOnRightHand;
     public bool docked;
 }
+#endif
 
 public abstract class StylusHandler : MonoBehaviour
 {
+#if OCULUS_SUPPORTED
     protected StylusInputs _stylus;
 
     public StylusInputs CurrentState
@@ -30,4 +33,5 @@ public abstract class StylusHandler : MonoBehaviour
     {
         return true;
     }
+#endif
 }

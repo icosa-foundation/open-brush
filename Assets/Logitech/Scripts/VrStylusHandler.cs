@@ -3,6 +3,7 @@ using System;
 
 public class VrStylusHandler : StylusHandler
 {
+#if OCULUS_SUPPORTED
     [SerializeField] private GameObject _mxInk_model;
     [SerializeField] private GameObject _tip;
     [SerializeField] private GameObject _cluster_front;
@@ -65,7 +66,7 @@ public class VrStylusHandler : StylusHandler
         var leftDevice = OVRPlugin.GetCurrentInteractionProfileName(OVRPlugin.Hand.HandLeft);
         var rightDevice = OVRPlugin.GetCurrentInteractionProfileName(OVRPlugin.Hand.HandRight);
 
-        // The Quest 3 touch controller interaction profile name is: /interaction_profiles/meta/touch_controller_plus 
+        // The Quest 3 touch controller interaction profile name is: /interaction_profiles/meta/touch_controller_plus
         // The MX Ink interaction profile is: /interaction_profiles/logitech/mx_ink_stylus_logitech
 
         // Find whether the Logitech MX Ink is on the left or the right hand
@@ -203,4 +204,5 @@ public class VrStylusHandler : StylusHandler
             Debug.LogError(e.Message);
         }
     }
+#endif
 }
