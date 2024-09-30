@@ -33,6 +33,7 @@ namespace TiltBrush
             base.OnDestroy();
             App.Switchboard.ToolChanged -= UpdateSliderToMatchCurrentSize;
         }
+
         private void ListenForConnectedDevices()
         {
             List<InputDevice> devices = new List<InputDevice>();
@@ -42,6 +43,7 @@ namespace TiltBrush
                 DeviceConnected(device);
             }
         }
+
         private void DeviceConnected(InputDevice device)
         {
             Debug.Log($"Device name: {device.name}");
@@ -53,6 +55,7 @@ namespace TiltBrush
 
             UpdateSliderToMatchCurrentSize();
         }
+
         private void UpdateSliderToMatchCurrentSize()
         {
             m_BrushSizeSlider.SetInitialValueAndUpdate(
