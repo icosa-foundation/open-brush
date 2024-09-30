@@ -714,7 +714,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 1
+  inputIsHDR: 0
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -19640,7 +19640,7 @@ MonoBehaviour:
     type: 3}
   m_GvrPointerControlsPrefab: {fileID: 1118433077968626, guid: 5afb9e0174eb44346ad642958130e294,
     type: 3}
-  m_LogitechMxInkControlsPrefab: {fileID: 1000010438099326, guid: dc370ed6d37f7c141bf13df38965130b,
+  m_LogitechMxInkControlsPrefab: {fileID: 2302704768686387309, guid: 1e3b2b559e2ddc247825568f121513bd,
     type: 3}
   m_NonVrControlsPrefab: {fileID: 1000011856084730, guid: 9d7a5b25efc95cd429ec738e0ccd19df,
     type: 3}
@@ -33540,7 +33540,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 1
+  inputIsHDR: 0
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -34443,7 +34443,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 1
+  inputIsHDR: 0
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0

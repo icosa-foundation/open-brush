@@ -49,7 +49,7 @@ namespace TiltBrush
         Neo3,
         Phoenix,
         Zapbox,
-        LogitechMxInk
+        LogitechMxInk = 6100
     }
 
     //
@@ -732,8 +732,7 @@ namespace TiltBrush
         {
             if (device.name.Contains("Logitech MX Ink"))
             {
-                //Temporal, waiting for stylus prefab
-                SetControllerStyle(ControllerStyle.OculusTouch);
+                SetControllerStyle(ControllerStyle.LogitechMxInk);
             }
             else if (device.name.Contains("Oculus Touch"))
             {
