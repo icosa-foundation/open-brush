@@ -36,24 +36,26 @@ namespace TiltBrush
 
         private void ListenForConnectedDevices()
         {
-            List<InputDevice> devices = new List<InputDevice>();
-            InputDevices.GetDevices(devices);
-            foreach (InputDevice device in devices)
+            bool needsBrushSizeUI = false;
+            InputDevice tryGetUnityXRController = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
+            if (tryGetUnityXRController.isValid && tryGetUnityXRController.name.Contains("Logitech MX Ink"))
             {
-                DeviceConnected(device);
+                needsBrushSizeUI = true;
             }
-        }
+            else
+            {
+                tryGetUnityXRController = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
+                if (tryGetUnityXRController.isValid && tryGetUnityXRController.name.Contains("Logitech MX Ink"))
+                {
+                    needsBrushSizeUI = true;
+                }
+            }
 
-        private void DeviceConnected(InputDevice device)
-        {
-            Debug.Log($"Device name: {device.name}");
-            bool needsBrushSizeUi = device.name.StartsWith("Logitech MX Ink");
-            if (needsBrushSizeUi)
+            if (needsBrushSizeUI)
             {
                 DoAnimateIn();
+                UpdateSliderToMatchCurrentSize();
             }
-
-            UpdateSliderToMatchCurrentSize();
         }
 
         private void UpdateSliderToMatchCurrentSize()
@@ -72,6 +74,7 @@ namespace TiltBrush
         protected override void OnToolChanged()
         {
             UpdateSliderToMatchCurrentSize();
+            ListenForConnectedDevices();
         }
 
         public void OnSliderChanged(Vector3 value)
