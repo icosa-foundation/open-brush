@@ -714,7 +714,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 1
+  inputIsHDR: 0
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -17110,6 +17110,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 4000013585580318, guid: dedd7823645ca60468aca5f2ff1b9a7f,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1814796582}
     - targetCorrespondingSourceObject: {fileID: 4000011853176074, guid: dedd7823645ca60468aca5f2ff1b9a7f,
         type: 3}
       insertIndex: -1
@@ -30859,6 +30863,12 @@ MeshRenderer:
     type: 3}
   m_PrefabInstance: {fileID: 2124612094}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &1814796582 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1857229286467065778, guid: cb1310f64dd794703964833b63e87d96,
+    type: 3}
+  m_PrefabInstance: {fileID: 1971022075}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1815866264
 GameObject:
   m_ObjectHideFlags: 0
@@ -33202,7 +33212,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 0}
+    m_TransformParent: {fileID: 17776369}
     m_Modifications:
     - target: {fileID: 1077171487981709975, guid: cb1310f64dd794703964833b63e87d96,
         type: 3}
@@ -33232,17 +33242,17 @@ PrefabInstance:
     - target: {fileID: 1857229286467065778, guid: cb1310f64dd794703964833b63e87d96,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 1857229286467065778, guid: cb1310f64dd794703964833b63e87d96,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 1857229286467065778, guid: cb1310f64dd794703964833b63e87d96,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 1857229286467065778, guid: cb1310f64dd794703964833b63e87d96,
         type: 3}
@@ -33606,7 +33616,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 1
+  inputIsHDR: 0
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -34509,7 +34519,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 1
+  inputIsHDR: 0
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -36944,4 +36954,3 @@ SceneRoots:
   - {fileID: 1802399861}
   - {fileID: 106206546}
   - {fileID: 1848773840}
-  - {fileID: 1971022075}

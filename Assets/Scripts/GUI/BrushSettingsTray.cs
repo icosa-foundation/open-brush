@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using UnityEngine;
+using UnityEngine.XR;
 
 namespace TiltBrush
 {
@@ -32,6 +34,29 @@ namespace TiltBrush
             App.Switchboard.ToolChanged -= UpdateSliderToMatchCurrentSize;
         }
 
+        private void DetectSupportedDevices()
+        {
+            // Currently only the Logitech stylus needs this panel
+            bool needsBrushSizeUI = VrStylusHandler.m_Instance.CurrentState.isActive;
+
+            // DoAnimateIn performs a toggle so we have to also check the state
+            if (needsBrushSizeUI)
+            {
+                if (!m_AnimateIn)
+                {
+                    DoAnimateIn();
+                    UpdateSliderToMatchCurrentSize();
+                }
+            }
+            else
+            {
+                if (m_AnimateIn)
+                {
+                    DoAnimateIn();
+                }
+            }
+        }
+
         private void UpdateSliderToMatchCurrentSize()
         {
             m_BrushSizeSlider.SetInitialValueAndUpdate(
@@ -43,21 +68,8 @@ namespace TiltBrush
         {
             base.Start();
 
-            bool needsBrushSizeUi = false;
-
-#if OCULUS_SUPPORTED
-            const string suffix = "mx_ink_stylus_logitech";
-            var leftDeviceName = OVRPlugin.GetCurrentInteractionProfileName(OVRPlugin.Hand.HandLeft);
-            var rightDeviceName = OVRPlugin.GetCurrentInteractionProfileName(OVRPlugin.Hand.HandRight);
-            needsBrushSizeUi = leftDeviceName.EndsWith(suffix) || rightDeviceName.EndsWith(suffix);
-#endif
-
-            if (needsBrushSizeUi)
-            {
-                DoAnimateIn();
-            }
-
-            UpdateSliderToMatchCurrentSize();
+            // Call DetectSupportedDevice every second
+            InvokeRepeating(nameof(DetectSupportedDevices), 0.0f, 1);
         }
 
         protected override void OnToolChanged()

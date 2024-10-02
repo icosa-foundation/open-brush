@@ -24,12 +24,12 @@ namespace TiltBrush
         private UnityEngine.XR.InputDevice device;
         private readonly UnityXRInputAction actionSet = new();
 
-        private VrStylusHandler _logitechMxInk;
-
         private Vector2 padAxisPrevious = new Vector2();
         private const float kInputScrollScalar = 0.5f;
 
         private bool isBrush = false;
+
+        private StylusInputs stylusState => VrStylusHandler.m_Instance.CurrentState;
 
         private string actionMap
         {
@@ -53,21 +53,10 @@ namespace TiltBrush
         {
             device = InputDevices.GetDeviceAtXRNode(isBrush ? XRNode.RightHand : XRNode.LeftHand);
             SetActionMask();
-            _logitechMxInk = null;
             if (isBrush)
             {
                 actionSet.Brush.Enable();
                 actionSet.Wand.Disable();
-
-                try
-                {
-                    _logitechMxInk = UnityEngine.Object.FindObjectsOfType<VrStylusHandler>()[0];
-                }
-                catch (Exception)
-                {
-                    _logitechMxInk = null;
-                }
-
             }
             else
             {
@@ -190,9 +179,9 @@ namespace TiltBrush
         public override float GetGripValue()
         {
 #if OCULUS_SUPPORTED
-            if (_logitechMxInk && _logitechMxInk.CurrentState.isActive)
+            if (stylusState.isActive)
             {
-                return _logitechMxInk.CurrentState.cluster_front_value ? 1.0f : 0;
+                return stylusState.cluster_front_value ? 1.0f : 0;
             }
 #endif
             return FindAction("GripAxis").ReadValue<float>();
@@ -206,9 +195,9 @@ namespace TiltBrush
         public override float GetTriggerValue()
         {
 #if OCULUS_SUPPORTED
-            if (_logitechMxInk && _logitechMxInk.CurrentState.isActive)
+            if (stylusState.isActive)
             {
-                return Math.Max(_logitechMxInk.CurrentState.tip_value, _logitechMxInk.CurrentState.cluster_middle_value);
+                return Math.Max(stylusState.tip_value, stylusState.cluster_middle_value);
             }
 #endif
             return FindAction("TriggerAxis").ReadValue<float>();
@@ -254,22 +243,22 @@ namespace TiltBrush
                     return FindAction("PadButton").IsPressed();
                 case VrInput.Trigger:
 #if OCULUS_SUPPORTED
-                    if (_logitechMxInk && _logitechMxInk.CurrentState.isActive)
-                        return _logitechMxInk.CurrentState.cluster_middle_value > 0.2 || _logitechMxInk.CurrentState.tip_value > 0.2;
+                    if (stylusState.isActive)
+                        return stylusState.cluster_middle_value > 0.2 || stylusState.tip_value > 0.2;
 #endif
                     return FindAction("TriggerAxis").IsPressed();
                 case VrInput.Grip:
 #if OCULUS_SUPPORTED
-                    if (_logitechMxInk && _logitechMxInk.CurrentState.isActive)
-                        return _logitechMxInk.CurrentState.cluster_front_value;
+                    if (stylusState.isActive)
+                        return stylusState.cluster_front_value;
 #endif
                     return FindAction("GripAxis").IsPressed();
                 case VrInput.Button01:
                 case VrInput.Button04:
                 case VrInput.Button06:
 #if OCULUS_SUPPORTED
-                    if (_logitechMxInk && _logitechMxInk.CurrentState.isActive)
-                        return _logitechMxInk.CurrentState.cluster_back_value;
+                    if (stylusState.isActive)
+                        return stylusState.cluster_back_value;
 #endif
                     return FindAction("PrimaryButton").IsPressed();
                 case VrInput.Button02:

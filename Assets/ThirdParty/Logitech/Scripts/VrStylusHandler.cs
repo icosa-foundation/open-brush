@@ -1,15 +1,24 @@
 using UnityEngine;
 using System;
+using TiltBrush;
 
 public class VrStylusHandler : StylusHandler
 {
-#if OCULUS_SUPPORTED
     [SerializeField] private GameObject _mxInk_model;
     [SerializeField] private GameObject _tip;
     [SerializeField] private GameObject _cluster_front;
     [SerializeField] private GameObject _cluster_middle;
     [SerializeField] private GameObject _cluster_back;
 
+    static public VrStylusHandler m_Instance;
+
+    void Awake()
+    {
+        _stylus = new StylusInputs();
+        m_Instance = this;
+    }
+
+#if OCULUS_SUPPORTED
     private bool _inUiInteraction = false;
 
     public bool InUiInteraction
@@ -29,6 +38,7 @@ public class VrStylusHandler : StylusHandler
     {
         get { return _positionIsValid; }
     }
+
     public Color active_color = Color.green;
     public Color double_tap_active_color = Color.cyan;
     public Color default_color = Color.white;
@@ -72,12 +82,15 @@ public class VrStylusHandler : StylusHandler
         // Find whether the Logitech MX Ink is on the left or the right hand
         bool stylusIsOnLeftHand = leftDevice.Contains("logitech");
         bool stylusIsOnRightHand = rightDevice.Contains("logitech");
-
+        // Debug.Log($"Device: Left hand: {leftDevice}, Right hand: {rightDevice}");
         // Flag the stylus as active/inactive, on right/left hand
         _stylus.isActive = stylusIsOnLeftHand || stylusIsOnRightHand;
         _stylus.isOnRightHand = stylusIsOnRightHand;
         // Hide the 3D model if not active
         _mxInk_model.SetActive(_stylus.isActive);
+        // Hacky
+        InputManager.m_Instance.ShowController(!_stylus.isActive, stylusIsOnLeftHand ? 0 : 1);
+        InputManager.m_Instance.ShowController(true, stylusIsOnLeftHand ? 1 : 0);
 
         // Select the right/left hand stylus pose to be used
         string MX_Ink_Pose = _stylus.isOnRightHand ? MX_Ink_Pose_Right : MX_Ink_Pose_Left;
@@ -97,7 +110,7 @@ public class VrStylusHandler : StylusHandler
         }
     }
 
-    void Update()
+    void LateUpdate()
     {
         OVRInput.Update();
         UpdatePose();
