@@ -131,6 +131,11 @@ namespace TiltBrush
             }
         }
 
+        private bool IsStylusActive()
+        {
+            return stylusState.isActive && isBrush;
+        }
+
         public override Vector2 GetPadValueDelta()
         {
             var action = FindAction("ThumbAxis");
@@ -179,7 +184,7 @@ namespace TiltBrush
         public override float GetGripValue()
         {
 #if OCULUS_SUPPORTED
-            if (stylusState.isActive)
+            if (IsStylusActive())
             {
                 return stylusState.cluster_front_value ? 1.0f : 0;
             }
@@ -195,7 +200,7 @@ namespace TiltBrush
         public override float GetTriggerValue()
         {
 #if OCULUS_SUPPORTED
-            if (stylusState.isActive)
+            if (IsStylusActive())
             {
                 return Math.Max(stylusState.tip_value, stylusState.cluster_middle_value);
             }
@@ -243,13 +248,13 @@ namespace TiltBrush
                     return FindAction("PadButton").IsPressed();
                 case VrInput.Trigger:
 #if OCULUS_SUPPORTED
-                    if (stylusState.isActive)
+                    if (IsStylusActive())
                         return stylusState.cluster_middle_value > 0.2 || stylusState.tip_value > 0.2;
 #endif
                     return FindAction("TriggerAxis").IsPressed();
                 case VrInput.Grip:
 #if OCULUS_SUPPORTED
-                    if (stylusState.isActive)
+                    if (IsStylusActive())
                         return stylusState.cluster_front_value;
 #endif
                     return FindAction("GripAxis").IsPressed();
@@ -257,7 +262,7 @@ namespace TiltBrush
                 case VrInput.Button04:
                 case VrInput.Button06:
 #if OCULUS_SUPPORTED
-                    if (stylusState.isActive)
+                    if (IsStylusActive())
                         return stylusState.cluster_back_value;
 #endif
                     return FindAction("PrimaryButton").IsPressed();
