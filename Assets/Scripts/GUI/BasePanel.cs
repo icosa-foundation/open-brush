@@ -107,6 +107,7 @@ namespace TiltBrush
             CameraPath,
             BrushLab,
             WebcamPanel = 5200,
+            Keyboard = 5400,
             Scripts = 6000,
             SnapSettings = 8000,
             StencilSettings = 20200,

@@ -113,7 +113,7 @@ namespace TiltBrush
         /// </summary>
         public string ConsoleContent { get; private set; }
 
-        public void SantizeFilename()
+        public void SanitizeFilename()
         {
             string invalidChars = System.Text.RegularExpressions.Regex.Escape(new string(System.IO.Path.GetInvalidFileNameChars()));
             string invalidRegStr = string.Format(@"([{0}]*\.+$)|([{0}]+)", invalidChars);
