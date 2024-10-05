@@ -58,8 +58,8 @@ Category {
 
       float4 _MainTex_ST;
 
-      uniform float _ClipStart;
-      uniform float _ClipEnd;
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
       uniform half _Dissolve;
       uniform half _Opacity;
 
@@ -82,8 +82,10 @@ Category {
 
       fixed4 frag (v2f i) : COLOR
       {
+        #ifdef SHADER_SCRIPTING_ON
         if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
         if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+        #endif
 
         half w = 0;
 #ifdef AUDIO_REACTIVE

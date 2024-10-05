@@ -25,7 +25,7 @@ Properties {
   _FlameFadeMin ("Fade Flame Min", Float) = 1
   _FlameFadeMax ("Fade Flame Max", Float) = 30
 
-      [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+
   _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
   _TimeBlend("Time Blend", Float) = 0
   _TimeSpeed("Time Speed", Float) = 1.0
@@ -55,15 +55,14 @@ Category {
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
 
       sampler2D _MainTex;
       sampler2D _DisplaceTex;
 
-      uniform float _ClipStart;
-      uniform float _ClipEnd;
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
       uniform half _Dissolve;
 
       struct appdata_t {
@@ -127,9 +126,10 @@ Category {
       // Note: input color is srgb
       fixed4 frag (v2f i) : COLOR
       {
-
+        #ifdef SHADER_SCRIPTING_ON
         if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
         if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+        #endif
 
         half2 displacement;
         float procedural_line = 0;

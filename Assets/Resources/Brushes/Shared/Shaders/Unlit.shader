@@ -42,8 +42,8 @@ SubShader {
         sampler2D _MainTex;
         float _Cutoff;
 
-  	    uniform float _ClipStart;
-        uniform float _ClipEnd;
+  	    uniform half _ClipStart;
+        uniform half _ClipEnd;
         uniform half _Dissolve;
 
         struct appdata_t {
@@ -85,8 +85,10 @@ SubShader {
 
         fixed4 frag (v2f i) : COLOR
         {
+            #ifdef SHADER_SCRIPTING_ON
             if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
             if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+            #endif
 
             fixed4 c;
             UNITY_APPLY_FOG(i.fogCoord, i.color);

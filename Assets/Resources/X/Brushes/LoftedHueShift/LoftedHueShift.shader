@@ -47,8 +47,8 @@ Shader "Brush/LoftedHueShift" {
 			fixed4 _Color;
 			half _Shininess;
 
-			uniform float _ClipStart;
-			uniform float _ClipEnd;
+			uniform half _ClipStart;
+			uniform half _ClipEnd;
 			uniform half _Dissolve;
 
 			struct appdata_full_plus_id {
@@ -72,8 +72,10 @@ Shader "Brush/LoftedHueShift" {
 
 			void surf(Input IN, inout SurfaceOutputStandardSpecular o) {
 
+				#ifdef SHADER_SCRIPTING_ON
 				if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
 				if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
+				#endif
 
 				fixed4 tex = tex2D(_MainTex, IN.uv_MainTex) * IN.color;
 

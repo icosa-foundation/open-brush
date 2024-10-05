@@ -43,8 +43,8 @@ Category {
 
       sampler2D _MainTex;
 
-      uniform float _ClipStart;
-      uniform float _ClipEnd;
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
       uniform half _Dissolve;
 
       struct appdata_t {
@@ -94,8 +94,10 @@ Category {
 
       fixed4 frag (v2f i) : COLOR
       {
+        #ifdef SHADER_SCRIPTING_ON
         if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
         if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+        #endif
 
         UNITY_APPLY_FOG(i.fogCoord, i.color.rgb);
         float4 color = float4(i.color.rgb, 1);

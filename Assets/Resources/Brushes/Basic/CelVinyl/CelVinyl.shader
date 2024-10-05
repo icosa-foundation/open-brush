@@ -46,8 +46,8 @@ Shader "Brush/Special/CelVinyl" {
         fixed4 _Color;
         float _Cutoff;
 
-        uniform float _ClipStart;
-        uniform float _ClipEnd;
+        uniform half _ClipStart;
+        uniform half _ClipEnd;
         uniform half _Dissolve;
 
         struct appdata_t {
@@ -89,9 +89,10 @@ Shader "Brush/Special/CelVinyl" {
 
         fixed4 frag (v2f i) : COLOR
         {
-
+          #ifdef SHADER_SCRIPTING_ON
           if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
           if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+          #endif
 
           fixed4 tex = tex2D(_MainTex, i.texcoord) * i.color;
           UNITY_APPLY_FOG(i.fogCoord, tex);

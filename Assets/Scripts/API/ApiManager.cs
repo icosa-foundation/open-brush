@@ -908,5 +908,16 @@ namespace TiltBrush
             }
             ActiveUndo = null;
         }
+
+        public static bool ParameterRequiresScriptingKeyword(string parameter)
+        {
+            return parameter is
+                "_ClipStart" or
+                "_ClipEnd" or
+                "_Dissolve" or
+                "_TimeOverrideValue" or
+                "_TimeBlend" or
+                "_TimeSpeed";
+        }
     }
 }

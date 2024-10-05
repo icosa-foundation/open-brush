@@ -17,7 +17,7 @@ Properties {
   _TintColor ("Tint Color", Color) = (0.5,0.5,0.5,0.5)
   _MainTex ("Particle Texture", 2D) = "white" {}
 
-  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+
   _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
   _TimeBlend("Time Blend", Float) = 0
   _TimeSpeed("Time Speed", Float) = 1.0
@@ -47,8 +47,8 @@ Category {
       #pragma multi_compile __ HDR_EMULATED HDR_SIMPLE
       #pragma multi_compile __ AUDIO_REACTIVE
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
+
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
       #include "Assets/ThirdParty/Shaders/Noise.cginc"
@@ -57,8 +57,8 @@ Category {
       sampler2D _MainTex;
       fixed4 _TintColor;
 
-      uniform float _ClipStart;
-      uniform float _ClipEnd;
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
       uniform half _Dissolve;
       uniform half _Opacity;
 
@@ -129,8 +129,10 @@ Category {
 
       fixed4 frag (v2f i) : SV_Target
       {
+        #ifdef SHADER_SCRIPTING_ON
         if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
         if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+        #endif
 
         float4 c = i.color * _TintColor * tex2D(_MainTex, i.texcoord);
         c = encodeHdr(c.rgb * c.a);

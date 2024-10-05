@@ -18,7 +18,7 @@ Properties {
   _MainTex ("Particle Texture", 2D) = "white" {}
   _ScrollRate("Scroll Rate", Float) = 1.0
 
-  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+
   _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
   _TimeBlend("Time Blend", Float) = 0
   _TimeSpeed("Time Speed", Float) = 1.0
@@ -48,7 +48,6 @@ Category {
       #pragma multi_compile __ SELECTION_ON
 
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Particles.cginc"
       #include "Assets/ThirdParty/Shaders/Noise.cginc"
@@ -69,8 +68,8 @@ Category {
       float4 _MainTex_ST;
       float _ScrollRate;
 
-      uniform float _ClipStart;
-      uniform float _ClipEnd;
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
       uniform half _Dissolve;
       uniform half _Opacity;
 
@@ -137,8 +136,10 @@ Category {
 
       fixed4 frag (v2f i) : SV_Target
       {
+        #ifdef SHADER_SCRIPTING_ON
         if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
         if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+        #endif
 
         float4 c =  tex2D(_MainTex, i.texcoord);
         c *= i.color * _TintColor;

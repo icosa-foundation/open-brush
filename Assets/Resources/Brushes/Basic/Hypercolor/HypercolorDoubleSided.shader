@@ -21,7 +21,7 @@ Properties {
   _BumpMap ("Normalmap", 2D) = "bump" {}
   _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
 
- [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+
  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
  _TimeBlend("Time Blend", Float) = 0
  _TimeSpeed("Time Speed", Float) = 1.0
@@ -43,7 +43,7 @@ Properties {
     #pragma multi_compile __ SELECTION_ON
     // Faster compiles
     #pragma skip_variants INSTANCING_ON
-    #include "Assets/Shaders/Include/TimeOverride.cginc"
+
     #include "Assets/Shaders/Include/Brush.cginc"
     #include "Assets/Shaders/Include/MobileSelection.cginc"
 
@@ -75,8 +75,8 @@ Properties {
     half _Shininess;
     fixed _Cutoff;
 
-    uniform float _ClipStart;
-    uniform float _ClipEnd;
+    uniform half _ClipStart;
+    uniform half _ClipEnd;
     uniform half _Dissolve;
 
     void vert (inout appdata v, out Input o) {
@@ -101,8 +101,10 @@ Properties {
 
     void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
+      #ifdef SHADER_SCRIPTING_ON
       if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
       if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
+      #endif
 
       fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);
 

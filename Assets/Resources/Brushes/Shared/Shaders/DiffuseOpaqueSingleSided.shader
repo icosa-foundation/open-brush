@@ -37,8 +37,8 @@ SubShader {
   #include "Assets/Shaders/Include/MobileSelection.cginc"
   fixed4 _Color;
 
-  uniform float _ClipStart;
-  uniform float _ClipEnd;
+  uniform half _ClipStart;
+  uniform half _ClipEnd;
   uniform half _Dissolve;
 
   struct Input {
@@ -69,8 +69,10 @@ SubShader {
 
   void surf (Input IN, inout SurfaceOutput o) {
 
+    #ifdef SHADER_SCRIPTING_ON
     if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
     if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
+    #endif
 
     o.Albedo = _Color * IN.color.rgb;
     SURF_FRAG_MOBILESELECT(o);

@@ -42,8 +42,8 @@ SubShader {
     fixed4 _ColorY;
     fixed4 _ColorZ;
 
-    uniform float _ClipStart;
-    uniform float _ClipEnd;
+    uniform half _ClipStart;
+    uniform half _ClipEnd;
     uniform half _Dissolve;
 
     struct appdata_t {
@@ -85,8 +85,10 @@ SubShader {
 
     fixed4 frag (v2f i) : SV_Target
     {
+      #ifdef SHADER_SCRIPTING_ON
       if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
       if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+      #endif
 
       float3 n = normalize(cross(ddy(i.worldPos), ddx(i.worldPos)));
       i.color.xyz = float3(

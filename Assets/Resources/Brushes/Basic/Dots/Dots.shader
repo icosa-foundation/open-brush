@@ -56,8 +56,8 @@ Category {
       sampler2D _MainTex;
       fixed4 _TintColor;
 
-      uniform float _ClipStart;
-      uniform float _ClipEnd;
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
       uniform half _Dissolve;
 
       struct v2f {
@@ -112,9 +112,11 @@ Category {
       // Input color is srgb
       fixed4 frag (v2f i) : SV_Target
       {
+        #ifdef SHADER_SCRIPTING_ON
         if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
         // It's hard to get alpha curves right so use dithering for hdr shaders
         if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+        #endif
 
         #ifdef AUDIO_REACTIVE
         // Deform uv's by waveform displacement amount vertically

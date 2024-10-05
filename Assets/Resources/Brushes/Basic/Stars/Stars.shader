@@ -18,7 +18,7 @@ Properties {
   _SparkleRate ("Sparkle Rate", Float) = 2.5
   _SpreadRate ("Spread Rate", Range(0.3, 5)) = 1.539
 
-  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+
   _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
   _TimeBlend("Time Blend", Float) = 0
   _TimeSpeed("Time Speed", Float) = 1.0
@@ -50,7 +50,6 @@ Category {
       #pragma target 3.0
 
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
       #include "Assets/Shaders/Include/Particles.cginc"
@@ -61,8 +60,8 @@ Category {
       float _SparkleRate;
       float _SpreadRate;
 
-      uniform float _ClipStart;
-      uniform float _ClipEnd;
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
       uniform half _Dissolve;
 
       struct v2f {
@@ -114,9 +113,11 @@ Category {
       // Input color is srgb
       fixed4 frag (v2f i) : SV_Target
       {
+        #ifdef SHADER_SCRIPTING_ON
         if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-      // It's hard to get alpha curves right so use dithering for hdr shaders
-      if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+        // It's hard to get alpha curves right so use dithering for hdr shaders
+        if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+        #endif
 
         float4 texCol = tex2D(_MainTex, i.texcoord);
         float4 color = i.color * texCol;

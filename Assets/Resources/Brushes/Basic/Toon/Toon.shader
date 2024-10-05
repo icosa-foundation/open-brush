@@ -36,8 +36,8 @@ CGINCLUDE
   float4 _MainTex_ST;
   float _OutlineMax;
 
-  uniform float _ClipStart;
-  uniform float _ClipEnd;
+  uniform half _ClipStart;
+  uniform half _ClipEnd;
   uniform half _Dissolve;
 
   struct appdata_t {
@@ -133,8 +133,10 @@ CGINCLUDE
 
   fixed4 fragBlack (v2f i) : SV_Target
   {
+    #ifdef SHADER_SCRIPTING_ON
     if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
     if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+    #endif
 
     float4 color = float4(0,0,0,1);
     UNITY_APPLY_FOG(i.fogCoord, color);
@@ -144,8 +146,10 @@ CGINCLUDE
 
   fixed4 fragColor (v2f i) : SV_Target
   {
+    #ifdef SHADER_SCRIPTING_ON
     if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
     if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+    #endif
 
     UNITY_APPLY_FOG(i.fogCoord, i.color);
     FRAG_MOBILESELECT(i.color)

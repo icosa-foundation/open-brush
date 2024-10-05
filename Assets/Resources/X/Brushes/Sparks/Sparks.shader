@@ -22,7 +22,7 @@ Properties {
 	_NumSides ("Number of Sides", Float) = 5
 	_Speed ("Speed", Float) = 1
 
-	[Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+
     _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
     _TimeBlend("Time Blend", Float) = 0
     _TimeSpeed("Time Speed", Float) = 1.0
@@ -53,8 +53,7 @@ Category {
 			#pragma target 3.0
 
 			#include "UnityCG.cginc"
-			#include "Assets/Shaders/Include/TimeOverride.cginc"
-			#include "Assets/Shaders/Include/Brush.cginc"
+            #include "Assets/Shaders/Include/Brush.cginc"
 			#include "Assets/Shaders/Include/Hdr.cginc"
 
 			sampler2D _MainTex;
@@ -86,8 +85,8 @@ Category {
 			float _NumSides;
 			float _Speed;
 
-            uniform float _ClipStart;
-			uniform float _ClipEnd;
+            uniform half _ClipStart;
+			uniform half _ClipEnd;
 			uniform half _Dissolve;
 
 			v2f vert (appdata_t v)
@@ -126,8 +125,10 @@ Category {
 
 			fixed4 frag (v2f i) : COLOR
 			{
+				#ifdef SHADER_SCRIPTING_ON
                 if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
                 if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+				#endif
 
 				// Distort U coord to taste. This makes the effect to "slow down" towards the end of the stroke
 				// by clumping UV's closer together toward the beginning of the stroke

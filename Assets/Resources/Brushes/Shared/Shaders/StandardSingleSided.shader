@@ -68,8 +68,8 @@ Shader "Brush/StandardSingleSided" {
       fixed4 _Color;
       half _Shininess;
 
-  	  uniform float _ClipStart;
-	    uniform float _ClipEnd;
+  	  uniform half _ClipStart;
+	    uniform half _ClipEnd;
       uniform half _Dissolve;
 
       void vert (inout appdata_full_plus_id i, out Input o) {
@@ -81,9 +81,10 @@ Shader "Brush/StandardSingleSided" {
       }
 
       void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
-
+        #ifdef SHADER_SCRIPTING_ON
         if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
         if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
+        #endif
 
         fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);
         o.Albedo = tex.rgb * _Color.rgb * IN.color.rgb;
@@ -147,8 +148,8 @@ Shader "Brush/StandardSingleSided" {
         fixed _Cutoff;
         half _MipScale;
 
-        uniform float _ClipStart;
-        uniform float _ClipEnd;
+        uniform half _ClipStart;
+        uniform half _ClipEnd;
         uniform half _Dissolve;
 
         float ComputeMipLevel(float2 uv) {
@@ -176,9 +177,10 @@ Shader "Brush/StandardSingleSided" {
         }
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
-
+          #ifdef SHADER_SCRIPTING_ON
           if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
           if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+          #endif
 
           fixed4 col = i.color;
           col.a = tex2D(_MainTex, i.uv).a * col.a;
@@ -259,8 +261,8 @@ Shader "Brush/StandardSingleSided" {
         half _Shininess;
 
         fixed _Cutoff;
-        uniform float _ClipStart;
-        uniform float _ClipEnd;
+        uniform half _ClipStart;
+        uniform half _ClipEnd;
         uniform half _Dissolve;
 
         v2f vert (appdata v) {
@@ -283,9 +285,10 @@ Shader "Brush/StandardSingleSided" {
         }
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
-
+          #ifdef SHADER_SCRIPTING_ON
           if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-
+          if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+          #endif
 
           fixed4 col = i.color;
           col.a = tex2D(_MainTex, i.uv).a * col.a;
@@ -365,8 +368,8 @@ Shader "Brush/StandardSingleSided" {
         fixed _Cutoff;
         half _MipScale;
 
-        uniform float _ClipStart;
-        uniform float _ClipEnd;
+        uniform half _ClipStart;
+        uniform half _ClipEnd;
         uniform half _Dissolve;
 
         float ComputeMipLevel(float2 uv) {
@@ -386,9 +389,10 @@ Shader "Brush/StandardSingleSided" {
         }
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
-
+          #ifdef SHADER_SCRIPTING_ON
           if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
           if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+          #endif
 
           fixed4 col = i.color;
           col.a *= tex2D(_MainTex, i.uv).a;
@@ -426,8 +430,8 @@ Shader "Brush/StandardSingleSided" {
       sampler2D _MainTex;
       fixed4 _Color;
 
-      uniform float _ClipStart;
-      uniform float _ClipEnd;
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
       uniform half _Dissolve;
 
       struct Input {
@@ -441,9 +445,10 @@ Shader "Brush/StandardSingleSided" {
       }
 
       void surf (Input IN, inout SurfaceOutput o) {
-
+        #ifdef SHADER_SCRIPTING_ON
         if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
         if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
+        #endif
 
         fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
         o.Albedo = c.rgb * IN.color.rgb;

@@ -40,8 +40,8 @@ Shader "Brush/Special/LeakyPen" {
 			sampler2D _MainTex;
 			sampler2D _SecondaryTex;
 
-			uniform float _ClipStart;
-			uniform float _ClipEnd;
+			uniform half _ClipStart;
+			uniform half _ClipEnd;
 			uniform half _Dissolve;
 
 			struct Input {
@@ -74,8 +74,10 @@ Shader "Brush/Special/LeakyPen" {
 
 			void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
+				#ifdef SHADER_SCRIPTING_ON
 				if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
                 if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
+				#endif
 
 				float3 secondary_tex = tex2D(_MainTex, IN.uv_SecondaryTex).rgb;
 
