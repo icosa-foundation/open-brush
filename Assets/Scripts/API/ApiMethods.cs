@@ -681,6 +681,14 @@ namespace TiltBrush
         }
 
         [ApiEndpoint(
+            "strokes.debug", "Logs some debug info about the strokes"
+        )]
+        public static void StrokesDebug()
+        {
+            Debug.Log($"Strokes: {SketchMemoryScript.m_Instance.StrokeCount}");
+        }
+
+        [ApiEndpoint(
             "panel.attach",
             "Attaches the given panel to the user's wand",
             "scripts"
