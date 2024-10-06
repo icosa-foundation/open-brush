@@ -14,11 +14,11 @@
       "hash": "4f87195d54ccefe076678cb83a296b3f0428fc53"
     },
     "com.meta.xr.sdk.core": {
-      "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.core.git#66.0.0-openbrush",
+      "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.core.git#68.0.2-openbrush-hotfix",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "25b32e5b6dacc484be3eed179ea3d2d21d55b9d1"
+      "hash": "cc9462850915e74dbb5cd6094f77464c5e606da1"
     },
     "com.meta.xr.sdk.platform": {
       "version": "60.0.0",
@@ -360,13 +360,6 @@
       },
       "url": "https://packages.unity.com"
     },
-    "com.watertrans.glyphloader": {
-      "version": "https://github.com/icosa-mirror/GlyphLoader-Unity.git#upm",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "6554bc1dce4f363437c6a9d42719f2756f24cf49"
-    },
     "com.zappar.xr.zapbox": {
       "version": "https://github.com/zappar-xr/zapbox-xr-sdk.git#43697771ed65efee02d5b1743141b8179444c147",
       "depth": 0,
@@ -376,13 +369,6 @@
         "com.unity.xr.legacyinputhelpers": "2.1.4"
       },
       "hash": "43697771ed65efee02d5b1743141b8179444c147"
-    },
-    "moonsharp": {
-      "version": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "dd39e8b23a399938e91a1088a78ef63ca64f2cd8"
     },
     "org.khronos.unitygltf": {
       "version": "https://github.com/icosa-mirror/UnityGLTF.git",
