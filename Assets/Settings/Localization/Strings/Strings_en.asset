@@ -3524,6 +3524,10 @@ MonoBehaviour:
     m_Localized: Image failed to load
     m_Metadata:
       m_Items: []
+  - m_Id: 276171365497266176
+    m_Localized: Brush Size
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
