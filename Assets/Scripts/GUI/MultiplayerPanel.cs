@@ -14,25 +14,56 @@
 
 using System;
 using OpenBrush.Multiplayer;
+using TMPro;
 using UnityEngine;
 
 namespace TiltBrush
 {
     public class MultiplayerPanel : BasePanel
     {
+        [SerializeField] private TextMeshPro m_RoomNumberTextLobby;
+        [SerializeField] private TextMeshPro m_RoomNumberTextRoomSettings;
+
+        private RoomCreateData data = new RoomCreateData
+        {
+            roomName = GenerateRandomRoomName(),
+            @private = false,
+            maxPlayers = 4,
+            voiceDisabled = false
+        };
+
+        private static string GenerateRandomRoomName()
+        {
+            System.Random random = new System.Random();
+            return random.Next(100000, 999999).ToString();
+        }
+
+        private void UpdateRoomNumberDisplay()
+        {
+            if (m_RoomNumberTextLobby)
+            {
+                m_RoomNumberTextLobby.text = data.roomName;
+            }
+            if (m_RoomNumberTextRoomSettings)
+            {
+                m_RoomNumberTextRoomSettings.text = data.roomName;
+            }
+        }
+
         public enum Mode
         {
             Null,
             Lobby,
-            Create,
-            RoomSettings,
-            GeneralSettings
+            Joined,
+            //Create,
+            //RoomSettings,
+            //GeneralSettings
         }
 
         [SerializeField] private GameObject m_LobbyElements;
-        [SerializeField] private GameObject m_CreateRoomElements;
-        [SerializeField] private GameObject m_RoomSettingsElements;
-        [SerializeField] private GameObject m_GeneralSettingsElements;
+        [SerializeField] private GameObject m_JoinedElements;
+        //[SerializeField] private GameObject m_RoomSettingsElements;
+        //[SerializeField] private GameObject m_GeneralSettingsElements;
 
         private Mode m_CurrentMode;
 
@@ -41,6 +72,7 @@ namespace TiltBrush
             base.InitPanel();
 
             InitMultiplayer();
+            UpdateRoomNumberDisplay();
         }
 
         public async void InitMultiplayer()
@@ -48,13 +80,43 @@ namespace TiltBrush
             bool success = await MultiplayerManager.m_Instance.Init();
         }
 
+        private async void JoinRoom()
+        {
+            if (MultiplayerManager.m_Instance != null)
+            {
+
+                bool success = await MultiplayerManager.m_Instance.Connect(data);
+
+                if (success)
+                {
+                    Debug.Log("Connected to room successfully.");
+
+                    // Additional UI updates or feedback
+                    UpdateMode(Mode.Joined);
+                    UpdateRoomNumberDisplay(); // Update room number display after joining
+                }
+                else
+                {
+                    Debug.LogError("Failed to connect to room.");
+                    // Provide user feedback with some UI element
+                }
+
+            }
+        }
+
         private void UpdateMode(Mode newMode)
         {
             m_CurrentMode = newMode;
             m_LobbyElements.SetActive(m_CurrentMode == Mode.Lobby);
-            m_CreateRoomElements.SetActive(m_CurrentMode == Mode.Create);
-            m_RoomSettingsElements.SetActive(m_CurrentMode == Mode.RoomSettings);
-            m_GeneralSettingsElements.SetActive(m_CurrentMode == Mode.GeneralSettings);
+            m_JoinedElements.SetActive(m_CurrentMode == Mode.Joined);
+            //m_RoomSettingsElements.SetActive(m_CurrentMode == Mode.RoomSettings);
+            //m_GeneralSettingsElements.SetActive(m_CurrentMode == Mode.GeneralSettings);
+
+            // Update room number display if switching to a mode that shows it
+            if (m_CurrentMode == Mode.Lobby || m_CurrentMode == Mode.Joined)
+            {
+                UpdateRoomNumberDisplay();
+            }
         }
 
         private void RefreshObjects()
@@ -82,6 +144,10 @@ namespace TiltBrush
                         default:
                             break;
                     }
+                    break;
+                case SketchControlsScript.GlobalCommands.MultiplayerJoinRoom:
+                    JoinRoom();
+                    Debug.Log("Joining room");
                     break;
             }
         }

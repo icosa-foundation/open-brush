@@ -60,7 +60,7 @@ namespace OpenBrush.Multiplayer
         public async Task<bool> Init()
         {
             await Task.Yield();
-            return true;
+            //return true;
             var result = await m_Runner.JoinSessionLobby(SessionLobby.Shared, customAppSettings: m_PhotonAppSettings);
 
             if (result.Ok)
@@ -88,6 +88,15 @@ namespace OpenBrush.Multiplayer
             };
 
             var result = await m_Runner.StartGame(args);
+
+            if (result.Ok)
+            {
+                ControllerConsoleScript.m_Instance.AddNewLine("Joined Room");
+            }
+            else
+            {
+                ControllerConsoleScript.m_Instance.AddNewLine("Failed to join Room!");
+            }
 
             return result.Ok;
             
@@ -258,7 +267,12 @@ namespace OpenBrush.Multiplayer
 
         public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
         {
-            if(player == m_Runner.LocalPlayer)
+            Debug.Log($"OnPlayerJoined called. PlayerRef: {player.PlayerId}");
+
+            try
+            {
+
+                if (player == m_Runner.LocalPlayer)
             {
                 var playerPrefab = Resources.Load("Multiplayer/Photon/PhotonPlayerRig") as GameObject;
                 var playerObj = m_Runner.Spawn(playerPrefab, inputAuthority: m_Runner.LocalPlayer);
@@ -270,6 +284,11 @@ namespace OpenBrush.Multiplayer
             else
             {
                 m_PlayersSpawning.Add(player);
+            }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Exception in OnPlayerJoined: {ex.Message}");
             }
         }
 

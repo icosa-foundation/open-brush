@@ -115,9 +115,9 @@ namespace OpenBrush.Multiplayer
             return success;
         }
 
-        public async void Connect(RoomCreateData data)
+        public async Task<bool> Connect(RoomCreateData data)
         {
-            var result = await m_Manager.Connect(data);
+            return await m_Manager.Connect(data);
         }
 
         void Update()
