@@ -2242,9 +2242,9 @@ MonoBehaviour:
   m_DescriptionText: 
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 5065626072358912
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -3224,7 +3224,7 @@ GameObject:
   - component: {fileID: 6605348980898369502}
   - component: {fileID: 8695917633644188848}
   m_Layer: 16
-  m_Name: Button_SaveOptions (1)
+  m_Name: Button_News
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3328,7 +3328,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_DescriptionType: 0
+  m_DescriptionType: -1
   m_DescriptionYOffset: 0
   m_DescriptionText: ADMIN_PANEL_SAVE_SKETCH_BUTTON_DESCRIPTION
   m_LocalizedDescription:
@@ -3352,7 +3352,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 0}
+  m_ButtonTexture: {fileID: 2800000, guid: 78bb99e2fe13ca44d9d0b4ab7882f4ce, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
