@@ -24,6 +24,8 @@ namespace TiltBrush
     {
         [SerializeField] private TextMeshPro m_RoomNumberTextLobby;
         [SerializeField] private TextMeshPro m_RoomNumberTextRoomSettings;
+        [SerializeField] private TextMeshPro m_DoesRoomNumberExist;
+
         private PanelManager m_PanelManager;
 
         public string RoomName
@@ -32,17 +34,29 @@ namespace TiltBrush
             set
             {
                 data.roomName = value;
-                UpdateRoomNumberDisplay(); 
+                UpdateRoomNumberDisplay();
+                UpdateRoomExistenceMessage(); 
             }
         }
 
         private RoomCreateData data = new RoomCreateData
         {
-            roomName = GenerateRandomRoomName(),
+            roomName = GenerateUniqueRoomName(),
             @private = false,
             maxPlayers = 4,
             voiceDisabled = false
         };
+
+        private static string GenerateUniqueRoomName()
+        {
+            string roomName;
+            do
+            {
+                roomName = GenerateRandomRoomName();
+            } while (MultiplayerManager.m_Instance.DoesRoomNameExist(roomName));
+
+            return roomName;
+        }
 
         private static string GenerateRandomRoomName()
         {
@@ -108,6 +122,23 @@ namespace TiltBrush
                     // Provide user feedback with some UI element
                 }
 
+            }
+        }
+
+        private void UpdateRoomExistenceMessage()
+        {
+            if (m_RoomNumberTextLobby) return;
+
+            if (MultiplayerManager.m_Instance != null && m_DoesRoomNumberExist != null)
+            {
+                if (MultiplayerManager.m_Instance.DoesRoomNameExist(data.roomName))
+                {
+                    m_DoesRoomNumberExist.text = "This room exists. You will be joining an active session. You can change the room number by pressing edit.";
+                }
+                else
+                {
+                    m_DoesRoomNumberExist.text = "This room does not exist yet. By pressing join, the room will be created.";
+                }
             }
         }
 
