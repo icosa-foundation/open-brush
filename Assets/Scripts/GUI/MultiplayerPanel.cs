@@ -16,6 +16,7 @@ using System;
 using OpenBrush.Multiplayer;
 using TMPro;
 using UnityEngine;
+using static TiltBrush.SketchControlsScript;
 
 namespace TiltBrush
 {
@@ -23,11 +24,16 @@ namespace TiltBrush
     {
         [SerializeField] private TextMeshPro m_RoomNumberTextLobby;
         [SerializeField] private TextMeshPro m_RoomNumberTextRoomSettings;
+        private PanelManager m_PanelManager;
 
-        public void SetRoomName(string roomName)
+        public string RoomName
         {
-            data.roomName = roomName;
-            UpdateRoomNumberDisplay();
+            get { return data.roomName; }
+            set
+            {
+                data.roomName = value;
+                UpdateRoomNumberDisplay(); 
+            }
         }
 
         private RoomCreateData data = new RoomCreateData
@@ -60,16 +66,11 @@ namespace TiltBrush
         {
             Null,
             Lobby,
-            Joined,
-            //Create,
-            //RoomSettings,
-            //GeneralSettings
+            Joined
         }
 
         [SerializeField] private GameObject m_LobbyElements;
         [SerializeField] private GameObject m_JoinedElements;
-        //[SerializeField] private GameObject m_RoomSettingsElements;
-        //[SerializeField] private GameObject m_GeneralSettingsElements;
 
         private Mode m_CurrentMode;
 
@@ -115,8 +116,6 @@ namespace TiltBrush
             m_CurrentMode = newMode;
             m_LobbyElements.SetActive(m_CurrentMode == Mode.Lobby);
             m_JoinedElements.SetActive(m_CurrentMode == Mode.Joined);
-            //m_RoomSettingsElements.SetActive(m_CurrentMode == Mode.RoomSettings);
-            //m_GeneralSettingsElements.SetActive(m_CurrentMode == Mode.GeneralSettings);
 
             // Update room number display if switching to a mode that shows it
             if (m_CurrentMode == Mode.Lobby || m_CurrentMode == Mode.Joined)
@@ -153,7 +152,6 @@ namespace TiltBrush
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerJoinRoom:
                     JoinRoom();
-                    Debug.Log("Joining room");
                     break;
             }
         }
