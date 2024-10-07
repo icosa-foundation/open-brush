@@ -271,5 +271,15 @@ namespace OpenBrush.Multiplayer
             }
 #endif // OCULUS_SUPPORTED
         }
+
+        public async Task<bool> Disconnect(bool force = false)
+        {
+            if (m_Manager != null)
+            {
+                return await m_Manager.Disconnect(force);
+            }
+            return true;
+        }
+
     }
 }
