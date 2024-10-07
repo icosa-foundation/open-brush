@@ -3339,6 +3339,10 @@ MonoBehaviour:
     m_Key: PANEL_REFERENCE_ICONIMAGE_GENERICERRORTEXT
     m_Metadata:
       m_Items: []
+  - m_Id: 276171365497266176
+    m_Key: BRUSH_SETTINGS_TRAY_BRUSH_SIZE
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
