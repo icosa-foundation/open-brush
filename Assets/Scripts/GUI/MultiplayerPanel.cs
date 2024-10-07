@@ -24,6 +24,12 @@ namespace TiltBrush
         [SerializeField] private TextMeshPro m_RoomNumberTextLobby;
         [SerializeField] private TextMeshPro m_RoomNumberTextRoomSettings;
 
+        public void SetRoomName(string roomName)
+        {
+            data.roomName = roomName;
+            UpdateRoomNumberDisplay();
+        }
+
         private RoomCreateData data = new RoomCreateData
         {
             roomName = GenerateRandomRoomName(),

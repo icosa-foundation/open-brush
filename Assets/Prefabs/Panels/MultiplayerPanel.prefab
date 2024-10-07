@@ -58,7 +58,10 @@ MonoBehaviour:
   m_Border: {fileID: 23425245546884932}
   m_MeshCollider: {fileID: 6569620}
   m_ParticleBounds: {x: 0, y: 0, z: 0}
-  m_PanelPopUpMap: []
+  m_PanelPopUpMap:
+  - m_PopUpPrefab: {fileID: 8644332587479430734, guid: 51ce29df58ccd0343a277023a12c50ff,
+      type: 3}
+    m_Command: 1005
   m_PanelDescription: 
   m_LocalizedPanelDescription:
     m_TableReference:
@@ -2188,10 +2191,10 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Command: 1004
+  m_Command: 1005
   m_CommandParam: 1
   m_CommandParam2: -1
-  m_RequiresPopup: 0
+  m_RequiresPopup: 1
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
