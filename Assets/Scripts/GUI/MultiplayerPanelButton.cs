@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using UnityEngine;
-using static UnityEditor.Experimental.GraphView.GraphView;
 
 namespace TiltBrush
 {
