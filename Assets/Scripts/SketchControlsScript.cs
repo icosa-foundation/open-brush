@@ -4514,11 +4514,10 @@ namespace TiltBrush
                 case GlobalCommands.EditMultiplayerRoomName:
                     {
                         var panel = (MultiplayerPanel)m_PanelManager.GetActivePanelByType(BasePanel.PanelType.Multiplayer);
-                        panel.SetRoomName(KeyboardPopUpWindow.m_LastInput);
+                        panel.RoomName = KeyboardPopUpWindow.m_LastInput;
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }
-
                 case GlobalCommands.ShowWindowGUI:
                     break;
                 case GlobalCommands.Disco:

@@ -16,6 +16,7 @@ using System;
 using OpenBrush.Multiplayer;
 using TMPro;
 using UnityEngine;
+using static TiltBrush.SketchControlsScript;
 
 namespace TiltBrush
 {
@@ -23,20 +24,39 @@ namespace TiltBrush
     {
         [SerializeField] private TextMeshPro m_RoomNumberTextLobby;
         [SerializeField] private TextMeshPro m_RoomNumberTextRoomSettings;
+        [SerializeField] private TextMeshPro m_DoesRoomNumberExist;
 
-        public void SetRoomName(string roomName)
+        private PanelManager m_PanelManager;
+
+        public string RoomName
         {
-            data.roomName = roomName;
-            UpdateRoomNumberDisplay();
+            get { return data.roomName; }
+            set
+            {
+                data.roomName = value;
+                UpdateRoomNumberDisplay();
+                UpdateRoomExistenceMessage(); 
+            }
         }
 
         private RoomCreateData data = new RoomCreateData
         {
-            roomName = GenerateRandomRoomName(),
+            roomName = GenerateUniqueRoomName(),
             @private = false,
             maxPlayers = 4,
             voiceDisabled = false
         };
+
+        private static string GenerateUniqueRoomName()
+        {
+            string roomName;
+            do
+            {
+                roomName = GenerateRandomRoomName();
+            } while (MultiplayerManager.m_Instance.DoesRoomNameExist(roomName));
+
+            return roomName;
+        }
 
         private static string GenerateRandomRoomName()
         {
@@ -60,16 +80,11 @@ namespace TiltBrush
         {
             Null,
             Lobby,
-            Joined,
-            //Create,
-            //RoomSettings,
-            //GeneralSettings
+            Joined
         }
 
         [SerializeField] private GameObject m_LobbyElements;
         [SerializeField] private GameObject m_JoinedElements;
-        //[SerializeField] private GameObject m_RoomSettingsElements;
-        //[SerializeField] private GameObject m_GeneralSettingsElements;
 
         private Mode m_CurrentMode;
 
@@ -110,13 +125,28 @@ namespace TiltBrush
             }
         }
 
+        private void UpdateRoomExistenceMessage()
+        {
+            if (m_RoomNumberTextLobby) return;
+
+            if (MultiplayerManager.m_Instance != null && m_DoesRoomNumberExist != null)
+            {
+                if (MultiplayerManager.m_Instance.DoesRoomNameExist(data.roomName))
+                {
+                    m_DoesRoomNumberExist.text = "This room exists. You will be joining an active session. You can change the room number by pressing edit.";
+                }
+                else
+                {
+                    m_DoesRoomNumberExist.text = "This room does not exist yet. By pressing join, the room will be created.";
+                }
+            }
+        }
+
         private void UpdateMode(Mode newMode)
         {
             m_CurrentMode = newMode;
             m_LobbyElements.SetActive(m_CurrentMode == Mode.Lobby);
             m_JoinedElements.SetActive(m_CurrentMode == Mode.Joined);
-            //m_RoomSettingsElements.SetActive(m_CurrentMode == Mode.RoomSettings);
-            //m_GeneralSettingsElements.SetActive(m_CurrentMode == Mode.GeneralSettings);
 
             // Update room number display if switching to a mode that shows it
             if (m_CurrentMode == Mode.Lobby || m_CurrentMode == Mode.Joined)
@@ -153,7 +183,6 @@ namespace TiltBrush
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerJoinRoom:
                     JoinRoom();
-                    Debug.Log("Joining room");
                     break;
             }
         }

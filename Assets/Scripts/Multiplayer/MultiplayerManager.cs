@@ -46,6 +46,7 @@ namespace OpenBrush.Multiplayer
         public Action<int, ITransientData<PlayerRigData>> remotePlayerJoined;
         public Action<int> playerLeft;
         public Action<List<RoomData>> roomDataRefreshed;
+        private List<RoomData> m_RoomData = new List<RoomData>();
 
         ulong myOculusUserId;
 
@@ -118,6 +119,16 @@ namespace OpenBrush.Multiplayer
         public async Task<bool> Connect(RoomCreateData data)
         {
             return await m_Manager.Connect(data);
+        }
+
+        public bool DoesRoomNameExist(string roomName)
+        {
+            return m_RoomData.Any(room => room.roomName == roomName);
+        }
+
+        void OnRoomDataRefreshed(List<RoomData> rooms)
+        {
+            m_RoomData = rooms;
         }
 
         void Update()
@@ -260,5 +271,15 @@ namespace OpenBrush.Multiplayer
             }
 #endif // OCULUS_SUPPORTED
         }
+
+        public async Task<bool> Disconnect(bool force = false)
+        {
+            if (m_Manager != null)
+            {
+                return await m_Manager.Disconnect(force);
+            }
+            return true;
+        }
+
     }
 }

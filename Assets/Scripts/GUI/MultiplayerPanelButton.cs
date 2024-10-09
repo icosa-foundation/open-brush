@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using static UnityEditor.Experimental.GraphView.GraphView;
 
 namespace TiltBrush
 {
@@ -21,15 +22,23 @@ namespace TiltBrush
         [SerializeField] private bool m_CommandIgnored = false;
 
         override protected void OnButtonPressed()
-        {
+        {   
+
+            MultiplayerPanel popup = m_Manager.GetComponent<MultiplayerPanel>();
+            
             // For some circumstances on mobile, we want to ignore the command, but still
             // notify the popup that we were pressed.  Which happens below.
             if (!m_CommandIgnored)
             {
+                if (m_RequiresPopup & m_Command == SketchControlsScript.GlobalCommands.EditMultiplayerRoomName)
+                {
+                    KeyboardPopUpWindow.m_InitialText = popup.RoomName;
+                }
+
                 base.OnButtonPressed();
             }
 
-            MultiplayerPanel popup = m_Manager.GetComponent<MultiplayerPanel>();
+            
             Debug.Assert(popup != null);
             popup.OnMultiplayerPanelButtonPressed(this);
         }
