@@ -35,7 +35,7 @@ namespace TiltBrush
             {
                 data.roomName = value;
                 UpdateRoomNumberDisplay();
-                UpdateRoomExistenceMessage(); 
+                UpdateRoomExistenceMessage();
             }
         }
 
@@ -157,7 +157,7 @@ namespace TiltBrush
 
         private void RefreshObjects()
         {
-            
+
         }
 
         // This function serves as a callback from ProfilePopUpButtons that want to
@@ -172,7 +172,7 @@ namespace TiltBrush
                     RefreshObjects();
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerPanelOptions:
-                    switch((Mode)button.m_CommandParam)
+                    switch ((Mode)button.m_CommandParam)
                     {
                         case Mode.Lobby:
                             UpdateMode(Mode.Lobby);

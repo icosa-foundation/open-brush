@@ -21,10 +21,10 @@ namespace TiltBrush
         [SerializeField] private bool m_CommandIgnored = false;
 
         override protected void OnButtonPressed()
-        {   
+        {
 
             MultiplayerPanel popup = m_Manager.GetComponent<MultiplayerPanel>();
-            
+
             // For some circumstances on mobile, we want to ignore the command, but still
             // notify the popup that we were pressed.  Which happens below.
             if (!m_CommandIgnored)
@@ -37,7 +37,7 @@ namespace TiltBrush
                 base.OnButtonPressed();
             }
 
-            
+
             Debug.Assert(popup != null);
             popup.OnMultiplayerPanelButtonPressed(this);
         }
