@@ -420,9 +420,8 @@ namespace TiltBrush
             PointerManager.m_Instance.SetMainPointerPosition(rAttachPoint.position);
         }
 
-        protected override void Update()
+        protected void Update()
         {
-            base.Update();
             // Update bounds transitions.
             switch (m_BoundsState)
             {

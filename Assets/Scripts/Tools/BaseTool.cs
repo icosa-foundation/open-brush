@@ -70,24 +70,6 @@ namespace TiltBrush
         protected bool m_AllowDrawing;
         protected bool m_ToolHidden;
 
-        // Used by real-time scripts
-        private bool m_IsActive;
-        private bool m_BecameActiveThisFrame;
-        private bool m_BecameInactiveThisFrame;
-        private float m_TimeBecameActive;
-        private float m_TimeBecameInactive;
-        private float m_DistanceMoved_CS;
-
-        public float DistanceMoved_CS => m_DistanceMoved_CS;
-        private Vector3 m_PreviousPosition;
-        private float m_DistanceDrawn_CS;
-        public float DistanceDrawn_CS => m_DistanceDrawn_CS;
-        public bool IsActive => m_IsActive;
-        public bool BecameActiveThisFrame => m_BecameActiveThisFrame;
-        public bool BecameInactiveThisFrame => m_BecameInactiveThisFrame;
-        public float TimeBecameActive => m_TimeBecameActive;
-        public float TimeBecameInactive => m_TimeBecameInactive;
-
         public bool IsEatingInput { get { return m_EatInput; } }
 
         public bool ExitRequested() { return m_RequestExit; }
@@ -176,8 +158,6 @@ namespace TiltBrush
                 headTr.position, headTr.rotation
             );
 
-            UpdateTimeRecords();
-
             if (m_EatInput)
             {
                 if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
@@ -188,69 +168,6 @@ namespace TiltBrush
             if (m_ExitOnAbortCommand && InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Abort))
             {
                 m_RequestExit = true;
-            }
-        }
-
-        protected virtual void Update()
-        {
-            // Can't do it in UpdateTool as it happens too late
-            // Symmetry scripts were seeing m_IsActiveThisFrame for two consecutive frames
-            UpdateStateFlags();
-        }
-
-        protected void UpdateStateFlags()
-        {
-            // Used by API
-
-            // Store time values for real-time scripts to use
-            if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
-            {
-                // The frame it becomes active
-                m_IsActive = true;
-                m_BecameActiveThisFrame = true;
-                m_BecameInactiveThisFrame = false;
-                m_TimeBecameActive = Time.realtimeSinceStartup;
-            }
-            else if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
-            {
-                // Every frame while active
-                m_IsActive = true;
-                m_BecameActiveThisFrame = false;
-                m_BecameInactiveThisFrame = false;
-            }
-            else if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate) && m_IsActive)
-            {
-                // The frame it becomes inactive
-                m_IsActive = false;
-                m_BecameActiveThisFrame = false;
-                m_BecameInactiveThisFrame = true;
-                m_TimeBecameInactive = Time.realtimeSinceStartup;
-            }
-            else
-            {
-                // Every frame while inactive
-                m_IsActive = false;
-                m_BecameActiveThisFrame = false;
-                m_BecameInactiveThisFrame = false;
-            }
-        }
-
-        protected void UpdateTimeRecords()
-        {
-            // Used by API
-
-            var pos = InputManager.m_Instance.GetBrushControllerAttachPoint().position;
-            float fPointerMovement_CS = Vector3.Distance(pos, m_PreviousPosition) / Coords.CanvasPose.scale;
-            m_DistanceMoved_CS += fPointerMovement_CS;
-            m_PreviousPosition = pos;
-
-            if (m_IsActive)
-            {
-                m_DistanceDrawn_CS += fPointerMovement_CS;
-            }
-            else
-            {
-                m_DistanceDrawn_CS = 0;
             }
         }
 
@@ -415,14 +332,6 @@ namespace TiltBrush
         protected virtual (Vector3, Quaternion) GetPointerPosition()
         {
             Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
-            Vector3 pos_GS = rAttachPoint.position;
-            Quaternion rot_GS = rAttachPoint.rotation;
-            return (pos_GS, rot_GS);
-        }
-
-        protected (Vector3, Quaternion) GetWandPosition()
-        {
-            Transform rAttachPoint = InputManager.m_Instance.GetWandControllerAttachPoint();
             Vector3 pos_GS = rAttachPoint.position;
             Quaternion rot_GS = rAttachPoint.rotation;
             return (pos_GS, rot_GS);

@@ -18,17 +18,29 @@ namespace TiltBrush
         [LuaDocsDescription("How far the trigger on the wand contrller is pressed in")]
         public static float pressure => InputManager.Wand.GetTriggerValue();
 
-        [LuaDocsDescription("How fast the wand contrller is currently moving")]
+        [LuaDocsDescription("How fast the wand controller is currently moving")]
         public static Vector3 speed => InputManager.Wand.m_Velocity;
 
         [LuaDocsDescription("Check whether the wand trigger is currently pressed")]
-        public static bool triggerIsPressed => InputManager.m_Instance.GetCommand(InputManager.SketchCommands.AltActivate);
+        public static bool triggerIsPressed => InputManager.Wand.IsTrigger();
 
         [LuaDocsDescription("Check whether the wand trigger was pressed during the current frame")]
-        public static bool triggerPressedThisFrame => InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.AltActivate);
+        public static bool triggerPressedThisFrame => InputManager.Wand.IsTriggerDown();
 
-        // [LuaDocsDescription("Check whether the wand trigger was released during the current frame")]
-        // public static bool triggerReleasedThisFrame => SketchSurfacePanel.m_Instance.ActiveTool.BecameInactiveThisFrame;
+        [LuaDocsDescription("Check whether the wand trigger was released during the current frame")]
+        public static bool triggerReleasedThisFrame => InputManager.Wand.BecameInactiveThisFrame;
+
+        [LuaDocsDescription("Time in seconds since the wand trigger was last pressed")]
+        public static float timeSincePressed => Time.realtimeSinceStartup - InputManager.Wand.TimeBecameActive;
+
+        [LuaDocsDescription("Time in seconds since the wand trigger was last released")]
+        public static float timeSinceReleased => Time.realtimeSinceStartup - InputManager.Wand.TimeBecameInactive;
+
+        [LuaDocsDescription("The distance moved by the wand")]
+        public static float distanceMoved => InputManager.Wand.DistanceMoved_CS;
+
+        [LuaDocsDescription("The distance drawn by the wand (i.e. distance since the trigger was last pressed)")]
+        public static float distanceDrawn => InputManager.Wand.DistanceDrawn_CS;
 
         [LuaDocsDescription("Clears the history and sets it's size")]
         [LuaDocsExample("Wand.ResizeHistory(100)")]
