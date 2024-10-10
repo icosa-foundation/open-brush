@@ -150,6 +150,7 @@ namespace TiltBrush
             MultiplayerPanelOptions = 1002, // iParam1: Popup options
             MultiplayerJoinRoom = 1004,
             EditMultiplayerRoomName = 1005,
+            MultiplayerLeaveRoom = 1006,
 
             RenameSketch = 5200,
             OpenLayerOptionsPopup = 5201,

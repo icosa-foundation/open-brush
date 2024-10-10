@@ -123,6 +123,31 @@ namespace TiltBrush
                 else
                 {
                     Debug.LogError("Failed to connect to room.");
+
+                    // Provide user feedback with some UI element
+                }
+
+            }
+        }
+
+        private async void LeaveRoom()
+        {
+            if (MultiplayerManager.m_Instance != null)
+            {
+
+                bool success = await MultiplayerManager.m_Instance.Disconnect(false);
+
+                if (success)
+                {
+                    Debug.Log("Left room successfully.");
+
+                    // Additional UI updates or feedback
+                    UpdateMode(Mode.Lobby);
+                    UpdateRoomNumberDisplay(); // Update room number display after joining
+                }
+                else
+                {
+                    Debug.LogError("Failed to leave to room.");
                     // Provide user feedback with some UI element
                 }
 
@@ -188,6 +213,9 @@ namespace TiltBrush
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerJoinRoom:
                     JoinRoom();
+                    break;
+                case SketchControlsScript.GlobalCommands.MultiplayerLeaveRoom:
+                    LeaveRoom();
                     break;
             }
         }
