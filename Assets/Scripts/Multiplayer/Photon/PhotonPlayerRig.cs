@@ -17,6 +17,7 @@
 using UnityEngine;
 using Fusion;
 using TiltBrush;
+using System;
 
 namespace OpenBrush.Multiplayer
 {
@@ -38,6 +39,14 @@ namespace OpenBrush.Multiplayer
         // The offset transforms.
         [SerializeField] private Transform headTransform;
         private PlayerRigData transmitData;
+
+        public int m_PlayerId;
+
+        public int PlayerId
+        {
+            get { return m_PlayerId; }
+            set { m_PlayerId = value; }
+        }
 
         public void TransmitData(PlayerRigData data)
         {
@@ -115,6 +124,14 @@ namespace OpenBrush.Multiplayer
 
             var remoteTR = TrTransform.TR(m_PlayerHead.InterpolationTarget.position, m_PlayerHead.InterpolationTarget.rotation);
             App.Scene.AsScene[headTransform] = remoteTR;
+        }
+
+        void OnDestroy()
+        {
+            if (transientPointer != null)
+            {
+                PointerManager.m_Instance.RemoveRemotePointer(transientPointer);
+            }
         }
     }
 }

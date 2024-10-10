@@ -146,6 +146,10 @@ namespace TiltBrush
 
             // Open Brush Reserved Enums 1000-1999
             LanguagePopup = 1000,
+            MultiplayerTogglePanel = 1001,
+            MultiplayerPanelOptions = 1002, // iParam1: Popup options
+            MultiplayerJoinRoom = 1004,
+            EditMultiplayerRoomName = 1005,
 
             RenameSketch = 5200,
             OpenLayerOptionsPopup = 5201,
@@ -4507,6 +4511,13 @@ namespace TiltBrush
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }
+                case GlobalCommands.EditMultiplayerRoomName:
+                    {
+                        var panel = (MultiplayerPanel)m_PanelManager.GetActivePanelByType(BasePanel.PanelType.Multiplayer);
+                        panel.RoomName = KeyboardPopUpWindow.m_LastInput;
+                        DismissPopupOnCurrentGazeObject(false);
+                        break;
+                    }
                 case GlobalCommands.ShowWindowGUI:
                     break;
                 case GlobalCommands.Disco:
@@ -4829,6 +4840,11 @@ namespace TiltBrush
                     break;
                 case GlobalCommands.OpenExampleScriptsList:
                     OpenURLAndInformUser($"http://localhost:{App.HttpServer.HttpPort}/examplescripts");
+                    break;
+                case GlobalCommands.MultiplayerTogglePanel:
+                    m_PanelManager.ToggleMultiplayerPanels();
+                    PointerManager.m_Instance.EatLineEnabledInput();
+                    SketchSurfacePanel.m_Instance.EatToolsInput();
                     break;
                 case GlobalCommands.RepaintOptions: break; // Intentionally blank.
                 case GlobalCommands.Null: break; // Intentionally blank.

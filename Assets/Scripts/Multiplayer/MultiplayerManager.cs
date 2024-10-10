@@ -14,6 +14,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 using Unity.XR.CoreUtils;
 #if OCULUS_SUPPORTED
@@ -34,14 +36,20 @@ namespace OpenBrush.Multiplayer
     {
         public static MultiplayerManager m_Instance;
         public MultiplayerType m_MultiplayerType;
+        public event Action Disconnected;
 
         private IConnectionHandler m_Manager;
 
         private ITransientData<PlayerRigData> m_LocalPlayer;
         private List<ITransientData<PlayerRigData>> m_RemotePlayers;
 
-        public Action<ITransientData<PlayerRigData>> localPlayerJoined;
-        public Action<ITransientData<PlayerRigData>> remotePlayerJoined;
+        public Action<int, ITransientData<PlayerRigData>> localPlayerJoined;
+        public Action<int, ITransientData<PlayerRigData>> remotePlayerJoined;
+        public Action<int> playerLeft;
+        public Action<List<RoomData>> roomDataRefreshed;
+        private List<RoomData> m_RoomData = new List<RoomData>();
+
+
 
         ulong myOculusUserId;
 
@@ -58,7 +66,6 @@ namespace OpenBrush.Multiplayer
 
         void Start()
         {
-
 #if OCULUS_SUPPORTED
             OVRPlatform.Users.GetLoggedInUser().OnComplete((msg) => {
                 if (!msg.IsError)
@@ -76,8 +83,9 @@ namespace OpenBrush.Multiplayer
             switch (m_MultiplayerType)
             {
                 case MultiplayerType.Photon:
-#if FUSION_WEAVER                
+#if FUSION_WEAVER
                     m_Manager = new PhotonManager(this);
+                    m_Manager.Disconnected += OnConnectionHandlerDisconnected;
 #endif // FUSION_WEAVER
                     break;
                 default:
@@ -86,6 +94,7 @@ namespace OpenBrush.Multiplayer
 
             localPlayerJoined += OnLocalPlayerJoined;
             remotePlayerJoined += OnRemotePlayerJoined;
+            playerLeft += OnPlayerLeft;
             SketchMemoryScript.m_Instance.CommandPerformed += OnCommandPerformed;
             SketchMemoryScript.m_Instance.CommandUndo += OnCommandUndo;
             SketchMemoryScript.m_Instance.CommandRedo += OnCommandRedo;
@@ -95,14 +104,35 @@ namespace OpenBrush.Multiplayer
         {
             localPlayerJoined -= OnLocalPlayerJoined;
             remotePlayerJoined -= OnRemotePlayerJoined;
+            playerLeft -= OnPlayerLeft;
             SketchMemoryScript.m_Instance.CommandPerformed -= OnCommandPerformed;
             SketchMemoryScript.m_Instance.CommandUndo -= OnCommandUndo;
             SketchMemoryScript.m_Instance.CommandRedo -= OnCommandRedo;
         }
 
-        public async void Connect()
+        public async Task<bool> Init()
         {
-            var result = await m_Manager.Connect();
+            var success = false;
+            if (m_Manager != null)
+            {
+                success = await m_Manager.Init();
+            }
+            return success;
+        }
+
+        public async Task<bool> Connect(RoomCreateData data)
+        {
+            return await m_Manager.Connect(data);
+        }
+
+        public bool DoesRoomNameExist(string roomName)
+        {
+            return m_RoomData.Any(room => room.roomName == roomName);
+        }
+
+        void OnRoomDataRefreshed(List<RoomData> rooms)
+        {
+            m_RoomData = rooms;
         }
 
         void Update()
@@ -147,6 +177,7 @@ namespace OpenBrush.Multiplayer
             foreach (var player in m_RemotePlayers)
             {
                 data = player.RecieveData();
+#if OCULUS_SUPPORTED
                 // New user, share the anchor with them
                 if (data.ExtraData.OculusPlayerId != 0 && !oculusPlayerIds.Contains(data.ExtraData.OculusPlayerId))
                 {
@@ -155,6 +186,7 @@ namespace OpenBrush.Multiplayer
                     oculusPlayerIds.Add(data.ExtraData.OculusPlayerId);
                     newUser = true;
                 }
+#endif // OCULUS_SUPPORTED
             }
 
             if (newUser)
@@ -163,15 +195,33 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        void OnLocalPlayerJoined(ITransientData<PlayerRigData> playerData)
+        void OnLocalPlayerJoined(int id, ITransientData<PlayerRigData> playerData)
         {
             m_LocalPlayer = playerData;
         }
 
-        void OnRemotePlayerJoined(ITransientData<PlayerRigData> playerData)
+        void OnRemotePlayerJoined(int id, ITransientData<PlayerRigData> playerData)
         {
             Debug.Log("Adding new player to track.");
+            playerData.PlayerId = id;
             m_RemotePlayers.Add(playerData);
+        }
+
+        void OnPlayerLeft(int id)
+        {
+            if (m_LocalPlayer.PlayerId == id)
+            {
+                Debug.Log("Possible to get here!");
+                return;
+            }
+            var copy = m_RemotePlayers.ToList();
+            foreach (var player in copy)
+            {
+                if (player.PlayerId == id)
+                {
+                    m_RemotePlayers.Remove(player);
+                }
+            }
         }
 
         private async void OnCommandPerformed(BaseCommand command)
@@ -225,5 +275,21 @@ namespace OpenBrush.Multiplayer
             }
 #endif // OCULUS_SUPPORTED
         }
+
+        public async Task<bool> Disconnect(bool force = false)
+        {
+            if (m_Manager != null)
+            {
+                return await m_Manager.Disconnect(force);
+            }
+            return true;
+        }
+
+        private void OnConnectionHandlerDisconnected()
+        {
+            // Invoke the Disconnected event
+            Disconnected?.Invoke();
+        }
+
     }
 }
