@@ -38,6 +38,8 @@ namespace OpenBrush.Multiplayer
 
         AppSettings m_PhotonAppSettings;
 
+        public event Action Disconnected;
+
         public PhotonManager(MultiplayerManager manager)
         {
             m_Manager = manager;
@@ -318,7 +320,9 @@ namespace OpenBrush.Multiplayer
 #endregion
 
 #region Unused Photon Callbacks 
-        public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason) { }
+        public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason) {
+            Disconnected?.Invoke();
+        }
         public void OnDisconnectedFromServer(NetworkRunner runner) { }
         public void OnConnectFailed(NetworkRunner runner, NetAddress remoteAddress, NetConnectFailedReason reason) { }
         public void OnInput(NetworkRunner runner, NetworkInput input) { }

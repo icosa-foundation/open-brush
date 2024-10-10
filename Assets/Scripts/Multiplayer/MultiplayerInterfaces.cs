@@ -35,6 +35,9 @@ namespace OpenBrush.Multiplayer
         Task<bool> RedoCommand(BaseCommand command);
         Task<bool> RpcSyncToSharedAnchor(string uuid);
 
+        event Action Disconnected;
+
+
         //ITransientData<PlayerRigData> SpawnPlayer();
     }
 

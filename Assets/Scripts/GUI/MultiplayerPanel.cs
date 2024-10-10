@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using OpenBrush.Multiplayer;
 using TMPro;
 using UnityEngine;
-using static TiltBrush.SketchControlsScript;
 
 namespace TiltBrush
 {
@@ -99,6 +97,12 @@ namespace TiltBrush
         public async void InitMultiplayer()
         {
             bool success = await MultiplayerManager.m_Instance.Init();
+            MultiplayerManager.m_Instance.Disconnected += OnDisconnected;
+        }
+
+        private void OnDisconnected()
+        {
+            UpdateMode(Mode.Lobby);
         }
 
         private async void JoinRoom()
@@ -159,6 +163,7 @@ namespace TiltBrush
         {
 
         }
+
 
         // This function serves as a callback from ProfilePopUpButtons that want to
         // change the mode of the popup on click.

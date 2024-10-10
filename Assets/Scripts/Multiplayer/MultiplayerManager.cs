@@ -36,6 +36,7 @@ namespace OpenBrush.Multiplayer
     {
         public static MultiplayerManager m_Instance;
         public MultiplayerType m_MultiplayerType;
+        public event Action Disconnected;
 
         private IConnectionHandler m_Manager;
 
@@ -47,6 +48,8 @@ namespace OpenBrush.Multiplayer
         public Action<int> playerLeft;
         public Action<List<RoomData>> roomDataRefreshed;
         private List<RoomData> m_RoomData = new List<RoomData>();
+
+
 
         ulong myOculusUserId;
 
@@ -82,6 +85,7 @@ namespace OpenBrush.Multiplayer
                 case MultiplayerType.Photon:
 #if FUSION_WEAVER
                     m_Manager = new PhotonManager(this);
+                    m_Manager.Disconnected += OnConnectionHandlerDisconnected;
 #endif // FUSION_WEAVER
                     break;
                 default:
@@ -279,6 +283,12 @@ namespace OpenBrush.Multiplayer
                 return await m_Manager.Disconnect(force);
             }
             return true;
+        }
+
+        private void OnConnectionHandlerDisconnected()
+        {
+            // Invoke the Disconnected event
+            Disconnected?.Invoke();
         }
 
     }
