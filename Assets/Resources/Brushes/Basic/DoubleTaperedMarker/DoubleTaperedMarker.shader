@@ -14,6 +14,9 @@
 
 Shader "Brush/Special/DoubleTaperedMarker" {
 Properties {
+  _Dissolve("Dissolve", Range(0,1)) = 1
+  _ClipStart("Clip Start", Float) = 0
+  _ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -40,11 +43,16 @@ Category {
 
       sampler2D _MainTex;
 
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
+      uniform half _Dissolve;
+
       struct appdata_t {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float2 texcoord0 : TEXCOORD0;
         float3 texcoord1 : TEXCOORD1; //per vert offset vector
+        uint id : SV_VertexID;
 
         UNITY_VERTEX_INPUT_INSTANCE_ID
       };
@@ -53,6 +61,7 @@ Category {
         float4 pos : POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        uint id : TEXCOORD2;
         UNITY_FOG_COORDS(1)
 
         UNITY_VERTEX_OUTPUT_STEREO
@@ -78,12 +87,18 @@ Category {
         o.pos = UnityObjectToClipPos(v.vertex);
         o.color = TbVertToNative(v.color);
         o.texcoord = v.texcoord0;
+        o.id = (float2)v.id;
         UNITY_TRANSFER_FOG(o, o.pos);
         return o;
       }
 
       fixed4 frag (v2f i) : COLOR
       {
+        #ifdef SHADER_SCRIPTING_ON
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+        if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+        #endif
+
         UNITY_APPLY_FOG(i.fogCoord, i.color.rgb);
         float4 color = float4(i.color.rgb, 1);
         FRAG_MOBILESELECT(color)

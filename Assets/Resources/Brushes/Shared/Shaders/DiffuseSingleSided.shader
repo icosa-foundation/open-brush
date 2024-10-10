@@ -17,6 +17,10 @@ Properties {
   _Color ("Main Color", Color) = (1,1,1,1)
   _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
   _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+
+  _Dissolve("Dissolve", Range(0,1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 SubShader {
@@ -35,18 +39,44 @@ CGPROGRAM
 sampler2D _MainTex;
 fixed4 _Color;
 
+uniform half _ClipStart;
+uniform half _ClipEnd;
+uniform half _Dissolve;
+
 struct Input {
   float2 uv_MainTex;
   float4 color : COLOR;
+  uint id : SV_VertexID;
+  float4 screenPos;
 };
 
-void vert (inout appdata_full v, out Input o) {
+struct appdata_full_plus_id {
+  float4 vertex : POSITION;
+  float4 tangent : TANGENT;
+  float3 normal : NORMAL;
+  float4 texcoord : TEXCOORD0;
+  float4 texcoord1 : TEXCOORD1;
+  float4 texcoord2 : TEXCOORD2;
+  float4 texcoord3 : TEXCOORD3;
+  fixed4 color : COLOR;
+  uint id : SV_VertexID;
+  UNITY_VERTEX_INPUT_INSTANCE_ID
+};
+
+void vert (inout appdata_full_plus_id v, out Input o) {
   PrepForOds(v.vertex);
   v.color = TbVertToNative(v.color);
   UNITY_INITIALIZE_OUTPUT(Input, o);
+  o.id = v.id;
 }
 
 void surf (Input IN, inout SurfaceOutput o) {
+
+  #ifdef SHADER_SCRIPTING_ON
+  if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
+  if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
+  #endif
+
   fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
   o.Albedo = c.rgb * IN.color.rgb;
   o.Alpha = c.a * IN.color.a;
@@ -65,22 +95,51 @@ SubShader {
 CGPROGRAM
 #pragma surface surf Lambert vertex:vert alphatest:_Cutoff
 #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
+#pragma target 4.0
 #include "Assets/Shaders/Include/Brush.cginc"
 
 sampler2D _MainTex;
 fixed4 _Color;
 
+uniform half _ClipStart;
+uniform half _ClipEnd;
+uniform half _Dissolve;
+
 struct Input {
   float2 uv_MainTex;
   float4 color : COLOR;
+  uint id : SV_VertexID;
+  float4 vertex : POSITION;
+  float4 screenPos;
+  fixed vface : VFACE;
 };
 
-void vert (inout appdata_full v) {
+struct appdata_full_plus_id {
+  float4 vertex : POSITION;
+  float4 tangent : TANGENT;
+  float3 normal : NORMAL;
+  float4 texcoord : TEXCOORD0;
+  float4 texcoord1 : TEXCOORD1;
+  float4 texcoord2 : TEXCOORD2;
+  float4 texcoord3 : TEXCOORD3;
+  fixed4 color : COLOR;
+  uint id : SV_VertexID;
+  UNITY_VERTEX_INPUT_INSTANCE_ID
+};
+
+void vert (inout appdata_full_plus_id v, out Input o) {
+  UNITY_INITIALIZE_OUTPUT(Input, o);
   PrepForOds(v.vertex);
   v.color = TbVertToNative(v.color);
 }
 
 void surf (Input IN, inout SurfaceOutput o) {
+
+  #ifdef SHADER_SCRIPTING_ON
+  if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
+  if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
+  #endif
+
   fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
   o.Albedo = c.rgb * IN.color.rgb;
   o.Alpha = c.a * IN.color.a;

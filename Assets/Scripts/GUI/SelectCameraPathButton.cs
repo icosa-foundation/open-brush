@@ -40,12 +40,8 @@ namespace TiltBrush
             // SketchControlsScript.IsCommandActive.
             if (m_PathWidget != null)
             {
-                int? index = WidgetManager.m_Instance.GetIndexOfCameraPath(m_PathWidget);
-                if (index == null)
-                {
-                    throw new ArgumentException("SelectCameraPathButton m_PathWidget index invalid.");
-                }
-                m_CommandParam = index.Value;
+                int index = WidgetManager.m_Instance.GetActiveWidgetIndex(m_PathWidget);
+                m_CommandParam = index;
             }
             else
             {

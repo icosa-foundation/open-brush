@@ -219,7 +219,10 @@ namespace TiltBrush
             m_Instance = this;
             m_JsonSerializer = new JsonSerializer();
             m_JsonSerializer.ContractResolver = new CustomJsonContractResolver();
-            m_JsonSerializer.Error += HandleDeserializationError;
+            if (!Application.isEditor)
+            {
+                m_JsonSerializer.Error += HandleDeserializationError;
+            }
 
             ResetLastFilename();
 
@@ -260,13 +263,17 @@ namespace TiltBrush
         }
 
         // Create a name that is guaranteed not to exist.
-        public string GenerateNewUntitledFilename(string directory, string extension)
+        public string GenerateNewFilename(string desiredFilename, string directory, string extension)
         {
             int iIndex = m_LastNonexistentFileIndex;
             int iSanity = 9999;
             while (iSanity > 0)
             {
-                string attempt = UNTITLED_PREFIX + iIndex.ToString();
+                string attempt = desiredFilename;
+                if (iIndex > 0)
+                {
+                    attempt += "_" + iIndex;
+                }
                 --iSanity;
                 ++iIndex;
 
@@ -277,35 +284,23 @@ namespace TiltBrush
                     return attempt;
                 }
             }
-
             Debug.Assert(false, "Could not generate a name");
             return null;
+        }
+
+
+        // Create a name that is guaranteed not to exist.
+        public string GenerateNewUntitledFilename(string directory, string extension)
+        {
+            string filename = UNTITLED_PREFIX;
+            return GenerateNewFilename(filename, directory, extension);
         }
 
         // Create a Tiltasaurus based name that is guaranteed not to exist.
         public string GenerateNewTiltasaurusFilename(string directory, string extension)
         {
-            int iIndex = 0;
-            int iSanity = 9999;
-            while (iSanity > 0)
-            {
-                string attempt = TILTASAURUS_PREFIX + Tiltasaurus.m_Instance.Prompt;
-                if (iIndex > 0)
-                {
-                    attempt += "_" + iIndex.ToString();
-                }
-                --iSanity;
-                ++iIndex;
-
-                attempt = Path.Combine(directory, attempt) + extension;
-                if (!File.Exists(attempt) && !Directory.Exists(attempt))
-                {
-                    return attempt;
-                }
-            }
-
-            Debug.Assert(false, "Could not generate a name");
-            return null;
+            string filename = TILTASAURUS_PREFIX + Tiltasaurus.m_Instance.Prompt;
+            return GenerateNewFilename(filename, directory, extension);
         }
 
         public void SaveOverwriteOrNewIfNotAllowed()
@@ -352,11 +347,31 @@ namespace TiltBrush
             }
         }
 
-        public DiskSceneFileInfo GetNewNameSceneFileInfo(bool tiltasaurusMode = false)
+        public DiskSceneFileInfo GetNewNameSceneFileInfo(bool tiltasaurusMode = false, string filename = null)
         {
-            DiskSceneFileInfo fileInfo = tiltasaurusMode
-                ? new DiskSceneFileInfo(GenerateNewTiltasaurusFilename(m_SaveDir, TILT_SUFFIX))
-                : new DiskSceneFileInfo(GenerateNewUntitledFilename(m_SaveDir, TILT_SUFFIX));
+            string uniquePath;
+            // If no filename is passed in then generate one
+            if (string.IsNullOrWhiteSpace(filename))
+            {
+                uniquePath = tiltasaurusMode
+                    ? GenerateNewTiltasaurusFilename(m_SaveDir, TILT_SUFFIX)
+                    : GenerateNewUntitledFilename(m_SaveDir, TILT_SUFFIX);
+            }
+            else
+            {
+                uniquePath = GenerateNewFilename(filename, m_SaveDir, TILT_SUFFIX);
+            }
+            DiskSceneFileInfo fileInfo = new DiskSceneFileInfo(uniquePath);
+            if (m_LastSceneFile.Valid)
+            {
+                fileInfo.SourceId = TransferredSourceIdFrom(m_LastSceneFile);
+            }
+            return fileInfo;
+        }
+
+        public DiskSceneFileInfo GetSceneFileInfoFromName(string name)
+        {
+            DiskSceneFileInfo fileInfo = new DiskSceneFileInfo(name);
             if (m_LastSceneFile.Valid)
             {
                 fileInfo.SourceId = TransferredSourceIdFrom(m_LastSceneFile);
@@ -390,6 +405,11 @@ namespace TiltBrush
         public IEnumerator<Timeslice> SaveNewName(bool tiltasaurusMode = false)
         {
             return SaveLow(GetNewNameSceneFileInfo(tiltasaurusMode));
+        }
+
+        public IEnumerator<Timeslice> SaveAs(string filename)
+        {
+            return SaveLow(GetNewNameSceneFileInfo(false, filename));
         }
 
         /// In order to for this to work properly:
@@ -611,7 +631,7 @@ namespace TiltBrush
             }
             using (var jsonReader = new JsonTextReader(new StreamReader(metadata)))
             {
-                var jsonData = DeserializeMetadata(jsonReader);
+                SketchMetadata jsonData = DeserializeMetadata(jsonReader);
                 if (LastMetadataError != null)
                 {
                     ControllerConsoleScript.m_Instance.AddNewLine(
@@ -666,17 +686,6 @@ namespace TiltBrush
                         jsonData.SceneTransformInRoomSpace);
                     App.Scene.Pose = jsonData.SceneTransformInRoomSpace;
                     App.Scene.ResetLayers(true);
-                    Coords.CanvasLocalPose = TrTransform.identity;
-                    if (jsonData.CanvasTransformInSceneSpace != TrTransform.identity)
-                    {
-                        Debug.LogWarning("This file has an unsupported, experimental Canvas Transform specified.");
-                        // Was experimental mode. Needs testing.
-                        // Saves sketches are unlikely to trigger this under normal usage
-                        if (false)
-                        {
-                            Coords.CanvasLocalPose = jsonData.CanvasTransformInSceneSpace;
-                        }
-                    }
                     LastThumbnail_SS = App.Scene.Pose.inverse *
                         jsonData.ThumbnailCameraTransformInRoomSpace;
 
@@ -690,11 +699,25 @@ namespace TiltBrush
                     // Create Layers
                     if (jsonData.Layers != null)
                     {
-                        foreach (var layer in jsonData.Layers.Skip(1))  // Skip the main canvas
+                        for (var i = 0; i < jsonData.Layers.Length; i++)
                         {
-                            var canvas = App.Scene.AddLayerNow();
+                            var layer = jsonData.Layers[i];
+                            CanvasScript canvas = i == 0 ? App.Scene.MainCanvas : App.Scene.AddLayerNow();
                             canvas.gameObject.name = layer.Name;
                             canvas.gameObject.SetActive(layer.Visible);
+
+                            // Assume that layers with a scale of 0 are from legacy sketches with no layer transform stored
+                            // and that they should be set to 1
+                            // nb. The correct place to do this would be somewhere in the deserialization code
+                            // But after failing with DefaultValueHandling.Populate and custom JsonConverters
+                            // I'm just going to do it here
+                            if (layer.Transform.scale == 0)
+                            {
+                                TrTransform tr = layer.Transform;
+                                tr.scale = 1;
+                                layer.Transform = tr;
+                            }
+                            canvas.LocalPose = layer.Transform;
                         }
                     }
                 }
@@ -772,6 +795,10 @@ namespace TiltBrush
                         if (VideoCatalog.Instance != null && jsonData.Videos != null)
                         {
                             WidgetManager.m_Instance.SetDataFromTilt(jsonData.Videos);
+                        }
+                        if (jsonData.TextWidgets != null)
+                        {
+                            WidgetManager.m_Instance.SetDataFromTilt(jsonData.TextWidgets);
                         }
                     }
                     if (jsonData.Mirror != null)

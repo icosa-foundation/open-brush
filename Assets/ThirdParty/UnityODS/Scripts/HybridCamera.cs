@@ -30,7 +30,7 @@ public class HybridCamera : MonoBehaviour {
   private int eyeImageWidth;
   private bool vr180 = false;
   private bool lastvr180 = false;
-  private OdsRendererType rendererType;
+  [NonSerialized] public OdsRendererType rendererType;
   private OdsRendererType lastRendererType;
 
   public float particleScaleFactor = 100.0f;
@@ -51,7 +51,7 @@ public class HybridCamera : MonoBehaviour {
   private int frameCount = 0;
   private bool isRendering = false;
 
-  private OdsRenderer odsRenderer = null;
+  [NonSerialized] public OdsRenderer odsRenderer = null;
 
 #if ENABLE_TIMING
   public System.Diagnostics.Stopwatch m_timer = new System.Diagnostics.Stopwatch();
@@ -69,29 +69,21 @@ public class HybridCamera : MonoBehaviour {
     get { return finalImage; }
   }
 
-  public void SetOdsRendererType(OdsRendererType type) {
-  //Currently StereoCubemap ODS rendering is only supported in the editor or when experimental is 
-  //enabled. If/When StereoCubemap ODS rendering is fully supported, removed this #if/#else/#endif.
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-    if (!isExperimental()) {
-      type = OdsRendererType.StereoCubemap;
-    }
-#else
-    type = OdsRendererType.StereoCubemap;
-#endif
+  public void SetOdsRendererType(OdsRendererType type)
+  {
+    //Currently StereoCubemap ODS rendering is only supported in the editor or when experimental is
+    //enabled. If/When StereoCubemap ODS rendering is fully supported, removed this #if/#else/#endif.
 
-    if (type != rendererType) {
+    if (type != rendererType || odsRenderer == null) {
       Debug.Assert( type < OdsRendererType.Count );
       if (odsRenderer != null) { 
         odsRenderer.Release();
       }
       
       if (type == OdsRendererType.Slice) {
-        Debug.Log("ODS Mode: Slice");
         odsRenderer = new OdsSlice();
       }
       else {
-        Debug.Log("ODS Mode: Stereo Cubemap");
         odsRenderer = new OdsStereoCubemap();
       }
       odsRenderer.SetVr180(vr180);
@@ -137,8 +129,6 @@ public class HybridCamera : MonoBehaviour {
     odsRenderer.SetVr180(vr180);
     rendererType = OdsRendererType.Slice;
     lastRendererType = rendererType;
-
-    Debug.Log("Init ODS Mode: " + rendererType.ToString());
 
     if ( outputFolder == null ) {
       outputFolder = System.Environment.GetFolderPath(
