@@ -201,16 +201,18 @@ namespace OpenBrush.Multiplayer
         private bool CommandBrushStroke(BrushStrokeCommand command)
         {
             var stroke = command.m_Stroke;
+            int maxPointsPerChunk = NetworkingConstants.MaxControlPointsPerChunk;
 
-            if (stroke.m_ControlPoints.Length > 128)
+
+            if (stroke.m_ControlPoints.Length > maxPointsPerChunk)
             {
                 // Split and Send
-                int numSplits = stroke.m_ControlPoints.Length / 128;
+                int numSplits = stroke.m_ControlPoints.Length / maxPointsPerChunk;
 
                 var firstStroke = new Stroke(stroke)
                 {
-                    m_ControlPoints = stroke.m_ControlPoints.Take(128).ToArray(),
-                    m_ControlPointsToDrop = stroke.m_ControlPointsToDrop.Take(128).ToArray()
+                    m_ControlPoints = stroke.m_ControlPoints.Take(maxPointsPerChunk).ToArray(),
+                    m_ControlPointsToDrop = stroke.m_ControlPointsToDrop.Take(maxPointsPerChunk).ToArray()
                 };
 
                 var netStroke = new NetworkedStroke().Init(firstStroke);
@@ -223,8 +225,8 @@ namespace OpenBrush.Multiplayer
                 // Middle
                 for (int rounds = 1; rounds < numSplits + 1; ++rounds)
                 {
-                    var controlPoints = stroke.m_ControlPoints.Skip(rounds*128).Take(128).ToArray();
-                    var dropPoints = stroke.m_ControlPointsToDrop.Skip(rounds*128).Take(128).ToArray();
+                    var controlPoints = stroke.m_ControlPoints.Skip(rounds* maxPointsPerChunk).Take(maxPointsPerChunk).ToArray();
+                    var dropPoints = stroke.m_ControlPointsToDrop.Skip(rounds* maxPointsPerChunk).Take(maxPointsPerChunk).ToArray();
 
                     var netControlPoints = new NetworkedControlPoint[controlPoints.Length];
 
@@ -233,7 +235,7 @@ namespace OpenBrush.Multiplayer
                         netControlPoints[point] = new NetworkedControlPoint().Init(controlPoints[point]);
                     }
 
-                    PhotonRPC.RPC_BrushStrokeContinue(m_Runner, strokeGuid, rounds * 128, netControlPoints, dropPoints);
+                    PhotonRPC.RPC_BrushStrokeContinue(m_Runner, strokeGuid, rounds * maxPointsPerChunk, netControlPoints, dropPoints);
                 }
 
                 // End
