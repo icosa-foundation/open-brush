@@ -136,7 +136,7 @@ jobs:
         env:
           PRERELEASE: ${{ steps.version.outputs.prerelease }}
         run: |
-          # For a PR action (i.e., syncronize / open), the value of github.ref will be refs/pull/1234/merge
+          # For a PR action (i.e., synchronize / open), the value of github.ref will be refs/pull/1234/merge
           # For a push action, it will be either refs/heads/foo_branch_name OR refs/tags/v1234.
           # We want to use the base name for pushes of tags or to main, the PR number for PRs, and the branch name for named branches.
           if [[ "$PRERELEASE" == "false" || ${{ github.ref }} == refs/heads/main ]]
@@ -907,7 +907,7 @@ jobs:
       - name: Restore steam login config
         run: |
           mkdir -p /home/runner/Steam/config
-          echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - > /home/runner/Steam/config/config.vdf
+          echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - | gunzip - > /home/runner/Steam/config/config.vdf
           md5sum /home/runner/Steam/config/config.vdf
       - name: Download Build Artifacts (Windows OpenXR)
         uses: actions/download-artifact@v4
@@ -948,7 +948,7 @@ jobs:
           CHANNEL: beta
       - name: Update steam login secret
         run: |
-          base64 -i /home/runner/Steam/config/config.vdf | gh secret set --visibility all --org icosa-foundation STEAM_CONFIG_VDF
+          gzip /home/runner/Steam/config/config.vdf -c | base64 | gh secret set --visibility all --org icosa-foundation STEAM_CONFIG_VDF
           md5sum /home/runner/Steam/config/config.vdf
         env:
           GITHUB_TOKEN: ${{ secrets.SECRET_UPDATER_PAT }}
