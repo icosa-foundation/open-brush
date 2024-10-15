@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6718544642020818535}
   - component: {fileID: 7533779467632377196}
-  - component: {fileID: 6752862290110515822}
+  - component: {fileID: 2967658244113361874}
   m_Layer: 0
   m_Name: PhotonPlayerRig
   m_TagString: Untagged
@@ -58,7 +58,7 @@ MonoBehaviour:
   _oculusPlayerId: 0
   headTransform: {fileID: 5041384770245166357}
   m_PlayerId: 0
---- !u!114 &6752862290110515822
+--- !u!114 &2967658244113361874
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
