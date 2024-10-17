@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6718544642020818535}
-  - component: {fileID: 7533779467632377196}
+  - component: {fileID: 7215016235458371273}
   - component: {fileID: 2967658244113361874}
   m_Layer: 0
   m_Name: PhotonPlayerRig
@@ -35,7 +35,7 @@ Transform:
   - {fileID: 1457871284126546349}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &7533779467632377196
+--- !u!114 &7215016235458371273
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -50,11 +50,11 @@ MonoBehaviour:
   WordOffset: 0
   WordCount: 0
   _interpolationDataSource: 0
-  m_PlayArea: {fileID: 8895232112724846442}
-  m_PlayerHead: {fileID: 5083753190464579125}
-  m_Left: {fileID: 6268094594865570998}
-  m_Right: {fileID: 4999079164026519325}
-  m_Tool: {fileID: 5771162771103583132}
+  m_PlayArea: {fileID: 1840530316396516229}
+  m_PlayerHead: {fileID: 2866855712475842972}
+  m_Left: {fileID: 6993845821128094923}
+  m_Right: {fileID: 1621605232836574636}
+  m_Tool: {fileID: 4282572128721117942}
   _oculusPlayerId: 0
   headTransform: {fileID: 5041384770245166357}
   m_PlayerId: 0
@@ -80,12 +80,12 @@ MonoBehaviour:
     RawGuidValue: 9ee52735aebb6a445b4905c8aba8cfe3
   NestedObjects: []
   NetworkedBehaviours:
-  - {fileID: 7533779467632377196}
-  - {fileID: 8895232112724846442}
-  - {fileID: 5083753190464579125}
-  - {fileID: 6268094594865570998}
-  - {fileID: 4999079164026519325}
-  - {fileID: 5771162771103583132}
+  - {fileID: 7215016235458371273}
+  - {fileID: 1840530316396516229}
+  - {fileID: 2866855712475842972}
+  - {fileID: 6993845821128094923}
+  - {fileID: 1621605232836574636}
+  - {fileID: 4282572128721117942}
   SimulationBehaviours: []
 --- !u!1 &459460118330075700
 GameObject:
@@ -96,7 +96,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6539275587195953435}
-  - component: {fileID: 8895232112724846442}
+  - component: {fileID: 1840530316396516229}
   m_Layer: 0
   m_Name: Area
   m_TagString: Untagged
@@ -120,7 +120,7 @@ Transform:
   - {fileID: 3005319065403690882}
   m_Father: {fileID: 1457871284126546349}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8895232112724846442
+--- !u!114 &1840530316396516229
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -159,7 +159,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7668165333132264083}
-  - component: {fileID: 4999079164026519325}
+  - component: {fileID: 1621605232836574636}
   m_Layer: 0
   m_Name: RightHand
   m_TagString: Untagged
@@ -183,7 +183,7 @@ Transform:
   - {fileID: 4501806461527917157}
   m_Father: {fileID: 1457871284126546349}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4999079164026519325
+--- !u!114 &1621605232836574636
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -253,7 +253,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1030654070696327489}
-  - component: {fileID: 5083753190464579125}
+  - component: {fileID: 2866855712475842972}
   m_Layer: 0
   m_Name: Head
   m_TagString: Untagged
@@ -277,7 +277,7 @@ Transform:
   - {fileID: 2514485848220458462}
   m_Father: {fileID: 1457871284126546349}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &5083753190464579125
+--- !u!114 &2866855712475842972
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -316,7 +316,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5887326793658353859}
-  - component: {fileID: 6268094594865570998}
+  - component: {fileID: 6993845821128094923}
   m_Layer: 0
   m_Name: LeftHand
   m_TagString: Untagged
@@ -340,7 +340,7 @@ Transform:
   - {fileID: 1310333546402417676}
   m_Father: {fileID: 1457871284126546349}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6268094594865570998
+--- !u!114 &6993845821128094923
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -504,7 +504,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8617970912018780043}
-  - component: {fileID: 5771162771103583132}
+  - component: {fileID: 4282572128721117942}
   m_Layer: 0
   m_Name: Tool
   m_TagString: Untagged
@@ -528,7 +528,7 @@ Transform:
   - {fileID: 2439271445520760248}
   m_Father: {fileID: 1457871284126546349}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &5771162771103583132
+--- !u!114 &4282572128721117942
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
