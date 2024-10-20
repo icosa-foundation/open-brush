@@ -23,7 +23,6 @@ using Fusion;
 using Fusion.Photon.Realtime;
 using Fusion.Sockets;
 using TiltBrush;
-using UnityEditor.Localization.Platform.Android;
 
 namespace OpenBrush.Multiplayer
 {
