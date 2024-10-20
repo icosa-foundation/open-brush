@@ -23,6 +23,7 @@ using Fusion;
 using Fusion.Photon.Realtime;
 using Fusion.Sockets;
 using TiltBrush;
+using UnityEditor.Localization.Platform.Android;
 
 namespace OpenBrush.Multiplayer
 {
@@ -117,6 +118,13 @@ namespace OpenBrush.Multiplayer
         {
             if(m_Runner != null)
             {
+
+                if (m_LocalPlayer != null)
+                {
+                    m_Runner.Despawn(m_LocalPlayer.Object);
+                    m_LocalPlayer = null;
+                }
+
                 await m_Runner.Shutdown(forceShutdownProcedure: force);
                 return m_Runner.IsShutdown;
             }

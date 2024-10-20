@@ -211,6 +211,7 @@ namespace OpenBrush.Multiplayer
         {
             if (m_LocalPlayer.PlayerId == id)
             {
+                m_LocalPlayer = null;
                 Debug.Log("Possible to get here!");
                 return;
             }
@@ -287,6 +288,9 @@ namespace OpenBrush.Multiplayer
 
         private void OnConnectionHandlerDisconnected()
         {
+            // Clean up local player reference
+            m_LocalPlayer = null;
+
             // Invoke the Disconnected event
             Disconnected?.Invoke();
         }
