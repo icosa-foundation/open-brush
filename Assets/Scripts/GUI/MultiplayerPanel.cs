@@ -37,13 +37,18 @@ namespace TiltBrush
             }
         }
 
-        private RoomCreateData data = new RoomCreateData
+        private RoomCreateData data;
+
+        public void Awake()
         {
-            roomName = GenerateUniqueRoomName(),
-            @private = false,
-            maxPlayers = 4,
-            voiceDisabled = false
-        };
+            data = new RoomCreateData
+            {
+                roomName = GenerateUniqueRoomName(),
+                @private = false,
+                maxPlayers = 4,
+                voiceDisabled = false
+            };
+        }
 
         private static string GenerateUniqueRoomName()
         {
@@ -51,7 +56,7 @@ namespace TiltBrush
             do
             {
                 roomName = GenerateRandomRoomName();
-            } while (MultiplayerManager.m_Instance.DoesRoomNameExist(roomName));
+            } while (MultiplayerManager.m_Instance != null && MultiplayerManager.m_Instance.DoesRoomNameExist(roomName)) ;
 
             return roomName;
         }
