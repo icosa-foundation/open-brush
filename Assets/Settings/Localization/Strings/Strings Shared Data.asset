@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
   m_Name: Strings Shared Data
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   m_TableCollectionName: Strings
   m_TableCollectionNameGuidString: c84355079ab3f3e4f8f3812258805f86
   m_Entries:
@@ -1452,7 +1452,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76121021711179776
-    m_Key: POPUP_GDRIVE_BETATAG
+    m_Key: LABEL_BETATAG
     m_Metadata:
       m_Items: []
   - m_Id: 76121263181455360
@@ -3297,6 +3297,18 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 189087250755706880
     m_Key: POPUP_UPLOAD_COMPLETE_MOBILE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 156198200358006784
+    m_Key: ADMIN_PANEL_MULTIPLAYER_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 157582826200739840
+    m_Key: MULTIPLAYER_PANEL_CLOSE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 176097607781543936
+    m_Key: LABEL_ALPHATAG
     m_Metadata:
       m_Items: []
   - m_Id: 217069105871577088

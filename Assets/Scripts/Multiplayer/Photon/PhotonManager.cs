@@ -16,13 +16,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using Fusion;
 using Fusion.Photon.Realtime;
 using Fusion.Sockets;
 using TiltBrush;
-using System.Linq;
 
 namespace OpenBrush.Multiplayer
 {
@@ -36,42 +36,69 @@ namespace OpenBrush.Multiplayer
 
         PhotonPlayerRig m_LocalPlayer;
 
+        AppSettings m_PhotonAppSettings;
+
+        public event Action Disconnected;
+
         public PhotonManager(MultiplayerManager manager)
         {
             m_Manager = manager;
             m_PlayersSpawning = new List<PlayerRef>();
-        }
-
-        public async Task<bool> Connect()
-        {
-            if(m_Runner != null)
-            {
-                GameObject.Destroy(m_Runner);
-            }
 
             var runnerGO = new GameObject("Photon Network Components");
-
             m_Runner = runnerGO.AddComponent<NetworkRunner>();
+            m_Runner.gameObject.AddComponent<NetworkSceneManagerDefault>();
             m_Runner.ProvideInput = true;
             m_Runner.AddCallbacks(this);
 
-            var appSettings = new AppSettings
+            m_PhotonAppSettings = new AppSettings
             {
                 AppIdFusion = App.Config.PhotonFusionSecrets.ClientId,
                 // Need this set for some reason
                 FixedRegion = "",
             };
+        }
 
+        public async Task<bool> Init()
+        {
+            await Task.Yield();
+            //return true;
+            var result = await m_Runner.JoinSessionLobby(SessionLobby.Shared, customAppSettings: m_PhotonAppSettings);
+
+            if (result.Ok)
+            {
+                ControllerConsoleScript.m_Instance.AddNewLine("Connected to lobby");
+            }
+            else
+            {
+                ControllerConsoleScript.m_Instance.AddNewLine("Failed to join lobby!");
+            }
+
+            return result.Ok;
+        }
+
+        public async Task<bool> Connect(RoomCreateData roomCreateData)
+        {   
             var args = new StartGameArgs()
             {
                 GameMode = GameMode.Shared,
-                SessionName = "OpenBrushMultiplayerTest",
-                CustomPhotonAppSettings = appSettings,
-                SceneManager = m_Runner.gameObject.AddComponent<NetworkSceneManagerDefault>(),
+                SessionName = roomCreateData.roomName,
+                CustomPhotonAppSettings = m_PhotonAppSettings,
+                PlayerCount = roomCreateData.maxPlayers != 0 ? roomCreateData.maxPlayers : null,
+                SceneManager = m_Runner.gameObject.GetComponent<NetworkSceneManagerDefault>(),
                 Scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex,
             };
 
             var result = await m_Runner.StartGame(args);
+
+            if (result.Ok)
+            {
+                ControllerConsoleScript.m_Instance.AddNewLine("Joined Room");
+            }
+            else
+            {
+                ControllerConsoleScript.m_Instance.AddNewLine("Failed to join Room!");
+            }
 
             return result.Ok;
             
@@ -90,6 +117,13 @@ namespace OpenBrush.Multiplayer
         {
             if(m_Runner != null)
             {
+
+                if (m_LocalPlayer != null)
+                {
+                    m_Runner.Despawn(m_LocalPlayer.Object);
+                    m_LocalPlayer = null;
+                }
+
                 await m_Runner.Shutdown(forceShutdownProcedure: force);
                 return m_Runner.IsShutdown;
             }
@@ -104,7 +138,7 @@ namespace OpenBrush.Multiplayer
                 var newPlayer = m_Runner.GetPlayerObject(player);
                 if (newPlayer != null)
                 {
-                    m_Manager.remotePlayerJoined?.Invoke(newPlayer.GetComponent<PhotonPlayerRig>());
+                    m_Manager.remotePlayerJoined?.Invoke(player.PlayerId, newPlayer.GetComponent<PhotonPlayerRig>());
                     m_PlayersSpawning.Remove(player);
                 }
             }
@@ -114,7 +148,7 @@ namespace OpenBrush.Multiplayer
         public async Task<bool> PerformCommand(BaseCommand command)
         {
             await Task.Yield();
-            return ProcessCommand(command);;
+            return ProcessCommand(command);
         }
 
         public async Task<bool> UndoCommand(BaseCommand command)
@@ -174,16 +208,18 @@ namespace OpenBrush.Multiplayer
         private bool CommandBrushStroke(BrushStrokeCommand command)
         {
             var stroke = command.m_Stroke;
+            int maxPointsPerChunk = NetworkingConstants.MaxControlPointsPerChunk;
 
-            if (stroke.m_ControlPoints.Length > 128)
+
+            if (stroke.m_ControlPoints.Length > maxPointsPerChunk)
             {
                 // Split and Send
-                int numSplits = stroke.m_ControlPoints.Length / 128;
+                int numSplits = stroke.m_ControlPoints.Length / maxPointsPerChunk;
 
                 var firstStroke = new Stroke(stroke)
                 {
-                    m_ControlPoints = stroke.m_ControlPoints.Take(128).ToArray(),
-                    m_ControlPointsToDrop = stroke.m_ControlPointsToDrop.Take(128).ToArray()
+                    m_ControlPoints = stroke.m_ControlPoints.Take(maxPointsPerChunk).ToArray(),
+                    m_ControlPointsToDrop = stroke.m_ControlPointsToDrop.Take(maxPointsPerChunk).ToArray()
                 };
 
                 var netStroke = new NetworkedStroke().Init(firstStroke);
@@ -196,8 +232,8 @@ namespace OpenBrush.Multiplayer
                 // Middle
                 for (int rounds = 1; rounds < numSplits + 1; ++rounds)
                 {
-                    var controlPoints = stroke.m_ControlPoints.Skip(rounds*128).Take(128).ToArray();
-                    var dropPoints = stroke.m_ControlPointsToDrop.Skip(rounds*128).Take(128).ToArray();
+                    var controlPoints = stroke.m_ControlPoints.Skip(rounds* maxPointsPerChunk).Take(maxPointsPerChunk).ToArray();
+                    var dropPoints = stroke.m_ControlPointsToDrop.Skip(rounds* maxPointsPerChunk).Take(maxPointsPerChunk).ToArray();
 
                     var netControlPoints = new NetworkedControlPoint[controlPoints.Length];
 
@@ -206,7 +242,7 @@ namespace OpenBrush.Multiplayer
                         netControlPoints[point] = new NetworkedControlPoint().Init(controlPoints[point]);
                     }
 
-                    PhotonRPC.RPC_BrushStrokeContinue(m_Runner, strokeGuid, rounds * 128, netControlPoints, dropPoints);
+                    PhotonRPC.RPC_BrushStrokeContinue(m_Runner, strokeGuid, rounds * maxPointsPerChunk, netControlPoints, dropPoints);
                 }
 
                 // End
@@ -242,33 +278,66 @@ namespace OpenBrush.Multiplayer
 
         public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
         {
-            if(player == m_Runner.LocalPlayer)
+            Debug.Log($"OnPlayerJoined called. PlayerRef: {player.PlayerId}");
+
+            try
+            {
+
+                if (player == m_Runner.LocalPlayer)
             {
                 var playerPrefab = Resources.Load("Multiplayer/Photon/PhotonPlayerRig") as GameObject;
                 var playerObj = m_Runner.Spawn(playerPrefab, inputAuthority: m_Runner.LocalPlayer);
                 m_LocalPlayer = playerObj.GetComponent<PhotonPlayerRig>();
                 m_Runner.SetPlayerObject(m_Runner.LocalPlayer, playerObj);
-                
 
-                m_Manager.localPlayerJoined?.Invoke(m_LocalPlayer);
+                m_Manager.localPlayerJoined?.Invoke(player.PlayerId, m_LocalPlayer);
             }
             else
             {
                 m_PlayersSpawning.Add(player);
             }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Exception in OnPlayerJoined: {ex.Message}");
+            }
+        }
+
+        public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
+        {
+            m_Manager.playerLeft?.Invoke(player.PlayerId);
+        }
+
+        public void OnSessionListUpdated(NetworkRunner runner, List<SessionInfo> sessionList)
+        {
+            var roomData = new List<RoomData>();
+            foreach (var session in sessionList)
+            {
+                RoomData data = new RoomData()
+                {
+                    roomName = session.Name,
+                    @private = session.IsOpen,
+                    numPlayers = session.PlayerCount,
+                    maxPlayers = session.MaxPlayers
+                };
+
+                roomData.Add(data);
+            }
+
+            m_Manager.roomDataRefreshed?.Invoke(roomData);
         }
 #endregion
 
 #region Unused Photon Callbacks 
-        public void OnPlayerLeft(NetworkRunner runner, PlayerRef player) { }
-        public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason) { }
+        public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason) {
+            Disconnected?.Invoke();
+        }
         public void OnDisconnectedFromServer(NetworkRunner runner) { }
         public void OnConnectFailed(NetworkRunner runner, NetAddress remoteAddress, NetConnectFailedReason reason) { }
         public void OnInput(NetworkRunner runner, NetworkInput input) { }
         public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input) { }
         public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token) { }
         public void OnUserSimulationMessage(NetworkRunner runner, SimulationMessagePtr message) { }
-        public void OnSessionListUpdated(NetworkRunner runner, List<SessionInfo> sessionList) { }
         public void OnCustomAuthenticationResponse(NetworkRunner runner, Dictionary<string, object> data) { }
         public void OnHostMigration(NetworkRunner runner, HostMigrationToken hostMigrationToken) { }
         public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ArraySegment<byte> data) { }

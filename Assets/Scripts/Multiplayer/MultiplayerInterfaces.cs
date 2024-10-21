@@ -22,7 +22,8 @@ namespace OpenBrush.Multiplayer
 {
     public interface IConnectionHandler
     {
-        Task<bool> Connect();
+        Task<bool> Init();
+        Task<bool> Connect(RoomCreateData data);
 
         bool IsConnected();
         Task<bool> Disconnect(bool force = false);
@@ -34,11 +35,15 @@ namespace OpenBrush.Multiplayer
         Task<bool> RedoCommand(BaseCommand command);
         Task<bool> RpcSyncToSharedAnchor(string uuid);
 
+        event Action Disconnected;
+
+
         //ITransientData<PlayerRigData> SpawnPlayer();
     }
 
     public interface ITransientData<T>
     {
+        int PlayerId { get; set; }
         void TransmitData(T data);
         T RecieveData();
     }
