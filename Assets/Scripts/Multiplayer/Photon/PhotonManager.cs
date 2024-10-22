@@ -45,11 +45,7 @@ namespace OpenBrush.Multiplayer
             m_Manager = manager;
             m_PlayersSpawning = new List<PlayerRef>();
 
-            var runnerGO = new GameObject("Photon Network Components");
-            m_Runner = runnerGO.AddComponent<NetworkRunner>();
-            m_Runner.gameObject.AddComponent<NetworkSceneManagerDefault>();
-            m_Runner.ProvideInput = true;
-            m_Runner.AddCallbacks(this);
+            InitializeRunner();
 
             m_PhotonAppSettings = new AppSettings
             {
@@ -57,6 +53,16 @@ namespace OpenBrush.Multiplayer
                 // Need this set for some reason
                 FixedRegion = "",
             };
+        }
+
+        private void InitializeRunner()
+        {
+            var runnerGO = new GameObject("Photon Network Components");
+            m_Runner = runnerGO.AddComponent<NetworkRunner>();
+            m_Runner.gameObject.AddComponent<NetworkSceneManagerDefault>();
+            m_Runner.ProvideInput = true;
+            m_Runner.AddCallbacks(this);
+            ControllerConsoleScript.m_Instance.AddNewLine("Runner Initialized");
         }
 
         public async Task<bool> Init()
@@ -78,7 +84,12 @@ namespace OpenBrush.Multiplayer
         }
 
         public async Task<bool> Connect(RoomCreateData roomCreateData)
-        {   
+        {
+            if (m_Runner == null)
+            {
+                InitializeRunner();
+            }
+
             var args = new StartGameArgs()
             {
                 GameMode = GameMode.Shared,
@@ -125,6 +136,7 @@ namespace OpenBrush.Multiplayer
                 }
 
                 await m_Runner.Shutdown(forceShutdownProcedure: force);
+                GameObject.Destroy(m_Runner.gameObject);
                 return m_Runner.IsShutdown;
             }
             return true;
