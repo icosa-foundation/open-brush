@@ -23,8 +23,8 @@ namespace TiltBrush
         [SerializeField] private TextMeshPro m_RoomNumberTextLobby;
         [SerializeField] private TextMeshPro m_RoomNumberTextRoomSettings;
         [SerializeField] private TextMeshPro m_DoesRoomNumberExist;
+        [SerializeField] private TextMeshPro m_AlertUserInBeginnerMode;
 
-        private PanelManager m_PanelManager;
 
         public string RoomName
         {
@@ -48,7 +48,28 @@ namespace TiltBrush
                 maxPlayers = 4,
                 voiceDisabled = false
             };
+
         }
+
+        protected override void OnEnablePanel()
+        {
+            base.OnEnablePanel();
+
+            if (m_CurrentMode == Mode.Lobby)
+            {
+                UserInBeginnerMode();
+            }
+        }
+
+        private void UserInBeginnerMode()
+        {
+            if (m_AlertUserInBeginnerMode)
+            {
+                PanelManager panelManager = PanelManager.m_Instance;
+                m_AlertUserInBeginnerMode.gameObject.SetActive(panelManager.AdvancedModeActive());
+            }
+        }
+
 
         private static string GenerateUniqueRoomName()
         {
@@ -56,7 +77,7 @@ namespace TiltBrush
             do
             {
                 roomName = GenerateRandomRoomName();
-            } while (MultiplayerManager.m_Instance != null && MultiplayerManager.m_Instance.DoesRoomNameExist(roomName)) ;
+            } while (MultiplayerManager.m_Instance != null && MultiplayerManager.m_Instance.DoesRoomNameExist(roomName));
 
             return roomName;
         }
@@ -79,6 +100,8 @@ namespace TiltBrush
             }
         }
 
+
+
         public enum Mode
         {
             Null,
@@ -97,6 +120,7 @@ namespace TiltBrush
 
             InitMultiplayer();
             UpdateRoomNumberDisplay();
+            UserInBeginnerMode();
         }
 
         public async void InitMultiplayer()
@@ -112,6 +136,7 @@ namespace TiltBrush
 
         private async void JoinRoom()
         {
+
             if (MultiplayerManager.m_Instance != null)
             {
 
@@ -186,6 +211,11 @@ namespace TiltBrush
             if (m_CurrentMode == Mode.Lobby || m_CurrentMode == Mode.Joined)
             {
                 UpdateRoomNumberDisplay();
+            }
+
+            if (m_CurrentMode == Mode.Lobby)
+            {
+                UserInBeginnerMode();
             }
         }
 

@@ -26,6 +26,8 @@ namespace OpenBrush.Multiplayer
         Task<bool> Connect(RoomCreateData data);
 
         bool IsConnected();
+        bool IsInRoom();
+
         Task<bool> Disconnect(bool force = false);
 
         void Update();

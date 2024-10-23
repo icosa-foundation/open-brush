@@ -55,7 +55,8 @@ namespace OpenBrush.Multiplayer
 
         List<ulong> oculusPlayerIds;
 
-        private bool IsConnected { get { return m_Manager != null && m_Manager.IsConnected(); } }
+        public bool IsConnected { get { return m_Manager != null && m_Manager.IsConnected(); } }
+        public bool IsInRoom { get { return m_Manager != null && m_Manager.IsInRoom(); } }
 
         void Awake()
         {

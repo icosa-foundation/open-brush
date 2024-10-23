@@ -124,6 +124,16 @@ namespace OpenBrush.Multiplayer
             return m_Runner.IsRunning;
         }
 
+        public bool IsInRoom() 
+        {
+            if (m_Runner == null)
+            {
+                return false;
+            }
+            return m_Runner.IsInSession;
+        }
+
+
         public async Task<bool> Disconnect(bool force)
         {
             if(m_Runner != null)

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using OpenBrush.Multiplayer;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -5063,6 +5064,8 @@ namespace TiltBrush
                 case GlobalCommands.GoogleDriveSync:
                     return App.GoogleIdentity.LoggedIn;
                 case GlobalCommands.RecordCameraPath: return m_WidgetManager.CameraPathsVisible;
+                case GlobalCommands.AdvancedPanelsToggle: return !MultiplayerManager.m_Instance.IsInRoom;
+                case GlobalCommands.MultiplayerJoinRoom: return !PanelManager.m_Instance.AdvancedModeActive();
             }
             return true;
         }
