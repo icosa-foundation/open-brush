@@ -66,7 +66,9 @@ namespace TiltBrush
             if (m_AlertUserInBeginnerMode)
             {
                 PanelManager panelManager = PanelManager.m_Instance;
-                m_AlertUserInBeginnerMode.gameObject.SetActive(panelManager.AdvancedModeActive());
+                bool IsAdavancedModeActive = panelManager.AdvancedModeActive();
+                Debug.Log(IsAdavancedModeActive);
+                m_AlertUserInBeginnerMode.gameObject.SetActive(IsAdavancedModeActive);
             }
         }
 
@@ -112,7 +114,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_LobbyElements;
         [SerializeField] private GameObject m_JoinedElements;
 
-        private Mode m_CurrentMode;
+        private Mode m_CurrentMode = Mode.Lobby;
 
         public override void InitPanel()
         {
