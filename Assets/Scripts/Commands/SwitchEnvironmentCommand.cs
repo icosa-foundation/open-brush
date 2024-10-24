@@ -19,7 +19,7 @@ namespace TiltBrush
         private CustomLights m_PrevLights;
         private CustomEnvironment m_PrevBackdrop;
         private Environment m_PrevEnvironment;
-        private Environment m_NextEnvironment;
+        public Environment m_NextEnvironment;
 
         public SwitchEnvironmentCommand(Environment nextEnv, BaseCommand parent = null) : base(parent)
         {

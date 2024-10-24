@@ -21,7 +21,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using Fusion;
 using TiltBrush;
-using System.Windows.Input;
 
 namespace OpenBrush.Multiplayer
 {
