@@ -207,6 +207,9 @@ namespace OpenBrush.Multiplayer
                 case DeleteStrokeCommand:
                     success = CommandDeleteStroke(command as DeleteStrokeCommand);
                     break;
+                case SwitchEnvironmentCommand:
+                    success = CommandSwitchEnvironment(command as SwitchEnvironmentCommand);
+                    break;
                 case BaseCommand:
                     success = CommandBase(command);
                     break;
@@ -289,9 +292,16 @@ namespace OpenBrush.Multiplayer
             PhotonRPC.RPC_DeleteStroke(m_Runner, command.m_TargetStroke.m_Seed, command.Guid, command.ParentGuid, command.ChildrenCount);
             return true;
         }
-#endregion
 
-#region Photon Callbacks
+        private bool CommandSwitchEnvironment(SwitchEnvironmentCommand command)
+        {
+            Guid environmentGuid = command.m_NextEnvironment.m_Guid;
+            PhotonRPC.RPC_SwitchEnvironment(m_Runner, environmentGuid, command.Guid, command.ParentGuid, command.ChildrenCount);
+            return true;
+        }
+        #endregion
+
+        #region Photon Callbacks
         public void OnConnectedToServer(NetworkRunner runner)
         {
             var rpc = m_Runner.gameObject.AddComponent<PhotonRPC>();

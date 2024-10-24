@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Fusion;
 using TiltBrush;
+using System.Windows.Input;
 
 namespace OpenBrush.Multiplayer
 {
@@ -293,7 +294,27 @@ namespace OpenBrush.Multiplayer
                 Debug.LogError($"couldn't find stroke with seed: {seed}");
             }
         }
-#endregion
+
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_SwitchEnvironment(NetworkRunner runner, Guid environmentGuid, Guid commandGuid, Guid parentGuid = default, int childCount = 0)
+        {
+            TiltBrush.Environment environment = EnvironmentCatalog.m_Instance.GetEnvironment(environmentGuid);
+
+            if (environment != null)
+            {
+     
+                var parentCommand = FindParentCommand(parentGuid);
+                var command = new SwitchEnvironmentCommand(environment, parent: parentCommand);
+
+                AddPendingCommand(() => { }, commandGuid, parentGuid, command, childCount);
+            }
+            else
+            {
+                Debug.LogError($"Environment with Guid {environmentGuid} not found.");
+            }
+        }
+
+        #endregion
     }
 }
 
