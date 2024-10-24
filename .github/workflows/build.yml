@@ -448,7 +448,7 @@ jobs:
       - name: Enable keystore
         run: |
           sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
-      
+
       - name: Add PHOTON_PAT specific define
         if: ${{ env.PHOTON_PAT }}
         run: |
