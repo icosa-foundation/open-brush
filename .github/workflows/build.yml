@@ -352,6 +352,7 @@ jobs:
         with:
           token: ${{ env.PHOTON_PAT }}
           repository: icosa-mirror/photon-fusion
+          ref: v1.1.10
           path: photon-fusion-mirror/
 
       - name: Copy photon files
@@ -447,6 +448,11 @@ jobs:
       - name: Enable keystore
         run: |
           sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
+
+      - name: Add PHOTON_PAT specific define
+        if: ${{ env.PHOTON_PAT }}
+        run: |
+          echo -e "\n-define:FUSION_WEAVER" | tee -a Assets/csc.rsp
 
       - name: Update build matrix specific defines in csc.rsp
         if: ${{ matrix.extra_defines }}

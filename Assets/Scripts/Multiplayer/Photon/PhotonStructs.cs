@@ -93,7 +93,7 @@ namespace OpenBrush.Multiplayer
     [System.Serializable]
     public struct NetworkedStroke : INetworkStruct
     {
-        public const int k_MaxCapacity = 128;
+        public const int k_MaxCapacity = NetworkingConstants.MaxControlPointsPerChunk;
         public Stroke.Type m_Type;
         [Networked][Capacity(k_MaxCapacity)] public NetworkArray<bool> m_ControlPointsToDrop => default;
         public Color m_Color;
