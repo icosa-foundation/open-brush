@@ -801,14 +801,13 @@ jobs:
 
       - name: Publish
         uses: softprops/action-gh-release@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           body: ${{ steps.changelog.outputs.changelog }}
           prerelease: ${{ needs.configuration.outputs.prerelease }}
           target_commitish: ${{ needs.configuration.outputs.currentrelease }}
           tag_name: ${{ needs.configuration.outputs.version }}
           files: releases/*
+          token: ${{ secrets.RELEASE_TOKEN }}
 
   publish_gitbook:
     name: Publish changelog from last major build to open-brush-docs
