@@ -39,6 +39,7 @@ namespace OpenBrush.Multiplayer
         public event Action Disconnected;
 
         private IConnectionHandler m_Manager;
+        private IVoiceManager m_VoiceManager;
 
         private ITransientData<PlayerRigData> m_LocalPlayer;
         private List<ITransientData<PlayerRigData>> m_RemotePlayers;
@@ -49,14 +50,16 @@ namespace OpenBrush.Multiplayer
         public Action<List<RoomData>> roomDataRefreshed;
         private List<RoomData> m_RoomData = new List<RoomData>();
 
-
-
         ulong myOculusUserId;
 
         List<ulong> oculusPlayerIds;
+        internal string UserId;
+        public string CurrentRoomName;
 
         public bool IsConnected { get { return m_Manager != null && m_Manager.IsConnected(); } }
         public bool IsInRoom { get { return m_Manager != null && m_Manager.IsInRoom(); } }
+
+        public string Id { get { return m_Manager.Id; } }
 
         void Awake()
         {
@@ -86,6 +89,7 @@ namespace OpenBrush.Multiplayer
                 case MultiplayerType.Photon:
 #if FUSION_WEAVER
                     m_Manager = new PhotonManager(this);
+                    m_VoiceManager = new PhotonVoiceManager(this);
                     m_Manager.Disconnected += OnConnectionHandlerDisconnected;
 #endif // FUSION_WEAVER
                     break;
@@ -123,7 +127,14 @@ namespace OpenBrush.Multiplayer
 
         public async Task<bool> Connect(RoomCreateData data)
         {
-            return await m_Manager.Connect(data);
+            bool success = await m_Manager.Connect(data);
+            if (success)
+            {
+                CurrentRoomName = data.roomName;
+                StartSpeaking();
+            }
+
+            return success;
         }
 
         public bool DoesRoomNameExist(string roomName)
@@ -282,7 +293,9 @@ namespace OpenBrush.Multiplayer
         {
             if (m_Manager != null)
             {
-                return await m_Manager.Disconnect(force);
+                var success = await m_Manager.Disconnect(force);
+                if (success) StopSpeaking();
+                return success;
             }
             return true;
         }
@@ -294,6 +307,21 @@ namespace OpenBrush.Multiplayer
 
             // Invoke the Disconnected event
             Disconnected?.Invoke();
+        }
+
+        public void JoinVoiceRoom(RoomCreateData data)
+        {
+            m_VoiceManager?.JoinRoom(data.roomName);
+        }
+
+        public void StartSpeaking()
+        {
+            m_VoiceManager?.StartSpeaking();
+        }
+
+        public void StopSpeaking()
+        {
+            m_VoiceManager?.StopSpeaking();
         }
 
     }

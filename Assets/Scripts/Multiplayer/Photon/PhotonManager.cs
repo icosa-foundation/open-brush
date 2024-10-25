@@ -30,15 +30,17 @@ namespace OpenBrush.Multiplayer
     {
         private NetworkRunner m_Runner;
 
-        MultiplayerManager m_Manager;
+        private MultiplayerManager m_Manager;
 
-        List<PlayerRef> m_PlayersSpawning;
+        private List<PlayerRef> m_PlayersSpawning;
 
-        PhotonPlayerRig m_LocalPlayer;
+        private PhotonPlayerRig m_LocalPlayer;
 
-        AppSettings m_PhotonAppSettings;
+        private AppSettings m_PhotonAppSettings;
 
         public event Action Disconnected;
+
+        public string Id { get { return m_Runner.UserId; } }
 
         public PhotonManager(MultiplayerManager manager)
         {
@@ -105,6 +107,7 @@ namespace OpenBrush.Multiplayer
             if (result.Ok)
             {
                 ControllerConsoleScript.m_Instance.AddNewLine("Joined Room");
+                m_Manager.JoinVoiceRoom(roomCreateData); // i'd like to solve this in a different way 
             }
             else
             {

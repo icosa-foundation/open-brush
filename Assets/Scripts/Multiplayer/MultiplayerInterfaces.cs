@@ -39,8 +39,20 @@ namespace OpenBrush.Multiplayer
 
         event Action Disconnected;
 
+        string Id { get; }
+
 
         //ITransientData<PlayerRigData> SpawnPlayer();
+    }
+
+    public interface IVoiceManager
+    {
+        void InitializeVoice();
+        Task<bool> ConnectToVoiceServer();
+        Task<bool> JoinRoom(string roomName);
+        void StartSpeaking();
+        void StopSpeaking();
+
     }
 
     public interface ITransientData<T>
