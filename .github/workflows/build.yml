@@ -352,6 +352,7 @@ jobs:
         with:
           token: ${{ env.PHOTON_PAT }}
           repository: icosa-mirror/photon-fusion
+          ref: v1.1.8
           path: photon-fusion-mirror/
 
       - name: Copy photon files
