@@ -57,7 +57,7 @@ namespace TiltBrush
             {
                 await m_SpatialAnchorManager.CreateSpatialAnchor();
                 m_SpatialAnchorManager.SceneLocalizeToAnchor();
-                MultiplayerManager.m_Instance.Connect(new RoomCreateData()
+                MultiplayerManager.m_Instance.JoinRoom(new RoomCreateData()
                 {
                     roomName = "OculusMRRoom",
                     maxPlayers = 12
@@ -65,7 +65,7 @@ namespace TiltBrush
             }
             else
             {
-                MultiplayerManager.m_Instance.Connect(new RoomCreateData()
+                MultiplayerManager.m_Instance.JoinRoom(new RoomCreateData()
                 {
                     roomName = "OculusMRRoom",
                     maxPlayers = 12

@@ -20,11 +20,11 @@ namespace TiltBrush
 {
     public class MultiplayerPanel : BasePanel
     {
-        [SerializeField] private TextMeshPro m_RoomNumberTextLobby;
-        [SerializeField] private TextMeshPro m_RoomNumberTextRoomSettings;
-        [SerializeField] private TextMeshPro m_DoesRoomNumberExist;
-        [SerializeField] private TextMeshPro m_AlertUserInBeginnerMode;
 
+        [SerializeField] private TextMeshPro m_State;
+        [SerializeField] private TextMeshPro m_RoomNumber;
+        [SerializeField] private TextMeshPro m_Nickname;
+        [SerializeField] private TextMeshPro m_Alerts;
 
         public string RoomName
         {
@@ -32,8 +32,28 @@ namespace TiltBrush
             set
             {
                 data.roomName = value;
-                UpdateRoomNumberDisplay();
-                UpdateRoomExistenceMessage();
+                UpdateDisplay();
+            }
+        }
+
+        public string NickName
+        {
+            get
+            {
+
+                if (MultiplayerManager.m_Instance != null) return MultiplayerManager.m_Instance.UserInfo.Nickname;
+                return "";
+            }
+            set
+            {
+                ConnectionUserInfo ui = new ConnectionUserInfo
+                {
+                    Nickname = value,
+                    UserId = MultiplayerManager.m_Instance.UserInfo.UserId,
+                    Role = MultiplayerManager.m_Instance.UserInfo.Role
+                };
+                MultiplayerManager.m_Instance.UserInfo = ui;
+                UpdateDisplay();
             }
         }
 
@@ -49,26 +69,19 @@ namespace TiltBrush
                 voiceDisabled = false
             };
 
-        }
+            if (MultiplayerManager.m_Instance != null) MultiplayerManager.m_Instance.StateUpdated += OnStateUpdated;
 
-        protected override void OnEnablePanel()
-        {
-            base.OnEnablePanel();
-
-            if (m_CurrentMode == Mode.Lobby)
-            {
-                UserInBeginnerMode();
-            }
+            UpdateDisplay();
         }
 
         private void UserInBeginnerMode()
         {
-            if (m_AlertUserInBeginnerMode)
+            if (m_Alerts)
             {
                 PanelManager panelManager = PanelManager.m_Instance;
                 bool IsAdavancedModeActive = panelManager.AdvancedModeActive();
                 Debug.Log(IsAdavancedModeActive);
-                m_AlertUserInBeginnerMode.gameObject.SetActive(IsAdavancedModeActive);
+                m_Alerts.gameObject.SetActive(IsAdavancedModeActive);
             }
         }
 
@@ -89,48 +102,19 @@ namespace TiltBrush
             return random.Next(100000, 999999).ToString();
         }
 
-        private void UpdateRoomNumberDisplay()
+        private void UpdateDisplay()
         {
-            if (m_RoomNumberTextLobby)
+            if (m_RoomNumber) m_RoomNumber.text = "RoomName: " + data.roomName;
+            if (m_Nickname) m_Nickname.text = "Nickname: " + NickName;
+
+        }
+
+        private async void Connect()
+        {
+            if (MultiplayerManager.m_Instance != null)
             {
-                m_RoomNumberTextLobby.text = data.roomName;
+                await MultiplayerManager.m_Instance.Connect();
             }
-            if (m_RoomNumberTextRoomSettings)
-            {
-                m_RoomNumberTextRoomSettings.text = data.roomName;
-            }
-        }
-
-        public enum Mode
-        {
-            Null,
-            Lobby,
-            Joined
-        }
-
-        [SerializeField] private GameObject m_LobbyElements;
-        [SerializeField] private GameObject m_JoinedElements;
-
-        private Mode m_CurrentMode = Mode.Lobby;
-
-        public override void InitPanel()
-        {
-            base.InitPanel();
-
-            InitMultiplayer();
-            UpdateRoomNumberDisplay();
-            UserInBeginnerMode();
-        }
-
-        public async void InitMultiplayer()
-        {
-            await MultiplayerManager.m_Instance.Connect();
-            MultiplayerManager.m_Instance.Disconnected += OnDisconnected;
-        }
-
-        private void OnDisconnected()
-        {
-            UpdateMode(Mode.Lobby);
         }
 
         private async void JoinRoom()
@@ -138,21 +122,7 @@ namespace TiltBrush
 
             if (MultiplayerManager.m_Instance != null)
             {
-
-                bool success = await MultiplayerManager.m_Instance.JoinRoom(data);
-
-                if (success)
-                {
-
-                    // Additional UI updates or feedback
-                    UpdateMode(Mode.Joined);
-                    UpdateRoomNumberDisplay(); // Update room number display after joining
-                }
-                else
-                {
-                    // Provide user feedback with some UI element
-                }
-
+                await MultiplayerManager.m_Instance.JoinRoom(data);
             }
         }
 
@@ -160,64 +130,14 @@ namespace TiltBrush
         {
             if (MultiplayerManager.m_Instance != null)
             {
-
-                bool success = await MultiplayerManager.m_Instance.LeaveRoom(false);
-
-                if (success)
-                {
-
-                    // Additional UI updates or feedback
-                    UpdateMode(Mode.Lobby);
-                    UpdateRoomNumberDisplay(); // Update room number display after joining
-                }
-                else
-                {
-                    // Provide user feedback with some UI element
-                }
-
+                await MultiplayerManager.m_Instance.LeaveRoom(false);
             }
         }
 
-        private void UpdateRoomExistenceMessage()
+        private void OnStateUpdated(ConnectionState newState)
         {
-            if (m_RoomNumberTextLobby) return;
-
-            if (MultiplayerManager.m_Instance != null && m_DoesRoomNumberExist != null)
-            {
-                if (MultiplayerManager.m_Instance.DoesRoomNameExist(data.roomName))
-                {
-                    m_DoesRoomNumberExist.text = "This room exists. You will be joining an active session. You can change the room number by pressing edit.";
-                }
-                else
-                {
-                    m_DoesRoomNumberExist.text = "This room does not exist yet. By pressing join, the room will be created.";
-                }
-            }
+            m_State.text = "State: " + newState.ToString();
         }
-
-        private void UpdateMode(Mode newMode)
-        {
-            m_CurrentMode = newMode;
-            m_LobbyElements.SetActive(m_CurrentMode == Mode.Lobby);
-            m_JoinedElements.SetActive(m_CurrentMode == Mode.Joined);
-
-            // Update room number display if switching to a mode that shows it
-            if (m_CurrentMode == Mode.Lobby || m_CurrentMode == Mode.Joined)
-            {
-                UpdateRoomNumberDisplay();
-            }
-
-            if (m_CurrentMode == Mode.Lobby)
-            {
-                UserInBeginnerMode();
-            }
-        }
-
-        private void RefreshObjects()
-        {
-
-        }
-
 
         // This function serves as a callback from ProfilePopUpButtons that want to
         // change the mode of the popup on click.
@@ -227,18 +147,20 @@ namespace TiltBrush
             {
                 // Identifier for signaling we understand the info message.
                 case SketchControlsScript.GlobalCommands.Null:
-                    UpdateMode(Mode.Lobby);
-                    RefreshObjects();
+                    //UpdateMode(Mode.Disconnected);
+                    break;
+                case SketchControlsScript.GlobalCommands.MultiplayerConnect:
+                    Connect();
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerPanelOptions:
-                    switch ((Mode)button.m_CommandParam)
-                    {
-                        case Mode.Lobby:
-                            UpdateMode(Mode.Lobby);
-                            break;
-                        default:
-                            break;
-                    }
+                    //switch ((Mode)button.m_CommandParam)
+                    //{
+                    //    case Mode.Lobby:
+                    //        UpdateMode(Mode.Lobby);
+                    //        break;
+                    //    default:
+                    //        break;
+                    //}
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerJoinRoom:
                     JoinRoom();

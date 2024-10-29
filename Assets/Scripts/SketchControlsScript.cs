@@ -152,6 +152,9 @@ namespace TiltBrush
             MultiplayerJoinRoom = 1004,
             EditMultiplayerRoomName = 1005,
             MultiplayerLeaveRoom = 1006,
+            MultiplayerConnect = 1007,
+            MultiplayerDisconnect = 1008,
+            EditMultiplayerNickName = 1009,
 
             RenameSketch = 5200,
             OpenLayerOptionsPopup = 5201,
@@ -4520,6 +4523,13 @@ namespace TiltBrush
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }
+                case GlobalCommands.EditMultiplayerNickName:
+                    {
+                        var panel = (MultiplayerPanel)m_PanelManager.GetActivePanelByType(BasePanel.PanelType.Multiplayer);
+                        panel.NickName = KeyboardPopUpWindow.m_LastInput;
+                        DismissPopupOnCurrentGazeObject(false);
+                        break;
+                    }
                 case GlobalCommands.ShowWindowGUI:
                     break;
                 case GlobalCommands.Disco:
@@ -4853,6 +4863,7 @@ namespace TiltBrush
                 case GlobalCommands.MultiplayerPanelOptions: break; // Intentionally blank.
                 case GlobalCommands.MultiplayerJoinRoom: break; // Intentionally blank.
                 case GlobalCommands.MultiplayerLeaveRoom: break; // Intentionally blank.
+                case GlobalCommands.MultiplayerConnect: break; // Intentionally blank.
                 default:
                     Debug.LogError($"Unrecognized command {rEnum}");
                     break;
@@ -5063,9 +5074,18 @@ namespace TiltBrush
                     return m_WidgetManager.AnyActivePathHasAKnot();
                 case GlobalCommands.GoogleDriveSync:
                     return App.GoogleIdentity.LoggedIn;
-                case GlobalCommands.RecordCameraPath: return m_WidgetManager.CameraPathsVisible;
-                case GlobalCommands.AdvancedPanelsToggle: return !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
-                case GlobalCommands.MultiplayerJoinRoom: return !PanelManager.m_Instance.AdvancedModeActive();
+                case GlobalCommands.RecordCameraPath:
+                    return m_WidgetManager.CameraPathsVisible;
+                case GlobalCommands.AdvancedPanelsToggle:
+                    return !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
+                case GlobalCommands.MultiplayerConnect:
+                    return MultiplayerManager.m_Instance.IsConnectable();
+                case GlobalCommands.MultiplayerDisconnect:
+                    return MultiplayerManager.m_Instance.IsDisconnectable();
+                case GlobalCommands.MultiplayerJoinRoom:
+                    return !PanelManager.m_Instance.AdvancedModeActive() && MultiplayerManager.m_Instance.CanJoinRoom();
+                case GlobalCommands.MultiplayerLeaveRoom:
+                    return MultiplayerManager.m_Instance.CanLeaveRoom();
             }
             return true;
         }

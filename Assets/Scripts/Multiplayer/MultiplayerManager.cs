@@ -18,6 +18,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using Unity.XR.CoreUtils;
+using System.ComponentModel.Composition;
+
 #if OCULUS_SUPPORTED
 using OVRPlatform = Oculus.Platform;
 #endif
@@ -48,6 +50,7 @@ namespace OpenBrush.Multiplayer
         public Action<int, ITransientData<PlayerRigData>> remotePlayerJoined;
         public Action<int> playerLeft;
         public Action<List<RoomData>> roomDataRefreshed;
+        public event Action<ConnectionState> StateUpdated;
         private List<RoomData> m_RoomData = new List<RoomData>();
 
         ulong myOculusUserId;
@@ -56,7 +59,21 @@ namespace OpenBrush.Multiplayer
         internal string UserId;
         [HideInInspector] public string CurrentRoomName;
 
-        public ConnectionState State => m_Manager?.State ?? ConnectionState.DISCONNECTED;
+        //public ConnectionState State => m_Manager?.State ?? ConnectionState.DISCONNECTED;
+        private ConnectionState _state;
+        public ConnectionState State
+        {
+            get => _state;
+            private set
+            {
+                if (_state != value)
+                {
+                    _state = value;
+                    StateUpdated?.Invoke(_state);  // Trigger the event when the state changes
+                }
+            }
+        }
+        public string LastError { get; private set; }
 
         public ConnectionUserInfo UserInfo
         {
@@ -69,6 +86,8 @@ namespace OpenBrush.Multiplayer
                 }
             }
         }
+
+        public RoomCreateData data;
 
         void Awake()
         {
@@ -93,6 +112,8 @@ namespace OpenBrush.Multiplayer
                 }
             });
 #endif
+
+            State = ConnectionState.INITIALISING;
             switch (m_MultiplayerType)
             {
                 case MultiplayerType.Photon:
@@ -104,13 +125,14 @@ namespace OpenBrush.Multiplayer
 #endif
 #if PHOTON_UNITY_NETWORKING && PHOTON_VOICE_DEFINED
                     m_VoiceManager = new PhotonVoiceManager(this);
-                    if (m_Manager != null) ControllerConsoleScript.m_Instance.AddNewLine("PhotonVoiceManager Loaded");
+                    if (m_VoiceManager != null) ControllerConsoleScript.m_Instance.AddNewLine("PhotonVoiceManager Loaded");
                     else ControllerConsoleScript.m_Instance.AddNewLine("PhotonVoiceManager Not Loaded");
 #endif 
                     break;
                 default:
                     return;
             }
+            if (m_VoiceManager != null && m_Manager != null) State = ConnectionState.INITIALIZED;
 
             localPlayerJoined += OnLocalPlayerJoined;
             remotePlayerJoined += OnRemotePlayerJoined;
@@ -132,45 +154,80 @@ namespace OpenBrush.Multiplayer
 
         public async Task<bool> Connect()
         {
+            State = ConnectionState.CONNECTING;
+
             var successData = false;
-            if (m_Manager != null)
-            {
-                successData = await m_Manager.Connect();
-            }
+            if (m_Manager != null) successData = await m_Manager.Connect();
+
             var successVoice = false;
-            if (m_VoiceManager != null)
+            if (m_VoiceManager != null) successVoice = await m_VoiceManager.Connect();
+
+            if (!successData)
             {
-                successVoice = await m_VoiceManager.Connect();
+                State = ConnectionState.ERROR;
+                LastError = m_Manager.LastError;
             }
+            else if (!successVoice)
+            {
+                State = ConnectionState.ERROR;
+                LastError = m_VoiceManager.LastError;
+            }
+            else State = ConnectionState.IN_LOBBY;
+
+
             return successData & successVoice;
         }
 
         public async Task<bool> JoinRoom(RoomCreateData RoomData)
         {
-            // attempt to connect multiplayer backend
-            bool success = await m_Manager.JoinRoom(RoomData);
-            if (!success) return success;
+            State = ConnectionState.JOINING_ROOM;
 
-            // attempt to connect voice backend OPTIONAL
-            m_VoiceManager?.JoinRoom(RoomData);
+            bool successData = false;
+            if (m_Manager != null) successData = await m_Manager.JoinRoom(RoomData);
+
+            bool successVoice = false;
+            if (m_VoiceManager != null) successVoice = await m_VoiceManager.JoinRoom(RoomData);
             m_VoiceManager?.StartSpeaking();
 
-            return success;
+            if (!successData)
+            {
+                State = ConnectionState.ERROR;
+                LastError = m_Manager.LastError;
+            }
+            else if (!successVoice)
+            {
+                State = ConnectionState.ERROR;
+                LastError = m_VoiceManager.LastError;
+            }
+            else State = ConnectionState.IN_ROOM;
+
+            return successData & successVoice;
         }
 
         public async Task<bool> LeaveRoom(bool force = false)
         {
-            if (m_Manager != null)
+            State = ConnectionState.DISCONNECTING;
+
+            bool successData = false;
+            if (m_Manager != null) successData = await m_Manager.LeaveRoom();
+
+            bool successVoice = false;
+            m_VoiceManager?.StopSpeaking();
+            if (m_VoiceManager != null) successVoice = await m_VoiceManager.LeaveRoom();
+
+            if (!successData)
             {
-                var success = await m_Manager.LeaveRoom(force);
-                if (success)
-                {
-                    m_VoiceManager?.LeaveRoom();
-                    StopSpeaking();
-                }
-                return success;
+                State = ConnectionState.ERROR;
+                LastError = m_Manager.LastError;
             }
-            return true;
+            else if (!successVoice)
+            {
+                State = ConnectionState.ERROR;
+                LastError = m_VoiceManager.LastError;
+            }
+            else State = ConnectionState.DISCONNECTED;
+
+            return successData & successVoice;
         }
 
         public bool DoesRoomNameExist(string roomName)
@@ -344,5 +401,22 @@ namespace OpenBrush.Multiplayer
             m_VoiceManager?.StopSpeaking();
         }
 
+        public bool IsDisconnectable()
+        {
+
+            return State == ConnectionState.IN_ROOM || State == ConnectionState.IN_LOBBY;
+        }
+        public bool IsConnectable()
+        {
+            return State == ConnectionState.INITIALIZED || State == ConnectionState.DISCONNECTED;
+        }
+        public bool CanJoinRoom()
+        {
+            return State == ConnectionState.IN_LOBBY;
+        }
+        public bool CanLeaveRoom()
+        {
+            return State == ConnectionState.IN_ROOM;
+        }
     }
 }

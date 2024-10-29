@@ -68,7 +68,7 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
             return false;
         }
 
-        ControllerConsoleScript.m_Instance.AddNewLine("Runner Initialized");
+        ControllerConsoleScript.m_Instance.AddNewLine("Photon Voice Initialized");
         State = ConnectionState.INITIALIZED;
         return true;
 

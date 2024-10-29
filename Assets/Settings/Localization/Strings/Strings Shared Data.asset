@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
   m_Name: Strings Shared Data
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_TableCollectionName: Strings
   m_TableCollectionNameGuidString: c84355079ab3f3e4f8f3812258805f86
   m_Entries:
@@ -3341,6 +3341,30 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 276171365497266176
     m_Key: BRUSH_SETTINGS_TRAY_BRUSH_SIZE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636550056648704
+    m_Key: MP_CONNECT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636769901092864
+    m_Key: MP_JOIN_ROOM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636908816441344
+    m_Key: MP_LEAVE_ROOM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637000357126144
+    m_Key: MP_DISCONNECT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637073212186624
+    m_Key: MP_EDIT_ROOM_NAME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637384320491520
+    m_Key: MP_EDIT_NICK_NAME
     m_Metadata:
       m_Items: []
   m_Metadata:

@@ -25,6 +25,7 @@ namespace OpenBrush.Multiplayer
         Task<bool> LeaveRoom(bool force = false);
         ConnectionState State { get; }
         ConnectionUserInfo UserInfo { get; set; }
+        string LastError { get; }
     }
 
     public interface IDataConnectionHandler : IConnectionHandler

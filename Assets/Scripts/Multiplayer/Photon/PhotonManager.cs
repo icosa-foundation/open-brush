@@ -40,13 +40,11 @@ namespace OpenBrush.Multiplayer
 
         private AppSettings m_PhotonAppSettings;
 
-
         public event Action Disconnected;
         
         public ConnectionUserInfo UserInfo { get; set; }
         public ConnectionState State { get; private set; }
         public string LastError { get; private set; }
-
 
         public PhotonManager(MultiplayerManager manager)
         {
