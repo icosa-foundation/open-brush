@@ -13,22 +13,22 @@
 // limitations under the License.
 
 using System;
-using System.Numerics;
 using System.Threading.Tasks;
 using TiltBrush;
-using UnityEngine;
 
 namespace OpenBrush.Multiplayer
 {
     public interface IConnectionHandler
     {
-        Task<bool> Init();
-        Task<bool> Connect(RoomCreateData data);
+        Task<bool> Connect();
+        Task<bool> JoinRoom(RoomCreateData data);
+        Task<bool> LeaveRoom(bool force = false);
+        ConnectionState State { get; }
+        ConnectionUserInfo UserInfo { get; set; }
+    }
 
-        bool IsConnected();
-        bool IsInRoom();
-
-        Task<bool> Disconnect(bool force = false);
+    public interface IDataConnectionHandler : IConnectionHandler
+    {
 
         void Update();
 
@@ -39,20 +39,29 @@ namespace OpenBrush.Multiplayer
 
         event Action Disconnected;
 
-        string Id { get; }
-
-
-        //ITransientData<PlayerRigData> SpawnPlayer();
     }
 
-    public interface IVoiceManager
+    public interface IVoiceConnectionHandler : IConnectionHandler
     {
-        void InitializeVoice();
-        Task<bool> ConnectToVoiceServer();
-        Task<bool> JoinRoom(string roomName);
-        void StartSpeaking();
-        void StopSpeaking();
 
+        bool StartSpeaking();
+        bool StopSpeaking();
+
+    }
+
+    public enum ConnectionState
+    {
+        INITIALISING = 0,
+        INITIALIZED = 1,
+        DISCONNECTED = 2,
+        DISCONNECTING = 3,
+        CONNECTING = 4,
+        AUTHENTICATING = 5,
+        IN_LOBBY = 6,
+        JOINING_ROOM = 7,
+        IN_ROOM = 8,
+        RECONNECTING = 9,
+        ERROR = 10,
     }
 
     public interface ITransientData<T>

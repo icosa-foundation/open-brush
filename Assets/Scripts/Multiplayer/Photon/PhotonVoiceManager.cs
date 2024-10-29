@@ -1,118 +1,199 @@
+// Copyright 2023 The Open Brush Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #if PHOTON_UNITY_NETWORKING && PHOTON_VOICE_DEFINED
+
+using Fusion;
 using OpenBrush.Multiplayer;
 using Photon.Realtime;
 using Photon.Voice.Unity;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using TiltBrush;
 using UnityEngine;
 
-public class PhotonVoiceManager : IVoiceManager, IConnectionCallbacks, IMatchmakingCallbacks
+public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks, IMatchmakingCallbacks
 {
     private VoiceConnection m_VoiceConnection;
     private MultiplayerManager m_Manager;
     private AppSettings m_PhotonVoiceAppSettings;
     private Recorder m_Recorder;
+    private bool ConnectedToMaster = false;
+
+    public ConnectionUserInfo UserInfo { get; set; }
+    public ConnectionState State { get; private set; }
+    public string LastError { get; private set; }
 
     public PhotonVoiceManager(MultiplayerManager manager)
     {
         m_Manager = manager;
-        InitializeVoice();
-
+        Init();
     }
 
-    public void InitializeVoice()
+    public async Task<bool> Init()
     {
-        m_VoiceConnection = GameObject.FindFirstObjectByType<VoiceConnection>();
-        if (m_VoiceConnection == null)
+
+        try
         {
-            ControllerConsoleScript.m_Instance.AddNewLine("VoiceConnection not found! Ensure the component is attached to a GameObject.");
-            return;
+            State = ConnectionState.INITIALISING;
+            m_VoiceConnection = GameObject.FindFirstObjectByType<VoiceConnection>();
+            if (m_VoiceConnection == null) throw new Exception("VoiceConnection component not found in scene");
+
+            m_VoiceConnection.Settings = new AppSettings
+            {
+                AppIdVoice = App.Config.PhotonVoiceSecrets.ClientId,
+                FixedRegion = "",  
+            };
+
+            m_VoiceConnection.Client.AddCallbackTarget(this);
+
+        }
+        catch (Exception ex)
+        {
+            State = ConnectionState.ERROR;
+            LastError = $"Failed to Initialize lobby: {ex.Message}";
+            ControllerConsoleScript.m_Instance.AddNewLine(LastError);
+            return false;
         }
 
-        m_VoiceConnection.Settings = new AppSettings
-        {
-            AppIdVoice = App.Config.PhotonVoiceSecrets.ClientId,
-            FixedRegion = "",  
-        };
+        ControllerConsoleScript.m_Instance.AddNewLine("Runner Initialized");
+        State = ConnectionState.INITIALIZED;
+        return true;
 
-        
-
-        m_VoiceConnection.Client.AddCallbackTarget(this);
     }
 
-    public async Task<bool> ConnectToVoiceServer()
+    public async Task<bool> Connect()
     {
-        m_VoiceConnection.Client.UserId = m_Manager.Id;
+        State = ConnectionState.CONNECTING;
+
+        m_VoiceConnection.Client.UserId = m_Manager.UserInfo.UserId;
 
         if (!m_VoiceConnection.Client.IsConnected)
         {
             ControllerConsoleScript.m_Instance.AddNewLine("Attempting to connect Voice Server...");
             m_VoiceConnection.ConnectUsingSettings();
-            while (!m_VoiceConnection.Client.IsConnected && !m_VoiceConnection.Client.IsConnectedAndReady)
+            while (!ConnectedToMaster)
             {
                 ControllerConsoleScript.m_Instance.AddNewLine("Waiting for Voice Connection to establish...");
                 await Task.Delay(100);
             }
         }
 
-        bool connectedAndReady = m_VoiceConnection.Client.IsConnectedAndReady;
-        if (connectedAndReady) ControllerConsoleScript.m_Instance.AddNewLine("Voice Connection successfully established.");
-        else ControllerConsoleScript.m_Instance.AddNewLine("Failed to connect to Voice Server.");
-        return connectedAndReady;
+        if (ConnectedToMaster)
+        {
+            State = ConnectionState.IN_LOBBY;
+            ControllerConsoleScript.m_Instance.AddNewLine("Voice Connection successfully established.");
+        }
+        else
+        {
+            State = ConnectionState.ERROR;
+            LastError = $"Failed to connect to Voice Server.";
+            ControllerConsoleScript.m_Instance.AddNewLine(LastError);
+        }
+
+        return ConnectedToMaster;
     }
 
-
-    public async Task<bool> JoinRoom(string roomName)
+    public async Task<bool> JoinRoom(RoomCreateData RoomData)
     {
+        State = ConnectionState.JOINING_ROOM;
+
         if (!m_VoiceConnection.Client.IsConnected)
         {
-            bool connected = await ConnectToVoiceServer();
+            bool connected = await Connect();
             if (!connected)
             {
                 return false; 
             }
         }
 
-        while (m_VoiceConnection.ClientState != ClientState.JoinedLobby)
+        var RoomParameters = new EnterRoomParams{RoomName = RoomData.roomName};
+        bool roomJoined = m_VoiceConnection.Client.OpJoinOrCreateRoom(RoomParameters);
+
+        if (roomJoined)
         {
-            ControllerConsoleScript.m_Instance.AddNewLine("Waiting to join lobby...");
-            await Task.Delay(100);
+            State = ConnectionState.IN_ROOM;
+            ControllerConsoleScript.m_Instance.AddNewLine($"Successfully joined room: {RoomData.roomName}");
         }
-        ControllerConsoleScript.m_Instance.AddNewLine("Joined lobby...");
-
-        bool roomJoined = m_VoiceConnection.Client.OpJoinOrCreateRoom(new EnterRoomParams
+        else
         {
-            RoomName = roomName
-        });
-
-        if (roomJoined)  ControllerConsoleScript.m_Instance.AddNewLine($"Successfully joined room: {roomName}");
-        else  ControllerConsoleScript.m_Instance.AddNewLine($"Failed to join or create room: {roomName}");
-        
+            State = ConnectionState.ERROR;
+            LastError = $"Failed to join or create room:  {RoomData}";
+            ControllerConsoleScript.m_Instance.AddNewLine(LastError);
+        }
 
         return roomJoined;
     }
 
+    public async Task<bool> LeaveRoom(bool force)
+    {
+        State = ConnectionState.DISCONNECTING;
 
-    public void StartSpeaking()
+        if (!m_VoiceConnection.Client.InRoom)  return false;
+        
+        bool leftRoom = m_VoiceConnection.Client.OpLeaveRoom(false);
+
+        if (!leftRoom)
+        {
+            ControllerConsoleScript.m_Instance.AddNewLine("Failed to initiate leaving the room.");
+            return false;
+        }
+
+        ControllerConsoleScript.m_Instance.AddNewLine("Initiated leaving the room...");
+
+        while (m_VoiceConnection.ClientState != ClientState.JoinedLobby && m_VoiceConnection.ClientState != ClientState.Disconnected)
+        {
+            await Task.Delay(100);
+        }
+
+        if (m_VoiceConnection.ClientState == ClientState.JoinedLobby)
+        {
+            State = ConnectionState.DISCONNECTED;
+            ControllerConsoleScript.m_Instance.AddNewLine("Successfully left the room and returned to the lobby.");
+            return true;
+        }
+        else
+        {
+            State = ConnectionState.ERROR;
+            ControllerConsoleScript.m_Instance.AddNewLine("Failed to leave the room properly.");
+            return false;
+        }
+    }
+
+    public bool StartSpeaking()
     {
         m_Recorder = m_VoiceConnection.PrimaryRecorder;
         if (m_Recorder == null)
         {
             ControllerConsoleScript.m_Instance.AddNewLine("Recorder not found! Ensure it's attached to a GameObject.");
-            return;
+            return false;
         }
 
         // m_Recorder.DebugEchoMode = true;
         m_Recorder.TransmitEnabled = true;
+        return true;
     }
 
-    public void StopSpeaking()
+    public bool StopSpeaking()
     {
         if (m_Recorder != null)
         {
             m_Recorder.TransmitEnabled = false;
+            return true;
         }
+        return false;
     }
 
 
@@ -163,10 +244,7 @@ public class PhotonVoiceManager : IVoiceManager, IConnectionCallbacks, IMatchmak
 
     public void OnConnectedToMaster()
     {
-        m_VoiceConnection.Client.OpJoinOrCreateRoom(new EnterRoomParams
-        {
-            RoomName = m_Manager.CurrentRoomName,
-        });
+        ConnectedToMaster = true;
     }
 
     public void OnDisconnected(DisconnectCause cause)
@@ -192,6 +270,7 @@ public class PhotonVoiceManager : IVoiceManager, IConnectionCallbacks, IMatchmak
     {
 
     }
+
 
     #endregion
 

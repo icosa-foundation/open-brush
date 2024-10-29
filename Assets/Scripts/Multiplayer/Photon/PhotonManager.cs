@@ -24,10 +24,12 @@ using Fusion.Photon.Realtime;
 using Fusion.Sockets;
 using TiltBrush;
 
+
 namespace OpenBrush.Multiplayer
 {
-    public class PhotonManager : IConnectionHandler, INetworkRunnerCallbacks
+    public class PhotonManager : IDataConnectionHandler, INetworkRunnerCallbacks
     {
+
         private NetworkRunner m_Runner;
 
         private MultiplayerManager m_Manager;
@@ -38,59 +40,82 @@ namespace OpenBrush.Multiplayer
 
         private AppSettings m_PhotonAppSettings;
 
-        public event Action Disconnected;
 
-        public string Id { get { return m_Runner.UserId; } }
+        public event Action Disconnected;
+        
+        public ConnectionUserInfo UserInfo { get; set; }
+        public ConnectionState State { get; private set; }
+        public string LastError { get; private set; }
+
 
         public PhotonManager(MultiplayerManager manager)
         {
             m_Manager = manager;
             m_PlayersSpawning = new List<PlayerRef>();
 
-            InitializeRunner();
+            Init();
 
             m_PhotonAppSettings = new AppSettings
             {
                 AppIdFusion = App.Config.PhotonFusionSecrets.ClientId,
-                // Need this set for some reason
                 FixedRegion = "",
             };
         }
 
-        private void InitializeRunner()
-        {
-            var runnerGO = new GameObject("Photon Network Components");
-            m_Runner = runnerGO.AddComponent<NetworkRunner>();
-            m_Runner.gameObject.AddComponent<NetworkSceneManagerDefault>();
-            m_Runner.ProvideInput = true;
-            m_Runner.AddCallbacks(this);
-            ControllerConsoleScript.m_Instance.AddNewLine("Runner Initialized");
-        }
-
         public async Task<bool> Init()
         {
+            try
+            {
+                State = ConnectionState.INITIALISING;
+                var runnerGO = new GameObject("Photon Network Components");
+                m_Runner = runnerGO.AddComponent<NetworkRunner>();
+                m_Runner.gameObject.AddComponent<NetworkSceneManagerDefault>();
+                m_Runner.ProvideInput = true;
+                m_Runner.AddCallbacks(this);
+
+            }
+            catch (Exception ex)
+            {
+                State = ConnectionState.ERROR;
+                LastError = $"Failed to Initialize lobby: {ex.Message}";
+                ControllerConsoleScript.m_Instance.AddNewLine(LastError);
+                return false; 
+            }
+
+            ControllerConsoleScript.m_Instance.AddNewLine("Runner Initialized");
+            State = ConnectionState.INITIALIZED;
+            return true; 
+        }
+
+        public async Task<bool> Connect()
+        {
+            State = ConnectionState.CONNECTING;
+
             await Task.Yield();
             //return true;
             var result = await m_Runner.JoinSessionLobby(SessionLobby.Shared, customAppSettings: m_PhotonAppSettings);
 
             if (result.Ok)
             {
+                State = ConnectionState.IN_LOBBY;
                 ControllerConsoleScript.m_Instance.AddNewLine("Connected to lobby");
             }
             else
             {
-                ControllerConsoleScript.m_Instance.AddNewLine("Failed to join lobby!");
+                State = ConnectionState.ERROR;
+                LastError = $"Failed to join lobby: {result.ErrorMessage}";
+                ControllerConsoleScript.m_Instance.AddNewLine(LastError);
             }
 
             return result.Ok;
         }
 
-        public async Task<bool> Connect(RoomCreateData roomCreateData)
+        public async Task<bool> JoinRoom(RoomCreateData roomCreateData)
         {
-            if (m_Runner == null)
-            {
-                InitializeRunner();
-            }
+
+            if (m_Runner == null) Init();
+            
+            State = ConnectionState.JOINING_ROOM;
 
             var args = new StartGameArgs()
             {
@@ -106,40 +131,26 @@ namespace OpenBrush.Multiplayer
 
             if (result.Ok)
             {
+                State = ConnectionState.IN_ROOM;
                 ControllerConsoleScript.m_Instance.AddNewLine("Joined Room");
-                m_Manager.JoinVoiceRoom(roomCreateData); // i'd like to solve this in a different way 
+                UserInfo = new ConnectionUserInfo { UserId = m_Runner.UserId };
             }
             else
             {
-                ControllerConsoleScript.m_Instance.AddNewLine("Failed to join Room!");
+                State = ConnectionState.ERROR;
+                LastError = $"Failed to join Room: {result.ErrorMessage}";
+                ControllerConsoleScript.m_Instance.AddNewLine(LastError);
             }
 
             return result.Ok;
             
         }
 
-        public bool IsConnected()
+        public async Task<bool> LeaveRoom(bool force)
         {
-            if(m_Runner == null)
-            {
-                return false;
-            }
-            return m_Runner.IsRunning;
-        }
+            State = ConnectionState.DISCONNECTING;
 
-        public bool IsInRoom() 
-        {
-            if (m_Runner == null)
-            {
-                return false;
-            }
-            return m_Runner.IsInSession;
-        }
-
-
-        public async Task<bool> Disconnect(bool force)
-        {
-            if(m_Runner != null)
+            if (m_Runner != null)
             {
 
                 if (m_LocalPlayer != null)
@@ -150,6 +161,9 @@ namespace OpenBrush.Multiplayer
 
                 await m_Runner.Shutdown(forceShutdownProcedure: force);
                 GameObject.Destroy(m_Runner.gameObject);
+
+                if(m_Runner.IsShutdown) State = ConnectionState.DISCONNECTED;
+
                 return m_Runner.IsShutdown;
             }
             return true;
@@ -304,7 +318,7 @@ namespace OpenBrush.Multiplayer
         }
         #endregion
 
-        #region Photon Callbacks
+#region Photon Callbacks
         public void OnConnectedToServer(NetworkRunner runner)
         {
             var rpc = m_Runner.gameObject.AddComponent<PhotonRPC>();

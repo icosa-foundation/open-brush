@@ -38,8 +38,8 @@ namespace OpenBrush.Multiplayer
         public MultiplayerType m_MultiplayerType;
         public event Action Disconnected;
 
-        private IConnectionHandler m_Manager;
-        private IVoiceManager m_VoiceManager;
+        private IDataConnectionHandler m_Manager;
+        private IVoiceConnectionHandler m_VoiceManager;
 
         private ITransientData<PlayerRigData> m_LocalPlayer;
         private List<ITransientData<PlayerRigData>> m_RemotePlayers;
@@ -54,12 +54,21 @@ namespace OpenBrush.Multiplayer
 
         List<ulong> oculusPlayerIds;
         internal string UserId;
-        public string CurrentRoomName;
+        [HideInInspector] public string CurrentRoomName;
 
-        public bool IsConnected { get { return m_Manager != null && m_Manager.IsConnected(); } }
-        public bool IsInRoom { get { return m_Manager != null && m_Manager.IsInRoom(); } }
+        public ConnectionState State => m_Manager?.State ?? ConnectionState.DISCONNECTED;
 
-        public string Id { get { return m_Manager.Id; } }
+        public ConnectionUserInfo UserInfo
+        {
+            get => m_Manager?.UserInfo ?? default;
+            set
+            {
+                if (m_Manager != null)
+                {
+                    m_Manager.UserInfo = value;
+                }
+            }
+        }
 
         void Awake()
         {
@@ -121,26 +130,47 @@ namespace OpenBrush.Multiplayer
             SketchMemoryScript.m_Instance.CommandRedo -= OnCommandRedo;
         }
 
-        public async Task<bool> Init()
+        public async Task<bool> Connect()
         {
-            var success = false;
+            var successData = false;
             if (m_Manager != null)
             {
-                success = await m_Manager.Init();
+                successData = await m_Manager.Connect();
             }
+            var successVoice = false;
+            if (m_VoiceManager != null)
+            {
+                successVoice = await m_VoiceManager.Connect();
+            }
+            return successData & successVoice;
+        }
+
+        public async Task<bool> JoinRoom(RoomCreateData RoomData)
+        {
+            // attempt to connect multiplayer backend
+            bool success = await m_Manager.JoinRoom(RoomData);
+            if (!success) return success;
+
+            // attempt to connect voice backend OPTIONAL
+            m_VoiceManager?.JoinRoom(RoomData);
+            m_VoiceManager?.StartSpeaking();
+
             return success;
         }
 
-        public async Task<bool> Connect(RoomCreateData data)
+        public async Task<bool> LeaveRoom(bool force = false)
         {
-            bool success = await m_Manager.Connect(data);
-            if (success)
+            if (m_Manager != null)
             {
-                CurrentRoomName = data.roomName;
-                StartSpeaking();
+                var success = await m_Manager.LeaveRoom(force);
+                if (success)
+                {
+                    m_VoiceManager?.LeaveRoom();
+                    StopSpeaking();
+                }
+                return success;
             }
-
-            return success;
+            return true;
         }
 
         public bool DoesRoomNameExist(string roomName)
@@ -245,7 +275,7 @@ namespace OpenBrush.Multiplayer
 
         private async void OnCommandPerformed(BaseCommand command)
         {
-            if (!IsConnected)
+            if (State == ConnectionState.IN_ROOM)
             {
                 return;
             }
@@ -265,7 +295,7 @@ namespace OpenBrush.Multiplayer
 
         private void OnCommandUndo(BaseCommand command)
         {
-            if (IsConnected)
+            if (State == ConnectionState.IN_ROOM)
             {
                 m_Manager.UndoCommand(command);
             }
@@ -273,7 +303,7 @@ namespace OpenBrush.Multiplayer
 
         private void OnCommandRedo(BaseCommand command)
         {
-            if (IsConnected)
+            if (State == ConnectionState.IN_ROOM)
             {
                 m_Manager.RedoCommand(command);
             }
@@ -295,17 +325,6 @@ namespace OpenBrush.Multiplayer
 #endif // OCULUS_SUPPORTED
         }
 
-        public async Task<bool> Disconnect(bool force = false)
-        {
-            if (m_Manager != null)
-            {
-                var success = await m_Manager.Disconnect(force);
-                if (success) StopSpeaking();
-                return success;
-            }
-            return true;
-        }
-
         private void OnConnectionHandlerDisconnected()
         {
             // Clean up local player reference
@@ -313,11 +332,6 @@ namespace OpenBrush.Multiplayer
 
             // Invoke the Disconnected event
             Disconnected?.Invoke();
-        }
-
-        public void JoinVoiceRoom(RoomCreateData data)
-        {
-            m_VoiceManager?.JoinRoom(data.roomName);
         }
 
         public void StartSpeaking()

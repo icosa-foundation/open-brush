@@ -66,4 +66,13 @@ namespace OpenBrush.Multiplayer
         public int maxPlayers;
         public bool voiceDisabled;
     }
+
+
+    [System.Serializable]
+    public struct ConnectionUserInfo
+    {
+        public string UserId;
+        public string Nickname;
+        public string Role;
+    }
 }

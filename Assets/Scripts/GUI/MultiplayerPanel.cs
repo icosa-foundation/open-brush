@@ -72,7 +72,6 @@ namespace TiltBrush
             }
         }
 
-
         private static string GenerateUniqueRoomName()
         {
             string roomName;
@@ -102,8 +101,6 @@ namespace TiltBrush
             }
         }
 
-
-
         public enum Mode
         {
             Null,
@@ -127,7 +124,7 @@ namespace TiltBrush
 
         public async void InitMultiplayer()
         {
-            bool success = await MultiplayerManager.m_Instance.Init();
+            await MultiplayerManager.m_Instance.Connect();
             MultiplayerManager.m_Instance.Disconnected += OnDisconnected;
         }
 
@@ -142,11 +139,10 @@ namespace TiltBrush
             if (MultiplayerManager.m_Instance != null)
             {
 
-                bool success = await MultiplayerManager.m_Instance.Connect(data);
+                bool success = await MultiplayerManager.m_Instance.JoinRoom(data);
 
                 if (success)
                 {
-                    Debug.Log("Connected to room successfully.");
 
                     // Additional UI updates or feedback
                     UpdateMode(Mode.Joined);
@@ -154,8 +150,6 @@ namespace TiltBrush
                 }
                 else
                 {
-                    Debug.LogError("Failed to connect to room.");
-
                     // Provide user feedback with some UI element
                 }
 
@@ -167,11 +161,10 @@ namespace TiltBrush
             if (MultiplayerManager.m_Instance != null)
             {
 
-                bool success = await MultiplayerManager.m_Instance.Disconnect(false);
+                bool success = await MultiplayerManager.m_Instance.LeaveRoom(false);
 
                 if (success)
                 {
-                    Debug.Log("Left room successfully.");
 
                     // Additional UI updates or feedback
                     UpdateMode(Mode.Lobby);
@@ -179,7 +172,6 @@ namespace TiltBrush
                 }
                 else
                 {
-                    Debug.LogError("Failed to leave to room.");
                     // Provide user feedback with some UI element
                 }
 
