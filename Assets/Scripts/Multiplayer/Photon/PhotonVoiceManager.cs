@@ -153,12 +153,12 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
 
         ControllerConsoleScript.m_Instance.AddNewLine("Initiated leaving the room...");
 
-        while (m_VoiceConnection.ClientState != ClientState.JoinedLobby && m_VoiceConnection.ClientState != ClientState.Disconnected)
+        while (m_VoiceConnection.ClientState != ClientState.ConnectedToMasterServer)
         {
             await Task.Delay(100);
         }
 
-        if (m_VoiceConnection.ClientState == ClientState.JoinedLobby)
+        if (m_VoiceConnection.ClientState == ClientState.ConnectedToMasterServer)
         {
             State = ConnectionState.DISCONNECTED;
             ControllerConsoleScript.m_Instance.AddNewLine("Successfully left the room and returned to the lobby.");
@@ -168,6 +168,38 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
         {
             State = ConnectionState.ERROR;
             ControllerConsoleScript.m_Instance.AddNewLine("Failed to leave the room properly.");
+            return false;
+        }
+    }
+
+    public async Task<bool> Disconnect() {
+
+        State = ConnectionState.DISCONNECTING;
+
+        if (!m_VoiceConnection.Client.IsConnected)
+        {
+            ControllerConsoleScript.m_Instance.AddNewLine("Voice Server is already disconnected.");
+            return true;
+        }
+
+        m_VoiceConnection.Client.Disconnect();
+
+        while (m_VoiceConnection.ClientState != ClientState.Disconnected)
+        {
+            await Task.Delay(100);
+            ControllerConsoleScript.m_Instance.AddNewLine("Disconnecting.");
+        }
+
+        if (m_VoiceConnection.ClientState == ClientState.Disconnected)
+        {
+            State = ConnectionState.DISCONNECTED;
+            ControllerConsoleScript.m_Instance.AddNewLine("Successfully disconnected from Voice Server.");
+            return true;
+        }
+        else
+        {
+            State = ConnectionState.ERROR;
+            ControllerConsoleScript.m_Instance.AddNewLine("Failed to disconnect from Voice Server.");
             return false;
         }
     }

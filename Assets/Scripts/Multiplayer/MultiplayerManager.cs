@@ -206,7 +206,7 @@ namespace OpenBrush.Multiplayer
 
         public async Task<bool> LeaveRoom(bool force = false)
         {
-            State = ConnectionState.DISCONNECTING;
+            State = ConnectionState.LEAVING_ROOM;
 
             bool successData = false;
             if (m_Manager != null) successData = await m_Manager.LeaveRoom();
@@ -214,6 +214,31 @@ namespace OpenBrush.Multiplayer
             bool successVoice = false;
             m_VoiceManager?.StopSpeaking();
             if (m_VoiceManager != null) successVoice = await m_VoiceManager.LeaveRoom();
+
+            if (!successData)
+            {
+                State = ConnectionState.ERROR;
+                LastError = m_Manager.LastError;
+            }
+            else if (!successVoice)
+            {
+                State = ConnectionState.ERROR;
+                LastError = m_VoiceManager.LastError;
+            }
+            else State = ConnectionState.IN_LOBBY;
+
+            return successData & successVoice;
+        }
+
+        public async Task<bool> Disconnect()
+        {
+            State = ConnectionState.DISCONNECTING;
+
+            bool successData = false;
+            if (m_Manager != null) successData = await m_Manager.Disconnect();
+
+            bool successVoice = false;
+            if (m_VoiceManager != null) successVoice = await m_VoiceManager.Disconnect();
 
             if (!successData)
             {

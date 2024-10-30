@@ -23,6 +23,7 @@ namespace OpenBrush.Multiplayer
         Task<bool> Connect();
         Task<bool> JoinRoom(RoomCreateData data);
         Task<bool> LeaveRoom(bool force = false);
+        Task<bool> Disconnect();
         ConnectionState State { get; }
         ConnectionUserInfo UserInfo { get; set; }
         string LastError { get; }
@@ -63,6 +64,7 @@ namespace OpenBrush.Multiplayer
         IN_ROOM = 8,
         RECONNECTING = 9,
         ERROR = 10,
+        LEAVING_ROOM = 11
     }
 
     public interface ITransientData<T>

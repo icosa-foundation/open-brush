@@ -134,18 +134,24 @@ namespace TiltBrush
             }
         }
 
+        private async void Disconnect()
+        {
+            if (MultiplayerManager.m_Instance != null)
+            {
+                await MultiplayerManager.m_Instance.Disconnect();
+            }
+        }
+
         private void OnStateUpdated(ConnectionState newState)
         {
             m_State.text = "State: " + newState.ToString();
         }
 
-        // This function serves as a callback from ProfilePopUpButtons that want to
-        // change the mode of the popup on click.
         public void OnMultiplayerPanelButtonPressed(MultiplayerPanelButton button)
         {
             switch (button.m_Command)
             {
-                // Identifier for signaling we understand the info message.
+                
                 case SketchControlsScript.GlobalCommands.Null:
                     //UpdateMode(Mode.Disconnected);
                     break;
@@ -167,6 +173,9 @@ namespace TiltBrush
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerLeaveRoom:
                     LeaveRoom();
+                    break;
+                case SketchControlsScript.GlobalCommands.MultiplayerDisconnect:
+                    Disconnect();
                     break;
             }
         }

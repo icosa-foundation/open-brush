@@ -144,7 +144,7 @@ namespace OpenBrush.Multiplayer
             
         }
 
-        public async Task<bool> LeaveRoom(bool force)
+        public async Task<bool> Disconnect()
         {
             State = ConnectionState.DISCONNECTING;
 
@@ -157,14 +157,40 @@ namespace OpenBrush.Multiplayer
                     m_LocalPlayer = null;
                 }
 
-                await m_Runner.Shutdown(forceShutdownProcedure: force);
+                await m_Runner.Shutdown(forceShutdownProcedure: false);
                 GameObject.Destroy(m_Runner.gameObject);
 
-                if(m_Runner.IsShutdown) State = ConnectionState.DISCONNECTED;
+                if(m_Runner.IsShutdown) 
+                {
+                    State = ConnectionState.DISCONNECTED;
+                    ControllerConsoleScript.m_Instance.AddNewLine("Left Room");
+                    UserInfo = new ConnectionUserInfo { UserId = m_Runner.UserId };
+                }
+                else
+                {
+                    State = ConnectionState.ERROR;
+                    LastError = $"Failed to disconnect";
+                    ControllerConsoleScript.m_Instance.AddNewLine(LastError);
+                }
 
                 return m_Runner.IsShutdown;
             }
             return true;
+        }
+
+        public async Task<bool> LeaveRoom(bool force)
+        {
+
+            if (m_Runner != null)
+            {
+                bool success = await Disconnect();
+                if (!success) return false;
+                success = await Connect();
+                if (!success) return false;
+                return true;
+            }
+            return false;
+
         }
 
         public void Update()

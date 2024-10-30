@@ -25,21 +25,21 @@ public class MultiplayerManagerInspector : Editor
         roomName = EditorGUILayout.TextField("Room Name", roomName);
 
         // Button to join the lobby
-        if (GUILayout.Button("Join Lobby") && multiplayerManager.State == ConnectionState.INITIALIZED)
+        if (GUILayout.Button("Join Lobby") )
         {
             ConnectToLobby();
             EditorUtility.SetDirty(target); // Mark the object as dirty to recognize state changes
         }
 
         // Button to join the room
-        if (GUILayout.Button("Join Room") && multiplayerManager.State == ConnectionState.IN_LOBBY)
+        if (GUILayout.Button("Join Room"))
         {
             ConnectToRoom();
             EditorUtility.SetDirty(target); // Update inspector on state change
         }
 
         // Button to exit the room
-        if (GUILayout.Button("Exit Room") && multiplayerManager.State == ConnectionState.IN_ROOM)
+        if (GUILayout.Button("Exit Room") )
         {
             DisconnectFromRoom();
             EditorUtility.SetDirty(target); // Update inspector on state change

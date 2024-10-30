@@ -4864,6 +4864,7 @@ namespace TiltBrush
                 case GlobalCommands.MultiplayerJoinRoom: break; // Intentionally blank.
                 case GlobalCommands.MultiplayerLeaveRoom: break; // Intentionally blank.
                 case GlobalCommands.MultiplayerConnect: break; // Intentionally blank.
+                case GlobalCommands.MultiplayerDisconnect: break; // Intentionally blank.
                 default:
                     Debug.LogError($"Unrecognized command {rEnum}");
                     break;
