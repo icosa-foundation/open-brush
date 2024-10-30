@@ -75,12 +75,12 @@ namespace OpenBrush.Multiplayer
             catch (Exception ex)
             {
                 State = ConnectionState.ERROR;
-                LastError = $"Failed to Initialize lobby: {ex.Message}";
+                LastError = $"[PhotonManager] Failed to Initialize lobby: {ex.Message}";
                 ControllerConsoleScript.m_Instance.AddNewLine(LastError);
                 return false; 
             }
 
-            ControllerConsoleScript.m_Instance.AddNewLine("Runner Initialized");
+            ControllerConsoleScript.m_Instance.AddNewLine("[PhotonManager] Runner Initialized");
             State = ConnectionState.INITIALIZED;
             return true; 
         }
@@ -96,12 +96,12 @@ namespace OpenBrush.Multiplayer
             if (result.Ok)
             {
                 State = ConnectionState.IN_LOBBY;
-                ControllerConsoleScript.m_Instance.AddNewLine("Connected to lobby");
+                ControllerConsoleScript.m_Instance.AddNewLine("[PhotonManager] Connected to lobby");
             }
             else
             {
                 State = ConnectionState.ERROR;
-                LastError = $"Failed to join lobby: {result.ErrorMessage}";
+                LastError = $"[PhotonManager] Failed to join lobby: {result.ErrorMessage}";
                 ControllerConsoleScript.m_Instance.AddNewLine(LastError);
             }
 
@@ -130,13 +130,13 @@ namespace OpenBrush.Multiplayer
             if (result.Ok)
             {
                 State = ConnectionState.IN_ROOM;
-                ControllerConsoleScript.m_Instance.AddNewLine("Joined Room");
+                ControllerConsoleScript.m_Instance.AddNewLine("[PhotonManager] Joined Room");
                 UserInfo = new ConnectionUserInfo { UserId = m_Runner.UserId };
             }
             else
             {
                 State = ConnectionState.ERROR;
-                LastError = $"Failed to join Room: {result.ErrorMessage}";
+                LastError = $"[PhotonManager] Failed to join Room: {result.ErrorMessage}";
                 ControllerConsoleScript.m_Instance.AddNewLine(LastError);
             }
 
@@ -163,13 +163,13 @@ namespace OpenBrush.Multiplayer
                 if(m_Runner.IsShutdown) 
                 {
                     State = ConnectionState.DISCONNECTED;
-                    ControllerConsoleScript.m_Instance.AddNewLine("Left Room");
+                    ControllerConsoleScript.m_Instance.AddNewLine("[PhotonManager] Left Room");
                     UserInfo = new ConnectionUserInfo { UserId = m_Runner.UserId };
                 }
                 else
                 {
                     State = ConnectionState.ERROR;
-                    LastError = $"Failed to disconnect";
+                    LastError = $"[PhotonManager] Failed to disconnect";
                     ControllerConsoleScript.m_Instance.AddNewLine(LastError);
                 }
 

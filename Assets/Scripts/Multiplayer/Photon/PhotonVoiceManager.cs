@@ -49,7 +49,7 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
         {
             State = ConnectionState.INITIALISING;
             m_VoiceConnection = GameObject.FindFirstObjectByType<VoiceConnection>();
-            if (m_VoiceConnection == null) throw new Exception("VoiceConnection component not found in scene");
+            if (m_VoiceConnection == null) throw new Exception("[PhotonVoiceManager] VoiceConnection component not found in scene");
 
             m_VoiceConnection.Settings = new AppSettings
             {
@@ -63,12 +63,12 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
         catch (Exception ex)
         {
             State = ConnectionState.ERROR;
-            LastError = $"Failed to Initialize lobby: {ex.Message}";
+            LastError = $"[PhotonVoiceManager] Failed to Initialize lobby: {ex.Message}";
             ControllerConsoleScript.m_Instance.AddNewLine(LastError);
             return false;
         }
 
-        ControllerConsoleScript.m_Instance.AddNewLine("Photon Voice Initialized");
+        ControllerConsoleScript.m_Instance.AddNewLine("[PhotonVoiceManager] Succesfully initialized");
         State = ConnectionState.INITIALIZED;
         return true;
 
@@ -82,11 +82,11 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
 
         if (!m_VoiceConnection.Client.IsConnected)
         {
-            ControllerConsoleScript.m_Instance.AddNewLine("Attempting to connect Voice Server...");
+            //ControllerConsoleScript.m_Instance.AddNewLine("[PhotonVoiceManager] Attempting to connect Voice Server...");
             m_VoiceConnection.ConnectUsingSettings();
             while (!ConnectedToMaster)
             {
-                ControllerConsoleScript.m_Instance.AddNewLine("Waiting for Voice Connection to establish...");
+                //ControllerConsoleScript.m_Instance.AddNewLine("Waiting for Voice Connection to establish...");
                 await Task.Delay(100);
             }
         }
@@ -94,12 +94,12 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
         if (ConnectedToMaster)
         {
             State = ConnectionState.IN_LOBBY;
-            ControllerConsoleScript.m_Instance.AddNewLine("Voice Connection successfully established.");
+            ControllerConsoleScript.m_Instance.AddNewLine("[PhotonVoiceManager] Connection successfully established.");
         }
         else
         {
             State = ConnectionState.ERROR;
-            LastError = $"Failed to connect to Voice Server.";
+            LastError = $"[PhotonVoiceManager] Failed to connect.";
             ControllerConsoleScript.m_Instance.AddNewLine(LastError);
         }
 
@@ -125,12 +125,12 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
         if (roomJoined)
         {
             State = ConnectionState.IN_ROOM;
-            ControllerConsoleScript.m_Instance.AddNewLine($"Successfully joined room: {RoomData.roomName}");
+            ControllerConsoleScript.m_Instance.AddNewLine($"[PhotonVoiceManager] Successfully joined room");
         }
         else
         {
             State = ConnectionState.ERROR;
-            LastError = $"Failed to join or create room:  {RoomData}";
+            LastError = $"[PhotonVoiceManager] Failed to join or create room";
             ControllerConsoleScript.m_Instance.AddNewLine(LastError);
         }
 
@@ -147,11 +147,11 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
 
         if (!leftRoom)
         {
-            ControllerConsoleScript.m_Instance.AddNewLine("Failed to initiate leaving the room.");
+            //ControllerConsoleScript.m_Instance.AddNewLine("[PhotonVoiceManager] Failed to initiate leaving the room.");
             return false;
         }
 
-        ControllerConsoleScript.m_Instance.AddNewLine("Initiated leaving the room...");
+        //ControllerConsoleScript.m_Instance.AddNewLine("Initiated leaving the room...");
 
         while (m_VoiceConnection.ClientState != ClientState.ConnectedToMasterServer)
         {
@@ -161,13 +161,13 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
         if (m_VoiceConnection.ClientState == ClientState.ConnectedToMasterServer)
         {
             State = ConnectionState.DISCONNECTED;
-            ControllerConsoleScript.m_Instance.AddNewLine("Successfully left the room and returned to the lobby.");
+            ControllerConsoleScript.m_Instance.AddNewLine("[PhotonVoiceManager] Successfully left the room.");
             return true;
         }
         else
         {
             State = ConnectionState.ERROR;
-            ControllerConsoleScript.m_Instance.AddNewLine("Failed to leave the room properly.");
+            ControllerConsoleScript.m_Instance.AddNewLine("[PhotonVoiceManager] Failed to leave the room.");
             return false;
         }
     }
@@ -178,7 +178,7 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
 
         if (!m_VoiceConnection.Client.IsConnected)
         {
-            ControllerConsoleScript.m_Instance.AddNewLine("Voice Server is already disconnected.");
+            //ControllerConsoleScript.m_Instance.AddNewLine("[PhotonVoiceManager] Voice Server is already disconnected.");
             return true;
         }
 
@@ -187,19 +187,19 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
         while (m_VoiceConnection.ClientState != ClientState.Disconnected)
         {
             await Task.Delay(100);
-            ControllerConsoleScript.m_Instance.AddNewLine("Disconnecting.");
+            //ControllerConsoleScript.m_Instance.AddNewLine("Disconnecting.");
         }
 
         if (m_VoiceConnection.ClientState == ClientState.Disconnected)
         {
             State = ConnectionState.DISCONNECTED;
-            ControllerConsoleScript.m_Instance.AddNewLine("Successfully disconnected from Voice Server.");
+            ControllerConsoleScript.m_Instance.AddNewLine("[PhotonVoiceManager] Successfully disconnected from Server.");
             return true;
         }
         else
         {
             State = ConnectionState.ERROR;
-            ControllerConsoleScript.m_Instance.AddNewLine("Failed to disconnect from Voice Server.");
+            ControllerConsoleScript.m_Instance.AddNewLine("[PhotonVoiceManager] Failed to disconnect from Server.");
             return false;
         }
     }

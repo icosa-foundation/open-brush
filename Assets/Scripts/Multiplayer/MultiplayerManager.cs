@@ -17,8 +17,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
-using Unity.XR.CoreUtils;
-using System.ComponentModel.Composition;
 
 #if OCULUS_SUPPORTED
 using OVRPlatform = Oculus.Platform;
@@ -431,14 +429,17 @@ namespace OpenBrush.Multiplayer
 
             return State == ConnectionState.IN_ROOM || State == ConnectionState.IN_LOBBY;
         }
+
         public bool IsConnectable()
         {
             return State == ConnectionState.INITIALIZED || State == ConnectionState.DISCONNECTED;
         }
+
         public bool CanJoinRoom()
         {
             return State == ConnectionState.IN_LOBBY;
         }
+
         public bool CanLeaveRoom()
         {
             return State == ConnectionState.IN_ROOM;

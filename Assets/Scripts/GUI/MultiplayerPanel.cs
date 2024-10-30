@@ -151,7 +151,7 @@ namespace TiltBrush
         {
             switch (button.m_Command)
             {
-                
+
                 case SketchControlsScript.GlobalCommands.Null:
                     //UpdateMode(Mode.Disconnected);
                     break;
