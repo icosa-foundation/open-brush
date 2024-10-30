@@ -41,7 +41,7 @@ namespace OpenBrush.Multiplayer
         private AppSettings m_PhotonAppSettings;
 
         public event Action Disconnected;
-        
+
         public ConnectionUserInfo UserInfo { get; set; }
         public ConnectionState State { get; private set; }
         public string LastError { get; private set; }
@@ -77,12 +77,12 @@ namespace OpenBrush.Multiplayer
                 State = ConnectionState.ERROR;
                 LastError = $"[PhotonManager] Failed to Initialize lobby: {ex.Message}";
                 ControllerConsoleScript.m_Instance.AddNewLine(LastError);
-                return false; 
+                return false;
             }
 
             ControllerConsoleScript.m_Instance.AddNewLine("[PhotonManager] Runner Initialized");
             State = ConnectionState.INITIALIZED;
-            return true; 
+            return true;
         }
 
         public async Task<bool> Connect()
@@ -112,7 +112,7 @@ namespace OpenBrush.Multiplayer
         {
 
             if (m_Runner == null) Init();
-            
+
             State = ConnectionState.JOINING_ROOM;
 
             var args = new StartGameArgs()
@@ -141,7 +141,7 @@ namespace OpenBrush.Multiplayer
             }
 
             return result.Ok;
-            
+
         }
 
         public async Task<bool> Disconnect()
@@ -160,7 +160,7 @@ namespace OpenBrush.Multiplayer
                 await m_Runner.Shutdown(forceShutdownProcedure: false);
                 GameObject.Destroy(m_Runner.gameObject);
 
-                if(m_Runner.IsShutdown) 
+                if (m_Runner.IsShutdown)
                 {
                     State = ConnectionState.DISCONNECTED;
                     ControllerConsoleScript.m_Instance.AddNewLine("[PhotonManager] Left Room");
@@ -207,7 +207,7 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-#region IConnectionHandler Methods
+        #region IConnectionHandler Methods
         public async Task<bool> PerformCommand(BaseCommand command)
         {
             await Task.Yield();
@@ -234,13 +234,13 @@ namespace OpenBrush.Multiplayer
             await Task.Yield();
             return true;
         }
-#endregion
+        #endregion
 
-#region Command Methods
+        #region Command Methods
         private bool ProcessCommand(BaseCommand command)
         {
             bool success = true;
-            switch(command)
+            switch (command)
             {
                 case BrushStrokeCommand:
                     success = CommandBrushStroke(command as BrushStrokeCommand);
@@ -260,9 +260,9 @@ namespace OpenBrush.Multiplayer
                     break;
             }
 
-            if(command.ChildrenCount > 0)
+            if (command.ChildrenCount > 0)
             {
-                foreach(var child in command.Children)
+                foreach (var child in command.Children)
                 {
                     success &= ProcessCommand(child);
                 }
@@ -298,12 +298,12 @@ namespace OpenBrush.Multiplayer
                 // Middle
                 for (int rounds = 1; rounds < numSplits + 1; ++rounds)
                 {
-                    var controlPoints = stroke.m_ControlPoints.Skip(rounds* maxPointsPerChunk).Take(maxPointsPerChunk).ToArray();
-                    var dropPoints = stroke.m_ControlPointsToDrop.Skip(rounds* maxPointsPerChunk).Take(maxPointsPerChunk).ToArray();
+                    var controlPoints = stroke.m_ControlPoints.Skip(rounds * maxPointsPerChunk).Take(maxPointsPerChunk).ToArray();
+                    var dropPoints = stroke.m_ControlPointsToDrop.Skip(rounds * maxPointsPerChunk).Take(maxPointsPerChunk).ToArray();
 
                     var netControlPoints = new NetworkedControlPoint[controlPoints.Length];
 
-                    for (int point = 0; point < controlPoints.Length; ++ point)
+                    for (int point = 0; point < controlPoints.Length; ++point)
                     {
                         netControlPoints[point] = new NetworkedControlPoint().Init(controlPoints[point]);
                     }
@@ -342,7 +342,7 @@ namespace OpenBrush.Multiplayer
         }
         #endregion
 
-#region Photon Callbacks
+        #region Photon Callbacks
         public void OnConnectedToServer(NetworkRunner runner)
         {
             var rpc = m_Runner.gameObject.AddComponent<PhotonRPC>();
@@ -357,18 +357,18 @@ namespace OpenBrush.Multiplayer
             {
 
                 if (player == m_Runner.LocalPlayer)
-            {
-                var playerPrefab = Resources.Load("Multiplayer/Photon/PhotonPlayerRig") as GameObject;
-                var playerObj = m_Runner.Spawn(playerPrefab, inputAuthority: m_Runner.LocalPlayer);
-                m_LocalPlayer = playerObj.GetComponent<PhotonPlayerRig>();
-                m_Runner.SetPlayerObject(m_Runner.LocalPlayer, playerObj);
+                {
+                    var playerPrefab = Resources.Load("Multiplayer/Photon/PhotonPlayerRig") as GameObject;
+                    var playerObj = m_Runner.Spawn(playerPrefab, inputAuthority: m_Runner.LocalPlayer);
+                    m_LocalPlayer = playerObj.GetComponent<PhotonPlayerRig>();
+                    m_Runner.SetPlayerObject(m_Runner.LocalPlayer, playerObj);
 
-                m_Manager.localPlayerJoined?.Invoke(player.PlayerId, m_LocalPlayer);
-            }
-            else
-            {
-                m_PlayersSpawning.Add(player);
-            }
+                    m_Manager.localPlayerJoined?.Invoke(player.PlayerId, m_LocalPlayer);
+                }
+                else
+                {
+                    m_PlayersSpawning.Add(player);
+                }
             }
             catch (Exception ex)
             {
@@ -399,10 +399,11 @@ namespace OpenBrush.Multiplayer
 
             m_Manager.roomDataRefreshed?.Invoke(roomData);
         }
-#endregion
+        #endregion
 
-#region Unused Photon Callbacks 
-        public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason) {
+        #region Unused Photon Callbacks 
+        public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason)
+        {
             Disconnected?.Invoke();
         }
         public void OnDisconnectedFromServer(NetworkRunner runner) { }
@@ -416,7 +417,7 @@ namespace OpenBrush.Multiplayer
         public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ArraySegment<byte> data) { }
         public void OnSceneLoadDone(NetworkRunner runner) { }
         public void OnSceneLoadStart(NetworkRunner runner) { }
-#endregion
+        #endregion
     }
 }
 

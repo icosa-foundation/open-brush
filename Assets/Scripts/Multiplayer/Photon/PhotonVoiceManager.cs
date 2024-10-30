@@ -54,7 +54,7 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
             m_VoiceConnection.Settings = new AppSettings
             {
                 AppIdVoice = App.Config.PhotonVoiceSecrets.ClientId,
-                FixedRegion = "",  
+                FixedRegion = "",
             };
 
             m_VoiceConnection.Client.AddCallbackTarget(this);
@@ -115,11 +115,11 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
             bool connected = await Connect();
             if (!connected)
             {
-                return false; 
+                return false;
             }
         }
 
-        var RoomParameters = new EnterRoomParams{RoomName = RoomData.roomName};
+        var RoomParameters = new EnterRoomParams { RoomName = RoomData.roomName };
         bool roomJoined = m_VoiceConnection.Client.OpJoinOrCreateRoom(RoomParameters);
 
         if (roomJoined)
@@ -141,8 +141,8 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
     {
         State = ConnectionState.DISCONNECTING;
 
-        if (!m_VoiceConnection.Client.InRoom)  return false;
-        
+        if (!m_VoiceConnection.Client.InRoom) return false;
+
         bool leftRoom = m_VoiceConnection.Client.OpLeaveRoom(false);
 
         if (!leftRoom)
@@ -172,7 +172,8 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
         }
     }
 
-    public async Task<bool> Disconnect() {
+    public async Task<bool> Disconnect()
+    {
 
         State = ConnectionState.DISCONNECTING;
 

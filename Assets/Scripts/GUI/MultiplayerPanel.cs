@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using OpenBrush.Multiplayer;
+using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
@@ -24,7 +26,7 @@ namespace TiltBrush
         [SerializeField] private TextMeshPro m_State;
         [SerializeField] private TextMeshPro m_RoomNumber;
         [SerializeField] private TextMeshPro m_Nickname;
-        [SerializeField] private TextMeshPro m_Alerts;
+        [SerializeField] private TextMeshPro m_AlertsErrors;
 
         public string RoomName
         {
@@ -59,6 +61,8 @@ namespace TiltBrush
 
         private RoomCreateData data;
 
+        private List<Func<Tuple<bool, string>>> alertChecks;
+
         public void Awake()
         {
             data = new RoomCreateData
@@ -69,20 +73,20 @@ namespace TiltBrush
                 voiceDisabled = false
             };
 
+            alertChecks = new List<Func<Tuple<bool, string>>>
+            {
+                CheckAdvancedModeActive,
+                CheckMultiplayerManagerErrors,
+            };
+
             if (MultiplayerManager.m_Instance != null) MultiplayerManager.m_Instance.StateUpdated += OnStateUpdated;
 
-            UpdateDisplay();
         }
 
-        private void UserInBeginnerMode()
+        protected override void OnEnablePanel()
         {
-            if (m_Alerts)
-            {
-                PanelManager panelManager = PanelManager.m_Instance;
-                bool IsAdavancedModeActive = panelManager.AdvancedModeActive();
-                Debug.Log(IsAdavancedModeActive);
-                m_Alerts.gameObject.SetActive(IsAdavancedModeActive);
-            }
+            base.OnEnablePanel();
+            UpdateDisplay();
         }
 
         private static string GenerateUniqueRoomName()
@@ -102,11 +106,12 @@ namespace TiltBrush
             return random.Next(100000, 999999).ToString();
         }
 
+
         private void UpdateDisplay()
         {
             if (m_RoomNumber) m_RoomNumber.text = "RoomName: " + data.roomName;
             if (m_Nickname) m_Nickname.text = "Nickname: " + NickName;
-
+            Alerts();
         }
 
         private async void Connect()
@@ -145,6 +150,48 @@ namespace TiltBrush
         private void OnStateUpdated(ConnectionState newState)
         {
             m_State.text = "State: " + newState.ToString();
+            UpdateDisplay();
+        }
+
+        private Tuple<bool, string> CheckAdvancedModeActive()
+        {
+            bool isAdvancedModeActive = PanelManager.m_Instance.AdvancedModeActive();
+            return Tuple.Create(isAdvancedModeActive, "Switch to beginner mode to Join Room");
+        }
+
+        private Tuple<bool, string> CheckMultiplayerManagerErrors()
+        {
+
+            if (MultiplayerManager.m_Instance != null)
+            {
+                if (MultiplayerManager.m_Instance.State == ConnectionState.ERROR)
+                    return Tuple.Create(true, MultiplayerManager.m_Instance.LastError);
+            }
+
+            return Tuple.Create(false, "");
+
+        }
+
+        private void Alerts()
+        {
+            if (m_AlertsErrors)
+            {
+                bool shouldShowAlert = false;
+                string alertMessage = "";
+
+                foreach (Func<Tuple<bool, string>> check in alertChecks)
+                {
+                    var (isTriggered, message) = check.Invoke();
+                    if (isTriggered)
+                    {
+                        shouldShowAlert = true;
+                        alertMessage += message + "/n";
+                        break;
+                    }
+                }
+                m_AlertsErrors.gameObject.GetComponent<TextMeshPro>().text = alertMessage;
+                m_AlertsErrors.gameObject.SetActive(shouldShowAlert);
+            }
         }
 
         public void OnMultiplayerPanelButtonPressed(MultiplayerPanelButton button)
