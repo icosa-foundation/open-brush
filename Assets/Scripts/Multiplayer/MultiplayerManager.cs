@@ -357,10 +357,9 @@ namespace OpenBrush.Multiplayer
         {
             if (State == ConnectionState.IN_ROOM)
             {
-                return;
+                await m_Manager.PerformCommand(command);
             }
 
-            var success = await m_Manager.PerformCommand(command);
 
             // TODO: Proper rollback if command not possible right now.
             // Commented so it doesn't interfere with general use.
