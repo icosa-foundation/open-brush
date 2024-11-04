@@ -29,6 +29,13 @@ namespace TiltBrush
         private Guid m_Guid;
         private BaseCommand m_Parent;
         protected List<BaseCommand> m_Children;
+        private int m_Timestamp;  // Updated to use an integer timestamp from Photon server
+
+        public int Timestamp
+        {
+            get { return m_Timestamp; }
+            set { m_Timestamp = value; }
+        }
 
         public int ChildrenCount
         {
@@ -77,6 +84,9 @@ namespace TiltBrush
                 parent.m_Children.Add(this);
                 m_Parent = parent;
             }
+#if FUSION_WEAVER
+            m_Timestamp = Photon.Pun.PhotonNetwork.ServerTimestamp; // Use Photon server timestamp
+#endif
         }
 
         /// True if this command changes the sketch in a saveable
