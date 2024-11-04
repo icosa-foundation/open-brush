@@ -269,6 +269,26 @@ MonoBehaviour:
   required: 0
   cacheSize: 1048576
   perThreadCacheSize: 51200
+--- !u!114 &-7605348493486604068
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 380ed73f3efd2fa43af94bae88b6ad53, type: 3}
+  m_Name: FBCompositionLayerAlphaBlend Android
+  m_EditorClassIdentifier: 
+  m_enabled: 0
+  nameUi: FB Composition Layer Alpha Blend
+  version: 0.1.0
+  featureIdInternal: dev.mikesky.openxr.extensions.fbcompositionlayeralphablend
+  openxrExtensionStrings: XR_FB_composition_layer_alpha_blend
+  company: Mikesky
+  priority: 0
+  required: 0
 --- !u!114 &-7457498403352615917
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -302,6 +322,26 @@ MonoBehaviour:
   extensionStrings:
   - XR_KHR_binding_modification
   - XR_EXT_dpad_binding
+--- !u!114 &-7275543427072262896
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b539472f3eea5fc4e89c6d3475c8e3a2, type: 3}
+  m_Name: FBDisplayRefreshRate Metro
+  m_EditorClassIdentifier: 
+  m_enabled: 0
+  nameUi: FB Display Refresh Rate
+  version: 0.1.0
+  featureIdInternal: dev.mikesky.openxr.extensions.fbdisplayrefreshrate
+  openxrExtensionStrings: XR_FB_display_refresh_rate
+  company: Mikesky
+  priority: 1
+  required: 0
 --- !u!114 &-7254429083908333054
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -423,6 +463,26 @@ MonoBehaviour:
   openxrExtensionStrings: XR_EXT_eye_gaze_interaction
   company: Unity
   priority: 0
+  required: 0
+--- !u!114 &-6440525335018112848
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9dd5613b2a5a0a24aa3d61b135e8af42, type: 3}
+  m_Name: FBBodyTracking Metro
+  m_EditorClassIdentifier: 
+  m_enabled: 0
+  nameUi: FB Body Tracking + META Body Tracking Full Body
+  version: 0.1.0
+  featureIdInternal: dev.mikesky.openxr.extensions.fbbodytracking
+  openxrExtensionStrings: XR_FB_body_tracking XR_META_body_tracking_full_body
+  company: Mikesky
+  priority: 1
   required: 0
 --- !u!114 &-6344979334240806338
 MonoBehaviour:
@@ -555,6 +615,28 @@ MonoBehaviour:
   company: Oculus
   priority: 0
   required: 0
+--- !u!114 &-5402383903550822874
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: RuntimeDebuggerOpenXRFeature Standalone
+  m_EditorClassIdentifier: Unity.XR.OpenXR.Features.RuntimeDebugger:UnityEngine.XR.OpenXR.Features.RuntimeDebugger:RuntimeDebuggerOpenXRFeature
+  m_enabled: 0
+  nameUi: Runtime Debugger
+  version: 1
+  featureIdInternal: com.unity.openxr.features.runtimedebugger
+  openxrExtensionStrings: 
+  company: Unity
+  priority: 0
+  required: 0
+  cacheSize: 1048576
+  perThreadCacheSize: 51200
 --- !u!114 &-5369529246399082918
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -736,6 +818,26 @@ MonoBehaviour:
   extensionStrings:
   - XR_KHR_binding_modification
   - XR_EXT_dpad_binding
+--- !u!114 &-5027550921310962242
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b539472f3eea5fc4e89c6d3475c8e3a2, type: 3}
+  m_Name: FBDisplayRefreshRate Android
+  m_EditorClassIdentifier: 
+  m_enabled: 1
+  nameUi: FB Display Refresh Rate
+  version: 0.1.0
+  featureIdInternal: dev.mikesky.openxr.extensions.fbdisplayrefreshrate
+  openxrExtensionStrings: XR_FB_display_refresh_rate
+  company: Mikesky
+  priority: 1
+  required: 0
 --- !u!114 &-4971751487047288188
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -858,6 +960,26 @@ MonoBehaviour:
   company: Unity
   priority: 0
   required: 0
+--- !u!114 &-3988207141228038949
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9dd5613b2a5a0a24aa3d61b135e8af42, type: 3}
+  m_Name: FBBodyTracking Standalone
+  m_EditorClassIdentifier: 
+  m_enabled: 0
+  nameUi: FB Body Tracking + META Body Tracking Full Body
+  version: 0.1.0
+  featureIdInternal: dev.mikesky.openxr.extensions.fbbodytracking
+  openxrExtensionStrings: XR_FB_body_tracking XR_META_body_tracking_full_body
+  company: Mikesky
+  priority: 1
+  required: 0
 --- !u!114 &-3768601675236611697
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -876,6 +998,26 @@ MonoBehaviour:
   featureIdInternal: com.unity.openxr.feature.input.oculustouch
   openxrExtensionStrings: 
   company: Unity
+  priority: 0
+  required: 0
+--- !u!114 &-3756081456893125512
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 380ed73f3efd2fa43af94bae88b6ad53, type: 3}
+  m_Name: FBCompositionLayerAlphaBlend Metro
+  m_EditorClassIdentifier: 
+  m_enabled: 0
+  nameUi: FB Composition Layer Alpha Blend
+  version: 0.1.0
+  featureIdInternal: dev.mikesky.openxr.extensions.fbcompositionlayeralphablend
+  openxrExtensionStrings: XR_FB_composition_layer_alpha_blend
+  company: Mikesky
   priority: 0
   required: 0
 --- !u!114 &-3656571113646423923
@@ -1066,6 +1208,26 @@ MonoBehaviour:
   required: 0
   cacheSize: 1048576
   perThreadCacheSize: 51200
+--- !u!114 &-2052250879119323806
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 311418363b561b04e96974e030216b89, type: 3}
+  m_Name: METABoundaryVisibility Standalone
+  m_EditorClassIdentifier: 
+  m_enabled: 1
+  nameUi: META Boundary Visibility
+  version: 0.1.0
+  featureIdInternal: dev.mikesky.openxr.extensions.metaboundaryvisibility
+  openxrExtensionStrings: XR_META_boundary_visibility
+  company: Mikesky
+  priority: 0
+  required: 0
 --- !u!114 &-2021925341700479113
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1203,18 +1365,21 @@ MonoBehaviour:
   m_Name: Android
   m_EditorClassIdentifier: 
   features:
-  - {fileID: -1808595922885573336}
-  - {fileID: -8843572672058236420}
-  - {fileID: 6566603068462745561}
-  - {fileID: -359388495042143212}
-  - {fileID: 5662570250215147847}
-  - {fileID: 5452654191548238638}
+  - {fileID: -803293609031204139}
+  - {fileID: -5027550921310962242}
   - {fileID: 3438722145102186730}
   - {fileID: -1729055449683593181}
   - {fileID: -9060494924153373858}
+  - {fileID: 6566603068462745561}
+  - {fileID: -7605348493486604068}
+  - {fileID: 5872022670951397758}
   - {fileID: 3729635443001478327}
+  - {fileID: -359388495042143212}
   - {fileID: -4431914812882349843}
+  - {fileID: 706594700983639897}
+  - {fileID: -8843572672058236420}
   - {fileID: 7572829481798904910}
+  - {fileID: 5662570250215147847}
   - {fileID: 3409825189635461668}
   - {fileID: -792796085665928788}
   - {fileID: -7871932882014305355}
@@ -1224,6 +1389,8 @@ MonoBehaviour:
   - {fileID: -568313750252970699}
   - {fileID: -238312934105289492}
   - {fileID: -3768601675236611697}
+  - {fileID: 5452654191548238638}
+  - {fileID: 6226504958816653034}
   - {fileID: 9137515127556058079}
   m_renderMode: 0
   m_autoColorSubmissionMode: 1
@@ -1252,6 +1419,26 @@ MonoBehaviour:
   company: Unity
   priority: 0
   required: 0
+--- !u!114 &-937873686496211436
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 311418363b561b04e96974e030216b89, type: 3}
+  m_Name: METABoundaryVisibility Metro
+  m_EditorClassIdentifier: 
+  m_enabled: 0
+  nameUi: META Boundary Visibility
+  version: 0.1.0
+  featureIdInternal: dev.mikesky.openxr.extensions.metaboundaryvisibility
+  openxrExtensionStrings: XR_META_boundary_visibility
+  company: Mikesky
+  priority: 0
+  required: 0
 --- !u!114 &-926590902572576670
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1271,6 +1458,26 @@ MonoBehaviour:
   openxrExtensionStrings: XR_EXT_performance_settings
   company: Unity
   priority: 0
+  required: 0
+--- !u!114 &-803293609031204139
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9dd5613b2a5a0a24aa3d61b135e8af42, type: 3}
+  m_Name: FBBodyTracking Android
+  m_EditorClassIdentifier: 
+  m_enabled: 0
+  nameUi: FB Body Tracking + META Body Tracking Full Body
+  version: 0.1.0
+  featureIdInternal: dev.mikesky.openxr.extensions.fbbodytracking
+  openxrExtensionStrings: XR_FB_body_tracking XR_META_body_tracking_full_body
+  company: Mikesky
+  priority: 1
   required: 0
 --- !u!114 &-792796085665928788
 MonoBehaviour:
@@ -1533,11 +1740,11 @@ MonoBehaviour:
   m_Name: PalmPoseInteraction Metro
   m_EditorClassIdentifier: 
   m_enabled: 0
-  nameUi: 
-  version: 
-  featureIdInternal: 
-  openxrExtensionStrings: 
-  company: 
+  nameUi: Palm Pose
+  version: 0.0.1
+  featureIdInternal: com.unity.openxr.feature.input.palmpose
+  openxrExtensionStrings: XR_EXT_palm_pose
+  company: Unity
   priority: 0
   required: 0
 --- !u!114 &271538386983659576
@@ -1580,6 +1787,28 @@ MonoBehaviour:
   company: Unity
   priority: 0
   required: 0
+--- !u!114 &310430984593368073
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: RuntimeDebuggerOpenXRFeature Metro
+  m_EditorClassIdentifier: Unity.XR.OpenXR.Features.RuntimeDebugger:UnityEngine.XR.OpenXR.Features.RuntimeDebugger:RuntimeDebuggerOpenXRFeature
+  m_enabled: 0
+  nameUi: Runtime Debugger
+  version: 1
+  featureIdInternal: com.unity.openxr.features.runtimedebugger
+  openxrExtensionStrings: 
+  company: Unity
+  priority: 0
+  required: 0
+  cacheSize: 1048576
+  perThreadCacheSize: 51200
 --- !u!114 &574840683824583675
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1620,6 +1849,26 @@ MonoBehaviour:
   company: Unity
   priority: 0
   required: 0
+--- !u!114 &706594700983639897
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 311418363b561b04e96974e030216b89, type: 3}
+  m_Name: METABoundaryVisibility Android
+  m_EditorClassIdentifier: 
+  m_enabled: 1
+  nameUi: META Boundary Visibility
+  version: 0.1.0
+  featureIdInternal: dev.mikesky.openxr.extensions.metaboundaryvisibility
+  openxrExtensionStrings: XR_META_boundary_visibility
+  company: Mikesky
+  priority: 0
+  required: 0
 --- !u!114 &792817780763860715
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1633,11 +1882,11 @@ MonoBehaviour:
   m_Name: RuntimeDebuggerOpenXRFeature Metro
   m_EditorClassIdentifier: Unity.XR.OpenXR.Features.RuntimeDebugger:UnityEngine.XR.OpenXR.Features.RuntimeDebugger:RuntimeDebuggerOpenXRFeature
   m_enabled: 0
-  nameUi: 
-  version: 
-  featureIdInternal: 
+  nameUi: Runtime Debugger
+  version: 1
+  featureIdInternal: com.unity.openxr.features.runtimedebugger
   openxrExtensionStrings: 
-  company: 
+  company: Unity
   priority: 0
   required: 0
   cacheSize: 1048576
@@ -1703,6 +1952,26 @@ MonoBehaviour:
   openxrExtensionStrings: 
   company: 
   priority: 0
+  required: 0
+--- !u!114 &1288961720814020653
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b539472f3eea5fc4e89c6d3475c8e3a2, type: 3}
+  m_Name: FBDisplayRefreshRate Standalone
+  m_EditorClassIdentifier: 
+  m_enabled: 1
+  nameUi: FB Display Refresh Rate
+  version: 0.1.0
+  featureIdInternal: dev.mikesky.openxr.extensions.fbdisplayrefreshrate
+  openxrExtensionStrings: XR_FB_display_refresh_rate
+  company: Mikesky
+  priority: 1
   required: 0
 --- !u!114 &1302668994057080467
 MonoBehaviour:
@@ -1917,11 +2186,11 @@ MonoBehaviour:
   m_Name: HPReverbG2ControllerProfile Metro
   m_EditorClassIdentifier: 
   m_enabled: 0
-  nameUi: 
-  version: 
-  featureIdInternal: 
-  openxrExtensionStrings: 
-  company: 
+  nameUi: HP Reverb G2 Controller Profile
+  version: 0.0.1
+  featureIdInternal: com.unity.openxr.feature.input.hpreverb
+  openxrExtensionStrings: XR_EXT_hp_mixed_reality_controller
+  company: Unity
   priority: 0
   required: 0
 --- !u!114 &2540959591261858297
@@ -1998,11 +2267,11 @@ MonoBehaviour:
   m_Name: EyeGazeInteraction Metro
   m_EditorClassIdentifier: 
   m_enabled: 0
-  nameUi: 
-  version: 
-  featureIdInternal: 
-  openxrExtensionStrings: 
-  company: 
+  nameUi: Eye Gaze Interaction Profile
+  version: 0.0.1
+  featureIdInternal: com.unity.openxr.feature.input.eyetracking
+  openxrExtensionStrings: XR_EXT_eye_gaze_interaction
+  company: Unity
   priority: 0
   required: 0
 --- !u!114 &3106534461171692324
@@ -2336,6 +2605,27 @@ MonoBehaviour:
   company: Unity
   priority: 0
   required: 0
+--- !u!114 &4879129667963011197
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e0487890a3eee83449ce94b951042ace, type: 3}
+  m_Name: FBPassthrough Metro
+  m_EditorClassIdentifier: 
+  m_enabled: 0
+  nameUi: FB Passthrough
+  version: 0.1.0
+  featureIdInternal: dev.mikesky.openxr.extensions.fbpassthrough
+  openxrExtensionStrings: XR_FB_passthrough
+  company: Mikesky
+  priority: 0
+  required: 0
+  StartEnabled: 0
 --- !u!114 &4980278333451499208
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2469,21 +2759,26 @@ MonoBehaviour:
   m_Name: WSA
   m_EditorClassIdentifier: 
   features:
+  - {fileID: -6440525335018112848}
+  - {fileID: -7275543427072262896}
   - {fileID: -6344979334240806338}
   - {fileID: -5098754768238288905}
-  - {fileID: 0}
+  - {fileID: 2988532055098582389}
+  - {fileID: -3756081456893125512}
+  - {fileID: 4879129667963011197}
   - {fileID: -7956739036010045027}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 6774984544229067780}
+  - {fileID: 2372011686619033440}
   - {fileID: -5099302859331215841}
   - {fileID: -3199145190972460908}
+  - {fileID: -937873686496211436}
   - {fileID: 8049887066580020921}
-  - {fileID: 0}
+  - {fileID: 7136574916481677489}
   - {fileID: 6482902447761637292}
   - {fileID: 9003827069442310504}
   - {fileID: 3106534461171692324}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 182495744435344008}
+  - {fileID: 310430984593368073}
   - {fileID: 278510016605624271}
   - {fileID: -2995124423222007804}
   m_renderMode: 0
@@ -2493,6 +2788,27 @@ MonoBehaviour:
   m_depthSubmissionMode: 1
   m_optimizeBufferDiscards: 0
   m_symmetricProjection: 0
+--- !u!114 &5872022670951397758
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e0487890a3eee83449ce94b951042ace, type: 3}
+  m_Name: FBPassthrough Android
+  m_EditorClassIdentifier: 
+  m_enabled: 1
+  nameUi: FB Passthrough
+  version: 0.1.0
+  featureIdInternal: dev.mikesky.openxr.extensions.fbpassthrough
+  openxrExtensionStrings: XR_FB_passthrough
+  company: Mikesky
+  priority: 0
+  required: 0
+  StartEnabled: 0
 --- !u!114 &6019140111641124994
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2533,6 +2849,28 @@ MonoBehaviour:
   company: Unity
   priority: 0
   required: 0
+--- !u!114 &6226504958816653034
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: RuntimeDebuggerOpenXRFeature Android
+  m_EditorClassIdentifier: Unity.XR.OpenXR.Features.RuntimeDebugger:UnityEngine.XR.OpenXR.Features.RuntimeDebugger:RuntimeDebuggerOpenXRFeature
+  m_enabled: 0
+  nameUi: Runtime Debugger
+  version: 1
+  featureIdInternal: com.unity.openxr.features.runtimedebugger
+  openxrExtensionStrings: 
+  company: Unity
+  priority: 0
+  required: 0
+  cacheSize: 1048576
+  perThreadCacheSize: 51200
 --- !u!114 &6229781539548151111
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2646,11 +2984,11 @@ MonoBehaviour:
   m_Name: HandInteractionProfile Metro
   m_EditorClassIdentifier: 
   m_enabled: 0
-  nameUi: 
-  version: 
-  featureIdInternal: 
-  openxrExtensionStrings: 
-  company: 
+  nameUi: Hand Interaction Profile
+  version: 0.0.1
+  featureIdInternal: com.unity.openxr.feature.input.handinteraction
+  openxrExtensionStrings: XR_EXT_hand_interaction
+  company: Unity
   priority: 0
   required: 0
 --- !u!114 &6781313199298781951
@@ -2759,11 +3097,11 @@ MonoBehaviour:
   m_Name: MetaQuestTouchProControllerProfile Metro
   m_EditorClassIdentifier: 
   m_enabled: 0
-  nameUi: 
-  version: 
-  featureIdInternal: 
-  openxrExtensionStrings: 
-  company: 
+  nameUi: Meta Quest Touch Pro Controller Profile
+  version: 0.0.1
+  featureIdInternal: com.unity.openxr.feature.input.metaquestpro
+  openxrExtensionStrings: XR_FB_touch_controller_pro
+  company: Unity
   priority: 0
   required: 0
 --- !u!114 &7381656899648225167
@@ -2779,19 +3117,22 @@ MonoBehaviour:
   m_Name: Standalone
   m_EditorClassIdentifier: 
   features:
-  - {fileID: 887424966740871682}
-  - {fileID: 1618651464046490541}
-  - {fileID: 7682352288251257475}
-  - {fileID: -223543171262116239}
-  - {fileID: 612927061893152235}
-  - {fileID: -3155737484702066491}
+  - {fileID: -3988207141228038949}
+  - {fileID: 1288961720814020653}
   - {fileID: -736748253630721105}
   - {fileID: -4469311779315207794}
   - {fileID: -7457498403352615917}
+  - {fileID: 1618651464046490541}
+  - {fileID: 8383400387376223497}
+  - {fileID: 7976530393180662520}
   - {fileID: 8280613793592923929}
+  - {fileID: 7682352288251257475}
+  - {fileID: -3155737484702066491}
   - {fileID: 1827103528056647146}
   - {fileID: 2554124788269052071}
+  - {fileID: -2052250879119323806}
   - {fileID: -6002454310084566546}
+  - {fileID: -223543171262116239}
   - {fileID: -2581017241881390745}
   - {fileID: -4773087401744612407}
   - {fileID: 1104377150978337437}
@@ -2800,6 +3141,8 @@ MonoBehaviour:
   - {fileID: -6553496117388817208}
   - {fileID: 3442458366111397828}
   - {fileID: 6812736204562946406}
+  - {fileID: 612927061893152235}
+  - {fileID: -5402383903550822874}
   - {fileID: -177044242218828340}
   - {fileID: -926590902572576670}
   m_renderMode: 0
@@ -2972,6 +3315,27 @@ MonoBehaviour:
   company: Unity
   priority: 0
   required: 0
+--- !u!114 &7976530393180662520
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e0487890a3eee83449ce94b951042ace, type: 3}
+  m_Name: FBPassthrough Standalone
+  m_EditorClassIdentifier: 
+  m_enabled: 1
+  nameUi: FB Passthrough
+  version: 0.1.0
+  featureIdInternal: dev.mikesky.openxr.extensions.fbpassthrough
+  openxrExtensionStrings: XR_FB_passthrough
+  company: Mikesky
+  priority: 0
+  required: 0
+  StartEnabled: 0
 --- !u!114 &8049887066580020921
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3032,6 +3396,26 @@ MonoBehaviour:
   featureIdInternal: com.unity.openxr.feature.input.handinteractionposes
   openxrExtensionStrings: XR_EXT_hand_interaction
   company: Unity
+  priority: 0
+  required: 0
+--- !u!114 &8383400387376223497
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 380ed73f3efd2fa43af94bae88b6ad53, type: 3}
+  m_Name: FBCompositionLayerAlphaBlend Standalone
+  m_EditorClassIdentifier: 
+  m_enabled: 0
+  nameUi: FB Composition Layer Alpha Blend
+  version: 0.1.0
+  featureIdInternal: dev.mikesky.openxr.extensions.fbcompositionlayeralphablend
+  openxrExtensionStrings: XR_FB_composition_layer_alpha_blend
+  company: Mikesky
   priority: 0
   required: 0
 --- !u!114 &8554729969567464418

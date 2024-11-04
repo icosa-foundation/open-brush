@@ -372,6 +372,15 @@
       },
       "hash": "43697771ed65efee02d5b1743141b8179444c147"
     },
+    "dev.mikesky.openxrextensions": {
+      "version": "https://github.com/mikeskydev/unity-openxr-extensions.git#0.1.0",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.xr.openxr": "1.13.0"
+      },
+      "hash": "4b42eef1d81b779f07e407ea0165d16401425ef0"
+    },
     "org.khronos.unitygltf": {
       "version": "https://github.com/icosa-mirror/UnityGLTF.git",
       "depth": 0,
