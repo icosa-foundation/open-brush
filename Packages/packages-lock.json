@@ -308,6 +308,17 @@
       },
       "hash": "214037a894f7e292687b8ba331f5c959c2bcdd8b"
     },
+    "com.unity.xr.compositionlayers": {
+      "version": "1.0.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.inputsystem": "1.6.3",
+        "com.unity.xr.core-utils": "2.2.2",
+        "com.unity.xr.management": "4.0.1"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.xr.core-utils": {
       "version": "2.3.0",
       "depth": 0,
@@ -328,7 +339,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.xr.management": {
-      "version": "4.4.1",
+      "version": "4.5.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -339,17 +350,8 @@
       },
       "url": "https://packages.unity.com"
     },
-    "com.unity.xr.oculus": {
-      "version": "4.2.0",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {
-        "com.unity.xr.management": "4.4.0"
-      },
-      "url": "https://packages.unity.com"
-    },
     "com.unity.xr.openxr": {
-      "version": "1.10.0",
+      "version": "1.13.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {
