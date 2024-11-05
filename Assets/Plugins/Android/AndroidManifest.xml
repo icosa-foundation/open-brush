@@ -16,10 +16,19 @@
             </intent-filter>
         </activity>
         <meta-data android:name="unityplayer.SkipPermissionsDialog" android:value="false" />
-        <meta-data android:name="pvr.app.type" android:value="vr" />
     </application>
-    <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove"/>
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" tools:node="remove"/>
+
+    <meta-data android:name="com.oculus.vr.focusaware" android:value="true"/>
+    <meta-data android:name="com.oculus.supportedDevices" android:value="quest|quest2" />
+    <meta-data android:name="pvr.app.type" android:value="vr" />
+
+    <uses-feature android:name="android.hardware.vr.headtracking" android:version="1" android:required="false" />
+    <uses-feature android:name="com.oculus.feature.PASSTHROUGH" android:required="false" />
+
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="com.oculus.permission.USE_SCENE" />
+    <uses-permission android:name="com.oculus.permission.BOUNDARY_VISIBILITY"/>
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" tools:node="remove"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove"/>
+
 </manifest>
