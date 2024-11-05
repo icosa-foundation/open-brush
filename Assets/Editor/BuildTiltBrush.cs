@@ -84,11 +84,13 @@ static class BuildTiltBrush
     const string kMenuPluginPref = "Open Brush/Build/Plugin";
     const string kMenuPluginMono = "Open Brush/Build/Plugin: Mono";
     const string kMenuPluginOpenXr = "Open Brush/Build/Plugin: OpenXR";
+    const string kMenuPluginZapbox = "Open Brush/Build/Plugin: Zapbox";
     const string kMenuPlatformPref = "Open Brush/Build/Platform";
     const string kMenuPlatformWindows = "Open Brush/Build/Platform: Windows";
     const string kMenuPlatformLinux = "Open Brush/Build/Platform: Linux";
     const string kMenuPlatformOsx = "Open Brush/Build/Platform: OSX";
     const string kMenuPlatformAndroid = "Open Brush/Build/Platform: Android";
+    const string kMenuPlatformIos = "Open Brush/Build/Platform: iOS";
     const string kMenuDevelopment = "Open Brush/Build/Development";
     const string kMenuMono = "Open Brush/Build/Runtime: Mono";
     const string kMenuIl2cpp = "Open Brush/Build/Runtime: IL2CPP";
@@ -100,6 +102,9 @@ static class BuildTiltBrush
     private static readonly List<KeyValuePair<XrSdkMode, BuildTarget>> kValidSdkTargets
         = new List<KeyValuePair<XrSdkMode, BuildTarget>>()
         {
+            // Monoscopic
+            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Monoscopic, BuildTarget.StandaloneWindows64),
+
             // OpenXR
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.StandaloneWindows64),
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.Android),
@@ -178,7 +183,9 @@ static class BuildTiltBrush
         set
         {
             EditorPrefs.SetString(kMenuPluginPref, value.ToString());
+            Menu.SetChecked(kMenuPluginMono, value == XrSdkMode.Monoscopic);
             Menu.SetChecked(kMenuPluginOpenXr, value == XrSdkMode.OpenXR);
+            Menu.SetChecked(kMenuPluginZapbox, value == XrSdkMode.Zapbox);
 
             if (!BuildTargetSupported(value, GuiSelectedBuildTarget))
             {
@@ -201,6 +208,7 @@ static class BuildTiltBrush
             Menu.SetChecked(kMenuPlatformLinux, value == BuildTarget.StandaloneLinux64);
             Menu.SetChecked(kMenuPlatformOsx, value == BuildTarget.StandaloneOSX);
             Menu.SetChecked(kMenuPlatformAndroid, value == BuildTarget.Android);
+            Menu.SetChecked(kMenuPlatformIos, value == BuildTarget.iOS);
         }
     }
 
@@ -359,8 +367,20 @@ static class BuildTiltBrush
     }
 
     //=======  SDKs =======
+    [MenuItem(kMenuPluginMono, isValidateFunction: false, priority: 110)]
+    static void MenuItem_Plugin_Mono()
+    {
+        GuiSelectedSdk = XrSdkMode.Monoscopic;
+    }
 
-    [MenuItem(kMenuPluginOpenXr, isValidateFunction: false, priority: 110)]
+    [MenuItem(kMenuPluginMono, isValidateFunction: true)]
+    static bool MenuItem_Plugin_Mono_Validate()
+    {
+        Menu.SetChecked(kMenuPluginMono, GuiSelectedSdk == XrSdkMode.Monoscopic);
+        return true;
+    }
+
+    [MenuItem(kMenuPluginOpenXr, isValidateFunction: false, priority: 111)]
     static void MenuItem_Plugin_OpenXr()
     {
         GuiSelectedSdk = XrSdkMode.OpenXR;
@@ -370,6 +390,19 @@ static class BuildTiltBrush
     static bool MenuItem_Plugin_OpenXr_Validate()
     {
         Menu.SetChecked(kMenuPluginOpenXr, GuiSelectedSdk == XrSdkMode.OpenXR);
+        return true;
+    }
+
+    [MenuItem(kMenuPluginZapbox, isValidateFunction: false, priority: 112)]
+    static void MenuItem_Plugin_Zapbox()
+    {
+        GuiSelectedSdk = XrSdkMode.Zapbox;
+    }
+
+    [MenuItem(kMenuPluginZapbox, isValidateFunction: true)]
+    static bool MenuItem_Plugin_Zapbox_Validate()
+    {
+        Menu.SetChecked(kMenuPluginZapbox, GuiSelectedSdk == XrSdkMode.Zapbox);
         return true;
     }
 
@@ -389,7 +422,7 @@ static class BuildTiltBrush
         return BuildTargetSupported(GuiSelectedSdk, BuildTarget.StandaloneWindows64);
     }
 
-    // [MenuItem(kMenuPlatformLinux, isValidateFunction: false, priority: 202)]
+    // [MenuItem(kMenuPlatformLinux, isValidateFunction: false, priority: 201)]
     // static void MenuItem_Platform_Linux()
     // {
     //     GuiSelectedBuildTarget = BuildTarget.StandaloneLinux64;
@@ -402,7 +435,7 @@ static class BuildTiltBrush
     //     return BuildTargetSupported(GuiSelectedSdk, BuildTarget.StandaloneLinux64);
     // }
 
-    [MenuItem(kMenuPlatformOsx, isValidateFunction: false, priority: 205)]
+    [MenuItem(kMenuPlatformOsx, isValidateFunction: false, priority: 202)]
     static void MenuItem_Platform_Osx()
     {
         GuiSelectedBuildTarget = BuildTarget.StandaloneOSX;
@@ -415,7 +448,7 @@ static class BuildTiltBrush
         return BuildTargetSupported(GuiSelectedSdk, BuildTarget.StandaloneOSX);
     }
 
-    [MenuItem(kMenuPlatformAndroid, isValidateFunction: false, priority: 210)]
+    [MenuItem(kMenuPlatformAndroid, isValidateFunction: false, priority: 203)]
     static void MenuItem_Platform_Android()
     {
         GuiSelectedBuildTarget = BuildTarget.Android;
@@ -428,6 +461,18 @@ static class BuildTiltBrush
         return BuildTargetSupported(GuiSelectedSdk, BuildTarget.Android);
     }
 
+    [MenuItem(kMenuPlatformIos, isValidateFunction: false, priority: 204)]
+    static void MenuItem_Platform_Ios()
+    {
+        GuiSelectedBuildTarget = BuildTarget.iOS;
+    }
+
+    [MenuItem(kMenuPlatformIos, isValidateFunction: true)]
+    static bool MenuItem_Platform_Ios_Validate()
+    {
+        Menu.SetChecked(kMenuPlatformIos, GuiSelectedBuildTarget == BuildTarget.iOS);
+        return BuildTargetSupported(GuiSelectedSdk, BuildTarget.iOS);
+    }
     //=======  Runtimes =======
 
     [MenuItem(kMenuMono, isValidateFunction: false, priority: 300)]
