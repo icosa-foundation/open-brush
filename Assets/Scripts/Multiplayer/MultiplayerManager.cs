@@ -56,7 +56,7 @@ namespace OpenBrush.Multiplayer
         void Start()
         {
 
-            OVRPlatform.Users.GetLoggedInUser().OnComplete((msg) =>
+            OVRPlatform.Users.GetLoggedInUser()?.OnComplete((msg) =>
             {
                 if (!msg.IsError)
                 {

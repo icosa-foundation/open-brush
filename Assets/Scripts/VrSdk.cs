@@ -207,14 +207,22 @@ namespace TiltBrush
             appId = App.Config.OculusMobileSecrets.ClientId;
 #endif
                 Oculus.Platform.Core.Initialize(oculusAppId);
-                Oculus.Platform.UserAgeCategory.Get().OnComplete((msg) =>
+                Oculus.Platform.UserAgeCategory.Get()?.OnComplete((msg) =>
                 {
-                    var unused = msg.Data.AgeCategory;
+                    if (msg.IsError)
+                    {
+                        Debug.LogWarning($"Failed to get user age category: {msg.GetError().Message}");
+                        return;
+                    }
+                    else
+                    {
+                        var unused = msg.Data.AgeCategory;
+                    }
                 });
             }
             catch (Exception e)
             {
-                Debug.LogError($"Failed to initialize Oculus Platform SDK: {e.Message}");
+                Debug.LogWarning($"Failed to initialize Oculus Platform SDK: {e.Message}");
             }
         }
 
