@@ -141,7 +141,11 @@ namespace TiltBrush
                 // TODO: Need to investigate exactly why Linux hits an NRE here
                 // When other platforms don't
                 XRGeneralSettings.Instance?.Manager?.InitializeLoaderSync();
-                XRGeneralSettings.Instance?.Manager?.StartSubsystems();
+
+                if (XRGeneralSettings.Instance?.Manager?.activeLoader != null)
+                {
+                    XRGeneralSettings.Instance?.Manager?.StartSubsystems();
+                }
             }
 
             if (App.Config.m_SdkMode == SdkMode.UnityXR)
@@ -192,7 +196,7 @@ namespace TiltBrush
             // Skip the rest of the VR setup if we're not using XR
             if (App.UserConfig.Flags.DisableXrMode || App.UserConfig.Flags.EnableMonoscopicMode) return;
 
-            // TODO:Mikesky - Oculus used to set tracking origin to stage here, check what OpenXR does.
+            UnityEngine.XR.OpenXR.OpenXRSettings.SetAllowRecentering(false);
 
             // Let it fail on non-oculus platforms
             try
@@ -221,7 +225,7 @@ namespace TiltBrush
                 Application.onBeforeRender += OnNewPoses;
             }
 
-            var displaySubsystem = XRGeneralSettings.Instance?.Manager?.activeLoader.GetLoadedSubsystem<XRDisplaySubsystem>();
+            var displaySubsystem = XRGeneralSettings.Instance?.Manager?.activeLoader?.GetLoadedSubsystem<XRDisplaySubsystem>();
 
             if (displaySubsystem != null)
             {
@@ -250,8 +254,11 @@ namespace TiltBrush
                 Application.onBeforeRender -= OnNewPoses;
                 InputDevices.deviceConnected -= OnUnityXRDeviceConnected;
                 InputDevices.deviceDisconnected -= OnUnityXRDeviceDisconnected;
-                XRGeneralSettings.Instance?.Manager?.StopSubsystems();
-                XRGeneralSettings.Instance?.Manager?.DeinitializeLoader();
+                if (XRGeneralSettings.Instance?.Manager?.activeLoader != null)
+                {
+                    XRGeneralSettings.Instance?.Manager?.StopSubsystems();
+                    XRGeneralSettings.Instance?.Manager?.DeinitializeLoader();
+                }
             }
         }
 
@@ -294,7 +301,7 @@ namespace TiltBrush
         // Returns the time of the most recent number of dropped frames, null on failure.
         public int? GetDroppedFrames()
         {
-            var displaySubsystem = XRGeneralSettings.Instance?.Manager?.activeLoader.GetLoadedSubsystem<XRDisplaySubsystem>();
+            var displaySubsystem = XRGeneralSettings.Instance?.Manager?.activeLoader?.GetLoadedSubsystem<XRDisplaySubsystem>();
             if (displaySubsystem != null && displaySubsystem.TryGetDroppedFrameCount(out var droppedFrames))
             {
                 return droppedFrames;
