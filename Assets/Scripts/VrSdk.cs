@@ -212,16 +212,6 @@ namespace TiltBrush
             {
                 Debug.LogError($"Failed to initialize Oculus Platform SDK: {e.Message}");
             }
-
-
-#if PIMAX_SUPPORTED
-            // Pimax currently requires initialising their Platform SDK.
-            if(ulong.TryParse(App.Config.PimaxSecrets?.ClientId, out var pimaxClientId))
-            {
-                Pimax.Platform.PvrPlatform.init();
-                Pimax.Platform.PvrConnectToDLL.pvr_PlatformInit(pimaxClientId);
-            }
-#endif // PIMAX_SUPPORTED
         }
 
         void Start()

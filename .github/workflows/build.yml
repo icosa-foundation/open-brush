@@ -180,18 +180,12 @@ jobs:
       fail-fast: false
       matrix:
         flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
-        name: [Windows OpenXR, Windows Pimax, Windows Rift, Linux, MacOS, Android OpenXR, Oculus Quest (1), Oculus Quest (2+), Android Pico, Android Pico (CN), iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
+        name: [Windows OpenXR, Windows Rift, Linux, MacOS, Android OpenXR, Oculus Quest (1), Oculus Quest (2+), Android Pico, Android Pico (CN), iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
         include:
           - name: Windows OpenXR
             targetPlatform: StandaloneWindows64
             vrsdk: OpenXR
             cache: Windows
-
-          - name: Windows Pimax
-            targetPlatform: StandaloneWindows64
-            vrsdk: OpenXR
-            cache: Windows
-            extra_defines: PIMAX_SUPPORTED
 
           - name: Windows Rift
             targetPlatform: StandaloneWindows64
