@@ -84,7 +84,6 @@ static class BuildTiltBrush
     const string kMenuPluginPref = "Open Brush/Build/Plugin";
     const string kMenuPluginMono = "Open Brush/Build/Plugin: Mono";
     const string kMenuPluginOpenXr = "Open Brush/Build/Plugin: OpenXR";
-    const string kMenuPluginWave = "Open Brush/Build/Plugin: Wave";
     const string kMenuPlatformPref = "Open Brush/Build/Platform";
     const string kMenuPlatformWindows = "Open Brush/Build/Platform: Windows";
     const string kMenuPlatformLinux = "Open Brush/Build/Platform: Linux";
@@ -107,9 +106,6 @@ static class BuildTiltBrush
 
             // Zapbox
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Zapbox, BuildTarget.iOS),
-
-            // Wave
-            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Wave, BuildTarget.Android),
         };
 
     static readonly List<CopyRequest> kToCopy = new List<CopyRequest>
@@ -183,7 +179,6 @@ static class BuildTiltBrush
         {
             EditorPrefs.SetString(kMenuPluginPref, value.ToString());
             Menu.SetChecked(kMenuPluginOpenXr, value == XrSdkMode.OpenXR);
-            Menu.SetChecked(kMenuPluginWave, value == XrSdkMode.Wave);
 
             if (!BuildTargetSupported(value, GuiSelectedBuildTarget))
             {
@@ -375,19 +370,6 @@ static class BuildTiltBrush
     static bool MenuItem_Plugin_OpenXr_Validate()
     {
         Menu.SetChecked(kMenuPluginOpenXr, GuiSelectedSdk == XrSdkMode.OpenXR);
-        return true;
-    }
-
-    [MenuItem(kMenuPluginWave, isValidateFunction: false, priority: 115)]
-    static void MenuItem_Plugin_Wave()
-    {
-        GuiSelectedSdk = XrSdkMode.Wave;
-    }
-
-    [MenuItem(kMenuPluginWave, isValidateFunction: true)]
-    static bool MenuItem_Plugin_Wave_Validate()
-    {
-        Menu.SetChecked(kMenuPluginWave, GuiSelectedSdk == XrSdkMode.Wave);
         return true;
     }
 
@@ -1165,9 +1147,6 @@ static class BuildTiltBrush
 
             switch (tiltOptions.XrSdk)
             {
-                case XrSdkMode.Wave:
-                    targetGraphicsApisRequired = new UnityEngine.Rendering.GraphicsDeviceType[] { UnityEngine.Rendering.GraphicsDeviceType.OpenGLES3 };
-                    break;
                 default:
                     targetGraphicsApisRequired = m_graphicsApis;
                     break;

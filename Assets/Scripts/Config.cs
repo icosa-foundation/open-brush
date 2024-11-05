@@ -38,7 +38,6 @@ namespace TiltBrush
     {
         Monoscopic = -1,
         OpenXR = 0,
-        Wave,
         Zapbox,
     }
 
