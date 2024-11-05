@@ -192,16 +192,17 @@ namespace TiltBrush
             // Skip the rest of the VR setup if we're not using XR
             if (App.UserConfig.Flags.DisableXrMode || App.UserConfig.Flags.EnableMonoscopicMode) return;
 
-            // TODO:Mikesky - Oculus set tracking origin to stage here, check what OpenXR does.
-            //Get Oculus ID
-            var appId = App.Config.OculusSecrets.ClientId;
-#if UNITY_ANDROID
-            appId = App.Config.OculusMobileSecrets.ClientId;
-#endif
+            // TODO:Mikesky - Oculus used to set tracking origin to stage here, check what OpenXR does.
+
             // Let it fail on non-oculus platforms
             try
             {
-                Oculus.Platform.Core.Initialize(appId);
+                //Get Oculus ID
+                var oculusAppId = App.Config.OculusSecrets.ClientId;
+#if UNITY_ANDROID
+            appId = App.Config.OculusMobileSecrets.ClientId;
+#endif
+                Oculus.Platform.Core.Initialize(oculusAppId);
                 Oculus.Platform.UserAgeCategory.Get().OnComplete((msg) =>
                 {
                     var unused = msg.Data.AgeCategory;
