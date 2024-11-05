@@ -28,17 +28,9 @@ using UnityEditor.iOS.Xcode;
 using UnityEditor.SceneManagement;
 using UnityEditor.XR.Management;
 using UnityEngine;
-using UnityEngine.XR;
 using UnityEngine.XR.Management;
 using Environment = System.Environment;
 
-//----------------------------------------------------------------------------------------
-// Notes on build flags which can be added to Player Settings.
-//
-//  - OCULUS_SUPPORTED
-//      - Oculus is an optional target. Define this flag to add Oculus targets.
-//
-//----------------------------------------------------------------------------------------
 // All output from this class is prefixed with "_btb_" to facilitate extracting
 // it from Unity's very noisy and spammy Editor.log file.
 
@@ -92,9 +84,7 @@ static class BuildTiltBrush
     const string kMenuPluginPref = "Open Brush/Build/Plugin";
     const string kMenuPluginMono = "Open Brush/Build/Plugin: Mono";
     const string kMenuPluginOpenXr = "Open Brush/Build/Plugin: OpenXR";
-    const string kMenuPluginOculus = "Open Brush/Build/Plugin: Oculus";
     const string kMenuPluginWave = "Open Brush/Build/Plugin: Wave";
-    const string kMenuPluginPico = "Open Brush/Build/Plugin: Pico";
     const string kMenuPlatformPref = "Open Brush/Build/Platform";
     const string kMenuPlatformWindows = "Open Brush/Build/Platform: Windows";
     const string kMenuPlatformLinux = "Open Brush/Build/Platform: Linux";
@@ -118,17 +108,8 @@ static class BuildTiltBrush
             // Zapbox
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Zapbox, BuildTarget.iOS),
 
-#if OCULUS_SUPPORTED
-            // Oculus
-            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Oculus, BuildTarget.StandaloneWindows64),
-            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Oculus, BuildTarget.Android),
-#endif // OCULUS_SUPPORTED
             // Wave
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Wave, BuildTarget.Android),
-#if PICO_SUPPORTED
-            // Pico
-            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Pico, BuildTarget.Android),
-#endif // PICO_SUPPORTED
         };
 
     static readonly List<CopyRequest> kToCopy = new List<CopyRequest>
@@ -202,11 +183,7 @@ static class BuildTiltBrush
         {
             EditorPrefs.SetString(kMenuPluginPref, value.ToString());
             Menu.SetChecked(kMenuPluginOpenXr, value == XrSdkMode.OpenXR);
-#if OCULUS_SUPPORTED
-            Menu.SetChecked(kMenuPluginOculus, value == XrSdkMode.Oculus);
-#endif // OCULUS_SUPPORTED
             Menu.SetChecked(kMenuPluginWave, value == XrSdkMode.Wave);
-            Menu.SetChecked(kMenuPluginPico, value == XrSdkMode.Pico);
 
             if (!BuildTargetSupported(value, GuiSelectedBuildTarget))
             {
@@ -401,23 +378,6 @@ static class BuildTiltBrush
         return true;
     }
 
-    [MenuItem(kMenuPluginOculus, isValidateFunction: false, priority: 105)]
-    static void MenuItem_Plugin_Oculus()
-    {
-        GuiSelectedSdk = XrSdkMode.Oculus;
-    }
-
-    [MenuItem(kMenuPluginOculus, isValidateFunction: true)]
-    static bool MenuItem_Plugin_Oculus_Validate()
-    {
-#if OCULUS_SUPPORTED
-        Menu.SetChecked(kMenuPluginOculus, GuiSelectedSdk == XrSdkMode.Oculus);
-        return true;
-#else
-        return false;
-#endif
-    }
-
     [MenuItem(kMenuPluginWave, isValidateFunction: false, priority: 115)]
     static void MenuItem_Plugin_Wave()
     {
@@ -429,23 +389,6 @@ static class BuildTiltBrush
     {
         Menu.SetChecked(kMenuPluginWave, GuiSelectedSdk == XrSdkMode.Wave);
         return true;
-    }
-
-    [MenuItem(kMenuPluginPico, isValidateFunction: false, priority: 125)]
-    static void MenuItem_Plugin_Pico()
-    {
-        GuiSelectedSdk = XrSdkMode.Pico;
-    }
-
-    [MenuItem(kMenuPluginPico, isValidateFunction: true)]
-    static bool MenuItem_Plugin_Pico_Validate()
-    {
-#if PICO_SUPPORTED
-        Menu.SetChecked(kMenuPluginPico, GuiSelectedSdk == XrSdkMode.Pico);
-        return true;
-#else
-        return false;
-#endif
     }
 
     //=======  Platforms =======
@@ -691,14 +634,6 @@ static class BuildTiltBrush
         string keyaliasName = null;
         string keystorePass = Environment.GetEnvironmentVariable("BTB_KEYSTORE_PASS");
         string keyaliasPass = Environment.GetEnvironmentVariable("BTB_KEYALIAS_PASS");
-
-#if OCULUS_SUPPORTED
-        // Call these once to create the files. Normally (i.e., in a GUI build), they're created with
-        // [UnityEditor.InitializeOnLoad], but in case they're missing, like in CI, make sure they're
-        // there!
-        OVRProjectConfig defaultOculusProjectConfig = OVRProjectConfig.CachedProjectConfig;
-        string useless_app_id = Assets.Oculus.VR.Editor.OVRPlatformToolSettings.AppID;
-#endif
 
         {
             string[] args = Environment.GetCommandLineArgs();
@@ -1023,7 +958,7 @@ static class BuildTiltBrush
                     break;
             }
 
-#if OCULUS_SUPPORTED || USE_QUEST_PACKAGE_NAME
+#if USE_QUEST_PACKAGE_NAME
             //Can't change Quest identifier
             new_identifier = "com.Icosa.OpenBrush";
 #elif ZAPBOX_SUPPORTED
@@ -1070,13 +1005,7 @@ static class BuildTiltBrush
 
             switch (tiltOptions.XrSdk)
             {
-                case XrSdkMode.Oculus:
-                    // requiredFeatureStrings.Add("com.oculus.openxr.feature.oculusxr");
-                    // if (m_targetGroup == BuildTargetGroup.Android)
-                    // {
-                    //     requiredFeatureStrings.Add("com.unity.openxr.feature.oculusquest");
-                    // }
-                    break;
+
             }
 
             if (requiredFeatureStrings.Count == 0)
@@ -1160,14 +1089,8 @@ static class BuildTiltBrush
 
             switch (tiltOptions.XrSdk)
             {
-                case XrSdkMode.Oculus:
-                    targetXrPluginsRequired = new string[] { "Unity.XR.Oculus.OculusLoader" };
-                    break;
                 case XrSdkMode.OpenXR:
                     targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
-                    break;
-                case XrSdkMode.Pico:
-                    targetXrPluginsRequired = new string[] { "Unity.XR.PXR.PXR_Loader" };
                     break;
                 case XrSdkMode.Zapbox:
                     targetXrPluginsRequired = new string[] { "Zappar.XR.ZapboxLoader" };
@@ -1242,7 +1165,6 @@ static class BuildTiltBrush
 
             switch (tiltOptions.XrSdk)
             {
-                case XrSdkMode.Pico:
                 case XrSdkMode.Wave:
                     targetGraphicsApisRequired = new UnityEngine.Rendering.GraphicsDeviceType[] { UnityEngine.Rendering.GraphicsDeviceType.OpenGLES3 };
                     break;
@@ -1609,23 +1531,6 @@ static class BuildTiltBrush
                         string.Format("Build sanity checks failed:\n{0}",
                             string.Join("\n", errors.ToArray())));
                 }
-                // b/139746720
-                {
-                    foreach (var asset in new[]
-                    {
-                        "Assets/ThirdParty/Oculus/LipSync/Scripts/OVRLipSyncMicInput.cs",
-                        "Assets/ThirdParty/Oculus/Platform/Scripts/MicrophoneInput.cs",
-                    })
-                    {
-                        // For some reason AssetPathToGUID() still returns a guid even after the
-                        // files are deleted :-P. So use the filesystem I guess?
-                        if (File.Exists(asset))
-                        {
-                            throw new BuildFailedException(
-                                string.Format("{0} not allowed in build", asset));
-                        }
-                    }
-                }
             }
 
             var supportBrushTexturesRequests = new GlTFEditorExporter.ExportRequests();
@@ -1786,7 +1691,6 @@ static class BuildTiltBrush
         return "Errors:\n" + string.Join("\n", steps.ToArray());
     }
 
-    // Disables the Oculus resolution-setting override for non-Oculus builds.
     // Copies loose-file app data.
     [UnityEditor.Callbacks.PostProcessBuildAttribute(2)]
     public static void OnPostProcessBuild(BuildTarget target, string path)

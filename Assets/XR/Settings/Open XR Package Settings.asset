@@ -149,6 +149,7 @@ MonoBehaviour:
   m_Name: OculusXRFeature Standalone
   m_EditorClassIdentifier: 
   m_enabled: 0
+  <failedInitialization>k__BackingField: 0
   nameUi: OculusXR Feature
   version: 0.0.1
   featureIdInternal: com.oculus.openxr.feature.oculusxr
@@ -220,6 +221,7 @@ MonoBehaviour:
   m_Name: MetaXRFoveationFeature Android
   m_EditorClassIdentifier: 
   m_enabled: 0
+  <failedInitialization>k__BackingField: 0
   nameUi: Meta XR Foveation
   version: 1.0.0
   featureIdInternal: com.meta.openxr.feature.foveation
@@ -504,6 +506,28 @@ MonoBehaviour:
   company: Unity
   priority: 0
   required: 0
+--- !u!114 &-6302694607310401378
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: RuntimeDebuggerOpenXRFeature Standalone
+  m_EditorClassIdentifier: Unity.XR.OpenXR.Features.RuntimeDebugger:UnityEngine.XR.OpenXR.Features.RuntimeDebugger:RuntimeDebuggerOpenXRFeature
+  m_enabled: 0
+  nameUi: Runtime Debugger
+  version: 1
+  featureIdInternal: com.unity.openxr.features.runtimedebugger
+  openxrExtensionStrings: 
+  company: Unity
+  priority: 0
+  required: 0
+  cacheSize: 1048576
+  perThreadCacheSize: 51200
 --- !u!114 &-6188679329620277984
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -517,6 +541,7 @@ MonoBehaviour:
   m_Name: MetaXRSpaceWarp Android
   m_EditorClassIdentifier: 
   m_enabled: 0
+  <failedInitialization>k__BackingField: 0
   nameUi: Meta XR Space Warp
   version: 1.0.0
   featureIdInternal: com.meta.openxr.feature.spacewarp
@@ -577,6 +602,7 @@ MonoBehaviour:
   m_Name: MetaXRSubsampledLayout Standalone
   m_EditorClassIdentifier: 
   m_enabled: 0
+  <failedInitialization>k__BackingField: 0
   nameUi: Meta XR Subsampled Layout
   version: 0.0.1
   featureIdInternal: com.meta.openxr.feature.subsampledLayout
@@ -597,6 +623,7 @@ MonoBehaviour:
   m_Name: OculusXRFeature Standalone
   m_EditorClassIdentifier: 
   m_enabled: 0
+  <failedInitialization>k__BackingField: 0
   nameUi: OculusXR Feature
   version: 0.0.1
   featureIdInternal: com.oculus.openxr.feature.oculusxr
@@ -672,6 +699,7 @@ MonoBehaviour:
   m_Name: OculusXRFeature Android
   m_EditorClassIdentifier: 
   m_enabled: 0
+  <failedInitialization>k__BackingField: 0
   nameUi: OculusXR Feature
   version: 0.0.1
   featureIdInternal: com.oculus.openxr.feature.oculusxr
@@ -871,6 +899,7 @@ MonoBehaviour:
   m_Name: OculusXRFeature Standalone
   m_EditorClassIdentifier: 
   m_enabled: 0
+  <failedInitialization>k__BackingField: 0
   nameUi: Meta XR Feature
   version: 0.0.1
   featureIdInternal: com.meta.openxr.feature.metaxr
@@ -1135,6 +1164,7 @@ MonoBehaviour:
   m_Name: MetaXREyeTrackedFoveationFeature Standalone
   m_EditorClassIdentifier: 
   m_enabled: 0
+  <failedInitialization>k__BackingField: 0
   nameUi: Meta XR Eye Tracked Foveation
   version: 0.0.1
   featureIdInternal: com.meta.openxr.feature.eyetrackedfoveation
@@ -1380,17 +1410,12 @@ MonoBehaviour:
   - {fileID: -8843572672058236420}
   - {fileID: 7572829481798904910}
   - {fileID: 5662570250215147847}
-  - {fileID: 3409825189635461668}
-  - {fileID: -792796085665928788}
-  - {fileID: -7871932882014305355}
-  - {fileID: 3978454027102150924}
-  - {fileID: 6457187213107907505}
   - {fileID: -1562417761177608366}
   - {fileID: -568313750252970699}
   - {fileID: -238312934105289492}
   - {fileID: -3768601675236611697}
   - {fileID: 5452654191548238638}
-  - {fileID: 6226504958816653034}
+  - {fileID: 6589980099124863518}
   - {fileID: 9137515127556058079}
   m_renderMode: 0
   m_autoColorSubmissionMode: 1
@@ -1492,6 +1517,7 @@ MonoBehaviour:
   m_Name: OculusXRFeature Android
   m_EditorClassIdentifier: 
   m_enabled: 0
+  <failedInitialization>k__BackingField: 0
   nameUi: Meta XR Feature
   version: 0.0.1
   featureIdInternal: com.meta.openxr.feature.metaxr
@@ -1926,6 +1952,7 @@ MonoBehaviour:
   m_Name: MetaXRFoveationFeature Standalone
   m_EditorClassIdentifier: 
   m_enabled: 0
+  <failedInitialization>k__BackingField: 0
   nameUi: Meta XR Foveation
   version: 1.0.0
   featureIdInternal: com.meta.openxr.feature.foveation
@@ -1946,6 +1973,7 @@ MonoBehaviour:
   m_Name: OculusXRFeature Android
   m_EditorClassIdentifier: 
   m_enabled: 0
+  <failedInitialization>k__BackingField: 0
   nameUi: 
   version: 
   featureIdInternal: 
@@ -2410,6 +2438,7 @@ MonoBehaviour:
   m_Name: MetaXREyeTrackedFoveationFeature Android
   m_EditorClassIdentifier: 
   m_enabled: 0
+  <failedInitialization>k__BackingField: 0
   nameUi: Meta XR Eye Tracked Foveation
   version: 0.0.1
   featureIdInternal: com.meta.openxr.feature.eyetrackedfoveation
@@ -2461,6 +2490,28 @@ MonoBehaviour:
   priority: 0
   required: 0
   ignoreValidationErrors: 0
+--- !u!114 &3575793672613456262
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: RuntimeDebuggerOpenXRFeature Metro
+  m_EditorClassIdentifier: Unity.XR.OpenXR.Features.RuntimeDebugger:UnityEngine.XR.OpenXR.Features.RuntimeDebugger:RuntimeDebuggerOpenXRFeature
+  m_enabled: 0
+  nameUi: Runtime Debugger
+  version: 1
+  featureIdInternal: com.unity.openxr.features.runtimedebugger
+  openxrExtensionStrings: 
+  company: Unity
+  priority: 0
+  required: 0
+  cacheSize: 1048576
+  perThreadCacheSize: 51200
 --- !u!114 &3701968863295678716
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2536,6 +2587,7 @@ MonoBehaviour:
   m_Name: MetaXRSpaceWarp Android
   m_EditorClassIdentifier: 
   m_enabled: 0
+  <failedInitialization>k__BackingField: 0
   nameUi: Meta XR Space Warp
   version: 1.0.0
   featureIdInternal: com.meta.openxr.feature.spacewarp
@@ -2778,7 +2830,7 @@ MonoBehaviour:
   - {fileID: 9003827069442310504}
   - {fileID: 3106534461171692324}
   - {fileID: 182495744435344008}
-  - {fileID: 310430984593368073}
+  - {fileID: 3575793672613456262}
   - {fileID: 278510016605624271}
   - {fileID: -2995124423222007804}
   m_renderMode: 0
@@ -2924,6 +2976,7 @@ MonoBehaviour:
   m_Name: MetaXRSubsampledLayout Android
   m_EditorClassIdentifier: 
   m_enabled: 0
+  <failedInitialization>k__BackingField: 0
   nameUi: Meta XR Subsampled Layout
   version: 0.0.1
   featureIdInternal: com.meta.openxr.feature.subsampledLayout
@@ -2971,6 +3024,28 @@ MonoBehaviour:
   company: Unity
   priority: 0
   required: 0
+--- !u!114 &6589980099124863518
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: RuntimeDebuggerOpenXRFeature Android
+  m_EditorClassIdentifier: Unity.XR.OpenXR.Features.RuntimeDebugger:UnityEngine.XR.OpenXR.Features.RuntimeDebugger:RuntimeDebuggerOpenXRFeature
+  m_enabled: 0
+  nameUi: Runtime Debugger
+  version: 1
+  featureIdInternal: com.unity.openxr.features.runtimedebugger
+  openxrExtensionStrings: 
+  company: Unity
+  priority: 0
+  required: 0
+  cacheSize: 1048576
+  perThreadCacheSize: 51200
 --- !u!114 &6774984544229067780
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3004,6 +3079,7 @@ MonoBehaviour:
   m_Name: OculusXRFeature Android
   m_EditorClassIdentifier: 
   m_enabled: 0
+  <failedInitialization>k__BackingField: 0
   nameUi: OculusXR Feature
   version: 0.0.1
   featureIdInternal: com.oculus.openxr.feature.oculusxr
@@ -3133,16 +3209,12 @@ MonoBehaviour:
   - {fileID: -2052250879119323806}
   - {fileID: -6002454310084566546}
   - {fileID: -223543171262116239}
-  - {fileID: -2581017241881390745}
-  - {fileID: -4773087401744612407}
-  - {fileID: 1104377150978337437}
-  - {fileID: -5585190116095795567}
   - {fileID: -6490217007365981742}
   - {fileID: -6553496117388817208}
   - {fileID: 3442458366111397828}
   - {fileID: 6812736204562946406}
   - {fileID: 612927061893152235}
-  - {fileID: -5402383903550822874}
+  - {fileID: -6302694607310401378}
   - {fileID: -177044242218828340}
   - {fileID: -926590902572576670}
   m_renderMode: 0

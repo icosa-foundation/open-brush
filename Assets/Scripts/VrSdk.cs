@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#if OCULUS_SUPPORTED || ZAPBOX_SUPPORTED
-#define PASSTHROUGH_SUPPORTED
-#endif
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,10 +20,6 @@ using UnityEngine.InputSystem;
 using UnityEngine.XR;
 using UnityEngine.XR.Management;
 using InputDevice = UnityEngine.XR.InputDevice;
-
-#if PICO_SUPPORTED
-using PicoInput = Unity.XR.PXR.PXR_Input;
-#endif
 
 namespace TiltBrush
 {
@@ -77,10 +69,6 @@ namespace TiltBrush
         [SerializeField] private GameObject m_UnityXRNeo3ControlsPrefab;
         [SerializeField] private GameObject m_UnityXRPhoenixControlsPrefab;
         [SerializeField] private GameObject m_UnityXRZapboxControlsPrefab;
-        // Prefab for the old-style Touch controllers, used only for Rift
-        [SerializeField] private GameObject m_OculusRiftControlsPrefab;
-        // Prefab for the new-style Touch controllers, used for Rift-S and Quest
-        [SerializeField] private GameObject m_OculusQuestControlsPrefab;
         [SerializeField] private GameObject m_GvrPointerControlsPrefab;
         [SerializeField] private GameObject m_NonVrControlsPrefab;
 
@@ -93,9 +81,6 @@ namespace TiltBrush
         //    out of date for a frame when controllers change.
         private VrControllers m_VrControls;
         public VrControllers VrControls { get { return m_VrControls; } }
-#if OCULUS_SUPPORTED
-        [NonSerialized] public OVRManager m_OvrManager;
-#endif
         private bool m_HasVrFocus = true;
 
         private Bounds? m_RoomBoundsAabbCached;
@@ -151,7 +136,12 @@ namespace TiltBrush
             {
                 // We no longer initialize XR SDKs automatically
                 // so we need to do it manually
-                Initialize();
+
+                // Null checks are for Linux view mode
+                // TODO: Need to investigate exactly why Linux hits an NRE here
+                // When other platforms don't
+                XRGeneralSettings.Instance?.Manager?.InitializeLoaderSync();
+                XRGeneralSettings.Instance?.Manager?.StartSubsystems();
             }
 
             if (App.Config.m_SdkMode == SdkMode.UnityXR)
@@ -202,38 +192,26 @@ namespace TiltBrush
             // Skip the rest of the VR setup if we're not using XR
             if (App.UserConfig.Flags.DisableXrMode || App.UserConfig.Flags.EnableMonoscopicMode) return;
 
-#if OCULUS_SUPPORTED
-            // ---------------------------------------------------------------------------------------- //
-            // OculusVR
-            // ---------------------------------------------------------------------------------------- //
-            m_OvrManager = gameObject.AddComponent<OVRManager>();
-            m_OvrManager.trackingOriginType = OVRManager.TrackingOrigin.Stage;
-            m_OvrManager.useRecommendedMSAALevel = false;
-            m_OvrManager.isInsightPassthroughEnabled = true;
-
-            // adding components to the VR Camera needed for fading view and getting controller poses.
-            m_VrCamera.gameObject.AddComponent<OculusCameraFade>();
-
-            //Add an OVRCameraRig to the VrSystem for Mixed Reality Capture.
-            var cameraRig = m_VrSystem.AddComponent<OVRCameraRig>();
-            //Disable the OVRCameraRig's eye cameras, since Open Brush already has its own.
-            cameraRig.disableEyeAnchorCameras = true;
-
+            // TODO:Mikesky - Oculus set tracking origin to stage here, check what OpenXR does.
             //Get Oculus ID
             var appId = App.Config.OculusSecrets.ClientId;
 #if UNITY_ANDROID
             appId = App.Config.OculusMobileSecrets.ClientId;
 #endif
-
-            if (Unity.XR.Oculus.Utils.GetSystemHeadsetType() != Unity.XR.Oculus.SystemHeadset.Oculus_Quest)
+            // Let it fail on non-oculus platforms
+            try
             {
                 Oculus.Platform.Core.Initialize(appId);
-                Oculus.Platform.UserAgeCategory.Get().OnComplete((msg) => {
+                Oculus.Platform.UserAgeCategory.Get().OnComplete((msg) =>
+                {
                     var unused = msg.Data.AgeCategory;
                 });
             }
+            catch (Exception e)
+            {
+                Debug.LogError($"Failed to initialize Oculus Platform SDK: {e.Message}");
+            }
 
-#endif // OCULUS_SUPPORTED
 
 #if PIMAX_SUPPORTED
             // Pimax currently requires initialising their Platform SDK.
@@ -252,11 +230,12 @@ namespace TiltBrush
                 Application.onBeforeRender += OnNewPoses;
             }
 
-#if OCULUS_SUPPORTED
-            // We shouldn't call this frequently, hence the local cache and callbacks.
-            OVRManager.VrFocusAcquired += () => { OnInputFocus(true); };
-            OVRManager.VrFocusLost += () => { OnInputFocus(false); };
-#endif // OCULUS_SUPPORTED
+            var displaySubsystem = XRGeneralSettings.Instance?.Manager?.activeLoader.GetLoadedSubsystem<XRDisplaySubsystem>();
+
+            if (displaySubsystem != null)
+            {
+                displaySubsystem.displayFocusChanged += OnInputFocus;
+            }
 
             if (m_NeedsToAttachConsoleScript && m_VrControls != null)
             {
@@ -289,12 +268,11 @@ namespace TiltBrush
         // Private VR SDK-Related Events
         // -------------------------------------------------------------------------------------------- //
 
-        private void OnInputFocus(params object[] args)
+        private void OnInputFocus(bool focused)
         {
-            bool value = (bool)args[0];
-            App.Log($"VrSdk.OnInputFocus -> {value}");
-            InputManager.m_Instance.AllowVrControllers = value;
-            m_HasVrFocus = value;
+            App.Log($"VrSdk.OnInputFocus -> {focused}");
+            InputManager.m_Instance.AllowVrControllers = focused;
+            m_HasVrFocus = focused;
         }
 
         private void OnNewPoses()
@@ -325,17 +303,13 @@ namespace TiltBrush
         // Returns the time of the most recent number of dropped frames, null on failure.
         public int? GetDroppedFrames()
         {
-#if OCULUS_SUPPORTED
-            // TODO: Currently not supported on Oculus OpenXR backend.
-            // OVRPlugin.AppPerfStats perfStats = OVRPlugin.GetAppPerfStats();
-            // if (perfStats.FrameStatsCount > 0)
-            // {
-            //     return perfStats.FrameStats[0].AppDroppedFrameCount;
-            // }
-            return 0;
-#else // OCULUS_SUPPORTED
+            var displaySubsystem = XRGeneralSettings.Instance?.Manager?.activeLoader.GetLoadedSubsystem<XRDisplaySubsystem>();
+            if (displaySubsystem != null && displaySubsystem.TryGetDroppedFrameCount(out var droppedFrames))
+            {
+                return droppedFrames;
+            }
+
             return null;
-#endif // OCULUS_SUPPORTED
         }
 
         // -------------------------------------------------------------------------------------------- //
@@ -381,7 +355,7 @@ namespace TiltBrush
 #else // OCULUS_SUPPORTED
             // if (App.Config.m_SdkMode == SdkMode.SteamVR)
             // {
-            //     // TODO - Setting OpenVR Chaperone bounds. Does XR have the equivalent generic?
+            //     // TODO:Mikesky - Setting OpenVR Chaperone bounds. Does XR have the equivalent generic?
             //     // var chaperone = OpenVR.Chaperone;
             //     // if (chaperone != null)
             //     // {
@@ -539,23 +513,10 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.OculusTouch:
                     {
-                        // TODO:Mikesky - comment below is correct, this won't work!
-                        // Need a new way to detect between the different headsets.
-                        // Note that other controllers that match the touch controller profile
-                        // register as OculusTouch, so will fall into the same loop here.
-
-                        // This will probably not work once new headsets are released.
-                        // Maybe something like this instead?
-                        //   isQuest = (UnityEngine.XR.XRDevice.model != "Oculus Rift CV1");
-                        // bool isQuestController = (XRDevice.refreshRate < 81f) ||
-                        //     (App.Config.VrHardware == VrHardware.Quest);
+                        // TODO:Mikesky - there's new input profiles for the legacy hardware we can check against
+                        // https://registry.khronos.org/OpenXR/specs/1.1/html/xrspec.html#_additional_openxr_1_1_changes
                         bool isQuestController = App.Config.IsMobileHardware;
                         controlsPrefab = isQuestController ? m_UnityXRQuestControlsPrefab : m_UnityXRRiftControlsPrefab;
-#if OCULUS_SUPPORTED
-                        // If we're using Oculus' own plugin rather than OpenXR, the controller pose is different.
-                        // Therefore, we need to set a different prefab.
-                        controlsPrefab = isQuestController ? m_OculusQuestControlsPrefab : m_OculusRiftControlsPrefab;
-#endif // OCULUS_SUPPORTED
                         break;
                     }
                 case ControllerStyle.Wmr:
@@ -747,22 +708,11 @@ namespace TiltBrush
             }
             else if (device.name.Contains("PICO Controller"))
             {
+                // TODO:Mikesky - OpenXR controller profiles for each type of pico, it's now available
                 // Controller name isn't specified in Pico's device layout
                 // so we have to run some additional checks if available.
                 // Default to Pico 4 as newest.
-#if !PICO_SUPPORTED
                 SetControllerStyle(ControllerStyle.Phoenix);
-#else
-                switch(PicoInput.GetControllerDeviceType())
-                {
-                    case PicoInput.ControllerDevice.Neo3:
-                        SetControllerStyle(ControllerStyle.Neo3);
-                        break;
-                    default:
-                        SetControllerStyle(ControllerStyle.Phoenix);
-                        break;
-                }
-#endif
             }
             else if (device.name.StartsWith("Zapbox"))
             {
@@ -932,15 +882,6 @@ namespace TiltBrush
                 OVRManager.gpuLevel = level;
             }
 #endif // OCULUS_SUPPORTED
-        }
-
-        public void Initialize()
-        {
-            // Null checks are for Linux view mode
-            // TODO: Need to investigate exactly why Linux hits an NRE here
-            // When other platforms don't
-            XRGeneralSettings.Instance?.Manager?.InitializeLoaderSync();
-            XRGeneralSettings.Instance?.Manager?.StartSubsystems();
         }
     }
 }

@@ -15,10 +15,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Unity.XR.CoreUtils;
-#if OCULUS_SUPPORTED
 using OVRPlatform = Oculus.Platform;
-#endif
 using TiltBrush;
 
 namespace OpenBrush.Multiplayer
@@ -59,8 +56,8 @@ namespace OpenBrush.Multiplayer
         void Start()
         {
 
-#if OCULUS_SUPPORTED
-            OVRPlatform.Users.GetLoggedInUser().OnComplete((msg) => {
+            OVRPlatform.Users.GetLoggedInUser().OnComplete((msg) =>
+            {
                 if (!msg.IsError)
                 {
                     myOculusUserId = msg.GetUser().ID;
@@ -72,7 +69,7 @@ namespace OpenBrush.Multiplayer
                     Debug.LogError(msg.GetError());
                 }
             });
-#endif
+
             switch (m_MultiplayerType)
             {
                 case MultiplayerType.Photon:

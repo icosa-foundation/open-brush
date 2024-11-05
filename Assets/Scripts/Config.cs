@@ -32,19 +32,13 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
-#if OCULUS_SUPPORTED
-using Unity.XR.Oculus;
-#endif
-
 namespace TiltBrush
 {
     public enum XrSdkMode
     {
         Monoscopic = -1,
         OpenXR = 0,
-        Oculus,
         Wave,
-        Pico,
         Zapbox,
     }
 
@@ -519,10 +513,6 @@ namespace TiltBrush
         {
             get
             {
-#if OCULUS_SUPPORTED
-                SystemHeadset headset = Unity.XR.Oculus.Utils.GetSystemHeadsetType();
-                return headset != SystemHeadset.Oculus_Quest;
-#endif // OCULUS_SUPPORTED
 #if ZAPBOX_SUPPORTED
                 return false;
 #endif
