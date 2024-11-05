@@ -510,7 +510,8 @@ namespace TiltBrush
             BatchSubset subset, Color rColor, Guid brushGuid,
             float fBrushSize, float brushScale,
             List<PointerManager.ControlPoint> rControlPoints, StrokeFlags strokeFlags,
-            StencilWidget stencil, float lineLength, int seed)
+            StencilWidget stencil, float lineLength, int seed,
+            bool isFinalStroke)
         {
             // NOTE: PointerScript calls ClearRedo() in batch case
 
@@ -527,8 +528,10 @@ namespace TiltBrush
             rNewStroke.m_Seed = seed;
             subset.m_Stroke = rNewStroke;
 
-            SketchMemoryScript.m_Instance.RecordCommand(
-                new BrushStrokeCommand(rNewStroke, stencil, lineLength));
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new BrushStrokeCommand(rNewStroke, stencil, lineLength),
+                invoke: isFinalStroke
+            );
 
             if (m_SanityCheckStrokes)
             {

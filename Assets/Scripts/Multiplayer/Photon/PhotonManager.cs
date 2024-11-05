@@ -23,6 +23,7 @@ using Fusion;
 using Fusion.Photon.Realtime;
 using Fusion.Sockets;
 using TiltBrush;
+using System.ComponentModel.Design;
 
 
 namespace OpenBrush.Multiplayer
@@ -240,22 +241,22 @@ namespace OpenBrush.Multiplayer
         private bool ProcessCommand(BaseCommand command)
         {
             bool success = true;
+
             switch (command)
             {
                 case BrushStrokeCommand:
-                    success = CommandBrushStroke(command as BrushStrokeCommand);
+                    success &= CommandBrushStroke(command as BrushStrokeCommand);
                     break;
                 case DeleteStrokeCommand:
-                    success = CommandDeleteStroke(command as DeleteStrokeCommand);
+                    success &= CommandDeleteStroke(command as DeleteStrokeCommand);
                     break;
                 case SwitchEnvironmentCommand:
-                    success = CommandSwitchEnvironment(command as SwitchEnvironmentCommand);
+                    success &= CommandSwitchEnvironment(command as SwitchEnvironmentCommand);
                     break;
                 case BaseCommand:
-                    success = CommandBase(command);
+                    success &= CommandBase(command);
                     break;
                 default:
-                    // Don't know how to process this command
                     success = false;
                     break;
             }
@@ -264,12 +265,17 @@ namespace OpenBrush.Multiplayer
             {
                 foreach (var child in command.Children)
                 {
+                    if (child.ParentGuid == Guid.Empty)
+                    {
+                        child.SetParent(command);
+                    }
                     success &= ProcessCommand(child);
                 }
             }
 
             return success;
         }
+
 
         private bool CommandBrushStroke(BrushStrokeCommand command)
         {

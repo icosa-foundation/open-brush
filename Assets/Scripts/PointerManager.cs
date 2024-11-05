@@ -1544,6 +1544,7 @@ namespace TiltBrush
                     }
                     else
                     {
+
                         SketchMemoryScript.StrokeFlags flags = SketchMemoryScript.StrokeFlags.None;
                         if (groupStart == null)
                         {
@@ -1557,7 +1558,10 @@ namespace TiltBrush
                             // Verify IsGroupContinue invariant
                             Debug.Assert(pointer.TimestampMs == groupStartTime);
                         }
-                        pointer.DetachLine(bDiscardLine, null, flags);
+
+                        // Set isFinalStroke to true only for the last pointer to ensure command chain invokes once all strokes are chained
+                        bool isFinalStroke = (i == m_NumActivePointers - 1);
+                        pointer.DetachLine(bDiscardLine, null, flags, isFinalStroke);
                     }
                 }
             }

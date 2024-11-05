@@ -31,6 +31,10 @@ namespace TiltBrush
         protected List<BaseCommand> m_Children;
         private int m_Timestamp;  // Updated to use an integer timestamp from Photon server
 
+        public void SetParent(BaseCommand parent)
+        {
+            m_Parent = parent;
+        }
         public int Timestamp
         {
             get { return m_Timestamp; }
@@ -85,7 +89,7 @@ namespace TiltBrush
                 m_Parent = parent;
             }
 #if FUSION_WEAVER
-            m_Timestamp = Photon.Pun.PhotonNetwork.ServerTimestamp; // Use Photon server timestamp
+            m_Timestamp = Photon.Pun.PhotonNetwork.ServerTimestamp; 
 #endif
         }
 
