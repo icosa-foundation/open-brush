@@ -746,6 +746,12 @@ namespace TiltBrush
                                 StartCoroutine(TakeScreenshotAsync(saveName));
                             }
                             break;
+                        case MultiCamStyle.Depth:
+                            if (FileUtils.CheckDiskSpaceWithError(saveName))
+                            {
+                                StartCoroutine(TakeScreenshotAsync(saveName, true));
+                            }
+                            break;
                         case MultiCamStyle.AutoGif:
                             if (FileUtils.CheckDiskSpaceWithError(saveName))
                             {
@@ -867,6 +873,7 @@ namespace TiltBrush
                             }
                             break;
                         case MultiCamStyle.Snapshot:
+                        case MultiCamStyle.Depth:
                         case MultiCamStyle.AutoGif:
                             break;
                     }
@@ -926,7 +933,7 @@ namespace TiltBrush
             }
         }
 
-        void Update()
+        protected void Update()
         {
             switch (m_CurrentState)
             {
@@ -1272,6 +1279,7 @@ namespace TiltBrush
                     ext = ".gif";
                     break;
                 case MultiCamStyle.Snapshot:
+                case MultiCamStyle.Depth:
                     ext = ".png";
                     break;
                 case MultiCamStyle.TimeGif:
@@ -1791,7 +1799,7 @@ namespace TiltBrush
         // Snapshot
         //
 
-        IEnumerator TakeScreenshotAsync(string saveName)
+        public IEnumerator TakeScreenshotAsync(string saveName, bool renderDepth = false)
         {
             // There are multiple expensive bits here, the most expensive of which
             // is the png conversion. Eventually we might want to run that on some other
@@ -1812,7 +1820,7 @@ namespace TiltBrush
                 yield return null;
             }
 
-            ScreenshotManager rMgr = GetScreenshotManager(MultiCamStyle.Snapshot);
+            ScreenshotManager rMgr = GetScreenshotManager(renderDepth ? MultiCamStyle.Depth : MultiCamStyle.Snapshot);
             if (rMgr != null)
             {
                 // Default to the multicam values, and overwrite with user config values.
@@ -1825,6 +1833,7 @@ namespace TiltBrush
 
                 RenderTexture tmp = rMgr.CreateTemporaryTargetForSave(
                     snapshotWidth, snapshotHeight);
+                RenderTexture tmpDepth = null;
 
                 try
                 {
@@ -1839,7 +1848,13 @@ namespace TiltBrush
                     {
                         wrapper.SuperSampling = m_superSampling;
                     }
-                    rMgr.RenderToTexture(tmp);
+                    rMgr.RenderToTexture(tmp, asDepth: false);
+                    if (renderDepth)
+                    {
+                        tmpDepth = rMgr.CreateTemporaryTargetForSave(
+                            snapshotWidth, snapshotHeight);
+                        rMgr.RenderToTexture(tmpDepth, asDepth: true);
+                    }
                     wrapper.SuperSampling = ssaaRestore;
                     yield return null;
                     SketchControlsScript.m_Instance.MultiCamCaptureRig.EnableCamera(App.PlatformConfig.EnableMulticamPreview);
@@ -1852,6 +1867,14 @@ namespace TiltBrush
                         using (var fs = new FileStream(fullPath, FileMode.Create))
                         {
                             ScreenshotManager.Save(fs, tmp, bSaveAsPng: true);
+                        }
+                        if (renderDepth)
+                        {
+                            var fullDepthPath = Path.GetFullPath(saveName.Replace(".png", "_depth.png"));
+                            using (var fs = new FileStream(fullDepthPath, FileMode.Create))
+                            {
+                                ScreenshotManager.Save(fs, tmpDepth, bSaveAsPng: true);
+                            }
                         }
                     }
                     catch (IOException e) { err = e.Message; }

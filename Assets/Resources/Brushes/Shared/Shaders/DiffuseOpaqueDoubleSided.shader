@@ -16,6 +16,10 @@ Shader "Brush/DiffuseOpaqueDoubleSided" {
 
 Properties {
   _Color ("Main Color", Color) = (1,1,1,1)
+
+  _Dissolve("Dissolve", Range(0,1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 SubShader {
@@ -35,6 +39,10 @@ SubShader {
 
   fixed4 _Color;
 
+  uniform half _ClipStart;
+  uniform half _ClipEnd;
+  uniform half _Dissolve;
+
   struct appdata {
     float4 vertex : POSITION;
     float2 texcoord : TEXCOORD0;
@@ -43,21 +51,34 @@ SubShader {
     half3 normal : NORMAL;
     fixed4 color : COLOR;
     float4 tangent : TANGENT;
+    uint id : SV_VertexID;
     UNITY_VERTEX_INPUT_INSTANCE_ID
   };
 
   struct Input {
+    float4 vertex : POSITION;
+    float2 texcoord : TEXCOORD0;
     float4 color : COLOR;
     fixed vface : VFACE;
+    uint id : SV_VertexID;
+    float4 screenPos;
   };
 
   void vert(inout appdata v, out Input o) {
     UNITY_INITIALIZE_OUTPUT(Input, o);
     PrepForOds(v.vertex);
     v.color = TbVertToNative(v.color);
+    o.vertex = v.vertex;
+    o.id = v.id;
   }
 
   void surf (Input IN, inout SurfaceOutput o) {
+
+    #ifdef SHADER_SCRIPTING_ON
+    if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
+    if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
+    #endif
+
     o.Albedo = _Color * IN.color.rgb;
     o.Normal = float3(0,0,IN.vface);
     SURF_FRAG_MOBILESELECT(o);

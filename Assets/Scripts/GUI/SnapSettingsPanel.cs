@@ -59,7 +59,5 @@ namespace TiltBrush
         {
             TransformItems.SnapSelectedRotationAngles();
         }
-
     }
-
 } // namespace TiltBrush

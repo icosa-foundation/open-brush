@@ -41,7 +41,15 @@ namespace TiltBrush
             }
         }
 
-        public void Init()
+        public void InitEditMode()
+        {
+            var cameraPos = App.VrSdk.GetVrCamera().transform.position;
+            cameraPos.y += 12;
+            App.VrSdk.GetVrCamera().transform.position = cameraPos;
+            Destroy(gameObject);
+        }
+
+        public void InitViewOnlyMode()
         {
             var cameraPos = App.VrSdk.GetVrCamera().transform.position;
             cameraPos.y += 12;
