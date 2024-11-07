@@ -132,6 +132,7 @@ namespace OpenBrush.Multiplayer
             }
             if (m_VoiceManager != null && m_Manager != null) State = ConnectionState.INITIALIZED;
 
+            roomDataRefreshed += OnRoomDataRefreshed;
             localPlayerJoined += OnLocalPlayerJoined;
             remotePlayerJoined += OnRemotePlayerJoined;
             playerLeft += OnPlayerLeft;
@@ -142,6 +143,7 @@ namespace OpenBrush.Multiplayer
 
         void OnDestroy()
         {
+            roomDataRefreshed -= OnRoomDataRefreshed;
             localPlayerJoined -= OnLocalPlayerJoined;
             remotePlayerJoined -= OnRemotePlayerJoined;
             playerLeft -= OnPlayerLeft;

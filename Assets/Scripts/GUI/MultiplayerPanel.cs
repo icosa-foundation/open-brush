@@ -77,6 +77,7 @@ namespace TiltBrush
             {
                 CheckAdvancedModeActive,
                 CheckMultiplayerManagerErrors,
+                CheckIfRoomExist,
             };
 
             if (MultiplayerManager.m_Instance != null) MultiplayerManager.m_Instance.StateUpdated += OnStateUpdated;
@@ -155,9 +156,14 @@ namespace TiltBrush
 
         private Tuple<bool, string> CheckAdvancedModeActive()
         {
-            bool isAdvancedModeActive = PanelManager.m_Instance.AdvancedModeActive();
-            return Tuple.Create(isAdvancedModeActive, "Switch to beginner mode to Join Room");
+            if (PanelManager.m_Instance != null)
+            {
+                bool isAdvancedModeActive = PanelManager.m_Instance.AdvancedModeActive();
+                return Tuple.Create(isAdvancedModeActive, "Switch to beginner mode to Join Room");
+            }
+            return Tuple.Create(false, "");
         }
+
 
         private Tuple<bool, string> CheckMultiplayerManagerErrors()
         {
@@ -166,6 +172,19 @@ namespace TiltBrush
             {
                 if (MultiplayerManager.m_Instance.State == ConnectionState.ERROR)
                     return Tuple.Create(true, MultiplayerManager.m_Instance.LastError);
+            }
+
+            return Tuple.Create(false, "");
+
+        }
+
+        private Tuple<bool, string> CheckIfRoomExist()
+        {
+
+            if (MultiplayerManager.m_Instance != null && MultiplayerManager.m_Instance.State == ConnectionState.IN_LOBBY)
+            {
+                if (MultiplayerManager.m_Instance.DoesRoomNameExist(data.roomName))
+                    return Tuple.Create(true, $"The room {data.roomName} already exist your joining an existing session.");
             }
 
             return Tuple.Create(false, "");
