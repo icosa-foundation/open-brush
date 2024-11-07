@@ -85,6 +85,22 @@ namespace OpenBrush.Multiplayer
             State = ConnectionState.INITIALIZED;
             return true;
         }
+        
+        public void Update()
+        {
+            var copy = m_PlayersSpawning.ToList();
+            foreach (var player in copy)
+            {
+                var newPlayer = m_Runner.GetPlayerObject(player);
+                if (newPlayer != null)
+                {
+                    m_Manager.remotePlayerJoined?.Invoke(player.PlayerId, newPlayer.GetComponent<PhotonPlayerRig>());
+                    m_PlayersSpawning.Remove(player);
+                }
+            }
+        }
+
+        #region IConnectionHandler Methods
 
         public async Task<bool> Connect()
         {
@@ -194,21 +210,19 @@ namespace OpenBrush.Multiplayer
 
         }
 
-        public void Update()
+        #endregion
+
+        #region IDataConnectionHandler Methods
+
+        public int GetPlayerCount()
         {
-            var copy = m_PlayersSpawning.ToList();
-            foreach (var player in copy)
+            if (m_Runner != null)
             {
-                var newPlayer = m_Runner.GetPlayerObject(player);
-                if (newPlayer != null)
-                {
-                    m_Manager.remotePlayerJoined?.Invoke(player.PlayerId, newPlayer.GetComponent<PhotonPlayerRig>());
-                    m_PlayersSpawning.Remove(player);
-                }
+                return m_Runner.SessionInfo.PlayerCount;
             }
+            return 0;
         }
 
-        #region IConnectionHandler Methods
         public async Task<bool> PerformCommand(BaseCommand command)
         {
             await Task.Yield();
@@ -368,8 +382,7 @@ namespace OpenBrush.Multiplayer
                     var playerObj = m_Runner.Spawn(playerPrefab, inputAuthority: m_Runner.LocalPlayer);
                     m_LocalPlayer = playerObj.GetComponent<PhotonPlayerRig>();
                     m_Runner.SetPlayerObject(m_Runner.LocalPlayer, playerObj);
-
-                    m_Manager.localPlayerJoined?.Invoke(player.PlayerId, m_LocalPlayer);
+                    m_Manager.localPlayerJoined?.Invoke(player.PlayerId, m_LocalPlayer); 
                 }
                 else
                 {

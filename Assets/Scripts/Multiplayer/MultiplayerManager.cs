@@ -49,6 +49,7 @@ namespace OpenBrush.Multiplayer
         public Action<int> playerLeft;
         public Action<List<RoomData>> roomDataRefreshed;
         public event Action<ConnectionState> StateUpdated;
+        public event Action<ConnectionUserInfo> UserInfoStateUpdated;
         private List<RoomData> m_RoomData = new List<RoomData>();
 
         ulong myOculusUserId;
@@ -57,8 +58,8 @@ namespace OpenBrush.Multiplayer
         internal string UserId;
         [HideInInspector] public string CurrentRoomName;
 
-        //public ConnectionState State => m_Manager?.State ?? ConnectionState.DISCONNECTED;
         private ConnectionState _state;
+
         public ConnectionState State
         {
             get => _state;
@@ -67,10 +68,11 @@ namespace OpenBrush.Multiplayer
                 if (_state != value)
                 {
                     _state = value;
-                    StateUpdated?.Invoke(_state);  // Trigger the event when the state changes
+                    StateUpdated?.Invoke(_state);
                 }
             }
         }
+
         public string LastError { get; private set; }
 
         public ConnectionUserInfo UserInfo
@@ -86,6 +88,8 @@ namespace OpenBrush.Multiplayer
         }
 
         public RoomCreateData data;
+
+        public bool isUserRoomOwner = false; //temporary public
 
         void Awake()
         {
@@ -327,7 +331,11 @@ namespace OpenBrush.Multiplayer
 
         void OnLocalPlayerJoined(int id, ITransientData<PlayerRigData> playerData)
         {
+            // the user is the room owner if is the firt to get in 
+            isUserRoomOwner = m_Manager.GetPlayerCount() == 1 ? true : false;
+
             m_LocalPlayer = playerData;
+
         }
 
         void OnRemotePlayerJoined(int id, ITransientData<PlayerRigData> playerData)
@@ -353,6 +361,10 @@ namespace OpenBrush.Multiplayer
                     m_RemotePlayers.Remove(player);
                 }
             }
+
+            // TODO extend to more than two users case
+            if (m_RemotePlayers.Count == 0) isUserRoomOwner = true; // If there are no other players left, the local player becomes the room owner
+
         }
 
         private async void OnCommandPerformed(BaseCommand command)
