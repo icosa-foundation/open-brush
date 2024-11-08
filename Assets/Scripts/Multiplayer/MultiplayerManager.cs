@@ -186,6 +186,8 @@ namespace OpenBrush.Multiplayer
         {
             State = ConnectionState.JOINING_ROOM;
 
+            if (!isUserRoomOwner) SketchMemoryScript.m_Instance.ClearMemory();
+
             bool successData = false;
             if (m_Manager != null) successData = await m_Manager.JoinRoom(RoomData);
 
