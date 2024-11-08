@@ -23,7 +23,7 @@ using Fusion;
 using Fusion.Photon.Realtime;
 using Fusion.Sockets;
 using TiltBrush;
-using System.ComponentModel.Design;
+
 
 
 namespace OpenBrush.Multiplayer
@@ -158,6 +158,20 @@ namespace OpenBrush.Multiplayer
             }
 
             return result.Ok;
+
+        }
+
+        public void CheckExistingUsers()
+        {
+            int playercount = m_Runner.SessionInfo.PlayerCount;
+
+            foreach (PlayerRef player in m_Runner.ActivePlayers)
+            {
+                if (player != m_Runner.LocalPlayer)
+                {
+                    m_PlayersSpawning.Add(player);
+                }
+            }
 
         }
 
@@ -363,6 +377,7 @@ namespace OpenBrush.Multiplayer
         #endregion
 
         #region Photon Callbacks
+
         public void OnConnectedToServer(NetworkRunner runner)
         {
             var rpc = m_Runner.gameObject.AddComponent<PhotonRPC>();
@@ -371,8 +386,7 @@ namespace OpenBrush.Multiplayer
 
         public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
         {
-            Debug.Log($"OnPlayerJoined called. PlayerRef: {player.PlayerId}");
-
+           
             try
             {
 
@@ -382,7 +396,8 @@ namespace OpenBrush.Multiplayer
                     var playerObj = m_Runner.Spawn(playerPrefab, inputAuthority: m_Runner.LocalPlayer);
                     m_LocalPlayer = playerObj.GetComponent<PhotonPlayerRig>();
                     m_Runner.SetPlayerObject(m_Runner.LocalPlayer, playerObj);
-                    m_Manager.localPlayerJoined?.Invoke(player.PlayerId, m_LocalPlayer); 
+                    m_Manager.localPlayerJoined?.Invoke(player.PlayerId, m_LocalPlayer);
+                    CheckExistingUsers();
                 }
                 else
                 {

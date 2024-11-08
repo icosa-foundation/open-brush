@@ -107,7 +107,6 @@ namespace TiltBrush
             return random.Next(100000, 999999).ToString();
         }
 
-
         private void UpdateDisplay()
         {
             if (m_RoomNumber) m_RoomNumber.text = "RoomName: " + data.roomName;

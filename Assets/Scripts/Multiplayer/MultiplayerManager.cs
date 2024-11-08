@@ -41,8 +41,8 @@ namespace OpenBrush.Multiplayer
         private IDataConnectionHandler m_Manager;
         private IVoiceConnectionHandler m_VoiceManager;
 
-        private ITransientData<PlayerRigData> m_LocalPlayer;
-        private List<ITransientData<PlayerRigData>> m_RemotePlayers;
+        public ITransientData<PlayerRigData> m_LocalPlayer;
+        public List<ITransientData<PlayerRigData>> m_RemotePlayers;
 
         public Action<int, ITransientData<PlayerRigData>> localPlayerJoined;
         public Action<int, ITransientData<PlayerRigData>> remotePlayerJoined;
@@ -339,14 +339,13 @@ namespace OpenBrush.Multiplayer
         {
             // the user is the room owner if is the firt to get in 
             isUserRoomOwner = m_Manager.GetPlayerCount() == 1 ? true : false;
-
             m_LocalPlayer = playerData;
+            m_LocalPlayer.PlayerId = id;
 
         }
 
         void OnRemotePlayerJoined(int id, ITransientData<PlayerRigData> playerData)
         {
-            Debug.Log("Adding new player to track.");
             playerData.PlayerId = id;
             m_RemotePlayers.Add(playerData);
 

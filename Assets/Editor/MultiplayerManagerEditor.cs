@@ -24,6 +24,31 @@ public class MultiplayerManagerInspector : Editor
         // Room data input fields
         roomName = EditorGUILayout.TextField("Room Name", roomName);
 
+        // Display m_LocalPlayer if assigned
+        if (multiplayerManager.m_LocalPlayer != null)
+        {
+            EditorGUILayout.LabelField("Local Player Data", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("UserId", multiplayerManager.m_LocalPlayer.PlayerId.ToString());
+        }
+        else
+        {
+            EditorGUILayout.LabelField("Local Player is not assigned.");
+        }
+
+        // Display each entry in m_RemotePlayers list
+        if (multiplayerManager.m_RemotePlayers != null && multiplayerManager.m_RemotePlayers.Count > 0)
+        {
+            EditorGUILayout.LabelField("Remote Players Data", EditorStyles.boldLabel);
+            foreach (var remotePlayer in multiplayerManager.m_RemotePlayers)
+            {
+                EditorGUILayout.LabelField("UserId", remotePlayer.PlayerId.ToString());
+            }
+        }
+        else
+        {
+            EditorGUILayout.LabelField("Remote Players are not assigned.");
+        }
+
         // Button to join the lobby
         if (GUILayout.Button("Join Lobby") )
         {
