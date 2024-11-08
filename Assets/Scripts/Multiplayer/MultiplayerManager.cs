@@ -261,7 +261,11 @@ namespace OpenBrush.Multiplayer
 
         public bool DoesRoomNameExist(string roomName)
         {
-            return m_RoomData.Any(room => room.roomName == roomName);
+            bool roomExist = m_RoomData.Any(room => room.roomName == roomName);
+
+            if (roomExist) { isUserRoomOwner = false; }
+
+            return roomExist;
         }
 
         void OnRoomDataRefreshed(List<RoomData> rooms)
@@ -343,6 +347,10 @@ namespace OpenBrush.Multiplayer
             Debug.Log("Adding new player to track.");
             playerData.PlayerId = id;
             m_RemotePlayers.Add(playerData);
+
+            //if i am the room owner I should send the command history
+            if (isUserRoomOwner) SendCommandHistory();
+
         }
 
         void OnPlayerLeft(int id)
@@ -425,6 +433,16 @@ namespace OpenBrush.Multiplayer
 
             // Invoke the Disconnected event
             Disconnected?.Invoke();
+        }
+
+        private void SendCommandHistory()
+        {
+
+            foreach (var command in SketchMemoryScript.m_Instance.GetOperationStack())
+            {
+                OnCommandPerformed(command);
+            }
+
         }
 
         public void StartSpeaking()
