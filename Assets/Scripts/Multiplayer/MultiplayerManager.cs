@@ -87,9 +87,9 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        public RoomCreateData data;
+        [HideInInspector] public RoomCreateData data;
 
-        public bool isUserRoomOwner = false; //temporary public
+        [HideInInspector] public bool isUserRoomOwner = false; //temporary public
 
         void Awake()
         {
@@ -429,11 +429,12 @@ namespace OpenBrush.Multiplayer
 
         private void OnConnectionHandlerDisconnected()
         {
-            // Clean up local player reference
-            m_LocalPlayer = null;
-
-            // Invoke the Disconnected event
-            Disconnected?.Invoke();
+            m_LocalPlayer = null;// Clean up local player reference
+            m_RemotePlayers.Clear();// Clean up remote player references
+            LastError = null;
+            State = ConnectionState.DISCONNECTED;
+            StateUpdated?.Invoke(State);
+            Disconnected?.Invoke();// Invoke the Disconnected event
         }
 
         private void SendCommandHistory()

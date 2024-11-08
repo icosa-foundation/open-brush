@@ -187,6 +187,7 @@ namespace OpenBrush.Multiplayer
                     m_Runner.Despawn(m_LocalPlayer.Object);
                     m_LocalPlayer = null;
                 }
+                m_PlayersSpawning.Clear();
 
                 await m_Runner.Shutdown(forceShutdownProcedure: false);
                 GameObject.Destroy(m_Runner.gameObject);
@@ -194,7 +195,7 @@ namespace OpenBrush.Multiplayer
                 if (m_Runner.IsShutdown)
                 {
                     State = ConnectionState.DISCONNECTED;
-                    ControllerConsoleScript.m_Instance.AddNewLine("[PhotonManager] Left Room");
+                    ControllerConsoleScript.m_Instance.AddNewLine("[PhotonManager] Disconnected successfully");
                     UserInfo = new ConnectionUserInfo { UserId = m_Runner.UserId };
                 }
                 else
