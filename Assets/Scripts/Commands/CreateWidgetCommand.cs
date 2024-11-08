@@ -101,6 +101,7 @@ namespace TiltBrush
                     case LightWidget:
                     case ImageWidget:
                     case VideoWidget:
+                    case SoundClipWidget:
                         m_Widget.transform.parent = m_Canvas.transform;
                         m_Widget.Show(true);
                         break;
