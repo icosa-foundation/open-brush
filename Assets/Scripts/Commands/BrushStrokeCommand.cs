@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using UnityEngine;
 
 namespace TiltBrush
@@ -29,6 +30,16 @@ namespace TiltBrush
 
         public BrushStrokeCommand(Stroke stroke, StencilWidget widget = null,
                                   float lineLength = -1, BaseCommand parent = null) : base(parent)
+        {
+            m_Stroke = stroke;
+            m_Widget = widget;
+            m_LineLength_CS = lineLength;
+        }
+
+        // New constructor that accepts an existing Guid
+        public BrushStrokeCommand(Stroke stroke, Guid existingGuid, StencilWidget widget = null,
+                                  float lineLength = -1, BaseCommand parent = null)
+            : base(existingGuid, parent)
         {
             m_Stroke = stroke;
             m_Widget = widget;

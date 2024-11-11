@@ -105,7 +105,6 @@ namespace OpenBrush.Multiplayer
 
             InvokePreCommands(command);
 
-
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(command.Command, invoke: false);
 
             TryProcessCommands();
@@ -113,6 +112,7 @@ namespace OpenBrush.Multiplayer
 
         private static void AddPendingCommand(Action preAction, Guid commandGuid, Guid parentGuid, BaseCommand command, int childCount)
         {
+
             PendingCommand pendingCommand = new PendingCommand(commandGuid, command, preAction, childCount);
 
             if (!parentGuid.Equals(default))
@@ -122,6 +122,12 @@ namespace OpenBrush.Multiplayer
             }
 
             m_pendingCommands.Add(pendingCommand);
+        }
+
+        private static bool CheckifCommandGuidIsInStack(Guid commandGuid) {
+
+            if (SketchMemoryScript.m_Instance.IsCommandInStack(commandGuid)) return true;
+            return false;
         }
 
         private static BaseCommand FindParentCommand(Guid parentGuid)
@@ -147,7 +153,7 @@ namespace OpenBrush.Multiplayer
 
             var parentCommand = FindParentCommand(parentGuid);
 
-            var command = new BrushStrokeCommand(stroke, parent: parentCommand);
+            var command = new BrushStrokeCommand( stroke, commandGuid, parent: parentCommand);
 
             AddPendingCommand(preAction, commandGuid, parentGuid, command, childCount);
         }
@@ -165,6 +171,7 @@ namespace OpenBrush.Multiplayer
         public static void RPC_PerformCommand(NetworkRunner runner, string commandName, string guid, string[] data)
         {
             Debug.Log($"Command recieved: {commandName}");
+
             if (commandName.Equals("TiltBrush.BrushStrokeCommand"))
             {
                 var asString = string.Join(string.Empty, data);
@@ -207,6 +214,8 @@ namespace OpenBrush.Multiplayer
         [Rpc(InvokeLocal = false)]
         public static void RPC_BaseCommand(NetworkRunner runner, Guid commandGuid, Guid parentGuid = default, int childCount = 0)
         {
+            if (CheckifCommandGuidIsInStack(commandGuid)) return;
+
             Debug.Log($"Base command child count: {childCount}");
             var parentCommand = FindParentCommand(parentGuid);
             var command = new BaseCommand(parent: parentCommand);
@@ -217,6 +226,9 @@ namespace OpenBrush.Multiplayer
         [Rpc(InvokeLocal = false)]
         public static void RPC_BrushStrokeFull(NetworkRunner runner, NetworkedStroke strokeData, Guid commandGuid, Guid parentGuid = default, int childCount = 0)
         {
+
+            if (CheckifCommandGuidIsInStack(commandGuid))  return; 
+            
             var decode = NetworkedStroke.ToStroke(strokeData);
 
             CreateBrushStroke(decode, commandGuid, parentGuid, childCount);
@@ -263,7 +275,10 @@ namespace OpenBrush.Multiplayer
         [Rpc(InvokeLocal = false)]
         public static void RPC_BrushStrokeComplete(NetworkRunner runner, Guid id, Guid commandGuid, Guid parentGuid = default, int childCount = 0)
         {
-            if(!m_inProgressStrokes.ContainsKey(id))
+
+            if (CheckifCommandGuidIsInStack(commandGuid))  return;
+           
+            if (!m_inProgressStrokes.ContainsKey(id))
             {
                 Debug.LogError("shouldn't be here!");
                 return;
@@ -279,6 +294,8 @@ namespace OpenBrush.Multiplayer
         [Rpc(InvokeLocal = false)]
         public static void RPC_DeleteStroke(NetworkRunner runner, int seed, Guid commandGuid, Guid parentGuid = default, int childCount = 0)
         {
+            if (CheckifCommandGuidIsInStack(commandGuid)) return;
+
             var foundStroke = SketchMemoryScript.m_Instance.GetMemoryList.Where(x => x.m_Seed == seed).First();
 
             if (foundStroke != null)
@@ -297,6 +314,8 @@ namespace OpenBrush.Multiplayer
         [Rpc(InvokeLocal = false)]
         public static void RPC_SwitchEnvironment(NetworkRunner runner, Guid environmentGuid, Guid commandGuid, Guid parentGuid = default, int childCount = 0)
         {
+            if (CheckifCommandGuidIsInStack(commandGuid)) return;
+
             TiltBrush.Environment environment = EnvironmentCatalog.m_Instance.GetEnvironment(environmentGuid);
 
             if (environment != null)

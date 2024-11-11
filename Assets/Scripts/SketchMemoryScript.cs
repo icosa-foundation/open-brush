@@ -1406,5 +1406,20 @@ namespace TiltBrush
 
             return result;
         }
+
+        public bool IsCommandInStack(Guid commandGuid)
+        {
+            return IsCommandInOperationStack(commandGuid) || IsCommandInRedoStack(commandGuid);
+        }
+
+        public bool IsCommandInOperationStack(Guid commandGuid)
+        {
+            return m_OperationStack.Any(command => command.Guid == commandGuid);
+        }
+
+        public bool IsCommandInRedoStack(Guid commandGuid)
+        {
+            return m_RedoStack.Any(command => command.Guid == commandGuid);
+        }
     }
 } // namespace TiltBrush

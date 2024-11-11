@@ -88,9 +88,18 @@ namespace TiltBrush
                 parent.m_Children.Add(this);
                 m_Parent = parent;
             }
-#if FUSION_WEAVER
-            m_Timestamp = Photon.Pun.PhotonNetwork.ServerTimestamp; 
-#endif
+        }
+
+        // constructor that takes an existing Guid used in multiplayer to mantain consistences of commands across peers
+        public BaseCommand(Guid existingGuid, BaseCommand parent = null)
+        {
+            m_Guid = existingGuid;
+            m_Children = new List<BaseCommand>();
+            if (parent != null)
+            {
+                parent.m_Children.Add(this);
+                m_Parent = parent;
+            }
         }
 
         /// True if this command changes the sketch in a saveable
