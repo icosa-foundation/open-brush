@@ -246,6 +246,8 @@ namespace OpenBrush.Multiplayer
                 .Select(playerRef => m_Runner.GetPlayerObject(playerRef)?.GetComponent<PhotonPlayerRig>())
                 .FirstOrDefault(playerRig => playerRig != null && playerRig.PlayerId == playerId);
 
+            Debug.LogError($"Remote Player: {remotePlayer.PlayerId} is Room Owner: {remotePlayer.IsRoomOwner}");
+
             return remotePlayer != null && remotePlayer.IsRoomOwner;
         }
 
