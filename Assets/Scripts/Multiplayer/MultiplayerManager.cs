@@ -17,6 +17,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
+using System.Collections;
+
 
 #if OCULUS_SUPPORTED
 using OVRPlatform = Oculus.Platform;
@@ -34,6 +36,9 @@ namespace OpenBrush.Multiplayer
 
     public class MultiplayerManager : MonoBehaviour
     {
+        public int batchSize = 1;
+        public float delayBetweenBatches = 0.25f;
+
         public static MultiplayerManager m_Instance;
         public MultiplayerType m_MultiplayerType;
         public event Action Disconnected;
@@ -350,7 +355,7 @@ namespace OpenBrush.Multiplayer
             m_RemotePlayers.Add(playerData);
 
             //if i am the room owner I should send the command history
-            if (isUserRoomOwner) SendCommandHistory();
+            if (isUserRoomOwner) StartCoroutine(SendCommandHistory());
 
         }
 
@@ -437,15 +442,25 @@ namespace OpenBrush.Multiplayer
             Disconnected?.Invoke();// Invoke the Disconnected event
         }
 
-        private void SendCommandHistory()
+        private IEnumerator SendCommandHistory()
         {
+            IEnumerable<BaseCommand> commands = SketchMemoryScript.m_Instance.GetOperationStack().Reverse();
 
-            foreach (var command in SketchMemoryScript.m_Instance.GetOperationStack())
+            int counter = 0;
+
+            foreach (BaseCommand command in commands)
             {
                 OnCommandPerformed(command);
-            }
+                counter++;
 
+                if (counter % batchSize == 0) // Using batch size for pacing; consider calculating payload size as an improvement
+                {
+                    yield return null;
+                    yield return new WaitForSeconds(delayBetweenBatches);
+                }
+            }
         }
+
 
         public void StartSpeaking()
         {
