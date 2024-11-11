@@ -238,17 +238,13 @@ namespace OpenBrush.Multiplayer
 
         public bool GetPlayerRoomOwnershipStatus(int playerId)
         {
-            // Check  local player 
-            if (m_LocalPlayer != null && m_LocalPlayer.PlayerId == playerId)  return m_LocalPlayer.IsRoomOwner;
-           
-            // Check among remote players 
             var remotePlayer = m_PlayersSpawning
                 .Select(playerRef => m_Runner.GetPlayerObject(playerRef)?.GetComponent<PhotonPlayerRig>())
                 .FirstOrDefault(playerRig => playerRig != null && playerRig.PlayerId == playerId);
 
-            Debug.LogError($"Remote Player: {remotePlayer.PlayerId} is Room Owner: {remotePlayer.IsRoomOwner}");
-
-            return remotePlayer != null && remotePlayer.IsRoomOwner;
+            if (remotePlayer != null && remotePlayer.Object != null && remotePlayer.Object.IsValid)
+                return remotePlayer.IsRoomOwner;
+            else return false; 
         }
 
         public async Task<bool> PerformCommand(BaseCommand command)
