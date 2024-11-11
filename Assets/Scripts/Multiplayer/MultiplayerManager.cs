@@ -377,8 +377,31 @@ namespace OpenBrush.Multiplayer
                 }
             }
 
-            // TODO extend to more than two users case
-            if (m_RemotePlayers.Count == 0) isUserRoomOwner = true; // If there are no other players left, the local player becomes the room owner
+            // Ownership logic
+            // Check if any remaining player is the room owner
+            bool anyRoomOwner = m_RemotePlayers.Any(player => m_Manager.GetPlayerRoomOwnershipStatus(player.PlayerId))
+                                || (m_LocalPlayer != null && m_Manager.GetPlayerRoomOwnershipStatus(m_LocalPlayer.PlayerId));
+            // If there's still a room owner, no reassignment is needed
+            if (anyRoomOwner) return;
+            Debug.LogError("No room owner left after a player left, reassigning ownership.");
+
+            // If there are no other players left, the local player becomes the room owner
+            if (m_RemotePlayers.Count == 0)
+            {
+                isUserRoomOwner = true;
+                return;
+            }
+
+            // There are other players left
+            // Determine the new room owner by the lowest PlayerId
+            var allPlayers = new List<ITransientData<PlayerRigData>> { m_LocalPlayer };
+            allPlayers.AddRange(m_RemotePlayers);
+
+            // Find the player with the lowest PlayerId
+            var newOwner = allPlayers.OrderBy(player => player.PlayerId).First();
+
+            // If the new owner is the local player, set the flag
+            if (m_LocalPlayer.PlayerId == newOwner.PlayerId) isUserRoomOwner = true;
 
         }
 

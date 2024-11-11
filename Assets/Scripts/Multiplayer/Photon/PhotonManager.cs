@@ -100,6 +100,18 @@ namespace OpenBrush.Multiplayer
             }
         }
 
+        public void CheckExistingUsers()
+        {
+            foreach (PlayerRef player in m_Runner.ActivePlayers)
+            {
+                if (player != m_Runner.LocalPlayer)
+                {
+                    m_PlayersSpawning.Add(player);
+                }
+            }
+
+        }
+
         #region IConnectionHandler Methods
 
         public async Task<bool> Connect()
@@ -158,20 +170,6 @@ namespace OpenBrush.Multiplayer
             }
 
             return result.Ok;
-
-        }
-
-        public void CheckExistingUsers()
-        {
-            int playercount = m_Runner.SessionInfo.PlayerCount;
-
-            foreach (PlayerRef player in m_Runner.ActivePlayers)
-            {
-                if (player != m_Runner.LocalPlayer)
-                {
-                    m_PlayersSpawning.Add(player);
-                }
-            }
 
         }
 
@@ -236,6 +234,21 @@ namespace OpenBrush.Multiplayer
                 return m_Runner.SessionInfo.PlayerCount;
             }
             return 0;
+        }
+
+        public bool GetPlayerRoomOwnershipStatus(int playerId)
+        {
+            // Check  local player 
+            if (m_LocalPlayer != null && m_LocalPlayer.PlayerId == playerId)  return m_LocalPlayer.IsRoomOwner;
+           
+            // Check among remote players 
+            var remotePlayer = m_PlayersSpawning
+                .Select(playerRef => m_Runner.GetPlayerObject(playerRef)?.GetComponent<PhotonPlayerRig>())
+                .FirstOrDefault(playerRig => playerRig != null && playerRig.PlayerId == playerId);
+
+            Debug.LogError($"Remote Player: {remotePlayer.PlayerId} is Room Owner: {remotePlayer.IsRoomOwner}");
+
+            return remotePlayer != null && remotePlayer.IsRoomOwner;
         }
 
         public async Task<bool> PerformCommand(BaseCommand command)
@@ -304,7 +317,6 @@ namespace OpenBrush.Multiplayer
 
             return success;
         }
-
 
         private bool CommandBrushStroke(BrushStrokeCommand command)
         {

@@ -97,7 +97,9 @@ public class MultiplayerManagerInspector : Editor
         {
             remoteUsersRegistered = "UserIds:[ ";
             foreach (var remotePlayer in multiplayerManager.m_RemotePlayers)
-                remoteUsersRegistered += remotePlayer.PlayerId.ToString()+",";
+            {
+                remoteUsersRegistered += remotePlayer.PlayerId.ToString() + ",";
+            }  
             remoteUsersRegistered += "]";
         }
         else remoteUsersRegistered = "Not Assigned";
