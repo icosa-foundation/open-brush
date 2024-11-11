@@ -30,6 +30,7 @@ namespace OpenBrush.Multiplayer
 
         public BrushData BrushData;
         public ExtraData ExtraData;
+        public bool IsRoomOwner;
 
     }
 

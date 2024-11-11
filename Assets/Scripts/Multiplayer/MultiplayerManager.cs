@@ -308,7 +308,8 @@ namespace OpenBrush.Multiplayer
                 ExtraData = new ExtraData
                 {
                     OculusPlayerId = myOculusUserId,
-                }
+                },
+                IsRoomOwner = isUserRoomOwner
             };
 
             if (m_LocalPlayer != null)

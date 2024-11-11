@@ -34,6 +34,7 @@ namespace OpenBrush.Multiplayer
         [Networked] private float brushSize { get; set; }
         [Networked] private NetworkString<_64> brushGuid { get; set; }
         [Networked] public ulong oculusPlayerId { get; set; }
+        [Networked] public bool IsRoomOwner { get; set; }
 
         PointerScript transientPointer;
         // The offset transforms.
@@ -56,6 +57,7 @@ namespace OpenBrush.Multiplayer
             brushColor = data.BrushData.Color;
             brushSize = data.BrushData.Size;
             brushGuid = data.BrushData.Guid;
+            IsRoomOwner = data.IsRoomOwner;
         }
 
         public PlayerRigData RecieveData()
@@ -64,6 +66,7 @@ namespace OpenBrush.Multiplayer
             {
                 HeadPosition = m_PlayerHead.InterpolationTarget.position,
                 HeadRotation = m_PlayerHead.InterpolationTarget.rotation,
+                IsRoomOwner = this.IsRoomOwner,
                 ExtraData = new ExtraData
                 {
                     OculusPlayerId = this.oculusPlayerId

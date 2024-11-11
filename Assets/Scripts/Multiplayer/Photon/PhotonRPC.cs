@@ -126,7 +126,10 @@ namespace OpenBrush.Multiplayer
 
         private static bool CheckifCommandGuidIsInStack(Guid commandGuid) {
 
-            if (SketchMemoryScript.m_Instance.IsCommandInStack(commandGuid)) return true;
+            if (SketchMemoryScript.m_Instance.IsCommandInStack(commandGuid)) { 
+                Debug.Log($"Command with Guid {commandGuid} already in stack.");
+                return true; 
+            }
             return false;
         }
 
