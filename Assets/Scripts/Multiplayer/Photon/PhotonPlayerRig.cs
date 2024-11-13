@@ -39,6 +39,9 @@ namespace OpenBrush.Multiplayer
         PointerScript transientPointer;
         // The offset transforms.
         [SerializeField] private Transform headTransform;
+        [SerializeField] private Transform rightHandTransform;
+        [SerializeField] private Transform leftHandTransform;
+
         private PlayerRigData transmitData;
 
         public int m_PlayerId;
@@ -48,6 +51,10 @@ namespace OpenBrush.Multiplayer
             get { return m_PlayerId; }
             set { m_PlayerId = value; }
         }
+
+        public GameObject m_DummyLeftController;
+        public GameObject m_DummyRightController;
+
 
         public void TransmitData(PlayerRigData data)
         {
@@ -98,6 +105,8 @@ namespace OpenBrush.Multiplayer
                 transientPointer.SetBrush(BrushCatalog.m_Instance.DefaultBrush);
                 transientPointer.SetColor(App.BrushColor.CurrentColor);
             }
+
+            UpdateControllerVisibility();
         }
 
         public override void FixedUpdateNetwork()
@@ -158,6 +167,36 @@ namespace OpenBrush.Multiplayer
                 );
                 App.Scene.AsScene[headTransform] = remoteTR;
 
+                // Remote left hand
+                var remoteLeftTR = TrTransform.TRS(
+                    m_Left.InterpolationTarget.position,
+                    m_Left.InterpolationTarget.rotation,
+                    1 / SceneScale
+                );
+                App.Scene.AsScene[leftHandTransform] = remoteLeftTR;
+
+                // Remote right hand
+                var remoteRightTR = TrTransform.TRS(
+                    m_Right.InterpolationTarget.position,
+                    m_Right.InterpolationTarget.rotation,
+                    1 / SceneScale
+                );
+                App.Scene.AsScene[rightHandTransform] = remoteRightTR;
+
+            }
+        }
+
+        public void UpdateControllerVisibility()
+        {
+            if (Object.HasStateAuthority)
+            {
+                m_DummyLeftController.SetActive(false);
+                m_DummyRightController.SetActive(false);
+            }
+            else
+            {
+                m_DummyLeftController.SetActive(true);
+                m_DummyRightController.SetActive(true);
             }
         }
 
