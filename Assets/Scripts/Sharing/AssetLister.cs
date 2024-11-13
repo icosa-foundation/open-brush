@@ -69,7 +69,7 @@ namespace TiltBrush
                 foreach (var asset in assets)
                 {
                     var info = new IcosaSceneFileInfo(asset);
-                    info.Author = asset["displayName"].ToString();
+                    info.Author = asset["authorName"].ToString();
                     files.Add(info);
                 }
             }
