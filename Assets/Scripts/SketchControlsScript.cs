@@ -5140,7 +5140,7 @@ namespace TiltBrush
             }
             else
             {
-                ProfilingManager.Instance.StartProfiling(App.UserConfig.Profiling.ProflingMode);
+                ProfilingManager.Instance.StartProfiling(App.UserConfig.Profiling.ProfilingMode);
             }
         }
 
@@ -5177,7 +5177,7 @@ namespace TiltBrush
             InputManager.Wand.Geometry.transform.rotation = Camera.main.transform.rotation;
             m_PanelManager.LockPanelsToController();
 
-            ProfilingManager.Instance.StartProfiling(App.UserConfig.Profiling.ProflingMode);
+            ProfilingManager.Instance.StartProfiling(App.UserConfig.Profiling.ProfilingMode);
             yield return new WaitForSeconds(App.UserConfig.Profiling.Duration);
             ProfilingManager.Instance.StopProfiling();
 

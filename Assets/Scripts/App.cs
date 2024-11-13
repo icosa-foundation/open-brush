@@ -72,6 +72,7 @@ namespace TiltBrush
 
         private const int kHttpListenerPort = 40074;
         private const string kProtocolHandlerPrefix = "tiltbrush://remix/";
+        private const string kBuiltInSketchPrefix = "tiltbrush://builtin/";
         private const string kFileMoveFilename = "WhereHaveMyFilesGone.txt";
 
         private const string kFileMoveContents =
@@ -484,7 +485,7 @@ namespace TiltBrush
             Resources.UnloadUnusedAssets();
         }
 
-        static string GetStartupString()
+        public static string GetStartupString()
         {
             string str = $"{App.kAppDisplayName} {Config.m_VersionNumber}";
 
@@ -650,11 +651,18 @@ namespace TiltBrush
 
             foreach (string s in Config.m_SketchFiles)
             {
-                // Assume all relative paths are relative to the Sketches directory.
                 string sketch = s;
-                if (!System.IO.Path.IsPathRooted(sketch))
+                if (s.StartsWith(kBuiltInSketchPrefix))
                 {
-                    sketch = System.IO.Path.Combine(App.UserSketchPath(), sketch);
+                    sketch = s;
+                }
+                else
+                {
+                    // Assume all relative paths are relative to the Sketches directory.
+                    if (!System.IO.Path.IsPathRooted(sketch))
+                    {
+                        sketch = System.IO.Path.Combine(App.UserSketchPath(), sketch);
+                    }
                 }
                 m_RequestedTiltFileQueue.Enqueue(sketch);
                 if (Config.m_SdkMode == SdkMode.Ods || Config.OfflineRender)
@@ -1485,6 +1493,15 @@ namespace TiltBrush
             if (path.StartsWith(kProtocolHandlerPrefix))
             {
                 return HandlePolyRequest(path);
+            }
+
+            if (path.StartsWith(kBuiltInSketchPrefix))
+            {
+                path = path.Substring(kBuiltInSketchPrefix.Length);
+                path = Path.Join(FeaturedSketchesPath(), path);
+                SketchControlsScript.m_Instance.IssueGlobalCommand(
+                    SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: path);
+                return true;
             }
 
             // Copy to sketch folder in order to discourage the user from explicitly saving

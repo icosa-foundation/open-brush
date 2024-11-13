@@ -620,7 +620,7 @@ namespace TiltBrush
         {
             public const int kDefaultScreenshotResolution = 1000;
             public string[] ProfilingFunctions { get; private set; }
-            public ProfilingManager.Mode ProflingMode { get; private set; }
+            public ProfilingManager.Mode ProfilingMode { get; private set; }
 
             public string Mode
             {
@@ -628,7 +628,7 @@ namespace TiltBrush
                 {
                     try
                     {
-                        ProflingMode = (ProfilingManager.Mode)Enum.Parse(typeof(ProfilingManager.Mode), value);
+                        ProfilingMode = (ProfilingManager.Mode)Enum.Parse(typeof(ProfilingManager.Mode), value);
                     }
                     catch (ArgumentException)
                     {

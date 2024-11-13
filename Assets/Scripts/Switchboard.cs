@@ -18,6 +18,7 @@ namespace TiltBrush
 {
     public class Switchboard
     {
+        public event Action BrushSizeChanged;
         public event Action ToolChanged;
         public event Action MirrorVisibilityChanged;
         public event Action PanelDismissed;
@@ -48,6 +49,11 @@ namespace TiltBrush
         public void TriggerToolChanged()
         {
             ToolChanged?.Invoke();
+        }
+
+        public void TriggerBrushSizeChanged()
+        {
+            BrushSizeChanged?.Invoke();
         }
 
         public void TriggerMirrorVisibilityChanged()
