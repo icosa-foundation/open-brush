@@ -233,7 +233,7 @@ namespace TiltBrush
             {
                 string cfg = App.UserConfig?.Sharing.IcosaApiRoot;
                 if (!string.IsNullOrEmpty(cfg)) { return cfg; }
-                return "https://icosa.gallery/api/v1";
+                return "https://api.icosa.gallery/v1";
             }
         }
 
