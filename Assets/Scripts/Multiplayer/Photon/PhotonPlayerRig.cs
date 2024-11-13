@@ -17,7 +17,6 @@
 using UnityEngine;
 using Fusion;
 using TiltBrush;
-using System;
 
 namespace OpenBrush.Multiplayer
 {
@@ -35,6 +34,7 @@ namespace OpenBrush.Multiplayer
         [Networked] private NetworkString<_64> brushGuid { get; set; }
         [Networked] public ulong oculusPlayerId { get; set; }
         [Networked] public bool IsRoomOwner { get; set; }
+        [Networked] public float SceneScale { get; set; }
 
         PointerScript transientPointer;
         // The offset transforms.
@@ -53,11 +53,11 @@ namespace OpenBrush.Multiplayer
         {
             transmitData = data;
             oculusPlayerId = data.ExtraData.OculusPlayerId;
-
             brushColor = data.BrushData.Color;
             brushSize = data.BrushData.Size;
             brushGuid = data.BrushData.Guid;
             IsRoomOwner = data.IsRoomOwner;
+            SceneScale = data.SceneScale;
         }
 
         public PlayerRigData RecieveData()
@@ -66,11 +66,22 @@ namespace OpenBrush.Multiplayer
             {
                 HeadPosition = m_PlayerHead.InterpolationTarget.position,
                 HeadRotation = m_PlayerHead.InterpolationTarget.rotation,
+
+                ToolPosition = m_Tool.InterpolationTarget.position,
+                ToolRotation = m_Tool.InterpolationTarget.rotation,
+
+                LeftHandPosition = m_Left.InterpolationTarget.position,
+                LeftHandRotation = m_Left.InterpolationTarget.rotation,
+
+                RightHandPosition = m_Right.InterpolationTarget.position,
+                RightHandRotation = m_Right.InterpolationTarget.rotation,
+
                 IsRoomOwner = this.IsRoomOwner,
                 ExtraData = new ExtraData
                 {
                     OculusPlayerId = this.oculusPlayerId
-                }
+                },
+                SceneScale = this.SceneScale
             };
             return data;
         }
@@ -100,6 +111,12 @@ namespace OpenBrush.Multiplayer
 
                 m_Tool.transform.position = transmitData.ToolPosition;
                 m_Tool.transform.rotation = transmitData.ToolRotation;
+
+                m_Left.transform.position = transmitData.LeftHandPosition;
+                m_Left.transform.rotation = transmitData.LeftHandRotation;
+
+                m_Right.transform.position = transmitData.RightHandPosition;
+                m_Right.transform.rotation = transmitData.RightHandRotation;
             }
         }
 
@@ -109,12 +126,21 @@ namespace OpenBrush.Multiplayer
 
             if (Object.HasStateAuthority)
             {
+                var remoteTR = TrTransform.TR(
+                    m_PlayerHead.InterpolationTarget.position,
+                    m_PlayerHead.InterpolationTarget.rotation
+                );
+                    App.Scene.AsScene[headTransform] = remoteTR;
 
             }
             
             else
             {
-                var toolTR = TrTransform.TR(m_Tool.InterpolationTarget.position, m_Tool.InterpolationTarget.rotation);
+                // Remote pointer
+                var toolTR = TrTransform.TR(
+                    m_Tool.InterpolationTarget.position,
+                    m_Tool.InterpolationTarget.rotation
+                    );
                 App.Scene.AsScene[transientPointer.transform] = toolTR;
 
                 transientPointer.SetColor(brushColor);
@@ -123,10 +149,16 @@ namespace OpenBrush.Multiplayer
                     transientPointer.SetBrush(BrushCatalog.m_Instance.GetBrush(new System.Guid(brushGuid.ToString())));
                 }
                 transientPointer.BrushSize01 = brushSize;
-            }
 
-            var remoteTR = TrTransform.TR(m_PlayerHead.InterpolationTarget.position, m_PlayerHead.InterpolationTarget.rotation);
-            App.Scene.AsScene[headTransform] = remoteTR;
+                // Remote head
+                var remoteTR = TrTransform.TRS(
+                    m_PlayerHead.InterpolationTarget.position,
+                    m_PlayerHead.InterpolationTarget.rotation,
+                    1/SceneScale
+                );
+                App.Scene.AsScene[headTransform] = remoteTR;
+
+            }
         }
 
         void OnDestroy()

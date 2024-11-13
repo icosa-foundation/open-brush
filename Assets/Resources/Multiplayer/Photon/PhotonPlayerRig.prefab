@@ -56,6 +56,7 @@ MonoBehaviour:
   m_Right: {fileID: 1621605232836574636}
   m_Tool: {fileID: 4282572128721117942}
   _oculusPlayerId: 0
+  _IsRoomOwner: 0
   headTransform: {fileID: 5041384770245166357}
   m_PlayerId: 0
 --- !u!114 &2967658244113361874

@@ -292,6 +292,25 @@ namespace OpenBrush.Multiplayer
             // Transmit local player data relative to scene origin
             var headRelativeToScene = App.Scene.AsScene[App.VrSdk.GetVrCamera().transform];
             var pointerRelativeToScene = App.Scene.AsScene[PointerManager.m_Instance.MainPointer.transform];
+            var headScale = App.VrSdk.GetVrCamera().transform.localScale;
+            var leftController = InputManager.m_Instance.GetController(InputManager.ControllerName.Brush).transform;
+            var rightController = InputManager.m_Instance.GetController(InputManager.ControllerName.Wand).transform;
+
+            //if (leftController == null || rightController == null)
+            //{
+            //    Debug.LogWarning("Left or right controller is null.");
+            //    return;
+            //}
+
+            //InputDevice headDevice = InputDevices.GetDeviceAtXRNode(XRNode.Head);
+            //if (headDevice.isValid)
+            //{
+            //    deviceModel = headDevice.name;
+            //    Debug.Log("Headset model: " + deviceModel);
+            //}
+
+            var leftHandRelativeToScene = App.Scene.AsScene[leftController];
+            var rightHandRelativeToScene = App.Scene.AsScene[rightController];
 
             var data = new PlayerRigData
             {
@@ -299,6 +318,11 @@ namespace OpenBrush.Multiplayer
                 HeadRotation = headRelativeToScene.rotation,
                 ToolPosition = pointerRelativeToScene.translation,
                 ToolRotation = pointerRelativeToScene.rotation,
+                LeftHandPosition = leftHandRelativeToScene.translation,
+                LeftHandRotation = leftHandRelativeToScene.rotation,
+                RightHandPosition = rightHandRelativeToScene.translation,
+                RightHandRotation = rightHandRelativeToScene.rotation,
+
                 BrushData = new BrushData
                 {
                     Color = PointerManager.m_Instance.MainPointer.GetCurrentColor(),
@@ -309,7 +333,8 @@ namespace OpenBrush.Multiplayer
                 {
                     OculusPlayerId = myOculusUserId,
                 },
-                IsRoomOwner = isUserRoomOwner
+                IsRoomOwner = isUserRoomOwner,
+                SceneScale = App.Scene.Pose.scale
             };
 
             if (m_LocalPlayer != null)
@@ -484,7 +509,6 @@ namespace OpenBrush.Multiplayer
                 }
             }
         }
-
 
         public void StartSpeaking()
         {

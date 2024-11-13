@@ -33,7 +33,6 @@ namespace OpenBrush.Multiplayer
     {
 
         void Update();
-
         int GetPlayerCount();
         bool GetPlayerRoomOwnershipStatus(int playerId);
         Task<bool> PerformCommand(BaseCommand command);
