@@ -826,6 +826,7 @@ namespace TiltBrush
                 Model model = m_LoadQueue[i].Model;
                 model.LoadModel();
                 // TODO Back to async loading
+                // AsyncHelpers.RunSync(model.LoadModelAsync);
                 m_LoadQueue.RemoveAt(i);
                 m_IsLoadingMemo = null;
                 m_NotifyListeners = true;

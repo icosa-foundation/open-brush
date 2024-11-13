@@ -839,6 +839,8 @@ namespace TiltBrush
                     {
                         return null;
                     }
+                    // TODO Filter out non-remixable assets
+                    // filteredUriPath = CombineQueryParams(kUserLikesUri, "format=TILT&orderBy=LIKED_TIME&license=CREATIVE_COMMONS_BY");
                     filteredUriPath = CombineQueryParams(kUserLikesUri, "format=TILT&orderBy=LIKED_TIME");
                     errorMessage = "Failed to access your liked sketches.";
                     break;
@@ -846,6 +848,8 @@ namespace TiltBrush
                     // Old way - newest curated
                     // filteredUriPath = CombineQueryParams(kListAssetsUri, "format=TILT&curated=true&orderBy=NEWEST");
                     // For now try just sorting by "best"
+                    // TODO Filter out non-remixable assets
+                    // filteredUriPath = CombineQueryParams(kListAssetsUri, "format=TILT&orderBy=BEST&license=CREATIVE_COMMONS_BY");
                     filteredUriPath = CombineQueryParams(kListAssetsUri, "format=TILT&orderBy=BEST");
                     errorMessage = "Failed to access featured sketches.";
                     break;
@@ -892,6 +896,8 @@ namespace TiltBrush
             switch (type)
             {
                 case IcosaSetType.Liked:
+                    // TODO Filter out non-remixable assets
+                    // uri += $"{kUserLikesUri}?orderBy=LIKED_TIME&license=CREATIVE_COMMONS_BY";
                     uri += $"{kUserLikesUri}?orderBy=LIKED_TIME";
                     break;
                 case IcosaSetType.User:
@@ -901,6 +907,8 @@ namespace TiltBrush
                     // Old way - newest curated
                     // uri += $"{kListAssetsUri}" + $"?curated=true&orderBy=NEWEST";
                     // For now try just sorting by "best"
+                    // TODO Filter out non-remixable assets
+                    // uri += $"{kListAssetsUri}" + $"?orderBy=BEST&license=CREATIVE_COMMONS_BY";
                     uri += $"{kListAssetsUri}" + $"?orderBy=BEST";
                     // Something like orderBy=TRENDING would be good - BEST but weighted by recency
                     break;
