@@ -115,7 +115,7 @@ MonoBehaviour:
   m_RoomNumber: {fileID: 9160963822650286723}
   m_Nickname: {fileID: 4888819335275065630}
   m_AlertsErrors: {fileID: 6437857310660163665}
-  m_RoomOwnership: {fileID: 0}
+  m_RoomOwnership: {fileID: 1415528830258304631}
   references:
     version: 2
     RefIds: []

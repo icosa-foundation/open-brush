@@ -178,8 +178,7 @@ namespace TiltBrush
         private void OnRoomOwnershipUpdated(bool isRoomOwner)
         {
             if (!m_RoomOwnership) return;
-            m_RoomOwnership.text = isRoomOwner ? "Room Owner" : "Not Room Owner";
-            UpdateDisplay();
+            m_RoomOwnership.text = isRoomOwner ? "You are Room Owner" : "You are Not Room Owner";
         }
 
         private Tuple<bool, string> CheckAdvancedModeActive()
