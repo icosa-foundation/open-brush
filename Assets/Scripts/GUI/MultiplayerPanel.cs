@@ -27,6 +27,7 @@ namespace TiltBrush
         [SerializeField] private TextMeshPro m_RoomNumber;
         [SerializeField] private TextMeshPro m_Nickname;
         [SerializeField] private TextMeshPro m_AlertsErrors;
+        [SerializeField] private TextMeshPro m_RoomOwnership;
 
         public string RoomName
         {
@@ -80,7 +81,11 @@ namespace TiltBrush
                 CheckIfRoomExist,
             };
 
-            if (MultiplayerManager.m_Instance != null) MultiplayerManager.m_Instance.StateUpdated += OnStateUpdated;
+            if (MultiplayerManager.m_Instance != null)
+            {
+                MultiplayerManager.m_Instance.StateUpdated += OnStateUpdated;
+                MultiplayerManager.m_Instance.RoomOwnershipUpdated += OnRoomOwnershipUpdated;
+            }
 
         }
 
@@ -165,7 +170,15 @@ namespace TiltBrush
 
         private void OnStateUpdated(ConnectionState newState)
         {
+            if (!m_State) return;
             m_State.text = "State: " + newState.ToString();
+            UpdateDisplay();
+        }
+
+        private void OnRoomOwnershipUpdated(bool isRoomOwner)
+        {
+            if (!m_RoomOwnership) return;
+            m_RoomOwnership.text = isRoomOwner ? "Room Owner" : "Not Room Owner";
             UpdateDisplay();
         }
 

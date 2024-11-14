@@ -54,6 +54,7 @@ namespace OpenBrush.Multiplayer
         public Action<int> playerLeft;
         public Action<List<RoomData>> roomDataRefreshed;
         public event Action<ConnectionState> StateUpdated;
+        public event Action<bool> RoomOwnershipUpdated;
         public event Action<ConnectionUserInfo> UserInfoStateUpdated;
         private List<RoomData> m_RoomData = new List<RoomData>();
 
@@ -94,7 +95,16 @@ namespace OpenBrush.Multiplayer
 
         [HideInInspector] public RoomCreateData data;
 
-        [HideInInspector] public bool isUserRoomOwner = false; //temporary public
+        private bool _isUserRoomOwner = false;
+        private bool isUserRoomOwner
+        {
+            get => _isUserRoomOwner;
+            set
+            {
+                _isUserRoomOwner = value;
+                RoomOwnershipUpdated?.Invoke(value);
+            }
+        }
 
         void Awake()
         {
@@ -539,6 +549,11 @@ namespace OpenBrush.Multiplayer
         public bool CanLeaveRoom()
         {
             return State == ConnectionState.IN_ROOM;
+        }
+
+        public bool IsUserRoomOwner()
+        {
+            return isUserRoomOwner;
         }
     }
 }

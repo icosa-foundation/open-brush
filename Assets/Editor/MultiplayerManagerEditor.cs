@@ -82,8 +82,8 @@ public class MultiplayerManagerInspector : Editor
 
         //Room Ownership
         string ownership = "";
-        if (multiplayerManager != null && multiplayerManager.isUserRoomOwner) ownership = "Yes";
-        else if (multiplayerManager != null && !multiplayerManager.isUserRoomOwner) ownership = "No";
+        if (multiplayerManager != null && multiplayerManager.IsUserRoomOwner()) ownership = "Yes";
+        else if (multiplayerManager != null && !multiplayerManager.IsUserRoomOwner()) ownership = "No";
         else ownership = "Not Assigned";
 
         EditorGUILayout.BeginHorizontal();
