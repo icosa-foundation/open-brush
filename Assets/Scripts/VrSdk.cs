@@ -199,30 +199,26 @@ namespace TiltBrush
             UnityEngine.XR.OpenXR.OpenXRSettings.SetAllowRecentering(false);
 
             // Let it fail on non-oculus platforms
-            try
-            {
-                //Get Oculus ID
-                var oculusAppId = App.Config.OculusSecrets.ClientId;
+            //Get Oculus ID
+            var oculusAppId = App.Config.OculusSecrets.ClientId;
+            bool packagePresent = true;
 #if UNITY_ANDROID
-            appId = App.Config.OculusMobileSecrets.ClientId;
+            oculusAppId = App.Config.OculusMobileSecrets.ClientId;
+            // Initialize() will crash android if the required system packages are not present.
+            // This is the earliest in the chain.
+            packagePresent = AndroidUtils.IsPackageInstalled("com.oculus.platformsdkruntime");
 #endif
+            if (packagePresent)
+            {
                 Oculus.Platform.Core.Initialize(oculusAppId);
+
                 Oculus.Platform.UserAgeCategory.Get()?.OnComplete((msg) =>
                 {
-                    if (msg.IsError)
-                    {
-                        Debug.LogWarning($"Failed to get user age category: {msg.GetError().Message}");
-                        return;
-                    }
-                    else
+                    if (!msg.IsError)
                     {
                         var unused = msg.Data.AgeCategory;
                     }
                 });
-            }
-            catch (Exception e)
-            {
-                Debug.LogWarning($"Failed to initialize Oculus Platform SDK: {e.Message}");
             }
         }
 
