@@ -169,11 +169,15 @@ namespace OpenBrush.Multiplayer
                 }
                 transientPointer.BrushSize01 = brushSize;
 
+                // Calculate the scale based on the scene scale
+                float clampedSceneScale = Mathf.Clamp(SceneScale, 0.01f, float.MaxValue);
+                float Scale = 1 / clampedSceneScale;
+
                 // Remote head
                 var remoteTR = TrTransform.TRS(
                     m_PlayerHead.InterpolationTarget.position,
                     m_PlayerHead.InterpolationTarget.rotation,
-                    1/SceneScale
+                    Scale
                 );
                 App.Scene.AsScene[headTransform] = remoteTR;
 
@@ -181,7 +185,7 @@ namespace OpenBrush.Multiplayer
                 var remoteLeftTR = TrTransform.TRS(
                     m_Left.InterpolationTarget.position,
                     m_Left.InterpolationTarget.rotation,
-                    1 / SceneScale
+                    Scale
                 );
                 App.Scene.AsScene[leftHandTransform] = remoteLeftTR;
 
@@ -189,7 +193,7 @@ namespace OpenBrush.Multiplayer
                 var remoteRightTR = TrTransform.TRS(
                     m_Right.InterpolationTarget.position,
                     m_Right.InterpolationTarget.rotation,
-                    1 / SceneScale
+                    Scale
                 );
                 App.Scene.AsScene[rightHandTransform] = remoteRightTR;
 
