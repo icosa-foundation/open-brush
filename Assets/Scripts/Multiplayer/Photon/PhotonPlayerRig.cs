@@ -69,29 +69,39 @@ namespace OpenBrush.Multiplayer
 
         public PlayerRigData RecieveData()
         {
-            var data = new PlayerRigData
+            var data = new PlayerRigData();
+
+            if (m_PlayerHead?.InterpolationTarget != null)
             {
-                HeadPosition = m_PlayerHead.InterpolationTarget.position,
-                HeadRotation = m_PlayerHead.InterpolationTarget.rotation,
+                data.HeadPosition = m_PlayerHead.InterpolationTarget.position;
+                data.HeadRotation = m_PlayerHead.InterpolationTarget.rotation;
+            }
 
-                ToolPosition = m_Tool.InterpolationTarget.position,
-                ToolRotation = m_Tool.InterpolationTarget.rotation,
+            if (m_Tool?.InterpolationTarget != null)
+            {
+                data.ToolPosition = m_Tool.InterpolationTarget.position;
+                data.ToolRotation = m_Tool.InterpolationTarget.rotation;
+            }
 
-                LeftHandPosition = m_Left.InterpolationTarget.position,
-                LeftHandRotation = m_Left.InterpolationTarget.rotation,
+            if (m_Left?.InterpolationTarget != null)
+            {
+                data.LeftHandPosition = m_Left.InterpolationTarget.position;
+                data.LeftHandRotation = m_Left.InterpolationTarget.rotation;
+            }
 
-                RightHandPosition = m_Right.InterpolationTarget.position,
-                RightHandRotation = m_Right.InterpolationTarget.rotation,
+            if (m_Right?.InterpolationTarget != null)
+            {
+                data.RightHandPosition = m_Right.InterpolationTarget.position;
+                data.RightHandRotation = m_Right.InterpolationTarget.rotation;
+            }
 
-                IsRoomOwner = this.IsRoomOwner,
-                ExtraData = new ExtraData
-                {
-                    OculusPlayerId = this.oculusPlayerId
-                },
-                SceneScale = this.SceneScale
-            };
+            data.IsRoomOwner = this.IsRoomOwner;
+            data.ExtraData = new ExtraData { OculusPlayerId = this.oculusPlayerId };
+            data.SceneScale = this.SceneScale;
+
             return data;
         }
+
 
         public override void Spawned()
         {
@@ -205,7 +215,13 @@ namespace OpenBrush.Multiplayer
             if (transientPointer != null)
             {
                 PointerManager.m_Instance.RemoveRemotePointer(transientPointer);
+                transientPointer = null;
             }
+
+            m_PlayerHead = null;
+            m_Tool = null;
+            m_Left = null;
+            m_Right = null;
         }
     }
 }
