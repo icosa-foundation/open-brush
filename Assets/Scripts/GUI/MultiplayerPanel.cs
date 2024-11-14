@@ -87,7 +87,23 @@ namespace TiltBrush
         protected override void OnEnablePanel()
         {
             base.OnEnablePanel();
-            UpdateDisplay();
+
+            if (MultiplayerManager.m_Instance == null) return;
+            if (MultiplayerManager.m_Instance.State == ConnectionState.INITIALIZED || MultiplayerManager.m_Instance.State == ConnectionState.DISCONNECTED)
+            {
+                MultiplayerManager.m_Instance.Connect();
+            }
+        }
+
+        protected override void OnDisablePanel()
+        {
+            base.OnDisablePanel();
+
+            if (MultiplayerManager.m_Instance == null) return;
+            if (MultiplayerManager.m_Instance.State != ConnectionState.IN_ROOM)
+            {
+                MultiplayerManager.m_Instance.Disconnect();
+            }
         }
 
         private static string GenerateUniqueRoomName()
@@ -162,7 +178,6 @@ namespace TiltBrush
             }
             return Tuple.Create(false, "");
         }
-
 
         private Tuple<bool, string> CheckMultiplayerManagerErrors()
         {
