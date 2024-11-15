@@ -52,8 +52,8 @@ namespace OpenBrush.Multiplayer
             set { m_PlayerId = value; }
         }
 
-        public GameObject m_DummyLeftController;
-        public GameObject m_DummyRightController;
+        public GameObject m_LeftControllerModel;
+        public GameObject m_RightControllerModel;
 
 
         public void TransmitData(PlayerRigData data)
@@ -204,13 +204,13 @@ namespace OpenBrush.Multiplayer
         {
             if (Object.HasStateAuthority)
             {
-                m_DummyLeftController.SetActive(false);
-                m_DummyRightController.SetActive(false);
+                m_LeftControllerModel.SetActive(false);
+                m_RightControllerModel.SetActive(false);
             }
             else
             {
-                m_DummyLeftController.SetActive(true);
-                m_DummyRightController.SetActive(true);
+                m_LeftControllerModel.SetActive(true);
+                m_RightControllerModel.SetActive(true);
             }
         }
 
