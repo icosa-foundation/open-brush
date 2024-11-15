@@ -3517,6 +3517,22 @@ MonoBehaviour:
     m_Localized: Plus d'informations sur l'utilisation d'Open Brush sans VR
     m_Metadata:
       m_Items: []
+  - m_Id: 294636769901092864
+    m_Localized: Rejoindre la Salle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636908816441344
+    m_Localized: Quitter la Salle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637073212186624
+    m_Localized: Modifier le Nom de la Salle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637384320491520
+    m_Localized: Modifier le Pseudo
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

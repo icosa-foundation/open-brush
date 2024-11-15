@@ -3576,6 +3576,22 @@ MonoBehaviour:
     m_Localized: Mehr Informationen zur Verwendung von Open Brush ohne VR
     m_Metadata:
       m_Items: []
+  - m_Id: 294636769901092864
+    m_Localized: Raum beitreten
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636908816441344
+    m_Localized: Raum verlassen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637073212186624
+    m_Localized: Raumnamen bearbeiten
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637384320491520
+    m_Localized: Spitznamen bearbeiten
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
