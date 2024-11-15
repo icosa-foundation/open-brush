@@ -48,7 +48,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8aef76c4a1603ae4a9b2be90c69653da, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_PanelType: 26
+  m_PanelType: 4
   m_Collider: {fileID: 65962833710381506}
   m_Mesh: {fileID: 1577576848578658}
   m_Border: {fileID: 23798923668222696}
@@ -61,12 +61,13 @@ MonoBehaviour:
   - m_PopUpPrefab: {fileID: 1000012632495268, guid: ce8b545b77426514d8145079c55ac5e7,
       type: 3}
     m_Command: 47
-  - m_PopUpPrefab: {fileID: 197348, guid: d6d515da978a4db419b15f960d57d718, type: 3}
+  - m_PopUpPrefab: {fileID: 1269800539083404, guid: 8c11503e6d0a24d409b1d8c992652d3b,
+      type: 3}
     m_Command: 31
-  - m_PopUpPrefab: {fileID: 1000012632495268, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
+  - m_PopUpPrefab: {fileID: 1153581385733574731, guid: 545e16288627ef8439942b5ec3dac49e,
       type: 3}
     m_Command: 96
-  - m_PopUpPrefab: {fileID: 8644332587479430734, guid: 4abd2477ca9b56d4ebbc36af78d00b5d,
+  - m_PopUpPrefab: {fileID: 563727746153209697, guid: 60ddeefaa28cf76478a6671a1193e2c9,
       type: 3}
     m_Command: 30
   m_PanelDescription: 
@@ -168,6 +169,10 @@ MonoBehaviour:
     renderer: {fileID: 0}
     baseLocalPos: {x: 0, y: 0, z: 0}
     baseScale: {x: 0, y: 0, z: 0}
+  - button: {fileID: 3913670656884359384}
+    renderer: {fileID: 0}
+    baseLocalPos: {x: 0, y: 0, z: 0}
+    baseScale: {x: 0, y: 0, z: 0}
   m_SaveNewButton: {fileID: 1922662397484504}
   m_SaveOptionsButton: {fileID: 1151082384707834}
   m_SettingsButton: {fileID: 1936268928807740}
@@ -182,6 +187,7 @@ MonoBehaviour:
   m_MemoryWarningButton: {fileID: 1712905289553642}
   m_MemoryWarningColor: {r: 0.78676474, g: 0.09256055, b: 0.09256055, a: 1}
   m_MultiplayerButton: {fileID: 5787249127137797294}
+  m_EmptyButton: {fileID: 1283872556223845477}
   m_ButtonRotationAngle: 45
   m_ShareButtonLoggedOutExtraText:
     m_TableReference:
@@ -1123,7 +1129,7 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
-  m_AllowUnavailable: 0
+  m_AllowUnavailable: 1
   m_LinkedUIObject: {fileID: 0}
   m_AdjustDistanceAmount: 1
   m_IconRenderer: {fileID: 23861549990399966}
@@ -3224,7 +3230,7 @@ GameObject:
   - component: {fileID: 6605348980898369502}
   - component: {fileID: 8695917633644188848}
   m_Layer: 16
-  m_Name: Button_News
+  m_Name: Button_Empty
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3328,7 +3334,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_DescriptionType: -1
+  m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: ADMIN_PANEL_SAVE_SKETCH_BUTTON_DESCRIPTION
   m_LocalizedDescription:
@@ -3365,7 +3371,7 @@ MonoBehaviour:
   m_Command: 0
   m_CommandParam: -1
   m_CommandParam2: -1
-  m_RequiresPopup: 1
+  m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
