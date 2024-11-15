@@ -305,20 +305,6 @@ namespace OpenBrush.Multiplayer
             var headScale = App.VrSdk.GetVrCamera().transform.localScale;
             var leftController = InputManager.m_Instance.GetController(InputManager.ControllerName.Brush).transform;
             var rightController = InputManager.m_Instance.GetController(InputManager.ControllerName.Wand).transform;
-
-            //if (leftController == null || rightController == null)
-            //{
-            //    Debug.LogWarning("Left or right controller is null.");
-            //    return;
-            //}
-
-            //InputDevice headDevice = InputDevices.GetDeviceAtXRNode(XRNode.Head);
-            //if (headDevice.isValid)
-            //{
-            //    deviceModel = headDevice.name;
-            //    Debug.Log("Headset model: " + deviceModel);
-            //}
-
             var leftHandRelativeToScene = App.Scene.AsScene[leftController];
             var rightHandRelativeToScene = App.Scene.AsScene[rightController];
 
