@@ -5088,6 +5088,10 @@ namespace TiltBrush
                     return !PanelManager.m_Instance.AdvancedModeActive() && MultiplayerManager.m_Instance.CanJoinRoom();
                 case GlobalCommands.MultiplayerLeaveRoom:
                     return MultiplayerManager.m_Instance.CanLeaveRoom();
+                case GlobalCommands.Sketchbook:
+                    return !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
+                case GlobalCommands.SketchbookMenu:
+                    return !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
             }
             return true;
         }
