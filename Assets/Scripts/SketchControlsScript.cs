@@ -1610,7 +1610,8 @@ namespace TiltBrush
                 m_PanelManager.GazePanelsAreVisible() &&
                 !m_GrabWand.grabbingWorld &&
                 !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate) &&
-                !SelectionManager.m_Instance.IsAnimatingTossFromGrabbingGroup;
+                !SelectionManager.m_Instance.IsAnimatingTossFromGrabbingGroup &&
+                !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
         }
 
         bool CanRedo()
@@ -1620,7 +1621,8 @@ namespace TiltBrush
                 m_PanelManager.GazePanelsAreVisible() &&
                 !m_GrabBrush.grabbingWorld &&
                 !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate) &&
-                !SelectionManager.m_Instance.IsAnimatingTossFromGrabbingGroup;
+                !SelectionManager.m_Instance.IsAnimatingTossFromGrabbingGroup &&
+                !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
         }
 
         bool ShouldRepeatUndo()
