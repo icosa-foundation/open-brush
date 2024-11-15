@@ -71,6 +71,7 @@ namespace OpenBrush.Multiplayer
     public interface ITransientData<T>
     {
         int PlayerId { get; set; }
+        bool IsSpawned { get; }
         void TransmitData(T data);
         T RecieveData();
     }

@@ -17,6 +17,7 @@
 using UnityEngine;
 using Fusion;
 using TiltBrush;
+using System;
 
 namespace OpenBrush.Multiplayer
 {
@@ -43,6 +44,9 @@ namespace OpenBrush.Multiplayer
         [SerializeField] private Transform leftHandTransform;
 
         private PlayerRigData transmitData;
+        
+        private bool m_IsSpawned = false;
+        public bool IsSpawned => m_IsSpawned;
 
         public int m_PlayerId;
 
@@ -54,7 +58,6 @@ namespace OpenBrush.Multiplayer
 
         public GameObject m_LeftControllerModel;
         public GameObject m_RightControllerModel;
-
 
         public void TransmitData(PlayerRigData data)
         {
@@ -68,7 +71,9 @@ namespace OpenBrush.Multiplayer
         }
 
         public PlayerRigData RecieveData()
-        {
+        {   
+            if (!m_IsSpawned) return default;
+            
             var data = new PlayerRigData();
 
             if (m_PlayerHead?.InterpolationTarget != null)
@@ -95,13 +100,19 @@ namespace OpenBrush.Multiplayer
                 data.RightHandRotation = m_Right.InterpolationTarget.rotation;
             }
 
-            data.IsRoomOwner = this.IsRoomOwner;
-            data.ExtraData = new ExtraData { OculusPlayerId = this.oculusPlayerId };
-            data.SceneScale = this.SceneScale;
+            try
+            {
+                data.IsRoomOwner = this.IsRoomOwner; 
+                data.ExtraData = new ExtraData { OculusPlayerId = this.oculusPlayerId };
+                data.SceneScale = this.SceneScale;
+            }
+            catch (InvalidOperationException ex)
+            {
+                return default;
+            }
 
             return data;
         }
-
 
         public override void Spawned()
         {
@@ -117,6 +128,8 @@ namespace OpenBrush.Multiplayer
             }
 
             UpdateControllerVisibility();
+
+            m_IsSpawned = true;
         }
 
         public override void FixedUpdateNetwork()
@@ -226,6 +239,8 @@ namespace OpenBrush.Multiplayer
             m_Tool = null;
             m_Left = null;
             m_Right = null;
+
+            m_IsSpawned = false;
         }
     }
 }

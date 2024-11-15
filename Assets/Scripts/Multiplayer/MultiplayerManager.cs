@@ -343,6 +343,8 @@ namespace OpenBrush.Multiplayer
             bool newUser = false;
             foreach (var player in m_RemotePlayers)
             {
+                if (!player.IsSpawned) continue;
+
                 data = player.RecieveData();
 #if OCULUS_SUPPORTED
                 // New user, share the anchor with them
