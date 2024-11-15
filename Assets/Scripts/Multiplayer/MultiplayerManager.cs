@@ -345,7 +345,7 @@ namespace OpenBrush.Multiplayer
             {
                 if (!player.IsSpawned) continue;
 
-                data = player.RecieveData();
+                data = player.ReceiveData();
 #if OCULUS_SUPPORTED
                 // New user, share the anchor with them
                 if (data.ExtraData.OculusPlayerId != 0 && !oculusPlayerIds.Contains(data.ExtraData.OculusPlayerId))

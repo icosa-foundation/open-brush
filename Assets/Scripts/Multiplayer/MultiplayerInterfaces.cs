@@ -73,6 +73,6 @@ namespace OpenBrush.Multiplayer
         int PlayerId { get; set; }
         bool IsSpawned { get; }
         void TransmitData(T data);
-        T RecieveData();
+        T ReceiveData();
     }
 }

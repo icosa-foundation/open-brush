@@ -70,7 +70,7 @@ namespace OpenBrush.Multiplayer
             SceneScale = data.SceneScale;
         }
 
-        public PlayerRigData RecieveData()
+        public PlayerRigData ReceiveData()
         {   
             if (!m_IsSpawned) return default;
             
