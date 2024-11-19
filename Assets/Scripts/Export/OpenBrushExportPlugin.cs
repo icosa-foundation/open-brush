@@ -29,7 +29,7 @@ namespace TiltBrush
 
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
-            if (App.UserConfig.Export.ExportCustomSkybox)
+            if (Application.isPlaying && App.UserConfig.Export.ExportCustomSkybox)
             {
                 GltfExportStandinManager.m_Instance.CreateSkyStandin();
             }
@@ -40,6 +40,7 @@ namespace TiltBrush
 
         private void GenerateCameraPathsCameras()
         {
+            if (!Application.isPlaying) return;
             m_CameraPathsCameras = new List<Camera>();
             var cameraPathWidgets = WidgetManager.m_Instance.CameraPathWidgets.ToArray();
             for (var i = 0; i < cameraPathWidgets.Length; i++)
