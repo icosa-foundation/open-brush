@@ -36,6 +36,7 @@ namespace TiltBrush
         public static SketchMemoryScript m_Instance;
 
         public event Action OperationStackChanged;
+        public event Action NetworkOperationStackChanged;
         public Action<BaseCommand> CommandPerformed;
         public Action<BaseCommand> CommandUndo;
         public Action<BaseCommand> CommandRedo;
@@ -76,10 +77,12 @@ namespace TiltBrush
             }
         }
 
-        // stack of sketch operations this session\\\
+        // stack of sketch operations this session
         private Stack<BaseCommand> m_OperationStack;
         // stack of undone operations available for redo
         private Stack<BaseCommand> m_RedoStack;
+        // stack of network sketch operations
+        private Stack<BaseCommand> m_NetworkStack = new Stack<BaseCommand>();
 
         // Memory list by timestamp of initial control point.  The nodes of this list are
         // embedded in MemoryObject.  Notable properties:
@@ -410,6 +413,17 @@ namespace TiltBrush
             {
                 CommandPerformed?.Invoke(command);
             }
+        }
+
+        /// Executes and records a network-synchronized command.
+        /// Note: This method does not include merge logic or parent-child relationship checks,
+        /// as these are already handled by the PhotonRPC system.
+        public void PerformAndRecordNetworkCommand(BaseCommand command)
+        {
+            BaseCommand delta = command;
+            delta.Redo();
+            m_NetworkStack.Push(command);
+            NetworkOperationStackChanged?.Invoke();
         }
 
         // TODO: deprecate in favor of PerformAndRecordCommand
@@ -782,6 +796,16 @@ namespace TiltBrush
                 command.Dispose();
             }
             m_RedoStack.Clear();
+        }
+
+        public void ClearNetworkStack()
+        {
+            foreach (var command in m_NetworkStack)
+            {
+                command.Dispose();
+            }
+            m_NetworkStack.Clear();
+            NetworkOperationStackChanged?.Invoke();
         }
 
         public void ClearMemory()
@@ -1383,7 +1407,9 @@ namespace TiltBrush
 
         public bool IsCommandInStack(Guid commandGuid)
         {
-            return IsCommandInOperationStack(commandGuid) || IsCommandInRedoStack(commandGuid);
+            return IsCommandInOperationStack(commandGuid) ||
+                   IsCommandInRedoStack(commandGuid) ||
+                   IsCommandInNetworkStack(commandGuid);
         }
 
         public bool IsCommandInOperationStack(Guid commandGuid)
@@ -1394,6 +1420,11 @@ namespace TiltBrush
         public bool IsCommandInRedoStack(Guid commandGuid)
         {
             return m_RedoStack.Any(command => command.Guid == commandGuid);
+        }
+
+        public bool IsCommandInNetworkStack(Guid commandGuid)
+        {
+            return m_NetworkStack.Any(command => command.Guid == commandGuid);
         }
     }
 } // namespace TiltBrush

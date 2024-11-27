@@ -105,7 +105,8 @@ namespace OpenBrush.Multiplayer
 
             InvokePreCommands(command);
 
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(command.Command, invoke: false);
+            //SketchMemoryScript.m_Instance.PerformAndRecordCommand(command.Command, invoke: false);
+            SketchMemoryScript.m_Instance.PerformAndRecordNetworkCommand(command.Command);
 
             TryProcessCommands();
         }
