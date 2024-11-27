@@ -194,10 +194,13 @@ namespace TiltBrush
             get { return m_MemoryList; }
         }
 
-        public IEnumerable<BaseCommand> GetOperationStack()
+        public IEnumerable<BaseCommand> GetAllOperations()
         {
-            return m_OperationStack;
+            var allCommands = m_OperationStack.Concat(m_NetworkStack);
+            //return allCommands.OrderBy(command => command.Timestamp);
+            return allCommands;
         }
+
 
         public Stroke GetStrokeAtIndex(int index)
         {

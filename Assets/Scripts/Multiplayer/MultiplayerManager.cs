@@ -491,7 +491,7 @@ namespace OpenBrush.Multiplayer
 
         private IEnumerator SendCommandHistory()
         {
-            IEnumerable<BaseCommand> commands = SketchMemoryScript.m_Instance.GetOperationStack().Reverse();
+            IEnumerable<BaseCommand> commands = SketchMemoryScript.m_Instance.GetAllOperations().Reverse();
 
             int counter = 0;
 
