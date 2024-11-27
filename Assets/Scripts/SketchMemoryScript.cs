@@ -16,6 +16,9 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TiltBrush;
+using System.Collections;
+using System.Threading.Tasks;
 
 namespace TiltBrush
 {
@@ -197,8 +200,8 @@ namespace TiltBrush
         public IEnumerable<BaseCommand> GetAllOperations()
         {
             var allCommands = m_OperationStack.Concat(m_NetworkStack);
-            //return allCommands.OrderBy(command => command.Timestamp);
-            return allCommands;
+
+            return allCommands.OrderBy(command => command.NetworkTimestamp);
         }
 
 
@@ -1428,6 +1431,22 @@ namespace TiltBrush
         public bool IsCommandInNetworkStack(Guid commandGuid)
         {
             return m_NetworkStack.Any(command => command.Guid == commandGuid);
+        }
+
+        public void SetTimeOffsetToAllStacks(int m_NetworkOffsetTimestamp)
+        {
+            SetTimeOffset(m_RedoStack, m_NetworkOffsetTimestamp);
+            SetTimeOffset(m_OperationStack, m_NetworkOffsetTimestamp);
+            SetTimeOffset(m_NetworkStack, m_NetworkOffsetTimestamp);
+        }
+
+        public void SetTimeOffset(Stack<BaseCommand> stack, int m_NetworkOffsetTimestamp)
+        {
+            foreach (BaseCommand c in stack)
+            {
+                if (c.NetworkTimestamp == null)
+                    c.NetworkTimestamp = c.Timestamp - m_NetworkOffsetTimestamp;
+            }
         }
     }
 } // namespace TiltBrush

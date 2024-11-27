@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
+
 namespace TiltBrush
 {
     public class SwitchEnvironmentCommand : BaseCommand
@@ -22,6 +24,22 @@ namespace TiltBrush
         public Environment m_NextEnvironment;
 
         public SwitchEnvironmentCommand(Environment nextEnv, BaseCommand parent = null) : base(parent)
+        {
+            m_NextEnvironment = nextEnv;
+            m_PrevBackdrop = SceneSettings.m_Instance.CustomEnvironment;
+            if (SceneSettings.m_Instance.IsTransitioning)
+            {
+                m_PrevEnvironment = SceneSettings.m_Instance.GetDesiredPreset();
+            }
+            else
+            {
+                m_PrevLights = LightsControlScript.m_Instance.CustomLights;
+                m_PrevEnvironment = SceneSettings.m_Instance.CurrentEnvironment;
+            }
+        }
+
+        public SwitchEnvironmentCommand(Environment nextEnv, Guid existingGuid, int timestamp, BaseCommand parent = null)
+            : base(existingGuid, timestamp, parent)
         {
             m_NextEnvironment = nextEnv;
             m_PrevBackdrop = SceneSettings.m_Instance.CustomEnvironment;

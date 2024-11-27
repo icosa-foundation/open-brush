@@ -57,6 +57,7 @@ namespace OpenBrush.Multiplayer
         public event Action<bool> RoomOwnershipUpdated;
         public event Action<ConnectionUserInfo> UserInfoStateUpdated;
         private List<RoomData> m_RoomData = new List<RoomData>();
+        private double? m_NetworkOffsetTimestamp = null;
 
         ulong myOculusUserId;
 
@@ -155,6 +156,7 @@ namespace OpenBrush.Multiplayer
             localPlayerJoined += OnLocalPlayerJoined;
             remotePlayerJoined += OnRemotePlayerJoined;
             playerLeft += OnPlayerLeft;
+            StateUpdated += UpdateSketchMemoryScriptTimeOffset;
             SketchMemoryScript.m_Instance.CommandPerformed += OnCommandPerformed;
             SketchMemoryScript.m_Instance.CommandUndo += OnCommandUndo;
             SketchMemoryScript.m_Instance.CommandRedo += OnCommandRedo;
@@ -166,6 +168,7 @@ namespace OpenBrush.Multiplayer
             localPlayerJoined -= OnLocalPlayerJoined;
             remotePlayerJoined -= OnRemotePlayerJoined;
             playerLeft -= OnPlayerLeft;
+            StateUpdated -= UpdateSketchMemoryScriptTimeOffset;
             SketchMemoryScript.m_Instance.CommandPerformed -= OnCommandPerformed;
             SketchMemoryScript.m_Instance.CommandUndo -= OnCommandUndo;
             SketchMemoryScript.m_Instance.CommandRedo -= OnCommandRedo;
@@ -491,7 +494,7 @@ namespace OpenBrush.Multiplayer
 
         private IEnumerator SendCommandHistory()
         {
-            IEnumerable<BaseCommand> commands = SketchMemoryScript.m_Instance.GetAllOperations().Reverse();
+            IEnumerable<BaseCommand> commands = SketchMemoryScript.m_Instance.GetAllOperations();
 
             int counter = 0;
 
@@ -543,5 +546,33 @@ namespace OpenBrush.Multiplayer
         {
             return isUserRoomOwner;
         }
+
+        public int? GetNetworkedTimestampMilliseconds()
+        {
+            if (State == ConnectionState.IN_ROOM)
+            {
+                if (m_Manager != null) return m_Manager.GetNetworkedTimestampMilliseconds();
+            }
+
+            return null;
+        }
+
+        // this only needs to be done once when the room is created
+        private void UpdateSketchMemoryScriptTimeOffset(ConnectionState state)
+        {
+            // Ensure the offset is set only once upon connecting as room owner
+            if (state == ConnectionState.IN_ROOM
+                && isUserRoomOwner
+                && m_NetworkOffsetTimestamp == null)
+            {
+                // Capture the current sketch time as the base offset for network synchronization
+                m_NetworkOffsetTimestamp = (int)(App.Instance.CurrentSketchTime * 1000);
+                SketchMemoryScript.m_Instance.SetTimeOffsetToAllStacks((int)m_NetworkOffsetTimestamp);
+                Debug.Log($"Network offset timestamp set: {m_NetworkOffsetTimestamp}s");
+
+            }
+
+        }
     }
 }
+

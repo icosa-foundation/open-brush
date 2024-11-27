@@ -37,9 +37,9 @@ namespace TiltBrush
         }
 
         // New constructor that accepts an existing Guid
-        public BrushStrokeCommand(Stroke stroke, Guid existingGuid, StencilWidget widget = null,
+        public BrushStrokeCommand(Stroke stroke, Guid existingGuid, int timestamp, StencilWidget widget = null,
                                   float lineLength = -1, BaseCommand parent = null)
-            : base(existingGuid, parent)
+            : base(existingGuid, timestamp, parent)
         {
             m_Stroke = stroke;
             m_Widget = widget;

@@ -236,6 +236,13 @@ namespace OpenBrush.Multiplayer
             return 0;
         }
 
+        public int GetNetworkedTimestampMilliseconds()
+        {
+            int tickRate = m_Runner.Simulation.Config.TickRate;
+            int networkTimeMilliseconds = (int)((m_Runner.Simulation.Tick * 1000) / (double)tickRate);
+            return networkTimeMilliseconds;
+        }
+
         public bool GetPlayerRoomOwnershipStatus(int playerId)
         {
             var remotePlayer = m_PlayersSpawning
@@ -355,12 +362,12 @@ namespace OpenBrush.Multiplayer
                 }
 
                 // End
-                PhotonRPC.RPC_BrushStrokeComplete(m_Runner, strokeGuid, command.Guid, command.ParentGuid, command.ChildrenCount);
+                PhotonRPC.RPC_BrushStrokeComplete(m_Runner, strokeGuid, command.Guid, (int)command.NetworkTimestamp, command.ParentGuid, command.ChildrenCount);
             }
             else
             {
                 // Can send in one.
-                PhotonRPC.RPC_BrushStrokeFull(m_Runner, new NetworkedStroke().Init(command.m_Stroke), command.Guid, command.ParentGuid, command.ChildrenCount);
+                PhotonRPC.RPC_BrushStrokeFull(m_Runner, new NetworkedStroke().Init(command.m_Stroke), command.Guid, (int)command.NetworkTimestamp, command.ParentGuid, command.ChildrenCount);
             }
             return true;
         }
@@ -373,14 +380,14 @@ namespace OpenBrush.Multiplayer
 
         private bool CommandDeleteStroke(DeleteStrokeCommand command)
         {
-            PhotonRPC.RPC_DeleteStroke(m_Runner, command.m_TargetStroke.m_Seed, command.Guid, command.ParentGuid, command.ChildrenCount);
+            PhotonRPC.RPC_DeleteStroke(m_Runner, command.m_TargetStroke.m_Seed, command.Guid, (int)command.NetworkTimestamp, command.ParentGuid, command.ChildrenCount);
             return true;
         }
 
         private bool CommandSwitchEnvironment(SwitchEnvironmentCommand command)
         {
             Guid environmentGuid = command.m_NextEnvironment.m_Guid;
-            PhotonRPC.RPC_SwitchEnvironment(m_Runner, environmentGuid, command.Guid, command.ParentGuid, command.ChildrenCount);
+            PhotonRPC.RPC_SwitchEnvironment(m_Runner, environmentGuid, command.Guid, (int)command.NetworkTimestamp, command.ParentGuid, command.ChildrenCount);
             return true;
         }
         #endregion
@@ -460,6 +467,7 @@ namespace OpenBrush.Multiplayer
         public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ArraySegment<byte> data) { }
         public void OnSceneLoadDone(NetworkRunner runner) { }
         public void OnSceneLoadStart(NetworkRunner runner) { }
+
         #endregion
     }
 }

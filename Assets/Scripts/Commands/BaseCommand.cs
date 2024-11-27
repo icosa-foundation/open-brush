@@ -16,6 +16,8 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
+using Fusion;
+using OpenBrush.Multiplayer;
 
 namespace TiltBrush
 {
@@ -29,7 +31,8 @@ namespace TiltBrush
         private Guid m_Guid;
         private BaseCommand m_Parent;
         protected List<BaseCommand> m_Children;
-        private int m_Timestamp;  // Updated to use an integer timestamp from Photon server
+        private int m_Timestamp;
+        private int? m_NetworkTimestamp;
 
         public void SetParent(BaseCommand parent)
         {
@@ -39,6 +42,12 @@ namespace TiltBrush
         {
             get { return m_Timestamp; }
             set { m_Timestamp = value; }
+        }
+
+        public int? NetworkTimestamp
+        {
+            get { return m_NetworkTimestamp; }
+            set { m_NetworkTimestamp = value; }
         }
 
         public int ChildrenCount
@@ -88,10 +97,13 @@ namespace TiltBrush
                 parent.m_Children.Add(this);
                 m_Parent = parent;
             }
+
+            m_Timestamp = (int)(App.Instance.CurrentSketchTime * 1000); // convert to milliseconds
+            m_NetworkTimestamp = MultiplayerManager.m_Instance?.GetNetworkedTimestampMilliseconds();
         }
 
-        // constructor that takes an existing Guid used in multiplayer to mantain consistences of commands across peers
-        public BaseCommand(Guid existingGuid, BaseCommand parent = null)
+        // constructor that takes an existing Guid and Timestamp used in multiplayer to mantain consistences of commands across peers
+        public BaseCommand(Guid existingGuid, int timestamp, BaseCommand parent = null)
         {
             m_Guid = existingGuid;
             m_Children = new List<BaseCommand>();
@@ -100,6 +112,8 @@ namespace TiltBrush
                 parent.m_Children.Add(this);
                 m_Parent = parent;
             }
+            m_Timestamp = timestamp;
+            m_NetworkTimestamp = timestamp;
         }
 
         /// True if this command changes the sketch in a saveable

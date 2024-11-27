@@ -145,8 +145,9 @@ namespace OpenBrush.Multiplayer
             return null;
         }
 
-        public static void CreateBrushStroke(Stroke stroke, Guid commandGuid, Guid parentGuid = default, int childCount = 0)
+        public static void CreateBrushStroke(Stroke stroke, Guid commandGuid,  int timestamp, Guid parentGuid = default, int childCount = 0)
         {
+
             Action preAction = () =>
             {
                 stroke.m_Type = Stroke.Type.NotCreated;
@@ -157,7 +158,7 @@ namespace OpenBrush.Multiplayer
 
             var parentCommand = FindParentCommand(parentGuid);
 
-            var command = new BrushStrokeCommand( stroke, commandGuid, parent: parentCommand);
+            var command = new BrushStrokeCommand( stroke, commandGuid, timestamp, parent: parentCommand);
 
             AddPendingCommand(preAction, commandGuid, parentGuid, command, childCount);
         }
@@ -228,14 +229,14 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false)]
-        public static void RPC_BrushStrokeFull(NetworkRunner runner, NetworkedStroke strokeData, Guid commandGuid, Guid parentGuid = default, int childCount = 0)
+        public static void RPC_BrushStrokeFull(NetworkRunner runner, NetworkedStroke strokeData, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0)
         {
 
             if (CheckifCommandGuidIsInStack(commandGuid))  return; 
             
             var decode = NetworkedStroke.ToStroke(strokeData);
 
-            CreateBrushStroke(decode, commandGuid, parentGuid, childCount);
+            CreateBrushStroke(decode, commandGuid, timestamp , parentGuid, childCount);
         }
 
         [Rpc(InvokeLocal = false)]
@@ -277,7 +278,7 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false)]
-        public static void RPC_BrushStrokeComplete(NetworkRunner runner, Guid id, Guid commandGuid, Guid parentGuid = default, int childCount = 0)
+        public static void RPC_BrushStrokeComplete(NetworkRunner runner, Guid id, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0)
         {
 
             if (CheckifCommandGuidIsInStack(commandGuid))  return;
@@ -290,13 +291,13 @@ namespace OpenBrush.Multiplayer
 
             var stroke = m_inProgressStrokes[id];
 
-            CreateBrushStroke(stroke, commandGuid, parentGuid, childCount);
+            CreateBrushStroke(stroke, commandGuid, timestamp, parentGuid, childCount);
 
             m_inProgressStrokes.Remove(id);
         }
 
         [Rpc(InvokeLocal = false)]
-        public static void RPC_DeleteStroke(NetworkRunner runner, int seed, Guid commandGuid, Guid parentGuid = default, int childCount = 0)
+        public static void RPC_DeleteStroke(NetworkRunner runner, int seed, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0)
         {
             if (CheckifCommandGuidIsInStack(commandGuid)) return;
 
@@ -305,7 +306,7 @@ namespace OpenBrush.Multiplayer
             if (foundStroke != null)
             {
                 var parentCommand = FindParentCommand(parentGuid);
-                var command = new DeleteStrokeCommand(foundStroke, parent: parentCommand);
+                var command = new DeleteStrokeCommand(foundStroke, commandGuid, timestamp, parent: parentCommand);
 
                 AddPendingCommand(() => {}, commandGuid, parentGuid, command, childCount);
             }
@@ -316,7 +317,7 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false)]
-        public static void RPC_SwitchEnvironment(NetworkRunner runner, Guid environmentGuid, Guid commandGuid, Guid parentGuid = default, int childCount = 0)
+        public static void RPC_SwitchEnvironment(NetworkRunner runner, Guid environmentGuid, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0)
         {
             if (CheckifCommandGuidIsInStack(commandGuid)) return;
 
@@ -326,7 +327,7 @@ namespace OpenBrush.Multiplayer
             {
      
                 var parentCommand = FindParentCommand(parentGuid);
-                var command = new SwitchEnvironmentCommand(environment, parent: parentCommand);
+                var command = new SwitchEnvironmentCommand(environment, commandGuid, timestamp, parent: parentCommand);
 
                 AddPendingCommand(() => { }, commandGuid, parentGuid, command, childCount);
             }
