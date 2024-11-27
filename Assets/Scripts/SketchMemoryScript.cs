@@ -16,8 +16,6 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace TiltBrush
 {
@@ -80,7 +78,6 @@ namespace TiltBrush
 
         // stack of sketch operations this session\\\
         private Stack<BaseCommand> m_OperationStack;
-        private HashSet<Guid> m_GuidCache; // Cache of GUIDs for network transmission
         // stack of undone operations available for redo
         private Stack<BaseCommand> m_RedoStack;
 
@@ -290,20 +287,6 @@ namespace TiltBrush
             return false;
         }
 
-        public IReadOnlyCollection<Guid> GetCommandGuids()
-        {
-            return m_GuidCache;
-        }
-
-        private string CalculateGuidCacheHash()
-        {
-            using (var md5 = MD5.Create())
-            {
-                var combined = string.Join("", m_GuidCache.OrderBy(g => g).Select(g => g.ToString()));
-                byte[] hashBytes = md5.ComputeHash(Encoding.UTF8.GetBytes(combined));
-                return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
-            }
-        }
 
         public bool CanUndo() { return m_OperationStack.Count > 0; }
         public bool CanRedo() { return m_RedoStack.Count > 0; }
@@ -313,7 +296,6 @@ namespace TiltBrush
             m_OperationStack = new Stack<BaseCommand>();
             m_LastOperationStackCount = 0;
             m_RedoStack = new Stack<BaseCommand>();
-            m_GuidCache = new HashSet<Guid>();
             m_HasVisibleObjects = false;
             m_MemoryExceeded = false;
             m_MemoryWarningAccepted = false;
@@ -407,11 +389,9 @@ namespace TiltBrush
             while (m_OperationStack.Any())
             {
                 BaseCommand top = m_OperationStack.Pop();
-                m_GuidCache.Remove(top.Guid);
                 if (!top.Merge(command))
                 {
                     m_OperationStack.Push(top);
-                    m_GuidCache.Add(top.Guid);
                     break;
                 }
                 discardCommand = false;
@@ -424,7 +404,6 @@ namespace TiltBrush
             }
             delta.Redo();
             m_OperationStack.Push(command);
-            m_GuidCache.Add(command.Guid);
             OperationStackChanged?.Invoke();
 
             if (invoke)
@@ -441,17 +420,14 @@ namespace TiltBrush
             while (m_OperationStack.Any())
             {
                 BaseCommand top = m_OperationStack.Pop();
-                m_GuidCache.Remove(top.Guid);
                 if (!top.Merge(command))
                 {
                     m_OperationStack.Push(top);
-                    m_GuidCache.Add(top.Guid);
                     break;
                 }
                 command = top;
             }
             m_OperationStack.Push(command);
-            m_GuidCache.Add(command.Guid);
             OperationStackChanged?.Invoke();
             CommandPerformed?.Invoke(command);
         }
@@ -830,7 +806,6 @@ namespace TiltBrush
                 }
             }
             m_OperationStack.Clear();
-            m_GuidCache.Clear();
             OperationStackChanged?.Invoke();
             m_LastOperationStackCount = 0;
             m_MemoryList.Clear();
@@ -950,7 +925,6 @@ namespace TiltBrush
         public void StepBack(bool invoke = true)
         {
             var comm = m_OperationStack.Pop();
-            m_GuidCache.Remove(comm.Guid);
             comm.Undo();
             m_RedoStack.Push(comm);
             OperationStackChanged?.Invoke();
