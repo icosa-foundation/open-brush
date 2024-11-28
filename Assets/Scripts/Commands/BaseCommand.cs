@@ -16,7 +16,6 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
-using Fusion;
 using OpenBrush.Multiplayer;
 
 namespace TiltBrush
