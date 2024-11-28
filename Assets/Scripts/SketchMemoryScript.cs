@@ -990,6 +990,14 @@ namespace TiltBrush
             return m_Instance.m_MemoryList.Count();
         }
 
+        public List<Stroke> GetStrokesWithoutCommand()
+        {
+            return m_MemoryList
+                .Where(stroke => stroke.Command == null)
+                .OrderBy(s => s.HeadTimestampMs)
+                .ToList();
+        }
+
         public static void InitUndoObject(BaseBrushScript rBrushScript)
         {
             rBrushScript.CloneAsUndoObject();
