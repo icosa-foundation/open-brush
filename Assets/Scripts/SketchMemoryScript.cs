@@ -837,6 +837,8 @@ namespace TiltBrush
             }
             m_OperationStack.Clear();
             OperationStackChanged?.Invoke();
+            m_NetworkStack.Clear();
+            NetworkOperationStackChanged?.Invoke();
             m_LastOperationStackCount = 0;
             m_MemoryList.Clear();
             App.GroupManager.ResetGroups();
