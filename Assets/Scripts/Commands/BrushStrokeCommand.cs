@@ -32,6 +32,7 @@ namespace TiltBrush
                                   float lineLength = -1, BaseCommand parent = null) : base(parent)
         {
             m_Stroke = stroke;
+            m_Stroke.Command = this;
             m_Widget = widget;
             m_LineLength_CS = lineLength;
         }
@@ -42,6 +43,7 @@ namespace TiltBrush
             : base(existingGuid, timestamp, parent)
         {
             m_Stroke = stroke;
+            m_Stroke.Command = this;
             m_Widget = widget;
             m_LineLength_CS = lineLength;
         }
