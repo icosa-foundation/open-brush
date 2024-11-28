@@ -204,6 +204,8 @@ namespace OpenBrush.Multiplayer
         {
             State = ConnectionState.JOINING_ROOM;
 
+            // check if room exist to determine if user is room owner
+            DoesRoomNameExist(RoomData.roomName);
             if (!isUserRoomOwner) SketchMemoryScript.m_Instance.ClearMemory();
 
             bool successData = false;
@@ -280,12 +282,26 @@ namespace OpenBrush.Multiplayer
         }
 
         public bool DoesRoomNameExist(string roomName)
-        {
+        { 
+
             bool roomExist = m_RoomData.Any(room => room.roomName == roomName);
 
-            if (roomExist) { isUserRoomOwner = false; }
+            // Room does not exist
+            if (!roomExist)
+            {
+                isUserRoomOwner = true;
+                return false;
+            }
 
-            return roomExist;
+            // Find the room with the given name
+            RoomData? room = m_RoomData.FirstOrDefault(r => r.roomName == roomName);
+
+            // Room exists 
+            RoomData r = (RoomData)room;
+            if (r.numPlayers == 0) isUserRoomOwner = true;// and is empty user becomes room owner
+            else isUserRoomOwner = false; // not empty user is not the room owner
+
+            return true;
         }
 
         void OnRoomDataRefreshed(List<RoomData> rooms)
@@ -371,6 +387,9 @@ namespace OpenBrush.Multiplayer
         {
             // the user is the room owner if is the firt to get in 
             isUserRoomOwner = m_Manager.GetPlayerCount() == 1 ? true : false;
+            // if not room owner clear scene 
+            if (!isUserRoomOwner) SketchMemoryScript.m_Instance.ClearMemory();
+
             m_LocalPlayer = playerData;
             m_LocalPlayer.PlayerId = id;
 

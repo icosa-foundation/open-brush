@@ -40,33 +40,38 @@ public class MultiplayerManagerInspector : Editor
         EditorGUILayout.EndHorizontal();
         GUILayout.Space(5);
 
-        if (GUILayout.Button("Connect") )
+        if (GUILayout.Button("Connect"))
         {
             ConnectToLobby();
-            EditorUtility.SetDirty(target); 
+            EditorUtility.SetDirty(target);
         }
 
 
         if (GUILayout.Button("Join Room"))
         {
             ConnectToRoom();
-            EditorUtility.SetDirty(target); 
+            EditorUtility.SetDirty(target);
         }
 
- 
-        if (GUILayout.Button("Exit Room") )
+
+        if (GUILayout.Button("Exit Room"))
         {
             DisconnectFromRoom();
-            EditorUtility.SetDirty(target); 
+            EditorUtility.SetDirty(target);
         }
 
 
         if (GUILayout.Button("Disconnect"))
         {
             Disconnect();
-            EditorUtility.SetDirty(target); 
+            EditorUtility.SetDirty(target);
         }
 
+        if (GUILayout.Button("Refresh Room List"))
+        {
+            CheckIfRoomExists();
+            EditorUtility.SetDirty(target);
+        }
 
         //Local Player Id
         string localPlayerId = "";
@@ -99,7 +104,7 @@ public class MultiplayerManagerInspector : Editor
             foreach (var remotePlayer in multiplayerManager.m_RemotePlayers)
             {
                 remoteUsersRegistered += remotePlayer.PlayerId.ToString() + ",";
-            }  
+            }
             remoteUsersRegistered += "]";
         }
         else remoteUsersRegistered = "Not Assigned";
@@ -111,7 +116,7 @@ public class MultiplayerManagerInspector : Editor
         EditorGUILayout.EndHorizontal();
 
         Repaint();
-        
+
     }
 
     private async void ConnectToLobby()
@@ -135,7 +140,7 @@ public class MultiplayerManagerInspector : Editor
             };
 
             bool success = await multiplayerManager.JoinRoom(roomData);
-           
+
         }
     }
 
@@ -144,7 +149,7 @@ public class MultiplayerManagerInspector : Editor
         if (multiplayerManager != null)
         {
             bool success = await multiplayerManager.LeaveRoom();
-          
+
         }
     }
 
@@ -154,6 +159,14 @@ public class MultiplayerManagerInspector : Editor
         {
             bool success = await multiplayerManager.Disconnect();
 
+        }
+    }
+
+    private void CheckIfRoomExists()
+    {
+        if (multiplayerManager != null)
+        {
+            bool roomExists = multiplayerManager.DoesRoomNameExist(roomName);
         }
     }
 }
