@@ -28,7 +28,7 @@ namespace TiltBrush
 {
     /// A sketchset made up of the sketches stored on Google drive, excepting the ones that are copies
     /// of the sketches on the local device.
-    public class GoogleDriveSketchSet : SketchSet
+    public class GoogleDriveSketchSet : ISketchSet
     {
 
         public class GoogleDriveFileInfo : SceneFileInfo
@@ -124,9 +124,9 @@ namespace TiltBrush
                 return true; // TODO
             }
 
-            public Stream GetReadStream(string subfileName)
+            public Task<Stream> GetReadStreamAsync(string subfileName)
             {
-                return m_TiltFile.GetReadStream(subfileName);
+                return m_TiltFile.GetReadStreamAsync(subfileName);
             }
 
             public IEnumerator LoadThumbnail()
@@ -184,7 +184,11 @@ namespace TiltBrush
         private Coroutine m_ThumbnailLoadingCoroutine;
         private bool m_Changed;
 
-        public SketchSetType Type => SketchSetType.Drive;
+        public const string UriString = "googledrive:";
+        public string SketchSetType => UriString;
+        public string SketchSetInstance => "";
+        public string Title => "Google Drive Backup";
+
 
         public bool IsReadyForAccess => m_Sketches != null;
 
