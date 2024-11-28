@@ -401,7 +401,7 @@ namespace OpenBrush.Multiplayer
             m_RemotePlayers.Add(playerData);
 
             //if i am the room owner I should send the command history
-            if (isUserRoomOwner) StartCoroutine(SendCommandHistory());
+            if (isUserRoomOwner) StartCoroutine(SendStrokesAndCommandHistory());
 
         }
 
@@ -511,13 +511,33 @@ namespace OpenBrush.Multiplayer
             Disconnected?.Invoke();// Invoke the Disconnected event
         }
 
-        private IEnumerator SendCommandHistory()
+        private IEnumerator SendStrokesAndCommandHistory()
         {
+
+            // Retrieve Strokes that do not have a command associated with them
+            List<Stroke> strokesWithoutCommand = SketchMemoryScript.m_Instance.GetStrokesWithoutCommand();
+            // Retrieve all commands from staks
             IEnumerable<BaseCommand> commands = SketchMemoryScript.m_Instance.GetAllOperations();
 
             int counter = 0;
 
-            foreach (BaseCommand command in commands)
+            // Determine the first command timestamp
+            int firstCommandTimestamp = int.MaxValue; // Default to MaxValue if no commands are present
+            if (commands.Any())
+            {
+                var firstCommand = commands.First();
+                if (firstCommand.NetworkTimestamp.HasValue) firstCommandTimestamp = firstCommand.NetworkTimestamp.Value;
+            }
+
+            // Generate a list of brush stroke commands from the list of strokes without commands
+            List<BrushStrokeCommand> brushCommands = CreateBrushStrokeCommands(strokesWithoutCommand, firstCommandTimestamp);
+
+            // Merge 
+            IEnumerable<BaseCommand> allCommands = brushCommands.Concat(commands);
+
+            // Send commands in the existing command staks
+            counter = 0;
+            foreach (BaseCommand command in allCommands)
             {
                 OnCommandPerformed(command);
                 counter++;
@@ -528,6 +548,47 @@ namespace OpenBrush.Multiplayer
                     yield return new WaitForSeconds(delayBetweenBatches);
                 }
             }
+        }
+
+        private List<BrushStrokeCommand> CreateBrushStrokeCommands(List<Stroke> strokes, int LastTimestamp)
+        {
+            List<BrushStrokeCommand> commands = new List<BrushStrokeCommand>();
+
+            // Handle empty list
+            if (strokes == null || strokes.Count == 0)
+            {
+                return commands;
+            }
+
+            // Ensure strokes are ordered by their timestamps
+            strokes = strokes.OrderBy(s => s.HeadTimestampMs).ToList();
+
+            uint earliestStrokeTimestampMs = strokes.First().HeadTimestampMs;
+            uint latestStrokeTimestampMs = strokes.Last().TailTimestampMs;
+            uint totalStrokeTimeMs = latestStrokeTimestampMs - earliestStrokeTimestampMs;
+
+            if (totalStrokeTimeMs == 0) totalStrokeTimeMs = 1;
+
+            foreach (var stroke in strokes)
+            {
+                // Calculate timestamp
+                uint strokeTimeMs = stroke.HeadTimestampMs - earliestStrokeTimestampMs;
+
+                // Use long to prevent integer overflow
+                long numerator = (long)strokeTimeMs * (LastTimestamp - 1);
+                int timestamp = (int)(numerator / totalStrokeTimeMs);
+
+                // Ensure timestamp is less than firstCommandTimestamp
+                if (timestamp >= LastTimestamp)
+                {
+                    timestamp = LastTimestamp - 1;
+                }
+
+                BrushStrokeCommand command = new BrushStrokeCommand(stroke, Guid.NewGuid(), timestamp);
+                commands.Add(command);
+            }
+
+            return commands;
         }
 
         public void StartSpeaking()

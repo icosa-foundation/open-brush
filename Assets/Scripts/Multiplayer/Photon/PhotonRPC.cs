@@ -301,6 +301,8 @@ namespace OpenBrush.Multiplayer
         {
             if (CheckifCommandGuidIsInStack(commandGuid)) return;
 
+            // TODO : implment GUID for strokesdata.
+            // The range of int is large (-2,147,483,648 to 2,147,483,647), but collisions are still possible.
             var foundStroke = SketchMemoryScript.m_Instance.GetMemoryList.Where(x => x.m_Seed == seed).First();
 
             if (foundStroke != null)
