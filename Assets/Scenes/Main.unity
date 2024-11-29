@@ -3654,7 +3654,7 @@ MonoBehaviour:
   m_SdkMode: 0
   m_AutoProfile: 0
   m_AutoProfileWaitTime: 10
-  Secrets: {fileID: 11400000, guid: 3196e9bd8aa430e42af6fe061aa7323b, type: 2}
+  Secrets: {fileID: 11400000, guid: 2958d93356c83c5409c5fc930c42e6fc, type: 2}
   m_SketchFiles: []
   DisableAccountLogins: 0
   m_OdsNumFrames: 0
@@ -15212,8 +15212,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b989d2f19099ac044b955d3a6a62dea9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  batchSize: 60
+  delayBetweenBatches: 0.05
   m_MultiplayerType: 2
   CurrentRoomName: 
+  data:
+    roomName: 
+    roomPassword: 
+    private: 0
+    maxPlayers: 0
+    voiceDisabled: 0
 --- !u!114 &1052269835
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15296,21 +15304,6 @@ MonoBehaviour:
     EnableLobbyStatistics: 0
     NetworkLogging: 1
   ShowSettings: 0
-  AppSettings:
-    AppIdFusion: 
-    AppIdChat: 
-    AppIdVoice: 
-    AppVersion: 
-    UseNameServer: 1
-    FixedRegion: 
-    Server: 
-    Port: 0
-    ProxyServer: 
-    Protocol: 0
-    EnableProtocolFallback: 1
-    AuthMode: 0
-    EnableLobbyStatistics: 0
-    NetworkLogging: 1
   UseVoiceAppSettings: 0
 --- !u!1 &1057179852
 GameObject:

@@ -47,7 +47,7 @@ namespace TiltBrush
                     return command;
                 return null;
             }
-            set {  m_Command = new WeakReference<BrushStrokeCommand>(value); }
+            set { m_Command = new WeakReference<BrushStrokeCommand>(value); }
         }
 
 

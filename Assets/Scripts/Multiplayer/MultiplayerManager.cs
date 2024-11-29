@@ -36,8 +36,8 @@ namespace OpenBrush.Multiplayer
 
     public class MultiplayerManager : MonoBehaviour
     {
-        public int batchSize = 1;
-        public float delayBetweenBatches = 0.25f;
+        public int batchSize = 60;
+        public float delayBetweenBatches = 0.05f;
 
         public static MultiplayerManager m_Instance;
         public MultiplayerType m_MultiplayerType;
@@ -282,7 +282,7 @@ namespace OpenBrush.Multiplayer
         }
 
         public bool DoesRoomNameExist(string roomName)
-        { 
+        {
 
             bool roomExist = m_RoomData.Any(room => room.roomName == roomName);
 
@@ -511,6 +511,8 @@ namespace OpenBrush.Multiplayer
             Disconnected?.Invoke();// Invoke the Disconnected event
         }
 
+        private const int MAX_MESSAGES_PER_TICK = 1; // Adjust based on network constraints
+
         private IEnumerator SendStrokesAndCommandHistory()
         {
 
@@ -535,18 +537,20 @@ namespace OpenBrush.Multiplayer
             // Merge 
             IEnumerable<BaseCommand> allCommands = brushCommands.Concat(commands);
 
-            // Send commands in the existing command staks
+            // Send commands 
             counter = 0;
             foreach (BaseCommand command in allCommands)
             {
-                OnCommandPerformed(command);
-                counter++;
+                int estimatedMessages = EstimateMessagesForCommand(command);
 
-                if (counter % batchSize == 0) // Using batch size for pacing; consider calculating payload size as an improvement
+                if (counter + estimatedMessages > batchSize) // Using batch size for pacing; consider calculating payload size as an improvement
                 {
                     yield return null;
                     yield return new WaitForSeconds(delayBetweenBatches);
                 }
+
+                OnCommandPerformed(command);
+                counter += estimatedMessages;
             }
         }
 
@@ -589,6 +593,24 @@ namespace OpenBrush.Multiplayer
             }
 
             return commands;
+        }
+
+        private int EstimateMessagesForCommand(BaseCommand command)
+        {
+            switch (command)
+            {
+                case BrushStrokeCommand strokeCommand:
+                    int totalControlPoints = strokeCommand.m_Stroke.m_ControlPoints.Length;
+                    if (totalControlPoints <= NetworkingConstants.MaxControlPointsPerChunk) return 1;
+                    int splits = (int)Math.Ceiling((double)totalControlPoints / NetworkingConstants.MaxControlPointsPerChunk);
+                    return 2 + (splits - 1);
+                case DeleteStrokeCommand:
+                case SwitchEnvironmentCommand:
+                case BaseCommand:
+                    return 1;
+                default:
+                    return 0;
+            }
         }
 
         public void StartSpeaking()
