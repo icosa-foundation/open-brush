@@ -333,7 +333,18 @@ namespace TiltBrush
             string subpathToTraverse;
             if (!string.IsNullOrEmpty(previousSubtree))
             {
-                subpathToTraverse = m_Subtree.Substring(previousSubtree.Length);
+
+                // example case:
+                //      previousSubtree = CarBody/Floor
+                //      m_Subtree = CarBody/Floor/Wheel1
+                //      subpathToTraverse should be Floor/Wheel1
+
+                // Floor
+                string lastLevel = previousSubtree.Split("/")[^1];
+
+                int startIndex = previousSubtree.Length - (lastLevel.Length + "/".Length);
+
+                subpathToTraverse = m_Subtree.Substring(startIndex);
             }
             else
             {
