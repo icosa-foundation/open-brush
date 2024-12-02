@@ -204,6 +204,10 @@ namespace TiltBrush
             return allCommands.OrderBy(command => command.NetworkTimestamp);
         }
 
+        public void AddCommandToNetworkStack(BaseCommand command)
+        {
+            m_NetworkStack.Push(command);
+        }
 
         public Stroke GetStrokeAtIndex(int index)
         {

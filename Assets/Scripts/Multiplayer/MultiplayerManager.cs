@@ -58,6 +58,8 @@ namespace OpenBrush.Multiplayer
         public event Action<ConnectionUserInfo> UserInfoStateUpdated;
         private List<RoomData> m_RoomData = new List<RoomData>();
         private double? m_NetworkOffsetTimestamp = null;
+        private bool _isWaiting = false;
+        private bool _isSendingCommandHistory = false;
 
         ulong myOculusUserId;
 
@@ -515,54 +517,70 @@ namespace OpenBrush.Multiplayer
 
         private IEnumerator SendStrokesAndCommandHistory()
         {
+            // Allow only one active coroutine and one queued:
+            // If already waiting, ignore this call.
+            if (_isWaiting) yield break;
 
-            // Retrieve Strokes that do not have a command associated with them
-            List<Stroke> strokesWithoutCommand = SketchMemoryScript.m_Instance.GetStrokesWithoutCommand();
-            // Retrieve all commands from staks
-            IEnumerable<BaseCommand> commands = SketchMemoryScript.m_Instance.GetAllOperations();
-
-            int counter = 0;
-
-            // Determine the first command timestamp
-            int firstCommandTimestamp = int.MaxValue; // Default to MaxValue if no commands are present
-            if (commands.Any())
+            if (_isSendingCommandHistory)
             {
-                var firstCommand = commands.First();
-                if (firstCommand.NetworkTimestamp.HasValue) firstCommandTimestamp = firstCommand.NetworkTimestamp.Value;
-            }
-
-            // Generate a list of brush stroke commands from the list of strokes without commands
-            List<BrushStrokeCommand> brushCommands = CreateBrushStrokeCommands(strokesWithoutCommand, firstCommandTimestamp);
-
-            // Merge 
-            IEnumerable<BaseCommand> allCommands = brushCommands.Concat(commands);
-
-            // Send commands 
-            counter = 0;
-            foreach (BaseCommand command in allCommands)
-            {
-                int estimatedMessages = EstimateMessagesForCommand(command);
-
-                if (counter + estimatedMessages > batchSize) // Using batch size for pacing; consider calculating payload size as an improvement
+                _isWaiting = true;
+                while (_isSendingCommandHistory)
                 {
                     yield return null;
-                    yield return new WaitForSeconds(delayBetweenBatches);
+
+                }
+                _isWaiting = false;
+            }
+
+            _isSendingCommandHistory = true;
+
+
+            try
+            {
+                // Retrieve Strokes that do not have a command associated with them
+                List<Stroke> strokesWithoutCommand = SketchMemoryScript.m_Instance.GetStrokesWithoutCommand();
+                // Retrieve all commands from staks
+                IEnumerable<BaseCommand> commands = SketchMemoryScript.m_Instance.GetAllOperations();
+
+                int counter = 0;
+
+                // Determine the first command timestamp
+                int firstCommandTimestamp = 0;
+                if (commands.Any())
+                {
+                    var firstCommand = commands.First();
+                    if (firstCommand.NetworkTimestamp.HasValue) firstCommandTimestamp = firstCommand.NetworkTimestamp.Value;
                 }
 
-                OnCommandPerformed(command);
-                counter += estimatedMessages;
+                // Generate a list of brush stroke commands from the list of strokes without commands
+                CreateBrushStrokeCommands(strokesWithoutCommand, firstCommandTimestamp);
+
+                // Send commands 
+                counter = 0;
+                foreach (BaseCommand command in commands)
+                {
+                    int estimatedMessages = EstimateMessagesForCommand(command);
+
+                    if (counter + estimatedMessages > batchSize)
+                    {
+                        yield return null;
+                        yield return new WaitForSeconds(delayBetweenBatches);
+                    }
+
+                    OnCommandPerformed(command);
+                    counter += estimatedMessages;
+                }
+            }
+            finally
+            {
+                _isSendingCommandHistory = false;
             }
         }
 
-        private List<BrushStrokeCommand> CreateBrushStrokeCommands(List<Stroke> strokes, int LastTimestamp)
+        private void CreateBrushStrokeCommands(List<Stroke> strokes, int LastTimestamp)
         {
-            List<BrushStrokeCommand> commands = new List<BrushStrokeCommand>();
 
-            // Handle empty list
-            if (strokes == null || strokes.Count == 0)
-            {
-                return commands;
-            }
+            if (strokes == null || strokes.Count == 0) return;
 
             // Ensure strokes are ordered by their timestamps
             strokes = strokes.OrderBy(s => s.HeadTimestampMs).ToList();
@@ -589,10 +607,8 @@ namespace OpenBrush.Multiplayer
                 }
 
                 BrushStrokeCommand command = new BrushStrokeCommand(stroke, Guid.NewGuid(), timestamp);
-                commands.Add(command);
+                SketchMemoryScript.m_Instance.AddCommandToNetworkStack(command);
             }
-
-            return commands;
         }
 
         private int EstimateMessagesForCommand(BaseCommand command)
@@ -670,8 +686,6 @@ namespace OpenBrush.Multiplayer
                 // Capture the current sketch time as the base offset for network synchronization
                 m_NetworkOffsetTimestamp = (int)(App.Instance.CurrentSketchTime * 1000);
                 SketchMemoryScript.m_Instance.SetTimeOffsetToAllStacks((int)m_NetworkOffsetTimestamp);
-                Debug.Log($"Network offset timestamp set: {m_NetworkOffsetTimestamp}s");
-
             }
 
         }
