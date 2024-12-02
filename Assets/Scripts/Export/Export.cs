@@ -281,7 +281,7 @@ URL=" + kExportDocumentationUrl;
                         // http textures so if uploaded, this glb will have missing textures.
                         var exporter = new ExportGlTF();
                         exporter.ExportBrushStrokes(
-                            filename, AxisConvention.kGltf2, binary: true, doExtras: false,
+                            filename, AxisConvention.kGltf2, binary: true, doExtras: true,
                             includeLocalMediaContent: true,
                             gltfVersion: gltfVersion,
                             selfContained: true
