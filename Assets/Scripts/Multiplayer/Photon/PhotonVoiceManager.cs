@@ -14,8 +14,8 @@
 
 #if PHOTON_UNITY_NETWORKING && PHOTON_VOICE_DEFINED
 
-using Fusion;
 using OpenBrush.Multiplayer;
+using Photon.Pun;
 using Photon.Realtime;
 using Photon.Voice.Unity;
 using System;
@@ -50,6 +50,8 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
             State = ConnectionState.INITIALISING;
             m_VoiceConnection = GameObject.FindFirstObjectByType<VoiceConnection>();
             if (m_VoiceConnection == null) throw new Exception("[PhotonVoiceManager] VoiceConnection component not found in scene");
+            PhotonNetwork.LogLevel = PunLogLevel.ErrorsOnly;
+            m_VoiceConnection.VoiceLogger.LogLevel = Photon.Voice.LogLevel.Error;
 
             m_VoiceConnection.Settings = new AppSettings
             {
