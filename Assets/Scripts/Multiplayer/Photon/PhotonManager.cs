@@ -23,6 +23,7 @@ using Fusion;
 using Fusion.Photon.Realtime;
 using Fusion.Sockets;
 using TiltBrush;
+using UnityEditor;
 
 
 
@@ -113,6 +114,7 @@ namespace OpenBrush.Multiplayer
             }
 
         }
+
 
         #region IConnectionHandler Methods
 
@@ -282,6 +284,32 @@ namespace OpenBrush.Multiplayer
             await Task.Yield();
             return true;
         }
+
+        public async Task<bool> RpcStartSyncHistory(int id)
+        {
+            PlayerRef playerRef = id;
+            PhotonRPC.RPC_StartHistorySync(m_Runner, id);
+            await Task.Yield();
+            return true;
+        }
+
+        public async Task<bool> RpcHistorySyncComplete(int id)
+        {
+            PlayerRef playerRef = id;
+            PhotonRPC.RPC_HistorySyncCompleted(m_Runner, id);
+            await Task.Yield();
+            return true;
+        }
+
+
+        public async Task<bool> RpcSyncHistoryPercentage(int id, int exp, int snt)
+        {
+            PlayerRef playerRef = id;
+            PhotonRPC.RPC_HistoryPercentageUpdate(m_Runner, id, exp, snt);
+            await Task.Yield();
+            return true;
+        }
+
         #endregion
 
         #region Command Methods

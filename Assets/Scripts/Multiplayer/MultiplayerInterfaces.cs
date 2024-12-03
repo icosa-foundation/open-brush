@@ -40,6 +40,9 @@ namespace OpenBrush.Multiplayer
         Task<bool> UndoCommand(BaseCommand command);
         Task<bool> RedoCommand(BaseCommand command);
         Task<bool> RpcSyncToSharedAnchor(string uuid);
+        Task<bool> RpcStartSyncHistory(int id);
+        Task<bool> RpcSyncHistoryPercentage(int id, int exp, int snt);
+        Task<bool> RpcHistorySyncComplete(int id);
 
         event Action Disconnected;
 

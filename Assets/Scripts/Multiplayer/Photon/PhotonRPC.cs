@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Fusion;
 using TiltBrush;
+using static TiltBrush.SketchControlsScript;
 
 namespace OpenBrush.Multiplayer
 {
@@ -128,7 +129,7 @@ namespace OpenBrush.Multiplayer
         private static bool CheckifCommandGuidIsInStack(Guid commandGuid) {
 
             if (SketchMemoryScript.m_Instance.IsCommandInStack(commandGuid)) { 
-                Debug.Log($"Command with Guid {commandGuid} already in stack.");
+                //Debug.Log($"Command with Guid {commandGuid} already in stack.");
                 return true; 
             }
             return false;
@@ -338,6 +339,27 @@ namespace OpenBrush.Multiplayer
                 Debug.LogError($"Environment with Guid {environmentGuid} not found.");
             }
         }
+
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_StartHistorySync(NetworkRunner runner, [RpcTarget] PlayerRef targetPlayer )
+        {
+            m_Instance.IssueGlobalCommand(GlobalCommands.DisplaySynchInfo);
+        }
+
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_HistoryPercentageUpdate(NetworkRunner runner, [RpcTarget] PlayerRef targetPlayer, int expected, int sent)
+        {
+            MultiplayerManager.m_Instance.numberOfCommandsExpected = expected;
+            MultiplayerManager.m_Instance.numberOfCommandsSent = sent;
+            m_Instance.IssueGlobalCommand(GlobalCommands.SynchInfoPercentageUpdate);
+        }
+
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_HistorySyncCompleted(NetworkRunner runner, [RpcTarget] PlayerRef targetPlayer)
+        {
+            m_Instance.IssueGlobalCommand(GlobalCommands.HideSynchInfo);
+        }
+
 
         #endregion
     }

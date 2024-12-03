@@ -18,6 +18,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using System.Collections;
+using Fusion;
+using System.Security.Cryptography;
+using TMPro;
+
+
+
 
 
 #if OCULUS_SUPPORTED
@@ -60,6 +66,9 @@ namespace OpenBrush.Multiplayer
         private double? m_NetworkOffsetTimestamp = null;
         private bool _isWaiting = false;
         private bool _isSendingCommandHistory = false;
+        [HideInInspector] public int numberOfCommandsExpected = 0;
+        [HideInInspector] public int numberOfCommandsSent = 0;
+        private InfoCardAnimation infoCard;
 
         ulong myOculusUserId;
 
@@ -403,7 +412,11 @@ namespace OpenBrush.Multiplayer
             m_RemotePlayers.Add(playerData);
 
             //if i am the room owner I should send the command history
-            if (isUserRoomOwner) StartCoroutine(SendStrokesAndCommandHistory());
+            if (isUserRoomOwner)
+            {
+                StartSynchHistory(id);
+                StartCoroutine(SendStrokesAndCommandHistory(id));
+            }
 
         }
 
@@ -459,16 +472,41 @@ namespace OpenBrush.Multiplayer
                 await m_Manager.PerformCommand(command);
             }
 
+        }
 
-            // TODO: Proper rollback if command not possible right now.
-            // Commented so it doesn't interfere with general use.
-            // Link actions to connect/disconnect, not Unity lifecycle.
+        private async void StartSynchHistory(int id)
+        {
+            if (State == ConnectionState.IN_ROOM)
+            {
+                await m_Manager.RpcStartSyncHistory(id);
+            }
+        }
 
-            // if (!success)
-            // {
-            //     OutputWindowScript.m_Instance.CreateInfoCardAtController(InputManager.ControllerName.Brush, "Don't know how to network this action yet.");
-            //     SketchMemoryScript.m_Instance.StepBack(false);
-            // }
+        private async void SynchHistoryPercentage(int id, int expected, int sent)
+        {
+            if (State == ConnectionState.IN_ROOM)
+            {
+                await m_Manager.RpcSyncHistoryPercentage(id, expected, sent);
+            }
+        }
+
+        private async void SynchHistoryComplete(int id)
+        {
+            if (State == ConnectionState.IN_ROOM)
+            {
+                await m_Manager.RpcHistorySyncComplete(id);
+            }
+        }
+
+        private async void SynchHistoryCompleteForAll()
+        {
+            if (State == ConnectionState.IN_ROOM)
+            {
+                foreach (var player in m_RemotePlayers)
+                {
+                    await m_Manager.RpcHistorySyncComplete(player.PlayerId);
+                }
+            }
         }
 
         private void OnCommandUndo(BaseCommand command)
@@ -513,9 +551,7 @@ namespace OpenBrush.Multiplayer
             Disconnected?.Invoke();// Invoke the Disconnected event
         }
 
-        private const int MAX_MESSAGES_PER_TICK = 1; // Adjust based on network constraints
-
-        private IEnumerator SendStrokesAndCommandHistory()
+        private IEnumerator SendStrokesAndCommandHistory(int id)
         {
             // Allow only one active coroutine and one queued:
             // If already waiting, ignore this call.
@@ -542,10 +578,9 @@ namespace OpenBrush.Multiplayer
                 // Retrieve all commands from staks
                 IEnumerable<BaseCommand> commands = SketchMemoryScript.m_Instance.GetAllOperations();
 
-                int counter = 0;
 
                 // Determine the first command timestamp
-                int firstCommandTimestamp = 0;
+                int firstCommandTimestamp = int.MaxValue;
                 if (commands.Any())
                 {
                     var firstCommand = commands.First();
@@ -556,24 +591,30 @@ namespace OpenBrush.Multiplayer
                 CreateBrushStrokeCommands(strokesWithoutCommand, firstCommandTimestamp);
 
                 // Send commands 
-                counter = 0;
+                int packetCounter = 0;
+                int counter = 0;
                 foreach (BaseCommand command in commands)
                 {
                     int estimatedMessages = EstimateMessagesForCommand(command);
 
-                    if (counter + estimatedMessages > batchSize)
+                    if (packetCounter + estimatedMessages > batchSize)
                     {
                         yield return null;
                         yield return new WaitForSeconds(delayBetweenBatches);
                     }
 
                     OnCommandPerformed(command);
-                    counter += estimatedMessages;
+                    packetCounter += estimatedMessages;
+                    counter++;
+                    SynchHistoryPercentage(id, commands.Count(), counter);
                 }
             }
             finally
             {
                 _isSendingCommandHistory = false;
+
+                if (_isWaiting) SynchHistoryComplete(id);
+                else SynchHistoryCompleteForAll();
             }
         }
 
@@ -688,6 +729,59 @@ namespace OpenBrush.Multiplayer
                 SketchMemoryScript.m_Instance.SetTimeOffsetToAllStacks((int)m_NetworkOffsetTimestamp);
             }
 
+        }
+
+        public void DisplaySynchInfo()
+        {
+            OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                InputManager.ControllerName.Brush,
+                "Synch Started!",
+                fPopScalar: 1.0f
+            );
+
+            RetrieveInfoCard();
+        }
+
+        public InfoCardAnimation RetrieveInfoCard()
+        {
+            // Find all active InfoCards in the scene
+            InfoCardAnimation[] allInfoCards = FindObjectsOfType<InfoCardAnimation>();
+
+            foreach (var card in allInfoCards)
+            {
+                TextMeshPro textComponent = card.GetComponentInChildren<TextMeshPro>();
+                if (textComponent != null && textComponent.text.Contains("Synch"))
+                {
+                    infoCard = card;
+                    return card;
+                }
+            }
+
+            return null;
+        }
+
+        public void SynchInfoPercentageUpdate()
+        {
+            int percentage = (int)((float)SketchMemoryScript.AllStrokesCount() / MultiplayerManager.m_Instance.numberOfCommandsExpected * 100);
+            string text = $"Synch {percentage}%";
+
+            if (infoCard == null) infoCard = RetrieveInfoCard();
+
+            if (infoCard == null) DisplaySynchInfo();
+
+            infoCard.GetComponentInChildren<TextMeshPro>().text = text;
+            infoCard.UpdateHoldingDuration(5f);
+        }
+
+
+        public void HideSynchInfo()
+        {
+            if (infoCard == null) infoCard = RetrieveInfoCard();
+
+            if (infoCard == null) DisplaySynchInfo();
+
+            infoCard.GetComponentInChildren<TextMeshPro>().text = "Synch Ended!";
+            infoCard.UpdateHoldingDuration(3.0f);
         }
     }
 }

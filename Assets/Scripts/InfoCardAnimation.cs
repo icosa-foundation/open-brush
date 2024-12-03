@@ -284,5 +284,16 @@ namespace TiltBrush
         {
             transform.localScale = m_BaseScale * fScale;
         }
+
+        public void UpdateHoldingDuration(float newDuration)
+        {
+            if (m_CurrentState == State.Holding)
+            {
+                m_HoldingStateDuration = newDuration;
+                m_StateTimer = 0.0f;
+            }
+        }
+
     }
-} // namespace TiltBrush
+
+}// namespace TiltBrush
