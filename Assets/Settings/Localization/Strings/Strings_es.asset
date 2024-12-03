@@ -3564,6 +3564,10 @@ MonoBehaviour:
     m_Localized: Editar Apodo
     m_Metadata:
       m_Items: []
+  - m_Id: 307216698459103232
+    m_Localized: Borrar texto
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

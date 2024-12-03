@@ -3564,6 +3564,10 @@ MonoBehaviour:
     m_Localized: Edit Nickname
     m_Metadata:
       m_Items: []
+  - m_Id: 307216698459103232
+    m_Localized: Erase text
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
