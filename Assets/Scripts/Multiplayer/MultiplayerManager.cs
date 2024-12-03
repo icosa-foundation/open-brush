@@ -415,6 +415,7 @@ namespace OpenBrush.Multiplayer
             if (isUserRoomOwner)
             {
                 StartSynchHistory(id);
+                SendCurrentTargetEnvironmentCommand();
                 StartCoroutine(SendStrokesAndCommandHistory(id));
             }
 
@@ -549,6 +550,17 @@ namespace OpenBrush.Multiplayer
             State = ConnectionState.DISCONNECTED;
             StateUpdated?.Invoke(State);
             Disconnected?.Invoke();// Invoke the Disconnected event
+        }
+
+        public void SendCurrentTargetEnvironmentCommand()
+        {
+            TiltBrush.Environment targetEnvironment = SceneSettings.m_Instance.GetDesiredPreset();
+
+            if (targetEnvironment != null)
+            {
+                SwitchEnvironmentCommand command = new SwitchEnvironmentCommand(targetEnvironment);
+                OnCommandPerformed(command);
+            }
         }
 
         private IEnumerator SendStrokesAndCommandHistory(int id)
