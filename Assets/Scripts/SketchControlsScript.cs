@@ -5089,8 +5089,9 @@ namespace TiltBrush
                 case GlobalCommands.MultiplayerLeaveRoom:
                     return MultiplayerManager.m_Instance.CanLeaveRoom();
                 case GlobalCommands.Sketchbook:
-                    return !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
                 case GlobalCommands.SketchbookMenu:
+                case GlobalCommands.EditMultiplayerNickName:
+                case GlobalCommands.EditMultiplayerRoomName:
                     return !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
             }
             return true;

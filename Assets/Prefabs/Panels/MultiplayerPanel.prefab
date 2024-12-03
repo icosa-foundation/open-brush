@@ -4458,7 +4458,7 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
-  m_AllowUnavailable: 0
+  m_AllowUnavailable: 1
   m_LinkedUIObject: {fileID: 0}
   m_CommandIgnored: 0
   references:
@@ -4829,7 +4829,7 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
-  m_AllowUnavailable: 0
+  m_AllowUnavailable: 1
   m_LinkedUIObject: {fileID: 0}
   m_CommandIgnored: 0
   references:
