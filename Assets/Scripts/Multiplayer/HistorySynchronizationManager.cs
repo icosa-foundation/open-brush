@@ -33,17 +33,16 @@ namespace OpenBrush.Multiplayer
         private bool _isWaiting = false;
         private bool _isSendingCommandHistory = false;
         private InfoCardAnimation infoCard;
-
+        private List<int> PlayerIdBeingSynched = new List<int>();
 
         void Awake()
         {
             m_Instance = this;
         }
 
-
         public void StartSyncronizationForUser(int id)
         {
-
+            PlayerIdBeingSynched.Add(id);
             StartSynchHistory(id);
             SendCurrentTargetEnvironmentCommand();
             StartCoroutine(SendStrokesAndCommandHistory(id));
@@ -100,13 +99,22 @@ namespace OpenBrush.Multiplayer
                 MultiplayerManager.m_Instance.OnCommandPerformed(command);
                 packetCounter += estimatedMessages;
                 counter++;
-                SynchHistoryPercentage(id, commands.Count(), counter);
+
+                foreach (int PlayerId in PlayerIdBeingSynched) SynchHistoryPercentage(PlayerId, commands.Count(), counter);
             }
 
             _isSendingCommandHistory = false;
 
-            if (_isWaiting) SynchHistoryComplete(id);
-            else SynchHistoryCompleteForAll();
+            if (_isWaiting)
+            {
+                SynchHistoryComplete(id);
+                PlayerIdBeingSynched.Remove(id);
+            }
+            else
+            {
+                PlayerIdBeingSynched.Clear();
+                SynchHistoryCompleteForAll();
+            }
 
         }
 
