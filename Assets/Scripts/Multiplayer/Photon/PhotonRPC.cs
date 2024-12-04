@@ -349,8 +349,8 @@ namespace OpenBrush.Multiplayer
         [Rpc(InvokeLocal = false)]
         public static void RPC_HistoryPercentageUpdate(NetworkRunner runner, [RpcTarget] PlayerRef targetPlayer, int expected, int sent)
         {
-            MultiplayerManager.m_Instance.numberOfCommandsExpected = expected;
-            MultiplayerManager.m_Instance.numberOfCommandsSent = sent;
+            HistorySynchronizationManager.m_Instance.numberOfCommandsExpected = expected;
+            HistorySynchronizationManager.m_Instance.numberOfCommandsSent = sent;
             m_Instance.IssueGlobalCommand(GlobalCommands.SynchInfoPercentageUpdate);
         }
 

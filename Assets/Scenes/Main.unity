@@ -15176,6 +15176,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1052269831}
   - component: {fileID: 1052269832}
+  - component: {fileID: 1052269837}
   - component: {fileID: 1052269836}
   - component: {fileID: 1052269835}
   m_Layer: 0
@@ -15212,8 +15213,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b989d2f19099ac044b955d3a6a62dea9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  batchSize: 60
-  delayBetweenBatches: 0.05
   m_MultiplayerType: 2
   CurrentRoomName: 
   data:
@@ -15305,6 +15304,22 @@ MonoBehaviour:
     NetworkLogging: 1
   ShowSettings: 0
   UseVoiceAppSettings: 0
+--- !u!114 &1052269837
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1052269830}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a751437a9d2b2724584655aaead0ddfe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  batchSize: 60
+  delayBetweenBatches: 0.05
+  numberOfCommandsExpected: 0
+  numberOfCommandsSent: 0
 --- !u!1 &1057179852
 GameObject:
   m_ObjectHideFlags: 0

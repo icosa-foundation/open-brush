@@ -4861,13 +4861,13 @@ namespace TiltBrush
                     SketchSurfacePanel.m_Instance.EatToolsInput();
                     break;
                 case GlobalCommands.DisplaySynchInfo:
-                    MultiplayerManager.m_Instance.DisplaySynchInfo();
+                    HistorySynchronizationManager.m_Instance.DisplaySynchInfo();
                     break;
                 case GlobalCommands.SynchInfoPercentageUpdate:
-                    MultiplayerManager.m_Instance.SynchInfoPercentageUpdate();
+                    HistorySynchronizationManager.m_Instance.SynchInfoPercentageUpdate();
                     break;
                 case GlobalCommands.HideSynchInfo:
-                    MultiplayerManager.m_Instance.HideSynchInfo();
+                    HistorySynchronizationManager.m_Instance.HideSynchInfo();
                     break;
                 case GlobalCommands.RepaintOptions: break; // Intentionally blank.
                 case GlobalCommands.Null: break; // Intentionally blank.

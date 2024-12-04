@@ -42,8 +42,6 @@ namespace OpenBrush.Multiplayer
 
     public class MultiplayerManager : MonoBehaviour
     {
-        public int batchSize = 60;
-        public float delayBetweenBatches = 0.05f;
 
         public static MultiplayerManager m_Instance;
         public MultiplayerType m_MultiplayerType;
@@ -64,11 +62,6 @@ namespace OpenBrush.Multiplayer
         public event Action<ConnectionUserInfo> UserInfoStateUpdated;
         private List<RoomData> m_RoomData = new List<RoomData>();
         private double? m_NetworkOffsetTimestamp = null;
-        private bool _isWaiting = false;
-        private bool _isSendingCommandHistory = false;
-        [HideInInspector] public int numberOfCommandsExpected = 0;
-        [HideInInspector] public int numberOfCommandsSent = 0;
-        private InfoCardAnimation infoCard;
 
         ulong myOculusUserId;
 
@@ -411,14 +404,10 @@ namespace OpenBrush.Multiplayer
             playerData.PlayerId = id;
             m_RemotePlayers.Add(playerData);
 
-            //if i am the room owner I should send the command history
             if (isUserRoomOwner)
             {
-                StartSynchHistory(id);
-                SendCurrentTargetEnvironmentCommand();
-                StartCoroutine(SendStrokesAndCommandHistory(id));
+                HistorySynchronizationManager.m_Instance.StartSyncronizationForUser(id);
             }
-
         }
 
         void OnPlayerLeft(int id)
@@ -466,7 +455,7 @@ namespace OpenBrush.Multiplayer
 
         }
 
-        private async void OnCommandPerformed(BaseCommand command)
+        public async void OnCommandPerformed(BaseCommand command)
         {
             if (State == ConnectionState.IN_ROOM)
             {
@@ -475,42 +464,7 @@ namespace OpenBrush.Multiplayer
 
         }
 
-        private async void StartSynchHistory(int id)
-        {
-            if (State == ConnectionState.IN_ROOM)
-            {
-                await m_Manager.RpcStartSyncHistory(id);
-            }
-        }
-
-        private async void SynchHistoryPercentage(int id, int expected, int sent)
-        {
-            if (State == ConnectionState.IN_ROOM)
-            {
-                await m_Manager.RpcSyncHistoryPercentage(id, expected, sent);
-            }
-        }
-
-        private async void SynchHistoryComplete(int id)
-        {
-            if (State == ConnectionState.IN_ROOM)
-            {
-                await m_Manager.RpcHistorySyncComplete(id);
-            }
-        }
-
-        private async void SynchHistoryCompleteForAll()
-        {
-            if (State == ConnectionState.IN_ROOM)
-            {
-                foreach (var player in m_RemotePlayers)
-                {
-                    await m_Manager.RpcHistorySyncComplete(player.PlayerId);
-                }
-            }
-        }
-
-        private void OnCommandUndo(BaseCommand command)
+        public void OnCommandUndo(BaseCommand command)
         {
             if (State == ConnectionState.IN_ROOM)
             {
@@ -518,11 +472,46 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        private void OnCommandRedo(BaseCommand command)
+        public void OnCommandRedo(BaseCommand command)
         {
             if (State == ConnectionState.IN_ROOM)
             {
                 m_Manager.RedoCommand(command);
+            }
+        }
+
+        public async void StartSynchHistory(int id)
+        {
+            if (State == ConnectionState.IN_ROOM)
+            {
+                await m_Manager.RpcStartSyncHistory(id);
+            }
+        }
+
+        public async void SynchHistoryPercentage(int id, int expected, int sent)
+        {
+            if (State == ConnectionState.IN_ROOM)
+            {
+                await m_Manager.RpcSyncHistoryPercentage(id, expected, sent);
+            }
+        }
+
+        public async void SynchHistoryComplete(int id)
+        {
+            if (State == ConnectionState.IN_ROOM)
+            {
+                await m_Manager.RpcHistorySyncComplete(id);
+            }
+        }
+
+        public async void SynchHistoryCompleteForAll()
+        {
+            if (State == ConnectionState.IN_ROOM)
+            {
+                foreach (var player in m_RemotePlayers)
+                {
+                    await m_Manager.RpcHistorySyncComplete(player.PlayerId);
+                }
             }
         }
 
@@ -550,136 +539,6 @@ namespace OpenBrush.Multiplayer
             State = ConnectionState.DISCONNECTED;
             StateUpdated?.Invoke(State);
             Disconnected?.Invoke();// Invoke the Disconnected event
-        }
-
-        public void SendCurrentTargetEnvironmentCommand()
-        {
-            TiltBrush.Environment targetEnvironment = SceneSettings.m_Instance.GetDesiredPreset();
-
-            if (targetEnvironment != null)
-            {
-                SwitchEnvironmentCommand command = new SwitchEnvironmentCommand(targetEnvironment);
-                OnCommandPerformed(command);
-            }
-        }
-
-        private IEnumerator SendStrokesAndCommandHistory(int id)
-        {
-            // Allow only one active coroutine and one queued:
-            // If already waiting, ignore this call.
-            if (_isWaiting) yield break;
-
-            if (_isSendingCommandHistory)
-            {
-                _isWaiting = true;
-                while (_isSendingCommandHistory)
-                {
-                    yield return null;
-
-                }
-                _isWaiting = false;
-            }
-
-            _isSendingCommandHistory = true;
-
-
-            try
-            {
-                // Retrieve Strokes that do not have a command associated with them
-                List<Stroke> strokesWithoutCommand = SketchMemoryScript.m_Instance.GetStrokesWithoutCommand();
-                // Retrieve all commands from staks
-                IEnumerable<BaseCommand> commands = SketchMemoryScript.m_Instance.GetAllOperations();
-
-
-                // Determine the first command timestamp
-                int firstCommandTimestamp = int.MaxValue;
-                if (commands.Any())
-                {
-                    var firstCommand = commands.First();
-                    if (firstCommand.NetworkTimestamp.HasValue) firstCommandTimestamp = firstCommand.NetworkTimestamp.Value;
-                }
-
-                // Generate a list of brush stroke commands from the list of strokes without commands
-                CreateBrushStrokeCommands(strokesWithoutCommand, firstCommandTimestamp);
-
-                // Send commands 
-                int packetCounter = 0;
-                int counter = 0;
-                foreach (BaseCommand command in commands)
-                {
-                    int estimatedMessages = EstimateMessagesForCommand(command);
-
-                    if (packetCounter + estimatedMessages > batchSize)
-                    {
-                        yield return null;
-                        yield return new WaitForSeconds(delayBetweenBatches);
-                    }
-
-                    OnCommandPerformed(command);
-                    packetCounter += estimatedMessages;
-                    counter++;
-                    SynchHistoryPercentage(id, commands.Count(), counter);
-                }
-            }
-            finally
-            {
-                _isSendingCommandHistory = false;
-
-                if (_isWaiting) SynchHistoryComplete(id);
-                else SynchHistoryCompleteForAll();
-            }
-        }
-
-        private void CreateBrushStrokeCommands(List<Stroke> strokes, int LastTimestamp)
-        {
-
-            if (strokes == null || strokes.Count == 0) return;
-
-            // Ensure strokes are ordered by their timestamps
-            strokes = strokes.OrderBy(s => s.HeadTimestampMs).ToList();
-
-            uint earliestStrokeTimestampMs = strokes.First().HeadTimestampMs;
-            uint latestStrokeTimestampMs = strokes.Last().TailTimestampMs;
-            uint totalStrokeTimeMs = latestStrokeTimestampMs - earliestStrokeTimestampMs;
-
-            if (totalStrokeTimeMs == 0) totalStrokeTimeMs = 1;
-
-            foreach (var stroke in strokes)
-            {
-                // Calculate timestamp
-                uint strokeTimeMs = stroke.HeadTimestampMs - earliestStrokeTimestampMs;
-
-                // Use long to prevent integer overflow
-                long numerator = (long)strokeTimeMs * (LastTimestamp - 1);
-                int timestamp = (int)(numerator / totalStrokeTimeMs);
-
-                // Ensure timestamp is less than firstCommandTimestamp
-                if (timestamp >= LastTimestamp)
-                {
-                    timestamp = LastTimestamp - 1;
-                }
-
-                BrushStrokeCommand command = new BrushStrokeCommand(stroke, Guid.NewGuid(), timestamp);
-                SketchMemoryScript.m_Instance.AddCommandToNetworkStack(command);
-            }
-        }
-
-        private int EstimateMessagesForCommand(BaseCommand command)
-        {
-            switch (command)
-            {
-                case BrushStrokeCommand strokeCommand:
-                    int totalControlPoints = strokeCommand.m_Stroke.m_ControlPoints.Length;
-                    if (totalControlPoints <= NetworkingConstants.MaxControlPointsPerChunk) return 1;
-                    int splits = (int)Math.Ceiling((double)totalControlPoints / NetworkingConstants.MaxControlPointsPerChunk);
-                    return 2 + (splits - 1);
-                case DeleteStrokeCommand:
-                case SwitchEnvironmentCommand:
-                case BaseCommand:
-                    return 1;
-                default:
-                    return 0;
-            }
         }
 
         public void StartSpeaking()
@@ -743,58 +602,6 @@ namespace OpenBrush.Multiplayer
 
         }
 
-        public void DisplaySynchInfo()
-        {
-            OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                InputManager.ControllerName.Brush,
-                "Synch Started!",
-                fPopScalar: 1.0f
-            );
-
-            RetrieveInfoCard();
-        }
-
-        public InfoCardAnimation RetrieveInfoCard()
-        {
-            // Find all active InfoCards in the scene
-            InfoCardAnimation[] allInfoCards = FindObjectsOfType<InfoCardAnimation>();
-
-            foreach (var card in allInfoCards)
-            {
-                TextMeshPro textComponent = card.GetComponentInChildren<TextMeshPro>();
-                if (textComponent != null && textComponent.text.Contains("Synch"))
-                {
-                    infoCard = card;
-                    return card;
-                }
-            }
-
-            return null;
-        }
-
-        public void SynchInfoPercentageUpdate()
-        {
-            int percentage = (int)((float)SketchMemoryScript.AllStrokesCount() / MultiplayerManager.m_Instance.numberOfCommandsExpected * 100);
-            string text = $"Synch {percentage}%";
-
-            if (infoCard == null) infoCard = RetrieveInfoCard();
-
-            if (infoCard == null) DisplaySynchInfo();
-
-            infoCard.GetComponentInChildren<TextMeshPro>().text = text;
-            infoCard.UpdateHoldingDuration(5f);
-        }
-
-
-        public void HideSynchInfo()
-        {
-            if (infoCard == null) infoCard = RetrieveInfoCard();
-
-            if (infoCard == null) DisplaySynchInfo();
-
-            infoCard.GetComponentInChildren<TextMeshPro>().text = "Synch Ended!";
-            infoCard.UpdateHoldingDuration(3.0f);
-        }
     }
 }
 
