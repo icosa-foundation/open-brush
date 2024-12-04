@@ -166,7 +166,7 @@ namespace OpenBrush.Multiplayer
 
 #region RPCS
         [Rpc(InvokeLocal = false, Channel = RpcChannel.Reliable)]
-        public static void RPC_SyncToSharedAnchor(NetworkRunner runner, string uuid)
+        public static void RPC_SyncToSharedAnchor(NetworkRunner runner, string uuid, [RpcTarget] PlayerRef targetPlayer = default)
         {
 #if OCULUS_SUPPORTED
             OculusMRController.m_Instance.RemoteSyncToAnchor(uuid);
@@ -174,7 +174,7 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false, Channel = RpcChannel.Reliable)]
-        public static void RPC_PerformCommand(NetworkRunner runner, string commandName, string guid, string[] data)
+        public static void RPC_PerformCommand(NetworkRunner runner, string commandName, string guid, string[] data, [RpcTarget] PlayerRef targetPlayer = default)
         {
             Debug.Log($"Command recieved: {commandName}");
 
@@ -200,7 +200,7 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false, Channel = RpcChannel.Reliable)]
-        public static void RPC_Undo(NetworkRunner runner, string commandName)
+        public static void RPC_Undo(NetworkRunner runner, string commandName, [RpcTarget] PlayerRef targetPlayer = default)
         {
             if (SketchMemoryScript.m_Instance.CanUndo())
             {
@@ -209,7 +209,7 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false, Channel = RpcChannel.Reliable)]
-        public static void RPC_Redo(NetworkRunner runner, string commandName)
+        public static void RPC_Redo(NetworkRunner runner, string commandName, [RpcTarget] PlayerRef targetPlayer = default)
         {
             if (SketchMemoryScript.m_Instance.CanRedo())
             {
@@ -218,7 +218,7 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false, Channel = RpcChannel.Reliable)]
-        public static void RPC_BaseCommand(NetworkRunner runner, Guid commandGuid, Guid parentGuid = default, int childCount = 0)
+        public static void RPC_BaseCommand(NetworkRunner runner, Guid commandGuid, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
         {
             if (CheckifCommandGuidIsInStack(commandGuid)) return;
 
@@ -230,7 +230,7 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false, Channel = RpcChannel.Reliable)]
-        public static void RPC_BrushStrokeFull(NetworkRunner runner, NetworkedStroke strokeData, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0)
+        public static void RPC_BrushStrokeFull(NetworkRunner runner, NetworkedStroke strokeData, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
         {
 
             if (CheckifCommandGuidIsInStack(commandGuid))  return; 
@@ -241,7 +241,7 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false, Channel = RpcChannel.Reliable)]
-        public static void RPC_BrushStrokeBegin(NetworkRunner runner, Guid id, NetworkedStroke strokeData, int finalLength)
+        public static void RPC_BrushStrokeBegin(NetworkRunner runner, Guid id, NetworkedStroke strokeData, int finalLength, [RpcTarget] PlayerRef targetPlayer = default)
         {
             var decode = NetworkedStroke.ToStroke(strokeData);
 
@@ -261,7 +261,7 @@ namespace OpenBrush.Multiplayer
         }
         
         [Rpc(InvokeLocal = false, Channel = RpcChannel.Reliable)]
-        public static void RPC_BrushStrokeContinue(NetworkRunner runner, Guid id, int offset, NetworkedControlPoint[] controlPoints, bool[] dropPoints)
+        public static void RPC_BrushStrokeContinue(NetworkRunner runner, Guid id, int offset, NetworkedControlPoint[] controlPoints, bool[] dropPoints, [RpcTarget] PlayerRef targetPlayer = default)
         {
             if(!m_inProgressStrokes.ContainsKey(id))
             {
@@ -279,7 +279,7 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false, Channel = RpcChannel.Reliable)]
-        public static void RPC_BrushStrokeComplete(NetworkRunner runner, Guid id, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0)
+        public static void RPC_BrushStrokeComplete(NetworkRunner runner, Guid id, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
         {
 
             if (CheckifCommandGuidIsInStack(commandGuid))  return;
@@ -298,7 +298,7 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false, Channel = RpcChannel.Reliable)]
-        public static void RPC_DeleteStroke(NetworkRunner runner, int seed, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0)
+        public static void RPC_DeleteStroke(NetworkRunner runner, int seed, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
         {
             if (CheckifCommandGuidIsInStack(commandGuid)) return;
 
@@ -320,7 +320,7 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false, Channel = RpcChannel.Reliable)]
-        public static void RPC_SwitchEnvironment(NetworkRunner runner, Guid environmentGuid, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0)
+        public static void RPC_SwitchEnvironment(NetworkRunner runner, Guid environmentGuid, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
         {
             if (CheckifCommandGuidIsInStack(commandGuid)) return;
 
