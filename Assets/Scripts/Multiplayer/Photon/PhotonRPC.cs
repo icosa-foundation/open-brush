@@ -22,6 +22,7 @@ using UnityEngine;
 using Fusion;
 using TiltBrush;
 using static TiltBrush.SketchControlsScript;
+using System.Threading.Tasks;
 
 namespace OpenBrush.Multiplayer
 {
@@ -29,6 +30,7 @@ namespace OpenBrush.Multiplayer
     {
         private static Dictionary<Guid, Stroke> m_inProgressStrokes;
         private static List<PendingCommand> m_pendingCommands;
+        private static Dictionary<Guid, TaskCompletionSource<bool>> CommandAcknowledgments = new();
 
         public void Awake()
         {
@@ -164,8 +166,29 @@ namespace OpenBrush.Multiplayer
             AddPendingCommand(preAction, commandGuid, parentGuid, command, childCount);
         }
 
-#region RPCS
-        [Rpc(InvokeLocal = false, Channel = RpcChannel.Reliable)]
+        public static async Task<bool> WaitForAcknowledgment(Guid commandGuid, int timeoutMilliseconds = 1000)
+        {
+            var tcs = new TaskCompletionSource<bool>();
+            CommandAcknowledgments[commandGuid] = tcs;
+
+            var timeoutTask = Task.Delay(timeoutMilliseconds);
+            var acknowledgmentTask = tcs.Task;
+            var completedTask = await Task.WhenAny(acknowledgmentTask, timeoutTask);
+
+            if (completedTask == acknowledgmentTask)
+            {
+                CommandAcknowledgments.Remove(commandGuid);
+                return await acknowledgmentTask; 
+            }
+            else
+            {
+                CommandAcknowledgments.Remove(commandGuid);
+                return false; 
+            }
+        }
+
+        #region RPCS
+        [Rpc(InvokeLocal = false)]
         public static void RPC_SyncToSharedAnchor(NetworkRunner runner, string uuid, [RpcTarget] PlayerRef targetPlayer = default)
         {
 #if OCULUS_SUPPORTED
@@ -173,7 +196,7 @@ namespace OpenBrush.Multiplayer
 #endif // OCULUS_SUPPORTED
         }
 
-        [Rpc(InvokeLocal = false, Channel = RpcChannel.Reliable)]
+        [Rpc(InvokeLocal = false)]
         public static void RPC_PerformCommand(NetworkRunner runner, string commandName, string guid, string[] data, [RpcTarget] PlayerRef targetPlayer = default)
         {
             Debug.Log($"Command recieved: {commandName}");
@@ -199,7 +222,7 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        [Rpc(InvokeLocal = false, Channel = RpcChannel.Reliable)]
+        [Rpc(InvokeLocal = false)]
         public static void RPC_Undo(NetworkRunner runner, string commandName, [RpcTarget] PlayerRef targetPlayer = default)
         {
             if (SketchMemoryScript.m_Instance.CanUndo())
@@ -208,7 +231,7 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        [Rpc(InvokeLocal = false, Channel = RpcChannel.Reliable)]
+        [Rpc(InvokeLocal = false)]
         public static void RPC_Redo(NetworkRunner runner, string commandName, [RpcTarget] PlayerRef targetPlayer = default)
         {
             if (SketchMemoryScript.m_Instance.CanRedo())
@@ -217,7 +240,7 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        [Rpc(InvokeLocal = false, Channel = RpcChannel.Reliable)]
+        [Rpc(InvokeLocal = false)]
         public static void RPC_BaseCommand(NetworkRunner runner, Guid commandGuid, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
         {
             if (CheckifCommandGuidIsInStack(commandGuid)) return;
@@ -229,7 +252,7 @@ namespace OpenBrush.Multiplayer
             AddPendingCommand(() => {}, commandGuid, parentGuid, command, childCount);
         }
 
-        [Rpc(InvokeLocal = false, Channel = RpcChannel.Reliable)]
+        [Rpc(InvokeLocal = false)]
         public static void RPC_BrushStrokeFull(NetworkRunner runner, NetworkedStroke strokeData, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
         {
 
@@ -240,7 +263,7 @@ namespace OpenBrush.Multiplayer
             CreateBrushStroke(decode, commandGuid, timestamp , parentGuid, childCount);
         }
 
-        [Rpc(InvokeLocal = false, Channel = RpcChannel.Reliable)]
+        [Rpc(InvokeLocal = false)]
         public static void RPC_BrushStrokeBegin(NetworkRunner runner, Guid id, NetworkedStroke strokeData, int finalLength, [RpcTarget] PlayerRef targetPlayer = default)
         {
             var decode = NetworkedStroke.ToStroke(strokeData);
@@ -260,7 +283,7 @@ namespace OpenBrush.Multiplayer
             m_inProgressStrokes[id] = decode;
         }
         
-        [Rpc(InvokeLocal = false, Channel = RpcChannel.Reliable)]
+        [Rpc(InvokeLocal = false)]
         public static void RPC_BrushStrokeContinue(NetworkRunner runner, Guid id, int offset, NetworkedControlPoint[] controlPoints, bool[] dropPoints, [RpcTarget] PlayerRef targetPlayer = default)
         {
             if(!m_inProgressStrokes.ContainsKey(id))
@@ -278,7 +301,7 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        [Rpc(InvokeLocal = false, Channel = RpcChannel.Reliable)]
+        [Rpc(InvokeLocal = false)]
         public static void RPC_BrushStrokeComplete(NetworkRunner runner, Guid id, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
         {
 
@@ -297,7 +320,7 @@ namespace OpenBrush.Multiplayer
             m_inProgressStrokes.Remove(id);
         }
 
-        [Rpc(InvokeLocal = false, Channel = RpcChannel.Reliable)]
+        [Rpc(InvokeLocal = false)]
         public static void RPC_DeleteStroke(NetworkRunner runner, int seed, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
         {
             if (CheckifCommandGuidIsInStack(commandGuid)) return;
@@ -319,7 +342,7 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        [Rpc(InvokeLocal = false, Channel = RpcChannel.Reliable)]
+        [Rpc(InvokeLocal = false)]
         public static void RPC_SwitchEnvironment(NetworkRunner runner, Guid environmentGuid, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
         {
             if (CheckifCommandGuidIsInStack(commandGuid)) return;
@@ -360,6 +383,22 @@ namespace OpenBrush.Multiplayer
             m_Instance.IssueGlobalCommand(GlobalCommands.HideSynchInfo);
         }
 
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_CheckCommand(NetworkRunner runner, Guid commandGuid, PlayerRef initiatorPlayer, [RpcTarget] PlayerRef targetPlayer)
+        {
+            bool isCommandInStack = CheckifCommandGuidIsInStack(commandGuid);
+            RPC_ConfirmCommand(runner, commandGuid, isCommandInStack, initiatorPlayer);
+        }
+
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_ConfirmCommand(NetworkRunner runner, Guid commandGuid, bool isCommandInStack, [RpcTarget] PlayerRef targetPlayer)
+        {
+            if (CommandAcknowledgments.TryGetValue(commandGuid, out var tcs))
+            {
+                tcs.SetResult(isCommandInStack);
+                CommandAcknowledgments.Remove(commandGuid);
+            }
+        }
 
         #endregion
     }

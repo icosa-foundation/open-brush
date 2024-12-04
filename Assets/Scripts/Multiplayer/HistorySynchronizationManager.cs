@@ -13,9 +13,10 @@
 // limitations under the License.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using TiltBrush;
 using TMPro;
 using UnityEngine;
@@ -33,19 +34,25 @@ namespace OpenBrush.Multiplayer
         private bool _isWaiting = false;
         private bool _isSendingCommandHistory = false;
         private InfoCardAnimation infoCard;
-        private List<int> PlayerIdBeingSynched = new List<int>();
+        private HashSet<int> currentlyProcessingUsers = new HashSet<int>();
+        private Dictionary<int, Queue<HistorySynchronizationCommand>> userCommandQueues = new Dictionary<int, Queue<HistorySynchronizationCommand>>();
+        private readonly SemaphoreSlim _networkLock = new SemaphoreSlim(1, 1);
 
         void Awake()
         {
             m_Instance = this;
         }
 
-        public void StartSyncronizationForUser(int id)
+        public async void StartSyncronizationForUser(int playerId)
         {
-            PlayerIdBeingSynched.Add(id);
-            StartSynchHistory(id);
-            SendCurrentTargetEnvironmentCommand();
-            StartCoroutine(SendStrokesAndCommandHistory(id));
+
+            if (!userCommandQueues.ContainsKey(playerId))
+                userCommandQueues[playerId] = new Queue<HistorySynchronizationCommand>();
+
+            PrepareHistory(playerId);
+
+            if (!currentlyProcessingUsers.Contains(playerId))
+                await ProcessQueueForUser(playerId);
         }
 
         #region Syncronization Logic
@@ -60,22 +67,8 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        public IEnumerator SendStrokesAndCommandHistory(int id)
+        public void PrepareHistory(int playerId)
         {
-            if (_isWaiting) yield break;
-
-            if (_isSendingCommandHistory)
-            {
-                _isWaiting = true;
-                while (_isSendingCommandHistory)
-                {
-                    yield return null;
-                }
-                _isWaiting = false;
-            }
-
-            _isSendingCommandHistory = true;
-
 
             List<Stroke> strokesWithoutCommand = SketchMemoryScript.m_Instance.GetStrokesWithoutCommand();
             IEnumerable<BaseCommand> commands = SketchMemoryScript.m_Instance.GetAllOperations();
@@ -84,38 +77,79 @@ namespace OpenBrush.Multiplayer
 
             CreateBrushStrokeCommands(strokesWithoutCommand, firstCommandTimestamp);
 
-            int packetCounter = 0;
-            int counter = 0;
             foreach (BaseCommand command in commands)
             {
-                int estimatedMessages = EstimateMessagesForCommand(command);
+                HistorySynchronizationCommand c = new HistorySynchronizationCommand(command, playerId);
+                userCommandQueues[playerId].Enqueue(c);
+            }
 
-                if (packetCounter + estimatedMessages > batchSize)
+        }
+
+        private async Task ProcessQueueForUser(int playerId)
+        {
+            currentlyProcessingUsers.Add(playerId);
+
+            StartSynchHistory(playerId);
+
+            if (!userCommandQueues.TryGetValue(playerId, out var commandQueue))
+            {
+                Debug.LogWarning($"No queue found for user {playerId}. Exiting.");
+                CleanupUserQueue(playerId);
+                return;
+            }
+
+            int totalCommands = commandQueue.Count;
+            int processedCommands = 0;
+
+            while (commandQueue.Count > 0)
+            {
+                var command = commandQueue.Peek();
+                Debug.Log($"Processing command for User {playerId}.");
+
+                if (!MultiplayerManager.m_Instance.IsRemotePlayerStillConnected(playerId))
                 {
-                    yield return null;
-                    yield return new WaitForSeconds(delayBetweenBatches);
+                    Debug.LogWarning($"User {playerId} is no longer connected. Clearing their queue.");
+                    CleanupUserQueue(playerId);
+                    break;
                 }
 
-                MultiplayerManager.m_Instance.OnCommandPerformed(command);
-                packetCounter += estimatedMessages;
-                counter++;
+                await _networkLock.WaitAsync();
+                try
+                {
+                    bool success = await command.Process();
 
-                foreach (int PlayerId in PlayerIdBeingSynched) SynchHistoryPercentage(PlayerId, commands.Count(), counter);
+                    if (success)
+                    {
+                        Debug.Log($"Command successfully acknowledged for User {playerId}.");
+                        commandQueue.Dequeue();
+                        processedCommands++;
+                        SynchHistoryPercentage(playerId, totalCommands, processedCommands);
+                    }
+                    else
+                    {
+                        Debug.LogError($"Command failed after retries {command.Attempts} for User {playerId}.");
+                        CleanupUserQueue(playerId);
+                        break;
+                    }
+                }
+                finally
+                {
+                    _networkLock.Release();
+                }
+
             }
 
-            _isSendingCommandHistory = false;
+            Debug.Log($"Finished processing the queue for User {playerId}.");
+            SynchHistoryComplete(playerId);
+            currentlyProcessingUsers.Remove(playerId);
+            userCommandQueues.Remove(playerId);
+        }
 
-            if (_isWaiting)
-            {
-                SynchHistoryComplete(id);
-                PlayerIdBeingSynched.Remove(id);
-            }
-            else
-            {
-                PlayerIdBeingSynched.Clear();
-                SynchHistoryCompleteForAll();
-            }
-
+        private void CleanupUserQueue(int playerId)
+        {
+            currentlyProcessingUsers.Remove(playerId);
+            userCommandQueues.Remove(playerId);
+            Debug.Log($"Cleaned up resources for User {playerId}.");
         }
 
         private void CreateBrushStrokeCommands(List<Stroke> strokes, int LastTimestamp)
@@ -146,19 +180,6 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        private int EstimateMessagesForCommand(BaseCommand command)
-        {
-            switch (command)
-            {
-                case BrushStrokeCommand strokeCommand:
-                    int totalControlPoints = strokeCommand.m_Stroke.m_ControlPoints.Length;
-                    return totalControlPoints <= NetworkingConstants.MaxControlPointsPerChunk
-                        ? 1
-                        : 2 + ((int)Math.Ceiling((double)totalControlPoints / NetworkingConstants.MaxControlPointsPerChunk) - 1);
-                default:
-                    return 1;
-            }
-        }
         #endregion
 
         #region Remote infoCard commands
@@ -178,10 +199,6 @@ namespace OpenBrush.Multiplayer
             MultiplayerManager.m_Instance.SynchHistoryComplete(id);
         }
 
-        private void SynchHistoryCompleteForAll()
-        {
-            MultiplayerManager.m_Instance.SynchHistoryCompleteForAll();
-        }
         #endregion
 
         #region Local infoCard commands
@@ -236,4 +253,53 @@ namespace OpenBrush.Multiplayer
         #endregion
 
     }
+
+    public class HistorySynchronizationCommand
+    {
+        public BaseCommand Command { get; private set; }
+        public int TargetPlayerId { get; private set; }
+        public bool IsAcknowledged { get; private set; }
+        public float LastSentTime { get; private set; }
+        public int Attempts { get; private set; }
+
+        private const int MaxRetries = 5;
+        private float RetryDelay = 0.1f;
+
+        public HistorySynchronizationCommand(BaseCommand command, int targetPlayerId)
+        {
+            Command = command;
+            IsAcknowledged = false;
+            LastSentTime = Time.time;
+            Attempts = 0;
+            TargetPlayerId = targetPlayerId;
+        }
+
+        public async Task<bool> Process()
+        {
+
+            while (Attempts < MaxRetries)
+            {
+                Attempts++;
+                LastSentTime = Time.time;
+
+                MultiplayerManager.m_Instance.SendCommandToPlayer(Command, TargetPlayerId);
+
+                bool isAcknowledged = await MultiplayerManager.m_Instance.CheckCommandReception(Command, TargetPlayerId);
+
+                if (isAcknowledged)
+                {
+                    IsAcknowledged = true;
+                    return true;
+                }
+
+                Debug.Log($"Attempt {Attempts} failed for command. Retrying in {RetryDelay} seconds...");
+                await Task.Delay(TimeSpan.FromSeconds(RetryDelay));
+                RetryDelay *= 2;
+            }
+
+            Debug.LogError($"Command acknowledgment failed after {MaxRetries} attempts.");
+            return false;
+        }
+    }
+
 }

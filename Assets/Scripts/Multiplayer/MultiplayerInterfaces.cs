@@ -37,6 +37,8 @@ namespace OpenBrush.Multiplayer
         int GetNetworkedTimestampMilliseconds();
         bool GetPlayerRoomOwnershipStatus(int playerId);
         Task<bool> PerformCommand(BaseCommand command);
+        Task<bool> SendCommandToPlayer(BaseCommand command, int playerId);
+        Task<bool> CheckCommandReception(BaseCommand command, int playerId);
         Task<bool> UndoCommand(BaseCommand command);
         Task<bool> RedoCommand(BaseCommand command);
         Task<bool> RpcSyncToSharedAnchor(string uuid);

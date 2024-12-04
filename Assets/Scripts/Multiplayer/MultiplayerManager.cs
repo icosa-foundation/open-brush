@@ -461,7 +461,24 @@ namespace OpenBrush.Multiplayer
             {
                 await m_Manager.PerformCommand(command);
             }
+        }
 
+        public async void SendCommandToPlayer(BaseCommand command, int playerID)
+        {
+            if (State == ConnectionState.IN_ROOM)
+            {
+                await m_Manager.SendCommandToPlayer(command, playerID);
+            }
+        }
+
+        public async Task<bool> CheckCommandReception(BaseCommand command, int id)
+        {
+            if (State == ConnectionState.IN_ROOM)
+            {
+                return await m_Manager.CheckCommandReception(command, id);
+            }
+
+            return false;
         }
 
         public void OnCommandUndo(BaseCommand command)
@@ -501,17 +518,6 @@ namespace OpenBrush.Multiplayer
             if (State == ConnectionState.IN_ROOM)
             {
                 await m_Manager.RpcHistorySyncComplete(id);
-            }
-        }
-
-        public async void SynchHistoryCompleteForAll()
-        {
-            if (State == ConnectionState.IN_ROOM)
-            {
-                foreach (var player in m_RemotePlayers)
-                {
-                    await m_Manager.RpcHistorySyncComplete(player.PlayerId);
-                }
             }
         }
 
@@ -575,6 +581,12 @@ namespace OpenBrush.Multiplayer
         public bool IsUserRoomOwner()
         {
             return isUserRoomOwner;
+        }
+
+        public bool IsRemotePlayerStillConnected(int playerId)
+        {
+            if (m_RemotePlayers.Any(player => player.PlayerId == playerId)) return true;
+            return false;
         }
 
         public int? GetNetworkedTimestampMilliseconds()
