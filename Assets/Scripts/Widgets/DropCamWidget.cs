@@ -163,10 +163,10 @@ namespace TiltBrush
         {
             switch (mode)
             {
-                case Mode.SlowFollow: return "Head Camera";
-                case Mode.Stationary: return "Stationary";
-                case Mode.Wobble: return "Figure 8";
-                case Mode.Circular: return "Circular";
+                case Mode.SlowFollow: return "头相机";
+                case Mode.Stationary: return "停止的";
+                case Mode.Wobble: return "数字 8";
+                case Mode.Circular: return "圆形";
             }
             return "";
         }

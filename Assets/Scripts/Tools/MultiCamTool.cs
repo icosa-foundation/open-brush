@@ -593,7 +593,7 @@ namespace TiltBrush
                 m_SwipeHintObject.Activate(true);
                 AudioManager.m_Instance.PlayTrashSoftSound(
                     SketchControlsScript.m_Instance.MultiCamCaptureRig.transform.position);
-                OutputWindowScript.ReportFileSaved("GIF trashed!", null,
+                OutputWindowScript.ReportFileSaved("GIF 垃圾回收!", null,
                     OutputWindowScript.InfoCardSpawnPos.Brush);
                 SetTimeBar(m_TimeGifCaptureTimer);
             }
@@ -1578,7 +1578,7 @@ namespace TiltBrush
                 else
                 {
                     m_VideoRecordAudioHeader.text = m_AudioLookingText;
-                    m_VideoRecordAudioDesc.text = "Play some sound or music on your computer";
+                    m_VideoRecordAudioDesc.text = "在电脑上播放一些音乐";
                 }
             }
             else if (m_AudioFoundCountdown > 0.0f)
@@ -1681,7 +1681,7 @@ namespace TiltBrush
                 if (showInfoCard)
                 {
                     OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                        InputManager.ControllerName.Brush, "Video Captured!");
+                        InputManager.ControllerName.Brush, "视频保存!");
                     if (filePath != null)
                     {
                         ControllerConsoleScript.m_Instance.AddNewLine(filePath);
@@ -1864,7 +1864,7 @@ namespace TiltBrush
                     }
 
                     App.DriveSync.SyncLocalFilesAsync().AsAsyncVoid();
-                    OutputWindowScript.ReportFileSaved("Snapshot Saved!", saveName,
+                    OutputWindowScript.ReportFileSaved("截图保存完成!", saveName,
                         OutputWindowScript.InfoCardSpawnPos.Brush);
 
                     if (!App.PlatformConfig.EnableMulticamPreview)
@@ -1962,7 +1962,7 @@ namespace TiltBrush
             AudioManager.m_Instance.PlayScreenshotSound(transform.position);
 
             // Give immediate feedback; but we won't really know if it succeeded or failed until later.
-            OutputWindowScript.ReportFileSaved("Gif Captured!", null,
+            OutputWindowScript.ReportFileSaved("Gif保存!", null,
                 OutputWindowScript.InfoCardSpawnPos.Brush);
 
             // Do not put away the camera.
@@ -2058,7 +2058,7 @@ namespace TiltBrush
             AudioManager.m_Instance.PlayScreenshotSound(transform.position);
 
             // Give immediate feedback; but we won't really know if it succeeded or failed until later.
-            OutputWindowScript.ReportFileSaved("Gif Captured!", null,
+            OutputWindowScript.ReportFileSaved("Gif 保存!", null,
                 OutputWindowScript.InfoCardSpawnPos.Brush);
 
             // Do not put away the camera.
