@@ -1,0 +1,1 @@
+It is recommended to delete the "URP Shaders" folder before updating the asset to avoid mixing old and new shader packages.

@@ -1,0 +1,194 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: AN_Fir_Branch
+  m_Shader: {fileID: 4800000, guid: 0154318cd2c5a3747a66420b5d885dd5, type: 3}
+  m_ValidKeywords:
+  - _COLOR2OVERLAYTYPE_VERTEX_POSITION_BASED
+  - _FIXTHEBASEOFFOLIAGE_ON
+  - _SNOWOVERLAYTYPE_UV_BASED
+  - _WIND_ON
+  m_InvalidKeywords:
+  - _COLOR2ENABLE1_ON
+  - _COLOR2OVERLAYTYPE_UVBASED
+  - _SNOWOVERLAYTYPE_UVBASED
+  - _TREETYPE_FIR
+  - _WIND1_ON
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 1
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BumpMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _CoverageTexture:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailAlbedoMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailMask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailNormalMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _EmissionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _LeavesTexture:
+        m_Texture: {fileID: 2800000, guid: 603a681375cacca45ae65a756606e807, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _LeavesTexture1:
+        m_Texture: {fileID: 2800000, guid: 603a681375cacca45ae65a756606e807, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MetallicGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _OcclusionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ParallaxMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SmoothnessTexture3:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SnowMask:
+        m_Texture: {fileID: 2800000, guid: 16d574e53541bba44a84052fa38778df, type: 3}
+        m_Scale: {x: 0.6, y: 0.6}
+        m_Offset: {x: 0, y: 0}
+    - _SnowTexture:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Texture0:
+        m_Texture: {fileID: 2800000, guid: 603a681375cacca45ae65a756606e807, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Texture00:
+        m_Texture: {fileID: 2800000, guid: 603a681375cacca45ae65a756606e807, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TextureSample0:
+        m_Texture: {fileID: 2800000, guid: a42cd62f3c2eebb47b0132c8c661b27e, type: 3}
+        m_Scale: {x: 0.8, y: 0.8}
+        m_Offset: {x: 0, y: 0}
+    - _TextureSample2:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _texcoord:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _AlphaCutoff: 0.35
+    - _BumpScale: 1
+    - _COLOR2: 0
+    - _Color2: 0
+    - _Color2Enable: 0
+    - _Color2Enable1: 1
+    - _Color2Fade: 0.8
+    - _Color2Fade1: -0.6
+    - _Color2Int: 0
+    - _Color2Intensity: 1
+    - _Color2Level: -0.24
+    - _Color2Level1: 0.7
+    - _Color2OverlayType: 0
+    - _Color2Power: 0
+    - _Cutoff: 0.45
+    - _Cutoff1: 0.35
+    - _DetailNormalMapScale: 1
+    - _DirectLightInt: 1
+    - _DirectLightOffset: 0
+    - _DstBlend: 0
+    - _EnableColor2: 0
+    - _Fixthebaseoffoliage: 1
+    - _Float0: 2
+    - _Float1: 7.8
+    - _Float2: 0
+    - _GlossMapScale: 1
+    - _Glossiness: 0.5
+    - _GlossyReflections: 1
+    - _IndirectLightInt: 1
+    - _InvertColor2: 0
+    - _Keyword0: 1
+    - _Metallic: 0
+    - _Mode: 0
+    - _OcclusionStrength: 1
+    - _Parallax: 0.02
+    - _SNOW: 0
+    - _Smoothness: 0.07
+    - _Smoothness1: 0
+    - _SmoothnessTextureChannel: 0
+    - _Snow: 0
+    - _Snow1: 0
+    - _SnowAmount: 0.911
+    - _SnowAmount1: 0.5
+    - _SnowFade: 0.106
+    - _SnowLevel: 0
+    - _SnowOverlayType: 1
+    - _SnowTiling: 0.15
+    - _SpecularHighlights: 1
+    - _SrcBlend: 1
+    - _ThicknessLevel1: 10
+    - _Tiling: 1
+    - _TransAmbient: 0
+    - _TransDirect: 1
+    - _TransNormalDistortion: 0
+    - _TransScattering: 1
+    - _TransShadow: 0.95
+    - _Translucency: 1
+    - _TranslucencyInt: 8
+    - _TreeType: 1
+    - _UVSec: 0
+    - _WIND: 1
+    - _Wind: 1
+    - _Wind1: 1
+    - _WindForce: 0.48
+    - _WindForce1: 0.3
+    - _WindSpeed: 0.2
+    - _WindSpeed1: 0.5
+    - _WindWavesScale: 0.4
+    - _WindWavesScale1: 0.25
+    - _ZWrite: 1
+    - __dirty: 1
+    m_Colors:
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Color1: {r: 0.13867459, g: 0.46099997, b: 0.27734926, a: 0}
+    - _Color2: {r: 0.15972927, g: 0.4433961, b: 0.044339456, a: 0}
+    - _Color3: {r: 0, g: 0, b: 0, a: 0}
+    - _CoverageColor: {r: 1, g: 1, b: 1, a: 0}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _SnowColor: {r: 0.51693714, g: 0.5647059, b: 0, a: 0}
+    - _SpecColor: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
