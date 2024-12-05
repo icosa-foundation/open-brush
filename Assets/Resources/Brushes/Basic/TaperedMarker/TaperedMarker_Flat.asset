@@ -33,7 +33,7 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionExtra: Geometry
+  m_DescriptionExtra: 
   m_BrushAudioLayers:
   - {fileID: 8300000, guid: 046a8970bf2f7a949a26a3af1b603528, type: 3}
   - {fileID: 8300000, guid: ec6a57762acdb0a438c141412269f6fc, type: 3}
