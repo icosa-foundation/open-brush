@@ -28,7 +28,7 @@
     "com.unity.xr.management": "4.5.0",
     "com.unity.xr.openxr": "1.13.0",
     "com.zappar.xr.zapbox": "https://github.com/zappar-xr/zapbox-xr-sdk.git#43697771ed65efee02d5b1743141b8179444c147",
-    "dev.mikesky.openxrextensions": "https://github.com/mikeskydev/unity-openxr-extensions.git#0.1.0",
+    "dev.mikesky.openxrextensions": "https://github.com/mikeskydev/unity-openxr-extensions.git#0.3.0",
     "org.khronos.unitygltf": "https://github.com/icosa-mirror/UnityGLTF.git",
     "org.nuget.google.apis": "1.64.0",
     "org.nuget.google.apis.auth": "1.64.0",

@@ -13,25 +13,25 @@
 // limitations under the License.
 
 using UnityEngine;
+using OpenXR.Extensions;
+using Unity.XR.CompositionLayers;
 
 namespace TiltBrush
 {
     public class PassthroughManager : MonoBehaviour
     {
+        [SerializeField] CompositionLayer m_PassthroughLayer;
+
         void Start()
         {
-#if OCULUS_SUPPORTED
-            var passthrough  = gameObject.AddComponent<OVRPassthroughLayer>();
-            passthrough.overlayType = OVROverlay.OverlayType.Underlay;
-            App.VrSdk.m_OvrManager.shouldBoundaryVisibilityBeSuppressed = true;
-#endif // OCULUS_SUPPORTED
-        }
-
-        void OnDestroy()
-        {
-#if OCULUS_SUPPORTED
-            App.VrSdk.m_OvrManager.shouldBoundaryVisibilityBeSuppressed = false;
-#endif
+            if (App.VrSdk.PassthroughMode == PassthroughMode.FBPassthrough)
+            {
+                m_PassthroughLayer.enabled = true;
+                if (METABoundaryVisibility.FeatureEnabled)
+                {
+                    METABoundaryVisibility.SetBoundaryVisibility(false);
+                }
+            }
         }
     }
 }

@@ -53,6 +53,15 @@ namespace TiltBrush
         Ods,    // Video rendering
     }
 
+    [Serializable]
+    public enum PassthroughMode
+    {
+        None,
+        OpenXREnvionmentBlendMode,
+        FBPassthrough,
+        Zapbox,
+    }
+
     /// These are not used in analytics. They indicate the type of tool tip description that will appear
     /// on a UI component.
     public enum DescriptionType

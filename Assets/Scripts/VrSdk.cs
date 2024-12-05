@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using OpenXR.Extensions;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.XR;
@@ -82,6 +83,8 @@ namespace TiltBrush
         private VrControllers m_VrControls;
         public VrControllers VrControls { get { return m_VrControls; } }
         private bool m_HasVrFocus = true;
+
+        public PassthroughMode PassthroughMode { get; private set; } = PassthroughMode.None;
 
         private Bounds? m_RoomBoundsAabbCached;
 
@@ -171,6 +174,8 @@ namespace TiltBrush
                 {
                     SetUnityXRControllerStyle(tryGetUnityXRController);
                 }
+
+                SetPassthroughStrategy();
             }
             else if (App.Config.m_SdkMode == SdkMode.Monoscopic)
             {
@@ -296,6 +301,26 @@ namespace TiltBrush
         public Camera GetVrCamera()
         {
             return m_VrCamera;
+        }
+
+        // -------------------------------------------------------------------------------------------- //
+        // Feature Methods
+        // -------------------------------------------------------------------------------------------- //
+
+        private void SetPassthroughStrategy()
+        {
+            if (FBPassthrough.FeatureEnabled)
+            {
+                PassthroughMode = PassthroughMode.FBPassthrough;
+                return;
+            }
+
+#if ZAPBOX_SUPPORTED
+            PassthroughMode = PassthroughMode.Zapbox;
+            return;
+#endif // ZAPBOX_SUPPORTED
+
+            PassthroughMode = PassthroughMode.None;
         }
 
         // -------------------------------------------------------------------------------------------- //
