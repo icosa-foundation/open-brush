@@ -1556,7 +1556,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76119645530677248
-    m_Localized: "You're about to exit \nOpen Brush"
+    m_Localized: "You're about to exit \n"
     m_Metadata:
       m_Items: []
   - m_Id: 76120862092746752
