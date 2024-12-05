@@ -24,10 +24,7 @@ using Fusion.Photon.Realtime;
 using Fusion.Sockets;
 using TiltBrush;
 using UnityEditor;
-using Photon.Pun;
 using UnityEngine.SceneManagement;
-
-
 
 namespace OpenBrush.Multiplayer
 {
@@ -330,6 +327,13 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
+        public void SendLargeDataToPlayer(int playerId, byte[] largeData)
+        {
+            PlayerRef playerRef = PlayerRef.FromEncoded(playerId);
+            var key = ReliableKey.FromInts(42, 0, 0, 0);
+            m_Runner.SendReliableDataToPlayer(playerRef, key, largeData);
+        }
+
         #endregion
 
         #region Command Methods
@@ -498,6 +502,26 @@ namespace OpenBrush.Multiplayer
 
             m_Manager.roomDataRefreshed?.Invoke(roomData);
         }
+
+        public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data) {
+
+            Debug.Log("Server received reliable data");
+
+            byte[] receivedData = data.Array;
+            if (receivedData == null || receivedData.Length == 0)
+            {
+                Debug.LogWarning("Received data is null or empty.");
+                return;
+            }
+
+            m_Manager.onLargeDataReceived?.Invoke(receivedData);
+        }
+
+        public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress) {
+
+            Debug.Log("Server received reliable data");
+        }
+
         #endregion
 
         #region Unused Photon Callbacks 
@@ -519,8 +543,6 @@ namespace OpenBrush.Multiplayer
         public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) { }
         public void OnObjectEnterAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player){ }
         public void OnDisconnectedFromServer(NetworkRunner runner, NetDisconnectReason reason) { }
-        public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data) { }
-        public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress) {  }
 
         #endregion
     }

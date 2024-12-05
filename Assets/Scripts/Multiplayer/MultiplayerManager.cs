@@ -17,14 +17,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
-using System.Collections;
-using Fusion;
-using System.Security.Cryptography;
-using TMPro;
-
-
-
-
 
 #if OCULUS_SUPPORTED
 using OVRPlatform = Oculus.Platform;
@@ -57,9 +49,12 @@ namespace OpenBrush.Multiplayer
         public Action<int, ITransientData<PlayerRigData>> remotePlayerJoined;
         public Action<int> playerLeft;
         public Action<List<RoomData>> roomDataRefreshed;
+        public Action<byte[]> onLargeDataReceived;
+
         public event Action<ConnectionState> StateUpdated;
         public event Action<bool> RoomOwnershipUpdated;
         public event Action<ConnectionUserInfo> UserInfoStateUpdated;
+
         private List<RoomData> m_RoomData = new List<RoomData>();
         private double? m_NetworkOffsetTimestamp = null;
 
@@ -161,6 +156,8 @@ namespace OpenBrush.Multiplayer
             remotePlayerJoined += OnRemotePlayerJoined;
             playerLeft += OnPlayerLeft;
             StateUpdated += UpdateSketchMemoryScriptTimeOffset;
+            onLargeDataReceived += OnLargeDataReceived;
+
             SketchMemoryScript.m_Instance.CommandPerformed += OnCommandPerformed;
             SketchMemoryScript.m_Instance.CommandUndo += OnCommandUndo;
             SketchMemoryScript.m_Instance.CommandRedo += OnCommandRedo;
@@ -173,6 +170,8 @@ namespace OpenBrush.Multiplayer
             remotePlayerJoined -= OnRemotePlayerJoined;
             playerLeft -= OnPlayerLeft;
             StateUpdated -= UpdateSketchMemoryScriptTimeOffset;
+            onLargeDataReceived -= OnLargeDataReceived;
+
             SketchMemoryScript.m_Instance.CommandPerformed -= OnCommandPerformed;
             SketchMemoryScript.m_Instance.CommandUndo -= OnCommandUndo;
             SketchMemoryScript.m_Instance.CommandRedo -= OnCommandRedo;
@@ -406,8 +405,25 @@ namespace OpenBrush.Multiplayer
 
             if (isUserRoomOwner)
             {
-                HistorySynchronizationManager.m_Instance.StartSyncronizationForUser(id);
+                StartCoroutine(SaveLoadScript.m_Instance.GetLastAutosaveBytes((byte[] autosaveBytes) =>
+                {
+                    if (autosaveBytes != null)
+                    {
+                        Debug.Log($"Successfully retrieved {autosaveBytes.Length} bytes from the autosave.");
+                        m_Manager.SendLargeDataToPlayer(id, autosaveBytes);
+                    }
+                    else
+                    {
+                        Debug.LogWarning("Failed to retrieve autosave bytes. Proceed to share command history");
+                        HistorySynchronizationManager.m_Instance.StartSyncronizationForUser(id);
+                    }
+                }));
             }
+        }
+
+        void OnLargeDataReceived(byte[] largeData)
+        {
+            SaveLoadScript.m_Instance.LoadFromBytes(largeData);
         }
 
         void OnPlayerLeft(int id)
@@ -613,6 +629,7 @@ namespace OpenBrush.Multiplayer
             }
 
         }
+
 
     }
 }
