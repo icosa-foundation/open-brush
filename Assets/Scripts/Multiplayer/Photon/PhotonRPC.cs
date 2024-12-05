@@ -148,7 +148,142 @@ namespace OpenBrush.Multiplayer
             return null;
         }
 
-        public static void CreateBrushStroke(Stroke stroke, Guid commandGuid,  int timestamp, Guid parentGuid = default, int childCount = 0)
+        public static void Send_BaseCommand(NetworkRunner runner, Guid commandGuid, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
+        {
+            if (targetPlayer == default)
+            {
+                RPC_BaseCommand(runner, commandGuid, parentGuid, childCount);
+            }
+            else
+            {
+                RPC_BaseCommand(runner, commandGuid, parentGuid, childCount, targetPlayer);
+            }
+        }
+
+        private static void BaseCommand(Guid commandGuid, Guid parentGuid = default, int childCount = 0)
+        {
+            if (CheckifCommandGuidIsInStack(commandGuid)) return;
+
+            Debug.Log($"Base command child count: {childCount}");
+            var parentCommand = FindParentCommand(parentGuid);
+            var command = new BaseCommand(parent: parentCommand);
+
+            AddPendingCommand(() => { }, commandGuid, parentGuid, command, childCount);
+        }
+
+        public static void Send_BrushStrokeFull(NetworkRunner runner, NetworkedStroke strokeData, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
+        {
+            if (targetPlayer == default)
+            {
+                RPC_BrushStrokeFull(runner, strokeData, commandGuid, timestamp, parentGuid, childCount);
+            }
+            else
+            {
+                RPC_BrushStrokeFull(runner, strokeData, commandGuid, timestamp, parentGuid, childCount, targetPlayer);
+            }
+        }
+
+        private static void BrushStrokeFull(NetworkedStroke strokeData, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0)
+        {
+
+            if (CheckifCommandGuidIsInStack(commandGuid)) return;
+
+            var decode = NetworkedStroke.ToStroke(strokeData);
+
+            CreateBrushStroke(decode, commandGuid, timestamp, parentGuid, childCount);
+        }
+
+        public static void Send_BrushStrokeBegin(NetworkRunner runner, Guid id, NetworkedStroke strokeData, int finalLength, [RpcTarget] PlayerRef targetPlayer = default)
+        {
+            if (targetPlayer == default)
+            {
+                RPC_BrushStrokeBegin(runner, id, strokeData, finalLength);
+            }
+            else
+            {
+                RPC_BrushStrokeBegin(runner, id, strokeData, finalLength, targetPlayer);
+            }
+        }
+
+        private static void BrushStrokeBegin(Guid id, NetworkedStroke strokeData, int finalLength)
+        {
+            var decode = NetworkedStroke.ToStroke(strokeData);
+
+            decode.m_Type = Stroke.Type.NotCreated;
+            decode.m_IntendedCanvas = App.Scene.MainCanvas;
+
+            Array.Resize(ref decode.m_ControlPoints, finalLength);
+            Array.Resize(ref decode.m_ControlPointsToDrop, finalLength);
+
+            if (m_inProgressStrokes.ContainsKey(id))
+            {
+                Debug.LogError("Shouldn't be here!");
+                return;
+            }
+
+            m_inProgressStrokes[id] = decode;
+        }
+
+        public static void Send_BrushStrokeContinue(NetworkRunner runner, Guid id, int offset, NetworkedControlPoint[] controlPoints, bool[] dropPoints, [RpcTarget] PlayerRef targetPlayer = default)
+        {
+            if (targetPlayer == default)
+            {
+                RPC_BrushStrokeContinue(runner, id, offset, controlPoints, dropPoints);
+            }
+            else
+            {
+                RPC_BrushStrokeContinue(runner, id, offset, controlPoints, dropPoints, targetPlayer);
+            }
+        }
+
+        private static void BrushStrokeContinue(Guid id, int offset, NetworkedControlPoint[] controlPoints, bool[] dropPoints)
+        {
+            if (!m_inProgressStrokes.ContainsKey(id))
+            {
+                Debug.LogError("shouldn't be here!");
+                return;
+            }
+
+            var stroke = m_inProgressStrokes[id];
+
+            for (int i = 0; i < controlPoints.Length; ++i)
+            {
+                stroke.m_ControlPoints[offset + i] = NetworkedControlPoint.ToControlPoint(controlPoints[i]);
+                stroke.m_ControlPointsToDrop[offset + i] = dropPoints[i];
+            }
+        }
+
+        public static void Send_BrushStrokeComplete(NetworkRunner runner, Guid id, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
+        {
+            if (targetPlayer == default)
+            {
+                RPC_BrushStrokeComplete(runner, id, commandGuid, timestamp, parentGuid, childCount);
+            }
+            else
+            {
+                RPC_BrushStrokeComplete(runner, id, commandGuid, timestamp, parentGuid, childCount, targetPlayer);
+            }
+        }
+
+        private static void BrushStrokeComplete( Guid id, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0)
+        {
+
+            if (CheckifCommandGuidIsInStack(commandGuid)) return;
+
+            if (!m_inProgressStrokes.ContainsKey(id))
+            {
+                Debug.LogError("shouldn't be here!");
+                return;
+            }
+
+            var stroke = m_inProgressStrokes[id];
+
+            CreateBrushStroke(stroke, commandGuid, timestamp, parentGuid, childCount);
+
+            m_inProgressStrokes.Remove(id);
+        }
+
+        private static void CreateBrushStroke(Stroke stroke, Guid commandGuid,  int timestamp, Guid parentGuid = default, int childCount = 0)
         {
 
             Action preAction = () =>
@@ -164,6 +299,71 @@ namespace OpenBrush.Multiplayer
             var command = new BrushStrokeCommand( stroke, commandGuid, timestamp, parent: parentCommand);
 
             AddPendingCommand(preAction, commandGuid, parentGuid, command, childCount);
+        }
+
+        public static void Send_DeleteStroke(NetworkRunner runner, int seed, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
+        {
+            if (targetPlayer == default)
+            {
+                RPC_DeleteStroke(runner, seed, commandGuid, timestamp, parentGuid, childCount);
+            }
+            else
+            {
+                RPC_DeleteStroke(runner, seed, commandGuid, timestamp, parentGuid, childCount, targetPlayer);
+            }
+        }
+
+        private static void DeleteStroke(int seed, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0)
+        {
+            if (CheckifCommandGuidIsInStack(commandGuid)) return;
+
+            // TODO : implment GUID for strokesdata.
+            // The range of int is large (-2,147,483,648 to 2,147,483,647), but collisions are still possible.
+            var foundStroke = SketchMemoryScript.m_Instance.GetMemoryList.Where(x => x.m_Seed == seed).First();
+
+            if (foundStroke != null)
+            {
+                var parentCommand = FindParentCommand(parentGuid);
+                var command = new DeleteStrokeCommand(foundStroke, commandGuid, timestamp, parent: parentCommand);
+
+                AddPendingCommand(() => { }, commandGuid, parentGuid, command, childCount);
+            }
+            else
+            {
+                Debug.LogError($"couldn't find stroke with seed: {seed}");
+            }
+        }
+
+        public static void Send_SwitchEnvironment(NetworkRunner runner, Guid environmentGuid, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default) {
+
+            if (targetPlayer == default)
+            {
+                RPC_SwitchEnvironment(runner, environmentGuid, commandGuid, timestamp, parentGuid, childCount);
+            }
+            else
+            {
+                RPC_SwitchEnvironment(runner, environmentGuid, commandGuid, timestamp, parentGuid, childCount, targetPlayer);
+            }
+        }
+        
+        private static void SwitchEnvironment(Guid environmentGuid, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0)
+        {
+            if (CheckifCommandGuidIsInStack(commandGuid)) return;
+
+            TiltBrush.Environment environment = EnvironmentCatalog.m_Instance.GetEnvironment(environmentGuid);
+
+            if (environment != null)
+            {
+
+                var parentCommand = FindParentCommand(parentGuid);
+                var command = new SwitchEnvironmentCommand(environment, commandGuid, timestamp, parent: parentCommand);
+
+                AddPendingCommand(() => { }, commandGuid, parentGuid, command, childCount);
+            }
+            else
+            {
+                Debug.LogError($"Environment with Guid {environmentGuid} not found.");
+            }
         }
 
         public static async Task<bool> WaitForAcknowledgment(Guid commandGuid, int timeoutMilliseconds = 1000)
@@ -189,7 +389,7 @@ namespace OpenBrush.Multiplayer
 
         #region RPCS
         [Rpc(InvokeLocal = false)]
-        public static void RPC_SyncToSharedAnchor(NetworkRunner runner, string uuid, [RpcTarget] PlayerRef targetPlayer = default)
+        public static void RPC_SyncToSharedAnchor(NetworkRunner runner, string uuid)
         {
 #if OCULUS_SUPPORTED
             OculusMRController.m_Instance.RemoteSyncToAnchor(uuid);
@@ -197,7 +397,7 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false)]
-        public static void RPC_PerformCommand(NetworkRunner runner, string commandName, string guid, string[] data, [RpcTarget] PlayerRef targetPlayer = default)
+        public static void RPC_PerformCommand(NetworkRunner runner, string commandName, string guid, string[] data)
         {
             Debug.Log($"Command recieved: {commandName}");
 
@@ -223,7 +423,7 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false)]
-        public static void RPC_Undo(NetworkRunner runner, string commandName, [RpcTarget] PlayerRef targetPlayer = default)
+        public static void RPC_Undo(NetworkRunner runner, string commandName)
         {
             if (SketchMemoryScript.m_Instance.CanUndo())
             {
@@ -232,7 +432,7 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false)]
-        public static void RPC_Redo(NetworkRunner runner, string commandName, [RpcTarget] PlayerRef targetPlayer = default)
+        public static void RPC_Redo(NetworkRunner runner, string commandName)
         {
             if (SketchMemoryScript.m_Instance.CanRedo())
             {
@@ -241,126 +441,87 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false)]
-        public static void RPC_BaseCommand(NetworkRunner runner, Guid commandGuid, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
+        private static void RPC_BaseCommand(NetworkRunner runner, Guid commandGuid, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
         {
-            if (CheckifCommandGuidIsInStack(commandGuid)) return;
-
-            Debug.Log($"Base command child count: {childCount}");
-            var parentCommand = FindParentCommand(parentGuid);
-            var command = new BaseCommand(parent: parentCommand);
-
-            AddPendingCommand(() => {}, commandGuid, parentGuid, command, childCount);
+            BaseCommand(commandGuid, parentGuid, childCount);
         }
 
         [Rpc(InvokeLocal = false)]
-        public static void RPC_BrushStrokeFull(NetworkRunner runner, NetworkedStroke strokeData, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
+        private static void RPC_BaseCommand(NetworkRunner runner, Guid commandGuid, Guid parentGuid = default, int childCount = 0)
         {
-
-            if (CheckifCommandGuidIsInStack(commandGuid))  return; 
-            
-            var decode = NetworkedStroke.ToStroke(strokeData);
-
-            CreateBrushStroke(decode, commandGuid, timestamp , parentGuid, childCount);
+            BaseCommand(commandGuid, parentGuid, childCount);
         }
 
         [Rpc(InvokeLocal = false)]
-        public static void RPC_BrushStrokeBegin(NetworkRunner runner, Guid id, NetworkedStroke strokeData, int finalLength, [RpcTarget] PlayerRef targetPlayer = default)
+        private static void RPC_BrushStrokeFull(NetworkRunner runner, NetworkedStroke strokeData, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
         {
-            var decode = NetworkedStroke.ToStroke(strokeData);
-
-            decode.m_Type = Stroke.Type.NotCreated;
-            decode.m_IntendedCanvas = App.Scene.MainCanvas;
-            
-            Array.Resize(ref decode.m_ControlPoints, finalLength);
-            Array.Resize(ref decode.m_ControlPointsToDrop, finalLength);
-
-            if(m_inProgressStrokes.ContainsKey(id))
-            {
-                Debug.LogError("Shouldn't be here!");
-                return;
-            }
-
-            m_inProgressStrokes[id] = decode;
-        }
-        
-        [Rpc(InvokeLocal = false)]
-        public static void RPC_BrushStrokeContinue(NetworkRunner runner, Guid id, int offset, NetworkedControlPoint[] controlPoints, bool[] dropPoints, [RpcTarget] PlayerRef targetPlayer = default)
-        {
-            if(!m_inProgressStrokes.ContainsKey(id))
-            {
-                Debug.LogError("shouldn't be here!");
-                return;
-            }
-
-            var stroke = m_inProgressStrokes[id];
-            
-            for(int i = 0; i < controlPoints.Length; ++i)
-            {
-                stroke.m_ControlPoints[offset + i] = NetworkedControlPoint.ToControlPoint(controlPoints[i]);
-                stroke.m_ControlPointsToDrop[offset + i] = dropPoints[i];
-            }
+            BrushStrokeFull(strokeData, commandGuid, timestamp, parentGuid, childCount);
         }
 
         [Rpc(InvokeLocal = false)]
-        public static void RPC_BrushStrokeComplete(NetworkRunner runner, Guid id, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
+        private static void RPC_BrushStrokeFull(NetworkRunner runner, NetworkedStroke strokeData, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0)
         {
-
-            if (CheckifCommandGuidIsInStack(commandGuid))  return;
-           
-            if (!m_inProgressStrokes.ContainsKey(id))
-            {
-                Debug.LogError("shouldn't be here!");
-                return;
-            }
-
-            var stroke = m_inProgressStrokes[id];
-
-            CreateBrushStroke(stroke, commandGuid, timestamp, parentGuid, childCount);
-
-            m_inProgressStrokes.Remove(id);
+            BrushStrokeFull(strokeData, commandGuid, timestamp, parentGuid, childCount);
         }
 
         [Rpc(InvokeLocal = false)]
-        public static void RPC_DeleteStroke(NetworkRunner runner, int seed, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
+        private static void RPC_BrushStrokeBegin(NetworkRunner runner, Guid id, NetworkedStroke strokeData, int finalLength, [RpcTarget] PlayerRef targetPlayer = default)
         {
-            if (CheckifCommandGuidIsInStack(commandGuid)) return;
-
-            // TODO : implment GUID for strokesdata.
-            // The range of int is large (-2,147,483,648 to 2,147,483,647), but collisions are still possible.
-            var foundStroke = SketchMemoryScript.m_Instance.GetMemoryList.Where(x => x.m_Seed == seed).First();
-
-            if (foundStroke != null)
-            {
-                var parentCommand = FindParentCommand(parentGuid);
-                var command = new DeleteStrokeCommand(foundStroke, commandGuid, timestamp, parent: parentCommand);
-
-                AddPendingCommand(() => {}, commandGuid, parentGuid, command, childCount);
-            }
-            else
-            {
-                Debug.LogError($"couldn't find stroke with seed: {seed}");
-            }
+            BrushStrokeBegin(id, strokeData, finalLength);
         }
 
         [Rpc(InvokeLocal = false)]
-        public static void RPC_SwitchEnvironment(NetworkRunner runner, Guid environmentGuid, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
+        private static void RPC_BrushStrokeBegin(NetworkRunner runner, Guid id, NetworkedStroke strokeData, int finalLength)
         {
-            if (CheckifCommandGuidIsInStack(commandGuid)) return;
+            BrushStrokeBegin(id, strokeData, finalLength);
+        }
 
-            TiltBrush.Environment environment = EnvironmentCatalog.m_Instance.GetEnvironment(environmentGuid);
+        [Rpc(InvokeLocal = false)]
+        private static void RPC_BrushStrokeContinue(NetworkRunner runner, Guid id, int offset, NetworkedControlPoint[] controlPoints, bool[] dropPoints, [RpcTarget] PlayerRef targetPlayer = default)
+        {
+            BrushStrokeContinue(id, offset, controlPoints, dropPoints);
+        }
 
-            if (environment != null)
-            {
-     
-                var parentCommand = FindParentCommand(parentGuid);
-                var command = new SwitchEnvironmentCommand(environment, commandGuid, timestamp, parent: parentCommand);
+        [Rpc(InvokeLocal = false)]
+        private static void RPC_BrushStrokeContinue(NetworkRunner runner, Guid id, int offset, NetworkedControlPoint[] controlPoints, bool[] dropPoints)
+        {
+            BrushStrokeContinue(id, offset, controlPoints, dropPoints);
+        }
 
-                AddPendingCommand(() => { }, commandGuid, parentGuid, command, childCount);
-            }
-            else
-            {
-                Debug.LogError($"Environment with Guid {environmentGuid} not found.");
-            }
+        [Rpc(InvokeLocal = false)]
+        private static void RPC_BrushStrokeComplete(NetworkRunner runner, Guid id, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
+        {
+            BrushStrokeComplete(id, commandGuid, timestamp, parentGuid, childCount);
+        }
+
+        [Rpc(InvokeLocal = false)]
+        private static void RPC_BrushStrokeComplete(NetworkRunner runner, Guid id, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0)
+        {
+            BrushStrokeComplete(id, commandGuid, timestamp, parentGuid, childCount);
+        }
+
+        [Rpc(InvokeLocal = false)]
+        private static void RPC_DeleteStroke(NetworkRunner runner, int seed, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
+        {
+            DeleteStroke(seed, commandGuid, timestamp, parentGuid, childCount);
+        }
+
+        [Rpc(InvokeLocal = false)]
+        private static void RPC_DeleteStroke(NetworkRunner runner, int seed, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0)
+        {
+            DeleteStroke(seed, commandGuid, timestamp, parentGuid, childCount);
+        }
+
+        [Rpc(InvokeLocal = false)]
+        private static void RPC_SwitchEnvironment(NetworkRunner runner, Guid environmentGuid, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0,  [RpcTarget] PlayerRef targetPlayer = default)
+        {
+            SwitchEnvironment(environmentGuid, commandGuid, timestamp, parentGuid, childCount);
+        }
+
+        [Rpc(InvokeLocal = false)]
+        private static void RPC_SwitchEnvironment(NetworkRunner runner, Guid environmentGuid, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0)
+        {
+            SwitchEnvironment(environmentGuid, commandGuid, timestamp, parentGuid, childCount);
         }
 
         [Rpc(InvokeLocal = false)]

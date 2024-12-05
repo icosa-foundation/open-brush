@@ -25,6 +25,7 @@ using Fusion.Sockets;
 using TiltBrush;
 using UnityEditor;
 using Photon.Pun;
+using UnityEngine.SceneManagement;
 
 
 
@@ -41,7 +42,7 @@ namespace OpenBrush.Multiplayer
 
         private PhotonPlayerRig m_LocalPlayer;
 
-        private AppSettings m_PhotonAppSettings;
+        private FusionAppSettings m_PhotonAppSettings;
 
         public event Action Disconnected;
 
@@ -56,7 +57,7 @@ namespace OpenBrush.Multiplayer
 
             Init();
 
-            m_PhotonAppSettings = new AppSettings
+            m_PhotonAppSettings = new FusionAppSettings
             {
                 AppIdFusion = App.Config.PhotonFusionSecrets.ClientId,
                 FixedRegion = "",
@@ -149,6 +150,11 @@ namespace OpenBrush.Multiplayer
 
             State = ConnectionState.JOINING_ROOM;
 
+            var sceneRef = SceneRef.FromIndex(SceneManager.GetActiveScene().buildIndex);
+
+            var sceneInfo = new NetworkSceneInfo();
+            sceneInfo.AddSceneRef(sceneRef, LoadSceneMode.Single);
+
             var args = new StartGameArgs()
             {
                 GameMode = GameMode.Shared,
@@ -156,7 +162,7 @@ namespace OpenBrush.Multiplayer
                 CustomPhotonAppSettings = m_PhotonAppSettings,
                 PlayerCount = roomCreateData.maxPlayers != 0 ? roomCreateData.maxPlayers : null,
                 SceneManager = m_Runner.gameObject.GetComponent<NetworkSceneManagerDefault>(),
-                Scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex,
+                Scene = sceneInfo, // Pass the configured NetworkSceneInfo
             };
 
             var result = await m_Runner.StartGame(args);
@@ -243,8 +249,8 @@ namespace OpenBrush.Multiplayer
 
         public int GetNetworkedTimestampMilliseconds()
         {
-            int tickRate = m_Runner.Simulation.Config.TickRate;
-            int networkTimeMilliseconds = (int)((m_Runner.Simulation.Tick * 1000) / (double)tickRate);
+            int tickRate = m_Runner.TickRate; // Access TickRate from Config directly
+            int networkTimeMilliseconds = (int)((m_Runner.Tick * 1000) / (double)tickRate); // Use m_Runner.Tick directly
             return networkTimeMilliseconds;
         }
 
@@ -268,14 +274,14 @@ namespace OpenBrush.Multiplayer
         public async Task<bool> SendCommandToPlayer(BaseCommand command, int playerId)
         {
             await Task.Yield();
-            PlayerRef playerRef = playerId;
+            PlayerRef playerRef = PlayerRef.FromEncoded(playerId);
             return ProcessCommand(command, playerRef);
         }
 
-        public async Task<bool> CheckCommandReception(BaseCommand command, int id)
+        public async Task<bool> CheckCommandReception(BaseCommand command, int playerId)
         {
-            PlayerRef targetPlayer = id;
-            PhotonRPC.RPC_CheckCommand(m_Runner, command.Guid, m_Runner.LocalPlayer, targetPlayer);
+            PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
+            PhotonRPC.RPC_CheckCommand(m_Runner,command.Guid, m_Runner.LocalPlayer, targetPlayer);
             return await PhotonRPC.WaitForAcknowledgment(command.Guid);
         }
 
@@ -302,24 +308,24 @@ namespace OpenBrush.Multiplayer
 
         public async Task<bool> RpcStartSyncHistory(int id)
         {
-            PlayerRef playerRef = id;
-            PhotonRPC.RPC_StartHistorySync(m_Runner, id);
+            PlayerRef playerRef = PlayerRef.FromEncoded(id);
+            PhotonRPC.RPC_StartHistorySync(m_Runner, playerRef);
             await Task.Yield();
             return true;
         }
 
         public async Task<bool> RpcHistorySyncComplete(int id)
         {
-            PlayerRef playerRef = id;
-            PhotonRPC.RPC_HistorySyncCompleted(m_Runner, id);
+            PlayerRef playerRef = PlayerRef.FromEncoded(id);
+            PhotonRPC.RPC_HistorySyncCompleted(m_Runner, playerRef);
             await Task.Yield();
             return true;
         }
 
         public async Task<bool> RpcSyncHistoryPercentage(int id, int exp, int snt)
         {
-            PlayerRef playerRef = id;
-            PhotonRPC.RPC_HistoryPercentageUpdate(m_Runner, id, exp, snt);
+            PlayerRef playerRef = PlayerRef.FromEncoded(id);
+            PhotonRPC.RPC_HistoryPercentageUpdate(m_Runner, playerRef, exp, snt);
             await Task.Yield();
             return true;
         }
@@ -387,7 +393,7 @@ namespace OpenBrush.Multiplayer
                 var strokeGuid = Guid.NewGuid();
 
                 // First Stroke
-                PhotonRPC.RPC_BrushStrokeBegin(m_Runner, strokeGuid, netStroke, stroke.m_ControlPoints.Length, playerRef);
+                PhotonRPC.Send_BrushStrokeBegin(m_Runner, strokeGuid, netStroke, stroke.m_ControlPoints.Length);
 
                 // Middle
                 for (int rounds = 1; rounds < numSplits + 1; ++rounds)
@@ -402,36 +408,36 @@ namespace OpenBrush.Multiplayer
                         netControlPoints[point] = new NetworkedControlPoint().Init(controlPoints[point]);
                     }
 
-                    PhotonRPC.RPC_BrushStrokeContinue(m_Runner, strokeGuid, rounds * maxPointsPerChunk, netControlPoints, dropPoints, playerRef);
+                    PhotonRPC.Send_BrushStrokeContinue(m_Runner, strokeGuid, rounds * maxPointsPerChunk, netControlPoints, dropPoints);
                 }
 
                 // End
-                PhotonRPC.RPC_BrushStrokeComplete(m_Runner, strokeGuid, command.Guid, (int)command.NetworkTimestamp, command.ParentGuid, command.ChildrenCount, playerRef);
+                PhotonRPC.Send_BrushStrokeComplete(m_Runner, strokeGuid, command.Guid, (int)command.NetworkTimestamp, command.ParentGuid, command.ChildrenCount);
             }
             else
             {
                 // Can send in one.
-                PhotonRPC.RPC_BrushStrokeFull(m_Runner, new NetworkedStroke().Init(command.m_Stroke), command.Guid, (int)command.NetworkTimestamp, command.ParentGuid, command.ChildrenCount, playerRef);
+                PhotonRPC.Send_BrushStrokeFull(m_Runner, new NetworkedStroke().Init(command.m_Stroke), command.Guid, (int)command.NetworkTimestamp, command.ParentGuid, command.ChildrenCount);
             }
             return true;
         }
 
         private bool CommandBase(BaseCommand command)
         {
-            PhotonRPC.RPC_BaseCommand(m_Runner, command.Guid, command.ParentGuid, command.ChildrenCount);
+            PhotonRPC.Send_BaseCommand(m_Runner, command.Guid, command.ParentGuid, command.ChildrenCount);
             return true;
         }
 
         private bool CommandDeleteStroke(DeleteStrokeCommand command, PlayerRef playerRef = default)
         {
-            PhotonRPC.RPC_DeleteStroke(m_Runner, command.m_TargetStroke.m_Seed, command.Guid, (int)command.NetworkTimestamp, command.ParentGuid, command.ChildrenCount, playerRef);
+            PhotonRPC.Send_DeleteStroke(m_Runner, command.m_TargetStroke.m_Seed, command.Guid, (int)command.NetworkTimestamp, command.ParentGuid, command.ChildrenCount, playerRef);
             return true;
         }
 
         private bool CommandSwitchEnvironment(SwitchEnvironmentCommand command, PlayerRef playerRef = default)
         {
             Guid environmentGuid = command.m_NextEnvironment.m_Guid;
-            PhotonRPC.RPC_SwitchEnvironment(m_Runner, environmentGuid, command.Guid, (int)command.NetworkTimestamp, command.ParentGuid, command.ChildrenCount, playerRef);
+            PhotonRPC.Send_SwitchEnvironment(m_Runner, environmentGuid, command.Guid, (int)command.NetworkTimestamp, command.ParentGuid, command.ChildrenCount, playerRef);
             return true;
         }
         #endregion
@@ -440,8 +446,7 @@ namespace OpenBrush.Multiplayer
 
         public void OnConnectedToServer(NetworkRunner runner)
         {
-            var rpc = m_Runner.gameObject.AddComponent<PhotonRPC>();
-            m_Runner.AddSimulationBehaviour(rpc);
+            var rpc = runner.gameObject.AddComponent<PhotonRPC>();
         }
 
         public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
@@ -511,6 +516,11 @@ namespace OpenBrush.Multiplayer
         public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ArraySegment<byte> data) { }
         public void OnSceneLoadDone(NetworkRunner runner) { }
         public void OnSceneLoadStart(NetworkRunner runner) { }
+        public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) { }
+        public void OnObjectEnterAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player){ }
+        public void OnDisconnectedFromServer(NetworkRunner runner, NetDisconnectReason reason) { }
+        public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data) { }
+        public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress) {  }
 
         #endregion
     }

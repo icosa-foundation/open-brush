@@ -76,28 +76,28 @@ namespace OpenBrush.Multiplayer
             
             var data = new PlayerRigData();
 
-            if (m_PlayerHead?.InterpolationTarget != null)
+            if (m_PlayerHead?.transform != null)
             {
-                data.HeadPosition = m_PlayerHead.InterpolationTarget.position;
-                data.HeadRotation = m_PlayerHead.InterpolationTarget.rotation;
+                data.HeadPosition = m_PlayerHead.transform.position;
+                data.HeadRotation = m_PlayerHead.transform.rotation;
             }
 
-            if (m_Tool?.InterpolationTarget != null)
+            if (m_Tool?.transform != null)
             {
-                data.ToolPosition = m_Tool.InterpolationTarget.position;
-                data.ToolRotation = m_Tool.InterpolationTarget.rotation;
+                data.ToolPosition = m_Tool.transform.position;
+                data.ToolRotation = m_Tool.transform.rotation;
             }
 
-            if (m_Left?.InterpolationTarget != null)
+            if (m_Left?.transform != null)
             {
-                data.LeftHandPosition = m_Left.InterpolationTarget.position;
-                data.LeftHandRotation = m_Left.InterpolationTarget.rotation;
+                data.LeftHandPosition = m_Left.transform.position;
+                data.LeftHandRotation = m_Left.transform.rotation;
             }
 
-            if (m_Right?.InterpolationTarget != null)
+            if (m_Right?.transform != null)
             {
-                data.RightHandPosition = m_Right.InterpolationTarget.position;
-                data.RightHandRotation = m_Right.InterpolationTarget.rotation;
+                data.RightHandPosition = m_Right.transform.position;
+                data.RightHandRotation = m_Right.transform.rotation;
             }
 
             try
@@ -159,8 +159,8 @@ namespace OpenBrush.Multiplayer
             if (Object.HasStateAuthority)
             {
                 var remoteTR = TrTransform.TR(
-                    m_PlayerHead.InterpolationTarget.position,
-                    m_PlayerHead.InterpolationTarget.rotation
+                    m_PlayerHead.transform.position,
+                    m_PlayerHead.transform.rotation
                 );
                     App.Scene.AsScene[headTransform] = remoteTR;
 
@@ -170,8 +170,8 @@ namespace OpenBrush.Multiplayer
             {
                 // Remote pointer
                 var toolTR = TrTransform.TR(
-                    m_Tool.InterpolationTarget.position,
-                    m_Tool.InterpolationTarget.rotation
+                    m_Tool.transform.position,
+                    m_Tool.transform.rotation
                     );
                 App.Scene.AsScene[transientPointer.transform] = toolTR;
 
@@ -188,24 +188,24 @@ namespace OpenBrush.Multiplayer
 
                 // Remote head
                 var remoteTR = TrTransform.TRS(
-                    m_PlayerHead.InterpolationTarget.position,
-                    m_PlayerHead.InterpolationTarget.rotation,
+                    m_PlayerHead.transform.position,
+                    m_PlayerHead.transform.rotation,
                     Scale
                 );
                 App.Scene.AsScene[headTransform] = remoteTR;
 
                 // Remote left hand
                 var remoteLeftTR = TrTransform.TRS(
-                    m_Left.InterpolationTarget.position,
-                    m_Left.InterpolationTarget.rotation,
+                    m_Left.transform.position,
+                    m_Left.transform.rotation,
                     Scale
                 );
                 App.Scene.AsScene[leftHandTransform] = remoteLeftTR;
 
                 // Remote right hand
                 var remoteRightTR = TrTransform.TRS(
-                    m_Right.InterpolationTarget.position,
-                    m_Right.InterpolationTarget.rotation,
+                    m_Right.transform.position,
+                    m_Right.transform.rotation,
                     Scale
                 );
                 App.Scene.AsScene[rightHandTransform] = remoteRightTR;
