@@ -242,7 +242,7 @@ namespace TiltBrush
                     else
                     {
                         var commandList = ListApiCommandsAsStrings();
-                        builder = new StringBuilder("<h3>Open Brush API Commands</h3>");
+                        builder = new StringBuilder("<h3>玲珑笔 API Commands</h3>");
                         builder.AppendLine($"<p>To run commands a request to this url with http://{host}/api/v1?</p>");
                         builder.AppendLine("<p>Commands are querystring parameters: commandname=parameters</p>");
                         builder.AppendLine("<p>Separate multiple commands with &</p>");
@@ -475,7 +475,7 @@ namespace TiltBrush
             string html;
             if (request.Url.Segments.Length == 2)
             {
-                var builder = new StringBuilder("<h3>Open Brush User Scripts</h3>");
+                var builder = new StringBuilder("<h3>玲珑笔 User Scripts</h3>");
                 builder.AppendLine("<ul>");
                 foreach (var e in m_UserScripts)
                 {
@@ -504,7 +504,7 @@ namespace TiltBrush
             string html;
             if (request.Url.Segments.Length == 2)
             {
-                var builder = new StringBuilder("<h3>Open Brush Example Scripts</h3>");
+                var builder = new StringBuilder("<h3>玲珑笔 Example Scripts</h3>");
                 builder.AppendLine("<ul>");
                 foreach (var e in m_ExampleScripts)
                 {
