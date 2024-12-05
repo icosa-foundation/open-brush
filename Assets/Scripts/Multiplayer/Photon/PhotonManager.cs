@@ -96,24 +96,11 @@ namespace OpenBrush.Multiplayer
                 var newPlayer = m_Runner.GetPlayerObject(player);
                 if (newPlayer != null)
                 {
-                    m_Manager.remotePlayerJoined?.Invoke(player.PlayerId, newPlayer.GetComponent<PhotonPlayerRig>());
+                    m_Manager.remotePlayerJoined?.Invoke(player.RawEncoded, newPlayer.GetComponent<PhotonPlayerRig>());
                     m_PlayersSpawning.Remove(player);
                 }
             }
         }
-
-        public void CheckExistingUsers()
-        {
-            foreach (PlayerRef player in m_Runner.ActivePlayers)
-            {
-                if (player != m_Runner.LocalPlayer)
-                {
-                    m_PlayersSpawning.Add(player);
-                }
-            }
-
-        }
-
 
         #region IConnectionHandler Methods
 
@@ -122,7 +109,7 @@ namespace OpenBrush.Multiplayer
             State = ConnectionState.CONNECTING;
 
             await Task.Yield();
-            //return true;
+
             var result = await m_Runner.JoinSessionLobby(SessionLobby.Shared, customAppSettings: m_PhotonAppSettings);
 
             if (result.Ok)
@@ -465,8 +452,7 @@ namespace OpenBrush.Multiplayer
                     var playerObj = m_Runner.Spawn(playerPrefab, inputAuthority: m_Runner.LocalPlayer);
                     m_LocalPlayer = playerObj.GetComponent<PhotonPlayerRig>();
                     m_Runner.SetPlayerObject(m_Runner.LocalPlayer, playerObj);
-                    m_Manager.localPlayerJoined?.Invoke(player.PlayerId, m_LocalPlayer);
-                    CheckExistingUsers();
+                    m_Manager.localPlayerJoined?.Invoke(player.RawEncoded, m_LocalPlayer);
                 }
                 else
                 {
@@ -481,7 +467,7 @@ namespace OpenBrush.Multiplayer
 
         public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
         {
-            m_Manager.playerLeft?.Invoke(player.PlayerId);
+            m_Manager.playerLeft?.Invoke(player.RawEncoded);
         }
 
         public void OnSessionListUpdated(NetworkRunner runner, List<SessionInfo> sessionList)
