@@ -495,12 +495,12 @@ namespace TiltBrush
                 // is tracked.
                 if (newFile)
                 {
-                    OutputWindowScript.ReportFileSaved("Added to Sketchbook!", info.FullPath,
+                    OutputWindowScript.ReportFileSaved("ÃÌº”µΩÀÿ√Ëø‚!", info.FullPath,
                         OutputWindowScript.InfoCardSpawnPos.Brush);
                 }
                 else
                 {
-                    OutputWindowScript.ReportFileSaved("Saved!", info.FullPath,
+                    OutputWindowScript.ReportFileSaved("±£¥Ê!", info.FullPath,
                         OutputWindowScript.InfoCardSpawnPos.UIReticle);
                     AudioManager.m_Instance.PlaySaveSound(
                         InputManager.m_Instance.GetControllerPosition(InputManager.ControllerName.Brush));
