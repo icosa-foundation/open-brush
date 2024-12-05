@@ -319,7 +319,7 @@ namespace TiltBrush
             if (m_InfoText != null)
             {
                 // TODO localize
-                m_InfoText.text = $"{m_CurrentTab.Catalog.ItemCount} Files {m_CurrentSubdirectories.Length} Subfolders";
+                m_InfoText.text = $"{m_CurrentTab.Catalog.ItemCount} 文件 {m_CurrentSubdirectories.Length} 子文件夹";
             }
         }
 

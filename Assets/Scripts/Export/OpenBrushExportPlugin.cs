@@ -12,8 +12,8 @@ namespace TiltBrush
 {
     public class OpenBrushExportPlugin : GLTFExportPlugin
     {
-        public override string DisplayName => "Open Brush Export";
-        public override string Description => "Handles Open Brush specific export logic.";
+        public override string DisplayName => "玲珑笔导出";
+        public override string Description => "处理玲珑笔特定的导出逻辑.";
         public override bool EnabledByDefault => true;
 
         public override GLTFExportPluginContext CreateInstance(ExportContext context)

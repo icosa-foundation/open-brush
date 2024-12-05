@@ -201,7 +201,7 @@ namespace TiltBrush
             m_SideRenderers = new Renderer[NumOptions];
 
             m_OptionContainer = new GameObject();
-            m_OptionContainer.name = "Options Container";
+            m_OptionContainer.name = "Ñ¡ÏîÈÝÆ÷";// "Options Container";
             m_OptionContainer.transform.parent = transform;
             m_OptionContainer.transform.localPosition = new Vector3(0, 0, OptionSideDistance);
             m_OptionContainer.transform.localRotation = Quaternion.identity;

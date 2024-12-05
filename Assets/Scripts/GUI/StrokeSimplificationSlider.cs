@@ -139,13 +139,13 @@ namespace TiltBrush
         {
             if (step == m_SimplificationAmounts.Length - 1)
             {
-                return "Original";
+                return "原始";
             }
             if (step == 0)
             {
-                return "Mangled";
+                return "支离破碎";
             }
-            return string.Format("Level {0}", m_SimplificationAmounts.Length - step - 1);
+            return string.Format("等级 {0}", m_SimplificationAmounts.Length - step - 1);
         }
 
         [System.Reflection.Obfuscation(Exclude = true)]
