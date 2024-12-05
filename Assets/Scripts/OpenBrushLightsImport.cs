@@ -6,8 +6,8 @@ namespace UnityGLTF.Plugins
 {
     public class OpenBrushLightsImport : GLTFImportPlugin
     {
-        public override string DisplayName => "Open Brush Lights";
-        public override string Description => "Customized import behaviour for lights.";
+        public override string DisplayName => "玲珑笔灯光";
+        public override string Description => "灯光的自定义导入行为.";
         public override GLTFImportPluginContext CreateInstance(GLTFImportContext context)
         {
             return new OpenBrushLightsImportContext();

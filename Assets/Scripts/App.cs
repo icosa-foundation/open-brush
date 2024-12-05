@@ -51,15 +51,15 @@ namespace TiltBrush
         public const float UNITS_TO_METERS = .1f;
 
         // This is the name of the app, as displayed to the users running it.
-        public const string kAppDisplayName = "Open Brush";
+        public const string kAppDisplayName = "¡·ÁÁ± ";
         // This is the App name used when speaking to Google services
         public const string kGoogleServicesAppName = kAppDisplayName;
         // The name of the configuration file. You may want to change this if you think your users may
         // want to have a different config file for your edition of the app.
-        public const string kConfigFileName = "Open Brush.cfg";
+        public const string kConfigFileName = "¡·ÁÁ± .cfg";
         // The name of the App folder (In the user's Documents folder) - original Tilt Brush used "Tilt Brush"
         // If you are forking Open Brush, you may want to leave this as "Open Brush" or not.
-        public const string kAppFolderName = "Open Brush";
+        public const string kAppFolderName = "¡·ÁÁ± ";
         // The data folder used on Google Drive.
         public const string kDriveFolderName = kAppDisplayName;
 
@@ -1271,7 +1271,7 @@ namespace TiltBrush
             else
             {
                 OutputWindowScript.m_Instance.AddNewLine(
-                    OutputWindowScript.LineType.Special, "Sketch Loaded!");
+                    OutputWindowScript.LineType.Special, "Àÿ√Ëº”‘ÿ!");
             }
 
             OnPlaybackComplete();
@@ -1322,7 +1322,7 @@ namespace TiltBrush
             }
 
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                InputManager.ControllerName.Brush, "Sketch Loaded!");
+                InputManager.ControllerName.Brush, "≤›Õºº”‘ÿÕÍ≥…!");
         }
 
         void SwitchState()

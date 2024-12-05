@@ -42,7 +42,7 @@ namespace TiltBrush
                     m_MeterBGRenderer.material.color = Color.grey * 0.5f;
 
                     m_CurrentPerformanceLevel.text = (meterRatio >= 1.0f) ?
-                        "Over Memory Limit!" : "Memory Usage";
+                        "超过内存限制!" : "内存使用情况";
                 }
                 else
                 {

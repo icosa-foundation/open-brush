@@ -886,7 +886,7 @@ namespace TiltBrush
                 float vertChange = (float)totalVerts / (float)totalPrevVerts;
                 float increasePercent = (vertChange - 1.0f) * 100.0f;
                 int increaseReadable = (int)Mathf.Max(1.0f, Mathf.Floor(increasePercent));
-                string report = "Sketch is " + increaseReadable.ToString() + "% larger.";
+                string report = "草图是 " + increaseReadable.ToString() + "% 大.";
                 OutputWindowScript.m_Instance.CreateInfoCardAtController(
                     InputManager.ControllerName.Wand,
                     report);
@@ -896,7 +896,7 @@ namespace TiltBrush
                 float vertChange = (float)totalVerts / (float)totalPrevVerts;
                 float decreasePercent = 100.0f - (vertChange * 100.0f);
                 int decreaseReadable = (int)Mathf.Max(1.0f, Mathf.Floor(decreasePercent));
-                string report = "Sketch is " + decreaseReadable.ToString() + "% smaller.";
+                string report = "草图是 " + decreaseReadable.ToString() + "% 小.";
                 OutputWindowScript.m_Instance.CreateInfoCardAtController(
                     InputManager.ControllerName.Wand,
                     report);
@@ -905,7 +905,7 @@ namespace TiltBrush
             {
                 OutputWindowScript.m_Instance.CreateInfoCardAtController(
                     InputManager.ControllerName.Wand,
-                    "No change in sketch size.");
+                    "草图尺寸没有变化.");
             }
             ControllerConsoleScript.m_Instance.AddNewLine("Sketch rebuilt! Vertex count: " +
                 totalPrevVerts.ToString() + " -> " + totalVerts.ToString());
