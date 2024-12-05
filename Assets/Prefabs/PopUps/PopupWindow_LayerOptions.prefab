@@ -26,6 +26,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000012632495268}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
@@ -37,7 +38,6 @@ Transform:
   - {fileID: 6722961399693109959}
   - {fileID: 4000010559923290}
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &65000013366633464
 BoxCollider:
@@ -47,9 +47,17 @@ BoxCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000012632495268}
   m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
   m_IsTrigger: 0
+  m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 2
+  serializedVersion: 3
   m_Size: {x: 1, y: 0.8, z: 0.01}
   m_Center: {x: 0, y: 0, z: -0.01}
 --- !u!114 &114000013354020050
@@ -121,13 +129,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000013656473796}
+  serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071067}
   m_LocalPosition: {x: -0, y: 0, z: 0}
   m_LocalScale: {x: 100, y: 100, z: 100}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4000010559923290}
-  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &33000010992386222
 MeshFilter:
@@ -204,13 +212,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000013916285508}
+  serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071067}
   m_LocalPosition: {x: -0, y: 0, z: 0}
   m_LocalScale: {x: 100, y: 100, z: 100}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4000010559923290}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &33000011371341338
 MeshFilter:
@@ -285,6 +293,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000014242470820}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0.087, z: -0.00024369}
   m_LocalScale: {x: 1.0487148, y: 0.9391765, z: 1.0487148}
@@ -293,19 +302,19 @@ Transform:
   - {fileID: 4000010937312920}
   - {fileID: 4000013517837758}
   m_Father: {fileID: 4000012974061348}
-  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1099095778520572365
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 4000012974061348}
     m_Modifications:
     - target: {fileID: 2258866777187424176, guid: 3044e302be7567d43b7cb6b660b75b41,
         type: 3}
       propertyPath: m_DescriptionTextExtra
-      value: Merge layer with the one below
+      value: "\u4E0E\u4E0B\u9762\u7684\u56FE\u5C42\u5408\u5E76"
       objectReference: {fileID: 0}
     - target: {fileID: 2258866777187424176, guid: 3044e302be7567d43b7cb6b660b75b41,
         type: 3}
@@ -388,6 +397,9 @@ PrefabInstance:
       value: PanelButton_Squash
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3044e302be7567d43b7cb6b660b75b41, type: 3}
 --- !u!4 &7359621229029953439 stripped
 Transform:
@@ -400,8 +412,14 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 4000012974061348}
     m_Modifications:
+    - target: {fileID: 4486572399880723504, guid: 5056dc0f2865306449988b756f72f2c2,
+        type: 3}
+      propertyPath: m_DescriptionText
+      value: "\u91CD\u547D\u540D\u56FE\u5C42"
+      objectReference: {fileID: 0}
     - target: {fileID: 4486572399880723504, guid: 5056dc0f2865306449988b756f72f2c2,
         type: 3}
       propertyPath: m_CenterPopupOnButton
@@ -508,6 +526,9 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5056dc0f2865306449988b756f72f2c2, type: 3}
 --- !u!4 &4000012524942918 stripped
 Transform:
@@ -532,12 +553,13 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 4000012974061348}
     m_Modifications:
     - target: {fileID: 444151169322757034, guid: 1c86458d1a7525744b384f8816d516f5,
         type: 3}
       propertyPath: m_DescriptionTextExtra
-      value: Deletes layer and contents
+      value: "\u5220\u9664\u56FE\u5C42\u548C\u5185\u5BB9"
       objectReference: {fileID: 0}
     - target: {fileID: 4315672031706450571, guid: 1c86458d1a7525744b384f8816d516f5,
         type: 3}
@@ -620,6 +642,9 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1c86458d1a7525744b384f8816d516f5, type: 3}
 --- !u!4 &6722961399693109959 stripped
 Transform:
@@ -632,6 +657,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 4000012974061348}
     m_Modifications:
     - target: {fileID: 1781126387072998529, guid: 9db6de3a1141ff24ea3a40222f25246f,
@@ -642,7 +668,7 @@ PrefabInstance:
     - target: {fileID: 1781126387072998529, guid: 9db6de3a1141ff24ea3a40222f25246f,
         type: 3}
       propertyPath: m_DescriptionTextExtra
-      value: Remove everything on this layer
+      value: "\u5220\u9664\u8BE5\u56FE\u5C42\u4E0A\u7684\u6240\u6709\u5185\u5BB9"
       objectReference: {fileID: 0}
     - target: {fileID: 1781126387072998529, guid: 9db6de3a1141ff24ea3a40222f25246f,
         type: 3}
@@ -725,6 +751,9 @@ PrefabInstance:
       value: PanelButton_Clear
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9db6de3a1141ff24ea3a40222f25246f, type: 3}
 --- !u!4 &216252393271635519 stripped
 Transform:
