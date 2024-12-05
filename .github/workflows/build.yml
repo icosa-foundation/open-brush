@@ -352,7 +352,7 @@ jobs:
         with:
           token: ${{ env.PHOTON_PAT }}
           repository: icosa-mirror/photon-fusion
-          ref: Fusion_v1.1.10_Voice_2
+          ref: Fusion_v2_Voice_2
           path: photon-fusion-mirror/
 
       - name: Copy photon files
@@ -452,7 +452,7 @@ jobs:
       - name: Add PHOTON_PAT specific define
         if: ${{ env.PHOTON_PAT }}
         run: |
-          echo -e "\n -define:PHOTON_UNITY_NETWORKING \n-define:PUN_2_0_OR_NEWER \n-define:PUN_2_OR_NEWER \n-define:PUN_2_19_OR_NEWER \n-define:FUSION_WEAVER \n-define:CROSS_PLATFORM_INPUT \n-define:MOBILE_INPUT \n-define:PHOTON_VOICE_DEFINED" | tee -a Assets/csc.rsp
+          echo -e "\n -define:PHOTON_UNITY_NETWORKING \n-define:PUN_2_0_OR_NEWER \n-define:PUN_2_OR_NEWER \n-define:PUN_2_19_OR_NEWER \n-define:FUSION_WEAVER \n-define:FUSION2 \n-define:CROSS_PLATFORM_INPUT \n-define:MOBILE_INPUT \n-define:PHOTON_VOICE_DEFINED" | tee -a Assets/csc.rsp
 
       - name: Update build matrix specific defines in csc.rsp
         if: ${{ matrix.extra_defines }}
