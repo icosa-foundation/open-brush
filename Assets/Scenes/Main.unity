@@ -11559,21 +11559,21 @@ MonoBehaviour:
   m_AutoGifWidth: 600
   m_AutoGifHeight: 600
   m_AutoGifPresets:
-  - name: AutoGif
+  - name: "\u81EA\u52A8Gif"
     style: 0
     focalPoint: 0.6
     movementRadius: 0.1
     frames: 20
     frameDelay: 0.05
     advancesTime: 1
-  - name: AutoGif (Wobble)
+  - name: "\u81EA\u52A8Gif (\u52A8)"
     style: 1
     focalPoint: 0.8
     movementRadius: 0.032
     frames: 14
     frameDelay: 0.05
     advancesTime: 0
-  - name: AutoGif (Circle)
+  - name: "\u81EA\u52A8Gif (\u5706)"
     style: 2
     focalPoint: 0.8
     movementRadius: 0.032
@@ -11590,10 +11590,10 @@ MonoBehaviour:
   m_superSampling: 2
   m_VideoRecordTimer: {fileID: 2129205351}
   m_VideoSavingRoot: {fileID: 46829156}
-  m_VideoSavingText: Finalizing Video...
-  m_VideoPlaybackText: Video Preview
-  m_VideoPreviewToolText: Upload to YouTube
-  m_VideoReadyToolText: Video
+  m_VideoSavingText: "\u6700\u540E\u7684\u89C6\u9891\u2026"
+  m_VideoPlaybackText: "\u89C6\u9891\u9884\u89C8"
+  m_VideoPreviewToolText: "\u4E0A\u4F20\u81F3YouTube"
+  m_VideoReadyToolText: "\u89C6\u9891"
   m_VideoPlaybackNumLoops: 100
   m_VideoPlaybackRoot: {fileID: 1530736238}
   m_VideoPlaybackProgressLeftAlign: {fileID: 1866615726}
@@ -11619,13 +11619,13 @@ MonoBehaviour:
   m_VideoRecorderAudioSearchIconBad: {fileID: 2800000, guid: e670cb6f5b1a3294da2a06e5f82d7766,
     type: 3}
   m_VideoRecordAudioDescColor: {r: 0.5882353, g: 0.5882353, b: 0.5882353, a: 1}
-  m_AudioLookingText: Looking for audio...
-  m_AudioFoundText: Audio found!
-  m_AudioNoneText: No audio
+  m_AudioLookingText: "\u5BFB\u627E\u97F3\u9891\u2026"
+  m_AudioFoundText: "\u97F3\u9891\u53D1\u73B0!"
+  m_AudioNoneText: "\u6CA1\u6709\u97F3\u9891"
   m_AudioFoundShowDuration: 3.5
   m_VideoToolText: {fileID: 1629108416}
-  m_UploadingText: Uploading...
-  m_AuthNeededText: Please Login
+  m_UploadingText: "\u4E0A\u4F20\u2026"
+  m_AuthNeededText: "\u8BF7\u767B\u5F55"
   m_EnterSpeed: 16
   m_CameraChangeTriggerT: 0.4
   m_CameraChangeSpeed: 4
@@ -29982,17 +29982,14 @@ MonoBehaviour:
   m_YouTubeChatPrefab: {fileID: 113562, guid: 9676f38a8f59017418608d24ddc492e1, type: 3}
   m_Decor: {fileID: 294061574}
   m_InitialTool: 0
-  m_ReleaseNotesURL: https://docs.openbrush.app/release-history
-  m_HelpCenterURL: https://docs.openbrush.app/user-guide
-  m_ThirdPartyNoticesURL: https://github.com/icosa-foundation/open-brush/blob/main/Support/ThirdParty/GeneratedThirdPartyNotices.txt
-  m_TosURL: https://openbrush.app/privacy-policy
-  m_PrivacyURL: https://openbrush.app/privacy-policy
-  m_QuestSideLoadingHowToURL: https://docs.openbrush.app/user-guide/using-reference-images-on-oculus-quest
-  m_ContributionPromoText: 'Open Brush is a free app entirely run by volunteers.
-
-    If
-    you enjoy the app, please consider donating in the settings menu!'
-  m_ContributionURL: https://opencollective.com/icosa
+  m_ReleaseNotesURL: https://hsxmeta.cn
+  m_HelpCenterURL: https://hsxmeta.cn
+  m_ThirdPartyNoticesURL: https://hsxmeta.cn
+  m_TosURL: https://hsxmeta.cn
+  m_PrivacyURL: https://hsxmeta.cn
+  m_QuestSideLoadingHowToURL: https://hsxmeta.cn
+  m_ContributionPromoText: ' '
+  m_ContributionURL: https://hsxmeta.cn
   m_WorldTransformMinScale: 0.1
   m_WorldTransformMaxScale: 10
   m_UndoRedoHold_DurationBeforeStart: 0.5
