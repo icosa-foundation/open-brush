@@ -44,7 +44,7 @@ namespace OpenBrush.Multiplayer
         }
 
         private bool CheckifChildStillPending(PendingCommand pending)
-        {   
+        {
             if (pending.TotalExpectedChildren == pending.Command.ChildrenCount)
             {
                 bool moreChildrenToAssign = false;
@@ -103,7 +103,7 @@ namespace OpenBrush.Multiplayer
             }
 
             // All children present, begin execution
-            
+
             m_pendingCommands.RemoveAt(0);
 
             InvokePreCommands(command);
@@ -128,11 +128,13 @@ namespace OpenBrush.Multiplayer
             m_pendingCommands.Add(pendingCommand);
         }
 
-        private static bool CheckifCommandGuidIsInStack(Guid commandGuid) {
+        private static bool CheckifCommandGuidIsInStack(Guid commandGuid)
+        {
 
-            if (SketchMemoryScript.m_Instance.IsCommandInStack(commandGuid)) { 
+            if (SketchMemoryScript.m_Instance.IsCommandInStack(commandGuid))
+            {
                 //Debug.Log($"Command with Guid {commandGuid} already in stack.");
-                return true; 
+                return true;
             }
             return false;
         }
@@ -265,7 +267,7 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        private static void BrushStrokeComplete( Guid id, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0)
+        private static void BrushStrokeComplete(Guid id, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0)
         {
 
             if (CheckifCommandGuidIsInStack(commandGuid)) return;
@@ -283,7 +285,7 @@ namespace OpenBrush.Multiplayer
             m_inProgressStrokes.Remove(id);
         }
 
-        private static void CreateBrushStroke(Stroke stroke, Guid commandGuid,  int timestamp, Guid parentGuid = default, int childCount = 0)
+        private static void CreateBrushStroke(Stroke stroke, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0)
         {
 
             Action preAction = () =>
@@ -296,7 +298,7 @@ namespace OpenBrush.Multiplayer
 
             var parentCommand = FindParentCommand(parentGuid);
 
-            var command = new BrushStrokeCommand( stroke, commandGuid, timestamp, parent: parentCommand);
+            var command = new BrushStrokeCommand(stroke, commandGuid, timestamp, parent: parentCommand);
 
             AddPendingCommand(preAction, commandGuid, parentGuid, command, childCount);
         }
@@ -334,7 +336,8 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        public static void Send_SwitchEnvironment(NetworkRunner runner, Guid environmentGuid, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default) {
+        public static void Send_SwitchEnvironment(NetworkRunner runner, Guid environmentGuid, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
+        {
 
             if (targetPlayer == default)
             {
@@ -345,7 +348,7 @@ namespace OpenBrush.Multiplayer
                 RPC_SwitchEnvironment(runner, environmentGuid, commandGuid, timestamp, parentGuid, childCount, targetPlayer);
             }
         }
-        
+
         private static void SwitchEnvironment(Guid environmentGuid, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0)
         {
             if (CheckifCommandGuidIsInStack(commandGuid)) return;
@@ -378,12 +381,12 @@ namespace OpenBrush.Multiplayer
             if (completedTask == acknowledgmentTask)
             {
                 CommandAcknowledgments.Remove(commandGuid);
-                return await acknowledgmentTask; 
+                return await acknowledgmentTask;
             }
             else
             {
                 CommandAcknowledgments.Remove(commandGuid);
-                return false; 
+                return false;
             }
         }
 
@@ -409,7 +412,7 @@ namespace OpenBrush.Multiplayer
 
                 // Temp
                 decode.m_BrushGuid = new System.Guid(guid);
-                
+
                 // Can we set up these more sensibly?
                 decode.m_Type = Stroke.Type.NotCreated;
                 decode.m_IntendedCanvas = App.Scene.MainCanvas;
@@ -513,7 +516,7 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false)]
-        private static void RPC_SwitchEnvironment(NetworkRunner runner, Guid environmentGuid, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0,  [RpcTarget] PlayerRef targetPlayer = default)
+        private static void RPC_SwitchEnvironment(NetworkRunner runner, Guid environmentGuid, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
         {
             SwitchEnvironment(environmentGuid, commandGuid, timestamp, parentGuid, childCount);
         }
@@ -525,7 +528,7 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false)]
-        public static void RPC_StartHistorySync(NetworkRunner runner, [RpcTarget] PlayerRef targetPlayer )
+        public static void RPC_StartHistorySync(NetworkRunner runner, [RpcTarget] PlayerRef targetPlayer)
         {
             m_Instance.IssueGlobalCommand(GlobalCommands.DisplaySynchInfo);
         }

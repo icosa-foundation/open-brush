@@ -44,7 +44,7 @@ namespace OpenBrush.Multiplayer
         [SerializeField] private Transform leftHandTransform;
 
         private PlayerRigData transmitData;
-        
+
         private bool m_IsSpawned = false;
         public bool IsSpawned => m_IsSpawned;
 
@@ -71,9 +71,9 @@ namespace OpenBrush.Multiplayer
         }
 
         public PlayerRigData ReceiveData()
-        {   
+        {
             if (!m_IsSpawned) return default;
-            
+
             var data = new PlayerRigData();
 
             if (m_PlayerHead?.transform != null)
@@ -102,7 +102,7 @@ namespace OpenBrush.Multiplayer
 
             try
             {
-                data.IsRoomOwner = this.IsRoomOwner; 
+                data.IsRoomOwner = this.IsRoomOwner;
                 data.ExtraData = new ExtraData { OculusPlayerId = this.oculusPlayerId };
                 data.SceneScale = this.SceneScale;
             }
@@ -120,7 +120,7 @@ namespace OpenBrush.Multiplayer
 
             brushGuid = BrushCatalog.m_Instance.DefaultBrush.m_Guid.ToString();
 
-            if(!Object.HasStateAuthority)
+            if (!Object.HasStateAuthority)
             {
                 transientPointer = PointerManager.m_Instance.CreateRemotePointer();
                 transientPointer.SetBrush(BrushCatalog.m_Instance.DefaultBrush);
@@ -136,7 +136,7 @@ namespace OpenBrush.Multiplayer
         {
             base.FixedUpdateNetwork();
 
-            if(Object.HasStateAuthority)
+            if (Object.HasStateAuthority)
             {
                 m_PlayerHead.transform.position = transmitData.HeadPosition;
                 m_PlayerHead.transform.rotation = transmitData.HeadRotation;
@@ -162,10 +162,10 @@ namespace OpenBrush.Multiplayer
                     m_PlayerHead.transform.position,
                     m_PlayerHead.transform.rotation
                 );
-                    App.Scene.AsScene[headTransform] = remoteTR;
+                App.Scene.AsScene[headTransform] = remoteTR;
 
             }
-            
+
             else
             {
                 // Remote pointer
@@ -176,7 +176,7 @@ namespace OpenBrush.Multiplayer
                 App.Scene.AsScene[transientPointer.transform] = toolTR;
 
                 transientPointer.SetColor(brushColor);
-                if(brushGuid.ToString() != string.Empty)
+                if (brushGuid.ToString() != string.Empty)
                 {
                     transientPointer.SetBrush(BrushCatalog.m_Instance.GetBrush(new System.Guid(brushGuid.ToString())));
                 }

@@ -87,7 +87,7 @@ namespace OpenBrush.Multiplayer
             State = ConnectionState.INITIALIZED;
             return true;
         }
-        
+
         public void Update()
         {
             var copy = m_PlayersSpawning.ToList();
@@ -259,7 +259,7 @@ namespace OpenBrush.Multiplayer
 
             if (remotePlayer != null && remotePlayer.Object != null && remotePlayer.Object.IsValid)
                 return remotePlayer.IsRoomOwner;
-            else return false; 
+            else return false;
         }
 
         public async Task<bool> PerformCommand(BaseCommand command)
@@ -278,7 +278,7 @@ namespace OpenBrush.Multiplayer
         public async Task<bool> CheckCommandReception(BaseCommand command, int playerId)
         {
             PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
-            PhotonRPC.RPC_CheckCommand(m_Runner,command.Guid, m_Runner.LocalPlayer, targetPlayer);
+            PhotonRPC.RPC_CheckCommand(m_Runner, command.Guid, m_Runner.LocalPlayer, targetPlayer);
             return await PhotonRPC.WaitForAcknowledgment(command.Guid);
         }
 
@@ -455,7 +455,7 @@ namespace OpenBrush.Multiplayer
 
         public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
         {
-           
+
             try
             {
 
@@ -503,7 +503,8 @@ namespace OpenBrush.Multiplayer
             m_Manager.roomDataRefreshed?.Invoke(roomData);
         }
 
-        public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data) {
+        public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data)
+        {
 
             Debug.Log("Server received reliable data");
 
@@ -517,7 +518,8 @@ namespace OpenBrush.Multiplayer
             m_Manager.onLargeDataReceived?.Invoke(receivedData);
         }
 
-        public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress) {
+        public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress)
+        {
 
             Debug.Log("Server received reliable data");
         }
@@ -541,7 +543,7 @@ namespace OpenBrush.Multiplayer
         public void OnSceneLoadDone(NetworkRunner runner) { }
         public void OnSceneLoadStart(NetworkRunner runner) { }
         public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) { }
-        public void OnObjectEnterAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player){ }
+        public void OnObjectEnterAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) { }
         public void OnDisconnectedFromServer(NetworkRunner runner, NetDisconnectReason reason) { }
 
         #endregion
