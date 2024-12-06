@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 141494, guid: 0053ac08708148641bd0b629e8e3e2e5, type: 3}
@@ -92,16 +93,12 @@ PrefabInstance:
     - target: {fileID: 584625050532430736, guid: 0053ac08708148641bd0b629e8e3e2e5,
         type: 3}
       propertyPath: m_text
-      value: Learn How
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 904101876321322130, guid: 0053ac08708148641bd0b629e8e3e2e5,
         type: 3}
       propertyPath: m_text
-      value: 'Add images to
-
-        your Device to
-
-        see them here'
+      value: "\u5C06\u56FE\u50CF\u6DFB\u52A0\u5230\n\u4F60\u7684\u8BBE\u5907\n\u5728\u8FD9\u91CC\u67E5\u770B"
       objectReference: {fileID: 0}
     - target: {fileID: 1346993258973891057, guid: 0053ac08708148641bd0b629e8e3e2e5,
         type: 3}
@@ -145,6 +142,13 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 1402254694969185755, guid: 0053ac08708148641bd0b629e8e3e2e5, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1361002835384496155, guid: 0053ac08708148641bd0b629e8e3e2e5,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3544921902032618920}
   m_SourcePrefab: {fileID: 100100000, guid: 0053ac08708148641bd0b629e8e3e2e5, type: 3}
 --- !u!1 &3235923593715655029 stripped
 GameObject:
