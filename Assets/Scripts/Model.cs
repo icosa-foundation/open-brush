@@ -248,6 +248,18 @@ namespace TiltBrush
             return m_ImportMaterialCollector.GetExportableMaterial(material);
         }
 
+        public struct UidToNodeMapItem
+        {
+            public Transform nodeTransform;
+            public string nodeRealName;
+        }
+
+        // initialized when model is loaded
+        //  - initialization uses GetInstanceID() to get unique id for each node in the model
+        //  - this dictionary is currently used for finding subtrees when breaking models apart, in ModelWidget.cs
+        //      - unique identifiers for nodes are needed because node names in e.g., glTF aren't unique
+        public Dictionary<int, UidToNodeMapItem> UidToNodeMap;
+
         public Model(Location location)
         {
             m_Location = location;
@@ -752,6 +764,8 @@ namespace TiltBrush
                     // If we pulled this from Icosa, it's going to be a gltf file.
                     Task t = LoadGltf(warnings);
                     await t;
+                    
+                    
                 }
                 else if (ext == ".fbx" || ext == ".obj")
                 {
@@ -856,6 +870,8 @@ namespace TiltBrush
                 UnityEngine.Object.Destroy(m_ModelParent.gameObject);
             }
             m_ModelParent = go.transform;
+            
+            InitializeUidToNodeMap(m_ModelParent);
 
             // !!! Add to material dictionary here?
 
@@ -863,6 +879,44 @@ namespace TiltBrush
             DisplayWarnings(warnings);
 
         }
+
+  
+        
+        public string GetNodeRealNameFromID(int uid)
+        {
+            if (UidToNodeMap.ContainsKey(uid))
+            {
+                return UidToNodeMap[uid].nodeRealName;
+            }
+            return null;
+        }
+
+        private void InitializeUidToNodeMap(Transform rootNode)
+        {
+            // the immediate children of rootNode are the root nodes of the model
+
+            UidToNodeMap = new Dictionary<int, UidToNodeMapItem>();
+
+            void ProcessNode(Transform node)
+            {
+                UidToNodeMapItem uidToNodeMapItem = new UidToNodeMapItem();
+                uidToNodeMapItem.nodeTransform = node;
+                uidToNodeMapItem.nodeRealName = node.name;
+                node.name = node.gameObject.GetInstanceID().ToString();
+                UidToNodeMap[node.gameObject.GetInstanceID()] = uidToNodeMapItem;
+
+                foreach (Transform child in node)
+                {
+                    ProcessNode(child);
+                }
+            }
+
+            foreach (Transform child in rootNode)
+            {
+                ProcessNode(child);
+            }
+        }
+        
 
         public void UnloadModel()
         {
