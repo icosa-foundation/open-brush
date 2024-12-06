@@ -10,6 +10,7 @@ indent_size = 2
 [*.{cs,py}]
 indent_style = space
 indent_size = 4
+end_of_line = lf
 
 # Microsoft .NET properties
 csharp_new_line_before_members_in_object_initializers = false

@@ -21,6 +21,14 @@ namespace TiltBrush
         [SerializeField] private float m_AdjustDistanceAmount;
         [SerializeField] private Renderer m_IconRenderer;
 
+        override public void UpdateVisuals()
+        {
+            // this is ugly but for some reason even if this is set to true on the option button it gets turned to false 
+            m_AllowUnavailable = true;
+            base.UpdateVisuals();
+
+        }
+
         protected override void AdjustButtonPositionAndScale(
             float posAmount, float scaleAmount, float boxColliderGrowAmount)
         {
