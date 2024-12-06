@@ -384,7 +384,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61229494e70c3e24cbad9ed75c03efed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_ToolName: "\u6A21\u578B\u9489"
+  m_ToolName: "\u6A21\u578B"
   m_PanelText: {fileID: 114000011486538170}
   m_Icon: {fileID: 2800000, guid: ee45b01b10082d848a5d2c97e2d0ed89, type: 3}
   m_Tool: 22
