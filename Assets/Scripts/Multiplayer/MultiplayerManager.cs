@@ -405,25 +405,48 @@ namespace OpenBrush.Multiplayer
 
             if (isUserRoomOwner)
             {
-                StartCoroutine(SaveLoadScript.m_Instance.GetLastAutosaveBytes((byte[] autosaveBytes) =>
-                {
-                    if (autosaveBytes != null)
-                    {
-                        Debug.Log($"Successfully retrieved {autosaveBytes.Length} bytes from the autosave.");
-                        m_Manager.SendLargeDataToPlayer(id, autosaveBytes);
-                    }
-                    else
-                    {
-                        Debug.LogWarning("Failed to retrieve autosave bytes. Proceed to share command history");
-                        HistorySynchronizationManager.m_Instance.StartSyncronizationForUser(id);
-                    }
-                }));
+                SendStrokesToPlayer(id);
             }
         }
 
+        async void SendStrokesToPlayer(int id)
+        {
+            LinkedList<Stroke> strokes = SketchMemoryScript.m_Instance.GetMemoryList;
+            const int chunkSize = 100;
+            List<Stroke> strokeList = strokes.ToList();
+
+            for (int i = 0; i < strokeList.Count; i += chunkSize)
+            {
+                var chunk = strokeList.Skip(i).Take(chunkSize).ToList();
+                byte[] strokesData = await MultiplayerStrokeSerialization.SerializeAndCompressMemoryListAsync(chunk);
+                m_Manager.SendLargeDataToPlayer(id, strokesData);
+                Debug.Log($"Sent {strokesData.Length} bytes of serialized stroke data (batch {(i / chunkSize) + 1}) to player {id}.");
+            }
+        }
+
+
         void OnLargeDataReceived(byte[] largeData)
         {
-            SaveLoadScript.m_Instance.LoadFromBytes(largeData);
+            Debug.Log($"Successfully received {largeData.Length} bytes from the autosave.");
+
+            DeserializeReceivedStrokes(largeData);
+        }
+
+        async void DeserializeReceivedStrokes(byte[] largeData)
+        {
+
+            // Decompress and deserialize strokes asynchronously
+            List<Stroke> strokes = await MultiplayerStrokeSerialization.DecompressAndDeserializeMemoryListAsync(largeData);
+
+            Debug.Log($"Successfully deserialized {strokes.Count} strokes.");
+
+            // Handle the strokes (e.g., add them to the scene or memory)
+            foreach (var stroke in strokes)
+            {
+                BrushStrokeCommand c = new BrushStrokeCommand(stroke);
+                SketchMemoryScript.m_Instance.PerformAndRecordNetworkCommand(c, true);
+            }
+
         }
 
         void OnPlayerLeft(int id)

@@ -26,21 +26,18 @@ using TiltBrush;
 using UnityEditor;
 using UnityEngine.SceneManagement;
 
+
 namespace OpenBrush.Multiplayer
 {
     public class PhotonManager : IDataConnectionHandler, INetworkRunnerCallbacks
     {
 
         private NetworkRunner m_Runner;
-
         private MultiplayerManager m_Manager;
-
         private List<PlayerRef> m_PlayersSpawning;
-
         private PhotonPlayerRig m_LocalPlayer;
-
         private FusionAppSettings m_PhotonAppSettings;
-
+        private int sequenceNumber = 0;
         public event Action Disconnected;
 
         public ConnectionUserInfo UserInfo { get; set; }
@@ -150,6 +147,9 @@ namespace OpenBrush.Multiplayer
             };
 
             var result = await m_Runner.StartGame(args);
+            m_Runner.ReliableDataSendRate = 60;
+            m_Runner.Config.Network.ReliableDataTransferModes = NetworkConfiguration.ReliableDataTransfers.ClientToClientWithServerProxy;
+
 
             if (result.Ok)
             {
@@ -316,8 +316,10 @@ namespace OpenBrush.Multiplayer
 
         public void SendLargeDataToPlayer(int playerId, byte[] largeData)
         {
+            sequenceNumber++;
             PlayerRef playerRef = PlayerRef.FromEncoded(playerId);
-            var key = ReliableKey.FromInts(42, 0, 0, 0);
+            int dataHash = largeData.GetHashCode();
+            var key = ReliableKey.FromInts(playerId, sequenceNumber, dataHash, 0);
             m_Runner.SendReliableDataToPlayer(playerRef, key, largeData);
         }
 
@@ -491,8 +493,6 @@ namespace OpenBrush.Multiplayer
 
         public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data)
         {
-
-            Debug.Log("Server received reliable data");
 
             byte[] receivedData = data.Array;
             if (receivedData == null || receivedData.Length == 0)

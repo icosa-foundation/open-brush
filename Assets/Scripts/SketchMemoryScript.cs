@@ -428,11 +428,11 @@ namespace TiltBrush
         /// Executes and records a network-synchronized command.
         /// Note: This method does not include merge logic or parent-child relationship checks,
         /// as these are already handled by the PhotonRPC system.
-        public void PerformAndRecordNetworkCommand(BaseCommand command)
+        public void PerformAndRecordNetworkCommand(BaseCommand command, bool discard = false)
         {
             BaseCommand delta = command;
             delta.Redo();
-            m_NetworkStack.Push(command);
+            if (!discard) m_NetworkStack.Push(command);
             NetworkOperationStackChanged?.Invoke();
         }
 
