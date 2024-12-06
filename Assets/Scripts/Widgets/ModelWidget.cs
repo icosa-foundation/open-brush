@@ -13,9 +13,11 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System.Threading.Tasks;
+using UnityEditor;
 
 namespace TiltBrush
 {
@@ -29,6 +31,18 @@ namespace TiltBrush
         [SerializeField] private float m_MaxBloat;
 
         private Model m_Model;
+        
+        
+        // What is Subtree?
+        // e.g. if we have 3d model with 3 chairs with the hierarchy below,
+        // then when the model is broken apart, we create a separate ModelWidget for each Chair1,Chair2,Chair3
+        // e.g for Chair1, Subtree = "Root/Chair1"
+        /*
+         Root (empty node) 
+            Chair1 (mesh)
+            Chair2 (mesh)
+            Chair3 (mesh)
+         */
         private string m_Subtree;
         public string Subtree
         {
@@ -245,7 +259,7 @@ namespace TiltBrush
             m_ModelInstance = Instantiate(m_Model.m_ModelParent);
             m_ModelInstance.gameObject.SetActive(true);
             m_ModelInstance.parent = this.transform;
-
+            
             Coords.AsLocal[m_ModelInstance] = TrTransform.identity;
             float maxExtent = 2 * Mathf.Max(m_Model.m_MeshBounds.extents.x,
                 Mathf.Max(m_Model.m_MeshBounds.extents.y, m_Model.m_MeshBounds.extents.z));
@@ -322,13 +336,16 @@ namespace TiltBrush
             return false;
         }
 
+        // Update the transform hierarchy of this ModelWidget to only contain m_Subtree
+        // e.g if Subtree = "CarBody/Floor/Wheel1", then this method will update the transform hierarchy to contain nodes
+        // starting at CarBody/Floor/Wheel1
         public void SyncHierarchyToSubtree(string previousSubtree = null)
         {
             if (string.IsNullOrEmpty(Subtree)) return;
             // Walk the hierarchy and find the matching node
             Transform oldRoot = m_ObjModelScript.transform;
             Transform node = oldRoot;
-
+            
             // We only want to walk the new part of the hierarchy
             string subpathToTraverse;
             if (!string.IsNullOrEmpty(previousSubtree))
@@ -355,9 +372,9 @@ namespace TiltBrush
             bool excludeChildren = false;
             if (subpathToTraverse.EndsWith(".mesh"))
             {
-                subpathToTraverse = subpathToTraverse.Substring(0, subpathToTraverse.Length - 5);
+                subpathToTraverse = subpathToTraverse.Substring(0, subpathToTraverse.Length - ".mesh".Length);
                 excludeChildren = true;
-            }
+            } 
             if (node.name == subpathToTraverse)
             {
                 // We're already at the right node
@@ -366,7 +383,7 @@ namespace TiltBrush
             }
             else
             {
-                // node will be null if not found
+                // - node will be null if not found
                 node = node.Find(subpathToTraverse);
             }
 
