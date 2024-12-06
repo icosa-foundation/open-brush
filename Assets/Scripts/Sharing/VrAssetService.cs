@@ -839,18 +839,14 @@ namespace TiltBrush
                     {
                         return null;
                     }
-                    // TODO Filter out non-remixable assets
-                    // filteredUriPath = CombineQueryParams(kUserLikesUri, "format=TILT&orderBy=LIKED_TIME&license=CREATIVE_COMMONS_BY");
-                    filteredUriPath = CombineQueryParams(kUserLikesUri, "format=TILT&orderBy=LIKED_TIME");
+                    filteredUriPath = CombineQueryParams(kUserLikesUri, "format=TILT&orderBy=LIKED_TIME&license=CREATIVE_COMMONS_BY");
                     errorMessage = "Failed to access your liked sketches.";
                     break;
                 case SketchSetType.Curated:
                     // Old way - newest curated
                     // filteredUriPath = CombineQueryParams(kListAssetsUri, "format=TILT&curated=true&orderBy=NEWEST");
                     // For now try just sorting by "best"
-                    // TODO Filter out non-remixable assets
-                    // filteredUriPath = CombineQueryParams(kListAssetsUri, "format=TILT&orderBy=BEST&license=CREATIVE_COMMONS_BY");
-                    filteredUriPath = CombineQueryParams(kListAssetsUri, "format=TILT&orderBy=BEST");
+                    filteredUriPath = CombineQueryParams(kListAssetsUri, "format=TILT&orderBy=BEST&license=CREATIVE_COMMONS_BY");
                     errorMessage = "Failed to access featured sketches.";
                     break;
             }
@@ -907,9 +903,7 @@ namespace TiltBrush
                     // Old way - newest curated
                     // uri += $"{kListAssetsUri}" + $"?curated=true&orderBy=NEWEST";
                     // For now try just sorting by "best"
-                    // TODO Filter out non-remixable assets
-                    // uri += $"{kListAssetsUri}" + $"?orderBy=BEST&license=CREATIVE_COMMONS_BY";
-                    uri += $"{kListAssetsUri}" + $"?orderBy=BEST";
+                    uri += $"{kListAssetsUri}" + $"?orderBy=BEST&license=CREATIVE_COMMONS_BY";
                     // Something like orderBy=TRENDING would be good - BEST but weighted by recency
                     break;
             }
