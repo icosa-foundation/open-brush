@@ -765,7 +765,7 @@ namespace TiltBrush
         // See go/vr-assets-service-api
         public IcosaSceneFileInfo(JToken json)
         {
-            m_AssetId = json["assetId"].ToString(); // strip 'assets/' from start
+            m_AssetId = json["assetId"].ToString();
             m_HumanName = json["displayName"].ToString();
 
             var format = json["formats"].First(x => x["formatType"].ToString() == "TILT")["root"];
