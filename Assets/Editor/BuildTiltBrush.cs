@@ -52,7 +52,7 @@ static class BuildTiltBrush
     public const string kVendorReverseDNS = "foundation.icosa";
 
     // Executable Base
-    public const string kGuiBuildExecutableName = "OpenBrush";
+    public const string kGuiBuildExecutableName = "LingLongBi";
     // Windows Executable
     public const string kGuiBuildWindowsExecutableName = kGuiBuildExecutableName + ".exe";
     // Linux Executable
