@@ -773,9 +773,10 @@ namespace TiltBrush
             m_IconUrl = json["thumbnail"]?["url"]?.ToString();
             m_License = json["license"]?.ToString();
 
-
             // Some assets (old ones? broken ones?) are missing the "formatComplexity" field
-            var gltfFormat = json["formats"].First(x => x["formatType"].ToString() == "GLTF");
+            var gltfFormat = json["formats"].FirstOrDefault(x =>
+                x["formatType"].ToString() == "GLTF2" || x["formatType"].ToString() == "GLTF"
+            );
             string gltfTriCount = gltfFormat?["formatComplexity"]?["triangleCount"]?.ToString();
             m_GltfTriangleCount = Int32.Parse(gltfTriCount ?? "1");
 
