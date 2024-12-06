@@ -21,7 +21,7 @@ namespace TiltBrush
         void Start()
         {
 #if OCULUS_SUPPORTED
-            var passthrough  = gameObject.AddComponent<OVRPassthroughLayer>();
+            var passthrough = gameObject.AddComponent<OVRPassthroughLayer>();
             passthrough.overlayType = OVROverlay.OverlayType.Underlay;
             App.VrSdk.m_OvrManager.shouldBoundaryVisibilityBeSuppressed = true;
 #endif // OCULUS_SUPPORTED

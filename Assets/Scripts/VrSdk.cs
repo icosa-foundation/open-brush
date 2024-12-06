@@ -228,7 +228,8 @@ namespace TiltBrush
             if (Unity.XR.Oculus.Utils.GetSystemHeadsetType() != Unity.XR.Oculus.SystemHeadset.Oculus_Quest)
             {
                 Oculus.Platform.Core.Initialize(appId);
-                Oculus.Platform.UserAgeCategory.Get().OnComplete((msg) => {
+                Oculus.Platform.UserAgeCategory.Get().OnComplete((msg) =>
+                {
                     var unused = msg.Data.AgeCategory;
                 });
             }
@@ -372,12 +373,12 @@ namespace TiltBrush
             Vector3[] points_RS = null;
 
 #if OCULUS_SUPPORTED
-                // N points, clockwise winding (but axis is undocumented), undocumented convexity
-                // In practice, it's clockwise looking along Y-
-                points_RS = OVRManager.boundary
-                    ?.GetGeometry(OVRBoundary.BoundaryType.OuterBoundary)
-                    ?.Select(v => UnityFromOculus(v))
-                    .ToArray();
+            // N points, clockwise winding (but axis is undocumented), undocumented convexity
+            // In practice, it's clockwise looking along Y-
+            points_RS = OVRManager.boundary
+                ?.GetGeometry(OVRBoundary.BoundaryType.OuterBoundary)
+                ?.Select(v => UnityFromOculus(v))
+                .ToArray();
 #else // OCULUS_SUPPORTED
             // if (App.Config.m_SdkMode == SdkMode.SteamVR)
             // {

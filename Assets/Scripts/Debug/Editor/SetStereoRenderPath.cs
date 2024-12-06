@@ -17,25 +17,30 @@ using UnityEditor;
 namespace TiltBrush
 {
 #if UNITY_ANDROID || UNITY_IOS
-[InitializeOnLoadAttribute]
-public class SetStereoRenderPath {
+    [InitializeOnLoadAttribute]
+    public class SetStereoRenderPath
+    {
 
-  private static StereoRenderingPath s_OriginalStereoPath;
+        private static StereoRenderingPath s_OriginalStereoPath;
 
-  static SetStereoRenderPath() {
-    EditorApplication.playModeStateChanged += OnPlayModeChanged;
-  }
+        static SetStereoRenderPath()
+        {
+            EditorApplication.playModeStateChanged += OnPlayModeChanged;
+        }
 
-  static void OnPlayModeChanged(PlayModeStateChange stateChange) {
-    if (stateChange == PlayModeStateChange.ExitingEditMode) {
-      s_OriginalStereoPath = PlayerSettings.stereoRenderingPath;
-      PlayerSettings.stereoRenderingPath = StereoRenderingPath.SinglePass;
+        static void OnPlayModeChanged(PlayModeStateChange stateChange)
+        {
+            if (stateChange == PlayModeStateChange.ExitingEditMode)
+            {
+                s_OriginalStereoPath = PlayerSettings.stereoRenderingPath;
+                PlayerSettings.stereoRenderingPath = StereoRenderingPath.SinglePass;
+            }
+
+            if (stateChange == PlayModeStateChange.EnteredEditMode)
+            {
+                PlayerSettings.stereoRenderingPath = s_OriginalStereoPath;
+            }
+        }
     }
-
-    if (stateChange == PlayModeStateChange.EnteredEditMode) {
-      PlayerSettings.stereoRenderingPath = s_OriginalStereoPath;
-    }
-  }
-}
 #endif
 } // namespace TiltBrush

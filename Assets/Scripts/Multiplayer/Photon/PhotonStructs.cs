@@ -40,7 +40,7 @@ namespace OpenBrush.Multiplayer
             ChildCommands = new List<PendingCommand>();
         }
     }
-    
+
     public struct NetworkCommandData : INetworkStruct
     {
         public Guid CommandGuid;
@@ -152,13 +152,13 @@ namespace OpenBrush.Multiplayer
 
             m_ControlPointsCapacity = data.m_ControlPoints.Length;
 
-            for(int i = 0; i < data.m_ControlPoints.Length; i++)
+            for (int i = 0; i < data.m_ControlPoints.Length; i++)
             {
                 var point = new NetworkedControlPoint().Init(data.m_ControlPoints[i]);
                 m_ControlPoints.Set(i, point);
             }
 
-            for(int i = 0; i < data.m_ControlPointsToDrop.Length; i++)
+            for (int i = 0; i < data.m_ControlPointsToDrop.Length; i++)
             {
                 m_ControlPointsToDrop.Set(i, data.m_ControlPointsToDrop[i]);
             }
