@@ -1272,7 +1272,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Drafting Lines
+  m_DescriptionText: "\u7D20\u63CF\u7EBF"
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: 
@@ -1308,11 +1308,11 @@ MonoBehaviour:
   m_RotationSpeedMultiplier: 14.3
   m_Command: 28
   m_Options:
-  - m_Description: Visible
+  - m_Description: "\u53EF\u89C1"
     m_Texture: {fileID: 2800000, guid: b3961aaf98d6a2d418267b50a97dc1f3, type: 3}
-  - m_Description: Transparent
+  - m_Description: "\u900F\u660E\u7684"
     m_Texture: {fileID: 2800000, guid: 30958851ea89a7c46bdb214571b82882, type: 3}
-  - m_Description: Hidden
+  - m_Description: "\u9690\u85CF\u7684"
     m_Texture: {fileID: 2800000, guid: ff3938a5f23ea46409dd9389f1a1cd97, type: 3}
   DisplayTextLabel: 0
   DisplayIcon: 1
