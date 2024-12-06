@@ -240,9 +240,9 @@ namespace TiltBrush
                 VideoRecorderUtils.ActiveVideoRecording.IsCapturing;
 
 #if UNITY_ANDROID || UNITY_IOS
-    // TODO:Mikesky - setting MSAA seems to crash quest when in Vulkan
-    
-    int msaa = QualityControls.m_Instance.MSAALevel;
+            // TODO:Mikesky - setting MSAA seems to crash quest when in Vulkan
+
+            int msaa = QualityControls.m_Instance.MSAALevel;
 
 #if UNITY_IOS && ZAPBOX_SUPPORTED
     // Force MSAA off on iOS Zapbox - Unity implementation is poor on iOS
@@ -250,22 +250,25 @@ namespace TiltBrush
     msaa = 0;
 #endif
 
-    // MSAA disabled in QualityControls = 0, but render texture wants 1.
-    if (msaa == 0) {
-      msaa = 1;
-    }
-    if (msaa != 1 && msaa != 2 && msaa != 4 && msaa != 8) {
-      UnityEngine.Debug.LogWarningFormat("Invalid MSAA {0} != [1,2,4,8]", msaa);
-      msaa = 1;
-    }
+            // MSAA disabled in QualityControls = 0, but render texture wants 1.
+            if (msaa == 0)
+            {
+                msaa = 1;
+            }
+            if (msaa != 1 && msaa != 2 && msaa != 4 && msaa != 8)
+            {
+                UnityEngine.Debug.LogWarningFormat("Invalid MSAA {0} != [1,2,4,8]", msaa);
+                msaa = 1;
+            }
 
-    if (msaa != QualitySettings.antiAliasing) {
-      QualitySettings.antiAliasing = msaa;
-    }
-    GetComponent<Camera>().allowMSAA = msaa > 1;
+            if (msaa != QualitySettings.antiAliasing)
+            {
+                QualitySettings.antiAliasing = msaa;
+            }
+            GetComponent<Camera>().allowMSAA = msaa > 1;
 
-    // Use a single camera on Android.
-    return;
+            // Use a single camera on Android.
+            return;
 #else
 
             Camera srcCam = GetComponent<Camera>();

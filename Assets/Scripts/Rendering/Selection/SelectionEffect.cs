@@ -112,17 +112,20 @@ namespace TiltBrush
             Shader.SetGlobalColor("_RightEyeSelectionColor", right);
 
 #if FEATURE_MOBILE_SELECTION
-    TrTransform worldToTransform = App.Scene.SelectionCanvas.Pose;
-    // Keep the scale within 0.5 and 2
-    if (worldToTransform.scale > 2) {
-      worldToTransform.scale /= Mathf.ClosestPowerOfTwo(Mathf.RoundToInt(worldToTransform.scale));
-    } else if (worldToTransform.scale < 0.5) {
-      worldToTransform.scale *=
-          Mathf.ClosestPowerOfTwo(Mathf.RoundToInt(1f / worldToTransform.scale));
-    }
+            TrTransform worldToTransform = App.Scene.SelectionCanvas.Pose;
+            // Keep the scale within 0.5 and 2
+            if (worldToTransform.scale > 2)
+            {
+                worldToTransform.scale /= Mathf.ClosestPowerOfTwo(Mathf.RoundToInt(worldToTransform.scale));
+            }
+            else if (worldToTransform.scale < 0.5)
+            {
+                worldToTransform.scale *=
+                    Mathf.ClosestPowerOfTwo(Mathf.RoundToInt(1f / worldToTransform.scale));
+            }
 
-    Shader.SetGlobalMatrix("_InverseLimitedScaleSceneMatrix", worldToTransform.inverse.ToMatrix4x4());
-    Shader.SetGlobalFloat("_PatternSpeed", m_NoiseSparkleSpeed);
+            Shader.SetGlobalMatrix("_InverseLimitedScaleSceneMatrix", worldToTransform.inverse.ToMatrix4x4());
+            Shader.SetGlobalFloat("_PatternSpeed", m_NoiseSparkleSpeed);
 #endif
 
 #if FEATURE_CUSTOM_MESH_RENDER
@@ -152,7 +155,7 @@ namespace TiltBrush
 #if FEATURE_CUSTOM_MESH_RENDER
             return m_CmrRenderHighlight;
 #else
-    throw new InvalidOperationException();  // Don't know what to return
+            throw new InvalidOperationException();  // Don't know what to return
 #endif
         }
 

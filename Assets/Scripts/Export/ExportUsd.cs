@@ -30,7 +30,7 @@ namespace TiltBrush
         // Serialization Classes
         // -------------------------------------------------------------------------------------------- //
 
-#region "Geometry Classes for Serialization"
+        #region "Geometry Classes for Serialization"
 
         /// The root / sketch metadata for the file.
         [Serializable]
@@ -109,9 +109,9 @@ namespace TiltBrush
             public float[] pressures;
         }
 
-#endregion
+        #endregion
 
-#region "Material Classes for Serialization"
+        #region "Material Classes for Serialization"
 
         [Serializable]
         [UsedImplicitly(ImplicitUseTargetFlags.Members)]
@@ -224,7 +224,7 @@ namespace TiltBrush
             }
         }
 
-#endregion
+        #endregion
 
         // -------------------------------------------------------------------------------------------- //
         // Conversion Helpers

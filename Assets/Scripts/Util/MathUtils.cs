@@ -27,19 +27,26 @@ namespace TiltBrush
         static public class TiltBrushCpp
         {
 #if USE_TILT_BRUSH_CPP
-            [DllImport("TiltBrushCpp")] unsafe public static extern void TransformVector3AsPoint(
+            [DllImport("TiltBrushCpp")]
+            unsafe public static extern void TransformVector3AsPoint(
                 Matrix4x4 mat, int iVert, int iVertEnd, Vector3* v3);
-            [DllImport("TiltBrushCpp")] unsafe public static extern void TransformVector3AsVector(
+            [DllImport("TiltBrushCpp")]
+            unsafe public static extern void TransformVector3AsVector(
                 Matrix4x4 mat, int iVert, int iVertEnd, Vector3* v3);
-            [DllImport("TiltBrushCpp")] unsafe public static extern void TransformVector3AsZDistance(
+            [DllImport("TiltBrushCpp")]
+            unsafe public static extern void TransformVector3AsZDistance(
                 float scale, int iVert, int iVertEnd, Vector3* v3);
-            [DllImport("TiltBrushCpp")] unsafe public static extern void TransformVector4AsPoint(
+            [DllImport("TiltBrushCpp")]
+            unsafe public static extern void TransformVector4AsPoint(
                 Matrix4x4 mat, int iVert, int iVertEnd, Vector4* v4);
-            [DllImport("TiltBrushCpp")] unsafe public static extern void TransformVector4AsVector(
+            [DllImport("TiltBrushCpp")]
+            unsafe public static extern void TransformVector4AsVector(
                 Matrix4x4 mat, int iVert, int iVertEnd, Vector4* v4);
-            [DllImport("TiltBrushCpp")] unsafe public static extern void TransformVector4AsZDistance(
+            [DllImport("TiltBrushCpp")]
+            unsafe public static extern void TransformVector4AsZDistance(
                 float scale, int iVert, int iVertEnd, Vector4* v4);
-            [DllImport("TiltBrushCpp")] unsafe public static extern void GetBoundsFor(
+            [DllImport("TiltBrushCpp")]
+            unsafe public static extern void GetBoundsFor(
                 Matrix4x4 m, int iVert, int iVertEnd, Vector3* v3, Vector3* center, Vector3* size);
 #endif
 

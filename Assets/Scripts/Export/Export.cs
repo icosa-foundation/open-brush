@@ -27,8 +27,8 @@ namespace TiltBrush
     {
         const string kExportDocumentationUrl = "https://docs.google.com/document/d/11ZsHozYn9FnWG7y3s3WAyKIACfbfwb4PbaS8cZ_xjvo#heading=h.im5f33smiavy";
 #if UNITY_ANDROID || UNITY_IOS
-  const string kExportReadmeName = "README.txt";
-  const string kExportReadmeBody = "Please see " + kExportDocumentationUrl;
+        const string kExportReadmeName = "README.txt";
+        const string kExportReadmeBody = "Please see " + kExportDocumentationUrl;
 #else
         const string kExportReadmeName = "README.url";
         const string kExportReadmeBody = @"[InternetShortcut]

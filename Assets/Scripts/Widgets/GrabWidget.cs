@@ -919,15 +919,19 @@ namespace TiltBrush
         private void LateUpdate()
         {
 #if UNITY_ANDROID || UNITY_IOS
-    if (m_Highlighted != m_OldHighlighted) {
-      if (m_Highlighted) {
-        AddKeyword("HIGHLIGHT_ON");
-      } else {
-        RemoveKeyword("HIGHLIGHT_ON");
-      }
-    }
-    m_OldHighlighted = m_Highlighted;
-    m_Highlighted = false;
+            if (m_Highlighted != m_OldHighlighted)
+            {
+                if (m_Highlighted)
+                {
+                    AddKeyword("HIGHLIGHT_ON");
+                }
+                else
+                {
+                    RemoveKeyword("HIGHLIGHT_ON");
+                }
+            }
+            m_OldHighlighted = m_Highlighted;
+            m_Highlighted = false;
 #endif
         }
 
@@ -1568,7 +1572,7 @@ namespace TiltBrush
                 }
             }
 #else
-    m_Highlighted = true;
+            m_Highlighted = true;
 #endif
         }
 
@@ -1583,7 +1587,7 @@ namespace TiltBrush
                 }
             }
 #else
-    m_Highlighted = false;
+            m_Highlighted = false;
 #endif
         }
 

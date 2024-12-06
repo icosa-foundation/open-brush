@@ -69,7 +69,7 @@ namespace OpenBrush.Multiplayer
 
             brushGuid = BrushCatalog.m_Instance.DefaultBrush.m_Guid.ToString();
 
-            if(!Object.HasStateAuthority)
+            if (!Object.HasStateAuthority)
             {
                 transientPointer = PointerManager.m_Instance.CreateRemotePointer();
                 transientPointer.SetBrush(BrushCatalog.m_Instance.DefaultBrush);
@@ -81,7 +81,7 @@ namespace OpenBrush.Multiplayer
         {
             base.FixedUpdateNetwork();
 
-            if(Object.HasStateAuthority)
+            if (Object.HasStateAuthority)
             {
                 m_PlayerHead.transform.position = transmitData.HeadPosition;
                 m_PlayerHead.transform.rotation = transmitData.HeadRotation;
@@ -99,14 +99,14 @@ namespace OpenBrush.Multiplayer
             {
 
             }
-            
+
             else
             {
                 var toolTR = TrTransform.TR(m_Tool.InterpolationTarget.position, m_Tool.InterpolationTarget.rotation);
                 App.Scene.AsScene[transientPointer.transform] = toolTR;
 
                 transientPointer.SetColor(brushColor);
-                if(brushGuid.ToString() != string.Empty)
+                if (brushGuid.ToString() != string.Empty)
                 {
                     transientPointer.SetBrush(BrushCatalog.m_Instance.GetBrush(new System.Guid(brushGuid.ToString())));
                 }

@@ -1,0 +1,26 @@
+---
+repos:
+  - repo: local
+    hooks:
+      - id: dotnet-format-windows
+        name: dotnet-format for Windows
+        language: system
+        entry: ./pre-commit-dotnet-format-windows.sh
+        types_or: [c#, vb]
+        exclude: ^(Assets/ThirdParty)|(Packages/)|(Assets/Photon/)
+  - repo: local
+    hooks:
+      - id: dotnet-format-multiplayer
+        name: dotnet-format for multiplayer
+        language: system
+        entry: ./pre-commit-dotnet-format-multiplayer.sh
+        types_or: [c#, vb]
+        exclude: ^(Assets/ThirdParty)|(Packages/)|(Assets/Photon/)
+  - repo: local
+    hooks:
+      - id: dotnet-format-oculus
+        name: dotnet-format for oculus
+        language: system
+        entry: ./pre-commit-dotnet-format-oculus.sh
+        types_or: [c#, vb]
+        exclude: ^(Assets/ThirdParty)|(Packages/)|(Assets/Photon/)

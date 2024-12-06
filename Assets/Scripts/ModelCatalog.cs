@@ -295,10 +295,10 @@ namespace TiltBrush
                 List<string> extensions = new() { ".gltf2", ".gltf", ".glb", ".ply", ".svg" };
 
 #if USD_SUPPORTED
-                extensions.AddRange(new [] { ".usda", ".usdc", ".usd" });
+                extensions.AddRange(new[] { ".usda", ".usdc", ".usd" });
 #endif
 #if FBX_SUPPORTED
-                extensions.AddRange(new [] { ".obj", ".fbx" });
+                extensions.AddRange(new[] { ".obj", ".fbx" });
 #endif
 
                 for (int i = 0; i < aFiles.Length; ++i)

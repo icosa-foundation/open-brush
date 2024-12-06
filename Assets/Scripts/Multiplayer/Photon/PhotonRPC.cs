@@ -41,7 +41,7 @@ namespace OpenBrush.Multiplayer
         }
 
         private bool CheckifChildStillPending(PendingCommand pending)
-        {   
+        {
             if (pending.TotalExpectedChildren == pending.Command.ChildrenCount)
             {
                 bool moreChildrenToAssign = false;
@@ -100,7 +100,7 @@ namespace OpenBrush.Multiplayer
             }
 
             // All children present, begin execution
-            
+
             m_pendingCommands.RemoveAt(0);
 
             InvokePreCommands(command);
@@ -152,7 +152,7 @@ namespace OpenBrush.Multiplayer
             AddPendingCommand(preAction, commandGuid, parentGuid, command, childCount);
         }
 
-#region RPCS
+        #region RPCS
         [Rpc(InvokeLocal = false)]
         public static void RPC_SyncToSharedAnchor(NetworkRunner runner, string uuid)
         {
@@ -173,7 +173,7 @@ namespace OpenBrush.Multiplayer
 
                 // Temp
                 decode.m_BrushGuid = new System.Guid(guid);
-                
+
                 // Can we set up these more sensibly?
                 decode.m_Type = Stroke.Type.NotCreated;
                 decode.m_IntendedCanvas = App.Scene.MainCanvas;
@@ -211,7 +211,7 @@ namespace OpenBrush.Multiplayer
             var parentCommand = FindParentCommand(parentGuid);
             var command = new BaseCommand(parent: parentCommand);
 
-            AddPendingCommand(() => {}, commandGuid, parentGuid, command, childCount);
+            AddPendingCommand(() => { }, commandGuid, parentGuid, command, childCount);
         }
 
         [Rpc(InvokeLocal = false)]
@@ -229,11 +229,11 @@ namespace OpenBrush.Multiplayer
 
             decode.m_Type = Stroke.Type.NotCreated;
             decode.m_IntendedCanvas = App.Scene.MainCanvas;
-            
+
             Array.Resize(ref decode.m_ControlPoints, finalLength);
             Array.Resize(ref decode.m_ControlPointsToDrop, finalLength);
 
-            if(m_inProgressStrokes.ContainsKey(id))
+            if (m_inProgressStrokes.ContainsKey(id))
             {
                 Debug.LogError("Shouldn't be here!");
                 return;
@@ -241,19 +241,19 @@ namespace OpenBrush.Multiplayer
 
             m_inProgressStrokes[id] = decode;
         }
-        
+
         [Rpc(InvokeLocal = false)]
         public static void RPC_BrushStrokeContinue(NetworkRunner runner, Guid id, int offset, NetworkedControlPoint[] controlPoints, bool[] dropPoints)
         {
-            if(!m_inProgressStrokes.ContainsKey(id))
+            if (!m_inProgressStrokes.ContainsKey(id))
             {
                 Debug.LogError("shouldn't be here!");
                 return;
             }
 
             var stroke = m_inProgressStrokes[id];
-            
-            for(int i = 0; i < controlPoints.Length; ++i)
+
+            for (int i = 0; i < controlPoints.Length; ++i)
             {
                 stroke.m_ControlPoints[offset + i] = NetworkedControlPoint.ToControlPoint(controlPoints[i]);
                 stroke.m_ControlPointsToDrop[offset + i] = dropPoints[i];
@@ -263,7 +263,7 @@ namespace OpenBrush.Multiplayer
         [Rpc(InvokeLocal = false)]
         public static void RPC_BrushStrokeComplete(NetworkRunner runner, Guid id, Guid commandGuid, Guid parentGuid = default, int childCount = 0)
         {
-            if(!m_inProgressStrokes.ContainsKey(id))
+            if (!m_inProgressStrokes.ContainsKey(id))
             {
                 Debug.LogError("shouldn't be here!");
                 return;
@@ -286,14 +286,14 @@ namespace OpenBrush.Multiplayer
                 var parentCommand = FindParentCommand(parentGuid);
                 var command = new DeleteStrokeCommand(foundStroke, parent: parentCommand);
 
-                AddPendingCommand(() => {}, commandGuid, parentGuid, command, childCount);
+                AddPendingCommand(() => { }, commandGuid, parentGuid, command, childCount);
             }
             else
             {
                 Debug.LogError($"couldn't find stroke with seed: {seed}");
             }
         }
-#endregion
+        #endregion
     }
 }
 
