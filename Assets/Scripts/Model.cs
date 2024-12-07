@@ -21,6 +21,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using TiltBrushToolkit;
+using Unity.Profiling;
 using Unity.VectorGraphics;
 using Debug = UnityEngine.Debug;
 using UObject = UnityEngine.Object;
@@ -852,9 +853,12 @@ namespace TiltBrush
             }
 
         }
+        
+        static ProfilerMarker _endCreatePrefabPerfMarker = new ProfilerMarker("Model.EndCreatePrefab");
 
         public void EndCreatePrefab(GameObject go, List<string> warnings)
         {
+   
             if (go == null)
             {
                 m_LoadError = m_LoadError ?? new LoadError("Bad data");
@@ -871,7 +875,11 @@ namespace TiltBrush
             }
             m_ModelParent = go.transform;
             
+            _endCreatePrefabPerfMarker.Begin();
+            
             InitializeUidToNodeMap(m_ModelParent);
+            
+            _endCreatePrefabPerfMarker.End();
 
             // !!! Add to material dictionary here?
 
