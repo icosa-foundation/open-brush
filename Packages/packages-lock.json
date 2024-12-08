@@ -380,7 +380,7 @@
         "com.unity.shadergraph": "10.0.0",
         "com.unity.mathematics": "1.0.0"
       },
-      "hash": "8427244b73c19eb121ca59dc98efacb732301712"
+      "hash": "59f0fd8d0722dd1156e0c4faf60964f841ced65b"
     },
     "org.nuget.google.apis": {
       "version": "1.64.0",
