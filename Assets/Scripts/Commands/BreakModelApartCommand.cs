@@ -14,6 +14,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 
 namespace TiltBrush
@@ -167,13 +168,16 @@ namespace TiltBrush
 
         private static string GetHierarchyPath(Transform root, Transform obj)
         {
-            string path = "/" + obj.name;
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.Insert(0, "/" + obj.name);
+            
             while (obj.transform.parent != root)
             {
                 obj = obj.transform.parent;
-                path = "/" + obj.name + path;
+                stringBuilder.Insert(0, "/" + obj.name);
             }
-            return path;
+            
+            return stringBuilder.ToString();
         }
 
         protected override void OnRedo()
