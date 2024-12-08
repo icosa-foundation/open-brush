@@ -29,7 +29,6 @@ using UObject = UnityEngine.Object;
 
 namespace TiltBrush
 {
-
     public class Model
     {
         public struct Location
@@ -60,6 +59,7 @@ namespace TiltBrush
                     path = relativePath.Substring(0, lastIndex);
                     fragment = relativePath.Substring(lastIndex + 1);
                 }
+
                 return new Location
                 {
                     type = Type.LocalFile,
@@ -87,6 +87,7 @@ namespace TiltBrush
                     {
                         return null;
                     }
+
                     switch (type)
                     {
                         case Type.LocalFile:
@@ -94,6 +95,7 @@ namespace TiltBrush
                         case Type.IcosaAssetId:
                             return path.Replace("\\", "/");
                     }
+
                     return null;
                 }
             }
@@ -102,7 +104,11 @@ namespace TiltBrush
             {
                 get
                 {
-                    if (type == Type.LocalFile) { return path; }
+                    if (type == Type.LocalFile)
+                    {
+                        return path;
+                    }
+
                     throw new Exception("Invalid relative path request");
                 }
             }
@@ -113,12 +119,19 @@ namespace TiltBrush
             {
                 get
                 {
-                    if (type == Type.IcosaAssetId) { return id; }
+                    if (type == Type.IcosaAssetId)
+                    {
+                        return id;
+                    }
+
                     throw new Exception("Invalid Icosa asset id request");
                 }
             }
 
-            public Type GetLocationType() { return type; }
+            public Type GetLocationType()
+            {
+                return type;
+            }
 
             public override int GetHashCode()
             {
@@ -136,6 +149,7 @@ namespace TiltBrush
                 {
                     str = $"{type}:{path}";
                 }
+
                 return str;
             }
 
@@ -145,6 +159,7 @@ namespace TiltBrush
                 {
                     return false;
                 }
+
                 return this == (Location)obj;
             }
 
@@ -197,8 +212,10 @@ namespace TiltBrush
                 this.message = message;
                 this.detail = detail;
             }
+
             public readonly string message; // Human-readable short message
-            public readonly string detail;  // Maybe non-human-readable details
+
+            public readonly string detail; // Maybe non-human-readable details
             // maybe? public bool transient;  // true if we know for sure that this error is transient
         }
 
@@ -208,6 +225,7 @@ namespace TiltBrush
 
         /// m_LoadError != null implies m_Valid == false
         private LoadError? m_LoadError;
+
         public LoadError? Error => m_LoadError;
 
         // How many widgets are using this model?
@@ -248,7 +266,6 @@ namespace TiltBrush
             EnsureCollectorExists();
             return m_ImportMaterialCollector.GetExportableMaterial(material);
         }
-        
 
 
         public Model(Location location)
@@ -256,7 +273,10 @@ namespace TiltBrush
             m_Location = location;
         }
 
-        public Location GetLocation() { return m_Location; }
+        public Location GetLocation()
+        {
+            return m_Location;
+        }
 
         /// A helper class which allows import to run I/O on a background thread before producing Unity
         /// GameObject(s). Usage:
@@ -289,11 +309,7 @@ namespace TiltBrush
             /// It's unclear if the intent is that the user should continue calling TryEndAsyncLoad
             /// until it returns true, or if they should stop calling TryEndAsyncLoad. etc. Probably
             /// we should remove this.
-            public bool IsValid
-            {
-                get;
-                protected set;
-            }
+            public bool IsValid { get; protected set; }
 
             public ModelBuilder(string localPath)
             {
@@ -318,13 +334,15 @@ namespace TiltBrush
                 if (m_root != null)
                 {
                     foreach (var mesh in m_root.GetComponentsInChildren<MeshFilter>()
-                        .Select(x => x.sharedMesh))
+                                 .Select(x => x.sharedMesh))
                     {
                         UObject.Destroy(mesh);
                     }
+
                     UObject.Destroy(m_root);
                     m_root = null;
                 }
+
                 m_stateReader.Close();
             }
 
@@ -334,7 +352,7 @@ namespace TiltBrush
             ///   ImportMaterialCollector - non-null upon successful completion.
             /// Raises an exception on unsuccessful completion.
             public bool TryEndAsyncLoad(out GameObject root,
-                                        out ImportMaterialCollector importMaterialCollector)
+                out ImportMaterialCollector importMaterialCollector)
             {
                 // Three things happen in this function.
                 // 1: It waits to try and get the result of reading the model on a background thread
@@ -346,7 +364,10 @@ namespace TiltBrush
                 if (m_meshEnumerator == null)
                 {
                     IDisposable state;
-                    if (!m_stateReader.TryGetResult(out state)) { return false; }
+                    if (!m_stateReader.TryGetResult(out state))
+                    {
+                        return false;
+                    }
 
                     IEnumerable<Null> enumerable;
                     m_root = DoUnityThreadWork(state, out enumerable, out m_ImportMaterialCollector);
@@ -359,6 +380,7 @@ namespace TiltBrush
                     {
                         return false;
                     }
+
                     m_ImportMaterialCollector = new ImportMaterialCollector(
                         Path.GetDirectoryName(m_localPath),
                         uniqueSeed: m_localPath
@@ -366,6 +388,7 @@ namespace TiltBrush
                     m_meshEnumerator = enumerable.GetEnumerator();
                     m_root.SetActive(false);
                 }
+
                 // Yield until the limiter unblocks.
                 // Multiple calls to TryGetResult above are harmless.
                 if (sm_Limiter.IsBlocked())
@@ -387,6 +410,7 @@ namespace TiltBrush
                         stopwatch.Stop();
                         return true;
                     }
+
                     if (stopwatch.ElapsedTicks > numTicks)
                     {
                         stopwatch.Stop();
@@ -437,13 +461,14 @@ namespace TiltBrush
                 {
                     return ImportGltf.BeginImport(m_localPath, loader, options);
                 }
+
                 return NewGltfImporter.BeginImport(m_localPath);
             }
 
             protected override GameObject DoUnityThreadWork(IDisposable state__,
-                                                            out IEnumerable<Null> meshEnumerable,
-                                                            out ImportMaterialCollector
-                                                                importMaterialCollector)
+                out IEnumerable<Null> meshEnumerable,
+                out ImportMaterialCollector
+                    importMaterialCollector)
             {
                 GameObject rootObject = null;
                 if (m_fromIcosa)
@@ -467,6 +492,7 @@ namespace TiltBrush
                             importMaterialCollector = (ImportMaterialCollector)result.materialCollector;
                         }
                     }
+
                     IsValid = rootObject != null;
                     meshEnumerable = null;
                     importMaterialCollector = null;
@@ -485,9 +511,11 @@ namespace TiltBrush
                             // EndImport doesn't try to use the loadImages functionality of UriLoader anyway.
                             // It knows it's on the main thread, so chooses to use Unity's fast loading.
                             rootObject = state.root;
-                            importMaterialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: m_localPath);
+                            importMaterialCollector =
+                                new ImportMaterialCollector(assetLocation, uniqueSeed: m_localPath);
                         }
                     }
+
                     IsValid = rootObject != null;
                     return rootObject;
                 }
@@ -505,7 +533,6 @@ namespace TiltBrush
 
         GameObject LoadPly(List<string> warningsOut)
         {
-
             try
             {
                 var reader = new PlyReader(m_Location.AbsolutePath);
@@ -522,7 +549,6 @@ namespace TiltBrush
                 Debug.LogException(ex);
                 return null;
             }
-
         }
 
         GameObject LoadSvg(List<string> warningsOut, out SVGParser.SceneInfo sceneInfo)
@@ -663,6 +689,7 @@ namespace TiltBrush
                 {
                     return false;
                 }
+
                 isValid = m_builder.IsValid;
             }
             catch (ObjectDisposedException ex)
@@ -705,12 +732,11 @@ namespace TiltBrush
         {
             Task t = StartCreatePrefab(null);
             await t;
-
         }
+
         public void LoadModel()
         {
             StartCreatePrefab(null);
-
         }
 
         /// Either synchronously load a GameObject hierarchy and convert it to a "prefab"
@@ -750,13 +776,11 @@ namespace TiltBrush
                     EndCreatePrefab(go, warnings);
                 }
                 else if (m_Location.GetLocationType() == Location.Type.IcosaAssetId ||
-                    ext == ".gltf2" || ext == ".gltf" || ext == ".glb")
+                         ext == ".gltf2" || ext == ".gltf" || ext == ".glb")
                 {
                     // If we pulled this from Icosa, it's going to be a gltf file.
                     Task t = LoadGltf(warnings);
                     await t;
-                    
-                    
                 }
                 else if (ext == ".fbx" || ext == ".obj")
                 {
@@ -782,7 +806,6 @@ namespace TiltBrush
                     m_LoadError = new LoadError("Unknown format", ext);
                 }
             }
-
         }
 
         public void CalcBoundsGltf(GameObject go)
@@ -804,6 +827,7 @@ namespace TiltBrush
                     b.Encapsulate(bounds);
                 }
             }
+
             m_MeshBounds = b;
             if (first)
             {
@@ -833,20 +857,20 @@ namespace TiltBrush
                 {
                     b.Encapsulate(bc.bounds);
                 }
+
                 UnityEngine.Object.Destroy(bc);
             }
+
             m_MeshBounds = b;
             if (first)
             {
                 // There was no geometry
                 Debug.LogErrorFormat("No usable geometry in model. LoadModel({0})", go.name);
             }
-
         }
-        
+
         public void EndCreatePrefab(GameObject go, List<string> warnings)
         {
-   
             if (go == null)
             {
                 m_LoadError = m_LoadError ?? new LoadError("Bad data");
@@ -861,39 +885,37 @@ namespace TiltBrush
             {
                 UnityEngine.Object.Destroy(m_ModelParent.gameObject);
             }
+
             m_ModelParent = go.transform;
-            
-            #if DEVELOPMENT_BUILD || UNITY_EDITOR
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
             ProfilerMarker generateUniqueNamesPerfMarker = new ProfilerMarker("Model.GenerateUniqueNames");
             generateUniqueNamesPerfMarker.Begin();
-            #endif
-     
+#endif
+
             GenerateUniqueNames(m_ModelParent);
-            
-            #if DEVELOPMENT_BUILD || UNITY_EDITOR
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
             generateUniqueNamesPerfMarker.End();
-            #endif
+#endif
 
             // !!! Add to material dictionary here?
 
             m_Valid = true;
             DisplayWarnings(warnings);
-
         }
-        
-        
+
 
         // This method is called when the model has been loaded and the node tree is available
         // This method is necessary because (1) nodes in e.g glTF files don't need to have unique names
         // and (2) there's code in at least ModelWidget that searches for specific nodes using node names
         private static void GenerateUniqueNames(Transform rootNode)
         {
-
             void SetUniqueNameForNode(Transform node)
             {
                 // GetInstanceID returns a unique ID for every GameObject during a runtime session
                 node.name += " uid: " + node.gameObject.GetInstanceID();
-                
+
                 foreach (Transform child in node)
                 {
                     SetUniqueNameForNode(child);
@@ -905,7 +927,7 @@ namespace TiltBrush
                 SetUniqueNameForNode(child);
             }
         }
-        
+
 
         public void UnloadModel()
         {
@@ -914,6 +936,7 @@ namespace TiltBrush
                 m_builder.CancelAsyncLoad();
                 m_builder = null;
             }
+
             m_Valid = false;
             m_LoadError = null;
             if (m_ModelParent != null)
@@ -921,10 +944,11 @@ namespace TiltBrush
                 // Procedurally created meshes need to be explicitly destroyed - you can't just destroy
                 // the MeshFilter that references them.
                 foreach (var mesh in m_ModelParent.GetComponentsInChildren<MeshFilter>()
-                    .Select(x => x.sharedMesh))
+                             .Select(x => x.sharedMesh))
                 {
                     UObject.Destroy(mesh);
                 }
+
                 UObject.Destroy(m_ModelParent.gameObject);
                 m_ModelParent = null;
             }
@@ -952,6 +976,7 @@ namespace TiltBrush
                     {
                         yield return null;
                     }
+
                     break;
                 default:
                     m_LoadError = new LoadError($"Unknown load type {type}");
@@ -976,7 +1001,7 @@ namespace TiltBrush
         public bool IsCached()
         {
             return m_Location.GetLocationType() == Location.Type.IcosaAssetId &&
-                Directory.Exists(m_Location.AbsolutePath);
+                   Directory.Exists(m_Location.AbsolutePath);
         }
 
         public void RefreshCache()
@@ -994,6 +1019,7 @@ namespace TiltBrush
             {
                 throw new InvalidOperationException();
             }
+
             return m_ModelParent.GetComponent<ObjModelScript>().m_MeshChildren;
         }
 
@@ -1006,6 +1032,7 @@ namespace TiltBrush
                 case Model.Location.Type.IcosaAssetId:
                     return AssetId;
             }
+
             return "Unknown";
         }
 
