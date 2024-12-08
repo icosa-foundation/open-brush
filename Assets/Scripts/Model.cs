@@ -248,18 +248,8 @@ namespace TiltBrush
             EnsureCollectorExists();
             return m_ImportMaterialCollector.GetExportableMaterial(material);
         }
+        
 
-        public struct UidToNodeMapItem
-        {
-            public Transform nodeTransform;
-            public string nodeRealName;
-        }
-
-        // initialized when model is loaded
-        //  - initialization uses GetInstanceID() to get unique id for each node in the model
-        //  - this dictionary is currently used for finding subtrees when breaking models apart, in ModelWidget.cs
-        //      - unique identifiers for nodes are needed because node names in e.g., glTF aren't unique
-        public Dictionary<int, UidToNodeMapItem> UidToNodeMap;
 
         public Model(Location location)
         {
@@ -854,8 +844,6 @@ namespace TiltBrush
 
         }
         
-        static ProfilerMarker _endCreatePrefabPerfMarker = new ProfilerMarker("Model.EndCreatePrefab");
-
         public void EndCreatePrefab(GameObject go, List<string> warnings)
         {
    
@@ -875,11 +863,16 @@ namespace TiltBrush
             }
             m_ModelParent = go.transform;
             
-            _endCreatePrefabPerfMarker.Begin();
+            #if DEVELOPMENT_BUILD || UNITY_EDITOR
+            ProfilerMarker generateUniqueNamesPerfMarker = new ProfilerMarker("Model.GenerateUniqueNames");
+            generateUniqueNamesPerfMarker.Begin();
+            #endif
+     
+            GenerateUniqueNames(m_ModelParent);
             
-            InitializeUidToNodeMap(m_ModelParent);
-            
-            _endCreatePrefabPerfMarker.End();
+            #if DEVELOPMENT_BUILD || UNITY_EDITOR
+            generateUniqueNamesPerfMarker.End();
+            #endif
 
             // !!! Add to material dictionary here?
 
@@ -887,41 +880,29 @@ namespace TiltBrush
             DisplayWarnings(warnings);
 
         }
-
-  
         
-        public string GetNodeRealNameFromID(int uid)
+        
+
+        // This method is called when the model has been loaded and the node tree is available
+        // This method is necessary because (1) nodes in e.g glTF files don't need to have unique names
+        // and (2) there's code in at least ModelWidget that searches for specific nodes using node names
+        private static void GenerateUniqueNames(Transform rootNode)
         {
-            if (UidToNodeMap.ContainsKey(uid))
+
+            void SetUniqueNameForNode(Transform node)
             {
-                return UidToNodeMap[uid].nodeRealName;
-            }
-            return null;
-        }
-
-        private void InitializeUidToNodeMap(Transform rootNode)
-        {
-            // the immediate children of rootNode are the root nodes of the model
-
-            UidToNodeMap = new Dictionary<int, UidToNodeMapItem>();
-
-            void ProcessNode(Transform node)
-            {
-                UidToNodeMapItem uidToNodeMapItem = new UidToNodeMapItem();
-                uidToNodeMapItem.nodeTransform = node;
-                uidToNodeMapItem.nodeRealName = node.name;
-                node.name = node.gameObject.GetInstanceID().ToString();
-                UidToNodeMap[node.gameObject.GetInstanceID()] = uidToNodeMapItem;
-
+                // GetInstanceID returns a unique ID for every GameObject during a runtime session
+                node.name += " uid: " + node.gameObject.GetInstanceID();
+                
                 foreach (Transform child in node)
                 {
-                    ProcessNode(child);
+                    SetUniqueNameForNode(child);
                 }
             }
 
             foreach (Transform child in rootNode)
             {
-                ProcessNode(child);
+                SetUniqueNameForNode(child);
             }
         }
         
