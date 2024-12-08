@@ -473,7 +473,7 @@ namespace TiltBrush
             {
                 get
                 {
-                    if (model.GetLocation().GetLocationType() == Model.Location.Type.PolyAssetId)
+                    if (model.GetLocation().GetLocationType() == Model.Location.Type.IcosaAssetId)
                     {
                         return model.AssetId; // blows up if type is not PolyAssetId
                     }
