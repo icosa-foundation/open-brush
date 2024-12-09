@@ -120,6 +120,7 @@ namespace TiltBrush
             try
             {
                 ImportOptions options = new ImportOptions();
+                localPath = localPath.Replace("#", "%23");
                 GLTFSceneImporter gltf = new GLTFSceneImporter(localPath, options);
 
                 gltf.IsMultithreaded = false;
