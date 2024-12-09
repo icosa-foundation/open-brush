@@ -120,6 +120,7 @@ namespace TiltBrush
             try
             {
                 ImportOptions options = new ImportOptions();
+                localPath = localPath.Replace("#", "%23");
                 GLTFSceneImporter gltf = new GLTFSceneImporter(localPath, options);
 
                 gltf.IsMultithreaded = false;
@@ -131,6 +132,7 @@ namespace TiltBrush
             catch (Exception e)
             {
                 Debug.LogError("Failed to import using UnityGltf. Falling back to legacy import");
+                Debug.LogError($"UnityGltf Exception: {e}");
                 // Fall back to the older import code
                 GameObject go = _ImportUsingLegacyGltf(localPath, assetLocation);
                 model.CalcBoundsGltf(go);

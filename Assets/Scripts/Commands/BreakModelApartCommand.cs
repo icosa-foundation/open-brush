@@ -67,13 +67,11 @@ namespace TiltBrush
             bool hasValidDirectChildren(Transform node)
             {
                 if (node.gameObject.activeInHierarchy == false) return false;
-                int count = 0;
                 foreach (Transform child in node)
                 {
-                    if (!isValid(child)) continue;
-                    count++;
+                    if (isValid(child)) return true;
                 }
-                return count > 0;
+                return false;
             }
 
             bool isSubPath(string basePath, string potentialSubPath)
