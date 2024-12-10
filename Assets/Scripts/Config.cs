@@ -671,10 +671,9 @@ namespace TiltBrush
 
 #if UNITY_EDITOR
         /// Called at build time, just before this Config instance is saved to Main.unity
-        public void DoBuildTimeConfiguration(UnityEditor.BuildTarget target, bool disableAccountLogins = false)
+        public void DoBuildTimeConfiguration(UnityEditor.BuildTarget target)
         {
             m_PlatformConfig = EditTimeAssetReferences.Instance.GetConfigForBuildTarget(target);
-            DisableAccountLogins = disableAccountLogins;
         }
 #endif
     }

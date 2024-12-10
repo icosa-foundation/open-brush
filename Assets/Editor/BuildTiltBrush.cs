@@ -67,7 +67,6 @@ static class BuildTiltBrush
         public string Stamp;
         public BuildOptions UnityOptions;
         public string Description;
-        public bool disableAccountLogins;
     }
 
     [Serializable()]
@@ -775,10 +774,6 @@ static class BuildTiltBrush
                 {
                     i++;
                 }
-                else if (args[i] == "-btb-disableAccountLogins")
-                {
-                    tiltOptions.disableAccountLogins = true;
-                }
                 else if (args[i] == "-androidExportType")
                 {
                     // Not supported in Open Brush (added to game-ci in v3)
@@ -1477,7 +1472,7 @@ static class BuildTiltBrush
             config.m_AutoProfile = tiltOptions.AutoProfile;
             config.m_BuildStamp = stamp;
             //config.OnValidate(xrSdk, TargetToGroup(target));
-            config.DoBuildTimeConfiguration(target, tiltOptions.disableAccountLogins);
+            config.DoBuildTimeConfiguration(target);
             EditorUtility.SetDirty(config);
 
             if (GuiSelectedBuildTarget == BuildTarget.Android)

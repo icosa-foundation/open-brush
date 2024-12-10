@@ -180,7 +180,7 @@ jobs:
       fail-fast: false
       matrix:
         flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
-        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android OpenXR (CN), Android Quest, iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
+        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android Quest, iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
         include:
           - name: Windows OpenXR
             targetPlatform: StandaloneWindows64
@@ -202,14 +202,6 @@ jobs:
             vrsdk: OpenXR
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
-            versionSuffix: 0
-
-          - name: Android OpenXR (CN)
-            targetPlatform: Android
-            vrsdk: OpenXR
-            cache: Android_Vulkan
-            # Chinese build that doesn't have google/sketchfab login.
-            extraoptions: -btb-il2cpp -btb-disableAccountLogins
             versionSuffix: 0
 
           - name: Android Quest
@@ -1072,11 +1064,6 @@ jobs:
         with:
           name: Android OpenXR
           path: build_android_openxr
-      - name: Download Build Artifacts (Android OpenXR CN)
-        uses: actions/download-artifact@v4
-        with:
-          name: Android OpenXR (CN)
-          path: build_android_openxr_cn
       - name: Publish Pico Builds
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
@@ -1087,7 +1074,6 @@ jobs:
         run: |
           mkdir releases
           mv build_android_openxr/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
-          mv build_android_openxr_cn/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_CN_$VERSION.apk
 
           cd releases
           # pico-cli v1.0.3
@@ -1096,9 +1082,8 @@ jobs:
 
           if [ "$PRERELEASE" == "false" ]
           then
-            # The order here matters, because the Chinese build has a slightly higher version code due to the suffix of 1 vs 0
             ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 2 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
-            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_CN_$VERSION.apk --channel 1 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region cn --apk OpenBrush_Pico_$VERSION.apk --channel 1 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
           else
             # For Pico, Beta channels can only get one build, not a separate China / non-China build
             ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 3 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
