@@ -1032,7 +1032,7 @@ static class BuildTiltBrush
 #endif
             if (!String.IsNullOrEmpty(Description))
             {
-                new_name += "-(" + Description + ")";
+                new_name += "-(" + Description.Replace("#", "") + ")";
                 new_identifier += "-" + Description.Replace("_", "").Replace("#", "").Replace("-", "");
             }
             if (m_IsAndroidOrIos)

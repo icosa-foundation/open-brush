@@ -146,7 +146,7 @@ jobs:
           else
             if [[ ${{ github.ref }} == refs/pull/* ]]
             then
-              DESCRIPTION="PR#$(echo ${{ github.ref }} | sed -e 's#refs/pull/##' -e 's#/merge##')"
+              DESCRIPTION="PR$(echo ${{ github.ref }} | sed -e 's#refs/pull/##' -e 's#/merge##')"
             elif [[ ${{ github.ref }} == refs/heads/* ]]
             then
               DESCRIPTION="$(echo ${{ github.ref }} | sed -e 's#refs/heads/##')"
