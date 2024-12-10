@@ -269,6 +269,13 @@ namespace OpenBrush.Multiplayer
             return await PhotonRPC.WaitForAcknowledgment(command.Guid);
         }
 
+        public async Task<bool> CheckStrokeReception(Stroke stroke, int playerId)
+        {
+            PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
+            PhotonRPC.RPC_CheckStroke(m_Runner, stroke.m_Guid, m_Runner.LocalPlayer, targetPlayer);
+            return await PhotonRPC.WaitForAcknowledgment(stroke.m_Guid);
+        }
+
         public async Task<bool> UndoCommand(BaseCommand command)
         {
             PhotonRPC.RPC_Undo(m_Runner, command.GetType().ToString());

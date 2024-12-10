@@ -30,12 +30,13 @@ namespace OpenBrush.Multiplayer
     {
         private static Dictionary<Guid, Stroke> m_inProgressStrokes;
         private static List<PendingCommand> m_pendingCommands;
-        private static Dictionary<Guid, TaskCompletionSource<bool>> CommandAcknowledgments = new();
+        private static Dictionary<Guid, TaskCompletionSource<bool>> m_acknowledgments;
 
         public void Awake()
         {
             m_inProgressStrokes = new();
             m_pendingCommands = new();
+            m_acknowledgments = new();
         }
 
         public void Update()
@@ -134,6 +135,17 @@ namespace OpenBrush.Multiplayer
             if (SketchMemoryScript.m_Instance.IsCommandInStack(commandGuid))
             {
                 //Debug.Log($"Command with Guid {commandGuid} already in stack.");
+                return true;
+            }
+            return false;
+        }
+
+        private static bool CheckifStrokeGuidIsInMemory(Guid strokeGuid)
+        {
+
+            if (SketchMemoryScript.m_Instance.IsStrokeInMemory(strokeGuid))
+            {
+                //Debug.Log($"Stroke with Guid {strokeGuid} already in memory.");
                 return true;
             }
             return false;
@@ -372,7 +384,7 @@ namespace OpenBrush.Multiplayer
         public static async Task<bool> WaitForAcknowledgment(Guid commandGuid, int timeoutMilliseconds = 1000)
         {
             var tcs = new TaskCompletionSource<bool>();
-            CommandAcknowledgments[commandGuid] = tcs;
+            m_acknowledgments[commandGuid] = tcs;
 
             var timeoutTask = Task.Delay(timeoutMilliseconds);
             var acknowledgmentTask = tcs.Task;
@@ -380,12 +392,12 @@ namespace OpenBrush.Multiplayer
 
             if (completedTask == acknowledgmentTask)
             {
-                CommandAcknowledgments.Remove(commandGuid);
+                m_acknowledgments.Remove(commandGuid);
                 return await acknowledgmentTask;
             }
             else
             {
-                CommandAcknowledgments.Remove(commandGuid);
+                m_acknowledgments.Remove(commandGuid);
                 return false;
             }
         }
@@ -551,16 +563,23 @@ namespace OpenBrush.Multiplayer
         public static void RPC_CheckCommand(NetworkRunner runner, Guid commandGuid, PlayerRef initiatorPlayer, [RpcTarget] PlayerRef targetPlayer)
         {
             bool isCommandInStack = CheckifCommandGuidIsInStack(commandGuid);
-            RPC_ConfirmCommand(runner, commandGuid, isCommandInStack, initiatorPlayer);
+            RPC_Confirm(runner, commandGuid, isCommandInStack, initiatorPlayer);
         }
 
         [Rpc(InvokeLocal = false)]
-        public static void RPC_ConfirmCommand(NetworkRunner runner, Guid commandGuid, bool isCommandInStack, [RpcTarget] PlayerRef targetPlayer)
+        public static void RPC_CheckStroke(NetworkRunner runner, Guid strokeGuid, PlayerRef initiatorPlayer, [RpcTarget] PlayerRef targetPlayer)
         {
-            if (CommandAcknowledgments.TryGetValue(commandGuid, out var tcs))
+            bool isCommandInStack = CheckifStrokeGuidIsInMemory(strokeGuid);
+            RPC_Confirm(runner, strokeGuid, isCommandInStack, initiatorPlayer);
+        }
+
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_Confirm(NetworkRunner runner, Guid commandGuid, bool isCommandInStack, [RpcTarget] PlayerRef targetPlayer)
+        {
+            if (m_acknowledgments.TryGetValue(commandGuid, out var tcs))
             {
                 tcs.SetResult(isCommandInStack);
-                CommandAcknowledgments.Remove(commandGuid);
+                m_acknowledgments.Remove(commandGuid);
             }
         }
 

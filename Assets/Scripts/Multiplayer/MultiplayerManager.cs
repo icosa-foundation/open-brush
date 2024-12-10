@@ -486,6 +486,16 @@ namespace OpenBrush.Multiplayer
             return false;
         }
 
+        public async Task<bool> CheckStrokeReception(Stroke stroke, int id)
+        {
+            if (State == ConnectionState.IN_ROOM)
+            {
+                return await m_Manager.CheckStrokeReception(stroke, id);
+            }
+
+            return false;
+        }
+
         public void OnCommandUndo(BaseCommand command)
         {
             if (State == ConnectionState.IN_ROOM)

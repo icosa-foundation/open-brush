@@ -1425,6 +1425,11 @@ namespace TiltBrush
             return result;
         }
 
+        public bool IsStrokeInMemory(Guid strokeGuid)
+        {
+            return m_MemoryList.Any(stroke => stroke.m_Guid == strokeGuid);
+        }
+
         public bool IsCommandInStack(Guid commandGuid)
         {
             return IsCommandInOperationStack(commandGuid) ||

@@ -15,11 +15,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.Eventing.Reader;
 using System.Linq;
+using System.Threading.Tasks;
 using TiltBrush;
 using TMPro;
 using UnityEngine;
+
 
 namespace OpenBrush.Multiplayer
 {
@@ -35,7 +36,7 @@ namespace OpenBrush.Multiplayer
 
         private bool _isWaiting = false;
         private bool _isSendingCommandHistory = false;
-        private InfoCardAnimation infoCard;
+
 
         void Awake()
         {
@@ -73,6 +74,7 @@ namespace OpenBrush.Multiplayer
         async void SendStrokesToPlayer(int id)
         {
             LinkedList<Stroke> strokes = SketchMemoryScript.m_Instance.GetMemoryList;
+            StartSyncProgressDisplayForSrokes(id, strokes);
             const int chunkSize = 5;
             List<Stroke> strokeList = strokes.ToList();
 
@@ -85,7 +87,6 @@ namespace OpenBrush.Multiplayer
                 counter += chunk.Count;
                 //Debug.Log($"Sent {strokesData.Length} bytes of serialized stroke data (batch {(i / chunkSize) + 1}) to player {id}.");
             }
-            SynchHistoryComplete(id);
         }
 
         async void DeserializeReceivedStrokes(byte[] largeData)
@@ -108,7 +109,7 @@ namespace OpenBrush.Multiplayer
 
         void OnLargeDataReceived(byte[] largeData)
         {
-            Debug.Log($"[Multiplayer Scene Sync]Successfully received {largeData.Length} bytes from the autosave.");
+            //Debug.Log($"[Multiplayer Scene Sync]Successfully received {largeData.Length} bytes from the autosave.");
 
             DeserializeReceivedStrokes(largeData);
         }
@@ -149,7 +150,9 @@ namespace OpenBrush.Multiplayer
 
             int firstCommandTimestamp = commands.Any() ? commands.First().NetworkTimestamp ?? int.MaxValue : int.MaxValue;
 
-            CreateBrushStrokeCommands(strokesWithoutCommand, firstCommandTimestamp);
+            CreateBrushStrokeCommands(strokesWithoutCommand, firstCommandTimestamp); // this add the strokes without commands to the IEnumerable<BaseCommand> commands
+
+            StartSyncProgressDisplayForCommands(id, commands.ToList());
 
             int packetCounter = 0;
             int counter = 0;
@@ -166,12 +169,9 @@ namespace OpenBrush.Multiplayer
                 MultiplayerManager.m_Instance.OnCommandPerformed(command);
                 packetCounter += estimatedMessages;
                 counter++;
-                SynchHistoryPercentage(id, commands.Count(), counter);
             }
 
             _isSendingCommandHistory = false;
-
-            SynchHistoryComplete(id);
 
         }
 
@@ -219,6 +219,43 @@ namespace OpenBrush.Multiplayer
         #endregion
 
         #region Remote infoCard commands
+
+        public async void StartSyncProgressDisplayForSrokes(int TargetPlayerId, LinkedList<Stroke> strokes)
+        {
+            StartSynchHistory(TargetPlayerId);
+
+            int sentStrokes = 0;
+            foreach (var stroke in strokes)
+            {
+                while (await MultiplayerManager.m_Instance.CheckStrokeReception(stroke, TargetPlayerId))
+                {
+                    await Task.Delay(200);
+                }
+                sentStrokes++;
+                SynchHistoryPercentage(TargetPlayerId, strokes.Count, sentStrokes);
+            }
+
+            SynchHistoryComplete(TargetPlayerId);
+        }
+
+        public async void StartSyncProgressDisplayForCommands(int TargetPlayerId, List<BaseCommand> commands)
+        {
+            StartSynchHistory(TargetPlayerId);
+
+            int sentStrokes = 0;
+            foreach (var command in commands)
+            {
+                while (await MultiplayerManager.m_Instance.CheckCommandReception(command, TargetPlayerId))
+                {
+                    await Task.Delay(200);
+                }
+                sentStrokes++;
+                SynchHistoryPercentage(TargetPlayerId, commands.Count, sentStrokes);
+            }
+
+            SynchHistoryComplete(TargetPlayerId);
+        }
+
         private void StartSynchHistory(int id)
         {
             MultiplayerManager.m_Instance.StartSynchHistory(id);
@@ -238,53 +275,65 @@ namespace OpenBrush.Multiplayer
         #endregion
 
         #region Local infoCard commands
+
+        private InfoCardAnimation infoCard;
+        private readonly object infoCardLock = new object();
+
         public void DisplaySynchInfo()
         {
-            OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                InputManager.ControllerName.Brush,
-                "Synch Started!",
-                fPopScalar: 1.0f
-            );
-            RetrieveInfoCard();
+            lock (infoCardLock)
+            {
+                if (infoCard == null)
+                {
+                    OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                        InputManager.ControllerName.Brush,
+                        "Synch Started!",
+                        fPopScalar: 1.0f
+                    );
+                    infoCard = RetrieveInfoCard();
+                }
+            }
         }
 
         public InfoCardAnimation RetrieveInfoCard()
         {
-            InfoCardAnimation[] allInfoCards = UnityEngine.Object.FindObjectsOfType<InfoCardAnimation>();
-
+            InfoCardAnimation[] allInfoCards = FindObjectsOfType<InfoCardAnimation>();
             foreach (var card in allInfoCards)
             {
                 TextMeshPro textComponent = card.GetComponentInChildren<TextMeshPro>();
                 if (textComponent != null && textComponent.text.Contains("Synch"))
                 {
-                    infoCard = card;
                     return card;
                 }
             }
-
             return null;
         }
 
         public void SynchInfoPercentageUpdate()
         {
-            int percentage = (int)((float)SketchMemoryScript.AllStrokesCount() / numberOfCommandsExpected * 100);
-            string text = $"Synch {percentage}%";
+            lock (infoCardLock)
+            {
+                int percentage = (int)((float)SketchMemoryScript.AllStrokesCount() / numberOfCommandsExpected * 100);
+                string text = $"Synch {percentage}%";
 
-            if (infoCard == null) infoCard = RetrieveInfoCard();
-            if (infoCard == null) DisplaySynchInfo();
+                if (infoCard == null) DisplaySynchInfo();
 
-            infoCard.GetComponentInChildren<TextMeshPro>().text = text;
-            infoCard.UpdateHoldingDuration(5f);
+                infoCard.GetComponentInChildren<TextMeshPro>().text = text;
+                infoCard.UpdateHoldingDuration(5f);
+            }
         }
 
         public void HideSynchInfo()
         {
-            if (infoCard == null) infoCard = RetrieveInfoCard();
-            if (infoCard == null) DisplaySynchInfo();
+            lock (infoCardLock)
+            {
+                if (infoCard == null) return;
 
-            infoCard.GetComponentInChildren<TextMeshPro>().text = "Synch Ended!";
-            infoCard.UpdateHoldingDuration(3.0f);
+                infoCard.GetComponentInChildren<TextMeshPro>().text = "Synch Ended!";
+                infoCard.UpdateHoldingDuration(3.0f);
+            }
         }
+
 
         #endregion
 

@@ -40,6 +40,7 @@ namespace OpenBrush.Multiplayer
         Task<bool> PerformCommand(BaseCommand command);
         Task<bool> SendCommandToPlayer(BaseCommand command, int playerId);
         Task<bool> CheckCommandReception(BaseCommand command, int playerId);
+        Task<bool> CheckStrokeReception(Stroke stroke, int playerId);
         Task<bool> UndoCommand(BaseCommand command);
         Task<bool> RedoCommand(BaseCommand command);
         Task<bool> RpcSyncToSharedAnchor(string uuid);
