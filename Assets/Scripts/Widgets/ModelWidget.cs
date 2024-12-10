@@ -30,8 +30,8 @@ namespace TiltBrush
         [SerializeField] private float m_MaxBloat;
 
         private Model m_Model;
-        
-        
+
+
         // What is Subtree?
         // e.g. if we have 3d model with 3 chairs with the hierarchy below,
         // then when the model is broken apart, we create a separate ModelWidget for each Chair1,Chair2,Chair3
@@ -258,7 +258,7 @@ namespace TiltBrush
             m_ModelInstance = Instantiate(m_Model.m_ModelParent);
             m_ModelInstance.gameObject.SetActive(true);
             m_ModelInstance.parent = this.transform;
-            
+
             Coords.AsLocal[m_ModelInstance] = TrTransform.identity;
             float maxExtent = 2 * Mathf.Max(m_Model.m_MeshBounds.extents.x,
                 Mathf.Max(m_Model.m_MeshBounds.extents.y, m_Model.m_MeshBounds.extents.z));
@@ -344,7 +344,7 @@ namespace TiltBrush
             // Walk the hierarchy and find the matching node
             Transform oldRoot = m_ObjModelScript.transform;
             Transform node = oldRoot;
-            
+
             // We only want to walk the new part of the hierarchy
             string subpathToTraverse;
             if (!string.IsNullOrEmpty(previousSubtree))
