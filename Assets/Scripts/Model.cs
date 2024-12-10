@@ -32,7 +32,6 @@ namespace TiltBrush
 
     public class Model
     {
-
         public struct Location
         {
             public enum Type
@@ -250,12 +249,12 @@ namespace TiltBrush
             return m_ImportMaterialCollector.GetExportableMaterial(material);
         }
 
-        public Model(Location location) { m_Location = location; }
-
-        public Location GetLocation()
+        public Model(Location location)
         {
-            return m_Location;
+            m_Location = location;
         }
+
+        public Location GetLocation() { return m_Location; }
 
         /// A helper class which allows import to run I/O on a background thread before producing Unity
         /// GameObject(s). Usage:
