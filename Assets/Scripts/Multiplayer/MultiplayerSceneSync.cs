@@ -15,6 +15,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using TiltBrush;
 using TMPro;
@@ -22,11 +23,13 @@ using UnityEngine;
 
 namespace OpenBrush.Multiplayer
 {
-    public class HistorySynchronizationManager : MonoBehaviour
+    public class MultiplayerSceneSync : MonoBehaviour
     {
-        public static HistorySynchronizationManager m_Instance;
-        public int batchSize = 60;
-        public float delayBetweenBatches = 0.05f;
+        public static MultiplayerSceneSync m_Instance;
+        public Action<byte[]> onLargeDataReceived;
+        [HideInInspector] public int batchSize = 10;
+        [HideInInspector] public float delayBetweenBatches = 0.05f;
+        public SyncType m_SyncType = SyncType.Strokes;
         [HideInInspector] public int numberOfCommandsExpected = 0;
         [HideInInspector] public int numberOfCommandsSent = 0;
 
@@ -34,22 +37,85 @@ namespace OpenBrush.Multiplayer
         private bool _isSendingCommandHistory = false;
         private InfoCardAnimation infoCard;
 
-
         void Awake()
         {
             m_Instance = this;
         }
 
+        void Start()
+        {
+            onLargeDataReceived += OnLargeDataReceived;
+        }
+
+        void OnDestroy()
+        {
+            onLargeDataReceived -= OnLargeDataReceived;
+        }
 
         public void StartSyncronizationForUser(int id)
         {
-
             StartSynchHistory(id);
-            SendCurrentTargetEnvironmentCommand();
-            StartCoroutine(SendStrokesAndCommandHistory(id));
+            SendCurrentTargetEnvironmentCommand(); // TODO  serialize the environmentand send it via large reliable data 
+
+            switch (m_SyncType)
+            {
+                case SyncType.Strokes:
+                    SendStrokesToPlayer(id);
+                    break;
+                case SyncType.Commands:
+                    StartCoroutine(SendCommandHistory(id));
+                    break;
+            }
+
         }
 
-        #region Syncronization Logic
+        #region Syncronization Logic Strokes
+        async void SendStrokesToPlayer(int id)
+        {
+            LinkedList<Stroke> strokes = SketchMemoryScript.m_Instance.GetMemoryList;
+            const int chunkSize = 5;
+            List<Stroke> strokeList = strokes.ToList();
+
+            int counter = 0;
+            for (int i = 0; i < strokeList.Count; i += chunkSize)
+            {
+                var chunk = strokeList.Skip(i).Take(chunkSize).ToList();
+                byte[] strokesData = await MultiplayerStrokeSerialization.SerializeAndCompressMemoryListAsync(chunk);
+                MultiplayerManager.m_Instance.SendLargeDataToPlayer(id, strokesData);
+                counter += chunk.Count;
+                //Debug.Log($"Sent {strokesData.Length} bytes of serialized stroke data (batch {(i / chunkSize) + 1}) to player {id}.");
+            }
+            SynchHistoryComplete(id);
+        }
+
+        async void DeserializeReceivedStrokes(byte[] largeData)
+        {
+
+            // Decompress and deserialize strokes asynchronously
+            List<Stroke> strokes = await MultiplayerStrokeSerialization.DecompressAndDeserializeMemoryListAsync(largeData);
+
+            Debug.Log($"Successfully deserialized {strokes.Count} strokes.");
+
+            // Handle the strokes (e.g., add them to the scene or memory)
+            foreach (var stroke in strokes)
+            {
+                BrushStrokeCommand c = new BrushStrokeCommand(stroke);
+                SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
+                SketchMemoryScript.m_Instance.PerformAndRecordNetworkCommand(c, true);
+            }
+
+        }
+
+        void OnLargeDataReceived(byte[] largeData)
+        {
+            Debug.Log($"[Multiplayer Scene Sync]Successfully received {largeData.Length} bytes from the autosave.");
+
+            DeserializeReceivedStrokes(largeData);
+        }
+
+        #endregion
+
+        #region Syncronization Logic Commands
         public void SendCurrentTargetEnvironmentCommand()
         {
             TiltBrush.Environment targetEnvironment = SceneSettings.m_Instance.GetDesiredPreset();
@@ -61,7 +127,7 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        public IEnumerator SendStrokesAndCommandHistory(int id)
+        public IEnumerator SendCommandHistory(int id)
         {
             if (_isWaiting) yield break;
 
@@ -155,7 +221,6 @@ namespace OpenBrush.Multiplayer
         #region Remote infoCard commands
         private void StartSynchHistory(int id)
         {
-
             MultiplayerManager.m_Instance.StartSynchHistory(id);
         }
 
@@ -223,5 +288,11 @@ namespace OpenBrush.Multiplayer
 
         #endregion
 
+    }
+
+    public enum SyncType
+    {
+        Strokes,
+        Commands
     }
 }

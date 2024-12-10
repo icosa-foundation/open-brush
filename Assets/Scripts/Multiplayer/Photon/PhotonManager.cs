@@ -147,8 +147,8 @@ namespace OpenBrush.Multiplayer
             };
 
             var result = await m_Runner.StartGame(args);
-            m_Runner.ReliableDataSendRate = 60;
-            m_Runner.Config.Network.ReliableDataTransferModes = NetworkConfiguration.ReliableDataTransfers.ClientToClientWithServerProxy;
+            //m_Runner.ReliableDataSendRate = 60;
+            //m_Runner.Config.Network.ReliableDataTransferModes = NetworkConfiguration.ReliableDataTransfers.ClientToClientWithServerProxy;
 
 
             if (result.Ok)
@@ -493,6 +493,7 @@ namespace OpenBrush.Multiplayer
 
         public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data)
         {
+            Debug.Log("Server received complete reliable data");
 
             byte[] receivedData = data.Array;
             if (receivedData == null || receivedData.Length == 0)
@@ -501,13 +502,13 @@ namespace OpenBrush.Multiplayer
                 return;
             }
 
-            m_Manager.onLargeDataReceived?.Invoke(receivedData);
+            MultiplayerSceneSync.m_Instance.onLargeDataReceived?.Invoke(receivedData);
         }
 
         public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress)
         {
 
-            Debug.Log("Server received reliable data");
+            Debug.Log("Server received Partial reliable data");
         }
 
         #endregion

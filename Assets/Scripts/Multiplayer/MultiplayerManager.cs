@@ -18,6 +18,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 
+
 #if OCULUS_SUPPORTED
 using OVRPlatform = Oculus.Platform;
 #endif
@@ -49,7 +50,6 @@ namespace OpenBrush.Multiplayer
         public Action<int, ITransientData<PlayerRigData>> remotePlayerJoined;
         public Action<int> playerLeft;
         public Action<List<RoomData>> roomDataRefreshed;
-        public Action<byte[]> onLargeDataReceived;
 
         public event Action<ConnectionState> StateUpdated;
         public event Action<bool> RoomOwnershipUpdated;
@@ -156,7 +156,6 @@ namespace OpenBrush.Multiplayer
             remotePlayerJoined += OnRemotePlayerJoined;
             playerLeft += OnPlayerLeft;
             StateUpdated += UpdateSketchMemoryScriptTimeOffset;
-            onLargeDataReceived += OnLargeDataReceived;
 
             SketchMemoryScript.m_Instance.CommandPerformed += OnCommandPerformed;
             SketchMemoryScript.m_Instance.CommandUndo += OnCommandUndo;
@@ -170,7 +169,6 @@ namespace OpenBrush.Multiplayer
             remotePlayerJoined -= OnRemotePlayerJoined;
             playerLeft -= OnPlayerLeft;
             StateUpdated -= UpdateSketchMemoryScriptTimeOffset;
-            onLargeDataReceived -= OnLargeDataReceived;
 
             SketchMemoryScript.m_Instance.CommandPerformed -= OnCommandPerformed;
             SketchMemoryScript.m_Instance.CommandUndo -= OnCommandUndo;
@@ -405,49 +403,17 @@ namespace OpenBrush.Multiplayer
 
             if (isUserRoomOwner)
             {
-                SendStrokesToPlayer(id);
+                MultiplayerSceneSync.m_Instance.StartSyncronizationForUser(id);
             }
         }
 
-        async void SendStrokesToPlayer(int id)
+        public void SendLargeDataToPlayer(int playerId, byte[] Data)
         {
-            LinkedList<Stroke> strokes = SketchMemoryScript.m_Instance.GetMemoryList;
-            const int chunkSize = 100;
-            List<Stroke> strokeList = strokes.ToList();
-
-            for (int i = 0; i < strokeList.Count; i += chunkSize)
-            {
-                var chunk = strokeList.Skip(i).Take(chunkSize).ToList();
-                byte[] strokesData = await MultiplayerStrokeSerialization.SerializeAndCompressMemoryListAsync(chunk);
-                m_Manager.SendLargeDataToPlayer(id, strokesData);
-                Debug.Log($"Sent {strokesData.Length} bytes of serialized stroke data (batch {(i / chunkSize) + 1}) to player {id}.");
-            }
+            m_Manager.SendLargeDataToPlayer(playerId, Data);
         }
 
 
-        void OnLargeDataReceived(byte[] largeData)
-        {
-            Debug.Log($"Successfully received {largeData.Length} bytes from the autosave.");
 
-            DeserializeReceivedStrokes(largeData);
-        }
-
-        async void DeserializeReceivedStrokes(byte[] largeData)
-        {
-
-            // Decompress and deserialize strokes asynchronously
-            List<Stroke> strokes = await MultiplayerStrokeSerialization.DecompressAndDeserializeMemoryListAsync(largeData);
-
-            Debug.Log($"Successfully deserialized {strokes.Count} strokes.");
-
-            // Handle the strokes (e.g., add them to the scene or memory)
-            foreach (var stroke in strokes)
-            {
-                BrushStrokeCommand c = new BrushStrokeCommand(stroke);
-                SketchMemoryScript.m_Instance.PerformAndRecordNetworkCommand(c, true);
-            }
-
-        }
 
         void OnPlayerLeft(int id)
         {
