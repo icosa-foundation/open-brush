@@ -500,7 +500,7 @@ namespace OpenBrush.Multiplayer
 
         public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data)
         {
-            Debug.Log("Server received complete reliable data");
+            //Debug.Log("Server received complete reliable data");
 
             byte[] receivedData = data.Array;
             if (receivedData == null || receivedData.Length == 0)
@@ -515,7 +515,7 @@ namespace OpenBrush.Multiplayer
         public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress)
         {
 
-            Debug.Log("Server received Partial reliable data");
+            //Debug.Log("Server received Partial reliable data");
         }
 
         #endregion
