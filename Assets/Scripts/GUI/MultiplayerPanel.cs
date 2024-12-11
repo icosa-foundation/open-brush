@@ -113,11 +113,22 @@ namespace TiltBrush
 
         private static string GenerateUniqueRoomName()
         {
+            const int maxAttempts = 10;
             string roomName;
+            int attempts = 0;
+
             do
             {
                 roomName = GenerateRandomRoomName();
-            } while (MultiplayerManager.m_Instance != null && MultiplayerManager.m_Instance.DoesRoomNameExist(roomName));
+                attempts++;
+            } while (MultiplayerManager.m_Instance != null &&
+             MultiplayerManager.m_Instance.DoesRoomNameExist(roomName) &&
+             attempts < maxAttempts);
+
+            if (attempts >= maxAttempts)
+            {
+                return "default room";
+            }
 
             return roomName;
         }
