@@ -163,6 +163,7 @@ namespace TiltBrush
         {
             m_NodeByTime = new LinkedListNode<Stroke>(this);
             m_PlaybackNode = new LinkedListNode<Stroke>(this);
+            m_Guid = Guid.NewGuid();
         }
 
         /// Clones the passed stroke into a new NotCreated stroke.
@@ -185,6 +186,9 @@ namespace TiltBrush
             // And we can't use field initializers for the linked list creation.
             m_NodeByTime = new LinkedListNode<Stroke>(this);
             m_PlaybackNode = new LinkedListNode<Stroke>(this);
+
+            if (existing.m_Guid != null)
+                m_Guid = Guid.NewGuid();
         }
 
         /// Makes a copy of stroke, if one has not already been made.

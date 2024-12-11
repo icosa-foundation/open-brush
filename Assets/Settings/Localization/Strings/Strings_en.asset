@@ -3512,6 +3512,18 @@ MonoBehaviour:
     m_Localized: Pick a Subfolder
     m_Metadata:
       m_Items: []
+  - m_Id: 157582826200739840
+    m_Localized: Close
+    m_Metadata:
+      m_Items: []
+  - m_Id: 176097607781543936
+    m_Localized: ALPHA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 156198200358006784
+    m_Localized: Multiplayer (Alpha)
+    m_Metadata:
+      m_Items: []
   - m_Id: 238556149774557184
     m_Localized: Image too large to load
     m_Metadata:
@@ -3526,6 +3538,34 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 276171365497266176
     m_Localized: Brush Size
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636550056648704
+    m_Localized: Connect
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636769901092864
+    m_Localized: Join Room
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636908816441344
+    m_Localized: Leave Room
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637000357126144
+    m_Localized: Disconnect
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637073212186624
+    m_Localized: Edit Room Name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637384320491520
+    m_Localized: Edit Nickname
+    m_Metadata:
+      m_Items: []
+  - m_Id: 307216698459103232
+    m_Localized: Erase text
     m_Metadata:
       m_Items: []
   references:

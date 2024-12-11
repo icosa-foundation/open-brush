@@ -1452,7 +1452,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76121021711179776
-    m_Key: POPUP_GDRIVE_BETATAG
+    m_Key: LABEL_BETATAG
     m_Metadata:
       m_Items: []
   - m_Id: 76121263181455360
@@ -3299,6 +3299,18 @@ MonoBehaviour:
     m_Key: POPUP_UPLOAD_COMPLETE_MOBILE_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 156198200358006784
+    m_Key: ADMIN_PANEL_MULTIPLAYER_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 157582826200739840
+    m_Key: MULTIPLAYER_PANEL_CLOSE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 176097607781543936
+    m_Key: LABEL_ALPHATAG
+    m_Metadata:
+      m_Items: []
   - m_Id: 217069105871577088
     m_Key: VIEW_MODE_TEXT
     m_Metadata:
@@ -3329,6 +3341,34 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 276171365497266176
     m_Key: BRUSH_SETTINGS_TRAY_BRUSH_SIZE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636550056648704
+    m_Key: MP_CONNECT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636769901092864
+    m_Key: MP_JOIN_ROOM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636908816441344
+    m_Key: MP_LEAVE_ROOM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637000357126144
+    m_Key: MP_DISCONNECT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637073212186624
+    m_Key: MP_EDIT_ROOM_NAME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637384320491520
+    m_Key: MP_EDIT_NICK_NAME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 307216698459103232
+    m_Key: erase text
     m_Metadata:
       m_Items: []
   m_Metadata:
