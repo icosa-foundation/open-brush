@@ -1544,7 +1544,7 @@ MonoBehaviour:
   company: Mikesky
   priority: 0
   required: 0
-  systemSplashScreen: {fileID: 2800000, guid: ce97f02a0d95f3d47b1a02dea91d564e, type: 3}
+  systemSplashScreen: {fileID: 0}
 --- !u!114 &6395018293380717554
 MonoBehaviour:
   m_ObjectHideFlags: 0
