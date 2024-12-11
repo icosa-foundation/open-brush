@@ -29,7 +29,7 @@ namespace TiltBrush
                 m_PassthroughLayer.enabled = true;
                 if (METABoundaryVisibility.FeatureEnabled)
                 {
-                    METABoundaryVisibility.SetBoundaryVisibility(false);
+                    METABoundaryVisibility.SuppressBoundaryVisibility(false);
                 }
             }
         }
