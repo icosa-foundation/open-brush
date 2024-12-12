@@ -617,7 +617,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7872343826997248
-    m_Localized: Layers
+    m_Localized: "\u5C42\u7EA7"
     m_Metadata:
       m_Items: []
   - m_Id: 7873280473800704
@@ -1707,7 +1707,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 81184440202092544
-    m_Localized: Layer
+    m_Localized: "\u56FE\u5C42"
     m_Metadata:
       m_Items: []
   - m_Id: 81187452349898752
