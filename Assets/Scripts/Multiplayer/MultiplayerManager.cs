@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 
 
+
 #if OCULUS_SUPPORTED
 using OVRPlatform = Oculus.Platform;
 #endif
@@ -92,6 +93,7 @@ namespace OpenBrush.Multiplayer
                 }
             }
         }
+        private string m_oldNickName = null;
 
         [HideInInspector] public RoomCreateData data;
 
@@ -317,6 +319,12 @@ namespace OpenBrush.Multiplayer
                 return;
             }
 
+            if (State != ConnectionState.IN_ROOM)
+            {
+                m_oldNickName = null;
+                return;
+            }
+
             m_Manager.Update();
             m_VoiceManager.Update();
 
@@ -352,8 +360,11 @@ namespace OpenBrush.Multiplayer
                 },
                 IsRoomOwner = isUserRoomOwner,
                 SceneScale = App.Scene.Pose.scale,
-                isReceivingVoiceTransmission = m_VoiceManager.isTransmitting
+                isReceivingVoiceTransmission = m_VoiceManager.isTransmitting,
+                Nickname = UserInfo.Nickname //TODO: remove from PlayerRigData or encode it and use photon to retrieve the string
             };
+
+
 
             if (m_LocalPlayer != null)
             {

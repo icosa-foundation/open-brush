@@ -38,7 +38,7 @@ namespace OpenBrush.Multiplayer
         public bool IsRoomOwner;
         public float SceneScale;
         public bool isReceivingVoiceTransmission;
-
+        public string Nickname;
     }
 
     [System.Serializable]

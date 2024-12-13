@@ -19,6 +19,7 @@ using Fusion;
 using TiltBrush;
 using System;
 using System.Collections;
+using TMPro;
 
 namespace OpenBrush.Multiplayer
 {
@@ -38,6 +39,7 @@ namespace OpenBrush.Multiplayer
         [Networked] public bool IsRoomOwner { get; set; }
         [Networked] public float SceneScale { get; set; }
         [Networked] public bool isReceivingVoiceTransmission { get; set; }
+        [Networked] public string Nickname { get; set; }
 
         PointerScript transientPointer;
         // The offset transforms.
@@ -46,6 +48,8 @@ namespace OpenBrush.Multiplayer
         [SerializeField] private Transform leftHandTransform;
         // The 3D model of the headset
         [SerializeField] private Renderer HMDMeshRenderer;
+        // The Nickname of the player
+        [SerializeField] private TextMeshPro NicknameText;
 
         private PlayerRigData transmitData;
         private Color originalColor;
@@ -75,6 +79,7 @@ namespace OpenBrush.Multiplayer
             IsRoomOwner = data.IsRoomOwner;
             SceneScale = data.SceneScale;
             isReceivingVoiceTransmission = data.isReceivingVoiceTransmission;
+            Nickname = data.Nickname;
         }
 
         private void Awake()
@@ -121,6 +126,12 @@ namespace OpenBrush.Multiplayer
                 data.ExtraData = new ExtraData { OculusPlayerId = this.oculusPlayerId };
                 data.SceneScale = this.SceneScale;
                 data.isReceivingVoiceTransmission = this.isReceivingVoiceTransmission;
+                if (!string.IsNullOrEmpty(this.Nickname))
+                {
+                    data.Nickname = this.Nickname;
+                    NicknameText.text = this.Nickname;
+                }
+                
             }
             catch (InvalidOperationException ex)
             {
@@ -141,6 +152,11 @@ namespace OpenBrush.Multiplayer
                 transientPointer = PointerManager.m_Instance.CreateRemotePointer();
                 transientPointer.SetBrush(BrushCatalog.m_Instance.DefaultBrush);
                 transientPointer.SetColor(App.BrushColor.CurrentColor);
+            }
+            else 
+            {
+                NicknameText.text = "";
+                NicknameText.gameObject.SetActive(false);
             }
 
             UpdateControllerVisibility();
@@ -262,14 +278,19 @@ namespace OpenBrush.Multiplayer
             m_IsSpawned = false;
         }
 
-        public void UpdateHMDMeshColor(Color color)
+        public void UpdateColor(Color color)
         {
 
             if (HMDMeshRenderer != null && HMDMeshRenderer.material.HasProperty("_EmissionColor"))
             {
                 HMDMeshRenderer.material.SetColor("_EmissionColor", color);
             }
-            
+
+            if (NicknameText != null)
+            {
+                NicknameText.outlineColor = color;
+            }
+
         }
 
         public void FadeHMDMeshColor(Color targetColor)
@@ -284,7 +305,9 @@ namespace OpenBrush.Multiplayer
         private IEnumerator FadeColorRoutine(Color targetColor)
         {
             
-            if (HMDMeshRenderer == null || !HMDMeshRenderer.material.HasProperty("_EmissionColor")) yield break;
+            if (HMDMeshRenderer == null || 
+                !HMDMeshRenderer.material.HasProperty("_EmissionColor") ||
+                NicknameText == null) yield break;
 
             Color startColor = HMDMeshRenderer.material.GetColor("_EmissionColor");
             float elapsedTime = 0f;
@@ -294,7 +317,7 @@ namespace OpenBrush.Multiplayer
                 elapsedTime += Time.deltaTime;
                 float t = Mathf.Clamp01(elapsedTime / 0.2f);
                 Color currentColor = Color.Lerp(startColor, targetColor, t);
-                HMDMeshRenderer.material.SetColor("_EmissionColor", currentColor);
+                UpdateColor(currentColor);
                 yield return null;
             }
 

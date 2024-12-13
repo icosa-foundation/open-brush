@@ -110,10 +110,26 @@ public class MultiplayerManagerInspector : Editor
         else remoteUsersRegistered = "Not Assigned";
 
         //Registered remote players
+
         EditorGUILayout.BeginHorizontal();
         GUILayout.Label("Registered Remote Players IDs:", EditorStyles.boldLabel);
         EditorGUILayout.LabelField($"{remoteUsersRegistered}");
         EditorGUILayout.EndHorizontal();
+
+        // Display and edit Nickname
+        GUILayout.Space(10);
+        EditorGUILayout.LabelField("Nickname", GUI.skin.horizontalSlider);
+        string currentNickname = multiplayerManager.UserInfo.Nickname;
+        GUILayout.Label("Nickname", EditorStyles.boldLabel);
+        string newNickname = EditorGUILayout.TextField("Edit Nickname", currentNickname);
+        if (newNickname != currentNickname)
+        {
+            ConnectionUserInfo updatedUserInfo = multiplayerManager.UserInfo;
+            updatedUserInfo.Nickname = newNickname;
+            multiplayerManager.UserInfo = updatedUserInfo;
+            EditorUtility.SetDirty(target); // Mark the target as dirty to apply changes
+        }
+
 
         Repaint();
 

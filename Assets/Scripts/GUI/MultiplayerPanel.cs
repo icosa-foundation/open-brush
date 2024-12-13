@@ -44,7 +44,7 @@ namespace TiltBrush
             get
             {
 
-                if (MultiplayerManager.m_Instance != null) return MultiplayerManager.m_Instance.UserInfo.Nickname;
+                if (MultiplayerManager.m_Instance) return MultiplayerManager.m_Instance.UserInfo.Nickname;
                 return "";
             }
             set
@@ -87,6 +87,7 @@ namespace TiltBrush
                 MultiplayerManager.m_Instance.RoomOwnershipUpdated += OnRoomOwnershipUpdated;
             }
 
+            NickName = "Nickname" + UnityEngine.Random.Range(0, 1000).ToString();
         }
 
         protected override void OnEnablePanel()

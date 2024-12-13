@@ -155,7 +155,11 @@ namespace OpenBrush.Multiplayer
             {
                 State = ConnectionState.IN_ROOM;
                 ControllerConsoleScript.m_Instance.AddNewLine("[PhotonManager] Joined Room");
-                UserInfo = new ConnectionUserInfo { UserId = m_Runner.UserId };
+                UserInfo = new ConnectionUserInfo { 
+                    Nickname = UserInfo.Nickname,
+                    UserId = m_Runner.UserId,
+                    Role = UserInfo.Role,
+                };
             }
             else
             {
