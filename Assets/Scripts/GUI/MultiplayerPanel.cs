@@ -189,7 +189,7 @@ namespace TiltBrush
         private void OnRoomOwnershipUpdated(bool isRoomOwner)
         {
             if (!m_RoomOwnership) return;
-            m_RoomOwnership.text = isRoomOwner ? "You are Room Owner" : "You are Not Room Owner";
+            m_RoomOwnership.text = isRoomOwner ? "You are the Room Owner" : "You are not the Room Owner";
         }
 
         private Tuple<bool, string> CheckAdvancedModeActive()
@@ -197,7 +197,7 @@ namespace TiltBrush
             if (PanelManager.m_Instance != null)
             {
                 bool isAdvancedModeActive = PanelManager.m_Instance.AdvancedModeActive();
-                return Tuple.Create(isAdvancedModeActive, "Switch to beginner mode to Join Room");
+                return Tuple.Create(isAdvancedModeActive, "Switch to beginner mode use Multiplayer");
             }
             return Tuple.Create(false, "");
         }
@@ -221,7 +221,7 @@ namespace TiltBrush
             if (MultiplayerManager.m_Instance != null && MultiplayerManager.m_Instance.State == ConnectionState.IN_LOBBY)
             {
                 if (MultiplayerManager.m_Instance.DoesRoomNameExist(data.roomName))
-                    return Tuple.Create(true, $"The room {data.roomName} already exist your joining an existing session.");
+                    return Tuple.Create(true, $"Room {data.roomName} already exists. You will be joining an existing session.");
             }
 
             return Tuple.Create(false, "");
@@ -241,7 +241,7 @@ namespace TiltBrush
                     if (isTriggered)
                     {
                         shouldShowAlert = true;
-                        alertMessage += message + "/n";
+                        alertMessage += message + "\n";
                         break;
                     }
                 }
