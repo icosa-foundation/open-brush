@@ -183,8 +183,35 @@ namespace TiltBrush
         private void OnStateUpdated(ConnectionState newState)
         {
             if (!m_State) return;
-            m_State.text = "State: " + newState.ToString();
+            m_State.text = "State: " + StateToString(newState);
             UpdateDisplay();
+        }
+
+        private string StateToString(ConnectionState newState)
+        {
+            switch (newState)
+            {
+                case ConnectionState.INITIALISING:
+                    return "Initialising";
+                case ConnectionState.INITIALIZED:
+                    return "Initialized";
+                case ConnectionState.DISCONNECTED:
+                    return "Disconnected";
+                case ConnectionState.DISCONNECTING:
+                    return "Disconnecting";
+                case ConnectionState.CONNECTING:
+                    return "Connecting";
+                case ConnectionState.AUTHENTICATING:
+                    return "Authenticating";
+                case ConnectionState.IN_LOBBY:
+                    return "In Lobby";
+                case ConnectionState.IN_ROOM:
+                    return "In Room";
+                case ConnectionState.ERROR:
+                    return "Error";
+                default:
+                    return "Unknown";
+            }
         }
 
         private void OnRoomOwnershipUpdated(bool isRoomOwner)
