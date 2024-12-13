@@ -21,6 +21,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using TiltBrushToolkit;
+using Unity.Profiling;
 using Unity.VectorGraphics;
 using Debug = UnityEngine.Debug;
 using UObject = UnityEngine.Object;
@@ -857,11 +858,44 @@ namespace TiltBrush
             }
             m_ModelParent = go.transform;
 
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            ProfilerMarker generateUniqueNamesPerfMarker = new ProfilerMarker("Model.GenerateUniqueNames");
+            generateUniqueNamesPerfMarker.Begin();
+#endif
+
+            GenerateUniqueNames(m_ModelParent);
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            generateUniqueNamesPerfMarker.End();
+#endif
+
             // !!! Add to material dictionary here?
 
             m_Valid = true;
             DisplayWarnings(warnings);
+        }
 
+
+        // This method is called when the model has been loaded and the node tree is available
+        // This method is necessary because (1) nodes in e.g glTF files don't need to have unique names
+        // and (2) there's code in at least ModelWidget that searches for specific nodes using node names
+        private static void GenerateUniqueNames(Transform rootNode)
+        {
+            void SetUniqueNameForNode(Transform node)
+            {
+                // GetInstanceID returns a unique ID for every GameObject during a runtime session
+                node.name += " uid: " + node.gameObject.GetInstanceID();
+
+                foreach (Transform child in node)
+                {
+                    SetUniqueNameForNode(child);
+                }
+            }
+
+            foreach (Transform child in rootNode)
+            {
+                SetUniqueNameForNode(child);
+            }
         }
 
         public void UnloadModel()
