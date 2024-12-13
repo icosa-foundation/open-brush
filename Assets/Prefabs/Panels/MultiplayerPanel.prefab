@@ -5424,6 +5424,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Beta Tag
       objectReference: {fileID: 0}
+    - target: {fileID: 2556331195588322189, guid: 2538d4a3972b37c4c9e8649481dd9a2b,
+        type: 3}
+      propertyPath: m_text
+      value: BETA
+      objectReference: {fileID: 0}
     - target: {fileID: 4378067676344109730, guid: 2538d4a3972b37c4c9e8649481dd9a2b,
         type: 3}
       propertyPath: m_RootOrder
