@@ -318,6 +318,7 @@ namespace OpenBrush.Multiplayer
             }
 
             m_Manager.Update();
+            m_VoiceManager.Update();
 
             // Transmit local player data relative to scene origin
             var headRelativeToScene = App.Scene.AsScene[App.VrSdk.GetVrCamera().transform];
@@ -350,7 +351,8 @@ namespace OpenBrush.Multiplayer
                     OculusPlayerId = myOculusUserId,
                 },
                 IsRoomOwner = isUserRoomOwner,
-                SceneScale = App.Scene.Pose.scale
+                SceneScale = App.Scene.Pose.scale,
+                isReceivingVoiceTransmission = m_VoiceManager.isTransmitting
             };
 
             if (m_LocalPlayer != null)

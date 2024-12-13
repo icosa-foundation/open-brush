@@ -54,9 +54,10 @@ namespace OpenBrush.Multiplayer
 
     public interface IVoiceConnectionHandler : IConnectionHandler
     {
-
+        void Update();
         bool StartSpeaking();
         bool StopSpeaking();
+        public bool isTransmitting { get; }
 
     }
 

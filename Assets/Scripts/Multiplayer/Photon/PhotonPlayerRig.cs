@@ -18,6 +18,7 @@ using UnityEngine;
 using Fusion;
 using TiltBrush;
 using System;
+using System.Collections;
 
 namespace OpenBrush.Multiplayer
 {
@@ -36,14 +37,19 @@ namespace OpenBrush.Multiplayer
         [Networked] public ulong oculusPlayerId { get; set; }
         [Networked] public bool IsRoomOwner { get; set; }
         [Networked] public float SceneScale { get; set; }
+        [Networked] public bool isReceivingVoiceTransmission { get; set; }
 
         PointerScript transientPointer;
         // The offset transforms.
         [SerializeField] private Transform headTransform;
         [SerializeField] private Transform rightHandTransform;
         [SerializeField] private Transform leftHandTransform;
+        // The 3D model of the headset
+        [SerializeField] private Renderer HMDMeshRenderer;
 
         private PlayerRigData transmitData;
+        private Color originalColor;
+        private Coroutine fadeCoroutine;
 
         private bool m_IsSpawned = false;
         public bool IsSpawned => m_IsSpawned;
@@ -68,6 +74,15 @@ namespace OpenBrush.Multiplayer
             brushGuid = data.BrushData.Guid;
             IsRoomOwner = data.IsRoomOwner;
             SceneScale = data.SceneScale;
+            isReceivingVoiceTransmission = data.isReceivingVoiceTransmission;
+        }
+
+        private void Awake()
+        {
+            if (HMDMeshRenderer != null && HMDMeshRenderer.material.HasProperty("_EmissionColor"))
+            {
+                originalColor = HMDMeshRenderer.material.GetColor("_EmissionColor");
+            } 
         }
 
         public PlayerRigData ReceiveData()
@@ -105,6 +120,7 @@ namespace OpenBrush.Multiplayer
                 data.IsRoomOwner = this.IsRoomOwner;
                 data.ExtraData = new ExtraData { OculusPlayerId = this.oculusPlayerId };
                 data.SceneScale = this.SceneScale;
+                data.isReceivingVoiceTransmission = this.isReceivingVoiceTransmission;
             }
             catch (InvalidOperationException ex)
             {
@@ -210,6 +226,9 @@ namespace OpenBrush.Multiplayer
                 );
                 App.Scene.AsScene[rightHandTransform] = remoteRightTR;
 
+                //HMD color
+                if (isReceivingVoiceTransmission) FadeHMDMeshColor(Color.red);
+                else FadeHMDMeshColor(originalColor);
             }
         }
 
@@ -242,7 +261,47 @@ namespace OpenBrush.Multiplayer
 
             m_IsSpawned = false;
         }
+
+        public void UpdateHMDMeshColor(Color color)
+        {
+
+            if (HMDMeshRenderer != null && HMDMeshRenderer.material.HasProperty("_EmissionColor"))
+            {
+                HMDMeshRenderer.material.SetColor("_EmissionColor", color);
+            }
+            
+        }
+
+        public void FadeHMDMeshColor(Color targetColor)
+        {
+            if (fadeCoroutine != null)
+            {
+                StopCoroutine(fadeCoroutine);
+            }
+            fadeCoroutine = StartCoroutine(FadeColorRoutine(targetColor));
+        }
+
+        private IEnumerator FadeColorRoutine(Color targetColor)
+        {
+            
+            if (HMDMeshRenderer == null || !HMDMeshRenderer.material.HasProperty("_EmissionColor")) yield break;
+
+            Color startColor = HMDMeshRenderer.material.GetColor("_EmissionColor");
+            float elapsedTime = 0f;
+
+            while (elapsedTime < 0.2f)
+            {
+                elapsedTime += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsedTime / 0.2f);
+                Color currentColor = Color.Lerp(startColor, targetColor, t);
+                HMDMeshRenderer.material.SetColor("_EmissionColor", currentColor);
+                yield return null;
+            }
+
+            HMDMeshRenderer.material.SetColor("_EmissionColor", targetColor);
+        }
     }
+
 }
 
 #endif // FUSION_WEAVER

@@ -26,20 +26,25 @@ using UnityEngine;
 
 public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks, IMatchmakingCallbacks
 {
+    public ConnectionUserInfo UserInfo { get; set; }
+    public ConnectionState State { get; private set; }
+    public string LastError { get; private set; }
+    public bool isTransmitting { get; private set; }
+
     private VoiceConnection m_VoiceConnection;
     private MultiplayerManager m_Manager;
     private AppSettings m_PhotonVoiceAppSettings;
     private Recorder m_Recorder;
     private bool ConnectedToMaster = false;
+    private bool wasTransmitting = false;
 
-    public ConnectionUserInfo UserInfo { get; set; }
-    public ConnectionState State { get; private set; }
-    public string LastError { get; private set; }
+
 
     public PhotonVoiceManager(MultiplayerManager manager)
     {
         m_Manager = manager;
         Init();
+        isTransmitting = false;
     }
 
     public async Task<bool> Init()
@@ -229,6 +234,32 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
             return true;
         }
         return false;
+    }
+
+    public void Update()
+    {
+        UpdateSpeechDetection();
+    }
+
+    private void UpdateSpeechDetection()
+    {
+        if (m_Recorder == null)
+        {
+           return;
+        }
+
+        isTransmitting = m_Recorder.IsCurrentlyTransmitting;
+
+        if (isTransmitting && !wasTransmitting)
+        {;
+            Debug.Log("[PhotonVoiceManager] Speech started.");
+        }
+        else if (!isTransmitting && wasTransmitting)
+        {
+            Debug.Log("[PhotonVoiceManager] Speech stopped.");
+        }
+
+        wasTransmitting = isTransmitting;
     }
 
 

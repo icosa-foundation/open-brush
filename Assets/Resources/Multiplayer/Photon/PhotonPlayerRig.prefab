@@ -60,6 +60,7 @@ MonoBehaviour:
   headTransform: {fileID: 5041384770245166357}
   rightHandTransform: {fileID: 5267290339349674983}
   leftHandTransform: {fileID: 2164438665615948153}
+  HMDMeshRenderer: {fileID: 7120707258077581555}
   m_PlayerId: 0
   m_LeftControllerModel: {fileID: 4048656607324710010}
   m_RightControllerModel: {fileID: 2292257892099998613}
@@ -77,7 +78,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SortKey: 2839312778
   ObjectInterest: 1
-  Flags: 2305
+  Flags: 264449
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 7215016235458371273}
@@ -2840,6 +2841,12 @@ PrefabInstance:
 --- !u!4 &7120707258077581554 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1448111865499013754, guid: 834f4ac71ec35d148acacfca28f04405,
+    type: 3}
+  m_PrefabInstance: {fileID: 8559495263563694728}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &7120707258077581555 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 1448111865499013755, guid: 834f4ac71ec35d148acacfca28f04405,
     type: 3}
   m_PrefabInstance: {fileID: 8559495263563694728}
   m_PrefabAsset: {fileID: 0}

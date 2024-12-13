@@ -37,6 +37,7 @@ namespace OpenBrush.Multiplayer
         public ExtraData ExtraData;
         public bool IsRoomOwner;
         public float SceneScale;
+        public bool isReceivingVoiceTransmission;
 
     }
 
