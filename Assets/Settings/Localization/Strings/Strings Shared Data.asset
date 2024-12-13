@@ -52,7 +52,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5064506084139008
-    m_Key: ADMIN_PANEL_SAVE_SKETCH_BUTTON_DESCRIPTION
+    m_Key: ADMIN_PANEL_WHAT_S_NEW
     m_Metadata:
       m_Items: []
   - m_Id: 5065176065482752
@@ -3369,6 +3369,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 307216698459103232
     m_Key: erase text
+    m_Metadata:
+      m_Items: []
+  - m_Id: 310819533771841536
+    m_Key: New Entry
     m_Metadata:
       m_Items: []
   m_Metadata:
