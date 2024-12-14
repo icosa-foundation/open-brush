@@ -384,6 +384,7 @@ namespace TiltBrush
         // ------------------------------------------------------------
 
         public bool RequestingAudioReactiveMode => m_RequestingAudioReactiveMode;
+        public bool RamLoggingActive = false;
 
         public void ToggleAudioReactiveModeRequest()
         {
