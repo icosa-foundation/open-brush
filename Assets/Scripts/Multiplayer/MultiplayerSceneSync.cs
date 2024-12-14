@@ -154,22 +154,7 @@ namespace OpenBrush.Multiplayer
 
             StartSyncProgressDisplayForCommands(id, commands.ToList());
 
-            int packetCounter = 0;
-            int counter = 0;
-            foreach (BaseCommand command in commands)
-            {
-                int estimatedMessages = EstimateMessagesForCommand(command);
-
-                if (packetCounter + estimatedMessages > batchSize)
-                {
-                    yield return null;
-                    yield return new WaitForSeconds(delayBetweenBatches);
-                }
-
-                MultiplayerManager.m_Instance.OnCommandPerformed(command);
-                packetCounter += estimatedMessages;
-                counter++;
-            }
+            foreach (BaseCommand command in commands) MultiplayerManager.m_Instance.OnCommandPerformed(command);
 
             _isSendingCommandHistory = false;
 
@@ -203,19 +188,6 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        private int EstimateMessagesForCommand(BaseCommand command)
-        {
-            switch (command)
-            {
-                case BrushStrokeCommand strokeCommand:
-                    int totalControlPoints = strokeCommand.m_Stroke.m_ControlPoints.Length;
-                    return totalControlPoints <= NetworkingConstants.MaxControlPointsPerChunk
-                        ? 1
-                        : 2 + ((int)Math.Ceiling((double)totalControlPoints / NetworkingConstants.MaxControlPointsPerChunk) - 1);
-                default:
-                    return 1;
-            }
-        }
         #endregion
 
         #region Remote infoCard commands

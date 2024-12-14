@@ -269,34 +269,39 @@ namespace OpenBrush.Multiplayer
         public async Task<bool> CheckCommandReception(BaseCommand command, int playerId)
         {
             PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
-            PhotonRPC.RPC_CheckCommand(m_Runner, command.Guid, m_Runner.LocalPlayer, targetPlayer);
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            { PhotonRPC.RPC_CheckCommand(m_Runner, command.Guid, m_Runner.LocalPlayer, targetPlayer); });
             return await PhotonRPC.WaitForAcknowledgment(command.Guid);
         }
 
         public async Task<bool> CheckStrokeReception(Stroke stroke, int playerId)
         {
             PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
-            PhotonRPC.RPC_CheckStroke(m_Runner, stroke.m_Guid, m_Runner.LocalPlayer, targetPlayer);
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            { PhotonRPC.RPC_CheckStroke(m_Runner, stroke.m_Guid, m_Runner.LocalPlayer, targetPlayer); });
             return await PhotonRPC.WaitForAcknowledgment(stroke.m_Guid);
         }
 
         public async Task<bool> UndoCommand(BaseCommand command)
         {
-            PhotonRPC.RPC_Undo(m_Runner, command.GetType().ToString());
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            { PhotonRPC.RPC_Undo(m_Runner, command.GetType().ToString()); });
             await Task.Yield();
             return true;
         }
 
         public async Task<bool> RedoCommand(BaseCommand command)
         {
-            PhotonRPC.RPC_Redo(m_Runner, command.GetType().ToString());
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            { PhotonRPC.RPC_Redo(m_Runner, command.GetType().ToString());});
             await Task.Yield();
             return true;
         }
 
         public async Task<bool> RpcSyncToSharedAnchor(string uuid)
         {
-            PhotonRPC.RPC_SyncToSharedAnchor(m_Runner, uuid);
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            { PhotonRPC.RPC_SyncToSharedAnchor(m_Runner, uuid); });
             await Task.Yield();
             return true;
         }
@@ -304,7 +309,8 @@ namespace OpenBrush.Multiplayer
         public async Task<bool> RpcStartSyncHistory(int id)
         {
             PlayerRef playerRef = PlayerRef.FromEncoded(id);
-            PhotonRPC.RPC_StartHistorySync(m_Runner, playerRef);
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            { PhotonRPC.RPC_StartHistorySync(m_Runner, playerRef); });
             await Task.Yield();
             return true;
         }
@@ -312,7 +318,8 @@ namespace OpenBrush.Multiplayer
         public async Task<bool> RpcHistorySyncComplete(int id)
         {
             PlayerRef playerRef = PlayerRef.FromEncoded(id);
-            PhotonRPC.RPC_HistorySyncCompleted(m_Runner, playerRef);
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            { PhotonRPC.RPC_HistorySyncCompleted(m_Runner, playerRef);});
             await Task.Yield();
             return true;
         }
@@ -320,7 +327,8 @@ namespace OpenBrush.Multiplayer
         public async Task<bool> RpcSyncHistoryPercentage(int id, int exp, int snt)
         {
             PlayerRef playerRef = PlayerRef.FromEncoded(id);
-            PhotonRPC.RPC_HistoryPercentageUpdate(m_Runner, playerRef, exp, snt);
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            { PhotonRPC.RPC_HistoryPercentageUpdate(m_Runner, playerRef, exp, snt);});
             await Task.Yield();
             return true;
         }
@@ -380,68 +388,85 @@ namespace OpenBrush.Multiplayer
             var stroke = command.m_Stroke;
             int maxPointsPerChunk = NetworkingConstants.MaxControlPointsPerChunk;
 
+            int totalPoints = stroke.m_ControlPoints.Length;
 
-            if (stroke.m_ControlPoints.Length > maxPointsPerChunk)
+            // Calculate how many chunks in total we need, including the initial one.
+            int numberOfChunks = (int)Math.Ceiling((double)totalPoints / maxPointsPerChunk);
+
+            // If we can fit everything in a single message:
+            if (numberOfChunks == 1)
             {
-                // Split and Send
-                int numSplits = stroke.m_ControlPoints.Length / maxPointsPerChunk;
+                // Send it all at once as a full stroke
+                PhotonRPCBatcher.EnqueueRPC(() =>
+                { PhotonRPC.Send_BrushStrokeFull( m_Runner,new NetworkedStroke().Init(stroke),command.Guid, (int)command.NetworkTimestamp, command.ParentGuid, command.ChildrenCount ); });
+                return true;
+            }
 
-                var firstStroke = new Stroke(stroke)
+            // More than one chunk: break it down.
+
+            // Prepare the first chunk
+            int firstChunkSize = Math.Min(maxPointsPerChunk, totalPoints);
+            var firstStroke = new Stroke(stroke)
+            {
+                m_ControlPoints = stroke.m_ControlPoints.Take(firstChunkSize).ToArray(),
+                m_ControlPointsToDrop = stroke.m_ControlPointsToDrop.Take(firstChunkSize).ToArray()
+            };
+
+            var netStroke = new NetworkedStroke().Init(firstStroke);
+            var strokeGuid = Guid.NewGuid();
+
+            // Send the initial Begin call
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            { PhotonRPC.Send_BrushStrokeBegin( m_Runner, strokeGuid, netStroke, totalPoints);});
+
+            // Send the middle "Continue" chunks (if any)
+            for (int chunkIndex = 1; chunkIndex < numberOfChunks; chunkIndex++)
+            {
+                int offset = chunkIndex * maxPointsPerChunk;
+                int chunkSize = Math.Min(maxPointsPerChunk, totalPoints - offset);
+
+                // Extract this chunk of control points and drop flags
+                var controlPoints = stroke.m_ControlPoints.Skip(offset).Take(chunkSize).ToArray();
+                var dropPoints = stroke.m_ControlPointsToDrop.Skip(offset).Take(chunkSize).ToArray();
+
+                // Convert to NetworkedControlPoint
+                var netControlPoints = new NetworkedControlPoint[chunkSize];
+                for (int i = 0; i < chunkSize; ++i)
                 {
-                    m_ControlPoints = stroke.m_ControlPoints.Take(maxPointsPerChunk).ToArray(),
-                    m_ControlPointsToDrop = stroke.m_ControlPointsToDrop.Take(maxPointsPerChunk).ToArray()
-                };
-
-                var netStroke = new NetworkedStroke().Init(firstStroke);
-
-                var strokeGuid = Guid.NewGuid();
-
-                // First Stroke
-                PhotonRPC.Send_BrushStrokeBegin(m_Runner, strokeGuid, netStroke, stroke.m_ControlPoints.Length);
-
-                // Middle
-                for (int rounds = 1; rounds < numSplits + 1; ++rounds)
-                {
-                    var controlPoints = stroke.m_ControlPoints.Skip(rounds * maxPointsPerChunk).Take(maxPointsPerChunk).ToArray();
-                    var dropPoints = stroke.m_ControlPointsToDrop.Skip(rounds * maxPointsPerChunk).Take(maxPointsPerChunk).ToArray();
-
-                    var netControlPoints = new NetworkedControlPoint[controlPoints.Length];
-
-                    for (int point = 0; point < controlPoints.Length; ++point)
-                    {
-                        netControlPoints[point] = new NetworkedControlPoint().Init(controlPoints[point]);
-                    }
-
-                    PhotonRPC.Send_BrushStrokeContinue(m_Runner, strokeGuid, rounds * maxPointsPerChunk, netControlPoints, dropPoints);
+                    netControlPoints[i] = new NetworkedControlPoint().Init(controlPoints[i]);
                 }
 
-                // End
-                PhotonRPC.Send_BrushStrokeComplete(m_Runner, strokeGuid, command.Guid, (int)command.NetworkTimestamp, command.ParentGuid, command.ChildrenCount);
+                PhotonRPCBatcher.EnqueueRPC(() =>
+                { PhotonRPC.Send_BrushStrokeContinue(m_Runner,strokeGuid, offset,netControlPoints,dropPoints);});
             }
-            else
-            {
-                // Can send in one.
-                PhotonRPC.Send_BrushStrokeFull(m_Runner, new NetworkedStroke().Init(command.m_Stroke), command.Guid, (int)command.NetworkTimestamp, command.ParentGuid, command.ChildrenCount);
-            }
+
+            // After all chunks have been sent, send the Complete call
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            { PhotonRPC.Send_BrushStrokeComplete( m_Runner,strokeGuid, command.Guid, (int)command.NetworkTimestamp, command.ParentGuid, command.ChildrenCount ); });
+
             return true;
         }
 
+
         private bool CommandBase(BaseCommand command)
         {
-            PhotonRPC.Send_BaseCommand(m_Runner, command.Guid, command.ParentGuid, command.ChildrenCount);
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            { PhotonRPC.Send_BaseCommand(m_Runner, command.Guid, command.ParentGuid, command.ChildrenCount); });
             return true;
         }
 
         private bool CommandDeleteStroke(DeleteStrokeCommand command, PlayerRef playerRef = default)
         {
-            PhotonRPC.Send_DeleteStroke(m_Runner, command.m_TargetStroke.m_Seed, command.Guid, (int)command.NetworkTimestamp, command.ParentGuid, command.ChildrenCount, playerRef);
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            { PhotonRPC.Send_DeleteStroke(m_Runner, command.m_TargetStroke.m_Seed, command.Guid, (int)command.NetworkTimestamp, command.ParentGuid, command.ChildrenCount, playerRef); });
             return true;
         }
 
         private bool CommandSwitchEnvironment(SwitchEnvironmentCommand command, PlayerRef playerRef = default)
         {
             Guid environmentGuid = command.m_NextEnvironment.m_Guid;
-            PhotonRPC.Send_SwitchEnvironment(m_Runner, environmentGuid, command.Guid, (int)command.NetworkTimestamp, command.ParentGuid, command.ChildrenCount, playerRef);
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            { PhotonRPC.Send_SwitchEnvironment(m_Runner, environmentGuid, command.Guid, (int)command.NetworkTimestamp, command.ParentGuid, command.ChildrenCount, playerRef); });
             return true;
         }
         #endregion
