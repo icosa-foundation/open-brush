@@ -402,6 +402,12 @@ namespace TiltBrush
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
 
+        [ApiEndpoint("debug.ram", "Enable/Disable logging of RAM usage to the in-app console (Android only)")]
+        public static void EnableRamLogging(bool active)
+        {
+            App.Instance.RamLoggingActive = active;
+        }
+
         [ApiEndpoint("layer.clear", "Clears the contents of a layer")]
         public static void ClearLayer(int layer)
         {
