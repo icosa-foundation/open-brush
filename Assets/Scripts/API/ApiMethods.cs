@@ -721,7 +721,6 @@ namespace TiltBrush
             "Clears the contents of a layer",
             "2"
         )]
-        [ApiEndpoint("layer.clear", "Clears the contents of a layer")]
         public static void ClearLayer(int layer)
         {
             ClearLayerCommand cmd = new ClearLayerCommand(layer);
