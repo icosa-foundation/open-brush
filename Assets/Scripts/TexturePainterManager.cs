@@ -24,7 +24,15 @@ namespace TiltBrush
         public float m_BrushSize = 0.5f;
         public Brush brush;
 
+        public enum TexturePaintMode
+        {
+            Paint,
+            Erase,
+            Fill
+        }
+
         [NonSerialized] public static TexturePainterManager m_Instance;
+        [NonSerialized] public TexturePaintMode m_CurrentMode;
 
         private bool m_EnableLine;
         private TrTransform m_PointerTransform;
@@ -66,7 +74,20 @@ namespace TiltBrush
                     DebugVisualization.ShowPosition(hitInfo.point, 0.1f);
                     if (m_EnableLine)
                     {
-                        canvas.Paint(brush, hitInfo);
+                        switch (m_CurrentMode)
+                        {
+                            case TexturePaintMode.Paint:
+                                canvas.Paint(brush, hitInfo);
+                                break;
+                            case TexturePaintMode.Erase:
+                                canvas.Erase(brush, hitInfo);
+                                break;
+                            case TexturePaintMode.Fill:
+                                canvas.Fill(brush, hitInfo);
+                                break;
+                            default:
+                                throw new ArgumentOutOfRangeException();
+                        }
                     }
                 }
             }

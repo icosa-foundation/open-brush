@@ -89,6 +89,13 @@ namespace TiltBrush
 
             m_brushUndoButtonUp = InputManager.Brush.GetCommandUp(InputManager.SketchCommands.Undo);
             m_brushUndoButtonTapped = m_brushUndoButtonUp && !m_brushUndoButtonTapInvalid;
+
+            // If we're in fill mode, we only want to paint on the frame the trigger is pressed
+            if (TexturePainterManager.m_Instance.m_CurrentMode == TexturePainterManager.TexturePaintMode.Fill)
+            {
+                m_brushTrigger = m_brushTriggerDown;
+            }
+
             if (m_brushUndoButtonDown)
             {
                 m_brushUndoButtonTapInvalid = false;
