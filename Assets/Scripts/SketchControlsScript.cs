@@ -152,6 +152,8 @@ namespace TiltBrush
             RenameLayer = 5202,
             OpenDirectorChooserPopup = 5800,
             EnableTexturePainting = 5900,
+            OpenUvMappingPopup = 5901,
+            OpenTextureBrushSettingsPopup = 5902,
             OpenScriptsCommandsList = 6000,
             OpenScriptsList = 6001,
             OpenExampleScriptsList = 6002,

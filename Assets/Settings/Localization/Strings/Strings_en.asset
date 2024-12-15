@@ -3536,6 +3536,14 @@ MonoBehaviour:
     m_Localized: Brush Size
     m_Metadata:
       m_Items: []
+  - m_Id: 241074401919459328
+    m_Localized: UV Mapping
+    m_Metadata:
+      m_Items: []
+  - m_Id: 241075235319275520
+    m_Localized: Brush Settings
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

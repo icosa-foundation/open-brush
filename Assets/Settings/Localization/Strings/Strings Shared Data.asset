@@ -3339,6 +3339,14 @@ MonoBehaviour:
     m_Key: BRUSH_SETTINGS_TRAY_BRUSH_SIZE
     m_Metadata:
       m_Items: []
+  - m_Id: 241074401919459328
+    m_Key: ADVANCEDTOOLS_PANEL_TEXTURE_PAINT_TRAY_UV_MAPPING
+    m_Metadata:
+      m_Items: []
+  - m_Id: 241075235319275520
+    m_Key: ADVANCEDTOOLS_PANEL_TEXTURE_PAINT_TRAY_BRUSH_SETTINGS
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
