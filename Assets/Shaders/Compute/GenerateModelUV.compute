@@ -14,12 +14,42 @@ uint vertexCount;
 // Mapping mode: 0 for planar, 1 for box, 2 for cylinder
 int mappingMode;
 
+int axis = 0;
+
 float2 PlanarMap(uint index)
 {
+    float frontback;
     float2 uv;
     float3 pos = positionBuffer[index];
-    uv.x = (pos.x - minX) / (maxX - minX);
-    uv.y = (pos.z - minZ) / (maxZ - minZ);
+
+    switch (axis)
+    {
+        case 0: // XY plane
+            uv.x = (pos.x - minX) / (maxX - minX);
+            uv.y = (pos.y - minY) / (maxY - minY);
+            frontback = pos.z;
+            break;
+        case 1: // XZ plane
+            uv.x = (pos.x - minX) / (maxX - minX);
+            uv.y = (pos.z - minZ) / (maxZ - minZ);
+            frontback = pos.y;
+            break;
+        case 2: // YZ plane
+            uv.x = (pos.y - minY) / (maxY - minY);
+            uv.y = (pos.z - minZ) / (maxZ - minZ);
+            frontback = pos.x;
+            break;
+    }
+
+    if (frontback < 0.0)
+    { // Front half
+        uv.x *= 0.5;
+    }
+    else
+    { // Back half
+        uv.x = 0.5 + (1 - uv.x) * 0.5;
+    }
+
     return uv;
 }
 
@@ -56,8 +86,80 @@ float2 BoxMap(uint index)
     return uv;
 }
 
+float2 CubeMap(uint index)
+{
+    float2 uv = float2(0, 0);
+    float3 pos = positionBuffer[index];
+
+    // Find the maximum range among the axes
+    float maxRange = max(maxX - minX, max(maxY - minY, maxZ - minZ));
+
+    // Calculate the normalized positions 0 to 1
+    float x = (pos.x - minX) / maxRange;
+    float y = (pos.y - minY) / maxRange;
+    float z = (pos.z - minZ) / maxRange;
+
+    pos = float3(x, y, z);
+
+    // Map to -1 to 1 range
+    pos = pos * 2.0 - 1.0;
+
+    // Determine the largest absolute axis value to find the major axis direction
+    float3 absPos = abs(pos);
+
+    if (absPos.x >= absPos.y && absPos.x >= absPos.z) {
+        // X major axis
+        if (pos.x > 0) {
+            // Positive X face
+            uv.x = pos.z + 2.0;
+            uv.y = pos.y + 1.0;
+        // } else {
+        //     // Negative X face
+        //     uv.x = absPos.z + 0.0;
+        //     uv.y = absPos.y + 1.0;
+        }
+    } else if (absPos.y >= absPos.x && absPos.y >= absPos.z) {
+        // Y major axis
+        if (pos.y > 0) {
+            // Positive Y face
+            uv.x = pos.x + 1.0;
+            uv.y = pos.z + 2.0;
+        // } else {
+        //     // Negative Y face
+        //     uv.x = absPos.x + 1.0;
+        //     uv.y = absPos.z + 0.0;
+        }
+    } else {
+        // Z major axis
+        if (pos.z > 0) {
+            // Positive Z face
+            uv.x = pos.x + 1.0;
+            uv.y = pos.y + 1.0;
+        // } else {
+        //     // Negative Z face
+        //     uv.x = absPos.x + 3.0;
+        //     uv.y = absPos.y + 1.0;
+        }
+    }
+
+    // Scale down to the [0,1] range for each face
+    uv = float2(uv.x / 4.0, uv.y / 3.0);
+
+    return uv;
+}
 
 float2 CylinderMap(uint index)
+{
+    float3 center = float3((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);
+    float3 position = positionBuffer[index];
+    float3 direction = normalize(position - center);
+    float angle = atan2(direction.z, direction.x); // angle around the y-axis from z to x-axis
+    float u = angle / (2 * 3.14159265f) + 0.5f; // Normalize angle to [0, 1]
+    float v = (position.y - minY) / (maxY - minY);
+    return float2(u, v);
+}
+
+float2 CappedCylinderMap(uint index)
 {
     float3 center = float3((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);
     float3 position = positionBuffer[index];
@@ -129,6 +231,61 @@ float2 SphericalMap(uint index)
     return float2(u, v);
 }
 
+float2 StereographicMap(uint index)
+{
+    float2 uv;
+    float3 pos = positionBuffer[index];
+
+    // Calculate the normalized positions
+    float x = (pos.x - minX) / (maxX - minX) * 2.0 - 1.0;
+    float y = (pos.y - minY) / (maxY - minY) * 2.0 - 1.0;
+    float z = (pos.z - minZ) / (maxZ - minZ) * 2.0 - 1.0;
+
+    // Stereographic projection
+    uv.x = x / (1.4 - z);
+    uv.y = y / (1.4 - z);
+
+    // Normalize the uv coordinates to [0, 1]
+    uv = uv * 0.5 + 0.5;
+
+
+    // float r2 = dot(uv, uv);
+    // float3 sphereCoords;
+    // sphereCoords.x = 2.0 * uv.x / (1.0 + r2);
+    // sphereCoords.y = 2.0 * uv.y / (1.0 + r2);
+    // sphereCoords.z = (1.0 - r2) / (1.0 + r2);
+    //
+    // // Convert Cartesian coordinates to UV coordinates for the texture lookup
+    // float u = 0.5 + atan(sphereCoords.y, sphereCoords.x) / (2.0 * 3.14159265358979323846);
+    // float v = 0.5 - asin(sphereCoords.z) / 3.14159265358979323846;
+
+    return uv;
+}
+
+float2 OctahedralMap(uint index)
+{
+    float2 uv;
+    float3 pos = positionBuffer[index];
+
+    // Calculate the normalized positions
+    float x = (pos.x - minX) / (maxX - minX) * 2.0 - 1.0;
+    float y = (pos.y - minY) / (maxY - minY) * 2.0 - 1.0;
+    float z = (pos.z - minZ) / (maxZ - minZ) * 2.0 - 1.0;
+
+    pos = float3(x, y, z);
+
+    // Convert the normalized vector to octahedral coordinates
+    uv = float2(pos.x, pos.y) * (1.0 / (abs(pos.x) + abs(pos.y) + abs(pos.z)));
+
+    // Remap octahedral coordinates to the range [0, 1]
+    if (pos.z < 0.0) {
+        uv = (1.0 - abs(uv)) * float2(sign(uv.x), sign(uv.y));
+    }
+    uv = uv * 0.5 + 0.5;
+
+    return uv;
+}
+
 
 // The compute shader kernel
 [numthreads(64, 1, 1)]
@@ -144,7 +301,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     }
     else if(mappingMode == 1) // Box mapping
     {
-        uv = BoxMap(id.x);
+        uv = CubeMap(id.x);
     }
     else if(mappingMode == 2) // Cylinder mapping
     {
@@ -153,6 +310,10 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     else if(mappingMode == 3) // Spherical mapping
     {
         uv = SphericalMap(id.x);
+    }
+    else if(mappingMode == 4) // Stereographic mapping
+    {
+        uv = OctahedralMap(id.x);
     }
 
     uvBuffer[id.x] = uv;

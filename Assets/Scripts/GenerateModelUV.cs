@@ -1,14 +1,45 @@
-using System.Runtime.InteropServices;
+using System;
 using UnityEngine;
+using UnityEngine.Serialization;
+
+[Serializable]
+public enum UvMappingMode
+{
+    Planar,
+    Box,
+    Cylinder,
+    Spherical,
+    Stereographic
+}
+
+[Serializable]
+public enum MappingAxis
+{
+    X,
+    Y,
+    Z,
+}
 
 public class GenerateModelUV : MonoBehaviour
 {
-    public int mappingMode; // 0 for Planar, 1 for Box
-    [Range(0.5f, 1)]
-    public float capThreshold = 0.75f;
+    public UvMappingMode uvMappingMode;
+    public MappingAxis axis;
+    [Range(0.5f, 1)] public float capThreshold = 0.75f;
     public ComputeShader uvGeneratorShader;
 
     private Mesh mesh;
+
+    private void Start()
+    {
+        Go();
+    }
+
+
+    void OnValidate()
+    {
+        if (!Application.isPlaying) return;
+        Go();
+    }
 
     [ContextMenu("Go")]
     void Go()
@@ -27,7 +58,8 @@ public class GenerateModelUV : MonoBehaviour
         // Bind the compute buffers to the shader
         uvGeneratorShader.SetBuffer(kernelID, "positionBuffer", positionBuffer);
         uvGeneratorShader.SetBuffer(kernelID, "uvBuffer", uvBuffer);
-        uvGeneratorShader.SetInt("mappingMode", mappingMode);
+        uvGeneratorShader.SetInt("mappingMode", (int)uvMappingMode);
+        uvGeneratorShader.SetInt("axis", (int)axis);
 
         // Set shader parameters for bounding box
         Bounds bounds = mesh.bounds;
