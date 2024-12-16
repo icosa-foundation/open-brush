@@ -58,13 +58,22 @@ namespace TiltBrush
 
             int maxTriangles = QualityControls.m_Instance.AppQualityLevels.MaxPolySketchTriangles;
 
-            InitFeaturedSketchesPath();
+            SketchSet featuredSketchSet = null;
+            if (false) // TODO this fails because of initialization order: (VrAssetService.m_Instance.m_UseLocalFeaturedSketches)
+            {
+                featuredSketchSet = new FileSketchSet(App.FeaturedSketchesPath());
+                InitFeaturedSketchesPath();
+            }
+            else
+            {
+                featuredSketchSet = new IcosaSketchSet(this, SketchSetType.Curated, maxTriangles);
+            }
 
             m_Sets = new SketchSet[]
             {
                 new FileSketchSet(),
-                new FileSketchSet(App.FeaturedSketchesPath()),
-                new PolySketchSet(this, SketchSetType.Liked, maxTriangles, needsLogin: true),
+                featuredSketchSet,
+                new IcosaSketchSet(this, SketchSetType.Liked, maxTriangles, needsLogin: true),
                 new GoogleDriveSketchSet(),
             };
         }

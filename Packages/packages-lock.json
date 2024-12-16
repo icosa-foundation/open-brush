@@ -124,7 +124,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.rider": {
-      "version": "3.0.31",
+      "version": "3.0.34",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -371,7 +371,7 @@
       "hash": "43697771ed65efee02d5b1743141b8179444c147"
     },
     "org.khronos.unitygltf": {
-      "version": "https://github.com/icosa-mirror/UnityGLTF.git",
+      "version": "https://github.com/icosa-mirror/UnityGLTF.git#feature/should-node-export-hook",
       "depth": 0,
       "source": "git",
       "dependencies": {
@@ -380,7 +380,7 @@
         "com.unity.shadergraph": "10.0.0",
         "com.unity.mathematics": "1.0.0"
       },
-      "hash": "99c96d9029d4ce02e5f729a5e069a44aef6faa99"
+      "hash": "59f0fd8d0722dd1156e0c4faf60964f841ced65b"
     },
     "org.nuget.google.apis": {
       "version": "1.64.0",
@@ -439,7 +439,7 @@
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "cff83f2ffcb95787572f951e7c7ea6e8958f2f65"
+      "hash": "731ce73482c74c1bccb84d53c1771f9c4a0d511b"
     },
     "com.unity.modules.ai": {
       "version": "1.0.0",
