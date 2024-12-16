@@ -42,8 +42,6 @@ namespace TiltBrush
     }
 
     // The sdk mode indicates which SDK that we're using to drive the display.
-    //  - These names are used in our analytics, so they must be protected from obfuscation.
-    //    Do not change the names of any of them, unless they've never been released.
     [Serializable]
     public enum SdkMode
     {
@@ -134,8 +132,6 @@ namespace TiltBrush
         public SecretsConfig.ServiceAuthData OculusMobileSecrets => Secrets[SecretsConfig.Service.OculusMobile];
         public SecretsConfig.ServiceAuthData PimaxSecrets => Secrets[SecretsConfig.Service.Pimax];
         public SecretsConfig.ServiceAuthData PhotonFusionSecrets => Secrets[SecretsConfig.Service.PhotonFusion];
-
-        public bool DisableAccountLogins;
 
         /// Return a value kinda sorta half-way between "building for Android" and "running on Android"
         /// In order of increasing strictness, here are the in-Editor semantics of various methods

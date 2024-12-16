@@ -100,5 +100,29 @@ static class AndroidUtils
             return false;
         }
     }
+
+    public static string GetProp(string propName)
+    {
+        var obj = new AndroidJavaClass("android.os.SystemProperties");
+        return obj.CallStatic<string>("get", propName);
+    }
+
+    public static bool IsPicoDevice()
+    {
+        return GetProp("ro.product.brand").Trim().ToLower().Equals("pico");
+    }
+
+    public static bool IsGreatFirewalled()
+    {
+        if (IsPicoDevice())
+        {
+            // https://developer.picoxr.com/document/unreal/check-pico-rom-version/
+            var overseasFlagPresent = GetProp("ro.pvr.product.global").Trim().ToLower().Equals("overseas");
+            return !overseasFlagPresent;
+        }
+
+        return false;
+        
+    }
 }
 #endif // UNITY_ANDROID
