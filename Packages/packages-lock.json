@@ -365,13 +365,13 @@
       "hash": "43697771ed65efee02d5b1743141b8179444c147"
     },
     "dev.mikesky.openxrextensions": {
-      "version": "https://github.com/mikeskydev/unity-openxr-extensions.git#0.3.1",
+      "version": "https://github.com/mikeskydev/unity-openxr-extensions.git#0.4.0",
       "depth": 0,
       "source": "git",
       "dependencies": {
         "com.unity.xr.openxr": "1.13.0"
       },
-      "hash": "288e3b0434963882f5f08ddbfc8aad9ea9e50692"
+      "hash": "c78c9ce566ce9745e8a9038569db41c818bda3dd"
     },
     "org.khronos.unitygltf": {
       "version": "https://github.com/icosa-mirror/UnityGLTF.git",
