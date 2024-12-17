@@ -1104,15 +1104,18 @@ namespace TiltBrush
                             {
                                 Quaternion vPointerRot = Quaternion.identity;
 
-                                LuaManager.Instance.RecordPointerPositions(
-                                    vPointerPos, vPointerRot,
-                                    vPointerPos, vPointerRot, // No wand transform so use brush
-                                    ViewpointScript.Head.position, ViewpointScript.Head.rotation
-                                );
-
-                                if (LuaManager.Instance.PointerScriptsEnabled)
+                                if (LuaManager.Instance.IsInitialized)
                                 {
-                                    LuaManager.Instance.ApplyPointerScript(Quaternion.identity, ref vPointerPos, ref vPointerRot);
+                                    LuaManager.Instance.RecordPointerPositions(
+                                        vPointerPos, vPointerRot,
+                                        vPointerPos, vPointerRot, // No wand transform so use brush
+                                        ViewpointScript.Head.position, ViewpointScript.Head.rotation
+                                    );
+
+                                    if (LuaManager.Instance.PointerScriptsEnabled)
+                                    {
+                                        LuaManager.Instance.ApplyPointerScript(Quaternion.identity, ref vPointerPos, ref vPointerRot);
+                                    }
                                 }
                                 vPointerForward = vPointerRot * vPointerForward;
                             }
@@ -5004,7 +5007,7 @@ namespace TiltBrush
             App.Scene.ResetLayers(notify: true);
             ApiManager.Instance.ResetBrushTransform();
             ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.None;
-            LuaManager.Instance.Init();
+            LuaManager.Instance.NeedsReInit();
 
             // If we've got the camera path tool active, switch back to the default tool.
             // I'm doing this because if we leave the camera path tool active, the camera path

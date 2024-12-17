@@ -526,19 +526,21 @@ namespace TiltBrush
             string commandsJson = JsonConvert.SerializeObject(ListApiCommands());
             html = html.Replace("{{commandsJson}}", commandsJson);
 
-            html = html.Replace("{{toolScripts}}", JsonConvert.SerializeObject(
-                LuaManager.Instance.GetScriptNames(LuaApiCategory.ToolScript))
-            );
-            html = html.Replace("{{symmetryScripts}}", JsonConvert.SerializeObject(
-                LuaManager.Instance.GetScriptNames(LuaApiCategory.SymmetryScript))
-            );
-            html = html.Replace("{{pointerScripts}}", JsonConvert.SerializeObject(
-                LuaManager.Instance.GetScriptNames(LuaApiCategory.PointerScript))
-            );
-            html = html.Replace("{{backgroundScripts}}", JsonConvert.SerializeObject(
-                LuaManager.Instance.GetScriptNames(LuaApiCategory.BackgroundScript))
-            );
-
+            if (LuaManager.Instance.IsInitialized)
+            {
+                html = html.Replace("{{toolScripts}}", JsonConvert.SerializeObject(
+                    LuaManager.Instance.GetScriptNames(LuaApiCategory.ToolScript))
+                );
+                html = html.Replace("{{symmetryScripts}}", JsonConvert.SerializeObject(
+                    LuaManager.Instance.GetScriptNames(LuaApiCategory.SymmetryScript))
+                );
+                html = html.Replace("{{pointerScripts}}", JsonConvert.SerializeObject(
+                    LuaManager.Instance.GetScriptNames(LuaApiCategory.PointerScript))
+                );
+                html = html.Replace("{{backgroundScripts}}", JsonConvert.SerializeObject(
+                    LuaManager.Instance.GetScriptNames(LuaApiCategory.BackgroundScript))
+                );
+            }
             return html;
         }
 

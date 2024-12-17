@@ -24,6 +24,13 @@ namespace TiltBrush
         public BaseButton ToolScriptButton;
         public ToggleButton BackgroundScriptsButton;
 
+        protected override void OnEnablePanel()
+        {
+            base.OnEnablePanel();
+            // Save to run multiple times as it checks m_IsInitialized
+            LuaManager.Instance?.Init();
+        }
+
         public void InitScriptUiNav()
         {
             foreach (var nav in GetComponentsInChildren<ScriptUiNav>())

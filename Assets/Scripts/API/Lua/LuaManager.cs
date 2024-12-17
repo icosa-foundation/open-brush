@@ -136,6 +136,8 @@ namespace TiltBrush
         public static LuaManager Instance => m_Instance;
 
         private LinkedList<LuaWebRequest> m_WebRequests;
+        private bool m_IsInitialized;
+        public bool IsInitialized => m_IsInitialized;
 
         public string LuaModulesPath => Path.Join(UserPluginsPath(), "LuaModules");
 
@@ -161,11 +163,6 @@ namespace TiltBrush
             }
         }
 
-        void Start()
-        {
-            Init();
-        }
-
         private void OnScriptsDirectoryChanged(object sender, FileSystemEventArgs e)
         {
             m_ScriptPathsToUpdate.Add(e.FullPath);
@@ -173,6 +170,7 @@ namespace TiltBrush
 
         public void Init()
         {
+            if (m_IsInitialized) return;
             m_WebRequests = new LinkedList<LuaWebRequest>();
             m_TransformBuffers = new TransformBuffers(128);
             m_ScriptPathsToUpdate = new List<string>();
@@ -222,6 +220,7 @@ namespace TiltBrush
             ConfigureScriptButton(LuaApiCategory.PointerScript);
             ConfigureScriptButton(LuaApiCategory.SymmetryScript);
             ConfigureScriptButton(LuaApiCategory.ToolScript);
+            m_IsInitialized = true;
         }
 
         public void CopyLuaModules()
@@ -270,6 +269,8 @@ namespace TiltBrush
 
         private void Update()
         {
+            if (!m_IsInitialized) return;
+
             bool sceneIsReady = App.CurrentState == App.AppState.Standard;
             if (BackgroundScriptsToRun.Count > 0 && sceneIsReady)
             {
@@ -1220,5 +1221,9 @@ namespace TiltBrush
         }
 
 
+        public void NeedsReInit()
+        {
+            m_IsInitialized = false;
+        }
     }
 }

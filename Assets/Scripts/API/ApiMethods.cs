@@ -1049,6 +1049,15 @@ namespace TiltBrush
             return path;
         }
 
+        [ApiEndpoint(
+            "scripts.initPluginScripting",
+            "Call this before using any HTTP endpoint that accesses plugins (including html pages that list plugins)",
+            ""
+        )]
+        public static void InitPluginScripting()
+        {
+            LuaManager.Instance.Init();
+        }
 
         [ApiEndpoint(
             "scripts.toolscript.activate",

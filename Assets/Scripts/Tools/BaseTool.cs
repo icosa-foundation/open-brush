@@ -148,15 +148,18 @@ namespace TiltBrush
 
         virtual public void UpdateTool()
         {
-            // Free paint tool does this in PositionPointer instead
-            Transform brushTr = InputManager.m_Instance.GetBrushControllerAttachPoint();
-            Transform wandTr = InputManager.m_Instance.GetWandControllerAttachPoint();
-            Transform headTr = ViewpointScript.Head;
-            LuaManager.Instance.RecordPointerPositions(
-                brushTr.position, brushTr.rotation,
-                wandTr.position, wandTr.rotation,
-                headTr.position, headTr.rotation
-            );
+            if (LuaManager.Instance.IsInitialized)
+            {
+                // Free paint tool does this in PositionPointer instead
+                Transform brushTr = InputManager.m_Instance.GetBrushControllerAttachPoint();
+                Transform wandTr = InputManager.m_Instance.GetWandControllerAttachPoint();
+                Transform headTr = ViewpointScript.Head;
+                LuaManager.Instance.RecordPointerPositions(
+                    brushTr.position, brushTr.rotation,
+                    wandTr.position, wandTr.rotation,
+                    headTr.position, headTr.rotation
+                );
+            }
 
             if (m_EatInput)
             {
