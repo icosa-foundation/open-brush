@@ -1220,9 +1220,17 @@ namespace TiltBrush
             if (transforms != null) DrawStrokes.DrawNestedTrList(transforms, tr_CS, result._Colors, brushScale);
         }
 
-
-        public void NeedsReInit()
+        // Stop scripts and clear data structures. Used when clearing the sketch
+        public void DeInitialize()
         {
+            m_WebRequests.Clear();
+            m_TransformBuffers = null;
+            m_ScriptPathsToUpdate.Clear();
+            m_Timers.Clear();
+            m_WidgetConfigs.Clear();
+            Scripts.Clear();
+            ActiveScripts.Clear();
+            m_ActiveBackgroundScripts.Clear();
             m_IsInitialized = false;
         }
     }

@@ -5007,7 +5007,7 @@ namespace TiltBrush
             App.Scene.ResetLayers(notify: true);
             ApiManager.Instance.ResetBrushTransform();
             ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.None;
-            LuaManager.Instance.NeedsReInit();
+            LuaManager.Instance.DeInitialize();
 
             // If we've got the camera path tool active, switch back to the default tool.
             // I'm doing this because if we leave the camera path tool active, the camera path
