@@ -733,7 +733,7 @@ namespace TiltBrush
             {
                 SetControllerStyle(ControllerStyle.Wmr);
             }
-            else if (device.name.Contains("PICO Controller"))
+            else if (device.name.Contains("PICO"))
             {
                 // TODO:Mikesky - OpenXR controller profiles for each type of pico, it's now available
                 // Controller name isn't specified in Pico's device layout
