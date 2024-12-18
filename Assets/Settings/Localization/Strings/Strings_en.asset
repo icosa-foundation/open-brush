@@ -3568,6 +3568,10 @@ MonoBehaviour:
     m_Localized: Erase text
     m_Metadata:
       m_Items: []
+  - m_Id: 312730512516521984
+    m_Localized: Save Sketch
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
