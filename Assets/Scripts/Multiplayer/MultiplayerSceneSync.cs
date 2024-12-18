@@ -251,7 +251,8 @@ namespace OpenBrush.Multiplayer
         private InfoCardAnimation infoCard;
         private readonly object infoCardLock = new object();
 
-        public void DisplaySynchInfo()
+
+        public void DisplaySynchInfo(string text = "Sync Started!")
         {
             lock (infoCardLock)
             {
@@ -259,7 +260,7 @@ namespace OpenBrush.Multiplayer
                 {
                     OutputWindowScript.m_Instance.CreateInfoCardAtController(
                         InputManager.ControllerName.Brush,
-                        "Sync Started!",
+                        text,
                         fPopScalar: 1.0f
                     );
                     infoCard = RetrieveInfoCard();
@@ -288,7 +289,11 @@ namespace OpenBrush.Multiplayer
                 int percentage = (int)((float)SketchMemoryScript.AllStrokesCount() / numberOfCommandsExpected * 100);
                 string text = $"Sync {percentage}%";
 
-                if (infoCard == null) DisplaySynchInfo();
+                if (infoCard == null)
+                {
+                    DisplaySynchInfo(text);
+                    return;
+                }
 
                 infoCard.GetComponentInChildren<TextMeshPro>().text = text;
                 infoCard.UpdateHoldingDuration(5f);
@@ -299,10 +304,15 @@ namespace OpenBrush.Multiplayer
         {
             lock (infoCardLock)
             {
-                if (infoCard == null) return;
+                if (infoCard == null)
+                {
+                    DisplaySynchInfo("Sync Ended!");
+                    return;
+                }
 
                 infoCard.GetComponentInChildren<TextMeshPro>().text = "Sync Ended!";
                 infoCard.UpdateHoldingDuration(3.0f);
+                ControllerConsoleScript.m_Instance.AddNewLine("Sync Ended!");
             }
         }
 
