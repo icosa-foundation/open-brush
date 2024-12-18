@@ -1682,10 +1682,6 @@ static class BuildTiltBrush
                 }
                 m_buildStatus = buildDesc;
 
-
-                PlayerSettings.productName = "linglongbi";
-                PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, "foundation.icosa.linglongbi");
-
                 // Start building
                 var thing = BuildPipeline.BuildPlayer(scenes, location, target, options);
                 string error = FormatBuildReport(thing);
