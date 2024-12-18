@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#if FUSION_WEAVER
+#if MP_PHOTON
 
 using System;
 using UnityEngine;
