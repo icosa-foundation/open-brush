@@ -593,7 +593,7 @@ namespace TiltBrush
                 m_SwipeHintObject.Activate(true);
                 AudioManager.m_Instance.PlayTrashSoftSound(
                     SketchControlsScript.m_Instance.MultiCamCaptureRig.transform.position);
-                OutputWindowScript.ReportFileSaved("GIF 回收!", null,
+                OutputWindowScript.ReportFileSaved("GIF 垃圾回收!", null,
                     OutputWindowScript.InfoCardSpawnPos.Brush);
                 SetTimeBar(m_TimeGifCaptureTimer);
             }

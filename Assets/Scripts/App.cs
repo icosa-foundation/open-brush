@@ -1322,7 +1322,7 @@ namespace TiltBrush
             }
 
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                InputManager.ControllerName.Brush, "显示!");
+                InputManager.ControllerName.Brush, "草图加载完成!");
         }
 
         void SwitchState()

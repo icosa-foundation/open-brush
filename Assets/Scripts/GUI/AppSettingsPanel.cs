@@ -50,7 +50,7 @@ namespace TiltBrush
         {
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
                 InputManager.ControllerName.Brush,
-                $"请重新启动LingLongBi",
+                $"请重新启动玲珑笔",
                 fPopScalar: 0.5f, false);
         }
     }
