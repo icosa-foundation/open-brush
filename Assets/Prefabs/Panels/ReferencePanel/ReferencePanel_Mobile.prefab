@@ -93,7 +93,7 @@ PrefabInstance:
     - target: {fileID: 584625050532430736, guid: 0053ac08708148641bd0b629e8e3e2e5,
         type: 3}
       propertyPath: m_text
-      value: "\u67E5\u770B"
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 904101876321322130, guid: 0053ac08708148641bd0b629e8e3e2e5,
         type: 3}
