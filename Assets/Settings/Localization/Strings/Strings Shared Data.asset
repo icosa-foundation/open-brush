@@ -3375,6 +3375,14 @@ MonoBehaviour:
     m_Key: New Entry
     m_Metadata:
       m_Items: []
+  - m_Id: 312729904472465408
+    m_Key: New Entry 1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312730512516521984
+    m_Key: ADMIN_PANEL_SAVE_SKETCH_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

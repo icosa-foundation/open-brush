@@ -187,7 +187,6 @@ MonoBehaviour:
   m_MemoryWarningButton: {fileID: 1712905289553642}
   m_MemoryWarningColor: {r: 0.78676474, g: 0.09256055, b: 0.09256055, a: 1}
   m_MultiplayerButton: {fileID: 5787249127137797294}
-  m_EmptyButton: {fileID: 1283872556223845477}
   m_ButtonRotationAngle: 45
   m_ShareButtonLoggedOutExtraText:
     m_TableReference:
@@ -422,7 +421,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 5064506084139008
+      m_KeyId: 312729904472465408
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -2605,7 +2604,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 5064506084139008
+      m_KeyId: 312730512516521984
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -3336,7 +3335,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: ADMIN_PANEL_SAVE_SKETCH_BUTTON_DESCRIPTION
+  m_DescriptionText: ADMIN_PANEL_WHAT_S_NEW_BUTTON_DESCRIPTION
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
