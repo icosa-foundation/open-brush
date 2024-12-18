@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Google.Apis.PeopleService.v1.Data;
 using OpenBrush.Multiplayer;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 
@@ -28,6 +30,8 @@ namespace TiltBrush
         [SerializeField] private TextMeshPro m_Nickname;
         [SerializeField] private TextMeshPro m_AlertsErrors;
         [SerializeField] private TextMeshPro m_RoomOwnership;
+
+        private PlayerPrefsDataStore m_multiplayer;
 
         public string RoomName
         {
@@ -57,6 +61,7 @@ namespace TiltBrush
                 };
                 MultiplayerManager.m_Instance.UserInfo = ui;
                 UpdateDisplay();
+                SaveNickname(value);
             }
         }
 
@@ -87,12 +92,27 @@ namespace TiltBrush
                 MultiplayerManager.m_Instance.RoomOwnershipUpdated += OnRoomOwnershipUpdated;
             }
 
-            NickName = "Nickname" + UnityEngine.Random.Range(0, 1000).ToString();
+        }
+
+        public async void RetrieveUsername()
+        {
+            var storedNickname = await m_multiplayer.GetAsync<string>("nickname");
+            NickName = storedNickname ?? "UnamedUser";
+            Debug.Log($"Nickname after assignment: {NickName}");
+        }
+
+
+        private async void SaveNickname(string nickname)
+        {
+            await m_multiplayer.StoreAsync("nickname", nickname);
         }
 
         protected override void OnEnablePanel()
         {
             base.OnEnablePanel();
+
+            m_multiplayer = new PlayerPrefsDataStore("Multiplayer");
+            RetrieveUsername();
 
             if (MultiplayerManager.m_Instance == null) return;
             if (MultiplayerManager.m_Instance.State == ConnectionState.INITIALIZED || MultiplayerManager.m_Instance.State == ConnectionState.DISCONNECTED)
