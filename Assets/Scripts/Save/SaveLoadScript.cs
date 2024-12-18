@@ -495,12 +495,12 @@ namespace TiltBrush
                 // is tracked.
                 if (newFile)
                 {
-                    OutputWindowScript.ReportFileSaved("", info.FullPath,
+                    OutputWindowScript.ReportFileSaved("±£´æ!", info.FullPath,
                         OutputWindowScript.InfoCardSpawnPos.Brush);
                 }
                 else
                 {
-                    OutputWindowScript.ReportFileSaved("", info.FullPath,
+                    OutputWindowScript.ReportFileSaved("±£´æ!", info.FullPath,
                         OutputWindowScript.InfoCardSpawnPos.UIReticle);
                     AudioManager.m_Instance.PlaySaveSound(
                         InputManager.m_Instance.GetControllerPosition(InputManager.ControllerName.Brush));

@@ -1322,7 +1322,7 @@ namespace TiltBrush
             }
 
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                InputManager.ControllerName.Brush, "");
+                InputManager.ControllerName.Brush, "œ‘ æ!");
         }
 
         void SwitchState()
