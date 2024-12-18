@@ -13,7 +13,7 @@
 // limitations under the License.
 
 
-#if FUSION_WEAVER
+#if MP_PHOTON
 
 using System;
 using System.Linq;

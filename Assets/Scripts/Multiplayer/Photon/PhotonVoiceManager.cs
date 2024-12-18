@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#if PHOTON_UNITY_NETWORKING && PHOTON_VOICE_DEFINED
+#if MP_PHOTON
 
 using OpenBrush.Multiplayer;
 using Photon.Pun;

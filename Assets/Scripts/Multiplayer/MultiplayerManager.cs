@@ -136,13 +136,13 @@ namespace OpenBrush.Multiplayer
             switch (m_MultiplayerType)
             {
                 case MultiplayerType.Photon:
-#if FUSION_WEAVER
+#if MP_PHOTON
                     m_Manager = new PhotonManager(this);
                     m_Manager.Disconnected += OnConnectionHandlerDisconnected;
                     if (m_Manager != null) ControllerConsoleScript.m_Instance.AddNewLine("PhotonManager Loaded");
                     else ControllerConsoleScript.m_Instance.AddNewLine("PhotonManager Not Loaded");
 #endif
-#if PHOTON_UNITY_NETWORKING && PHOTON_VOICE_DEFINED
+#if MP_PHOTON
                     m_VoiceManager = new PhotonVoiceManager(this);
                     if (m_VoiceManager != null) ControllerConsoleScript.m_Instance.AddNewLine("PhotonVoiceManager Loaded");
                     else ControllerConsoleScript.m_Instance.AddNewLine("PhotonVoiceManager Not Loaded");
