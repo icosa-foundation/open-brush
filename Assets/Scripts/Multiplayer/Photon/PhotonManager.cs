@@ -193,7 +193,12 @@ namespace OpenBrush.Multiplayer
                 {
                     State = ConnectionState.DISCONNECTED;
                     ControllerConsoleScript.m_Instance.AddNewLine("[PhotonManager] Disconnected successfully");
-                    UserInfo = new ConnectionUserInfo { UserId = m_Runner.UserId };
+                    UserInfo = new ConnectionUserInfo
+                    {
+                        Nickname = UserInfo.Nickname,
+                        UserId = m_Runner.UserId,
+                        Role = UserInfo.Role,
+                    };
                 }
                 else
                 {
