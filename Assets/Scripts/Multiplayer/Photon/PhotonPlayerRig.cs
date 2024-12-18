@@ -215,7 +215,7 @@ namespace OpenBrush.Multiplayer
                 transientPointer.BrushSize01 = brushSize;
 
                 // Calculate the scale based on the scene scale
-                float clampedSceneScale = Mathf.Clamp(SceneScale, 0.01f, float.MaxValue);
+                float clampedSceneScale = Mathf.Clamp(SceneScale, 0.1f, 9.8f);
                 float Scale = 1 / clampedSceneScale;
 
                 // Remote head
