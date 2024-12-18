@@ -495,7 +495,7 @@ namespace TiltBrush
                 // is tracked.
                 if (newFile)
                 {
-                    OutputWindowScript.ReportFileSaved("±£¥Ê!", info.FullPath,
+                    OutputWindowScript.ReportFileSaved("ÃÌº”µΩÀÿ√Ëø‚!", info.FullPath,
                         OutputWindowScript.InfoCardSpawnPos.Brush);
                 }
                 else
