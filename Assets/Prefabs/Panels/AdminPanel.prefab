@@ -61,13 +61,12 @@ MonoBehaviour:
   - m_PopUpPrefab: {fileID: 1000012632495268, guid: ce8b545b77426514d8145079c55ac5e7,
       type: 3}
     m_Command: 47
-  - m_PopUpPrefab: {fileID: 1269800539083404, guid: 8c11503e6d0a24d409b1d8c992652d3b,
-      type: 3}
+  - m_PopUpPrefab: {fileID: 197348, guid: d6d515da978a4db419b15f960d57d718, type: 3}
     m_Command: 31
-  - m_PopUpPrefab: {fileID: 1153581385733574731, guid: 545e16288627ef8439942b5ec3dac49e,
+  - m_PopUpPrefab: {fileID: 1000012632495268, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
       type: 3}
     m_Command: 96
-  - m_PopUpPrefab: {fileID: 563727746153209697, guid: 60ddeefaa28cf76478a6671a1193e2c9,
+  - m_PopUpPrefab: {fileID: 8644332587479430734, guid: 4abd2477ca9b56d4ebbc36af78d00b5d,
       type: 3}
     m_Command: 30
   m_PanelDescription: 

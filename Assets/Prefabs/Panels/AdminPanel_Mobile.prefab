@@ -52,6 +52,24 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 114828844590133850, guid: f5b291cbc819737469486452ea6748b8,
+        type: 3}
+      propertyPath: m_PanelPopUpMap.Array.data[2].m_PopUpPrefab
+      value: 
+      objectReference: {fileID: 1269800539083404, guid: 8c11503e6d0a24d409b1d8c992652d3b,
+        type: 3}
+    - target: {fileID: 114828844590133850, guid: f5b291cbc819737469486452ea6748b8,
+        type: 3}
+      propertyPath: m_PanelPopUpMap.Array.data[3].m_PopUpPrefab
+      value: 
+      objectReference: {fileID: 1153581385733574731, guid: 545e16288627ef8439942b5ec3dac49e,
+        type: 3}
+    - target: {fileID: 114828844590133850, guid: f5b291cbc819737469486452ea6748b8,
+        type: 3}
+      propertyPath: m_PanelPopUpMap.Array.data[4].m_PopUpPrefab
+      value: 
+      objectReference: {fileID: 563727746153209697, guid: 60ddeefaa28cf76478a6671a1193e2c9,
+        type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
