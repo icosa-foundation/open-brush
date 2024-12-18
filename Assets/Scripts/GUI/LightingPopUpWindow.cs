@@ -116,7 +116,7 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.ResetGrabbedPose(true);
         }
 
-        override protected void RefreshPage()
+        override public void RefreshPage()
         {
             base.RefreshPage();
             bool passthroughActive = m_CurrentPresetGuid == PASSTHROUGH_GUID;
