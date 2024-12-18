@@ -5056,7 +5056,7 @@ namespace TiltBrush
                         (VrAssetService.m_Instance.UploadProgress <= 0.0f) &&
                         IsCommandAvailable(GlobalCommands.UploadToGenericCloud);
                 case GlobalCommands.NewSketch:
-                    return SketchHasChanges();
+                    return SketchHasChanges() && !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
                 case GlobalCommands.Credits:
                 case GlobalCommands.AshleysSketch:
                     return !SketchHasChanges() && !SketchMemoryScript.m_Instance.IsMemoryDirty();
