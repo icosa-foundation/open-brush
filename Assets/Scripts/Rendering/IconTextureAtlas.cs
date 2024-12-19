@@ -56,7 +56,7 @@ namespace TiltBrush
         void AtlasIconTextures()
         {
             // Load the appropriate catalog from Resources.
-            string catalogPath = App.Config.GetIsExperimental() ? m_ExperimentalCatalogPath : m_CatalogPath;
+            string catalogPath = m_ExperimentalCatalogPath;
             m_Catalog = Resources.Load<IconTextureAtlasCatalog>(catalogPath);
             Debug.Assert(m_Catalog != null);
 

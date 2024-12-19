@@ -3081,7 +3081,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 89093153698373632
-    m_Localized: (Restart required)
+    m_Localized: Less compatibility when exported. See our docs.
     m_Metadata:
       m_Items: []
   - m_Id: 89093320602312704
