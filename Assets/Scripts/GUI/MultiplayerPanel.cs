@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
 
 namespace TiltBrush
 {
@@ -39,6 +40,7 @@ namespace TiltBrush
 
 
         private PlayerPrefsDataStore m_multiplayer;
+        private bool updateDisplay = false;
 
         public string RoomName
         {
@@ -99,6 +101,13 @@ namespace TiltBrush
                 MultiplayerManager.m_Instance.RoomOwnershipUpdated += OnRoomOwnershipUpdated;
             }
 
+            LocalizationSettings.SelectedLocaleChanged += OnLanguageChanged;
+
+        }
+
+        private void OnLanguageChanged(Locale newLocale)
+        {
+            updateDisplay = true;
         }
 
         public async void RetrieveUsername()
@@ -125,6 +134,8 @@ namespace TiltBrush
             {
                 MultiplayerManager.m_Instance.Connect();
             }
+
+            if (updateDisplay) UpdateDisplay();
         }
 
         protected override void OnDisablePanel()
@@ -171,6 +182,7 @@ namespace TiltBrush
             if (m_RoomNumber) m_RoomNumber.text = m_RoomNumberString.GetLocalizedString() + data.roomName;
             if (m_Nickname) m_Nickname.text = m_NicknameString.GetLocalizedString() + NickName;
             Alerts();
+            updateDisplay = false;
         }
 
         private async void Connect()
