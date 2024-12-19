@@ -62,7 +62,7 @@ namespace OpenBrush.Multiplayer
         {
             try
             {
-                State = ConnectionState.INITIALISING;
+                State = ConnectionState.INITIALIZING;
                 var runnerGO = new GameObject("Photon Network Components");
                 m_Runner = runnerGO.AddComponent<NetworkRunner>();
                 m_Runner.gameObject.AddComponent<NetworkSceneManagerDefault>();

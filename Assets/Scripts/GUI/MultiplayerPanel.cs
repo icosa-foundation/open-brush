@@ -217,8 +217,8 @@ namespace TiltBrush
         {
             switch (newState)
             {
-                case ConnectionState.INITIALISING:
-                    return "Initialising";
+                case ConnectionState.INITIALIZING:
+                    return "Initializing";
                 case ConnectionState.INITIALIZED:
                     return "Initialized";
                 case ConnectionState.DISCONNECTED:

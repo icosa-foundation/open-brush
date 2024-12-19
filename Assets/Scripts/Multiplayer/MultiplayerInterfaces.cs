@@ -63,7 +63,7 @@ namespace OpenBrush.Multiplayer
 
     public enum ConnectionState
     {
-        INITIALISING = 0,
+        INITIALIZING = 0,
         INITIALIZED = 1,
         DISCONNECTED = 2,
         DISCONNECTING = 3,

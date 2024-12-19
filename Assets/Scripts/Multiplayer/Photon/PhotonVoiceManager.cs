@@ -52,7 +52,7 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
 
         try
         {
-            State = ConnectionState.INITIALISING;
+            State = ConnectionState.INITIALIZING;
             m_VoiceConnection = GameObject.FindFirstObjectByType<VoiceConnection>();
             if (m_VoiceConnection == null) throw new Exception("[PhotonVoiceManager] VoiceConnection component not found in scene");
             PhotonNetwork.LogLevel = PunLogLevel.ErrorsOnly;

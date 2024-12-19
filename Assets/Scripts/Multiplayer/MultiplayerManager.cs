@@ -132,7 +132,7 @@ namespace OpenBrush.Multiplayer
             });
 #endif
 
-            State = ConnectionState.INITIALISING;
+            State = ConnectionState.INITIALIZING;
             switch (m_MultiplayerType)
             {
                 case MultiplayerType.Photon:
