@@ -15,9 +15,6 @@
 // TODO: Better way to detect Passthrough support.
 // Extra: Passthrough should be *per* envrionment really!
 // See https://github.com/icosa-foundation/open-brush/issues/456
-#if OCULUS_SUPPORTED || ZAPBOX_SUPPORTED
-#define PASSTHROUGH_SUPPORTED
-#endif
 
 using System;
 using UnityEngine;
@@ -63,17 +60,18 @@ namespace TiltBrush
             m_Environments = EnvironmentCatalog.m_Instance.AllEnvironments.ToList();
 
             // Remove passthrough scene for devices that don't support it
-#if !PASSTHROUGH_SUPPORTED
-            foreach (var env in m_Environments)
+            if (App.VrSdk.PassthroughMode == PassthroughMode.None)
             {
-                // Passthrough
-                if (env.m_Guid.ToString() == PASSTHROUGH_GUID)
+                foreach (var env in m_Environments)
                 {
-                    m_Environments.Remove(env);
-                    break;
+                    // Passthrough
+                    if (env.m_Guid.ToString() == PASSTHROUGH_GUID)
+                    {
+                        m_Environments.Remove(env);
+                        break;
+                    }
                 }
             }
-#endif // PASSTHROUGH_SUPPORTED
 
             //find the active lighting preset
             TiltBrush.Environment rCurrentPreset = SceneSettings.m_Instance.GetDesiredPreset();
