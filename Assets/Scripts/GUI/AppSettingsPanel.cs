@@ -24,7 +24,7 @@ namespace TiltBrush
         public override void InitPanel()
         {
             base.InitPanel();
-            m_ExperimentalModeToggle.IsToggledOn = App.Config.GetIsExperimental();
+            m_ExperimentalModeToggle.IsToggledOn = Config.IsExperimental;
         }
 
         public void HandleToggleHandedness()
@@ -43,7 +43,6 @@ namespace TiltBrush
         public void HandleToggleExperimentalMode(ToggleButton btn)
         {
             App.Config.SetIsExperimental(btn.IsToggledOn);
-            RestartNotification();
         }
 
         private void RestartNotification()
