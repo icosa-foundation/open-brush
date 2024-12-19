@@ -3590,6 +3590,11 @@ MonoBehaviour:
       \uC138\uC158\uC5D0 \uCC38\uC5EC\uD569\uB2C8\uB2E4."
     m_Metadata:
       m_Items: []
+  - m_Id: 156198200358006784
+    m_Localized: "\uBA40\uD2F0\uD50C\uB808\uC774\uC5B4\uB97C \uC0AC\uC6A9\uD558\uB824\uBA74
+      \uD328\uC2A4\uC2A4\uB8E8 \uD658\uACBD \uBAA8\uB4DC\uB97C \uB044\uC138\uC694."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

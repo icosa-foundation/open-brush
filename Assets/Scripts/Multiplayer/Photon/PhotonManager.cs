@@ -150,7 +150,6 @@ namespace OpenBrush.Multiplayer
             //m_Runner.ReliableDataSendRate = 60;
             //m_Runner.Config.Network.ReliableDataTransferModes = NetworkConfiguration.ReliableDataTransfers.ClientToClientWithServerProxy;
 
-
             if (result.Ok)
             {
                 // Verify if the room is actually full
@@ -163,6 +162,7 @@ namespace OpenBrush.Multiplayer
                     State = ConnectionState.ERROR;
                     LastError = "[PhotonManager] Room is full.";
                     ControllerConsoleScript.m_Instance.AddNewLine(LastError);
+                    Disconnect();
                     return false;
                 }
 

@@ -37,7 +37,7 @@ namespace TiltBrush
         [SerializeField] private TextMeshPro m_AlertsErrors;
         [SerializeField] private LocalizedString m_AlertsErrorBeginnerModeActive;
         [SerializeField] private LocalizedString m_AlertsRoomAlreadyExistent;
-
+        [SerializeField] private LocalizedString m_AlertsPassThroughAcive;
 
         private PlayerPrefsDataStore m_multiplayer;
         private bool updateDisplay = false;
@@ -91,6 +91,7 @@ namespace TiltBrush
             alertChecks = new List<Func<Tuple<bool, string>>>
             {
                 CheckAdvancedModeActive,
+                CheckIfPassThroughEnvironment,
                 CheckMultiplayerManagerErrors,
                 CheckIfRoomExist,
             };
@@ -295,6 +296,21 @@ namespace TiltBrush
 
             return Tuple.Create(false, "");
 
+        }
+
+        // hardoded copied from LightingPopUpWindow
+        private const string PASSTHROUGH_GUID = "e38af599-4575-46ff-a040-459703dbcd36";
+        private Tuple<bool, string> CheckIfPassThroughEnvironment()
+        {
+
+            if (MultiplayerManager.m_Instance != null && MultiplayerManager.m_Instance.State == ConnectionState.IN_LOBBY)
+            {
+                TiltBrush.Environment targetEnvironment = SceneSettings.m_Instance.GetDesiredPreset();
+                if (targetEnvironment.m_Guid.ToString() == PASSTHROUGH_GUID)
+                    return Tuple.Create(true, m_AlertsPassThroughAcive.GetLocalizedString());
+            }
+
+            return Tuple.Create(false, "");
         }
 
         private void Alerts()

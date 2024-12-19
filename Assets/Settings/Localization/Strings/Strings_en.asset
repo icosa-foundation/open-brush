@@ -3521,7 +3521,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 156198200358006784
-    m_Localized: Multiplayer (Alpha)
+    m_Localized: Switch off passthrough environment mode to use Multiplayer
     m_Metadata:
       m_Items: []
   - m_Id: 238556149774557184

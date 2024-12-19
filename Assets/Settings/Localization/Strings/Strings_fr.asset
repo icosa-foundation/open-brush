@@ -3569,6 +3569,11 @@ MonoBehaviour:
     m_Localized: "La salle existe d\xE9j\xE0. Vous allez rejoindre une session existante."
     m_Metadata:
       m_Items: []
+  - m_Id: 156198200358006784
+    m_Localized: "D\xE9sactivez le mode environnement de transparence pour utiliser
+      le multijoueur."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

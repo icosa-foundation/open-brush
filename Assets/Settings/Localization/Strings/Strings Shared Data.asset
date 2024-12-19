@@ -3300,7 +3300,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 156198200358006784
-    m_Key: ADMIN_PANEL_MULTIPLAYER_BUTTON_DESCRIPTION
+    m_Key: MULTIPLAYER_PANEL_ALERT_PASSTHROUGH_ACTIVE
     m_Metadata:
       m_Items: []
   - m_Id: 157582826200739840
@@ -3425,6 +3425,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 312967604588847104
     m_Key: MULTIPLAYER_PANEL_ALERT_ROOM_EXIST
+    m_Metadata:
+      m_Items: []
+  - m_Id: 313081115495178240
+    m_Key: MULTIPLAYER_PANEL_ALERT_PASSTHROUGH_EXIST
     m_Metadata:
       m_Items: []
   m_Metadata:

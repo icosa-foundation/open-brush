@@ -3600,6 +3600,10 @@ MonoBehaviour:
     m_Localized: "La sala ya existe. Te unir\xE1s a una sesi\xF3n existente."
     m_Metadata:
       m_Items: []
+  - m_Id: 156198200358006784
+    m_Localized: Desactiva el modo de entorno de passthrough para usar el multijugador.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
