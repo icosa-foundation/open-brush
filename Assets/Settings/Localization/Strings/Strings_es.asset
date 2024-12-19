@@ -3572,6 +3572,34 @@ MonoBehaviour:
     m_Localized: Qu\xE9 hay de nuevo
     m_Metadata:
       m_Items: []
+  - m_Id: 312783011751469056
+    m_Localized: 'Estado: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783116814589952
+    m_Localized: 'Nombre de la sala: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783250461892608
+    m_Localized: 'Apodo: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312963339069759488
+    m_Localized: Eres el propietario de la sala
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312963447907753984
+    m_Localized: No eres el propietario de la sala
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312967307862810624
+    m_Localized: Cambia al modo principiante para usar el multijugador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312967604588847104
+    m_Localized: "La sala ya existe. Te unir\xE1s a una sesi\xF3n existente."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

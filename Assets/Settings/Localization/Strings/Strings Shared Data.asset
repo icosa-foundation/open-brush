@@ -3383,6 +3383,50 @@ MonoBehaviour:
     m_Key: ADMIN_PANEL_SAVE_SKETCH_BUTTON_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 312781662766833664
+    m_Key: MULTIPLAYER_STATUS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783011751469056
+    m_Key: MULTIPLAYER__PANEL_STATE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783116814589952
+    m_Key: MULTIPLAYER_PANEL_ROOM_NAME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783250461892608
+    m_Key: MULTIPLAYER_PANEL_NICKNAME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783415369342976
+    m_Key: New Entry 2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312962917202468864
+    m_Key: MULTIPLAYER_PANEL_ROOM_OWNER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312963339069759488
+    m_Key: MULTIPLAYER_PANEL_ROOM_OWNE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312963447907753984
+    m_Key: MULTIPLAYER_PANEL_NOT_ROOM_OWNER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312967307862810624
+    m_Key: MULTIPLAYER_PANEL_ALERT_BEGINNER_MODE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312967595889860608
+    m_Key: New Entry 3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312967604588847104
+    m_Key: MULTIPLAYER_PANEL_ALERT_ROOM_EXIST
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

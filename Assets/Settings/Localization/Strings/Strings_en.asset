@@ -3572,6 +3572,38 @@ MonoBehaviour:
     m_Localized: Save Sketch
     m_Metadata:
       m_Items: []
+  - m_Id: 312781662766833664
+    m_Localized: 'Status:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783011751469056
+    m_Localized: 'Status: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312963339069759488
+    m_Localized: You are the Room Owner
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312963447907753984
+    m_Localized: You are not the Room Owner
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783116814589952
+    m_Localized: 'RoomName: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783250461892608
+    m_Localized: 'Nickname:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312967307862810624
+    m_Localized: Switch to beginner mode use Multiplayer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312967604588847104
+    m_Localized: Room already exists. You will be joining an existing session.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -3600,6 +3600,35 @@ MonoBehaviour:
     m_Localized: Skizze speichern
     m_Metadata:
       m_Items: []
+  - m_Id: 312783011751469056
+    m_Localized: 'Status: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783116814589952
+    m_Localized: 'Raumname: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783250461892608
+    m_Localized: 'Spitzname: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312963339069759488
+    m_Localized: Sie sind der Raumbesitzer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312963447907753984
+    m_Localized: Sie sind nicht der Raumbesitzer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312967307862810624
+    m_Localized: "Wechseln Sie in den Anf\xE4nger-Modus, um Multiplayer zu verwenden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312967604588847104
+    m_Localized: Der Raum existiert bereits. Sie werden einer bestehenden Sitzung
+      beitreten.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

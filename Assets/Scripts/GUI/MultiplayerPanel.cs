@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Google.Apis.PeopleService.v1.Data;
 using OpenBrush.Multiplayer;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Localization;
 
 namespace TiltBrush
 {
@@ -26,10 +25,18 @@ namespace TiltBrush
     {
 
         [SerializeField] private TextMeshPro m_State;
+        [SerializeField] private LocalizedString m_StatString;
         [SerializeField] private TextMeshPro m_RoomNumber;
+        [SerializeField] private LocalizedString m_RoomNumberString;
         [SerializeField] private TextMeshPro m_Nickname;
-        [SerializeField] private TextMeshPro m_AlertsErrors;
+        [SerializeField] private LocalizedString m_NicknameString;
         [SerializeField] private TextMeshPro m_RoomOwnership;
+        [SerializeField] private LocalizedString m_RoomOwnerString;
+        [SerializeField] private LocalizedString m_NotRoomOwnerString;
+        [SerializeField] private TextMeshPro m_AlertsErrors;
+        [SerializeField] private LocalizedString m_AlertsErrorBeginnerModeActive;
+        [SerializeField] private LocalizedString m_AlertsRoomAlreadyExistent;
+
 
         private PlayerPrefsDataStore m_multiplayer;
 
@@ -98,7 +105,6 @@ namespace TiltBrush
         {
             var storedNickname = await m_multiplayer.GetAsync<string>("nickname");
             NickName = storedNickname ?? "UnamedUser";
-            Debug.Log($"Nickname after assignment: {NickName}");
         }
 
 
@@ -162,8 +168,8 @@ namespace TiltBrush
 
         private void UpdateDisplay()
         {
-            if (m_RoomNumber) m_RoomNumber.text = "RoomName: " + data.roomName;
-            if (m_Nickname) m_Nickname.text = "Nickname: " + NickName;
+            if (m_RoomNumber) m_RoomNumber.text = m_RoomNumberString.GetLocalizedString() + data.roomName;
+            if (m_Nickname) m_Nickname.text = m_NicknameString.GetLocalizedString() + NickName;
             Alerts();
         }
 
@@ -203,7 +209,7 @@ namespace TiltBrush
         private void OnStateUpdated(ConnectionState newState)
         {
             if (!m_State) return;
-            m_State.text = "State: " + StateToString(newState);
+            m_State.text = m_StatString.GetLocalizedString() + StateToString(newState);
             UpdateDisplay();
         }
 
@@ -237,7 +243,10 @@ namespace TiltBrush
         private void OnRoomOwnershipUpdated(bool isRoomOwner)
         {
             if (!m_RoomOwnership) return;
-            m_RoomOwnership.text = isRoomOwner ? "You are the Room Owner" : "You are not the Room Owner";
+
+            var localizedString = isRoomOwner ? m_RoomOwnerString : m_NotRoomOwnerString;
+            localizedString.GetLocalizedStringAsync().Completed += handle =>
+            { m_RoomOwnership.text = handle.Result; };
         }
 
         private Tuple<bool, string> CheckAdvancedModeActive()
@@ -245,7 +254,7 @@ namespace TiltBrush
             if (PanelManager.m_Instance != null)
             {
                 bool isAdvancedModeActive = PanelManager.m_Instance.AdvancedModeActive();
-                return Tuple.Create(isAdvancedModeActive, "Switch to beginner mode use Multiplayer");
+                return Tuple.Create(isAdvancedModeActive, m_AlertsErrorBeginnerModeActive.GetLocalizedString());
             }
             return Tuple.Create(false, "");
         }
@@ -269,7 +278,7 @@ namespace TiltBrush
             if (MultiplayerManager.m_Instance != null && MultiplayerManager.m_Instance.State == ConnectionState.IN_LOBBY)
             {
                 if (MultiplayerManager.m_Instance.DoesRoomNameExist(data.roomName))
-                    return Tuple.Create(true, $"Room {data.roomName} already exists. You will be joining an existing session.");
+                    return Tuple.Create(true, m_AlertsRoomAlreadyExistent.GetLocalizedString());
             }
 
             return Tuple.Create(false, "");

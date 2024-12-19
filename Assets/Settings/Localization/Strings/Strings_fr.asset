@@ -3541,6 +3541,34 @@ MonoBehaviour:
     m_Localized: Quoi de neuf
     m_Metadata:
       m_Items: []
+  - m_Id: 312783011751469056
+    m_Localized: 'Statut: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783116814589952
+    m_Localized: "Nom de la salle\_: "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783250461892608
+    m_Localized: "Surnom\_: "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312963339069759488
+    m_Localized: "Vous \xEAtes le propri\xE9taire de la salle"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312963447907753984
+    m_Localized: "Vous n'\xEAtes pas le propri\xE9taire de la salle"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312967307862810624
+    m_Localized: "Passez en mode d\xE9butant pour utiliser le multijoueur"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312967604588847104
+    m_Localized: "La salle existe d\xE9j\xE0. Vous allez rejoindre une session existante."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
