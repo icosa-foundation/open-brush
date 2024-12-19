@@ -23,6 +23,7 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using OpenBrush.Multiplayer;
 
 namespace TiltBrush
 {
@@ -64,17 +65,11 @@ namespace TiltBrush
 
             // Remove passthrough scene for devices that don't support it
 #if !PASSTHROUGH_SUPPORTED
-            foreach (var env in m_Environments)
-            {
-                // Passthrough
-                if (env.m_Guid.ToString() == PASSTHROUGH_GUID)
-                {
-                    m_Environments.Remove(env);
-                    break;
-                }
-            }
-#endif // PASSTHROUGH_SUPPORTED
-
+            RemovePassthrough();
+#else // PASSTHROUGH_SUPPORTED
+            // Remove passthrough if multiplayer connected
+            if (MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM) RemovePassthrough();
+#endif
             //find the active lighting preset
             TiltBrush.Environment rCurrentPreset = SceneSettings.m_Instance.GetDesiredPreset();
             if (rCurrentPreset != null)
@@ -104,6 +99,19 @@ namespace TiltBrush
             SceneSettings.m_Instance.FadingToDesiredEnvironment += OnFadingToDesiredEnvironment;
 
             base.Init(rParent, sText);
+        }
+
+        public void RemovePassthrough()
+        {
+            foreach (var env in m_Environments)
+            {
+                // Passthrough
+                if (env.m_Guid.ToString() == PASSTHROUGH_GUID)
+                {
+                    m_Environments.Remove(env);
+                    break;
+                }
+            }
         }
 
         public void HandleCanvasLockToggle()
@@ -157,5 +165,6 @@ namespace TiltBrush
         {
             SceneSettings.m_Instance.FadingToDesiredEnvironment -= OnFadingToDesiredEnvironment;
         }
+
     }
 } // namespace TiltBrush
