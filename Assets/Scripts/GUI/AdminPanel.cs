@@ -43,6 +43,7 @@ namespace TiltBrush
         [SerializeField] GameObject m_MemoryWarning;
         [SerializeField] GameObject m_MemoryWarningButton;
         [SerializeField] Color m_MemoryWarningColor;
+        [SerializeField] GameObject m_MultiplayerButton;
         [SerializeField] float m_ButtonRotationAngle = 45f;
 
         [SerializeField] LocalizedString m_ShareButtonLoggedOutExtraText;

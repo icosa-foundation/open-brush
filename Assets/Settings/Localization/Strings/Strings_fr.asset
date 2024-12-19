@@ -199,7 +199,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5064506084139008
-    m_Localized: Enregistrer le croquis
+    m_Localized: Quoi de neuf
     m_Metadata:
       m_Items: []
   - m_Id: 5065040224559104
@@ -3515,6 +3515,67 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 218558579745579008
     m_Localized: Plus d'informations sur l'utilisation d'Open Brush sans VR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636769901092864
+    m_Localized: Rejoindre la Salle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636908816441344
+    m_Localized: Quitter la Salle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637073212186624
+    m_Localized: Modifier le Nom de la Salle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637384320491520
+    m_Localized: Modifier le Pseudo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 307216698459103232
+    m_Localized: Effacer le texte
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312730512516521984
+    m_Localized: Quoi de neuf
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783011751469056
+    m_Localized: 'Statut: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783116814589952
+    m_Localized: "Nom de la salle\_: "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783250461892608
+    m_Localized: "Surnom\_: "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312963339069759488
+    m_Localized: "Vous \xEAtes le propri\xE9taire de la salle"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312963447907753984
+    m_Localized: "Vous n'\xEAtes pas le propri\xE9taire de la salle"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312967307862810624
+    m_Localized: "Passez en mode d\xE9butant pour utiliser le multijoueur"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312967604588847104
+    m_Localized: "La salle existe d\xE9j\xE0. Vous allez rejoindre une session existante."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 156198200358006784
+    m_Localized: "D\xE9sactivez le mode environnement de transparence pour utiliser
+      le multijoueur."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 313111533204348928
+    m_Localized: Menu Multijoueur
     m_Metadata:
       m_Items: []
   references:
