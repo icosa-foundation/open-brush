@@ -13,33 +13,75 @@
 // limitations under the License.
 
 using System;
-using System.Numerics;
 using System.Threading.Tasks;
 using TiltBrush;
-using UnityEngine;
 
 namespace OpenBrush.Multiplayer
 {
     public interface IConnectionHandler
     {
         Task<bool> Connect();
+        Task<bool> JoinRoom(RoomCreateData data);
+        Task<bool> LeaveRoom(bool force = false);
+        Task<bool> Disconnect();
+        ConnectionState State { get; }
+        ConnectionUserInfo UserInfo { get; set; }
+        string LastError { get; }
+    }
 
-        bool IsConnected();
-        Task<bool> Disconnect(bool force = false);
+    public interface IDataConnectionHandler : IConnectionHandler
+    {
 
         void Update();
-
+        int GetPlayerCount();
+        int GetNetworkedTimestampMilliseconds();
+        bool GetPlayerRoomOwnershipStatus(int playerId);
+        void SendLargeDataToPlayer(int playerId, byte[] largeData);
         Task<bool> PerformCommand(BaseCommand command);
+        Task<bool> SendCommandToPlayer(BaseCommand command, int playerId);
+        Task<bool> CheckCommandReception(BaseCommand command, int playerId);
+        Task<bool> CheckStrokeReception(Stroke stroke, int playerId);
         Task<bool> UndoCommand(BaseCommand command);
         Task<bool> RedoCommand(BaseCommand command);
         Task<bool> RpcSyncToSharedAnchor(string uuid);
+        Task<bool> RpcStartSyncHistory(int id);
+        Task<bool> RpcSyncHistoryPercentage(int id, int exp, int snt);
+        Task<bool> RpcHistorySyncComplete(int id);
 
-        //ITransientData<PlayerRigData> SpawnPlayer();
+        event Action Disconnected;
+
+    }
+
+    public interface IVoiceConnectionHandler : IConnectionHandler
+    {
+        void Update();
+        bool StartSpeaking();
+        bool StopSpeaking();
+        public bool isTransmitting { get; }
+
+    }
+
+    public enum ConnectionState
+    {
+        INITIALIZING = 0,
+        INITIALIZED = 1,
+        DISCONNECTED = 2,
+        DISCONNECTING = 3,
+        CONNECTING = 4,
+        AUTHENTICATING = 5,
+        IN_LOBBY = 6,
+        JOINING_ROOM = 7,
+        IN_ROOM = 8,
+        RECONNECTING = 9,
+        ERROR = 10,
+        LEAVING_ROOM = 11
     }
 
     public interface ITransientData<T>
     {
+        int PlayerId { get; set; }
+        bool IsSpawned { get; }
         void TransmitData(T data);
-        T RecieveData();
+        T ReceiveData();
     }
 }
