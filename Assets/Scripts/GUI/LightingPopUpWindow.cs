@@ -30,7 +30,6 @@ namespace TiltBrush
 
     public class LightingPopUpWindow : PagingPopUpWindow
     {
-        private const string PASSTHROUGH_GUID = "e38af599-4575-46ff-a040-459703dbcd36";
 
         private string m_CurrentPresetGuid;
         [SerializeField] private Transform m_PassthroughControls;
@@ -105,8 +104,7 @@ namespace TiltBrush
         {
             foreach (var env in m_Environments)
             {
-                // Passthrough
-                if (env.m_Guid.ToString() == PASSTHROUGH_GUID)
+                if (env.isPassthrough)
                 {
                     m_Environments.Remove(env);
                     break;
@@ -127,8 +125,7 @@ namespace TiltBrush
         override protected void RefreshPage()
         {
             base.RefreshPage();
-            bool passthroughActive = m_CurrentPresetGuid == PASSTHROUGH_GUID;
-            if (passthroughActive)
+            if (isPassThroughActive())
             {
                 m_PassthroughControls.gameObject.SetActive(true);
             }
@@ -144,8 +141,7 @@ namespace TiltBrush
             if (rCurrentPreset != null)
             {
                 m_CurrentPresetGuid = rCurrentPreset.m_Guid.ToString();
-                bool passthroughActive = m_CurrentPresetGuid == PASSTHROUGH_GUID;
-                if (passthroughActive)
+                if (isPassThroughActive())
                 {
                     m_PassthroughControls.gameObject.SetActive(true);
                     m_WorldLockToggle.IsToggledOn = true;
@@ -159,6 +155,11 @@ namespace TiltBrush
                 }
             }
             RefreshPage();
+        }
+
+        private bool isPassThroughActive()
+        {
+            return m_Environments.Any(env => env.isPassthrough && env.m_Guid.ToString() == m_CurrentPresetGuid);
         }
 
         void OnDestroy()

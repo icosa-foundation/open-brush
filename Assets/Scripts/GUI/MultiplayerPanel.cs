@@ -298,15 +298,13 @@ namespace TiltBrush
 
         }
 
-        // hardoded copied from LightingPopUpWindow
-        private const string PASSTHROUGH_GUID = "e38af599-4575-46ff-a040-459703dbcd36";
         private Tuple<bool, string> CheckIfPassThroughEnvironment()
         {
 
             if (MultiplayerManager.m_Instance != null && MultiplayerManager.m_Instance.State == ConnectionState.IN_LOBBY)
             {
                 TiltBrush.Environment targetEnvironment = SceneSettings.m_Instance.GetDesiredPreset();
-                if (targetEnvironment.m_Guid.ToString() == PASSTHROUGH_GUID)
+                if (targetEnvironment.isPassthrough)
                     return Tuple.Create(true, m_AlertsPassThroughAcive.GetLocalizedString());
             }
 
