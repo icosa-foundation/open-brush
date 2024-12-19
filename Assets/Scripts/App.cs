@@ -23,6 +23,7 @@ using System.Runtime.CompilerServices;
 using UnityEngine;
 using Newtonsoft.Json;
 using TMPro;
+using UnityEngine.Serialization;
 #if USD_SUPPORTED
 using Unity.Formats.USD;
 #endif
@@ -191,11 +192,22 @@ namespace TiltBrush
 
         [SerializeField] GpuIntersector m_GpuIntersector;
 
-        public TiltBrushManifest m_Manifest;
-
-        // Previously Experimental-Mode only
+        [SerializeField] private TiltBrushManifest m_ManifestStandard;
         [SerializeField] private TiltBrushManifest m_ManifestExperimental;
         [SerializeField] private TiltBrushManifest m_ZapboxManifest;
+        private TiltBrushManifest m_ManifestFull;
+
+        public TiltBrushManifest ManifestFull
+        {
+            get
+            {
+                if (m_ManifestFull == null)
+                {
+                    m_ManifestFull = MergeManifests();
+                }
+                return m_ManifestFull;
+            }
+        }
 
         [SerializeField] private SelectionEffect m_SelectionEffect;
 
@@ -551,8 +563,6 @@ namespace TiltBrush
             {
                 gameObject.AddComponent<AutoProfiler>();
             }
-
-            m_Manifest = GetMergedManifest();
 
             m_HttpServer = GetComponentInChildren<HttpServer>();
             if (!Config.IsMobileHardware)
@@ -2205,19 +2215,16 @@ namespace TiltBrush
             }
         }
 
-        public TiltBrushManifest GetMergedManifest(bool forceExperimental = false)
+        private TiltBrushManifest MergeManifests()
         {
-            var manifest = m_Manifest;
-            if (Config.IsExperimental || forceExperimental)
-            {
-                if (m_ManifestExperimental != null)
-                {
-                    manifest = Instantiate(m_Manifest);
-                    manifest.AppendFrom(m_ManifestExperimental);
-                }
-            }
 #if ZAPBOX_SUPPORTED
-            manifest = m_ZapboxManifest;
+            var manifest = m_ZapboxManifest;
+#else
+            var manifest = Instantiate(m_ManifestStandard);
+            if (m_ManifestExperimental != null)
+            {
+                manifest.AppendFrom(m_ManifestExperimental);
+            }
 #endif
             return manifest;
         }

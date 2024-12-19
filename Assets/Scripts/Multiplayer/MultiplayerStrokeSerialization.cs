@@ -94,7 +94,7 @@ namespace OpenBrush.Multiplayer
             List<Guid> brushGuids = new List<Guid>();
 
             // Iterate through each unique brush in the manifest
-            foreach (BrushDescriptor brush in App.Instance.m_Manifest.UniqueBrushes())
+            foreach (BrushDescriptor brush in App.Instance.ManifestFull.UniqueBrushes())
             {
                 if (brush != null)
                 {
