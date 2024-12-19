@@ -23,6 +23,7 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using OpenBrush.Multiplayer;
 
 namespace TiltBrush
 {
@@ -74,6 +75,9 @@ namespace TiltBrush
                 }
             }
 #endif // PASSTHROUGH_SUPPORTED
+
+            // Disable passthrough button if in room 
+            if (MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM) DisablePassthroughButton();
 
             //find the active lighting preset
             TiltBrush.Environment rCurrentPreset = SceneSettings.m_Instance.GetDesiredPreset();
@@ -157,5 +161,19 @@ namespace TiltBrush
         {
             SceneSettings.m_Instance.FadingToDesiredEnvironment -= OnFadingToDesiredEnvironment;
         }
+
+        public void DisablePassthroughButton()
+        {
+            for (int i = 0; i < m_Environments.Count; i++)
+            {
+                if (m_Environments[i].m_Guid.ToString() == PASSTHROUGH_GUID)
+                {
+                    BaseButton button = m_Icons[i]?.m_IconScript as BaseButton;
+                    if (button != null) button.SetButtonAvailable(false);
+                    break;
+                }
+            }
+        }
+
     }
 } // namespace TiltBrush
