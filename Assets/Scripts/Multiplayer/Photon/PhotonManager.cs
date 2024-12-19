@@ -153,6 +153,19 @@ namespace OpenBrush.Multiplayer
 
             if (result.Ok)
             {
+                // Verify if the room is actually full
+                int currentPlayerCount = m_Runner.SessionInfo.PlayerCount;
+                int? maxPlayerCount = m_Runner.SessionInfo.MaxPlayers;
+                maxPlayerCount = maxPlayerCount == null ? int.MaxValue : maxPlayerCount;
+
+                if (currentPlayerCount >= maxPlayerCount)
+                {
+                    State = ConnectionState.ERROR;
+                    LastError = "[PhotonManager] Room is full.";
+                    ControllerConsoleScript.m_Instance.AddNewLine(LastError);
+                    return false;
+                }
+
                 State = ConnectionState.IN_ROOM;
                 ControllerConsoleScript.m_Instance.AddNewLine("[PhotonManager] Joined Room");
                 UserInfo = new ConnectionUserInfo { 
