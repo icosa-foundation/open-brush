@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -46,6 +47,11 @@ namespace OpenBrush.Multiplayer
         void Start()
         {
             onLargeDataReceived += OnLargeDataReceived;
+        }
+
+        private void Update()
+        {
+            ProcessQueue();
         }
 
         void OnDestroy()
@@ -206,23 +212,11 @@ namespace OpenBrush.Multiplayer
 
             foreach (var stroke in strokes)
             {
-                int retryCount = 0;
-                const int maxRetries = 3;
-                bool acknowledged = false;
 
-                while (retryCount < maxRetries)
+                while (await MultiplayerManager.m_Instance.CheckStrokeReception(stroke, TargetPlayerId))
                 {
-                    if (await MultiplayerManager.m_Instance.CheckStrokeReception(stroke, TargetPlayerId))
-                    {
-                        acknowledged = true;
-                        break;
-                    }
-                    retryCount++;
                     await Task.Delay(200);
                 }
-
-                if (!acknowledged)
-                    ControllerConsoleScript.m_Instance.AddNewLine($"Stroke {stroke.m_Guid} failed to synchronize after {maxRetries} retries.");
 
                 sentStrokes++;
                 SynchHistoryPercentage(TargetPlayerId, strokes.Count, sentStrokes);
@@ -269,27 +263,54 @@ namespace OpenBrush.Multiplayer
 
         #region Local infoCard commands
 
-        private InfoCardAnimation infoCard;
         private readonly object infoCardLock = new object();
+        private ConcurrentQueue<string> messageQueue = new ConcurrentQueue<string>();
+        private InfoCardAnimation infoCard;
 
-
-        public void DisplaySynchInfo(string text = "Sync Started!")
+        private void EnqueueMessage(string message)
         {
-            lock (infoCardLock)
+            messageQueue.Enqueue(message);
+        }
+
+        private void ProcessQueue() //once per frame
+        {
+            if (messageQueue.TryDequeue(out string message))
             {
                 if (infoCard == null)
                 {
-                    OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                        InputManager.ControllerName.Brush,
-                        text,
-                        fPopScalar: 1.0f
-                    );
-                    infoCard = RetrieveInfoCard();
+                    DisplaySynchInfo(message);
+                }
+                else
+                {
+                    UpdateInfoCard(message);
                 }
             }
         }
 
-        public InfoCardAnimation RetrieveInfoCard()
+        private void DisplaySynchInfo(string text)
+        {
+            if (infoCard == null)
+            {
+                OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                    InputManager.ControllerName.Brush,
+                    text,
+                    fPopScalar: 1.0f
+                );
+                infoCard = RetrieveInfoCard();
+            }
+            else
+            {
+                UpdateInfoCard(text);
+            }
+        }
+
+        private void UpdateInfoCard(string text)
+        {
+            infoCard.GetComponentInChildren<TextMeshPro>().text = text;
+            infoCard.UpdateHoldingDuration(5f);
+        }
+
+        private InfoCardAnimation RetrieveInfoCard()
         {
             InfoCardAnimation[] allInfoCards = FindObjectsOfType<InfoCardAnimation>();
             foreach (var card in allInfoCards)
@@ -303,40 +324,20 @@ namespace OpenBrush.Multiplayer
             return null;
         }
 
+        public void StartSynchInfo()
+        {
+            EnqueueMessage("Sync Started!");
+        }
         public void SynchInfoPercentageUpdate()
         {
-            lock (infoCardLock)
-            {
-                int percentage = (int)((float)SketchMemoryScript.AllStrokesCount() / numberOfCommandsExpected * 100);
-                string text = $"Sync {percentage}%";
-
-                if (infoCard == null)
-                {
-                    DisplaySynchInfo(text);
-                    return;
-                }
-
-                infoCard.GetComponentInChildren<TextMeshPro>().text = text;
-                infoCard.UpdateHoldingDuration(5f);
-            }
+            int percentage = (int)((float)SketchMemoryScript.AllStrokesCount() / numberOfCommandsExpected * 100);
+            EnqueueMessage($"Sync {percentage}%");
         }
 
         public void HideSynchInfo()
         {
-            lock (infoCardLock)
-            {
-                if (infoCard == null)
-                {
-                    DisplaySynchInfo("Sync Ended!");
-                    return;
-                }
-
-                infoCard.GetComponentInChildren<TextMeshPro>().text = "Sync Ended!";
-                infoCard.UpdateHoldingDuration(3.0f);
-                ControllerConsoleScript.m_Instance.AddNewLine("Sync Ended!");
-            }
+            EnqueueMessage("Sync Ended!");
         }
-
 
         #endregion
 

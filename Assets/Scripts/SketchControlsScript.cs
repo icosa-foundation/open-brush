@@ -4862,7 +4862,7 @@ namespace TiltBrush
                     SketchSurfacePanel.m_Instance.EatToolsInput();
                     break;
                 case GlobalCommands.DisplaySynchInfo:
-                    MultiplayerSceneSync.m_Instance.DisplaySynchInfo();
+                    MultiplayerSceneSync.m_Instance.StartSynchInfo();
                     break;
                 case GlobalCommands.SynchInfoPercentageUpdate:
                     MultiplayerSceneSync.m_Instance.SynchInfoPercentageUpdate();
