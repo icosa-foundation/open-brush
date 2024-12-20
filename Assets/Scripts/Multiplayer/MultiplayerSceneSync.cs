@@ -55,8 +55,6 @@ namespace OpenBrush.Multiplayer
 
         public void StartSyncronizationForUser(int id)
         {
-            StartSynchHistory(id);
-            SendCurrentTargetEnvironmentCommand(); // TODO  serialize the environmentand send it via large reliable data 
 
             switch (m_SyncType)
             {
@@ -74,6 +72,10 @@ namespace OpenBrush.Multiplayer
         async void SendStrokesToPlayer(int id)
         {
             LinkedList<Stroke> strokes = SketchMemoryScript.m_Instance.GetMemoryList;
+
+            if (strokes.Count == 0) return;
+
+            SendCurrentTargetEnvironmentCommand();
             StartSyncProgressDisplayForSrokes(id, strokes);
             const int chunkSize = 5;
             List<Stroke> strokeList = strokes.ToList();
@@ -152,6 +154,10 @@ namespace OpenBrush.Multiplayer
 
             CreateBrushStrokeCommands(strokesWithoutCommand, firstCommandTimestamp); // this add the strokes without commands to the IEnumerable<BaseCommand> commands
 
+            if (commands.Count() == 0) yield break;
+
+            SendCurrentTargetEnvironmentCommand();
+
             StartSyncProgressDisplayForCommands(id, commands.ToList());
 
             foreach (BaseCommand command in commands) MultiplayerManager.m_Instance.OnCommandPerformed(command);
@@ -197,12 +203,27 @@ namespace OpenBrush.Multiplayer
             StartSynchHistory(TargetPlayerId);
 
             int sentStrokes = 0;
+
             foreach (var stroke in strokes)
             {
-                while (await MultiplayerManager.m_Instance.CheckStrokeReception(stroke, TargetPlayerId))
+                int retryCount = 0;
+                const int maxRetries = 3;
+                bool acknowledged = false;
+
+                while (retryCount < maxRetries)
                 {
+                    if (await MultiplayerManager.m_Instance.CheckStrokeReception(stroke, TargetPlayerId))
+                    {
+                        acknowledged = true;
+                        break;
+                    }
+                    retryCount++;
                     await Task.Delay(200);
                 }
+
+                if (!acknowledged)
+                    ControllerConsoleScript.m_Instance.AddNewLine($"Stroke {stroke.m_Guid} failed to synchronize after {maxRetries} retries.");
+
                 sentStrokes++;
                 SynchHistoryPercentage(TargetPlayerId, strokes.Count, sentStrokes);
             }
