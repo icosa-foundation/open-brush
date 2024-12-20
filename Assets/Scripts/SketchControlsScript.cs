@@ -144,6 +144,7 @@ namespace TiltBrush
             SignOutConfirm,
             ReadOnlyNotice,
             ShowContribution,
+            WhatIsNew,
 
             // Open Brush Reserved Enums 1000-1999
             LanguagePopup = 1000,
@@ -4876,6 +4877,7 @@ namespace TiltBrush
                 case GlobalCommands.MultiplayerLeaveRoom: break; // Intentionally blank.
                 case GlobalCommands.MultiplayerConnect: break; // Intentionally blank.
                 case GlobalCommands.MultiplayerDisconnect: break; // Intentionally blank.
+                case GlobalCommands.WhatIsNew: break;// Intentionally blank.
                 default:
                     Debug.LogError($"Unrecognized command {rEnum}");
                     break;
@@ -5105,6 +5107,8 @@ namespace TiltBrush
                 case GlobalCommands.EditMultiplayerNickName:
                 case GlobalCommands.EditMultiplayerRoomName:
                     return !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
+                case GlobalCommands.WhatIsNew:
+                    return false;
             }
             return true;
         }
