@@ -533,7 +533,7 @@ jobs:
           du -mcsh Library/*
           find Library -size +50M -exec ls -altrh {} \;
           # chown all files, since some are owned by root after the docker run
-          docker run -v $(pwd)/Library:/mnt alpine chown $(id -u).$(id -g) -R /mnt/
+          docker run -v $(pwd)/Library:/mnt alpine chown $(id -u):$(id -g) -R /mnt/
           # Print the files to be deleted
           find Library/Bee/ -name 'symbols.zip' -or -name 'libil2cpp*.so' -or -name 'launcher-release.apk' | tee todelete.txt
           cat todelete.txt | xargs -r rm
