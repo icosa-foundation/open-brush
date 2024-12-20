@@ -114,7 +114,7 @@ namespace TiltBrush
         public async void RetrieveUsername()
         {
             var storedNickname = await m_multiplayer.GetAsync<string>("nickname");
-            NickName = storedNickname ?? "UnnamedUser";
+            NickName = storedNickname ?? "Unnamed";
         }
 
 
