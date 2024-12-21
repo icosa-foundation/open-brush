@@ -129,6 +129,7 @@ namespace TiltBrush
         public SecretsConfig.ServiceAuthData OculusMobileSecrets => Secrets[SecretsConfig.Service.OculusMobile];
         public SecretsConfig.ServiceAuthData PimaxSecrets => Secrets[SecretsConfig.Service.Pimax];
         public SecretsConfig.ServiceAuthData PhotonFusionSecrets => Secrets[SecretsConfig.Service.PhotonFusion];
+        public SecretsConfig.ServiceAuthData PhotonVoiceSecrets => Secrets[SecretsConfig.Service.PhotonVoice];
 
         public bool DisableAccountLogins;
 
