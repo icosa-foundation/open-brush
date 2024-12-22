@@ -106,6 +106,7 @@ namespace TiltBrush
             ReferenceMobile,
             CameraPath,
             BrushLab,
+            Multiplayer,
             WebcamPanel = 5200,
             Keyboard = 5400,
             Scripts = 6000,
