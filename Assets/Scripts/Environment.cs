@@ -175,6 +175,7 @@ namespace TiltBrush
 
         public Color m_SkyboxColorA;
         public Color m_SkyboxColorB;
+        public bool isPassthrough;
     }
 
 } // namespace TiltBrush
