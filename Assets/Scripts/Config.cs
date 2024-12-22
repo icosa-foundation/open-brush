@@ -66,8 +66,9 @@ namespace TiltBrush
     {
         None = -1,
         Button = 0,
-        Slider,
-        PreviewCube,
+        Slider = 1,
+        PreviewCube = 2,
+        VerticalSlider = 3,
     }
 
     /// Script Ordering:
@@ -112,9 +113,6 @@ namespace TiltBrush
         // The sdk mode indicates which SDK that we're using to drive the display.
         public SdkMode m_SdkMode;
 
-        // Stores the value of IsExperimental at startup time
-        [NonSerialized] public bool m_WasExperimentalAtStartup;
-
         // Whether or not to just do an automatic profile and then exit.
         public bool m_AutoProfile;
         // How long to wait before starting to profile.
@@ -125,12 +123,13 @@ namespace TiltBrush
         public string[] m_SketchFiles = new string[0];
         [NonSerialized] public bool m_QuickLoad = true;
 
-        public SecretsConfig.ServiceAuthData GoogleSecrets => Secrets[SecretsConfig.Service.Google];
+        public SecretsConfig.ServiceAuthData GoogleSecrets => Secrets?[SecretsConfig.Service.Google];
         public SecretsConfig.ServiceAuthData SketchfabSecrets => Secrets[SecretsConfig.Service.Sketchfab];
         public SecretsConfig.ServiceAuthData OculusSecrets => Secrets[SecretsConfig.Service.Oculus];
         public SecretsConfig.ServiceAuthData OculusMobileSecrets => Secrets[SecretsConfig.Service.OculusMobile];
         public SecretsConfig.ServiceAuthData PimaxSecrets => Secrets[SecretsConfig.Service.Pimax];
         public SecretsConfig.ServiceAuthData PhotonFusionSecrets => Secrets[SecretsConfig.Service.PhotonFusion];
+        public SecretsConfig.ServiceAuthData PhotonVoiceSecrets => Secrets[SecretsConfig.Service.PhotonVoice];
 
         public bool DisableAccountLogins;
 
@@ -223,6 +222,8 @@ namespace TiltBrush
         [SerializeField] GameObject m_ButtonDescriptionThreeLinesPrefab;
         [SerializeField] GameObject m_SliderDescriptionOneLinePrefab;
         [SerializeField] GameObject m_SliderDescriptionTwoLinesPrefab;
+        [SerializeField] GameObject m_VerticalSliderDescriptionOneLinePrefab;
+        [SerializeField] GameObject m_VerticalSliderDescriptionTwoLinesPrefab;
         [SerializeField] GameObject m_PreviewCubeDescriptionOneLinePrefab;
         [SerializeField] GameObject m_PreviewCubeDescriptionTwoLinesPrefab;
 
@@ -251,6 +252,16 @@ namespace TiltBrush
                             return Instantiate(m_SliderDescriptionOneLinePrefab);
                         case 2:
                             return Instantiate(m_SliderDescriptionTwoLinesPrefab);
+                        default:
+                            throw new Exception($"{type} description does not have a ${numberOfLines} line variant");
+                    }
+                case DescriptionType.VerticalSlider:
+                    switch (numberOfLines)
+                    {
+                        case 1:
+                            return Instantiate(m_VerticalSliderDescriptionOneLinePrefab);
+                        case 2:
+                            return Instantiate(m_VerticalSliderDescriptionTwoLinesPrefab);
                         default:
                             throw new Exception($"{type} description does not have a ${numberOfLines} line variant");
                     }
@@ -517,12 +528,6 @@ namespace TiltBrush
             }
         }
 
-        // Non-Static version of above
-        public bool GetIsExperimental()
-        {
-            return PlayerPrefs.HasKey("ExperimentalMode") && PlayerPrefs.GetInt("ExperimentalMode") == 1;
-        }
-
         public void SetIsExperimental(bool active)
         {
             PlayerPrefs.SetInt("ExperimentalMode", active ? 1 : 0);
@@ -533,7 +538,6 @@ namespace TiltBrush
         void Awake()
         {
             m_SingletonState = this;
-            m_WasExperimentalAtStartup = GetIsExperimental();
 
 #if UNITY_EDITOR
             if (!string.IsNullOrEmpty(m_FakeCommandLineArgsInEditor))
@@ -567,12 +571,9 @@ namespace TiltBrush
 #endif
 
             m_BrushReplacement = new Dictionary<Guid, Guid>();
-            if (IsExperimental)
+            foreach (var brush in m_BrushReplacementMap)
             {
-                foreach (var brush in m_BrushReplacementMap)
-                {
-                    m_BrushReplacement.Add(new Guid(brush.FromGuid), new Guid(brush.ToGuid));
-                }
+                m_BrushReplacement.Add(new Guid(brush.FromGuid), new Guid(brush.ToGuid));
             }
         }
 

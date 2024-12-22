@@ -16,6 +16,9 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TiltBrush;
+using System.Collections;
+using System.Threading.Tasks;
 
 namespace TiltBrush
 {
@@ -36,6 +39,7 @@ namespace TiltBrush
         public static SketchMemoryScript m_Instance;
 
         public event Action OperationStackChanged;
+        public event Action NetworkOperationStackChanged;
         public Action<BaseCommand> CommandPerformed;
         public Action<BaseCommand> CommandUndo;
         public Action<BaseCommand> CommandRedo;
@@ -80,6 +84,8 @@ namespace TiltBrush
         private Stack<BaseCommand> m_OperationStack;
         // stack of undone operations available for redo
         private Stack<BaseCommand> m_RedoStack;
+        // stack of network sketch operations
+        private Stack<BaseCommand> m_NetworkStack = new Stack<BaseCommand>();
 
         // Memory list by timestamp of initial control point.  The nodes of this list are
         // embedded in MemoryObject.  Notable properties:
@@ -191,6 +197,18 @@ namespace TiltBrush
             get { return m_MemoryList; }
         }
 
+        public IEnumerable<BaseCommand> GetAllOperations()
+        {
+            var allCommands = m_OperationStack.Concat(m_NetworkStack);
+
+            return allCommands.OrderBy(command => command.NetworkTimestamp);
+        }
+
+        public void AddCommandToNetworkStack(BaseCommand command)
+        {
+            m_NetworkStack.Push(command);
+        }
+
         public Stroke GetStrokeAtIndex(int index)
         {
             return m_Instance.m_MemoryList.ElementAt(index);
@@ -281,6 +299,7 @@ namespace TiltBrush
             }
             return false;
         }
+
 
         public bool CanUndo() { return m_OperationStack.Count > 0; }
         public bool CanRedo() { return m_RedoStack.Count > 0; }
@@ -406,6 +425,17 @@ namespace TiltBrush
             }
         }
 
+        /// Executes and records a network-synchronized command.
+        /// Note: This method does not include merge logic or parent-child relationship checks,
+        /// as these are already handled by the PhotonRPC system.
+        public void PerformAndRecordNetworkCommand(BaseCommand command, bool discard = false)
+        {
+            BaseCommand delta = command;
+            delta.Redo();
+            if (!discard) m_NetworkStack.Push(command);
+            NetworkOperationStackChanged?.Invoke();
+        }
+
         // TODO: deprecate in favor of PerformAndRecordCommand
         // Used by BrushStrokeCommand and ModifyLightCommmand while in Disco mode
         public void RecordCommand(BaseCommand command)
@@ -510,7 +540,8 @@ namespace TiltBrush
             BatchSubset subset, Color rColor, Guid brushGuid,
             float fBrushSize, float brushScale,
             List<PointerManager.ControlPoint> rControlPoints, StrokeFlags strokeFlags,
-            StencilWidget stencil, float lineLength, int seed)
+            StencilWidget stencil, float lineLength, int seed,
+            bool isFinalStroke)
         {
             // NOTE: PointerScript calls ClearRedo() in batch case
 
@@ -527,8 +558,10 @@ namespace TiltBrush
             rNewStroke.m_Seed = seed;
             subset.m_Stroke = rNewStroke;
 
-            SketchMemoryScript.m_Instance.RecordCommand(
-                new BrushStrokeCommand(rNewStroke, stencil, lineLength));
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new BrushStrokeCommand(rNewStroke, stencil, lineLength),
+                invoke: isFinalStroke
+            );
 
             if (m_SanityCheckStrokes)
             {
@@ -775,6 +808,16 @@ namespace TiltBrush
             m_RedoStack.Clear();
         }
 
+        public void ClearNetworkStack()
+        {
+            foreach (var command in m_NetworkStack)
+            {
+                command.Dispose();
+            }
+            m_NetworkStack.Clear();
+            NetworkOperationStackChanged?.Invoke();
+        }
+
         public void ClearMemory()
         {
             if (m_ScenePlayback != null)
@@ -798,6 +841,8 @@ namespace TiltBrush
             }
             m_OperationStack.Clear();
             OperationStackChanged?.Invoke();
+            m_NetworkStack.Clear();
+            NetworkOperationStackChanged?.Invoke();
             m_LastOperationStackCount = 0;
             m_MemoryList.Clear();
             App.GroupManager.ResetGroups();
@@ -947,6 +992,14 @@ namespace TiltBrush
         public static int AllStrokesCount()
         {
             return m_Instance.m_MemoryList.Count();
+        }
+
+        public List<Stroke> GetStrokesWithoutCommand()
+        {
+            return m_MemoryList
+                .Where(stroke => stroke.Command == null)
+                .OrderBy(s => s.HeadTimestampMs)
+                .ToList();
         }
 
         public static void InitUndoObject(BaseBrushScript rBrushScript)
@@ -1370,6 +1423,49 @@ namespace TiltBrush
             }
 
             return result;
+        }
+
+        public bool IsStrokeInMemory(Guid strokeGuid)
+        {
+            return m_MemoryList.Any(stroke => stroke.m_Guid == strokeGuid);
+        }
+
+        public bool IsCommandInStack(Guid commandGuid)
+        {
+            return IsCommandInOperationStack(commandGuid) ||
+                   IsCommandInRedoStack(commandGuid) ||
+                   IsCommandInNetworkStack(commandGuid);
+        }
+
+        public bool IsCommandInOperationStack(Guid commandGuid)
+        {
+            return m_OperationStack.Any(command => command.Guid == commandGuid);
+        }
+
+        public bool IsCommandInRedoStack(Guid commandGuid)
+        {
+            return m_RedoStack.Any(command => command.Guid == commandGuid);
+        }
+
+        public bool IsCommandInNetworkStack(Guid commandGuid)
+        {
+            return m_NetworkStack.Any(command => command.Guid == commandGuid);
+        }
+
+        public void SetTimeOffsetToAllStacks(int m_NetworkOffsetTimestamp)
+        {
+            SetTimeOffset(m_RedoStack, m_NetworkOffsetTimestamp);
+            SetTimeOffset(m_OperationStack, m_NetworkOffsetTimestamp);
+            SetTimeOffset(m_NetworkStack, m_NetworkOffsetTimestamp);
+        }
+
+        public void SetTimeOffset(Stack<BaseCommand> stack, int m_NetworkOffsetTimestamp)
+        {
+            foreach (BaseCommand c in stack)
+            {
+                if (c.NetworkTimestamp == null)
+                    c.NetworkTimestamp = c.Timestamp - m_NetworkOffsetTimestamp;
+            }
         }
     }
 } // namespace TiltBrush
