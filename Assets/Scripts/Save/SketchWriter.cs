@@ -278,6 +278,91 @@ namespace TiltBrush
             }
         }
 
+
+        /// Serializes brush GUIDs directly instead of maintaining an internal mapping or list.
+        public static void WriteMemory(Stream stream, IList<AdjustedMemoryBrushStroke> strokeCopies,
+                                       GroupIdMapping groupIdMapping)
+        {
+            bool allowFastPath = BitConverter.IsLittleEndian;
+            var writer = new TiltBrush.SketchBinaryWriter(stream);
+
+            writer.UInt32(SKETCH_SENTINEL);
+            writer.Int32(SKETCH_VERSION);
+            writer.Int32(0); // reserved for header: must be 0
+                             // Bump SKETCH_VERSION to >= 6 and remove this comment if non-zero data is written here
+            writer.UInt32(0); // additional data size
+
+            // strokes
+            writer.Int32(strokeCopies.Count);
+            foreach (AdjustedMemoryBrushStroke copy in strokeCopies)
+            {
+                var stroke = copy.strokeData;
+                Guid brushGuid = stroke.m_BrushGuid;
+
+                writer.Guid(brushGuid);
+                writer.Color(stroke.m_Color);
+                writer.Float(stroke.m_BrushSize);
+
+                // Determine the stroke extension mask
+                StrokeExtension strokeExtensionMask = StrokeExtension.Flags | StrokeExtension.Seed;
+                if (stroke.m_BrushScale != 1) { strokeExtensionMask |= StrokeExtension.Scale; }
+                if (stroke.m_Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
+                strokeExtensionMask |= StrokeExtension.Layer;
+
+                writer.UInt32((uint)strokeExtensionMask);
+                uint controlPointExtensionMask =
+                    (uint)(ControlPointExtension.Pressure | ControlPointExtension.Timestamp);
+                writer.UInt32(controlPointExtensionMask);
+
+                // Stroke extension fields, in order of appearance in the mask
+                writer.UInt32((uint)copy.adjustedStrokeFlags);
+                if ((uint)(strokeExtensionMask & StrokeExtension.Scale) != 0)
+                {
+                    writer.Float(stroke.m_BrushScale);
+                }
+                if ((uint)(strokeExtensionMask & StrokeExtension.Group) != 0)
+                {
+                    writer.UInt32(groupIdMapping.GetId(stroke.m_Group));
+                }
+                if ((uint)(strokeExtensionMask & StrokeExtension.Seed) != 0)
+                {
+                    writer.Int32(stroke.m_Seed);
+                }
+                if ((uint)(strokeExtensionMask & StrokeExtension.Layer) != 0)
+                {
+                    writer.UInt32(copy.layerIndex);
+                }
+
+                // Control points
+                writer.Int32(stroke.m_ControlPoints.Length);
+                if (allowFastPath && controlPointExtensionMask == ControlPoint.EXTENSIONS)
+                {
+                    // Fast path: write ControlPoint[] (semi-)directly into the file
+                    unsafe
+                    {
+                        int size = sizeof(ControlPoint) * stroke.m_ControlPoints.Length;
+                        fixed (ControlPoint* aPoints = stroke.m_ControlPoints)
+                        {
+                            writer.Write((IntPtr)aPoints, size);
+                        }
+                    }
+                }
+                else
+                {
+                    for (int j = 0; j < stroke.m_ControlPoints.Length; ++j)
+                    {
+                        var rControlPoint = stroke.m_ControlPoints[j];
+                        writer.Vec3(rControlPoint.m_Pos);
+                        writer.Quaternion(rControlPoint.m_Orient);
+                        // Control point extension fields, in order of appearance in the mask
+                        writer.Float(rControlPoint.m_Pressure);
+                        writer.UInt32(rControlPoint.m_TimestampMs);
+                    }
+                }
+            }
+        }
+
+
         /// Leaves stream in indeterminate state; caller should Close() upon return.
         public static bool ReadMemory(Stream stream, Guid[] brushList, bool bAdditive, out bool isLegacy, out Dictionary<int, int> oldGroupToNewGroup)
         {
@@ -522,5 +607,170 @@ namespace TiltBrush
 
             return result;
         }
+
+        // Parses a binary stream into List of MemoryBrushStroke the binary need strokes with encoded guids
+        public static List<Stroke> GetStrokes(
+            Stream stream, bool allowFastPath, bool squashLayers = false)
+        {
+            var reader = new SketchBinaryReader(stream);
+
+            uint sentinel = reader.UInt32();
+            if (sentinel != SKETCH_SENTINEL)
+            {
+                Debug.LogFormat("Invalid .tilt: bad sentinel");
+                return null;
+            }
+
+            int version = reader.Int32();
+            if (version < REQUIRED_SKETCH_VERSION_MIN ||
+                version > REQUIRED_SKETCH_VERSION_MAX)
+            {
+                Debug.LogFormat("Invalid .tilt: unsupported version {0}", version);
+                return null;
+            }
+
+            reader.Int32();                    // reserved for header: must be 0
+            uint moreHeader = reader.UInt32(); // additional data size
+            if (!reader.Skip(moreHeader)) { return null; }
+
+            // strokes
+            int iNumMemories = reader.Int32();
+            var result = new List<Stroke>();
+            for (int i = 0; i < iNumMemories; ++i)
+            {
+                var stroke = new Stroke();
+
+                // Read the brush GUID directly from the stream
+                stroke.m_BrushGuid = reader.ReadGuid();
+                stroke.m_Color = reader.Color();
+                stroke.m_BrushSize = reader.Float();
+                stroke.m_BrushScale = 1f;
+                stroke.m_Seed = 0;
+
+                uint strokeExtensionMask = reader.UInt32();
+                uint controlPointExtensionMask = reader.UInt32();
+
+                if ((strokeExtensionMask & (int)StrokeExtension.Seed) == 0)
+                {
+                    // Backfill for old files saved without seeds.
+                    // This is arbitrary but should be determinstic.
+                    unchecked
+                    {
+                        int seed = i;
+                        seed = (seed * 397) ^ stroke.m_BrushGuid.GetHashCode();
+                        seed = (seed * 397) ^ stroke.m_Color.GetHashCode();
+                        seed = (seed * 397) ^ stroke.m_BrushSize.GetHashCode();
+                        stroke.m_Seed = seed;
+                    }
+                }
+
+                // Process stroke extension fields...
+                for (var fields = strokeExtensionMask; fields != 0; fields &= (fields - 1))
+                {
+                    uint bit = (fields & ~(fields - 1));
+                    switch ((StrokeExtension)bit)
+                    {
+                        case StrokeExtension.None:
+                            Debug.Assert(false);
+                            break;
+                        case StrokeExtension.Flags:
+                            stroke.m_Flags = (StrokeFlags)reader.UInt32();
+                            break;
+                        case StrokeExtension.Scale:
+                            stroke.m_BrushScale = reader.Float();
+                            break;
+                        case StrokeExtension.Group:
+                            {
+                                UInt32 groupId = reader.UInt32();
+                                stroke.Group = App.GroupManager.GetGroupFromId(groupId);
+                                break;
+                            }
+                        case StrokeExtension.Layer:
+                            UInt32 layerIndex = reader.UInt32();
+                            if (squashLayers)
+                            {
+                                layerIndex = 0;
+                            }
+                            var canvas = App.Scene.GetOrCreateLayer((int)layerIndex);
+                            stroke.m_IntendedCanvas = canvas;
+                            break;
+                        case StrokeExtension.Seed:
+                            stroke.m_Seed = reader.Int32();
+                            break;
+                        default:
+                            {
+                                // Skip unknown extension.
+                                if ((bit & (uint)StrokeExtension.MaskSingleWord) != 0)
+                                {
+                                    reader.UInt32();
+                                }
+                                else
+                                {
+                                    uint size = reader.UInt32();
+                                    if (!reader.Skip(size)) { return null; }
+                                }
+                                break;
+                            }
+                    }
+                }
+
+                // Process control points...
+                int nControlPoints = reader.Int32();
+                stroke.m_ControlPoints = new PointerManager.ControlPoint[nControlPoints];
+                stroke.m_ControlPointsToDrop = new bool[nControlPoints];
+
+                if (allowFastPath && controlPointExtensionMask == PointerManager.ControlPoint.EXTENSIONS)
+                {
+                    unsafe
+                    {
+                        int size = sizeof(PointerManager.ControlPoint) * stroke.m_ControlPoints.Length;
+                        fixed (PointerManager.ControlPoint* aPoints = stroke.m_ControlPoints)
+                        {
+                            if (!reader.ReadInto((IntPtr)aPoints, size))
+                            {
+                                return null;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    for (int j = 0; j < nControlPoints; ++j)
+                    {
+                        PointerManager.ControlPoint rControlPoint;
+
+                        rControlPoint.m_Pos = reader.Vec3();
+                        rControlPoint.m_Orient = reader.Quaternion();
+
+                        rControlPoint.m_Pressure = 1.0f;
+                        rControlPoint.m_TimestampMs = 0;
+
+                        for (var fields = controlPointExtensionMask; fields != 0; fields &= (fields - 1))
+                        {
+                            switch ((ControlPointExtension)(fields & ~(fields - 1)))
+                            {
+                                case ControlPointExtension.None:
+                                    Debug.Assert(false);
+                                    break;
+                                case ControlPointExtension.Pressure:
+                                    rControlPoint.m_Pressure = reader.Float();
+                                    break;
+                                case ControlPointExtension.Timestamp:
+                                    rControlPoint.m_TimestampMs = reader.UInt32();
+                                    break;
+                                default:
+                                    reader.Int32();
+                                    break;
+                            }
+                        }
+                        stroke.m_ControlPoints[j] = rControlPoint;
+                    }
+                }
+
+                result.Add(stroke);
+            }
+            return result;
+        }
+
     }
-} // namespace TiltBrush
+}// namespace TiltBrush
