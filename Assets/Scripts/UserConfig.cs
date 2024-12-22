@@ -187,19 +187,38 @@ namespace TiltBrush
         public struct PerformanceConfig
         {
             // Comments show defaults for Mobile / PC
-            public int? HullBrushMaxVertInputs; // 2500 / 400
-            public int? HullBrushMaxKnots; // 6000 / 900
-            public int? ReferenceImagesMaxFileSize; // 2147483647 / 10485760
-            public int? ReferenceImagesMaxDimension; // 2147483647 / 4352
-            public int? ReferenceImagesResizeDimension; // 2147483647 / 1024
-            public int? MemoryWarningVertCount; // 2147483647 / 1000000
-            public bool? UseFileSystemWatcher; // true / false
-            public bool? EnableAutosave; // true / false
-            public float? QuickLoadMaxDistancePerFrame; // 40 / 4
-            public bool? AvoidUploadHandlerFile; // true / false
+            public int? HullBrushMaxVertInputs;          // 2500 / 400
+            public int? HullBrushMaxKnots;               // 6000 / 900
+            public int? ReferenceImagesMaxFileSize;      // 2147483647 / 10485760
+            public int? ReferenceImagesMaxDimension;     // 2147483647 / 4352
+            public int? ReferenceImagesResizeDimension;  // 2147483647 / 1024
+            public int? MemoryWarningVertCount;          // 2147483647 / 1000000
+            public bool? UseFileSystemWatcher;           // true / false
+            public bool? EnableAutosave;                 // true / false
+            public float? QuickLoadMaxDistancePerFrame;  // 40 / 4
+            public bool? AvoidUploadHandlerFile;         // true / false
             public bool? EnableExportMemoryOptimization; // true / true
-            public bool? EnableMulticamPreview; // true / true
-            public int? MaxSnapshotDimension; // 16000 / 4096
+            public bool? EnableMulticamPreview;          // true / true
+            public int? MaxSnapshotDimension;            // 16000 / 4096
+
+
+            public bool? QuestDynamicFoveation;
+            public bool? QuestDynamicResolution;
+            public int? OverrideQuestGPULevel;
+            public int? OverrideQuestFoveationLevel;
+
+            public int? OverrideQualityLevel;
+
+            public bool? AnisotropicFiltering;         // true / false
+            public bool? BillboardsFaceCameraPosition; // true / false
+            public int? ShadowMode;                    // HardOnly / Disable
+            public int? ShadowResolution;              // High / Low
+            public int? ShadowDistance;                // 30 / 15
+            public int? LodBias;                       // 1 / 0.3
+            public int? SkinWeights;                   // 2 / 1
+
+
+            public int? OverrideBloomMode;
         }
 
         public PerformanceConfig Performance;
