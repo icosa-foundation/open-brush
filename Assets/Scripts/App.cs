@@ -23,6 +23,7 @@ using System.Runtime.CompilerServices;
 using UnityEngine;
 using Newtonsoft.Json;
 using TMPro;
+using UnityEngine.Serialization;
 #if USD_SUPPORTED
 using Unity.Formats.USD;
 #endif
@@ -72,6 +73,7 @@ namespace TiltBrush
 
         private const int kHttpListenerPort = 40074;
         private const string kProtocolHandlerPrefix = "tiltbrush://remix/";
+        private const string kBuiltInSketchPrefix = "tiltbrush://builtin/";
         private const string kFileMoveFilename = "WhereHaveMyFilesGone.txt";
 
         private const string kFileMoveContents =
@@ -190,11 +192,22 @@ namespace TiltBrush
 
         [SerializeField] GpuIntersector m_GpuIntersector;
 
-        public TiltBrushManifest m_Manifest;
-
-        // Previously Experimental-Mode only
+        [SerializeField] private TiltBrushManifest m_ManifestStandard;
         [SerializeField] private TiltBrushManifest m_ManifestExperimental;
         [SerializeField] private TiltBrushManifest m_ZapboxManifest;
+        private TiltBrushManifest m_ManifestFull;
+
+        public TiltBrushManifest ManifestFull
+        {
+            get
+            {
+                if (m_ManifestFull == null)
+                {
+                    m_ManifestFull = MergeManifests();
+                }
+                return m_ManifestFull;
+            }
+        }
 
         [SerializeField] private SelectionEffect m_SelectionEffect;
 
@@ -472,7 +485,7 @@ namespace TiltBrush
             Resources.UnloadUnusedAssets();
         }
 
-        static string GetStartupString()
+        public static string GetStartupString()
         {
             string str = $"{App.kAppDisplayName} {Config.m_VersionNumber}";
 
@@ -550,8 +563,6 @@ namespace TiltBrush
             {
                 gameObject.AddComponent<AutoProfiler>();
             }
-
-            m_Manifest = GetMergedManifest();
 
             m_HttpServer = GetComponentInChildren<HttpServer>();
             if (!Config.IsMobileHardware)
@@ -638,11 +649,18 @@ namespace TiltBrush
 
             foreach (string s in Config.m_SketchFiles)
             {
-                // Assume all relative paths are relative to the Sketches directory.
                 string sketch = s;
-                if (!System.IO.Path.IsPathRooted(sketch))
+                if (s.StartsWith(kBuiltInSketchPrefix))
                 {
-                    sketch = System.IO.Path.Combine(App.UserSketchPath(), sketch);
+                    sketch = s;
+                }
+                else
+                {
+                    // Assume all relative paths are relative to the Sketches directory.
+                    if (!System.IO.Path.IsPathRooted(sketch))
+                    {
+                        sketch = System.IO.Path.Combine(App.UserSketchPath(), sketch);
+                    }
                 }
                 m_RequestedTiltFileQueue.Enqueue(sketch);
                 if (Config.m_SdkMode == SdkMode.Ods || Config.OfflineRender)
@@ -1187,6 +1205,10 @@ namespace TiltBrush
             {
                 PanelManager.m_Instance.ToggleBrushLabPanels();
             }
+            else if (PanelManager.m_Instance.MultiplayerActive())
+            {
+                PanelManager.m_Instance.ToggleMultiplayerPanels();
+            }
 
             // Hide all panels.
             SketchControlsScript.m_Instance.RequestPanelsVisibility(false);
@@ -1473,6 +1495,15 @@ namespace TiltBrush
             if (path.StartsWith(kProtocolHandlerPrefix))
             {
                 return HandlePolyRequest(path);
+            }
+
+            if (path.StartsWith(kBuiltInSketchPrefix))
+            {
+                path = path.Substring(kBuiltInSketchPrefix.Length);
+                path = Path.Join(FeaturedSketchesPath(), path);
+                SketchControlsScript.m_Instance.IssueGlobalCommand(
+                    SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: path);
+                return true;
             }
 
             // Copy to sketch folder in order to discourage the user from explicitly saving
@@ -2184,19 +2215,16 @@ namespace TiltBrush
             }
         }
 
-        public TiltBrushManifest GetMergedManifest(bool forceExperimental = false)
+        private TiltBrushManifest MergeManifests()
         {
-            var manifest = m_Manifest;
-            if (Config.IsExperimental || forceExperimental)
-            {
-                if (m_ManifestExperimental != null)
-                {
-                    manifest = Instantiate(m_Manifest);
-                    manifest.AppendFrom(m_ManifestExperimental);
-                }
-            }
 #if ZAPBOX_SUPPORTED
-            manifest = m_ZapboxManifest;
+            var manifest = m_ZapboxManifest;
+#else
+            var manifest = Instantiate(m_ManifestStandard);
+            if (m_ManifestExperimental != null)
+            {
+                manifest.AppendFrom(m_ManifestExperimental);
+            }
 #endif
             return manifest;
         }

@@ -9,3 +9,7 @@ updates:
       - "mikeage"
     assignees:
       - "mikeage"
+    groups:
+      all-actions-updates:
+        patterns:
+          - "**"
