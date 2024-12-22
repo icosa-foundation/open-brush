@@ -103,7 +103,7 @@ namespace TiltBrush
 
         public bool IsGoogle => m_Service == SecretsConfig.Service.Google;
         public UserCredential UserCredential => m_CredentialRequest?.UserCredential;
-        private SecretsConfig.ServiceAuthData ServiceAuthData => App.Config.Secrets[m_Service];
+        private SecretsConfig.ServiceAuthData ServiceAuthData => App.Config.Secrets?[m_Service];
         public string ClientId => ServiceAuthData?.ClientId;
         private string ClientSecret => ServiceAuthData?.ClientSecret;
 
