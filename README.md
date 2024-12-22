@@ -230,6 +230,18 @@ Follow these steps to build your app for Oculus Quest:
     `../Builds/OculusMobile_Release_OpenBrush/`.
 1.  Run `adb install com.Icosa.OpenBrush.apk`.
 
+### Enabling Multiplayer Photon Fusion and Photon Voice
+
+1.  Download and install both [Photon Fusion 2.0.3 SDK](https://doc.photonengine.com/fusion/current/getting-started/sdk-download) and [Photon Voice 2](https://assetstore.unity.com/packages/tools/audio/photon-voice-2-130518?srsltid=AfmBOoqJifR_h-nIp73IL5F83GSvOmk3WqKytS1YsxrEUuZqVfAv5kQ9) 
+1.  Alternatively Download [Photon Fusion 2.0.3 SDK + Photon Voice 2] (https://github.com/icosa-mirror/photon-fusion/releases/tag/Fusion_v2_Voice_2) copy it's content to the Assets Folder.
+1.  Restart Unity to trigger the creation of the Photon Fusion and Photon Voice specific defines.
+1.  In the **Standalone** and **Android** tabs of the Player settings, go to **Other Settings** > **Scripting Define Symbols**.
+1.  Click the + button to create a new entry.
+1.  Add `MP_PHOTON` and press **Apply**.
+1.  Follow the steps to [create your secrets file](#-Generating-Secrets-file).
+    Add 2 new items to the **Secrets** field. Both `Photon Fusion` and `Photon Voice` should have their own entries.
+1.  Put the app IDs in the `Client ID` field for each.
+
 ### Publishing to Oculus stores
 
 Note: _Tilt Brush_ is a Google trademark. If you intend to publish a cloned
