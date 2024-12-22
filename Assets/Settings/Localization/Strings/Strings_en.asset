@@ -201,7 +201,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5064506084139008
-    m_Localized: Save Sketch
+    m_Localized: What's New
     m_Metadata:
       m_Items: []
   - m_Id: 5065040224559104
@@ -3081,7 +3081,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 89093153698373632
-    m_Localized: (Restart required)
+    m_Localized: Less compatibility when exported. See our docs.
     m_Metadata:
       m_Items: []
   - m_Id: 89093320602312704
@@ -3516,6 +3516,18 @@ MonoBehaviour:
     m_Localized: Pick a Subfolder
     m_Metadata:
       m_Items: []
+  - m_Id: 157582826200739840
+    m_Localized: Close
+    m_Metadata:
+      m_Items: []
+  - m_Id: 176097607781543936
+    m_Localized: ALPHA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 156198200358006784
+    m_Localized: Switch off passthrough environment mode to use Multiplayer
+    m_Metadata:
+      m_Items: []
   - m_Id: 238556149774557184
     m_Localized: Image too large to load
     m_Metadata:
@@ -3526,6 +3538,78 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 242372529028341760
     m_Localized: Image failed to load
+    m_Metadata:
+      m_Items: []
+  - m_Id: 276171365497266176
+    m_Localized: Brush Size
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636550056648704
+    m_Localized: Connect
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636769901092864
+    m_Localized: Join Room
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636908816441344
+    m_Localized: Leave Room
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637000357126144
+    m_Localized: Disconnect
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637073212186624
+    m_Localized: Edit Room Name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637384320491520
+    m_Localized: Edit Nickname
+    m_Metadata:
+      m_Items: []
+  - m_Id: 307216698459103232
+    m_Localized: Erase text
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312730512516521984
+    m_Localized: Save Sketch
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312781662766833664
+    m_Localized: 'Status:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783011751469056
+    m_Localized: 'Status: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312963339069759488
+    m_Localized: You are the Room Owner
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312963447907753984
+    m_Localized: You are not the Room Owner
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783116814589952
+    m_Localized: 'RoomName: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783250461892608
+    m_Localized: 'Nickname:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312967307862810624
+    m_Localized: Switch to beginner mode use Multiplayer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312967604588847104
+    m_Localized: Room already exists. You will be joining an existing session.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 313111533204348928
+    m_Localized: 'Multiplayer Menu '
     m_Metadata:
       m_Items: []
   references:
