@@ -4967,18 +4967,15 @@ namespace TiltBrush
                 case GlobalCommands.HideSynchInfo:
                     MultiplayerSceneSync.m_Instance.HideSynchInfo();
                     break;
-                case GlobalCommands.RepaintOptions: break; // Intentionally blank.
-                case GlobalCommands.Null: break; // Intentionally blank.
-                case GlobalCommands.MultiplayerPanelOptions: break; // Intentionally blank.
-                case GlobalCommands.MultiplayerJoinRoom: break; // Intentionally blank.
-                case GlobalCommands.MultiplayerLeaveRoom: break; // Intentionally blank.
-                case GlobalCommands.MultiplayerConnect: break; // Intentionally blank.
-                case GlobalCommands.MultiplayerDisconnect: break; // Intentionally blank.
-                case GlobalCommands.WhatIsNew: break;// Intentionally blank.
-                case GlobalCommands.OpenScriptParametersPopup:
-                case GlobalCommands.RepaintOptions:
-                case GlobalCommands.Null:
-                    break; // Intentionally blank.
+                case GlobalCommands.MultiplayerPanelOptions: break;
+                case GlobalCommands.MultiplayerJoinRoom: break;
+                case GlobalCommands.MultiplayerLeaveRoom: break;
+                case GlobalCommands.MultiplayerConnect: break;
+                case GlobalCommands.MultiplayerDisconnect: break;
+                case GlobalCommands.WhatIsNew: break;
+                case GlobalCommands.OpenScriptParametersPopup: break;
+                case GlobalCommands.RepaintOptions: break;
+                case GlobalCommands.Null: break;
                 default:
                     Debug.LogError($"Unrecognized command {rEnum}");
                     break;
