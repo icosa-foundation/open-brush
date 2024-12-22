@@ -114,10 +114,7 @@ namespace TiltBrush
                 VisualizerManager.m_Instance.VisualsRequested);
             // Play standard click sound if brush doesn't have a custom button sound
             m_ButtonHasPressedAudio = (rBrush.m_ButtonAudio == null);
-            if (App.Config.m_WasExperimentalAtStartup)
-            {
-                m_ExperimentalIcon.SetActive(App.Instance.IsBrushExperimental(rBrush));
-            }
+            m_ExperimentalIcon.SetActive(App.Instance.IsBrushExperimental(rBrush));
         }
 
         override protected void OnDescriptionActivated()

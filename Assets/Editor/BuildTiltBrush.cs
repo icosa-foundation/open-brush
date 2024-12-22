@@ -696,7 +696,7 @@ static class BuildTiltBrush
         // Call these once to create the files. Normally (i.e., in a GUI build), they're created with
         // [UnityEditor.InitializeOnLoad], but in case they're missing, like in CI, make sure they're
         // there!
-        OVRProjectConfig defaultOculusProjectConfig = OVRProjectConfig.GetProjectConfig();
+        OVRProjectConfig defaultOculusProjectConfig = OVRProjectConfig.CachedProjectConfig;
         string useless_app_id = Assets.Oculus.VR.Editor.OVRPlatformToolSettings.AppID;
 #endif
 
@@ -1032,7 +1032,7 @@ static class BuildTiltBrush
 #endif
             if (!String.IsNullOrEmpty(Description))
             {
-                new_name += "-(" + Description + ")";
+                new_name += "-(" + Description.Replace("#", "") + ")";
                 new_identifier += "-" + Description.Replace("_", "").Replace("#", "").Replace("-", "");
             }
             if (m_IsAndroidOrIos)
@@ -1435,7 +1435,7 @@ static class BuildTiltBrush
         using (var unused = new TempHookUpSingletons())
         {
             // Set consultUserConfig = false to keep user config from affecting the build output.
-            TiltBrushManifest manifest = App.Instance.GetMergedManifest(forceExperimental: true);
+            TiltBrushManifest manifest = App.Instance.ManifestFull;
 
             StringBuilder s = new StringBuilder();
             foreach (BrushDescriptor desc in manifest.UniqueBrushes())
@@ -1547,7 +1547,7 @@ static class BuildTiltBrush
             // to be run at build-time (ie when nobody has called Start(), Awake()).
             // TempHookupSingletons() has done just enough initialization to make it happy.
             // Also set consultUserConfig = false to keep user config from affecting the build output.
-            TiltBrushManifest manifest = App.Instance.GetMergedManifest(forceExperimental: true);
+            TiltBrushManifest manifest = App.Instance.ManifestFull;
 
             // Some sanity checks
             {

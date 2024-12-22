@@ -20,8 +20,16 @@ namespace TiltBrush
 
     public class BaseSlider : UIComponent
     {
+        [Serializable]
+        public enum Orientation
+        {
+            Horizontal,
+            Vertical
+        }
+
         [SerializeField] public GameObject m_Nob;
         [SerializeField] private Renderer m_Mesh;
+        [SerializeField] private Orientation m_Orientation;
 
         [NonSerialized] public Vector3 m_MeshScale;
         protected float m_CurrentValue;
@@ -36,6 +44,11 @@ namespace TiltBrush
         {
             m_IsAvailable = available;
             SetDescriptionVisualsAvailable(m_IsAvailable);
+            if (m_Orientation == Orientation.Vertical)
+            {
+                // Fix distortion due to the parent having a non-uniform scale.
+                m_Description.transform.localScale = Vector3.one;
+            }
         }
 
         override protected void Awake()
@@ -83,7 +96,15 @@ namespace TiltBrush
             if (m_Nob != null)
             {
                 Vector3 vLocalPos = m_Nob.transform.localPosition;
-                vLocalPos.x = (m_CurrentValue - 0.5f) * m_MeshScale.x;
+                switch (m_Orientation)
+                {
+                    case Orientation.Horizontal:
+                        vLocalPos.x = (m_CurrentValue - 0.5f) * m_MeshScale.x;
+                        break;
+                    case Orientation.Vertical:
+                        vLocalPos.y = (m_CurrentValue - 0.5f) * m_MeshScale.x;
+                        break;
+                }
                 m_Nob.transform.localPosition = vLocalPos;
             }
         }
@@ -122,12 +143,25 @@ namespace TiltBrush
             {
                 m_Nob.transform.position = pos_WS;
                 Vector3 vLocalPos = m_Nob.transform.localPosition;
-                float fScaledBounds = 0.5f * m_MeshScale.x;
-                vLocalPos.x = Mathf.Clamp(vLocalPos.x, -fScaledBounds, fScaledBounds);
-                vLocalPos.y = 0.0f;
+                float fScaledBounds;
+                float fValue = 0;
+                switch (m_Orientation)
+                {
+                    case Orientation.Horizontal:
+                        fScaledBounds = 0.5f * m_MeshScale.x;
+                        vLocalPos.x = Mathf.Clamp(vLocalPos.x, -fScaledBounds, fScaledBounds);
+                        vLocalPos.y = 0.0f;
+                        fValue = (vLocalPos.x / m_MeshScale.x) + 0.5f;
+                        break;
+                    case Orientation.Vertical:
+                        fScaledBounds = 0.5f * m_MeshScale.x;
+                        vLocalPos.x = 0.0f;
+                        vLocalPos.y = Mathf.Clamp(vLocalPos.y, -fScaledBounds, fScaledBounds);
+                        fValue = (vLocalPos.y / m_MeshScale.x) + 0.5f;
+                        break;
+                }
                 vLocalPos.z = 0.0f;
                 m_Nob.transform.localPosition = vLocalPos;
-                float fValue = (vLocalPos.x / m_MeshScale.x) + 0.5f;
                 UpdateValue(fValue);
                 OnPositionSliderNobUpdated();
             }
