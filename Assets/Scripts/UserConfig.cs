@@ -232,14 +232,7 @@ namespace TiltBrush
                 {
                     if (m_IncludeTags == null)
                     {
-                        if (App.Config.GetIsExperimental())
-                        {
-                            m_IncludeTags = new[] { "default", "experimental" };
-                        }
-                        else
-                        {
-                            m_IncludeTags = new[] { "default" };
-                        }
+                        m_IncludeTags = new[] { "default", "experimental" };
                     }
                     return m_IncludeTags;
                 }
@@ -550,36 +543,33 @@ namespace TiltBrush
                 get
                 {
                     Dictionary<Guid, Guid> results = new Dictionary<Guid, Guid>();
-                    if (Config.IsExperimental)
+                    if (string.IsNullOrEmpty(BrushReplacements))
                     {
-                        if (string.IsNullOrEmpty(BrushReplacements))
+                        return results;
+                    }
+                    var replacements = BrushReplacements.Split(',');
+                    foreach (string replacement in replacements)
+                    {
+                        string[] pair = replacement.Split('=');
+                        if (pair.Length == 2)
                         {
-                            return results;
-                        }
-                        var replacements = BrushReplacements.Split(',');
-                        foreach (string replacement in replacements)
-                        {
-                            string[] pair = replacement.Split('=');
-                            if (pair.Length == 2)
+                            if (pair[0] == "*")
                             {
-                                if (pair[0] == "*")
+                                Guid guid = new Guid(pair[1]);
+                                foreach (var brush in App.Instance.ManifestFull.Brushes)
                                 {
-                                    Guid guid = new Guid(pair[1]);
-                                    foreach (var brush in App.Instance.m_Manifest.Brushes)
-                                    {
-                                        results.Add(brush.m_Guid, guid);
-                                    }
-                                }
-                                else
-                                {
-                                    results.Add(new Guid(pair[0]), new Guid(pair[1]));
+                                    results.Add(brush.m_Guid, guid);
                                 }
                             }
                             else
                             {
-                                OutputWindowScript.Error("BrushReplacement should be of the form:\n" +
-                                    "brushguidA=brushguidB,brushguidC=brushguidD");
+                                results.Add(new Guid(pair[0]), new Guid(pair[1]));
                             }
+                        }
+                        else
+                        {
+                            OutputWindowScript.Error("BrushReplacement should be of the form:\n" +
+                                "brushguidA=brushguidB,brushguidC=brushguidD");
                         }
                     }
                     return results;
@@ -601,7 +591,7 @@ namespace TiltBrush
         {
             public const int kDefaultScreenshotResolution = 1000;
             public string[] ProfilingFunctions { get; private set; }
-            public ProfilingManager.Mode ProflingMode { get; private set; }
+            public ProfilingManager.Mode ProfilingMode { get; private set; }
 
             public string Mode
             {
@@ -609,7 +599,7 @@ namespace TiltBrush
                 {
                     try
                     {
-                        ProflingMode = (ProfilingManager.Mode)Enum.Parse(typeof(ProfilingManager.Mode), value);
+                        ProfilingMode = (ProfilingManager.Mode)Enum.Parse(typeof(ProfilingManager.Mode), value);
                     }
                     catch (ArgumentException)
                     {
