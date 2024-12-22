@@ -32,6 +32,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 056f401eae1a4f76b6f580ebf76127a9, type: 3}
   m_Name: GPUInstancingImport
   m_EditorClassIdentifier: 
+--- !u!114 &-7610138946625775758
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c261146868c45eb4eb6b9987bd8c9084, type: 3}
+  m_Name: OpenBrushExportPlugin
+  m_EditorClassIdentifier: 
 --- !u!114 &-7373113640993280472
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -62,6 +74,18 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9571021a85f04ddfb74e8aa5aad9cc5a, type: 3}
   m_Name: UnlitMaterialsExport
+  m_EditorClassIdentifier: 
+--- !u!114 &-6092789625841630549
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6843a59b1a844430b7b7c08e8711a6d7, type: 3}
+  m_Name: OpenBrushLightsImport
   m_EditorClassIdentifier: 
 --- !u!114 &-5728475199642485532
 MonoBehaviour:
@@ -182,7 +206,7 @@ MonoBehaviour:
   - {fileID: -5020980606651475385}
   - {fileID: 8372111537548844026}
   - {fileID: -7716978867629807533}
-  - {fileID: 6916234453510156686}
+  - {fileID: -6092789625841630549}
   ExportPlugins:
   - {fileID: 242952683485160214}
   - {fileID: -5728475199642485532}
@@ -194,8 +218,7 @@ MonoBehaviour:
   - {fileID: -7373113640993280472}
   - {fileID: 7420168740226561727}
   - {fileID: -6755212205620999988}
-  - {fileID: 8207833083978872644}
-  - {fileID: -682178813687408182}
+  - {fileID: -7610138946625775758}
   exportNames: 1
   exportFullPath: 0
   requireExtensions: 0
