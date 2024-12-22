@@ -352,7 +352,7 @@ jobs:
         with:
           token: ${{ env.PHOTON_PAT }}
           repository: icosa-mirror/photon-fusion
-          ref: v1.1.8
+          ref: Fusion_v2_Voice_2
           path: photon-fusion-mirror/
 
       - name: Copy photon files
@@ -449,6 +449,11 @@ jobs:
         run: |
           sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
 
+      - name: Add PHOTON_PAT specific define
+        if: ${{ env.PHOTON_PAT }}
+        run: |
+          echo -e "\n -define:MP_PHOTON \n -define:PHOTON_UNITY_NETWORKING \n-define:PUN_2_0_OR_NEWER \n-define:PUN_2_OR_NEWER \n-define:PUN_2_19_OR_NEWER \n-define:FUSION_WEAVER \n-define:FUSION2 \n-define:CROSS_PLATFORM_INPUT \n-define:MOBILE_INPUT \n-define:PHOTON_VOICE_DEFINED" | tee -a Assets/csc.rsp
+
       - name: Update build matrix specific defines in csc.rsp
         if: ${{ matrix.extra_defines }}
         run: |
@@ -533,7 +538,7 @@ jobs:
           du -mcsh Library/*
           find Library -size +50M -exec ls -altrh {} \;
           # chown all files, since some are owned by root after the docker run
-          docker run -v $(pwd)/Library:/mnt alpine chown $(id -u).$(id -g) -R /mnt/
+          docker run -v $(pwd)/Library:/mnt alpine chown $(id -u):$(id -g) -R /mnt/
           # Print the files to be deleted
           find Library/Bee/ -name 'symbols.zip' -or -name 'libil2cpp*.so' -or -name 'launcher-release.apk' | tee todelete.txt
           cat todelete.txt | xargs -r rm

@@ -35,6 +35,23 @@ namespace TiltBrush
         public int m_Seed;
         protected SketchGroupTag m_Group = SketchGroupTag.None;
         public SketchGroupTag Group => m_Group;
+        public Guid m_Guid;
+
+        // Reference the BrushStrokeCommand that created this stroke with a WeakReference.
+        // This allows the garbage collector to collect the BrushStrokeCommand if it's no
+        // longer in use elsewhere.
+        [NonSerialized] private WeakReference<BrushStrokeCommand> m_Command;
+        public BrushStrokeCommand Command
+        {
+            get
+            {
+                if (m_Command != null && m_Command.TryGetTarget(out var command))
+                    return command;
+                return null;
+            }
+            set { m_Command = new WeakReference<BrushStrokeCommand>(value); }
+        }
+
 
         /// This creates a copy of the given stroke.
         public StrokeData(StrokeData existing = null)

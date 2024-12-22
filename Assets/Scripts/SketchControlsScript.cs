@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using OpenBrush.Multiplayer;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -144,9 +145,21 @@ namespace TiltBrush
             SignOutConfirm,
             ReadOnlyNotice,
             ShowContribution,
+            WhatIsNew,
 
             // Open Brush Reserved Enums 1000-1999
             LanguagePopup = 1000,
+            MultiplayerTogglePanel = 1001,
+            MultiplayerPanelOptions = 1002, // iParam1: Popup options
+            MultiplayerJoinRoom = 1004,
+            EditMultiplayerRoomName = 1005,
+            MultiplayerLeaveRoom = 1006,
+            MultiplayerConnect = 1007,
+            MultiplayerDisconnect = 1008,
+            EditMultiplayerNickName = 1009,
+            DisplaySynchInfo = 1010,
+            SynchInfoPercentageUpdate = 1011,
+            HideSynchInfo = 1012,
 
             RenameSketch = 5200,
             OpenLayerOptionsPopup = 5201,
@@ -1309,8 +1322,7 @@ namespace TiltBrush
                 && !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate)
                 && m_GrabBrush.grabbingWorld == false
                 && m_CurrentGazeObject == -1 // free up swipe for use by gaze object
-                && (m_ControlsType != ControlsType.SixDofControllers || InputManager.Brush.IsTrackedObjectValid)
-                // TODO:Mikesky - very hacky
+                && (m_ControlsType != ControlsType.SixDofControllers || InputManager.Brush.IsTrackedObjectValid) // TODO:Mikesky - very hacky
                 && SketchSurfacePanel.m_Instance.ActiveTool.m_Type != BaseTool.ToolType.MultiCamTool;
 
             if (m_EatToolScaleInput)
@@ -1527,9 +1539,7 @@ namespace TiltBrush
             if (!m_PanelManager.AdvancedModeActive() &&
                 InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleDefaultTool) &&
                 !m_SketchSurfacePanel.IsDefaultToolEnabled() &&
-                m_SketchSurfacePanel.ActiveTool.AllowDefaultToolToggle() &&
-                // don't allow tool to change while pointing at panel because there is no visual indication
-                m_CurrentGazeObject == -1)
+                m_SketchSurfacePanel.ActiveTool.AllowDefaultToolToggle() && m_CurrentGazeObject == -1)// don't allow tool to change while pointing at panel because there is no visual indication
             {
                 m_SketchSurfacePanel.EnableDefaultTool();
                 AudioManager.m_Instance.PlayPinCushionSound(true);
@@ -1640,7 +1650,8 @@ namespace TiltBrush
                 m_PanelManager.GazePanelsAreVisible() &&
                 !m_GrabWand.grabbingWorld &&
                 !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate) &&
-                !SelectionManager.m_Instance.IsAnimatingTossFromGrabbingGroup;
+                !SelectionManager.m_Instance.IsAnimatingTossFromGrabbingGroup &&
+                !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
         }
 
         bool CanRedo()
@@ -1650,7 +1661,8 @@ namespace TiltBrush
                 m_PanelManager.GazePanelsAreVisible() &&
                 !m_GrabBrush.grabbingWorld &&
                 !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate) &&
-                !SelectionManager.m_Instance.IsAnimatingTossFromGrabbingGroup;
+                !SelectionManager.m_Instance.IsAnimatingTossFromGrabbingGroup &&
+                !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
         }
 
         bool ShouldRepeatUndo()
@@ -4565,6 +4577,20 @@ namespace TiltBrush
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }
+                case GlobalCommands.EditMultiplayerRoomName:
+                    {
+                        var panel = (MultiplayerPanel)m_PanelManager.GetActivePanelByType(BasePanel.PanelType.Multiplayer);
+                        panel.RoomName = KeyboardPopUpWindow.m_LastInput;
+                        DismissPopupOnCurrentGazeObject(false);
+                        break;
+                    }
+                case GlobalCommands.EditMultiplayerNickName:
+                    {
+                        var panel = (MultiplayerPanel)m_PanelManager.GetActivePanelByType(BasePanel.PanelType.Multiplayer);
+                        panel.NickName = KeyboardPopUpWindow.m_LastInput;
+                        DismissPopupOnCurrentGazeObject(false);
+                        break;
+                    }
                 case GlobalCommands.ShowWindowGUI:
                     break;
                 case GlobalCommands.Disco:
@@ -4891,10 +4917,29 @@ namespace TiltBrush
                 case GlobalCommands.OpenExampleScriptsList:
                     OpenURLAndInformUser($"http://localhost:{App.HttpServer.HttpPort}/examplescripts");
                     break;
-                case GlobalCommands.OpenScriptParametersPopup:
-                case GlobalCommands.RepaintOptions:
-                case GlobalCommands.Null:
-                    break; // Intentionally blank.
+                case GlobalCommands.MultiplayerTogglePanel:
+                    m_PanelManager.ToggleMultiplayerPanels();
+                    PointerManager.m_Instance.EatLineEnabledInput();
+                    SketchSurfacePanel.m_Instance.EatToolsInput();
+                    break;
+                case GlobalCommands.DisplaySynchInfo:
+                    MultiplayerSceneSync.m_Instance.StartSynchInfo();
+                    break;
+                case GlobalCommands.SynchInfoPercentageUpdate:
+                    MultiplayerSceneSync.m_Instance.SynchInfoPercentageUpdate();
+                    break;
+                case GlobalCommands.HideSynchInfo:
+                    MultiplayerSceneSync.m_Instance.HideSynchInfo();
+                    break;
+                case GlobalCommands.MultiplayerPanelOptions: break;
+                case GlobalCommands.MultiplayerJoinRoom: break;
+                case GlobalCommands.MultiplayerLeaveRoom: break;
+                case GlobalCommands.MultiplayerConnect: break;
+                case GlobalCommands.MultiplayerDisconnect: break;
+                case GlobalCommands.WhatIsNew: break;
+                case GlobalCommands.OpenScriptParametersPopup: break;
+                case GlobalCommands.RepaintOptions: break;
+                case GlobalCommands.Null: break;
                 default:
                     Debug.LogError($"Unrecognized command {rEnum}");
                     break;
@@ -5048,8 +5093,10 @@ namespace TiltBrush
             // TODO: hide gallery view / publish if there are no saved sketches
             switch (rEnum)
             {
-                case GlobalCommands.Undo: return SketchMemoryScript.m_Instance.CanUndo();
-                case GlobalCommands.Redo: return SketchMemoryScript.m_Instance.CanRedo();
+                case GlobalCommands.Undo:
+                    return SketchMemoryScript.m_Instance.CanUndo() && !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
+                case GlobalCommands.Redo:
+                    return SketchMemoryScript.m_Instance.CanRedo() && !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
                 case GlobalCommands.Save:
                     bool canSave =
                         SaveLoadScript.m_Instance.SceneFile.Valid &&
@@ -5087,7 +5134,7 @@ namespace TiltBrush
                         (VrAssetService.m_Instance.UploadProgress <= 0.0f) &&
                         IsCommandAvailable(GlobalCommands.UploadToGenericCloud);
                 case GlobalCommands.NewSketch:
-                    return SketchHasChanges();
+                    return SketchHasChanges() && !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
                 case GlobalCommands.Credits:
                 case GlobalCommands.AshleysSketch:
                     return !SketchHasChanges() && !SketchMemoryScript.m_Instance.IsMemoryDirty();
@@ -5119,7 +5166,25 @@ namespace TiltBrush
                     return m_WidgetManager.AnyActivePathHasAKnot();
                 case GlobalCommands.GoogleDriveSync:
                     return App.GoogleIdentity.LoggedIn;
-                case GlobalCommands.RecordCameraPath: return m_WidgetManager.CameraPathsVisible;
+                case GlobalCommands.RecordCameraPath:
+                    return m_WidgetManager.CameraPathsVisible;
+                case GlobalCommands.AdvancedPanelsToggle:
+                    return !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
+                case GlobalCommands.MultiplayerConnect:
+                    return MultiplayerManager.m_Instance.IsConnectable();
+                case GlobalCommands.MultiplayerDisconnect:
+                    return MultiplayerManager.m_Instance.IsDisconnectable();
+                case GlobalCommands.MultiplayerJoinRoom:
+                    return !PanelManager.m_Instance.AdvancedModeActive() && MultiplayerManager.m_Instance.CanJoinRoom() && !SceneSettings.m_Instance.GetDesiredPreset().isPassthrough;
+                case GlobalCommands.MultiplayerLeaveRoom:
+                    return MultiplayerManager.m_Instance.CanLeaveRoom();
+                case GlobalCommands.Sketchbook:
+                case GlobalCommands.SketchbookMenu:
+                case GlobalCommands.EditMultiplayerNickName:
+                case GlobalCommands.EditMultiplayerRoomName:
+                    return !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
+                case GlobalCommands.WhatIsNew:
+                    return false;
             }
             return true;
         }
