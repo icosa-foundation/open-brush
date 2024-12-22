@@ -5107,9 +5107,8 @@ namespace TiltBrush
                     return m_WidgetManager.AnyActivePathHasAKnot();
                 case GlobalCommands.GoogleDriveSync:
                     return App.GoogleIdentity.LoggedIn;
-                case GlobalCommands.RecordCameraPath: return m_WidgetManager.CameraPathsVisible;
-                case GlobalCommands.EnableTexturePainting: return LastGrabWidget != null && TexturePainterManager.m_Instance.CanBeMadePaintable(LastGrabWidget);
-
+                case GlobalCommands.EnableTexturePainting:
+                    return LastGrabWidget != null && TexturePainterManager.m_Instance.CanBeMadePaintable(LastGrabWidget);
                 case GlobalCommands.RecordCameraPath:
                     return m_WidgetManager.CameraPathsVisible;
                 case GlobalCommands.AdvancedPanelsToggle:
