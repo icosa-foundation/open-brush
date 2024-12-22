@@ -136,7 +136,7 @@ jobs:
         env:
           PRERELEASE: ${{ steps.version.outputs.prerelease }}
         run: |
-          # For a PR action (i.e., syncronize / open), the value of github.ref will be refs/pull/1234/merge
+          # For a PR action (i.e., synchronize / open), the value of github.ref will be refs/pull/1234/merge
           # For a push action, it will be either refs/heads/foo_branch_name OR refs/tags/v1234.
           # We want to use the base name for pushes of tags or to main, the PR number for PRs, and the branch name for named branches.
           if [[ "$PRERELEASE" == "false" || ${{ github.ref }} == refs/heads/main ]]
@@ -146,7 +146,7 @@ jobs:
           else
             if [[ ${{ github.ref }} == refs/pull/* ]]
             then
-              DESCRIPTION="PR#$(echo ${{ github.ref }} | sed -e 's#refs/pull/##' -e 's#/merge##')"
+              DESCRIPTION="PR$(echo ${{ github.ref }} | sed -e 's#refs/pull/##' -e 's#/merge##')"
             elif [[ ${{ github.ref }} == refs/heads/* ]]
             then
               DESCRIPTION="$(echo ${{ github.ref }} | sed -e 's#refs/heads/##')"
@@ -268,7 +268,7 @@ jobs:
           echo "Initial free space"
           df -h /
           echo "Removing all pre-loaded docker images"
-          docker rmi $(docker image ls -aq)  # Removes ~3GB
+          docker image ls -aq | xargs -r docker rmi # Removes ~3GB
           df -h /
           echo "Listing 100 largest packages"
           dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
@@ -352,6 +352,7 @@ jobs:
         with:
           token: ${{ env.PHOTON_PAT }}
           repository: icosa-mirror/photon-fusion
+          ref: Fusion_v2_Voice_2
           path: photon-fusion-mirror/
 
       - name: Copy photon files
@@ -448,6 +449,11 @@ jobs:
         run: |
           sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
 
+      - name: Add PHOTON_PAT specific define
+        if: ${{ env.PHOTON_PAT }}
+        run: |
+          echo -e "\n -define:MP_PHOTON \n -define:PHOTON_UNITY_NETWORKING \n-define:PUN_2_0_OR_NEWER \n-define:PUN_2_OR_NEWER \n-define:PUN_2_19_OR_NEWER \n-define:FUSION_WEAVER \n-define:FUSION2 \n-define:CROSS_PLATFORM_INPUT \n-define:MOBILE_INPUT \n-define:PHOTON_VOICE_DEFINED" | tee -a Assets/csc.rsp
+
       - name: Update build matrix specific defines in csc.rsp
         if: ${{ matrix.extra_defines }}
         run: |
@@ -532,7 +538,7 @@ jobs:
           du -mcsh Library/*
           find Library -size +50M -exec ls -altrh {} \;
           # chown all files, since some are owned by root after the docker run
-          docker run -v $(pwd)/Library:/mnt alpine chown $(id -u).$(id -g) -R /mnt/
+          docker run -v $(pwd)/Library:/mnt alpine chown $(id -u):$(id -g) -R /mnt/
           # Print the files to be deleted
           find Library/Bee/ -name 'symbols.zip' -or -name 'libil2cpp*.so' -or -name 'launcher-release.apk' | tee todelete.txt
           cat todelete.txt | xargs -r rm
@@ -801,14 +807,13 @@ jobs:
 
       - name: Publish
         uses: softprops/action-gh-release@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           body: ${{ steps.changelog.outputs.changelog }}
           prerelease: ${{ needs.configuration.outputs.prerelease }}
           target_commitish: ${{ needs.configuration.outputs.currentrelease }}
           tag_name: ${{ needs.configuration.outputs.version }}
           files: releases/*
+          token: ${{ secrets.RELEASE_TOKEN }}
 
   publish_gitbook:
     name: Publish changelog from last major build to open-brush-docs
@@ -907,7 +912,7 @@ jobs:
       - name: Restore steam login config
         run: |
           mkdir -p /home/runner/Steam/config
-          echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - > /home/runner/Steam/config/config.vdf
+          echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - | gunzip - > /home/runner/Steam/config/config.vdf
           md5sum /home/runner/Steam/config/config.vdf
       - name: Download Build Artifacts (Windows OpenXR)
         uses: actions/download-artifact@v4
@@ -948,7 +953,7 @@ jobs:
           CHANNEL: beta
       - name: Update steam login secret
         run: |
-          base64 -i /home/runner/Steam/config/config.vdf | gh secret set --visibility all --org icosa-foundation STEAM_CONFIG_VDF
+          gzip /home/runner/Steam/config/config.vdf -c | base64 | gh secret set --visibility all --org icosa-foundation STEAM_CONFIG_VDF
           md5sum /home/runner/Steam/config/config.vdf
         env:
           GITHUB_TOKEN: ${{ secrets.SECRET_UPDATER_PAT }}
