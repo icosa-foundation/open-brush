@@ -201,7 +201,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5064506084139008
-    m_Localized: Guardar dibujo
+    m_Localized: "Qu\xE9 hay de nuevo"
     m_Metadata:
       m_Items: []
   - m_Id: 5065040224559104
@@ -3546,6 +3546,66 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 218558579745579008
     m_Localized: "M\xE1s informaci\xF3n sobre c\xF3mo usar Open Brush sin VR"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636769901092864
+    m_Localized: Unirse a la Sala
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636908816441344
+    m_Localized: Salir de la Sala
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637073212186624
+    m_Localized: Editar Nombre de la Sala
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637384320491520
+    m_Localized: Editar Apodo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 307216698459103232
+    m_Localized: Borrar texto
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312730512516521984
+    m_Localized: Qu\xE9 hay de nuevo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783011751469056
+    m_Localized: 'Estado: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783116814589952
+    m_Localized: 'Nombre de la sala: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783250461892608
+    m_Localized: 'Apodo: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312963339069759488
+    m_Localized: Eres el propietario de la sala
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312963447907753984
+    m_Localized: No eres el propietario de la sala
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312967307862810624
+    m_Localized: Cambia al modo principiante para usar el multijugador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312967604588847104
+    m_Localized: "La sala ya existe. Te unir\xE1s a una sesi\xF3n existente."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 156198200358006784
+    m_Localized: Desactiva el modo de entorno de passthrough para usar el multijugador.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 313111533204348928
+    m_Localized: "Men\xFA Multijugador"
     m_Metadata:
       m_Items: []
   references:

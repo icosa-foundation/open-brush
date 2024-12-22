@@ -201,7 +201,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5064506084139008
-    m_Localized: Skizze speichern
+    m_Localized: Was gibt's Neues
     m_Metadata:
       m_Items: []
   - m_Id: 5065040224559104
@@ -3574,6 +3574,68 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 218558579745579008
     m_Localized: Mehr Informationen zur Verwendung von Open Brush ohne VR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636769901092864
+    m_Localized: Raum beitreten
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636908816441344
+    m_Localized: Raum verlassen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637073212186624
+    m_Localized: Raumnamen bearbeiten
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637384320491520
+    m_Localized: Spitznamen bearbeiten
+    m_Metadata:
+      m_Items: []
+  - m_Id: 307216698459103232
+    m_Localized: "Text l\xF6schen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312730512516521984
+    m_Localized: Skizze speichern
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783011751469056
+    m_Localized: 'Status: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783116814589952
+    m_Localized: 'Raumname: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312783250461892608
+    m_Localized: 'Spitzname: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312963339069759488
+    m_Localized: Sie sind der Raumbesitzer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312963447907753984
+    m_Localized: Sie sind nicht der Raumbesitzer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312967307862810624
+    m_Localized: "Wechseln Sie in den Anf\xE4nger-Modus, um Multiplayer zu verwenden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312967604588847104
+    m_Localized: Der Raum existiert bereits. Sie werden einer bestehenden Sitzung
+      beitreten.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 156198200358006784
+    m_Localized: Schalten Sie den Passthrough-Modus aus, um den Mehrspielermodus
+      zu nutzen.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 313111533204348928
+    m_Localized: "Mehrspieler-Men\xFC"
     m_Metadata:
       m_Items: []
   references:

@@ -189,19 +189,22 @@ namespace TiltBrush
             m_GuiBrushList.Clear();
             foreach (var brush in m_GuidToBrush.Values)
             {
-                if (brush.m_HiddenInGui)
+                // Some brushes are hardcoded as hidden
+                if (brush.m_HiddenInGui) continue;
+                // Always include if experimental mode is on
+                if (Config.IsExperimental || !App.Instance.IsBrushExperimental(brush))
                 {
-                    continue;
+                    m_GuiBrushList.Add(brush);
                 }
-                m_GuiBrushList.Add(brush);
             }
+            BrushCatalogChanged?.Invoke();
         }
 
 
         public Brush[] GetTagFilteredBrushList()
         {
-            List<string> includeTags = App.UserConfig.Brushes.IncludeTags.ToList();
-            List<string> excludeTags = App.UserConfig.Brushes.ExcludeTags.ToList();
+            List<string> includeTags = App.UserConfig.Brushes.IncludeTags?.ToList();
+            List<string> excludeTags = App.UserConfig.Brushes.ExcludeTags?.ToList();
 
             if (includeTags == null || includeTags.Count == 0)
             {
@@ -288,7 +291,7 @@ namespace TiltBrush
         static private List<Brush> LoadBrushesInManifest()
         {
             List<Brush> output = new List<Brush>();
-            var manifest = App.Instance.m_Manifest;
+            var manifest = App.Instance.ManifestFull;
             foreach (var desc in manifest.Brushes)
             {
                 if (desc != null)
