@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#if FUSION_WEAVER
+#if MP_PHOTON
 
 using System;
 using UnityEngine;
@@ -40,7 +40,7 @@ namespace OpenBrush.Multiplayer
             ChildCommands = new List<PendingCommand>();
         }
     }
-    
+
     public struct NetworkCommandData : INetworkStruct
     {
         public Guid CommandGuid;
@@ -93,7 +93,7 @@ namespace OpenBrush.Multiplayer
     [System.Serializable]
     public struct NetworkedStroke : INetworkStruct
     {
-        public const int k_MaxCapacity = 128;
+        public const int k_MaxCapacity = NetworkingConstants.MaxControlPointsPerChunk;
         public Stroke.Type m_Type;
         [Networked][Capacity(k_MaxCapacity)] public NetworkArray<bool> m_ControlPointsToDrop => default;
         public Color m_Color;
@@ -152,13 +152,13 @@ namespace OpenBrush.Multiplayer
 
             m_ControlPointsCapacity = data.m_ControlPoints.Length;
 
-            for(int i = 0; i < data.m_ControlPoints.Length; i++)
+            for (int i = 0; i < data.m_ControlPoints.Length; i++)
             {
                 var point = new NetworkedControlPoint().Init(data.m_ControlPoints[i]);
                 m_ControlPoints.Set(i, point);
             }
 
-            for(int i = 0; i < data.m_ControlPointsToDrop.Length; i++)
+            for (int i = 0; i < data.m_ControlPointsToDrop.Length; i++)
             {
                 m_ControlPointsToDrop.Set(i, data.m_ControlPointsToDrop[i]);
             }
