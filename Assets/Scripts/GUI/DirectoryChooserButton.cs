@@ -22,16 +22,17 @@ namespace TiltBrush
     class DirectoryChooserButton : BaseButton
     {
         public TextMeshPro m_TextLabel;
-        [NonSerialized] public PopUpWindow_DirectoryChooser m_Popup;
         [NonSerialized] public ReferencePanel m_Panel;
 
-        private DirectoryInfo m_DirectoryInfo;
+        private string m_Path;
+        private string m_Root;
         private string m_Label;
 
-        public void SetDirectory(string directory)
+        public void SetDirectory(string path, string root, string label)
         {
-            m_DirectoryInfo = new DirectoryInfo(directory);
-            m_Label = m_DirectoryInfo.Name;
+            m_Path = path;
+            m_Root = root;
+            m_Label = label;
             m_TextLabel.text = m_Label;
         }
 
@@ -39,12 +40,10 @@ namespace TiltBrush
         {
             base.ButtonPressed(rHitInfo);
             m_Panel.CloseActivePopUp(false);
-            m_Panel.ChangeDirectoryForCurrentTab(m_DirectoryInfo.FullName);
+            m_Panel.ChangeDirectoryForCurrentTab(m_Path);
         }
 
         protected override void SetMaterialColor(Color rColor)
-        {
-            // m_TextLabel.color = rColor;
-        }
+        { }
     }
 }

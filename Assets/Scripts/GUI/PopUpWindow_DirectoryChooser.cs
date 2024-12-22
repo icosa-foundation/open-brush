@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.IO;
 using UnityEngine;
 namespace TiltBrush
 {
@@ -37,8 +38,9 @@ namespace TiltBrush
         {
             var btn = icon.m_IconScript as DirectoryChooserButton;
             var parent = GetParentReferencePanel();
-            btn.SetDirectory(parent.CurrentSubdirectories[iCatalog]);
-            btn.m_Popup = this;
+            string path = parent.CurrentSubdirectories[iCatalog];
+            string root = parent.ExtraDirectories.Values
+            btn.SetDirectory(path, directoryInfo.Name);
             btn.m_Panel = parent;
         }
 

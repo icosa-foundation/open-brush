@@ -35,10 +35,12 @@ namespace TiltBrush
         [SerializeField] private TextMeshPro m_InfoText;
         private ReferencePanelTab m_CurrentTab;
         private int m_EnabledCount = 0;
-        private List<string> m_CurrentSubdirectories;
+        private List<string> m_CurrentDirectories;
+        private Dictionary<string, string> m_ExtraDirectories; // "Virtual" directories added via GetExtraDirectories
         private bool m_FolderNavButtonsNeedUpdate;
 
-        public List<string> CurrentSubdirectories => m_CurrentSubdirectories;
+        public List<string> CurrentSubdirectories => m_CurrentDirectories;
+        public Dictionary<string, string> ExtraDirectories => m_ExtraDirectories;
 
         public Texture2D UnknownImageTexture
         {
@@ -135,7 +137,6 @@ namespace TiltBrush
                 tab.InitTab();
                 tab.Catalog.CatalogChanged += OnCatalogChanged;
             }
-
             m_CurrentPageFlipState = PageFlipState.Standard;
         }
 
@@ -227,13 +228,14 @@ namespace TiltBrush
                 ReferenceButton.Type.Models => ModelCatalog.m_Instance.CurrentModelsDirectory,
                 ReferenceButton.Type.Videos => VideoCatalog.Instance.CurrentVideoDirectory
             };
-
-            var truncatedPath = currentDir.Substring(App.MediaLibraryPath().Length);
+            m_ExtraDirectories = m_CurrentTab.Catalog.GetExtraDirectories(currentDir);
+            var root = App.MediaLibraryPath();
+            var truncatedPath = currentDir.Substring(root.Length);
             if (m_DirectoryChooserPopupButton != null)
             {
                 m_DirectoryChooserPopupButton.ButtonLabel = $"{truncatedPath}";
-                m_CurrentSubdirectories = Directory.GetDirectories(currentDir).ToList();
-                m_CurrentSubdirectories.AddRange(m_CurrentTab.Catalog.GetExtraDirectories(currentDir).Keys);
+                m_CurrentDirectories = Directory.GetDirectories(currentDir).ToList();
+                m_CurrentDirectories.AddRange(m_ExtraDirectories.Keys);
             }
 
             base.RefreshPage();
@@ -260,7 +262,7 @@ namespace TiltBrush
                 m_DirectoryUpButton.SetDescriptionUnavailable(true);
             }
 
-            if (m_CurrentSubdirectories.Count == 0)
+            if (m_CurrentDirectories.Count == 0)
             {
                 m_DirectoryChooserPopupButton.SetButtonAvailable(false);
                 m_DirectoryChooserPopupButton.SetDescriptionUnavailable(true);
@@ -275,7 +277,7 @@ namespace TiltBrush
             m_NoData.gameObject.SetActive(
                 m_CurrentTab.Catalog.IsHomeDirectory() &&
                 m_CurrentTab.Catalog.ItemCount == 0 &&
-                m_CurrentSubdirectories.Count == 0
+                m_CurrentDirectories.Count == 0
             );
         }
 
@@ -320,7 +322,7 @@ namespace TiltBrush
             if (m_InfoText != null)
             {
                 // TODO localize
-                m_InfoText.text = $"{m_CurrentTab.Catalog.ItemCount} Files {m_CurrentSubdirectories.Count} Subfolders";
+                m_InfoText.text = $"{m_CurrentTab.Catalog.ItemCount} Files {m_CurrentDirectories.Count} Subfolders";
             }
         }
 
