@@ -18,12 +18,22 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
+using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
-
     public class SketchbookPanel : ModalPanel
     {
+        public enum RootSet
+        {
+            Local,
+            Remote,
+            Liked,
+            Backup,
+        }
+
+        public static SketchbookPanel Instance => PanelManager.m_Instance.GetSketchBookPanel() as SketchbookPanel;
+
         // Index of the "local sketches" button in m_GalleryButtons
         const int kElementNumberGalleryButtonLocal = 0;
         // Amount of extra space to put below the "local sketches" gallery button
@@ -50,13 +60,13 @@ namespace TiltBrush
         [SerializeField] private GameObject m_ContactingServerMessage;
         [SerializeField] private GameObject m_OutOfDateMessage;
         [SerializeField] private GameObject m_NoPolyConnectionMessage;
-        [SerializeField] private Renderer m_OnlineGalleryButtonRenderer;
         [SerializeField] private GameObject[] m_IconsOnFirstPage;
         [SerializeField] private GameObject[] m_IconsOnNormalPage;
         [SerializeField] private GameObject m_CloseButton;
         [SerializeField] private GameObject m_NewSketchButton;
         // Gallery buttons will automatically reposition based on how many are visible so they must be
         // added to this array in order from top to bottom.
+        [SerializeField] private ActionButton m_BackButton;
         [SerializeField] private GalleryButton[] m_GalleryButtons;
         [SerializeField] private int m_ElementNumberGalleryButtonDrive = 3;
         [SerializeField] private float m_GalleryButtonHeight = 0.3186f;
@@ -70,6 +80,8 @@ namespace TiltBrush
         [SerializeField] private Vector2 m_SketchIconUvScale = new Vector2(0.7f, 0.7f);
         [SerializeField] private Vector3 m_ReadOnlyPopupOffset;
 
+        [FormerlySerializedAs("m_FolderTexture")][SerializeField] private Texture2D m_FolderIcon;
+
         private float m_ImageAspect;
         private Vector2 m_HalfInvUvScale;
 
@@ -77,8 +89,10 @@ namespace TiltBrush
 
         private bool m_AllIconTexturesAssigned;
         private bool m_AllSketchesAreAvailable;
-        private SketchSetType m_CurrentSketchSet;
-        private SketchSet m_SketchSet;
+        private Stack<ISketchSet>[] m_SetStacks;
+        private int m_SelectedStack;
+
+
         private OptionButton m_NewSketchButtonScript;
         private OptionButton m_PaintButtonScript;
         private List<BaseButton> m_IconScriptsOnFirstPage;
@@ -87,6 +101,9 @@ namespace TiltBrush
         private bool m_ReadOnlyShown = false;
 
         public float ImageAspect { get { return m_ImageAspect; } }
+
+        public int SelectedSketchStack => m_SelectedStack;
+        public ISketchSet CurrentSketchSet { get; private set; }
 
         override public void SetInIntroMode(bool inIntro)
         {
@@ -119,11 +136,12 @@ namespace TiltBrush
         public override bool IsInButtonMode(ModeButton button)
         {
             GalleryButton galleryButton = button as GalleryButton;
+            // TODO: There's gotta be a better way of doing this!
             return galleryButton &&
-                ((galleryButton.m_ButtonType == GalleryButton.Type.Liked && m_CurrentSketchSet == SketchSetType.Liked) ||
-                (galleryButton.m_ButtonType == GalleryButton.Type.Local && m_CurrentSketchSet == SketchSetType.User) ||
-                (galleryButton.m_ButtonType == GalleryButton.Type.Showcase && m_CurrentSketchSet == SketchSetType.Curated) ||
-                (galleryButton.m_ButtonType == GalleryButton.Type.Drive && m_CurrentSketchSet == SketchSetType.Drive));
+                ((galleryButton.m_ButtonType == GalleryButton.Type.Liked && m_SelectedStack == 2) ||
+                (galleryButton.m_ButtonType == GalleryButton.Type.Local && m_SelectedStack == 0) ||
+                (galleryButton.m_ButtonType == GalleryButton.Type.Showcase && m_SelectedStack == 1) ||
+                (galleryButton.m_ButtonType == GalleryButton.Type.Drive && m_SelectedStack == 3));
         }
 
         override public void InitPanel()
@@ -150,6 +168,17 @@ namespace TiltBrush
             m_HalfInvUvScale *= 0.5f;
         }
 
+        private void InitializeRootSketchSets()
+        {
+            m_SetStacks = new Stack<ISketchSet>[4];
+
+        }
+
+        public ISketchSet GetSketchSet(RootSet set)
+        {
+            return m_SetStacks[(int)set].Peek();
+        }
+
         protected override void OnStart()
         {
             // Initialize icons.
@@ -165,61 +194,106 @@ namespace TiltBrush
             m_NotLoggedInMessage.SetActive(false);
             m_NotLoggedInDriveMessage.SetActive(false);
 
+            var rssOptions = new Dictionary<string, object>
+            {
+                {"uri",  "https://timaidley.github.io/open-brush-feed/sketches.rss" }
+            };
+
+            var fileOptions = new Dictionary<string, object>
+            {
+                {"path", App.UserSketchPath() },
+                {"name", "Your Sketches"},
+                {"icon", m_FolderIcon},
+            };
+
+            m_SetStacks = new string[]
+            {
+                $"file:///{App.UserSketchPath()}",
+                "feed:https://timaidley.github.io/open-brush-feed/sketches.rss",
+                IcosaCollection.AllAssetsUri.OriginalString,
+                "googledrive:"
+            }.Select(uri => new Stack<ISketchSet>(new[] { SketchCatalog.m_Instance.GetSketchSet(uri) })).ToArray();
+
+            m_SelectedStack = (int)RootSet.Backup;
+            CurrentSketchSet = m_SetStacks[m_SelectedStack].Peek();
+
             // Dynamically position the gallery buttons.
             OnDriveSetHasSketchesChanged();
 
             // Set the sketch set var to Liked, then function set to force state.
-            m_CurrentSketchSet = SketchSetType.Liked;
-            SetVisibleSketchSet(SketchSetType.User);
+            SetVisibleSketchSet(0);
+            RefreshPage();
 
-            Action refresh = () =>
+            App.GoogleIdentity.OnLogout += OnSketchRefreshingChanged;
+        }
+
+        void OnSketchRefreshingChanged()
+        {
+            if (m_ContactingServerMessage.activeSelf ||
+                m_NoShowcaseMessage.activeSelf ||
+                m_LoadingGallery.activeSelf)
             {
-                if (m_ContactingServerMessage.activeSelf ||
-                    m_NoShowcaseMessage.activeSelf ||
-                    m_LoadingGallery.activeSelf)
-                {
-                    // Update the overlays more frequently when these overlays are shown to reflect whether
-                    // we are actively trying to get sketches from Poly.
-                    RefreshPage();
-                }
-            };
-            SketchCatalog.m_Instance.GetSet(SketchSetType.Liked).OnSketchRefreshingChanged += refresh;
-            SketchCatalog.m_Instance.GetSet(SketchSetType.Curated).OnSketchRefreshingChanged += refresh;
-            SketchCatalog.m_Instance.GetSet(SketchSetType.Drive).OnSketchRefreshingChanged += refresh;
-            App.GoogleIdentity.OnLogout += refresh;
+                // Update the overlays more frequently when these overlays are shown to reflect whether
+                // we are actively trying to get sketches from Poly.
+                RefreshPage();
+            }
         }
 
         void OnDestroy()
         {
-            if (m_SketchSet != null)
+            if (CurrentSketchSet != null)
             {
-                m_SketchSet.OnChanged -= OnSketchSetDirty;
+                CurrentSketchSet.OnChanged -= OnSketchSetDirty;
+                CurrentSketchSet.OnSketchRefreshingChanged -= OnSketchRefreshingChanged;
             }
         }
 
         override protected void OnEnablePanel()
         {
             base.OnEnablePanel();
-            if (m_SketchSet != null)
+            if (CurrentSketchSet != null)
             {
-                m_SketchSet.RequestRefresh();
+                CurrentSketchSet.RequestRefresh();
             }
         }
 
-        void SetVisibleSketchSet(SketchSetType type)
+        public void PushSketchSet(int stack, ISketchSet sketchSet)
         {
-            if (m_CurrentSketchSet != type)
+            m_SetStacks[stack].Push(sketchSet);
+            if (stack == m_SelectedStack)
+            {
+                SetVisibleSketchSet((RootSet)m_SelectedStack);
+            }
+        }
+
+        public void PopSketchSet(int stack)
+        {
+            m_SetStacks[stack].Pop();
+            if (stack == m_SelectedStack)
+            {
+                SetVisibleSketchSet((RootSet)m_SelectedStack);
+            }
+        }
+
+        void SetVisibleSketchSet(RootSet stack)
+        {
+            int stackIndex = (int)stack;
+            var newSketchSet = m_SetStacks[stackIndex].Peek();
+            if (newSketchSet != CurrentSketchSet)
             {
                 // Clean up our old sketch set.
-                if (m_SketchSet != null)
+                if (CurrentSketchSet != null)
                 {
-                    m_SketchSet.OnChanged -= OnSketchSetDirty;
+                    CurrentSketchSet.OnChanged -= OnSketchSetDirty;
+                    CurrentSketchSet.OnSketchRefreshingChanged -= OnSketchRefreshingChanged;
                 }
 
                 // Cache new set.
-                m_SketchSet = SketchCatalog.m_Instance.GetSet(type);
-                m_SketchSet.OnChanged += OnSketchSetDirty;
-                m_SketchSet.RequestRefresh();
+                m_SelectedStack = stackIndex;
+                CurrentSketchSet = m_SetStacks[m_SelectedStack].Peek();
+                CurrentSketchSet.OnChanged += OnSketchSetDirty;
+                CurrentSketchSet.OnSketchRefreshingChanged += OnSketchRefreshingChanged;
+                CurrentSketchSet.RequestRefresh();
 
                 // Tell all the icons which set to reference when loading sketches.
                 IEnumerable<LoadSketchButton> allIcons = m_IconsOnFirstPage.Concat(m_IconsOnNormalPage)
@@ -227,40 +301,25 @@ namespace TiltBrush
                     .Where(icon => icon != null);
                 foreach (LoadSketchButton icon in allIcons)
                 {
-                    icon.SketchSet = m_SketchSet;
+                    icon.SketchSet = CurrentSketchSet;
                 }
 
                 ComputeNumPages();
                 ResetPageIndex();
-                m_CurrentSketchSet = type;
                 RefreshPage();
 
-                switch (m_CurrentSketchSet)
-                {
-                    case SketchSetType.User:
-                        m_PanelTextPro.text = PanelTextStandard;
-                        break;
-                    case SketchSetType.Curated:
-                        m_PanelTextPro.text = PanelTextShowcase;
-                        break;
-                    case SketchSetType.Liked:
-                        m_PanelTextPro.text = PanelTextLiked;
-                        break;
-                    case SketchSetType.Drive:
-                        m_PanelTextPro.text = PanelTextDrive;
-                        break;
-                }
+                m_PanelTextPro.text = CurrentSketchSet.Title;
             }
         }
 
         private void ComputeNumPages()
         {
-            if (m_SketchSet.NumSketches <= m_IconsOnFirstPage.Length)
+            if (CurrentSketchSet.NumSketches <= m_IconsOnFirstPage.Length)
             {
                 m_NumPages = 1;
                 return;
             }
-            int remainingSketches = m_SketchSet.NumSketches - m_IconsOnFirstPage.Length;
+            int remainingSketches = CurrentSketchSet.NumSketches - m_IconsOnFirstPage.Length;
             int normalPages = ((remainingSketches - 1) / m_IconsOnNormalPage.Length) + 1;
             m_NumPages = 1 + normalPages;
         }
@@ -271,7 +330,7 @@ namespace TiltBrush
             for (int i = 0; i < Icons.Count; i++)
             {
                 int sketchIndex = m_IndexOffset + i;
-                if (sketchIndex >= m_SketchSet.NumSketches)
+                if (sketchIndex >= CurrentSketchSet.NumSketches)
                 {
                     break;
                 }
@@ -282,7 +341,7 @@ namespace TiltBrush
 
         protected override void RefreshPage()
         {
-            m_SketchSet.RequestOnlyLoadedMetadata(GetIconLoadIndices());
+            CurrentSketchSet.RequestOnlyLoadedMetadata(GetIconLoadIndices());
             m_AllIconTexturesAssigned = false;
             m_AllSketchesAreAvailable = false;
 
@@ -299,61 +358,68 @@ namespace TiltBrush
             // Base Refresh updates the modal parts of the panel, and we always want those refreshed.
             base.RefreshPage();
 
-            bool requiresPoly = m_CurrentSketchSet == SketchSetType.Liked;
+            m_NoSketchesMessage.SetActive(false);
+            m_NoDriveSketchesMessage.SetActive(false);
+            m_NotLoggedInMessage.SetActive(false);
+            m_NoLikesMessage.SetActive(false);
+            m_ContactingServerMessage.SetActive(false);
+            m_NoShowcaseMessage.SetActive(false);
 
-            bool polyDown = VrAssetService.m_Instance.NoConnection && requiresPoly;
-            m_NoPolyConnectionMessage.SetActive(polyDown);
+            // bool requiresPoly = CurrentSketchSet.SketchSetType == PolySketchSet.UriName;
+            //
+            // bool polyDown = VrAssetService.m_Instance.NoConnection && requiresPoly;
+            // m_NoPolyConnectionMessage.SetActive(polyDown);
+            //
+            // bool outOfDate = !polyDown && !VrAssetService.m_Instance.Available && requiresPoly;
+            // m_OutOfDateMessage.SetActive(outOfDate);
+            //
+            // if (outOfDate || polyDown)
+            // {
+            //     m_NoSketchesMessage.SetActive(false);
+            //     m_NoDriveSketchesMessage.SetActive(false);
+            //     m_NotLoggedInMessage.SetActive(false);
+            //     m_NoLikesMessage.SetActive(false);
+            //     m_ContactingServerMessage.SetActive(false);
+            //     m_NoShowcaseMessage.SetActive(false);
+            //     return;
+            // }
+            //
+            // bool refreshIcons = CurrentSketchSet.NumSketches > 0;
+            //
+            // // Show no sketches if we don't have sketches.
+            // bool isUser = CurrentSketchSet.SketchSetType == FileSketchSet.TypeName;
+            // bool isLiked = CurrentSketchSet.SketchSetType == PolySketchSet.UriName;
+            // bool isCurated = CurrentSketchSet is ResourceCollectionSketchSet;
+            // bool isDrive = CurrentSketchSet.SketchSetType == GoogleDriveSketchSet.UriString;
+            // m_NoSketchesMessage.SetActive(isUser && (CurrentSketchSet.NumSketches <= 0));
+            // m_NoDriveSketchesMessage.SetActive(isDrive && (CurrentSketchSet.NumSketches <= 0));
+            //
+            // // Show sign in popup if signed out for liked or drive sketchsets
+            // bool showNotLoggedIn = !App.GoogleIdentity.LoggedIn && (isLiked || isDrive);
+            // refreshIcons = refreshIcons && !showNotLoggedIn;
+            // m_NotLoggedInMessage.SetActive(showNotLoggedIn && isLiked);
+            // m_NotLoggedInDriveMessage.SetActive(showNotLoggedIn && isDrive);
+            //
+            // // Show no likes text & gallery button if we don't have liked sketches.
+            // m_NoLikesMessage.SetActive(
+            //     isLiked &&
+            //     (CurrentSketchSet.NumSketches <= 0) &&
+            //     !CurrentSketchSet.IsActivelyRefreshingSketches &&
+            //     App.GoogleIdentity.LoggedIn);
+            //
+            // // Show Contacting Server if we're talking to Poly.
+            // m_ContactingServerMessage.SetActive(
+            //     (requiresPoly || isDrive) &&
+            //     (CurrentSketchSet.NumSketches <= 0) &&
+            //     (CurrentSketchSet.IsActivelyRefreshingSketches && App.GoogleIdentity.LoggedIn));
+            //
+            // // Show Showcase error if we're in Showcase and don't have sketches.
+            // m_NoShowcaseMessage.SetActive(
+            //     isCurated &&
+            //     (CurrentSketchSet.NumSketches <= 0) &&
+            //     !CurrentSketchSet.IsActivelyRefreshingSketches);
 
-            bool outOfDate = !polyDown && !VrAssetService.m_Instance.Available && requiresPoly;
-            m_OutOfDateMessage.SetActive(outOfDate);
-
-            if (outOfDate || polyDown)
-            {
-                m_NoSketchesMessage.SetActive(false);
-                m_NoDriveSketchesMessage.SetActive(false);
-                m_NotLoggedInMessage.SetActive(false);
-                m_NoLikesMessage.SetActive(false);
-                m_ContactingServerMessage.SetActive(false);
-                m_NoShowcaseMessage.SetActive(false);
-                return;
-            }
-
-            bool refreshIcons = m_SketchSet.NumSketches > 0;
-
-            // Show no sketches if we don't have sketches.
-            m_NoSketchesMessage.SetActive(
-                (m_CurrentSketchSet == SketchSetType.User) && (m_SketchSet.NumSketches <= 0));
-            m_NoDriveSketchesMessage.SetActive(
-                (m_CurrentSketchSet == SketchSetType.Drive) && (m_SketchSet.NumSketches <= 0));
-
-            // Show sign in popup if signed out for liked or drive sketchsets
-            bool showNotLoggedIn = !App.GoogleIdentity.LoggedIn &&
-                (m_CurrentSketchSet == SketchSetType.Liked ||
-                m_CurrentSketchSet == SketchSetType.Drive);
-            refreshIcons = refreshIcons && !showNotLoggedIn;
-            m_NotLoggedInMessage.SetActive(showNotLoggedIn && m_CurrentSketchSet == SketchSetType.Liked);
-            m_NotLoggedInDriveMessage.SetActive(showNotLoggedIn &&
-                m_CurrentSketchSet == SketchSetType.Drive);
-
-            // Show no likes text & gallery button if we don't have liked sketches.
-            m_NoLikesMessage.SetActive(
-                (m_CurrentSketchSet == SketchSetType.Liked) &&
-                (m_SketchSet.NumSketches <= 0) &&
-                !m_SketchSet.IsActivelyRefreshingSketches &&
-                App.GoogleIdentity.LoggedIn);
-
-            // Show Contacting Server if we're talking to Poly.
-            m_ContactingServerMessage.SetActive(
-                (requiresPoly ||
-                m_CurrentSketchSet == SketchSetType.Drive) &&
-                (m_SketchSet.NumSketches <= 0) &&
-                (m_SketchSet.IsActivelyRefreshingSketches && App.GoogleIdentity.LoggedIn));
-
-            // Show Showcase error if we're in Showcase and don't have sketches.
-            m_NoShowcaseMessage.SetActive(
-                (m_CurrentSketchSet == SketchSetType.Curated) &&
-                (m_SketchSet.NumSketches <= 0) &&
-                !m_SketchSet.IsActivelyRefreshingSketches);
+            bool refreshIcons = CurrentSketchSet.NumSketches > 0;
 
             // Refresh all icons if necessary.
             if (!refreshIcons)
@@ -370,7 +436,7 @@ namespace TiltBrush
 
                 // Set sketch index relative to page based index
                 int iSketchIndex = m_IndexOffset + i;
-                if (iSketchIndex >= m_SketchSet.NumSketches)
+                if (iSketchIndex >= CurrentSketchSet.NumSketches)
                 {
                     iSketchIndex = -1;
                 }
@@ -379,14 +445,14 @@ namespace TiltBrush
 
                 // Init icon according to availability of sketch
                 GameObject go = icon.gameObject;
-                if (m_SketchSet.IsSketchIndexValid(iSketchIndex))
+                if (CurrentSketchSet.IsSketchIndexValid(iSketchIndex))
                 {
-                    string sSketchName = m_SketchSet.GetSketchName(iSketchIndex);
+                    string sSketchName = CurrentSketchSet.GetSketchName(iSketchIndex);
                     icon.SetDescriptionText(App.ShortenForDescriptionText(sSketchName));
-                    SceneFileInfo info = m_SketchSet.GetSketchSceneFileInfo(iSketchIndex);
+                    SceneFileInfo info = CurrentSketchSet.GetSketchSceneFileInfo(iSketchIndex);
                     if (info.Available)
                     {
-                        m_SketchSet.PrecacheSketchModels(iSketchIndex);
+                        CurrentSketchSet.PrecacheSketchModels(iSketchIndex);
                     }
 
                     if (info.TriangleCount is int triCount)
@@ -413,8 +479,8 @@ namespace TiltBrush
             PageFlipUpdate();
 
             // Refresh icons while they are in flux
-            if (m_SketchSet.IsReadyForAccess &&
-                (!m_SketchSet.RequestedIconsAreLoaded ||
+            if (CurrentSketchSet.IsReadyForAccess &&
+                (!CurrentSketchSet.RequestedIconsAreLoaded ||
                 !m_AllIconTexturesAssigned || !m_AllSketchesAreAvailable))
             {
                 UpdateIcons();
@@ -439,17 +505,17 @@ namespace TiltBrush
                 icon.UpdateUvOffsetAndScale(offset, m_SketchIconUvScale);
             }
 
-            switch (m_CurrentSketchSet)
+            switch (SelectedSketchStack)
             {
-                case SketchSetType.Curated:
-                    m_LoadingGallery.SetActive(m_SketchSet.IsActivelyRefreshingSketches);
+                case (int)RootSet.Liked:
+                    m_LoadingGallery.SetActive(CurrentSketchSet.IsActivelyRefreshingSketches);
                     m_DriveSyncProgress.SetActive(false);
                     m_SyncingDriveIcon.SetActive(false);
                     m_DriveEnabledIcon.SetActive(false);
                     m_DriveDisabledIcon.SetActive(false);
                     m_DriveFullIcon.SetActive(false);
                     break;
-                case SketchSetType.Liked:
+                case (int)RootSet.Remote:
                     m_LoadingGallery.SetActive(false);
                     m_DriveSyncProgress.SetActive(false);
                     m_SyncingDriveIcon.SetActive(false);
@@ -457,10 +523,10 @@ namespace TiltBrush
                     m_DriveDisabledIcon.SetActive(false);
                     m_DriveFullIcon.SetActive(false);
                     break;
-                case SketchSetType.User:
-                case SketchSetType.Drive:
-                    bool sketchSetRefreshing = m_CurrentSketchSet == SketchSetType.Drive &&
-                        m_SketchSet.IsActivelyRefreshingSketches;
+                case (int)RootSet.Local:
+                case (int)RootSet.Backup:
+                    bool sketchSetRefreshing = CurrentSketchSet.SketchSetType == GoogleDriveSketchSet.UriString &&
+                        CurrentSketchSet.IsActivelyRefreshingSketches;
                     bool driveSyncing = App.DriveSync.Syncing;
                     bool syncEnabled = App.DriveSync.SyncEnabled;
                     bool googleLoggedIn = App.GoogleIdentity.LoggedIn;
@@ -475,8 +541,7 @@ namespace TiltBrush
             }
 
             // Check to see if whether "drive set has sketches" has changed.
-            bool driveSetHasSketches =
-                SketchCatalog.m_Instance.GetSet(SketchSetType.Drive).NumSketches != 0;
+            bool driveSetHasSketches = m_SetStacks[(int)RootSet.Backup].Peek().NumSketches != 0;
             if (m_DriveSetHasSketches != driveSetHasSketches)
             {
                 m_DriveSetHasSketches = driveSetHasSketches;
@@ -501,7 +566,7 @@ namespace TiltBrush
                 m_GalleryButtons[m_ElementNumberGalleryButtonDrive].gameObject.SetActive(false);
                 galleryButtonN = galleryButtonAvailable - 1;
 
-                if (m_CurrentSketchSet == SketchSetType.Drive)
+                if (CurrentSketchSet.SketchSetType == GoogleDriveSketchSet.UriString)
                 {
                     // We were on the Drive tab but it's gone away so switch to the local tab by simulating
                     // the user pressing the local tab button.
@@ -546,16 +611,16 @@ namespace TiltBrush
                 LoadSketchButton icon = baseButton as LoadSketchButton;
                 if (icon == null) { continue; }
                 int iSketchIndex = icon.SketchIndex;
-                if (m_SketchSet.IsSketchIndexValid(iSketchIndex))
+                if (CurrentSketchSet.IsSketchIndexValid(iSketchIndex))
                 {
-                    icon.FadeIn = m_SketchSet.GetSketchSceneFileInfo(iSketchIndex).Available ? 1f : 0.5f;
+                    icon.FadeIn = CurrentSketchSet.GetSketchSceneFileInfo(iSketchIndex).Available ? 1f : 0.5f;
 
                     if (!icon.ThumbnailLoaded)
                     {
                         Texture2D rTexture = null;
                         string[] authors;
                         string description;
-                        if (m_SketchSet.GetSketchIcon(iSketchIndex, out rTexture, out authors, out description))
+                        if (CurrentSketchSet.GetSketchIcon(iSketchIndex, out rTexture, out authors, out description))
                         {
                             if (rTexture != null)
                             {
@@ -576,7 +641,7 @@ namespace TiltBrush
                             List<string> lines = new List<string>();
                             lines.Add(icon.Description);
 
-                            SceneFileInfo info = m_SketchSet.GetSketchSceneFileInfo(iSketchIndex);
+                            SceneFileInfo info = CurrentSketchSet.GetSketchSceneFileInfo(iSketchIndex);
                             if (info is PolySceneFileInfo polyInfo &&
                                 polyInfo.License != VrAssetService.kCreativeCommonsLicense)
                             {
@@ -602,7 +667,7 @@ namespace TiltBrush
                         {
                             // While metadata has not finished loading, check if this file is valid
                             bool bFileValid = false;
-                            SceneFileInfo rInfo = m_SketchSet.GetSketchSceneFileInfo(iSketchIndex);
+                            SceneFileInfo rInfo = CurrentSketchSet.GetSketchSceneFileInfo(iSketchIndex);
                             if (rInfo != null)
                             {
                                 bFileValid = rInfo.Exists;
@@ -667,7 +732,6 @@ namespace TiltBrush
             // If we're not active, hide all our preview panels
             if (!m_GazeActive)
             {
-                m_OnlineGalleryButtonRenderer.material.SetFloat("_Grayscale", 1);
                 m_ProfileButtonRenderer.material.SetFloat("_Grayscale", 1);
 
                 for (int i = 0; i < m_IconScriptsOnFirstPage.Count; ++i)
@@ -689,9 +753,8 @@ namespace TiltBrush
             }
             else if (m_CurrentState == PanelState.Available)
             {
-                m_OnlineGalleryButtonRenderer.material.SetFloat("_Grayscale", 0);
                 m_ProfileButtonRenderer.material.SetFloat("_Grayscale", 0);
-                m_SketchSet.RequestRefresh();
+                CurrentSketchSet.RequestRefresh();
             }
         }
 
@@ -732,6 +795,7 @@ namespace TiltBrush
         // Works specifically with GalleryButtons.
         public void ButtonPressed(GalleryButton.Type rType, BaseButton button = null)
         {
+            // TODO: Just do this whole damn thing differently.
             switch (rType)
             {
                 case GalleryButton.Type.Exit:
@@ -739,16 +803,16 @@ namespace TiltBrush
                     PointerManager.m_Instance.EatLineEnabledInput();
                     break;
                 case GalleryButton.Type.Showcase:
-                    SetVisibleSketchSet(SketchSetType.Curated);
+                    SetVisibleSketchSet(RootSet.Remote);
                     break;
                 case GalleryButton.Type.Local:
-                    SetVisibleSketchSet(SketchSetType.User);
+                    SetVisibleSketchSet(RootSet.Local);
                     break;
                 case GalleryButton.Type.Liked:
-                    SetVisibleSketchSet(SketchSetType.Liked);
+                    SetVisibleSketchSet(RootSet.Liked);
                     break;
                 case GalleryButton.Type.Drive:
-                    SetVisibleSketchSet(SketchSetType.Drive);
+                    SetVisibleSketchSet(RootSet.Backup);
                     if (!m_ReadOnlyShown)
                     {
                         CreatePopUp(SketchControlsScript.GlobalCommands.ReadOnlyNotice,
@@ -765,12 +829,17 @@ namespace TiltBrush
             }
         }
 
+        public void BackButtonPressed()
+        {
+            PopSketchSet(m_SelectedStack);
+        }
+
         private void OnSketchSetDirty()
         {
             ComputeNumPages();
 
-            SceneFileInfo first = (m_SketchSet.NumSketches > 0) ?
-                m_SketchSet.GetSketchSceneFileInfo(0) : null;
+            SceneFileInfo first = (CurrentSketchSet.NumSketches > 0) ?
+                CurrentSketchSet.GetSketchSceneFileInfo(0) : null;
             // If first sketch changed, return to first page.
             if (m_FirstSketch != null && !m_FirstSketch.Equals(first))
             {

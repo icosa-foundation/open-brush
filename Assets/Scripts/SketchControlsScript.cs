@@ -18,6 +18,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using TiltBrush.Layers;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -3897,8 +3898,9 @@ namespace TiltBrush
         // This coroutine must be run to completion or disposed.
         IEnumerator<Null> LoadAndExportAll()
         {
-            SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.User);
-            for (int i = 0; i < SketchCatalog.m_Instance.GetSet(SketchSetType.User).NumSketches; ++i)
+            // Currently just gets the user sketch set
+            ISketchSet sketchSet = SketchCatalog.m_Instance.GetSketchSet(FileSketchSet.TypeName);
+            for (int i = 0; i < sketchSet.NumSketches; ++i)
             {
                 SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(i);
                 using (var coroutine = LoadAndExport(rInfo.FullPath))
@@ -4106,11 +4108,16 @@ namespace TiltBrush
             m_SaveIconTool.ProgrammaticCaptureSaveIcon(vNewCamPos, Quaternion.identity);
         }
 
-        private void MergeBrushStrokes(SceneFileInfo fileInfo)
+        private IEnumerator MergeBrushStrokes(SceneFileInfo fileInfo)
         {
             m_PanelManager.ToggleSketchbookPanels(isLoadingSketch: true);
             PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
-            if (SaveLoadScript.m_Instance.Load(fileInfo, true))
+            var loadTask = SaveLoadScript.m_Instance.LoadAsync(fileInfo, true);
+            while (!loadTask.IsCompleted)
+            {
+                yield return null;
+            }
+            if (loadTask.Result)
             {
                 SketchMemoryScript.m_Instance.SetPlaybackMode(m_SketchPlaybackMode, m_DefaultSketchLoadSpeed);
                 SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true, false, false);
@@ -4124,16 +4131,16 @@ namespace TiltBrush
             }
         }
 
-        public void LoadSketch(SceneFileInfo fileInfo, bool quickload = false, bool additive = false)
+        private IEnumerator LoadSketchCoroutine(SceneFileInfo fileInfo, bool quickload, bool additive)
         {
-            LightsControlScript.m_Instance.DiscoMode = false;
-            m_WidgetManager.FollowingPath = false;
-            m_WidgetManager.CameraPathsVisible = false;
-            m_WidgetManager.DestroyAllWidgets();
-            m_PanelManager.ToggleSketchbookPanels(isLoadingSketch: true);
-            ResetGrabbedPose(everything: true);
-            PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
-            if (SaveLoadScript.m_Instance.Load(fileInfo, additive))
+            var previousState = App.CurrentState;
+            App.Instance.SetDesiredState(quickload ? App.AppState.QuickLoad : App.AppState.Loading);
+            var loadTask = SaveLoadScript.m_Instance.LoadAsync(fileInfo, additive);
+            while (!loadTask.IsCompleted)
+            {
+                yield return null;
+            }
+            if (loadTask.IsCompletedSuccessfully && loadTask.Result)
             {
                 SketchMemoryScript.m_Instance.SetPlaybackMode(m_SketchPlaybackMode, m_DefaultSketchLoadSpeed);
                 SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true);
@@ -4143,10 +4150,27 @@ namespace TiltBrush
                 // when the app is in the standard mode. That was there to prevent the controller color
                 // from flickering while in the intro mode.
                 App.Instance.ExitIntroSketch();
-                App.Instance.SetDesiredState(quickload ? App.AppState.QuickLoad : App.AppState.Loading);
+            }
+            else
+            {
+                Debug.LogException((loadTask.Exception));
+                App.Instance.SetDesiredState(previousState);
             }
             QualityControls.m_Instance.ResetAutoQuality();
             m_WidgetManager.ValidateCurrentCameraPath();
+        }
+
+        public void LoadSketch(SceneFileInfo fileInfo, bool quickload = false, bool additive = false)
+        {
+            LightsControlScript.m_Instance.DiscoMode = false;
+            m_WidgetManager.FollowingPath = false;
+            m_WidgetManager.CameraPathsVisible = false;
+            m_WidgetManager.DestroyAllWidgets();
+            m_PanelManager.ToggleSketchbookPanels(isLoadingSketch: true);
+            ResetGrabbedPose(everything: true);
+            PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
+
+            StartCoroutine(LoadSketchCoroutine(fileInfo, quickload, additive));
         }
 
         public void IssueGlobalCommand(GlobalCommands rEnum, int iParam1 = -1,
@@ -4247,12 +4271,11 @@ namespace TiltBrush
                     {
                         // TODO Refactor with Load below
                         var index = iParam1;
-                        var sketchSetType = (SketchSetType)iParam2;
-                        SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
+                        ISketchSet sketchSet = SketchbookPanel.Instance.GetSketchSet((SketchbookPanel.RootSet)iParam2);
                         SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
                         if (rInfo != null)
                         {
-                            MergeBrushStrokes(rInfo);
+                            StartCoroutine(MergeBrushStrokes(rInfo));
                             if (m_ControlsType != ControlsType.ViewingOnly)
                             {
                                 EatGazeObjectInput();
@@ -4263,8 +4286,7 @@ namespace TiltBrush
                 case GlobalCommands.Load:
                     {
                         var index = iParam1;
-                        var sketchSetType = (SketchSetType)iParam2;
-                        SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
+                        ISketchSet sketchSet = SketchbookPanel.Instance.GetSketchSet((SketchbookPanel.RootSet)iParam2);
                         SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
                         if (rInfo != null)
                         {
@@ -4456,8 +4478,7 @@ namespace TiltBrush
                 case GlobalCommands.ShowSketchFolder:
                     {
                         var index = iParam1;
-                        var sketchSetType = (SketchSetType)iParam2;
-                        SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
+                        ISketchSet sketchSet = SketchbookPanel.Instance.GetSketchSet((SketchbookPanel.RootSet)iParam2);
                         SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
                         EatGazeObjectInput();
                         //launch external window and tell the user we did so
@@ -4495,20 +4516,15 @@ namespace TiltBrush
                     break;
                 case GlobalCommands.DeleteSketch:
                     {
-                        var sketchSetType = (SketchSetType)iParam2;
-                        SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
+                        ISketchSet sketchSet = SketchbookPanel.Instance.GetSketchSet((SketchbookPanel.RootSet)iParam2);
                         sketchSet.DeleteSketch(iParam1);
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }
                 case GlobalCommands.RenameSketch:
                     {
-                        var sketchSetType = (SketchSetType)iParam2;
-                        SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
-                        if (sketchSetType == SketchSetType.User)
-                        {
-                            sketchSet.RenameSketch(iParam1, KeyboardPopUpWindow.m_LastInput);
-                        }
+                        ISketchSet sketchSet = SketchbookPanel.Instance.GetSketchSet((SketchbookPanel.RootSet)iParam2);
+                        sketchSet.RenameSketch(iParam1, KeyboardPopUpWindow.m_LastInput);
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }
@@ -4720,7 +4736,6 @@ namespace TiltBrush
                 case GlobalCommands.LoadConfirmComplex:
                     {
                         var index = iParam1;
-                        var sketchSetType = (SketchSetType)iParam2;
                         bool loadSketch = true;
 
                         // If the sketchbook is active, we may want to show a popup instead of load.
@@ -4730,7 +4745,7 @@ namespace TiltBrush
                             if (sketchBook != null)
                             {
                                 // Get triangle count from cloud scene file info.
-                                SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
+                                ISketchSet sketchSet = SketchbookPanel.Instance.GetSketchSet((SketchbookPanel.RootSet)iParam2);
                                 SceneFileInfo sfi = sketchSet.GetSketchSceneFileInfo(index);
                                 int tris = sfi.TriangleCount ?? -1;
 
@@ -4772,14 +4787,14 @@ namespace TiltBrush
                 case GlobalCommands.LoadWaitOnDownload:
                     {
                         bool download = false;
-                        if (iParam2 == (int)SketchSetType.Drive)
+                        ISketchSet sketchSet = SketchbookPanel.Instance.GetSketchSet((SketchbookPanel.RootSet)iParam2);
+                        if (sketchSet.SketchSetType == GoogleDriveSketchSet.UriString)
                         {
                             BasePanel sketchBook = m_PanelManager.GetSketchBookPanel();
-                            var googleSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Drive);
                             if (sketchBook != null
-                                && googleSketchSet != null
-                                && googleSketchSet.IsSketchIndexValid(iParam1)
-                                && !googleSketchSet.GetSketchSceneFileInfo(iParam1).Available)
+                                && sketchSet != null
+                                && sketchSet.IsSketchIndexValid(iParam1)
+                                && !sketchSet.GetSketchSceneFileInfo(iParam1).Available)
                             {
                                 sketchBook.CreatePopUp(GlobalCommands.LoadConfirmComplex, iParam1, iParam2, null);
                                 download = true;
@@ -4887,7 +4902,7 @@ namespace TiltBrush
         private void LoadNamed(string path, bool quickload, bool additive)
         {
             var fileInfo = new DiskSceneFileInfo(path);
-            fileInfo.ReadMetadata();
+            fileInfo.ReadMetadataAsync();
             if (SaveLoadScript.m_Instance.LastMetadataError != null)
             {
                 ControllerConsoleScript.m_Instance.AddNewLine(

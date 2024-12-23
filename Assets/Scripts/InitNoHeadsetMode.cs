@@ -27,13 +27,13 @@ namespace TiltBrush
         {
             var dropdown = GetComponentInChildren<TMP_Dropdown>();
             dropdown.ClearOptions();
-            var userSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.User);
+            var userSketchSet = SketchbookPanel.Instance.GetSketchSet(SketchbookPanel.RootSet.Local);
             for (int i = 0; i < userSketchSet.NumSketches; i++)
             {
                 var sketchName = userSketchSet.GetSketchName(i);
                 dropdown.options.Add(new TMP_Dropdown.OptionData(sketchName));
             }
-            var curatedSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Curated);
+            var curatedSketchSet = SketchbookPanel.Instance.GetSketchSet(SketchbookPanel.RootSet.Remote);
             for (int i = 0; i < curatedSketchSet.NumSketches; i++)
             {
                 var sketchName = curatedSketchSet.GetSketchName(i);
@@ -49,7 +49,7 @@ namespace TiltBrush
             var dropdown = GetComponentInChildren<TMP_Dropdown>();
             var index = dropdown.value;
 
-            var sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.User);
+            var sketchSet = SketchbookPanel.Instance.GetSketchSet(SketchbookPanel.RootSet.Local);
             if (index < sketchSet.NumSketches)
             {
                 SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
@@ -61,7 +61,7 @@ namespace TiltBrush
             else
             {
                 index -= sketchSet.NumSketches;
-                sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Curated);
+                sketchSet = SketchbookPanel.Instance.GetSketchSet(SketchbookPanel.RootSet.Remote);
                 var rInfo = sketchSet.GetSketchSceneFileInfo(index);
                 if (rInfo != null)
                 {

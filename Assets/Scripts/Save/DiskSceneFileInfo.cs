@@ -14,6 +14,7 @@
 
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using UnityEngine;
 using Newtonsoft.Json;
 #if USE_DOTNETZIP
@@ -268,7 +269,7 @@ namespace TiltBrush
         /// Returns a readable stream to a pre-existing subfile,
         /// or null if the subfile does not exist,
         /// or null if the file format is invalid.
-        public Stream GetReadStream(string subfileName)
+        public async Task<Stream> GetReadStreamAsync(string subfileName)
         {
             if (!Valid)
             {
@@ -334,17 +335,19 @@ namespace TiltBrush
             return m_TiltFile.IsHeaderValid();
         }
 
-        public SketchMetadata ReadMetadata()
+        public async Task<SketchMetadata> ReadMetadataAsync()
         {
             SketchMetadata metadata = null;
-            var stream = SaveLoadScript.GetMetadataReadStream(this);
-            if (stream != null)
+            await using (var stream = await SaveLoadScript.GetMetadataReadStreamAsync(this))
             {
-                using (var jsonReader = new JsonTextReader(new StreamReader(stream)))
+                if (stream != null)
                 {
-                    metadata = SaveLoadScript.m_Instance.DeserializeMetadata(jsonReader);
-                    m_SourceId = metadata.SourceId;
-                    m_AssetId = metadata.AssetId;
+                    using (var jsonReader = new JsonTextReader(new StreamReader(stream)))
+                    {
+                        metadata = SaveLoadScript.m_Instance.DeserializeMetadata(jsonReader);
+                        m_SourceId = metadata.SourceId;
+                        m_AssetId = metadata.AssetId;
+                    }
                 }
             }
             return metadata;
