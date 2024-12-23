@@ -17,7 +17,7 @@ Properties {
   _MainTex ("Particle Texture", 2D) = "white" {}
     _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
 
-    [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+
   _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
   _TimeBlend("Time Blend", Float) = 0
   _TimeSpeed("Time Speed", Float) = 1.0
@@ -46,15 +46,14 @@ Category {
 
       #pragma target 3.0
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
       #include "Assets/ThirdParty/Shaders/Noise.cginc"
 
       sampler2D _MainTex;
 
-      uniform float _ClipStart;
-      uniform float _ClipEnd;
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
       uniform half _Dissolve;
 
       struct appdata_t {
@@ -100,9 +99,10 @@ Category {
       // Input color is srgb
       fixed4 frag (v2f i) : COLOR {
 
+        #ifdef SHADER_SCRIPTING_ON
         if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
         if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
-
+        #endif
 
         float scale1 = 3;
         float scale2 = 3;

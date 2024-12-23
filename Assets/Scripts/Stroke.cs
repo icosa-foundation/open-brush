@@ -499,6 +499,7 @@ namespace TiltBrush
             }
             float startIndex = clipStart * batch.Geometry.NumVerts;
             float endIndex = clipEnd * batch.Geometry.NumVerts;
+            batch.InstantiatedMaterial.EnableKeyword("SHADER_SCRIPTING_ON");
             batch.InstantiatedMaterial.SetFloat("_ClipStart", startIndex);
             batch.InstantiatedMaterial.SetFloat("_ClipEnd", endIndex);
         }
@@ -507,12 +508,16 @@ namespace TiltBrush
         {
             _CheckValidLayerState();
             var batch = m_BatchSubset.m_ParentBatch;
+            if (ApiManager.ParameterRequiresScriptingKeyword(parameter))
+            {
+                batch.InstantiatedMaterial.EnableKeyword("SHADER_SCRIPTING_ON");
+            }
             var material = batch.InstantiatedMaterial;
             if (!material.HasFloat(parameter))
             {
                 throw new StrokeShaderModifierException($"Brush material {material.name} does not have a float parameter named {parameter}");
             }
-            batch.InstantiatedMaterial.SetFloat(parameter, value);
+            material.SetFloat(parameter, value);
         }
 
         public void SetShaderColor(string parameter, ColorApiWrapper color)

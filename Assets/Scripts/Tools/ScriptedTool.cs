@@ -140,6 +140,7 @@ namespace TiltBrush
 
             bool shouldEndUndo = false;
 
+            Vector3 upVector = InputManager.m_Instance.GetBrushControllerAttachPoint().rotation * Vector3.up;
             if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
                 var previewTypeVal = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, LuaNames.ToolPreviewType);
@@ -147,11 +148,10 @@ namespace TiltBrush
                 var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
                 var drawnVector_GS = rAttachPoint_GS - m_FirstPositionClicked_GS;
 
-                var stableUp = CalcStableUp(drawnVector_CS);
                 if (drawnVector_GS.sqrMagnitude > 0)
                 {
-                    var rotation_CS = Quaternion.LookRotation(drawnVector_CS, stableUp);
-                    var rotation_GS = Quaternion.LookRotation(drawnVector_GS, stableUp);
+                    var rotation_CS = Quaternion.LookRotation(drawnVector_CS, upVector);
+                    var rotation_GS = Quaternion.LookRotation(drawnVector_GS, upVector);
 
                     // Snapping needs compensating for the different rotation between global space and canvas space
                     var CS_GS_offset = rotation_GS.eulerAngles - rotation_CS.eulerAngles;
@@ -224,26 +224,13 @@ namespace TiltBrush
                     var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
                     SetApiProperty($"Tool.{LuaNames.ToolScriptEndPoint}", rAttachPoint_CS);
                     SetApiProperty($"Tool.{LuaNames.ToolScriptVector}", drawnVector_CS);
-                    SetApiProperty($"Tool.{LuaNames.ToolScriptRotation}", Quaternion.LookRotation(drawnVector_CS, CalcStableUp(drawnVector_CS)));
+                    SetApiProperty($"Tool.{LuaNames.ToolScriptRotation}", upVector);
                     shouldEndUndo = true;
                 }
             }
 
             LuaManager.Instance.DoToolScript(LuaNames.Main, m_FirstPositionClicked_CS, rAttachPoint_CS);
             if (shouldEndUndo) ApiManager.Instance.EndUndo();
-        }
-
-        public static Vector3 CalcStableUp(Vector3 vector)
-        {
-            // Check if the direction is nearly up or down, if it is, use world right instead.
-            var referenceUp = Vector3.Dot(vector, Vector3.up) > 0.99f ||
-                Vector3.Dot(vector, Vector3.up) < -0.99f
-                    ? Vector3.right : Vector3.up;
-            // Compute the right vector by crossing the direction with the reference up
-            Vector3 right = Vector3.Cross(vector, referenceUp);
-            // Compute a stable up vector by crossing the direction with the right vector
-            Vector3 stableUp = Vector3.Cross(vector, right);
-            return stableUp;
         }
 
         private void SetApiProperty(string key, object value)
@@ -253,9 +240,8 @@ namespace TiltBrush
         }
 
         //The actual Unity update function, used to update transforms and perform per-frame operations
-        protected override void Update()
+        protected void Update()
         {
-            base.Update();
             // If we're not locking to a controller, update our transforms now, instead of in LateUpdate.
             if (!m_LockToController)
             {

@@ -31,8 +31,8 @@ CGINCLUDE
   sampler2D _MainTex;
   float4 _MainTex_ST;
 
-  uniform float _ClipStart;
-  uniform float _ClipEnd;
+  uniform half _ClipStart;
+  uniform half _ClipEnd;
   uniform half _Dissolve;
 
   struct appdata_t {
@@ -90,15 +90,19 @@ CGINCLUDE
 
   fixed4 fragBlack (v2f i) : SV_Target
   {
+    #ifdef SHADER_SCRIPTING_ON
     if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
     if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+    #endif
     return float4(0,0,0,1);
   }
 
   fixed4 fragColor (v2f i) : SV_Target
   {
+    #ifdef SHADER_SCRIPTING_ON
     if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
     if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+    #endif
     return i.color;
   }
 

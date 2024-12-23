@@ -16,7 +16,7 @@ Shader "Brush/Special/DiamondHull" {
   Properties {
     _MainTex("Texture", 2D) = "white" {}
 
-    [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+
     _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
     _TimeBlend("Time Blend", Float) = 0
     _TimeSpeed("Time Speed", Float) = 1.0
@@ -39,15 +39,15 @@ Shader "Brush/Special/DiamondHull" {
       #pragma multi_compile __ AUDIO_REACTIVE
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
       #pragma multi_compile __ SELECTION_ON
-      #include "Assets/Shaders/Include/TimeOverride.cginc"
+
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/ThirdParty/Shaders/Noise.cginc"
       #include "Assets/Shaders/Include/MobileSelection.cginc"
 
       sampler2D _MainTex;
 
-      uniform float _ClipStart;
-      uniform float _ClipEnd;
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
       uniform half _Dissolve;
       uniform half _Opacity;
 
@@ -182,8 +182,10 @@ Shader "Brush/Special/DiamondHull" {
       // Input color is srgb
       void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
+        #ifdef SHADER_SCRIPTING_ON
         if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
         if (_Dissolve < 1 && Dither8x8(IN.vertex.xy) >= _Dissolve) discard;
+        #endif
 
         // Hardcode some shiny specular values
         o.Smoothness = .8;

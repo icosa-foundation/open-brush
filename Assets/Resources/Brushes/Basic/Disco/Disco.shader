@@ -20,7 +20,7 @@ Shader "Brush/Disco" {
     _MainTex ("Base (RGB) TransGloss (A)", 2D) = "white" {}
     _BumpMap ("Normalmap", 2D) = "bump" {}
 
-    [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+
     _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
     _TimeBlend("Time Blend", Float) = 0
     _TimeSpeed("Time Speed", Float) = 1.0
@@ -38,8 +38,9 @@ Shader "Brush/Disco" {
     #pragma multi_compile __ AUDIO_REACTIVE
     #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
     #pragma multi_compile __ SELECTION_ON
-    #include "Assets/Shaders/Include/TimeOverride.cginc"
+
     #include "Assets/Shaders/Include/Brush.cginc"
+
     #include "Assets/Shaders/Include/MobileSelection.cginc"
 
     struct Input {
@@ -69,8 +70,8 @@ Shader "Brush/Disco" {
     fixed4 _Color;
     half _Shininess;
 
-    uniform float _ClipStart;
-    uniform float _ClipEnd;
+    uniform half _ClipStart;
+    uniform half _ClipEnd;
     uniform half _Dissolve;
 
     void vert (inout appdata_full_plus_id v, out Input o) {
@@ -103,8 +104,10 @@ Shader "Brush/Disco" {
     // Input color is _native_
     void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
+      #ifdef SHADER_SCRIPTING_ON
       if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
       if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
+      #endif
 
       fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);
       o.Albedo = tex.rgb * _Color.rgb * IN.color.rgb;

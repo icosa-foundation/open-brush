@@ -49,8 +49,8 @@ SubShader {
     sampler2D _MainTex;
     float4 _MainTex_ST;
 
-    uniform float _ClipStart;
-    uniform float _ClipEnd;
+    uniform half _ClipStart;
+    uniform half _ClipEnd;
     uniform half _Dissolve;
 
     struct appdata {
@@ -117,8 +117,10 @@ SubShader {
 
     float4 frag(v2f i) : SV_TARGET {
 
+      #ifdef SHADER_SCRIPTING_ON
       if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
       if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+      #endif
 
       // Apply shadows
       UNITY_LIGHT_ATTENUATION(attenuation, i, i.worldPos);

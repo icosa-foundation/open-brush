@@ -681,6 +681,14 @@ namespace TiltBrush
         }
 
         [ApiEndpoint(
+            "strokes.debug", "Logs some debug info about the strokes"
+        )]
+        public static void StrokesDebug()
+        {
+            Debug.Log($"Strokes: {SketchMemoryScript.m_Instance.StrokeCount}");
+        }
+
+        [ApiEndpoint(
             "panel.attach",
             "Attaches the given panel to the user's wand",
             "scripts"
@@ -717,6 +725,12 @@ namespace TiltBrush
         {
             ClearLayerCommand cmd = new ClearLayerCommand(layer);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+        }
+
+        [ApiEndpoint("debug.ram", "Enable/Disable logging of RAM usage to the in-app console (Android only)")]
+        public static void EnableRamLogging(bool active)
+        {
+            App.Instance.RamLoggingActive = active;
         }
 
         [ApiEndpoint(
@@ -1035,6 +1049,15 @@ namespace TiltBrush
             return path;
         }
 
+        [ApiEndpoint(
+            "scripts.initPluginScripting",
+            "Call this before using any HTTP endpoint that accesses plugins (including html pages that list plugins)",
+            ""
+        )]
+        public static void InitPluginScripting()
+        {
+            LuaManager.Instance.Init();
+        }
 
         [ApiEndpoint(
             "scripts.toolscript.activate",

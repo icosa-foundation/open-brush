@@ -933,9 +933,8 @@ namespace TiltBrush
             }
         }
 
-        protected override void Update()
+        protected void Update()
         {
-            base.Update();
             switch (m_CurrentState)
             {
                 case State.Enter:

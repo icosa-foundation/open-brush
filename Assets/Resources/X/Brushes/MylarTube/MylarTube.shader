@@ -20,7 +20,7 @@ Properties {
 	_Shininess ("Shininess", Range (0.01, 1)) = 0.078125
 	_SqueezeAmount("Squeeze Amount", Range(0.0,1)) = 0.825
 
-	[Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+
 	_TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
 	_TimeBlend("Time Blend", Float) = 0
 	_TimeSpeed("Time Speed", Float) = 1.0
@@ -39,8 +39,8 @@ Category {
 		#pragma surface surf StandardSpecular vertex:vert addshadow
 		#pragma multi_compile __ AUDIO_REACTIVE
 		#pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
-		#include "Assets/Shaders/Include/TimeOverride.cginc"
-		#include "Assets/Shaders/Include/Brush.cginc"
+
+        #include "Assets/Shaders/Include/Brush.cginc"
 		#include "Assets/ThirdParty/Shaders/Noise.cginc"
 
 		sampler2D _MainTex;
@@ -48,8 +48,8 @@ Category {
 		half _Shininess;
 		half _SqueezeAmount;
 
-		uniform float _ClipStart;
-		uniform float _ClipEnd;
+		uniform half _ClipStart;
+		uniform half _ClipEnd;
 		uniform half _Dissolve;
 
 		struct Input {
@@ -96,8 +96,10 @@ Category {
 		// Input color is srgb
 		void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
+			#ifdef SHADER_SCRIPTING_ON
 			if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
 			if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
+			#endif
 
 		    o.Albedo =  _Color.rgb * IN.color.rgb;
 			//o.Emission =  _Color.rgb * IN.color.rgb;

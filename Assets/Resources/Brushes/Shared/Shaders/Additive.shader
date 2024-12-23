@@ -47,8 +47,8 @@ Category {
 
       sampler2D _MainTex;
 
-      uniform float _ClipStart;
-      uniform float _ClipEnd;
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
       uniform half _Dissolve;
       uniform half _Opacity;
 
@@ -96,8 +96,10 @@ Category {
 
       fixed4 frag (v2f i) : COLOR
       {
+        #ifdef SHADER_SCRIPTING_ON
         if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
         if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+        #endif
 
         half4 c = tex2D(_MainTex, i.texcoord);
         c = i.color * c;

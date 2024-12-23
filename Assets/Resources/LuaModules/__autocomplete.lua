@@ -661,10 +661,18 @@ function Headset:PastRotation(back) end
 ---@field position Vector3 | number[] The 3D position of the Image Widget
 ---@field rotation Rotation | number[] The 3D orientation of the Image Widget
 ---@field scale number The scale of the image widget
+---@field visible boolean Whether the widget is visible or not
+---@field aspect number The aspect ration of the image
+---@field filename string The filename of the image
 Image = {}
----@param location string The location of the image
+---@param x number The y coordinate of the pixel
+---@param y number 
+---@return Color # The pixel color
+function Image:GetPixel(x, y) end
+
+---@param filename string The filename of the image
 ---@return Image # The imported image widget
-function Image:Import(location) end
+function Image:Import(filename) end
 
 
 function Image:Select() end
@@ -1774,13 +1782,14 @@ function Svg:ParsePathString(svgPath) end
 ---@return PathList # Returns a PathList representing the parsed SVG document
 function Svg:ParseDocument(svg, offsetPerPath, includeColors) end
 
----@param svg string The SVG path string to draw
+---@param svgPath string The SVG path string to draw
 ---@param tr? Transform The transform to apply to the result
-function Svg:DrawPathString(svg, tr) end
+function Svg:DrawPathString(svgPath, tr) end
 
 ---@param svg string A text string that is a valid SVG document
 ---@param tr? Transform The transform (position, rotation and scale) to apply to the result
-function Svg:DrawDocument(svg, tr) end
+---@param includeColors? boolean Whether to use the colors from the SVG document
+function Svg:DrawDocument(svg, tr, includeColors) end
 
 
 
@@ -2504,9 +2513,14 @@ function Visualizer:SetBandPeak(peak) end
 ---@field rotation Rotation | number[] The 3D orientation of the Wand
 ---@field direction Vector3 | number[] The vector representing the forward direction of the wand controller
 ---@field pressure number How far the trigger on the wand contrller is pressed in
----@field speed Vector3 | number[] How fast the wand contrller is currently moving
+---@field speed Vector3 | number[] How fast the wand controller is currently moving
 ---@field triggerIsPressed boolean Check whether the wand trigger is currently pressed
 ---@field triggerPressedThisFrame boolean Check whether the wand trigger was pressed during the current frame
+---@field triggerReleasedThisFrame boolean Check whether the wand trigger was released during the current frame
+---@field timeSincePressed number Time in seconds since the wand trigger was last pressed
+---@field timeSinceReleased number Time in seconds since the wand trigger was last released
+---@field distanceMoved number The distance moved by the wand
+---@field distanceDrawn number The distance drawn by the wand (i.e. distance since the trigger was last pressed)
 Wand = {}
 ---@param size number The size of the history buffer
 function Wand:ResizeHistory(size) end

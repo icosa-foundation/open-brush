@@ -47,8 +47,8 @@ Category {
     float4 _MainTex_ST;
     float _EmissionGain;
 
-    uniform float _ClipStart;
-    uniform float _ClipEnd;
+    uniform half _ClipStart;
+    uniform half _ClipEnd;
     uniform half _Dissolve;
 
     struct appdata_t {
@@ -92,9 +92,11 @@ Category {
 
     fixed4 frag (v2f i) : COLOR
     {
+      #ifdef SHADER_SCRIPTING_ON
       if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
       // It's hard to get alpha curves right so use dithering for hdr shaders
       if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+      #endif
 
       float4 color = i.color * tex2D(_MainTex, i.texcoord);
       color = float4(color.rgb * color.a, 1.0);

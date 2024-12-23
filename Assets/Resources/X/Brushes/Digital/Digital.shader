@@ -50,8 +50,8 @@ Category {
 
       sampler2D _MainTex;
 
-      uniform float _ClipStart;
-      uniform float _ClipEnd;
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
       uniform half _Dissolve;
       uniform half _Opacity;
 
@@ -108,8 +108,10 @@ Category {
       // Input color is srgb
       fixed4 frag (v2f i) : COLOR {
 
+        #ifdef SHADER_SCRIPTING_ON
         if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
         if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+        #endif
 
         float stroke_width = .1;
         float antialias_feather_px = 4;

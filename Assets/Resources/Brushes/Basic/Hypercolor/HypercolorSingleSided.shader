@@ -21,7 +21,7 @@ Properties {
   _BumpMap ("Normalmap", 2D) = "bump" {}
   _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
 
-  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+
   _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
   _TimeBlend("Time Blend", Float) = 0
   _TimeSpeed("Time Speed", Float) = 1.0
@@ -36,7 +36,7 @@ Properties {
     #pragma surface surf StandardSpecular vertex:vert alphatest:_Cutoff addshadow
     #pragma multi_compile __ AUDIO_REACTIVE
     #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
-    #include "Assets/Shaders/Include/TimeOverride.cginc"
+
     #include "Assets/Shaders/Include/Brush.cginc"
 
     struct Input {

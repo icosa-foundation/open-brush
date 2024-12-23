@@ -271,6 +271,7 @@ namespace TiltBrush
             {
                 float startIndex = clipStart * batch.Geometry.NumVerts;
                 float endIndex = clipEnd * batch.Geometry.NumVerts;
+                batch.InstantiatedMaterial.EnableKeyword("SHADER_SCRIPTING_ON");
                 batch.InstantiatedMaterial.SetFloat("_ClipStart", startIndex);
                 batch.InstantiatedMaterial.SetFloat("_ClipEnd", endIndex);
             }
@@ -290,6 +291,7 @@ namespace TiltBrush
                 {
                     float startIndex = clipStart * batch.Geometry.NumVerts;
                     float endIndex = clipEnd * batch.Geometry.NumVerts;
+                    batch.InstantiatedMaterial.EnableKeyword("SHADER_SCRIPTING_ON");
                     batch.InstantiatedMaterial.SetFloat("_ClipStart", startIndex);
                     batch.InstantiatedMaterial.SetFloat("_ClipEnd", endIndex);
                 }
@@ -304,6 +306,10 @@ namespace TiltBrush
         {
             foreach (var batch in _CanvasScript.BatchManager.AllBatches())
             {
+                if (ApiManager.ParameterRequiresScriptingKeyword(parameter))
+                {
+                    batch.InstantiatedMaterial.EnableKeyword("SHADER_SCRIPTING_ON");
+                }
                 if (!batch.InstantiatedMaterial.HasFloat(parameter)) continue;
                 batch.InstantiatedMaterial.SetFloat(parameter, value);
             }
@@ -320,6 +326,10 @@ namespace TiltBrush
             if (desc == null || !desc.Material.HasFloat(parameter)) return;
             foreach (var batch in _GetBatches(desc))
             {
+                if (ApiManager.ParameterRequiresScriptingKeyword(parameter))
+                {
+                    batch.InstantiatedMaterial.EnableKeyword("SHADER_SCRIPTING_ON");
+                }
                 batch.InstantiatedMaterial.SetFloat(parameter, value);
             }
         }

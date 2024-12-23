@@ -12,25 +12,25 @@ namespace TiltBrush
     public static class BrushApiWrapper
     {
         [LuaDocsDescription("Time in seconds since the brush trigger was last pressed")]
-        public static float timeSincePressed => Time.realtimeSinceStartup - SketchSurfacePanel.m_Instance.ActiveTool.TimeBecameActive;
+        public static float timeSincePressed => Time.realtimeSinceStartup - InputManager.Brush.TimeBecameActive;
 
         [LuaDocsDescription("Time in seconds since the brush trigger was last released")]
-        public static float timeSinceReleased => Time.realtimeSinceStartup - SketchSurfacePanel.m_Instance.ActiveTool.TimeBecameInactive;
+        public static float timeSinceReleased => Time.realtimeSinceStartup - InputManager.Brush.TimeBecameInactive;
 
         [LuaDocsDescription("Check whether the brush trigger is currently pressed")]
-        public static bool triggerIsPressed => SketchSurfacePanel.m_Instance.ActiveTool.IsActive;
+        public static bool triggerIsPressed => InputManager.Brush.IsTrigger();
 
         [LuaDocsDescription("Check whether the brush trigger was pressed during the current frame")]
-        public static bool triggerPressedThisFrame => SketchSurfacePanel.m_Instance.ActiveTool.BecameActiveThisFrame;
+        public static bool triggerPressedThisFrame => InputManager.Brush.IsTriggerDown();
 
         [LuaDocsDescription("Check whether the brush trigger was released during the current frame")]
-        public static bool triggerReleasedThisFrame => SketchSurfacePanel.m_Instance.ActiveTool.BecameInactiveThisFrame;
+        public static bool triggerReleasedThisFrame => InputManager.Brush.BecameInactiveThisFrame;
 
         [LuaDocsDescription("The distance moved by the brush")]
-        public static float distanceMoved => SketchSurfacePanel.m_Instance.ActiveTool.DistanceMoved_CS;
+        public static float distanceMoved => InputManager.Brush.DistanceMoved_CS;
 
         [LuaDocsDescription("The distance drawn by the brush (i.e. distance since the trigger was last pressed)")]
-        public static float distanceDrawn => SketchSurfacePanel.m_Instance.ActiveTool.DistanceDrawn_CS;
+        public static float distanceDrawn => InputManager.Brush.DistanceDrawn_CS;
 
         [LuaDocsDescription("The 3D position of the Brush Controller's tip")]
         public static Vector3 position

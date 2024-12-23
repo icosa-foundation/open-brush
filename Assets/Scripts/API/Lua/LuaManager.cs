@@ -136,6 +136,8 @@ namespace TiltBrush
         public static LuaManager Instance => m_Instance;
 
         private LinkedList<LuaWebRequest> m_WebRequests;
+        private bool m_IsInitialized;
+        public bool IsInitialized => m_IsInitialized;
 
         public string LuaModulesPath => Path.Join(UserPluginsPath(), "LuaModules");
 
@@ -161,11 +163,6 @@ namespace TiltBrush
             }
         }
 
-        void Start()
-        {
-            Init();
-        }
-
         private void OnScriptsDirectoryChanged(object sender, FileSystemEventArgs e)
         {
             m_ScriptPathsToUpdate.Add(e.FullPath);
@@ -173,6 +170,7 @@ namespace TiltBrush
 
         public void Init()
         {
+            if (m_IsInitialized) return;
             m_WebRequests = new LinkedList<LuaWebRequest>();
             m_TransformBuffers = new TransformBuffers(128);
             m_ScriptPathsToUpdate = new List<string>();
@@ -222,6 +220,7 @@ namespace TiltBrush
             ConfigureScriptButton(LuaApiCategory.PointerScript);
             ConfigureScriptButton(LuaApiCategory.SymmetryScript);
             ConfigureScriptButton(LuaApiCategory.ToolScript);
+            m_IsInitialized = true;
         }
 
         public void CopyLuaModules()
@@ -270,6 +269,8 @@ namespace TiltBrush
 
         private void Update()
         {
+            if (!m_IsInitialized) return;
+
             bool sceneIsReady = App.CurrentState == App.AppState.Standard;
             if (BackgroundScriptsToRun.Count > 0 && sceneIsReady)
             {
@@ -1200,9 +1201,10 @@ namespace TiltBrush
                 case ScriptCoordSpace.Default:
                 case ScriptCoordSpace.Pointer:
 
+                    Vector3 upVector = InputManager.m_Instance.GetBrushControllerAttachPoint().rotation * Vector3.up;
                     tr_CS.translation = firstTr_CS.translation;
                     tr_CS.rotation = drawnVector_CS == Vector3.zero ?
-                        Quaternion.identity : Quaternion.LookRotation(drawnVector_CS, ScriptedTool.CalcStableUp(drawnVector_CS));
+                        Quaternion.identity : Quaternion.LookRotation(drawnVector_CS, upVector);
                     tr_CS.scale = 1f / App.ActiveCanvas.Pose.scale;
                     tr_CS.scale *= drawnVector_CS.magnitude;
                     transforms = result.AsMultiTrList();
@@ -1218,6 +1220,18 @@ namespace TiltBrush
             if (transforms != null) DrawStrokes.DrawNestedTrList(transforms, tr_CS, result._Colors, brushScale);
         }
 
-
+        // Stop scripts and clear data structures. Used when clearing the sketch
+        public void DeInitialize()
+        {
+            m_WebRequests.Clear();
+            m_TransformBuffers = null;
+            m_ScriptPathsToUpdate.Clear();
+            m_Timers.Clear();
+            m_WidgetConfigs.Clear();
+            Scripts.Clear();
+            ActiveScripts.Clear();
+            m_ActiveBackgroundScripts.Clear();
+            m_IsInitialized = false;
+        }
     }
 }

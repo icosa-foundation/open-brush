@@ -20,7 +20,7 @@ Shader "Brush/Special/LightWire" {
     _MainTex ("Base (RGB) TransGloss (A)", 2D) = "white" {}
     _BumpMap ("Normalmap", 2D) = "bump" {}
 
-    [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+
     _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
     _TimeBlend("Time Blend", Float) = 0
     _TimeSpeed("Time Speed", Float) = 1.0
@@ -38,7 +38,7 @@ Shader "Brush/Special/LightWire" {
     #pragma multi_compile __ AUDIO_REACTIVE
     #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
     #pragma multi_compile __ SELECTION_ON
-    #include "Assets/Shaders/Include/TimeOverride.cginc"
+
     #include "Assets/Shaders/Include/Brush.cginc"
     #include "Assets/Shaders/Include/MobileSelection.cginc"
 
@@ -54,8 +54,8 @@ Shader "Brush/Special/LightWire" {
     fixed4 _Color;
     half _Shininess;
 
-    uniform float _ClipStart;
-    uniform float _ClipEnd;
+    uniform half _ClipStart;
+    uniform half _ClipEnd;
     uniform half _Dissolve;
 
     struct appdata_full_plus_id {
@@ -95,8 +95,10 @@ Shader "Brush/Special/LightWire" {
     // Input color is srgb
     void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
+      #ifdef SHADER_SCRIPTING_ON
       if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
       if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
+      #endif
 
       float envelope = sin ( fmod ( IN.uv_MainTex.x*2, 1.0f) * 3.14159);
       float lights = envelope < .1 ? 1 : 0;
