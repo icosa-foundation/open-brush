@@ -20,6 +20,10 @@ Properties {
   _WaveformIntensity("Waveform Intensity", Vector) = (0,1,0,0)
   _BaseGain("Base Gain", Float) = 0
   _EmissionGain("Emission Gain", Float) = 0
+
+  _Dissolve("_Dissolve", Range(0, 1)) = 1
+  _ClipStart("Clip Start", Float) = 0
+  _ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -52,11 +56,16 @@ Category {
       sampler2D _MainTex;
       fixed4 _TintColor;
 
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
+      uniform half _Dissolve;
+
       struct v2f {
         float4 vertex : SV_POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
         float waveform : TEXCOORD1;
+        uint id : TEXCOORD2;
 
         UNITY_VERTEX_OUTPUT_STEREO
       };
@@ -75,7 +84,7 @@ Category {
         UNITY_SETUP_INSTANCE_ID(v);
         UNITY_INITIALIZE_OUTPUT(v2f, o);
         UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-        
+
         float birthTime = v.texcoord.w;
         float rotation = v.texcoord.z;
         float halfSize = GetParticleHalfSize(v.corner.xyz, v.center, birthTime);
@@ -96,13 +105,20 @@ Category {
         o.color = v.color * _BaseGain;
         o.texcoord = TRANSFORM_TEX(v.texcoord.xy,_MainTex);
         o.waveform = waveform * 15;
+        o.id = v.id;
         return o;
       }
 
       // Input color is srgb
       fixed4 frag (v2f i) : SV_Target
       {
-#ifdef AUDIO_REACTIVE
+        #ifdef SHADER_SCRIPTING_ON
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+        // It's hard to get alpha curves right so use dithering for hdr shaders
+        if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+        #endif
+
+        #ifdef AUDIO_REACTIVE
         // Deform uv's by waveform displacement amount vertically
         // Envelop by "V" UV to keep the edges clean
         float vDistance = abs(i.texcoord.y - .5)*2;
@@ -120,7 +136,7 @@ Category {
 #if SELECTION_ON
         c.rgb = GetSelectionColor() * tex.r;
 #endif
-        return c;
+          return c * _Dissolve;
       }
       ENDCG
     }

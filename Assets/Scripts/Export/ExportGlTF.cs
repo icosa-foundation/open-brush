@@ -228,7 +228,7 @@ namespace TiltBrush
         {
             foreach (BrushMeshPayload meshPayload in payload.groups.SelectMany(g => g.brushMeshes))
             {
-                exporter.ExportMeshPayload(payload, meshPayload, GetGroupNode(meshPayload.group));
+                exporter.ExportMeshPayload(payload, meshPayload, GetGroupNode(meshPayload.group), localXf: meshPayload.xform);
             }
 
             foreach (var sameInstance in payload.modelMeshes.GroupBy(m => (m.model, m.modelId)))

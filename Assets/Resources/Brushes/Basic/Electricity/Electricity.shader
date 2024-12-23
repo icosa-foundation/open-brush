@@ -16,13 +16,23 @@ Shader "Brush/Special/Electricity" {
 Properties {
   _MainTex ("Color", 2D) = "white" {}
   _DisplacementIntensity("Displacement", Float) = .1
-    _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+  _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+
+
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
+
+    _Dissolve("Dissolve", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 CGINCLUDE
   #pragma multi_compile __ SELECTION_ON
   #include "UnityCG.cginc"
   #include "Assets/Shaders/Include/Brush.cginc"
+
   #include "Assets/Shaders/Include/Hdr.cginc"
   #include "Assets/ThirdParty/Shaders/Noise.cginc"
   #include "Assets/Shaders/Include/MobileSelection.cginc"
@@ -40,6 +50,7 @@ CGINCLUDE
     float3 tangent : TANGENT;
     float2 texcoord0 : TEXCOORD0;
     float3 texcoord1 : TEXCOORD1;
+    uint id : SV_VertexID;
 
     UNITY_VERTEX_INPUT_INSTANCE_ID
   };
@@ -48,24 +59,29 @@ CGINCLUDE
   half _DisplacementIntensity;
   half _EmissionGain;
 
+  uniform half _ClipStart;
+  uniform half _ClipEnd;
+  uniform half _Dissolve;
+
   struct v2f {
     float4 vertex : POSITION;
     fixed4 color : COLOR;
     float2 texcoord : TEXCOORD0;
+    uint id : TEXCOORD2;
 
     UNITY_VERTEX_OUTPUT_STEREO
   };
 
   float3 displacement(float3 pos, float mod) {
     // Noise
-    float time = _Time.w;
+    float time = GetTime().w;
     float d = 30;
     float freq = .1 + mod;
     float3 disp = float3(1,0,0) * curlX(pos * freq + time, d);
     disp += float3(0,1,0) * curlY(pos * freq + time, d);
     disp += float3(0,0,1) * curlZ(pos * freq + time, d);
 
-    time = _Time.w*1.777;
+    time = GetTime().w*1.777;
     d = 100;
     freq = .2 + mod;
     float3 disp2 = float3(1,0,0) * curlX(pos * freq + time, d);
@@ -126,6 +142,7 @@ CGINCLUDE
     o.color = v.color;
 #endif
     o.texcoord = v.texcoord0;
+    o.id = (float2)v.id;
     return o;
   }
 
@@ -147,6 +164,12 @@ CGINCLUDE
   // Input color is srgb
   fixed4 frag (v2f i) : COLOR
   {
+    #ifdef SHADER_SCRIPTING_ON
+    if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+    // It's hard to get alpha curves right so use dithering for hdr shaders
+    if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+    #endif
+
     // interior procedural line
 #if SHARP_AND_BLOOMY
     // Step function: 3 in [.4, .6], 1 elsewhere
@@ -170,7 +193,8 @@ CGINCLUDE
 
     // It doesn't matter which of these is first since they can't both be active at the same time;
     // but only one ordering will compile because of the return types.
-    return SrgbToNative(encodeHdr(unencoded));
+    float4 color = encodeHdr(unencoded);
+    return SrgbToNative(color * _Dissolve);
   }
 ENDCG
 

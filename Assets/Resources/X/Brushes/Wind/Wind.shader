@@ -16,6 +16,16 @@ Shader "Brush/Special/Wind" {
 Properties {
 	_MainTex ("Texture", 2D) = "white" {}
 	_Speed ("Animation Speed", Range (0,1)) = 1
+
+
+      _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+      _TimeBlend("Time Blend", Float) = 0
+      _TimeSpeed("Time Speed", Float) = 1.0
+
+      _Opacity ("Opacity", Range(0, 1)) = 1
+      _Dissolve ("Dissolve", Range(0, 1)) = 1
+	  _ClipStart("Clip Start", Float) = 0
+	  _ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -35,8 +45,9 @@ Category {
 			#pragma multi_compile __ AUDIO_REACTIVE
 			#pragma multi_compile __ HDR_EMULATED HDR_SIMPLE
 			#pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
+
 			#include "UnityCG.cginc"
-			#include "Assets/Shaders/Include/Brush.cginc"
+            #include "Assets/Shaders/Include/Brush.cginc"
 			#include "Assets/Shaders/Include/Hdr.cginc"
 
 			sampler2D _MainTex;
@@ -44,11 +55,17 @@ Category {
 			float4 _MainTex_ST;
 			float _Speed;
 
+			uniform half _ClipStart;
+			uniform half _ClipEnd;
+			uniform half _Dissolve;
+			uniform half _Opacity;
+
 			struct appdata_t {
 				float4 vertex : POSITION;
 				fixed4 color : COLOR;
 				float3 normal : NORMAL;
 				float2 texcoord : TEXCOORD0;
+                uint id : SV_VertexID;
 
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
@@ -57,6 +74,7 @@ Category {
 				float4 vertex : POSITION;
 				fixed4 color : COLOR;
 				float2 texcoord : TEXCOORD0;
+                uint id : TEXCOORD2;
 
 				UNITY_VERTEX_OUTPUT_STEREO
 			};
@@ -74,19 +92,24 @@ Category {
 				o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
 				o.color = TbVertToNative(v.color);
 				o.vertex = UnityObjectToClipPos(v.vertex);
-
+                o.id = (float2)v.id;
 				return o;
 			}
 
 			fixed4 frag (v2f i) : COLOR
 			{
+				#ifdef SHADER_SCRIPTING_ON
+				if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+				if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+				#endif
+
 				// Simple scrollin'
-				float time = _Time.y * _Speed;
+				float time = GetTime().y * _Speed;
 				fixed2 scrollUV = i.texcoord;
 				scrollUV.x += time * 0.5;
 
 				float4 tex = tex2D(_MainTex, scrollUV);
-				return encodeHdr(tex * i.color.rgb * i.color.a);
+				return encodeHdr(tex * i.color.rgb * i.color.a) * _Opacity;
 			}
 			ENDCG
 		}
