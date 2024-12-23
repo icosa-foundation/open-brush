@@ -310,7 +310,7 @@ public class UserVariantBrush
             return false;
         }
 
-        var baseBrush = App.Instance.m_Manifest.Brushes.FirstOrDefault(
+        var baseBrush = App.Instance.ManifestFull.Brushes.FirstOrDefault(
           x => x.m_Guid.ToString() == m_BrushProperties.VariantOf);
 
         if (baseBrush == null)
@@ -320,7 +320,7 @@ public class UserVariantBrush
             return false;
         }
 
-        if (App.Instance.m_Manifest.UniqueBrushes().Any(x => x.m_Guid.ToString() == m_BrushProperties.GUID))
+        if (App.Instance.ManifestFull.UniqueBrushes().Any(x => x.m_Guid.ToString() == m_BrushProperties.GUID))
         {
             Debug.Log(
               $"Cannot load brush at {m_Location} because its GUID matches {baseBrush.name}.");

@@ -238,7 +238,9 @@ namespace TiltBrush
 
                     // Write sketch data
                     zip.PutNextEntry(new ZipEntry(TiltFile.FN_SKETCH));
-                    WriteMemory(zip, strokeCopies, groupIdMapping, out brushList);
+                    List<Guid> fallbackGuids;
+                    WriteMemory(zip, strokeCopies, groupIdMapping, out brushList, out fallbackGuids);
+                    m_Metadata.FallbackBrushIndex = fallbackGuids.Select(GetForcePrecededBy).ToArray();
                     zip.CloseEntry();
 
                     // Write thumbnail if available
