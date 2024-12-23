@@ -6,11 +6,6 @@ public class TempMRFix : MonoBehaviour
 {
     private MeshRenderer[] m_MeshRenderers;
 
-    void Start()
-    {
-        m_MeshRenderers = gameObject.GetComponentsInChildren<MeshRenderer>();
-    }
-
     private void Update()
     {
         var pos = gameObject.transform.position;
@@ -21,6 +16,11 @@ public class TempMRFix : MonoBehaviour
 
     void OnEnable()
     {
+        if (m_MeshRenderers == null)
+        {
+            m_MeshRenderers = gameObject.GetComponentsInChildren<MeshRenderer>();
+        }
+
         for (int i = 0; i < m_MeshRenderers.Length; i++)
         {
             m_MeshRenderers[i].enabled = true;
