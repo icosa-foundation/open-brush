@@ -36,8 +36,8 @@ namespace TiltBrush.Layers
         private bool m_RefreshNavButtons;
 
         private int WidgetsPerPage => m_Widgets.Count;
-        private int LastPageIndex => (m_Canvases.Count + WidgetsPerPage - 1) / WidgetsPerPage - 1;
-        private int CurrentPageIndex => m_StartingCanvasIndex / WidgetsPerPage;
+        private int LastPageIndex => (m_Canvases.Count + WidgetsPerPage - 1) / (WidgetsPerPage > 1 ? WidgetsPerPage - 1 : 1);
+        private int CurrentPageIndex => m_StartingCanvasIndex / (WidgetsPerPage > 0 ? WidgetsPerPage : 1);
 
         private void Start()
         {
@@ -85,8 +85,8 @@ namespace TiltBrush.Layers
             if (m_RefreshNavButtons)
             {
                 // Can't do this in RefreshUI because the it doesn't take effect if the button is being interacted with
-                m_PreviousPageButton.SetButtonAvailable(CurrentPageIndex > 0);
-                m_NextPageButton.SetButtonAvailable(CurrentPageIndex < LastPageIndex);
+                m_PreviousPageButton?.SetButtonAvailable(CurrentPageIndex > 0);
+                m_NextPageButton?.SetButtonAvailable(CurrentPageIndex < LastPageIndex);
                 m_RefreshNavButtons = false;
             }
         }
