@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -26,16 +27,45 @@ namespace TiltBrush
         private Renderer m_DropperColorDescriptionSwatchRenderer;
 
 
+        private bool m_ValidBrushFoundThisFrame;
+        private bool m_SelectionValid;
         private Color m_SelectionColor;
         private BrushDescriptor m_SelectionBrush;
         private Stroke m_SelectionStroke;
 
+        private enum State
+        {
+            Enter,
+            Standard,
+            Exit,
+            Off
+        }
+        private State m_CurrentState;
+        private float m_EnterAmount;
+        [SerializeField] private float m_EnterSpeed = 16.0f;
+        [SerializeField] private Transform m_OffsetTransform;
         private Vector3 m_OffsetTransformBaseScale;
+
+        public void DisableRequestExit_HackForSceneSurgeon() { m_RequestExit = false; }
+
+        override public void Init()
+        {
+            base.Init();
+
+            m_OffsetTransformBaseScale = m_OffsetTransform.localScale;
+            SetState(State.Off);
+            m_EnterAmount = 0.0f;
+            UpdateScale();
+        }
 
         override public void HideTool(bool bHide)
         {
             base.HideTool(bHide);
 
+            if (bHide)
+            {
+                SetState(State.Exit);
+            }
             ResetDetection();
             m_DropperRenderer.enabled = !bHide;
             m_DropperConeRenderer.enabled = !bHide;
@@ -45,10 +75,17 @@ namespace TiltBrush
         {
             base.EnableTool(bEnable);
             ResetDetection();
+            m_SelectionValid = false;
 
             if (bEnable)
             {
                 EatInput();
+            }
+            else
+            {
+                SetState(State.Off);
+                m_EnterAmount = 0.0f;
+                UpdateScale();
             }
             SnapIntersectionObjectToController();
         }
@@ -93,11 +130,12 @@ namespace TiltBrush
         {
             base.UpdateTool();
 
-            // keep description locked to controller
+            //keep description locked to controller
             SnapIntersectionObjectToController();
 
-            // always default to resetting detection
+            //always default to resetting detection
             m_ResetDetection = true;
+            m_ValidBrushFoundThisFrame = false;
 
             if (App.Config.m_UseBatchedBrushes)
             {
@@ -110,6 +148,14 @@ namespace TiltBrush
 
             if (m_ResetDetection)
             {
+                if (m_ValidBrushFoundThisFrame)
+                {
+                    SetState(State.Enter);
+                }
+                else
+                {
+                    SetState(State.Exit);
+                }
                 ResetDetection();
             }
         }
@@ -151,6 +197,13 @@ namespace TiltBrush
                 );
                 AudioManager.m_Instance.PlayDropperPickSound(m_DropperRenderer.transform.position);
             }
+        }
+
+        void UpdateScale()
+        {
+            Vector3 vScale = m_OffsetTransformBaseScale;
+            vScale.x *= m_EnterAmount;
+            m_OffsetTransform.localScale = vScale;
         }
 
         override public float GetSize()
