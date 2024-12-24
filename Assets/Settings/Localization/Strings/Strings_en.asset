@@ -3432,6 +3432,14 @@ MonoBehaviour:
     m_Localized: Next Device
     m_Metadata:
       m_Items: []
+  - m_Id: 144201565051027456
+    m_Localized: Audio Clip
+    m_Metadata:
+      m_Items: []
+  - m_Id: 144204798700027904
+    m_Localized: Audio Clips
+    m_Metadata:
+      m_Items: []
   - m_Id: 137988464450723840
     m_Localized: Move Selection to Current Layer
     m_Metadata:
