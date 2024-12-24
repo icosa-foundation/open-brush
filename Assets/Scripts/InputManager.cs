@@ -312,6 +312,8 @@ namespace TiltBrush
         private Dictionary<int, KeyboardShortcut?> m_SketchToKeyboardCommandMap =
             new Dictionary<int, KeyboardShortcut?>();
 
+        private bool m_DisableKeyboardShortcuts = false;
+
         //
         // Public properties
         //
@@ -380,6 +382,18 @@ namespace TiltBrush
                 {
                     OnSwapControllers();
                 }
+            }
+        }
+
+        public bool DisableKeyboardShortcuts
+        {
+            get
+            {
+                return m_DisableKeyboardShortcuts;
+            }
+            set
+            {
+                m_DisableKeyboardShortcuts = value;
             }
         }
 
@@ -532,6 +546,7 @@ namespace TiltBrush
 
         public bool GetKeyboardShortcut(KeyboardShortcut shortcut)
         {
+            if (m_DisableKeyboardShortcuts) return false;
             if (!ActiveKeyMap.TryGetValue((int)shortcut, out Key[] codes))
             {
                 return false;
@@ -548,6 +563,7 @@ namespace TiltBrush
 
         public bool GetKeyboardShortcutDown(KeyboardShortcut shortcut)
         {
+            if (m_DisableKeyboardShortcuts) return false;
             if (!ActiveKeyMap.TryGetValue((int)shortcut, out Key[] codes))
             {
                 return false;
