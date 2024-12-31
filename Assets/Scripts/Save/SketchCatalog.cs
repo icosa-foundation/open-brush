@@ -56,8 +56,6 @@ namespace TiltBrush
                 System.Environment.SetEnvironmentVariable("MONO_MANAGED_WATCHER", "3");
             }
 
-            int maxTriangles = QualityControls.m_Instance.AppQualityLevels.MaxPolySketchTriangles;
-
             SketchSet featuredSketchSet = null;
             if (false) // TODO this fails because of initialization order: (VrAssetService.m_Instance.m_UseLocalFeaturedSketches)
             {
@@ -66,14 +64,14 @@ namespace TiltBrush
             }
             else
             {
-                featuredSketchSet = new IcosaSketchSet(this, SketchSetType.Curated, maxTriangles);
+                featuredSketchSet = new IcosaSketchSet(this, SketchSetType.Curated);
             }
 
             m_Sets = new SketchSet[]
             {
                 new FileSketchSet(),
                 featuredSketchSet,
-                new IcosaSketchSet(this, SketchSetType.Liked, maxTriangles, needsLogin: true),
+                new IcosaSketchSet(this, SketchSetType.Liked, needsLogin: true),
                 new GoogleDriveSketchSet(),
             };
         }

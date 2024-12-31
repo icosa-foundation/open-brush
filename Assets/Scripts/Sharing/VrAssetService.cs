@@ -322,6 +322,7 @@ namespace TiltBrush
         private string m_LastUploadCompleteUrl;
         TaskAndCts<(string url, long bytes)> m_UploadTask = null;
         private string m_IcosaAccountId;
+        private int m_MaxPolySketchTriangles;
 
         private enum IcosaStatus
         {
@@ -387,6 +388,7 @@ namespace TiltBrush
             {
                 m_IcosaStatus = IcosaStatus.Disabled;
             }
+            m_MaxPolySketchTriangles = QualityControls.m_Instance.AppQualityLevels.MaxPolySketchTriangles;
         }
 
         /// Consume the result of the previous upload (if any)
@@ -830,6 +832,7 @@ namespace TiltBrush
         {
             string filteredUriPath = null;
             string errorMessage = null;
+            string commonParams = $"triangleCountMax={m_MaxPolySketchTriangles}&format=TILT&license=CREATIVE_COMMONS_BY";
             switch (type)
             {
                 // TODO Add User sketches
@@ -839,14 +842,14 @@ namespace TiltBrush
                     {
                         return null;
                     }
-                    filteredUriPath = CombineQueryParams(kUserLikesUri, "format=TILT&orderBy=LIKED_TIME&license=CREATIVE_COMMONS_BY");
+                    filteredUriPath = CombineQueryParams(kUserLikesUri, $"{commonParams}&orderBy=LIKED_TIME");
                     errorMessage = "Failed to access your liked sketches.";
                     break;
                 case SketchSetType.Curated:
                     // Old way - newest curated
-                    // filteredUriPath = CombineQueryParams(kListAssetsUri, "format=TILT&curated=true&orderBy=NEWEST");
-                    // For now try just sorting by "best"
-                    filteredUriPath = CombineQueryParams(kListAssetsUri, "format=TILT&orderBy=BEST&license=CREATIVE_COMMONS_BY");
+                    filteredUriPath = CombineQueryParams(kListAssetsUri, $"{commonParams}&curated=true&orderBy=NEWEST");
+                    // Maybe just sort by "best"?
+                    // filteredUriPath = CombineQueryParams(kListAssetsUri, $"{commonParams}&orderBy=BEST");
                     errorMessage = "Failed to access featured sketches.";
                     break;
             }

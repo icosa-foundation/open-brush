@@ -98,7 +98,6 @@ namespace TiltBrush
         private bool m_NeedsLogin;
         private bool m_LoggedIn;
         private bool m_ActivelyRefreshingSketches;
-        private int m_MaximumSceneTriangles;
 
         private SketchSetType m_Type;
         private string m_CacheDir;
@@ -114,8 +113,7 @@ namespace TiltBrush
             set { m_AssetService = value; }
         }
 
-        public IcosaSketchSet(MonoBehaviour parent, SketchSetType type, int maxSceneTriangles,
-                             bool needsLogin = false)
+        public IcosaSketchSet(MonoBehaviour parent, SketchSetType type, bool needsLogin = false)
         {
             m_Parent = parent;
             m_Sketches = new List<IcosaSketch>();
@@ -124,7 +122,6 @@ namespace TiltBrush
             m_RefreshRequested = false;
             m_Type = type;
             m_NeedsLogin = needsLogin;
-            m_MaximumSceneTriangles = maxSceneTriangles;
         }
 
         public void Init()
@@ -430,12 +427,6 @@ namespace TiltBrush
                 if (m_CacheDir == null)
                 {
                     yield break;
-                }
-                // Only cull the curated sketches.  If a user likes a sketch that's very high poly count,
-                // there's no feedback to tell them why it didn't show up in their list.  b/123649719
-                if (m_Type == SketchSetType.Curated)
-                {
-                    infos = infos.Where(x => x.GltfTriangleCount < m_MaximumSceneTriangles).ToList();
                 }
                 if (m_Type == SketchSetType.Curated && !assetIds.Keys.Contains(kIntroSketchAssetId))
                 {
