@@ -40,6 +40,12 @@ namespace TiltBrush
         {
             IEnumerator AddDropdownItems(SketchSet sketchset)
             {
+                // TODO Start loading icons and metadata
+                // sketchset.RequestRefresh();
+                // yield return new WaitUntil(() => !sketchset.IsActivelyRefreshingSketches);
+                // - then refresh the UI when done
+                // Maybe the dropdown itself is unwieldy for this -
+                // it leaves very little space for images.
                 yield return new WaitUntil(() => sketchset.IsReadyForAccess);
 
                 for (int i = 0; i < sketchset.NumSketches; i++)
