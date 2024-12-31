@@ -832,7 +832,7 @@ namespace TiltBrush
         {
             string filteredUriPath = null;
             string errorMessage = null;
-            string commonParams = $"triangleCountMax={m_MaxPolySketchTriangles}&format=TILT&license=CREATIVE_COMMONS_BY";
+            string commonParams = $"triangleCountMax={m_MaxPolySketchTriangles}&format=TILT&license=${kCreativeCommonsLicense}";
             switch (type)
             {
                 // TODO Add User sketches
@@ -895,9 +895,7 @@ namespace TiltBrush
             switch (type)
             {
                 case IcosaSetType.Liked:
-                    // TODO Filter out non-remixable assets
-                    // uri += $"{kUserLikesUri}?orderBy=LIKED_TIME&license=CREATIVE_COMMONS_BY";
-                    uri += $"{kUserLikesUri}?orderBy=LIKED_TIME";
+                    uri += $"{kUserLikesUri}?orderBy=LIKED_TIME&license=${kCreativeCommonsLicense}";
                     break;
                 case IcosaSetType.User:
                     uri += $"{kUserAssetsUri}?orderBy=NEWEST";
@@ -906,7 +904,7 @@ namespace TiltBrush
                     // Old way - newest curated
                     // uri += $"{kListAssetsUri}" + $"?curated=true&orderBy=NEWEST";
                     // For now try just sorting by "best"
-                    uri += $"{kListAssetsUri}" + $"?orderBy=BEST&license=CREATIVE_COMMONS_BY";
+                    uri += $"{kListAssetsUri}" + $"?orderBy=BEST&license={kCreativeCommonsLicense}";
                     // Something like orderBy=TRENDING would be good - BEST but weighted by recency
                     break;
             }
