@@ -323,6 +323,8 @@ namespace TiltBrush
         TaskAndCts<(string url, long bytes)> m_UploadTask = null;
         private string m_IcosaAccountId;
         private int m_MaxPolySketchTriangles;
+        private int m_MaxPolyModelTriangles;
+        private const int m_DefaultMaxPolyModelTriangles = 20000;
 
         private enum IcosaStatus
         {
@@ -389,6 +391,7 @@ namespace TiltBrush
                 m_IcosaStatus = IcosaStatus.Disabled;
             }
             m_MaxPolySketchTriangles = QualityControls.m_Instance.AppQualityLevels.MaxPolySketchTriangles;
+            m_MaxPolyModelTriangles = m_DefaultMaxPolyModelTriangles;
         }
 
         /// Consume the result of the previous upload (if any)
@@ -908,7 +911,7 @@ namespace TiltBrush
                     // Something like orderBy=TRENDING would be good - BEST but weighted by recency
                     break;
             }
-            uri += $"&format=GLTF2&pageSize={m_AssetsPerPage}";
+            uri += $"&format=GLTF2&pageSize={m_AssetsPerPage}&triangleCountMax={m_MaxPolyModelTriangles}";
             return new AssetLister(uri, errorMessage: "Failed to connect to Icosa.");
         }
 
