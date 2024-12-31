@@ -370,6 +370,11 @@ namespace TiltBrush
             }
             for (int i = 0; i < m_LightWidgets.Count; ++i)
             {
+                // TODO: Temp fix for a bug:
+                // MissingReferenceException: The object of type 'GameObject'
+                // has been destroyed but you are still trying to access it.
+                // Happens when breaking apart imported models with lights then using undo
+                if (m_LightWidgets[i].m_WidgetObject == null) continue;
                 if (m_LightWidgets[i].m_WidgetObject.activeSelf)
                 {
                     yield return m_LightWidgets[i];
