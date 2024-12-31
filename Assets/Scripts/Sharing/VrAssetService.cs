@@ -835,7 +835,7 @@ namespace TiltBrush
         {
             string filteredUriPath = null;
             string errorMessage = null;
-            string commonParams = $"triangleCountMax={m_MaxPolySketchTriangles}&format=TILT&license=${kCreativeCommonsLicense}";
+            string commonParams = $"triangleCountMax={m_MaxPolySketchTriangles}&format=TILT&license={kCreativeCommonsLicense}";
             switch (type)
             {
                 // TODO Add User sketches
@@ -898,7 +898,7 @@ namespace TiltBrush
             switch (type)
             {
                 case IcosaSetType.Liked:
-                    uri += $"{kUserLikesUri}?orderBy=LIKED_TIME&license=${kCreativeCommonsLicense}";
+                    uri += $"{kUserLikesUri}?orderBy=LIKED_TIME&license={kCreativeCommonsLicense}";
                     break;
                 case IcosaSetType.User:
                     uri += $"{kUserAssetsUri}?orderBy=NEWEST";
