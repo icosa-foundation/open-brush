@@ -28,8 +28,6 @@ namespace TiltBrush.Layers
         [SerializeField] private LocalizedString m_MainLayerName;
         [SerializeField] private LocalizedString m_AdditionalLayerName;
 
-        [SerializeField] public GameObject modeltrackWidget;
-
         public GameObject mainWidget;
         public List<GameObject> m_Widgets;
         public int scrollOffset = 0;
