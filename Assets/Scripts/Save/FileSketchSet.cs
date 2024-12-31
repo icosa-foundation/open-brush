@@ -315,7 +315,7 @@ namespace TiltBrush
                 Debug.Log("SketchCatalog Error: Invalid index for Sketch Name requested.");
                 return;
             }
-            App.PolyAssetCatalog.PrecacheModels(
+            App.IcosaAssetCatalog.PrecacheModels(
                 m_Sketches[iSketchIndex].SceneFileInfo, $"FileSketchSet {iSketchIndex}");
         }
 
