@@ -526,21 +526,24 @@ namespace TiltBrush
             string commandsJson = JsonConvert.SerializeObject(ListApiCommands());
             html = html.Replace("{{commandsJson}}", commandsJson);
 
+            var toolScripts = new List<string>();
+            var symmetryScripts = new List<string>();
+            var pointerScripts = new List<string>();
+            var backgroundScripts = new List<string>();
+
             if (LuaManager.Instance.IsInitialized)
             {
-                html = html.Replace("{{toolScripts}}", JsonConvert.SerializeObject(
-                    LuaManager.Instance.GetScriptNames(LuaApiCategory.ToolScript))
-                );
-                html = html.Replace("{{symmetryScripts}}", JsonConvert.SerializeObject(
-                    LuaManager.Instance.GetScriptNames(LuaApiCategory.SymmetryScript))
-                );
-                html = html.Replace("{{pointerScripts}}", JsonConvert.SerializeObject(
-                    LuaManager.Instance.GetScriptNames(LuaApiCategory.PointerScript))
-                );
-                html = html.Replace("{{backgroundScripts}}", JsonConvert.SerializeObject(
-                    LuaManager.Instance.GetScriptNames(LuaApiCategory.BackgroundScript))
-                );
+                toolScripts = LuaManager.Instance.GetScriptNames(LuaApiCategory.ToolScript);
+                symmetryScripts = LuaManager.Instance.GetScriptNames(LuaApiCategory.SymmetryScript);
+                pointerScripts = LuaManager.Instance.GetScriptNames(LuaApiCategory.PointerScript);
+                backgroundScripts = LuaManager.Instance.GetScriptNames(LuaApiCategory.BackgroundScript);
             }
+
+            html = html.Replace("{{toolScripts}}", JsonConvert.SerializeObject(toolScripts));
+            html = html.Replace("{{symmetryScripts}}", JsonConvert.SerializeObject(symmetryScripts));
+            html = html.Replace("{{pointerScripts}}", JsonConvert.SerializeObject(pointerScripts));
+            html = html.Replace("{{backgroundScripts}}", JsonConvert.SerializeObject(backgroundScripts));
+
             return html;
         }
 
