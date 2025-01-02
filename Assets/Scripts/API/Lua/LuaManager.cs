@@ -75,6 +75,7 @@ namespace TiltBrush
         public static string widgetTypeImage => "image";
         public static string widgetTypeVideo => "video";
         public static string widgetTypeModel => "model";
+        public static string widgetTypeEnum => "enum";
 
         // Special Methods
 
@@ -103,6 +104,7 @@ namespace TiltBrush
         public DynValue defaultVal;
         public bool allowMultiple;
         public List<DynValue> items;
+        public Type enumType;
     }
 
     public class LuaManager : MonoBehaviour
@@ -982,14 +984,27 @@ namespace TiltBrush
                 {
                     var config = new ScriptWidgetConfig();
                     config.label = pair.Value.Table.Get("label").String;
-                    config.type = pair.Value.Table.Get("type").String;
                     config.min = pair.Value.Table.Get("min").Clone();
                     config.max = pair.Value.Table.Get("max").Clone();
-                    config.items = pair.Value.Table.Get("items")?.Table?.Values?.ToList();
-                    config.defaultVal = pair.Value.Table.Get("default").Clone();
+                    var typeDynVal = pair.Value.Table.Get("type");
+                    if (typeDynVal.UserData != null)
+                    {
+                        // type can be an enum
+                        config.type = "enum";
+                        config.enumType = typeDynVal.UserData.Descriptor.Type;
+                        config.defaultVal = UserData.Create(config.enumType.GetEnumValues().GetValue(0));
+                    }
+                    else
+                    {
+                        // If it's not an enu, then it's a string
+                        config.type = typeDynVal.String;
+                        config.items = pair.Value.Table.Get("items")?.Table?.Values?.ToList();
+                        config.defaultVal = pair.Value.Table.Get("default").Clone();
+                    }
                     m_WidgetConfigs[scriptName][pair.Key.String] = config;
                 }
             }
+
             // Replace the config table with the default value
             foreach (var item in m_WidgetConfigs[scriptName])
             {

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using MoonSharp.Interpreter;
@@ -92,6 +93,16 @@ namespace TiltBrush
                         listPickerButton.m_Items = config.items.Select(x => x.String).ToList();
                         listPickerButton.ButtonLabel = val.String;
                         listPickerButton.ItemIndex = listPickerButton.m_Items.IndexOf(val.String);
+                        break;
+                    case var value when value == LuaNames.widgetTypeEnum:
+                        instance = Instantiate(m_ListButtonPrefab, transform);
+                        var enumPickerButton = instance.GetComponent<OpenListPickerPopupButton>();
+                        enumPickerButton.SetDescriptionText(config.label);
+                        enumPickerButton.m_PropertyName = propertyName;
+                        enumPickerButton.m_Items = Enum.GetNames(config.enumType).ToList();
+                        var enumVal = Enum.ToObject(config.enumType, val.UserData.Object);
+                        enumPickerButton.ButtonLabel = Enum.GetName(config.enumType, enumVal);
+                        enumPickerButton.ItemIndex = enumPickerButton.m_Items.IndexOf(val.String);
                         break;
                     case var value when value == LuaNames.widgetTypeLayer:
                         instance = Instantiate(m_ListButtonPrefab, transform);
