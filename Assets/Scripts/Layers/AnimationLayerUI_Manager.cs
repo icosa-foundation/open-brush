@@ -20,7 +20,7 @@ using System;
 
 namespace TiltBrush.Layers
 {
-    public class AnimationLayerUI_Manager : MonoBehaviour
+    public class AnimationLayerUI_Manager : MonoBehaviour, ILayerManager
     {
         public delegate void OnActiveSceneChanged(GameObject widget);
         public static event OnActiveSceneChanged onActiveSceneChanged;

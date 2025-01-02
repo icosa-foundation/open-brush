@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -20,13 +19,13 @@ using UnityEngine.Localization;
 
 namespace TiltBrush.Layers
 {
-    public class LayerUI_Manager : MonoBehaviour
+    public class LayerUI_Manager : MonoBehaviour, ILayerManager
     {
         public delegate void OnActiveSceneChanged(GameObject widget);
         public static event OnActiveSceneChanged onActiveSceneChanged;
 
-        [SerializeField] private LocalizedString m_MainLayerName;
-        [SerializeField] private LocalizedString m_AdditionalLayerName;
+        [SerializeField] protected LocalizedString m_MainLayerName;
+        [SerializeField] protected LocalizedString m_AdditionalLayerName;
         [SerializeField] private NavButton m_PreviousPageButton;
         [SerializeField] private NavButton m_NextPageButton;
 
@@ -198,4 +197,5 @@ namespace TiltBrush.Layers
             GotoPage(CurrentPageIndex + iAmount);
         }
     }
+
 }
