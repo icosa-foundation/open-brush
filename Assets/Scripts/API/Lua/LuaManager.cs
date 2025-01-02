@@ -1234,7 +1234,15 @@ namespace TiltBrush
                     break;
             }
             float brushScale = 1f;
+
             if (transforms != null) DrawStrokes.DrawNestedTrList(transforms, tr_CS, result._Colors, brushScale);
+            if (result._Colors == null)
+            {
+                // If our script doesn't generate colors
+                // then DrawNestedTrList will use the current brush color
+                // so we can assume that jitter (if enabled) should be applied
+                LuaApiMethods.JitterColor();
+            }
         }
 
         // Stop scripts and clear data structures. Used when clearing the sketch
