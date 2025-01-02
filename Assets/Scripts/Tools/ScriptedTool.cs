@@ -56,7 +56,7 @@ namespace TiltBrush
             m_toolDirectionIndicator = transform.GetChild(0).gameObject;
         }
 
-        //What to do when the tool is enabled or disabled
+        // What to do when the tool is enabled or disabled
         public override void EnableTool(bool bEnable)
         {
             base.EnableTool(bEnable);
@@ -161,7 +161,7 @@ namespace TiltBrush
                     Matrix4x4 transform_GS = TrTransform.TRS(
                         m_FirstPositionClicked_GS,
                         App.Scene.Pose.rotation * rotation_CS,
-                        drawnVector_CS.magnitude * 2
+                        drawnVector_GS.magnitude * 2
                     ).ToMatrix4x4();
 
                     switch (previewTypeVal.String?.ToLower())
