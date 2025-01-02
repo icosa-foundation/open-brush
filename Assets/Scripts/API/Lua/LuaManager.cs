@@ -216,7 +216,7 @@ namespace TiltBrush
             }
 
             var panel = (ScriptsPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Scripts);
-            panel.InitScriptUiNav();
+            panel?.InitScriptUiNav();
             ConfigureScriptButton(LuaApiCategory.PointerScript);
             ConfigureScriptButton(LuaApiCategory.SymmetryScript);
             ConfigureScriptButton(LuaApiCategory.ToolScript);
@@ -732,10 +732,12 @@ namespace TiltBrush
             {
                 LogLuaCastError(script, fnName, e);
             }
+
             if (wrapper == null)
             {
                 wrapper = new PathApiWrapper();
             }
+
             wrapper._Space = _GetSpaceForActiveScript(LuaApiCategory.SymmetryScript);
             return wrapper;
         }
@@ -1036,6 +1038,7 @@ namespace TiltBrush
             Vector3 wandPos_GS, Quaternion wandRot_GS,
             Vector3 headPos_GS, Quaternion headRot_GS)
         {
+            if (!IsInitialized) return;
             m_TransformBuffers.AddBrushTr(App.Scene.ActiveCanvas.Pose.inverse * TrTransform.TR(brushPos_GS, brushRot_GS));
             m_TransformBuffers.AddWandTr(App.Scene.ActiveCanvas.Pose.inverse * TrTransform.TR(wandPos_GS, wandRot_GS));
             m_TransformBuffers.AddHeadTr(App.Scene.ActiveCanvas.Pose.inverse * TrTransform.TR(headPos_GS, headRot_GS));
