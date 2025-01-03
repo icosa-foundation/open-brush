@@ -21,6 +21,10 @@ Properties {
   _MainTex("Texture", 2D) = "white" {}
   _Smoothness("Smoothness", Range(0, 1)) = 0.5
   _Metallic("Metallic", Range(0, 1)) = 0
+
+  _Dissolve("Dissolve", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 SubShader {
@@ -36,6 +40,7 @@ SubShader {
     #pragma multi_compile _ SHADOWS_SCREEN
     #pragma target 4.0
 
+    #include "Assets/Shaders/Include/Brush.cginc"
     #include "AutoLight.cginc"
     #include "UnityPBSLighting.cginc"
 
@@ -44,10 +49,15 @@ SubShader {
     sampler2D _MainTex;
     float4 _MainTex_ST;
 
+    uniform half _ClipStart;
+    uniform half _ClipEnd;
+    uniform half _Dissolve;
+
     struct appdata {
       float4 vertex : POSITION;
       float2 uv : TEXCOORD0;
       float4 color : Color;
+      uint id : SV_VertexID;
 
       UNITY_VERTEX_INPUT_INSTANCE_ID
     };
@@ -58,6 +68,7 @@ SubShader {
       float3 normal : TEXCOORD1;
       float3 worldPos : TEXCOORD2;
       float4 color : TEXCOORD3;
+      float2 id : TEXCOORD4;
       SHADOW_COORDS(5)
 
       UNITY_VERTEX_OUTPUT_STEREO
@@ -78,6 +89,7 @@ SubShader {
 
       // normal is set in geom method
 
+      o.id = (float2)v.id;
       return o;
     }
 
@@ -104,6 +116,12 @@ SubShader {
     }
 
     float4 frag(v2f i) : SV_TARGET {
+
+      #ifdef SHADER_SCRIPTING_ON
+      if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+      if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+      #endif
+
       // Apply shadows
       UNITY_LIGHT_ATTENUATION(attenuation, i, i.worldPos);
       float3 lightColor = _LightColor0.rgb * attenuation;

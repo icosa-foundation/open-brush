@@ -17,6 +17,15 @@ Properties {
   _MainTex ("Particle Texture", 2D) = "white" {}
   _SparkleRate ("Sparkle Rate", Float) = 2.5
   _SpreadRate ("Spread Rate", Range(0.3, 5)) = 1.539
+
+
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
+
+  _Dissolve("Dissolve", Range(0, 1)) = 1
+  _ClipStart("Clip Start", Float) = 0
+  _ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -51,10 +60,15 @@ Category {
       float _SparkleRate;
       float _SpreadRate;
 
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
+      uniform half _Dissolve;
+
       struct v2f {
         float4 vertex : SV_POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        uint id : TEXCOORD2;
 
         UNITY_VERTEX_OUTPUT_STEREO
       };
@@ -83,7 +97,7 @@ Category {
         brightness = 800 * pow(abs(sin(_BeatOutputAccum.w * _SparkleRate + phase)), 20);
         brightness = brightness*.25 + 2*brightness * (_BeatOutput.w);
 #else
-        brightness = 800 * pow(abs(sin(_Time.y * _SparkleRate + phase)), 20);
+        brightness = 800 * pow(abs(sin(GetTime().y * _SparkleRate + phase)), 20);
 #endif
         o.color.rgb = v.color.rgb * brightness;
         o.color.a = 1;
@@ -91,6 +105,7 @@ Category {
 
         float4 corner = OrientParticle(center.xyz, halfSize, v.vid, rotation);
         o.vertex = UnityObjectToClipPos(corner);
+        o.id = (float2)v.id;
 
         return o;
       }
@@ -98,6 +113,12 @@ Category {
       // Input color is srgb
       fixed4 frag (v2f i) : SV_Target
       {
+        #ifdef SHADER_SCRIPTING_ON
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+        // It's hard to get alpha curves right so use dithering for hdr shaders
+        if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+        #endif
+
         float4 texCol = tex2D(_MainTex, i.texcoord);
         float4 color = i.color * texCol;
         color = encodeHdr(color.rgb * color.a);
@@ -106,7 +127,7 @@ Category {
         color.rgb = GetSelectionColor() * texCol.r;
         color.a = texCol.a;
 #endif
-        return color;
+        return color * _Dissolve;
       }
       ENDCG
     }

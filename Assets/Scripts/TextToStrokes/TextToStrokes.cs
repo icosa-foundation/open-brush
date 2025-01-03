@@ -28,10 +28,11 @@ namespace TiltBrush
             _font = font;
         }
 
-        public List<List<Vector3>> Build(string text)
+        public List<List<TrTransform>> Build(string text)
         {
-            var shape = new List<List<Vector3>>();
+            var allPaths = new List<List<TrTransform>>();
             Vector2 offset = Vector2.zero;
+
             foreach (var character in text)
             {
                 if (character == '\n')
@@ -40,25 +41,33 @@ namespace TiltBrush
                     offset.x = 0;
                     continue;
                 }
-                // try
-                // {
-                List<List<Vector2>> letter = _font.Outlines[character];
-                // Offset letter outline by the current total offset
-                shape.AddRange(
-                    letter.Select(
-                        path => path.Select(
-                            point => new Vector3(point.x + offset.x, point.y + offset.y, 0)
-                        ).ToList()
+
+                var letterShape2d = new List<List<Vector2>>();
+                if (_font.Outlines.TryGetValue(character, out var outline))
+                {
+                    letterShape2d = outline;
+                }
+
+                // Offset letter outline by the current total offset and convert to 3d TrTransform
+                List<List<TrTransform>> pathList = letterShape2d.Select(
+                    path => path.Select(
+                        point => TrTransform.T(new Vector3(point.x + offset.x, point.y + offset.y, 0))
                     ).ToList()
-                );
-                offset.x += _font.Widths[character];
-                // }
-                // catch (Ex e)
-                // {
-                //     
-                // }
+                ).ToList();
+
+                allPaths.AddRange(pathList);
+                if (_font.Outlines.ContainsKey(character))
+                {
+                    offset.x += _font.Widths[character];
+                }
+                else
+                {
+                    // This is mainly to handle missing space characters.
+                    // Is this a sane general default?
+                    offset.x += 0.75f;
+                }
             }
-            return shape;
+            return allPaths;
         }
     }
 }

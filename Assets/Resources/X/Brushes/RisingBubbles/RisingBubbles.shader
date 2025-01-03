@@ -21,6 +21,16 @@ Properties {
   _ScrollJitterIntensity("Scroll Jitter Intensity", Float) = 1.0
   _ScrollJitterFrequency("Scroll Jitter Frequency", Float) = 1.0
   _SpreadRate ("Spread Rate", Range(0.3, 5)) = 1.539
+
+
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
+
+  _Opacity ("Opacity", Range(0, 1)) = 1
+  _Dissolve ("Dissolve", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -51,10 +61,16 @@ Category {
       sampler2D _MainTex;
       fixed4 _TintColor;
 
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
+      uniform half _Dissolve;
+      uniform half _Opacity;
+
       struct v2f {
         float4 vertex : SV_POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        uint id : TEXCOORD2;
 
         UNITY_VERTEX_OUTPUT_STEREO
       };
@@ -72,7 +88,7 @@ Category {
       // seed is a value in [0, 1]
       // t01 is a time value in [0, 1]
       float3 ComputeDisplacement(float3 pos, float seed, float t01) {
-        float t2 = _Time.y / 3;
+        float t2 = GetTime().y / 3;
 
         // Animate the motion of the bubbles
         // Accumulate all displacement into a common, pre-transformed space.
@@ -93,10 +109,10 @@ Category {
         UNITY_SETUP_INSTANCE_ID(v);
         UNITY_INITIALIZE_OUTPUT(v2f, o);
         UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-        
+
         // Used as a random-ish seed for various calculations
         float seed = v.color.a;
-        float t01 = fmod(_Time.y*_ScrollRate + seed * 10, 1);
+        float t01 = fmod(GetTime().y*_ScrollRate + seed * 10, 1);
         float birthTime = v.texcoord.w;
         float rotation = v.texcoord.z;
         float halfSize = GetParticleHalfSize(v.corner.xyz, v.center, birthTime);
@@ -130,13 +146,18 @@ Category {
 
         o.color = v.color;
         o.texcoord = TRANSFORM_TEX(v.texcoord.xy,_MainTex);
-
+        o.id = (float2)v.id;
         return o;
       }
 
       // i.color is srgb
       fixed4 frag (v2f i) : SV_Target
       {
+        #ifdef SHADER_SCRIPTING_ON
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+        if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+        #endif
+
         float4 tex = tex2D(_MainTex, i.texcoord);
 
         // RGB Channels of the texture are affected by color
@@ -145,7 +166,9 @@ Category {
         float3 highlightcolor = tex.a;
 
         float4 color = float4(basecolor + highlightcolor, 1);
-        return SrgbToNative(color);
+        color.a *= _Opacity;
+
+        return SrgbToNative(color * _Opacity);
         return color;
       }
       ENDCG
