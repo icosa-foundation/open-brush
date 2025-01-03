@@ -1210,8 +1210,13 @@ namespace TiltBrush
             var result = CallActiveToolScript(fnName);
             if (result == null) return;
             List<List<TrTransform>> transforms = null;
-
             var drawnVector_CS = secondTr_CS.translation - firstTr_CS.translation;
+            // Quantize the positions to the grid
+            // Rotation will be quantized later based on (non-quantized) drawnVector_CS
+            firstTr_CS.translation = SelectionManager.m_Instance.SnapToGrid_CS(firstTr_CS.translation);
+            secondTr_CS.translation = SelectionManager.m_Instance.SnapToGrid_CS(secondTr_CS.translation);
+            var quantizedVector_CS = secondTr_CS.translation - firstTr_CS.translation;
+
             var tr_CS = new TrTransform();
 
             switch (result._Space)
@@ -1223,7 +1228,7 @@ namespace TiltBrush
                     tr_CS.translation = firstTr_CS.translation;
                     tr_CS.rotation = drawnVector_CS == Vector3.zero ?
                         Quaternion.identity : Quaternion.LookRotation(drawnVector_CS, upVector);
-                    tr_CS.scale = drawnVector_CS.magnitude;
+                    tr_CS.scale = quantizedVector_CS.magnitude;
                     transforms = result.AsMultiTrList();
                     break;
                 case ScriptCoordSpace.Canvas:
@@ -1234,6 +1239,8 @@ namespace TiltBrush
                     break;
             }
             float brushScale = 1f;
+
+            tr_CS.rotation = SelectionManager.m_Instance.QuantizeAngle(tr_CS.rotation);
 
             if (transforms != null) DrawStrokes.DrawNestedTrList(transforms, tr_CS, result._Colors, brushScale);
             if (result._Colors == null)
