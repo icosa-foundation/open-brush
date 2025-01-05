@@ -49,6 +49,7 @@ namespace TiltBrush
             {
                 data.roomName = value;
                 UpdateDisplay();
+                SaveRoomName(value);
             }
         }
 
@@ -82,7 +83,7 @@ namespace TiltBrush
         {
             data = new RoomCreateData
             {
-                roomName = GenerateUniqueRoomName(),
+                roomName = "default room",
                 @private = false,
                 maxPlayers = 4,
                 voiceDisabled = false
@@ -111,12 +112,22 @@ namespace TiltBrush
             updateDisplay = true;
         }
 
+        public async void RetrieveRoomName()
+        {
+            var storedRoomName = await m_multiplayer.GetAsync<string>("roomname");
+            RoomName = storedRoomName ?? GenerateUniqueRoomName();
+        }
+
+        private async void SaveRoomName(string roomName)
+        {
+            await m_multiplayer.StoreAsync("roomname", roomName);
+        }
+
         public async void RetrieveUsername()
         {
             var storedNickname = await m_multiplayer.GetAsync<string>("nickname");
             NickName = storedNickname ?? "Unnamed";
         }
-
 
         private async void SaveNickname(string nickname)
         {
@@ -129,6 +140,7 @@ namespace TiltBrush
 
             m_multiplayer = new PlayerPrefsDataStore("Multiplayer");
             RetrieveUsername();
+            RetrieveRoomName();
 
             if (MultiplayerManager.m_Instance == null) return;
             if (MultiplayerManager.m_Instance.State == ConnectionState.INITIALIZED || MultiplayerManager.m_Instance.State == ConnectionState.DISCONNECTED)
