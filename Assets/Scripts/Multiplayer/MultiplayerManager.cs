@@ -420,13 +420,10 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        public void SendLargeDataToPlayer(int playerId, byte[] Data)
+        public void SendLargeDataToPlayer(int playerId, byte[] Data, int percentage)
         {
-            m_Manager.SendLargeDataToPlayer(playerId, Data);
+            m_Manager.SendLargeDataToPlayer(playerId, Data, percentage);
         }
-
-
-
 
         void OnPlayerLeft(int id)
         {
@@ -522,30 +519,6 @@ namespace OpenBrush.Multiplayer
             if (State == ConnectionState.IN_ROOM)
             {
                 m_Manager.RedoCommand(command);
-            }
-        }
-
-        public async void StartSynchHistory(int id)
-        {
-            if (State == ConnectionState.IN_ROOM)
-            {
-                await m_Manager.RpcStartSyncHistory(id);
-            }
-        }
-
-        public async void SynchHistoryPercentage(int id, int expected, int sent)
-        {
-            if (State == ConnectionState.IN_ROOM)
-            {
-                await m_Manager.RpcSyncHistoryPercentage(id, expected, sent);
-            }
-        }
-
-        public async void SynchHistoryComplete(int id)
-        {
-            if (State == ConnectionState.IN_ROOM)
-            {
-                await m_Manager.RpcHistorySyncComplete(id);
             }
         }
 

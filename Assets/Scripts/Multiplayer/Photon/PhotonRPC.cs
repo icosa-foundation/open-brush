@@ -540,26 +540,6 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false)]
-        public static void RPC_StartHistorySync(NetworkRunner runner, [RpcTarget] PlayerRef targetPlayer)
-        {
-            m_Instance.IssueGlobalCommand(GlobalCommands.DisplaySynchInfo);
-        }
-
-        [Rpc(InvokeLocal = false)]
-        public static void RPC_HistoryPercentageUpdate(NetworkRunner runner, [RpcTarget] PlayerRef targetPlayer, int expected, int sent)
-        {
-            MultiplayerSceneSync.m_Instance.numberOfCommandsExpected = expected;
-            MultiplayerSceneSync.m_Instance.numberOfCommandsSent = sent;
-            m_Instance.IssueGlobalCommand(GlobalCommands.SynchInfoPercentageUpdate);
-        }
-
-        [Rpc(InvokeLocal = false)]
-        public static void RPC_HistorySyncCompleted(NetworkRunner runner, [RpcTarget] PlayerRef targetPlayer)
-        {
-            m_Instance.IssueGlobalCommand(GlobalCommands.HideSynchInfo);
-        }
-
-        [Rpc(InvokeLocal = false)]
         public static void RPC_CheckCommand(NetworkRunner runner, Guid commandGuid, PlayerRef initiatorPlayer, [RpcTarget] PlayerRef targetPlayer)
         {
             bool isCommandInStack = CheckifCommandGuidIsInStack(commandGuid);

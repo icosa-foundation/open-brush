@@ -36,7 +36,7 @@ namespace OpenBrush.Multiplayer
         int GetPlayerCount();
         int GetNetworkedTimestampMilliseconds();
         bool GetPlayerRoomOwnershipStatus(int playerId);
-        void SendLargeDataToPlayer(int playerId, byte[] largeData);
+        void SendLargeDataToPlayer(int playerId, byte[] largeData, int percentage);
         Task<bool> PerformCommand(BaseCommand command);
         Task<bool> SendCommandToPlayer(BaseCommand command, int playerId);
         Task<bool> CheckCommandReception(BaseCommand command, int playerId);
@@ -44,9 +44,6 @@ namespace OpenBrush.Multiplayer
         Task<bool> UndoCommand(BaseCommand command);
         Task<bool> RedoCommand(BaseCommand command);
         Task<bool> RpcSyncToSharedAnchor(string uuid);
-        Task<bool> RpcStartSyncHistory(int id);
-        Task<bool> RpcSyncHistoryPercentage(int id, int exp, int snt);
-        Task<bool> RpcHistorySyncComplete(int id);
 
         event Action Disconnected;
 

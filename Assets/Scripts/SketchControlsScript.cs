@@ -156,9 +156,6 @@ namespace TiltBrush
             MultiplayerConnect = 1007,
             MultiplayerDisconnect = 1008,
             EditMultiplayerNickName = 1009,
-            DisplaySynchInfo = 1010,
-            SynchInfoPercentageUpdate = 1011,
-            HideSynchInfo = 1012,
 
             RenameSketch = 5200,
             OpenLayerOptionsPopup = 5201,
@@ -4860,15 +4857,6 @@ namespace TiltBrush
                     m_PanelManager.ToggleMultiplayerPanels();
                     PointerManager.m_Instance.EatLineEnabledInput();
                     SketchSurfacePanel.m_Instance.EatToolsInput();
-                    break;
-                case GlobalCommands.DisplaySynchInfo:
-                    MultiplayerSceneSync.m_Instance.StartSynchInfo();
-                    break;
-                case GlobalCommands.SynchInfoPercentageUpdate:
-                    MultiplayerSceneSync.m_Instance.SynchInfoPercentageUpdate();
-                    break;
-                case GlobalCommands.HideSynchInfo:
-                    MultiplayerSceneSync.m_Instance.HideSynchInfo();
                     break;
                 case GlobalCommands.RepaintOptions: break; // Intentionally blank.
                 case GlobalCommands.Null: break; // Intentionally blank.

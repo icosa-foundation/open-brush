@@ -324,39 +324,12 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
-        public async Task<bool> RpcStartSyncHistory(int id)
-        {
-            PlayerRef playerRef = PlayerRef.FromEncoded(id);
-            PhotonRPCBatcher.EnqueueRPC(() =>
-            { PhotonRPC.RPC_StartHistorySync(m_Runner, playerRef); });
-            await Task.Yield();
-            return true;
-        }
-
-        public async Task<bool> RpcHistorySyncComplete(int id)
-        {
-            PlayerRef playerRef = PlayerRef.FromEncoded(id);
-            PhotonRPCBatcher.EnqueueRPC(() =>
-            { PhotonRPC.RPC_HistorySyncCompleted(m_Runner, playerRef);});
-            await Task.Yield();
-            return true;
-        }
-
-        public async Task<bool> RpcSyncHistoryPercentage(int id, int exp, int snt)
-        {
-            PlayerRef playerRef = PlayerRef.FromEncoded(id);
-            PhotonRPCBatcher.EnqueueRPC(() =>
-            { PhotonRPC.RPC_HistoryPercentageUpdate(m_Runner, playerRef, exp, snt);});
-            await Task.Yield();
-            return true;
-        }
-
-        public void SendLargeDataToPlayer(int playerId, byte[] largeData)
+        public void SendLargeDataToPlayer(int playerId, byte[] largeData, int percentage)
         {
             sequenceNumber++;
             PlayerRef playerRef = PlayerRef.FromEncoded(playerId);
             int dataHash = largeData.GetHashCode();
-            var key = ReliableKey.FromInts(playerId, sequenceNumber, dataHash, 0);
+            var key = ReliableKey.FromInts(playerId, sequenceNumber, dataHash, percentage);
             m_Runner.SendReliableDataToPlayer(playerRef, key, largeData);
         }
 
@@ -549,6 +522,10 @@ namespace OpenBrush.Multiplayer
         {
             //Debug.Log("Server received complete reliable data");
 
+            int percentage;
+            key.GetInts(out _, out _, out _, out percentage);
+            //Debug.Log($"Data received with percentage: {percentage}%");
+
             byte[] receivedData = data.Array;
             if (receivedData == null || receivedData.Length == 0)
             {
@@ -556,8 +533,9 @@ namespace OpenBrush.Multiplayer
                 return;
             }
 
-            MultiplayerSceneSync.m_Instance.onLargeDataReceived?.Invoke(receivedData);
+            MultiplayerSceneSync.m_Instance.onLargeDataReceived?.Invoke(receivedData,percentage);
         }
+
 
         public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress)
         {
