@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.IO;
 using UnityEngine;
 using UnityEngine.Localization;
 
@@ -47,7 +48,17 @@ namespace TiltBrush
             {
                 return;
             }
-            SceneSettings.m_Instance.LoadCustomSkybox(ReferenceImage.FileName);
+            if (ReferenceImage.NotLoaded)
+            {
+                // Load-on-demand.
+                ReferenceImage.SynchronousLoad();
+            }
+
+
+            // TODO we had problems with seams when using the cached image.
+            // Likely related to mipmaps but I couldn't track down the cause.
+            // SceneSettings.m_Instance.LoadCustomSkyboxFromCache(ReferenceImage.FilePath);
+            SceneSettings.m_Instance.LoadCustomSkybox(Path.GetFileName(ReferenceImage.FilePath));
         }
 
         override public void ResetState()

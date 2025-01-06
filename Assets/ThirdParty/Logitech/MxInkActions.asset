@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c9e57bb38d16564c9d1040c6f1a93f5, type: 3}
+  m_Name: MxInkActions
+  m_EditorClassIdentifier: 
+  InteractionProfile: /interaction_profiles/logitech/mx_ink_stylus_logitech
+  InputActionDefinitions:
+  - ActionName: middle
+    Type: 2
+    Paths:
+    - /user/hand/left/input/cluster_middle_logitech/force
+    - /user/hand/right/input/cluster_middle_logitech/force
+  - ActionName: tip
+    Type: 2
+    Paths:
+    - /user/hand/left/input/tip_logitech/force
+    - /user/hand/right/input/tip_logitech/force
+  - ActionName: front
+    Type: 1
+    Paths:
+    - /user/hand/left/input/cluster_front_logitech/click
+    - /user/hand/right/input/cluster_front_logitech/click
+  - ActionName: back
+    Type: 1
+    Paths:
+    - /user/hand/left/input/cluster_back_logitech/click
+    - /user/hand/right/input/cluster_back_logitech/click
+  - ActionName: grip
+    Type: 4
+    Paths:
+    - /user/hand/left/input/grip/pose
+    - /user/hand/right/input/grip/pose
+  - ActionName: aim_right
+    Type: 4
+    Paths:
+    - /user/hand/right/input/aim/pose
+  - ActionName: docked
+    Type: 1
+    Paths:
+    - /user/hand/left/input/dock_logitech/docked_logitech
+    - /user/hand/right/input/dock_logitech/docked_logitech
+  - ActionName: back_double_tap
+    Type: 1
+    Paths:
+    - /user/hand/left/input/cluster_back_logitech/double_tap_logitech
+    - /user/hand/right/input/cluster_back_logitech/double_tap_logitech
+  - ActionName: front_double_tap
+    Type: 1
+    Paths:
+    - /user/hand/left/input/cluster_front_logitech/double_tap_logitech
+    - /user/hand/right/input/cluster_front_logitech/double_tap_logitech
+  - ActionName: aim_left
+    Type: 4
+    Paths:
+    - /user/hand/left/input/aim/pose
+  - ActionName: haptic_pulse
+    Type: 100
+    Paths:
+    - /user/hand/left/output/haptic
+    - /user/hand/right/output/haptic
+  - ActionName: dock
+    Type: 1
+    Paths:
+    - /user/hand/left/input/dock_logitech/docked_logitech
+    - /user/hand/right/input/dock_logitech/docked_logitech
