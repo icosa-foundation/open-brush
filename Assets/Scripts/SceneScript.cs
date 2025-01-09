@@ -255,7 +255,7 @@ namespace TiltBrush
             App.Scene.ActiveCanvas = layer;
             App.Scene.LayerCanvasesUpdate?.Invoke();
             // Add canvases for other animation frames
-            animationUI_manager.AddLayerRefresh(layer);
+            layer = animationUI_manager.AddLayerRefresh(layer);
             return layer;
         }
 

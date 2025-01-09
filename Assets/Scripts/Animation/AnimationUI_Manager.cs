@@ -242,18 +242,24 @@ namespace TiltBrush.FrameAnimation
             ResetTimeline();
         }
 
-        public void AddLayerRefresh(CanvasScript canvasAdding)
+        public CanvasScript AddLayerRefresh(CanvasScript canvasAdding)
         {
+            CanvasScript canvasFill;
             Track addingTrack = NewTrack();
-
+            Frame addingFrame;
             for (int i = 0; i < GetTimelineLength(); i++)
             {
-                Frame addingFrame;
-                addingFrame = NewFrame(i == FrameOn ? canvasAdding : App.Scene.AddCanvas());
+                canvasFill = App.Scene.AddCanvas();    
+                addingFrame = NewFrame(i == 0 ? canvasAdding : canvasFill);
+                    if (i == FrameOn)
+                    {
+                        canvasAdding = addingFrame.Canvas;
+                    } 
                 addingTrack.Frames.Add(addingFrame);
-            }
+            }            
             Timeline.Add(addingTrack);
             ResetTimeline();
+            return canvasAdding;
         }
 
         public (int, int) GetCanvasLocation(CanvasScript canvas)
@@ -671,7 +677,8 @@ namespace TiltBrush.FrameAnimation
             deletedFrame.Length = GetFrameLength(index.Item1, index.Item2);
             deletedFrame.Location = (index.Item1, index.Item2);
 
-            App.Scene.HideCanvas(Timeline[index.Item1].Frames[index.Item2].Canvas);
+            App.Scene.ClearLayerContents(deletedFrame.Frame.Canvas);
+            App.Scene.HideCanvas(deletedFrame.Frame.Canvas);
             CanvasScript replacingCanvas = App.Scene.AddCanvas();
             for (int l = index.Item2; l < nextIndex.Item2; l++)
             {
