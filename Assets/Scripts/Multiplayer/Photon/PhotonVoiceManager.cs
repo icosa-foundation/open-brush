@@ -65,7 +65,7 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
             };
 
             m_VoiceConnection.Client.AddCallbackTarget(this);
-
+            m_VoiceConnection.RemoteVoiceAdded += OnRemoteVoiceAdded;
         }
         catch (Exception ex)
         {
@@ -79,6 +79,11 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
         State = ConnectionState.INITIALIZED;
         return true;
 
+    }
+
+    void OnDestroy()
+    {
+        m_VoiceConnection.RemoteVoiceAdded += OnRemoteVoiceAdded;
     }
 
     public async Task<bool> Connect()
@@ -262,6 +267,27 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
         wasTransmitting = isTransmitting;
     }
 
+    private async void WaitForSpeaker(string speakerName, Action<GameObject> onSpeakerFound)
+    {
+        GameObject speakerObject = null;
+        while (speakerObject == null)
+        {
+            speakerObject = GameObject.Find(speakerName);
+            await Task.Delay(1000); 
+        }
+        onSpeakerFound?.Invoke(speakerObject);
+    }
+
+    private void OnRemoteVoiceAdded(RemoteVoiceLink remoteVoice)
+    {
+        string speakerName = string.Format("Remote p#{0} v#{1}", remoteVoice.PlayerId, remoteVoice.VoiceId);
+
+        // Start waiting for the speaker to appear
+        WaitForSpeaker(speakerName, speakerObject =>
+        {
+            m_Manager.remoteVoiceAdded?.Invoke(remoteVoice.PlayerId+1, speakerObject);
+        });
+    }
 
     #region MatchmakingCallbacks
 

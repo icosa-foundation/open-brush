@@ -87,10 +87,10 @@ namespace OpenBrush.Multiplayer
 
         public void Update()
         {
-            var copy = m_PlayersSpawning.ToList();
+            List<PlayerRef> copy = m_PlayersSpawning.ToList();
             foreach (var player in copy)
             {
-                var newPlayer = m_Runner.GetPlayerObject(player);
+                NetworkObject newPlayer = m_Runner.GetPlayerObject(player);
                 if (newPlayer != null)
                 {
                     m_Manager.remotePlayerJoined?.Invoke(player.RawEncoded, newPlayer.GetComponent<PhotonPlayerRig>());
@@ -98,6 +98,7 @@ namespace OpenBrush.Multiplayer
                 }
             }
         }
+
 
         #region IConnectionHandler Methods
 
@@ -269,6 +270,22 @@ namespace OpenBrush.Multiplayer
             if (remotePlayer != null && remotePlayer.Object != null && remotePlayer.Object.IsValid)
                 return remotePlayer.IsRoomOwner;
             else return false;
+        }
+
+        public GameObject GetPlayerPrefab(int playerId)
+        {
+            if (m_Runner == null) return null;
+
+            PlayerRef player = PlayerRef.FromEncoded(playerId);
+
+            NetworkObject playerNetworkObject = m_Runner.GetPlayerObject(player);
+            if (playerNetworkObject != null) return playerNetworkObject.gameObject;
+
+            else
+            {
+                Debug.LogWarning($"No NetworkObject found for PlayerRef: {player.RawEncoded}");
+                return null;
+            }
         }
 
         public async Task<bool> PerformCommand(BaseCommand command)

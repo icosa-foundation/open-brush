@@ -18,8 +18,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 
-
-
 #if OCULUS_SUPPORTED
 using OVRPlatform = Oculus.Platform;
 #endif
@@ -49,6 +47,7 @@ namespace OpenBrush.Multiplayer
 
         public Action<int, ITransientData<PlayerRigData>> localPlayerJoined;
         public Action<int, ITransientData<PlayerRigData>> remotePlayerJoined;
+        public Action<int, GameObject> remoteVoiceAdded;
         public Action<int> playerLeft;
         public Action<List<RoomData>> roomDataRefreshed;
 
@@ -156,6 +155,7 @@ namespace OpenBrush.Multiplayer
             roomDataRefreshed += OnRoomDataRefreshed;
             localPlayerJoined += OnLocalPlayerJoined;
             remotePlayerJoined += OnRemotePlayerJoined;
+            remoteVoiceAdded += OnRemoteVoiceConnected;
             playerLeft += OnPlayerLeft;
             StateUpdated += UpdateSketchMemoryScriptTimeOffset;
 
@@ -169,6 +169,7 @@ namespace OpenBrush.Multiplayer
             roomDataRefreshed -= OnRoomDataRefreshed;
             localPlayerJoined -= OnLocalPlayerJoined;
             remotePlayerJoined -= OnRemotePlayerJoined;
+            remoteVoiceAdded -= OnRemoteVoiceConnected;
             playerLeft -= OnPlayerLeft;
             StateUpdated -= UpdateSketchMemoryScriptTimeOffset;
 
@@ -418,6 +419,13 @@ namespace OpenBrush.Multiplayer
             {
                 MultiplayerSceneSync.m_Instance.StartSyncronizationForUser(id);
             }
+        }
+
+        public void OnRemoteVoiceConnected(int id, GameObject voicePrefab)
+        {
+            ITransientData<PlayerRigData> playerData = m_RemotePlayers.First(x => x.PlayerId == id);
+            GameObject RemotePlayerGameObject = m_Manager.GetPlayerPrefab(id);
+            voicePrefab.transform.parent = RemotePlayerGameObject.transform;
         }
 
         public void SendLargeDataToPlayer(int playerId, byte[] Data, int percentage)

@@ -15,6 +15,7 @@
 using System;
 using System.Threading.Tasks;
 using TiltBrush;
+using UnityEngine;
 
 namespace OpenBrush.Multiplayer
 {
@@ -36,6 +37,7 @@ namespace OpenBrush.Multiplayer
         int GetPlayerCount();
         int GetNetworkedTimestampMilliseconds();
         bool GetPlayerRoomOwnershipStatus(int playerId);
+        GameObject GetPlayerPrefab(int playerId);
         void SendLargeDataToPlayer(int playerId, byte[] largeData, int percentage);
         Task<bool> PerformCommand(BaseCommand command);
         Task<bool> SendCommandToPlayer(BaseCommand command, int playerId);
