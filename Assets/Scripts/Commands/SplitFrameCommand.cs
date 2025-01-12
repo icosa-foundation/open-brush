@@ -34,7 +34,7 @@ namespace TiltBrush.FrameAnimation
 
         protected override void OnRedo()
         {
-            m_SplittingIndex = m_Manager.splitKeyFrame(m_TimelineLocation.Item1, m_TimelineLocation.Item2);
+            m_SplittingIndex = m_Manager.SplitKeyFrame(m_TimelineLocation.Item1, m_TimelineLocation.Item2);
         }
 
         protected override void OnUndo()

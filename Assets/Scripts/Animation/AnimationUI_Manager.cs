@@ -952,81 +952,24 @@ namespace TiltBrush.FrameAnimation
             return index;
         }
 
-        public (int, int) splitKeyFrame(int trackNum = -1, int frameNum = -1)
+        private void ReplicateStrokes(List<Stroke> newStrokes, CanvasScript newCanvas)
         {
-            (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
-
-            CanvasScript newCanvas = App.Scene.AddCanvas();
-            CanvasScript oldCanvas = App.Scene.ActiveCanvas;
-
-            int frameLegnth = GetFrameLength(index.Item1, index.Item2);
-
-
-            int splittingIndex = FrameOn;
-            if (splittingIndex < index.Item2 || splittingIndex > index.Item2 + frameLegnth - 1) return (-1, -1);
-
-            List<Stroke> oldStrokes = SketchMemoryScript.m_Instance.GetMemoryList
-                .Where(x => x.Canvas == oldCanvas).ToList();
-
-            List<Stroke> newStrokes = oldStrokes.Select(stroke =>
-                SketchMemoryScript.m_Instance.DuplicateStroke(stroke, App.Scene.SelectionCanvas, null))
-                .ToList();
+            Dictionary<int, List<Stroke>> strokeGroups = new Dictionary<int, List<Stroke>>();
 
             foreach (var stroke in newStrokes)
             {
-                switch (stroke.m_Type)
-                {
-                    case Stroke.Type.BrushStroke:
+                if (stroke.Group != SketchGroupTag.None)
+                    {
+                        if (strokeGroups.TryGetValue(stroke.Group.GetHashCode(), out List<Stroke> group))
                         {
-                            BaseBrushScript brushScript = stroke.m_Object.GetComponent<BaseBrushScript>();
-                            if (brushScript)
-                            {
-                                brushScript.HideBrush(false);
-                            }
+                            group.Add(stroke);
                         }
-                        break;
-                    case Stroke.Type.BatchedBrushStroke:
+                        else
                         {
-                            stroke.m_BatchSubset.m_ParentBatch.EnableSubset(stroke.m_BatchSubset);
-                        }
-                        break;
-                    default:
-                        Debug.LogError("Unexpected: redo NotCreated duplicate stroke");
-                        break;
-                }
-                TiltMeterScript.m_Instance.AdjustMeter(stroke, up: true);
+                            strokeGroups[stroke.Group.GetHashCode()] = new List<Stroke> { stroke };
+                        }   
+                    }
 
-                stroke.SetParentKeepWorldPosition(newCanvas);
-            }
-
-            for (int f = splittingIndex; f < index.Item2 + frameLegnth; f++)
-            {
-                Frame addingFrame = NewFrame(newCanvas);
-                Timeline[index.Item1].Frames[f] = addingFrame;
-            }
-
-            SelectTimelineFrame(index.Item1, splittingIndex);
-            ResetTimeline();
-            return (index.Item1, splittingIndex);
-        }
-
-        public (int, int) duplicateKeyFrame(int trackNum = -1, int frameNum = -1)
-        {
-            (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
-            CanvasScript newCanvas = App.Scene.AddCanvas();
-            CanvasScript oldCanvas = App.Scene.ActiveCanvas;
-
-            int frameLegnth = GetFrameLength(index.Item1, index.Item2);
-            (int, int) nextIndex = GetFollowingFrameIndex(index.Item1, index.Item2);
-            List<Stroke> oldStrokes = SketchMemoryScript.m_Instance.GetMemoryList
-                .Where(x => x.Canvas == oldCanvas).ToList();
-
-            List<Stroke> newStrokes = oldStrokes
-                .Select(stroke => SketchMemoryScript.m_Instance.DuplicateStroke(
-                    stroke, App.Scene.SelectionCanvas, null)).ToList();
-
-            foreach (var stroke in newStrokes)
-            {
                 switch (stroke.m_Type)
                 {
                     case Stroke.Type.BrushStroke:
@@ -1047,7 +990,62 @@ namespace TiltBrush.FrameAnimation
                 stroke.SetParentKeepWorldPosition(newCanvas);
             }
 
-            for (int f = 0; f < frameLegnth; f++)
+            foreach (var sg in strokeGroups)
+            {
+                GroupManager.MoveStrokesToNewGroups(sg.Value,null);
+            }
+        }
+
+        public (int, int) SplitKeyFrame(int trackNum = -1, int frameNum = -1)
+        {
+            (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
+
+            CanvasScript newCanvas = App.Scene.AddCanvas();
+            CanvasScript oldCanvas = App.Scene.ActiveCanvas;
+
+            int frameLength = GetFrameLength(index.Item1, index.Item2);
+
+            int splittingIndex = FrameOn;
+            if (splittingIndex < index.Item2 || splittingIndex > index.Item2 + frameLength - 1) return (-1, -1);
+
+            List<Stroke> oldStrokes = SketchMemoryScript.m_Instance.GetMemoryList
+                .Where(x => x.Canvas == oldCanvas).ToList();
+
+            List<Stroke> newStrokes = oldStrokes.Select(stroke =>
+                SketchMemoryScript.m_Instance.DuplicateStroke(stroke, App.Scene.SelectionCanvas, null))
+                .ToList();
+
+            ReplicateStrokes(newStrokes,newCanvas);
+
+            for (int f = splittingIndex; f < index.Item2 + frameLength; f++)
+            {
+                Frame addingFrame = NewFrame(newCanvas);
+                Timeline[index.Item1].Frames[f] = addingFrame;
+            }
+
+            SelectTimelineFrame(index.Item1, splittingIndex);
+            ResetTimeline();
+            return (index.Item1, splittingIndex);
+        }
+
+        public (int, int) DuplicateKeyFrame(int trackNum = -1, int frameNum = -1)
+        {
+            (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
+            CanvasScript newCanvas = App.Scene.AddCanvas();
+            CanvasScript oldCanvas = App.Scene.ActiveCanvas;
+
+            int frameLength = GetFrameLength(index.Item1, index.Item2);
+            (int, int) nextIndex = GetFollowingFrameIndex(index.Item1, index.Item2);
+            List<Stroke> oldStrokes = SketchMemoryScript.m_Instance.GetMemoryList
+                .Where(x => x.Canvas == oldCanvas).ToList();
+
+            List<Stroke> newStrokes = oldStrokes
+                .Select(stroke => SketchMemoryScript.m_Instance.DuplicateStroke(
+                    stroke, App.Scene.SelectionCanvas, null)).ToList();
+
+            ReplicateStrokes(newStrokes,newCanvas);
+
+            for (int f = 0; f < frameLength; f++)
             {
                 if (nextIndex.Item2 + f < Timeline[nextIndex.Item1].Frames.Count &&
                     !GetFrameFilled(nextIndex.Item1, nextIndex.Item2))

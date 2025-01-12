@@ -34,7 +34,7 @@ namespace TiltBrush.FrameAnimation
 
         protected override void OnRedo()
         {
-            m_DuplicatingIndex = m_Manager.duplicateKeyFrame(m_TimelineLocation.Item1, m_TimelineLocation.Item2);
+            m_DuplicatingIndex = m_Manager.DuplicateKeyFrame(m_TimelineLocation.Item1, m_TimelineLocation.Item2);
         }
 
         protected override void OnUndo()
