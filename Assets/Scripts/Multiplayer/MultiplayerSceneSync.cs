@@ -89,12 +89,13 @@ namespace OpenBrush.Multiplayer
 
             int counter = 0;
             for (int i = 0; i < strokeList.Count; i += chunkSize)
+
             {
-                int percentage = (int)((counter / (float)strokeList.Count) * 100);
                 var chunk = strokeList.Skip(i).Take(chunkSize).ToList();
+                counter += chunk.Count;
+                int percentage = (int)((counter / (float)strokeList.Count) * 100);
                 byte[] strokesData = await MultiplayerStrokeSerialization.SerializeAndCompressMemoryListAsync(chunk);
                 MultiplayerManager.m_Instance.SendLargeDataToPlayer(id, strokesData, percentage);
-                counter += chunk.Count;
                 //Debug.Log($"Sent {strokesData.Length} bytes of serialized stroke data (batch {(i / chunkSize) + 1}) to player {id}.");
             }
         }
