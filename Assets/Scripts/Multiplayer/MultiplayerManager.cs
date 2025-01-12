@@ -17,7 +17,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
-
 #if OCULUS_SUPPORTED
 using OVRPlatform = Oculus.Platform;
 #endif
@@ -424,8 +423,29 @@ namespace OpenBrush.Multiplayer
         public void OnRemoteVoiceConnected(int id, GameObject voicePrefab)
         {
             ITransientData<PlayerRigData> playerData = m_RemotePlayers.First(x => x.PlayerId == id);
+            if (playerData == null)
+            {
+                Debug.LogWarning($"PlayerRigData with ID {id} not found");
+                return;
+            }
+
+
             GameObject RemotePlayerGameObject = m_Manager.GetPlayerPrefab(id);
-            voicePrefab.transform.parent = RemotePlayerGameObject.transform;
+            if (RemotePlayerGameObject == null)
+            {
+                Debug.LogWarning($"RemotePlayerGameObject with ID {id} not found");
+                return;
+            }
+
+            Transform headTransform = RemotePlayerGameObject.transform.Find("HeadTransform");
+            if (headTransform != null)
+            {
+                voicePrefab.transform.SetParent(headTransform, false);
+            }
+            else
+            {
+                Debug.LogWarning($"HeadTransform not found in {RemotePlayerGameObject.name}");
+            }
         }
 
         public void SendLargeDataToPlayer(int playerId, byte[] Data, int percentage)
