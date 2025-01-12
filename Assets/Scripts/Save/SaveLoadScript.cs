@@ -666,6 +666,7 @@ namespace TiltBrush
                         jsonData.SceneTransformInRoomSpace);
                     App.Scene.Pose = jsonData.SceneTransformInRoomSpace;
                     App.Scene.ResetLayers(true);
+                    App.Scene.animationUI_manager.StartTimeline();
                     Coords.CanvasLocalPose = TrTransform.identity;
                     if (jsonData.CanvasTransformInSceneSpace != TrTransform.identity)
                     {

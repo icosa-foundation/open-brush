@@ -4976,6 +4976,7 @@ namespace TiltBrush
             SelectionManager.m_Instance.RemoveFromSelection(false);
             PointerManager.m_Instance.ResetSymmetryToHome();
             App.Scene.ResetLayers(notify: true);
+            App.Scene.animationUI_manager.StartTimeline();
             ApiManager.Instance.ResetBrushTransform();
 
             // If we've got the camera path tool active, switch back to the default tool.
