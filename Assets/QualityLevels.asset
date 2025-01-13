@@ -29,7 +29,7 @@ MonoBehaviour:
     m_GpuLevel: 4
     m_FixedFoveationLevel: 0
   - m_Bloom: 1
-    m_Hdr: 0
+    m_Hdr: 1
     m_Fxaa: 1
     m_MsaaLevel: 1
     m_MaxLod: 99999999
