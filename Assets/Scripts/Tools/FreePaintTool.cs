@@ -236,6 +236,15 @@ namespace TiltBrush
 
         void PositionPointer()
         {
+            // Discard the pointer if the controller is exactly zero
+            // as it probably indicates the controller tracking stalled this frame
+            // TODO:Mikesky: See if can be done at input level
+            if (InputManager.m_Instance.GetControllerBehavior(InputManager.ControllerName.Brush).transform.position == Vector3.zero)
+            {
+                Debug.LogError($"Controller Glitch!");
+                return;
+            }
+
             // Angle the pointer according to the user-defined pointer angle.
             (Vector3 pos_GS, Quaternion rot_GS) = GetPointerPosition();
 
