@@ -418,6 +418,7 @@ namespace OpenBrush.Multiplayer
             {
                 MultiplayerSceneSync.m_Instance.StartSyncronizationForUser(id);
             }
+
         }
 
         public void OnRemoteVoiceConnected(int id, GameObject voicePrefab)
@@ -446,6 +447,14 @@ namespace OpenBrush.Multiplayer
             {
                 Debug.LogWarning($"HeadTransform not found in {RemotePlayerGameObject.name}");
             }
+
+            AudioSource audioSource = voicePrefab.GetComponent<AudioSource>();
+            if (audioSource == null)
+            {
+                Debug.LogWarning($"VoicePrefab with ID {id} lack AudioSource :S ");
+                return;
+            }
+            MultiplayerAudioSourcesManager.m_Instance.AddAudioSource(audioSource);
         }
 
         public void SendLargeDataToPlayer(int playerId, byte[] Data, int percentage)

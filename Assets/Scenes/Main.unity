@@ -15179,6 +15179,7 @@ GameObject:
   - component: {fileID: 1052269837}
   - component: {fileID: 1052269836}
   - component: {fileID: 1052269835}
+  - component: {fileID: 1052269838}
   m_Layer: 0
   m_Name: MultiplayerManager
   m_TagString: Untagged
@@ -15321,6 +15322,18 @@ MonoBehaviour:
   m_SyncType: 0
   numberOfCommandsExpected: 0
   numberOfCommandsSent: 0
+--- !u!114 &1052269838
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1052269830}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e5dc8298e822c34698aa17ff24b2b77, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1057179852
 GameObject:
   m_ObjectHideFlags: 0
