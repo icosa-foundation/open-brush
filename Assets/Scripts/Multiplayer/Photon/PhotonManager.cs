@@ -93,7 +93,15 @@ namespace OpenBrush.Multiplayer
                 NetworkObject newPlayer = m_Runner.GetPlayerObject(player);
                 if (newPlayer != null)
                 {
-                    m_Manager.remotePlayerJoined?.Invoke(player.RawEncoded, newPlayer.GetComponent<PhotonPlayerRig>());
+                    RemotePlayer newRemotePlayer = new RemotePlayer
+                    {
+                        PlayerId = player.RawEncoded,
+                        Nickname = GetPlayerNickname(player.RawEncoded),
+                        TransientData = newPlayer.GetComponent<PhotonPlayerRig>(),
+                        PlayerGameObject = newPlayer.gameObject
+                    };
+
+                    m_Manager.remotePlayerJoined?.Invoke(newRemotePlayer);
                     m_PlayersSpawning.Remove(player);
                 }
             }
@@ -270,6 +278,17 @@ namespace OpenBrush.Multiplayer
             if (remotePlayer != null && remotePlayer.Object != null && remotePlayer.Object.IsValid)
                 return remotePlayer.IsRoomOwner;
             else return false;
+        }
+
+        public string GetPlayerNickname(int playerId)
+        {
+            var remotePlayer = m_PlayersSpawning
+                .Select(playerRef => m_Runner.GetPlayerObject(playerRef)?.GetComponent<PhotonPlayerRig>())
+                .FirstOrDefault(playerRig => playerRig != null && playerRig.PlayerId == playerId);
+
+            if (remotePlayer != null && remotePlayer.Object != null && remotePlayer.Object.IsValid)
+                return remotePlayer.Nickname;
+            else return "default";
         }
 
         public GameObject GetPlayerPrefab(int playerId)

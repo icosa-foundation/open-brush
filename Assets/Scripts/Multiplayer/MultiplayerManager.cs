@@ -42,10 +42,10 @@ namespace OpenBrush.Multiplayer
         private IVoiceConnectionHandler m_VoiceManager;
 
         public ITransientData<PlayerRigData> m_LocalPlayer;
-        public List<ITransientData<PlayerRigData>> m_RemotePlayers;
+        public List<RemotePlayer> m_RemotePlayers;
 
         public Action<int, ITransientData<PlayerRigData>> localPlayerJoined;
-        public Action<int, ITransientData<PlayerRigData>> remotePlayerJoined;
+        public Action<RemotePlayer> remotePlayerJoined;
         public Action<int, GameObject> remoteVoiceAdded;
         public Action<int> playerLeft;
         public Action<List<RoomData>> roomDataRefreshed;
@@ -110,7 +110,7 @@ namespace OpenBrush.Multiplayer
         {
             m_Instance = this;
             oculusPlayerIds = new List<ulong>();
-            m_RemotePlayers = new List<ITransientData<PlayerRigData>>();
+            m_RemotePlayers = new List<RemotePlayer>();
         }
 
         void Start()
@@ -374,8 +374,10 @@ namespace OpenBrush.Multiplayer
 
             // Update remote user refs, and send Anchors if new player joins.
             bool newUser = false;
-            foreach (var player in m_RemotePlayers)
+            foreach (var playerData in m_RemotePlayers)
             {
+                ITransientData<PlayerRigData> player = playerData.TransientData;
+
                 if (!player.IsSpawned) continue;
 
                 data = player.ReceiveData();
@@ -409,43 +411,41 @@ namespace OpenBrush.Multiplayer
 
         }
 
-        void OnRemotePlayerJoined(int id, ITransientData<PlayerRigData> playerData)
-        {
-            playerData.PlayerId = id;
-            m_RemotePlayers.Add(playerData);
+        void OnRemotePlayerJoined(RemotePlayer newRemotePlayer)
+        {     
+            m_RemotePlayers.Add(newRemotePlayer);
 
             if (isUserRoomOwner)
             {
-                MultiplayerSceneSync.m_Instance.StartSyncronizationForUser(id);
+                MultiplayerSceneSync.m_Instance.StartSyncronizationForUser(newRemotePlayer.PlayerId);
             }
 
         }
 
         public void OnRemoteVoiceConnected(int id, GameObject voicePrefab)
         {
-            ITransientData<PlayerRigData> playerData = m_RemotePlayers.First(x => x.PlayerId == id);
-            if (playerData == null)
+            RemotePlayer playerData = m_RemotePlayers.First(x => x.PlayerId == id);
+            if (playerData == default)
             {
                 Debug.LogWarning($"PlayerRigData with ID {id} not found");
                 return;
             }
 
-
-            GameObject RemotePlayerGameObject = m_Manager.GetPlayerPrefab(id);
-            if (RemotePlayerGameObject == null)
+            if (playerData.PlayerGameObject == null)
             {
                 Debug.LogWarning($"RemotePlayerGameObject with ID {id} not found");
                 return;
             }
 
-            Transform headTransform = RemotePlayerGameObject.transform.Find("HeadTransform");
+            Transform headTransform = playerData.PlayerGameObject.transform.Find("HeadTransform");
             if (headTransform != null)
             {
                 voicePrefab.transform.SetParent(headTransform, false);
+                playerData.VoiceGameObject = voicePrefab;
             }
             else
             {
-                Debug.LogWarning($"HeadTransform not found in {RemotePlayerGameObject.name}");
+                Debug.LogWarning($"HeadTransform not found in {playerData.PlayerGameObject.name}");
             }
 
             AudioSource audioSource = voicePrefab.GetComponent<AudioSource>();
@@ -496,7 +496,7 @@ namespace OpenBrush.Multiplayer
 
             // Since There are other players left
             // Determine the new room owner by the lowest PlayerId
-            var allPlayers = new List<ITransientData<PlayerRigData>> { m_LocalPlayer };
+            var allPlayers = new List<RemotePlayer> { new RemotePlayer { PlayerId = m_LocalPlayer.PlayerId } };
             allPlayers.AddRange(m_RemotePlayers);
 
             // Find the player with the lowest PlayerId
