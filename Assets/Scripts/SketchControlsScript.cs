@@ -156,6 +156,7 @@ namespace TiltBrush
             MultiplayerConnect = 1007,
             MultiplayerDisconnect = 1008,
             EditMultiplayerNickName = 1009,
+            OpenRoomSettings = 1010,
 
             RenameSketch = 5200,
             OpenLayerOptionsPopup = 5201,
@@ -4527,6 +4528,11 @@ namespace TiltBrush
                     {
                         var panel = (MultiplayerPanel)m_PanelManager.GetActivePanelByType(BasePanel.PanelType.Multiplayer);
                         panel.NickName = KeyboardPopUpWindow.m_LastInput;
+                        DismissPopupOnCurrentGazeObject(false);
+                        break;
+                    }
+                case GlobalCommands.OpenRoomSettings:
+                    {
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }
