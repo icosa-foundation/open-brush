@@ -412,7 +412,7 @@ namespace OpenBrush.Multiplayer
         }
 
         void OnRemotePlayerJoined(RemotePlayer newRemotePlayer)
-        {     
+        {
             m_RemotePlayers.Add(newRemotePlayer);
 
             if (isUserRoomOwner)
