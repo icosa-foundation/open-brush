@@ -98,10 +98,10 @@ public class MultiplayerManagerInspector : Editor
 
         //Remote Users
         string remoteUsersRegistered = "";
-        if (multiplayerManager.m_RemotePlayers != null && multiplayerManager.m_RemotePlayers.Count > 0)
+        if (multiplayerManager.m_RemotePlayers != null && multiplayerManager.m_RemotePlayers.List.Count > 0)
         {
             remoteUsersRegistered = "UserIds:[ ";
-            foreach (var remotePlayer in multiplayerManager.m_RemotePlayers)
+            foreach (var remotePlayer in multiplayerManager.m_RemotePlayers.List)
             {
                 remoteUsersRegistered += remotePlayer.PlayerId.ToString() + ",";
             }

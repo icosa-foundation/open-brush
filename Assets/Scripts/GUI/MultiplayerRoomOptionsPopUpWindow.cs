@@ -13,16 +13,53 @@
 // limitations under the License.
 
 using UnityEngine;
+using OpenBrush.Multiplayer;
+using System;
+using System.Collections.Generic;
 
 namespace TiltBrush
 {
 
     public class MultiplayerRoomOptionsPopUpWindow : PopUpWindow
     {
+        public GameObject m_playerGuiPrefab;
+        public Vector2 PlayerGuiPrefabSize;
+        public Vector2 PlayerListOffset;
+        public Vector2 PlayerListArea;
+        private List<GameObject> m_instantiatedGuiPrefabs;
+
+        public RemotePlayers m_RemotePlayers
+        {
+            get
+            {
+                if (MultiplayerManager.m_Instance == null)
+                    throw new InvalidOperationException("MultiplayerManager is not initialized.");
+                return MultiplayerManager.m_Instance.m_RemotePlayers;
+            }
+
+        }
+
+        public ITransientData<PlayerRigData> m_LocalPlayer
+        {
+            get
+            {
+                if (MultiplayerManager.m_Instance == null)
+                    throw new InvalidOperationException("MultiplayerManager is not initialized.");
+                return MultiplayerManager.m_Instance.m_LocalPlayer;
+            }
+
+        }
+
+        #region overrides base class
 
         override public void Init(GameObject rParent, string sText)
         {
             base.Init(rParent, sText);
+
+            m_RemotePlayers.remotePlayerAdded += RemotePlayerAdded;
+            m_RemotePlayers.remotePlayerRemoved += RemotePlayerRemoved;
+            m_RemotePlayers.remotePlayersListCleared += RemotePlayersListCleared;
+
         }
 
         override protected void BaseUpdate()
@@ -44,5 +81,95 @@ namespace TiltBrush
         {
             base.UpdateUIComponents(rCastRay, inputValid, parentCollider);
         }
+
+        #endregion
+
+        public void RemotePlayerAdded(int playerId)
+        {
+            GeneratePlayerList();
+        }
+
+        public void RemotePlayerRemoved(int playerId)
+        {
+            GeneratePlayerList();
+        }
+
+        public void RemotePlayersListCleared()
+        {
+            GeneratePlayerList();
+        }
+
+        public void GeneratePlayerList(List<RemotePlayer> playersList = null)
+        {
+            if (m_playerGuiPrefab == null)
+            {
+                Debug.LogWarning("Player GUI Prefab is not assigned!");
+                return;
+            }
+
+            ClearGuiPrefabsList();
+
+            List<RemotePlayer> playersToDisplay = playersList ?? m_RemotePlayers.List;
+
+            Vector3 basePosition = transform.position + new Vector3(-PlayerListArea.x / 2 + PlayerGuiPrefabSize.x / 2, PlayerListOffset.y + PlayerListArea.y / 2 - PlayerGuiPrefabSize.y / 2, 0);
+            float yOffset = PlayerGuiPrefabSize.y;
+
+            foreach (var remotePlayer in playersToDisplay)
+            {
+                GameObject playerListItem = Instantiate(m_playerGuiPrefab, basePosition, Quaternion.identity, transform);
+                playerListItem.name = $"Player_{remotePlayer.PlayerId}";
+                playerListItem.transform.localPosition = basePosition;
+
+                PlayerListItemPrefab playerGuiComponent = playerListItem.GetComponent<PlayerListItemPrefab>();
+                if (playerGuiComponent != null)
+                {
+                    playerGuiComponent.SetRemotePlayer(remotePlayer);
+                }
+
+                basePosition -= new Vector3(0, yOffset, 0);
+                playerListItem.SetActive(true);
+                AddTodGuiPrefabsList(playerListItem);
+            }
+        }
+
+        private void AddTodGuiPrefabsList(GameObject item)
+        {
+            m_instantiatedGuiPrefabs.Add(item);
+        }
+
+        private void ClearGuiPrefabsList()
+        {
+            foreach (GameObject g in m_instantiatedGuiPrefabs) DestroyImmediate(g);
+            m_instantiatedGuiPrefabs.Clear();
+        }
+
+
+        #region player list 
+
+#if UNITY_EDITOR
+        void OnDrawGizmos()
+        {
+            Gizmos.color = Color.red;
+
+            Vector3 basePosition = transform.position + new Vector3(PlayerListOffset.x, PlayerListOffset.y, 0);
+
+            Vector3 topLeft = basePosition + new Vector3(-PlayerListArea.x / 2, PlayerListArea.y / 2, 0);
+            Vector3 topRight = basePosition + new Vector3(PlayerListArea.x / 2, PlayerListArea.y / 2, 0);
+            Vector3 bottomLeft = basePosition + new Vector3(-PlayerListArea.x / 2, -PlayerListArea.y / 2, 0);
+            Vector3 bottomRight = basePosition + new Vector3(PlayerListArea.x / 2, -PlayerListArea.y / 2, 0);
+
+            Gizmos.DrawLine(topLeft, topRight);
+            Gizmos.DrawLine(topRight, bottomRight);
+            Gizmos.DrawLine(bottomRight, bottomLeft);
+            Gizmos.DrawLine(bottomLeft, topLeft);
+
+            Vector3 topEdgeCenter = (topLeft + topRight) / 2;
+            UnityEditor.Handles.Label(topEdgeCenter, "Player List Area");
+
+        }
+#endif
+        #endregion
+
+
     }
 } // namespace TiltBrush

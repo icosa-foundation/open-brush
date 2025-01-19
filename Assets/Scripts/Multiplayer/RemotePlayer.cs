@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -31,6 +32,59 @@ namespace OpenBrush.Multiplayer
         // The underlying GameObjects in the scene that represents this player 
         public GameObject PlayerGameObject;
         public GameObject VoiceGameObject;
+    }
+
+
+    [System.Serializable]
+    public class RemotePlayers
+    {
+        public Action<int> remotePlayerAdded;
+        public Action<int> remotePlayerRemoved;
+        public Action remotePlayersListCleared;
+
+        private List<RemotePlayer> list = new List<RemotePlayer>();
+
+        public List<RemotePlayer> List
+        {
+            get { return list; }
+        }
+
+        public void AddPlayer(RemotePlayer player)
+        {
+            if (player != null)
+            {
+                list.Add(player);
+                remotePlayerAdded?.Invoke(player.PlayerId);
+            }
+        }
+
+        public void RemovePlayer(RemotePlayer player)
+        {
+            if (player != null && list.Remove(player))
+                remotePlayerRemoved?.Invoke(player.PlayerId);
+        }
+
+        public void RemovePlayerById(int playerId)
+        {
+            RemotePlayer playerToRemove = GetPlayerById(playerId);
+
+            if (playerToRemove != null && list.Remove(playerToRemove))
+                remotePlayerRemoved?.Invoke(playerId);
+
+        }
+
+        public RemotePlayer GetPlayerById(int playerId)
+        {
+            RemotePlayer playerToRemove = list.Find(player => player.PlayerId == playerId);
+
+            return playerToRemove;
+        }
+
+        public void ClearList()
+        {
+            list.Clear();
+            remotePlayersListCleared?.Invoke();
+        }
     }
 
 }

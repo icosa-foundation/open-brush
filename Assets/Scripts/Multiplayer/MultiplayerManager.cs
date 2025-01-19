@@ -42,7 +42,7 @@ namespace OpenBrush.Multiplayer
         private IVoiceConnectionHandler m_VoiceManager;
 
         public ITransientData<PlayerRigData> m_LocalPlayer;
-        public List<RemotePlayer> m_RemotePlayers;
+        public RemotePlayers m_RemotePlayers;
 
         public Action<int, ITransientData<PlayerRigData>> localPlayerJoined;
         public Action<RemotePlayer> remotePlayerJoined;
@@ -110,7 +110,6 @@ namespace OpenBrush.Multiplayer
         {
             m_Instance = this;
             oculusPlayerIds = new List<ulong>();
-            m_RemotePlayers = new List<RemotePlayer>();
         }
 
         void Start()
@@ -374,7 +373,7 @@ namespace OpenBrush.Multiplayer
 
             // Update remote user refs, and send Anchors if new player joins.
             bool newUser = false;
-            foreach (var playerData in m_RemotePlayers)
+            foreach (var playerData in m_RemotePlayers.List)
             {
                 ITransientData<PlayerRigData> player = playerData.TransientData;
 
@@ -413,7 +412,7 @@ namespace OpenBrush.Multiplayer
 
         void OnRemotePlayerJoined(RemotePlayer newRemotePlayer)
         {
-            m_RemotePlayers.Add(newRemotePlayer);
+            m_RemotePlayers.AddPlayer(newRemotePlayer);
 
             if (isUserRoomOwner)
             {
@@ -424,7 +423,7 @@ namespace OpenBrush.Multiplayer
 
         public void OnRemoteVoiceConnected(int id, GameObject voicePrefab)
         {
-            RemotePlayer playerData = m_RemotePlayers.First(x => x.PlayerId == id);
+            RemotePlayer playerData = m_RemotePlayers.List.First(x => x.PlayerId == id);
             if (playerData == default)
             {
                 Debug.LogWarning($"PlayerRigData with ID {id} not found");
@@ -470,25 +469,19 @@ namespace OpenBrush.Multiplayer
                 Debug.Log("Possible to get here!");
                 return;
             }
-            var copy = m_RemotePlayers.ToList();
-            foreach (var player in copy)
-            {
-                if (player.PlayerId == id)
-                {
-                    m_RemotePlayers.Remove(player);
-                }
-            }
+
+            m_RemotePlayers.RemovePlayerById(id);
 
             // Reassign Ownership if needed 
             // Check if any remaining player is the room owner
-            bool anyRoomOwner = m_RemotePlayers.Any(player => m_Manager.GetPlayerRoomOwnershipStatus(player.PlayerId))
+            bool anyRoomOwner = m_RemotePlayers.List.Any(player => m_Manager.GetPlayerRoomOwnershipStatus(player.PlayerId))
                                 || isUserRoomOwner;
 
             // If there's still a room owner, no reassignment is needed
             if (anyRoomOwner) return;
 
             // If there are no other players left, the local player becomes the room owner
-            if (m_RemotePlayers.Count == 0)
+            if (m_RemotePlayers.List.Count == 0)
             {
                 isUserRoomOwner = true;
                 return;
@@ -497,7 +490,7 @@ namespace OpenBrush.Multiplayer
             // Since There are other players left
             // Determine the new room owner by the lowest PlayerId
             var allPlayers = new List<RemotePlayer> { new RemotePlayer { PlayerId = m_LocalPlayer.PlayerId } };
-            allPlayers.AddRange(m_RemotePlayers);
+            allPlayers.AddRange(m_RemotePlayers.List);
 
             // Find the player with the lowest PlayerId
             var newOwner = allPlayers.OrderBy(player => player.PlayerId).First();
@@ -578,7 +571,7 @@ namespace OpenBrush.Multiplayer
         private void OnConnectionHandlerDisconnected()
         {
             m_LocalPlayer = null;// Clean up local player reference
-            m_RemotePlayers.Clear();// Clean up remote player references
+            m_RemotePlayers.ClearList();// Clean up remote player references
             LastError = null;
             State = ConnectionState.DISCONNECTED;
             StateUpdated?.Invoke(State);
@@ -623,7 +616,7 @@ namespace OpenBrush.Multiplayer
 
         public bool IsRemotePlayerStillConnected(int playerId)
         {
-            if (m_RemotePlayers.Any(player => player.PlayerId == playerId)) return true;
+            if (m_RemotePlayers.List.Any(player => player.PlayerId == playerId)) return true;
             return false;
         }
 
