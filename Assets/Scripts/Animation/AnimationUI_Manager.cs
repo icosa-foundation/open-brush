@@ -253,14 +253,14 @@ namespace TiltBrush.FrameAnimation
             Frame addingFrame;
             for (int i = 0; i < GetTimelineLength(); i++)
             {
-                canvasFill = App.Scene.AddCanvas();    
+                canvasFill = App.Scene.AddCanvas();
                 addingFrame = NewFrame(i == 0 ? canvasAdding : canvasFill);
-                    if (i == FrameOn)
-                    {
-                        canvasAdding = addingFrame.Canvas;
-                    } 
+                if (i == FrameOn)
+                {
+                    canvasAdding = addingFrame.Canvas;
+                }
                 addingTrack.Frames.Add(addingFrame);
-            }            
+            }
             Timeline.Add(addingTrack);
             ResetTimeline();
             return canvasAdding;
@@ -367,7 +367,7 @@ namespace TiltBrush.FrameAnimation
         }
 
         private void UpdateNodes()
-        {           
+        {
             int nodeCount; // always 8, unless we increase fps
             int trackFrameCount;
             int nodeToMake; // 9 - 8
@@ -378,13 +378,13 @@ namespace TiltBrush.FrameAnimation
 
             if (nodeToMake > 0)
             {
-                float posModifier = nodeCount; 
-                for (int make = 0; make < nodeToMake ; make++)
+                float posModifier = nodeCount;
+                for (int make = 0; make < nodeToMake; make++)
                 {
                     GameObject newFrame = Instantiate(timelineNotchPrefab, frameNotchesWidget.transform, false);
                     // HARD CODED. MUST GET Vector and Scale info from FrameButton1
-                    newFrame.transform.localPosition = new Vector3(posModifier  * 0.1971429f , 0 , 0.0087f); // 1.9... is the spacing between framebuttons 0 and 1
-                    newFrame.transform.FindChild("Num").GetComponent<TextMeshPro>().text = "" + posModifier;  
+                    newFrame.transform.localPosition = new Vector3(posModifier * 0.1971429f, 0, 0.0087f); // 1.9... is the spacing between framebuttons 0 and 1
+                    newFrame.transform.FindChild("Num").GetComponent<TextMeshPro>().text = "" + posModifier;
 
                     posModifier = posModifier + 1;
                 }
@@ -392,8 +392,9 @@ namespace TiltBrush.FrameAnimation
 
             List<Track> ActiveTrack = new();
             foreach (Track track in Timeline)
-            { 
-                if (!track.Deleted){
+            {
+                if (!track.Deleted)
+                {
                     ActiveTrack.Add(track);
                 }
             }
@@ -403,7 +404,7 @@ namespace TiltBrush.FrameAnimation
                 trackNodes.SetActive(false);
             }
 
-            int loopLimitTrack = Math.Min(ActiveTrack.Count,trackNodesWidget.Count);
+            int loopLimitTrack = Math.Min(ActiveTrack.Count, trackNodesWidget.Count);
             for (int trackNum = 0; trackNum < loopLimitTrack; trackNum++)
             {
                 if (ActiveTrack[trackNum].Frames.Count > 0) // check if there is a frame here.
@@ -414,31 +415,31 @@ namespace TiltBrush.FrameAnimation
                     trackFrameCount = ActiveTrack[trackNum].Frames.Count;
                     nodeToMake = trackFrameCount - nodeCount; // 9 - 8
 
-                        if (nodeToMake > 0)
+                    if (nodeToMake > 0)
+                    {
+                        double posModifier = nodeCount;
+                        for (int make = 0; make < nodeToMake; make++)
                         {
-                            double posModifier = nodeCount; 
-                            for (int make = 0; make < nodeToMake ; make++)
-                            {
-                                GameObject newFrame = Instantiate(frameButtonPrefab, trackNodesWidget[trackNum].transform, false);
-                                // TODO : HARD CODED. MUST GET Vector and Scale info from FrameButton1
-                                newFrame.transform.localPosition = new Vector3((float)posModifier  * (float)0.1971429 , 0 , -0.029f); // 1.9... is the spacing between framebuttons 0 and 1
-                                float scale = 0.16175f;
-                                newFrame.transform.localScale = new Vector3(scale,scale,scale);
-                                posModifier = posModifier + 1;
-                            }
-                        } 
-
-                        for (int hideNode = 0; hideNode < nodeCount ; hideNode++)
-                        {
-                            // trackNodesWidget[trackNum].transform.GetChild(hideNode).gameObject.SetActive(false); // already handled in UpdateTimelineSlider below
-                            foreach (Transform buttonState in trackNodesWidget[trackNum].transform.GetChild(hideNode).GetChild(0)) // hide all button state
-                                {
-                                    buttonState.gameObject.SetActive(false); // trackNodesWidget[t].transform.GetChild(hideNode).GetChild(0).GetChild(X).gameObject.SetActive(false); 
-                                }
+                            GameObject newFrame = Instantiate(frameButtonPrefab, trackNodesWidget[trackNum].transform, false);
+                            // TODO : HARD CODED. MUST GET Vector and Scale info from FrameButton1
+                            newFrame.transform.localPosition = new Vector3((float)posModifier * (float)0.1971429, 0, -0.029f); // 1.9... is the spacing between framebuttons 0 and 1
+                            float scale = 0.16175f;
+                            newFrame.transform.localScale = new Vector3(scale, scale, scale);
+                            posModifier = posModifier + 1;
                         }
+                    }
 
-                    int loopLimitFrames = Math.Min(nodeCount , trackFrameCount);
-                    for (int frameNum = 0; frameNum < loopLimitFrames ; frameNum++)
+                    for (int hideNode = 0; hideNode < nodeCount; hideNode++)
+                    {
+                        // trackNodesWidget[trackNum].transform.GetChild(hideNode).gameObject.SetActive(false); // already handled in UpdateTimelineSlider below
+                        foreach (Transform buttonState in trackNodesWidget[trackNum].transform.GetChild(hideNode).GetChild(0)) // hide all button state
+                        {
+                            buttonState.gameObject.SetActive(false); // trackNodesWidget[t].transform.GetChild(hideNode).GetChild(0).GetChild(X).gameObject.SetActive(false); 
+                        }
+                    }
+
+                    int loopLimitFrames = Math.Min(nodeCount, trackFrameCount);
+                    for (int frameNum = 0; frameNum < loopLimitFrames; frameNum++)
                     {
                         // trackNodesWidget[trackNum].transform.GetChild(frameNum).gameObject.SetActive(true); // already handled in UpdateTimelineSlider below
                         var frameButton = trackNodesWidget[trackNum].transform.GetChild(frameNum).GetChild(0); // f is tracknodes; 0 is the control, which is labled "1" in the prefab
@@ -498,9 +499,9 @@ namespace TiltBrush.FrameAnimation
                         {
                             frameButton.GetChild(Convert.ToInt32(filled) + 4).gameObject.SetActive(true); // buttonState index 4 or 5; respectively empty connect right, filled connect right 
                             frameButton.GetChild(backBox + 2).gameObject.SetActive(true); // buttonState index 8: back box right
-                        } 
+                        }
                     }
-                } 
+                }
             }
         }
 
@@ -566,19 +567,19 @@ namespace TiltBrush.FrameAnimation
         public void UpdateTimelineSlider()
         {
             float meshLength = timelineRef.GetComponent<TimelineSlider>().m_MeshScale.x;
-            for (int t = 0 ; t < timelineField.transform.childCount ; t++)
+            for (int t = 0; t < timelineField.transform.childCount; t++)
             {
                 Transform trackT = timelineField.transform.GetChild(t);
                 Vector3 newPosition;
                 Quaternion quaternion;
                 trackT.GetLocalPositionAndRotation(out newPosition, out quaternion);
-            
+
                 newPosition.x = (-m_TimelineOffset * meshLength) - 0.8f; // 1.64567f is mesh length; -0.8f is the X position on the prefab
-                                                                            // TODO: probably need to get a global for this...
+                                                                         // TODO: probably need to get a global for this...
                 trackT.localPosition = newPosition;
                 trackT.localRotation = quaternion;
 
-                for (int f = 0 ; f < trackT.transform.childCount ; f++)
+                for (int f = 0; f < trackT.transform.childCount; f++)
                 {
                     Vector3 nodeVector = trackT.GetChild(f).transform.position;
                     Vector3 relativePosition = timelineField.transform.InverseTransformPoint(nodeVector);
@@ -971,32 +972,34 @@ namespace TiltBrush.FrameAnimation
                 .Select(stroke => SketchMemoryScript.m_Instance.DuplicateStroke(
                     stroke, App.Scene.SelectionCanvas, null)).ToList();
 
-            for (int i = 0; i < oldStrokes.Count ; i++)
+            for (int i = 0; i < oldStrokes.Count; i++)
             {
                 if (oldStrokes.Count == newStrokes.Count && oldStrokes[i].m_Type == Stroke.Type.NotCreated)
                 {
                     // using SketchMemory of oldStrokes to mark Uncreated strokes on newStrokes. Otherwise, Uncreated strokes will be re-made.
                     newStrokes[i].Uncreate();
-                } else {
+                }
+                else
+                {
                     Debug.LogWarning("Unexpected. Count of oldStrokes must match newStrokes.");
                 }
             }
 
             Dictionary<int, List<Stroke>> strokeGroups = new Dictionary<int, List<Stroke>>();
-            
+
             foreach (var stroke in newStrokes)
             {
                 if (stroke.Group != SketchGroupTag.None)
+                {
+                    if (strokeGroups.TryGetValue(stroke.Group.GetHashCode(), out List<Stroke> group))
                     {
-                        if (strokeGroups.TryGetValue(stroke.Group.GetHashCode(), out List<Stroke> group))
-                        {
-                            group.Add(stroke);
-                        }
-                        else
-                        {
-                            strokeGroups[stroke.Group.GetHashCode()] = new List<Stroke> { stroke };
-                        }   
+                        group.Add(stroke);
                     }
+                    else
+                    {
+                        strokeGroups[stroke.Group.GetHashCode()] = new List<Stroke> { stroke };
+                    }
+                }
 
                 switch (stroke.m_Type)
                 {
@@ -1015,13 +1018,13 @@ namespace TiltBrush.FrameAnimation
                 if (stroke.m_Type != Stroke.Type.NotCreated)
                 {
                     TiltMeterScript.m_Instance.AdjustMeter(stroke, up: true);
-                    stroke.SetParentKeepWorldPosition(newCanvas);                   
+                    stroke.SetParentKeepWorldPosition(newCanvas);
                 }
             }
 
             foreach (var sg in strokeGroups)
             {
-                GroupManager.MoveStrokesToNewGroups(sg.Value,null);
+                GroupManager.MoveStrokesToNewGroups(sg.Value, null);
             }
 
             return newCanvas;
