@@ -743,7 +743,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7931780608532480
-    m_Localized: Browse Poly
+    m_Localized: Browse Icosa Gallery
     m_Metadata:
       m_Items: []
   - m_Id: 7931977472385024
@@ -771,7 +771,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7932977482539008
-    m_Localized: 'Loading models from Poly
+    m_Localized: 'Loading models from Icosa Gallery
 
 
 
@@ -960,7 +960,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8052065399709696
-    m_Localized: From Poly
+    m_Localized: From Icosa Gallery
     m_Metadata:
       m_Items: []
   - m_Id: 8052141249503232
@@ -968,7 +968,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8052215190888448
-    m_Localized: From Poly
+    m_Localized: From Icosa Gallery
     m_Metadata:
       m_Items: []
   - m_Id: 8052288863838208
@@ -980,7 +980,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8053396663410688
-    m_Localized: Browse Poly
+    m_Localized: Browse Icosa Gallery
     m_Metadata:
       m_Items: []
   - m_Id: 8053860821868544
@@ -1032,7 +1032,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10134247853236224
-    m_Localized: 'Error gathering sketches from Poly
+    m_Localized: 'Error gathering sketches from Icosa Gallery
 
       <color=#969696>
 
