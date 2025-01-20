@@ -23,11 +23,15 @@ public class MultiplayerAudioSourcesManager : MonoBehaviour
     private List<AudioSource> sources;
     private float _previousScale;
 
+    private void Awake()
+    {
+        if (m_Instance == null) m_Instance = this;
+        else Debug.LogWarning("Multiple instances of MultiplayerAudioSourcesManager detected!");
+    }
+
     public void AddAudioSource(AudioSource source)
     {
-
         sources.Append(source);
-
     }
 
     void Update()
