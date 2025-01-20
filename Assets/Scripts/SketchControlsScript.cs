@@ -157,6 +157,8 @@ namespace TiltBrush
             MultiplayerDisconnect = 1008,
             EditMultiplayerNickName = 1009,
             OpenRoomSettings = 1010,
+            MuteUserInMultiplayer = 1011,
+            UnmuteUserInMultiplayer = 1012,
 
             RenameSketch = 5200,
             OpenLayerOptionsPopup = 5201,
@@ -4871,6 +4873,8 @@ namespace TiltBrush
                 case GlobalCommands.MultiplayerLeaveRoom: break; // Intentionally blank.
                 case GlobalCommands.MultiplayerConnect: break; // Intentionally blank.
                 case GlobalCommands.MultiplayerDisconnect: break; // Intentionally blank.
+                case GlobalCommands.MuteUserInMultiplayer: break; // Intentionally blank.
+                case GlobalCommands.UnmuteUserInMultiplayer: break; // Intentionally blank.
                 case GlobalCommands.WhatIsNew: break;// Intentionally blank.
                 default:
                     Debug.LogError($"Unrecognized command {rEnum}");

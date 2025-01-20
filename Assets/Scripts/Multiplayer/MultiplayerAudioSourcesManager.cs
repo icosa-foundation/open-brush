@@ -13,61 +13,90 @@
 // limitations under the License.
 
 using System.Collections.Generic;
-using System.Linq;
 using TiltBrush;
 using UnityEngine;
 
-public class MultiplayerAudioSourcesManager : MonoBehaviour
+namespace OpenBrush
 {
-    public static MultiplayerAudioSourcesManager m_Instance;
-    private List<AudioSource> sources;
-    private float _previousScale;
 
-    private void Awake()
+    public class MultiplayerAudioSourcesManager : MonoBehaviour
     {
-        sources = new List<AudioSource>();
+        public static MultiplayerAudioSourcesManager m_Instance;
+        private Dictionary<int, AudioSource> sources; // Key: playerId, Value: AudioSource
+        private float _previousScale;
 
-        if (m_Instance == null) m_Instance = this;
-        else Debug.LogWarning("Multiple instances of MultiplayerAudioSourcesManager detected!");
-    }
-
-    public void AddAudioSource(AudioSource source)
-    {
-        sources.Append(source);
-    }
-
-    void Update()
-    {
-        float currentScale = App.Scene.Pose.scale;
-
-        if (!Mathf.Approximately(currentScale, _previousScale))
+        private void Awake()
         {
-            _previousScale = currentScale;
-            UpdateAudioSources(currentScale);
+            sources = new Dictionary<int, AudioSource>();
+
+            if (m_Instance == null) m_Instance = this;
+            else Debug.LogWarning("Multiple instances of MultiplayerAudioSourcesManager detected!");
+
         }
-    }
 
-    private void UpdateAudioSources(float sceneScale)
-    {
-        // Loop backward to remove invalid AudioSources
-        for (int i = sources.Count - 1; i >= 0; i--)
+        public void AddAudioSource(int playerId, AudioSource source)
         {
-            var source = sources[i];
             if (source != null)
+                sources[playerId] = source;
+        }
+
+        void Update()
+        {
+            float currentScale = App.Scene.Pose.scale;
+
+            if (!Mathf.Approximately(currentScale, _previousScale))
             {
-                float adjustedMaxDistance = CalculateMaxDistance(sceneScale);
-                source.maxDistance = adjustedMaxDistance;
+                _previousScale = currentScale;
+                UpdateAudioSources(currentScale);
             }
-            else sources.RemoveAt(i);
+        }
+
+        private void UpdateAudioSources(float sceneScale)
+        {
+            // Loop backward to remove invalid AudioSources
+            foreach (var kvp in new List<KeyValuePair<int, AudioSource>>(sources))
+            {
+                var source = kvp.Value;
+                if (source != null)
+                {
+                    float adjustedMaxDistance = CalculateMaxDistance(sceneScale);
+                    source.maxDistance = adjustedMaxDistance;
+                }
+                else sources.Remove(kvp.Key); // Remove invalid AudioSource by playerId
+            }
+        }
+
+        private float CalculateMaxDistance(float sceneScale)
+        {
+            // This is based on OpenBrush default scene max radius
+            // - At scale 0.1, the mountains diameter is 200 (close range).
+            // - At scale 1.0, the mountains diameter is 20000 (far range).
+            return Mathf.Lerp(200f, 20000f, Mathf.Clamp01(sceneScale));
+        }
+
+        public void MuteAudioSources()
+        {
+            foreach (var source in sources.Values)
+                if (source != null) source.mute = true;
+        }
+
+        public void UnmuteAudioSources()
+        {
+            foreach (var source in sources.Values)
+                if (source != null) source.mute = false;
+        }
+
+        public void MuteAudioSourcesForPlayer(int playerId)
+        { AudioSourcesMuteStateForPlayer(playerId, true); }
+
+        public void UnmuteAudioSourcesForPlayer(int playerId)
+        { AudioSourcesMuteStateForPlayer(playerId, false); }
+
+        public void AudioSourcesMuteStateForPlayer(int playerId, bool state)
+        {
+            sources.TryGetValue(playerId, out AudioSource source);
+            if (source == null) return;
+            source.mute = state;
         }
     }
-
-    private float CalculateMaxDistance(float sceneScale)
-    {
-        // This is based on OpenBrush default scene max radius
-        // - At scale 0.1, the mountains diameter is 200 (close range).
-        // - At scale 1.0,the mountains diameter is 20000 (far range).
-        return Mathf.Lerp(200f, 20000f, Mathf.Clamp01(sceneScale));
-    }
-
 }

@@ -16,10 +16,10 @@ using UnityEngine;
 using OpenBrush.Multiplayer;
 using System;
 using System.Collections.Generic;
+using OpenBrush;
 
 namespace TiltBrush
 {
-
     public class MultiplayerRoomOptionsPopUpWindow : PopUpWindow
     {
         public GameObject m_playerGuiPrefab;
@@ -145,8 +145,20 @@ namespace TiltBrush
             m_instantiatedGuiPrefabs.Clear();
         }
 
-
-        #region player list 
+        public void OnMultiplayerRoomOptionsPopUpWindowButtonPressed(MultiplayerRoomOptionsPanelButton button)
+        {
+            switch (button.m_Command)
+            {
+                case SketchControlsScript.GlobalCommands.Null:
+                    break;
+                case SketchControlsScript.GlobalCommands.MuteUserInMultiplayer:
+                    MultiplayerAudioSourcesManager.m_Instance.MuteAudioSourcesForPlayer(button.playerId);
+                    break;
+                case SketchControlsScript.GlobalCommands.UnmuteUserInMultiplayer:
+                    MultiplayerAudioSourcesManager.m_Instance.UnmuteAudioSourcesForPlayer(button.playerId);
+                    break;
+            }
+        }
 
 #if UNITY_EDITOR
         void OnDrawGizmos()
@@ -170,7 +182,6 @@ namespace TiltBrush
 
         }
 #endif
-        #endregion
 
 
     }

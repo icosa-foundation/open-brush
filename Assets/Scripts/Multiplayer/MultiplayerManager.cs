@@ -453,7 +453,7 @@ namespace OpenBrush.Multiplayer
                 Debug.LogWarning($"VoicePrefab with ID {id} lack AudioSource :S ");
                 return;
             }
-            MultiplayerAudioSourcesManager.m_Instance.AddAudioSource(audioSource);
+            MultiplayerAudioSourcesManager.m_Instance.AddAudioSource(id, audioSource);
         }
 
         public void SendLargeDataToPlayer(int playerId, byte[] Data, int percentage)
