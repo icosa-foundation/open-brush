@@ -24,7 +24,18 @@ namespace OpenBrush.Multiplayer
     public class RemotePlayer
     {
         public int PlayerId;
-        public string Nickname;
+        private string _nickname;
+        public string Nickname
+        {
+
+            get
+            {
+                if (_nickname == "") _nickname = RetrieveNickNameFromRig();
+                return _nickname;
+            }
+            set { _nickname = value; }
+
+        }
 
         // send/receive rig data interface
         public ITransientData<PlayerRigData> TransientData;
@@ -32,6 +43,16 @@ namespace OpenBrush.Multiplayer
         // The underlying GameObjects in the scene that represents this player 
         public GameObject PlayerGameObject;
         public GameObject VoiceGameObject;
+
+        private string RetrieveNickNameFromRig()
+        {
+
+            if (PlayerGameObject == null) return "";
+            PhotonPlayerRig Rig = PlayerGameObject.GetComponent<PhotonPlayerRig>();
+            if (Rig == null) return "";
+            return Rig.PersistentNickname;
+
+        }
     }
 
 

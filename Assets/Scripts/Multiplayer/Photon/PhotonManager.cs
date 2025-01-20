@@ -107,7 +107,6 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-
         #region IConnectionHandler Methods
 
         public async Task<bool> Connect()
@@ -287,8 +286,8 @@ namespace OpenBrush.Multiplayer
                 .FirstOrDefault(playerRig => playerRig != null && playerRig.PlayerId == playerId);
 
             if (remotePlayer != null && remotePlayer.Object != null && remotePlayer.Object.IsValid)
-                return remotePlayer.Nickname;
-            else return "default";
+                return remotePlayer.PersistentNickname;
+            else return "";
         }
 
         public GameObject GetPlayerPrefab(int playerId)

@@ -11,6 +11,8 @@ public class MultiplayerManagerInspector : Editor
 {
     private MultiplayerManager multiplayerManager;
     private string roomName = "1234";
+    private string nickname = "PlayerNickname";
+    private string oldNickname = "PlayerNickname";
     private bool isPrivate = false;
     private int maxPlayers = 4;
     private bool voiceDisabled = false;
@@ -26,6 +28,14 @@ public class MultiplayerManagerInspector : Editor
         GUILayout.Space(10);
 
         roomName = EditorGUILayout.TextField("Room Name", roomName);
+        nickname = EditorGUILayout.TextField("Nickname", nickname);
+        
+        if (nickname != oldNickname)
+        {
+            SetNickname();
+            oldNickname = nickname;
+            EditorUtility.SetDirty(target);
+        }
 
         //State
         string connectionState = "";
@@ -157,6 +167,21 @@ public class MultiplayerManagerInspector : Editor
 
             bool success = await multiplayerManager.JoinRoom(roomData);
 
+        }
+    }
+
+    private async void SetNickname()
+    {
+        if (multiplayerManager != null)
+        {
+
+            ConnectionUserInfo ui = new ConnectionUserInfo
+            {
+                Nickname = nickname,
+                UserId = MultiplayerManager.m_Instance.UserInfo.UserId,
+                Role = MultiplayerManager.m_Instance.UserInfo.Role
+            };
+            MultiplayerManager.m_Instance.UserInfo = ui;
         }
     }
 

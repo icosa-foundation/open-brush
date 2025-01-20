@@ -42,7 +42,7 @@ namespace OpenBrush.Multiplayer
         private IVoiceConnectionHandler m_VoiceManager;
 
         public ITransientData<PlayerRigData> m_LocalPlayer;
-        public RemotePlayers m_RemotePlayers;
+        [HideInInspector] public RemotePlayers m_RemotePlayers;
 
         public Action<int, ITransientData<PlayerRigData>> localPlayerJoined;
         public Action<RemotePlayer> remotePlayerJoined;

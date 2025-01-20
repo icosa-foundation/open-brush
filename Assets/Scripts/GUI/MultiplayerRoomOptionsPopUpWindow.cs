@@ -26,7 +26,7 @@ namespace TiltBrush
         public Vector2 PlayerGuiPrefabSize;
         public Vector2 PlayerListOffset;
         public Vector2 PlayerListArea;
-        private List<GameObject> m_instantiatedGuiPrefabs;
+        private List<GameObject> m_instantiatedGuiPrefabs = new List<GameObject>();
 
         public RemotePlayers m_RemotePlayers
         {
@@ -70,6 +70,7 @@ namespace TiltBrush
         protected override void UpdateOpening()
         {
             base.UpdateOpening();
+            GeneratePlayerList();
         }
 
         protected override void UpdateClosing()
@@ -111,20 +112,21 @@ namespace TiltBrush
 
             List<RemotePlayer> playersToDisplay = playersList ?? m_RemotePlayers.List;
 
-            Vector3 basePosition = transform.position + new Vector3(-PlayerListArea.x / 2 + PlayerGuiPrefabSize.x / 2, PlayerListOffset.y + PlayerListArea.y / 2 - PlayerGuiPrefabSize.y / 2, 0);
+            Vector3 basePosition = new Vector3(
+                -PlayerListArea.x / 2 + PlayerGuiPrefabSize.x / 2,
+                PlayerListOffset.y + PlayerListArea.y / 2 - PlayerGuiPrefabSize.y / 2,
+                0
+            );
             float yOffset = PlayerGuiPrefabSize.y;
 
             foreach (var remotePlayer in playersToDisplay)
             {
-                GameObject playerListItem = Instantiate(m_playerGuiPrefab, basePosition, Quaternion.identity, transform);
+                GameObject playerListItem = Instantiate(m_playerGuiPrefab, basePosition, transform.rotation, transform);
                 playerListItem.name = $"Player_{remotePlayer.PlayerId}";
                 playerListItem.transform.localPosition = basePosition;
 
                 PlayerListItemPrefab playerGuiComponent = playerListItem.GetComponent<PlayerListItemPrefab>();
-                if (playerGuiComponent != null)
-                {
-                    playerGuiComponent.SetRemotePlayer(remotePlayer);
-                }
+                if (playerGuiComponent != null) playerGuiComponent.SetRemotePlayer(remotePlayer);
 
                 basePosition -= new Vector3(0, yOffset, 0);
                 playerListItem.SetActive(true);
