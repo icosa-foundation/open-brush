@@ -48,7 +48,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_PanelType: 34
-  m_Collider: {fileID: 0}
+  m_Collider: {fileID: 6569620}
   m_Mesh: {fileID: 184986}
   m_Border: {fileID: 23425245546884932}
   m_MeshCollider: {fileID: 6569620}
