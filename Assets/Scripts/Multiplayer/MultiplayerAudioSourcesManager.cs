@@ -25,6 +25,8 @@ public class MultiplayerAudioSourcesManager : MonoBehaviour
 
     private void Awake()
     {
+        sources = new List<AudioSource>();
+
         if (m_Instance == null) m_Instance = this;
         else Debug.LogWarning("Multiple instances of MultiplayerAudioSourcesManager detected!");
     }
