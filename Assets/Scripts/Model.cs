@@ -249,9 +249,16 @@ namespace TiltBrush
             return m_ImportMaterialCollector.GetExportableMaterial(material);
         }
 
-        public Model(Location location)
+        // Constructor for local models i.e. Media Library assets
+        public Model(string relativePath)
         {
-            m_Location = location;
+            m_Location = Location.File(relativePath);
+        }
+
+        // Constructor for remote models i.e. Icosa Gallery assets
+        public Model(string assetId, string path)
+        {
+            m_Location = Location.IcosaAsset(assetId, path);
         }
 
         public Location GetLocation() { return m_Location; }

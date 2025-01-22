@@ -93,7 +93,7 @@ namespace TiltBrush
                 subtree = location.Substring(relativePath.Length + 1);
             }
             var tr = _CurrentTransform().TransformBy(Coords.CanvasPose);
-            var model = new Model(Model.Location.File(relativePath));
+            var model = new Model(relativePath);
 
             AsyncHelpers.RunSync(() => model.LoadModelAsync());
             model.EnsureCollectorExists();

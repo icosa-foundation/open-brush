@@ -311,17 +311,17 @@ namespace TiltBrush
             {
                 foreach (string folderPath in EnumerateCacheDirectories())
                 {
-                    string folderName = Path.GetFileName(folderPath);
-                    string gltfFile = ValidGltfCache(folderPath, folderName);
+                    string assetId = Path.GetFileName(folderPath);
+                    string gltfFile = ValidGltfCache(folderPath, assetId);
                     if (gltfFile != null)
                     {
-                        string path = Path.Combine(folderPath, folderName);
+                        string path = Path.Combine(folderPath, assetId);
                         path = Path.Combine(path, gltfFile);
-                        m_ModelsByAssetId[folderName] = new Model(Model.Location.IcosaAsset(folderName, path));
+                        m_ModelsByAssetId[assetId] = new Model(assetId, path);
                     }
                     else
                     {
-                        Debug.LogWarningFormat("Deleting invalid cache folder {0}", folderName);
+                        Debug.LogWarningFormat("Deleting invalid cache folder {0}", assetId);
                         Directory.Delete(folderPath, true);
                     }
                 }
@@ -741,7 +741,7 @@ namespace TiltBrush
             while (!request.IsReady) { yield return null; }
             request.Asset.WriteToDisk();
             string path = Path.Combine(GetCacheDirectoryForAsset(assetId), request.Asset.RootFilePath);
-            m_ModelsByAssetId[assetId] = new Model(Model.Location.IcosaAsset(assetId, path));
+            m_ModelsByAssetId[assetId] = new Model(assetId, path);
         }
 
         public void UpdateCatalog()
@@ -764,7 +764,7 @@ namespace TiltBrush
                             // VrAssetService.m_Instance.GetAsset to decide how to store and index the asset.
 
                             // Populate map entry for this new model.
-                            m_ModelsByAssetId[assetId] = new Model(Model.Location.IcosaAsset(assetId, path));
+                            m_ModelsByAssetId[assetId] = new Model(assetId, path);
 
                             // After download the model should be loaded too, unless the request was canceled.
                             // TODO: this seems a littttle suspect. Just because it finished downloading,
