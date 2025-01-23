@@ -26,7 +26,7 @@
     "com.unity.xr.compositionlayers": "1.0.0",
     "com.unity.xr.core-utils": "2.3.0",
     "com.unity.xr.management": "4.5.0",
-    "com.unity.xr.openxr": "1.13.0",
+    "com.unity.xr.openxr": "1.14.0",
     "com.zappar.xr.zapbox": "https://github.com/zappar-xr/zapbox-xr-sdk.git#43697771ed65efee02d5b1743141b8179444c147",
     "dev.mikesky.openxrextensions": "https://github.com/mikeskydev/unity-openxr-extensions.git#0.4.0",
     "org.khronos.unitygltf": "https://github.com/icosa-mirror/UnityGLTF.git",
