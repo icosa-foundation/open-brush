@@ -113,9 +113,6 @@ namespace TiltBrush
         // The sdk mode indicates which SDK that we're using to drive the display.
         public SdkMode m_SdkMode;
 
-        // Stores the value of IsExperimental at startup time
-        [NonSerialized] public bool m_WasExperimentalAtStartup;
-
         // Whether or not to just do an automatic profile and then exit.
         public bool m_AutoProfile;
         // How long to wait before starting to profile.
@@ -126,12 +123,13 @@ namespace TiltBrush
         public string[] m_SketchFiles = new string[0];
         [NonSerialized] public bool m_QuickLoad = true;
 
-        public SecretsConfig.ServiceAuthData GoogleSecrets => Secrets[SecretsConfig.Service.Google];
+        public SecretsConfig.ServiceAuthData GoogleSecrets => Secrets?[SecretsConfig.Service.Google];
         public SecretsConfig.ServiceAuthData SketchfabSecrets => Secrets[SecretsConfig.Service.Sketchfab];
         public SecretsConfig.ServiceAuthData OculusSecrets => Secrets[SecretsConfig.Service.Oculus];
         public SecretsConfig.ServiceAuthData OculusMobileSecrets => Secrets[SecretsConfig.Service.OculusMobile];
         public SecretsConfig.ServiceAuthData PimaxSecrets => Secrets[SecretsConfig.Service.Pimax];
         public SecretsConfig.ServiceAuthData PhotonFusionSecrets => Secrets[SecretsConfig.Service.PhotonFusion];
+        public SecretsConfig.ServiceAuthData PhotonVoiceSecrets => Secrets[SecretsConfig.Service.PhotonVoice];
 
         /// Return a value kinda sorta half-way between "building for Android" and "running on Android"
         /// In order of increasing strictness, here are the in-Editor semantics of various methods
@@ -524,12 +522,6 @@ namespace TiltBrush
             }
         }
 
-        // Non-Static version of above
-        public bool GetIsExperimental()
-        {
-            return PlayerPrefs.HasKey("ExperimentalMode") && PlayerPrefs.GetInt("ExperimentalMode") == 1;
-        }
-
         public void SetIsExperimental(bool active)
         {
             PlayerPrefs.SetInt("ExperimentalMode", active ? 1 : 0);
@@ -540,7 +532,6 @@ namespace TiltBrush
         void Awake()
         {
             m_SingletonState = this;
-            m_WasExperimentalAtStartup = GetIsExperimental();
 
 #if UNITY_EDITOR
             if (!string.IsNullOrEmpty(m_FakeCommandLineArgsInEditor))
@@ -574,12 +565,9 @@ namespace TiltBrush
 #endif
 
             m_BrushReplacement = new Dictionary<Guid, Guid>();
-            if (IsExperimental)
+            foreach (var brush in m_BrushReplacementMap)
             {
-                foreach (var brush in m_BrushReplacementMap)
-                {
-                    m_BrushReplacement.Add(new Guid(brush.FromGuid), new Guid(brush.ToGuid));
-                }
+                m_BrushReplacement.Add(new Guid(brush.FromGuid), new Guid(brush.ToGuid));
             }
         }
 

@@ -1021,6 +1021,71 @@ namespace TiltBrush
                     m_CaptureGifSaveIcon ? m_SaveGifRenderTextures : null));
             return snapshot;
         }
+
+        public IEnumerator GetLastAutosaveBytes(Action<byte[]> onComplete)
+        {
+
+            while (m_AutosaveCoroutine != null) yield return null;
+
+            // Retrieve the autosaved file
+            string autosaveFile = MostRecentAutosaveFile();
+            if (!string.IsNullOrEmpty(autosaveFile) && File.Exists(autosaveFile))
+            {
+                try
+                {
+                    byte[] fileBytes = File.ReadAllBytes(autosaveFile);
+                    Debug.Log($"Autosave complete. Loaded {fileBytes.Length} bytes from {autosaveFile}");
+                    onComplete?.Invoke(fileBytes);
+                }
+                catch (IOException ex)
+                {
+                    Debug.LogError($"Failed to read autosave file: {ex.Message}");
+                    onComplete?.Invoke(null);
+                }
+            }
+            else
+            {
+                Debug.LogWarning("Autosave file not found or doesn't exist.");
+                onComplete?.Invoke(null);
+            }
+        }
+
+        public void LoadFromBytes(byte[] data)
+        {
+            if (data == null || data.Length == 0)
+            {
+                Debug.LogError("LoadFromBytes: Data is null or empty.");
+                return;
+            }
+
+            try
+            {
+                // Write the byte array to a temporary file
+                string tempFilePath = Path.Combine(Application.temporaryCachePath, "temp_autosave.tilt");
+                File.WriteAllBytes(tempFilePath, data);
+
+                // Load the temporary file into the scene
+                var fileInfo = new DiskSceneFileInfo(tempFilePath);
+                if (Load(fileInfo))
+                {
+                    Debug.Log("LoadFromBytes: Scene successfully loaded from bytes.");
+                }
+                else
+                {
+                    Debug.LogError("LoadFromBytes: Failed to load scene.");
+                }
+
+                // Clean up the temporary file
+                if (File.Exists(tempFilePath))
+                {
+                    File.Delete(tempFilePath);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"LoadFromBytes: Error while loading scene from bytes. Exception: {ex.Message}");
+            }
+        }
     }
 
 } // namespace TiltBrush

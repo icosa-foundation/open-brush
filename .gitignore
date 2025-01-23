@@ -80,6 +80,8 @@
 /Assets/Photon/**
 /Assets/Photon.meta
 !/Assets/Photon/Fusion/Resources/NetworkProjectConfig.fusion*
+!/Assets/Photon/Fusion/Resources/PhotonAppSettings.asset*
+!/Assets/Photon/Fusion/User/NetworkPrefabAssetCollection.asset*
 
 # Cache files
 *.cache
