@@ -144,8 +144,9 @@ namespace TiltBrush
                 UnityEngine.Debug.LogErrorFormat("Caller did not create directory for me: {0}", assetDir);
             }
             string rootFilePath = Path.Combine(assetDir, GetPolySanitizedFilePath(m_RootElement.filePath));
+            var unescapedRootFilePath = Uri.UnescapeDataString(rootFilePath);
             if (!FileUtils.InitializeDirectory(Path.GetDirectoryName(rootFilePath)) ||
-                !FileUtils.WriteBytesIgnoreExceptions(m_RootElement.assetBytes, rootFilePath))
+                !FileUtils.WriteBytesIgnoreExceptions(m_RootElement.assetBytes, unescapedRootFilePath))
             {
                 return false;
             }
@@ -155,8 +156,9 @@ namespace TiltBrush
             for (int j = 0; j < m_ResourceElements.Count; ++j)
             {
                 string filePath = Path.Combine(assetDir, GetPolySanitizedFilePath(m_ResourceElements[j].filePath));
+                string unescapedFilePath = Uri.UnescapeDataString(filePath);
                 if (!FileUtils.InitializeDirectory(Path.GetDirectoryName(filePath)) ||
-                    !FileUtils.WriteBytesIgnoreExceptions(m_ResourceElements[j].assetBytes, filePath))
+                    !FileUtils.WriteBytesIgnoreExceptions(m_ResourceElements[j].assetBytes, unescapedFilePath))
                 {
                     RemoveFiles(written);
                     return false;
