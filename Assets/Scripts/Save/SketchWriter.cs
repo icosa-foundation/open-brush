@@ -173,14 +173,16 @@ namespace TiltBrush
                             snapshot.frameIndex = canvasToIndexMap[App.Scene.ActiveCanvas].Item1;
                             snapshot.trackIndex = canvasToIndexMap[App.Scene.ActiveCanvas].Item2;
                         }
+                        yield return snapshot;
                     }
-                    else
+                    else if (canvasToIndexMap.ContainsKey(stroke.Canvas))
                     {
                         // Don't use the method in SceneScript as they count deleted layers
                         snapshot.frameIndex = canvasToIndexMap[stroke.Canvas].Item1;
                         snapshot.trackIndex = canvasToIndexMap[stroke.Canvas].Item2;
+
+                        yield return snapshot;
                     }
-                    yield return snapshot;
                 }
                 else
                 {

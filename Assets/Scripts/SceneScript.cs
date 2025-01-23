@@ -437,6 +437,8 @@ namespace TiltBrush
         public void MarkLayerAsNotDeleted(CanvasScript layer)
         {
             m_DeletedLayers.Remove(GetIndexOfCanvas(layer).Item1 - 1);
+            animationUI_manager.MarkLayerAsNotDeleteRefresh(layer);
+
             App.Scene.LayerCanvasesUpdate?.Invoke();
         }
 
@@ -473,15 +475,16 @@ namespace TiltBrush
             meta.Tracks = new AnimationTrackMetadata[layers.Length];
 
             var timeline = animationUI_manager.Timeline;
+            List<int> activeTrackIndexes = animationUI_manager.ActiveTrackIndexes();
             for (var i = 0; i < layers.Length; i++)
             {
                 var layer = layers[i];
                 var frameLengthsFound = new List<int>();
-                for (var f = 0; f < timeline[i].Frames.Count; f++)
+                for (var f = 0; f < timeline[activeTrackIndexes[i]].Frames.Count; f++)
                 {
                     if (f > 0)
                     {
-                        if (timeline[i].Frames[f].Canvas.Equals(timeline[i].Frames[f - 1].Canvas))
+                        if (timeline[activeTrackIndexes[i]].Frames[f].Canvas.Equals(timeline[activeTrackIndexes[i]].Frames[f - 1].Canvas))
                         {
                             frameLengthsFound[frameLengthsFound.Count - 1]++;
                         }
@@ -503,7 +506,7 @@ namespace TiltBrush
                 };
             }
 
-            meta.numFrames = animationUI_manager.Timeline.Count;
+            meta.numFrames = activeTrackIndexes.Count;
             return meta;
         }
     }

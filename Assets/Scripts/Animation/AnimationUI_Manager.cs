@@ -149,7 +149,7 @@ namespace TiltBrush.FrameAnimation
             {
                 if (frameIndex >= Timeline[i].Frames.Count) { continue; }
                 Frame thisFrame = Timeline[i].Frames[frameIndex];
-                if (Timeline[i].Visible && !thisFrame.Deleted)
+                if (Timeline[i].Visible && !thisFrame.Deleted && !Timeline[i].Deleted)
                 {
                     App.Scene.ShowCanvas(thisFrame.Canvas);
                 }
@@ -295,19 +295,29 @@ namespace TiltBrush.FrameAnimation
 
         public List<List<CanvasScript>> GetTrackCanvases()
         {
-            var timelineCavses = new List<List<CanvasScript>>();
+            var timelineCanvases = new List<List<CanvasScript>>();
             for (int l = 0; l < GetTimelineLength(); l++)
             {
                 var canvasFrames = new List<CanvasScript>();
-
                 for (int i = 0; i < Timeline.Count; i++)
                 {
-                    if (l >= Timeline[i].Frames.Count) { continue; }
+                    if (l >= Timeline[i].Frames.Count || Timeline[i].Deleted == true) { continue; }
                     canvasFrames.Add(Timeline[i].Frames[l].Canvas);
                 }
-                timelineCavses.Add(canvasFrames);
+                timelineCanvases.Add(canvasFrames);
             }
-            return timelineCavses;
+            return timelineCanvases;
+        }
+
+        public List<int> ActiveTrackIndexes()
+        {
+            List<int> activeTrackIndexes = new();
+            foreach (Track track in Timeline)
+            {
+                if (track.Deleted) continue;
+                activeTrackIndexes.Add(Timeline.IndexOf(track));
+            }
+            return activeTrackIndexes;
         }
 
         public void UpdateLayerVisibilityRefresh(CanvasScript canvas)
@@ -337,6 +347,18 @@ namespace TiltBrush.FrameAnimation
             {
                 Track thisTrack = Timeline[canvasIndex.Item1];
                 thisTrack.Deleted = true;
+                Timeline[canvasIndex.Item1] = thisTrack;
+            }
+            ResetTimeline();
+        }
+
+        public void MarkLayerAsNotDeleteRefresh(CanvasScript canvas)
+        {
+            (int, int) canvasIndex = GetCanvasLocation(canvas);
+            if (canvasIndex.Item2 != -1)
+            {
+                Track thisTrack = Timeline[canvasIndex.Item1];
+                thisTrack.Deleted = false;
                 Timeline[canvasIndex.Item1] = thisTrack;
             }
             ResetTimeline();
@@ -390,29 +412,22 @@ namespace TiltBrush.FrameAnimation
                 }
             }
 
-            List<Track> ActiveTrack = new();
-            foreach (Track track in Timeline)
-            {
-                if (!track.Deleted)
-                {
-                    ActiveTrack.Add(track);
-                }
-            }
+            List<int> ActiveTrackIndex = ActiveTrackIndexes();
 
             foreach (GameObject trackNodes in trackNodesWidget)
             {
                 trackNodes.SetActive(false);
             }
 
-            int loopLimitTrack = Math.Min(ActiveTrack.Count, trackNodesWidget.Count);
+            int loopLimitTrack = Math.Min(ActiveTrackIndex.Count, trackNodesWidget.Count);
             for (int trackNum = 0; trackNum < loopLimitTrack; trackNum++)
             {
-                if (ActiveTrack[trackNum].Frames.Count > 0) // check if there is a frame here.
+                if (Timeline[ActiveTrackIndex[trackNum]].Frames.Count > 0) // check if there is a frame here.
                 {
                     trackNodesWidget[trackNum].SetActive(true);
 
                     nodeCount = trackNodesWidget[trackNum].gameObject.transform.childCount; // always 8, unless we increase fps
-                    trackFrameCount = ActiveTrack[trackNum].Frames.Count;
+                    trackFrameCount = Timeline[ActiveTrackIndex[trackNum]].Frames.Count;
                     nodeToMake = trackFrameCount - nodeCount; // 9 - 8
 
                     if (nodeToMake > 0)
@@ -443,7 +458,8 @@ namespace TiltBrush.FrameAnimation
                     {
                         // trackNodesWidget[trackNum].transform.GetChild(frameNum).gameObject.SetActive(true); // already handled in UpdateTimelineSlider below
                         var frameButton = trackNodesWidget[trackNum].transform.GetChild(frameNum).GetChild(0); // f is tracknodes; 0 is the control, which is labled "1" in the prefab
-                        int scrolledTrack = trackNum + Math.Abs(m_TrackScrollOffset); // TODO : May need to instantiate tracks and hide them as we go at UpdateTimelineSlider when toggling pages
+                        int scrollIndex = trackNum + Math.Abs(m_TrackScrollOffset);
+                        int scrolledTrack = ActiveTrackIndex[scrollIndex]; // TODO : May need to instantiate tracks and hide them as we go at UpdateTimelineSlider when toggling pages
 
                         frameButton.gameObject.GetComponent<FrameButton>().SetButtonCoordinate(scrolledTrack, frameNum); // 0 is the "1" that contains the FrameButton component.
 
@@ -689,7 +705,6 @@ namespace TiltBrush.FrameAnimation
             deletedFrame.Length = GetFrameLength(index.Item1, index.Item2);
             deletedFrame.Location = (index.Item1, index.Item2);
 
-            App.Scene.ClearLayerContents(deletedFrame.Frame.Canvas);
             App.Scene.HideCanvas(deletedFrame.Frame.Canvas);
             CanvasScript replacingCanvas = App.Scene.AddCanvas();
             for (int l = index.Item2; l < nextIndex.Item2; l++)
@@ -1039,12 +1054,11 @@ namespace TiltBrush.FrameAnimation
             List<Stroke> oldStrokes = SketchMemoryScript.m_Instance.GetMemoryList
                 .Where(x => x.Canvas == oldCanvas).ToList();
 
-            CanvasScript newCanvas = ReplicateStrokesToNewCanvas(oldStrokes);
-
             int frameLength = GetFrameLength(index.Item1, index.Item2);
-
             int splittingIndex = FrameOn;
-            if (splittingIndex < index.Item2 || splittingIndex > index.Item2 + frameLength - 1) return (-1, -1);
+            if (splittingIndex <= index.Item2 || splittingIndex > index.Item2 + frameLength - 1) return (-1, -1);
+
+            CanvasScript newCanvas = ReplicateStrokesToNewCanvas(oldStrokes);
 
             for (int f = splittingIndex; f < index.Item2 + frameLength; f++)
             {
