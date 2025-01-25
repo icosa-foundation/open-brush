@@ -20,6 +20,15 @@ Properties {
   _MainTex ("Base (RGB) TransGloss (A)", 2D) = "white" {}
   _BumpMap ("Normalmap", 2D) = "bump" {}
   _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+
+
+ _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+ _TimeBlend("Time Blend", Float) = 0
+ _TimeSpeed("Time Speed", Float) = 1.0
+
+ _Dissolve("Dissolve", Range(0,1)) = 1
+ _ClipStart("Clip Start", Float) = 0
+ _ClipEnd("Clip End", Float) = -1
 }
     SubShader {
     Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
@@ -34,6 +43,7 @@ Properties {
     #pragma multi_compile __ SELECTION_ON
     // Faster compiles
     #pragma skip_variants INSTANCING_ON
+
     #include "Assets/Shaders/Include/Brush.cginc"
     #include "Assets/Shaders/Include/MobileSelection.cginc"
 
@@ -45,6 +55,7 @@ Properties {
       half3 normal : NORMAL;
       fixed4 color : COLOR;
       float4 tangent : TANGENT;
+      uint id : SV_VertexID;
       UNITY_VERTEX_INPUT_INSTANCE_ID
     };
 
@@ -54,6 +65,8 @@ Properties {
       float4 color : Color;
       float3 worldPos;
       fixed vface : VFACE;
+      uint id : TEXCOORD2;
+      float4 screenPos;
     };
 
     sampler2D _MainTex;
@@ -61,6 +74,10 @@ Properties {
     fixed4 _Color;
     half _Shininess;
     fixed _Cutoff;
+
+    uniform half _ClipStart;
+    uniform half _ClipEnd;
+    uniform half _Dissolve;
 
     void vert (inout appdata v, out Input o) {
       UNITY_INITIALIZE_OUTPUT(Input, o);
@@ -79,12 +96,19 @@ Properties {
                 * waveIntensity)
               ;
 #endif
+      o.id = v.id;
     }
 
     void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
+
+      #ifdef SHADER_SCRIPTING_ON
+      if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
+      if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
+      #endif
+
       fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);
 
-      float scroll = _Time.z;
+      float scroll = GetTime().z;
 #ifdef AUDIO_REACTIVE
       float3 localPos = mul(xf_I_CS, float4(IN.worldPos, 1.0)).xyz;
       float t = length(localPos) * .5;

@@ -16,6 +16,15 @@ Shader "Brush/Special/Rainbow" {
 Properties {
   _MainTex ("Particle Texture", 2D) = "white" {}
   _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+
+
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
+
+  _Dissolve("Dissolve", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -33,6 +42,7 @@ Category {
     #pragma multi_compile __ SELECTION_ON
 
     #pragma target 3.0
+
     #include "UnityCG.cginc"
     #include "Assets/Shaders/Include/Brush.cginc"
     #include "Assets/Shaders/Include/Hdr.cginc"
@@ -40,11 +50,16 @@ Category {
 
     sampler2D _MainTex;
 
+    uniform half _ClipStart;
+    uniform half _ClipEnd;
+    uniform half _Dissolve;
+
     struct appdata_t {
       float4 vertex : POSITION;
       fixed4 color : COLOR;
       float3 normal : NORMAL;
       float2 texcoord : TEXCOORD0;
+      uint id : SV_VertexID;
 
       UNITY_VERTEX_INPUT_INSTANCE_ID
     };
@@ -53,6 +68,7 @@ Category {
       float4 pos : POSITION;
       fixed4 color : COLOR;
       float2 texcoord : TEXCOORD0;
+      uint id : TEXCOORD2;
 
       UNITY_VERTEX_OUTPUT_STEREO
     };
@@ -74,6 +90,7 @@ Category {
       o.pos = UnityObjectToClipPos(v.vertex);
       o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
       o.color = v.color;
+      o.id = (float2)v.id;
       return o;
     }
 
@@ -88,8 +105,8 @@ Category {
       // Create parametric colors
       half4 tex = float4(0,0,0,1);
       half row_y = fmod(uvs.y,1);
-       
-      float time = frac( _Time.z * 0.2 ) * 5; 
+
+      float time = frac( GetTime().z * 0.2 ) * 5;
       float rowOffset = floor( time );
 
       row_id += rowOffset;
@@ -102,7 +119,7 @@ Category {
       tex.rgb = row_id == 4 ? float3(.4,0,1.2) : tex.rgb;
 
       // Make rainbow lines pulse
-      tex.rgb *= pow( (sin(row_id * 1 + _Time.z) + 1)/2,5);
+      tex.rgb *= pow( (sin(row_id * 1 + GetTime().z) + 1)/2,5);
 
       // Make rainbow lines thin
       tex.rgb *= saturate(pow(row_y * (1 - row_y) * 5, 50));
@@ -171,6 +188,12 @@ Category {
     // Input color is srgb
     fixed4 frag (v2f i) : COLOR
     {
+      #ifdef SHADER_SCRIPTING_ON
+      if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+      // It's hard to get alpha curves right so use dithering for hdr shaders
+      if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+      #endif
+
       i.color.a = 1; //ignore incoming vert alpha
 #ifdef AUDIO_REACTIVE
       float4 tex =  GetAudioReactiveRainbowColor(i.texcoord.xy);
@@ -183,7 +206,7 @@ Category {
       float4 color = encodeHdr(tex.rgb * tex.a);
       color = SrgbToNative(color);
       FRAG_MOBILESELECT(color)
-      return color;
+      return color * _Dissolve;
     }
 
 

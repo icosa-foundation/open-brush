@@ -16,6 +16,16 @@ Shader "Brush/Special/HyperGrid" {
 Properties {
   _TintColor ("Tint Color", Color) = (0.5,0.5,0.5,0.5)
   _MainTex ("Particle Texture", 2D) = "white" {}
+
+
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
+
+  _Opacity ("Opacity", Range(0, 1)) = 1
+  _Dissolve ("Dissolve", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -38,6 +48,7 @@ Category {
       #pragma multi_compile __ AUDIO_REACTIVE
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
       #pragma multi_compile __ SELECTION_ON
+
       #include "UnityCG.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
@@ -47,11 +58,17 @@ Category {
       sampler2D _MainTex;
       fixed4 _TintColor;
 
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
+      uniform half _Dissolve;
+      uniform half _Opacity;
+
       struct appdata_t {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
         float4 texcoord1 : TEXCOORD1;
+        uint id : SV_VertexID;
 
         UNITY_VERTEX_INPUT_INSTANCE_ID
       };
@@ -60,6 +77,7 @@ Category {
         float4 pos : SV_POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        uint id : TEXCOORD2;
 
         UNITY_VERTEX_OUTPUT_STEREO
       };
@@ -83,7 +101,7 @@ Category {
 
         float waveform = 0;
 
-        float lifetime = _Time.y - v.texcoord1.w;
+        float lifetime = GetTime().y - v.texcoord1.w;
         float size = length(v.texcoord1.xyz);
         float release = saturate(lifetime);
 
@@ -101,17 +119,23 @@ Category {
 
         o.color = 2 * v.color + v.color.yzxw * _BeatOutput.x;
         o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
+        o.id = (float2)v.id;
         return o;
       }
 
       // Input color is srgb
       fixed4 frag (v2f i) : SV_Target
       {
+        #ifdef SHADER_SCRIPTING_ON
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+        if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+        #endif
+
         float4 c = i.color * _TintColor * tex2D(_MainTex, i.texcoord);
         c = encodeHdr(c.rgb * c.a);
         c = SrgbToNative(c);
         FRAG_MOBILESELECT(c)
-        return c;
+        return c * _Opacity;
       }
       ENDCG
     }

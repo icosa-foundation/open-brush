@@ -15,6 +15,14 @@
 Shader "Brush/Visualizer/RainbowTube" {
 Properties {
   _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
+
+  _Dissolve ("Dissolve", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -46,10 +54,15 @@ Category {
 
       float _EmissionGain;
 
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
+      uniform half _Dissolve;
+
       struct appdata_t {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        uint id : SV_VertexID;
 
         UNITY_VERTEX_INPUT_INSTANCE_ID
       };
@@ -59,6 +72,7 @@ Category {
         float4 color : COLOR;
         float2 texcoord : TEXCOORD0;
         float4 unbloomedColor : TEXCOORD1;
+        uint id : TEXCOORD2;
 
         UNITY_VERTEX_OUTPUT_STEREO
       };
@@ -77,12 +91,19 @@ Category {
         o.texcoord = v.texcoord;
         o.color = bloomColor(v.color, _EmissionGain);
         o.unbloomedColor = v.color;
+        o.id = (float2)v.id;
         return o;
       }
 
       // Input color is srgb
       fixed4 frag (v2f i) : COLOR
       {
+        #ifdef SHADER_SCRIPTING_ON
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+        // It's hard to get alpha curves right so use dithering for hdr shaders
+        if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+        #endif
+
         // Envelope
         float envelope = sin(i.texcoord.x * 3.14159);
         i.texcoord.y += i.texcoord.x * 3 + _BeatOutputAccum.b*3;
@@ -91,9 +112,9 @@ Category {
         float waveform_g =  .5*(tex2D(_WaveFormTex, float2(i.texcoord.x*1.8,0)).r - .5f);
         float waveform_b =  .5*(tex2D(_WaveFormTex, float2(i.texcoord.x*2.4,0)).r - .5f);
 #else
-        float waveform_r = .15 * sin( -20 * i.unbloomedColor.r * _Time.w + i.texcoord.x * 100 * i.unbloomedColor.r);
-        float waveform_g = .15 * sin( -30 * i.unbloomedColor.g * _Time.w + i.texcoord.x * 100 * i.unbloomedColor.g);
-        float waveform_b = .15 * sin( -40 * i.unbloomedColor.b * _Time.w + i.texcoord.x * 100 * i.unbloomedColor.b);
+        float waveform_r = .15 * sin( -20 * i.unbloomedColor.r * GetTime().w + i.texcoord.x * 100 * i.unbloomedColor.r);
+        float waveform_g = .15 * sin( -30 * i.unbloomedColor.g * GetTime().w + i.texcoord.x * 100 * i.unbloomedColor.g);
+        float waveform_b = .15 * sin( -40 * i.unbloomedColor.b * GetTime().w + i.texcoord.x * 100 * i.unbloomedColor.b);
 #endif
           i.texcoord.y = fmod(i.texcoord.y + i.texcoord.x, 1);
         float procedural_line_r = saturate(1 - 40*abs(i.texcoord.y - .5 + waveform_r));
@@ -102,11 +123,10 @@ Category {
         float4 color = procedural_line_r * float4(1,0,0,0) + procedural_line_g * float4(0,1,0,0) + procedural_line_b * float4(0,0,1,0);
         color.w = 1;
         color = i.color * color;
-
         color = encodeHdr(color.rgb * color.a);
         color = SrgbToNative(color);
         FRAG_MOBILESELECT(color)
-        return color;
+        return color * _Dissolve;
       }
       ENDCG
     }
