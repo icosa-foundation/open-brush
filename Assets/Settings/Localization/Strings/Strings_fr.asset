@@ -3582,6 +3582,18 @@ MonoBehaviour:
     m_Localized: 'Joueurs Max: '
     m_Metadata:
       m_Items: []
+  - m_Id: 326549804571619328
+    m_Localized: "Param\xE8tres de la Salle: "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326570591894564864
+    m_Localized: 'Panneau de Salle: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326572252843143168
+    m_Localized: 'Modifier le nombre max de joueurs : '
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

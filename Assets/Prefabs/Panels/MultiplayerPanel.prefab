@@ -197,6 +197,7 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
+  m_RoomSettingsButton: {fileID: 4513402330335811974}
   references:
     version: 2
     RefIds: []
@@ -1703,7 +1704,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 294637073212186624
+      m_KeyId: 326572252843143168
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -2033,12 +2034,12 @@ GameObject:
   - component: {fileID: 4873125866289393846}
   - component: {fileID: 5322833515426493788}
   m_Layer: 16
-  m_Name: MultiplayerRoomSettings
+  m_Name: RoomSettings
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &7486361010185590075
 Transform:
   m_ObjectHideFlags: 0
@@ -2048,8 +2049,8 @@ Transform:
   m_GameObject: {fileID: 4513402330335811974}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.63, y: -0.44700006, z: -0.042}
-  m_LocalScale: {x: 0.33, y: 0.33, z: 0.33}
+  m_LocalPosition: {x: 0.177, y: 0.853, z: -0.042}
+  m_LocalScale: {x: 0.15, y: 0.15, z: 0.15}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8346410928580794432}
@@ -2144,7 +2145,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 294637000357126144
+      m_KeyId: 326570591894564864
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0

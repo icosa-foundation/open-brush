@@ -3612,6 +3612,18 @@ MonoBehaviour:
     m_Localized: 'Max Players: '
     m_Metadata:
       m_Items: []
+  - m_Id: 326549804571619328
+    m_Localized: 'Room Settings: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326570591894564864
+    m_Localized: 'In Room Panel: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326572252843143168
+    m_Localized: 'Edit max PLayers: '
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

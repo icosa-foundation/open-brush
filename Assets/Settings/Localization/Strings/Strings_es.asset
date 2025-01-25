@@ -3612,6 +3612,18 @@ MonoBehaviour:
     m_Localized: "Jugadores M\xE1ximos: "
     m_Metadata:
       m_Items: []
+  - m_Id: 326549804571619328
+    m_Localized: "Configuraci\xF3n de la Sala: "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326570591894564864
+    m_Localized: "Panel de Habitaci\xF3n: "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326572252843143168
+    m_Localized: "Editar m\xE1ximo de jugadores: "
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

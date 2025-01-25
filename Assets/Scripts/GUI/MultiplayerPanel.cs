@@ -40,6 +40,7 @@ namespace TiltBrush
         [SerializeField] private LocalizedString m_AlertsErrorBeginnerModeActive;
         [SerializeField] private LocalizedString m_AlertsRoomAlreadyExistent;
         [SerializeField] private LocalizedString m_AlertsPassThroughAcive;
+        [SerializeField] private GameObject m_RoomSettingsButton;
 
         private PlayerPrefsDataStore m_multiplayer;
         private bool updateDisplay = false;
@@ -271,6 +272,7 @@ namespace TiltBrush
         {
             if (!m_State) return;
             m_State.text = m_StatString.GetLocalizedString() + StateToString(newState);
+            DisplayRoomSettingsButton(newState);
             UpdateDisplay();
         }
 
@@ -298,6 +300,29 @@ namespace TiltBrush
                     return "Error";
                 default:
                     return "Unknown";
+            }
+        }
+
+        private void DisplayRoomSettingsButton(ConnectionState newState)
+        {
+            if (!m_RoomSettingsButton) return;
+
+            switch (newState)
+            {
+                case ConnectionState.IN_ROOM:
+                    m_RoomSettingsButton.SetActive(true);
+                    break;
+                case ConnectionState.INITIALIZING:
+                case ConnectionState.INITIALIZED:
+                case ConnectionState.DISCONNECTED:
+                case ConnectionState.DISCONNECTING:
+                case ConnectionState.CONNECTING:
+                case ConnectionState.AUTHENTICATING:
+                case ConnectionState.IN_LOBBY:
+                case ConnectionState.ERROR:
+                default:
+                    m_RoomSettingsButton.SetActive(false);
+                    break;
             }
         }
 

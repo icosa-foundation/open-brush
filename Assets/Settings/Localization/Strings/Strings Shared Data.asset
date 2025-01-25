@@ -3443,6 +3443,18 @@ MonoBehaviour:
     m_Key: MULTIPLAYER_PANEL_MAX_ROOM_NUMBER
     m_Metadata:
       m_Items: []
+  - m_Id: 326549804571619328
+    m_Key: MULTIPLAYER_ROOM_SETTINGS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326570591894564864
+    m_Key: MULTIPLAYER_IN_ROOM_PANEL_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326572252843143168
+    m_Key: MULTIPLAYER_EDIT_MAX_PLAYERS
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
