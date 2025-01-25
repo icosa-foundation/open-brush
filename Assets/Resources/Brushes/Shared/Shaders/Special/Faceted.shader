@@ -15,6 +15,13 @@
 Shader "Brush/Special/Faceted" {
 Properties {
   _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
+  _ColorX("Color X", Color) = (1,0,0,1)
+  _ColorY("Color Y", Color) = (0,1,0,1)
+  _ColorZ("Color Z", Color) = (0,0,1,1)
+
+  _Dissolve("Dissolve", Range(0,1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 SubShader {
@@ -31,12 +38,20 @@ SubShader {
     #include "Assets/ThirdParty/Shaders/Noise.cginc"
     sampler2D _MainTex;
     float4 _MainTex_ST;
+    fixed4 _ColorX;
+    fixed4 _ColorY;
+    fixed4 _ColorZ;
+
+    uniform half _ClipStart;
+    uniform half _ClipEnd;
+    uniform half _Dissolve;
 
     struct appdata_t {
       float4 vertex : POSITION;
       fixed4 color : COLOR;
       float3 normal : NORMAL;
       float2 texcoord : TEXCOORD0;
+      uint id : SV_VertexID;
 
       UNITY_VERTEX_INPUT_INSTANCE_ID
     };
@@ -46,6 +61,7 @@ SubShader {
       fixed4 color : COLOR;
       float2 texcoord : TEXCOORD0;
       float3 worldPos : TEXCOORD1;
+      float2 id : TEXCOORD2;
 
       UNITY_VERTEX_OUTPUT_STEREO
     };
@@ -60,16 +76,26 @@ SubShader {
       UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
       o.vertex = UnityObjectToClipPos(v.vertex);
-        o.color = v.color;
-        o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
-        o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
+      o.color = v.color;
+      o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
+      o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
+      o.id = (float2)v.id;
       return o;
     }
 
     fixed4 frag (v2f i) : SV_Target
     {
+      #ifdef SHADER_SCRIPTING_ON
+      if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+      if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+      #endif
+
       float3 n = normalize(cross(ddy(i.worldPos), ddx(i.worldPos)));
-      i.color.xyz = n.xyz;
+      i.color.xyz = float3(
+        lerp(float3(0,0,0), _ColorX, n.x) +
+        lerp(float3(0,0,0), _ColorY, n.y) +
+        lerp(float3(0,0,0), _ColorZ, n.z)
+      );
       return i.color;
     }
 
