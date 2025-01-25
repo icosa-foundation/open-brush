@@ -159,6 +159,7 @@ namespace TiltBrush
             OpenRoomSettings = 1010,
             MuteUserInMultiplayer = 1011,
             UnmuteUserInMultiplayer = 1012,
+            EditMultiplayerRoomMaxPlayers = 1013,
 
             RenameSketch = 5200,
             OpenLayerOptionsPopup = 5201,
@@ -4526,6 +4527,14 @@ namespace TiltBrush
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }
+                case GlobalCommands.EditMultiplayerRoomMaxPlayers:
+                    {
+                        var panel = (MultiplayerPanel)m_PanelManager.GetActivePanelByType(BasePanel.PanelType.Multiplayer);
+                        if (int.TryParse(KeyboardPopUpWindow.m_LastInput, out var parsedMaxPlayers))
+                            panel.MaxPlayers = parsedMaxPlayers;
+                        DismissPopupOnCurrentGazeObject(false);
+                        break;
+                    }
                 case GlobalCommands.EditMultiplayerNickName:
                     {
                         var panel = (MultiplayerPanel)m_PanelManager.GetActivePanelByType(BasePanel.PanelType.Multiplayer);
@@ -5104,6 +5113,7 @@ namespace TiltBrush
                 case GlobalCommands.SketchbookMenu:
                 case GlobalCommands.EditMultiplayerNickName:
                 case GlobalCommands.EditMultiplayerRoomName:
+                case GlobalCommands.EditMultiplayerRoomMaxPlayers:
                     return !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
                 case GlobalCommands.WhatIsNew:
                     return false;

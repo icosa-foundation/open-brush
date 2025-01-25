@@ -3608,6 +3608,10 @@ MonoBehaviour:
     m_Localized: "Men\xFA Multijugador"
     m_Metadata:
       m_Items: []
+  - m_Id: 326532953040941056
+    m_Localized: "Jugadores M\xE1ximos: "
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

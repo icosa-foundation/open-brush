@@ -34,6 +34,8 @@ namespace TiltBrush
         [SerializeField] private TextMeshPro m_RoomOwnership;
         [SerializeField] private LocalizedString m_RoomOwnerString;
         [SerializeField] private LocalizedString m_NotRoomOwnerString;
+        [SerializeField] private TextMeshPro m_RoomMaxPlayer;
+        [SerializeField] private LocalizedString m_RoomMaxPlayerString;
         [SerializeField] private TextMeshPro m_AlertsErrors;
         [SerializeField] private LocalizedString m_AlertsErrorBeginnerModeActive;
         [SerializeField] private LocalizedString m_AlertsRoomAlreadyExistent;
@@ -72,6 +74,20 @@ namespace TiltBrush
                 MultiplayerManager.m_Instance.UserInfo = ui;
                 UpdateDisplay();
                 SaveNickname(value);
+            }
+        }
+
+        private Tuple<int, int> MaxPlayersRange = new Tuple<int, int>(2, 8);
+        public int MaxPlayers
+        {
+            get { return data.maxPlayers; }
+            set
+            {
+                if (value < MaxPlayersRange.Item1) data.maxPlayers = MaxPlayersRange.Item1;
+                else if (value > MaxPlayersRange.Item2) data.maxPlayers = MaxPlayersRange.Item2;
+                else data.maxPlayers = value;
+                UpdateDisplay();
+                SaveMaxPlayerNumber(value);
             }
         }
 
@@ -134,6 +150,24 @@ namespace TiltBrush
             await m_multiplayer.StoreAsync("nickname", nickname);
         }
 
+        public async void RetrieveMaxPlayers()
+        {
+            try
+            {
+                var storedMaxPlayers = await m_multiplayer.GetAsync<int>("maxPlayers");
+                MaxPlayers = storedMaxPlayers;
+            }
+            catch (KeyNotFoundException)
+            {
+                MaxPlayers = 4;
+            }
+        }
+
+        private async void SaveMaxPlayerNumber(int maxPlayers)
+        {
+            await m_multiplayer.StoreAsync("maxPlayers", maxPlayers);
+        }
+
         protected override void OnEnablePanel()
         {
             base.OnEnablePanel();
@@ -141,6 +175,7 @@ namespace TiltBrush
             m_multiplayer = new PlayerPrefsDataStore("Multiplayer");
             RetrieveUsername();
             RetrieveRoomName();
+            RetrieveMaxPlayers();
 
             if (MultiplayerManager.m_Instance == null) return;
             if (MultiplayerManager.m_Instance.State == ConnectionState.INITIALIZED || MultiplayerManager.m_Instance.State == ConnectionState.DISCONNECTED)
@@ -194,6 +229,7 @@ namespace TiltBrush
         {
             if (m_RoomNumber) m_RoomNumber.text = m_RoomNumberString.GetLocalizedString() + data.roomName;
             if (m_Nickname) m_Nickname.text = m_NicknameString.GetLocalizedString() + NickName;
+            if (m_RoomMaxPlayer) m_RoomMaxPlayer.text = m_RoomMaxPlayerString.GetLocalizedString() + MaxPlayers;
             Alerts();
             updateDisplay = false;
         }

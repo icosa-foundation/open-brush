@@ -3608,6 +3608,10 @@ MonoBehaviour:
     m_Localized: 'Multiplayer Menu '
     m_Metadata:
       m_Items: []
+  - m_Id: 326532953040941056
+    m_Localized: 'Max Players: '
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

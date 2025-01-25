@@ -3638,6 +3638,10 @@ MonoBehaviour:
     m_Localized: "Mehrspieler-Men\xFC"
     m_Metadata:
       m_Items: []
+  - m_Id: 326532953040941056
+    m_Localized: 'Maximale Spieler: '
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
