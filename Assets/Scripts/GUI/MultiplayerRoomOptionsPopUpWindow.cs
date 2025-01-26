@@ -152,10 +152,13 @@ namespace TiltBrush
                 case SketchControlsScript.GlobalCommands.Null:
                     break;
                 case SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayer:
-                    MultiplayerAudioSourcesManager.m_Instance.ToggleAudioMuteForPlayer(button.playerId);
+                    MultiplayerAudioSourcesManager.m_Instance.ToggleAudioMuteForPlayer(button.IsButtonActive(), button.playerId);
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerTransferRoomOwnership:
                     MultiplayerManager.m_Instance.RoomOwnershipTransferedToUser(button.playerId);
+                    break;
+                case SketchControlsScript.GlobalCommands.MultiplayerToggleUserStrokeGeneration:
+                    MultiplayerManager.m_Instance.ToggleUserViewOnlyMode(button.IsButtonActive(), button.playerId);
                     break;
             }
         }

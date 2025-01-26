@@ -366,6 +366,15 @@ namespace OpenBrush.Multiplayer
             { PhotonRPC.RPC_TransferRoomOwnership(m_Runner, targetPlayer); });
             return true;
         }
+
+        public async Task<bool> RpcToggleUserViewOnlyMode(bool value,int playerId)
+        {
+            PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            { PhotonRPC.RPC_ToggleUserViewOnlyMode(m_Runner,value, targetPlayer); });
+            return true;
+        }
+
         public void SendLargeDataToPlayer(int playerId, byte[] largeData, int percentage)
         {
             sequenceNumber++;
@@ -606,6 +615,7 @@ namespace OpenBrush.Multiplayer
         public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) { }
         public void OnObjectEnterAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) { }
         public void OnDisconnectedFromServer(NetworkRunner runner, NetDisconnectReason reason) { }
+
 
         #endregion
     }

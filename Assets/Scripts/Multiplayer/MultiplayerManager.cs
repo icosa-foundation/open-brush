@@ -318,6 +318,12 @@ namespace OpenBrush.Multiplayer
             isUserRoomOwner = false;
         }
 
+        public void ToggleUserViewOnlyMode(bool value, int playerId)
+        {
+            if (!isUserRoomOwner) return;
+            m_Manager.RpcToggleUserViewOnlyMode(value, playerId);
+        }
+
         void OnRoomDataRefreshed(List<RoomData> rooms)
         {
             m_RoomData = rooms;

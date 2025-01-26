@@ -24,6 +24,7 @@ namespace TiltBrush
         public TextMeshPro NickNameObject;
         public MultiplayerRoomOptionsPanelButton MuteButton;
         public MultiplayerRoomOptionsPanelButton TransferOwnershipButton;
+        public MultiplayerRoomOptionsPanelButton ToggleViewOnly;
         [HideInInspector] public RemotePlayer remotePlayer;
 
         public void SetRemotePlayer(RemotePlayer Player)
@@ -39,6 +40,7 @@ namespace TiltBrush
             if (PlayerIdObject) PlayerIdObject.text = remotePlayer.PlayerId.ToString();
             if (TransferOwnershipButton) TransferOwnershipButton.playerId = remotePlayer.PlayerId;
             if (MuteButton) MuteButton.playerId = remotePlayer.PlayerId;
+            if (ToggleViewOnly) ToggleViewOnly.playerId = remotePlayer.PlayerId;
         }
     }
 }

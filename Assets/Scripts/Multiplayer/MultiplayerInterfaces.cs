@@ -47,9 +47,9 @@ namespace OpenBrush.Multiplayer
         Task<bool> RedoCommand(BaseCommand command);
         Task<bool> RpcSyncToSharedAnchor(string uuid);
         Task<bool> RpcTransferRoomOnwership(int playerId);
+        Task<bool> RpcToggleUserViewOnlyMode(bool value, int playerId);
 
         event Action Disconnected;
-
     }
 
     public interface IVoiceConnectionHandler : IConnectionHandler

@@ -408,6 +408,12 @@ namespace OpenBrush.Multiplayer
             MultiplayerManager.m_Instance.RoomOwnershipReceived();
         }
 
+        private static void ToggleDrawing(bool isEnabled)
+        {
+            PointerManager.m_Instance.EnableLine(isEnabled);
+            PointerManager.m_Instance.EnablePointerStrokeGeneration(isEnabled);
+        }
+
         #region RPCS
         [Rpc(InvokeLocal = false)]
         public static void RPC_SyncToSharedAnchor(NetworkRunner runner, string uuid)
@@ -573,6 +579,12 @@ namespace OpenBrush.Multiplayer
         public static void RPC_TransferRoomOwnership(NetworkRunner runner, [RpcTarget] PlayerRef targetPlayer)
         {
             TransferRoomOwnership();
+        }
+
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_ToggleUserViewOnlyMode(NetworkRunner runner, bool value, [RpcTarget] PlayerRef targetPlayer)
+        {
+            ToggleDrawing(value);
         }
 
         #endregion
