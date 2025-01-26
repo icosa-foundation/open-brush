@@ -27,15 +27,16 @@ public class MultiplayerManagerInspector : Editor
         EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
         GUILayout.Space(10);
 
+
         roomName = EditorGUILayout.TextField("Room Name", roomName);
         nickname = EditorGUILayout.TextField("Nickname", nickname);
-        
         if (nickname != oldNickname)
         {
             SetNickname();
             oldNickname = nickname;
             EditorUtility.SetDirty(target);
         }
+        maxPlayers = EditorGUILayout.IntField("MaxPlayers", maxPlayers);
 
         //State
         string connectionState = "";
@@ -126,19 +127,6 @@ public class MultiplayerManagerInspector : Editor
         EditorGUILayout.LabelField($"{remoteUsersRegistered}");
         EditorGUILayout.EndHorizontal();
 
-        // Display and edit Nickname
-        GUILayout.Space(10);
-        EditorGUILayout.LabelField("Nickname", GUI.skin.horizontalSlider);
-        string currentNickname = multiplayerManager.UserInfo.Nickname;
-        GUILayout.Label("Nickname", EditorStyles.boldLabel);
-        string newNickname = EditorGUILayout.TextField("Edit Nickname", currentNickname);
-        if (newNickname != currentNickname)
-        {
-            ConnectionUserInfo updatedUserInfo = multiplayerManager.UserInfo;
-            updatedUserInfo.Nickname = newNickname;
-            multiplayerManager.UserInfo = updatedUserInfo;
-            EditorUtility.SetDirty(target); // Mark the target as dirty to apply changes
-        }
 
 
         Repaint();
