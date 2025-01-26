@@ -406,7 +406,7 @@ namespace TiltBrush.FrameAnimation
                     GameObject newFrame = Instantiate(timelineNotchPrefab, frameNotchesWidget.transform, false);
                     // HARD CODED. MUST GET Vector and Scale info from FrameButton1
                     newFrame.transform.localPosition = new Vector3(posModifier * 0.1971429f, 0, 0.0087f); // 1.9... is the spacing between framebuttons 0 and 1
-                    newFrame.transform.FindChild("Num").GetComponent<TextMeshPro>().text = "" + posModifier;
+                    newFrame.transform.FindChild("Num").GetComponent<TextMeshPro>().text = "" + (posModifier + 1);
 
                     posModifier = posModifier + 1;
                 }
@@ -638,7 +638,8 @@ namespace TiltBrush.FrameAnimation
 
         public void updateFrameInfo()
         {
-            textRef.GetComponent<TextMeshPro>().text = (m_FrameOn.ToString("0.00")) + ":" + GetTimelineLength();
+            float adjustedFrameOn = Math.Min(m_FrameOn + 1, GetTimelineLength());
+            textRef.GetComponent<TextMeshPro>().text = (adjustedFrameOn.ToString("0")) + " / " + GetTimelineLength();
         }
 
         public void UpdateUI(bool timelineInput = false)
@@ -706,10 +707,9 @@ namespace TiltBrush.FrameAnimation
             deletedFrame.Location = (index.Item1, index.Item2);
 
             App.Scene.HideCanvas(deletedFrame.Frame.Canvas);
-            CanvasScript replacingCanvas = App.Scene.AddCanvas();
             for (int l = index.Item2; l < nextIndex.Item2; l++)
             {
-                Frame removingFrame = NewFrame(replacingCanvas);
+                Frame removingFrame = NewFrame(App.Scene.AddCanvas());
                 Timeline[index.Item1].Frames[l] = removingFrame;
             }
 
@@ -989,7 +989,7 @@ namespace TiltBrush.FrameAnimation
 
             for (int i = 0; i < oldStrokes.Count; i++)
             {
-                if (oldStrokes.Count == newStrokes.Count && oldStrokes[i].m_Type == Stroke.Type.NotCreated)
+                if (oldStrokes.Count == newStrokes.Count && (oldStrokes[i].m_Type == Stroke.Type.NotCreated || !oldStrokes[i].IsGeometryEnabled))
                 {
                     // using SketchMemory of oldStrokes to mark Uncreated strokes on newStrokes. Otherwise, Uncreated strokes will be re-made.
                     newStrokes[i].Uncreate();
