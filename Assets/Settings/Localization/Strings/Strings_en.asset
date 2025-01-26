@@ -3644,6 +3644,18 @@ MonoBehaviour:
     m_Localized: Disable user view only
     m_Metadata:
       m_Items: []
+  - m_Id: 326852018926186496
+    m_Localized: In room settings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326852593516474368
+    m_Localized: Players list
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326864334061236224
+    m_Localized: Kick User Out
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

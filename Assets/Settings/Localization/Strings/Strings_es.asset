@@ -3644,6 +3644,18 @@ MonoBehaviour:
     m_Localized: Desactivar solo vista de usuario
     m_Metadata:
       m_Items: []
+  - m_Id: 326852018926186496
+    m_Localized: "En la configuraci\xF3n de la sala"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326852593516474368
+    m_Localized: Lista de jugadores
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326864334061236224
+    m_Localized: Expulsar al jugador
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

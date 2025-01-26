@@ -25,6 +25,7 @@ namespace TiltBrush
         public MultiplayerRoomOptionsPanelButton MuteButton;
         public MultiplayerRoomOptionsPanelButton TransferOwnershipButton;
         public MultiplayerRoomOptionsPanelButton ToggleViewOnly;
+        public MultiplayerRoomOptionsPanelButton KickPlayerOut;
         [HideInInspector] public RemotePlayer remotePlayer;
 
         public void SetRemotePlayer(RemotePlayer Player)
@@ -41,6 +42,7 @@ namespace TiltBrush
             if (TransferOwnershipButton) TransferOwnershipButton.playerId = remotePlayer.PlayerId;
             if (MuteButton) MuteButton.playerId = remotePlayer.PlayerId;
             if (ToggleViewOnly) ToggleViewOnly.playerId = remotePlayer.PlayerId;
+            if (KickPlayerOut) KickPlayerOut.playerId = remotePlayer.PlayerId;
         }
     }
 }

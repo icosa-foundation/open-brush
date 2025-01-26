@@ -17,16 +17,22 @@ using OpenBrush.Multiplayer;
 using System;
 using System.Collections.Generic;
 using OpenBrush;
+using UnityEngine.Localization;
+using TMPro;
 
 namespace TiltBrush
 {
     public class MultiplayerRoomOptionsPopUpWindow : PopUpWindow
     {
-        public GameObject m_playerGuiPrefab;
+        [SerializeField] public GameObject m_playerGuiPrefab;
         public Vector2 PlayerGuiPrefabSize;
         public Vector2 PlayerListOffset;
         public Vector2 PlayerListArea;
         private List<GameObject> m_instantiatedGuiPrefabs = new List<GameObject>();
+
+        [SerializeField] private LocalizedString m_popupWindowTitleString;
+        [SerializeField] public TextMeshPro m_playerLIstTitle;
+        [SerializeField] private LocalizedString m_playerLIstTitleString;
 
         public RemotePlayers m_RemotePlayers
         {
@@ -70,6 +76,7 @@ namespace TiltBrush
         protected override void UpdateOpening()
         {
             base.UpdateOpening();
+            UpdateTitles();
             GeneratePlayerList();
         }
 
@@ -98,6 +105,12 @@ namespace TiltBrush
         public void RemotePlayersListCleared()
         {
             GeneratePlayerList();
+        }
+
+        public void UpdateTitles()
+        {
+            if (m_WindowText) m_WindowText.text = m_popupWindowTitleString.GetLocalizedString();
+            if (m_playerLIstTitle) m_playerLIstTitle.text = m_playerLIstTitleString.GetLocalizedString();
         }
 
         public void GeneratePlayerList(List<RemotePlayer> playersList = null)
@@ -159,6 +172,9 @@ namespace TiltBrush
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerToggleUserStrokeGeneration:
                     MultiplayerManager.m_Instance.ToggleUserViewOnlyMode(button.IsButtonActive(), button.playerId);
+                    break;
+                case SketchControlsScript.GlobalCommands.MultiplayerKickPlayerOut:
+                    MultiplayerManager.m_Instance.KickPlayerOut(button.playerId);
                     break;
             }
         }

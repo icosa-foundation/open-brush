@@ -32,7 +32,6 @@ namespace OpenBrush.Multiplayer
 
     public interface IDataConnectionHandler : IConnectionHandler
     {
-
         void Update();
         int GetPlayerCount();
         int GetNetworkedTimestampMilliseconds();
@@ -48,6 +47,7 @@ namespace OpenBrush.Multiplayer
         Task<bool> RpcSyncToSharedAnchor(string uuid);
         Task<bool> RpcTransferRoomOnwership(int playerId);
         Task<bool> RpcToggleUserViewOnlyMode(bool value, int playerId);
+        Task<bool> RpcKickPlayerOut(int playerId);
 
         event Action Disconnected;
     }

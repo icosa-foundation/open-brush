@@ -3614,6 +3614,18 @@ MonoBehaviour:
     m_Localized: "D\xE9sactiver uniquement la vue utilisateur"
     m_Metadata:
       m_Items: []
+  - m_Id: 326852018926186496
+    m_Localized: "Dans les param\xE8tres de la salle"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326852593516474368
+    m_Localized: Liste des joueurs
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326864334061236224
+    m_Localized: Expulser le joueur
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

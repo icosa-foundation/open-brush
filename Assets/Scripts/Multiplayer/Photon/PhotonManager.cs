@@ -375,6 +375,14 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
+        public async Task<bool> RpcKickPlayerOut(int playerId)
+        {
+            PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            { PhotonRPC.RPC_DisconnectRemoteUser(m_Runner, targetPlayer); });
+            return true;
+        }
+
         public void SendLargeDataToPlayer(int playerId, byte[] largeData, int percentage)
         {
             sequenceNumber++;

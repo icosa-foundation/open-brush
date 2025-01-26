@@ -161,6 +161,7 @@ namespace TiltBrush
             EditMultiplayerRoomMaxPlayers = 1012,
             MultiplayerTransferRoomOwnership = 1013,
             MultiplayerToggleUserStrokeGeneration = 1014,
+            MultiplayerKickPlayerOut = 1015,
 
 
             RenameSketch = 5200,
@@ -4887,6 +4888,7 @@ namespace TiltBrush
                 case GlobalCommands.ToggleUserVoiceInMultiplayer:
                 case GlobalCommands.MultiplayerTransferRoomOwnership:
                 case GlobalCommands.MultiplayerToggleUserStrokeGeneration:
+                case GlobalCommands.MultiplayerKickPlayerOut:
                 case GlobalCommands.WhatIsNew:
                     break;// Intentionally blank.
                 default:
@@ -5121,6 +5123,7 @@ namespace TiltBrush
                     return !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
                 case GlobalCommands.MultiplayerTransferRoomOwnership:
                 case GlobalCommands.MultiplayerToggleUserStrokeGeneration:
+                case GlobalCommands.MultiplayerKickPlayerOut:
                     return (MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM && MultiplayerManager.m_Instance.IsUserRoomOwner());
                 case GlobalCommands.WhatIsNew:
                     return false;

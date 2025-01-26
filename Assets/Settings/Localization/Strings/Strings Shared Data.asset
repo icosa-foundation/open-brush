@@ -3475,6 +3475,18 @@ MonoBehaviour:
     m_Key: MULTIPLAYER_DISABLE_USER_VIEW_ONLY_BUTTON
     m_Metadata:
       m_Items: []
+  - m_Id: 326852018926186496
+    m_Key: MULTIPLAYER_IN_ROOM_SETTINGS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326852593516474368
+    m_Key: MULTIPLAYER_PLAYERS_LIST_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326864334061236224
+    m_Key: MULTIPLAYER_KICK_OUT_USER
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

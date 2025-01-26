@@ -3674,6 +3674,18 @@ MonoBehaviour:
     m_Localized: Nur Benutzeransicht deaktivieren
     m_Metadata:
       m_Items: []
+  - m_Id: 326852018926186496
+    m_Localized: In den Raumeinstellungen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326852593516474368
+    m_Localized: Spielerliste
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326864334061236224
+    m_Localized: Spieler entfernen
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

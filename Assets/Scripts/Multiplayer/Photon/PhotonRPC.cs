@@ -587,6 +587,12 @@ namespace OpenBrush.Multiplayer
             ToggleDrawing(value);
         }
 
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_DisconnectRemoteUser(NetworkRunner runner,[RpcTarget] PlayerRef targetPlayer)
+        {
+            MultiplayerManager.m_Instance.Disconnect();
+        }
+
         #endregion
     }
 }
