@@ -42,5 +42,11 @@ namespace TiltBrush
             Debug.Assert(popup != null);
             popup.OnMultiplayerRoomOptionsPopUpWindowButtonPressed(this);
         }
+
+        public void SetToggleState(bool isActive)
+        {
+            m_ToggleActive = isActive;
+            UpdateVisuals();
+        }
     }
 } // namespace TiltBrush

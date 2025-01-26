@@ -3656,6 +3656,22 @@ MonoBehaviour:
     m_Localized: Kick User Out
     m_Metadata:
       m_Items: []
+  - m_Id: 326869993834082304
+    m_Localized: Mute all players
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326870578603945984
+    m_Localized: Unmute all players
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326871085665939456
+    m_Localized: Set all players to view only
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326871757446639616
+    m_Localized: Allow all players to edit
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

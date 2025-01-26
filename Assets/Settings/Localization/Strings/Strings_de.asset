@@ -3686,6 +3686,22 @@ MonoBehaviour:
     m_Localized: Spieler entfernen
     m_Metadata:
       m_Items: []
+  - m_Id: 326869993834082304
+    m_Localized: Alle Spieler stummschalten
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326870578603945984
+    m_Localized: Alle Spieler stumm schalten aufheben
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326871085665939456
+    m_Localized: Alle Spieler auf Nur-Ansicht setzen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326871757446639616
+    m_Localized: Allen Spielern das Bearbeiten erlauben
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -3626,6 +3626,22 @@ MonoBehaviour:
     m_Localized: Expulser le joueur
     m_Metadata:
       m_Items: []
+  - m_Id: 326869993834082304
+    m_Localized: Mettre tous les joueurs en sourdine
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326870578603945984
+    m_Localized: "R\xE9activer le son de tous les joueurs"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326871085665939456
+    m_Localized: Mettre tous les joueurs en mode visualisation uniquement
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326871757446639616
+    m_Localized: "Permettre \xE0 tous les joueurs de modifier"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

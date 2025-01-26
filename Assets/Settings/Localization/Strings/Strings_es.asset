@@ -3656,6 +3656,22 @@ MonoBehaviour:
     m_Localized: Expulsar al jugador
     m_Metadata:
       m_Items: []
+  - m_Id: 326869993834082304
+    m_Localized: Silenciar a todos los jugadores
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326870578603945984
+    m_Localized: Activar el sonido de todos los jugadores
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326871085665939456
+    m_Localized: "Configurar a todos los jugadores en modo solo visualizaci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326871757446639616
+    m_Localized: Permitir que todos los jugadores editen
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

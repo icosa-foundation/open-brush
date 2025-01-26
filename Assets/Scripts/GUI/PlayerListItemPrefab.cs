@@ -44,5 +44,16 @@ namespace TiltBrush
             if (ToggleViewOnly) ToggleViewOnly.playerId = remotePlayer.PlayerId;
             if (KickPlayerOut) KickPlayerOut.playerId = remotePlayer.PlayerId;
         }
+
+        public void SetAudioToggleState(bool isActive)
+        {
+            if (MuteButton) MuteButton.SetToggleState(isActive);
+        }
+
+        public void SetViewOnlyToggleState(bool isActive)
+        {
+            if (ToggleViewOnly) ToggleViewOnly.SetToggleState(isActive);
+        }
+
     }
 }

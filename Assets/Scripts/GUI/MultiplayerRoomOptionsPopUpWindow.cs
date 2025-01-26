@@ -158,6 +158,19 @@ namespace TiltBrush
             m_instantiatedGuiPrefabs.Clear();
         }
 
+        private PlayerListItemPrefab GetGameobjectWithPlayerId(int playerID)
+        {
+            foreach (GameObject playerGui in m_instantiatedGuiPrefabs)
+            {
+                PlayerListItemPrefab playerComponent = playerGui.GetComponent<PlayerListItemPrefab>();
+                if (playerComponent != null && playerComponent.remotePlayer.PlayerId == playerID)
+                    return playerComponent;
+            }
+
+            return null;
+        }
+
+
         public void OnMultiplayerRoomOptionsPopUpWindowButtonPressed(MultiplayerRoomOptionsPanelButton button)
         {
             switch (button.m_Command)
@@ -170,11 +183,31 @@ namespace TiltBrush
                 case SketchControlsScript.GlobalCommands.MultiplayerTransferRoomOwnership:
                     MultiplayerManager.m_Instance.RoomOwnershipTransferedToUser(button.playerId);
                     break;
-                case SketchControlsScript.GlobalCommands.MultiplayerToggleUserStrokeGeneration:
+                case SketchControlsScript.GlobalCommands.MultiplayerToggleUserViewEditMode:
                     MultiplayerManager.m_Instance.ToggleUserViewOnlyMode(button.IsButtonActive(), button.playerId);
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerKickPlayerOut:
                     MultiplayerManager.m_Instance.KickPlayerOut(button.playerId);
+                    break;
+                case SketchControlsScript.GlobalCommands.MultiplayerToggleAllUserAudio:
+
+                    foreach (var remotePlayer in m_RemotePlayers.List)
+                    {
+                        MultiplayerAudioSourcesManager.m_Instance.ToggleAudioMuteForPlayer(button.IsButtonActive(), remotePlayer.PlayerId);
+                        PlayerListItemPrefab playerComponent = GetGameobjectWithPlayerId(remotePlayer.PlayerId);
+                        if (playerComponent) playerComponent.SetAudioToggleState(button.IsButtonActive());
+                    }
+
+                    break;
+                case SketchControlsScript.GlobalCommands.MultiplayerToggleAllUserViewEditMode:
+
+                    foreach (var remotePlayer in m_RemotePlayers.List)
+                    {
+                        MultiplayerManager.m_Instance.ToggleUserViewOnlyMode(button.IsButtonActive(), remotePlayer.PlayerId);
+                        PlayerListItemPrefab playerComponent = GetGameobjectWithPlayerId(remotePlayer.PlayerId);
+                        if (playerComponent) playerComponent.SetViewOnlyToggleState(button.IsButtonActive());
+                    }
+
                     break;
             }
         }

@@ -1050,7 +1050,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 464883c791528804496b8c8ef7126e52, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: e5a95db3eceb2ac48bd574c538be1470, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -1420,7 +1420,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 464883c791528804496b8c8ef7126e52, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 0141ac6bf9f578f4e95706cdd2117914, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
@@ -1729,7 +1729,7 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_ToggleOnTexture: {fileID: 0}
+  m_ToggleOnTexture: {fileID: 2800000, guid: 89c869f76d8c0474a8da08e71510f0f2, type: 3}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
   m_CommandIgnored: 0
@@ -1915,7 +1915,7 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_ToggleOnTexture: {fileID: 2800000, guid: 97a84a57c58583a48a834c393578618d, type: 3}
+  m_ToggleOnTexture: {fileID: 2800000, guid: 0c91e975bed1cd948a150b672f3fec48, type: 3}
   m_AllowUnavailable: 1
   m_LinkedUIObject: {fileID: 0}
   m_CommandIgnored: 0
@@ -1952,8 +1952,8 @@ Transform:
   m_GameObject: {fileID: 8401036954015826580}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.648, y: 0.421, z: 0}
-  m_LocalScale: {x: 0.25, y: 0.25, z: 0.25}
+  m_LocalPosition: {x: -0.648, y: 0.404, z: 0}
+  m_LocalScale: {x: 0.33, y: 0.33, z: 0.33}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 461372}
@@ -2048,7 +2048,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 326832067431559168
+      m_KeyId: 326871085665939456
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -2065,7 +2065,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 464883c791528804496b8c8ef7126e52, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 97a84a57c58583a48a834c393578618d, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
@@ -2075,7 +2075,7 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Command: 1014
+  m_Command: 1017
   m_CommandParam: -1
   m_CommandParam2: -1
   m_RequiresPopup: 0
@@ -2096,12 +2096,12 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 326833306865168384
+      m_KeyId: 326871757446639616
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_ToggleOnTexture: {fileID: 2800000, guid: 97a84a57c58583a48a834c393578618d, type: 3}
+  m_ToggleOnTexture: {fileID: 2800000, guid: 0141ac6bf9f578f4e95706cdd2117914, type: 3}
   m_AllowUnavailable: 1
   m_LinkedUIObject: {fileID: 0}
   m_CommandIgnored: 0
@@ -2309,8 +2309,8 @@ Transform:
   m_GameObject: {fileID: 8947761366766059199}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.312, y: 0.421, z: 0}
-  m_LocalScale: {x: 0.25, y: 0.25, z: 0.25}
+  m_LocalPosition: {x: -0.221, y: 0.404, z: 0}
+  m_LocalScale: {x: 0.33, y: 0.33, z: 0.33}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 461372}
@@ -2405,7 +2405,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 326832067431559168
+      m_KeyId: 326869993834082304
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -2422,7 +2422,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 464883c791528804496b8c8ef7126e52, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 89c869f76d8c0474a8da08e71510f0f2, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
@@ -2432,7 +2432,7 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Command: 1014
+  m_Command: 1016
   m_CommandParam: -1
   m_CommandParam2: -1
   m_RequiresPopup: 0
@@ -2453,12 +2453,12 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 326833306865168384
+      m_KeyId: 326870578603945984
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_ToggleOnTexture: {fileID: 2800000, guid: 97a84a57c58583a48a834c393578618d, type: 3}
+  m_ToggleOnTexture: {fileID: 2800000, guid: 464883c791528804496b8c8ef7126e52, type: 3}
   m_AllowUnavailable: 1
   m_LinkedUIObject: {fileID: 0}
   m_CommandIgnored: 0

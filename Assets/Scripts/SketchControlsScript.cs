@@ -160,8 +160,10 @@ namespace TiltBrush
             ToggleUserVoiceInMultiplayer = 1011,
             EditMultiplayerRoomMaxPlayers = 1012,
             MultiplayerTransferRoomOwnership = 1013,
-            MultiplayerToggleUserStrokeGeneration = 1014,
+            MultiplayerToggleUserViewEditMode = 1014,
             MultiplayerKickPlayerOut = 1015,
+            MultiplayerToggleAllUserAudio = 1016,
+            MultiplayerToggleAllUserViewEditMode = 1017,
 
 
             RenameSketch = 5200,
@@ -4887,7 +4889,9 @@ namespace TiltBrush
                 case GlobalCommands.MultiplayerDisconnect:
                 case GlobalCommands.ToggleUserVoiceInMultiplayer:
                 case GlobalCommands.MultiplayerTransferRoomOwnership:
-                case GlobalCommands.MultiplayerToggleUserStrokeGeneration:
+                case GlobalCommands.MultiplayerToggleUserViewEditMode:
+                case GlobalCommands.MultiplayerToggleAllUserAudio:
+                case GlobalCommands.MultiplayerToggleAllUserViewEditMode:
                 case GlobalCommands.MultiplayerKickPlayerOut:
                 case GlobalCommands.WhatIsNew:
                     break;// Intentionally blank.
@@ -5120,10 +5124,12 @@ namespace TiltBrush
                 case GlobalCommands.EditMultiplayerNickName:
                 case GlobalCommands.EditMultiplayerRoomName:
                 case GlobalCommands.EditMultiplayerRoomMaxPlayers:
+                case GlobalCommands.MultiplayerToggleAllUserAudio:
                     return !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
                 case GlobalCommands.MultiplayerTransferRoomOwnership:
-                case GlobalCommands.MultiplayerToggleUserStrokeGeneration:
+                case GlobalCommands.MultiplayerToggleUserViewEditMode:
                 case GlobalCommands.MultiplayerKickPlayerOut:
+                case GlobalCommands.MultiplayerToggleAllUserViewEditMode:
                     return (MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM && MultiplayerManager.m_Instance.IsUserRoomOwner());
                 case GlobalCommands.WhatIsNew:
                     return false;

@@ -3487,6 +3487,22 @@ MonoBehaviour:
     m_Key: MULTIPLAYER_KICK_OUT_USER
     m_Metadata:
       m_Items: []
+  - m_Id: 326869993834082304
+    m_Key: MULTIPLAYER_MUTE_ALL_USER_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326870578603945984
+    m_Key: MULTIPLAYER_UNMUTE_ALL_PLAYERS_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326871085665939456
+    m_Key: MULTIPLAYER_SET_ALL_PLAYERS_TO_VIEWONLY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326871757446639616
+    m_Key: MULTIPLAYER_UNSET_ALL_PLAYERS_TO_VIEWONLY
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
