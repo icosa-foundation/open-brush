@@ -157,10 +157,9 @@ namespace TiltBrush
             MultiplayerDisconnect = 1008,
             EditMultiplayerNickName = 1009,
             OpenRoomSettings = 1010,
-            MuteUserInMultiplayer = 1011,
-            UnmuteUserInMultiplayer = 1012,
-            EditMultiplayerRoomMaxPlayers = 1013,
-            MultiplayerTransferRoomOwnership = 1014,
+            ToggleUserVoiceInMultiplayer = 1011,
+            EditMultiplayerRoomMaxPlayers = 1012,
+            MultiplayerTransferRoomOwnership = 1013,
 
             RenameSketch = 5200,
             OpenLayerOptionsPopup = 5201,
@@ -4876,16 +4875,17 @@ namespace TiltBrush
                     PointerManager.m_Instance.EatLineEnabledInput();
                     SketchSurfacePanel.m_Instance.EatToolsInput();
                     break;
-                case GlobalCommands.RepaintOptions: break; // Intentionally blank.
-                case GlobalCommands.Null: break; // Intentionally blank.
-                case GlobalCommands.MultiplayerPanelOptions: break; // Intentionally blank.
-                case GlobalCommands.MultiplayerJoinRoom: break; // Intentionally blank.
-                case GlobalCommands.MultiplayerLeaveRoom: break; // Intentionally blank.
-                case GlobalCommands.MultiplayerConnect: break; // Intentionally blank.
-                case GlobalCommands.MultiplayerDisconnect: break; // Intentionally blank.
-                case GlobalCommands.MuteUserInMultiplayer: break; // Intentionally blank.
-                case GlobalCommands.UnmuteUserInMultiplayer: break; // Intentionally blank.
-                case GlobalCommands.WhatIsNew: break;// Intentionally blank.
+                case GlobalCommands.RepaintOptions:
+                case GlobalCommands.Null:
+                case GlobalCommands.MultiplayerPanelOptions:
+                case GlobalCommands.MultiplayerJoinRoom:
+                case GlobalCommands.MultiplayerLeaveRoom:
+                case GlobalCommands.MultiplayerConnect:
+                case GlobalCommands.MultiplayerDisconnect:
+                case GlobalCommands.ToggleUserVoiceInMultiplayer:
+                case GlobalCommands.MultiplayerTransferRoomOwnership:
+                case GlobalCommands.WhatIsNew:
+                    break;// Intentionally blank.
                 default:
                     Debug.LogError($"Unrecognized command {rEnum}");
                     break;

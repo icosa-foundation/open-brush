@@ -30,7 +30,7 @@ namespace TiltBrush
             // notify the popup that we were pressed.  Which happens below.
             if (!m_CommandIgnored)
             {
-                if (m_RequiresPopup & m_Command == SketchControlsScript.GlobalCommands.MuteUserInMultiplayer)
+                if (m_RequiresPopup & m_Command == SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayer)
                 {
 
                 }
