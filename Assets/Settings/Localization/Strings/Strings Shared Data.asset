@@ -3455,6 +3455,18 @@ MonoBehaviour:
     m_Key: MULTIPLAYER_EDIT_MAX_PLAYERS
     m_Metadata:
       m_Items: []
+  - m_Id: 326807657823793152
+    m_Key: MULTIPLAYER_ROOM_OWNERSHIP_TRANSFER_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326808393542463488
+    m_Key: MULTIPLAYER_MUTE_UNMUTE_PLAYERBUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326808972507410432
+    m_Key: MULTIPLAYER_UNMUTE_PLAYER_BUTTON
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

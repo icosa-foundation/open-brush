@@ -306,6 +306,18 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
+        public void RoomOwnershipReceived()
+        {
+            isUserRoomOwner = true;
+        }
+
+        public void RoomOwnershipTransferedToUser(int playerId)
+        {
+            if (!isUserRoomOwner) return;
+            m_Manager.RpcTransferRoomOnwership(playerId);
+            isUserRoomOwner = false;
+        }
+
         void OnRoomDataRefreshed(List<RoomData> rooms)
         {
             m_RoomData = rooms;

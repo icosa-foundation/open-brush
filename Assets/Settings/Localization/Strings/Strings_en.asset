@@ -3624,6 +3624,18 @@ MonoBehaviour:
     m_Localized: 'Edit max PLayers: '
     m_Metadata:
       m_Items: []
+  - m_Id: 326807657823793152
+    m_Localized: Transfer room ownership to this player
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326808393542463488
+    m_Localized: Mute Player
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326808972507410432
+    m_Localized: Unmute Player
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

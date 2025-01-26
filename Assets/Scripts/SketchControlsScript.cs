@@ -160,6 +160,7 @@ namespace TiltBrush
             MuteUserInMultiplayer = 1011,
             UnmuteUserInMultiplayer = 1012,
             EditMultiplayerRoomMaxPlayers = 1013,
+            MultiplayerTransferRoomOwnership = 1014,
 
             RenameSketch = 5200,
             OpenLayerOptionsPopup = 5201,
@@ -5115,6 +5116,8 @@ namespace TiltBrush
                 case GlobalCommands.EditMultiplayerRoomName:
                 case GlobalCommands.EditMultiplayerRoomMaxPlayers:
                     return !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
+                case GlobalCommands.MultiplayerTransferRoomOwnership:
+                    return (MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM && MultiplayerManager.m_Instance.IsUserRoomOwner());
                 case GlobalCommands.WhatIsNew:
                     return false;
             }

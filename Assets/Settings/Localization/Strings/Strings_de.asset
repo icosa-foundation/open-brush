@@ -3654,6 +3654,18 @@ MonoBehaviour:
     m_Localized: 'Maximale Spieler bearbeiten: '
     m_Metadata:
       m_Items: []
+  - m_Id: 326807657823793152
+    m_Localized: "\xDCbertrage die Raumverwaltung an diesen Spieler"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326808393542463488
+    m_Localized: Spieler stummschalten
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326808972507410432
+    m_Localized: Spieler stumm schalten aufheben
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -3624,6 +3624,18 @@ MonoBehaviour:
     m_Localized: "Editar m\xE1ximo de jugadores: "
     m_Metadata:
       m_Items: []
+  - m_Id: 326807657823793152
+    m_Localized: ' Transferir la propiedad de la sala a este jugador'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326808393542463488
+    m_Localized: Silenciar jugador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326808972507410432
+    m_Localized: Activar el sonido del jugador
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

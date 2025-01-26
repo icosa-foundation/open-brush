@@ -3594,6 +3594,18 @@ MonoBehaviour:
     m_Localized: 'Modifier le nombre max de joueurs : '
     m_Metadata:
       m_Items: []
+  - m_Id: 326807657823793152
+    m_Localized: "Transf\xE9rer la propri\xE9t\xE9 de la salle \xE0 ce joueur"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326808393542463488
+    m_Localized: Mettre le joueur en sourdine
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326808972507410432
+    m_Localized: "R\xE9activer le son du joueur"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

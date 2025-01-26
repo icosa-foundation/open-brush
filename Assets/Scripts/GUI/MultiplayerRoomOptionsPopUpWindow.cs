@@ -157,6 +157,9 @@ namespace TiltBrush
                 case SketchControlsScript.GlobalCommands.UnmuteUserInMultiplayer:
                     MultiplayerAudioSourcesManager.m_Instance.UnmuteAudioSourcesForPlayer(button.playerId);
                     break;
+                case SketchControlsScript.GlobalCommands.MultiplayerTransferRoomOwnership:
+                    MultiplayerManager.m_Instance.RoomOwnershipTransferedToUser(button.playerId);
+                    break;
             }
         }
 

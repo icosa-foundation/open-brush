@@ -402,6 +402,12 @@ namespace OpenBrush.Multiplayer
             }
         }
 
+        private static void TransferRoomOwnership()
+        {
+            if (!MultiplayerManager.m_Instance) return;
+            MultiplayerManager.m_Instance.RoomOwnershipReceived();
+        }
+
         #region RPCS
         [Rpc(InvokeLocal = false)]
         public static void RPC_SyncToSharedAnchor(NetworkRunner runner, string uuid)
@@ -561,6 +567,12 @@ namespace OpenBrush.Multiplayer
                 tcs.SetResult(isCommandInStack);
                 m_acknowledgments.Remove(commandGuid);
             }
+        }
+
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_TransferRoomOwnership(NetworkRunner runner, [RpcTarget] PlayerRef targetPlayer)
+        {
+            TransferRoomOwnership();
         }
 
         #endregion

@@ -359,6 +359,13 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
+        public async Task<bool> RpcTransferRoomOnwership(int playerId)
+        {
+            PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            { PhotonRPC.RPC_TransferRoomOwnership(m_Runner, targetPlayer); });
+            return true;
+        }
         public void SendLargeDataToPlayer(int playerId, byte[] largeData, int percentage)
         {
             sequenceNumber++;
