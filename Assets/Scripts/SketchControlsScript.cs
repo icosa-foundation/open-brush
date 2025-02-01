@@ -4132,7 +4132,10 @@ namespace TiltBrush
             m_WidgetManager.FollowingPath = false;
             m_WidgetManager.CameraPathsVisible = false;
             m_WidgetManager.DestroyAllWidgets();
-            m_PanelManager.ToggleSketchbookPanels(isLoadingSketch: true);
+            if (m_PanelManager.SketchbookActive())
+            {
+                m_PanelManager.ToggleSketchbookPanels(isLoadingSketch: true);
+            }
             ResetGrabbedPose(everything: true);
             PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
             if (SaveLoadScript.m_Instance.Load(fileInfo, additive))
