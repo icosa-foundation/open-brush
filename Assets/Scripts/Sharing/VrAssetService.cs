@@ -702,7 +702,18 @@ namespace TiltBrush
 
             // Collect files into a .zip file, including the .tilt file and thumbnail
             string zipName = Path.Combine(tempUploadDir, "archive.zip");
-            var filesToZip = exportResults.exportedFiles.ToList().Append(tempTiltPath).Append(tempThumbnailPath);
+
+            var filesToZip = exportResults.exportedFiles.ToList()
+                .Append(tempTiltPath)
+                .Append(tempThumbnailPath);
+
+            if (App.UserConfig?.Sharing.GenerateNewGlb ?? false)
+            {
+                string newGlbPath = Path.Combine(tempUploadDir, $"{uploadName}.glb");
+                Export.ExportNewGlb(tempUploadDir, uploadName, true);
+                filesToZip = filesToZip.Append(newGlbPath);
+            }
+
             await CreateZipFileAsync(zipName, tempUploadDir, filesToZip.ToArray(), token);
 
             var service = new IcosaService(App.Instance.IcosaToken);

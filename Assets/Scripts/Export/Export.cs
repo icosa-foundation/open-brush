@@ -293,27 +293,10 @@ URL=" + kExportDocumentationUrl;
 
             if (App.PlatformConfig.EnableExportGlb && IsExportEnabled("newglb"))
             {
-                // 'New' GLTF export using UnityGLTF
-                string extension = "glb";
                 using (var unused = new AutoTimer("glb export"))
                 {
                     OverlayManager.m_Instance.UpdateProgress(0.7f);
-                    var settings = App.Config.m_UnityGLTFSettings;
-                    var context = new ExportContext(settings);
-
-                    // Beware the two meanings of "layer" in the following code - Unity layers and Open Brush layers
-
-                    var layerCanvases = App.Scene.LayerCanvases.Select(x => x.transform).ToList();
-                    var layerMask = LayerMask.GetMask("MainCanvas");
-                    if (App.UserConfig.Export.ExportEnvironment)
-                    {
-                        layerCanvases.Add(App.Instance.m_EnvironmentTransform);
-                        layerMask |= LayerMask.GetMask("Environment");
-                    }
-                    context.ExportLayers = layerMask;
-                    var unityGltfexporter = new GLTFSceneExporter(layerCanvases.ToArray(), context);
-
-                    unityGltfexporter.SaveGLB(Path.Combine(parent, $"newglb"), $"{basename}.{extension}");
+                    ExportNewGlb(Path.Combine(parent, $"newglb"), basename, App.UserConfig.Export.ExportEnvironment);
                 }
                 progress.CompleteWork("newglb");
             }
@@ -328,6 +311,25 @@ URL=" + kExportDocumentationUrl;
             {
                 File.WriteAllText(readmeFilename, kExportReadmeBody);
             }
+        }
+
+        public static void ExportNewGlb(string destinationPath, string fileBaseName, bool exportEnvironment)
+        {
+            // 'New' GLTF style export. Exports to GLB format using UnityGLTF
+            var settings = App.Config.m_UnityGLTFSettings;
+            var context = new ExportContext(settings);
+
+            // Beware the two meanings of "layer" in the following code - Unity layers and Open Brush layers
+            var layerCanvases = App.Scene.LayerCanvases.Select(x => x.transform).ToList();
+            var layerMask = LayerMask.GetMask("MainCanvas");
+            if (exportEnvironment)
+            {
+                layerCanvases.Add(App.Instance.m_EnvironmentTransform);
+                layerMask |= LayerMask.GetMask("Environment");
+            }
+            context.ExportLayers = layerMask;
+            var unityGltfexporter = new GLTFSceneExporter(layerCanvases.ToArray(), context);
+            unityGltfexporter.SaveGLB(destinationPath, $"{fileBaseName}.glb");
         }
     }
 } // namespace TiltBrush
