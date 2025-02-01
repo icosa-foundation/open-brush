@@ -51,7 +51,7 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 0, (int)SketchSetType.User, sParam: filename);
         }
 
-        [ApiEndpoint("icosa.login", "Login to the Icosa Gallery")]
+        [ApiEndpoint("icosa.login", "Login to the Icosa Gallery using a username and password")]
         public static void IcosaLogin(string username, string password)
         {
             var config = new Configuration();
@@ -59,6 +59,32 @@ namespace TiltBrush
             config.BasePath = VrAssetService.m_Instance.IcosaApiRoot;
             loginApi.Configuration = config;
             var token = loginApi.LoginLoginPost(username, password);
+            App.Instance.IcosaToken = token.AccessToken;
+
+            if (token != null)
+            {
+                var usersApi = new UsersApi(VrAssetService.m_Instance.IcosaApiRoot);
+                config = new Configuration { AccessToken = App.Instance.IcosaToken };
+                config.BasePath = VrAssetService.m_Instance.IcosaApiRoot;
+                usersApi.Configuration = config;
+                var userData = usersApi.GetUsersMeUsersMeGet();
+
+                if (userData != null)
+                {
+                    App.IcosaUserName = userData.Displayname;
+                    App.IcosaUserId = userData.Id;
+                }
+            }
+        }
+
+        [ApiEndpoint("icosa.devicelogin", "Login to the Icosa Gallery using a device code")]
+        public static void IcosaDeviceLogin(string code)
+        {
+            var config = new Configuration();
+            var loginApi = new LoginApi(VrAssetService.m_Instance.IcosaApiRoot);
+            config.BasePath = VrAssetService.m_Instance.IcosaApiRoot;
+            loginApi.Configuration = config;
+            var token = loginApi.DeviceLoginLoginDeviceLoginPost(code);
             App.Instance.IcosaToken = token.AccessToken;
 
             if (token != null)
