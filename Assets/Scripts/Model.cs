@@ -234,7 +234,14 @@ namespace TiltBrush
 
         public string HumanName
         {
-            get { return Path.GetFileNameWithoutExtension(m_Location.RelativePath); }
+            get
+            {
+                if (m_Location.GetLocationType() == Location.Type.IcosaAssetId)
+                {
+                    return AssetId;
+                }
+                return Path.GetFileNameWithoutExtension(m_Location.RelativePath);
+            }
         }
 
         public bool AllowExport
