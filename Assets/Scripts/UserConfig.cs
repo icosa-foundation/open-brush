@@ -340,7 +340,7 @@ namespace TiltBrush
         {
             public string IcosaApiRoot;
             public string IcosaHomePage;
-            [FormerlySerializedAs("ExportNewGlb")] public bool GenerateNewGlb;
+            public bool GenerateNewGlb;
         }
         public SharingConfig Sharing;
 
