@@ -84,6 +84,13 @@ namespace TiltBrush
 
         override protected bool HandleIntersectionWithWidget(GrabWidget widget)
         {
+            if (widget is MediaWidget)
+            {
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(new HideWidgetCommand(widget));
+                AudioManager.m_Instance.ShowHideWidget(false, transform.position);
+                PlayModifyStrokeSound();
+                return true;
+            }
             return false;
         }
 
