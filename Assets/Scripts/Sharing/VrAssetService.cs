@@ -707,7 +707,7 @@ namespace TiltBrush
                 .Append(tempTiltPath)
                 .Append(tempThumbnailPath);
 
-            if (App.UserConfig?.Sharing.GenerateNewGlb ?? false)
+            if (App.UserConfig?.Sharing.UseNewGlb ?? false)
             {
                 string newGlbPath = Path.Combine(tempUploadDir, $"{uploadName}.glb");
                 Export.ExportNewGlb(tempUploadDir, uploadName, true);
