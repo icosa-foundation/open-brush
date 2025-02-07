@@ -1,13 +1,31 @@
+using System;
 using System.Collections;
 using OpenBrush.Multiplayer;
 using TiltBrush;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class NonVrMultiplayerUi : MonoBehaviour
 {
     public TMP_InputField m_RoomNameInput;
     public TMP_InputField m_NicknameInput;
+
+    private ViewModeUI m_ViewModeUi;
+
+    void Start()
+    {
+        m_ViewModeUi = GetComponentInParent<ViewModeUI>();
+    }
+
+    void Update()
+    {
+        if (Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            m_ViewModeUi.m_CloseButton.SetActive(!m_ViewModeUi.m_CloseButton.activeSelf);
+            m_ViewModeUi.m_MenuButton.SetActive(!m_ViewModeUi.m_MenuButton.activeSelf);
+        }
+    }
 
     public void HandleJoinRoomButton()
     {
@@ -48,6 +66,7 @@ public class NonVrMultiplayerUi : MonoBehaviour
             cameraPos.y += 12;
             App.VrSdk.GetVrCamera().transform.position = cameraPos;
             gameObject.SetActive(false);
+
         }
         else
         {

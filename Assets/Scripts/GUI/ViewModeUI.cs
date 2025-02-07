@@ -8,6 +8,8 @@ public class ViewModeUI : MonoBehaviour
 {
     public GameObject m_UiRoot;
     public GameObject m_MenuPanel;
+    public GameObject m_CloseButton;
+    public GameObject m_MenuButton;
 
     void Awake()
     {
