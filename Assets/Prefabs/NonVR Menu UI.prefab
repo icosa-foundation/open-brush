@@ -362,6 +362,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_RoomNameInput: {fileID: 8497429393582015138}
   m_NicknameInput: {fileID: 1855410318653795537}
+  m_MultiplayerMenuPanel: {fileID: 4662939369836531456}
 --- !u!222 &1517313830619284542
 CanvasRenderer:
   m_ObjectHideFlags: 0

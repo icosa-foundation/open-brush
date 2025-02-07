@@ -10,6 +10,7 @@ public class NonVrMultiplayerUi : MonoBehaviour
 {
     public TMP_InputField m_RoomNameInput;
     public TMP_InputField m_NicknameInput;
+    public GameObject m_MultiplayerMenuPanel;
 
     private ViewModeUI m_ViewModeUi;
 
@@ -65,8 +66,7 @@ public class NonVrMultiplayerUi : MonoBehaviour
             var cameraPos = App.VrSdk.GetVrCamera().transform.position;
             cameraPos.y += 12;
             App.VrSdk.GetVrCamera().transform.position = cameraPos;
-            gameObject.SetActive(false);
-
+            m_MultiplayerMenuPanel.SetActive(false);
         }
         else
         {
