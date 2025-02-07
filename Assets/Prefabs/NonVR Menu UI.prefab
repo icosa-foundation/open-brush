@@ -319,6 +319,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3114756803188682520}
   - component: {fileID: 1921756684925958395}
+  - component: {fileID: 1517313830619284542}
   m_Layer: 5
   m_Name: NonVR Menu UI
   m_TagString: Untagged
@@ -361,6 +362,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_RoomNameInput: {fileID: 8497429393582015138}
   m_NicknameInput: {fileID: 1855410318653795537}
+--- !u!222 &1517313830619284542
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1383501869076208940}
+  m_CullTransparentMesh: 1
 --- !u!1 &1445561761934209024
 GameObject:
   m_ObjectHideFlags: 0
@@ -1151,7 +1160,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 62, y: -7.5}
+  m_AnchoredPosition: {x: 275, y: -175}
   m_SizeDelta: {x: 300, y: 300}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2102489574960915915
@@ -1227,9 +1236,9 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: -128, y: 112.5}
+  m_AnchoredPosition: {x: 30, y: -97.99}
   m_SizeDelta: {x: 50, y: 50}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 0, y: 0}
 --- !u!222 &2912743605728252711
 CanvasRenderer:
   m_ObjectHideFlags: 0
