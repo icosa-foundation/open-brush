@@ -1014,9 +1014,9 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10133179773722624
-    m_Localized: 'Like       sketches
+    m_Localized: 'Like sketches
 
-      on Poly to
+      on Icosa to
 
       see them here'
     m_Metadata:
@@ -1032,7 +1032,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10134247853236224
-    m_Localized: 'Error gathering sketches from Icosa Gallery
+    m_Localized: 'Error gathering sketches from Icosa
 
       <color=#969696>
 
@@ -1043,7 +1043,7 @@ MonoBehaviour:
   - m_Id: 10134539248312320
     m_Localized: 'Sign in to access
 
-      Poly sketches'
+      Icosa sketches'
     m_Metadata:
       m_Items: []
   - m_Id: 10134688972382208
@@ -1068,7 +1068,7 @@ MonoBehaviour:
   - m_Id: 10134947404423168
     m_Localized: 'Error Connecting
 
-      to Poly'
+      to Icosa'
     m_Metadata:
       m_Items: []
   - m_Id: 10137717402476544
@@ -3502,8 +3502,8 @@ MonoBehaviour:
   - m_Id: 217069105871577088
     m_Localized: 'You can continue without a VR headset.
 
-      Choose a sketch
-      below to enter Viewing Mode.'
+      Choose a sketch below
+      to enter Viewing Mode.'
     m_Metadata:
       m_Items: []
   - m_Id: 217070349893754880
@@ -3622,6 +3622,18 @@ MonoBehaviour:
     m_Localized: "<b>PC Controls:</b>\r\nMouse: view direction (press I to invert
       up/down) \r\nW,A,S,D: move forward/back/left/right\r\nQ,E: move up/down\r\nShift:
       move faster"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332314407106863104
+    m_Localized: Options
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332573810292776960
+    m_Localized: Search
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332574165927813120
+    m_Localized: Filter/Sorting
     m_Metadata:
       m_Items: []
   references:

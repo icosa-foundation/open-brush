@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
   m_Name: Strings Shared Data
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_TableCollectionName: Strings
   m_TableCollectionNameGuidString: c84355079ab3f3e4f8f3812258805f86
   m_Entries:
@@ -3449,6 +3449,18 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 317029250049335296
     m_Key: VIEW_MODE_CONTROLS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332314407106863104
+    m_Key: ICOSAPANEL_PANEL_OPTIONS_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332573810292776960
+    m_Key: ICOSAPANEL_PANEL_SEARCH_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332574165927813120
+    m_Key: ICOSAPANEL_PANEL_FILTER_POPUP
     m_Metadata:
       m_Items: []
   m_Metadata:
