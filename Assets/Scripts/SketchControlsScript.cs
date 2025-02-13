@@ -165,6 +165,9 @@ namespace TiltBrush
             OpenLayerOptionsPopup = 5201,
             RenameLayer = 5202,
             LoginToIcosa = 5600,
+            OpenIcosaPanelSearchPopup = 5601,
+            OpenIcosaPanelFilterPopup = 5602,
+            OpenIcosaPanelOptionsPopup = 5603,
             OpenDirectorChooserPopup = 5800,
             OpenScriptsCommandsList = 6000,
             OpenScriptsList = 6001,
@@ -4907,6 +4910,13 @@ namespace TiltBrush
                 case GlobalCommands.HideSynchInfo:
                     MultiplayerSceneSync.m_Instance.HideSynchInfo();
                     break;
+                case GlobalCommands.OpenIcosaPanelSearchPopup:
+                {
+                    IcosaSetType currentSet = (IcosaSetType)iParam1;
+                    App.IcosaAssetCatalog.UpdateSearchText(currentSet, KeyboardPopUpWindow.m_LastInput);
+                    DismissPopupOnCurrentGazeObject(false);
+                    break;
+                }
                 case GlobalCommands.RepaintOptions: break; // Intentionally blank.
                 case GlobalCommands.MultiplayerPanelOptions: break; // Intentionally blank.
                 case GlobalCommands.MultiplayerJoinRoom: break; // Intentionally blank.
@@ -4915,6 +4925,8 @@ namespace TiltBrush
                 case GlobalCommands.MultiplayerDisconnect: break; // Intentionally blank.
                 case GlobalCommands.WhatIsNew: break;// Intentionally blank.
                 case GlobalCommands.LoginToIcosa: break; // Intentionally blank.
+                case GlobalCommands.OpenIcosaPanelOptionsPopup: break; // Intentionally blank.
+                case GlobalCommands.OpenIcosaPanelFilterPopup: break; // Intentionally blank.
                 case GlobalCommands.Null: break;           // Intentionally blank.
                 default:
                     Debug.LogError($"Unrecognized command {rEnum}");

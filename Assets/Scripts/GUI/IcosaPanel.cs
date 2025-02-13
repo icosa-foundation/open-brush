@@ -102,14 +102,26 @@ namespace TiltBrush
             // Make sure Poly gallery button starts at greyscale when panel is initialized
             m_PolyGalleryRenderer.material.SetFloat("_Grayscale", 1);
 
-            App.IcosaAssetCatalog.RequestRefresh(m_CurrentSet);
+            App.IcosaAssetCatalog.RequestAutoRefresh(m_CurrentSet);
             App.IcosaAssetCatalog.CatalogChanged += OnIcosaAssetCatalogChanged;
         }
 
         void SetVisiblePolySet(IcosaSetType type)
         {
             m_CurrentSet = type;
-            App.IcosaAssetCatalog.RequestRefresh(m_CurrentSet);
+            RefreshCurrentSet(false);
+        }
+
+        public void RefreshCurrentSet(bool forced)
+        {
+            if (forced)
+            {
+                App.IcosaAssetCatalog.RequestForcedRefresh(m_CurrentSet);
+            }
+            else
+            {
+                App.IcosaAssetCatalog.RequestAutoRefresh(m_CurrentSet);
+            }
             ResetPageIndex();
             RefreshPage();
         }
@@ -306,5 +318,13 @@ namespace TiltBrush
             SetVisiblePolySet(rType);
         }
 
+        public void SetInitialSearchText(KeyboardPopupButton btn)
+        {
+            btn.m_CommandParam = (int)m_CurrentSet;
+            KeyboardPopUpWindow.m_InitialText = CurrentQuery.SearchText;
+        }
+
+        public IcosaAssetCatalog.QueryParameters CurrentQuery =>
+            App.IcosaAssetCatalog.QueryOptionParametersForSet(m_CurrentSet);
     }
 } // namespace TiltBrush

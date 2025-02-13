@@ -23,6 +23,154 @@ using Newtonsoft.Json;
 
 namespace TiltBrush
 {
+    public static class ChoicesHelper
+    {
+        public static bool IsValidChoice<T>(string choice) where T : class
+        {
+            var fieldValues = typeof(T)
+                .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+                .Where(f => f.FieldType == typeof(string))
+                .Select(f => (string)f.GetValue(null))
+                .ToArray();
+            return fieldValues.Contains(choice);
+        }
+
+        public static string[] GetAllChoices<T>() where T : class
+        {
+            return typeof(T)
+                .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+                .Where(f => f.FieldType == typeof(string))
+                .Select(f => (string)f.GetValue(null))
+                .ToArray();
+        }
+    }
+
+    public static class CategoryChoices
+    {
+        public const string
+            ANY = "ANY",
+            ANIMALS = "ANIMALS",
+            ARCHITECTURE = "ARCHITECTURE",
+            ART = "ART",
+            CULTURE = "CULTURE",
+            EVENTS = "EVENTS",
+            FOOD = "FOOD",
+            HISTORY = "HISTORY",
+            HOME = "HOME",
+            MISCELLANEOUS = "MISCELLANEOUS",
+            NATURE = "NATURE",
+            OBJECTS = "OBJECTS",
+            PEOPLE = "PEOPLE",
+            PLACES = "PLACES",
+            SCIENCE = "SCIENCE",
+            SPORTS = "SPORTS",
+            TECH = "TECH",
+            TRANSPORT = "TRANSPORT",
+            TRAVEL = "TRAVEL";
+
+        public static string GetFriendlyName(string category)
+        {
+            return category switch
+            {
+                "ANY" => "Any",
+                "ANIMALS" => "Animals & Pets",
+                "ARCHITECTURE" => "Architecture",
+                "ART" => "Art",
+                "CULTURE" => "Culture & Humanity",
+                "EVENTS" => "Current Events",
+                "FOOD" => "Food & Drink",
+                "HISTORY" => "History",
+                "HOME" => "Furniture & Home",
+                "MISCELLANEOUS" => "Miscellaneous",
+                "NATURE" => "Nature",
+                "OBJECTS" => "Objects",
+                "PEOPLE" => "People & Characters",
+                "PLACES" => "Places & Scenes",
+                "SCIENCE" => "Science",
+                "SPORTS" => "Sports & Fitness",
+                "TECH" => "Tools & Technology",
+                "TRANSPORT" => "Transport",
+                "TRAVEL" => "Travel & Leisure",
+                _ => throw new ArgumentOutOfRangeException(nameof(category), category, null)
+            };
+        }
+    }
+
+    public static class LicenseChoices
+    {
+        public const string
+            ANY = "",
+            CC0 = "CC0",
+            CREATIVE_COMMONS_BY = "CREATIVE_COMMONS_BY",
+            CREATIVE_COMMONS_BY_NC = "CREATIVE_COMMONS_BY_NC",
+            CREATIVE_COMMONS_BY_ND = "CREATIVE_COMMONS_BY_ND",
+            ALL_RIGHTS_RESERVED = "ALL_RIGHTS_RESERVED";
+
+        public static string GetFriendlyName(string licence)
+        {
+            return licence switch
+            {
+                "ANY" => "Any",
+                "CC0" => "CC0",
+                "CREATIVE_COMMONS_BY" => "Creative Commons BY",
+                "CREATIVE_COMMONS_BY_NC" => "Creative Commons BY-NC",
+                "CREATIVE_COMMONS_BY_ND" => "Creative Commons BY-ND",
+                "ALL_RIGHTS_RESERVED" => "All Rights Reserved",
+                _ => throw new ArgumentOutOfRangeException(nameof(licence), licence, null)
+            };
+        }
+    }
+
+    public class OrderByChoices
+    {
+        public const string
+            NEWEST = "NEWEST",
+            OLDEST = "OLDEST",
+            BEST = "BEST",
+            TRIANGLE_COUNT = "TRIANGLE_COUNT",
+            LIKED_TIME = "LIKED_TIME",
+            CREATE_TIME = "CREATE_TIME",
+            UPDATE_TIME = "UPDATE_TIME",
+            LIKES = "LIKES",
+            DOWNLOADS = "DOWNLOADS",
+            DISPLAY_NAME = "DISPLAY_NAME",
+            AUTHOR_NAME = "AUTHOR_NAME";
+
+        public static string GetFriendlyName(string orderBy)
+        {
+            return orderBy switch
+            {
+                "NEWEST" => "Newest",
+                "OLDEST" => "Oldest",
+                "BEST" => "Best",
+                "TRIANGLE_COUNT" => "Triangle Count",
+                "LIKED_TIME" => "Recently Liked",
+                "CREATE_TIME" => "Creation Time",
+                "UPDATE_TIME" => "Update Time",
+                "LIKES" => "Likes",
+                "DOWNLOADS" => "Downloads",
+                "DISPLAY_NAME" => "Name",
+                "AUTHOR_NAME" => "Author",
+                _ => throw new ArgumentOutOfRangeException(nameof(orderBy), orderBy, null)
+            };
+        }
+    }
+
+    public static class FormatChoices
+    {
+        public const string
+            ANY = "",
+            GLTF2 = "GLTF2",
+            TILT = "TILT";
+    }
+
+    public static class CuratedChoices
+    {
+        public const string
+            ANY = "",
+            TRUE = "true",
+            FALSE = "false";
+    }
 
     /// Used as an accessor for files downloaded from Poly and cached on local storage.
     public partial class IcosaAssetCatalog : MonoBehaviour
@@ -31,6 +179,7 @@ namespace TiltBrush
         const float kThumbnailFetchRate = 15;
         const int kThumbnailFetchMaxCount = 30;
         const int kThumbnailReadRate = 4;
+        private const int DEFAULT_MODEL_TRIANGLE_COUNT_MAX = 20000;
 
         // This may be a bit broader than an asset id, but it's a safe set of
         // filename characters.
@@ -200,6 +349,15 @@ namespace TiltBrush
                 }
             }
         }
+        public struct QueryParameters
+        {
+            public string SearchText;
+            public int TriangleCountMax;
+            public string License;
+            public string OrderBy;
+            public string Format;
+            public string Curated;
+        }
 
         private static Vector3? GetCameraForward(JToken cameraParams)
         {
@@ -223,6 +381,7 @@ namespace TiltBrush
             public IEnumerator<Null> m_FetchMetadataCoroutine;
             public bool m_RefreshRequested;
             public float m_CooldownTimer;
+            public QueryParameters QueryParams;
         }
 
         /// A request to pull a Model into memory.
@@ -282,13 +441,26 @@ namespace TiltBrush
             return m_IsLoadingMemo.Contains(assetId);
         }
 
-        public void RequestRefresh(IcosaSetType type)
+        public void RequestAutoRefresh(IcosaSetType type)
         {
             // We don't update featured except on startup
             if (type != IcosaSetType.Featured && App.IcosaIsLoggedIn)
             {
                 m_AssetSetByType[type].m_RefreshRequested = true;
             }
+        }
+
+        public void RequestForcedRefresh(IcosaSetType type)
+        {
+            var set = m_AssetSetByType[type];
+            if (set.m_FetchMetadataCoroutine != null)
+            {
+                StopCoroutine(set.m_FetchMetadataCoroutine);
+                set.m_FetchMetadataCoroutine = null;
+            }
+            set.m_Models.Clear();
+            set.m_CooldownTimer = -1f;
+            set.m_RefreshRequested = true;
         }
 
         public void Init()
@@ -339,15 +511,53 @@ namespace TiltBrush
             {
                 {
                     IcosaSetType.User,
-                    new AssetSet()
+                    new AssetSet
+                    {
+                        QueryParams = new QueryParameters
+                        {
+                            SearchText = "",
+                            TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
+                            License = LicenseChoices.ANY,
+                            OrderBy = OrderByChoices.NEWEST,
+                            Format = FormatChoices.GLTF2,
+                            Curated = CuratedChoices.ANY,
+                        }
+                    }
                 },
                 {
                     IcosaSetType.Liked,
-                    new AssetSet()
+                    new AssetSet
+                    {
+                        QueryParams = new QueryParameters
+                        {
+                            SearchText = "",
+                            TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
+                            License = LicenseChoices.CREATIVE_COMMONS_BY,
+                            OrderBy = OrderByChoices.LIKED_TIME,
+                            Format = FormatChoices.GLTF2,
+                            Curated = CuratedChoices.ANY,
+                        }
+                    }
                 },
+                // Old way - newest curated
+                // "?curated=true&orderBy=NEWEST"
+                // For now try just sorting by "best"
+                // Something like orderBy=TRENDING would be good - BEST but weighted by recency
                 {
                     IcosaSetType.Featured,
-                    new AssetSet { m_RefreshRequested = true }
+                    new AssetSet
+                    {
+                        m_RefreshRequested = true,
+                        QueryParams = new QueryParameters
+                        {
+                            SearchText = "",
+                            TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
+                            License = LicenseChoices.CREATIVE_COMMONS_BY,
+                            OrderBy = OrderByChoices.BEST,
+                            Format = FormatChoices.GLTF2,
+                            Curated = CuratedChoices.ANY,
+                        }
+                    }
                 }
             };
 
@@ -867,13 +1077,14 @@ namespace TiltBrush
             {
                 m_AssetSetByType[type].m_Models = models;
             }
-            AssetLister lister = VrAssetService.m_Instance.ListAssets(type);
+            AssetLister lister = VrAssetService.m_Instance.ListAssets(type, QueryOptionParametersForSet(type));
             bool firstPass = true;
             while (lister.HasMore || firstPass)
             {
                 firstPass = false;
                 using (var cr = lister.NextPage(models, m_ThumbnailSuffix))
                 {
+                    int prevCount = models.Count;
                     while (true)
                     {
                         try
@@ -889,6 +1100,23 @@ namespace TiltBrush
                             Debug.LogException(e);
                             yield break;
                         }
+                        if (models.Count - prevCount > 5)
+                        {
+                            // As the assets may already have models loaded into them, just add any new models and
+                            // remove old ones.
+                            var newIds = new HashSet<string>(models.Select(m => m.AssetId));
+                            var oldIds = new HashSet<string>(m_AssetSetByType[type].m_Models.Select(m => m.AssetId));
+                            // These must be reified; if they are left as lazy IEnumerables, O(n^2) behavior results
+                            HashSet<string> toAdd = SetMinus(newIds, oldIds);
+                            HashSet<string> toRemove = SetMinus(oldIds, newIds);
+                            m_AssetSetByType[type].m_Models.RemoveAll(m => toRemove.Contains(m.AssetId));
+                            m_AssetSetByType[type].m_Models.InsertRange(0, models.Where(m => toAdd.Contains(m.AssetId)));
+                            if (CatalogChanged != null)
+                            {
+                                CatalogChanged();
+                            }
+                            prevCount = models.Count;
+                        }
                         yield return cr.Current;
                     }
                 }
@@ -897,18 +1125,20 @@ namespace TiltBrush
                     break;
                 }
             }
-            // As the assets may already have models loaded into them, just add any new models and
-            // remove old ones.
-            var newIds = new HashSet<string>(models.Select(m => m.AssetId));
-            var oldIds = new HashSet<string>(m_AssetSetByType[type].m_Models.Select(m => m.AssetId));
-            // These must be reified; if they are left as lazy IEnumerables, O(n^2) behavior results
-            HashSet<string> toAdd = SetMinus(newIds, oldIds);
-            HashSet<string> toRemove = SetMinus(oldIds, newIds);
-            m_AssetSetByType[type].m_Models.RemoveAll(m => toRemove.Contains(m.AssetId));
-            m_AssetSetByType[type].m_Models.InsertRange(0, models.Where(m => toAdd.Contains(m.AssetId)));
-            if (CatalogChanged != null)
             {
-                CatalogChanged();
+                // As the assets may already have models loaded into them, just add any new models and
+                // remove old ones.
+                var newIds = new HashSet<string>(models.Select(m => m.AssetId));
+                var oldIds = new HashSet<string>(m_AssetSetByType[type].m_Models.Select(m => m.AssetId));
+                // These must be reified; if they are left as lazy IEnumerables, O(n^2) behavior results
+                HashSet<string> toAdd = SetMinus(newIds, oldIds);
+                HashSet<string> toRemove = SetMinus(oldIds, newIds);
+                m_AssetSetByType[type].m_Models.RemoveAll(m => toRemove.Contains(m.AssetId));
+                m_AssetSetByType[type].m_Models.InsertRange(0, models.Where(m => toAdd.Contains(m.AssetId)));
+                if (CatalogChanged != null)
+                {
+                    CatalogChanged();
+                }
             }
         }
 
@@ -1005,6 +1235,60 @@ namespace TiltBrush
             {
                 model.UnloadModel();
             }
+        }
+
+        public QueryParameters QueryOptionParametersForSet(IcosaSetType set)
+        {
+            return m_AssetSetByType[set].QueryParams;
+        }
+
+        public void UpdateSearchText(IcosaSetType set, string mLastInput)
+        {
+            var queryParams = QueryOptionParametersForSet(set);
+            queryParams.SearchText = mLastInput;
+            m_AssetSetByType[set].QueryParams = queryParams;
+            var panel = (IcosaPanel)PanelManager.m_Instance.GetActivePanelByType(BasePanel.PanelType.Icosa);
+            panel.RefreshCurrentSet(true);
+        }
+
+        public void UpdateTriangleCountMax(IcosaSetType set, int triangleCountMax)
+        {
+            var queryParams = QueryOptionParametersForSet(set);
+            queryParams.TriangleCountMax = triangleCountMax;
+            m_AssetSetByType[set].QueryParams = queryParams;
+            RequestForcedRefresh(set);
+        }
+
+        public void UpdateLicense(IcosaSetType set, string license)
+        {
+            var queryParams = QueryOptionParametersForSet(set);
+            queryParams.License = license;
+            m_AssetSetByType[set].QueryParams = queryParams;
+            RequestForcedRefresh(set);
+        }
+
+        public void UpdateOrderBy(IcosaSetType set, string orderBy)
+        {
+            var queryParams = QueryOptionParametersForSet(set);
+            queryParams.OrderBy = orderBy;
+            m_AssetSetByType[set].QueryParams = queryParams;
+            RequestForcedRefresh(set);
+        }
+
+        public void UpdateFormat(IcosaSetType set, string format)
+        {
+            var queryParams = QueryOptionParametersForSet(set);
+            queryParams.Format = format;
+            m_AssetSetByType[set].QueryParams = queryParams;
+            RequestForcedRefresh(set);
+        }
+
+        public void UpdateCurated(IcosaSetType set, string curated)
+        {
+            var queryParams = QueryOptionParametersForSet(set);
+            queryParams.Curated = curated;
+            m_AssetSetByType[set].QueryParams = queryParams;
+            RequestAutoRefresh(set);
         }
     }
 

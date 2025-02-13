@@ -323,8 +323,6 @@ namespace TiltBrush
         TaskAndCts<(string url, long bytes)> m_UploadTask = null;
         private string m_IcosaAccountId;
         private int m_MaxPolySketchTriangles;
-        private int m_MaxPolyModelTriangles;
-        private const int m_DefaultMaxPolyModelTriangles = 20000;
 
         private enum IcosaStatus
         {
@@ -391,7 +389,6 @@ namespace TiltBrush
                 m_IcosaStatus = IcosaStatus.Disabled;
             }
             m_MaxPolySketchTriangles = QualityControls.m_Instance.AppQualityLevels.MaxPolySketchTriangles;
-            m_MaxPolyModelTriangles = m_DefaultMaxPolyModelTriangles;
         }
 
         /// Consume the result of the previous upload (if any)
@@ -868,7 +865,7 @@ namespace TiltBrush
                     break;
             }
 
-            string uri = $"{IcosaApiRoot}{filteredUriPath}&pageSize={m_AssetsPerPage}";
+            string uri = $"{IcosaApiRoot}{filteredUriPath}&pageSize={m_AssetsPerPage}&";
             return new AssetLister(uri, errorMessage);
         }
 
@@ -902,27 +899,22 @@ namespace TiltBrush
             infos.Insert(index, new IcosaSceneFileInfo(json.Root));
         }
 
-        public AssetLister ListAssets(IcosaSetType type)
+        public AssetLister ListAssets(IcosaSetType type, IcosaAssetCatalog.QueryParameters queryParams)
         {
-            string uri = IcosaApiRoot;
-
-            switch (type)
+            string uri = type switch
             {
-                case IcosaSetType.Liked:
-                    uri += $"{kUserLikesUri}?orderBy=LIKED_TIME&license={kCreativeCommonsLicense}";
-                    break;
-                case IcosaSetType.User:
-                    uri += $"{kUserAssetsUri}?orderBy=NEWEST";
-                    break;
-                case IcosaSetType.Featured:
-                    // Old way - newest curated
-                    // uri += $"{kListAssetsUri}" + $"?curated=true&orderBy=NEWEST";
-                    // For now try just sorting by "best"
-                    uri += $"{kListAssetsUri}" + $"?orderBy=BEST&license={kCreativeCommonsLicense}";
-                    // Something like orderBy=TRENDING would be good - BEST but weighted by recency
-                    break;
-            }
-            uri += $"&format=GLTF2&pageSize={m_AssetsPerPage}&triangleCountMax={m_MaxPolyModelTriangles}";
+                IcosaSetType.Liked => $"{IcosaApiRoot}{kUserLikesUri}?",
+                IcosaSetType.User => $"{IcosaApiRoot}{kUserAssetsUri}?",
+                IcosaSetType.Featured => $"{IcosaApiRoot}{kListAssetsUri}?",
+                _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+            };
+            uri += $"format={queryParams.Format}&";
+            uri += $"pageSize={m_AssetsPerPage}&";
+            uri += $"triangleCountMax={queryParams.TriangleCountMax}&";
+            uri += $"orderBy={queryParams.OrderBy}&";
+            if (!string.IsNullOrEmpty(queryParams.SearchText))  uri += $"name={queryParams.SearchText}&";
+            if (!string.IsNullOrEmpty(queryParams.License)) uri += $"license={queryParams.License}&";
+            if (!string.IsNullOrEmpty(queryParams.Curated)) uri += $"curated={queryParams.Curated}&";
             return new AssetLister(uri, errorMessage: "Failed to connect to Icosa.");
         }
 
