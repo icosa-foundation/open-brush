@@ -435,6 +435,8 @@ namespace TiltBrush
             {
                 using (UnityWebRequest www = new UnityWebRequest(m_Uri, m_Method))
                 {
+                    // Strip trailing ampersands
+                    m_Uri = m_Uri.TrimEnd('&');
                     UploadHandler payload = payloadCreator?.Invoke();
                     www.uploadHandler = payload;
                     www.disposeUploadHandlerOnDispose = true; // the default, but just to be expicit about it
