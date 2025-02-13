@@ -5878,9 +5878,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Like       sketches
+  m_text: 'Like sketches
 
-    on Poly to
+    on Icosa to
 
     see them here'
   m_isRightToLeft: 0
@@ -10896,7 +10896,7 @@ MonoBehaviour:
       m_Calls: []
   m_text: 'Sign in to access
 
-    Poly sketches'
+    Icosa sketches'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
   m_sharedMaterial: {fileID: 2133298, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
@@ -12440,7 +12440,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Error gathering sketches from Poly
+  m_text: 'Error gathering sketches from Icosa
 
     <color=#969696>
 
@@ -14979,7 +14979,7 @@ MonoBehaviour:
       m_Calls: []
   m_text: 'Error Connecting
 
-    to Poly'
+    to Icosa'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
   m_sharedMaterial: {fileID: 2133298, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
