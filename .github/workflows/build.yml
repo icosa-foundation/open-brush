@@ -1154,6 +1154,10 @@ jobs:
     name: Publish Oculus Quest 2+ Release ArborXR
     needs: [configuration, build]
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
       - name: Download Build Artifacts (Oculus Quest 2+)
@@ -1180,20 +1184,23 @@ jobs:
           unzip arborxr-cli.zip
           ln -s arborxr-cli-linux-* arborxr-cli
           chmod 755 arborxr-cli
-          ./arborxr-cli
 
           if [ "$PRERELEASE" == "false" ]
           then
-            echo ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_LIVE_CHANNEL OpenBrush_Quest_$VERSION.apk
+            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_LIVE_CHANNEL OpenBrush_Quest_$VERSION.apk
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            echo ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_BETA_CHANNEL OpenBrush_Quest_$VERSION.apk --release-notes "${CHANGELOG}"
+            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_BETA_CHANNEL OpenBrush_Quest_$VERSION.apk --release-notes "${CHANGELOG}"
           fi
 
   publish_oculus_quest1_arborxr:
     name: Publish Oculus Quest 1 Release ArborXR
     needs: [configuration, build]
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
       - name: Download Build Artifacts (Oculus Quest 1)
@@ -1223,10 +1230,10 @@ jobs:
 
           if [ "$PRERELEASE" == "false" ]
           then
-            echo ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_LIVE_CHANNEL OpenBrush_Quest1_$VERSION.apk
+            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_LIVE_CHANNEL OpenBrush_Quest1_$VERSION.apk
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            echo ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_BETA_CHANNEL OpenBrush_Quest1_$VERSION.apk --release-notes "${CHANGELOG}"
+            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_BETA_CHANNEL OpenBrush_Quest1_$VERSION.apk --release-notes "${CHANGELOG}"
           fi
 
   publish_oculus_rift:
