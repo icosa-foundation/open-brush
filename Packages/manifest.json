@@ -70,7 +70,10 @@
       "name": "OpenUPM",
       "url": "https://package.openupm.com",
       "scopes": [
-        "com.atteneder"
+        "com.atteneder",
+        "org.nuget.google",
+        "org.nuget.sharpziplib",
+        "org.nuget.system"
       ]
     },
     {
@@ -78,15 +81,6 @@
       "url": "https://npm-registry.vive.com",
       "scopes": [
         "com.htc.upm"
-      ]
-    },
-    {
-      "name": "Unity NuGet",
-      "url": "https://unitynuget-registry.azurewebsites.net",
-      "scopes": [
-        "org.nuget.google",
-        "org.nuget.sharpziplib",
-        "org.nuget.system"
       ]
     },
     {
