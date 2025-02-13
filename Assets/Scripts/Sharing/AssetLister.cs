@@ -78,7 +78,7 @@ namespace TiltBrush
         public IEnumerator<Null> NextPage(List<IcosaAssetCatalog.AssetDetails> files,
                                           string thumbnailSuffix)
         {
-            string uri = m_PageToken == null ? m_Uri : $"{m_Uri}&pageToken={m_PageToken}";
+            string uri = m_PageToken == null ? m_Uri : $"{m_Uri}pageToken={m_PageToken}&";
 
             WebRequest request = new WebRequest(uri, App.Instance.IcosaToken);
             using (var cr = request.SendAsync().AsIeNull())
