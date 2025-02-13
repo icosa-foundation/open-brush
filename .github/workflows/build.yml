@@ -1321,6 +1321,49 @@ jobs:
             ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 3 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
           fi
 
+  publish_pico_arborxr:
+    name: Publish Pico Releases ArborXR
+    needs: [configuration, build]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Download Build Artifacts (Android Pico)
+        uses: actions/download-artifact@v4
+        with:
+          name: Android Pico
+          path: build_android_pico
+      - name: Publish Pico Builds
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
+          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
+          ARBORXR_ACCESS_TOKEN: ${{ secrets.ARBORXR_ACCESS_TOKEN }}
+          ARBORXR_ORG_ID: ${{ vars.ARBORXR_ORG_ID }}
+          ARBORXR_APP_ID: ${{ vars.ARBORXR_PICO_APP_ID }}
+          ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_PICO_LIVE_CHANNEL }}
+          ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_PICO_BETA_CHANNEL }}
+        run: |
+          mkdir releases
+          mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
+
+          cd releases
+          wget -O arborxr-cli.zip https://graphql.xrdm.app/download/system-content/channel/fe7633a5-d733-4885-8b3c-580c11c4842d
+          unzip arborxr-cli.zip
+          ln -s arborxr-cli-linux-* arborxr-cli
+          chmod 755 arborxr-cli
+
+          if [ "$PRERELEASE" == "false" ]
+          then
+            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_LIVE_CHANNEL OpenBrush_Pico_$VERSION.apk
+          else
+            CHANGELOG="${RAW_CHANGELOG}"
+            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_BETA_CHANNEL OpenBrush_Pico_$VERSION.apk --release-notes "${CHANGELOG}"
+          fi
+
   publish_ios_zapbox:
     name: Publish Zapbox iOS
     needs: [configuration, build]
