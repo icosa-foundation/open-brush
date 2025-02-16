@@ -76,7 +76,7 @@ namespace TiltBrush
         }
 
         public IEnumerator<Null> NextPage(List<IcosaAssetCatalog.AssetDetails> files,
-                                          string thumbnailSuffix)
+                                          string thumbnailSuffix, bool includePrivate = false)
         {
             string uri = m_PageToken == null ? m_Uri : $"{m_Uri}pageToken={m_PageToken}&";
 
@@ -109,13 +109,14 @@ namespace TiltBrush
             {
                 try
                 {
-                    if (asset["visibility"].ToString() == "PRIVATE")
+                    if (!includePrivate && asset["visibility"].ToString() == "PRIVATE")
                     {
                         continue;
                     }
 
-                    // We now don't filter the liked Icosa objects, but we don't want to return liked Tilt Brush
-                    // sketches so in this section we filter out anything with a Tilt file in it.
+                    // We don't want to return liked Tilt Brush sketches
+                    // so in this section we filter out anything with a Tilt file in it.
+                    // TODO We should record the generating app and allow filtering by that
                     bool skipObject = false;
                     foreach (var format in asset["formats"])
                     {

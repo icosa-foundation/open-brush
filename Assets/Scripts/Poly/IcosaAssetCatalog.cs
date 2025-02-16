@@ -45,10 +45,10 @@ namespace TiltBrush
         }
     }
 
-    public static class CategoryChoices
+    public class CategoryChoices
     {
-        public const string
-            ANY = "ANY",
+        public static string
+            ANY = "",
             ANIMALS = "ANIMALS",
             ARCHITECTURE = "ARCHITECTURE",
             ART = "ART",
@@ -96,9 +96,9 @@ namespace TiltBrush
         }
     }
 
-    public static class LicenseChoices
+    public class LicenseChoices
     {
-        public const string
+        public static string
             ANY = "",
             CC0 = "CC0",
             CREATIVE_COMMONS_BY = "CREATIVE_COMMONS_BY",
@@ -124,8 +124,8 @@ namespace TiltBrush
     public class OrderByChoices
     {
         public const string
-            NEWEST = "NEWEST",
-            OLDEST = "OLDEST",
+            NEWEST = "NEWEST",  // Same as CREATE_TIME
+            OLDEST = "OLDEST",  // Same as -CREATE_TIME
             BEST = "BEST",
             TRIANGLE_COUNT = "TRIANGLE_COUNT",
             LIKED_TIME = "LIKED_TIME",
@@ -149,24 +149,29 @@ namespace TiltBrush
                 "UPDATE_TIME" => "Update Time",
                 "LIKES" => "Likes",
                 "DOWNLOADS" => "Downloads",
-                "DISPLAY_NAME" => "Name",
+                "DISPLAY_NAME" => "Title",
                 "AUTHOR_NAME" => "Author",
                 _ => throw new ArgumentOutOfRangeException(nameof(orderBy), orderBy, null)
             };
         }
     }
 
-    public static class FormatChoices
+    public class FormatChoices
     {
-        public const string
+        public static string
             ANY = "",
+            TILT = "TILT",
+            BLOCKS = "BLOCKS",
+            GLTF = "GLTF",
+            GLTF1 = "GLTF1",
             GLTF2 = "GLTF2",
-            TILT = "TILT";
+            OBJ = "OBJ",
+            FBX = "FBX";
     }
 
-    public static class CuratedChoices
+    public class CuratedChoices
     {
-        public const string
+        public static string
             ANY = "",
             TRUE = "true",
             FALSE = "false";
@@ -357,6 +362,7 @@ namespace TiltBrush
             public string OrderBy;
             public string Format;
             public string Curated;
+            public string Category;
         }
 
         private static Vector3? GetCameraForward(JToken cameraParams)
@@ -521,6 +527,7 @@ namespace TiltBrush
                             OrderBy = OrderByChoices.NEWEST,
                             Format = FormatChoices.GLTF2,
                             Curated = CuratedChoices.ANY,
+                            Category = CategoryChoices.ANY
                         }
                     }
                 },
@@ -536,6 +543,7 @@ namespace TiltBrush
                             OrderBy = OrderByChoices.LIKED_TIME,
                             Format = FormatChoices.GLTF2,
                             Curated = CuratedChoices.ANY,
+                            Category = CategoryChoices.ANY
                         }
                     }
                 },
@@ -556,6 +564,7 @@ namespace TiltBrush
                             OrderBy = OrderByChoices.BEST,
                             Format = FormatChoices.GLTF2,
                             Curated = CuratedChoices.ANY,
+                            Category = CategoryChoices.ANY
                         }
                     }
                 }
@@ -1082,7 +1091,13 @@ namespace TiltBrush
             while (lister.HasMore || firstPass)
             {
                 firstPass = false;
-                using (var cr = lister.NextPage(models, m_ThumbnailSuffix))
+                // TODO - it makes sense for a user to be allowed to access their own private assets
+                // But it might break assumptions in the rest of the code and in other apps.
+                // As well as presenting some challenges in terms of non-surprising behaviour
+                // So for now, just don't show them.
+                // bool includePrivate = type == IcosaSetType.User;
+                bool includePrivate = false;
+                using (var cr = lister.NextPage(models, m_ThumbnailSuffix, includePrivate))
                 {
                     int prevCount = models.Count;
                     while (true)
@@ -1242,53 +1257,85 @@ namespace TiltBrush
             return m_AssetSetByType[set].QueryParams;
         }
 
-        public void UpdateSearchText(IcosaSetType set, string mLastInput)
+        private void RefreshPanel()
+        {
+            var panel = (IcosaPanel)PanelManager.m_Instance.GetActivePanelByType(BasePanel.PanelType.Icosa);
+            if (panel == null) panel = (IcosaPanel)PanelManager.m_Instance.GetActivePanelByType(BasePanel.PanelType.IcosaMobile);
+            if (panel != null)
+            {
+                panel.RefreshCurrentSet(true);
+            }
+        }
+
+        public void UpdateSearchText(IcosaSetType set, string mLastInput, bool requestRefresh = false)
         {
             var queryParams = QueryOptionParametersForSet(set);
             queryParams.SearchText = mLastInput;
             m_AssetSetByType[set].QueryParams = queryParams;
-            var panel = (IcosaPanel)PanelManager.m_Instance.GetActivePanelByType(BasePanel.PanelType.Icosa);
-            panel.RefreshCurrentSet(true);
+            if (requestRefresh) RefreshPanel();
         }
 
-        public void UpdateTriangleCountMax(IcosaSetType set, int triangleCountMax)
+        public void UpdateTriangleCountMax(IcosaSetType set, int triangleCountMax, bool requestRefresh = false)
         {
             var queryParams = QueryOptionParametersForSet(set);
             queryParams.TriangleCountMax = triangleCountMax;
             m_AssetSetByType[set].QueryParams = queryParams;
-            RequestForcedRefresh(set);
+            if (requestRefresh) RefreshPanel();
         }
 
-        public void UpdateLicense(IcosaSetType set, string license)
+        public void UpdateLicense(IcosaSetType set, string license, bool requestRefresh = false)
         {
             var queryParams = QueryOptionParametersForSet(set);
-            queryParams.License = license;
-            m_AssetSetByType[set].QueryParams = queryParams;
-            RequestForcedRefresh(set);
+            if (ChoicesHelper.IsValidChoice<LicenseChoices>(license))
+            {
+                queryParams.License = license;
+                m_AssetSetByType[set].QueryParams = queryParams;
+                if (requestRefresh) RefreshPanel();
+            }
         }
 
-        public void UpdateOrderBy(IcosaSetType set, string orderBy)
+        public void UpdateOrderBy(IcosaSetType set, string orderBy, bool requestRefresh = false)
         {
             var queryParams = QueryOptionParametersForSet(set);
-            queryParams.OrderBy = orderBy;
-            m_AssetSetByType[set].QueryParams = queryParams;
-            RequestForcedRefresh(set);
+            if (ChoicesHelper.IsValidChoice<OrderByChoices>(orderBy))
+            {
+                queryParams.OrderBy = orderBy;
+                m_AssetSetByType[set].QueryParams = queryParams;
+                if (requestRefresh) RefreshPanel();
+            }
         }
 
-        public void UpdateFormat(IcosaSetType set, string format)
+        public void UpdateFormat(IcosaSetType set, string format, bool requestRefresh = false)
         {
             var queryParams = QueryOptionParametersForSet(set);
-            queryParams.Format = format;
-            m_AssetSetByType[set].QueryParams = queryParams;
-            RequestForcedRefresh(set);
+            if (ChoicesHelper.IsValidChoice<FormatChoices>(format))
+            {
+                queryParams.Format = format;
+                m_AssetSetByType[set].QueryParams = queryParams;
+                if (requestRefresh) RefreshPanel();
+            }
         }
 
-        public void UpdateCurated(IcosaSetType set, string curated)
+        public void UpdateCurated(IcosaSetType set, string curated, bool requestRefresh = false)
         {
             var queryParams = QueryOptionParametersForSet(set);
-            queryParams.Curated = curated;
-            m_AssetSetByType[set].QueryParams = queryParams;
-            RequestAutoRefresh(set);
+            if (ChoicesHelper.IsValidChoice<CuratedChoices>(curated))
+            {
+                queryParams.Curated = curated;
+                m_AssetSetByType[set].QueryParams = queryParams;
+                if (requestRefresh) RefreshPanel();
+            }
+        }
+
+        public void UpdateCategory(IcosaSetType set, string category, bool requestRefresh = false)
+        {
+            var queryParams = QueryOptionParametersForSet(set);
+            if (ChoicesHelper.IsValidChoice<CategoryChoices>(category))
+            {
+                queryParams.Category = category;
+                m_AssetSetByType[set].QueryParams = queryParams;
+                if (requestRefresh) RefreshPanel();
+            }
         }
     }
 

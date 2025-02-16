@@ -98,12 +98,12 @@ namespace TiltBrush
         [SerializeField] private float m_InitialValue = 0.5f;
         [SerializeField] private TextMeshPro minText;
         [SerializeField] private TextMeshPro maxText;
-        [SerializeField] private TextMeshPro valueText;
+        [SerializeField] protected TextMeshPro valueText;
         public SliderTypes SliderType;
 
         [SerializeField] public sliderEvent onUpdateValue;
 
-        public float CurrentValueAbsolute => Mathf.Lerp(Min, Max, m_CurrentValue);
+        public virtual float CurrentValueAbsolute => Mathf.Lerp(Min, Max, m_CurrentValue);
 
         float remap(float s, float a1, float a2, float b1, float b2)
         {
@@ -131,7 +131,7 @@ namespace TiltBrush
             valueText.text = FormatValue(CurrentValueAbsolute);
         }
 
-        private string FormatValue(float val)
+        protected virtual string FormatValue(float val)
         {
             if (SliderType == SliderTypes.Int)
             {
@@ -146,7 +146,7 @@ namespace TiltBrush
             return "";
         }
 
-        override public void UpdateValue(float fValue)
+        public override void UpdateValue(float fValue)
         {
             var val = remap(fValue, 0, 1, Min, Max);
             _UpdateValueAbsolute(val);
@@ -163,7 +163,7 @@ namespace TiltBrush
         private void _UpdateValueAbsolute(float fValue)
         {
             valueText.text = FormatValue(fValue);
-            onUpdateValue.Invoke(new Vector3(m_Param1, m_Param2, fValue));
+            if (onUpdateValue != null) onUpdateValue.Invoke(new Vector3(m_Param1, m_Param2, fValue));
             m_CurrentValue = Mathf.InverseLerp(Min, Max, fValue);
             SetSliderPositionToReflectValue();
         }

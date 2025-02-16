@@ -47,6 +47,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_NoPolyConnectionMessage;
 
         private IcosaSetType m_CurrentSet;
+        public IcosaSetType CurrentSet => m_CurrentSet;
         private bool m_LoggedIn;
 
         // State for automatically loading models.

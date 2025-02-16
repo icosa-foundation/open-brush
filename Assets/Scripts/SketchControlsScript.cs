@@ -4913,7 +4913,7 @@ namespace TiltBrush
                 case GlobalCommands.OpenIcosaPanelSearchPopup:
                 {
                     IcosaSetType currentSet = (IcosaSetType)iParam1;
-                    App.IcosaAssetCatalog.UpdateSearchText(currentSet, KeyboardPopUpWindow.m_LastInput);
+                    App.IcosaAssetCatalog.UpdateSearchText(currentSet, KeyboardPopUpWindow.m_LastInput, requestRefresh: true);
                     DismissPopupOnCurrentGazeObject(false);
                     break;
                 }

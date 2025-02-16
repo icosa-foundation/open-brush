@@ -915,6 +915,7 @@ namespace TiltBrush
             if (!string.IsNullOrEmpty(queryParams.SearchText))  uri += $"name={queryParams.SearchText}&";
             if (!string.IsNullOrEmpty(queryParams.License)) uri += $"license={queryParams.License}&";
             if (!string.IsNullOrEmpty(queryParams.Curated)) uri += $"curated={queryParams.Curated}&";
+            if (!string.IsNullOrEmpty(queryParams.Category)) uri += $"category={queryParams.Category}&";
             return new AssetLister(uri, errorMessage: "Failed to connect to Icosa.");
         }
 
