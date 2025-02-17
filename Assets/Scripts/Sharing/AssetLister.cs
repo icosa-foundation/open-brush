@@ -134,6 +134,7 @@ namespace TiltBrush
                     lastAsset = asset;
                     string accountName = asset["authorName"]?.ToString() ?? "Unknown";
                     files.Add(new IcosaAssetCatalog.AssetDetails(asset, accountName, thumbnailSuffix));
+                    App.IcosaAssetCatalog.SetJsonForAsset(asset["assetId"].ToString(), asset);
                 }
                 catch (NullReferenceException)
                 {

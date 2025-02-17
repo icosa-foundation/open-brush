@@ -33,6 +33,7 @@ namespace TiltBrush
         private string m_URI;
         private IcosaRawAsset m_Asset;
         private JsonSerializer m_JsonSerializer;
+        private JObject m_ListerJson;
 
         /// Converts a property from snake case to camel case.
         public class SnakeToCamelPropertyNameContractResolver : DefaultContractResolver
@@ -101,89 +102,87 @@ namespace TiltBrush
             else
             {
                 m_Ready = false;
-
-                WebRequest initialRequest = new WebRequest(m_URI);
-                using (var cr = initialRequest.SendAsync().AsIeNull())
+                JObject json = App.IcosaAssetCatalog.GetJsonForAsset(m_Asset.Id);
+                if (json == null)
                 {
-                    while (!initialRequest.Done)
+                    WebRequest initialRequest = new WebRequest(m_URI);
+                    using (var cr = initialRequest.SendAsync().AsIeNull())
                     {
-                        try
+                        while (!initialRequest.Done)
                         {
-                            cr.MoveNext();
+                            try
+                            {
+                                cr.MoveNext();
+                            }
+                            catch (VrAssetServiceException e)
+                            {
+                                Debug.LogException(e);
+                                IsCanceled = true;
+                                yield break;
+                            }
+                            yield return cr.Current;
                         }
-                        catch (VrAssetServiceException e)
-                        {
-                            Debug.LogException(e);
-                            IsCanceled = true;
-                            yield break;
-                        }
-                        yield return cr.Current;
                     }
+
+                    // Deserialize request string in to an Asset class.
+                    Future<JObject> f = new Future<JObject>(() => JObject.Parse(initialRequest.Result));
+                    while (!f.TryGetResult(out json)) { yield return null; }
                 }
 
-                // Deserialize request string in to an Asset class.
-                MemoryStream memStream = new MemoryStream(Encoding.UTF8.GetBytes(initialRequest.Result));
-                using (var jsonReader = new JsonTextReader(new StreamReader(memStream)))
+                if (json.Count == 0)
                 {
-                    Future<JObject> f = new Future<JObject>(() => JObject.Parse(initialRequest.Result));
-                    JObject json;
-                    while (!f.TryGetResult(out json)) { yield return null; }
+                    Debug.LogErrorFormat("Failed to deserialize response for {0}", m_URI);
+                    yield break;
+                }
 
-                    if (json.Count == 0)
+                // Find the asset by looking through the format list for the specified type.
+                VrAssetFormat requestedType = m_Asset.DesiredType;
+
+                while (true)
+                {
+                    var format = json["formats"]?.FirstOrDefault(x =>
+                        x["formatType"]?.ToString() == requestedType.ToString());
+                    if (format != null)
                     {
-                        Debug.LogErrorFormat("Failed to deserialize response for {0}", m_URI);
-                        yield break;
-                    }
-
-                    // Find the asset by looking through the format list for the specified type.
-                    VrAssetFormat requestedType = m_Asset.DesiredType;
-
-                    while (true)
-                    {
-                        var format = json["formats"]?.FirstOrDefault(x =>
-                            x["formatType"]?.ToString() == requestedType.ToString());
-                        if (format != null)
+                        string internalRootFilePath = format["root"]?["relativePath"].ToString();
+                        // If we successfully get a gltf2 format file, internally change the extension to
+                        // "gltf2" so that the cache knows that it is a gltf2 file.
+                        if (requestedType == VrAssetFormat.GLTF2)
                         {
-                            string internalRootFilePath = format["root"]?["relativePath"].ToString();
-                            // If we successfully get a gltf2 format file, internally change the extension to
-                            // "gltf2" so that the cache knows that it is a gltf2 file.
-                            if (requestedType == VrAssetFormat.GLTF2)
-                            {
-                                internalRootFilePath = Path.ChangeExtension(internalRootFilePath, "gltf2");
-                            }
+                            internalRootFilePath = Path.ChangeExtension(internalRootFilePath, "gltf2");
+                        }
 
-                            // Get root element info.
-                            m_Asset.SetRootElement(
-                                internalRootFilePath,
-                                format["root"]?["url"].ToString());
+                        // Get root element info.
+                        m_Asset.SetRootElement(
+                            internalRootFilePath,
+                            format["root"]?["url"].ToString());
 
-                            // Get all resource infos.  There may be zero.
-                            foreach (var r in format["resources"])
-                            {
-                                string path = r["relativePath"].ToString();
-                                m_Asset.AddResourceElement(path, r["url"].ToString());
+                        // Get all resource infos.  There may be zero.
+                        foreach (var r in format["resources"])
+                        {
+                            string path = r["relativePath"].ToString();
+                            m_Asset.AddResourceElement(path, r["url"].ToString());
 
-                                // The root element should be the only gltf file.
-                                Debug.Assert(!path.EndsWith(".gltf") && !path.EndsWith(".gltf2"),
-                                    string.Format("Found extra gltf resource: {0}", path));
-                            }
-                            break;
+                            // The root element should be the only gltf file.
+                            Debug.Assert(!path.EndsWith(".gltf") && !path.EndsWith(".gltf2"),
+                                string.Format("Found extra gltf resource: {0}", path));
+                        }
+                        break;
+                    }
+                    else
+                    {
+                        // We asked for an asset in a format that it doesn't have.
+                        // In some cases, we should look for a different format as backup.
+                        if (requestedType == VrAssetFormat.GLTF2)
+                        {
+                            Debug.LogWarning($"No GLTF2 format found for {m_Asset.Id}. Trying GLTF1.");
+                            requestedType = VrAssetFormat.GLTF;
                         }
                         else
                         {
-                            // We asked for an asset in a format that it doesn't have.
-                            // In some cases, we should look for a different format as backup.
-                            if (requestedType == VrAssetFormat.GLTF2)
-                            {
-                                Debug.LogWarning($"No GLTF2 format found for {m_Asset.Id}. Trying GLTF1.");
-                                requestedType = VrAssetFormat.GLTF;
-                            }
-                            else
-                            {
-                                // In other cases, we should fail and get out.
-                                Debug.LogErrorFormat("Can't download {0} in {1} format.", m_Asset.Id, m_Asset.DesiredType);
-                                yield break;
-                            }
+                            // In other cases, we should fail and get out.
+                            Debug.LogErrorFormat("Can't download {0} in {1} format.", m_Asset.Id, m_Asset.DesiredType);
+                            yield break;
                         }
                     }
                 }

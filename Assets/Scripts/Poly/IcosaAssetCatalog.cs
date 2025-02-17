@@ -425,6 +425,7 @@ namespace TiltBrush
         private string m_CacheDir;
         private string m_ThumbnailCacheDir;
         private Dictionary<string, Model> m_ModelsByAssetId;
+        private Dictionary<string, JObject > m_AssetJsonByAssetId;
         private Dictionary<IcosaSetType, AssetSet> m_AssetSetByType;
         private bool m_NotifyListeners;
 
@@ -1336,6 +1337,28 @@ namespace TiltBrush
                 m_AssetSetByType[set].QueryParams = queryParams;
                 if (requestRefresh) RefreshPanel();
             }
+        }
+
+        public JObject GetJsonForAsset(string assetId)
+        {
+            if (m_AssetJsonByAssetId == null)
+            {
+                m_AssetJsonByAssetId = new Dictionary<string, JObject>();
+            }
+            if (!m_AssetJsonByAssetId.TryGetValue(assetId, out JObject json))
+            {
+                json = null;
+            }
+            return json;
+        }
+
+        public void SetJsonForAsset(string toString, JObject asset)
+        {
+            if (m_AssetJsonByAssetId == null)
+            {
+                m_AssetJsonByAssetId = new Dictionary<string, JObject>();
+            }
+            m_AssetJsonByAssetId[toString] = asset;
         }
     }
 
