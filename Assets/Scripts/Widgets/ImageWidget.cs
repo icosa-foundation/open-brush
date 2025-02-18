@@ -193,23 +193,45 @@ namespace TiltBrush
 
         public void SetExtrusion(float depth, Color color)
         {
-            SpriteRenderer spriteRenderer = gameObject.GetComponentInChildren<SpriteRenderer>();
-            if (depth > 0)
+            var extruder = gameObject.GetComponentInChildren<SpriteExtruder>();
+            var importer = new RuntimeSVGImporter();
+            var imageMeshRenderer = m_Mesh.GetComponent<MeshRenderer>();
+            if (m_ReferenceImage.FilePath.EndsWith(".svg"))
             {
-                spriteRenderer.enabled = true;
-                var importer = new RuntimeSVGImporter();
-                var sprite = importer.ImportAsVectorSprite(m_ReferenceImage.FilePath);
-                spriteRenderer.sprite = sprite;
-                var extruder = gameObject.GetComponentInChildren<SpriteExtruder>();
-                extruder.AssignSprite(sprite);
-                extruder.extrudeColor = color;
-                extruder.frontDistance = 0;
-                extruder.backDistance = depth;
-                extruder.Generate();
+                var extruderMeshFilter = extruder.GetComponent<MeshFilter>();
+                if (depth > 0)
+                {
+                    imageMeshRenderer.enabled = false;
+                    var scaleFix = new Vector3(0.002f, -0.002f, 0.5f);
+                    var positionFix = new Vector3(-0.5f, 0.5f, 0);
+                    var tr = Matrix4x4.TRS(positionFix, Quaternion.identity, scaleFix);
+                    var sceneInfo = importer.ImportAsSceneInfo(m_ReferenceImage.FilePath);
+                    extruderMeshFilter.mesh = importer.SceneInfoToMesh(sceneInfo, tr, depth);
+                }
+                else
+                {
+                    imageMeshRenderer.enabled = false;
+                    extruderMeshFilter.mesh = null;
+                }
             }
             else
             {
-                spriteRenderer.enabled = false;
+                SpriteRenderer spriteRenderer = gameObject.GetComponentInChildren<SpriteRenderer>();
+                spriteRenderer.enabled = true;
+                if (depth > 0)
+                {
+                    Sprite sprite = importer.ImportAsVectorSprite(m_ReferenceImage.FilePath);
+                    spriteRenderer.sprite = sprite;
+                    extruder.AssignSprite(sprite);
+                    extruder.extrudeColor = color;
+                    extruder.frontDistance = 0;
+                    extruder.backDistance = depth;
+                    extruder.Generate();
+                }
+                else
+                {
+                    spriteRenderer.enabled = false;
+                }
             }
         }
 
