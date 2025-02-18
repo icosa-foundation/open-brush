@@ -1116,21 +1116,9 @@ namespace TiltBrush
                             Debug.LogException(e);
                             yield break;
                         }
-                        if (models.Count - prevCount > 5)
+                        if (models.Count - prevCount > 5)  // Avoid updating the catalog too often
                         {
-                            // As the assets may already have models loaded into them, just add any new models and
-                            // remove old ones.
-                            var newIds = new HashSet<string>(models.Select(m => m.AssetId));
-                            var oldIds = new HashSet<string>(m_AssetSetByType[type].m_Models.Select(m => m.AssetId));
-                            // These must be reified; if they are left as lazy IEnumerables, O(n^2) behavior results
-                            HashSet<string> toAdd = SetMinus(newIds, oldIds);
-                            HashSet<string> toRemove = SetMinus(oldIds, newIds);
-                            m_AssetSetByType[type].m_Models.RemoveAll(m => toRemove.Contains(m.AssetId));
-                            m_AssetSetByType[type].m_Models.InsertRange(0, models.Where(m => toAdd.Contains(m.AssetId)));
-                            if (CatalogChanged != null)
-                            {
-                                CatalogChanged();
-                            }
+                            addFoundModels();
                             prevCount = models.Count;
                         }
                         yield return cr.Current;
@@ -1141,6 +1129,10 @@ namespace TiltBrush
                     break;
                 }
             }
+            // Add any remaining models
+            addFoundModels();
+
+            void addFoundModels()
             {
                 // As the assets may already have models loaded into them, just add any new models and
                 // remove old ones.

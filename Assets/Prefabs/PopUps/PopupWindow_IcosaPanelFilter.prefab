@@ -863,7 +863,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 5e29d73b48580ad4e98b76833dbcc4e4, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 9818ddf6214411c4b8de0b1448047daf, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
@@ -1988,7 +1988,7 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_ToggleOnTexture: {fileID: 2800000, guid: 2aab05d5e47face47aefce6eb6523acf, type: 3}
+  m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
   m_OnToggle:
@@ -2403,7 +2403,7 @@ Transform:
   m_GameObject: {fileID: 4146978747154055681}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.56, y: 0.13800001, z: -0.027}
+  m_LocalPosition: {x: -0.08, y: 0.13800001, z: -0.027}
   m_LocalScale: {x: 0.2, y: 0.2, z: 0.2}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3475,7 +3475,7 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_ToggleOnTexture: {fileID: 2800000, guid: bf605239a2273da45b808a226ed5a411, type: 3}
+  m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
   m_OnToggle:
@@ -3703,8 +3703,8 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7001928515267744468}
-  - {fileID: 9082204510692068613}
   - {fileID: 1322892960962062695}
+  - {fileID: 9082204510692068613}
   m_Father: {fileID: 6737902938498210794}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6566587292305418615
@@ -4361,7 +4361,7 @@ Transform:
   m_GameObject: {fileID: 7415733736093158662}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.56, y: 0.13800001, z: -0.027}
+  m_LocalPosition: {x: -0.08, y: 0.13800001, z: -0.027}
   m_LocalScale: {x: 0.2, y: 0.2, z: 0.2}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4510,7 +4510,7 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_ToggleOnTexture: {fileID: 2800000, guid: 2aab05d5e47face47aefce6eb6523acf, type: 3}
+  m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
   m_OnToggle:
@@ -4535,7 +4535,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2223971825440069302
 Transform:
   m_ObjectHideFlags: 0
@@ -4550,9 +4550,9 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4345502243053804751}
-  - {fileID: 1290299574210356838}
-  - {fileID: 6810096031736108001}
   - {fileID: 405143523333663327}
+  - {fileID: 6810096031736108001}
+  - {fileID: 1290299574210356838}
   m_Father: {fileID: 6737902938498210794}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8066896685587702465

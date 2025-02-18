@@ -27,8 +27,11 @@ namespace TiltBrush
         private string m_Uri;
         private string m_ErrorMessage;
         private string m_PageToken;
+        private int m_pageLimit = 20;
 
-        public bool HasMore => m_PageToken != null && Int16.TryParse(m_PageToken, out short _);
+        // How do we decide when to stop?
+        public bool HasMore => m_PageToken != null && Int16.Parse(m_PageToken) < m_pageLimit;
+        //public bool HasMore => m_PageToken != null && Int16.TryParse(m_PageToken, out short _);
 
         public AssetLister(string uri, string errorMessage)
         {
@@ -143,7 +146,6 @@ namespace TiltBrush
                 }
                 yield return null;
             }
-
             m_PageToken = json["nextPageToken"]?.ToString();
         }
     }
