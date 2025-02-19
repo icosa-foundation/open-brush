@@ -32,25 +32,16 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
-#if OCULUS_SUPPORTED
-using Unity.XR.Oculus;
-#endif
-
 namespace TiltBrush
 {
     public enum XrSdkMode
     {
         Monoscopic = -1,
         OpenXR = 0,
-        Oculus,
-        Wave,
-        Pico,
         Zapbox,
     }
 
     // The sdk mode indicates which SDK that we're using to drive the display.
-    //  - These names are used in our analytics, so they must be protected from obfuscation.
-    //    Do not change the names of any of them, unless they've never been released.
     [Serializable]
     public enum SdkMode
     {
@@ -58,6 +49,15 @@ namespace TiltBrush
         UnityXR,
         Monoscopic,
         Ods,    // Video rendering
+    }
+
+    [Serializable]
+    public enum PassthroughMode
+    {
+        None,
+        OpenXREnvionmentBlendMode,
+        FBPassthrough,
+        Zapbox,
     }
 
     /// These are not used in analytics. They indicate the type of tool tip description that will appear
@@ -130,8 +130,6 @@ namespace TiltBrush
         public SecretsConfig.ServiceAuthData PimaxSecrets => Secrets[SecretsConfig.Service.Pimax];
         public SecretsConfig.ServiceAuthData PhotonFusionSecrets => Secrets[SecretsConfig.Service.PhotonFusion];
         public SecretsConfig.ServiceAuthData PhotonVoiceSecrets => Secrets[SecretsConfig.Service.PhotonVoice];
-
-        public bool DisableAccountLogins;
 
         /// Return a value kinda sorta half-way between "building for Android" and "running on Android"
         /// In order of increasing strictness, here are the in-Editor semantics of various methods
@@ -517,10 +515,6 @@ namespace TiltBrush
         {
             get
             {
-#if OCULUS_SUPPORTED
-                SystemHeadset headset = Unity.XR.Oculus.Utils.GetSystemHeadsetType();
-                return headset != SystemHeadset.Oculus_Quest;
-#endif // OCULUS_SUPPORTED
 #if ZAPBOX_SUPPORTED
                 return false;
 #endif
@@ -661,10 +655,9 @@ namespace TiltBrush
 
 #if UNITY_EDITOR
         /// Called at build time, just before this Config instance is saved to Main.unity
-        public void DoBuildTimeConfiguration(UnityEditor.BuildTarget target, bool disableAccountLogins = false)
+        public void DoBuildTimeConfiguration(UnityEditor.BuildTarget target)
         {
             m_PlatformConfig = EditTimeAssetReferences.Instance.GetConfigForBuildTarget(target);
-            DisableAccountLogins = disableAccountLogins;
         }
 #endif
     }
