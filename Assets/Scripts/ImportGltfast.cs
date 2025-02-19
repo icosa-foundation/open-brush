@@ -124,6 +124,8 @@ namespace TiltBrush
             try
             {
                 ImportOptions options = new ImportOptions();
+                // TODO - should we import disabled to help round-tripping?
+                options.CameraImport = CameraImportOption.None;
 
                 // See https://github.com/KhronosGroup/UnityGLTF/issues/805
                 var uriPath = $"file:///{Uri.UnescapeDataString(localPath).Replace("\\", "/")}";
