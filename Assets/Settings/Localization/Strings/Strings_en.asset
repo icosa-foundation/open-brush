@@ -759,11 +759,9 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7932559960547328
-    m_Localized: 'Share to Poly
+    m_Localized: 'Share to Icosa Gallery
 
-      to see models and
-
-      Blocks objects here'
+      to see models here'
     m_Metadata:
       m_Items: []
   - m_Id: 7932746569326592
@@ -774,14 +772,13 @@ MonoBehaviour:
     m_Localized: 'Loading models from Icosa Gallery
 
 
-
-      Check back soon!'
+      Please wait.'
     m_Metadata:
       m_Items: []
   - m_Id: 7933149889404928
-    m_Localized: 'Like       models
+    m_Localized: 'Like models
 
-      on Poly to
+      on Icosa Gallery to
 
       see them here'
     m_Metadata:
@@ -791,11 +788,9 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7933450197377024
-    m_Localized: 'Sign in on desktop
+    m_Localized: 'Sign in to load
 
-      to load
-
-      Poly models'
+      Icosa Gallery models'
     m_Metadata:
       m_Items: []
   - m_Id: 7933561489039360
@@ -803,7 +798,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7933827554713600
-    m_Localized: 'Share to Poly
+    m_Localized: 'Share to Icosa Gallery
 
       to see your
 
@@ -830,7 +825,7 @@ MonoBehaviour:
   - m_Id: 7934199497203712
     m_Localized: 'Error Connecting
 
-      to Poly'
+      to Icosa Gallery'
     m_Metadata:
       m_Items: []
   - m_Id: 7939526611410944
