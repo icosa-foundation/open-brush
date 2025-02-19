@@ -1426,7 +1426,7 @@ MonoBehaviour:
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 1
-  m_ZAdjustHover: -684.21
+  m_ZAdjustHover: -0.04
   m_ZAdjustClick: -0.04
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
@@ -2709,7 +2709,7 @@ MonoBehaviour:
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 1
-  m_ZAdjustHover: -684.21
+  m_ZAdjustHover: -0.04
   m_ZAdjustClick: -0.04
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
