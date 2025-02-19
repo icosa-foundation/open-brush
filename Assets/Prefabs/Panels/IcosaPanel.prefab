@@ -9899,7 +9899,7 @@ PrefabInstance:
     - target: {fileID: 7631838532712089505, guid: 3364244fa7a5bef418c39e9d1ff07419,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.793
+      value: -0.687
       objectReference: {fileID: 0}
     - target: {fileID: 7631838532712089505, guid: 3364244fa7a5bef418c39e9d1ff07419,
         type: 3}
@@ -10009,6 +10009,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: OpenIcosaPanelOptionsButton
+      objectReference: {fileID: 0}
+    - target: {fileID: 7630606763700834929, guid: 3364244fa7a5bef418c39e9d1ff07419,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7631838532712089505, guid: 3364244fa7a5bef418c39e9d1ff07419,
         type: 3}
