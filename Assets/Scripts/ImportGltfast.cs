@@ -122,7 +122,7 @@ namespace TiltBrush
                 ImportOptions options = new ImportOptions();
 
                 // See https://github.com/KhronosGroup/UnityGLTF/issues/805
-                var uriPath = $"file:///{ Uri.UnescapeDataString(localPath).Replace("\\","/")}";
+                var uriPath = $"file:///{Uri.UnescapeDataString(localPath).Replace("\\", "/")}";
                 GLTFSceneImporter gltf = new GLTFSceneImporter(uriPath, options);
 
                 gltf.IsMultithreaded = false;
