@@ -86,10 +86,14 @@ namespace TiltBrush
             var go = new GameObject();
             if (success)
             {
+                var mask = ~ComponentType.Camera;
+                // Currently we only handle lights via UnityGLTF importer
+                // Mainly because that allows more control via import hooks
+                mask &= ~ComponentType.Light;
                 var settings = new InstantiationSettings
                 {
                     LightIntensityFactor = 0.0001f,
-                    Mask = ~ComponentType.Camera
+                    Mask = mask,
                 };
                 success = await gltf.InstantiateMainSceneAsync(
                     new GameObjectInstantiator(gltf, go.transform, null, settings)
