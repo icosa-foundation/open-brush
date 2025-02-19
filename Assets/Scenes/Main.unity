@@ -10855,7 +10855,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: adbbf4878d1751442bd198bcb9fe071d, type: 3}
   m_Name:
   m_EditorClassIdentifier:
-  m_AssetsPerPage: 20
+  m_AssetsPerPage: 8
   m_SketchbookRefreshInterval: 10
   m_UseLocalFeaturedSketches: 0
 --- !u!114 &652605567
