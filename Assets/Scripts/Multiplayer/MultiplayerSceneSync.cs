@@ -28,7 +28,7 @@ namespace OpenBrush.Multiplayer
     public class MultiplayerSceneSync : MonoBehaviour
     {
         public static MultiplayerSceneSync m_Instance;
-        public Action<byte[]> onLargeDataReceived;
+        public Action<byte[], int> onLargeDataReceived;
         [HideInInspector] public int batchSize = 10;
         [HideInInspector] public float delayBetweenBatches = 0.05f;
         public SyncType m_SyncType = SyncType.Strokes;
@@ -75,6 +75,7 @@ namespace OpenBrush.Multiplayer
         }
 
         #region Syncronization Logic Strokes
+
         async void SendStrokesToPlayer(int id)
         {
             LinkedList<Stroke> strokes = SketchMemoryScript.m_Instance.GetMemoryList;
@@ -82,22 +83,24 @@ namespace OpenBrush.Multiplayer
             if (strokes.Count == 0) return;
 
             SendCurrentTargetEnvironmentCommand();
-            StartSyncProgressDisplayForSrokes(id, strokes);
+
             const int chunkSize = 5;
             List<Stroke> strokeList = strokes.ToList();
 
             int counter = 0;
             for (int i = 0; i < strokeList.Count; i += chunkSize)
+
             {
                 var chunk = strokeList.Skip(i).Take(chunkSize).ToList();
-                byte[] strokesData = await MultiplayerStrokeSerialization.SerializeAndCompressMemoryListAsync(chunk);
-                MultiplayerManager.m_Instance.SendLargeDataToPlayer(id, strokesData);
                 counter += chunk.Count;
+                int percentage = (int)((counter / (float)strokeList.Count) * 100);
+                byte[] strokesData = await MultiplayerStrokeSerialization.SerializeAndCompressMemoryListAsync(chunk);
+                MultiplayerManager.m_Instance.SendLargeDataToPlayer(id, strokesData, percentage);
                 //Debug.Log($"Sent {strokesData.Length} bytes of serialized stroke data (batch {(i / chunkSize) + 1}) to player {id}.");
             }
         }
 
-        async void DeserializeReceivedStrokes(byte[] largeData)
+        async void DeserializeReceivedStrokes(byte[] largeData, int percentage)
         {
 
             // Decompress and deserialize strokes asynchronously
@@ -115,11 +118,12 @@ namespace OpenBrush.Multiplayer
 
         }
 
-        void OnLargeDataReceived(byte[] largeData)
+        void OnLargeDataReceived(byte[] largeData, int percentage)
         {
             //Debug.Log($"[Multiplayer Scene Sync]Successfully received {largeData.Length} bytes from the autosave.");
 
-            DeserializeReceivedStrokes(largeData);
+            SynchInfoPercentageUpdate(percentage);
+            DeserializeReceivedStrokes(largeData, percentage);
         }
 
         #endregion
@@ -164,8 +168,6 @@ namespace OpenBrush.Multiplayer
 
             SendCurrentTargetEnvironmentCommand();
 
-            StartSyncProgressDisplayForCommands(id, commands.ToList());
-
             foreach (BaseCommand command in commands) MultiplayerManager.m_Instance.OnCommandPerformed(command);
 
             _isSendingCommandHistory = false;
@@ -199,65 +201,6 @@ namespace OpenBrush.Multiplayer
                 SketchMemoryScript.m_Instance.AddCommandToNetworkStack(command);
             }
         }
-
-        #endregion
-
-        #region Remote infoCard commands
-
-        public async void StartSyncProgressDisplayForSrokes(int TargetPlayerId, LinkedList<Stroke> strokes)
-        {
-            StartSynchHistory(TargetPlayerId);
-
-            int sentStrokes = 0;
-
-            foreach (var stroke in strokes)
-            {
-
-                while (await MultiplayerManager.m_Instance.CheckStrokeReception(stroke, TargetPlayerId))
-                {
-                    await Task.Delay(200);
-                }
-
-                sentStrokes++;
-                SynchHistoryPercentage(TargetPlayerId, strokes.Count, sentStrokes);
-            }
-
-            SynchHistoryComplete(TargetPlayerId);
-        }
-
-        public async void StartSyncProgressDisplayForCommands(int TargetPlayerId, List<BaseCommand> commands)
-        {
-            StartSynchHistory(TargetPlayerId);
-
-            int sentStrokes = 0;
-            foreach (var command in commands)
-            {
-                while (await MultiplayerManager.m_Instance.CheckCommandReception(command, TargetPlayerId))
-                {
-                    await Task.Delay(200);
-                }
-                sentStrokes++;
-                SynchHistoryPercentage(TargetPlayerId, commands.Count, sentStrokes);
-            }
-
-            SynchHistoryComplete(TargetPlayerId);
-        }
-
-        private void StartSynchHistory(int id)
-        {
-            MultiplayerManager.m_Instance.StartSynchHistory(id);
-        }
-
-        private void SynchHistoryPercentage(int id, int expected, int sent)
-        {
-            MultiplayerManager.m_Instance.SynchHistoryPercentage(id, expected, sent);
-        }
-
-        private void SynchHistoryComplete(int id)
-        {
-            MultiplayerManager.m_Instance.SynchHistoryComplete(id);
-        }
-
 
         #endregion
 
@@ -328,9 +271,9 @@ namespace OpenBrush.Multiplayer
         {
             EnqueueMessage("Sync Started!");
         }
-        public void SynchInfoPercentageUpdate()
+
+        public void SynchInfoPercentageUpdate(int percentage)
         {
-            int percentage = (int)((float)SketchMemoryScript.AllStrokesCount() / numberOfCommandsExpected * 100);
             EnqueueMessage($"Sync {percentage}%");
         }
 

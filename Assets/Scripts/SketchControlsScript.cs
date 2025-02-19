@@ -156,9 +156,15 @@ namespace TiltBrush
             MultiplayerConnect = 1007,
             MultiplayerDisconnect = 1008,
             EditMultiplayerNickName = 1009,
-            DisplaySynchInfo = 1010,
-            SynchInfoPercentageUpdate = 1011,
-            HideSynchInfo = 1012,
+            OpenRoomSettings = 1010,
+            ToggleUserVoiceInMultiplayer = 1011,
+            EditMultiplayerRoomMaxPlayers = 1012,
+            MultiplayerTransferRoomOwnership = 1013,
+            MultiplayerToggleUserViewEditMode = 1014,
+            MultiplayerKickPlayerOut = 1015,
+            MultiplayerToggleAllUserAudio = 1016,
+            MultiplayerToggleAllUserViewEditMode = 1017,
+
 
             RenameSketch = 5200,
             OpenLayerOptionsPopup = 5201,
@@ -4526,10 +4532,23 @@ namespace TiltBrush
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }
+                case GlobalCommands.EditMultiplayerRoomMaxPlayers:
+                    {
+                        var panel = (MultiplayerPanel)m_PanelManager.GetActivePanelByType(BasePanel.PanelType.Multiplayer);
+                        if (int.TryParse(KeyboardPopUpWindow.m_LastInput, out var parsedMaxPlayers))
+                            panel.MaxPlayers = parsedMaxPlayers;
+                        DismissPopupOnCurrentGazeObject(false);
+                        break;
+                    }
                 case GlobalCommands.EditMultiplayerNickName:
                     {
                         var panel = (MultiplayerPanel)m_PanelManager.GetActivePanelByType(BasePanel.PanelType.Multiplayer);
                         panel.NickName = KeyboardPopUpWindow.m_LastInput;
+                        DismissPopupOnCurrentGazeObject(false);
+                        break;
+                    }
+                case GlobalCommands.OpenRoomSettings:
+                    {
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }
@@ -4861,23 +4880,21 @@ namespace TiltBrush
                     PointerManager.m_Instance.EatLineEnabledInput();
                     SketchSurfacePanel.m_Instance.EatToolsInput();
                     break;
-                case GlobalCommands.DisplaySynchInfo:
-                    MultiplayerSceneSync.m_Instance.StartSynchInfo();
-                    break;
-                case GlobalCommands.SynchInfoPercentageUpdate:
-                    MultiplayerSceneSync.m_Instance.SynchInfoPercentageUpdate();
-                    break;
-                case GlobalCommands.HideSynchInfo:
-                    MultiplayerSceneSync.m_Instance.HideSynchInfo();
-                    break;
-                case GlobalCommands.RepaintOptions: break; // Intentionally blank.
-                case GlobalCommands.Null: break; // Intentionally blank.
-                case GlobalCommands.MultiplayerPanelOptions: break; // Intentionally blank.
-                case GlobalCommands.MultiplayerJoinRoom: break; // Intentionally blank.
-                case GlobalCommands.MultiplayerLeaveRoom: break; // Intentionally blank.
-                case GlobalCommands.MultiplayerConnect: break; // Intentionally blank.
-                case GlobalCommands.MultiplayerDisconnect: break; // Intentionally blank.
-                case GlobalCommands.WhatIsNew: break;// Intentionally blank.
+                case GlobalCommands.RepaintOptions:
+                case GlobalCommands.Null:
+                case GlobalCommands.MultiplayerPanelOptions:
+                case GlobalCommands.MultiplayerJoinRoom:
+                case GlobalCommands.MultiplayerLeaveRoom:
+                case GlobalCommands.MultiplayerConnect:
+                case GlobalCommands.MultiplayerDisconnect:
+                case GlobalCommands.ToggleUserVoiceInMultiplayer:
+                case GlobalCommands.MultiplayerTransferRoomOwnership:
+                case GlobalCommands.MultiplayerToggleUserViewEditMode:
+                case GlobalCommands.MultiplayerToggleAllUserAudio:
+                case GlobalCommands.MultiplayerToggleAllUserViewEditMode:
+                case GlobalCommands.MultiplayerKickPlayerOut:
+                case GlobalCommands.WhatIsNew:
+                    break;// Intentionally blank.
                 default:
                     Debug.LogError($"Unrecognized command {rEnum}");
                     break;
@@ -5106,7 +5123,14 @@ namespace TiltBrush
                 case GlobalCommands.SketchbookMenu:
                 case GlobalCommands.EditMultiplayerNickName:
                 case GlobalCommands.EditMultiplayerRoomName:
+                case GlobalCommands.EditMultiplayerRoomMaxPlayers:
+                case GlobalCommands.MultiplayerToggleAllUserAudio:
                     return !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
+                case GlobalCommands.MultiplayerTransferRoomOwnership:
+                case GlobalCommands.MultiplayerToggleUserViewEditMode:
+                case GlobalCommands.MultiplayerKickPlayerOut:
+                case GlobalCommands.MultiplayerToggleAllUserViewEditMode:
+                    return (MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM && MultiplayerManager.m_Instance.IsUserRoomOwner());
                 case GlobalCommands.WhatIsNew:
                     return false;
             }

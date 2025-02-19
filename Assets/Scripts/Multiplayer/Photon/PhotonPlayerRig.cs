@@ -40,6 +40,9 @@ namespace OpenBrush.Multiplayer
         [Networked] public float SceneScale { get; set; }
         [Networked] public bool isReceivingVoiceTransmission { get; set; }
         [Networked] public string Nickname { get; set; }
+        
+        public string PersistentNickname = "";
+
 
         PointerScript transientPointer;
         // The offset transforms.
@@ -130,6 +133,7 @@ namespace OpenBrush.Multiplayer
                 {
                     data.Nickname = this.Nickname;
                     NicknameText.text = this.Nickname;
+                    PersistentNickname = this.Nickname;
                 }
                 
             }

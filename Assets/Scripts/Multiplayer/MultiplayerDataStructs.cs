@@ -83,4 +83,6 @@ namespace OpenBrush.Multiplayer
         public string Nickname;
         public string Role;
     }
+
+
 }
