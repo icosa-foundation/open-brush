@@ -425,7 +425,7 @@ namespace TiltBrush
         private string m_CacheDir;
         private string m_ThumbnailCacheDir;
         private Dictionary<string, Model> m_ModelsByAssetId;
-        private Dictionary<string, JObject > m_AssetJsonByAssetId;
+        private Dictionary<string, JObject> m_AssetJsonByAssetId;
         private Dictionary<IcosaSetType, AssetSet> m_AssetSetByType;
         private bool m_NotifyListeners;
 

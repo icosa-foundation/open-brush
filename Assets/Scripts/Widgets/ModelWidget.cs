@@ -373,7 +373,7 @@ namespace TiltBrush
             {
                 subpathToTraverse = subpathToTraverse.Substring(0, subpathToTraverse.Length - ".mesh".Length);
                 excludeChildren = true;
-            } 
+            }
             if (node.name == subpathToTraverse)
             {
                 // We're already at the right node

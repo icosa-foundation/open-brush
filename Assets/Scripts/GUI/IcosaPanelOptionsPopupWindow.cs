@@ -44,8 +44,10 @@ namespace TiltBrush
             m_TriangleCountSlider.SetCurrentTriangles(currentQuery.TriangleCountMax);
         }
 
-        private GameObject CurrentOrderByGroup {
-            get {
+        private GameObject CurrentOrderByGroup
+        {
+            get
+            {
                 var currentSet = ((IcosaPanel)m_ParentPanel).CurrentSet;
                 return GetCurrentButtonGroup(currentSet);
             }

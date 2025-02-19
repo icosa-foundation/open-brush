@@ -36,7 +36,7 @@ namespace TiltBrush
             {
                 return "MAX";
             }
-            return $"{Mathf.RoundToInt(val*100)}%";
+            return $"{Mathf.RoundToInt(val * 100)}%";
         }
 
         public int CurrentTriangleCount => CalcTriangleCount(CurrentValueAbsolute);

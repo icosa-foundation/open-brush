@@ -170,13 +170,13 @@ namespace TiltBrush
         {
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.Insert(0, "/" + obj.name);
-            
+
             while (obj.transform.parent != root)
             {
                 obj = obj.transform.parent;
                 stringBuilder.Insert(0, "/" + obj.name);
             }
-            
+
             return stringBuilder.ToString();
         }
 

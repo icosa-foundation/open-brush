@@ -4911,12 +4911,12 @@ namespace TiltBrush
                     MultiplayerSceneSync.m_Instance.HideSynchInfo();
                     break;
                 case GlobalCommands.OpenIcosaPanelSearchPopup:
-                {
-                    IcosaSetType currentSet = (IcosaSetType)iParam1;
-                    App.IcosaAssetCatalog.UpdateSearchText(currentSet, KeyboardPopUpWindow.m_LastInput, requestRefresh: true);
-                    DismissPopupOnCurrentGazeObject(false);
-                    break;
-                }
+                    {
+                        IcosaSetType currentSet = (IcosaSetType)iParam1;
+                        App.IcosaAssetCatalog.UpdateSearchText(currentSet, KeyboardPopUpWindow.m_LastInput, requestRefresh: true);
+                        DismissPopupOnCurrentGazeObject(false);
+                        break;
+                    }
                 case GlobalCommands.RepaintOptions: break; // Intentionally blank.
                 case GlobalCommands.MultiplayerPanelOptions: break; // Intentionally blank.
                 case GlobalCommands.MultiplayerJoinRoom: break; // Intentionally blank.
