@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using System.IO;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
 
 namespace TiltBrush
 {
@@ -40,13 +42,82 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 1);
         }
 
-        // TODO
-        // [ApiEndpoint("upload", "Saves the current scene and uploads it to Poly/Icosa")]
-        // public static void SaveAndUpload()
-        // {
-        //     var rEnum = SketchControlsScript.GlobalCommands.SaveAndUpload;
-        //     SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
-        // }
+        [ApiEndpoint("save.as", "Saves the current scene with the given name")]
+        public static void SaveAs(string filename)
+        {
+            var rEnum = SketchControlsScript.GlobalCommands.SaveNew;
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 1);
+            rEnum = SketchControlsScript.GlobalCommands.RenameSketch;
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 0, (int)SketchSetType.User, sParam: filename);
+        }
+
+        [ApiEndpoint("icosa.login", "Login to the Icosa Gallery using a username and password")]
+        public static void IcosaLogin(string username, string password)
+        {
+            var config = new Configuration();
+            var loginApi = new LoginApi(VrAssetService.m_Instance.IcosaApiRoot);
+            config.BasePath = VrAssetService.m_Instance.IcosaApiRoot;
+            loginApi.Configuration = config;
+            var token = loginApi.LoginLoginPost(username, password);
+            App.Instance.IcosaToken = token.AccessToken;
+
+            if (token != null)
+            {
+                var usersApi = new UsersApi(VrAssetService.m_Instance.IcosaApiRoot);
+                config = new Configuration { AccessToken = App.Instance.IcosaToken };
+                config.BasePath = VrAssetService.m_Instance.IcosaApiRoot;
+                usersApi.Configuration = config;
+                var userData = usersApi.GetUsersMeUsersMeGet();
+
+                if (userData != null)
+                {
+                    App.IcosaUserName = userData.Displayname;
+                    App.IcosaUserId = userData.Id;
+                }
+            }
+        }
+
+        [ApiEndpoint("icosa.devicelogin", "Login to the Icosa Gallery using a device code")]
+        public static void IcosaDeviceLogin(string code)
+        {
+            var config = new Configuration();
+            var loginApi = new LoginApi(VrAssetService.m_Instance.IcosaApiRoot);
+            config.BasePath = VrAssetService.m_Instance.IcosaApiRoot;
+            loginApi.Configuration = config;
+            var token = loginApi.DeviceLoginLoginDeviceLoginPost(code);
+            App.Instance.IcosaToken = token.AccessToken;
+
+            if (token != null)
+            {
+                var usersApi = new UsersApi(VrAssetService.m_Instance.IcosaApiRoot);
+                config = new Configuration { AccessToken = App.Instance.IcosaToken };
+                config.BasePath = VrAssetService.m_Instance.IcosaApiRoot;
+                usersApi.Configuration = config;
+                var userData = usersApi.GetUsersMeUsersMeGet();
+
+                if (userData != null)
+                {
+                    App.IcosaUserName = userData.Displayname;
+                    App.IcosaUserId = userData.Id;
+                }
+            }
+        }
+
+        [ApiEndpoint("icosa.logout", "Logout of the Icosa Gallery")]
+        public static void IcosaLogout()
+        {
+            App.IcosaUserName = null;
+            App.IcosaUserId = null;
+            App.IcosaUserIcon = null;
+            App.Instance.IcosaToken = null;
+        }
+
+        [ApiEndpoint("icosa.upload", "Uploads it to the Icosa Gallery")]
+        public static void IcosaUpload()
+        {
+            var rEnum = SketchControlsScript.GlobalCommands.UploadToGenericCloud;
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, (int)Cloud.Icosa);
+        }
 
         [ApiEndpoint("export.all", "Exports all the scenes in the users's sketch folder")]
         public static void ExportAll()
@@ -262,8 +333,8 @@ namespace TiltBrush
         public static void ShowSketchFolder(int index)
         {
             var rEnum = SketchControlsScript.GlobalCommands.ShowSketchFolder;
-            // TODO 0 is User folder. Do we need to support the other SketchSetTypes?
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, index, 0);
+            // TODO Do we need to support the other SketchSetTypes?
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, index, (int)SketchSetType.User);
         }
 
         // TODO Why no "enabled" counterpart?
@@ -547,6 +618,13 @@ namespace TiltBrush
         {
             var rEnum = SketchControlsScript.GlobalCommands.RecordCameraPath;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
+        }
+
+        [ApiEndpoint("camerapath.setactive", "Sets the active camera path")]
+        public static void SetActiveCameraPath(int index)
+        {
+            var widget = _GetActiveCameraPath(index);
+            WidgetManager.m_Instance.SetCurrentCameraPath(widget);
         }
     }
 }

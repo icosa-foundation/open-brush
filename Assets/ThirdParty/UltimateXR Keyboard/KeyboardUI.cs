@@ -113,7 +113,7 @@ namespace TiltBrush
         /// </summary>
         public string ConsoleContent { get; private set; }
 
-        public void SantizeFilename()
+        public void SanitizeFilename()
         {
             string invalidChars = System.Text.RegularExpressions.Regex.Escape(new string(System.IO.Path.GetInvalidFileNameChars()));
             string invalidRegStr = string.Format(@"([{0}]*\.+$)|([{0}]+)", invalidChars);
@@ -301,12 +301,20 @@ namespace TiltBrush
             }
         }
 
+        private void OnDestroy()
+        {
+            InputManager.m_Instance.DisableKeyboardShortcuts = false;
+        }
+
         /// <summary>
         ///     If there is a console display Text component specified, it becomes updated with the content plus the cursor.
         ///     If there is a caps lock GameObject specified it is updated to reflect the caps lock state as well.
         /// </summary>
         private void Update()
         {
+            // Disable global keyboard shortcuts while active so we can use real keyboard for input
+            InputManager.m_Instance.DisableKeyboardShortcuts = gameObject.activeInHierarchy;
+
             if (_consoleDisplay != null)
             {
                 _consoleDisplay.text = FormatStringOutput(_consoleDisplayUsesCursor ? ConsoleContentWithCursor : ConsoleContent, _consoleDisplayUsesCursor);
