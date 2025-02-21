@@ -198,15 +198,21 @@ namespace TiltBrush
             var imageMeshRenderer = m_Mesh.GetComponent<MeshRenderer>();
             if (m_ReferenceImage.FilePath.EndsWith(".svg"))
             {
+                // We handle SVG images differently for two reasons:
+                // 1. The Unity Vector Sprite doesn't seem to create
+                //    a correct Polygon2DCollider mesh
+                // 2. Our fork of Unity Vector Graphics has native support for extruding SVG files
                 var extruderMeshFilter = extruder.GetComponent<MeshFilter>();
                 if (depth > 0)
                 {
                     imageMeshRenderer.enabled = false;
-                    var scaleFix = new Vector3(0.002f, -0.002f, 0.5f);
+                    var scaleFix = new Vector3(0.002f, -0.002f, 0.002f);
                     var positionFix = new Vector3(-0.5f, 0.5f, 0);
                     var tr = Matrix4x4.TRS(positionFix, Quaternion.identity, scaleFix);
                     var sceneInfo = importer.ImportAsSceneInfo(m_ReferenceImage.FilePath);
-                    extruderMeshFilter.mesh = importer.SceneInfoToMesh(sceneInfo, tr, depth);
+                    // The depth is multiplied by the inverse of the scaleFix.
+                    // Modifying the y of the scale fix instead created precision issues
+                    extruderMeshFilter.mesh = importer.SceneInfoToMesh(sceneInfo, tr, depth * 500);
                 }
                 else
                 {

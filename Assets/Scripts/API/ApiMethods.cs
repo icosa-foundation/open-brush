@@ -516,15 +516,15 @@ namespace TiltBrush
         }
 
         // TODO
-        // [ApiEndpoint(
-        //     "text.extrude",
-        //     "Sets a text object to be extruded by a given depth and color. Set depth to 0 to remove extrusion.",
-        //     "-1,0.75,0.5,0.25,0")]
-        // public static void ExtrudeText(int index, float depth, Vector3 rgb)
-        // {
-        //     var textWidget = _GetActiveTextWidget(index);
-        //     textWidget.SetExtrusion(depth, new Color(rgb.x, rgb.y, rgb.z));
-        // }
+        [ApiEndpoint(
+            "text.extrude",
+            "Sets a text object to be extruded by a given depth and color. Set depth to 0 to remove extrusion.",
+            "-1,0.75,0.5,0.25,0")]
+        public static void ExtrudeText(int index, float depth, Vector3 rgb)
+        {
+            var textWidget = _GetActiveTextWidget(index);
+            textWidget.SetExtrusion(depth, new Color(rgb.x, rgb.y, rgb.z));
+        }
 
         [ApiEndpoint(
             "video.import",
@@ -610,15 +610,15 @@ namespace TiltBrush
         }
 
         // TODO - currently the polygon collider isn't using the imported SVG sprite
-        // [ApiEndpoint(
-        //     "image.extrude",
-        //     "Sets an SVG image to be extruded by a given depth and color. Set depth to 0 to remove extrusion.",
-        //     "-1,0.75,0.5,0.25,0")]
-        // public static void ExtrudeImage(int index, float depth, Vector3 rgb)
-        // {
-        //     var imageWidget = _GetActiveImage(index);
-        //     imageWidget.SetExtrusion(depth, new Color(rgb.x, rgb.y, rgb.z));
-        // }
+        [ApiEndpoint(
+            "image.extrude",
+            "Sets an SVG image to be extruded by a given depth and color. Set depth to 0 to remove extrusion.",
+            "-1,0.75,0.5,0.25,0")]
+        public static void ExtrudeImage(int index, float depth, Vector3 rgb)
+        {
+            var imageWidget = _GetActiveImage(index);
+            imageWidget.SetExtrusion(depth, new Color(rgb.x, rgb.y, rgb.z));
+        }
 
         [ApiEndpoint(
             "environment.type",
