@@ -241,7 +241,6 @@ namespace TiltBrush
             // TODO:Mikesky: See if can be done at input level
             if (InputManager.m_Instance.GetControllerBehavior(InputManager.ControllerName.Brush).transform.position == Vector3.zero)
             {
-                Debug.LogError($"Controller Glitch!");
                 return;
             }
 
