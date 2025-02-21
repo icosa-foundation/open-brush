@@ -422,7 +422,7 @@ namespace TiltBrush
 
         /// If m_AutoAlignRig is set, you should pass in a RenderTexture created
         /// with CreateTemporaryTargetForSave().
-        public void RenderToTexture(RenderTexture rTexture)
+        public void RenderToTexture(RenderTexture rTexture, bool asDepth = false, bool removeBackground = false)
         {
             RenderTextureFormat format = CameraFormat();
             int depth = 24;
@@ -439,7 +439,30 @@ namespace TiltBrush
                 var camera = LeftInfo.camera;
                 var prev = camera.targetTexture;
                 camera.targetTexture = targetA;
-                camera.Render();
+                if (asDepth)
+                {
+                    var prevDepthTextureMode = camera.depthTextureMode;
+                    camera.depthTextureMode = DepthTextureMode.Depth;
+                    camera.RenderWithShader(Shader.Find("Hidden/Internal-DepthNormalsTexture"), "");
+                    camera.depthTextureMode = prevDepthTextureMode;
+                }
+                else if (removeBackground)
+                {
+                    var prevClearFlags = camera.clearFlags;
+                    var prevBackgroundColor = camera.backgroundColor;
+                    var prevCullingMask = camera.cullingMask;
+                    camera.clearFlags = CameraClearFlags.SolidColor;
+                    camera.backgroundColor = new Color(0, 0, 0, 0);
+                    camera.cullingMask = LayerMask.GetMask("MainCanvas");
+                    camera.Render();
+                    camera.clearFlags = prevClearFlags;
+                    camera.backgroundColor = prevBackgroundColor;
+                    camera.cullingMask = prevCullingMask;
+                }
+                else
+                {
+                    camera.Render();
+                }
                 camera.targetTexture = prev;
             }
 

@@ -25,7 +25,7 @@ namespace TiltBrush
 
     //TODO: Separate basic pointer management (e.g. enumeration, global operations)
     //from higher-level symmetry code.
-    public class PointerManager : MonoBehaviour
+    public partial class PointerManager : MonoBehaviour
     {
         static public PointerManager m_Instance;
         const float STRAIGHTEDGE_PRESSURE = 1f;
@@ -42,7 +42,9 @@ namespace TiltBrush
             SinglePlane,
             MultiMirror,
             DebugMultiple,
-            TwoHanded,
+            CustomSymmetryMode = 5000,
+            ScriptedSymmetryMode = 6000,
+            TwoHanded = 6001
         }
 
         [Serializable]
@@ -51,15 +53,6 @@ namespace TiltBrush
             Point,
             Wallpaper,
             Polyhedra
-        }
-
-        public enum ColorShiftMode
-        {
-            SineWave,
-            SquareWave,
-            SawtoothWave,
-            TriangleWave,
-            Noise
         }
 
         public enum ColorShiftComponent
@@ -86,19 +79,19 @@ namespace TiltBrush
         [Serializable]
         public struct ColorShiftComponentSetting
         {
-            public ColorShiftMode mode;
+            public WaveGenerator.Mode mode;
             public float amp;
             public float freq;
         }
 
         private static readonly ColorShiftComponentSetting m_defaultColorShiftComponentSetting = new()
         {
-            mode = ColorShiftMode.SineWave, amp = 0, freq = 1
+            mode = WaveGenerator.Mode.SineWave, amp = 0, freq = 1
         };
+
         [NonSerialized] public ColorShiftComponentSetting m_SymmetryColorShiftSettingHue = m_defaultColorShiftComponentSetting;
         [NonSerialized] public ColorShiftComponentSetting m_SymmetryColorShiftSettingSaturation = m_defaultColorShiftComponentSetting;
         [NonSerialized] public ColorShiftComponentSetting m_SymmetryColorShiftSettingBrightness = m_defaultColorShiftComponentSetting;
-
 
         // Modifying this struct has implications for binary compatibility.
         // The layout should match the most commonly-seen layout in the binary file.
@@ -145,6 +138,7 @@ namespace TiltBrush
         [SerializeField] private int m_MaxPointers = 1;
         [SerializeField] private GameObject m_MainPointerPrefab;
         [SerializeField] private GameObject m_AuxPointerPrefab;
+        [SerializeField] private GameObject m_DummyPointerPrefab;
         [SerializeField] private float m_DefaultPointerAngle = 25.0f;
         [SerializeField] private bool m_DebugViewControlPoints = false;
         [SerializeField] private StraightEdgeGuideScript m_StraightEdgeGuide;
@@ -176,13 +170,7 @@ namespace TiltBrush
         private bool m_LineEnabled = false;
         private int m_EatLineEnabledInputFrames;
 
-        public Transform SymmetryWidget
-        {
-            get
-            {
-                return m_SymmetryWidget;
-            }
-        }
+        public SymmetryWidget SymmetryWidget => m_SymmetryWidget.GetComponent<SymmetryWidget>();
 
         /// This array is horrible. It is sort-of a preallocated pool of pointers,
         /// but different ranges are used for different purposes, and the ranges overlap.
@@ -199,6 +187,11 @@ namespace TiltBrush
         private PointerData[] m_Pointers;
 
         private List<PointerScript> m_RemoteUserPointers;
+
+        private List<PointerScript> m_ScriptedPointers;
+        private List<TrTransform> m_ScriptedTransforms;
+        private List<TrTransform> m_ScriptedTrFixes; // Fixes for reflection transforms
+
         private bool m_InPlaybackMode;
 
         private PointerData m_MainPointerData;
@@ -242,6 +235,7 @@ namespace TiltBrush
         private bool m_SketchSurfaceLineWasEnabled;
         private List<Matrix4x4> m_CustomMirrorMatrices;
         private List<Color> m_SymmetryPointerColors;
+        private List<BrushDescriptor> m_SymmetryPointerBrushes;
         private Vector2[] m_CustomMirrorDomain;
 
         // ---- events
@@ -309,7 +303,7 @@ namespace TiltBrush
 
         /// Number of pointers reserved for user (including symmetry)
         /// TODO: handle more intelligently.  Depends on user's access to e.g. 4-way symmetry.
-        private int NumUserPointers { get { return 2; } }
+        private int NumUserPointers { get { return m_NumActivePointers; } }
 
         public SymmetryMode CurrentSymmetryMode
         {
@@ -365,8 +359,19 @@ namespace TiltBrush
         public bool JitterEnabled => colorJitter.sqrMagnitude > 0 || sizeJitter > 0 || positionJitter > 0;
 
         public List<Matrix4x4> CustomMirrorMatrices => m_CustomMirrorMatrices.ToList(); // Ensure we return a clone
-        public List<Color> SymmetryPointerColors => m_SymmetryPointerColors.ToList();
         public List<Vector2> CustomMirrorDomain => m_CustomMirrorDomain.ToList();
+
+        public List<Color> SymmetryPointerColors
+        {
+            get { return m_SymmetryPointerColors; }
+            set { m_SymmetryPointerColors = value; }
+        }
+
+        public List<BrushDescriptor> SymmetryPointerBrushes
+        {
+            get { return m_SymmetryPointerBrushes; }
+            set { m_SymmetryPointerBrushes = value; }
+        }
 
         static public void ClearPlayerPrefs()
         {
@@ -487,6 +492,7 @@ namespace TiltBrush
             m_Pointers = new PointerData[m_MaxPointers];
             m_RemoteUserPointers = new List<PointerScript>();
             m_CustomMirrorMatrices = new List<Matrix4x4>();
+            m_ScriptedPointers = new List<PointerScript>();
 
             for (int i = 0; i < m_Pointers.Length; ++i)
             {
@@ -523,6 +529,28 @@ namespace TiltBrush
 
             m_FreePaintPointerAngle =
                 PlayerPrefs.GetFloat(PLAYER_PREFS_POINTER_ANGLE, m_DefaultPointerAngle);
+
+            App.Scene.MainCanvas.PoseChanged += OnPoseChanged;
+        }
+        private void OnPoseChanged(TrTransform prev, TrTransform current)
+        {
+            // Calculate differences
+            Vector3 translationDiff = current.translation - prev.translation;
+            Quaternion rotationDiff = current.rotation * Quaternion.Inverse(prev.rotation);
+
+            // Scripted pointers should translate and rotate with the scene
+            // Apply differences to target TrTransform
+            foreach (var pointer in m_ScriptedPointers)
+            {
+                var tr = pointer.transform;
+                tr.position += translationDiff;
+                tr.rotation *= rotationDiff;
+            }
+        }
+
+        protected void OnDestroy()
+        {
+            App.Scene.MainCanvas.PoseChanged -= OnPoseChanged;
         }
 
         private void OnActiveCanvasPoseChanged(TrTransform prev, TrTransform current)
@@ -530,8 +558,19 @@ namespace TiltBrush
             CalculateMirrorMatrices();
         }
 
+        public PointerScript CreateScriptedPointer()
+        {
+            GameObject obj = (GameObject)Instantiate(m_AuxPointerPrefab, transform, true);
+            var script = obj.GetComponent<PointerScript>();
+            script.ChildIndex = m_ScriptedPointers.Count - 1;
+            m_ScriptedPointers.Add(script);
+            return script;
+        }
+
         void Start()
         {
+            m_SymmetryPointerColors = new List<Color>();
+            m_SymmetryPointerBrushes = new List<BrushDescriptor>();
             SetSymmetryMode(SymmetryMode.None, false);
             m_PointersHideOnControllerLoss = App.VrSdk.GetControllerDof() == VrSdk.DoF.Six;
 
@@ -574,6 +613,16 @@ namespace TiltBrush
                         m_SymmetryWidget.position = SketchSurfacePanel.m_Instance.transform.position;
                         m_SymmetryWidget.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
                     }
+                    else if (m_CurrentSymmetryMode == SymmetryMode.CustomSymmetryMode)
+                    {
+                        m_SymmetryWidget.position = SketchSurfacePanel.m_Instance.transform.position;
+                        m_SymmetryWidget.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
+                    }
+                    else if (m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
+                    {
+                        m_SymmetryWidget.position = SketchSurfacePanel.m_Instance.transform.position;
+                        m_SymmetryWidget.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
+                    }
                 }
             }
 
@@ -611,6 +660,10 @@ namespace TiltBrush
                 {
                     m_Pointers[i].m_Script.MonoscopicLineDepth = fPointerLift;
                     m_Pointers[i].m_Script.UpdatePointer();
+                }
+                for (int i = 0; i < m_ScriptedPointers.Count; ++i)
+                {
+                    m_ScriptedPointers[i].UpdatePointer();
                 }
             }
 
@@ -805,14 +858,152 @@ namespace TiltBrush
             UpdateSymmetryPointerTransforms();
         }
 
-        public void SetMainPointerForward(Vector3 vForward)
+        public void SetMainPointerPositionAndForward(Vector3 vPos, Vector3 vForward)
         {
+            m_MainPointerData.m_Script.transform.position = vPos;
             m_MainPointerData.m_Script.transform.forward = vForward;
-            UpdateSymmetryPointerTransforms();
+            if (App.Config.m_SdkMode == SdkMode.Monoscopic)
+            {
+                // Monoscopic has a different codepath so we need to do this here.
+                // TODO figure out how to remove this conditional
+                // without calling UpdateSymmetryPointerTransforms multiple times
+                UpdateSymmetryPointerTransforms();
+            }
+        }
+
+        public bool CalcScriptedTransforms()
+        {
+            Transform rAttachPoint_GS = InputManager.m_Instance.GetBrushControllerAttachPoint();
+
+            var result = LuaManager.Instance.CallActiveSymmetryScript(LuaNames.Main);
+
+            if (result == null)
+            {
+                m_ScriptedTransforms = new List<TrTransform> { TrTransform.identity };
+                ChangeNumActivePointers(0);
+                return false;
+            }
+
+            List<TrTransform> transforms = result.AsSingleTrList();
+
+            int prevCount = m_ScriptedTransforms != null ? m_ScriptedTransforms.Count : 0;
+            if (transforms.Count != prevCount || m_ScriptedTransforms == null)
+            {
+                ChangeNumActivePointers(transforms.Count);
+                m_ScriptedTransforms = new List<TrTransform>(transforms.Count);
+                m_ScriptedTrFixes = new List<TrTransform>(transforms.Count);
+            }
+            else
+            {
+                m_ScriptedTransforms.Clear();
+                m_ScriptedTrFixes.Clear();
+            }
+
+            bool needsDummyPointer = true;
+            MatrixListApiWrapper matList = null;
+
+            if (result._Space == ScriptCoordSpace.Widget)
+            {
+                matList = result as MatrixListApiWrapper;
+            }
+
+            for (var i = 0; i < transforms.Count; i++)
+            {
+                var tr = transforms[i];
+                TrTransform newTr_CS = TrTransform.identity;
+                switch (result._Space)
+                {
+                    case ScriptCoordSpace.Default:
+                    case ScriptCoordSpace.Polar:
+                        {
+                            // Check to see if any pointers have an unchanged position
+                            if (tr.translation == SymmetryApiWrapper.brushOffset)
+                            {
+                                needsDummyPointer = false;
+                            }
+                            var xfWidget_GS = TrTransform.FromTransform(m_SymmetryWidget);
+                            var xfWidget_CS = App.Scene.MainCanvas.AsCanvas[m_SymmetryWidget];
+                            var xfPointer_CS = TrTransform.T(LuaManager.Instance.GetPastBrushPos(0));
+                            var brushToWidget_CS = xfWidget_CS.inverse * xfPointer_CS;
+                            TrTransform pos = TrTransform.T(-brushToWidget_CS.translation + tr.translation);
+                            newTr_CS = TrTransform.T(pos.translation);
+                            TrTransform rot = TrTransform.R(tr.rotation);
+                            newTr_CS = rot * newTr_CS;
+                            newTr_CS = xfWidget_GS * newTr_CS * xfWidget_GS.inverse;
+                            break;
+                        }
+                    case ScriptCoordSpace.Widget: // The only coordinate space that supports matrices
+                        {
+                            var mat = matList[i]._Matrix;
+
+                            var xfCenter_GS = TrTransform.FromTransform(m_SymmetryWidget);
+                            (TrTransform, TrTransform) trAndFix = TrFromMatrixWithFixedReflections(mat);
+                            var newTr_GS = xfCenter_GS * trAndFix.Item1 * xfCenter_GS.inverse;
+                            m_ScriptedTrFixes.Add(trAndFix.Item2);
+                            newTr_CS = newTr_GS;
+                        }
+                        break;
+                    case ScriptCoordSpace.Canvas:
+                        {
+                            needsDummyPointer = false;
+                            newTr_CS = TrTransform.T(tr.translation - LuaManager.Instance.GetPastBrushPos(0));
+                            break;
+                        }
+                    case ScriptCoordSpace.Pointer:
+                        {
+                            // Check to see if any pointers have an unchanged position
+                            if (tr.translation == Vector3.zero)
+                            {
+                                needsDummyPointer = false;
+                            }
+                            Quaternion pointerRot_GS = rAttachPoint_GS.rotation * FreePaintTool.sm_OrientationAdjust;
+                            pointerRot_GS *= Quaternion.Euler(0, 180, 0);
+                            newTr_CS.translation = pointerRot_GS * tr.translation;
+                            break;
+                        }
+                }
+                m_ScriptedTransforms.Add(newTr_CS);
+            }
+            return needsDummyPointer;
+        }
+
+
+        public void GenerateScriptedPointerTransforms()
+        {
+            bool needsDummyPointer = CalcScriptedTransforms();
+            Transform rAttachPoint_GS = InputManager.m_Instance.GetBrushControllerAttachPoint();
+
+            // If none of the pointers match the normal pointer location then we need to show a dummy pointer
+            var dummyPointer = rAttachPoint_GS.GetComponentInChildren<PointerScript>()?.gameObject;
+
+            if (needsDummyPointer)
+            {
+                if (dummyPointer == null)
+                {
+                    dummyPointer = Instantiate(m_DummyPointerPrefab, rAttachPoint_GS);
+                    dummyPointer.GetComponent<PointerScript>().BrushSize01 = 0.001f;
+                }
+                dummyPointer.SetActive(true);
+            }
+            else
+            {
+                if (dummyPointer != null)
+                {
+                    dummyPointer.SetActive(false);
+                }
+            }
         }
 
         public void SetSymmetryMode(SymmetryMode mode, bool recordCommand = true)
         {
+            // Early out if we're already in the requested mode (but allow None for initial hide of widget)
+            if (mode != SymmetryMode.None && m_CurrentSymmetryMode == mode) return;
+
+            if (m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
+            {
+                LuaManager.Instance.EndActiveScript(LuaApiCategory.SymmetryScript);
+            }
+
             int active = m_NumActivePointers;
             switch (mode)
             {
@@ -829,6 +1020,12 @@ namespace TiltBrush
                     CalculateMirrorMatrices();
                     CalculateMirrorColors(m_CustomMirrorMatrices.Count);
                     active = m_CustomMirrorMatrices.Count;
+                    break;
+                case SymmetryMode.ScriptedSymmetryMode:
+                    var script = LuaManager.Instance.GetActiveScript(LuaApiCategory.SymmetryScript);
+                    LuaManager.Instance.InitScript(script);
+                    GenerateScriptedPointerTransforms();
+                    active = m_ScriptedTransforms.Count;
                     break;
                 case SymmetryMode.DebugMultiple:
                     active = DEBUG_MULTIPLE_NUM_POINTERS;
@@ -893,7 +1090,8 @@ namespace TiltBrush
             int child = pointer.ChildIndex;
             // "active pointers" is the number of pointers the symmetry widget is using,
             // including the main pointer.
-            if (child == 0 || child >= m_NumActivePointers)
+            // ScriptedSymmetryMode controls ALL pointers including the pointer 0
+            if (child == 0 || m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
             {
                 return xfMain;
             }
@@ -921,6 +1119,16 @@ namespace TiltBrush
                             tr = trAndFix.Item1.TransformBy(xfCenter);
                         }
                         return tr * xfMain * trAndFix.Item1;
+                    }
+                case SymmetryMode.ScriptedSymmetryMode:
+                    {
+                        TrTransform scriptedTr;
+                        {
+                            scriptedTr = m_ScriptedTransforms[child];
+                            // convert from canvas to world coords
+                            scriptedTr *= App.Scene.Pose.inverse;
+                        }
+                        return scriptedTr;
                     }
 
                 case SymmetryMode.DebugMultiple:
@@ -1058,13 +1266,33 @@ namespace TiltBrush
 
                         for (int i = 0; i < m_CustomMirrorMatrices.Count; i++)
                         {
-                            (TrTransform, TrTransform) trAndFix;
-                            trAndFix = TrFromMatrixWithFixedReflections(m_CustomMirrorMatrices[i]);
+                            (TrTransform, TrTransform) trAndFix = TrFromMatrixWithFixedReflections(m_CustomMirrorMatrices[i]);
                             tr = xfCenter * trAndFix.Item1 * xfCenter.inverse; // convert from widget-local coords to world coords
                             var tmp = tr * pointer0 * trAndFix.Item2; // Work around 2018.3.x Mono parse bug
                             tmp.ToTransform(m_Pointers[i].m_Script.transform);
                             float scaledSize = m_Pointers[0].m_Script.BrushSize01 * Mathf.Abs(m_CustomMirrorMatrices[i].lossyScale.x);
                             m_Pointers[i].m_Script.BrushSize01 = scaledSize;
+                        }
+                        break;
+                    }
+                case SymmetryMode.ScriptedSymmetryMode:
+                    {
+                        GenerateScriptedPointerTransforms();
+                        TrTransform pointer0_GS = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
+                        int pointerIndex = 0;
+                        for (var i = 0; i < m_ScriptedTransforms.Count; i++)
+                        {
+                            var tr = m_ScriptedTransforms[i];
+                            // convert from canvas to world coords
+                            // tr *= App.Scene.Pose.inverse;
+                            // Apply the transform to the pointer
+                            TrTransform fixTr = i < m_ScriptedTrFixes.Count ? m_ScriptedTrFixes[i] : TrTransform.identity;
+                            var tmp = tr * pointer0_GS * fixTr; // Work around 2018.3.x Mono parse bug
+                            if (tmp.IsFinite())
+                            {
+                                tmp.ToTransform(m_Pointers[pointerIndex].m_Script.transform);
+                            }
+                            pointerIndex++;
                         }
                         break;
                     }
@@ -1082,7 +1310,6 @@ namespace TiltBrush
                     }
                 case SymmetryMode.TwoHanded:
                     {
-                        var xf0 = m_Pointers[0].m_Script.transform;
                         var xf = m_Pointers[1].m_Script.transform;
                         xf.position = InputManager.m_Instance.GetWandControllerAttachPoint().position;
                         xf.rotation = InputManager.m_Instance.GetWandControllerAttachPoint().rotation;
@@ -1274,13 +1501,7 @@ namespace TiltBrush
                 m_lastChosenColor = PointerColor;
             }
 
-            if (JitterEnabled)
-            {
-                // Bypass the code in the PointerColor setter
-                // Size is jittered in PointerScript. Should we also do color there?
-                ChangeAllPointerColorsDirectly(GenerateJitteredColor(MainPointer.CurrentBrush.m_ColorLuminanceMin));
-            }
-
+            HandleColorJitter();
 
             if (m_StraightEdgeEnabled)
             {
@@ -1306,7 +1527,6 @@ namespace TiltBrush
             return ColorPickerUtils.ClampLuminance(CalculateJitteredColor(currentColor), colorLuminanceMin);
         }
 
-
         public Color CalculateJitteredColor(Color currentColor)
         {
             Color.RGBToHSV(currentColor, out var h, out var s, out var v);
@@ -1328,27 +1548,13 @@ namespace TiltBrush
             return Color.HSVToRGB(ActualMod(h, 1), s, v);
         }
 
-        private static float CalcColorWaveform(float x, ColorShiftMode mode, float freq)
-        {
-            // Input is 0 to +1, output is -1 to +1
-            return mode switch
-            {
-                ColorShiftMode.SineWave => Mathf.Cos(x * freq * Mathf.PI * 2f),
-                ColorShiftMode.TriangleWave => Mathf.Abs((x * freq * 4) % 4 - 2) - 1,
-                ColorShiftMode.SawtoothWave => (x * freq % 1 - 0.5f) * 2f,
-                ColorShiftMode.SquareWave => (x * freq) % 1 < 0.5f ? -1 : 1,
-                ColorShiftMode.Noise => (Mathf.PerlinNoise(x * freq * 2, 0) * 3f) - 1.5f,
-                _ => x
-            };
-        }
-
         public static float _CalcColorShiftH(float x, float mod, ColorShiftComponentSetting settings)
         {
             // Expects x to vary from -1 to +1
             return Mathf.LerpUnclamped(
                 x,
                 x + settings.amp / 2,
-                CalcColorWaveform(mod, settings.mode, settings.freq));
+                WaveGenerator.Sample(settings.mode, mod, settings.freq));
         }
 
         public static float _CalcColorShiftSV(float x, float mod, ColorShiftComponentSetting settings)
@@ -1357,14 +1563,13 @@ namespace TiltBrush
             return Mathf.LerpUnclamped(
                 x,
                 x + settings.amp / 2,
-                CalcColorWaveform(mod, settings.mode, settings.freq)
+                WaveGenerator.Sample(settings.mode, mod, settings.freq)
             );
         }
 
         public float GenerateJitteredSize(BrushDescriptor desc, float currentSize)
         {
             float range = desc.m_BrushSizeRange.y - desc.m_BrushSizeRange.x;
-            float sizeJitter = PointerManager.m_Instance.sizeJitter;
             float jitterValue = Random.Range(-sizeJitter * range, sizeJitter * range) * 0.5f;
             float jitteredBrushSize = currentSize + jitterValue;
             jitteredBrushSize = Mathf.Clamp(jitteredBrushSize, desc.m_BrushSizeRange.x, desc.m_BrushSizeRange.y);
@@ -1412,6 +1617,7 @@ namespace TiltBrush
         {
             // standard mode, just finalize our line and get ready for the next one
             FinalizeLine();
+
             m_CurrentLineCreationState = LineCreationState.WaitingForInput;
         }
 
@@ -1500,11 +1706,37 @@ namespace TiltBrush
                     }
                 }
 
+                bool resetColors = true;
+                bool resetBrushes = true;
                 // Currently only Multimirror mode shows UI for color shift
                 // So disable it for all other modes
-                if (m_CurrentSymmetryMode == SymmetryMode.MultiMirror)
+                // TODO Better logic around when to set and revert colors
+                if (CurrentSymmetryMode is SymmetryMode.ScriptedSymmetryMode or SymmetryMode.MultiMirror)
                 {
-                    script.SetColor(m_SymmetryPointerColors[i % m_SymmetryPointerColors.Count]);
+                    if (m_SymmetryPointerColors != null && m_SymmetryPointerColors.Count > 0)
+                    {
+                        script.SetColor(m_SymmetryPointerColors[i % m_SymmetryPointerColors.Count]);
+                        resetColors = false;
+                    }
+
+                    if (m_SymmetryPointerBrushes != null && m_SymmetryPointerBrushes.Count > 0)
+                    {
+                        script.SetBrush(m_SymmetryPointerBrushes[i % m_SymmetryPointerBrushes.Count]);
+                        resetBrushes = false;
+                    }
+                }
+
+                // Ensure brush and color is reset after using scripts
+                if (resetBrushes)
+                {
+                    script.CurrentBrush = MainPointer.CurrentBrush;
+                }
+                if (resetColors)
+                {
+                    var color = JitterEnabled ?
+                        GenerateJitteredColor(m_lastChosenColor, script.CurrentBrush.m_ColorLuminanceMin) :
+                        m_lastChosenColor;
+                    script.SetColor(color);
                 }
 
                 script.CreateNewLine(
@@ -1526,7 +1758,7 @@ namespace TiltBrush
         }
 
         // Detach and record lines for all active pointers.
-        void FinalizeLine(bool isContinue = false, bool discard = false)
+        public void FinalizeLine(bool isContinue = false, bool discard = false)
         {
             PointerScript groupStart = null;
             uint groupStartTime = 0;
@@ -1535,6 +1767,8 @@ namespace TiltBrush
             {
                 var pointer = m_Pointers[i].m_Script;
                 // XXX: when would an active pointer not be creating a line?
+                // Well - actually! When a plugin can override line creation per pointer...
+                // And also perhaps multiplayer
                 if (pointer.IsCreatingStroke())
                 {
                     bool bDiscardLine = discard || pointer.ShouldDiscardCurrentLine();
@@ -1564,6 +1798,16 @@ namespace TiltBrush
                         pointer.DetachLine(bDiscardLine, null, flags, isFinalStroke);
                     }
                 }
+            }
+        }
+
+        public void HandleColorJitter()
+        {
+            if (JitterEnabled)
+            {
+                // Bypass the code in the PointerColor setter
+                // Size is jittered in PointerScript. Should we also do color there?
+                ChangeAllPointerColorsDirectly(GenerateJitteredColor(MainPointer.CurrentBrush.m_ColorLuminanceMin));
             }
         }
     }
