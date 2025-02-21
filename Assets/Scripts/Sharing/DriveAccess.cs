@@ -126,7 +126,8 @@ namespace TiltBrush
                     }
                     catch (Exception e)
                     {
-                        // We suspect wmic.xe can cause an exception on some systems, so we catch it here.
+                        // We suspect wmic.exe can cause an exception on some systems, so we catch it here
+                        Debug.LogWarning("wmic.exe not found. No Host id generated");
                         return "PC-unknown";
                     }
             }
