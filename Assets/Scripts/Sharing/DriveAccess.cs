@@ -107,17 +107,17 @@ namespace TiltBrush
             {
                 case RuntimePlatform.OSXPlayer:
                 case RuntimePlatform.OSXEditor:
-                    Debug.LogError("Host id not implemented for macOS");
+                    Debug.LogWarning("Host id not implemented for macOS");
                     return "macOS-unknown";
                 case RuntimePlatform.LinuxPlayer:
                 case RuntimePlatform.LinuxEditor:
-                    Debug.LogError("Host id not implemented for Linux");
+                    Debug.LogWarning("Host id not implemented for Linux");
                     return "Linux-unknown";
                 case RuntimePlatform.Android:
                     return GetAndroidId();
                 case RuntimePlatform.IPhonePlayer:
                     // TODO:Mikesky - iOS ID generation
-                    Debug.LogError("Host id not implemented for iOS");
+                    Debug.LogWarning("Host id not implemented for iOS");
                     return "iOS-unknown";
                 default:
                     try
