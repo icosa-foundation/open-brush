@@ -1255,6 +1255,7 @@ namespace TiltBrush
         // Stop scripts and clear data structures. Used when clearing the sketch
         public void DeInitialize()
         {
+            if (!m_IsInitialized) return;
             m_WebRequests.Clear();
             m_TransformBuffers = null;
             m_ScriptPathsToUpdate.Clear();
