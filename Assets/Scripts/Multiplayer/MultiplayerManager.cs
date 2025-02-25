@@ -17,12 +17,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
-
-
-
-#if OCULUS_SUPPORTED
 using OVRPlatform = Oculus.Platform;
-#endif
 using TiltBrush;
 
 namespace OpenBrush.Multiplayer
@@ -117,8 +112,9 @@ namespace OpenBrush.Multiplayer
 
         void Start()
         {
+
 #if OCULUS_SUPPORTED
-            OVRPlatform.Users.GetLoggedInUser().OnComplete((msg) => {
+            OVRPlatform.Users.GetLoggedInUser()?.OnComplete((msg) => {
                 if (!msg.IsError)
                 {
                     myOculusUserId = msg.GetUser().ID;
