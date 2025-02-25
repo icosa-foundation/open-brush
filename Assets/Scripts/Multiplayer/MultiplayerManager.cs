@@ -17,9 +17,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
-
-
-
 #if OCULUS_SUPPORTED
 using OVRPlatform = Oculus.Platform;
 #endif
@@ -45,10 +42,11 @@ namespace OpenBrush.Multiplayer
         private IVoiceConnectionHandler m_VoiceManager;
 
         public ITransientData<PlayerRigData> m_LocalPlayer;
-        public List<ITransientData<PlayerRigData>> m_RemotePlayers;
+        [HideInInspector] public RemotePlayers m_RemotePlayers;
 
         public Action<int, ITransientData<PlayerRigData>> localPlayerJoined;
-        public Action<int, ITransientData<PlayerRigData>> remotePlayerJoined;
+        public Action<RemotePlayer> remotePlayerJoined;
+        public Action<int, GameObject> remoteVoiceAdded;
         public Action<int> playerLeft;
         public Action<List<RoomData>> roomDataRefreshed;
 
@@ -112,7 +110,6 @@ namespace OpenBrush.Multiplayer
         {
             m_Instance = this;
             oculusPlayerIds = new List<ulong>();
-            m_RemotePlayers = new List<ITransientData<PlayerRigData>>();
         }
 
         void Start()
@@ -156,6 +153,7 @@ namespace OpenBrush.Multiplayer
             roomDataRefreshed += OnRoomDataRefreshed;
             localPlayerJoined += OnLocalPlayerJoined;
             remotePlayerJoined += OnRemotePlayerJoined;
+            remoteVoiceAdded += OnRemoteVoiceConnected;
             playerLeft += OnPlayerLeft;
             StateUpdated += UpdateSketchMemoryScriptTimeOffset;
 
@@ -169,6 +167,7 @@ namespace OpenBrush.Multiplayer
             roomDataRefreshed -= OnRoomDataRefreshed;
             localPlayerJoined -= OnLocalPlayerJoined;
             remotePlayerJoined -= OnRemotePlayerJoined;
+            remoteVoiceAdded -= OnRemoteVoiceConnected;
             playerLeft -= OnPlayerLeft;
             StateUpdated -= UpdateSketchMemoryScriptTimeOffset;
 
@@ -307,6 +306,30 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
+        public void RoomOwnershipReceived()
+        {
+            isUserRoomOwner = true;
+        }
+
+        public void RoomOwnershipTransferedToUser(int playerId)
+        {
+            if (!isUserRoomOwner) return;
+            m_Manager.RpcTransferRoomOnwership(playerId);
+            isUserRoomOwner = false;
+        }
+
+        public void ToggleUserViewOnlyMode(bool value, int playerId)
+        {
+            if (!isUserRoomOwner) return;
+            m_Manager.RpcToggleUserViewOnlyMode(value, playerId);
+        }
+
+        public void KickPlayerOut(int playerId)
+        {
+            if (!isUserRoomOwner) return;
+            m_Manager.RpcKickPlayerOut(playerId);
+        }
+
         void OnRoomDataRefreshed(List<RoomData> rooms)
         {
             m_RoomData = rooms;
@@ -374,8 +397,10 @@ namespace OpenBrush.Multiplayer
 
             // Update remote user refs, and send Anchors if new player joins.
             bool newUser = false;
-            foreach (var player in m_RemotePlayers)
+            foreach (var playerData in m_RemotePlayers.List)
             {
+                ITransientData<PlayerRigData> player = playerData.TransientData;
+
                 if (!player.IsSpawned) continue;
 
                 data = player.ReceiveData();
@@ -409,24 +434,56 @@ namespace OpenBrush.Multiplayer
 
         }
 
-        void OnRemotePlayerJoined(int id, ITransientData<PlayerRigData> playerData)
+        void OnRemotePlayerJoined(RemotePlayer newRemotePlayer)
         {
-            playerData.PlayerId = id;
-            m_RemotePlayers.Add(playerData);
+            m_RemotePlayers.AddPlayer(newRemotePlayer);
 
             if (isUserRoomOwner)
             {
-                MultiplayerSceneSync.m_Instance.StartSyncronizationForUser(id);
+                MultiplayerSceneSync.m_Instance.StartSyncronizationForUser(newRemotePlayer.PlayerId);
             }
+
         }
 
-        public void SendLargeDataToPlayer(int playerId, byte[] Data)
+        public void OnRemoteVoiceConnected(int id, GameObject voicePrefab)
         {
-            m_Manager.SendLargeDataToPlayer(playerId, Data);
+            RemotePlayer playerData = m_RemotePlayers.List.First(x => x.PlayerId == id);
+            if (playerData == default)
+            {
+                Debug.LogWarning($"PlayerRigData with ID {id} not found");
+                return;
+            }
+
+            if (playerData.PlayerGameObject == null)
+            {
+                Debug.LogWarning($"RemotePlayerGameObject with ID {id} not found");
+                return;
+            }
+
+            Transform headTransform = playerData.PlayerGameObject.transform.Find("HeadTransform");
+            if (headTransform != null)
+            {
+                voicePrefab.transform.SetParent(headTransform, false);
+                playerData.VoiceGameObject = voicePrefab;
+            }
+            else
+            {
+                Debug.LogWarning($"HeadTransform not found in {playerData.PlayerGameObject.name}");
+            }
+
+            AudioSource audioSource = voicePrefab.GetComponent<AudioSource>();
+            if (audioSource == null)
+            {
+                Debug.LogWarning($"VoicePrefab with ID {id} lack AudioSource :S ");
+                return;
+            }
+            MultiplayerAudioSourcesManager.m_Instance.AddAudioSource(id, audioSource);
         }
 
-
-
+        public void SendLargeDataToPlayer(int playerId, byte[] Data, int percentage)
+        {
+            m_Manager.SendLargeDataToPlayer(playerId, Data, percentage);
+        }
 
         void OnPlayerLeft(int id)
         {
@@ -436,25 +493,19 @@ namespace OpenBrush.Multiplayer
                 Debug.Log("Possible to get here!");
                 return;
             }
-            var copy = m_RemotePlayers.ToList();
-            foreach (var player in copy)
-            {
-                if (player.PlayerId == id)
-                {
-                    m_RemotePlayers.Remove(player);
-                }
-            }
+
+            m_RemotePlayers.RemovePlayerById(id);
 
             // Reassign Ownership if needed 
             // Check if any remaining player is the room owner
-            bool anyRoomOwner = m_RemotePlayers.Any(player => m_Manager.GetPlayerRoomOwnershipStatus(player.PlayerId))
+            bool anyRoomOwner = m_RemotePlayers.List.Any(player => m_Manager.GetPlayerRoomOwnershipStatus(player.PlayerId))
                                 || isUserRoomOwner;
 
             // If there's still a room owner, no reassignment is needed
             if (anyRoomOwner) return;
 
             // If there are no other players left, the local player becomes the room owner
-            if (m_RemotePlayers.Count == 0)
+            if (m_RemotePlayers.List.Count == 0)
             {
                 isUserRoomOwner = true;
                 return;
@@ -462,8 +513,8 @@ namespace OpenBrush.Multiplayer
 
             // Since There are other players left
             // Determine the new room owner by the lowest PlayerId
-            var allPlayers = new List<ITransientData<PlayerRigData>> { m_LocalPlayer };
-            allPlayers.AddRange(m_RemotePlayers);
+            var allPlayers = new List<RemotePlayer> { new RemotePlayer { PlayerId = m_LocalPlayer.PlayerId } };
+            allPlayers.AddRange(m_RemotePlayers.List);
 
             // Find the player with the lowest PlayerId
             var newOwner = allPlayers.OrderBy(player => player.PlayerId).First();
@@ -525,30 +576,6 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        public async void StartSynchHistory(int id)
-        {
-            if (State == ConnectionState.IN_ROOM)
-            {
-                await m_Manager.RpcStartSyncHistory(id);
-            }
-        }
-
-        public async void SynchHistoryPercentage(int id, int expected, int sent)
-        {
-            if (State == ConnectionState.IN_ROOM)
-            {
-                await m_Manager.RpcSyncHistoryPercentage(id, expected, sent);
-            }
-        }
-
-        public async void SynchHistoryComplete(int id)
-        {
-            if (State == ConnectionState.IN_ROOM)
-            {
-                await m_Manager.RpcHistorySyncComplete(id);
-            }
-        }
-
         async void ShareAnchors()
         {
 #if OCULUS_SUPPORTED
@@ -568,7 +595,7 @@ namespace OpenBrush.Multiplayer
         private void OnConnectionHandlerDisconnected()
         {
             m_LocalPlayer = null;// Clean up local player reference
-            m_RemotePlayers.Clear();// Clean up remote player references
+            m_RemotePlayers.ClearList();// Clean up remote player references
             LastError = null;
             State = ConnectionState.DISCONNECTED;
             StateUpdated?.Invoke(State);
@@ -613,7 +640,7 @@ namespace OpenBrush.Multiplayer
 
         public bool IsRemotePlayerStillConnected(int playerId)
         {
-            if (m_RemotePlayers.Any(player => player.PlayerId == playerId)) return true;
+            if (m_RemotePlayers.List.Any(player => player.PlayerId == playerId)) return true;
             return false;
         }
 

@@ -3608,6 +3608,70 @@ MonoBehaviour:
     m_Localized: 'Multiplayer Menu '
     m_Metadata:
       m_Items: []
+  - m_Id: 326532953040941056
+    m_Localized: 'Max Players: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326549804571619328
+    m_Localized: 'Room Settings: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326570591894564864
+    m_Localized: 'In Room Panel: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326572252843143168
+    m_Localized: 'Edit max PLayers: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326807657823793152
+    m_Localized: Transfer room ownership to this player
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326808393542463488
+    m_Localized: Mute Player
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326808972507410432
+    m_Localized: Unmute Player
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326832067431559168
+    m_Localized: Enable user view only
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326833306865168384
+    m_Localized: Disable user view only
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326852018926186496
+    m_Localized: In room settings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326852593516474368
+    m_Localized: Players list
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326864334061236224
+    m_Localized: Kick User Out
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326869993834082304
+    m_Localized: Mute all players
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326870578603945984
+    m_Localized: Unmute all players
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326871085665939456
+    m_Localized: Set all players to view only
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326871757446639616
+    m_Localized: Allow all players to edit
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
