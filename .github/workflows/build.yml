@@ -139,24 +139,8 @@ jobs:
           # For a PR action (i.e., synchronize / open), the value of github.ref will be refs/pull/1234/merge
           # For a push action, it will be either refs/heads/foo_branch_name OR refs/tags/v1234.
           # We want to use the base name for pushes of tags or to main, the PR number for PRs, and the branch name for named branches.
-          if [[ "$PRERELEASE" == "false" || ${{ github.ref }} == refs/heads/main ]]
-          then
-            echo "basename=OpenBrush" >> $GITHUB_OUTPUT
-            echo "description=" >> $GITHUB_OUTPUT
-          else
-            if [[ ${{ github.ref }} == refs/pull/* ]]
-            then
-              DESCRIPTION="PR$(echo ${{ github.ref }} | sed -e 's#refs/pull/##' -e 's#/merge##')"
-            elif [[ ${{ github.ref }} == refs/heads/* ]]
-            then
-              DESCRIPTION="$(echo ${{ github.ref }} | sed -e 's#refs/heads/##')"
-            else
-              DESCRIPTION="Unknown"
-            fi
-            echo "description=-btb-description ${DESCRIPTION}" >> $GITHUB_OUTPUT
-            IDENTIFIER=$(echo ${DESCRIPTION} | sed -e 's/[\/#_-]//g')
-            echo "basename=OpenBrush-${IDENTIFIER}" >> $GITHUB_OUTPUT
-          fi
+          echo "basename=OpenBrush" >> $GITHUB_OUTPUT
+          echo "description=" >> $GITHUB_OUTPUT
           echo "uid=$(id -u)" >> $GITHUB_OUTPUT
           echo "gid=$(id -g)" >> $GITHUB_OUTPUT
 
@@ -180,77 +164,8 @@ jobs:
       fail-fast: false
       matrix:
         flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
-        name: [Windows OpenXR, Windows Pimax, Windows Rift, Linux, MacOS, Android OpenXR, Oculus Quest (1), Oculus Quest (2+), Android Pico, Android Pico (CN), iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
+        name: [iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
         include:
-          - name: Windows OpenXR
-            targetPlatform: StandaloneWindows64
-            vrsdk: OpenXR
-            cache: Windows
-
-          - name: Windows Pimax
-            targetPlatform: StandaloneWindows64
-            vrsdk: OpenXR
-            cache: Windows
-            extra_defines: PIMAX_SUPPORTED
-
-          - name: Windows Rift
-            targetPlatform: StandaloneWindows64
-            vrsdk: Oculus
-            cache: Windows
-            extra_defines: OCULUS_SUPPORTED
-
-          - name: Linux
-            targetPlatform: StandaloneLinux64
-            vrsdk: Monoscopic  # All builds include monoscopic, but this one has no additional XrSdk, so we'll keep the name monoscopic
-            cache: Linux
-
-          - name: MacOS
-            targetPlatform: StandaloneOSX
-            vrsdk: Monoscopic
-            cache: MacOS
-            packages_to_remove: com.meta.xr.sdk.core
-
-          - name: Android OpenXR
-            targetPlatform: Android
-            vrsdk: OpenXR
-            cache: Android_Vulkan
-            extraoptions: -btb-il2cpp
-            versionSuffix: 0
-
-          - name: Oculus Quest (1)
-            targetPlatform: Android
-            vrsdk: OpenXR
-            cache: Android_Vulkan
-            extraoptions: -btb-il2cpp
-            versionSuffix: 0
-            extra_defines: USE_QUEST_PACKAGE_NAME FORCE_QUEST_SUPPORT_DEVICE FORCE_FOCUSAWARE FORCE_HEADTRACKING
-            packages_to_remove: com.meta.xr.sdk.platform com.meta.xr.sdk.utilities
-
-          - name: Oculus Quest (2+)
-            targetPlatform: Android
-            vrsdk: Oculus
-            cache: Android_Vulkan
-            extraoptions: -btb-il2cpp
-            versionSuffix: 1
-            extra_defines: OCULUS_SUPPORTED USE_QUEST_PACKAGE_NAME
-
-          - name: Android Pico
-            targetPlatform: Android
-            vrsdk: Pico
-            cache: Android_GLES
-            extraoptions: -btb-il2cpp
-            versionSuffix: 0
-            extra_defines: PICO_SUPPORTED
-
-          - name: Android Pico (CN)
-            targetPlatform: Android
-            vrsdk: Pico
-            cache: Android_GLES
-            # Pico requested Chinese build that doesn't have google/sketchfab login.
-            extraoptions: -btb-il2cpp -btb-disableAccountLogins
-            versionSuffix: 1
-            extra_defines: PICO_SUPPORTED
-
           - name: iOS Zapbox
             targetPlatform: iOS
             vrsdk: Zapbox
@@ -1368,10 +1283,6 @@ jobs:
     name: Publish Zapbox iOS
     needs: [configuration, build]
     runs-on: macos-latest
-    if: |
-      github.event_name == 'push' &&
-      github.repository == 'icosa-foundation/open-brush' &&
-      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -1393,6 +1304,7 @@ jobs:
           sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
           xcodebuild -downloadPlatform iOS -buildVersion 18.2  # Because of https://github.com/actions/runner-images/issues/11335
           df -h ~
+          xcrun simctl list || /bin/true
 
       - name: Download iOS Artifact
         uses: actions/download-artifact@v4

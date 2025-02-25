@@ -50,7 +50,6 @@ platform :ios do
       end
     )
     build
-    upload_to_testflight(skip_waiting_for_build_processing: true)
   end
 
   desc "Create .ipa"
