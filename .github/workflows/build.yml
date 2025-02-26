@@ -1391,6 +1391,7 @@ jobs:
           echo "Disk space after cleanup of \$AGENT_TOOLSDIRECTORY"
           df -h
           sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+          xcodebuild -downloadPlatform iOS -buildVersion 18.2  # Because of https://github.com/actions/runner-images/issues/11335
           df -h ~
 
       - name: Download iOS Artifact
