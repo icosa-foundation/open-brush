@@ -1390,10 +1390,7 @@ jobs:
           rm -rf "$AGENT_TOOLSDIRECTORY"
           echo "Disk space after cleanup of \$AGENT_TOOLSDIRECTORY"
           df -h
-          echo "Deleting all Xcode versions except 16.2"
-          find /Applications/Xcode_* -maxdepth 0 -type d ! -name 'Xcode_16.2.app' -exec rm -rf {} \;
-          df -h
-          sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+          sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer
           df -h ~
 
       - name: Download iOS Artifact
