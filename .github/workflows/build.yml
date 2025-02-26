@@ -1390,6 +1390,10 @@ jobs:
           rm -rf "$AGENT_TOOLSDIRECTORY"
           echo "Disk space after cleanup of \$AGENT_TOOLSDIRECTORY"
           df -h
+          echo "Deleting all Xcode versions except 16.2"
+          find /Applications/Xcode_* -maxdepth 0 -type d ! -name 'Xcode_16.2.app' -exec rm -rf {} \;
+          df -h
+          find /Applications/Xcode* -name "*.app" -exec du -mcsh {} \;  # Shows Xcode app sizes
 
       - name: Download iOS Artifact
         uses: actions/download-artifact@v4
