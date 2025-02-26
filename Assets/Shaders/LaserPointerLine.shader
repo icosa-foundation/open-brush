@@ -24,7 +24,7 @@ Shader "Custom/LaserPointerLine" {
     Tags { "Queue"="Transparent" "RenderType"="Transparent" }
 
     CGPROGRAM
-    #pragma surface surf Lambert alphatest:_Cutoff
+    #pragma surface surf Lambert keepalpha
 
     struct Input {
       float2 uv_MainTex;
@@ -37,8 +37,9 @@ Shader "Custom/LaserPointerLine" {
     void surf (Input IN, inout SurfaceOutput o) {
 
       o.Albedo = 0;
-      o.Emission = _EmissionColor.xyz * .1f;
-      o.Alpha = (sin(IN.uv_MainTex.x + _Time.x * _ScrollSpeed) + 1.0f)/2.0f;
+      float alpha = (sin(IN.uv_MainTex.x + _Time.x * _ScrollSpeed) + 1.0f) * 0.5f;
+      o.Emission = _EmissionColor.xyz * 0.1f * alpha;
+      o.Alpha = alpha;
     }
     ENDCG
   }
