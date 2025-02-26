@@ -1390,9 +1390,11 @@ jobs:
           rm -rf "$AGENT_TOOLSDIRECTORY"
           echo "Disk space after cleanup of \$AGENT_TOOLSDIRECTORY"
           df -h
-          sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+
+      - name: Use xcode 16.2 / ios 18.2
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer  # The default in macos-latest (i.e., 14) is currently 15.4.
           xcodebuild -downloadPlatform iOS -buildVersion 18.2  # Because of https://github.com/actions/runner-images/issues/11335
-          df -h ~
 
       - name: Download iOS Artifact
         uses: actions/download-artifact@v4
