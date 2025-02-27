@@ -1,7 +1,6 @@
 {
   "dependencies": {
     "com.ixxy.polyhydra.core": "https://github.com/IxxyXR/polyhydra-core.git#upm",
-    "com.ixxy.polyhydra.core": "https://github.com/IxxyXR/polyhydra-core.git#upm",
     "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
     "com.watertrans.glyphloader": "https://github.com/icosa-mirror/GlyphLoader-Unity.git#upm",
     "com.meta.xr.sdk.core": "https://github.com/icosa-mirror/com.meta.xr.sdk.core.git#68.0.2-openbrush-hotfix",
@@ -71,19 +70,6 @@
   },
   "scopedRegistries": [
     {
-<<<<<<< HEAD
-=======
-      "name": "OpenUPM",
-      "url": "https://package.openupm.com",
-      "scopes": [
-        "com.atteneder",
-        "org.nuget.google",
-        "org.nuget.sharpziplib",
-        "org.nuget.system"
-      ]
-    },
-    {
->>>>>>> origin/main
       "name": "Vive",
       "url": "https://npm-registry.vive.com",
       "scopes": [
@@ -95,19 +81,6 @@
       "url": "https://npm.developer.oculus.com",
       "scopes": [
         "com.meta.xr.sdk"
-      ]
-    },
-    {
-      "name": "OpenUPM",
-      "url": "https://package.openupm.com",
-      "scopes": [
-        "com.atteneder",
-        "com.ixxy.polyhydra.core",
-        "com.nition.unity-octree",
-        "com.openupm",
-        "com.syomus.proceduraltoolkit",
-        "com.watertrans.glyphloader": "https://github.com/icosa-mirror/GlyphLoader-Unity.git#upm",
-        "moonsharp": "https://github.com/icosa-mirror/moonsharp-unity-upm.git"
       ]
     },
     {
