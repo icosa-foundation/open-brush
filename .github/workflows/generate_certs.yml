@@ -12,6 +12,7 @@ on:  # yamllint disable-line rule:truthy
 
 jobs:
   generate_certs:
+    name: Generate Certs
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: macos-latest
     steps:
