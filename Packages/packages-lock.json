@@ -76,11 +76,11 @@
       "depth": 1,
       "source": "registry",
       "dependencies": {
-        "com.unity.modules.assetbundle": "1.0.0",
-        "com.unity.modules.jsonserialize": "1.0.0",
-        "com.unity.modules.imageconversion": "1.0.0",
-        "com.unity.modules.unitywebrequest": "1.0.0",
         "com.unity.scriptablebuildpipeline": "1.21.23",
+        "com.unity.modules.assetbundle": "1.0.0",
+        "com.unity.modules.imageconversion": "1.0.0",
+        "com.unity.modules.jsonserialize": "1.0.0",
+        "com.unity.modules.unitywebrequest": "1.0.0",
         "com.unity.modules.unitywebrequestassetbundle": "1.0.0"
       },
       "url": "https://packages.unity.com"
@@ -299,9 +299,9 @@
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.modules.audio": "1.0.0",
         "com.unity.modules.director": "1.0.0",
         "com.unity.modules.animation": "1.0.0",
+        "com.unity.modules.audio": "1.0.0",
         "com.unity.modules.particlesystem": "1.0.0"
       },
       "url": "https://packages.unity.com"
@@ -429,7 +429,7 @@
       "dependencies": {
         "org.nuget.google.apis.core": "1.64.0"
       },
-      "url": "https://unitynuget-registry.azurewebsites.net"
+      "url": "https://package.openupm.com"
     },
     "org.nuget.google.apis.auth": {
       "version": "1.64.0",
@@ -440,7 +440,7 @@
         "org.nuget.google.apis": "1.64.0",
         "org.nuget.system.management": "7.0.2"
       },
-      "url": "https://unitynuget-registry.azurewebsites.net"
+      "url": "https://package.openupm.com"
     },
     "org.nuget.google.apis.core": {
       "version": "https://github.com/icosa-mirror/org.nuget.google.apis.core.git#1.64.0-openbrush",
@@ -456,14 +456,14 @@
       "depth": 0,
       "source": "registry",
       "dependencies": {},
-      "url": "https://unitynuget-registry.azurewebsites.net"
+      "url": "https://package.openupm.com"
     },
     "org.nuget.system.codedom": {
       "version": "7.0.0",
       "depth": 2,
       "source": "registry",
       "dependencies": {},
-      "url": "https://unitynuget-registry.azurewebsites.net"
+      "url": "https://package.openupm.com"
     },
     "org.nuget.system.management": {
       "version": "7.0.2",
@@ -472,7 +472,7 @@
       "dependencies": {
         "org.nuget.system.codedom": "7.0.0"
       },
-      "url": "https://unitynuget-registry.azurewebsites.net"
+      "url": "https://package.openupm.com"
     },
     "tv.superla.radiancehdr": {
       "version": "https://github.com/superlatv/RadianceHDRUnity.git#upm",
