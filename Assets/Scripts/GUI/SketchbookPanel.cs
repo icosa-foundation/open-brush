@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
+using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
@@ -49,7 +50,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_NoShowcaseMessage;
         [SerializeField] private GameObject m_ContactingServerMessage;
         [SerializeField] private GameObject m_OutOfDateMessage;
-        [SerializeField] private GameObject m_NoPolyConnectionMessage;
+        [FormerlySerializedAs("m_NoPolyConnectionMessage")][SerializeField] private GameObject m_NoIcosaConnectionMessage;
         [SerializeField] private Renderer m_OnlineGalleryButtonRenderer;
         [SerializeField] private GameObject[] m_IconsOnFirstPage;
         [SerializeField] private GameObject[] m_IconsOnNormalPage;
@@ -299,15 +300,16 @@ namespace TiltBrush
             // Base Refresh updates the modal parts of the panel, and we always want those refreshed.
             base.RefreshPage();
 
-            bool requiresPoly = m_CurrentSketchSet == SketchSetType.Liked;
+            bool requiresIcosa = m_CurrentSketchSet == SketchSetType.Liked || m_CurrentSketchSet == SketchSetType.Curated;
+            bool requiresGoogle = m_CurrentSketchSet == SketchSetType.Drive;
 
-            bool polyDown = VrAssetService.m_Instance.NoConnection && requiresPoly;
-            m_NoPolyConnectionMessage.SetActive(polyDown);
+            bool icosaDown = VrAssetService.m_Instance.NoConnection && requiresIcosa;
+            m_NoIcosaConnectionMessage.SetActive(icosaDown);
 
-            bool outOfDate = !polyDown && !VrAssetService.m_Instance.Available && requiresPoly;
+            bool outOfDate = !icosaDown && !VrAssetService.m_Instance.Available && requiresIcosa;
             m_OutOfDateMessage.SetActive(outOfDate);
 
-            if (outOfDate || polyDown)
+            if (outOfDate || icosaDown)
             {
                 m_NoSketchesMessage.SetActive(false);
                 m_NoDriveSketchesMessage.SetActive(false);
@@ -327,27 +329,27 @@ namespace TiltBrush
                 (m_CurrentSketchSet == SketchSetType.Drive) && (m_SketchSet.NumSketches <= 0));
 
             // Show sign in popup if signed out for liked or drive sketchsets
-            bool showNotLoggedIn = !App.GoogleIdentity.LoggedIn &&
-                (m_CurrentSketchSet == SketchSetType.Liked ||
-                m_CurrentSketchSet == SketchSetType.Drive);
-            refreshIcons = refreshIcons && !showNotLoggedIn;
-            m_NotLoggedInMessage.SetActive(showNotLoggedIn && m_CurrentSketchSet == SketchSetType.Liked);
-            m_NotLoggedInDriveMessage.SetActive(showNotLoggedIn &&
-                m_CurrentSketchSet == SketchSetType.Drive);
+            bool showIcosaNotLoggedIn = !App.IcosaIsLoggedIn && m_CurrentSketchSet == SketchSetType.Liked;
+            bool showGoogleNotLoggedIn = !App.GoogleIdentity.LoggedIn && m_CurrentSketchSet == SketchSetType.Drive;
+            refreshIcons = refreshIcons && !showIcosaNotLoggedIn;
+            m_NotLoggedInMessage.SetActive(showIcosaNotLoggedIn && m_CurrentSketchSet == SketchSetType.Liked);
+            m_NotLoggedInDriveMessage.SetActive(showGoogleNotLoggedIn);
 
             // Show no likes text & gallery button if we don't have liked sketches.
             m_NoLikesMessage.SetActive(
                 (m_CurrentSketchSet == SketchSetType.Liked) &&
                 (m_SketchSet.NumSketches <= 0) &&
                 !m_SketchSet.IsActivelyRefreshingSketches &&
-                App.GoogleIdentity.LoggedIn);
+                App.IcosaIsLoggedIn);
 
-            // Show Contacting Server if we're talking to Poly.
+            // Show Contacting Server if we're talking to Drive or Icosa
             m_ContactingServerMessage.SetActive(
-                (requiresPoly ||
-                m_CurrentSketchSet == SketchSetType.Drive) &&
-                (m_SketchSet.NumSketches <= 0) &&
-                (m_SketchSet.IsActivelyRefreshingSketches && App.GoogleIdentity.LoggedIn));
+                m_SketchSet.NumSketches <= 0
+                && m_SketchSet.IsActivelyRefreshingSketches
+                && (
+                    (requiresIcosa && App.IcosaIsLoggedIn) ||
+                    (requiresGoogle && App.GoogleIdentity.LoggedIn)
+                ));
 
             // Show Showcase error if we're in Showcase and don't have sketches.
             m_NoShowcaseMessage.SetActive(
@@ -577,10 +579,12 @@ namespace TiltBrush
                             lines.Add(icon.Description);
 
                             SceneFileInfo info = m_SketchSet.GetSketchSceneFileInfo(iSketchIndex);
-                            if (info is PolySceneFileInfo polyInfo &&
-                                polyInfo.License != VrAssetService.kCreativeCommonsLicense)
+                            if (info is IcosaSceneFileInfo polyInfo && polyInfo.License != VrAssetService.kCreativeCommonsLicense)
                             {
-                                lines.Add(String.Format("© {0}", authors[0]));
+                                if (authors != null && authors.Length > 0)
+                                {
+                                    lines.Add($"© {authors[0]}");
+                                }
                                 lines.Add("All Rights Reserved");
                             }
                             else
