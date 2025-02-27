@@ -194,6 +194,15 @@ namespace TiltBrush
             {
                 return rCompareSketch.m_FileInfo.CreationTime.CompareTo(m_FileInfo.CreationTime);
             }
+
+            public void ForceLoadThumbnail()
+            {
+                var data = ReadThumbnail(SceneFileInfo);
+                var icon = new Texture2D(128, 128, TextureFormat.RGB24, true);
+                icon.LoadImage(data);
+                icon.Apply();
+                m_Icon = icon;
+            }
         }
 
         protected SketchSetType m_Type;
@@ -234,28 +243,31 @@ namespace TiltBrush
             get { return m_Sketches.Count; }
         }
 
-        public FileSketchSet()
+        public FileSketchSet(SketchSetType sketchSetType)
         {
-            m_Type = SketchSetType.User;
+            m_Type = sketchSetType;
             m_ReadyForAccess = false;
             m_RequestedLoads = new Stack<int>();
             m_Sketches = new List<FileSketch>();
             m_ToAdd = Queue.Synchronized(new Queue());
             m_ToDelete = Queue.Synchronized(new Queue());
-            m_ReadOnly = false;
-            m_SketchesPath = App.UserSketchPath();
-        }
-
-        public FileSketchSet(string path)
-        {
-            m_Type = SketchSetType.Curated;
-            m_ReadyForAccess = false;
-            m_RequestedLoads = new Stack<int>();
-            m_Sketches = new List<FileSketch>();
-            m_ToAdd = Queue.Synchronized(new Queue());
-            m_ToDelete = Queue.Synchronized(new Queue());
-            m_ReadOnly = true;
-            m_SketchesPath = path;
+            switch (m_Type)
+            {
+                case SketchSetType.Curated:
+                    m_ReadOnly = true;
+                    m_SketchesPath = App.FeaturedSketchesPath();
+                    break;
+                case SketchSetType.SavedStrokes:
+                    m_ReadOnly = false;
+                    m_SketchesPath = App.SavedStrokesPath();
+                    break;
+                case SketchSetType.User:
+                    m_ReadOnly = false;
+                    m_SketchesPath = App.UserSketchPath();
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
         }
 
         public bool IsSketchIndexValid(int iIndex)
@@ -362,7 +374,10 @@ namespace TiltBrush
 
         public virtual void Init()
         {
-            ProcessDirectory(m_SketchesPath);
+            if (!m_Sketches.Any())
+            {
+                ProcessDirectory(m_SketchesPath);
+            }
             m_ReadyForAccess = true;
 
             // No real reason to do this; SaveLoadScript creates the directory itself
@@ -484,6 +499,12 @@ namespace TiltBrush
                     m_RequestedLoads.Push(iSketch);
                 }
             }
+        }
+
+        public Texture2D ForceLoadThumbnail(int index)
+        {
+            m_Sketches[index].ForceLoadThumbnail();
+            return m_Sketches[index].Icon;
         }
 
         private void ProcessDirectory(string path)
