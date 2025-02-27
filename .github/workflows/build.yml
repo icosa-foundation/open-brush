@@ -1150,6 +1150,92 @@ jobs:
             ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest1_$VERSION.apk --channel Beta:quest1only --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group MIXED_AGES
           fi
 
+  publish_oculus_quest_arborxr:
+    name: Publish Oculus Quest 2+ Release ArborXR
+    needs: [configuration, build]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Download Build Artifacts (Oculus Quest 2+)
+        uses: actions/download-artifact@v4
+        with:
+          name: Oculus Quest (2+)
+          path: build_oculus_quest
+      - name: Publish Oculus Builds
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
+          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
+          ARBORXR_ACCESS_TOKEN: ${{ secrets.ARBORXR_ACCESS_TOKEN }}
+          ARBORXR_ORG_ID: ${{ vars.ARBORXR_ORG_ID }}
+          ARBORXR_APP_ID: ${{ vars.ARBORXR_Q2_APP_ID }}
+          ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_Q2_LIVE_CHANNEL }}
+          ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_Q2_BETA_CHANNEL }}
+        run: |
+          mkdir releases
+          mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
+
+          cd releases
+          wget -O arborxr-cli.zip https://graphql.xrdm.app/download/system-content/channel/fe7633a5-d733-4885-8b3c-580c11c4842d
+          unzip arborxr-cli.zip
+          ln -s arborxr-cli-linux-* arborxr-cli
+          chmod 755 arborxr-cli
+
+          if [ "$PRERELEASE" == "false" ]
+          then
+            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_LIVE_CHANNEL OpenBrush_Quest_$VERSION.apk
+          else
+            CHANGELOG="${RAW_CHANGELOG}"
+            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_BETA_CHANNEL OpenBrush_Quest_$VERSION.apk --release-notes "${CHANGELOG}"
+          fi
+
+  publish_oculus_quest1_arborxr:
+    name: Publish Oculus Quest 1 Release ArborXR
+    needs: [configuration, build]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Download Build Artifacts (Oculus Quest 1)
+        uses: actions/download-artifact@v4
+        with:
+          name: Oculus Quest (1)
+          path: build_oculus_quest1
+      - name: Publish Oculus Builds
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
+          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
+          ARBORXR_ACCESS_TOKEN: ${{ secrets.ARBORXR_ACCESS_TOKEN }}
+          ARBORXR_ORG_ID: ${{ vars.ARBORXR_ORG_ID }}
+          ARBORXR_APP_ID: ${{ vars.ARBORXR_Q1_APP_ID }}
+          ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_Q1_LIVE_CHANNEL }}
+          ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_Q1_BETA_CHANNEL }}
+        run: |
+          mkdir releases1
+          mv build_oculus_quest1/*/com.Icosa.OpenBrush*apk releases1/OpenBrush_Quest1_$VERSION.apk
+
+          cd releases1
+          wget -O arborxr-cli.zip https://graphql.xrdm.app/download/system-content/channel/fe7633a5-d733-4885-8b3c-580c11c4842d
+          unzip arborxr-cli.zip
+          ln -s arborxr-cli-linux-* arborxr-cli
+          chmod 755 arborxr-cli
+
+          if [ "$PRERELEASE" == "false" ]
+          then
+            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_LIVE_CHANNEL OpenBrush_Quest1_$VERSION.apk
+          else
+            CHANGELOG="${RAW_CHANGELOG}"
+            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_BETA_CHANNEL OpenBrush_Quest1_$VERSION.apk --release-notes "${CHANGELOG}"
+          fi
+
   publish_oculus_rift:
     name: Publish Oculus Rift Release
     needs: [configuration, build]
@@ -1235,6 +1321,49 @@ jobs:
             ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 3 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
           fi
 
+  publish_pico_arborxr:
+    name: Publish Pico Releases ArborXR
+    needs: [configuration, build]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Download Build Artifacts (Android Pico)
+        uses: actions/download-artifact@v4
+        with:
+          name: Android Pico
+          path: build_android_pico
+      - name: Publish Pico Builds
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
+          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
+          ARBORXR_ACCESS_TOKEN: ${{ secrets.ARBORXR_ACCESS_TOKEN }}
+          ARBORXR_ORG_ID: ${{ vars.ARBORXR_ORG_ID }}
+          ARBORXR_APP_ID: ${{ vars.ARBORXR_PICO_APP_ID }}
+          ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_PICO_LIVE_CHANNEL }}
+          ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_PICO_BETA_CHANNEL }}
+        run: |
+          mkdir releases
+          mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
+
+          cd releases
+          wget -O arborxr-cli.zip https://graphql.xrdm.app/download/system-content/channel/fe7633a5-d733-4885-8b3c-580c11c4842d
+          unzip arborxr-cli.zip
+          ln -s arborxr-cli-linux-* arborxr-cli
+          chmod 755 arborxr-cli
+
+          if [ "$PRERELEASE" == "false" ]
+          then
+            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_LIVE_CHANNEL OpenBrush_Pico_$VERSION.apk
+          else
+            CHANGELOG="${RAW_CHANGELOG}"
+            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_BETA_CHANNEL OpenBrush_Pico_$VERSION.apk --release-notes "${CHANGELOG}"
+          fi
+
   publish_ios_zapbox:
     name: Publish Zapbox iOS
     needs: [configuration, build]
@@ -1261,10 +1390,11 @@ jobs:
           rm -rf "$AGENT_TOOLSDIRECTORY"
           echo "Disk space after cleanup of \$AGENT_TOOLSDIRECTORY"
           df -h
-          echo "Deleting all Xcode versions except 15.4"
-          find /Applications/Xcode_* -maxdepth 0 -type d ! -name 'Xcode_15.4.app' -exec rm -rf {} \;
-          df -h
-          find /Applications/Xcode* -name "*.app" -exec du -mcsh {} \;  # Shows Xcode app sizes
+
+      - name: Use xcode 16.2 / ios 18.2
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer  # The default in macos-latest (i.e., 14) is currently 15.4.
+          xcodebuild -downloadPlatform iOS -buildVersion 18.2  # Because of https://github.com/actions/runner-images/issues/11335
 
       - name: Download iOS Artifact
         uses: actions/download-artifact@v4
