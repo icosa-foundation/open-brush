@@ -172,7 +172,8 @@ namespace TiltBrush
             ChangeSnapAngle = 8000,
             MergeBrushStrokes = 10000,
             RepaintOptions = 11500,
-            OpenNumericInputPopup = 12000
+            OpenNumericInputPopup = 12000,
+            OpenTextInputPopup = 12001
         }
 
         public enum ControlsType
@@ -4871,6 +4872,8 @@ namespace TiltBrush
                     MultiplayerSceneSync.m_Instance.HideSynchInfo();
                     break;
                 case GlobalCommands.RepaintOptions: break; // Intentionally blank.
+                case GlobalCommands.OpenTextInputPopup: break; // Intentionally blank.
+                case GlobalCommands.Null: break;           // Intentionally blank.
                 case GlobalCommands.Null: break; // Intentionally blank.
                 case GlobalCommands.MultiplayerPanelOptions: break; // Intentionally blank.
                 case GlobalCommands.MultiplayerJoinRoom: break; // Intentionally blank.

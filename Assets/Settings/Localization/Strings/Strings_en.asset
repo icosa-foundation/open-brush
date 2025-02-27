@@ -3432,6 +3432,10 @@ MonoBehaviour:
     m_Localized: Next Device
     m_Metadata:
       m_Items: []
+  - m_Id: 140585981667180544
+    m_Localized: Text
+    m_Metadata:
+      m_Items: []
   - m_Id: 137988464450723840
     m_Localized: Move Selection to Current Layer
     m_Metadata:
@@ -3487,6 +3491,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 188792931159203840
     m_Localized: Unlock Canvas Position
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151470525216034816
+    m_Localized: "Enter text"
     m_Metadata:
       m_Items: []
   - m_Id: 217069105871577088

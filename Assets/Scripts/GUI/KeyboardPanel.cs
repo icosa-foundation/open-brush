@@ -1,4 +1,4 @@
-﻿// Copyright 2023 The Open Brush Authors
+// Copyright 2023 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,34 +13,34 @@
 // limitations under the License.
 
 using System;
-using System.IO;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Localization;
+using TMPro;
 
 namespace TiltBrush
 {
-    public class KeyboardPopUpWindow : OptionsPopUpWindow
+    public class KeyboardPanel : BasePanel
     {
         private KeyboardUI m_KeyboardUI;
         [NonSerialized] public static string m_InitialText;
         [NonSerialized] public static string m_LastInput;
+        [NonSerialized] public Action<KeyboardPanel> m_OnClose;
 
         public bool m_SanitizeFilename;
 
-        void Awake()
+        protected override void Awake()
         {
+            base.Awake();
             m_KeyboardUI = GetComponentInChildren<KeyboardUI>();
             m_KeyboardUI.KeyPressed += KeyPressed;
-        }
-
-        override public void Init(GameObject rParent, string sText)
-        {
-            base.Init(rParent, sText);
             m_KeyboardUI.AddConsoleContent(m_InitialText);
             m_LastInput = m_InitialText;
         }
 
         private void OnDestroy()
         {
+            m_OnClose?.Invoke(this);
             m_KeyboardUI.KeyPressed -= KeyPressed;
         }
 
@@ -51,11 +51,8 @@ namespace TiltBrush
                 case KeyboardKeyType.Enter:
                     // Logic will been to be updated if we ever have a multi-line keyboard
                     m_LastInput = m_KeyboardUI.ConsoleContent;
-                    if (m_ParentPanel)
-                    {
-                        m_ParentPanel.ResolveDelayedButtonCommand(true);
-                    }
-                    RequestClose(bForceClose: true);
+                    PanelManager.m_Instance.DismissNonCorePanel(PanelType.Keyboard);
+                    SketchControlsScript.m_Instance.EatGazeObjectInput();
                     break;
             }
 
@@ -64,5 +61,6 @@ namespace TiltBrush
                 m_KeyboardUI.SanitizeFilename();
             }
         }
+
     }
 } // namespace TiltBrush

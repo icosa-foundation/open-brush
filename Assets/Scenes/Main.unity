@@ -3651,7 +3651,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_FakeCommandLineArgsInEditor: 
   m_PlatformConfig: {fileID: 11400000, guid: 0764a106823cbec4e8d75b2816f3cbd3, type: 2}
-  m_SdkMode: 0
+  m_SdkMode: 1
   m_AutoProfile: 0
   m_AutoProfileWaitTime: 10
   Secrets: {fileID: 11400000, guid: 2958d93356c83c5409c5fc930c42e6fc, type: 2}
@@ -8203,13 +8203,11 @@ MonoBehaviour:
 
     Quality Level: ~~
 
-    #
-    FPS High: ~~~~ (> ~~)
+    # FPS High: ~~~~ (> ~~)
 
     # GPU Low: ~~~~ (< ~~.~~)
 
-    # FPS Low: ~~~~ (<
-    ~~)
+    # FPS Low: ~~~~ (< ~~)
 
     # GPU High: ~~~~ (> ~~.~~)
 
@@ -9728,6 +9726,7 @@ Transform:
   - {fileID: 8282789105019930893}
   - {fileID: 402490430}
   - {fileID: 1804317401}
+  - {fileID: 1404596589}
   m_Father: {fileID: 1796800572}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &593121477
@@ -19698,6 +19697,12 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!4 &1404596589 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8463577212548165002, guid: 057ad9cf6c77278419e3f7c95edc17e0,
+    type: 3}
+  m_PrefabInstance: {fileID: 8463577213852081383}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1412532061
 GameObject:
   m_ObjectHideFlags: 0
@@ -30130,8 +30135,7 @@ MonoBehaviour:
   m_QuestSideLoadingHowToURL: https://docs.openbrush.app/user-guide/using-reference-images-on-oculus-quest
   m_ContributionPromoText: 'Open Brush is a free app entirely run by volunteers.
 
-    If
-    you enjoy the app, please consider donating in the settings menu!'
+    If you enjoy the app, please consider donating in the settings menu!'
   m_ContributionURL: https://opencollective.com/icosa
   m_WorldTransformMinScale: 0.1
   m_WorldTransformMaxScale: 10
@@ -30571,6 +30575,7 @@ MonoBehaviour:
     type: 3}
   m_SceneLightGizmoPrefab: {fileID: 1712584378369130260, guid: f28bfd6efbf3cb046be485c6573ca207,
     type: 3}
+  m_TextWidgetPrefab: {fileID: 11466202, guid: c28bc4e3ed71248b889df2a70d873d0b, type: 3}
   m_CameraPathWidgetPrefab: {fileID: 114268259032398848, guid: a933b2a19614a6c4da08a0143f0ec912,
     type: 3}
   m_CameraPathPositionKnotPrefab: {fileID: 1334758335721002, guid: 38b506951b7a81e4e9a6c65a9a20efa9,
@@ -37049,6 +37054,75 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: e26dd31bb70849e4da9f0b1230a62278, type: 3}
+--- !u!1001 &8463577213852081383
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 593121476}
+    m_Modifications:
+    - target: {fileID: 8463577212548165002, guid: 057ad9cf6c77278419e3f7c95edc17e0,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 21
+      objectReference: {fileID: 0}
+    - target: {fileID: 8463577212548165002, guid: 057ad9cf6c77278419e3f7c95edc17e0,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8463577212548165002, guid: 057ad9cf6c77278419e3f7c95edc17e0,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8463577212548165002, guid: 057ad9cf6c77278419e3f7c95edc17e0,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8463577212548165002, guid: 057ad9cf6c77278419e3f7c95edc17e0,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8463577212548165002, guid: 057ad9cf6c77278419e3f7c95edc17e0,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8463577212548165002, guid: 057ad9cf6c77278419e3f7c95edc17e0,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8463577212548165002, guid: 057ad9cf6c77278419e3f7c95edc17e0,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8463577212548165002, guid: 057ad9cf6c77278419e3f7c95edc17e0,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8463577212548165002, guid: 057ad9cf6c77278419e3f7c95edc17e0,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8463577212548165002, guid: 057ad9cf6c77278419e3f7c95edc17e0,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8463577212548165003, guid: 057ad9cf6c77278419e3f7c95edc17e0,
+        type: 3}
+      propertyPath: m_Name
+      value: TextTool
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 057ad9cf6c77278419e3f7c95edc17e0, type: 3}
 --- !u!4 &9123593761565215834
 Transform:
   m_ObjectHideFlags: 0
