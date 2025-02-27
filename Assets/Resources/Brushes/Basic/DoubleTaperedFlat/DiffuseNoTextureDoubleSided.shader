@@ -15,6 +15,10 @@
 Shader "Brush/Special/DiffuseNoTextureDoubleSided" {
 Properties {
   _Color ("Main Color", Color) = (1,1,1,1)
+
+  _Dissolve("Dissolve", Range(0,1)) = 1
+  _ClipStart("Clip Start", Float) = 0
+  _ClipEnd("Clip End", Float) = -1
 }
 
 SubShader {
@@ -33,6 +37,10 @@ SubShader {
 
   fixed4 _Color;
 
+  uniform half _ClipStart;
+  uniform half _ClipEnd;
+  uniform half _Dissolve;
+
   struct appdata_t {
     float4 vertex : POSITION;
     fixed4 color : COLOR;
@@ -41,6 +49,7 @@ SubShader {
     float2 texcoord0 : TEXCOORD0;
     float3 texcoord1 : TEXCOORD1;
     float4 texcoord2 : TEXCOORD2;
+    uint id : SV_VertexID;
     UNITY_VERTEX_INPUT_INSTANCE_ID
   };
 
@@ -49,6 +58,8 @@ SubShader {
     float2 uv_MainTex;
     float4 color : COLOR;
     fixed vface : VFACE;
+    uint id : SV_VertexID;
+    float4 screenPos;
   };
 
   void vert (inout appdata_t v, out Input o) {
@@ -64,9 +75,16 @@ SubShader {
     float widthMultiplier = 1 - envelope;
     v.vertex.xyz += -v.texcoord1 * widthMultiplier;
     v.color = TbVertToNative(v.color);
+    o.id = v.id;
   }
 
   void surf (Input IN, inout SurfaceOutput o) {
+
+    #ifdef SHADER_SCRIPTING_ON
+    if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
+    if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
+    #endif
+
     fixed4 c = _Color;
     o.Normal = float3(0,0,IN.vface);
     o.Albedo = c.rgb * IN.color.rgb;

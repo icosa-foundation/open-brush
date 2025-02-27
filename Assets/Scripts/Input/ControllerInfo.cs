@@ -24,6 +24,80 @@ namespace TiltBrush
     /// </summary>
     public abstract class ControllerInfo
     {
+        // Used by API commands
+
+        private bool m_WasActive;
+        private bool m_BecameActiveThisFrame;
+        private bool m_BecameInactiveThisFrame;
+
+        private float m_TimeBecameActive;
+        private float m_TimeBecameInactive;
+        private float m_DistanceMoved_CS;
+
+        public float DistanceMoved_CS => m_DistanceMoved_CS;
+        private Vector3 m_PreviousPosition;
+        private float m_DistanceDrawn_CS;
+        public float DistanceDrawn_CS => m_DistanceDrawn_CS;
+        public bool BecameInactiveThisFrame => m_BecameInactiveThisFrame;
+        public float TimeBecameActive => m_TimeBecameActive;
+        public float TimeBecameInactive => m_TimeBecameInactive;
+
+        protected void UpdateStateFlags()
+        {
+            // Store time values for real-time scripts to use
+
+            if (IsTriggerDown())
+            {
+                // The frame it becomes active
+                m_WasActive = true;
+                m_BecameActiveThisFrame = true;
+                m_BecameInactiveThisFrame = false;
+                m_TimeBecameActive = Time.realtimeSinceStartup;
+            }
+            else if (IsTrigger())
+            {
+                // Every frame while active
+                m_WasActive = true;
+                m_BecameActiveThisFrame = false;
+                m_BecameInactiveThisFrame = false;
+            }
+            else if (!IsTrigger() && m_WasActive)
+            {
+                // The frame it becomes inactive
+                m_WasActive = false;
+                m_BecameActiveThisFrame = false;
+                m_BecameInactiveThisFrame = true;
+                m_TimeBecameInactive = Time.realtimeSinceStartup;
+            }
+            else
+            {
+                // Every frame while inactive
+                m_WasActive = false;
+                m_BecameActiveThisFrame = false;
+                m_BecameInactiveThisFrame = false;
+            }
+
+        }
+
+        protected void UpdateTimeRecords()
+        {
+            // Used by API
+
+            var pos = Behavior.PointerAttachPoint.position;
+            float fPointerMovement_CS = Vector3.Distance(pos, m_PreviousPosition) / Coords.CanvasPose.scale;
+            m_DistanceMoved_CS += fPointerMovement_CS;
+            m_PreviousPosition = pos;
+
+            if (m_WasActive)
+            {
+                m_DistanceDrawn_CS += fPointerMovement_CS;
+            }
+            else
+            {
+                m_DistanceDrawn_CS = 0;
+            }
+        }
+
         // The various inputs available on VR controllers.
 
         // The invalid position (0,0) is excluded from all the pad buttons,
@@ -138,6 +212,9 @@ namespace TiltBrush
                     TriggerControllerHaptics(m_HapticPulseLength);
                 }
             }
+
+            UpdateStateFlags();
+            UpdateTimeRecords();
         }
 
         public virtual void LateUpdate()
@@ -181,6 +258,8 @@ namespace TiltBrush
                 case SketchCommands.Redo:
                     return GetVrInput(VrInput.Button02 /*half_right*/);
                 case SketchCommands.Fly:
+                    return IsTrigger();
+                case SketchCommands.ScriptedTool:
                     return IsTrigger();
             }
 

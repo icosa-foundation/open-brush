@@ -18,6 +18,7 @@ using System.IO;
 using System.Linq;
 using Unity.VectorGraphics;
 using Superla.RadianceHDR;
+using Unity.VectorGraphics;
 using UnityEngine;
 using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;

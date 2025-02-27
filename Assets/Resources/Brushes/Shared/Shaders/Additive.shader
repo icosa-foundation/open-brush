@@ -15,6 +15,11 @@
 Shader "Brush/Additive" {
 Properties {
   _MainTex ("Texture", 2D) = "white" {}
+
+  _Opacity("Opacity", Range(0,1)) = 1
+  _Dissolve ("Dissolve", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -42,11 +47,17 @@ Category {
 
       sampler2D _MainTex;
 
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
+      uniform half _Dissolve;
+      uniform half _Opacity;
+
       struct appdata_t {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float3 normal : NORMAL;
         float2 texcoord : TEXCOORD0;
+        uint id : SV_VertexID;
 
         UNITY_VERTEX_INPUT_INSTANCE_ID
       };
@@ -55,6 +66,7 @@ Category {
         float4 pos : POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        float2 id : TEXCOORD2;
 
         UNITY_VERTEX_OUTPUT_STEREO
       };
@@ -78,17 +90,22 @@ Category {
         o.color = v.color;
 #endif
         o.pos = UnityObjectToClipPos(v.vertex);
-
+        o.id = (float2)v.id;
         return o;
-
       }
 
       fixed4 frag (v2f i) : COLOR
       {
+        #ifdef SHADER_SCRIPTING_ON
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+        if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+        #endif
+
         half4 c = tex2D(_MainTex, i.texcoord);
         c = i.color * c;
         FRAG_MOBILESELECT(c)
-        return encodeHdr(c.rgb * c.a);
+        c = encodeHdr(c.rgb * c.a);
+        return c * _Opacity;
       }
       ENDCG
     }

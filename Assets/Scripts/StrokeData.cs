@@ -33,7 +33,8 @@ namespace TiltBrush
         // Seed for deterministic pseudo-random numbers for geometry generation.
         // Not currently serialized.
         public int m_Seed;
-        public SketchGroupTag m_Group = SketchGroupTag.None;
+        protected SketchGroupTag m_Group = SketchGroupTag.None;
+        public SketchGroupTag Group => m_Group;
         public Guid m_Guid;
 
         // Reference the BrushStrokeCommand that created this stroke with a WeakReference.

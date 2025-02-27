@@ -25,6 +25,14 @@ Properties {
   _FlameFadeMin ("Fade Flame Min", Float) = 1
   _FlameFadeMax ("Fade Flame Max", Float) = 30
 
+
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
+
+    _Dissolve("Dissolve", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -53,6 +61,10 @@ Category {
       sampler2D _MainTex;
       sampler2D _DisplaceTex;
 
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
+      uniform half _Dissolve;
+
       struct appdata_t {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
@@ -63,6 +75,7 @@ Category {
         float2 texcoord : TEXCOORD0;
 #endif
         float3 worldPos : TEXCOORD1;
+        uint id : SV_VertexID;
 
         UNITY_VERTEX_INPUT_INSTANCE_ID
       };
@@ -76,6 +89,7 @@ Category {
         float2 texcoord : TEXCOORD0;
 #endif
         float3 worldPos : TEXCOORD1;
+        uint id : TEXCOORD2;
 
         UNITY_VERTEX_OUTPUT_STEREO
       };
@@ -93,7 +107,7 @@ Category {
       {
         PrepForOds(v.vertex);
 
-  
+
         v.color = TbVertToSrgb(v.color);
         v2f o;
 
@@ -105,17 +119,23 @@ Category {
         o.color = bloomColor(v.color, _EmissionGain);
         o.vertex = UnityObjectToClipPos(v.vertex);
         o.worldPos = mul(unity_ObjectToWorld, v.vertex);
+        o.id = (float2)v.id;
         return o;
       }
 
       // Note: input color is srgb
       fixed4 frag (v2f i) : COLOR
       {
+        #ifdef SHADER_SCRIPTING_ON
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+        if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+        #endif
+
         half2 displacement;
         float procedural_line = 0;
         float flame_fade_mix = 0;
 
-        displacement = tex2D( _DisplaceTex, i.texcoord ).xy; 
+        displacement = tex2D( _DisplaceTex, i.texcoord ).xy;
         displacement =  displacement * 2.0 - 1.0;
         displacement *= _DisplacementIntensity;
 
@@ -128,8 +148,8 @@ Category {
         half2 uv = i.texcoord;
         uv += displacement;
 
-        half flame1 = tex2D(_MainTex, uv * .7 + half2(-_Time.x * _Scroll1, 0)).x;
-        half flame2 = tex2D(_MainTex, half2(uv.x,1.0-uv.y) + half2(-_Time.x * _Scroll2, -_Time.x * _Scroll2 / 4 )).x;
+        half flame1 = tex2D(_MainTex, uv * .7 + half2(-GetTime().x * _Scroll1, 0)).x;
+        half flame2 = tex2D(_MainTex, half2(uv.x,1.0-uv.y) + half2(-GetTime().x * _Scroll2, -GetTime().x * _Scroll2 / 4 )).x;
 
         half flames = saturate( flame2 + flame1 ) / 2.0;
         flames = smoothstep( 0, 0.8, mask*flames);
@@ -143,7 +163,7 @@ Category {
         float4 color = i.color * tex;
         color = encodeHdr(color.rgb * color.a);
         color = SrgbToNative(color);
-        return color;
+        return color * _Dissolve;
       }
       ENDCG
     }
