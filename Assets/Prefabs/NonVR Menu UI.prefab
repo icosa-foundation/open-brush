@@ -582,7 +582,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_RoomNameInput: {fileID: 8497429393582015138}
   m_NicknameInput: {fileID: 1855410318653795537}
-  m_MaxPlayersInput: {fileID: 0}
+  m_MaxPlayersInput: {fileID: 353303902217973833}
   m_PrivateToggle: {fileID: 395559422104200561}
   m_VoiceDisabledToggle: {fileID: 4928700367364170898}
   m_MultiplayerMenuPanel: {fileID: 4662939369836531456}
@@ -1724,7 +1724,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.5566038, g: 0.5566038, b: 0.5566038, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1760,7 +1760,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 0.54509807}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}

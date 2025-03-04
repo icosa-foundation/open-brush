@@ -33,15 +33,15 @@ public class NonVrMultiplayerUi : MonoBehaviour
         }
     }
 
-    void SetJoinRoomUi(bool enabled)
+    void SetJoinRoomUi(bool canJoin)
     {
-        m_RoomNameInput.gameObject.SetActive(enabled);
-        m_NicknameInput.gameObject.SetActive(enabled);
-        m_MaxPlayersInput.gameObject.SetActive(enabled);
-        m_PrivateToggle.gameObject.SetActive(enabled);
-        m_VoiceDisabledToggle.gameObject.SetActive(enabled);
-        m_JoinRoomButton.gameObject.SetActive(enabled);
-        m_LeaveRoomButton.gameObject.SetActive(!enabled);
+        m_RoomNameInput.gameObject.SetActive(canJoin);
+        m_NicknameInput.gameObject.SetActive(canJoin);
+        m_MaxPlayersInput.gameObject.SetActive(canJoin);
+        m_PrivateToggle.gameObject.SetActive(canJoin);
+        m_VoiceDisabledToggle.gameObject.SetActive(canJoin);
+        m_JoinRoomButton.gameObject.SetActive(canJoin);
+        m_LeaveRoomButton.gameObject.SetActive(!canJoin);
     }
 
     void Update()
