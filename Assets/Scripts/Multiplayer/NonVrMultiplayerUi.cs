@@ -23,18 +23,11 @@ public class NonVrMultiplayerUi : MonoBehaviour
     void Start()
     {
         m_ViewModeUi = GetComponentInParent<ViewModeUI>();
-        if (MultiplayerManager.m_Instance.CanLeaveRoom())
-        {
-            SetJoinRoomUi(false);
-        }
-        else
-        {
-            SetJoinRoomUi(true);
-        }
     }
 
-    void SetJoinRoomUi(bool canJoin)
+    void SetJoinRoomUi()
     {
+        bool canJoin = MultiplayerManager.m_Instance.CanLeaveRoom();
         m_RoomNameInput.gameObject.SetActive(canJoin);
         m_NicknameInput.gameObject.SetActive(canJoin);
         m_MaxPlayersInput.gameObject.SetActive(canJoin);
@@ -97,6 +90,7 @@ public class NonVrMultiplayerUi : MonoBehaviour
             Debug.LogError("Failed to leave room");
             yield break;
         }
+        SetJoinRoomUi();
     }
 
     private void OnJoinRoomCompleted(bool success)
@@ -107,6 +101,7 @@ public class NonVrMultiplayerUi : MonoBehaviour
             cameraPos.y += 12;
             App.VrSdk.GetVrCamera().transform.position = cameraPos;
             m_MultiplayerMenuPanel.SetActive(false);
+            SetJoinRoomUi();
         }
         else
         {
