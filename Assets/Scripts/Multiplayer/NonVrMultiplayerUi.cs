@@ -15,12 +15,33 @@ public class NonVrMultiplayerUi : MonoBehaviour
     public Toggle m_PrivateToggle;
     public Toggle m_VoiceDisabledToggle;
     public GameObject m_MultiplayerMenuPanel;
+    public Button m_JoinRoomButton;
+    public Button m_LeaveRoomButton;
 
     private ViewModeUI m_ViewModeUi;
 
     void Start()
     {
         m_ViewModeUi = GetComponentInParent<ViewModeUI>();
+        if (MultiplayerManager.m_Instance.CanLeaveRoom())
+        {
+            SetJoinRoomUi(false);
+        }
+        else
+        {
+            SetJoinRoomUi(true);
+        }
+    }
+
+    void SetJoinRoomUi(bool enabled)
+    {
+        m_RoomNameInput.gameObject.SetActive(enabled);
+        m_NicknameInput.gameObject.SetActive(enabled);
+        m_MaxPlayersInput.gameObject.SetActive(enabled);
+        m_PrivateToggle.gameObject.SetActive(enabled);
+        m_VoiceDisabledToggle.gameObject.SetActive(enabled);
+        m_JoinRoomButton.gameObject.SetActive(enabled);
+        m_LeaveRoomButton.gameObject.SetActive(!enabled);
     }
 
     void Update()
@@ -37,10 +58,14 @@ public class NonVrMultiplayerUi : MonoBehaviour
         StartCoroutine(HandleJoinRoomButtonCoroutine());
     }
 
+    public void HandleLeaveRoomButton()
+    {
+        StartCoroutine(HandleJoinRoomButtonCoroutine());
+    }
+
     private IEnumerator HandleJoinRoomButtonCoroutine()
     {
         yield return StartCoroutine(HandleJoinRoomButtonAsync());
-        OnJoinRoomCompleted(true);
     }
 
     private IEnumerator HandleJoinRoomButtonAsync()
@@ -51,7 +76,7 @@ public class NonVrMultiplayerUi : MonoBehaviour
             roomName = m_RoomNameInput.text,
             @private = m_PrivateToggle.isOn,
             maxPlayers = int.Parse(m_MaxPlayersInput.text),
-            voiceDisabled = m_PrivateToggle.isOn
+            voiceDisabled = m_VoiceDisabledToggle.isOn
         };
         var joinRoomTask = MultiplayerManager.m_Instance.JoinRoom(roomData);
         yield return new WaitUntil(() => joinRoomTask.IsCompleted);
@@ -61,6 +86,17 @@ public class NonVrMultiplayerUi : MonoBehaviour
             yield break;
         }
         OnJoinRoomCompleted(joinRoomTask.Result);
+    }
+
+    private IEnumerator HandleLeaveRoomButtonAsync()
+    {
+        var leaveRoomTask = MultiplayerManager.m_Instance.LeaveRoom();
+        yield return new WaitUntil(() => leaveRoomTask.IsCompleted);
+        if (leaveRoomTask.IsFaulted)
+        {
+            Debug.LogError("Failed to leave room");
+            yield break;
+        }
     }
 
     private void OnJoinRoomCompleted(bool success)
