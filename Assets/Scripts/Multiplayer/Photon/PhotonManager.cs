@@ -165,7 +165,7 @@ namespace OpenBrush.Multiplayer
                 int? maxPlayerCount = m_Runner.SessionInfo.MaxPlayers;
                 maxPlayerCount = maxPlayerCount == null ? int.MaxValue : maxPlayerCount;
 
-                if (currentPlayerCount >= maxPlayerCount)
+                if (currentPlayerCount > maxPlayerCount)
                 {
                     State = ConnectionState.ERROR;
                     LastError = "[PhotonManager] Room is full.";
