@@ -5,11 +5,15 @@ using TiltBrush;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 public class NonVrMultiplayerUi : MonoBehaviour
 {
     public TMP_InputField m_RoomNameInput;
     public TMP_InputField m_NicknameInput;
+    public TMP_InputField m_MaxPlayersInput;
+    public Toggle m_PrivateToggle;
+    public Toggle m_VoiceDisabledToggle;
     public GameObject m_MultiplayerMenuPanel;
 
     private ViewModeUI m_ViewModeUi;
@@ -45,9 +49,9 @@ public class NonVrMultiplayerUi : MonoBehaviour
         RoomCreateData roomData = new RoomCreateData
         {
             roomName = m_RoomNameInput.text,
-            @private = false,
-            maxPlayers = 4,
-            voiceDisabled = false
+            @private = m_PrivateToggle.isOn,
+            maxPlayers = int.Parse(m_MaxPlayersInput.text),
+            voiceDisabled = m_PrivateToggle.isOn
         };
         var joinRoomTask = MultiplayerManager.m_Instance.JoinRoom(roomData);
         yield return new WaitUntil(() => joinRoomTask.IsCompleted);
