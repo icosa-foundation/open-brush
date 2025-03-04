@@ -18390,12 +18390,6 @@ Transform:
   - {fileID: 1175138880}
   m_Father: {fileID: 1316587488}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1332713373 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 4662939369836531456, guid: eec2c6d84d06c8243a91c52d96d79404,
-    type: 3}
-  m_PrefabInstance: {fileID: 9088044348092674843}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1344159569
 GameObject:
   m_ObjectHideFlags: 0
@@ -30933,7 +30927,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_UiRoot: {fileID: 2128862032}
-  m_MenuPanel: {fileID: 1332713373}
   m_CloseButton: {fileID: 1590074096}
   m_MenuButton: {fileID: 9088044348092674845}
 --- !u!1 &1804317400
@@ -37080,11 +37073,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2128862033}
     m_Modifications:
-    - target: {fileID: 16554121672217833, guid: eec2c6d84d06c8243a91c52d96d79404,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value: 
-      objectReference: {fileID: 1802399862}
     - target: {fileID: 1383501869076208940, guid: eec2c6d84d06c8243a91c52d96d79404,
         type: 3}
       propertyPath: m_Name

@@ -9,12 +9,12 @@ using UnityEngine.UI;
 
 public class NonVrMultiplayerUi : MonoBehaviour
 {
+    public GameObject m_MultiplayerMenuPanel;
     public TMP_InputField m_RoomNameInput;
     public TMP_InputField m_NicknameInput;
     public TMP_InputField m_MaxPlayersInput;
     public Toggle m_PrivateToggle;
     public Toggle m_VoiceDisabledToggle;
-    public GameObject m_MultiplayerMenuPanel;
     public Button m_JoinRoomButton;
     public Button m_LeaveRoomButton;
 
@@ -118,5 +118,10 @@ public class NonVrMultiplayerUi : MonoBehaviour
             Role = MultiplayerManager.m_Instance.UserInfo.Role
         };
         MultiplayerManager.m_Instance.UserInfo = userInfo;
+    }
+
+    public void HandleMenuButton()
+    {
+        m_MultiplayerMenuPanel.SetActive(!m_MultiplayerMenuPanel.activeSelf);
     }
 }
