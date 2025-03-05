@@ -3558,7 +3558,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 294637073212186624
     m_Localized: Edit Room Name
-    m_Metadata:
+    m_Metadata:s
       m_Items: []
   - m_Id: 294637384320491520
     m_Localized: Edit Nickname
@@ -3573,7 +3573,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 312781662766833664
-    m_Localized: 'Status:'
+    m_Localized: 'Status: '
     m_Metadata:
       m_Items: []
   - m_Id: 312783011751469056
@@ -3581,19 +3581,19 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 312963339069759488
-    m_Localized: You are the Room Owner
+    m_Localized: Room name is available
     m_Metadata:
       m_Items: []
   - m_Id: 312963447907753984
-    m_Localized: You are not the Room Owner
+    m_Localized: Room already exists
     m_Metadata:
       m_Items: []
   - m_Id: 312783116814589952
-    m_Localized: 'RoomName: '
+    m_Localized: 'Room Name: '
     m_Metadata:
       m_Items: []
   - m_Id: 312783250461892608
-    m_Localized: 'Nickname:'
+    m_Localized: 'Nickname: '
     m_Metadata:
       m_Items: []
   - m_Id: 312967307862810624
@@ -3617,11 +3617,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 326570591894564864
-    m_Localized: 'In Room Panel: '
+    m_Localized: 'Room Panel: '
     m_Metadata:
       m_Items: []
   - m_Id: 326572252843143168
-    m_Localized: 'Edit max PLayers: '
+    m_Localized: 'Edit Max Players'
     m_Metadata:
       m_Items: []
   - m_Id: 326807657823793152
