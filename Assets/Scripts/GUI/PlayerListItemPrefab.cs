@@ -23,6 +23,7 @@ namespace TiltBrush
         public TextMeshPro PlayerIdObject;
         public TextMeshPro NickNameObject;
         public MultiplayerRoomOptionsPanelButton MuteButton;
+        public MultiplayerRoomOptionsPanelButton MuteForAllButton;
         public MultiplayerRoomOptionsPanelButton TransferOwnershipButton;
         public MultiplayerRoomOptionsPanelButton ToggleViewOnly;
         public MultiplayerRoomOptionsPanelButton KickPlayerOut;
@@ -48,6 +49,11 @@ namespace TiltBrush
         public void SetAudioToggleState(bool isActive)
         {
             if (MuteButton) MuteButton.SetToggleState(isActive);
+        }
+
+        public void SetAudioForAllToggleState(bool isActive)
+        {
+            if (MuteForAllButton) MuteForAllButton.SetToggleState(isActive);
         }
 
         public void SetViewOnlyToggleState(bool isActive)

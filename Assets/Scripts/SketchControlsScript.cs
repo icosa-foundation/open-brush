@@ -164,6 +164,8 @@ namespace TiltBrush
             MultiplayerKickPlayerOut = 1015,
             MultiplayerToggleAllUserAudio = 1016,
             MultiplayerToggleAllUserViewEditMode = 1017,
+            MultiplayerToggleAllUserAudioForAll = 1018,
+            ToggleUserVoiceInMultiplayerForAll = 1019,
 
 
             RenameSketch = 5200,

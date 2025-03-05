@@ -318,6 +318,12 @@ namespace OpenBrush.Multiplayer
             isUserRoomOwner = false;
         }
 
+        public void MutePlayerForAll(bool mute, int playerId)
+        {
+            if (!isUserRoomOwner) return;
+            m_Manager.RpcMutePlayer(mute, playerId);
+        }
+
         public void ToggleUserViewOnlyMode(bool value, int playerId)
         {
             if (!isUserRoomOwner) return;

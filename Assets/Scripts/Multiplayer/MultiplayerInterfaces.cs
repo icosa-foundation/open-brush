@@ -48,6 +48,7 @@ namespace OpenBrush.Multiplayer
         Task<bool> RpcTransferRoomOnwership(int playerId);
         Task<bool> RpcToggleUserViewOnlyMode(bool value, int playerId);
         Task<bool> RpcKickPlayerOut(int playerId);
+        bool RpcMutePlayer(bool mute, int playerId);
 
         event Action Disconnected;
     }
