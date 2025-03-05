@@ -594,19 +594,15 @@ namespace OpenBrush.Multiplayer
             MultiplayerManager.m_Instance.Disconnect();
         }
 
-        [Rpc(RpcSources.All, RpcTargets.All)]
-        public static void RPC_MutePlayer(NetworkRunner runner, bool mute, PlayerRef targetPlayer)
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_MutePlayer(NetworkRunner runner, bool mute, int playerId)
         {
-            if (runner.TryGetPlayerObject(targetPlayer, out NetworkObject networkObject))
+            if (MultiplayerAudioSourcesManager.m_Instance != null)
             {
-                var speaker = networkObject.GetComponent<Speaker>(); // Photon Voice 2 component
-                if (speaker != null)
-                {
-                    speaker.enabled = !mute; // Disables speaker to mute
-                }
+                MultiplayerAudioSourcesManager.m_Instance.AudioSourcesMuteStateForPlayer(playerId, mute);
             }
         }
-        
+
         #endregion
     }
 }

@@ -391,12 +391,11 @@ namespace OpenBrush.Multiplayer
             m_Runner.SendReliableDataToPlayer(playerRef, key, largeData);
         }
 
-        public async Task<bool> RpcMutePlayer(bool mute, int playerId)
+        public bool RpcMutePlayer(bool mute, int playerId)
         {
-            PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
             PhotonRPCBatcher.EnqueueRPC(() =>
             {
-                PhotonRPC.RPC_MutePlayer(m_Runner, mute, targetPlayer);
+                PhotonRPC.RPC_MutePlayer(m_Runner, mute, playerId);
             });
             return true;
         }
