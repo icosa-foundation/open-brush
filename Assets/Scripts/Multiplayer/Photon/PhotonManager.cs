@@ -396,7 +396,7 @@ namespace OpenBrush.Multiplayer
             PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
             PhotonRPCBatcher.EnqueueRPC(() =>
             {
-                MultiplayerAudioSourcesManager.RPC_MutePlayer(m_Runner, mute, targetPlayer);
+                PhotonRPC.RPC_MutePlayer(m_Runner, mute, targetPlayer);
             });
             return true;
         }
