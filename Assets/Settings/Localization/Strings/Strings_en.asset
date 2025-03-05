@@ -3657,7 +3657,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 326869993834082304
-    m_Localized: Mute all players
+    m_Localized: Muted
     m_Metadata:
       m_Items: []
   - m_Id: 326870578603945984
@@ -3665,7 +3665,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 326871085665939456
-    m_Localized: Set all players to view only
+    m_Localized: View only
     m_Metadata:
       m_Items: []
   - m_Id: 326871757446639616
