@@ -3625,7 +3625,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 326807657823793152
-    m_Localized: Transfer room ownership to this player
+    m_Localized: Transfer room ownership
     m_Metadata:
       m_Items: []
   - m_Id: 326808393542463488
@@ -3637,7 +3637,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 326832067431559168
-    m_Localized: Enable user view only
+    m_Localized: View only
     m_Metadata:
       m_Items: []
   - m_Id: 326833306865168384
@@ -3653,7 +3653,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 326864334061236224
-    m_Localized: Kick User Out
+    m_Localized: Kick User
     m_Metadata:
       m_Items: []
   - m_Id: 326869993834082304
