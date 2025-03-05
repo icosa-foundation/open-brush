@@ -1140,7 +1140,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.414, y: -0.14600028}
+  m_AnchoredPosition: {x: 0.414, y: -0.40799987}
   m_SizeDelta: {x: 1.104868, y: 1.4460607}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!23 &5377226912068943702
@@ -1608,7 +1608,7 @@ Transform:
   m_GameObject: {fileID: 1458507807089661463}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.619, y: 0.396, z: -0.042}
+  m_LocalPosition: {x: -0.619, y: 0.13400039, z: -0.042}
   m_LocalScale: {x: 0.15, y: 0.15, z: 0.15}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2239,7 +2239,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.414, y: 0.09299956}
+  m_AnchoredPosition: {x: 0.414, y: -0.16900004}
   m_SizeDelta: {x: 1.104868, y: 1.4460607}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!23 &8677733851088090031
@@ -2996,7 +2996,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.161, y: -0.605}
+  m_AnchoredPosition: {x: 0.161, y: -0.128}
   m_SizeDelta: {x: 1.104868, y: 1.4460607}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!23 &4811598343171871539
@@ -3061,7 +3061,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Room Owner
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
   m_sharedMaterial: {fileID: 2133298, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
@@ -3088,8 +3088,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 1.5
-  m_fontSizeBase: 1.5
+  m_fontSize: 1.25
+  m_fontSizeBase: 1.25
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -3282,7 +3282,7 @@ MonoBehaviour:
   m_ButtonHasPressedAudio: 1
   m_ZAdjustHover: -0.02
   m_ZAdjustClick: 0.02
-  m_HoverScale: 1.1
+  m_HoverScale: -176.8
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
   m_Command: 1004
@@ -3532,7 +3532,7 @@ Transform:
   m_GameObject: {fileID: 7521510091458286424}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.619, y: 0.635, z: -0.042}
+  m_LocalPosition: {x: -0.619, y: 0.373, z: -0.042}
   m_LocalScale: {x: 0.15, y: 0.15, z: 0.15}
   m_ConstrainProportionsScale: 0
   m_Children: []
