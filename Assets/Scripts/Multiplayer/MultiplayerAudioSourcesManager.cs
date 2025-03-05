@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using Fusion;
+using Photon.Voice.Unity;
 using TiltBrush;
 using UnityEngine;
 
@@ -107,5 +109,17 @@ namespace OpenBrush
             }
         }
 
+        [Rpc(RpcSources.All, RpcTargets.All)]
+        public static void RPC_MutePlayer(NetworkRunner runner, bool mute, PlayerRef targetPlayer)
+        {
+            if (runner.TryGetPlayerObject(targetPlayer, out NetworkObject networkObject))
+            {
+                var speaker = networkObject.GetComponent<Speaker>(); // Photon Voice 2 component
+                if (speaker != null)
+                {
+                    speaker.enabled = !mute; // Disables speaker to mute
+                }
+            }
+        }
     }
 }

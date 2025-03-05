@@ -23,7 +23,6 @@ using Fusion;
 using Fusion.Photon.Realtime;
 using Fusion.Sockets;
 using TiltBrush;
-using UnityEditor;
 using UnityEngine.SceneManagement;
 
 
@@ -390,6 +389,16 @@ namespace OpenBrush.Multiplayer
             int dataHash = largeData.GetHashCode();
             var key = ReliableKey.FromInts(playerId, sequenceNumber, dataHash, percentage);
             m_Runner.SendReliableDataToPlayer(playerRef, key, largeData);
+        }
+
+        public async Task<bool> RpcMutePlayer(bool mute, int playerId)
+        {
+            PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            {
+                MultiplayerAudioSourcesManager.RPC_MutePlayer(m_Runner, mute, targetPlayer);
+            });
+            return true;
         }
 
         #endregion
