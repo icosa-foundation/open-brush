@@ -3503,6 +3503,14 @@ MonoBehaviour:
     m_Key: MULTIPLAYER_UNSET_ALL_PLAYERS_TO_VIEWONLY
     m_Metadata:
       m_Items: []
+  - m_Id: 340941283698237440
+    m_Key: MULTIPLAYER_MUTE_ALL_USER_FOR_ALL_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 340941524061216768
+    m_Key: MULTIPLAYER_MUTE_UNMUTE_FOR_ALL_PLAYERBUTTON
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

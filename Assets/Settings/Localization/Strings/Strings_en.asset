@@ -3558,7 +3558,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 294637073212186624
     m_Localized: Edit Room Name
-    m_Metadata:s
+    m_Metadata:
       m_Items: []
   - m_Id: 294637384320491520
     m_Localized: Edit Nickname
@@ -3621,7 +3621,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 326572252843143168
-    m_Localized: 'Edit Max Players'
+    m_Localized: Edit Max Players
     m_Metadata:
       m_Items: []
   - m_Id: 326807657823793152
@@ -3629,7 +3629,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 326808393542463488
-    m_Localized: Mute Player
+    m_Localized: Mute
     m_Metadata:
       m_Items: []
   - m_Id: 326808972507410432
@@ -3657,7 +3657,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 326869993834082304
-    m_Localized: Muted
+    m_Localized: Mute
     m_Metadata:
       m_Items: []
   - m_Id: 326870578603945984
@@ -3670,6 +3670,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 326871757446639616
     m_Localized: Allow all players to edit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 340941283698237440
+    m_Localized: Mute for everyone
+    m_Metadata:
+      m_Items: []
+  - m_Id: 340941524061216768
+    m_Localized: Mute for everyone
     m_Metadata:
       m_Items: []
   references:
