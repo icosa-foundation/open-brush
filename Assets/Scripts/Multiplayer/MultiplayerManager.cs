@@ -314,7 +314,7 @@ namespace OpenBrush.Multiplayer
         public void RoomOwnershipTransferedToUser(int playerId)
         {
             if (!isUserRoomOwner) return;
-            m_Manager.RpcTransferRoomOnwership(playerId);
+            m_Manager.RpcTransferRoomOwnership(playerId);
             isUserRoomOwner = false;
         }
 

@@ -45,7 +45,7 @@ namespace OpenBrush.Multiplayer
         Task<bool> UndoCommand(BaseCommand command);
         Task<bool> RedoCommand(BaseCommand command);
         Task<bool> RpcSyncToSharedAnchor(string uuid);
-        Task<bool> RpcTransferRoomOnwership(int playerId);
+        Task<bool> RpcTransferRoomOwnership(int playerId);
         Task<bool> RpcToggleUserViewOnlyMode(bool value, int playerId);
         Task<bool> RpcKickPlayerOut(int playerId);
         bool RpcMutePlayer(bool mute, int playerId);
