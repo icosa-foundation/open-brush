@@ -271,16 +271,16 @@ namespace OpenBrush.Multiplayer
             if (!successData)
             {
                 State = ConnectionState.ERROR;
-                LastError = m_Manager.LastError;
+                LastError = m_Manager?.LastError;
             }
             else if (!successVoice)
             {
                 State = ConnectionState.ERROR;
-                LastError = m_VoiceManager.LastError;
+                LastError = m_VoiceManager?.LastError;
             }
             else State = ConnectionState.DISCONNECTED;
 
-            return successData & successVoice;
+            return successData && successVoice;
         }
 
         public bool DoesRoomNameExist(string roomName)
