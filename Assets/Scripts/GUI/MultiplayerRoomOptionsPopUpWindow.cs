@@ -184,7 +184,7 @@ namespace TiltBrush
                     MultiplayerManager.m_Instance.MutePlayerForAll(button.IsButtonActive(), button.playerId);
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerTransferRoomOwnership:
-                    MultiplayerManager.m_Instance.RoomOwnershipTransferedToUser(button.playerId);
+                    MultiplayerManager.m_Instance.RoomOwnershipTransferToUser(button.playerId);
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerToggleUserViewEditMode:
                     MultiplayerManager.m_Instance.ToggleUserViewOnlyMode(button.IsButtonActive(), button.playerId);
