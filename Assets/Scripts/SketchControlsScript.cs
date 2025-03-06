@@ -4895,6 +4895,8 @@ namespace TiltBrush
                 case GlobalCommands.MultiplayerToggleAllUserAudio:
                 case GlobalCommands.MultiplayerToggleAllUserViewEditMode:
                 case GlobalCommands.MultiplayerKickPlayerOut:
+                case GlobalCommands.MultiplayerToggleAllUserAudioForAll:
+                case GlobalCommands.ToggleUserVoiceInMultiplayerForAll:
                 case GlobalCommands.WhatIsNew:
                     break;// Intentionally blank.
                 default:
@@ -5132,6 +5134,8 @@ namespace TiltBrush
                 case GlobalCommands.MultiplayerToggleUserViewEditMode:
                 case GlobalCommands.MultiplayerKickPlayerOut:
                 case GlobalCommands.MultiplayerToggleAllUserViewEditMode:
+                case GlobalCommands.MultiplayerToggleAllUserAudioForAll:
+                case GlobalCommands.ToggleUserVoiceInMultiplayerForAll:
                     return (MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM && MultiplayerManager.m_Instance.IsUserRoomOwner());
                 case GlobalCommands.WhatIsNew:
                     return false;
