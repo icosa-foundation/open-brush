@@ -939,7 +939,7 @@ Transform:
   m_GameObject: {fileID: 1461296043633818204}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.94200003, y: 0, z: 0}
+  m_LocalPosition: {x: 1.142, y: 0, z: 0}
   m_LocalScale: {x: 0.14999999, y: 0.14999999, z: 0.14999999}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1422,7 +1422,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8179569077979998440
 Transform:
   m_ObjectHideFlags: 0
@@ -1440,8 +1440,8 @@ Transform:
   - {fileID: 5114263697058651145}
   - {fileID: 2962397487389710043}
   - {fileID: 2183583116571402782}
-  - {fileID: 5902158930843246765}
   - {fileID: 8756030045986842438}
+  - {fileID: 5902158930843246765}
   - {fileID: 7276864798255666015}
   m_Father: {fileID: 461372}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1683,7 +1683,7 @@ Transform:
   m_GameObject: {fileID: 3989332755205052522}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.142, y: 0, z: 0}
+  m_LocalPosition: {x: 0.942, y: 0, z: 0}
   m_LocalScale: {x: 0.14999999, y: 0.14999999, z: 0.14999999}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1941,7 +1941,7 @@ GameObject:
   - component: {fileID: 3067514523684327492}
   - component: {fileID: 2918817422897490678}
   m_Layer: 16
-  m_Name: MuteButton
+  m_Name: MuteForMeButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
