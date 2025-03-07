@@ -34,6 +34,9 @@ namespace TiltBrush
         [SerializeField] private TextMeshPro m_RoomOwnership;
         [SerializeField] private LocalizedString m_RoomOwnerString;
         [SerializeField] private LocalizedString m_NotRoomOwnerString;
+        [SerializeField] private TextMeshPro m_RoomAvailable;
+        [SerializeField] private LocalizedString m_RoomAvailableString;
+        [SerializeField] private LocalizedString m_NotRoomAvailableString;
         [SerializeField] private TextMeshPro m_RoomMaxPlayer;
         [SerializeField] private LocalizedString m_RoomMaxPlayerString;
         [SerializeField] private TextMeshPro m_AlertsErrors;
@@ -272,6 +275,16 @@ namespace TiltBrush
         {
             if (!m_State) return;
             m_State.text = m_StatString.GetLocalizedString() + StateToString(newState);
+            if (newState == ConnectionState.IN_ROOM)
+            {
+                m_RoomOwnership.gameObject.SetActive(true);
+                m_RoomAvailable.gameObject.SetActive(false);
+            }
+            else
+            {
+                m_RoomOwnership.gameObject.SetActive(false);
+                m_RoomAvailable.gameObject.SetActive(true);
+            }
             DisplayRoomSettingsButton(newState);
             UpdateDisplay();
         }
@@ -328,11 +341,18 @@ namespace TiltBrush
 
         private void OnRoomOwnershipUpdated(bool isRoomOwner)
         {
-            if (!m_RoomOwnership) return;
-
-            var localizedString = isRoomOwner ? m_RoomOwnerString : m_NotRoomOwnerString;
-            localizedString.GetLocalizedStringAsync().Completed += handle =>
-            { m_RoomOwnership.text = handle.Result; };
+            if (m_RoomOwnership)
+            {
+                var localizedOwnershipString = isRoomOwner ? m_RoomOwnerString : m_NotRoomOwnerString;
+                localizedOwnershipString.GetLocalizedStringAsync().Completed += handle =>
+                    { m_RoomOwnership.text = handle.Result; };
+            }
+            if (m_RoomAvailable)
+            {
+                var localizedAvailableString = isRoomOwner ? m_RoomAvailableString : m_NotRoomAvailableString;
+                localizedAvailableString.GetLocalizedStringAsync().Completed += handle =>
+                    { m_RoomAvailable.text = handle.Result; };
+            }
         }
 
         private Tuple<bool, string> CheckAdvancedModeActive()

@@ -3581,11 +3581,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 312963339069759488
-    m_Localized: Room name is available
+    m_Localized: You are the Room Owner
     m_Metadata:
       m_Items: []
   - m_Id: 312963447907753984
-    m_Localized: Room already exists
+    m_Localized: You are not the Room Owner
     m_Metadata:
       m_Items: []
   - m_Id: 312783116814589952
@@ -3617,7 +3617,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 326570591894564864
-    m_Localized: 'Room Panel: '
+    m_Localized: Manage Room
     m_Metadata:
       m_Items: []
   - m_Id: 326572252843143168
@@ -3678,6 +3678,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 340941524061216768
     m_Localized: Mute for everyone
+    m_Metadata:
+      m_Items: []
+  - m_Id: 341358942189346816
+    m_Localized: Room name is available
+    m_Metadata:
+      m_Items: []
+  - m_Id: 341359317994790912
+    m_Localized: Room already exists
     m_Metadata:
       m_Items: []
   references:
