@@ -23,11 +23,16 @@ public class NonVrMultiplayerUi : MonoBehaviour
     void Start()
     {
         m_ViewModeUi = GetComponentInParent<ViewModeUI>();
+        m_RoomNameInput.text = PlayerPrefs.GetString("roomname", "");
+        m_NicknameInput.text = PlayerPrefs.GetString("nickname", "");
+        m_MaxPlayersInput.text = PlayerPrefs.GetString("maxplayers", "4");
     }
 
     void SetJoinRoomUi()
     {
-        bool canJoin = MultiplayerManager.m_Instance.CanLeaveRoom();
+        // This probably misses some edge cases
+        bool canJoin = MultiplayerManager.m_Instance.State != ConnectionState.IN_ROOM;
+
         m_RoomNameInput.gameObject.SetActive(canJoin);
         m_NicknameInput.gameObject.SetActive(canJoin);
         m_MaxPlayersInput.gameObject.SetActive(canJoin);
@@ -63,7 +68,14 @@ public class NonVrMultiplayerUi : MonoBehaviour
 
     private IEnumerator HandleJoinRoomButtonAsync()
     {
-        SetNickname();
+        ConnectionUserInfo userInfo = new ConnectionUserInfo
+        {
+            Nickname = m_NicknameInput.text,
+            UserId = MultiplayerManager.m_Instance.UserInfo.UserId,
+            Role = MultiplayerManager.m_Instance.UserInfo.Role
+        };
+        MultiplayerManager.m_Instance.UserInfo = userInfo;
+
         RoomCreateData roomData = new RoomCreateData
         {
             roomName = m_RoomNameInput.text,
@@ -71,6 +83,10 @@ public class NonVrMultiplayerUi : MonoBehaviour
             maxPlayers = int.Parse(m_MaxPlayersInput.text),
             voiceDisabled = m_VoiceDisabledToggle.isOn
         };
+        PlayerPrefs.SetString("roomname", roomData.roomName);
+        PlayerPrefs.SetString("nickname", userInfo.Nickname);
+        PlayerPrefs.SetString("maxplayers", roomData.maxPlayers.ToString());
+
         var joinRoomTask = MultiplayerManager.m_Instance.JoinRoom(roomData);
         yield return new WaitUntil(() => joinRoomTask.IsCompleted);
         if (joinRoomTask.IsFaulted)
@@ -109,19 +125,12 @@ public class NonVrMultiplayerUi : MonoBehaviour
         }
     }
 
-    private void SetNickname()
-    {
-        ConnectionUserInfo userInfo = new ConnectionUserInfo
-        {
-            Nickname = m_NicknameInput.text,
-            UserId = MultiplayerManager.m_Instance.UserInfo.UserId,
-            Role = MultiplayerManager.m_Instance.UserInfo.Role
-        };
-        MultiplayerManager.m_Instance.UserInfo = userInfo;
-    }
-
     public void HandleMenuButton()
     {
         m_MultiplayerMenuPanel.SetActive(!m_MultiplayerMenuPanel.activeSelf);
+        if (m_MultiplayerMenuPanel.activeSelf)
+        {
+            SetJoinRoomUi();
+        }
     }
 }
