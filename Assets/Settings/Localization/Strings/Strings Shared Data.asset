@@ -3279,6 +3279,14 @@ MonoBehaviour:
     m_Key: CONTROLLER_HINT_THUMBPAD_BRUSHSIZE
     m_Metadata:
       m_Items: []
+  - m_Id: 164911761917042688
+    m_Key: POPUP_ACCOUNTS_ICOSAINFO_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911966586494976
+    m_Key: POPUP_ACCOUNTS_ICOSAINFO_TITLE
+    m_Metadata:
+      m_Items: []
   - m_Id: 176764812224364544
     m_Key: BRUSH_PASSTHROUGHHULL
     m_Metadata:
@@ -3437,6 +3445,22 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 313111642914758656
     m_Key: ADMIN_PANEL_MULTIPLAYER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 317029250049335296
+    m_Key: VIEW_MODE_CONTROLS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332314407106863104
+    m_Key: ICOSAPANEL_PANEL_OPTIONS_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332573810292776960
+    m_Key: ICOSAPANEL_PANEL_SEARCH_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332574165927813120
+    m_Key: ICOSAPANEL_PANEL_FILTER_POPUP
     m_Metadata:
       m_Items: []
   m_Metadata:
