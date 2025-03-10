@@ -58,7 +58,7 @@ public class NonVrMultiplayerUi : MonoBehaviour
 
     public void HandleLeaveRoomButton()
     {
-        StartCoroutine(HandleJoinRoomButtonCoroutine());
+        StartCoroutine(HandleLeaveRoomButtonAsync());
     }
 
     private IEnumerator HandleJoinRoomButtonCoroutine()
