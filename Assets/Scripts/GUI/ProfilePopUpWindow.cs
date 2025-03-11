@@ -82,7 +82,7 @@ namespace TiltBrush
             App.DriveAccess.RefreshFreeSpaceAsync().AsAsyncVoid();
 
             // TODO: Make configurable by secrets/login data available at runtime.
-            if (App.Config.DisableAccountLogins)
+            if (App.Instance.AccountLoginsDisabled)
             {
                 UpdateMode(Mode.Unavailable);
             }
