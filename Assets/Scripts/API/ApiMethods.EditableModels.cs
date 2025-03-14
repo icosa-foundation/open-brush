@@ -419,7 +419,7 @@ namespace TiltBrush
         [ApiEndpoint("editablemodel.create.off", "Generates a off from POST data")]
         public static void CreateOff(string offData)
         {
-            var poly = new PolyMesh(new StringReader(offData));
+            var poly = new PolyMesh(new StringReader(offData), ".off");
             var recipe = new PolyRecipe
             {
                 Faces = poly.ListFacesByVertexIndices().ToList(),

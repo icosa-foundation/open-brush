@@ -46,7 +46,7 @@ namespace TiltBrush
             GameObject go = new GameObject($"Off model: {m_path}");
             using (StreamReader reader = new StreamReader(m_path))
             {
-                var poly = new PolyMesh(reader);
+                var poly = new PolyMesh(reader, ".off");
                 var colMethod = ColorMethods.ByTags;
                 var meshData = poly.BuildMeshData(colorMethod: colMethod);
                 var mesh = poly.BuildUnityMesh(meshData);
