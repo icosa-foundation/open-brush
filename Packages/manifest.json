@@ -1,8 +1,8 @@
 {
   "dependencies": {
     "com.ixxy.polyhydra.core": "https://github.com/IxxyXR/polyhydra-core.git#upm",
-    "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
     "com.watertrans.glyphloader": "https://github.com/icosa-mirror/GlyphLoader-Unity.git#upm",
+    "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
     "com.meta.xr.sdk.core": "https://github.com/icosa-mirror/com.meta.xr.sdk.core.git#68.0.2-openbrush-hotfix",
     "com.meta.xr.sdk.platform": "60.0.0",
     "com.unity.2d.sprite": "1.0.0",
@@ -30,8 +30,8 @@
     "com.unity.xr.management": "4.4.1",
     "com.unity.xr.oculus": "4.2.0",
     "com.unity.xr.openxr": "1.10.0",
-    "moonsharp": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",
     "com.zappar.xr.zapbox": "https://github.com/zappar-xr/zapbox-xr-sdk.git#43697771ed65efee02d5b1743141b8179444c147",
+    "moonsharp": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",
     "org.khronos.unitygltf": "https://github.com/icosa-mirror/UnityGLTF.git",
     "org.nuget.google.apis": "1.64.0",
     "org.nuget.google.apis.auth": "1.64.0",
@@ -70,20 +70,6 @@
   },
   "scopedRegistries": [
     {
-      "name": "Vive",
-      "url": "https://npm-registry.vive.com",
-      "scopes": [
-        "com.htc.upm"
-      ]
-    },
-    {
-      "name": "Meta XR",
-      "url": "https://npm.developer.oculus.com",
-      "scopes": [
-        "com.meta.xr.sdk"
-      ]
-    },
-    {
       "name": "OpenUPM",
       "url": "https://package.openupm.com",
       "scopes": [
@@ -95,6 +81,20 @@
         "org.nuget.system",
         "com.openupm",
         "com.syomus.proceduraltoolkit"
+      ]
+    },
+    {
+      "name": "Vive",
+      "url": "https://npm-registry.vive.com",
+      "scopes": [
+        "com.htc.upm"
+      ]
+    },
+    {
+      "name": "Meta XR",
+      "url": "https://npm.developer.oculus.com",
+      "scopes": [
+        "com.meta.xr.sdk"
       ]
     }
   ]

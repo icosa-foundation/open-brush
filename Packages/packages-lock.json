@@ -14,7 +14,7 @@
         "com.syomus.proceduraltoolkit": "0.2.3",
         "com.nition.unity-octree": "0.0.1-preview"
       },
-      "hash": "7f16dc1400a9185073cb1a8b561928751cdb43c4"
+      "hash": "0dc8eefc3de440acbaa29c723554e3778175a719"
     },
     "com.ixxy.unitysymmetry": {
       "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
@@ -332,7 +332,7 @@
         "com.unity.modules.unitywebrequesttexture": "1.0.0",
         "com.unity.modules.unitywebrequestwww": "1.0.0"
       },
-      "hash": "214037a894f7e292687b8ba331f5c959c2bcdd8b"
+      "hash": "a933fb8541371ff8ab171ab8e6af50a36f1f113e"
     },
     "com.unity.xr.core-utils": {
       "version": "2.3.0",
@@ -420,7 +420,7 @@
         "com.unity.shadergraph": "10.0.0",
         "com.unity.mathematics": "1.0.0"
       },
-      "hash": "99c96d9029d4ce02e5f729a5e069a44aef6faa99"
+      "hash": "7813092a7527445867cc6f27120a1e46d5aab3df"
     },
     "org.nuget.google.apis": {
       "version": "1.64.0",
@@ -479,7 +479,7 @@
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "cff83f2ffcb95787572f951e7c7ea6e8958f2f65"
+      "hash": "731ce73482c74c1bccb84d53c1771f9c4a0d511b"
     },
     "com.unity.modules.ai": {
       "version": "1.0.0",
