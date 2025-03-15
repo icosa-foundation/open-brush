@@ -27,7 +27,7 @@ namespace TiltBrush
         protected override void OnEnablePanel()
         {
             base.OnEnablePanel();
-            // Save to run multiple times as it checks m_IsInitialized
+            // Safe to run multiple times as it checks m_IsInitialized
             LuaManager.Instance?.Init();
         }
 

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using MoonSharp.Interpreter;
@@ -28,23 +29,25 @@ namespace TiltBrush
         public Transform m_ToggleButtonPrefab;
         public Transform m_TextInputPrefab;
         public Transform m_ListButtonPrefab;
+        public Transform m_EnumButtonPrefab;
         public Transform m_ImagePickerButtonPrefab;
         public Transform m_ModelPickerButtonPrefab;
+        private Dictionary<string, ScriptWidgetConfig> m_WidgetConfigs;
 
         public override void SetPopupCommandParameters(int iCommandParam, int iCommandParam2)
         {
             m_ApiCategory = (LuaApiCategory)iCommandParam;
             var scriptName = LuaManager.Instance.GetActiveScriptName(m_ApiCategory);
-            var widgetConfigs = LuaManager.Instance.GetWidgetConfigs(scriptName);
+            m_WidgetConfigs = LuaManager.Instance.GetWidgetConfigs(scriptName);
             if (m_Widgets != null)
             {
                 m_Widgets.ForEach(Destroy);
             }
             m_Widgets = new List<Transform>();
-            for (int i = 0; i < widgetConfigs.Count; i++)
+            for (int i = 0; i < m_WidgetConfigs.Count; i++)
             {
-                var propertyName = widgetConfigs.Keys.ElementAt(i);
-                var config = widgetConfigs[propertyName];
+                var propertyName = m_WidgetConfigs.Keys.ElementAt(i);
+                var config = m_WidgetConfigs[propertyName];
                 var script = LuaManager.Instance.GetActiveScript(m_ApiCategory);
                 var val = LuaManager.Instance.GetOrSetWidgetCurrentValue(script, propertyName, config);
 
@@ -92,6 +95,16 @@ namespace TiltBrush
                         listPickerButton.m_Items = config.items.Select(x => x.String).ToList();
                         listPickerButton.ButtonLabel = val.String;
                         listPickerButton.ItemIndex = listPickerButton.m_Items.IndexOf(val.String);
+                        break;
+                    case var value when value == LuaNames.widgetTypeEnum:
+                        instance = Instantiate(m_EnumButtonPrefab, transform);
+                        var enumPickerButton = instance.GetComponent<OpenListPickerPopupButton>();
+                        enumPickerButton.SetDescriptionText(config.label);
+                        enumPickerButton.m_PropertyName = propertyName;
+                        enumPickerButton.m_Items = Enum.GetNames(config.enumType).ToList();
+                        var enumVal = Enum.ToObject(config.enumType, val.UserData.Object);
+                        enumPickerButton.ButtonLabel = Enum.GetName(config.enumType, enumVal);
+                        enumPickerButton.ItemIndex = enumPickerButton.m_Items.IndexOf(val.String);
                         break;
                     case var value when value == LuaNames.widgetTypeLayer:
                         instance = Instantiate(m_ListButtonPrefab, transform);
@@ -186,6 +199,16 @@ namespace TiltBrush
             var script = LuaManager.Instance.GetActiveScript(m_ApiCategory);
             string text = btn.m_Items[btn.ItemIndex];
             LuaManager.Instance.SetScriptParam(script, btn.m_PropertyName, DynValue.NewString(text));
+        }
+
+        public void HandleEnumPickerParameterChanged(OpenListPickerPopupButton btn)
+        {
+            var script = LuaManager.Instance.GetActiveScript(m_ApiCategory);
+            string text = btn.m_Items[btn.ItemIndex];
+            var config = m_WidgetConfigs[btn.m_PropertyName];
+            var val = Enum.Parse(config.enumType, text);
+            var enumVal = Enum.ToObject(config.enumType, val);
+            LuaManager.Instance.SetScriptParam(script, btn.m_PropertyName, DynValue.FromObject(script, enumVal));
         }
 
         public void HandleImagePickerParameterChanged(OpenImagePickerPopupButton btn)

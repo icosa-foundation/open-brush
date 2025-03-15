@@ -75,6 +75,7 @@ namespace TiltBrush
         public static string widgetTypeImage => "image";
         public static string widgetTypeVideo => "video";
         public static string widgetTypeModel => "model";
+        public static string widgetTypeEnum => "enum";
 
         // Special Methods
 
@@ -103,6 +104,7 @@ namespace TiltBrush
         public DynValue defaultVal;
         public bool allowMultiple;
         public List<DynValue> items;
+        public Type enumType;
     }
 
     public class LuaManager : MonoBehaviour
@@ -216,7 +218,14 @@ namespace TiltBrush
             }
 
             var panel = (ScriptsPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Scripts);
-            panel.InitScriptUiNav();
+            try
+            {
+                panel?.InitScriptUiNav();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
             ConfigureScriptButton(LuaApiCategory.PointerScript);
             ConfigureScriptButton(LuaApiCategory.SymmetryScript);
             ConfigureScriptButton(LuaApiCategory.ToolScript);
@@ -732,10 +741,12 @@ namespace TiltBrush
             {
                 LogLuaCastError(script, fnName, e);
             }
+
             if (wrapper == null)
             {
                 wrapper = new PathApiWrapper();
             }
+
             wrapper._Space = _GetSpaceForActiveScript(LuaApiCategory.SymmetryScript);
             return wrapper;
         }
@@ -980,14 +991,27 @@ namespace TiltBrush
                 {
                     var config = new ScriptWidgetConfig();
                     config.label = pair.Value.Table.Get("label").String;
-                    config.type = pair.Value.Table.Get("type").String;
                     config.min = pair.Value.Table.Get("min").Clone();
                     config.max = pair.Value.Table.Get("max").Clone();
-                    config.items = pair.Value.Table.Get("items")?.Table?.Values?.ToList();
-                    config.defaultVal = pair.Value.Table.Get("default").Clone();
+                    var typeDynVal = pair.Value.Table.Get("type");
+                    if (typeDynVal.UserData != null)
+                    {
+                        // type can be an enum
+                        config.type = "enum";
+                        config.enumType = typeDynVal.UserData.Descriptor.Type;
+                        config.defaultVal = UserData.Create(config.enumType.GetEnumValues().GetValue(0));
+                    }
+                    else
+                    {
+                        // If it's not an enu, then it's a string
+                        config.type = typeDynVal.String;
+                        config.items = pair.Value.Table.Get("items")?.Table?.Values?.ToList();
+                        config.defaultVal = pair.Value.Table.Get("default").Clone();
+                    }
                     m_WidgetConfigs[scriptName][pair.Key.String] = config;
                 }
             }
+
             // Replace the config table with the default value
             foreach (var item in m_WidgetConfigs[scriptName])
             {
@@ -1036,6 +1060,7 @@ namespace TiltBrush
             Vector3 wandPos_GS, Quaternion wandRot_GS,
             Vector3 headPos_GS, Quaternion headRot_GS)
         {
+            if (!IsInitialized) return;
             m_TransformBuffers.AddBrushTr(App.Scene.ActiveCanvas.Pose.inverse * TrTransform.TR(brushPos_GS, brushRot_GS));
             m_TransformBuffers.AddWandTr(App.Scene.ActiveCanvas.Pose.inverse * TrTransform.TR(wandPos_GS, wandRot_GS));
             m_TransformBuffers.AddHeadTr(App.Scene.ActiveCanvas.Pose.inverse * TrTransform.TR(headPos_GS, headRot_GS));
@@ -1192,8 +1217,13 @@ namespace TiltBrush
             var result = CallActiveToolScript(fnName);
             if (result == null) return;
             List<List<TrTransform>> transforms = null;
-
             var drawnVector_CS = secondTr_CS.translation - firstTr_CS.translation;
+            // Quantize the positions to the grid
+            // Rotation will be quantized later based on (non-quantized) drawnVector_CS
+            firstTr_CS.translation = SelectionManager.m_Instance.SnapToGrid_CS(firstTr_CS.translation);
+            secondTr_CS.translation = SelectionManager.m_Instance.SnapToGrid_CS(secondTr_CS.translation);
+            var quantizedVector_CS = secondTr_CS.translation - firstTr_CS.translation;
+
             var tr_CS = new TrTransform();
 
             switch (result._Space)
@@ -1205,8 +1235,7 @@ namespace TiltBrush
                     tr_CS.translation = firstTr_CS.translation;
                     tr_CS.rotation = drawnVector_CS == Vector3.zero ?
                         Quaternion.identity : Quaternion.LookRotation(drawnVector_CS, upVector);
-                    tr_CS.scale = 1f / App.ActiveCanvas.Pose.scale;
-                    tr_CS.scale *= drawnVector_CS.magnitude;
+                    tr_CS.scale = quantizedVector_CS.magnitude;
                     transforms = result.AsMultiTrList();
                     break;
                 case ScriptCoordSpace.Canvas:
@@ -1217,12 +1246,23 @@ namespace TiltBrush
                     break;
             }
             float brushScale = 1f;
+
+            tr_CS.rotation = SelectionManager.m_Instance.QuantizeAngle(tr_CS.rotation);
+
             if (transforms != null) DrawStrokes.DrawNestedTrList(transforms, tr_CS, result._Colors, brushScale);
+            if (result._Colors == null)
+            {
+                // If our script doesn't generate colors
+                // then DrawNestedTrList will use the current brush color
+                // so we can assume that jitter (if enabled) should be applied
+                LuaApiMethods.JitterColor();
+            }
         }
 
         // Stop scripts and clear data structures. Used when clearing the sketch
         public void DeInitialize()
         {
+            if (!m_IsInitialized) return;
             m_WebRequests.Clear();
             m_TransformBuffers = null;
             m_ScriptPathsToUpdate.Clear();

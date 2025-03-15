@@ -30,13 +30,13 @@ MonoBehaviour:
     m_Name: OpenUPM
     m_Url: https://package.openupm.com
     m_Scopes:
+    - com.openupm
     - com.atteneder
     - com.ixxy.polyhydra.core
     - com.nition.unity-octree
     - org.nuget.google
     - org.nuget.sharpziplib
     - org.nuget.system
-    - com.openupm
     - com.syomus.proceduraltoolkit
     m_IsDefault: 0
     m_Capabilities: 0

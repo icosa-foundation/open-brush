@@ -5092,7 +5092,14 @@ namespace TiltBrush
             App.Scene.ResetLayers(notify: true);
             ApiManager.Instance.ResetBrushTransform();
             ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.None;
+            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None);
             LuaManager.Instance.DeInitialize();
+            // Lua is normally initialized OnEnablePanel, but that method
+            // won't get called if the panel is already open
+            if (m_PanelManager.GetActivePanelByType(BasePanel.PanelType.Scripts) != null)
+            {
+                LuaManager.Instance.Init();
+            }
 
             // If we've got the camera path tool active, switch back to the default tool.
             // I'm doing this because if we leave the camera path tool active, the camera path

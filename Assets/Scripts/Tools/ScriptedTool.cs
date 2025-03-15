@@ -56,7 +56,7 @@ namespace TiltBrush
             m_toolDirectionIndicator = transform.GetChild(0).gameObject;
         }
 
-        //What to do when the tool is enabled or disabled
+        // What to do when the tool is enabled or disabled
         public override void EnableTool(bool bEnable)
         {
             base.EnableTool(bEnable);
@@ -145,8 +145,13 @@ namespace TiltBrush
             {
                 var previewTypeVal = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, LuaNames.ToolPreviewType);
                 var previewAxisVal = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, LuaNames.ToolPreviewAxis);
-                var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
-                var drawnVector_GS = rAttachPoint_GS - m_FirstPositionClicked_GS;
+
+                var drawnVector_CS = SelectionManager.m_Instance.SnapToGrid_CS(rAttachPoint_CS.translation) -
+                    SelectionManager.m_Instance.SnapToGrid_CS(m_FirstPositionClicked_CS.translation);
+                var drawnVector_GS = SelectionManager.m_Instance.SnapToGrid_GS(rAttachPoint_GS) -
+                    SelectionManager.m_Instance.SnapToGrid_GS(m_FirstPositionClicked_GS);
+
+                upVector = InputManager.m_Instance.GetBrushControllerAttachPoint().up;
 
                 if (drawnVector_GS.sqrMagnitude > 0)
                 {
@@ -159,9 +164,9 @@ namespace TiltBrush
                     rotation_CS *= Quaternion.Euler(CS_GS_offset);
 
                     Matrix4x4 transform_GS = TrTransform.TRS(
-                        m_FirstPositionClicked_GS,
-                        App.Scene.Pose.rotation * rotation_CS,
-                        drawnVector_CS.magnitude * 2
+                        SelectionManager.m_Instance.SnapToGrid_GS(m_FirstPositionClicked_GS),
+                        App.Scene.Pose.rotation * SelectionManager.m_Instance.QuantizeAngle(rotation_CS),
+                        drawnVector_GS.magnitude * 2
                     ).ToMatrix4x4();
 
                     switch (previewTypeVal.String?.ToLower())

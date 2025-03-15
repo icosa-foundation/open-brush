@@ -3443,6 +3443,10 @@ MonoBehaviour:
     m_Key: ADMIN_PANEL_MULTIPLAYER_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 317029250049335296
+    m_Key: VIEW_MODE_CONTROLS
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
