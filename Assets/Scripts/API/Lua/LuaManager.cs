@@ -218,7 +218,14 @@ namespace TiltBrush
             }
 
             var panel = (ScriptsPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Scripts);
-            panel?.InitScriptUiNav();
+            try
+            {
+                panel?.InitScriptUiNav();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
             ConfigureScriptButton(LuaApiCategory.PointerScript);
             ConfigureScriptButton(LuaApiCategory.SymmetryScript);
             ConfigureScriptButton(LuaApiCategory.ToolScript);
