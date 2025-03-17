@@ -112,11 +112,11 @@ namespace TiltBrush
             public Quaternion rotation;
         }
 
-        public CustomLights CustomLights
+        // Differs from CustomLights in that it is a) read-only and b) returns a value even if the lights are unchanged
+        public CustomLights CustomLightsFromScene
         {
             get
             {
-                if (!LightsChanged) { return null; }
                 var shadow = App.Scene.GetLight((int)LightMode.Shadow);
                 var noShadow = App.Scene.GetLight((int)LightMode.NoShadow);
                 return new CustomLights()
@@ -133,6 +133,15 @@ namespace TiltBrush
                         Color = noShadow.enabled ? noShadow.color : Color.black
                     }
                 };
+            }
+        }
+
+        public CustomLights CustomLights
+        {
+            get
+            {
+                if (!LightsChanged) { return null; }
+                return CustomLightsFromScene;
             }
             set
             {

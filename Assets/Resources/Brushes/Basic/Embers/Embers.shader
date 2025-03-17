@@ -21,6 +21,15 @@ Properties {
   _ScrollJitterIntensity("Scroll Jitter Intensity", Float) = 1.0
   _ScrollJitterFrequency("Scroll Jitter Frequency", Float) = 1.0
   _SpreadRate ("Spread Rate", Range(0.3, 5)) = 1.539
+
+
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
+
+  _Dissolve("Dissolve", Range(0, 1)) = 1
+  _ClipStart("Clip Start", Float) = 0
+  _ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -53,10 +62,15 @@ Category {
       sampler2D _MainTex;
       fixed4 _TintColor;
 
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
+      uniform half _Dissolve;
+
       struct v2f {
         float4 vertex : SV_POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        uint id : TEXCOORD2;
 
         UNITY_VERTEX_OUTPUT_STEREO
       };
@@ -74,7 +88,7 @@ Category {
       // seed is a value in [0, 1]
       // t01 is a time value in [0, 1]
       float3 ComputeDisplacement(float3 pos, float seed, float t01) {
-        float t2 = _Time.y;
+        float t2 = GetTime().y;
         float floatUpTime01 = t01;
 
 #if SELECTION_ON
@@ -112,7 +126,7 @@ Category {
 
         // Used as a random-ish seed for various calculations
         float seed = v.color.a;
-        float t01 = fmod(_Time.y*_ScrollRate + seed * 10, 1);
+        float t01 = fmod(GetTime().y*_ScrollRate + seed * 10, 1);
         float birthTime = v.texcoord.w;
         float rotation = v.texcoord.z;
         float halfSize = GetParticleHalfSize(v.corner.xyz, v.center, birthTime);
@@ -124,7 +138,7 @@ Category {
         // Ramp color from bright to dark over particle lifetime
         float3 incolor = v.color.rgb;
         float t_minus_1 = 1-t01;
-        float sparkle = (pow(abs(sin(_Time.y * 3 + seed * 10)), 30));
+        float sparkle = (pow(abs(sin(GetTime().y * 3 + seed * 10)), 30));
         v.color.rgb += pow(t_minus_1,10)*incolor*200;
         v.color.rgb += incolor * sparkle * 50;
 
@@ -158,12 +172,19 @@ Category {
 
         o.color = v.color;
         o.texcoord = TRANSFORM_TEX(v.texcoord.xy,_MainTex);
+        o.id = (float2)v.id;
         return o;
       }
 
       // i.color is srgb
       fixed4 frag (v2f i) : SV_Target
       {
+        #ifdef SHADER_SCRIPTING_ON
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+        // It's hard to get alpha curves right so use dithering for hdr shaders
+        if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+        #endif
+
         float4 texCol = tex2D(_MainTex, i.texcoord);
         float4 color = 2.0f * i.color * _TintColor * texCol;
         color = encodeHdr(color.rgb * color.a);
@@ -171,7 +192,7 @@ Category {
 #if SELECTION_ON
         color.rgb = GetSelectionColor() * texCol.a;
 #endif
-        return color;
+        return color * _Dissolve;
       }
       ENDCG
     }
