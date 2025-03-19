@@ -515,7 +515,7 @@ namespace TiltBrush
 
 #if ZAPBOX_SUPPORTED
             // TODO:Mikesky - fix zapbox support.
-            HasPlayedBefore = true;
+            //HasPlayedBefore = true;
 #endif
 
             // Copy files into Support directory
