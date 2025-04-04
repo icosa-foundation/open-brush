@@ -30,6 +30,7 @@ namespace TiltBrush
             if (App.PlatformConfig.UseFileSystemWatcher)
             {
                 m_InternalFileWatcher = new FileSystemWatcher(path);
+                m_InternalFileWatcher.IncludeSubdirectories = true;
                 AddEventsToInternalFileWatcher();
             }
         }
