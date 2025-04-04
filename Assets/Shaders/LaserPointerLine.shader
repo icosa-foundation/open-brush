@@ -22,9 +22,10 @@ Shader "Custom/LaserPointerLine" {
   }
   SubShader {
     Tags { "Queue"="Transparent" "RenderType"="Transparent" }
+    Blend One OneMinusSrcAlpha
 
     CGPROGRAM
-    #pragma surface surf Lambert alphatest:_Cutoff
+    #pragma surface surf Lambert keepalpha
 
     struct Input {
       float2 uv_MainTex;
@@ -33,12 +34,18 @@ Shader "Custom/LaserPointerLine" {
     uniform float4 _Color;
     uniform half _ScrollSpeed;
     uniform half4 _EmissionColor;
+    sampler2D _MainTex;
 
     void surf (Input IN, inout SurfaceOutput o) {
-
+      
       o.Albedo = 0;
-      o.Emission = _EmissionColor.xyz * .1f;
-      o.Alpha = (sin(IN.uv_MainTex.x + _Time.x * _ScrollSpeed) + 1.0f)/2.0f;
+
+      // Compute animated alpha
+      float alpha = (sin(IN.uv_MainTex.x + _Time.x * _ScrollSpeed) + 1.0f) * 0.5f;
+      
+      // Multiply the emission by alpha to output premultiplied color.
+      o.Emission = _EmissionColor.xyz * 0.1f * alpha;
+      o.Alpha = alpha;
     }
     ENDCG
   }

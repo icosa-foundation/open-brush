@@ -35,6 +35,10 @@ namespace TiltBrush
 
         public void AssignMaterial(Material mat)
         {
+#if ZAPBOX_SUPPORTED
+            if (mat != null)
+                return;
+#endif
             // Get mat from dictionary.
             if (!m_CachedMaterialMap.ContainsKey(mat))
             {
