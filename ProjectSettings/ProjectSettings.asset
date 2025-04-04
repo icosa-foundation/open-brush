@@ -641,9 +641,9 @@ PlayerSettings:
   enableInternalProfiler: 0
   logObjCUncaughtExceptions: 1
   enableCrashReportAPI: 0
-  cameraUsageDescription: 
+  cameraUsageDescription: Camera is required for motion tracking and Mixed Reality
   locationUsageDescription: 
-  microphoneUsageDescription: Microphone is used for voice chat in Multiplayer mode
+  microphoneUsageDescription: Microphone is required for voice chat in Multiplayer mode
   bluetoothUsageDescription: 
   macOSTargetOSVersion: 10.13.0
   switchNMETAOverride: 
