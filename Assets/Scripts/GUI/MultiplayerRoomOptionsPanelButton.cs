@@ -48,5 +48,10 @@ namespace TiltBrush
             m_ToggleActive = isActive;
             UpdateVisuals();
         }
+
+        public bool GetToggleState()
+        {
+            return m_ToggleActive;
+        }
     }
 } // namespace TiltBrush

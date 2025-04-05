@@ -178,16 +178,16 @@ namespace TiltBrush
                 case SketchControlsScript.GlobalCommands.Null:
                     break;
                 case SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayer:
-                    MultiplayerAudioSourcesManager.m_Instance.ToggleAudioMuteForPlayer(button.playerId);
+                    MultiplayerAudioSourcesManager.m_Instance.ToggleAudioMuteForPlayer(button.GetToggleState(), button.playerId);
                     break;
                 case SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayerForAll:
-                    MultiplayerManager.m_Instance.MutePlayerForAll(button.IsButtonActive(), button.playerId);
+                    MultiplayerManager.m_Instance.MutePlayerForAll(button.GetToggleState(), button.playerId);
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerTransferRoomOwnership:
                     MultiplayerManager.m_Instance.RoomOwnershipTransferToUser(button.playerId);
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerToggleUserViewEditMode:
-                    MultiplayerManager.m_Instance.ToggleUserViewOnlyMode(button.IsButtonActive(), button.playerId);
+                    MultiplayerManager.m_Instance.ToggleUserViewOnlyMode(button.GetToggleState(), button.playerId);
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerKickPlayerOut:
                     MultiplayerManager.m_Instance.KickPlayerOut(button.playerId);
@@ -195,25 +195,25 @@ namespace TiltBrush
                 case SketchControlsScript.GlobalCommands.MultiplayerToggleAllUserAudio:
                     foreach (var remotePlayer in m_RemotePlayers.List)
                     {
-                        MultiplayerAudioSourcesManager.m_Instance.ToggleAudioMuteForPlayer(remotePlayer.PlayerId);
+                        MultiplayerAudioSourcesManager.m_Instance.ToggleAudioMuteForPlayer(button.GetToggleState(), remotePlayer.PlayerId);
                         PlayerListItemPrefab playerComponent = GetGameobjectWithPlayerId(remotePlayer.PlayerId);
-                        if (playerComponent) playerComponent.SetAudioToggleState(button.IsButtonActive());
+                        if (playerComponent) playerComponent.SetAudioToggleState(button.GetToggleState());
                     }
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerToggleAllUserAudioForAll:
                     foreach (var remotePlayer in m_RemotePlayers.List)
                     {
-                        MultiplayerManager.m_Instance.MutePlayerForAll(button.IsButtonActive(), remotePlayer.PlayerId);
+                        MultiplayerManager.m_Instance.MutePlayerForAll(button.GetToggleState(), remotePlayer.PlayerId);
                         PlayerListItemPrefab playerComponent = GetGameobjectWithPlayerId(remotePlayer.PlayerId);
-                        if (playerComponent) playerComponent.SetAudioForAllToggleState(button.IsButtonActive());
+                        if (playerComponent) playerComponent.SetAudioForAllToggleState(button.GetToggleState());
                     }
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerToggleAllUserViewEditMode:
                     foreach (var remotePlayer in m_RemotePlayers.List)
                     {
-                        MultiplayerManager.m_Instance.ToggleUserViewOnlyMode(button.IsButtonActive(), remotePlayer.PlayerId);
+                        MultiplayerManager.m_Instance.ToggleUserViewOnlyMode(button.GetToggleState(), remotePlayer.PlayerId);
                         PlayerListItemPrefab playerComponent = GetGameobjectWithPlayerId(remotePlayer.PlayerId);
-                        if (playerComponent) playerComponent.SetViewOnlyToggleState(button.IsButtonActive());
+                        if (playerComponent) playerComponent.SetViewOnlyToggleState(button.GetToggleState());
                     }
                     break;
             }
