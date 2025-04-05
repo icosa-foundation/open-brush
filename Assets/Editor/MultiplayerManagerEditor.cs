@@ -143,7 +143,7 @@ public class MultiplayerManagerInspector : Editor
                 if (GUILayout.Button(muteButtonLabel))
                 {
                     bool newMuteState = !currentMuteState;
-                    MultiplayerManager.m_Instance.MutePlayerForAll(newMuteState, playerId);
+                    multiplayerManager.MutePlayerForAll(newMuteState, playerId);
                     muteStates[playerId] = newMuteState;
                     EditorUtility.SetDirty(target);
                 }
@@ -154,9 +154,19 @@ public class MultiplayerManagerInspector : Editor
                 if (GUILayout.Button(viewButtonLabel))
                 {
                     bool newViewState = !currentViewState;
-                    MultiplayerManager.m_Instance.ToggleUserViewOnlyMode(newViewState, playerId);
+                    multiplayerManager.ToggleUserViewOnlyMode(newViewState, playerId);
                     viewOnlyStates[playerId] = newViewState;
                     EditorUtility.SetDirty(target);
+                }
+
+                // ** Kick Out button (only if room owner) **
+                if (multiplayerManager.IsUserRoomOwner())
+                {
+                    if (GUILayout.Button("Kick Out"))
+                    {
+                        multiplayerManager.KickPlayerOut(playerId);
+                        EditorUtility.SetDirty(target);
+                    }
                 }
 
                 EditorGUILayout.EndHorizontal();
