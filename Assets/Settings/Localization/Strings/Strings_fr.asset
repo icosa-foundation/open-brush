@@ -3578,6 +3578,70 @@ MonoBehaviour:
     m_Localized: Menu Multijoueur
     m_Metadata:
       m_Items: []
+  - m_Id: 326532953040941056
+    m_Localized: 'Joueurs Max: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326549804571619328
+    m_Localized: "Param\xE8tres de la Salle: "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326570591894564864
+    m_Localized: 'Panneau de Salle: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326572252843143168
+    m_Localized: 'Modifier le nombre max de joueurs : '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326807657823793152
+    m_Localized: "Transf\xE9rer la propri\xE9t\xE9 de la salle \xE0 ce joueur"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326808393542463488
+    m_Localized: Mettre le joueur en sourdine
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326808972507410432
+    m_Localized: "R\xE9activer le son du joueur"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326832067431559168
+    m_Localized: "D\xE9finir uniquement la vue utilisateur"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326833306865168384
+    m_Localized: "D\xE9sactiver uniquement la vue utilisateur"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326852018926186496
+    m_Localized: "Dans les param\xE8tres de la salle"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326852593516474368
+    m_Localized: Liste des joueurs
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326864334061236224
+    m_Localized: Expulser le joueur
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326869993834082304
+    m_Localized: Mettre tous les joueurs en sourdine
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326870578603945984
+    m_Localized: "R\xE9activer le son de tous les joueurs"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326871085665939456
+    m_Localized: Mettre tous les joueurs en mode visualisation uniquement
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326871757446639616
+    m_Localized: "Permettre \xE0 tous les joueurs de modifier"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

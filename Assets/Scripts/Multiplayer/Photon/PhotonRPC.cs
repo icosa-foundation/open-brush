@@ -23,6 +23,7 @@ using Fusion;
 using TiltBrush;
 using static TiltBrush.SketchControlsScript;
 using System.Threading.Tasks;
+using Photon.Voice.Unity;
 
 namespace OpenBrush.Multiplayer
 {
@@ -402,6 +403,18 @@ namespace OpenBrush.Multiplayer
             }
         }
 
+        private static void TransferRoomOwnership()
+        {
+            if (!MultiplayerManager.m_Instance) return;
+            MultiplayerManager.m_Instance.RoomOwnershipReceived();
+        }
+
+        private static void ToggleDrawing(bool isEnabled)
+        {
+            PointerManager.m_Instance.EnableLine(isEnabled);
+            PointerManager.m_Instance.EnablePointerStrokeGeneration(isEnabled);
+        }
+
         #region RPCS
         [Rpc(InvokeLocal = false)]
         public static void RPC_SyncToSharedAnchor(NetworkRunner runner, string uuid)
@@ -540,26 +553,6 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false)]
-        public static void RPC_StartHistorySync(NetworkRunner runner, [RpcTarget] PlayerRef targetPlayer)
-        {
-            m_Instance.IssueGlobalCommand(GlobalCommands.DisplaySynchInfo);
-        }
-
-        [Rpc(InvokeLocal = false)]
-        public static void RPC_HistoryPercentageUpdate(NetworkRunner runner, [RpcTarget] PlayerRef targetPlayer, int expected, int sent)
-        {
-            MultiplayerSceneSync.m_Instance.numberOfCommandsExpected = expected;
-            MultiplayerSceneSync.m_Instance.numberOfCommandsSent = sent;
-            m_Instance.IssueGlobalCommand(GlobalCommands.SynchInfoPercentageUpdate);
-        }
-
-        [Rpc(InvokeLocal = false)]
-        public static void RPC_HistorySyncCompleted(NetworkRunner runner, [RpcTarget] PlayerRef targetPlayer)
-        {
-            m_Instance.IssueGlobalCommand(GlobalCommands.HideSynchInfo);
-        }
-
-        [Rpc(InvokeLocal = false)]
         public static void RPC_CheckCommand(NetworkRunner runner, Guid commandGuid, PlayerRef initiatorPlayer, [RpcTarget] PlayerRef targetPlayer)
         {
             bool isCommandInStack = CheckifCommandGuidIsInStack(commandGuid);
@@ -580,6 +573,33 @@ namespace OpenBrush.Multiplayer
             {
                 tcs.SetResult(isCommandInStack);
                 m_acknowledgments.Remove(commandGuid);
+            }
+        }
+
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_TransferRoomOwnership(NetworkRunner runner, [RpcTarget] PlayerRef targetPlayer)
+        {
+            TransferRoomOwnership();
+        }
+
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_ToggleUserViewOnlyMode(NetworkRunner runner, bool value, [RpcTarget] PlayerRef targetPlayer)
+        {
+            ToggleDrawing(value);
+        }
+
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_DisconnectRemoteUser(NetworkRunner runner,[RpcTarget] PlayerRef targetPlayer)
+        {
+            MultiplayerManager.m_Instance.Disconnect();
+        }
+
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_MutePlayer(NetworkRunner runner, bool mute, int playerId)
+        {
+            if (MultiplayerAudioSourcesManager.m_Instance != null)
+            {
+                MultiplayerAudioSourcesManager.m_Instance.AudioSourcesMuteStateForPlayer(playerId, mute);
             }
         }
 
