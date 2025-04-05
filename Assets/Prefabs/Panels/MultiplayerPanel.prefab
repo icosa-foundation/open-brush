@@ -64,7 +64,7 @@ MonoBehaviour:
     m_Command: 1010
   - m_PopUpPrefab: {fileID: 8644332587479430734, guid: 51ce29df58ccd0343a277023a12c50ff,
       type: 3}
-    m_Command: 1013
+    m_Command: 1012
   m_PanelDescription: 
   m_LocalizedPanelDescription:
     m_TableReference:
