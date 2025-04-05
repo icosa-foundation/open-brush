@@ -321,6 +321,7 @@ namespace OpenBrush.Multiplayer
         public void MutePlayerForAll(bool mute, int playerId)
         {
             if (!isUserRoomOwner) return;
+            MultiplayerAudioSourcesManager.m_Instance.ToggleAudioMuteForPlayer(mute, playerId);
             m_Manager.RpcMutePlayer(mute, playerId);
         }
 
