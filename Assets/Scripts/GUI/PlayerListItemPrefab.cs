@@ -42,6 +42,7 @@ namespace TiltBrush
             if (PlayerIdObject) PlayerIdObject.text = remotePlayer.PlayerId.ToString();
             if (TransferOwnershipButton) TransferOwnershipButton.playerId = remotePlayer.PlayerId;
             if (MuteButton) MuteButton.playerId = remotePlayer.PlayerId;
+            if (MuteButton) MuteForAllButton.playerId = remotePlayer.PlayerId;
             if (ToggleViewOnly) ToggleViewOnly.playerId = remotePlayer.PlayerId;
             if (KickPlayerOut) KickPlayerOut.playerId = remotePlayer.PlayerId;
         }
