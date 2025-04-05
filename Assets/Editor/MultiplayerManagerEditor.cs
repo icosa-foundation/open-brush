@@ -4,6 +4,7 @@ using UnityEngine;
 using OpenBrush.Multiplayer;
 using System.Threading.Tasks;
 using System.ComponentModel.Composition;
+using System.Collections.Generic;
 
 #if UNITY_EDITOR
 [CustomEditor(typeof(MultiplayerManager))]
@@ -16,6 +17,8 @@ public class MultiplayerManagerInspector : Editor
     private bool isPrivate = false;
     private int maxPlayers = 4;
     private bool voiceDisabled = false;
+    private Dictionary<int, bool> muteStates = new Dictionary<int, bool>();
+    private Dictionary<int, bool> viewOnlyStates = new Dictionary<int, bool>();
 
     public override void OnInspectorGUI()
     {
@@ -107,27 +110,61 @@ public class MultiplayerManagerInspector : Editor
         EditorGUILayout.LabelField($"{ownership}");
         EditorGUILayout.EndHorizontal();
 
-        //Remote Users
-        string remoteUsersRegistered = "";
-        if (multiplayerManager.m_RemotePlayers != null && multiplayerManager.m_RemotePlayers.List.Count > 0)
+        // Show the remote players
+        GUILayout.Space(10);
+        EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
+
+        EditorGUILayout.LabelField("Remote Players", EditorStyles.boldLabel);
+        if (multiplayerManager.m_RemotePlayers != null &&
+            multiplayerManager.m_RemotePlayers.List.Count > 0)
         {
-            remoteUsersRegistered = "UserIds:[ ";
+            // Then when iterating:
             foreach (var remotePlayer in multiplayerManager.m_RemotePlayers.List)
             {
-                remoteUsersRegistered += remotePlayer.PlayerId.ToString() + ",";
+                int playerId = remotePlayer.PlayerId; // now an int
+
+                // Ensure our dictionaries have entries for this playerId
+                if (!muteStates.ContainsKey(playerId))
+                {
+                    muteStates[playerId] = false;
+                }
+                if (!viewOnlyStates.ContainsKey(playerId))
+                {
+                    viewOnlyStates[playerId] = false;
+                }
+
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField($"Player: {playerId}");
+
+                //mute/unmute
+                bool currentMuteState = muteStates[playerId];
+                string muteButtonLabel = currentMuteState ? "Unmute" : "Mute";
+                if (GUILayout.Button(muteButtonLabel))
+                {
+                    bool newMuteState = !currentMuteState;
+                    MultiplayerManager.m_Instance.MutePlayerForAll(newMuteState, playerId);
+                    muteStates[playerId] = newMuteState;
+                    EditorUtility.SetDirty(target);
+                }
+
+                //viewOnly/edit
+                bool currentViewState = viewOnlyStates[playerId];
+                string viewButtonLabel = currentViewState ? "Disable ViewOnly" : "Enable ViewOnly";
+                if (GUILayout.Button(viewButtonLabel))
+                {
+                    bool newViewState = !currentViewState;
+                    MultiplayerManager.m_Instance.ToggleUserViewOnlyMode(newViewState, playerId);
+                    viewOnlyStates[playerId] = newViewState;
+                    EditorUtility.SetDirty(target);
+                }
+
+                EditorGUILayout.EndHorizontal();
             }
-            remoteUsersRegistered += "]";
         }
-        else remoteUsersRegistered = "Not Assigned";
-
-        //Registered remote players
-
-        EditorGUILayout.BeginHorizontal();
-        GUILayout.Label("Registered Remote Players IDs:", EditorStyles.boldLabel);
-        EditorGUILayout.LabelField($"{remoteUsersRegistered}");
-        EditorGUILayout.EndHorizontal();
-
-
+        else
+        {
+            EditorGUILayout.LabelField("No remote players found.");
+        }
 
         Repaint();
 
