@@ -99,11 +99,11 @@ namespace OpenBrush
             source.mute = state;
         }
 
-        public void ToggleAudioMuteForPlayer(bool value, int playerId)
+        public void ToggleAudioMuteForPlayer(int playerId)
         {
             if (sources.TryGetValue(playerId, out AudioSource source))
             {
-                source.mute = value;
+                source.mute = !source.mute;
             }
         }
     }

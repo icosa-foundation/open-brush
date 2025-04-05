@@ -178,7 +178,7 @@ namespace TiltBrush
                 case SketchControlsScript.GlobalCommands.Null:
                     break;
                 case SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayer:
-                    MultiplayerAudioSourcesManager.m_Instance.ToggleAudioMuteForPlayer(button.IsButtonActive(), button.playerId);
+                    MultiplayerAudioSourcesManager.m_Instance.ToggleAudioMuteForPlayer(button.playerId);
                     break;
                 case SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayerForAll:
                     MultiplayerManager.m_Instance.MutePlayerForAll(button.IsButtonActive(), button.playerId);
@@ -195,7 +195,7 @@ namespace TiltBrush
                 case SketchControlsScript.GlobalCommands.MultiplayerToggleAllUserAudio:
                     foreach (var remotePlayer in m_RemotePlayers.List)
                     {
-                        MultiplayerAudioSourcesManager.m_Instance.ToggleAudioMuteForPlayer(button.IsButtonActive(), remotePlayer.PlayerId);
+                        MultiplayerAudioSourcesManager.m_Instance.ToggleAudioMuteForPlayer(remotePlayer.PlayerId);
                         PlayerListItemPrefab playerComponent = GetGameobjectWithPlayerId(remotePlayer.PlayerId);
                         if (playerComponent) playerComponent.SetAudioToggleState(button.IsButtonActive());
                     }
