@@ -1422,7 +1422,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8179569077979998440
 Transform:
   m_ObjectHideFlags: 0
@@ -1460,7 +1460,7 @@ MonoBehaviour:
   PlayerIdObject: {fileID: 4873271370203748162}
   NickNameObject: {fileID: 1798382661626105731}
   MuteButton: {fileID: 2918817422897490678}
-  MuteForAllButton: {fileID: 0}
+  MuteForAllButton: {fileID: 7221723342307561705}
   TransferOwnershipButton: {fileID: 2588245756299914869}
   ToggleViewOnly: {fileID: 8042277596490285762}
   KickPlayerOut: {fileID: 8974035494957902845}
