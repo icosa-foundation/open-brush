@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using OpenBrush.Multiplayer;
 using UnityEngine;
 
 namespace TiltBrush
@@ -121,8 +122,18 @@ namespace TiltBrush
 
             m_PaintingActive = !m_EatInput && !m_ToolHidden && (m_brushTrigger || (m_PaintingActive && !m_RevolverActive && m_LazyInputActive && m_BimanualTape && m_wandTrigger));
 
-            // Allow API command to override painting mode
-            m_PaintingActive = m_PaintingActive || ApiManager.Instance.ForcePaintingOn;
+            // Allow Multiplayer to override painting mode
+            if (MultiplayerManager.m_Instance.IsViewOnly)
+            {
+                m_PaintingActive = false;
+            }
+            else
+            {
+                // Allow API command to override painting mode
+                // (ignored if multiplayer is in view-only mode)
+                m_PaintingActive = m_PaintingActive || ApiManager.Instance.ForcePaintingOn;
+            }
+
 
             if (m_BimanualTape)
             {

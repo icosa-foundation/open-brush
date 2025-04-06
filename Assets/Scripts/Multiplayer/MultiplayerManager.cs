@@ -106,6 +106,18 @@ namespace OpenBrush.Multiplayer
             }
         }
 
+        private bool _isViewOnly;
+        public bool IsViewOnly
+        {
+            get
+            {
+                // Room owners are never in view-only mode
+                if (isUserRoomOwner) return false;
+                return _isViewOnly;
+            }
+            set => _isViewOnly = value;
+        }
+
         void Awake()
         {
             m_Instance = this;
@@ -325,10 +337,10 @@ namespace OpenBrush.Multiplayer
             m_Manager.RpcMutePlayer(mute, playerId);
         }
 
-        public void ToggleUserViewOnlyMode(bool value, int playerId)
+        public void SetUserViewOnlyMode(bool value, int playerId)
         {
             if (!isUserRoomOwner) return;
-            m_Manager.RpcToggleUserViewOnlyMode(value, playerId);
+            m_Manager.RpcSetUserViewOnlyMode(value, playerId);
         }
 
         public void KickPlayerOut(int playerId)

@@ -366,11 +366,11 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
-        public async Task<bool> RpcToggleUserViewOnlyMode(bool value,int playerId)
+        public async Task<bool> RpcSetUserViewOnlyMode(bool value,int playerId)
         {
             PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
             PhotonRPCBatcher.EnqueueRPC(() =>
-            { PhotonRPC.RPC_ToggleUserViewOnlyMode(m_Runner,value, targetPlayer); });
+            { PhotonRPC.RPC_SetUserViewOnlyMode(m_Runner,value, targetPlayer); });
             return true;
         }
 

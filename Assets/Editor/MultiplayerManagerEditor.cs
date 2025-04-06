@@ -154,7 +154,7 @@ public class MultiplayerManagerInspector : Editor
                 if (GUILayout.Button(viewButtonLabel))
                 {
                     bool newViewState = !currentViewState;
-                    multiplayerManager.ToggleUserViewOnlyMode(newViewState, playerId);
+                    multiplayerManager.SetUserViewOnlyMode(newViewState, playerId);
                     viewOnlyStates[playerId] = newViewState;
                     EditorUtility.SetDirty(target);
                 }

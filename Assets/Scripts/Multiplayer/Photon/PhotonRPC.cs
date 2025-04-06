@@ -409,10 +409,9 @@ namespace OpenBrush.Multiplayer
             MultiplayerManager.m_Instance.RoomOwnershipReceived();
         }
 
-        private static void ToggleDrawing(bool isEnabled)
+        private static void SetViewOnly(bool isEnabled)
         {
-            PointerManager.m_Instance.EnableLine(isEnabled);
-            PointerManager.m_Instance.EnablePointerStrokeGeneration(isEnabled);
+            MultiplayerManager.m_Instance.IsViewOnly = isEnabled;
         }
 
         #region RPCS
@@ -583,9 +582,9 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false)]
-        public static void RPC_ToggleUserViewOnlyMode(NetworkRunner runner, bool value, [RpcTarget] PlayerRef targetPlayer)
+        public static void RPC_SetUserViewOnlyMode(NetworkRunner runner, bool value, [RpcTarget] PlayerRef targetPlayer)
         {
-            ToggleDrawing(value);
+            SetViewOnly(value);
         }
 
         [Rpc(InvokeLocal = false)]

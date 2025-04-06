@@ -187,7 +187,7 @@ namespace TiltBrush
                     MultiplayerManager.m_Instance.RoomOwnershipTransferToUser(button.playerId);
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerToggleUserViewEditMode:
-                    MultiplayerManager.m_Instance.ToggleUserViewOnlyMode(button.GetToggleState(), button.playerId);
+                    MultiplayerManager.m_Instance.SetUserViewOnlyMode(button.GetToggleState(), button.playerId);
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerKickPlayerOut:
                     MultiplayerManager.m_Instance.KickPlayerOut(button.playerId);
@@ -211,7 +211,7 @@ namespace TiltBrush
                 case SketchControlsScript.GlobalCommands.MultiplayerToggleAllUserViewEditMode:
                     foreach (var remotePlayer in m_RemotePlayers.List)
                     {
-                        MultiplayerManager.m_Instance.ToggleUserViewOnlyMode(button.GetToggleState(), remotePlayer.PlayerId);
+                        MultiplayerManager.m_Instance.SetUserViewOnlyMode(button.GetToggleState(), remotePlayer.PlayerId);
                         PlayerListItemPrefab playerComponent = GetGameobjectWithPlayerId(remotePlayer.PlayerId);
                         if (playerComponent) playerComponent.SetViewOnlyToggleState(button.GetToggleState());
                     }
