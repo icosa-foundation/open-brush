@@ -34,7 +34,6 @@ Shader "Custom/LaserPointerLine" {
     uniform float4 _Color;
     uniform half _ScrollSpeed;
     uniform half4 _EmissionColor;
-    sampler2D _MainTex;
 
     void surf (Input IN, inout SurfaceOutput o) {
       
