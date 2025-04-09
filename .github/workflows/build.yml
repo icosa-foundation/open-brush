@@ -1160,11 +1160,19 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install ArborXR CLI
+        run: |
+          uv tool install abxrcli
+
       - name: Download Build Artifacts (Oculus Quest 2+)
         uses: actions/download-artifact@v4
         with:
           name: Oculus Quest (2+)
           path: build_oculus_quest
+
       - name: Publish Oculus Builds
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
@@ -1180,17 +1188,15 @@ jobs:
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
 
           cd releases
-          wget -O arborxr-cli.zip https://graphql.xrdm.app/download/system-content/channel/fe7633a5-d733-4885-8b3c-580c11c4842d
-          unzip arborxr-cli.zip
-          ln -s arborxr-cli-linux-* arborxr-cli
-          chmod 755 arborxr-cli
 
           if [ "$PRERELEASE" == "false" ]
           then
-            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_LIVE_CHANNEL OpenBrush_Quest_$VERSION.apk
+            abxr-cli apps upload $ARBORXR_APP_ID OpenBrush_Quest_$VERSION.apk --version $VERSION
+            abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_LIVE_CHANNEL --version $VERSION
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_BETA_CHANNEL OpenBrush_Quest_$VERSION.apk --release-notes "${CHANGELOG}"
+            abxr-cli apps upload $ARBORXR_APP_ID OpenBrush_Quest_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION
+            abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_BETA_CHANNEL --version $VERSION
           fi
 
   publish_oculus_quest1_arborxr:
@@ -1203,6 +1209,13 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install ArborXR CLI
+        run: |
+          uv tool install abxrcli
+
       - name: Download Build Artifacts (Oculus Quest 1)
         uses: actions/download-artifact@v4
         with:
@@ -1223,17 +1236,15 @@ jobs:
           mv build_oculus_quest1/*/com.Icosa.OpenBrush*apk releases1/OpenBrush_Quest1_$VERSION.apk
 
           cd releases1
-          wget -O arborxr-cli.zip https://graphql.xrdm.app/download/system-content/channel/fe7633a5-d733-4885-8b3c-580c11c4842d
-          unzip arborxr-cli.zip
-          ln -s arborxr-cli-linux-* arborxr-cli
-          chmod 755 arborxr-cli
 
           if [ "$PRERELEASE" == "false" ]
           then
-            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_LIVE_CHANNEL OpenBrush_Quest1_$VERSION.apk
+            abxr-cli apps upload $ARBORXR_APP_ID OpenBrush_Quest1_$VERSION.apk --version $VERSION
+            abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_LIVE_CHANNEL --version $VERSION
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_BETA_CHANNEL OpenBrush_Quest1_$VERSION.apk --release-notes "${CHANGELOG}"
+            abxr-cli apps upload $ARBORXR_APP_ID OpenBrush_Quest1_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION
+            abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_BETA_CHANNEL --version $VERSION
           fi
 
   publish_oculus_rift:
@@ -1331,6 +1342,13 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install ArborXR CLI
+        run: |
+          uv tool install abxrcli
+
       - name: Download Build Artifacts (Android Pico)
         uses: actions/download-artifact@v4
         with:
@@ -1351,17 +1369,15 @@ jobs:
           mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
 
           cd releases
-          wget -O arborxr-cli.zip https://graphql.xrdm.app/download/system-content/channel/fe7633a5-d733-4885-8b3c-580c11c4842d
-          unzip arborxr-cli.zip
-          ln -s arborxr-cli-linux-* arborxr-cli
-          chmod 755 arborxr-cli
 
           if [ "$PRERELEASE" == "false" ]
           then
-            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_LIVE_CHANNEL OpenBrush_Pico_$VERSION.apk
+            abxr-cli apps upload $ARBORXR_APP_ID OpenBrush_Pico_$VERSION.apk --version $VERSION
+            abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_LIVE_CHANNEL --version $VERSION
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_BETA_CHANNEL OpenBrush_Pico_$VERSION.apk --release-notes "${CHANGELOG}"
+            abxr-cli apps upload $ARBORXR_APP_ID OpenBrush_Pico_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION
+            abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_BETA_CHANNEL --version $VERSION
           fi
 
   publish_ios_zapbox:
