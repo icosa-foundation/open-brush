@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
   m_Name: Strings_en
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   m_LocaleId:
     m_Code: en
   m_SharedData: {fileID: 11400000, guid: c84355079ab3f3e4f8f3812258805f86, type: 2}
@@ -3522,6 +3522,18 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 156198200358006784
     m_Localized: Switch off passthrough environment mode to use Multiplayer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 234808679492837376
+    m_Localized: Saved Strokes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235160207315525632
+    m_Localized: Save selected strokes to media library
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235163428054458368
+    m_Localized: Saved Strokes
     m_Metadata:
       m_Items: []
   - m_Id: 238556149774557184
