@@ -324,20 +324,20 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
-        public void RoomOwnershipReceived(Dictionary<int, Dictionary<int, bool>> playerSettings)
+        public void RoomOwnershipReceived(NetworkPlayerSettings[] playerSettings)
         {
 
             int idMuteForMe = (int)SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayer;
             int idMuteForAll = (int)SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayerForAll;
             int idViewOnly = (int)SketchControlsScript.GlobalCommands.MultiplayerToggleUserViewEditMode;
 
-            foreach (var playerId in playerSettings.Keys)
+            foreach (var p in playerSettings)
             {
-                var player = GetPlayerById(playerId);
-                var playerSetting = playerSettings[playerId];
-                player.m_IsMutedForMe = playerSetting[idMuteForMe];
-                player.m_IsMutedForAll = playerSetting[idMuteForAll];
-                player.m_IsViewOnly = playerSetting[idViewOnly];
+                var player = p.m_Player;
+                var mplayer = MultiplayerManager.m_Instance.GetPlayerById(player.PlayerId);
+                mplayer.m_IsMutedForMe = p.m_IsMutedForMe;
+                mplayer.m_IsMutedForAll = p.m_IsMutedForAll;
+                mplayer.m_IsViewOnly = p.m_IsViewOnly;
             }
             // TODO Refresh GUI
 
@@ -348,20 +348,16 @@ namespace OpenBrush.Multiplayer
         {
             if (!isUserRoomOwner) return;
 
-            var playerSettings = new Dictionary<int, Dictionary<int, bool>>();
+            var playerSettings = new NetworkPlayerSettings[m_RemotePlayers.List.Count];
             int idMuteForMe = (int)SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayer;
             int idMuteForAll = (int)SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayerForAll;
             int idViewOnly = (int)SketchControlsScript.GlobalCommands.MultiplayerToggleUserViewEditMode;
 
-            foreach (var player in m_RemotePlayers.List)
+            for (var i = 0; i < m_RemotePlayers.List.Count; i++)
             {
-                var playerDict = new Dictionary<int, bool>
-                {
-                    [idMuteForMe] = player.m_IsMutedForMe,
-                    [idMuteForAll] = player.m_IsMutedForAll,
-                    [idViewOnly] = player.m_IsViewOnly
-                };
-                playerSettings[player.PlayerId] = playerDict;
+                var player = m_RemotePlayers.List[i];
+                PlayerRef p = PlayerRef.FromEncoded(player.PlayerId);
+                playerSettings[i] = new NetworkPlayerSettings(p, player.m_IsMutedForMe, player.m_IsMutedForAll, player.m_IsViewOnly);
             }
             m_Manager.RpcTransferRoomOwnership(playerId, playerSettings);
             isUserRoomOwner = false;

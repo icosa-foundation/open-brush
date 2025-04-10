@@ -403,7 +403,7 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        private static void TransferRoomOwnership(Dictionary<int, Dictionary<int, bool>> playerSettings)
+        private static void TransferRoomOwnership(NetworkPlayerSettings[] playerSettings)
         {
             if (!MultiplayerManager.m_Instance) return;
             MultiplayerManager.m_Instance.RoomOwnershipReceived(playerSettings);
@@ -579,7 +579,7 @@ namespace OpenBrush.Multiplayer
         public static void RPC_TransferRoomOwnership
             (NetworkRunner runner,
              [RpcTarget] PlayerRef targetPlayer,
-             Dictionary<int, Dictionary<int, bool>> playerSettings)
+             NetworkPlayerSettings[] playerSettings)
         {
             TransferRoomOwnership(playerSettings);
         }
