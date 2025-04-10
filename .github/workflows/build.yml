@@ -1189,15 +1189,17 @@ jobs:
 
           cd releases
 
+          set -x
           if [ "$PRERELEASE" == "false" ]
           then
-            abxr-cli apps upload $ARBORXR_APP_ID OpenBrush_Quest_$VERSION.apk --version $VERSION
-            abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_LIVE_CHANNEL --version $VERSION
+            CHANGELOG="Version $VERSION"
+            ARBORXR_CHANNEL="${ARBORXR_LIVE_CHANNEL}"
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            abxr-cli apps upload $ARBORXR_APP_ID OpenBrush_Quest_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION
-            abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_BETA_CHANNEL --version $VERSION
+            ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
           fi
+          VERSION_ID="$(abxr-cli apps upload $ARBORXR_APP_ID OpenBrush_Quest_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION | jq -r '.id')"
+          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version $VERSION_ID
 
   publish_oculus_quest1_arborxr:
     name: Publish Oculus Quest 1 Release ArborXR
@@ -1239,13 +1241,14 @@ jobs:
 
           if [ "$PRERELEASE" == "false" ]
           then
-            abxr-cli apps upload $ARBORXR_APP_ID OpenBrush_Quest1_$VERSION.apk --version $VERSION
-            abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_LIVE_CHANNEL --version $VERSION
+            CHANGELOG="Version $VERSION"
+            ARBORXR_CHANNEL="${ARBORXR_LIVE_CHANNEL}"
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            abxr-cli apps upload $ARBORXR_APP_ID OpenBrush_Quest1_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION
-            abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_BETA_CHANNEL --version $VERSION
+            ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
           fi
+          VERSION_ID="$(abxr-cli apps upload $ARBORXR_APP_ID OpenBrush_Quest1_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION | jq -r '.id')"
+          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version $VERSION_ID
 
   publish_oculus_rift:
     name: Publish Oculus Rift Release
@@ -1372,13 +1375,14 @@ jobs:
 
           if [ "$PRERELEASE" == "false" ]
           then
-            abxr-cli apps upload $ARBORXR_APP_ID OpenBrush_Pico_$VERSION.apk --version $VERSION
-            abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_LIVE_CHANNEL --version $VERSION
+            CHANGELOG="Version $VERSION"
+            ARBORXR_CHANNEL="${ARBORXR_LIVE_CHANNEL}"
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            abxr-cli apps upload $ARBORXR_APP_ID OpenBrush_Pico_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION
-            abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_BETA_CHANNEL --version $VERSION
+            ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
           fi
+          VERSION_ID="$(abxr-cli apps upload $ARBORXR_APP_ID OpenBrush_Pico_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION | jq -r '.id')"
+          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version $VERSION_ID
 
   publish_ios_zapbox:
     name: Publish Zapbox iOS
