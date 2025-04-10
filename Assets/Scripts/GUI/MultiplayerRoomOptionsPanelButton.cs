@@ -32,25 +32,25 @@ namespace TiltBrush
                 {
                     // "Single User" commands
 
-                    case SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayer:
-                        IsToggledOn = !_playerData.m_IsMutedForMe;
+                    case SketchControlsScript.GlobalCommands.MultiplayerMutePlayerForMe:
+                        IsToggledOn = _playerData.m_IsMutedForMe;
                         break;
-                    case SketchControlsScript.GlobalCommands.MultiplayerToggleUserViewEditMode:
-                        IsToggledOn = !_playerData.m_IsViewOnly;
+                    case SketchControlsScript.GlobalCommands.MultiplayerViewOnlyMode:
+                        IsToggledOn = _playerData.m_IsViewOnly;
                         break;
-                    case SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayerForAll:
-                        IsToggledOn = !_playerData.m_IsMutedForAll;
+                    case SketchControlsScript.GlobalCommands.MultiplayerPlayerMuteForAll:
+                        IsToggledOn = _playerData.m_IsMutedForAll;
                         break;
 
                     // "All User" commands
 
-                    case SketchControlsScript.GlobalCommands.MultiplayerToggleAllUserViewEditMode:
+                    case SketchControlsScript.GlobalCommands.MultiplayerSetAllViewOnly:
                         IsToggledOn = MultiplayerManager.m_Instance.IsViewOnly;
                         break;
-                    case SketchControlsScript.GlobalCommands.MultiplayerToggleAllUserAudio:
+                    case SketchControlsScript.GlobalCommands.MultiplayerMuteAllForMe:
                         IsToggledOn = MultiplayerManager.m_Instance.m_IsAllMutedForMe;
                         break;
-                    case SketchControlsScript.GlobalCommands.MultiplayerToggleAllUserAudioForAll:
+                    case SketchControlsScript.GlobalCommands.MultiplayerMuteAllForAll:
                         IsToggledOn = MultiplayerManager.m_Instance.m_IsAllMutedForAll;
                         break;
                 }

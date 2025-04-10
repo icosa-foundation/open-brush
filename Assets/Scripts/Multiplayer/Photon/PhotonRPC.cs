@@ -601,7 +601,7 @@ namespace OpenBrush.Multiplayer
         {
             if (MultiplayerAudioSourcesManager.m_Instance != null)
             {
-                MultiplayerAudioSourcesManager.m_Instance.AudioSourcesMuteStateForPlayer(playerId, mute);
+                MultiplayerAudioSourcesManager.m_Instance.SetMuteForPlayer(playerId, mute);
             }
         }
 

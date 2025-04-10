@@ -1107,7 +1107,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  m_ToggleOffTint: {r: 1, g: 1, b: 1, a: 1}
   playerId: 0
   references:
     version: 2
@@ -1396,7 +1395,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  m_ToggleOffTint: {r: 1, g: 1, b: 1, a: 1}
   playerId: 0
   references:
     version: 2
@@ -1498,6 +1496,9 @@ MonoBehaviour:
   KickPlayerOut: {fileID: 8974035494957902845}
   remotePlayer:
     PlayerId: 0
+    m_IsMutedForMe: 0
+    m_IsMutedForAll: 0
+    m_IsViewOnly: 0
     PlayerGameObject: {fileID: 0}
     VoiceGameObject: {fileID: 0}
 --- !u!1 &3336686636497808106
@@ -1697,7 +1698,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  m_ToggleOffTint: {r: 1, g: 1, b: 1, a: 1}
   playerId: 0
   references:
     version: 2
@@ -1891,7 +1891,7 @@ MonoBehaviour:
         m_MethodName: OnMultiplayerRoomOptionsPopUpWindowButtonPressed
         m_Mode: 2
         m_Arguments:
-          m_ObjectArgument: {fileID: 7221723342307561705}
+          m_ObjectArgument: {fileID: 8042277596490285762}
           m_ObjectArgumentAssemblyTypeName: TiltBrush.MultiplayerRoomOptionsPanelButton,
             Assembly-CSharp
           m_IntArgument: 0
@@ -1899,7 +1899,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  m_ToggleOffTint: {r: 1, g: 1, b: 1, a: 1}
   playerId: 0
   references:
     version: 2
@@ -2188,7 +2187,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  m_ToggleOffTint: {r: 1, g: 1, b: 1, a: 1}
   playerId: 0
   references:
     version: 2
@@ -2561,7 +2559,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  m_ToggleOffTint: {r: 1, g: 1, b: 1, a: 1}
   playerId: 0
   references:
     version: 2
@@ -2763,7 +2760,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  m_ToggleOffTint: {r: 1, g: 1, b: 1, a: 1}
   playerId: 0
   references:
     version: 2
@@ -3128,7 +3124,7 @@ MonoBehaviour:
         m_MethodName: OnMultiplayerRoomOptionsPopUpWindowButtonPressed
         m_Mode: 2
         m_Arguments:
-          m_ObjectArgument: {fileID: 3497437910775520417}
+          m_ObjectArgument: {fileID: 5661515221701686702}
           m_ObjectArgumentAssemblyTypeName: TiltBrush.MultiplayerRoomOptionsPanelButton,
             Assembly-CSharp
           m_IntArgument: 0
@@ -3136,7 +3132,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  m_ToggleOffTint: {r: 1, g: 1, b: 1, a: 1}
   playerId: 0
   references:
     version: 2

@@ -327,9 +327,9 @@ namespace OpenBrush.Multiplayer
         public void RoomOwnershipReceived(NetworkPlayerSettings[] playerSettings)
         {
 
-            int idMuteForMe = (int)SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayer;
-            int idMuteForAll = (int)SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayerForAll;
-            int idViewOnly = (int)SketchControlsScript.GlobalCommands.MultiplayerToggleUserViewEditMode;
+            int idMuteForMe = (int)SketchControlsScript.GlobalCommands.MultiplayerMutePlayerForMe;
+            int idMuteForAll = (int)SketchControlsScript.GlobalCommands.MultiplayerPlayerMuteForAll;
+            int idViewOnly = (int)SketchControlsScript.GlobalCommands.MultiplayerViewOnlyMode;
 
             foreach (var p in playerSettings)
             {
@@ -349,9 +349,9 @@ namespace OpenBrush.Multiplayer
             if (!isUserRoomOwner) return;
 
             var playerSettings = new NetworkPlayerSettings[m_RemotePlayers.List.Count];
-            int idMuteForMe = (int)SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayer;
-            int idMuteForAll = (int)SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayerForAll;
-            int idViewOnly = (int)SketchControlsScript.GlobalCommands.MultiplayerToggleUserViewEditMode;
+            int idMuteForMe = (int)SketchControlsScript.GlobalCommands.MultiplayerMutePlayerForMe;
+            int idMuteForAll = (int)SketchControlsScript.GlobalCommands.MultiplayerPlayerMuteForAll;
+            int idViewOnly = (int)SketchControlsScript.GlobalCommands.MultiplayerViewOnlyMode;
 
             for (var i = 0; i < m_RemotePlayers.List.Count; i++)
             {
@@ -364,25 +364,25 @@ namespace OpenBrush.Multiplayer
         }
 
         // Not really a multiplayer function but placing it here for consistency with other methods
-        public void MutePlayerForMe(bool state, int playerId)
+        public void MutePlayerForMe(bool muted, int playerId)
         {
-            GetPlayerById(playerId).m_IsMutedForAll = state;
-            MultiplayerAudioSourcesManager.m_Instance.ToggleAudioMuteForPlayer(state, playerId);
+            GetPlayerById(playerId).m_IsMutedForMe = muted;
+            MultiplayerAudioSourcesManager.m_Instance.SetMuteForPlayer(playerId, muted);
         }
 
-        public void MutePlayerForAll(bool mute, int playerId)
+        public void MutePlayerForAll(bool muted, int playerId)
         {
             if (!isUserRoomOwner) return;
-            GetPlayerById(playerId).m_IsMutedForAll = mute;
-            MultiplayerAudioSourcesManager.m_Instance.ToggleAudioMuteForPlayer(mute, playerId);
-            m_Manager.RpcMutePlayer(mute, playerId);
+            GetPlayerById(playerId).m_IsMutedForAll = muted;
+            MultiplayerAudioSourcesManager.m_Instance.SetMuteForPlayer(playerId, muted);
+            m_Manager.RpcMutePlayer(muted, playerId);
         }
 
-        public void SetUserViewOnlyMode(bool value, int playerId)
+        public void SetUserViewOnlyMode(bool isViewOnly, int playerId)
         {
             if (!isUserRoomOwner) return;
-            GetPlayerById(playerId).m_IsViewOnly = value;
-            m_Manager.RpcSetUserViewOnlyMode(value, playerId);
+            GetPlayerById(playerId).m_IsViewOnly = isViewOnly;
+            m_Manager.RpcSetUserViewOnlyMode(isViewOnly, playerId);
         }
 
         public void KickPlayerOut(int playerId)

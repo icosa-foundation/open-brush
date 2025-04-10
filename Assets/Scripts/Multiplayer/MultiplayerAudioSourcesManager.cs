@@ -74,37 +74,11 @@ namespace OpenBrush
             return Mathf.Lerp(200f, 20000f, Mathf.Clamp01(sceneScale));
         }
 
-        public void MuteAudioSources()
-        {
-            foreach (var source in sources.Values)
-                if (source != null) source.mute = true;
-        }
-
-        public void UnmuteAudioSources()
-        {
-            foreach (var source in sources.Values)
-                if (source != null) source.mute = false;
-        }
-
-        public void MuteAudioSourcesForPlayer(int playerId)
-        { AudioSourcesMuteStateForPlayer(playerId, true); }
-
-        public void UnmuteAudioSourcesForPlayer(int playerId)
-        { AudioSourcesMuteStateForPlayer(playerId, false); }
-
-        public void AudioSourcesMuteStateForPlayer(int playerId, bool state)
+        public void SetMuteForPlayer(int playerId, bool muted)
         {
             sources.TryGetValue(playerId, out AudioSource source);
             if (source == null) return;
-            source.mute = state;
-        }
-
-        public void ToggleAudioMuteForPlayer(bool state, int playerId)
-        {
-            if (sources.TryGetValue(playerId, out AudioSource source))
-            {
-                source.mute = state;
-            }
+            source.mute = muted;
         }
     }
 }
