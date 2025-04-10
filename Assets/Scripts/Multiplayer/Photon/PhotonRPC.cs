@@ -403,10 +403,10 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        private static void TransferRoomOwnership()
+        private static void TransferRoomOwnership(Dictionary<int, Dictionary<int, bool>> playerSettings)
         {
             if (!MultiplayerManager.m_Instance) return;
-            MultiplayerManager.m_Instance.RoomOwnershipReceived();
+            MultiplayerManager.m_Instance.RoomOwnershipReceived(playerSettings);
         }
 
         private static void SetViewOnly(bool isEnabled)
@@ -576,9 +576,12 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false)]
-        public static void RPC_TransferRoomOwnership(NetworkRunner runner, [RpcTarget] PlayerRef targetPlayer)
+        public static void RPC_TransferRoomOwnership
+            (NetworkRunner runner,
+             [RpcTarget] PlayerRef targetPlayer,
+             Dictionary<int, Dictionary<int, bool>> playerSettings)
         {
-            TransferRoomOwnership();
+            TransferRoomOwnership(playerSettings);
         }
 
         [Rpc(InvokeLocal = false)]

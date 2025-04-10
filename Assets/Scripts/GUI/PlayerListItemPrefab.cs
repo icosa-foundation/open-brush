@@ -49,17 +49,17 @@ namespace TiltBrush
 
         public void SetAudioToggleState(bool isActive)
         {
-            if (MuteButton) MuteButton.SetToggleState(isActive);
+            if (MuteButton) MuteButton.IsToggledOn = isActive;
         }
 
         public void SetAudioForAllToggleState(bool isActive)
         {
-            if (MuteForAllButton) MuteForAllButton.SetToggleState(isActive);
+            if (MuteForAllButton) MuteForAllButton.IsToggledOn = isActive;
         }
 
         public void SetViewOnlyToggleState(bool isActive)
         {
-            if (ToggleViewOnly) ToggleViewOnly.SetToggleState(isActive);
+            if (ToggleViewOnly) ToggleViewOnly.IsToggledOn = isActive;
         }
 
     }

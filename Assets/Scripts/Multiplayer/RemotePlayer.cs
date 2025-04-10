@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -24,6 +23,10 @@ namespace OpenBrush.Multiplayer
     public class RemotePlayer
     {
         public int PlayerId;
+        public bool m_IsMutedForMe;
+        public bool m_IsMutedForAll;
+        public bool m_IsViewOnly;
+
         private string _nickname;
         public string Nickname
         {

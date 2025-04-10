@@ -12,46 +12,50 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using OpenBrush.Multiplayer;
 using UnityEngine;
 
 namespace TiltBrush
 {
-    public class MultiplayerRoomOptionsPanelButton : OptionButton
+    public class MultiplayerRoomOptionsPanelButton : ToggleButton
     {
-        [SerializeField] private bool m_CommandIgnored = false;
         [HideInInspector] public int playerId;
 
-        override protected void OnButtonPressed()
+        private RemotePlayer _playerData =>
+            MultiplayerManager.m_Instance.GetPlayerById(playerId);
+
+        protected override void Start()
         {
-
-            MultiplayerRoomOptionsPopUpWindow popup = m_Manager.GetComponent<MultiplayerRoomOptionsPopUpWindow>();
-
-            // For some circumstances on mobile, we want to ignore the command, but still
-            // notify the popup that we were pressed.  Which happens below.
-            if (!m_CommandIgnored)
+            if (m_ToggleButton)
             {
-                if (m_RequiresPopup & m_Command == SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayer)
+                switch (m_Command)
                 {
+                    // "Single User" commands
 
+                    case SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayer:
+                        IsToggledOn = !_playerData.m_IsMutedForMe;
+                        break;
+                    case SketchControlsScript.GlobalCommands.MultiplayerToggleUserViewEditMode:
+                        IsToggledOn = !_playerData.m_IsViewOnly;
+                        break;
+                    case SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayerForAll:
+                        IsToggledOn = !_playerData.m_IsMutedForAll;
+                        break;
+
+                    // "All User" commands
+
+                    case SketchControlsScript.GlobalCommands.MultiplayerToggleAllUserViewEditMode:
+                        IsToggledOn = MultiplayerManager.m_Instance.IsViewOnly;
+                        break;
+                    case SketchControlsScript.GlobalCommands.MultiplayerToggleAllUserAudio:
+                        IsToggledOn = MultiplayerManager.m_Instance.m_IsAllMutedForMe;
+                        break;
+                    case SketchControlsScript.GlobalCommands.MultiplayerToggleAllUserAudioForAll:
+                        IsToggledOn = MultiplayerManager.m_Instance.m_IsAllMutedForAll;
+                        break;
                 }
-
-                base.OnButtonPressed();
             }
-
-
-            Debug.Assert(popup != null);
-            popup.OnMultiplayerRoomOptionsPopUpWindowButtonPressed(this);
-        }
-
-        public void SetToggleState(bool isActive)
-        {
-            m_ToggleActive = isActive;
-            UpdateVisuals();
-        }
-
-        public bool GetToggleState()
-        {
-            return m_ToggleActive;
+            base.Start();
         }
     }
 } // namespace TiltBrush

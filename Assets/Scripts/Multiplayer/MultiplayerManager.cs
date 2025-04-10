@@ -16,11 +16,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Fusion;
 using UnityEngine;
 #if OCULUS_SUPPORTED
 using OVRPlatform = Oculus.Platform;
 #endif
 using TiltBrush;
+using UnityEngine.Serialization;
 
 namespace OpenBrush.Multiplayer
 {
@@ -107,6 +109,10 @@ namespace OpenBrush.Multiplayer
         }
 
         private bool _isViewOnly;
+
+        [NonSerialized] public bool m_IsAllMutedForMe;
+        [NonSerialized] public bool m_IsAllMutedForAll;
+
         public bool IsViewOnly
         {
             get
@@ -318,21 +324,60 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
-        public void RoomOwnershipReceived()
+        public void RoomOwnershipReceived(Dictionary<int, Dictionary<int, bool>> playerSettings)
         {
+
+            int idMuteForMe = (int)SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayer;
+            int idMuteForAll = (int)SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayerForAll;
+            int idViewOnly = (int)SketchControlsScript.GlobalCommands.MultiplayerToggleUserViewEditMode;
+
+            foreach (var playerId in playerSettings.Keys)
+            {
+                var player = GetPlayerById(playerId);
+                var playerSetting = playerSettings[playerId];
+                player.m_IsMutedForMe = playerSetting[idMuteForMe];
+                player.m_IsMutedForAll = playerSetting[idMuteForAll];
+                player.m_IsViewOnly = playerSetting[idViewOnly];
+            }
+            // TODO Refresh GUI
+
             isUserRoomOwner = true;
         }
 
         public void RoomOwnershipTransferToUser(int playerId)
         {
             if (!isUserRoomOwner) return;
-            m_Manager.RpcTransferRoomOwnership(playerId);
+
+            var playerSettings = new Dictionary<int, Dictionary<int, bool>>();
+            int idMuteForMe = (int)SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayer;
+            int idMuteForAll = (int)SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayerForAll;
+            int idViewOnly = (int)SketchControlsScript.GlobalCommands.MultiplayerToggleUserViewEditMode;
+
+            foreach (var player in m_RemotePlayers.List)
+            {
+                var playerDict = new Dictionary<int, bool>
+                {
+                    [idMuteForMe] = player.m_IsMutedForMe,
+                    [idMuteForAll] = player.m_IsMutedForAll,
+                    [idViewOnly] = player.m_IsViewOnly
+                };
+                playerSettings[player.PlayerId] = playerDict;
+            }
+            m_Manager.RpcTransferRoomOwnership(playerId, playerSettings);
             isUserRoomOwner = false;
+        }
+
+        // Not really a multiplayer function but placing it here for consistency with other methods
+        public void MutePlayerForMe(bool state, int playerId)
+        {
+            GetPlayerById(playerId).m_IsMutedForAll = state;
+            MultiplayerAudioSourcesManager.m_Instance.ToggleAudioMuteForPlayer(state, playerId);
         }
 
         public void MutePlayerForAll(bool mute, int playerId)
         {
             if (!isUserRoomOwner) return;
+            GetPlayerById(playerId).m_IsMutedForAll = mute;
             MultiplayerAudioSourcesManager.m_Instance.ToggleAudioMuteForPlayer(mute, playerId);
             m_Manager.RpcMutePlayer(mute, playerId);
         }
@@ -340,6 +385,7 @@ namespace OpenBrush.Multiplayer
         public void SetUserViewOnlyMode(bool value, int playerId)
         {
             if (!isUserRoomOwner) return;
+            GetPlayerById(playerId).m_IsViewOnly = value;
             m_Manager.RpcSetUserViewOnlyMode(value, playerId);
         }
 
@@ -464,20 +510,28 @@ namespace OpenBrush.Multiplayer
 
         }
 
-        public void OnRemoteVoiceConnected(int id, GameObject voicePrefab)
+        public RemotePlayer GetPlayerById(int id)
         {
-            RemotePlayer playerData = m_RemotePlayers.List.First(x => x.PlayerId == id);
-            if (playerData == default)
+            RemotePlayer playerData = m_RemotePlayers.List.FirstOrDefault(x => x.PlayerId == id);
+            if (playerData == null)
             {
                 Debug.LogWarning($"PlayerRigData with ID {id} not found");
-                return;
+                return null;
             }
 
             if (playerData.PlayerGameObject == null)
             {
                 Debug.LogWarning($"RemotePlayerGameObject with ID {id} not found");
-                return;
+                return null;
             }
+
+            return playerData;
+        }
+
+        public void OnRemoteVoiceConnected(int id, GameObject voicePrefab)
+        {
+            var playerData = GetPlayerById(id);
+            if (playerData == null) return;
 
             Transform headTransform = playerData.PlayerGameObject.transform.Find("HeadTransform");
             if (headTransform != null)
@@ -685,10 +739,7 @@ namespace OpenBrush.Multiplayer
                 m_NetworkOffsetTimestamp = (int)(App.Instance.CurrentSketchTime * 1000);
                 SketchMemoryScript.m_Instance.SetTimeOffsetToAllStacks((int)m_NetworkOffsetTimestamp);
             }
-
         }
-
-
     }
 }
 

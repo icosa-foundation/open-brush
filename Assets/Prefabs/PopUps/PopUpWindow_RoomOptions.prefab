@@ -924,7 +924,7 @@ GameObject:
   - component: {fileID: 5181048296988181000}
   - component: {fileID: 2588245756299914869}
   m_Layer: 16
-  m_Name: TransferOwnershipButton
+  m_Name: ButtonTransferOwnership
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1091,7 +1091,23 @@ MonoBehaviour:
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 1
   m_LinkedUIObject: {fileID: 0}
-  m_CommandIgnored: 0
+  m_OnToggle:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 8874513985202052663}
+        m_TargetAssemblyTypeName: TiltBrush.MultiplayerRoomOptionsPopUpWindow, Assembly-CSharp
+        m_MethodName: OnMultiplayerRoomOptionsPopUpWindowButtonPressed
+        m_Mode: 2
+        m_Arguments:
+          m_ObjectArgument: {fileID: 2588245756299914869}
+          m_ObjectArgumentAssemblyTypeName: TiltBrush.MultiplayerRoomOptionsPanelButton,
+            Assembly-CSharp
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_ToggleOffTint: {r: 1, g: 1, b: 1, a: 1}
   playerId: 0
   references:
     version: 2
@@ -1197,7 +1213,7 @@ GameObject:
   - component: {fileID: 3500110406489554640}
   - component: {fileID: 7221723342307561705}
   m_Layer: 16
-  m_Name: MuteForAllButton
+  m_Name: ToggleMuteForAll
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1361,10 +1377,26 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_ToggleOnTexture: {fileID: 2800000, guid: 89c869f76d8c0474a8da08e71510f0f2, type: 3}
+  m_ToggleOnTexture: {fileID: 2800000, guid: 5ca1540d7e17e2c45bcb251d2e17f105, type: 3}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
-  m_CommandIgnored: 0
+  m_OnToggle:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 8874513985202052663}
+        m_TargetAssemblyTypeName: TiltBrush.MultiplayerRoomOptionsPopUpWindow, Assembly-CSharp
+        m_MethodName: OnMultiplayerRoomOptionsPopUpWindowButtonPressed
+        m_Mode: 2
+        m_Arguments:
+          m_ObjectArgument: {fileID: 7221723342307561705}
+          m_ObjectArgumentAssemblyTypeName: TiltBrush.MultiplayerRoomOptionsPanelButton,
+            Assembly-CSharp
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_ToggleOffTint: {r: 1, g: 1, b: 1, a: 1}
   playerId: 0
   references:
     version: 2
@@ -1646,10 +1678,26 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_ToggleOnTexture: {fileID: 0}
+  m_ToggleOnTexture: {fileID: 2800000, guid: 5ca1540d7e17e2c45bcb251d2e17f105, type: 3}
   m_AllowUnavailable: 1
   m_LinkedUIObject: {fileID: 0}
-  m_CommandIgnored: 0
+  m_OnToggle:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 8874513985202052663}
+        m_TargetAssemblyTypeName: TiltBrush.MultiplayerRoomOptionsPopUpWindow, Assembly-CSharp
+        m_MethodName: OnMultiplayerRoomOptionsPopUpWindowButtonPressed
+        m_Mode: 2
+        m_Arguments:
+          m_ObjectArgument: {fileID: 3497437910775520417}
+          m_ObjectArgumentAssemblyTypeName: TiltBrush.MultiplayerRoomOptionsPanelButton,
+            Assembly-CSharp
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_ToggleOffTint: {r: 1, g: 1, b: 1, a: 1}
   playerId: 0
   references:
     version: 2
@@ -1668,7 +1716,7 @@ GameObject:
   - component: {fileID: 820006243264167913}
   - component: {fileID: 8042277596490285762}
   m_Layer: 16
-  m_Name: ToggleUserDrawingAbility
+  m_Name: ToggleViewOnly
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1832,10 +1880,26 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_ToggleOnTexture: {fileID: 2800000, guid: 97a84a57c58583a48a834c393578618d, type: 3}
+  m_ToggleOnTexture: {fileID: 2800000, guid: b833d20511bb64d45b81827083823d04, type: 3}
   m_AllowUnavailable: 1
   m_LinkedUIObject: {fileID: 0}
-  m_CommandIgnored: 0
+  m_OnToggle:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 8874513985202052663}
+        m_TargetAssemblyTypeName: TiltBrush.MultiplayerRoomOptionsPopUpWindow, Assembly-CSharp
+        m_MethodName: OnMultiplayerRoomOptionsPopUpWindowButtonPressed
+        m_Mode: 2
+        m_Arguments:
+          m_ObjectArgument: {fileID: 7221723342307561705}
+          m_ObjectArgumentAssemblyTypeName: TiltBrush.MultiplayerRoomOptionsPanelButton,
+            Assembly-CSharp
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_ToggleOffTint: {r: 1, g: 1, b: 1, a: 1}
   playerId: 0
   references:
     version: 2
@@ -1941,7 +2005,7 @@ GameObject:
   - component: {fileID: 3067514523684327492}
   - component: {fileID: 2918817422897490678}
   m_Layer: 16
-  m_Name: MuteForMeButton
+  m_Name: ToggleMuteForMe
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2105,10 +2169,26 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_ToggleOnTexture: {fileID: 2800000, guid: 89c869f76d8c0474a8da08e71510f0f2, type: 3}
+  m_ToggleOnTexture: {fileID: 2800000, guid: 48c6befe545f63943b18a2a69bceb969, type: 3}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
-  m_CommandIgnored: 0
+  m_OnToggle:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 8874513985202052663}
+        m_TargetAssemblyTypeName: TiltBrush.MultiplayerRoomOptionsPopUpWindow, Assembly-CSharp
+        m_MethodName: OnMultiplayerRoomOptionsPopUpWindowButtonPressed
+        m_Mode: 2
+        m_Arguments:
+          m_ObjectArgument: {fileID: 2918817422897490678}
+          m_ObjectArgumentAssemblyTypeName: TiltBrush.MultiplayerRoomOptionsPanelButton,
+            Assembly-CSharp
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_ToggleOffTint: {r: 1, g: 1, b: 1, a: 1}
   playerId: 0
   references:
     version: 2
@@ -2298,7 +2378,7 @@ GameObject:
   - component: {fileID: 7372616648850819689}
   - component: {fileID: 8974035494957902845}
   m_Layer: 16
-  m_Name: KickUser
+  m_Name: ButtonKickUser
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2465,7 +2545,23 @@ MonoBehaviour:
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 1
   m_LinkedUIObject: {fileID: 0}
-  m_CommandIgnored: 0
+  m_OnToggle:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 8874513985202052663}
+        m_TargetAssemblyTypeName: TiltBrush.MultiplayerRoomOptionsPopUpWindow, Assembly-CSharp
+        m_MethodName: OnMultiplayerRoomOptionsPopUpWindowButtonPressed
+        m_Mode: 2
+        m_Arguments:
+          m_ObjectArgument: {fileID: 8974035494957902845}
+          m_ObjectArgumentAssemblyTypeName: TiltBrush.MultiplayerRoomOptionsPanelButton,
+            Assembly-CSharp
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_ToggleOffTint: {r: 1, g: 1, b: 1, a: 1}
   playerId: 0
   references:
     version: 2
@@ -2648,10 +2744,26 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_ToggleOnTexture: {fileID: 0}
+  m_ToggleOnTexture: {fileID: 2800000, guid: b833d20511bb64d45b81827083823d04, type: 3}
   m_AllowUnavailable: 1
   m_LinkedUIObject: {fileID: 0}
-  m_CommandIgnored: 0
+  m_OnToggle:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 8874513985202052663}
+        m_TargetAssemblyTypeName: TiltBrush.MultiplayerRoomOptionsPopUpWindow, Assembly-CSharp
+        m_MethodName: OnMultiplayerRoomOptionsPopUpWindowButtonPressed
+        m_Mode: 2
+        m_Arguments:
+          m_ObjectArgument: {fileID: 6330845168842661360}
+          m_ObjectArgumentAssemblyTypeName: TiltBrush.MultiplayerRoomOptionsPanelButton,
+            Assembly-CSharp
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_ToggleOffTint: {r: 1, g: 1, b: 1, a: 1}
   playerId: 0
   references:
     version: 2
@@ -3005,10 +3117,26 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_ToggleOnTexture: {fileID: 0}
+  m_ToggleOnTexture: {fileID: 2800000, guid: 48c6befe545f63943b18a2a69bceb969, type: 3}
   m_AllowUnavailable: 1
   m_LinkedUIObject: {fileID: 0}
-  m_CommandIgnored: 0
+  m_OnToggle:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 8874513985202052663}
+        m_TargetAssemblyTypeName: TiltBrush.MultiplayerRoomOptionsPopUpWindow, Assembly-CSharp
+        m_MethodName: OnMultiplayerRoomOptionsPopUpWindowButtonPressed
+        m_Mode: 2
+        m_Arguments:
+          m_ObjectArgument: {fileID: 3497437910775520417}
+          m_ObjectArgumentAssemblyTypeName: TiltBrush.MultiplayerRoomOptionsPanelButton,
+            Assembly-CSharp
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_ToggleOffTint: {r: 1, g: 1, b: 1, a: 1}
   playerId: 0
   references:
     version: 2

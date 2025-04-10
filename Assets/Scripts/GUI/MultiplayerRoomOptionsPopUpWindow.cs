@@ -28,6 +28,7 @@ namespace TiltBrush
         public Vector2 PlayerGuiPrefabSize;
         public Vector2 PlayerListOffset;
         public Vector2 PlayerListArea;
+
         private List<GameObject> m_instantiatedGuiPrefabs = new List<GameObject>();
 
         [SerializeField] private LocalizedString m_popupWindowTitleString;
@@ -53,24 +54,27 @@ namespace TiltBrush
                     throw new InvalidOperationException("MultiplayerManager is not initialized.");
                 return MultiplayerManager.m_Instance.m_LocalPlayer;
             }
-
         }
 
         #region overrides base class
 
-        override public void Init(GameObject rParent, string sText)
+        public override void Init(GameObject rParent, string sText)
         {
             base.Init(rParent, sText);
 
             m_RemotePlayers.remotePlayerAdded += RemotePlayerAdded;
             m_RemotePlayers.remotePlayerRemoved += RemotePlayerRemoved;
             m_RemotePlayers.remotePlayersListCleared += RemotePlayersListCleared;
-
         }
 
-        override protected void BaseUpdate()
+        public void OnDestroy()
         {
-            base.BaseUpdate();
+            if (m_RemotePlayers != null)
+            {
+                m_RemotePlayers.remotePlayerAdded -= RemotePlayerAdded;
+                m_RemotePlayers.remotePlayerRemoved -= RemotePlayerRemoved;
+                m_RemotePlayers.remotePlayersListCleared -= RemotePlayersListCleared;
+            }
         }
 
         protected override void UpdateOpening()
@@ -78,16 +82,6 @@ namespace TiltBrush
             base.UpdateOpening();
             UpdateTitles();
             GeneratePlayerList();
-        }
-
-        protected override void UpdateClosing()
-        {
-            base.UpdateClosing();
-        }
-
-        override public void UpdateUIComponents(Ray rCastRay, bool inputValid, Collider parentCollider)
-        {
-            base.UpdateUIComponents(rCastRay, inputValid, parentCollider);
         }
 
         #endregion
@@ -178,42 +172,50 @@ namespace TiltBrush
                 case SketchControlsScript.GlobalCommands.Null:
                     break;
                 case SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayer:
-                    MultiplayerAudioSourcesManager.m_Instance.ToggleAudioMuteForPlayer(button.GetToggleState(), button.playerId);
+                    Debug.Log($"ToggleAudioMuteForPlayer: {button.IsToggledOn}::{button.playerId}");
+                    MultiplayerManager.m_Instance.MutePlayerForMe(button.IsToggledOn, button.playerId);
                     break;
                 case SketchControlsScript.GlobalCommands.ToggleUserVoiceInMultiplayerForAll:
-                    MultiplayerManager.m_Instance.MutePlayerForAll(button.GetToggleState(), button.playerId);
+                    Debug.Log($"MutePlayerForAll: {button.IsToggledOn}::{button.playerId}");
+                    MultiplayerManager.m_Instance.MutePlayerForAll(button.IsToggledOn, button.playerId);
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerTransferRoomOwnership:
+                    Debug.Log($"RoomOwnershipTransferToUser: {button.IsToggledOn}::{button.playerId}");
                     MultiplayerManager.m_Instance.RoomOwnershipTransferToUser(button.playerId);
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerToggleUserViewEditMode:
-                    MultiplayerManager.m_Instance.SetUserViewOnlyMode(button.GetToggleState(), button.playerId);
+                    Debug.Log($"SetUserViewOnlyMode: {button.IsToggledOn}::{button.playerId}");
+                    MultiplayerManager.m_Instance.SetUserViewOnlyMode(button.IsToggledOn, button.playerId);
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerKickPlayerOut:
+                    Debug.Log($"KickPlayerOut: {button.IsToggledOn}::{button.playerId}");
                     MultiplayerManager.m_Instance.KickPlayerOut(button.playerId);
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerToggleAllUserAudio:
                     foreach (var remotePlayer in m_RemotePlayers.List)
                     {
-                        MultiplayerAudioSourcesManager.m_Instance.ToggleAudioMuteForPlayer(button.GetToggleState(), remotePlayer.PlayerId);
+                        Debug.Log($"ToggleAllUserAudio: {button.IsToggledOn}::{remotePlayer}");
+                        MultiplayerAudioSourcesManager.m_Instance.ToggleAudioMuteForPlayer(button.IsToggledOn, remotePlayer.PlayerId);
                         PlayerListItemPrefab playerComponent = GetGameobjectWithPlayerId(remotePlayer.PlayerId);
-                        if (playerComponent) playerComponent.SetAudioToggleState(button.GetToggleState());
+                        if (playerComponent) playerComponent.SetAudioToggleState(button.IsToggledOn);
                     }
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerToggleAllUserAudioForAll:
                     foreach (var remotePlayer in m_RemotePlayers.List)
                     {
-                        MultiplayerManager.m_Instance.MutePlayerForAll(button.GetToggleState(), remotePlayer.PlayerId);
+                        Debug.Log($"ToggleAllUserAudioForAll: {button.IsToggledOn}::{remotePlayer}");
+                        MultiplayerManager.m_Instance.MutePlayerForAll(button.IsToggledOn, remotePlayer.PlayerId);
                         PlayerListItemPrefab playerComponent = GetGameobjectWithPlayerId(remotePlayer.PlayerId);
-                        if (playerComponent) playerComponent.SetAudioForAllToggleState(button.GetToggleState());
+                        if (playerComponent) playerComponent.SetAudioForAllToggleState(button.IsToggledOn);
                     }
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerToggleAllUserViewEditMode:
                     foreach (var remotePlayer in m_RemotePlayers.List)
                     {
-                        MultiplayerManager.m_Instance.SetUserViewOnlyMode(button.GetToggleState(), remotePlayer.PlayerId);
+                        Debug.Log($"ToggleAllUserViewEditMode: {button.IsToggledOn}::{remotePlayer}");
+                        MultiplayerManager.m_Instance.SetUserViewOnlyMode(button.IsToggledOn, remotePlayer.PlayerId);
                         PlayerListItemPrefab playerComponent = GetGameobjectWithPlayerId(remotePlayer.PlayerId);
-                        if (playerComponent) playerComponent.SetViewOnlyToggleState(button.GetToggleState());
+                        if (playerComponent) playerComponent.SetViewOnlyToggleState(button.IsToggledOn);
                     }
                     break;
             }

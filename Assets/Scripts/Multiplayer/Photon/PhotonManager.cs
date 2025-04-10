@@ -358,11 +358,11 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
-        public async Task<bool> RpcTransferRoomOwnership(int playerId)
+        public async Task<bool> RpcTransferRoomOwnership(int playerId, Dictionary<int, Dictionary<int, bool>> playerSettings)
         {
             PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
             PhotonRPCBatcher.EnqueueRPC(() =>
-            { PhotonRPC.RPC_TransferRoomOwnership(m_Runner, targetPlayer); });
+            { PhotonRPC.RPC_TransferRoomOwnership(m_Runner, targetPlayer, playerSettings); });
             return true;
         }
 

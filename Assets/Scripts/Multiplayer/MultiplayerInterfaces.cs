@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
+using System;e
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using TiltBrush;
 using UnityEngine;
@@ -45,7 +46,7 @@ namespace OpenBrush.Multiplayer
         Task<bool> UndoCommand(BaseCommand command);
         Task<bool> RedoCommand(BaseCommand command);
         Task<bool> RpcSyncToSharedAnchor(string uuid);
-        Task<bool> RpcTransferRoomOwnership(int playerId);
+        Task<bool> RpcTransferRoomOwnership(int playerId, Dictionary<int, Dictionary<int, bool>> playerSettings);
         Task<bool> RpcSetUserViewOnlyMode(bool value, int playerId);
         Task<bool> RpcKickPlayerOut(int playerId);
         bool RpcMutePlayer(bool mute, int playerId);

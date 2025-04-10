@@ -157,16 +157,18 @@ namespace TiltBrush
             MultiplayerDisconnect = 1008,
             EditMultiplayerNickName = 1009,
             OpenRoomSettings = 1010,
-            ToggleUserVoiceInMultiplayer = 1011,
+
             EditMultiplayerRoomMaxPlayers = 1012,
-            MultiplayerTransferRoomOwnership = 1013,
+
+            ToggleUserVoiceInMultiplayer = 1011,
+            ToggleUserVoiceInMultiplayerForAll = 1019,
             MultiplayerToggleUserViewEditMode = 1014,
+            MultiplayerTransferRoomOwnership = 1013,
             MultiplayerKickPlayerOut = 1015,
+
             MultiplayerToggleAllUserAudio = 1016,
             MultiplayerToggleAllUserViewEditMode = 1017,
             MultiplayerToggleAllUserAudioForAll = 1018,
-            ToggleUserVoiceInMultiplayerForAll = 1019,
-
 
             RenameSketch = 5200,
             OpenLayerOptionsPopup = 5201,
