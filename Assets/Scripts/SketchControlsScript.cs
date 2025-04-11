@@ -5115,6 +5115,7 @@ namespace TiltBrush
                     return App.GoogleIdentity.LoggedIn;
                 case GlobalCommands.RecordCameraPath:
                     return m_WidgetManager.CameraPathsVisible;
+
                 case GlobalCommands.AdvancedPanelsToggle:
                     return !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
                 case GlobalCommands.MultiplayerConnect:
@@ -5125,20 +5126,32 @@ namespace TiltBrush
                     return !PanelManager.m_Instance.AdvancedModeActive() && MultiplayerManager.m_Instance.CanJoinRoom() && !SceneSettings.m_Instance.GetDesiredPreset().isPassthrough;
                 case GlobalCommands.MultiplayerLeaveRoom:
                     return MultiplayerManager.m_Instance.CanLeaveRoom();
+
+                // Disabled when in a multiplayer room.
                 case GlobalCommands.Sketchbook:
                 case GlobalCommands.SketchbookMenu:
                 case GlobalCommands.EditMultiplayerNickName:
                 case GlobalCommands.EditMultiplayerRoomName:
                 case GlobalCommands.EditMultiplayerRoomMaxPlayers:
-                case GlobalCommands.MultiplayerMuteAllForMe:
                     return !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
-                case GlobalCommands.MultiplayerTransferRoomOwnership:
+
+                // Disabled when not in a multiplayer room.
+                case GlobalCommands.MultiplayerMutePlayerForMe:
+                case GlobalCommands.MultiplayerMuteAllForMe:
+                    return MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM;
+
+                // Disabled when in a multiplayer room or not the room owner.
+                // 1. Channges state for a single player
                 case GlobalCommands.MultiplayerViewOnlyMode:
+                case GlobalCommands.MultiplayerTransferRoomOwnership:
                 case GlobalCommands.MultiplayerKickPlayerOut:
+                case GlobalCommands.MultiplayerPlayerMuteForAll:
+                // 2. Changes state for all players
                 case GlobalCommands.MultiplayerSetAllViewOnly:
                 case GlobalCommands.MultiplayerMuteAllForAll:
-                case GlobalCommands.MultiplayerPlayerMuteForAll:
                     return (MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM && MultiplayerManager.m_Instance.IsUserRoomOwner());
+
+                // Currently disabled all the time
                 case GlobalCommands.WhatIsNew:
                     return false;
             }
