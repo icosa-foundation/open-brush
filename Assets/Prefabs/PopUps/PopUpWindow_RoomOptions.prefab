@@ -1377,7 +1377,7 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 2800000, guid: 5ca1540d7e17e2c45bcb251d2e17f105, type: 3}
-  m_AllowUnavailable: 0
+  m_AllowUnavailable: 1
   m_LinkedUIObject: {fileID: 0}
   m_OnToggle:
     m_PersistentCalls:
@@ -2169,7 +2169,7 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 2800000, guid: 48c6befe545f63943b18a2a69bceb969, type: 3}
-  m_AllowUnavailable: 0
+  m_AllowUnavailable: 1
   m_LinkedUIObject: {fileID: 0}
   m_OnToggle:
     m_PersistentCalls:
@@ -2752,7 +2752,7 @@ MonoBehaviour:
         m_MethodName: OnMultiplayerRoomOptionsPopUpWindowButtonPressed
         m_Mode: 2
         m_Arguments:
-          m_ObjectArgument: {fileID: 6330845168842661360}
+          m_ObjectArgument: {fileID: 3497437910775520417}
           m_ObjectArgumentAssemblyTypeName: TiltBrush.MultiplayerRoomOptionsPanelButton,
             Assembly-CSharp
           m_IntArgument: 0
@@ -3124,7 +3124,7 @@ MonoBehaviour:
         m_MethodName: OnMultiplayerRoomOptionsPopUpWindowButtonPressed
         m_Mode: 2
         m_Arguments:
-          m_ObjectArgument: {fileID: 5661515221701686702}
+          m_ObjectArgument: {fileID: 3497437910775520417}
           m_ObjectArgumentAssemblyTypeName: TiltBrush.MultiplayerRoomOptionsPanelButton,
             Assembly-CSharp
           m_IntArgument: 0
