@@ -436,7 +436,7 @@ namespace OpenBrush.Multiplayer
                 {
                     Color = PointerManager.m_Instance.MainPointer.GetCurrentColor(),
                     Size = PointerManager.m_Instance.MainPointer.BrushSize01,
-                    Guid = BrushController.m_Instance.ActiveBrush.m_Guid.ToString(),
+                    Guid = BrushController.m_Instance.ActiveBrush?.m_Guid.ToString(),
                 },
                 ExtraData = new ExtraData
                 {
