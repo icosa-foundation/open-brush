@@ -55,6 +55,22 @@ namespace OpenBrush.Multiplayer
         }
     }
 
+    public struct NetworkPlayerSettings : INetworkStruct
+    {
+         public PlayerRef m_Player;
+         public bool m_IsMutedForMe;
+         public bool m_IsMutedForAll;
+         public bool m_IsViewOnly;
+
+         public NetworkPlayerSettings(PlayerRef player, bool isMutedForMe, bool isMutedForAll, bool isViewOnly)
+         {
+                m_Player = player;
+                m_IsMutedForMe = isMutedForMe;
+                m_IsMutedForAll = isMutedForAll;
+                m_IsViewOnly = isViewOnly;
+         }
+    }
+
     public struct NetworkedControlPoint : INetworkStruct
     {
         public Vector3 m_Pos;
