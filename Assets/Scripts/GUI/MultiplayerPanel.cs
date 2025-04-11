@@ -323,7 +323,7 @@ namespace TiltBrush
             switch (newState)
             {
                 case ConnectionState.IN_ROOM:
-                    m_RoomSettingsButton.SetActive(true);
+                    m_RoomSettingsButton.SetActive(MultiplayerManager.m_Instance.IsUserRoomOwner());
                     break;
                 case ConnectionState.INITIALIZING:
                 case ConnectionState.INITIALIZED:
@@ -353,6 +353,11 @@ namespace TiltBrush
                 localizedAvailableString.GetLocalizedStringAsync().Completed += handle =>
                     { m_RoomAvailable.text = handle.Result; };
             }
+
+            // Update settings button visibility
+            bool showRoomSettingsButton = MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM &&
+                MultiplayerManager.m_Instance.IsUserRoomOwner();
+            m_RoomSettingsButton.SetActive(showRoomSettingsButton);
         }
 
         private Tuple<bool, string> CheckAdvancedModeActive()
