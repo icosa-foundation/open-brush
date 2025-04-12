@@ -5,7 +5,7 @@ namespace TiltBrush
     public static partial class ApiMethods
     {
         [ApiEndpoint("multiplayer.join", "Joins a multiplayer room")]
-        public static void MultiplayerJoin(string nickname, string roomName, bool isPrivate, int maxPlayers, bool voiceDisabled)
+        public static void MultiplayerJoin(string nickname, string roomName, bool isPrivate, int maxPlayers, bool silentRoom, bool viewOnlyRoom)
         {
             ConnectionUserInfo userInfo = new ConnectionUserInfo
             {
@@ -20,7 +20,8 @@ namespace TiltBrush
                 roomName = roomName,
                 @private = isPrivate,
                 maxPlayers = maxPlayers,
-                voiceDisabled = voiceDisabled
+                silentRoom = silentRoom,
+                viewOnlyRoom = viewOnlyRoom
             };
             var joinRoomTask = MultiplayerManager.m_Instance.JoinRoom(roomData);
             AsyncHelpers.RunSync(() => joinRoomTask);

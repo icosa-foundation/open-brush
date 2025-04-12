@@ -17,7 +17,8 @@ public class MultiplayerManagerInspector : Editor
     private string oldNickname = "PlayerNickname";
     private bool isPrivate = false;
     private int maxPlayers = 4;
-    private bool voiceDisabled = false;
+    private bool silentRoom = false;
+    private bool viewOnlyRoom = false;
     private Dictionary<int, bool> muteStates = new Dictionary<int, bool>();
     private Dictionary<int, bool> viewOnlyStates = new Dictionary<int, bool>();
 
@@ -208,7 +209,8 @@ public class MultiplayerManagerInspector : Editor
                 roomName = roomName,
                 @private = isPrivate,
                 maxPlayers = maxPlayers,
-                voiceDisabled = voiceDisabled
+                silentRoom = silentRoom,
+                viewOnlyRoom = viewOnlyRoom, 
             };
 
             bool success = await multiplayerManager.JoinRoom(roomData);

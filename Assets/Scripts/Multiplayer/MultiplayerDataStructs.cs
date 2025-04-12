@@ -63,7 +63,8 @@ namespace OpenBrush.Multiplayer
         public string roomPassword;
         public bool @private;
         public int maxPlayers;
-        public bool voiceDisabled;
+        public bool silentRoom;
+        public bool viewOnlyRoom;
     }
 
     [System.Serializable]
@@ -73,7 +74,8 @@ namespace OpenBrush.Multiplayer
         public bool @private;
         public int numPlayers;
         public int maxPlayers;
-        public bool voiceDisabled;
+        public bool silentRoom;
+        public bool viewOnlyRoom;
     }
 
 

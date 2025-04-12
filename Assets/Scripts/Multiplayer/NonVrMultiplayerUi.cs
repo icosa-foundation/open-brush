@@ -81,7 +81,8 @@ public class NonVrMultiplayerUi : MonoBehaviour
             roomName = m_RoomNameInput.text,
             @private = m_PrivateToggle.isOn,
             maxPlayers = int.Parse(m_MaxPlayersInput.text),
-            voiceDisabled = m_VoiceDisabledToggle.isOn
+            silentRoom = m_VoiceDisabledToggle.isOn,
+            viewOnlyRoom = false
         };
         PlayerPrefs.SetString("roomname", roomData.roomName);
         PlayerPrefs.SetString("nickname", userInfo.Nickname);

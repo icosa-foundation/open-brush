@@ -106,7 +106,8 @@ namespace TiltBrush
                 roomName = "default room",
                 @private = false,
                 maxPlayers = 4,
-                voiceDisabled = false
+                silentRoom = false,
+                viewOnlyRoom = false
             };
 
             alertChecks = new List<Func<Tuple<bool, string>>>
