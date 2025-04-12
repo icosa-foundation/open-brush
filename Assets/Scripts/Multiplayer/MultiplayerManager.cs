@@ -330,9 +330,6 @@ namespace OpenBrush.Multiplayer
         public void RoomOwnershipReceived(RemotePlayerSettings[] playerSettings)
         {
 
-            int idMuteForAll = (int)SketchControlsScript.GlobalCommands.MultiplayerPlayerMuteForAll;
-            int idViewOnly = (int)SketchControlsScript.GlobalCommands.MultiplayerViewOnlyMode;
-
             foreach (var p in playerSettings)
             {
                 var PlayerId = p.m_PlayerId;
@@ -351,8 +348,6 @@ namespace OpenBrush.Multiplayer
             if (!isUserRoomOwner) return;
 
             var playerSettings = new RemotePlayerSettings[m_RemotePlayers.List.Count];
-            int idMuteForAll = (int)SketchControlsScript.GlobalCommands.MultiplayerPlayerMuteForAll;
-            int idViewOnly = (int)SketchControlsScript.GlobalCommands.MultiplayerViewOnlyMode;
 
             for (var i = 0; i < m_RemotePlayers.List.Count; i++)
             {
