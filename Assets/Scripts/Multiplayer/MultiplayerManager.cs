@@ -95,7 +95,7 @@ namespace OpenBrush.Multiplayer
         }
         private string m_oldNickName = null;
 
-        [HideInInspector] public RoomCreateData data;
+        [HideInInspector] public RoomCreateData CurrentRoomData;
 
         private bool _isUserRoomOwner = false;
         private bool isUserRoomOwner
@@ -246,6 +246,9 @@ namespace OpenBrush.Multiplayer
                 LastError = m_VoiceManager.LastError;
             }
             else State = ConnectionState.IN_ROOM;
+
+            //asing the room name to the current room name
+            RoomCreateData CurrentRoomData  = RoomData;
 
             return successData & successVoice;
         }
@@ -496,11 +499,35 @@ namespace OpenBrush.Multiplayer
         {
             m_RemotePlayers.AddPlayer(newRemotePlayer);
 
-            if (isUserRoomOwner)
-            {
-                MultiplayerSceneSync.m_Instance.StartSyncronizationForUser(newRemotePlayer.PlayerId);
-            }
+            if(!isUserRoomOwner) return;  //below this line is only room owner responsability 
 
+            MultiplayerSceneSync.m_Instance.StartSyncronizationForUser(newRemotePlayer.PlayerId);
+            if (CurrentRoomData.silentRoom ==  true) MutePlayerForAll(true, newRemotePlayer.PlayerId);
+            if (CurrentRoomData.viewOnlyRoom == true) SetUserViewOnlyMode(true, newRemotePlayer.PlayerId);
+        }
+
+        public void SetRoomSilent(bool isSilent)
+        {
+            if (!isUserRoomOwner) return;
+            CurrentRoomData.silentRoom = isSilent;
+            for (int i = 0; i < m_RemotePlayers.List.Count; i++)
+            {
+                var player = m_RemotePlayers.List[i];
+                player.m_IsMutedForAll = CurrentRoomData.silentRoom;
+                MutePlayerForAll(player.m_IsMutedForAll, player.PlayerId);
+            }
+        }
+
+        public void SetRoomViewOnly(bool isViewOnly)
+        {
+            if (!isUserRoomOwner) return;
+            CurrentRoomData.viewOnlyRoom = isViewOnly;
+            for (int i = 0; i < m_RemotePlayers.List.Count; i++)
+            {
+                var player = m_RemotePlayers.List[i];
+                player.m_IsViewOnly = CurrentRoomData.viewOnlyRoom;
+                SetUserViewOnlyMode(player.m_IsViewOnly, player.PlayerId);
+            }
         }
 
         public RemotePlayer GetPlayerById(int id)

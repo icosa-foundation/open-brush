@@ -218,6 +218,14 @@ namespace TiltBrush
                         if (playerComponent) playerComponent.SetViewOnlyToggleState(button.IsToggledOn);
                     }
                     break;
+                case SketchControlsScript.GlobalCommands.MultiplayerSetRoomViewOnly:
+                    Debug.Log($"SetRoomViewOnly: {button.IsToggledOn}");
+                    MultiplayerManager.m_Instance.SetRoomViewOnly(button.IsToggledOn);
+                    break;
+                case SketchControlsScript.GlobalCommands.MultiplayerSetRoomSilent:
+                    Debug.Log($"SetRoomSilent: {button.IsToggledOn}");
+                    MultiplayerManager.m_Instance.SetRoomSilent(button.IsToggledOn);
+                    break;
             }
         }
 
