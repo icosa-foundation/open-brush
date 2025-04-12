@@ -112,6 +112,24 @@ public class MultiplayerManagerInspector : Editor
         EditorGUILayout.LabelField($"{ownership}");
         EditorGUILayout.EndHorizontal();
 
+        if (multiplayerManager.IsUserRoomOwner())
+        {
+            if (GUILayout.Button("Set Room Silent"))
+            {
+                silentRoom = !silentRoom;
+                multiplayerManager.SetRoomSilent(silentRoom);
+                EditorUtility.SetDirty(target);
+            }
+
+            if (GUILayout.Button("Set Room View Only"))
+            {
+                viewOnlyRoom = !viewOnlyRoom;
+                multiplayerManager.SetRoomViewOnly(viewOnlyRoom);
+                EditorUtility.SetDirty(target);
+            }
+
+        }
+
         // Show the remote players
         GUILayout.Space(10);
         EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
@@ -120,6 +138,7 @@ public class MultiplayerManagerInspector : Editor
         if (multiplayerManager.m_RemotePlayers != null &&
             multiplayerManager.m_RemotePlayers.List.Count > 0)
         {
+
             // Then when iterating:
             foreach (var remotePlayer in multiplayerManager.m_RemotePlayers.List)
             {
@@ -168,16 +187,13 @@ public class MultiplayerManagerInspector : Editor
                         multiplayerManager.KickPlayerOut(playerId);
                         EditorUtility.SetDirty(target);
                     }
-                }
-
-                // ** Kick Out button (only if room owner) **
-                if (multiplayerManager.IsUserRoomOwner())
-                {
+               
                     if (GUILayout.Button("Transfer ownership"))
                     {
                         multiplayerManager.RoomOwnershipTransferToUser(playerId);
                         EditorUtility.SetDirty(target);
                     }
+
                 }
 
                 EditorGUILayout.EndHorizontal();
