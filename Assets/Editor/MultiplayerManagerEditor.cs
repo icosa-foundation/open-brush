@@ -169,6 +169,16 @@ public class MultiplayerManagerInspector : Editor
                     }
                 }
 
+                // ** Kick Out button (only if room owner) **
+                if (multiplayerManager.IsUserRoomOwner())
+                {
+                    if (GUILayout.Button("Transfer ownership"))
+                    {
+                        multiplayerManager.RoomOwnershipTransferToUser(playerId);
+                        EditorUtility.SetDirty(target);
+                    }
+                }
+
                 EditorGUILayout.EndHorizontal();
             }
         }
