@@ -57,15 +57,13 @@ namespace OpenBrush.Multiplayer
 
     public struct NetworkPlayerSettings : INetworkStruct
     {
-         public PlayerRef m_Player;
-         public bool m_IsMutedForMe;
+         public int m_PlayerId;
          public bool m_IsMutedForAll;
          public bool m_IsViewOnly;
 
-         public NetworkPlayerSettings(PlayerRef player, bool isMutedForMe, bool isMutedForAll, bool isViewOnly)
+         public NetworkPlayerSettings(int playerId, bool isMutedForAll, bool isViewOnly)
          {
-                m_Player = player;
-                m_IsMutedForMe = isMutedForMe;
+                m_PlayerId = playerId;
                 m_IsMutedForAll = isMutedForAll;
                 m_IsViewOnly = isViewOnly;
          }

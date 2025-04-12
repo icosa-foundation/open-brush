@@ -327,15 +327,14 @@ namespace OpenBrush.Multiplayer
         public void RoomOwnershipReceived(NetworkPlayerSettings[] playerSettings)
         {
 
-            int idMuteForMe = (int)SketchControlsScript.GlobalCommands.MultiplayerMutePlayerForMe;
             int idMuteForAll = (int)SketchControlsScript.GlobalCommands.MultiplayerPlayerMuteForAll;
             int idViewOnly = (int)SketchControlsScript.GlobalCommands.MultiplayerViewOnlyMode;
 
             foreach (var p in playerSettings)
             {
-                var player = p.m_Player;
-                var mplayer = MultiplayerManager.m_Instance.GetPlayerById(player.PlayerId);
-                mplayer.m_IsMutedForMe = p.m_IsMutedForMe;
+                var PlayerId = p.m_PlayerId;
+                var mplayer = m_Instance.GetPlayerById(PlayerId);
+                if (mplayer == null) continue;
                 mplayer.m_IsMutedForAll = p.m_IsMutedForAll;
                 mplayer.m_IsViewOnly = p.m_IsViewOnly;
             }
@@ -349,15 +348,13 @@ namespace OpenBrush.Multiplayer
             if (!isUserRoomOwner) return;
 
             var playerSettings = new NetworkPlayerSettings[m_RemotePlayers.List.Count];
-            int idMuteForMe = (int)SketchControlsScript.GlobalCommands.MultiplayerMutePlayerForMe;
             int idMuteForAll = (int)SketchControlsScript.GlobalCommands.MultiplayerPlayerMuteForAll;
             int idViewOnly = (int)SketchControlsScript.GlobalCommands.MultiplayerViewOnlyMode;
 
             for (var i = 0; i < m_RemotePlayers.List.Count; i++)
             {
                 var player = m_RemotePlayers.List[i];
-                PlayerRef p = PlayerRef.FromEncoded(player.PlayerId);
-                playerSettings[i] = new NetworkPlayerSettings(p, player.m_IsMutedForMe, player.m_IsMutedForAll, player.m_IsViewOnly);
+                playerSettings[i] = new NetworkPlayerSettings(player.PlayerId, player.m_IsMutedForAll, player.m_IsViewOnly);
             }
             m_Manager.RpcTransferRoomOwnership(playerId, playerSettings);
             isUserRoomOwner = false;
