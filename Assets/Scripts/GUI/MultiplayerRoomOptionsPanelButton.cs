@@ -24,12 +24,24 @@ namespace TiltBrush
         private RemotePlayer _playerData =>
             MultiplayerManager.m_Instance.GetPlayerById(playerId);
 
+        private RoomCreateData _roomData =>
+            MultiplayerManager.m_Instance.CurrentRoomData;
+
         protected override void Start()
         {
             if (m_ToggleButton)
             {
                 switch (m_Command)
                 {
+                    // "Room" commands
+                    case SketchControlsScript.GlobalCommands.MultiplayerSetRoomSilent:
+                        IsToggledOn = _roomData.silentRoom;
+                        break;
+                    case SketchControlsScript.GlobalCommands.MultiplayerSetRoomViewOnly:
+                        IsToggledOn = _roomData.viewOnlyRoom;
+                        break;  
+
+
                     // "Single User" commands
 
                     case SketchControlsScript.GlobalCommands.MultiplayerMutePlayerForMe:
