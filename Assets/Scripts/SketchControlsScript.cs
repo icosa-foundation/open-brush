@@ -170,6 +170,9 @@ namespace TiltBrush
             MultiplayerSetAllViewOnly = 1017,
             MultiplayerMuteAllForAll = 1018,
 
+            MultiplayerSetRoomViewOnly = 1020,
+            MultiplayerSetRoomSilent = 1021,
+
             RenameSketch = 5200,
             OpenLayerOptionsPopup = 5201,
             RenameLayer = 5202,
