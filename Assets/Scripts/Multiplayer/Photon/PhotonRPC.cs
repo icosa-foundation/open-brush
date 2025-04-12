@@ -403,7 +403,7 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        private static void TransferRoomOwnership(NetworkPlayerSettings[] playerSettings)
+        private static void TransferRoomOwnership(NetworkPlayerSettings[] playerSettings,NetworkRoomSettings roomData)
         {
             if (!MultiplayerManager.m_Instance) return;
 
@@ -418,7 +418,13 @@ namespace OpenBrush.Multiplayer
                 );
             }
 
-            MultiplayerManager.m_Instance.RoomOwnershipReceived(remoteSettings);
+            RoomCreateData currentRoomData = new RoomCreateData();
+
+            currentRoomData.maxPlayers = roomData.m_MaxPlayers;
+            currentRoomData.silentRoom = roomData.m_IsSilentRoom;
+            currentRoomData.viewOnlyRoom = roomData.m_IsViewOnlyRoom;
+            
+            MultiplayerManager.m_Instance.RoomOwnershipReceived(remoteSettings, currentRoomData);
         }
 
         private static void SetViewOnly(bool isEnabled)
@@ -591,9 +597,10 @@ namespace OpenBrush.Multiplayer
         public static void RPC_TransferRoomOwnership
             (NetworkRunner runner,
              [RpcTarget] PlayerRef targetPlayer,
-             NetworkPlayerSettings[] playerSettings)
+             NetworkPlayerSettings[] playerSettings,
+             NetworkRoomSettings roomData)
         {
-            TransferRoomOwnership(playerSettings);
+            TransferRoomOwnership(playerSettings,roomData);
         }
 
         [Rpc(InvokeLocal = false)]

@@ -358,7 +358,7 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
-        public async Task<bool> RpcTransferRoomOwnership(int playerId, RemotePlayerSettings[] playerSettings)
+        public async Task<bool> RpcTransferRoomOwnership(int playerId, RemotePlayerSettings[] playerSettings, RoomCreateData currentRoomData)
         {
             PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
 
@@ -373,9 +373,11 @@ namespace OpenBrush.Multiplayer
                 );
             }
 
+            var roomData = new NetworkRoomSettings(currentRoomData);
+
             PhotonRPCBatcher.EnqueueRPC(() =>
             {
-                PhotonRPC.RPC_TransferRoomOwnership(m_Runner, targetPlayer, networkSettings);
+                PhotonRPC.RPC_TransferRoomOwnership(m_Runner, targetPlayer, networkSettings, roomData);
             });
 
             return true;

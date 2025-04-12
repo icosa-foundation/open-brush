@@ -327,8 +327,10 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
-        public void RoomOwnershipReceived(RemotePlayerSettings[] playerSettings)
+        public void RoomOwnershipReceived(RemotePlayerSettings[] playerSettings, RoomCreateData roomData)
         {
+
+            CurrentRoomData = roomData;
 
             foreach (var p in playerSettings)
             {
@@ -354,7 +356,7 @@ namespace OpenBrush.Multiplayer
                 var player = m_RemotePlayers.List[i];
                 playerSettings[i] = new RemotePlayerSettings(player.PlayerId, player.m_IsMutedForAll, player.m_IsViewOnly);
             }
-            m_Manager.RpcTransferRoomOwnership(playerId, playerSettings);
+            m_Manager.RpcTransferRoomOwnership(playerId, playerSettings, CurrentRoomData);
             isUserRoomOwner = false;
         }
 

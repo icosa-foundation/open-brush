@@ -55,6 +55,20 @@ namespace OpenBrush.Multiplayer
         }
     }
 
+    public struct NetworkRoomSettings : INetworkStruct
+    {
+        public int m_MaxPlayers;
+        public bool m_IsSilentRoom;
+        public bool m_IsViewOnlyRoom;
+
+        public NetworkRoomSettings(RoomCreateData data)
+        {
+            m_MaxPlayers = data.maxPlayers;
+            m_IsSilentRoom = data.silentRoom;
+            m_IsViewOnlyRoom = data.viewOnlyRoom;
+        }
+    }
+
     public struct NetworkPlayerSettings : INetworkStruct
     {
          public int m_PlayerId;
