@@ -358,13 +358,29 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
-        public async Task<bool> RpcTransferRoomOwnership(int playerId, NetworkPlayerSettings[] playerSettings)
+        public async Task<bool> RpcTransferRoomOwnership(int playerId, RemotePlayerSettings[] playerSettings)
         {
             PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
+
+            // Convert RemotePlayerSettings[] to NetworkPlayerSettings[]
+            NetworkPlayerSettings[] networkSettings = new NetworkPlayerSettings[playerSettings.Length];
+            for (int i = 0; i < playerSettings.Length; i++)
+            {
+                networkSettings[i] = new NetworkPlayerSettings(
+                    playerSettings[i].m_PlayerId,
+                    playerSettings[i].m_IsMutedForAll,
+                    playerSettings[i].m_IsViewOnly
+                );
+            }
+
             PhotonRPCBatcher.EnqueueRPC(() =>
-            { PhotonRPC.RPC_TransferRoomOwnership(m_Runner, targetPlayer, playerSettings); });
+            {
+                PhotonRPC.RPC_TransferRoomOwnership(m_Runner, targetPlayer, networkSettings);
+            });
+
             return true;
         }
+
 
         public async Task<bool> RpcSetUserViewOnlyMode(bool value,int playerId)
         {

@@ -324,7 +324,7 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
-        public void RoomOwnershipReceived(NetworkPlayerSettings[] playerSettings)
+        public void RoomOwnershipReceived(RemotePlayerSettings[] playerSettings)
         {
 
             int idMuteForAll = (int)SketchControlsScript.GlobalCommands.MultiplayerPlayerMuteForAll;
@@ -347,14 +347,14 @@ namespace OpenBrush.Multiplayer
         {
             if (!isUserRoomOwner) return;
 
-            var playerSettings = new NetworkPlayerSettings[m_RemotePlayers.List.Count];
+            var playerSettings = new RemotePlayerSettings[m_RemotePlayers.List.Count];
             int idMuteForAll = (int)SketchControlsScript.GlobalCommands.MultiplayerPlayerMuteForAll;
             int idViewOnly = (int)SketchControlsScript.GlobalCommands.MultiplayerViewOnlyMode;
 
             for (var i = 0; i < m_RemotePlayers.List.Count; i++)
             {
                 var player = m_RemotePlayers.List[i];
-                playerSettings[i] = new NetworkPlayerSettings(player.PlayerId, player.m_IsMutedForAll, player.m_IsViewOnly);
+                playerSettings[i] = new RemotePlayerSettings(player.PlayerId, player.m_IsMutedForAll, player.m_IsViewOnly);
             }
             m_Manager.RpcTransferRoomOwnership(playerId, playerSettings);
             isUserRoomOwner = false;

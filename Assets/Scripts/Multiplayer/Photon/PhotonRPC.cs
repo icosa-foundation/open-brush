@@ -406,7 +406,19 @@ namespace OpenBrush.Multiplayer
         private static void TransferRoomOwnership(NetworkPlayerSettings[] playerSettings)
         {
             if (!MultiplayerManager.m_Instance) return;
-            MultiplayerManager.m_Instance.RoomOwnershipReceived(playerSettings);
+
+            // Convert NetworkPlayerSettings[] to RemotePlayerSettings[]
+            RemotePlayerSettings[] remoteSettings = new RemotePlayerSettings[playerSettings.Length];
+            for (int i = 0; i < playerSettings.Length; i++)
+            {
+                remoteSettings[i] = new RemotePlayerSettings(
+                    playerSettings[i].m_PlayerId,
+                    playerSettings[i].m_IsMutedForAll,
+                    playerSettings[i].m_IsViewOnly
+                );
+            }
+
+            MultiplayerManager.m_Instance.RoomOwnershipReceived(remoteSettings);
         }
 
         private static void SetViewOnly(bool isEnabled)
