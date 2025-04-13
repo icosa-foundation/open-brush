@@ -274,16 +274,51 @@ jobs:
           dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
           echo "Removing unneeded large packages"
           sudo apt update
-          sudo apt remove -y '^ghc-.*' '^dotnet-.*' azure-cli powershell google-chrome-stable firefox microsoft-edge-stable 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' default-jre-headless  mono-devel libgl1-mesa-dri # Removes ~6GB
-          sudo apt autoremove -y
-          sudo apt clean
+
+          echo "Disabling slow triggers and package update hooks"
+          sudo rm -rf /var/lib/man-db # remove man-db database completely
+          sudo mkdir -p /etc/dpkg/dpkg.cfg.d/
+          echo "path-exclude=/usr/share/man/*" | sudo tee /etc/dpkg/dpkg.cfg.d/01_nodoc > /dev/null
+          echo "path-exclude=/usr/share/icons/hicolor/*" | sudo tee -a /etc/dpkg/dpkg.cfg.d/01_nodoc > /dev/null
+          sudo dpkg-divert --local --rename --add /usr/bin/update-mime-database
+          sudo dpkg-divert --local --rename --add /usr/bin/update-desktop-database
+          sudo dpkg-divert --local --rename --add /usr/bin/update-icon-caches
+          sudo dpkg-divert --local --rename --add /usr/bin/mandb
+          sudo ln -sf /bin/true /usr/bin/mandb
+
+          # Disable dpkg triggers temporarily
+          if [ -d /var/lib/dpkg/triggers ]; then
+            sudo mv /var/lib/dpkg/triggers /var/lib/dpkg/triggers.bak
+            sudo mkdir -p /var/lib/dpkg/triggers
+          fi
+
+          # Force remove google-cloud-cli directly instead of using apt
+          echo "Removing Google Cloud CLI directly"
+          sudo rm -rf /usr/lib/google-cloud-sdk
+          sudo find /etc/apt/ /var/lib/dpkg/ -name 'google-cloud*' -delete
+
+          # Remove packages with faster options
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" -yq remove \
+            '^ghc-.*' '^dotnet-.*' azure-cli powershell google-chrome-stable firefox \
+            microsoft-edge-stable 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' \
+            default-jre-headless mono-devel libgl1-mesa-dri man-db hicolor-icon-theme
+
+          sudo apt-get autoremove -y --purge
+          sudo apt-get clean
+
+          if [ -d /var/lib/dpkg/triggers.bak ]; then
+            sudo rm -rf /var/lib/dpkg/triggers
+            sudo mv /var/lib/dpkg/triggers.bak /var/lib/dpkg/triggers
+          fi
+
           df -h /
           echo "Removing Android"
           sudo rm -rf /usr/local/lib/android # Removes ~9GB
           df -h /
           echo "Removing remaining large directories"
-          rm -rf /usr/share/dotnet/  # Removes ~1GB
-          rm -rf "$AGENT_TOOLSDIRECTORY"  # Removes ~7GB
+          sudo rm -rf /usr/share/dotnet/  # ~1GB
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"  # ~7GB
           echo "Disk space after cleanup"
           df -h /
 
