@@ -40,7 +40,14 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 1);
         }
 
-        // TODO
+        [ApiEndpoint("save.selected", "Saves the current selected strokes in a new slot")]
+        public static void SaveSelected()
+        {
+            var rEnum = SketchControlsScript.GlobalCommands.SaveSelected;
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 1);
+        }
+
+        // TODO 
         // [ApiEndpoint("upload", "Saves the current scene and uploads it to Poly/Icosa")]
         // public static void SaveAndUpload()
         // {
