@@ -15,6 +15,16 @@
 Shader "Brush/Special/DiamondHull" {
   Properties {
     _MainTex("Texture", 2D) = "white" {}
+
+
+    _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+    _TimeBlend("Time Blend", Float) = 0
+    _TimeSpeed("Time Speed", Float) = 1.0
+
+    _Opacity ("Opacity", Range(0, 1)) = 1
+    _Dissolve ("Dissolve", Range(0, 1)) = 1
+    _ClipStart("Clip Start", Float) = 0
+    _ClipEnd("Clip End", Float) = -1
   }
 
   SubShader {
@@ -29,18 +39,26 @@ Shader "Brush/Special/DiamondHull" {
       #pragma multi_compile __ AUDIO_REACTIVE
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
       #pragma multi_compile __ SELECTION_ON
+
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/ThirdParty/Shaders/Noise.cginc"
       #include "Assets/Shaders/Include/MobileSelection.cginc"
 
       sampler2D _MainTex;
 
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
+      uniform half _Dissolve;
+      uniform half _Opacity;
+
       struct Input {
+        float4 vertex : SV_POSITION;
         float4 color : Color;
         float2 tex : TEXCOORD0;
         float3 viewDir;
         float3 worldPos;
         float3 worldNormal;
+        uint id : SV_VertexID;
         INTERNAL_DATA
       };
 
@@ -140,15 +158,35 @@ Shader "Brush/Special/DiamondHull" {
         return float3(red, green, blue);
       }
 
-      void vert (inout appdata_full v, out Input o) {
+      struct appdata_full_plus_id {
+        float4 vertex : POSITION;
+        float4 tangent : TANGENT;
+        float3 normal : NORMAL;
+        float4 texcoord : TEXCOORD0;
+        float4 texcoord1 : TEXCOORD1;
+        float4 texcoord2 : TEXCOORD2;
+        float4 texcoord3 : TEXCOORD3;
+        fixed4 color : COLOR;
+        uint id : SV_VertexID;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+      };
+
+      void vert (inout appdata_full_plus_id v, out Input o) {
         PrepForOds(v.vertex);
         o.color = TbVertToSrgb(o.color);
         UNITY_INITIALIZE_OUTPUT(Input, o);
         o.tex = v.texcoord.xy;
+        o.id = v.id;
       }
 
       // Input color is srgb
       void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
+
+        #ifdef SHADER_SCRIPTING_ON
+        if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
+        if (_Dissolve < 1 && Dither8x8(IN.vertex.xy) >= _Dissolve) discard;
+        #endif
+
         // Hardcode some shiny specular values
         o.Smoothness = .8;
         o.Albedo = IN.color * .2;
@@ -161,12 +199,15 @@ Shader "Brush/Special/DiamondHull" {
         rim = lerp(rim, 150,
               1 - saturate(abs(dot(normalize(I), IN.worldNormal)) / .1));
 
-        float3 diffraction = tex2D(_MainTex, half2(rim + _Time.x * .3 + o.Normal.x, rim + o.Normal.y)).xyz;
+        float3 diffraction = tex2D(_MainTex, half2(rim + GetTime().x * .3 + o.Normal.x, rim + o.Normal.y)).xyz;
         diffraction = GetDiffraction(diffraction, o.Normal, normalize(IN.viewDir));
 
         o.Emission = rim * IN.color * diffraction * .5 + rim * diffraction * .25;
-        SURF_FRAG_MOBILESELECT(o);
+        // SURF_FRAG_MOBILESELECT(o);
         o.Specular = SrgbToNative(IN.color).rgb * clamp(diffraction, .0, 1);
+        o.Emission *= _Opacity;
+        o.Albedo *= _Opacity;
+        o.Specular *= _Opacity;
       }
     ENDCG
   }

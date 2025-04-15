@@ -16,6 +16,15 @@ Shader "Brush/Special/Space" {
 Properties {
   _MainTex ("Particle Texture", 2D) = "white" {}
     _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+
+
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
+
+  _Dissolve("Dissolve", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -50,6 +59,7 @@ Category {
         fixed4 color : COLOR;
         float3 normal : NORMAL;
         float2 texcoord : TEXCOORD0;
+        uint id : SV_VertexID;
 
         UNITY_VERTEX_INPUT_INSTANCE_ID
       };
@@ -58,12 +68,17 @@ Category {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        uint id : TEXCOORD2;
 
         UNITY_VERTEX_OUTPUT_STEREO
       };
 
       float4 _MainTex_ST;
       half _EmissionGain;
+
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
+      uniform half _Dissolve;
 
       v2f vert (appdata_t v)
       {
@@ -79,12 +94,18 @@ Category {
         o.vertex = UnityObjectToClipPos(v.vertex);
         o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
         o.color = v.color;
+        o.id = (float2)v.id;
         return o;
       }
 
       // Input color is srgb
       fixed4 frag (v2f i) : COLOR
       {
+        #ifdef SHADER_SCRIPTING_ON
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+        if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+        #endif
+
         float analog_spread = .1;  // how far the analogous hues are from the primary
         float gain = 10;
         float gain2 = 0;
@@ -100,12 +121,12 @@ Category {
         float r = abs(i.texcoord.y * 2 - 1);  // distance from center of stroke
 
         // determine the contributions of each hue
-        float primary_a = .2 * fbm(i.texcoord + _Time.x) * gain + gain2;
-        float analog1_a = .2 * fbm(float3(i.texcoord.x + 12.52, i.texcoord.y + 12.52, _Time.x * 5.2)) * gain + gain2;
-        float analog2_a = .2 * fbm(float3(i.texcoord.x + 6.253, i.texcoord.y + 6.253, _Time.x * .8)) * gain + gain2;
+        float primary_a = .2 * fbm(i.texcoord + GetTime().x) * gain + gain2;
+        float analog1_a = .2 * fbm(float3(i.texcoord.x + 12.52, i.texcoord.y + 12.52, GetTime().x * 5.2)) * gain + gain2;
+        float analog2_a = .2 * fbm(float3(i.texcoord.x + 6.253, i.texcoord.y + 6.253, GetTime().x * .8)) * gain + gain2;
 
         // the main hue is present in the center and falls off with randomized radius
-        primary_a = clampedRemap(0, .5, primary_a, 0, r + fbm(float2(_Time.x + 50, i.texcoord.x)) * 2);
+        primary_a = clampedRemap(0, .5, primary_a, 0, r + fbm(float2(GetTime().x + 50, i.texcoord.x)) * 2);
 
         // the analog hues start a little out from the center and increase with intensity going out
         analog1_a = clampedRemap(.2, 1, 0, analog1_a * 1.2, r);
@@ -122,7 +143,7 @@ Category {
 
         // now sculpt the overall shape of the stroke
         float lum = 1 - r;
-        float rfbm = fbm(float2(i.texcoord.x, _Time.x));
+        float rfbm = fbm(float2(i.texcoord.x, GetTime().x));
         rfbm += 1.2;
         rfbm *= .8;
         lum *= step(r, rfbm);  // shorten the radius with fbm
@@ -135,6 +156,7 @@ Category {
         color = bloomColor(color,_EmissionGain);
         color = SrgbToNative(color);
         color = encodeHdr(color.rgb);
+
         return color;
       }
       ENDCG

@@ -300,6 +300,11 @@ namespace TiltBrush
                     GeometryPool geometry = batch.pool;
                     List<Stroke> strokes = batch.strokes;
 
+                    // Assumes that ALL strokes in a group come from the same canvas
+                    // Currently true as there is no way to create a group
+                    // from strokes on different canvases
+                    var assumedXform = batch.strokes[0].Canvas.Pose.ToMatrix4x4();
+
                     string legacyUniqueName = $"{desc.m_DurableName}_{desc.m_Guid}_{group.id}_i{batchIndex}";
                     string friendlyGeometryName = $"brush_{desc.m_DurableName}_g{group.id}_b{batchIndex}";
 
@@ -327,7 +332,7 @@ namespace TiltBrush
                         legacyUniqueName = legacyUniqueName,
                         // This is the only instance of the mesh, so the node doesn't need an extra instance id
                         nodeName = friendlyGeometryName,
-                        xform = Matrix4x4.identity,
+                        xform = assumedXform,
                         geometry = geometry,
                         geometryName = friendlyGeometryName,
                         exportableMaterial = brush.m_desc,

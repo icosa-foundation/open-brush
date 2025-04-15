@@ -21,6 +21,11 @@ Properties {
   _ScrollJitterIntensity("Scroll Jitter Intensity", Float) = 1.0
   _ScrollJitterFrequency("Scroll Jitter Frequency", Float) = 1.0
   _FalloffPower("Falloff Power", Float) = 2.0
+
+
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
 }
 
 Category {
@@ -71,10 +76,10 @@ Category {
 
         // Custom vertex animation
         float4 worldPos = mul(unity_ObjectToWorld, v.vertex);
-        float t = fmod(_Time.y*_ScrollRate + v.color.a, 1);
+        float t = fmod(GetTime().y*_ScrollRate + v.color.a, 1);
         worldPos.xyz +=  (t - .5f) * _ScrollDistance;
-        worldPos.x += sin(t * _ScrollJitterFrequency + _Time.y) * _ScrollJitterIntensity;
-        worldPos.z += cos(t * _ScrollJitterFrequency * .5 + _Time.y) * _ScrollJitterIntensity;
+        worldPos.x += sin(t * _ScrollJitterFrequency + GetTime().y) * _ScrollJitterIntensity;
+        worldPos.z += cos(t * _ScrollJitterFrequency * .5 + GetTime().y) * _ScrollJitterIntensity;
         v.color.a = pow(1 - abs(2*(t - .5)),3);
 
         o.vertex = mul(UNITY_MATRIX_VP, worldPos);

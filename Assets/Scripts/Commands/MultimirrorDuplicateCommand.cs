@@ -39,9 +39,22 @@ namespace TiltBrush
 
             m_SelectedStrokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
             m_DuplicatedStrokes = new List<Stroke>();
-            List<Matrix4x4> matrices;
+            List<Matrix4x4> matrices = null;
+            List<TrTransform> fixTrs = null;
 
-            matrices = PointerManager.m_Instance.CustomMirrorMatrices.ToList();
+            switch (PointerManager.m_Instance.CurrentSymmetryMode)
+            {
+                case PointerManager.SymmetryMode.MultiMirror:
+                    matrices = PointerManager.m_Instance.CustomMirrorMatrices.ToList();
+                    break;
+                case PointerManager.SymmetryMode.ScriptedSymmetryMode:
+                    // TODO not currently working
+                    PointerManager.m_Instance.CalcScriptedTransforms();
+                    // matrices = PointerManager.m_Instance.ScriptedTransforms;
+                    break;
+                case PointerManager.SymmetryMode.CustomSymmetryMode:
+                    break;
+            }
 
             if (m_StampMode)
             {
@@ -56,7 +69,7 @@ namespace TiltBrush
             {
                 TrTransform strokeTransform_GS = Coords.AsGlobal[stroke.StrokeTransform];
                 TrTransform tr_GS;
-                var xfCenter_GS = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget);
+                var xfCenter_GS = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget.transform);
                 for (int i = 0; i < matrices.Count; i++)
                 {
                     (TrTransform, TrTransform) trAndFix_WS;
@@ -81,7 +94,7 @@ namespace TiltBrush
             {
                 TrTransform widgetTransform_GS = TrTransform.FromTransform(widget.transform);
                 TrTransform tr_GS;
-                var xfCenter_GS = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget);
+                var xfCenter_GS = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget.transform);
 
                 // Generally speaking we want both sides of 2d media to appear
                 // when duplicating using multimirror

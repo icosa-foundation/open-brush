@@ -41,8 +41,9 @@ namespace TiltBrush
         private Transform m_ModelInstance;
         private ObjModelScript m_ObjModelScript;
         private float m_InitSize_CS;
+        public float InitSize_CS => m_InitSize_CS;
         private float m_HideSize_CS;
-        private bool m_PolyCallbackActive;
+        protected bool m_PolyCallbackActive;
 
         private int m_NumVertsTrackedByWidgetManager;
 
@@ -146,6 +147,7 @@ namespace TiltBrush
             // Set our model to null so its usage count is decremented.
             Model = null;
         }
+
         public override GrabWidget Clone()
         {
             return Clone(transform.position, transform.rotation, m_Size);
@@ -484,13 +486,12 @@ namespace TiltBrush
         {
             base.OnShow();
 
-            if (m_Model != null && m_Model.m_Valid)
-            {
-                SetSignedWidgetSize(0.0f);
-            }
-
             if (!m_LoadingFromSketch)
             {
+                if (m_Model != null && m_Model.m_Valid)
+                {
+                    SetSignedWidgetSize(0.0f);
+                }
                 m_IntroAnimState = IntroAnimState.In;
                 Debug.Assert(!IsMoving(), "Shouldn't have velocity!");
                 ClearVelocities();
@@ -647,7 +648,7 @@ namespace TiltBrush
 
         /// I believe (but am not sure) that Media Library content loads synchronously,
         /// and PAC content loads asynchronously.
-        public static async void CreateFromSaveData(TiltModels75 modelDatas)
+        public static async void CreateModelFromSaveData(TiltModels75 modelDatas)
         {
             Debug.AssertFormat(modelDatas.AssetId == null || modelDatas.FilePath == null,
                 "Model Data should not have an AssetID *and* a File Path");
