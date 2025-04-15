@@ -86,10 +86,14 @@ namespace TiltBrush
             var go = new GameObject();
             if (success)
             {
+                var mask = ~ComponentType.Camera;
+                // Currently we only handle lights via UnityGLTF importer
+                // Mainly because that allows more control via import hooks
+                mask &= ~ComponentType.Light;
                 var settings = new InstantiationSettings
                 {
                     LightIntensityFactor = 0.0001f,
-                    Mask = ~ComponentType.Camera
+                    Mask = mask,
                 };
                 success = await gltf.InstantiateMainSceneAsync(
                     new GameObjectInstantiator(gltf, go.transform, null, settings)
@@ -120,7 +124,12 @@ namespace TiltBrush
             try
             {
                 ImportOptions options = new ImportOptions();
-                GLTFSceneImporter gltf = new GLTFSceneImporter(localPath, options);
+                // TODO - should we import disabled to help round-tripping?
+                options.CameraImport = CameraImportOption.None;
+
+                // See https://github.com/KhronosGroup/UnityGLTF/issues/805
+                var uriPath = $"file:///{Uri.UnescapeDataString(localPath).Replace("\\", "/")}";
+                GLTFSceneImporter gltf = new GLTFSceneImporter(uriPath, options);
 
                 gltf.IsMultithreaded = false;
                 AsyncHelpers.RunSync(() => gltf.LoadSceneAsync());
@@ -131,6 +140,7 @@ namespace TiltBrush
             catch (Exception e)
             {
                 Debug.LogError("Failed to import using UnityGltf. Falling back to legacy import");
+                Debug.LogError($"UnityGltf Exception: {e}");
                 // Fall back to the older import code
                 GameObject go = _ImportUsingLegacyGltf(localPath, assetLocation);
                 model.CalcBoundsGltf(go);
