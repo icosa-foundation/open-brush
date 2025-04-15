@@ -361,14 +361,14 @@
       "url": "https://packages.unity.com"
     },
     "com.zappar.xr.zapbox": {
-      "version": "https://github.com/zappar-xr/zapbox-xr-sdk.git#43697771ed65efee02d5b1743141b8179444c147",
+      "version": "https://github.com/zappar-xr/zapbox-xr-sdk.git#74fe120c1c9a0b31a186eb551ef25efe4a316c73",
       "depth": 0,
       "source": "git",
       "dependencies": {
         "com.unity.xr.management": "3.2.9",
         "com.unity.xr.legacyinputhelpers": "2.1.4"
       },
-      "hash": "43697771ed65efee02d5b1743141b8179444c147"
+      "hash": "74fe120c1c9a0b31a186eb551ef25efe4a316c73"
     },
     "org.khronos.unitygltf": {
       "version": "https://github.com/icosa-mirror/UnityGLTF.git",
