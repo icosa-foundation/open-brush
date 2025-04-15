@@ -39,7 +39,7 @@ namespace TiltBrush
                         break;
                     case SketchControlsScript.GlobalCommands.MultiplayerSetRoomViewOnly:
                         IsToggledOn = _roomData.viewOnlyRoom;
-                        break;  
+                        break;
 
 
                     // "Single User" commands

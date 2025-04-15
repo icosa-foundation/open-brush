@@ -88,7 +88,7 @@ namespace OpenBrush.Multiplayer
     }
 
     [System.Serializable]
-    public struct RemotePlayerSettings 
+    public struct RemotePlayerSettings
     {
         public int m_PlayerId;
         public bool m_IsMutedForAll;

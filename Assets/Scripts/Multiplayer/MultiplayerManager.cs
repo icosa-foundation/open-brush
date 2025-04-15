@@ -248,7 +248,7 @@ namespace OpenBrush.Multiplayer
             else State = ConnectionState.IN_ROOM;
 
             //asing the room name to the current room name
-            RoomCreateData CurrentRoomData  = RoomData;
+            RoomCreateData CurrentRoomData = RoomData;
 
             return successData & successVoice;
         }
@@ -496,10 +496,10 @@ namespace OpenBrush.Multiplayer
         {
             m_RemotePlayers.AddPlayer(newRemotePlayer);
 
-            if(!isUserRoomOwner) return;  //below this line is only room owner responsability 
+            if (!isUserRoomOwner) return;  //below this line is only room owner responsability 
 
             MultiplayerSceneSync.m_Instance.StartSyncronizationForUser(newRemotePlayer.PlayerId);
-            if (CurrentRoomData.silentRoom ==  true) MutePlayerForAll(true, newRemotePlayer.PlayerId);
+            if (CurrentRoomData.silentRoom == true) MutePlayerForAll(true, newRemotePlayer.PlayerId);
             if (CurrentRoomData.viewOnlyRoom == true) SetUserViewOnlyMode(true, newRemotePlayer.PlayerId);
         }
 
