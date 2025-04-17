@@ -117,6 +117,8 @@ namespace OpenBrush.Multiplayer
         {
             get
             {
+                // If the user is not in a room, then they can't be view only
+                if (!CanLeaveRoom()) return false;
                 // Room owners are never in view-only mode
                 if (isUserRoomOwner) return false;
                 return _isViewOnly;
