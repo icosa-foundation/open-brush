@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Fusion;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -62,7 +63,8 @@ namespace OpenBrush.Multiplayer
         public string roomPassword;
         public bool @private;
         public int maxPlayers;
-        public bool voiceDisabled;
+        public bool silentRoom;
+        public bool viewOnlyRoom;
     }
 
     [System.Serializable]
@@ -72,7 +74,8 @@ namespace OpenBrush.Multiplayer
         public bool @private;
         public int numPlayers;
         public int maxPlayers;
-        public bool voiceDisabled;
+        public bool silentRoom;
+        public bool viewOnlyRoom;
     }
 
 
@@ -82,5 +85,20 @@ namespace OpenBrush.Multiplayer
         public string UserId;
         public string Nickname;
         public string Role;
+    }
+
+    [System.Serializable]
+    public struct RemotePlayerSettings
+    {
+        public int m_PlayerId;
+        public bool m_IsMutedForAll;
+        public bool m_IsViewOnly;
+
+        public RemotePlayerSettings(int playerId, bool isMutedForAll, bool isViewOnly)
+        {
+            m_PlayerId = playerId;
+            m_IsMutedForAll = isMutedForAll;
+            m_IsViewOnly = isViewOnly;
+        }
     }
 }
