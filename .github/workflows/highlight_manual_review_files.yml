@@ -46,6 +46,7 @@ jobs:
           token: ${{ github.token }}
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
+          comment-id: ${{ steps.find_comment.outputs.comment-id }}
           body: |
             :warning: **Heads‑up:**
 
