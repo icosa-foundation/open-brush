@@ -409,6 +409,7 @@ jobs:
 
       - name: Restore Library/PackageCache
         id: cache_packagecache
+        if: false
         uses: actions/cache/restore@v4
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
@@ -545,6 +546,7 @@ jobs:
             !build/**/*_BackUpThisFolder_ButDontShipItWithYourGame
 
       - name: Check if packages-lock.json has changed or if it's cacheable
+        if: false
         id: check_packagecache
         run: |
           # Check if there are any changes to the packages-lock.json file
@@ -557,7 +559,7 @@ jobs:
 
       - name: Save Library/PackageCache cache
         uses: actions/cache/save@v4
-        if: github.ref == 'refs/heads/main' && steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
+        if: false && github.ref == 'refs/heads/main' && steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
