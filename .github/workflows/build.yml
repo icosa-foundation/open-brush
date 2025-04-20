@@ -268,7 +268,7 @@ jobs:
             extraoptions: -btb-il2cpp
             extra_defines: ZAPBOX_SUPPORTED
             packages_to_remove: com.unity.formats.usd
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2  # The Fusion plugin does *not* set FUSION_WEAVER and FUSION2 for iOS, unlike other platforms. However, it does get set elsewhere, but only when we go through the Editor. From the command line, it doesn't get set properly, and thus the builds fail without these two defines.
 
     steps:
       - name: Set masking
