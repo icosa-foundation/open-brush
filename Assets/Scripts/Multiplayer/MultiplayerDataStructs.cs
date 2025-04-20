@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#if MP_FUSION
 using Fusion;
+#endif
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;

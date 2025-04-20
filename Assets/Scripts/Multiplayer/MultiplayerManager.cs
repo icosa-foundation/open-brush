@@ -16,7 +16,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+#if MP_FUSION
 using Fusion;
+#endif
 using UnityEngine;
 #if OCULUS_SUPPORTED
 using OVRPlatform = Oculus.Platform;
