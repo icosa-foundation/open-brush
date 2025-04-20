@@ -51,9 +51,13 @@ namespace OpenBrush.Multiplayer
         {
 
             if (PlayerGameObject == null) return "";
+            string nickname = null;
+#if MP_PHOTON
             PhotonPlayerRig Rig = PlayerGameObject.GetComponent<PhotonPlayerRig>();
             if (Rig == null) return "";
-            return Rig.PersistentNickname;
+            nickname = Rig.PersistentNickname;
+#endif
+            return nickname;
 
         }
     }
