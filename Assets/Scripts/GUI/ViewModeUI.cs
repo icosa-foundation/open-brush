@@ -1,11 +1,11 @@
-using System.Collections;
-using System.Collections.Generic;
 using TiltBrush;
 using UnityEngine;
 
 public class ViewModeUI : MonoBehaviour
 {
     public GameObject m_UiRoot;
+    public GameObject m_CloseButton;
+    public GameObject m_MenuButton;
 
     void Awake()
     {
