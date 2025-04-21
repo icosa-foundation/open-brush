@@ -1,0 +1,65 @@
+---
+# yamllint disable rule:line-length
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Highlight files requiring manual review
+on:  # yamllint disable-line rule:truthy
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'Packages/*.json'
+      - 'ProjectSettings/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  notify:
+    name: Check for changes to be highlighted
+    runs-on: ubuntu-latest
+    steps:
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          list-files: json
+          filters: |
+            packages:
+              - 'Packages/*.json'
+            projectsettings:
+              - 'ProjectSettings/**'
+
+      - name: Find Comment
+        uses: peter-evans/find-comment@v3
+        id: find_comment
+        with:
+          token: ${{ github.token }}
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: 'Review: flagged files'
+
+      - name: Post a comment
+        if: |
+          steps.filter.outputs.packages == 'true' ||
+          steps.filter.outputs.projectsettings == 'true'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ github.token }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          comment-id: ${{ steps.find_comment.outputs.comment-id }}
+          body: |
+            :warning: **Heads‑up:**
+
+            ${{ steps.filter.outputs.packages == 'true' && 'The following package files were changed:' || '' }}
+
+            ${{ steps.filter.outputs.packages == 'true' && '```text' || '' }}
+            ${{ steps.filter.outputs.packages == 'true' && join(fromJson(steps.filter.outputs.packages_files || '[]'), '\n') || '' }}
+            ${{ steps.filter.outputs.packages == 'true' && '```' || '' }}
+
+            ${{ steps.filter.outputs.projectsettings == 'true' && 'The following files from ProjectSettings were changed:' || '' }}
+
+            ${{ steps.filter.outputs.projectsettings == 'true' && '```text' || '' }}
+            ${{ steps.filter.outputs.projectsettings == 'true' && join(fromJson(steps.filter.outputs.projectsettings_files || '[]'), '\n') || '' }}
+            ${{ steps.filter.outputs.projectsettings == 'true' && '```' || '' }}
+
+            (Review: flagged files)
