@@ -132,6 +132,8 @@ namespace TiltBrush
         /// the only commands whose merge functions can put them in no-op states.
         virtual protected bool IsNoop { get { return false; } }
 
+        public virtual bool IsAvailable => true;
+
         /// Undo this entire command tree.
         /// Parent is always undone after all children.
         /// Children are undone in reverse order.

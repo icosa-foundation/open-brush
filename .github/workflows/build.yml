@@ -186,29 +186,34 @@ jobs:
             targetPlatform: StandaloneWindows64
             vrsdk: OpenXR
             cache: Windows
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: Windows Pimax
             targetPlatform: StandaloneWindows64
             vrsdk: OpenXR
             cache: Windows
             extra_defines: PIMAX_SUPPORTED
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: Windows Rift
             targetPlatform: StandaloneWindows64
             vrsdk: Oculus
             cache: Windows
             extra_defines: OCULUS_SUPPORTED
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: Linux
             targetPlatform: StandaloneLinux64
             vrsdk: Monoscopic  # All builds include monoscopic, but this one has no additional XrSdk, so we'll keep the name monoscopic
             cache: Linux
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: MacOS
             targetPlatform: StandaloneOSX
             vrsdk: Monoscopic
             cache: MacOS
             packages_to_remove: com.meta.xr.sdk.core
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: Android OpenXR
             targetPlatform: Android
@@ -216,6 +221,7 @@ jobs:
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
             versionSuffix: 0
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: Oculus Quest (1)
             targetPlatform: Android
@@ -225,6 +231,7 @@ jobs:
             versionSuffix: 0
             extra_defines: USE_QUEST_PACKAGE_NAME FORCE_QUEST_SUPPORT_DEVICE FORCE_FOCUSAWARE FORCE_HEADTRACKING
             packages_to_remove: com.meta.xr.sdk.platform com.meta.xr.sdk.utilities
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: Oculus Quest (2+)
             targetPlatform: Android
@@ -233,6 +240,7 @@ jobs:
             extraoptions: -btb-il2cpp
             versionSuffix: 1
             extra_defines: OCULUS_SUPPORTED USE_QUEST_PACKAGE_NAME
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: Android Pico
             targetPlatform: Android
@@ -241,6 +249,7 @@ jobs:
             extraoptions: -btb-il2cpp
             versionSuffix: 0
             extra_defines: PICO_SUPPORTED
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: Android Pico (CN)
             targetPlatform: Android
@@ -250,6 +259,7 @@ jobs:
             extraoptions: -btb-il2cpp -btb-disableAccountLogins
             versionSuffix: 1
             extra_defines: PICO_SUPPORTED
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: iOS Zapbox
             targetPlatform: iOS
@@ -258,6 +268,7 @@ jobs:
             extraoptions: -btb-il2cpp
             extra_defines: ZAPBOX_SUPPORTED
             packages_to_remove: com.unity.formats.usd
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2  # The Fusion plugin does *not* set FUSION_WEAVER and FUSION2 for iOS, unlike other platforms. However, it does get set elsewhere, but only when we go through the Editor. From the command line, it doesn't get set properly, and thus the builds fail without these two defines.
 
     steps:
       - name: Set masking
@@ -409,6 +420,7 @@ jobs:
 
       - name: Restore Library/PackageCache
         id: cache_packagecache
+        if: false
         uses: actions/cache/restore@v4
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
@@ -484,15 +496,17 @@ jobs:
         run: |
           sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
 
-      - name: Add PHOTON_PAT specific define
-        if: ${{ env.PHOTON_PAT }}
-        run: |
-          echo -e "\n -define:MP_PHOTON \n -define:PHOTON_UNITY_NETWORKING \n-define:PUN_2_0_OR_NEWER \n-define:PUN_2_OR_NEWER \n-define:PUN_2_19_OR_NEWER \n-define:FUSION_WEAVER \n-define:FUSION2 \n-define:CROSS_PLATFORM_INPUT \n-define:MOBILE_INPUT \n-define:PHOTON_VOICE_DEFINED" | tee -a Assets/csc.rsp
-
       - name: Update build matrix specific defines in csc.rsp
         if: ${{ matrix.extra_defines }}
         run: |
           for DEFINE in ${{ matrix.extra_defines }}; do
+            echo -e "\n-define:$DEFINE" | tee -a Assets/csc.rsp
+          done
+
+      - name: Update build matrix specific defines in csc.rsp (PHOTON_PAT only)
+        if: ${{ env.PHOTON_PAT && matrix.extra_photon_defines }}
+        run: |
+          for DEFINE in ${{ matrix.extra_photon_defines }}; do
             echo -e "\n-define:$DEFINE" | tee -a Assets/csc.rsp
           done
 
@@ -545,6 +559,7 @@ jobs:
             !build/**/*_BackUpThisFolder_ButDontShipItWithYourGame
 
       - name: Check if packages-lock.json has changed or if it's cacheable
+        if: false
         id: check_packagecache
         run: |
           # Check if there are any changes to the packages-lock.json file
@@ -557,7 +572,7 @@ jobs:
 
       - name: Save Library/PackageCache cache
         uses: actions/cache/save@v4
-        if: github.ref == 'refs/heads/main' && steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
+        if: false && github.ref == 'refs/heads/main' && steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -1197,6 +1212,9 @@ jobs:
     steps:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
+        with:
+          ignore-empty-workdir: true
+          enable-cache: false
 
       - name: Install ArborXR CLI
         run: |
@@ -1248,6 +1266,9 @@ jobs:
     steps:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
+        with:
+          ignore-empty-workdir: true
+          enable-cache: false
 
       - name: Install ArborXR CLI
         run: |
@@ -1382,6 +1403,9 @@ jobs:
     steps:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
+        with:
+          ignore-empty-workdir: true
+          enable-cache: false
 
       - name: Install ArborXR CLI
         run: |
