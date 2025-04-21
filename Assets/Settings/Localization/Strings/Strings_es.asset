@@ -3608,6 +3608,70 @@ MonoBehaviour:
     m_Localized: "Men\xFA Multijugador"
     m_Metadata:
       m_Items: []
+  - m_Id: 326532953040941056
+    m_Localized: "Jugadores M\xE1ximos: "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326549804571619328
+    m_Localized: "Configuraci\xF3n de la Sala: "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326570591894564864
+    m_Localized: "Panel de Habitaci\xF3n: "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326572252843143168
+    m_Localized: "Editar m\xE1ximo de jugadores: "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326807657823793152
+    m_Localized: ' Transferir la propiedad de la sala a este jugador'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326808393542463488
+    m_Localized: Silenciar jugador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326808972507410432
+    m_Localized: Activar el sonido del jugador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326832067431559168
+    m_Localized: Establecer solo vista de usuario
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326833306865168384
+    m_Localized: Desactivar solo vista de usuario
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326852018926186496
+    m_Localized: "En la configuraci\xF3n de la sala"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326852593516474368
+    m_Localized: Lista de jugadores
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326864334061236224
+    m_Localized: Expulsar al jugador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326869993834082304
+    m_Localized: Silenciar a todos los jugadores
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326870578603945984
+    m_Localized: Activar el sonido de todos los jugadores
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326871085665939456
+    m_Localized: "Configurar a todos los jugadores en modo solo visualizaci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326871757446639616
+    m_Localized: Permitir que todos los jugadores editen
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
