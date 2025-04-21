@@ -149,7 +149,8 @@ namespace TiltBrush
                         m_PaintingActive = true;
                         ApiManager.Instance.ForcePainting = ApiManager.Instance.PreviousForcePaintingMode;
                         break;
-                }            }
+                }
+            }
 
 
             if (m_BimanualTape)
