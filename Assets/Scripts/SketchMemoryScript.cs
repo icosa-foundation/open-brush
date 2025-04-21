@@ -395,6 +395,7 @@ namespace TiltBrush
 
         public void PerformAndRecordCommand(BaseCommand command, bool discardIfNotMerged = false, bool invoke = true)
         {
+            if (!command.IsAvailable) return;
             SketchSurfacePanel.m_Instance.m_LastCommand = command;
             bool discardCommand = discardIfNotMerged;
             BaseCommand delta = command;
@@ -438,6 +439,7 @@ namespace TiltBrush
 
         // TODO: deprecate in favor of PerformAndRecordCommand
         // Used by BrushStrokeCommand and ModifyLightCommmand while in Disco mode
+        // IMPORTANT: Bypasses the check for Command.IsAvailable (currently used for multiplayer view-only mode)
         public void RecordCommand(BaseCommand command)
         {
             ClearRedo();

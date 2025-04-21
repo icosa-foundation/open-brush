@@ -13,8 +13,11 @@
 // limitations under the License.
 
 using System;
+
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using TiltBrush;
+using UnityEngine;
 
 namespace OpenBrush.Multiplayer
 {
@@ -31,12 +34,12 @@ namespace OpenBrush.Multiplayer
 
     public interface IDataConnectionHandler : IConnectionHandler
     {
-
         void Update();
         int GetPlayerCount();
         int GetNetworkedTimestampMilliseconds();
         bool GetPlayerRoomOwnershipStatus(int playerId);
-        void SendLargeDataToPlayer(int playerId, byte[] largeData);
+        GameObject GetPlayerPrefab(int playerId);
+        void SendLargeDataToPlayer(int playerId, byte[] largeData, int percentage);
         Task<bool> PerformCommand(BaseCommand command);
         Task<bool> SendCommandToPlayer(BaseCommand command, int playerId);
         Task<bool> CheckCommandReception(BaseCommand command, int playerId);
@@ -44,12 +47,12 @@ namespace OpenBrush.Multiplayer
         Task<bool> UndoCommand(BaseCommand command);
         Task<bool> RedoCommand(BaseCommand command);
         Task<bool> RpcSyncToSharedAnchor(string uuid);
-        Task<bool> RpcStartSyncHistory(int id);
-        Task<bool> RpcSyncHistoryPercentage(int id, int exp, int snt);
-        Task<bool> RpcHistorySyncComplete(int id);
+        Task<bool> RpcTransferRoomOwnership(int playerId, RemotePlayerSettings[] playerSettings, RoomCreateData roomData);
+        Task<bool> RpcSetUserViewOnlyMode(bool value, int playerId);
+        Task<bool> RpcKickPlayerOut(int playerId);
+        bool RpcMutePlayer(bool mute, int playerId);
 
         event Action Disconnected;
-
     }
 
     public interface IVoiceConnectionHandler : IConnectionHandler
