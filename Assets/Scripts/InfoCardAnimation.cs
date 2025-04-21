@@ -289,10 +289,15 @@ namespace TiltBrush
         {
             if (m_CurrentState == State.Holding)
             {
-                m_HoldingStateDuration = newDuration;
-                m_StateTimer = 0.0f;
+                float remainingDuration = m_HoldingStateDuration - m_StateTimer;
+
+                if (remainingDuration < newDuration)
+                {
+                    m_HoldingStateDuration += newDuration - remainingDuration;
+                }
             }
         }
+
 
     }
 
