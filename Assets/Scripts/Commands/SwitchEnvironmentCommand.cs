@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using OpenBrush.Multiplayer;
 
 namespace TiltBrush
 {
@@ -22,6 +23,8 @@ namespace TiltBrush
         private CustomEnvironment m_PrevBackdrop;
         private Environment m_PrevEnvironment;
         public Environment m_NextEnvironment;
+
+        public override bool IsAvailable => !MultiplayerManager.m_Instance.IsViewOnly;
 
         public SwitchEnvironmentCommand(Environment nextEnv, BaseCommand parent = null) : base(parent)
         {

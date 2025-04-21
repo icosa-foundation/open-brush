@@ -3470,6 +3470,86 @@ MonoBehaviour:
     m_Key: ADMIN_PANEL_MULTIPLAYER_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 326532953040941056
+    m_Key: MULTIPLAYER_PANEL_MAX_ROOM_NUMBER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326549804571619328
+    m_Key: MULTIPLAYER_ROOM_SETTINGS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326570591894564864
+    m_Key: MULTIPLAYER_IN_ROOM_PANEL_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326572252843143168
+    m_Key: MULTIPLAYER_EDIT_MAX_PLAYERS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326807657823793152
+    m_Key: MULTIPLAYER_ROOM_OWNERSHIP_TRANSFER_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326808393542463488
+    m_Key: MULTIPLAYER_MUTE_UNMUTE_PLAYERBUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326808972507410432
+    m_Key: MULTIPLAYER_UNMUTE_PLAYER_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326832067431559168
+    m_Key: MULTIPLAYER_ENABLE_USER_VIEW_ONLY_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326833306865168384
+    m_Key: MULTIPLAYER_DISABLE_USER_VIEW_ONLY_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326852018926186496
+    m_Key: MULTIPLAYER_IN_ROOM_SETTINGS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326852593516474368
+    m_Key: MULTIPLAYER_PLAYERS_LIST_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326864334061236224
+    m_Key: MULTIPLAYER_KICK_OUT_USER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326869993834082304
+    m_Key: MULTIPLAYER_MUTE_ALL_USER_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326870578603945984
+    m_Key: MULTIPLAYER_UNMUTE_ALL_PLAYERS_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326871085665939456
+    m_Key: MULTIPLAYER_SET_ALL_PLAYERS_TO_VIEWONLY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326871757446639616
+    m_Key: MULTIPLAYER_UNSET_ALL_PLAYERS_TO_VIEWONLY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 340941283698237440
+    m_Key: MULTIPLAYER_MUTE_ALL_USER_FOR_ALL_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 340941524061216768
+    m_Key: MULTIPLAYER_MUTE_UNMUTE_FOR_ALL_PLAYERBUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 341358942189346816
+    m_Key: MULTIPLAYER_PANEL_ROOM_AVAIL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 341359317994790912
+    m_Key: MULTIPLAYER_PANEL_ROOM_NOT_AVAIL
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
