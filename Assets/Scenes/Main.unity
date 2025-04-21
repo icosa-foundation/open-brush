@@ -3654,7 +3654,7 @@ MonoBehaviour:
   m_SdkMode: 0
   m_AutoProfile: 0
   m_AutoProfileWaitTime: 10
-  Secrets: {fileID: 11400000, guid: 2958d93356c83c5409c5fc930c42e6fc, type: 2}
+  Secrets: {fileID: 11400000, guid: b7879e54dd39e0d4b8e5c93f6ecab5f3, type: 2}
   m_SketchFiles: []
   DisableAccountLogins: 0
   m_OdsNumFrames: 0
