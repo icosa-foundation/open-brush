@@ -156,9 +156,22 @@ namespace TiltBrush
             MultiplayerConnect = 1007,
             MultiplayerDisconnect = 1008,
             EditMultiplayerNickName = 1009,
-            DisplaySynchInfo = 1010,
-            SynchInfoPercentageUpdate = 1011,
-            HideSynchInfo = 1012,
+            OpenRoomSettings = 1010,
+
+            EditMultiplayerRoomMaxPlayers = 1012,
+
+            MultiplayerMutePlayerForMe = 1011,
+            MultiplayerPlayerMuteForAll = 1019,
+            MultiplayerViewOnlyMode = 1014,
+            MultiplayerTransferRoomOwnership = 1013,
+            MultiplayerKickPlayerOut = 1015,
+
+            MultiplayerMuteAllForMe = 1016,
+            MultiplayerSetAllViewOnly = 1017,
+            MultiplayerMuteAllForAll = 1018,
+
+            MultiplayerSetRoomViewOnly = 1020,
+            MultiplayerSetRoomSilent = 1021,
 
             RenameSketch = 5200,
             OpenLayerOptionsPopup = 5201,
@@ -4542,10 +4555,23 @@ namespace TiltBrush
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }
+                case GlobalCommands.EditMultiplayerRoomMaxPlayers:
+                    {
+                        var panel = (MultiplayerPanel)m_PanelManager.GetActivePanelByType(BasePanel.PanelType.Multiplayer);
+                        if (int.TryParse(KeyboardPopUpWindow.m_LastInput, out var parsedMaxPlayers))
+                            panel.MaxPlayers = parsedMaxPlayers;
+                        DismissPopupOnCurrentGazeObject(false);
+                        break;
+                    }
                 case GlobalCommands.EditMultiplayerNickName:
                     {
                         var panel = (MultiplayerPanel)m_PanelManager.GetActivePanelByType(BasePanel.PanelType.Multiplayer);
                         panel.NickName = KeyboardPopUpWindow.m_LastInput;
+                        DismissPopupOnCurrentGazeObject(false);
+                        break;
+                    }
+                case GlobalCommands.OpenRoomSettings:
+                    {
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }
@@ -4877,23 +4903,23 @@ namespace TiltBrush
                     PointerManager.m_Instance.EatLineEnabledInput();
                     SketchSurfacePanel.m_Instance.EatToolsInput();
                     break;
-                case GlobalCommands.DisplaySynchInfo:
-                    MultiplayerSceneSync.m_Instance.StartSynchInfo();
-                    break;
-                case GlobalCommands.SynchInfoPercentageUpdate:
-                    MultiplayerSceneSync.m_Instance.SynchInfoPercentageUpdate();
-                    break;
-                case GlobalCommands.HideSynchInfo:
-                    MultiplayerSceneSync.m_Instance.HideSynchInfo();
-                    break;
-                case GlobalCommands.RepaintOptions: break; // Intentionally blank.
-                case GlobalCommands.Null: break; // Intentionally blank.
-                case GlobalCommands.MultiplayerPanelOptions: break; // Intentionally blank.
-                case GlobalCommands.MultiplayerJoinRoom: break; // Intentionally blank.
-                case GlobalCommands.MultiplayerLeaveRoom: break; // Intentionally blank.
-                case GlobalCommands.MultiplayerConnect: break; // Intentionally blank.
-                case GlobalCommands.MultiplayerDisconnect: break; // Intentionally blank.
-                case GlobalCommands.WhatIsNew: break;// Intentionally blank.
+                case GlobalCommands.RepaintOptions:
+                case GlobalCommands.Null:
+                case GlobalCommands.MultiplayerPanelOptions:
+                case GlobalCommands.MultiplayerJoinRoom:
+                case GlobalCommands.MultiplayerLeaveRoom:
+                case GlobalCommands.MultiplayerConnect:
+                case GlobalCommands.MultiplayerDisconnect:
+                case GlobalCommands.MultiplayerMutePlayerForMe:
+                case GlobalCommands.MultiplayerTransferRoomOwnership:
+                case GlobalCommands.MultiplayerViewOnlyMode:
+                case GlobalCommands.MultiplayerMuteAllForMe:
+                case GlobalCommands.MultiplayerSetAllViewOnly:
+                case GlobalCommands.MultiplayerKickPlayerOut:
+                case GlobalCommands.MultiplayerMuteAllForAll:
+                case GlobalCommands.MultiplayerPlayerMuteForAll:
+                case GlobalCommands.WhatIsNew:
+                    break;// Intentionally blank.
                 default:
                     Debug.LogError($"Unrecognized command {rEnum}");
                     break;
@@ -5111,6 +5137,7 @@ namespace TiltBrush
                     return LastGrabWidget != null && TexturePainterManager.m_Instance.CanBeMadePaintable(LastGrabWidget);
                 case GlobalCommands.RecordCameraPath:
                     return m_WidgetManager.CameraPathsVisible;
+
                 case GlobalCommands.AdvancedPanelsToggle:
                     return !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
                 case GlobalCommands.MultiplayerConnect:
@@ -5121,11 +5148,32 @@ namespace TiltBrush
                     return !PanelManager.m_Instance.AdvancedModeActive() && MultiplayerManager.m_Instance.CanJoinRoom() && !SceneSettings.m_Instance.GetDesiredPreset().isPassthrough;
                 case GlobalCommands.MultiplayerLeaveRoom:
                     return MultiplayerManager.m_Instance.CanLeaveRoom();
+
+                // Disabled when in a multiplayer room.
                 case GlobalCommands.Sketchbook:
                 case GlobalCommands.SketchbookMenu:
                 case GlobalCommands.EditMultiplayerNickName:
                 case GlobalCommands.EditMultiplayerRoomName:
+                case GlobalCommands.EditMultiplayerRoomMaxPlayers:
                     return !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
+
+                // Disabled when not in a multiplayer room.
+                case GlobalCommands.MultiplayerMutePlayerForMe:
+                case GlobalCommands.MultiplayerMuteAllForMe:
+                    return MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM;
+
+                // Disabled when in a multiplayer room or not the room owner.
+                // 1. Channges state for a single player
+                case GlobalCommands.MultiplayerViewOnlyMode:
+                case GlobalCommands.MultiplayerTransferRoomOwnership:
+                case GlobalCommands.MultiplayerKickPlayerOut:
+                case GlobalCommands.MultiplayerPlayerMuteForAll:
+                // 2. Changes state for all players
+                case GlobalCommands.MultiplayerSetAllViewOnly:
+                case GlobalCommands.MultiplayerMuteAllForAll:
+                    return (MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM && MultiplayerManager.m_Instance.IsUserRoomOwner());
+
+                // Currently disabled all the time
                 case GlobalCommands.WhatIsNew:
                     return false;
             }
