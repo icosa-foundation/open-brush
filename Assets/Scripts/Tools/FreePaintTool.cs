@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using OpenBrush.Multiplayer;
 using UnityEngine;
 
 namespace TiltBrush
@@ -123,23 +124,31 @@ namespace TiltBrush
 
             m_PaintingActive = !m_EatInput && !m_ToolHidden && (m_brushTrigger || (m_PaintingActive && !m_RevolverActive && m_LazyInputActive && m_BimanualTape && m_wandTrigger));
 
-            // Allow API commands to override painting mode
-            switch (ApiManager.Instance.ForcePainting)
+            // Allow Multiplayer to override painting mode
+            if (MultiplayerManager.m_Instance.IsViewOnly)
             {
-                case ApiManager.ForcePaintingMode.ForcedOn:
-                    m_PaintingActive = true;
-                    break;
-                case ApiManager.ForcePaintingMode.ForcedOff:
-                    m_PaintingActive = false;
-                    break;
-                case ApiManager.ForcePaintingMode.ForceNewStroke:
-                    m_PaintingActive = false;
-                    ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.WasForceNewStroke;
-                    break;
-                case ApiManager.ForcePaintingMode.WasForceNewStroke:
-                    m_PaintingActive = true;
-                    ApiManager.Instance.ForcePainting = ApiManager.Instance.PreviousForcePaintingMode;
-                    break;
+                m_PaintingActive = false;
+            }
+            else
+            {
+                // Allow API commands to override painting mode
+                switch (ApiManager.Instance.ForcePainting)
+                {
+                    case ApiManager.ForcePaintingMode.ForcedOn:
+                        m_PaintingActive = true;
+                        break;
+                    case ApiManager.ForcePaintingMode.ForcedOff:
+                        m_PaintingActive = false;
+                        break;
+                    case ApiManager.ForcePaintingMode.ForceNewStroke:
+                        m_PaintingActive = false;
+                        ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.WasForceNewStroke;
+                        break;
+                    case ApiManager.ForcePaintingMode.WasForceNewStroke:
+                        m_PaintingActive = true;
+                        ApiManager.Instance.ForcePainting = ApiManager.Instance.PreviousForcePaintingMode;
+                        break;
+                }
             }
 
             if (m_BimanualTape)

@@ -4,6 +4,8 @@ using UnityEngine;
 using OpenBrush.Multiplayer;
 using System.Threading.Tasks;
 using System.ComponentModel.Composition;
+using System.Collections.Generic;
+using OpenBrush;
 
 #if UNITY_EDITOR
 [CustomEditor(typeof(MultiplayerManager))]
@@ -11,9 +13,14 @@ public class MultiplayerManagerInspector : Editor
 {
     private MultiplayerManager multiplayerManager;
     private string roomName = "1234";
+    private string nickname = "PlayerNickname";
+    private string oldNickname = "PlayerNickname";
     private bool isPrivate = false;
     private int maxPlayers = 4;
-    private bool voiceDisabled = false;
+    private bool silentRoom = false;
+    private bool viewOnlyRoom = false;
+    private Dictionary<int, bool> muteStates = new Dictionary<int, bool>();
+    private Dictionary<int, bool> viewOnlyStates = new Dictionary<int, bool>();
 
     public override void OnInspectorGUI()
     {
@@ -25,7 +32,16 @@ public class MultiplayerManagerInspector : Editor
         EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
         GUILayout.Space(10);
 
+
         roomName = EditorGUILayout.TextField("Room Name", roomName);
+        nickname = EditorGUILayout.TextField("Nickname", nickname);
+        if (nickname != oldNickname)
+        {
+            SetNickname();
+            oldNickname = nickname;
+            EditorUtility.SetDirty(target);
+        }
+        maxPlayers = EditorGUILayout.IntField("MaxPlayers", maxPlayers);
 
         //State
         string connectionState = "";
@@ -96,40 +112,97 @@ public class MultiplayerManagerInspector : Editor
         EditorGUILayout.LabelField($"{ownership}");
         EditorGUILayout.EndHorizontal();
 
-        //Remote Users
-        string remoteUsersRegistered = "";
-        if (multiplayerManager.m_RemotePlayers != null && multiplayerManager.m_RemotePlayers.Count > 0)
+        if (multiplayerManager.IsUserRoomOwner())
         {
-            remoteUsersRegistered = "UserIds:[ ";
-            foreach (var remotePlayer in multiplayerManager.m_RemotePlayers)
+            if (GUILayout.Button("Set Room Silent"))
             {
-                remoteUsersRegistered += remotePlayer.PlayerId.ToString() + ",";
+                silentRoom = !silentRoom;
+                multiplayerManager.SetRoomSilent(silentRoom);
+                EditorUtility.SetDirty(target);
             }
-            remoteUsersRegistered += "]";
+
+            if (GUILayout.Button("Set Room View Only"))
+            {
+                viewOnlyRoom = !viewOnlyRoom;
+                multiplayerManager.SetRoomViewOnly(viewOnlyRoom);
+                EditorUtility.SetDirty(target);
+            }
+
         }
-        else remoteUsersRegistered = "Not Assigned";
 
-        //Registered remote players
-
-        EditorGUILayout.BeginHorizontal();
-        GUILayout.Label("Registered Remote Players IDs:", EditorStyles.boldLabel);
-        EditorGUILayout.LabelField($"{remoteUsersRegistered}");
-        EditorGUILayout.EndHorizontal();
-
-        // Display and edit Nickname
+        // Show the remote players
         GUILayout.Space(10);
-        EditorGUILayout.LabelField("Nickname", GUI.skin.horizontalSlider);
-        string currentNickname = multiplayerManager.UserInfo.Nickname;
-        GUILayout.Label("Nickname", EditorStyles.boldLabel);
-        string newNickname = EditorGUILayout.TextField("Edit Nickname", currentNickname);
-        if (newNickname != currentNickname)
-        {
-            ConnectionUserInfo updatedUserInfo = multiplayerManager.UserInfo;
-            updatedUserInfo.Nickname = newNickname;
-            multiplayerManager.UserInfo = updatedUserInfo;
-            EditorUtility.SetDirty(target); // Mark the target as dirty to apply changes
-        }
+        EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
 
+        EditorGUILayout.LabelField("Remote Players", EditorStyles.boldLabel);
+        if (multiplayerManager.m_RemotePlayers != null &&
+            multiplayerManager.m_RemotePlayers.List.Count > 0)
+        {
+
+            // Then when iterating:
+            foreach (var remotePlayer in multiplayerManager.m_RemotePlayers.List)
+            {
+                int playerId = remotePlayer.PlayerId; // now an int
+
+                // Ensure our dictionaries have entries for this playerId
+                if (!muteStates.ContainsKey(playerId))
+                {
+                    muteStates[playerId] = false;
+                }
+                if (!viewOnlyStates.ContainsKey(playerId))
+                {
+                    viewOnlyStates[playerId] = false;
+                }
+
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField($"Player: {playerId}");
+
+                //mute/unmute
+                bool currentMuteState = muteStates[playerId];
+                string muteButtonLabel = currentMuteState ? "Unmute" : "Mute";
+                if (GUILayout.Button(muteButtonLabel))
+                {
+                    bool newMuteState = !currentMuteState;
+                    multiplayerManager.MutePlayerForAll(newMuteState, playerId);
+                    muteStates[playerId] = newMuteState;
+                    EditorUtility.SetDirty(target);
+                }
+
+                //viewOnly/edit
+                bool currentViewState = viewOnlyStates[playerId];
+                string viewButtonLabel = currentViewState ? "Disable ViewOnly" : "Enable ViewOnly";
+                if (GUILayout.Button(viewButtonLabel))
+                {
+                    bool newViewState = !currentViewState;
+                    multiplayerManager.SetUserViewOnlyMode(newViewState, playerId);
+                    viewOnlyStates[playerId] = newViewState;
+                    EditorUtility.SetDirty(target);
+                }
+
+                // ** Kick Out button (only if room owner) **
+                if (multiplayerManager.IsUserRoomOwner())
+                {
+                    if (GUILayout.Button("Kick Out"))
+                    {
+                        multiplayerManager.KickPlayerOut(playerId);
+                        EditorUtility.SetDirty(target);
+                    }
+               
+                    if (GUILayout.Button("Transfer ownership"))
+                    {
+                        multiplayerManager.RoomOwnershipTransferToUser(playerId);
+                        EditorUtility.SetDirty(target);
+                    }
+
+                }
+
+                EditorGUILayout.EndHorizontal();
+            }
+        }
+        else
+        {
+            EditorGUILayout.LabelField("No remote players found.");
+        }
 
         Repaint();
 
@@ -152,11 +225,27 @@ public class MultiplayerManagerInspector : Editor
                 roomName = roomName,
                 @private = isPrivate,
                 maxPlayers = maxPlayers,
-                voiceDisabled = voiceDisabled
+                silentRoom = silentRoom,
+                viewOnlyRoom = viewOnlyRoom, 
             };
 
             bool success = await multiplayerManager.JoinRoom(roomData);
 
+        }
+    }
+
+    private async void SetNickname()
+    {
+        if (multiplayerManager != null)
+        {
+
+            ConnectionUserInfo ui = new ConnectionUserInfo
+            {
+                Nickname = nickname,
+                UserId = MultiplayerManager.m_Instance.UserInfo.UserId,
+                Role = MultiplayerManager.m_Instance.UserInfo.Role
+            };
+            MultiplayerManager.m_Instance.UserInfo = ui;
         }
     }
 
