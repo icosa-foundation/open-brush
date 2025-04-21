@@ -23,7 +23,6 @@ using Fusion;
 using Fusion.Photon.Realtime;
 using Fusion.Sockets;
 using TiltBrush;
-using UnityEditor;
 using UnityEngine.SceneManagement;
 
 
@@ -87,13 +86,21 @@ namespace OpenBrush.Multiplayer
 
         public void Update()
         {
-            var copy = m_PlayersSpawning.ToList();
+            List<PlayerRef> copy = m_PlayersSpawning.ToList();
             foreach (var player in copy)
             {
-                var newPlayer = m_Runner.GetPlayerObject(player);
+                NetworkObject newPlayer = m_Runner.GetPlayerObject(player);
                 if (newPlayer != null)
                 {
-                    m_Manager.remotePlayerJoined?.Invoke(player.RawEncoded, newPlayer.GetComponent<PhotonPlayerRig>());
+                    RemotePlayer newRemotePlayer = new RemotePlayer
+                    {
+                        PlayerId = player.RawEncoded,
+                        Nickname = GetPlayerNickname(player.RawEncoded),
+                        TransientData = newPlayer.GetComponent<PhotonPlayerRig>(),
+                        PlayerGameObject = newPlayer.gameObject
+                    };
+
+                    m_Manager.remotePlayerJoined?.Invoke(newRemotePlayer);
                     m_PlayersSpawning.Remove(player);
                 }
             }
@@ -157,7 +164,7 @@ namespace OpenBrush.Multiplayer
                 int? maxPlayerCount = m_Runner.SessionInfo.MaxPlayers;
                 maxPlayerCount = maxPlayerCount == null ? int.MaxValue : maxPlayerCount;
 
-                if (currentPlayerCount >= maxPlayerCount)
+                if (currentPlayerCount > maxPlayerCount)
                 {
                     State = ConnectionState.ERROR;
                     LastError = "[PhotonManager] Room is full.";
@@ -271,6 +278,33 @@ namespace OpenBrush.Multiplayer
             else return false;
         }
 
+        public string GetPlayerNickname(int playerId)
+        {
+            var remotePlayer = m_PlayersSpawning
+                .Select(playerRef => m_Runner.GetPlayerObject(playerRef)?.GetComponent<PhotonPlayerRig>())
+                .FirstOrDefault(playerRig => playerRig != null && playerRig.PlayerId == playerId);
+
+            if (remotePlayer != null && remotePlayer.Object != null && remotePlayer.Object.IsValid)
+                return remotePlayer.PersistentNickname;
+            else return "";
+        }
+
+        public GameObject GetPlayerPrefab(int playerId)
+        {
+            if (m_Runner == null) return null;
+
+            PlayerRef player = PlayerRef.FromEncoded(playerId);
+
+            NetworkObject playerNetworkObject = m_Runner.GetPlayerObject(player);
+            if (playerNetworkObject != null) return playerNetworkObject.gameObject;
+
+            else
+            {
+                Debug.LogWarning($"No NetworkObject found for PlayerRef: {player.RawEncoded}");
+                return null;
+            }
+        }
+
         public async Task<bool> PerformCommand(BaseCommand command)
         {
             await Task.Yield();
@@ -324,40 +358,64 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
-        public async Task<bool> RpcStartSyncHistory(int id)
+        public async Task<bool> RpcTransferRoomOwnership(int playerId, RemotePlayerSettings[] playerSettings, RoomCreateData currentRoomData)
         {
-            PlayerRef playerRef = PlayerRef.FromEncoded(id);
+            PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
+
+            // Convert RemotePlayerSettings[] to NetworkPlayerSettings[]
+            NetworkPlayerSettings[] networkSettings = new NetworkPlayerSettings[playerSettings.Length];
+            for (int i = 0; i < playerSettings.Length; i++)
+            {
+                networkSettings[i] = new NetworkPlayerSettings(
+                    playerSettings[i].m_PlayerId,
+                    playerSettings[i].m_IsMutedForAll,
+                    playerSettings[i].m_IsViewOnly
+                );
+            }
+
+            var roomData = new NetworkRoomSettings(currentRoomData);
+
             PhotonRPCBatcher.EnqueueRPC(() =>
-            { PhotonRPC.RPC_StartHistorySync(m_Runner, playerRef); });
-            await Task.Yield();
+            {
+                PhotonRPC.RPC_TransferRoomOwnership(m_Runner, targetPlayer, networkSettings, roomData);
+            });
+
             return true;
         }
 
-        public async Task<bool> RpcHistorySyncComplete(int id)
+
+        public async Task<bool> RpcSetUserViewOnlyMode(bool value,int playerId)
         {
-            PlayerRef playerRef = PlayerRef.FromEncoded(id);
+            PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
             PhotonRPCBatcher.EnqueueRPC(() =>
-            { PhotonRPC.RPC_HistorySyncCompleted(m_Runner, playerRef);});
-            await Task.Yield();
+            { PhotonRPC.RPC_SetUserViewOnlyMode(m_Runner,value, targetPlayer); });
             return true;
         }
 
-        public async Task<bool> RpcSyncHistoryPercentage(int id, int exp, int snt)
+        public async Task<bool> RpcKickPlayerOut(int playerId)
         {
-            PlayerRef playerRef = PlayerRef.FromEncoded(id);
+            PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
             PhotonRPCBatcher.EnqueueRPC(() =>
-            { PhotonRPC.RPC_HistoryPercentageUpdate(m_Runner, playerRef, exp, snt);});
-            await Task.Yield();
+            { PhotonRPC.RPC_DisconnectRemoteUser(m_Runner, targetPlayer); });
             return true;
         }
 
-        public void SendLargeDataToPlayer(int playerId, byte[] largeData)
+        public void SendLargeDataToPlayer(int playerId, byte[] largeData, int percentage)
         {
             sequenceNumber++;
             PlayerRef playerRef = PlayerRef.FromEncoded(playerId);
             int dataHash = largeData.GetHashCode();
-            var key = ReliableKey.FromInts(playerId, sequenceNumber, dataHash, 0);
+            var key = ReliableKey.FromInts(playerId, sequenceNumber, dataHash, percentage);
             m_Runner.SendReliableDataToPlayer(playerRef, key, largeData);
+        }
+
+        public bool RpcMutePlayer(bool mute, int playerId)
+        {
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            {
+                PhotonRPC.RPC_MutePlayer(m_Runner, mute, playerId);
+            });
+            return true;
         }
 
         #endregion
@@ -549,6 +607,10 @@ namespace OpenBrush.Multiplayer
         {
             //Debug.Log("Server received complete reliable data");
 
+            int percentage;
+            key.GetInts(out _, out _, out _, out percentage);
+            //Debug.Log($"Data received with percentage: {percentage}%");
+
             byte[] receivedData = data.Array;
             if (receivedData == null || receivedData.Length == 0)
             {
@@ -556,8 +618,9 @@ namespace OpenBrush.Multiplayer
                 return;
             }
 
-            MultiplayerSceneSync.m_Instance.onLargeDataReceived?.Invoke(receivedData);
+            MultiplayerSceneSync.m_Instance.onLargeDataReceived?.Invoke(receivedData,percentage);
         }
+
 
         public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress)
         {
@@ -586,6 +649,7 @@ namespace OpenBrush.Multiplayer
         public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) { }
         public void OnObjectEnterAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) { }
         public void OnDisconnectedFromServer(NetworkRunner runner, NetDisconnectReason reason) { }
+
 
         #endregion
     }
