@@ -24,6 +24,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000010438099326}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 10, y: 10, z: 10}
@@ -32,7 +33,6 @@ Transform:
   - {fileID: 4000010267600154}
   - {fileID: 4000010915250370}
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &114000011240657384
 MonoBehaviour:
@@ -81,13 +81,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000012863469616}
+  serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4000011949354466}
-  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &114000013332822508
 MonoBehaviour:
@@ -120,9 +120,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_HapticBuzzLength: 0.01
   m_HapticPulses: 7
-  m_MeshMaterialInactive: {fileID: 2100000, guid: c3c67c655fefce843a4094dbcf752549,
+  m_MeshMaterialInactive: {fileID: 2100000, guid: 944168a567ae63548980d921b5cbcc5c,
     type: 2}
-  m_TriggerMaterialInactive: {fileID: 2100000, guid: c3c67c655fefce843a4094dbcf752549,
+  m_TriggerMaterialInactive: {fileID: 2100000, guid: 944168a567ae63548980d921b5cbcc5c,
     type: 2}
 --- !u!114 &5733822967690520026
 MonoBehaviour:
@@ -168,13 +168,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000013186975256}
+  serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4000011949354466}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &114000010919708240
 MonoBehaviour:
@@ -207,9 +207,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_HapticBuzzLength: 0.01
   m_HapticPulses: 7
-  m_MeshMaterialInactive: {fileID: 2100000, guid: c3c67c655fefce843a4094dbcf752549,
+  m_MeshMaterialInactive: {fileID: 2100000, guid: 944168a567ae63548980d921b5cbcc5c,
     type: 2}
-  m_TriggerMaterialInactive: {fileID: 2100000, guid: c3c67c655fefce843a4094dbcf752549,
+  m_TriggerMaterialInactive: {fileID: 2100000, guid: 944168a567ae63548980d921b5cbcc5c,
     type: 2}
 --- !u!114 &1658141134665010823
 MonoBehaviour:
