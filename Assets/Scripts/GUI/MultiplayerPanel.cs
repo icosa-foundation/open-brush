@@ -34,10 +34,16 @@ namespace TiltBrush
         [SerializeField] private TextMeshPro m_RoomOwnership;
         [SerializeField] private LocalizedString m_RoomOwnerString;
         [SerializeField] private LocalizedString m_NotRoomOwnerString;
+        [SerializeField] private TextMeshPro m_RoomAvailable;
+        [SerializeField] private LocalizedString m_RoomAvailableString;
+        [SerializeField] private LocalizedString m_NotRoomAvailableString;
+        [SerializeField] private TextMeshPro m_RoomMaxPlayer;
+        [SerializeField] private LocalizedString m_RoomMaxPlayerString;
         [SerializeField] private TextMeshPro m_AlertsErrors;
         [SerializeField] private LocalizedString m_AlertsErrorBeginnerModeActive;
         [SerializeField] private LocalizedString m_AlertsRoomAlreadyExistent;
         [SerializeField] private LocalizedString m_AlertsPassThroughAcive;
+        [SerializeField] private GameObject m_RoomSettingsButton;
 
         private PlayerPrefsDataStore m_multiplayer;
         private bool updateDisplay = false;
@@ -49,6 +55,7 @@ namespace TiltBrush
             {
                 data.roomName = value;
                 UpdateDisplay();
+                SaveRoomName(value);
             }
         }
 
@@ -74,6 +81,20 @@ namespace TiltBrush
             }
         }
 
+        private Tuple<int, int> MaxPlayersRange = new Tuple<int, int>(2, 8);
+        public int MaxPlayers
+        {
+            get { return data.maxPlayers; }
+            set
+            {
+                if (value < MaxPlayersRange.Item1) data.maxPlayers = MaxPlayersRange.Item1;
+                else if (value > MaxPlayersRange.Item2) data.maxPlayers = MaxPlayersRange.Item2;
+                else data.maxPlayers = value;
+                UpdateDisplay();
+                SaveMaxPlayerNumber(value);
+            }
+        }
+
         private RoomCreateData data;
 
         private List<Func<Tuple<bool, string>>> alertChecks;
@@ -82,10 +103,11 @@ namespace TiltBrush
         {
             data = new RoomCreateData
             {
-                roomName = GenerateUniqueRoomName(),
+                roomName = "default room",
                 @private = false,
                 maxPlayers = 4,
-                voiceDisabled = false
+                silentRoom = false,
+                viewOnlyRoom = false
             };
 
             alertChecks = new List<Func<Tuple<bool, string>>>
@@ -111,16 +133,44 @@ namespace TiltBrush
             updateDisplay = true;
         }
 
+        public async void RetrieveRoomName()
+        {
+            var storedRoomName = await m_multiplayer.GetAsync<string>("roomname");
+            RoomName = storedRoomName ?? GenerateUniqueRoomName();
+        }
+
+        private async void SaveRoomName(string roomName)
+        {
+            await m_multiplayer.StoreAsync("roomname", roomName);
+        }
+
         public async void RetrieveUsername()
         {
             var storedNickname = await m_multiplayer.GetAsync<string>("nickname");
             NickName = storedNickname ?? "Unnamed";
         }
 
-
         private async void SaveNickname(string nickname)
         {
             await m_multiplayer.StoreAsync("nickname", nickname);
+        }
+
+        public async void RetrieveMaxPlayers()
+        {
+            try
+            {
+                var storedMaxPlayers = await m_multiplayer.GetAsync<int>("maxPlayers");
+                MaxPlayers = storedMaxPlayers;
+            }
+            catch (KeyNotFoundException)
+            {
+                MaxPlayers = 4;
+            }
+        }
+
+        private async void SaveMaxPlayerNumber(int maxPlayers)
+        {
+            await m_multiplayer.StoreAsync("maxPlayers", maxPlayers);
         }
 
         protected override void OnEnablePanel()
@@ -129,6 +179,8 @@ namespace TiltBrush
 
             m_multiplayer = new PlayerPrefsDataStore("Multiplayer");
             RetrieveUsername();
+            RetrieveRoomName();
+            RetrieveMaxPlayers();
 
             if (MultiplayerManager.m_Instance == null) return;
             if (MultiplayerManager.m_Instance.State == ConnectionState.INITIALIZED || MultiplayerManager.m_Instance.State == ConnectionState.DISCONNECTED)
@@ -182,6 +234,7 @@ namespace TiltBrush
         {
             if (m_RoomNumber) m_RoomNumber.text = m_RoomNumberString.GetLocalizedString() + data.roomName;
             if (m_Nickname) m_Nickname.text = m_NicknameString.GetLocalizedString() + NickName;
+            if (m_RoomMaxPlayer) m_RoomMaxPlayer.text = m_RoomMaxPlayerString.GetLocalizedString() + MaxPlayers;
             Alerts();
             updateDisplay = false;
         }
@@ -223,6 +276,17 @@ namespace TiltBrush
         {
             if (!m_State) return;
             m_State.text = m_StatString.GetLocalizedString() + StateToString(newState);
+            if (newState == ConnectionState.IN_ROOM)
+            {
+                m_RoomOwnership.gameObject.SetActive(true);
+                m_RoomAvailable.gameObject.SetActive(false);
+            }
+            else
+            {
+                m_RoomOwnership.gameObject.SetActive(false);
+                m_RoomAvailable.gameObject.SetActive(true);
+            }
+            DisplayRoomSettingsButton(newState);
             UpdateDisplay();
         }
 
@@ -253,13 +317,48 @@ namespace TiltBrush
             }
         }
 
+        private void DisplayRoomSettingsButton(ConnectionState newState)
+        {
+            if (!m_RoomSettingsButton) return;
+
+            switch (newState)
+            {
+                case ConnectionState.IN_ROOM:
+                    m_RoomSettingsButton.SetActive(MultiplayerManager.m_Instance.IsUserRoomOwner());
+                    break;
+                case ConnectionState.INITIALIZING:
+                case ConnectionState.INITIALIZED:
+                case ConnectionState.DISCONNECTED:
+                case ConnectionState.DISCONNECTING:
+                case ConnectionState.CONNECTING:
+                case ConnectionState.AUTHENTICATING:
+                case ConnectionState.IN_LOBBY:
+                case ConnectionState.ERROR:
+                default:
+                    m_RoomSettingsButton.SetActive(false);
+                    break;
+            }
+        }
+
         private void OnRoomOwnershipUpdated(bool isRoomOwner)
         {
-            if (!m_RoomOwnership) return;
+            if (m_RoomOwnership)
+            {
+                var localizedOwnershipString = isRoomOwner ? m_RoomOwnerString : m_NotRoomOwnerString;
+                localizedOwnershipString.GetLocalizedStringAsync().Completed += handle =>
+                    { m_RoomOwnership.text = handle.Result; };
+            }
+            if (m_RoomAvailable)
+            {
+                var localizedAvailableString = isRoomOwner ? m_RoomAvailableString : m_NotRoomAvailableString;
+                localizedAvailableString.GetLocalizedStringAsync().Completed += handle =>
+                    { m_RoomAvailable.text = handle.Result; };
+            }
 
-            var localizedString = isRoomOwner ? m_RoomOwnerString : m_NotRoomOwnerString;
-            localizedString.GetLocalizedStringAsync().Completed += handle =>
-            { m_RoomOwnership.text = handle.Result; };
+            // Update settings button visibility
+            bool showRoomSettingsButton = MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM &&
+                MultiplayerManager.m_Instance.IsUserRoomOwner();
+            m_RoomSettingsButton.SetActive(showRoomSettingsButton);
         }
 
         private Tuple<bool, string> CheckAdvancedModeActive()

@@ -186,29 +186,34 @@ jobs:
             targetPlatform: StandaloneWindows64
             vrsdk: OpenXR
             cache: Windows
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: Windows Pimax
             targetPlatform: StandaloneWindows64
             vrsdk: OpenXR
             cache: Windows
             extra_defines: PIMAX_SUPPORTED
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: Windows Rift
             targetPlatform: StandaloneWindows64
             vrsdk: Oculus
             cache: Windows
             extra_defines: OCULUS_SUPPORTED
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: Linux
             targetPlatform: StandaloneLinux64
             vrsdk: Monoscopic  # All builds include monoscopic, but this one has no additional XrSdk, so we'll keep the name monoscopic
             cache: Linux
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: MacOS
             targetPlatform: StandaloneOSX
             vrsdk: Monoscopic
             cache: MacOS
             packages_to_remove: com.meta.xr.sdk.core
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: Android OpenXR
             targetPlatform: Android
@@ -216,6 +221,7 @@ jobs:
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
             versionSuffix: 0
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: Oculus Quest (1)
             targetPlatform: Android
@@ -225,6 +231,7 @@ jobs:
             versionSuffix: 0
             extra_defines: USE_QUEST_PACKAGE_NAME FORCE_QUEST_SUPPORT_DEVICE FORCE_FOCUSAWARE FORCE_HEADTRACKING
             packages_to_remove: com.meta.xr.sdk.platform com.meta.xr.sdk.utilities
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: Oculus Quest (2+)
             targetPlatform: Android
@@ -233,6 +240,7 @@ jobs:
             extraoptions: -btb-il2cpp
             versionSuffix: 1
             extra_defines: OCULUS_SUPPORTED USE_QUEST_PACKAGE_NAME
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: Android Pico
             targetPlatform: Android
@@ -241,6 +249,7 @@ jobs:
             extraoptions: -btb-il2cpp
             versionSuffix: 0
             extra_defines: PICO_SUPPORTED
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: Android Pico (CN)
             targetPlatform: Android
@@ -250,6 +259,7 @@ jobs:
             extraoptions: -btb-il2cpp -btb-disableAccountLogins
             versionSuffix: 1
             extra_defines: PICO_SUPPORTED
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: iOS Zapbox
             targetPlatform: iOS
@@ -258,6 +268,7 @@ jobs:
             extraoptions: -btb-il2cpp
             extra_defines: ZAPBOX_SUPPORTED
             packages_to_remove: com.unity.formats.usd
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2  # The Fusion plugin does *not* set FUSION_WEAVER and FUSION2 for iOS, unlike other platforms. However, it does get set elsewhere, but only when we go through the Editor. From the command line, it doesn't get set properly, and thus the builds fail without these two defines.
 
     steps:
       - name: Set masking
@@ -274,16 +285,51 @@ jobs:
           dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
           echo "Removing unneeded large packages"
           sudo apt update
-          sudo apt remove -y '^ghc-.*' '^dotnet-.*' azure-cli powershell google-chrome-stable firefox microsoft-edge-stable 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' default-jre-headless  mono-devel libgl1-mesa-dri # Removes ~6GB
-          sudo apt autoremove -y
-          sudo apt clean
+
+          echo "Disabling slow triggers and package update hooks"
+          sudo rm -rf /var/lib/man-db # remove man-db database completely
+          sudo mkdir -p /etc/dpkg/dpkg.cfg.d/
+          echo "path-exclude=/usr/share/man/*" | sudo tee /etc/dpkg/dpkg.cfg.d/01_nodoc > /dev/null
+          echo "path-exclude=/usr/share/icons/hicolor/*" | sudo tee -a /etc/dpkg/dpkg.cfg.d/01_nodoc > /dev/null
+          sudo dpkg-divert --local --rename --add /usr/bin/update-mime-database
+          sudo dpkg-divert --local --rename --add /usr/bin/update-desktop-database
+          sudo dpkg-divert --local --rename --add /usr/bin/update-icon-caches
+          sudo dpkg-divert --local --rename --add /usr/bin/mandb
+          sudo ln -sf /bin/true /usr/bin/mandb
+
+          # Disable dpkg triggers temporarily
+          if [ -d /var/lib/dpkg/triggers ]; then
+            sudo mv /var/lib/dpkg/triggers /var/lib/dpkg/triggers.bak
+            sudo mkdir -p /var/lib/dpkg/triggers
+          fi
+
+          # Force remove google-cloud-cli directly instead of using apt
+          echo "Removing Google Cloud CLI directly"
+          sudo rm -rf /usr/lib/google-cloud-sdk
+          sudo find /etc/apt/ /var/lib/dpkg/ -name 'google-cloud*' -delete
+
+          # Remove packages with faster options
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" -yq remove \
+            '^ghc-.*' '^dotnet-.*' azure-cli powershell google-chrome-stable firefox \
+            microsoft-edge-stable 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' \
+            default-jre-headless mono-devel libgl1-mesa-dri man-db hicolor-icon-theme
+
+          sudo apt-get autoremove -y --purge
+          sudo apt-get clean
+
+          if [ -d /var/lib/dpkg/triggers.bak ]; then
+            sudo rm -rf /var/lib/dpkg/triggers
+            sudo mv /var/lib/dpkg/triggers.bak /var/lib/dpkg/triggers
+          fi
+
           df -h /
           echo "Removing Android"
           sudo rm -rf /usr/local/lib/android # Removes ~9GB
           df -h /
           echo "Removing remaining large directories"
-          rm -rf /usr/share/dotnet/  # Removes ~1GB
-          rm -rf "$AGENT_TOOLSDIRECTORY"  # Removes ~7GB
+          sudo rm -rf /usr/share/dotnet/  # ~1GB
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"  # ~7GB
           echo "Disk space after cleanup"
           df -h /
 
@@ -374,6 +420,7 @@ jobs:
 
       - name: Restore Library/PackageCache
         id: cache_packagecache
+        if: false
         uses: actions/cache/restore@v4
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
@@ -449,15 +496,17 @@ jobs:
         run: |
           sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
 
-      - name: Add PHOTON_PAT specific define
-        if: ${{ env.PHOTON_PAT }}
-        run: |
-          echo -e "\n -define:MP_PHOTON \n -define:PHOTON_UNITY_NETWORKING \n-define:PUN_2_0_OR_NEWER \n-define:PUN_2_OR_NEWER \n-define:PUN_2_19_OR_NEWER \n-define:FUSION_WEAVER \n-define:FUSION2 \n-define:CROSS_PLATFORM_INPUT \n-define:MOBILE_INPUT \n-define:PHOTON_VOICE_DEFINED" | tee -a Assets/csc.rsp
-
       - name: Update build matrix specific defines in csc.rsp
         if: ${{ matrix.extra_defines }}
         run: |
           for DEFINE in ${{ matrix.extra_defines }}; do
+            echo -e "\n-define:$DEFINE" | tee -a Assets/csc.rsp
+          done
+
+      - name: Update build matrix specific defines in csc.rsp (PHOTON_PAT only)
+        if: ${{ env.PHOTON_PAT && matrix.extra_photon_defines }}
+        run: |
+          for DEFINE in ${{ matrix.extra_photon_defines }}; do
             echo -e "\n-define:$DEFINE" | tee -a Assets/csc.rsp
           done
 
@@ -510,6 +559,7 @@ jobs:
             !build/**/*_BackUpThisFolder_ButDontShipItWithYourGame
 
       - name: Check if packages-lock.json has changed or if it's cacheable
+        if: false
         id: check_packagecache
         run: |
           # Check if there are any changes to the packages-lock.json file
@@ -522,7 +572,7 @@ jobs:
 
       - name: Save Library/PackageCache cache
         uses: actions/cache/save@v4
-        if: github.ref == 'refs/heads/main' && steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
+        if: false && github.ref == 'refs/heads/main' && steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -1160,11 +1210,22 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          ignore-empty-workdir: true
+          enable-cache: false
+
+      - name: Install ArborXR CLI
+        run: |
+          uv tool install abxrcli
+
       - name: Download Build Artifacts (Oculus Quest 2+)
         uses: actions/download-artifact@v4
         with:
           name: Oculus Quest (2+)
           path: build_oculus_quest
+
       - name: Publish Oculus Builds
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
@@ -1180,18 +1241,18 @@ jobs:
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
 
           cd releases
-          wget -O arborxr-cli.zip https://graphql.xrdm.app/download/system-content/channel/fe7633a5-d733-4885-8b3c-580c11c4842d
-          unzip arborxr-cli.zip
-          ln -s arborxr-cli-linux-* arborxr-cli
-          chmod 755 arborxr-cli
 
+          set -x
           if [ "$PRERELEASE" == "false" ]
           then
-            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_LIVE_CHANNEL OpenBrush_Quest_$VERSION.apk
+            CHANGELOG="Version $VERSION"
+            ARBORXR_CHANNEL="${ARBORXR_LIVE_CHANNEL}"
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_BETA_CHANNEL OpenBrush_Quest_$VERSION.apk --release-notes "${CHANGELOG}"
+            ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
           fi
+          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION | jq -r '.id')"
+          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version $VERSION_ID
 
   publish_oculus_quest1_arborxr:
     name: Publish Oculus Quest 1 Release ArborXR
@@ -1203,6 +1264,16 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          ignore-empty-workdir: true
+          enable-cache: false
+
+      - name: Install ArborXR CLI
+        run: |
+          uv tool install abxrcli
+
       - name: Download Build Artifacts (Oculus Quest 1)
         uses: actions/download-artifact@v4
         with:
@@ -1223,18 +1294,17 @@ jobs:
           mv build_oculus_quest1/*/com.Icosa.OpenBrush*apk releases1/OpenBrush_Quest1_$VERSION.apk
 
           cd releases1
-          wget -O arborxr-cli.zip https://graphql.xrdm.app/download/system-content/channel/fe7633a5-d733-4885-8b3c-580c11c4842d
-          unzip arborxr-cli.zip
-          ln -s arborxr-cli-linux-* arborxr-cli
-          chmod 755 arborxr-cli
 
           if [ "$PRERELEASE" == "false" ]
           then
-            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_LIVE_CHANNEL OpenBrush_Quest1_$VERSION.apk
+            CHANGELOG="Version $VERSION"
+            ARBORXR_CHANNEL="${ARBORXR_LIVE_CHANNEL}"
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_BETA_CHANNEL OpenBrush_Quest1_$VERSION.apk --release-notes "${CHANGELOG}"
+            ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
           fi
+          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest1_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION | jq -r '.id')"
+          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version $VERSION_ID
 
   publish_oculus_rift:
     name: Publish Oculus Rift Release
@@ -1331,6 +1401,16 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          ignore-empty-workdir: true
+          enable-cache: false
+
+      - name: Install ArborXR CLI
+        run: |
+          uv tool install abxrcli
+
       - name: Download Build Artifacts (Android Pico)
         uses: actions/download-artifact@v4
         with:
@@ -1351,18 +1431,17 @@ jobs:
           mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
 
           cd releases
-          wget -O arborxr-cli.zip https://graphql.xrdm.app/download/system-content/channel/fe7633a5-d733-4885-8b3c-580c11c4842d
-          unzip arborxr-cli.zip
-          ln -s arborxr-cli-linux-* arborxr-cli
-          chmod 755 arborxr-cli
 
           if [ "$PRERELEASE" == "false" ]
           then
-            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_LIVE_CHANNEL OpenBrush_Pico_$VERSION.apk
+            CHANGELOG="Version $VERSION"
+            ARBORXR_CHANNEL="${ARBORXR_LIVE_CHANNEL}"
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_BETA_CHANNEL OpenBrush_Pico_$VERSION.apk --release-notes "${CHANGELOG}"
+            ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
           fi
+          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Pico_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION | jq -r '.id')"
+          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version $VERSION_ID
 
   publish_ios_zapbox:
     name: Publish Zapbox iOS
