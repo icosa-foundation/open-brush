@@ -31,7 +31,6 @@ Category {
       CGPROGRAM
       #pragma vertex vert
       #pragma fragment frag
-      #pragma multi_compile __ AUDIO_REACTIVE
       #pragma multi_compile __ HDR_EMULATED HDR_SIMPLE
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 

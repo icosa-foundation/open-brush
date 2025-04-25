@@ -27,7 +27,6 @@ Category {
 		CGPROGRAM
 		#pragma target 3.0
 		#pragma surface surf StandardSpecular vertex:vert addshadow
-		#pragma multi_compile __ AUDIO_REACTIVE
 		#pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 		#include "Assets/Shaders/Include/Brush.cginc"
 		#include "Assets/ThirdParty/Shaders/Noise.cginc"

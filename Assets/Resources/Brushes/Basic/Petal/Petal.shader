@@ -25,7 +25,6 @@ Shader "Brush/Special/Petal" {
     CGPROGRAM
       #pragma target 4.0
       #pragma surface surf StandardSpecular vertex:vert addshadow
-      #pragma multi_compile __ AUDIO_REACTIVE
       #pragma multi_compile __ ODS_RENDER
       #pragma multi_compile __ SELECTION_ON
       #include "Assets/Shaders/Include/Brush.cginc"

@@ -25,7 +25,6 @@ Shader "Brush/LoftedHueShift" {
 			CGPROGRAM
 			#pragma target 3.0
 			#pragma surface surf StandardSpecular vertex:vert addshadow
-			#pragma multi_compile __ AUDIO_REACTIVE
 			#pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 			#include "Assets/Shaders/Include/Brush.cginc"
 			#include "Assets/Shaders/Include/ColorSpace.cginc"
@@ -45,13 +44,20 @@ Shader "Brush/LoftedHueShift" {
 				PrepForOds(v.vertex);
 			}
 
+			float3 hue06_to_base_rgb_(in float hue06) {
+			  float r = -1 + abs(hue06 - 3);
+			  float g =  2 - abs(hue06 - 2);
+			  float b =  2 - abs(hue06 - 4);
+			  return saturate(float3(r, g, b));
+			}
+
 			void surf(Input IN, inout SurfaceOutputStandardSpecular o) {
 				fixed4 tex = tex2D(_MainTex, IN.uv_MainTex) * IN.color;
 
 				// Hijack colorspace to make a hue shift..this is probably awful and technically wrong?
 				float shift = 5;
 				shift += IN.color;
-				float3 hueshift = hue06_to_base_rgb(IN.color * shift);
+				float3 hueshift = hue06_to_base_rgb_(IN.color * shift);
 				fixed4 _ColorShift = float4(hueshift, 1);
 				float huevignette = pow(abs(IN.uv_MainTex - .5) * 2.0, 2.0);
 
