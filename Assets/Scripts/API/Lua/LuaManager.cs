@@ -1249,7 +1249,17 @@ namespace TiltBrush
 
             tr_CS.rotation = SelectionManager.m_Instance.QuantizeAngle(tr_CS.rotation);
 
-            if (transforms != null) DrawStrokes.DrawNestedTrList(transforms, tr_CS, result._Colors, brushScale);
+            if (transforms != null)
+            {
+                var matrices = PointerManager.m_Instance.GetSymmetryMatrices();
+                ApiManager.Instance.StartUndo();
+                foreach (var mat in matrices)
+                {
+                    TrTransform symTr = TrTransform.FromMatrix4x4(mat);
+                    DrawStrokes.DrawNestedTrList(transforms, symTr * tr_CS, result._Colors, brushScale);
+                }
+                ApiManager.Instance.EndUndo();
+            }
             if (result._Colors == null)
             {
                 // If our script doesn't generate colors

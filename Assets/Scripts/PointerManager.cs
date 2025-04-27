@@ -1810,5 +1810,95 @@ namespace TiltBrush
                 ChangeAllPointerColorsDirectly(GenerateJitteredColor(MainPointer.CurrentBrush.m_ColorLuminanceMin));
             }
         }
+
+        public List<Matrix4x4> GetSymmetryMatrices()
+        {
+            List<Matrix4x4> matrices = null;
+            switch (CurrentSymmetryMode)
+            {
+                case SymmetryMode.None:
+                    matrices = new List<Matrix4x4> { Matrix4x4.identity };
+                    break;
+                case SymmetryMode.SinglePlane:
+                    Plane plane = m_SymmetryWidgetScript.ReflectionPlane;
+                    TrTransform xf0 = Coords.AsCanvas[m_SymmetryWidget];
+                    TrTransform xf1 = plane.ReflectPoseKeepHandedness(xf0);
+                    matrices = new List<Matrix4x4> { Matrix4x4.identity, xf1.ToMatrix4x4() };
+                    break;
+                case SymmetryMode.MultiMirror:
+                    var xf_CS = Coords.AsCanvas[m_SymmetryWidget];
+                    matrices = CustomMirrorMatrices.Select(m =>
+                        m * xf_CS.ToMatrix4x4()).ToList();
+                    break;
+                case SymmetryMode.ScriptedSymmetryMode:
+                    CalcScriptedTransforms();
+                    var trs = PointerManager.m_Instance.m_ScriptedTransforms;
+                    matrices = trs.Select(tr => tr.ToMatrix4x4()).ToList();
+                    break;
+                // TODO - the other symmetry modes aren't used any more
+                // we should either remove them elsewhere or implement them here
+                // for the sake of consistency
+            }
+            return matrices;
+        }
+
+        public List<Stroke> DuplicateStrokesWithSymmetry(List<Stroke> strokes,
+                                                         List<Matrix4x4> matrices, CanvasScript targetCanvas)
+        {
+            List<Stroke> duplicatedStrokes = new List<Stroke>();
+            foreach (var stroke in strokes)
+            {
+                TrTransform strokeTransform_GS = Coords.AsGlobal[stroke.StrokeTransform];
+                TrTransform tr_GS;
+                var xfCenter_GS = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget.transform);
+                for (int i = 0; i < matrices.Count; i++)
+                {
+                    (TrTransform, TrTransform) trAndFix_WS;
+                    trAndFix_WS = PointerManager.m_Instance.TrFromMatrixWithFixedReflections(matrices[i]);
+                    tr_GS = xfCenter_GS * trAndFix_WS.Item1 * xfCenter_GS.inverse; // convert from widget-local coords to world coords
+                    var tmp = tr_GS * strokeTransform_GS * trAndFix_WS.Item2;      // Work around 2018.3.x Mono parse bug
+
+                    // TODO strokes don't work correctly with reflections and I can't figure out why
+                    // Same logic is working for widgets and pointers (whilst drawing)...
+                    // So skip reflected strokes for now
+                    if (trAndFix_WS.Item2 != TrTransform.identity) continue;
+
+                    tmp = targetCanvas.Pose.inverse * tmp;
+                    var duplicatedStroke = SketchMemoryScript.m_Instance.DuplicateStroke(stroke, targetCanvas, tmp);
+                    duplicatedStrokes.Add(duplicatedStroke);
+                }
+            }
+            return duplicatedStrokes;
+        }
+
+        public List<GrabWidget> DuplicateWidgetsWithSymmetry(List<GrabWidget> widgets, List<Matrix4x4> matrices, CanvasScript targetCanvas)
+        {
+            var duplicatedWidgets = new List<GrabWidget>();
+            foreach (var widget in widgets)
+            {
+                TrTransform widgetTransform_GS = TrTransform.FromTransform(widget.transform);
+                TrTransform tr_GS;
+                var xfCenter_GS = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget.transform);
+
+                // Generally speaking we want both sides of 2d media to appear
+                // when duplicating using multimirror
+                bool duplicateAsTwoSided = widget is Media2dWidget;
+
+                for (int i = 0; i < matrices.Count; i++)
+                {
+                    var duplicatedWidget = widget.Clone();
+                    if (duplicateAsTwoSided) ((Media2dWidget)duplicatedWidget).TwoSided = true;
+
+                    (TrTransform, TrTransform) trAndFix_WS;
+                    trAndFix_WS = PointerManager.m_Instance.TrFromMatrixWithFixedReflections(matrices[i]);
+                    tr_GS = xfCenter_GS * trAndFix_WS.Item1 * xfCenter_GS.inverse; // convert from widget-local coords to world coords
+                    var tmp = tr_GS * widgetTransform_GS * trAndFix_WS.Item2;      // Work around 2018.3.x Mono parse bug
+                    tmp.ToTransform(duplicatedWidget.transform);
+                    duplicatedWidget.SetCanvas(targetCanvas);
+                    duplicatedWidgets.Add(duplicatedWidget);
+                }
+            }
+            return duplicatedWidgets;
+        }
     }
 } // namespace TiltBrush

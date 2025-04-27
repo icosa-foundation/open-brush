@@ -37,25 +37,6 @@ namespace TiltBrush
             m_StampMode = stampMode;
             m_Transform = xf;
 
-            m_SelectedStrokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
-            m_DuplicatedStrokes = new List<Stroke>();
-            List<Matrix4x4> matrices = null;
-            List<TrTransform> fixTrs = null;
-
-            switch (PointerManager.m_Instance.CurrentSymmetryMode)
-            {
-                case PointerManager.SymmetryMode.MultiMirror:
-                    matrices = PointerManager.m_Instance.CustomMirrorMatrices.ToList();
-                    break;
-                case PointerManager.SymmetryMode.ScriptedSymmetryMode:
-                    // TODO not currently working
-                    PointerManager.m_Instance.CalcScriptedTransforms();
-                    // matrices = PointerManager.m_Instance.ScriptedTransforms;
-                    break;
-                case PointerManager.SymmetryMode.CustomSymmetryMode:
-                    break;
-            }
-
             if (m_StampMode)
             {
                 targetCanvas = m_CurrentCanvas;
@@ -65,56 +46,13 @@ namespace TiltBrush
                 targetCanvas = App.Scene.SelectionCanvas;
             }
 
-            foreach (var stroke in m_SelectedStrokes)
-            {
-                TrTransform strokeTransform_GS = Coords.AsGlobal[stroke.StrokeTransform];
-                TrTransform tr_GS;
-                var xfCenter_GS = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget.transform);
-                for (int i = 0; i < matrices.Count; i++)
-                {
-                    (TrTransform, TrTransform) trAndFix_WS;
-                    trAndFix_WS = PointerManager.m_Instance.TrFromMatrixWithFixedReflections(matrices[i]);
-                    tr_GS = xfCenter_GS * trAndFix_WS.Item1 * xfCenter_GS.inverse;                   // convert from widget-local coords to world coords
-                    var tmp = tr_GS * strokeTransform_GS * trAndFix_WS.Item2; // Work around 2018.3.x Mono parse bug
+            var matrices = PointerManager.m_Instance.GetSymmetryMatrices();
 
-                    // TODO strokes don't work correctly with reflections and I can't figure out why
-                    // Same logic is working for widgets and pointers (whilst drawing)...
-                    // So skip reflected strokes for now
-                    if (trAndFix_WS.Item2 != TrTransform.identity) continue;
-
-                    tmp = targetCanvas.Pose.inverse * tmp;
-                    var duplicatedStroke = SketchMemoryScript.m_Instance.DuplicateStroke(stroke, targetCanvas, tmp);
-                    m_DuplicatedStrokes.Add(duplicatedStroke);
-                }
-            }
-
+            m_SelectedStrokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
             m_SelectedWidgets = SelectionManager.m_Instance.SelectedWidgets.ToList();
-            m_DuplicatedWidgets = new List<GrabWidget>();
-            foreach (var widget in m_SelectedWidgets)
-            {
-                TrTransform widgetTransform_GS = TrTransform.FromTransform(widget.transform);
-                TrTransform tr_GS;
-                var xfCenter_GS = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget.transform);
 
-                // Generally speaking we want both sides of 2d media to appear
-                // when duplicating using multimirror
-                bool duplicateAsTwoSided = widget is Media2dWidget;
-
-                for (int i = 0; i < matrices.Count; i++)
-                {
-                    var duplicatedWidget = widget.Clone();
-                    if (duplicateAsTwoSided) ((Media2dWidget)duplicatedWidget).TwoSided = true;
-
-                    (TrTransform, TrTransform) trAndFix_WS;
-                    trAndFix_WS = PointerManager.m_Instance.TrFromMatrixWithFixedReflections(matrices[i]);
-                    tr_GS = xfCenter_GS * trAndFix_WS.Item1 * xfCenter_GS.inverse; // convert from widget-local coords to world coords
-                    var tmp = tr_GS * widgetTransform_GS * trAndFix_WS.Item2;   // Work around 2018.3.x Mono parse bug
-                    tmp.ToTransform(duplicatedWidget.transform);
-                    duplicatedWidget.SetCanvas(m_CurrentCanvas);
-                    m_DuplicatedWidgets.Add(duplicatedWidget);
-                }
-            }
-            GroupManager.MoveStrokesToNewGroups(m_DuplicatedStrokes, null);
+            m_DuplicatedStrokes = PointerManager.m_Instance.DuplicateStrokesWithSymmetry(m_SelectedStrokes, matrices, targetCanvas);
+            m_DuplicatedWidgets = PointerManager.m_Instance.DuplicateWidgetsWithSymmetry(m_SelectedWidgets, matrices, targetCanvas);
         }
 
         public override bool NeedsSave { get { return true; } }
