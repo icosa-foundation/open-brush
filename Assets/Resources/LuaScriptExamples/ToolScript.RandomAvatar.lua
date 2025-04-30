@@ -23,8 +23,8 @@ function requestNewAvatar()
     for i = 1, 8 do
         randomString = randomString .. string.char(Random:Range(97, 122))
     end
-    url = "https://api.multiavatar.com/" .. randomString .. ".svg"
-    -- url = "https://bit.ly/multiavatar"
+    -- url = "https://api.multiavatar.com/" .. randomString .. ".svg"
+    url = "https://bit.ly/multiavatar"
     WebRequest:Get(url, onGetAvatar)
 end
 
