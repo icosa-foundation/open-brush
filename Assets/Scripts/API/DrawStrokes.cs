@@ -12,169 +12,162 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using Unity.VectorGraphics;
 using UnityEngine;
+
 namespace TiltBrush
 {
     public static class DrawStrokes
     {
-
-        public static void SinglePathToStroke(List<List<float>> floatPath, Vector3 origin, float scale = 1f, bool rawStroke = false)
+        public static void DrawNestedTrList(
+            IEnumerable<IEnumerable<TrTransform>> pathEnumerable,
+            TrTransform tr,
+            List<Color> colors = null,
+            float brushScale = 1f,
+            float smoothing = 0,
+            uint group = GroupManager.kIdSketchGroupTagNone)
         {
-            var floatPaths = new List<List<List<float>>> { floatPath };
-            MultiPathsToStrokes(floatPaths, origin, scale, rawStroke);
-        }
-
-        public static void SinglePath2dToStroke(List<Vector2> polyline2d, Vector3 origin, float scale = 1f)
-        {
-            var polylines2d = new List<List<Vector2>> { polyline2d };
-            MultiPath2dToStrokes(polylines2d, origin, scale);
-        }
-
-        public static void PositionPathsToStroke(List<Vector3> path, Vector3 origin, float scale = 1f)
-        {
-            var positions = new List<List<Vector3>> { path };
-            MultiPositionPathsToStrokes(positions, null, null, origin, scale);
-        }
-
-        public static void MultiPathsToStrokes(List<List<List<float>>> strokeData, Vector3 origin, float scale = 1f, bool rawStroke = false)
-        {
-            var positions = new List<List<Vector3>>();
-            var orientations = new List<List<Quaternion>>();
-            var pressures = new List<List<float>>();
-
-            // This assumes that the stroke data is consistent.
-            // If we have orientation or pressure for the first point, we have it for all
-            bool orientationsExist = strokeData[0][0].Count == 6 || strokeData[0][0].Count == 7;
-            bool pressuresExist = strokeData[0][0].Count == 6 || strokeData[0][0].Count == 7;
-
-            foreach (List<List<float>> positionList in strokeData)
-            {
-                var positionsPath = new List<Vector3>();
-                var orientationsPath = new List<Quaternion>();
-                var pressuresPath = new List<float>();
-
-                foreach (List<float> controlPoint in positionList)
-                {
-                    if (controlPoint.Count < 3) { controlPoint.Add(0); }  // Handle 2D paths
-
-                    positionsPath.Add(new Vector3(controlPoint[0], controlPoint[1], controlPoint[2]));
-                    if (orientationsExist)
-                    {
-                        orientationsPath.Add(
-                            Quaternion.Euler(
-                                controlPoint[3],
-                                controlPoint[4],
-                                controlPoint[5]
-                            ));
-                    }
-                    if (pressuresExist)
-                    {
-                        pressuresPath.Add(controlPoint.Last());
-                    }
-                }
-                positions.Add(positionsPath);
-                if (orientationsExist) orientations.Add(orientationsPath);
-                if (pressuresExist) pressures.Add(pressuresPath);
-            }
-            MultiPositionPathsToStrokes(positions, orientations, pressures, origin, scale, rawStroke);
-        }
-
-        public static void MultiPath2dToStrokes(List<List<Vector2>> polylines2d, Vector3 origin, float scale = 1f, bool breakOnOrigin = false)
-        {
-            var positions = new List<List<Vector3>>();
-            foreach (List<Vector2> positionList in polylines2d)
-            {
-                var path = new List<Vector3>();
-                foreach (Vector2 position in positionList)
-                {
-                    path.Add(new Vector3(position.x, position.y, 0));
-                }
-                positions.Add(path);
-            }
-            MultiPositionPathsToStrokes(positions, null, null, origin, scale, breakOnOrigin);
-        }
-
-        public static void MultiPositionPathsToStrokes(List<List<Vector3>> positions, List<List<Quaternion>> orientations, List<List<float>> pressures, Vector3 origin, float scale = 1f, bool breakOnOrigin = false, bool rawStrokes = false)
-        {
+            var paths = pathEnumerable.ToList();
             var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
             uint time = 0;
-            float minPressure = PointerManager.m_Instance.MainPointer.CurrentBrush.PressureSizeMin(false);
-            float defaultPressure = Mathf.Lerp(minPressure, 1f, 0.5f);
-            var group = App.GroupManager.NewUnusedGroup();
-            for (var pathIndex = 0; pathIndex < positions.Count; pathIndex++)
+            int pathIndex = 0;
+            for (var i = 0; i < paths.Count; i++)
             {
+                var color = colors == null || i >= colors.Count ?
+                    App.BrushColor.CurrentColor : colors[i];
+                var item = paths[i];
+                if (item == null) continue;
+                var path = item.ToList();
                 // Single joined paths
-                var positionList = positions[pathIndex];
-                if (positionList.Count < 2) continue;
-                float lineLength = 0;
-                var controlPoints = new List<PointerManager.ControlPoint>();
-                for (var vertexIndex = 0; vertexIndex < positionList.Count - 1; vertexIndex++)
-                {
-                    var position = positionList[vertexIndex];
-                    Quaternion orientation = orientations?.Any() == true ?
-                        orientations[pathIndex][vertexIndex] :
-                        Quaternion.identity;
-                    float pressure = pressures?.Any() == true ?
-                        pressures[pathIndex][vertexIndex] :
-                        defaultPressure;
-                    var nextPosition = positionList[(vertexIndex + 1) % positionList.Count];
-                    // Fix for trailing zeros from SVG.
-                    // TODO Find out why and fix it properly
-                    if (breakOnOrigin && nextPosition == Vector3.zero)
-                    {
-                        break;
-                    }
+                if (path.Count < 2) continue;
+                int cpCount = path.Count - 1;
+                if (smoothing > 0) cpCount *= 3; // Three control points per original vertex
+                var controlPoints = new List<PointerManager.ControlPoint>(cpCount);
 
-                    if (rawStrokes)
+                for (var vertexIndex = 0; vertexIndex < path.Count - 1; vertexIndex++)
+                {
+                    Vector3 position = path[vertexIndex].translation;
+                    Quaternion orientation = path[vertexIndex].rotation;
+                    float pressure = path[vertexIndex].scale;
+                    Vector3 nextPosition = path[(vertexIndex + 1) % path.Count].translation;
+
+                    void addPoint(Vector3 pos)
                     {
-                        controlPoints.Add(new PointerManager.ControlPoint()
+                        controlPoints.Add(new PointerManager.ControlPoint
                         {
-                            m_Pos = position,
+                            m_Pos = pos,
                             m_Orient = orientation,
                             m_Pressure = pressure,
                             m_TimestampMs = time++
                         });
                     }
-                    else
-                    {
-                        // Create extra control points if needed
-                        // Procedural strokes need to have extra control points added to avoid being smoothed out.
-                        for (float step = 0; step <= 1f; step += 0.25f)
-                        {
-                            controlPoints.Add(new PointerManager.ControlPoint
-                            {
-                                m_Pos = (position + (nextPosition - position) * step) * scale + origin,
-                                m_Orient = orientation,
-                                m_Pressure = pressure,
-                                m_TimestampMs = time++
-                            });
-                        }
-                    }
 
-                    lineLength += (nextPosition - position).magnitude; // TODO Does this need scaling? Should be in Canvas space
+                    addPoint(position);
+                    if (smoothing > 0)
+                    {
+                        // smoothing controls much to pull extra vertices towards the middle
+                        // 0.25 smooths corners a lot, 0.1 is tighter
+                        addPoint(position);
+                        addPoint(position + (nextPosition - position) * smoothing);
+                        addPoint(position + (nextPosition - position) * .5f);
+                        addPoint(position + (nextPosition - position) * (1 - smoothing));
+                    }
                 }
+
                 var stroke = new Stroke
                 {
                     m_Type = Stroke.Type.NotCreated,
                     m_IntendedCanvas = App.Scene.ActiveCanvas,
                     m_BrushGuid = brush.m_Guid,
-                    m_BrushScale = 1f,
+                    m_BrushScale = brushScale,
                     m_BrushSize = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute,
-                    m_Color = App.BrushColor.CurrentColor,
+                    m_Color = color,
                     m_Seed = 0,
                     m_ControlPoints = controlPoints.ToArray(),
                 };
                 stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
-                stroke.Group = @group;
-                stroke.Recreate(null, App.Scene.ActiveCanvas);
+                stroke.Group = new SketchGroupTag(group);
+                stroke.Recreate(tr, App.Scene.ActiveCanvas);
                 if (pathIndex != 0) stroke.m_Flags = SketchMemoryScript.StrokeFlags.IsGroupContinue;
                 SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                    new BrushStrokeCommand(stroke, WidgetManager.m_Instance.ActiveStencil, 123) // TODO calc length
+                var undoParent = ApiManager.Instance.ActiveUndo;
+                var cmd = new BrushStrokeCommand(
+                    stroke, WidgetManager.m_Instance.ActiveStencil, 123, undoParent
                 );
+                if (undoParent == null)
+                {
+                    // No active undo. So actually perform the command
+                    SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+                }
+                pathIndex++;
             }
+        }
+
+        public static List<List<TrTransform>> SvgPathStringToApiPaths(string svgPathString)
+        {
+            var svgText = $"<svg xmlns=\"http: //www.w3.org/2000/svg\"><path d=\"{svgPathString}\"/></svg>";
+            return SvgDocumentToNestedPaths(svgText).paths;
+        }
+
+        public static (List<List<TrTransform>> paths, List<Color> colors) SvgDocumentToNestedPaths(
+            string svgText,
+            float offsetPerPath = 0,
+            bool includeColors = false
+        )
+        {
+            svgText = _PreProcessSvg(svgText);
+            var geoms = _ParseSvg(svgText);
+            var svgPolyline = new List<List<TrTransform>>(geoms.Count);
+            List<Color> colors = null;
+            if (includeColors)
+            {
+                colors = new List<Color>(geoms.Count);
+            }
+            float offset = 0;
+            for (var i = 0; i < geoms.Count; i++)
+            {
+                var geom = geoms[i];
+                var verts = new List<TrTransform>(geom.Vertices.Length);
+                for (var j = 0; j < geom.Vertices.Length; j++)
+                {
+                    var v = geom.Vertices[j];
+                    verts.Add(TrTransform.T(new Vector3(v.x, -v.y, offset))); // SVG is Y down, Unity is Y up
+                }
+                svgPolyline.Add(verts);
+                if (includeColors)
+                {
+                    colors.Add(geom.Color);
+                }
+                offset += offsetPerPath;
+            }
+            return (svgPolyline, colors);
+        }
+
+        private static string _PreProcessSvg(string svgText)
+        {
+            var colorString = ColorUtility.ToHtmlStringRGB(App.BrushColor.CurrentColor);
+            svgText = svgText.Replace("currentcolor", $"#{colorString}", StringComparison.OrdinalIgnoreCase);
+            return svgText;
+        }
+
+        private static List<VectorUtils.Geometry> _ParseSvg(string svgText, bool outlinesOnly = true, bool convexOutlinesOnly = false)
+        {
+            TextReader stringReader = new StringReader(svgText);
+            var sceneInfo = SVGParser.ImportSVG(stringReader);
+            VectorUtils.TessellationOptions tessellationOptions = new VectorUtils.TessellationOptions
+            {
+                StepDistance = 100.0f,
+                MaxCordDeviation = 0.5f,
+                MaxTanAngleDeviation = 0.1f,
+                SamplingStepSize = 0.01f,
+                OutlinesOnly = outlinesOnly,
+                ConvexOutlinesOnly = convexOutlinesOnly,
+            };
+            return VectorUtils.TessellateScene(sceneInfo.Scene, tessellationOptions);
         }
     }
 }
