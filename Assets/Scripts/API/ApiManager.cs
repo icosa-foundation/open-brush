@@ -21,6 +21,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using Newtonsoft.Json;
 using UnityEngine;
@@ -31,6 +32,7 @@ namespace TiltBrush
 {
     public class ApiManager : MonoBehaviour
     {
+        public const string WEBREQUEST_USER_AGENT = "Open Brush API Web Request";
         private const string ROOT_API_URL = "/api/v1";
         private const string BASE_USER_SCRIPTS_URL = "/scripts";
         private const string BASE_EXAMPLE_SCRIPTS_URL = "/examplescripts";
@@ -52,11 +54,24 @@ namespace TiltBrush
         private bool cameraViewRequested;
         private bool cameraViewGenerated;
 
-        [NonSerialized] public Vector3 BrushOrigin = new(0, 13, 3); // Good origin for monoscopic
+        public enum ForcePaintingMode
+        {
+            None,
+            ForcedOn,
+            ForcedOff,
+            ForceNewStroke,
+            WasForceNewStroke,
+        }
+
+        [NonSerialized] public Vector3 BrushOrigin = new Vector3(0, 13, 3);
         [NonSerialized] public Quaternion BrushInitialRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
-        [NonSerialized] public Vector3 BrushPosition;
-        [NonSerialized] public Quaternion BrushRotation;
-        public bool ForcePaintingOn = false;
+        [NonSerialized] public Vector3 BrushPosition = new Vector3(0, 13, 3); // Good origin for monoscopic
+        [NonSerialized] public float PathSmoothing = 0.1f;
+        [NonSerialized] public Quaternion BrushRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
+        [NonSerialized] public ForcePaintingMode ForcePainting;
+        [NonSerialized] public ForcePaintingMode PreviousForcePaintingMode;
+        public BaseCommand ActiveUndo { get; set; }
+
         private Dictionary<string, string> m_UserScripts;
         private Dictionary<string, string> m_ExampleScripts;
 
@@ -99,63 +114,6 @@ namespace TiltBrush
                 // m_FileWatcher.FileDeleted += OnScriptsDirectoryChanged; TODO
                 m_FileWatcher.EnableRaisingEvents = true;
             }
-            if (CommandExamples == null)
-            {
-                CommandExamples = new Dictionary<string, string>();
-            }
-            CommandExamples["draw.paths"] = "[[0,0,0],[1,0,0],[1,1,0]],[[0,0,-1],[-1,0,-1],[-1,1,-1]]";
-            CommandExamples["draw.path"] = "[0,0,0],[1,0,0],[1,1,0],[0,1,0]";
-            CommandExamples["draw.stroke"] = "[0,0,0,0,180,90,.75],[1,0,0,0,180,90,.75],[1,1,0,0,180,90,.75],[0,1,0,0,180,90,.75]";
-            CommandExamples["listenfor.strokes"] = "http://localhost:8000/";
-            CommandExamples["draw.polygon"] = "5,1,0";
-            CommandExamples["draw.text"] = "hello";
-            CommandExamples["draw.svg"] = "M 184,199 116,170 53,209.6 60,136.2 4.3,88";
-            CommandExamples["draw.camerapath"] = "0";
-            CommandExamples["brush.type"] = "ink";
-            CommandExamples["color.add.hsv"] = "0.1,0.2,0.3";
-            CommandExamples["color.add.rgb"] = "0.1,0.2,0.3";
-            CommandExamples["color.set.rgb"] = "0.1,0.2,0.3";
-            CommandExamples["color.set.hsv"] = "0.1,0.2,0.3";
-            CommandExamples["color.set.html"] = "darkblue";
-            CommandExamples["brush.size.set"] = ".5";
-            CommandExamples["brush.size.add"] = ".1";
-            CommandExamples["spectator.move.to"] = "1,1,1";
-            CommandExamples["spectator.move.by"] = "1,1,1";
-            CommandExamples["spectator.turn.y"] = "45";
-            CommandExamples["spectator.turn.x"] = "45";
-            CommandExamples["spectator.turn.z"] = "45";
-            CommandExamples["spectator.direction"] = "45,45,0";
-            CommandExamples["spectator.look.at"] = "1,2,3";
-            CommandExamples["spectator.mode"] = "circular";
-            CommandExamples["spectator.show"] = "panels";
-            CommandExamples["spectator.hide"] = "widgets";
-            CommandExamples["user.move.to"] = "1,1,1";
-            CommandExamples["user.move.by"] = "1,1,1";
-            CommandExamples["brush.move.to"] = "1,1,1";
-            CommandExamples["brush.move.by"] = "1,1,1";
-            CommandExamples["brush.move"] = "1";
-            CommandExamples["brush.draw"] = "1";
-            CommandExamples["brush.turn.y"] = "45";
-            CommandExamples["brush.turn.x"] = "45";
-            CommandExamples["brush.turn.z"] = "45";
-            CommandExamples["brush.look.at"] = "1,1,1";
-            CommandExamples["stroke.delete"] = "0";
-            CommandExamples["stroke.select"] = "0";
-            CommandExamples["strokes.select"] = "0,3";
-            CommandExamples["selection.trim"] = "2";
-            CommandExamples["selection.points.addnoise"] = "x,0.5";
-            CommandExamples["selection.points.quantize"] = "0.1";
-            CommandExamples["strokes.join"] = "0,2";
-            CommandExamples["stroke.add"] = "0";
-            CommandExamples["load.user"] = "0";
-            CommandExamples["load.curated"] = "0";
-            CommandExamples["load.liked"] = "0";
-            CommandExamples["load.drive"] = "0";
-            CommandExamples["load.named"] = "Untitled_0.tilt";
-            CommandExamples["showfolder.sketch"] = "0";
-            CommandExamples["import.model"] = "Andy\\Andy.obj";
-            CommandExamples["import.image"] = "TiltBrushLogo.png";
-            CommandExamples["import.video"] = "animated-logo.mp4";
             App.Instance.StateChanged += RunStartupScript;
         }
 
@@ -436,22 +394,41 @@ namespace TiltBrush
             }
         }
 
+        public (string paramInfo, string Description) GetCommandInfo(string endpoint)
+        {
+            var paramInfoText = new List<string>();
+            foreach (var param in endpoints[endpoint].parameterInfo)
+            {
+                string typeName = param.ParameterType.Name
+                    .Replace("Single", "float")
+                    .Replace("Int32", "int")
+                    .Replace("String", "string");
+                paramInfoText.Add($"{typeName} {param.Name}");
+            }
+            string paramInfo = String.Join(", ", paramInfoText);
+            return (paramInfo, endpoints[endpoint].Description);
+        }
+
+        public (string paramInfo, string Description) GetRuntimeCommandInfo(string luaName)
+        {
+            var paramInfoText = new List<string>();
+            // Convert lua name to Http Api name (split camel case parts and add ".")
+            string[] parts = Regex.Split(luaName, @"(?<!^)(?=[A-Z])");
+            string endpoint = string.Join(".", parts).ToLower();
+            foreach (var param in endpoints[endpoint].parameterInfo)
+            {
+                paramInfoText.Add($"{param.Name}");
+            }
+            string paramInfo = String.Join(", ", paramInfoText);
+            return (paramInfo, endpoints[endpoint].Description);
+        }
+
         Dictionary<string, (string, string)> ListApiCommandsAsStrings()
         {
             var commandList = new Dictionary<string, (string, string)>();
             foreach (var endpoint in endpoints.Keys)
             {
-                var paramInfoText = new List<string>();
-                foreach (var param in endpoints[endpoint].parameterInfo)
-                {
-                    string typeName = param.ParameterType.Name
-                        .Replace("Single", "float")
-                        .Replace("Int32", "int")
-                        .Replace("String", "string");
-                    paramInfoText.Add($"{typeName} {param.Name}");
-                }
-                string paramInfo = String.Join(", ", paramInfoText);
-                commandList[endpoint] = (paramInfo, endpoints[endpoint].Description);
+                commandList[endpoint] = GetCommandInfo(endpoint);
             }
             return commandList;
         }
@@ -539,14 +516,33 @@ namespace TiltBrush
             string wallpaperGroups = JsonConvert.SerializeObject(Enum.GetNames(typeof(PointSymmetry.Family)));
             html = html.Replace("{{wallpaperGroupsJson}}", wallpaperGroups);
 
-            string[] environmentNameList = EnvironmentCatalog.m_Instance.AllEnvironments
-                .Select(x => x.Description.Replace(" ", ""))
+            string[] environmentNameList = EnvironmentCatalog.m_Instance.m_EnvironmentDescriptions
+                .Select(x => x.Replace(" ", ""))
                 .ToArray();
+
             string environmentsJson = JsonConvert.SerializeObject(environmentNameList);
             html = html.Replace("{{environmentsJson}}", environmentsJson);
 
             string commandsJson = JsonConvert.SerializeObject(ListApiCommands());
             html = html.Replace("{{commandsJson}}", commandsJson);
+
+            var toolScripts = new List<string>();
+            var symmetryScripts = new List<string>();
+            var pointerScripts = new List<string>();
+            var backgroundScripts = new List<string>();
+
+            if (LuaManager.Instance.IsInitialized)
+            {
+                toolScripts = LuaManager.Instance.GetScriptNames(LuaApiCategory.ToolScript);
+                symmetryScripts = LuaManager.Instance.GetScriptNames(LuaApiCategory.SymmetryScript);
+                pointerScripts = LuaManager.Instance.GetScriptNames(LuaApiCategory.PointerScript);
+                backgroundScripts = LuaManager.Instance.GetScriptNames(LuaApiCategory.BackgroundScript);
+            }
+
+            html = html.Replace("{{toolScripts}}", JsonConvert.SerializeObject(toolScripts));
+            html = html.Replace("{{symmetryScripts}}", JsonConvert.SerializeObject(symmetryScripts));
+            html = html.Replace("{{pointerScripts}}", JsonConvert.SerializeObject(pointerScripts));
+            html = html.Replace("{{backgroundScripts}}", JsonConvert.SerializeObject(backgroundScripts));
 
             return html;
         }
@@ -628,6 +624,31 @@ namespace TiltBrush
 
         public bool HasOutgoingListeners => m_OutgoingApiListeners != null && m_OutgoingApiListeners.Count > 0;
 
+        // TODO Find a better home for this. It won't always be API specific
+        public CHRFont TextFont
+        {
+            get
+            {
+                if (m_TextFont == null)
+                {
+                    TextFont = Resources.Load<CHRFont>("arcade");
+                }
+                return m_TextFont;
+            }
+
+            set
+            {
+                m_TextFont = value;
+            }
+        }
+        private CHRFont m_TextFont;
+
+        public void SetTextFont(string chrData)
+        {
+            TextFont.DataRaw = chrData;
+            TextFont.Initialize();
+        }
+
         public void EnqueueOutgoingCommands(List<KeyValuePair<string, string>> commands)
         {
             if (!HasOutgoingListeners) return;
@@ -662,7 +683,7 @@ namespace TiltBrush
             foreach (var listenerUrl in m_OutgoingApiListeners)
             {
                 string getUri = $"{listenerUrl}?{command.Key}={command.Value}";
-                if (getUri.Length < 512)  // Actually limit is 2083 but let's be conservative 
+                if (getUri.Length < 512)  // Actually limit is 2083 but let's be conservative
                 {
                     StartCoroutine(GetRequest(getUri));
                 }
@@ -873,6 +894,35 @@ namespace TiltBrush
                     new ("draw.stroke", string.Join(",", pointsAsStrings))
                 }
             );
+        }
+
+        // Undo currently only affects stroke creation
+        // but any command can be supported as long as you set it's parent to ActiveUndo
+        // Mainly used by lua scripts at the moment.
+
+        public void StartUndo()
+        {
+            ActiveUndo = new BaseCommand();
+        }
+
+        public void EndUndo()
+        {
+            if (ActiveUndo != null && ActiveUndo.HasChildren)
+            {
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(ActiveUndo);
+            }
+            ActiveUndo = null;
+        }
+
+        public static bool ParameterRequiresScriptingKeyword(string parameter)
+        {
+            return parameter is
+                "_ClipStart" or
+                "_ClipEnd" or
+                "_Dissolve" or
+                "_TimeOverrideValue" or
+                "_TimeBlend" or
+                "_TimeSpeed";
         }
     }
 }
