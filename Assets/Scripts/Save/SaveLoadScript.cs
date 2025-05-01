@@ -267,7 +267,7 @@ namespace TiltBrush
         }
 
         // Create a name that is guaranteed not to exist.
-        public string GenerateNewFilename(string desiredFilename, string directory, string extension, string prefix)
+        public string GenerateNewFilename(string desiredFilename, string directory, string extension)
         {
             int iIndex = m_LastNonexistentFileIndex;
             int iSanity = 9999;
@@ -276,7 +276,7 @@ namespace TiltBrush
                 string attempt = desiredFilename;
                 if (iIndex > 0)
                 {
-                    attempt = prefix + iIndex.ToString();
+                    attempt = desiredFilename + iIndex.ToString();
                 }
                 --iSanity;
                 ++iIndex;
@@ -359,7 +359,7 @@ namespace TiltBrush
             {
                 uniquePath = tiltasaurusMode
                     ? GenerateNewTiltasaurusFilename(m_SaveDir, TILT_SUFFIX)
-                    : new DiskSceneFileInfo(GenerateNewFilename(m_SaveDir, TILT_SUFFIX, UNTITLED_PREFIX));
+                    : GenerateNewUntitledFilename(m_SaveDir, TILT_SUFFIX);
             }
             else
             {
@@ -376,6 +376,16 @@ namespace TiltBrush
         public DiskSceneFileInfo GetSceneFileInfoFromName(string name)
         {
             DiskSceneFileInfo fileInfo = new DiskSceneFileInfo(name);
+            if (m_LastSceneFile.Valid)
+            {
+                fileInfo.SourceId = TransferredSourceIdFrom(m_LastSceneFile);
+            }
+            return fileInfo;
+        }
+
+        public DiskSceneFileInfo GetNewSaveSelectedFileInfo()
+        {
+            DiskSceneFileInfo fileInfo = new DiskSceneFileInfo(GenerateNewFilename(m_SaveSelectedDir, TILT_SUFFIX, SAVESELECTED_PREFIX));
             if (m_LastSceneFile.Valid)
             {
                 fileInfo.SourceId = TransferredSourceIdFrom(m_LastSceneFile);

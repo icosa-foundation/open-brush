@@ -679,8 +679,8 @@ namespace TiltBrush
                 string lastAutosave = SaveLoadScript.m_Instance.MostRecentAutosaveFile();
                 if (lastAutosave != null)
                 {
-                    string newPath = SaveLoadScript.m_Instance.GenerateNewFilename(
-                        UserSketchPath(), SaveLoadScript.TILT_SUFFIX, SaveLoadScript.UNTITLED_PREFIX);
+                    string newPath = SaveLoadScript.m_Instance.GenerateNewUntitledFilename(
+                        UserSketchPath(), SaveLoadScript.TILT_SUFFIX);
                     if (newPath != null)
                     {
                         File.Copy(lastAutosave, newPath);

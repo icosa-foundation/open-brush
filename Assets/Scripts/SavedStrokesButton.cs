@@ -34,7 +34,7 @@ namespace TiltBrush
                     SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true, false, false);
                 }
                 var strokes = SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes();
-                var widgets = WidgetManager.m_Instance.GetAllUnselectedActiveWidgets();
+                var widgets = WidgetManager.m_Instance.GetAllUnselectedActiveWidgets(null);
                 var group = App.GroupManager.NewUnusedGroup();
                 for (int i = 0; i < strokes.Count; i++) { strokes[i].Group = group; }
                 for (int i = 0; i < widgets.Count; i++) { widgets[i].Group = group; }
