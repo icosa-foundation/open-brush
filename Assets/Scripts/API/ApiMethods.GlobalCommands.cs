@@ -59,15 +59,6 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 1);
         }
 
-        [ApiEndpoint("save.as", "Saves the current scene with the given name")]
-        public static void SaveAs(string filename)
-        {
-            var rEnum = SketchControlsScript.GlobalCommands.SaveNew;
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 1);
-            rEnum = SketchControlsScript.GlobalCommands.RenameSketch;
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 0, (int)SketchSetType.User, sParam: filename);
-        }
-
         [ApiEndpoint("icosa.login", "Login to the Icosa Gallery using a username and password")]
         public static void IcosaLogin(string username, string password)
         {
