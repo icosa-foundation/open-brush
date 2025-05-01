@@ -301,7 +301,7 @@ namespace TiltBrush
             return false;
         }
 
-        void Update()
+        protected void Update()
         {
             switch (m_CurrentState)
             {

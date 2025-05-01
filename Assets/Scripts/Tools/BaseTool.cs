@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using Color = UnityEngine.Color;
 
 namespace TiltBrush
 {
@@ -47,6 +48,7 @@ namespace TiltBrush
             EmptyTool,
             CameraPathTool,
             FlyTool,
+            ScriptedTool = 6001,
             SnipTool = 11000,
             JoinTool = 11001
         }
@@ -146,6 +148,19 @@ namespace TiltBrush
 
         virtual public void UpdateTool()
         {
+            if (LuaManager.Instance.IsInitialized)
+            {
+                // Free paint tool does this in PositionPointer instead
+                Transform brushTr = InputManager.m_Instance.GetBrushControllerAttachPoint();
+                Transform wandTr = InputManager.m_Instance.GetWandControllerAttachPoint();
+                Transform headTr = ViewpointScript.Head;
+                LuaManager.Instance.RecordPointerPositions(
+                    brushTr.position, brushTr.rotation,
+                    wandTr.position, wandTr.rotation,
+                    headTr.position, headTr.rotation
+                );
+            }
+
             if (m_EatInput)
             {
                 if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
@@ -315,6 +330,14 @@ namespace TiltBrush
             Vector3 vProjectedPoint = segmentRay.GetPoint(fDistToCenterProj);
             Vector3 vToProjectedPoint = vProjectedPoint - vSphereCenter;
             return vToProjectedPoint.sqrMagnitude <= fSphereRadSq;
+        }
+
+        protected virtual (Vector3, Quaternion) GetPointerPosition()
+        {
+            Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
+            Vector3 pos_GS = rAttachPoint.position;
+            Quaternion rot_GS = rAttachPoint.rotation;
+            return (pos_GS, rot_GS);
         }
     }
 } // namespace TiltBrush
