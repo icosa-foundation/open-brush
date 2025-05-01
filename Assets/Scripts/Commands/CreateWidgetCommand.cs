@@ -100,6 +100,7 @@ namespace TiltBrush
                     case StencilWidget:
                     case LightWidget:
                     case ImageWidget:
+                    case TextWidget:
                     case VideoWidget:
                     case SoundClipWidget:
                         m_Widget.transform.parent = m_Canvas.transform;

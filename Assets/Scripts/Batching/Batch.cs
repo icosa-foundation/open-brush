@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -35,6 +36,12 @@ namespace TiltBrush
         /// Sorted by initial vert index
         /// (if this is violated, RemoveSubset() will fail)
         public List<BatchSubset> m_Groups;
+#if UNITY_EDITOR
+        public bool m_EditorDebug;
+        public Mesh m_EditorDebugMesh;
+        public Vector3 m_EditorDebugMeshScale;
+#endif
+        public BrushDescriptor Brush => BrushCatalog.m_Instance.GetBrush(m_ParentPool.m_BrushGuid);
 
         /// Returns the BatchManager timestamp of the last time the Batch's mesh was written to.
         public int LastMeshUpdate { get { return m_LastMeshUpdate; } }
@@ -92,6 +99,27 @@ namespace TiltBrush
         {
             UpdateMesh();
         }
+
+#if UNITY_EDITOR
+        private void OnDrawGizmos()
+        {
+            if (m_Groups == null || !m_EditorDebug) return;
+            if (m_EditorDebugMesh == null) m_EditorDebugMesh = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
+            if (m_EditorDebugMeshScale == Vector3.zero) m_EditorDebugMeshScale = new Vector3(0.1f, 0.1f, 0.7f);
+            foreach (var subset in m_Groups)
+            {
+                var stroke = subset.m_Stroke;
+                if (!subset.m_Active || stroke.m_Type == Stroke.Type.NotCreated) continue;
+                foreach (var cp in stroke.m_ControlPoints)
+                {
+                    var tr = TrTransform.TR(cp.m_Pos, cp.m_Orient);
+                    tr = stroke.Canvas.Pose * tr;
+                    Gizmos.DrawMesh(m_EditorDebugMesh, tr.translation, tr.rotation, m_EditorDebugMeshScale);
+                    Debug.DrawRay(tr.translation, tr.rotation * Vector3.forward);
+                }
+            }
+        }
+#endif
 
         void Init(BatchPool parentPool, Bounds bounds, ushort batchId)
         {
@@ -203,6 +231,8 @@ namespace TiltBrush
         /// Note that empty batches will accept verts up to the Unity VB limit.
         public bool HasSpaceFor(int nVert)
         {
+            // OneStrokePerBatch flag forces all strokes on this canvas into separate gameobjects
+            if (ParentPool.Owner.OneStrokePerBatch && m_Groups.Count >= 1) return false;
             // The limit above which we try not to go (This must be a multiple of 3)
             int max_verts = App.UserConfig.Flags.LargeMeshSupport ? 2147483646 : 15999;
             return m_Geometry.NumVerts + nVert <= max_verts;
@@ -319,7 +349,7 @@ namespace TiltBrush
                 m_bTopologyDirty = false; // The topology gets updated in CopyToMesh().
                 m_Geometry.CopyToMesh(m_MeshFilter.mesh);
                 Bounds bounds = m_MeshFilter.mesh.bounds;
-                bounds.Expand(BrushCatalog.m_Instance.GetBrush(m_ParentPool.m_BrushGuid).m_BoundsPadding *
+                bounds.Expand(Brush.m_BoundsPadding *
                     2 * App.METERS_TO_UNITS * Vector3.one);
                 m_MeshFilter.mesh.bounds = bounds;
                 m_LastMeshUpdate = m_ParentPool.Owner.CurrentTimestamp;

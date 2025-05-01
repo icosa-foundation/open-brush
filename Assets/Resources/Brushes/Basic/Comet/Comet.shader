@@ -18,6 +18,15 @@ Properties {
   _AlphaMask("Alpha Mask", 2D) = "white" {}
   _Speed ("Animation Speed", Range (0,1)) = 1
   _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
+
+  _Opacity ("Opacity", Range(0, 1)) = 1
+  _Dissolve ("Dissolve", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -37,6 +46,7 @@ Category {
       #pragma multi_compile __ HDR_EMULATED HDR_SIMPLE
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
       #pragma multi_compile __ SELECTION_ON
+
       #include "UnityCG.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
@@ -49,11 +59,17 @@ Category {
       float _Speed;
       half _EmissionGain;
 
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
+      uniform half _Dissolve;
+      uniform half _Opacity;
+
       struct appdata_t {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float3 normal : NORMAL;
         float3 texcoord : TEXCOORD0;
+        uint id : SV_VertexID;
 
         UNITY_VERTEX_INPUT_INSTANCE_ID
       };
@@ -62,6 +78,7 @@ Category {
         float4 pos : POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        uint id : TEXCOORD2;
 
         UNITY_VERTEX_OUTPUT_STEREO
       };
@@ -85,16 +102,22 @@ Category {
         v.vertex.xyz += displacement;
 #endif
         o.pos = UnityObjectToClipPos(v.vertex);
+        o.id = (float2)v.id;
         return o;
       }
 
       fixed4 frag (v2f i) : COLOR
       {
+        #ifdef SHADER_SCRIPTING_ON
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+        if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+        #endif
+
         // Set up some staggered scrolling for "fire" effect
 #ifdef AUDIO_REACTIVE
-        float time = (_Time.x * 2 + _BeatOutputAccum.w) * -_Speed;
+        float time = (GetTime().x * 2 + _BeatOutputAccum.w) * -_Speed;
 #else
-        float time = _Time.y * -_Speed;
+        float time = GetTime().y * -_Speed;
 #endif
         fixed2 scrollUV = i.texcoord;
         fixed2 scrollUV2 = i.texcoord;
@@ -121,7 +144,7 @@ Category {
 
         float4 color =  encodeHdr ((tex * i.color).rgb );
         FRAG_MOBILESELECT(color)
-        return color;
+        return color * _Opacity;
       }
       ENDCG
     }
