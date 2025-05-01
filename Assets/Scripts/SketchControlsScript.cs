@@ -4291,20 +4291,6 @@ namespace TiltBrush
                         EatGazeObjectInput();
                         break;
                     }
-                case GlobalCommands.SaveAs:
-                    {
-                        if (!FileUtils.CheckDiskSpaceWithError(App.UserSketchPath()))
-                        {
-                            return;
-                        }
-                        if (iParam1 == 1)
-                        {
-                            GenerateBoundingBoxSaveIcon();
-                        }
-                        StartCoroutine(SaveLoadScript.m_Instance.SaveAs(sParam));
-                        EatGazeObjectInput();
-                        break;
-                    }
                 case GlobalCommands.SaveAndUpload:
                     {
                         if (!FileUtils.CheckDiskSpaceWithError(App.UserSketchPath()))

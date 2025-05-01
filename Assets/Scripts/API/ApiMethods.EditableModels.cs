@@ -63,7 +63,7 @@ namespace TiltBrush
         )]
         public static ModelWidget ImportEditableModel(string location)
         {
-            return _ImportModel(location, true);
+            return ImportModel(location, true);
         }
 
         [ApiEndpoint(
@@ -101,7 +101,7 @@ namespace TiltBrush
             "Imports a model given a url or a filename in Media Library\\Models (Models loaded from a url are saved locally first)",
             "Andy\\Andy.obj"
         )]
-        public static ModelWidget ImportModel(string location)
+        public static ModelWidget ImportModel(string location, bool editable=false)
         {
             if (location.StartsWith("poly:"))
             {
@@ -175,11 +175,12 @@ namespace TiltBrush
                     return null;
                 }
 
-            WidgetManager.m_Instance.WidgetsDormant = false;
-            SketchControlsScript.m_Instance.EatGazeObjectInput();
-            SelectionManager.m_Instance.RemoveFromSelection(false);
+                WidgetManager.m_Instance.WidgetsDormant = false;
+                SketchControlsScript.m_Instance.EatGazeObjectInput();
+                SelectionManager.m_Instance.RemoveFromSelection(false);
 
-            return widget;
+                return widget;
+            }
         }
 
         private static EditableModelWidget GetActiveEditableModel(int index)
