@@ -21,6 +21,7 @@ using System.Linq;
 using TiltBrush.Layers;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Random = UnityEngine.Random;
 using SymmetryMode = TiltBrush.PointerManager.SymmetryMode;
 
 namespace TiltBrush
@@ -186,8 +187,13 @@ namespace TiltBrush
             OpenScriptsList = 6001,
             OpenExampleScriptsList = 6002,
             SymmetryTwoHanded = 6003,
+            ScriptedSymmetryCommand = 6004,
+            OpenScriptParametersPopup = 6005,
+            SaveAs = 6006,
             OpenColorOptionsPopup = 7000,
             ChangeSnapAngle = 8000,
+            OpenColorPicker = 9000,
+            OpenTexturePicker = 9001,
             MergeBrushStrokes = 10000,
             RepaintOptions = 11500,
             OpenNumericInputPopup = 12000
@@ -814,6 +820,11 @@ namespace TiltBrush
             get { return GetComponent<IconTextureAtlas>(); }
         }
         public GrabWidget CurrentGrabWidget => m_CurrentGrabWidget;
+        public bool AutoOrientAfterRotation
+        {
+            get => m_AutoOrientAfterRotation;
+            set => m_AutoOrientAfterRotation = value;
+        }
 
         void DismissPopupOnCurrentGazeObject(bool force)
         {
@@ -934,7 +945,7 @@ namespace TiltBrush
             m_UndoHold_Timer = m_UndoRedoHold_DurationBeforeStart;
             m_RedoHold_Timer = m_UndoRedoHold_DurationBeforeStart;
 
-            m_AutoOrientAfterRotation = true;
+            AutoOrientAfterRotation = true;
             m_RotationCursor.gameObject.SetActive(false);
 
             ResetGrabbedPose();
@@ -1114,8 +1125,32 @@ namespace TiltBrush
                             Vector3 vPointerForward = Vector3.zero;
                             m_SketchSurfacePanel.GetReticleTransform(out vPointerPos, out vPointerForward,
                                 (m_ControlsType == ControlsType.ViewingOnly));
-                            PointerManager.m_Instance.SetMainPointerPosition(vPointerPos);
-                            PointerManager.m_Instance.SetMainPointerForward(vPointerForward);
+
+                            if (!App.VrSdk.IsHmdInitialized())
+                            {
+                                vPointerPos = ViewpointScript.Head.rotation * vPointerPos;
+                            }
+
+                            if (App.Config.m_SdkMode == SdkMode.Monoscopic || !App.VrSdk.IsHmdInitialized())
+                            {
+                                Quaternion vPointerRot = Quaternion.identity;
+
+                                if (LuaManager.Instance.IsInitialized)
+                                {
+                                    LuaManager.Instance.RecordPointerPositions(
+                                        vPointerPos, vPointerRot,
+                                        vPointerPos, vPointerRot, // No wand transform so use brush
+                                        ViewpointScript.Head.position, ViewpointScript.Head.rotation
+                                    );
+
+                                    if (LuaManager.Instance.PointerScriptsEnabled)
+                                    {
+                                        LuaManager.Instance.ApplyPointerScript(Quaternion.identity, ref vPointerPos, ref vPointerRot);
+                                    }
+                                }
+                                vPointerForward = vPointerRot * vPointerForward;
+                            }
+                            PointerManager.m_Instance.SetMainPointerPositionAndForward(vPointerPos, vPointerForward);
                         }
 
                         m_SketchSurfacePanel.AllowDrawing(m_InputStateConfigs[(int)m_CurrentInputState].m_AllowDrawing);
@@ -1399,11 +1434,12 @@ namespace TiltBrush
                     InputManager.KeyboardShortcut.CycleSymmetryMode))
                 {
                     var cur = PointerManager.m_Instance.CurrentSymmetryMode;
-                    var next = (cur == SymmetryMode.None) ? SymmetryMode.SinglePlane
-                        : (cur == SymmetryMode.SinglePlane) ? SymmetryMode.DebugMultiple
-                        : (cur == SymmetryMode.DebugMultiple) ? SymmetryMode.MultiMirror
-                        : (cur == SymmetryMode.MultiMirror) ? SymmetryMode.TwoHanded
-                        : SymmetryMode.None;
+                    var next = (cur == PointerManager.SymmetryMode.None) ? PointerManager.SymmetryMode.SinglePlane
+                        : (cur == PointerManager.SymmetryMode.SinglePlane) ? PointerManager.SymmetryMode.DebugMultiple
+                        : (cur == PointerManager.SymmetryMode.DebugMultiple) ? PointerManager.SymmetryMode.MultiMirror
+                        : (cur == PointerManager.SymmetryMode.MultiMirror) ? PointerManager.SymmetryMode.TwoHanded
+                        : (cur == PointerManager.SymmetryMode.TwoHanded) ? PointerManager.SymmetryMode.ScriptedSymmetryMode
+                        : PointerManager.SymmetryMode.None;
                     PointerManager.m_Instance.CurrentSymmetryMode = next;
                 }
                 else if (InputManager.m_Instance.GetKeyboardShortcutDown(
@@ -2709,11 +2745,17 @@ namespace TiltBrush
             if (RenderSettings.skybox)
             {
                 Quaternion sceneQuaternion = App.Instance.m_SceneTransform.rotation;
-                RenderSettings.skybox.SetVector(
-                    "_SkyboxRotation",
-                    new Vector4(sceneQuaternion.x, sceneQuaternion.y, sceneQuaternion.z, sceneQuaternion.w));
+                if (SceneSettings.m_Instance.HasCustomSkybox())
+                {
+                    RenderSettings.skybox.SetFloat("_Rotation", -sceneQuaternion.eulerAngles.y);
+                }
+                else
+                {
+                    RenderSettings.skybox.SetVector(
+                        "_SkyboxRotation",
+                        new Vector4(sceneQuaternion.x, sceneQuaternion.y, sceneQuaternion.z, sceneQuaternion.w));
+                }
             }
-
             // Update last frame members.
             m_AllowWorldTransformLastFrame = bAllowWorldTransform;
         }
@@ -3427,7 +3469,7 @@ namespace TiltBrush
                 m_SurfaceRight = m_SketchSurface.transform.right;
                 m_SurfaceUp = m_SketchSurface.transform.up;
 
-                if (!m_RotationRollActive && m_AutoOrientAfterRotation && m_SketchSurfacePanel.IsSketchSurfaceToolActive())
+                if (!m_RotationRollActive && AutoOrientAfterRotation && m_SketchSurfacePanel.IsSketchSurfaceToolActive())
                 {
                     //get possible auto rotations
                     Quaternion qQuatUp = OrientSketchSurfaceToUp();
@@ -4229,6 +4271,20 @@ namespace TiltBrush
                         EatGazeObjectInput();
                         break;
                     }
+                case GlobalCommands.SaveAs:
+                    {
+                        if (!FileUtils.CheckDiskSpaceWithError(App.UserSketchPath()))
+                        {
+                            return;
+                        }
+                        if (iParam1 == 1)
+                        {
+                            GenerateBoundingBoxSaveIcon();
+                        }
+                        StartCoroutine(SaveLoadScript.m_Instance.SaveAs(sParam));
+                        EatGazeObjectInput();
+                        break;
+                    }
                 case GlobalCommands.SaveAndUpload:
                     {
                         if (!FileUtils.CheckDiskSpaceWithError(App.UserSketchPath()))
@@ -4312,40 +4368,48 @@ namespace TiltBrush
                     PromoManager.m_Instance.RequestAdvancedPanelsPromo();
                     break;
                 case GlobalCommands.SymmetryPlane:
-                    if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.SinglePlane)
+                    if (PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.SinglePlane)
                     {
-                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.SinglePlane);
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.SinglePlane);
                         ControllerConsoleScript.m_Instance.AddNewLine("Mirror Enabled");
                     }
                     else
                     {
-                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.None);
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None);
                         ControllerConsoleScript.m_Instance.AddNewLine("Mirror Off");
                     }
                     break;
                 case GlobalCommands.MultiMirror:
-                    if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.MultiMirror)
+                    if (PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.MultiMirror)
                     {
-                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.MultiMirror);
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
                         ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Enabled");
                     }
                     else
                     {
-                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.None);
-                        ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Off");
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None);
                     }
                     InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
                     break;
                 case GlobalCommands.SymmetryTwoHanded:
-                    if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.TwoHanded)
+                    if (PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.TwoHanded)
                     {
-                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.TwoHanded);
-                        ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Enabled");
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.TwoHanded);
                     }
                     else
                     {
-                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.None);
-                        ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Off");
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None);
+                    }
+                    InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
+                    break;
+                case GlobalCommands.ScriptedSymmetryCommand:
+                    if (PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.ScriptedSymmetryMode)
+                    {
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.ScriptedSymmetryMode);
+                    }
+                    else
+                    {
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None);
                     }
                     InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
                     break;
@@ -4361,8 +4425,8 @@ namespace TiltBrush
                     }
                     break;
                 case GlobalCommands.AutoOrient:
-                    m_AutoOrientAfterRotation = !m_AutoOrientAfterRotation;
-                    if (m_AutoOrientAfterRotation)
+                    AutoOrientAfterRotation = !AutoOrientAfterRotation;
+                    if (AutoOrientAfterRotation)
                     {
                         ControllerConsoleScript.m_Instance.AddNewLine("Auto-Orient On");
                     }
@@ -4389,13 +4453,7 @@ namespace TiltBrush
                     break;
                 case GlobalCommands.ViewOnly:
                     m_ViewOnly = !m_ViewOnly;
-                    RequestPanelsVisibility(!m_ViewOnly);
-                    PointerManager.m_Instance.RequestPointerRendering(!m_ViewOnly);
-                    // TODO - decide if this is a permanent change
-                    // With this line, you can't set a tool such as fly or teleport
-                    // and switch to View Only mode as the mode change disables all tools
-                    //m_SketchSurface.SetActive(!m_ViewOnly);
-                    m_Decor.SetActive(!m_ViewOnly);
+                    ViewOnly(m_ViewOnly);
                     break;
                 case GlobalCommands.SaveGallery:
                     m_SketchSurfacePanel.EnableSpecificTool(BaseTool.ToolType.SaveIconTool);
@@ -4657,7 +4715,10 @@ namespace TiltBrush
                     }
                     break;
                 case GlobalCommands.ShowGoogleDrive:
-                    string baseDriveUrl = "https://drive.google.com";
+                    string folderId = App.GoogleUserSettings.DriveSyncFolderId;
+                    string baseDriveUrl = string.IsNullOrEmpty(folderId) ?
+                        "https://drive.google.com" :
+                        $"https://drive.google.com/drive/folders/{folderId}";
                     string driveURL = !App.GoogleIdentity.LoggedIn ? baseDriveUrl :
                         string.Format(
                             "http://accounts.google.com/AccountChooser?Email={0}&continue={1}",
@@ -4675,7 +4736,7 @@ namespace TiltBrush
                         int selectedVerts = SelectionManager.m_Instance.NumVertsInSelection;
 
                         // TODO - this code has never taken imported models etc into account
-                        if (PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.MultiMirror)
+                        if (PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.MultiMirror)
                         {
                             selectedVerts *= PointerManager.m_Instance.CustomMirrorMatrices.Count;
                         }
@@ -4706,9 +4767,9 @@ namespace TiltBrush
                         m_WidgetManager.CameraPathsVisible = false;
                         App.Switchboard.TriggerStencilModeChanged();
                         m_SketchSurfacePanel.EnsureUserHasBasicToolEnabled();
-                        if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.None)
+                        if (PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.None)
                         {
-                            PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.None, false);
+                            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None, false);
                         }
                     }
                     PromoManager.m_Instance.RecordCompletion(PromoType.AdvancedPanels);
@@ -4752,11 +4813,11 @@ namespace TiltBrush
                     PointerManager.m_Instance.BringSymmetryToUser();
                     break;
                 case GlobalCommands.InvertSelection:
-                    SelectionManager.m_Instance.InvertSelection();
+                    SelectionManager.m_Instance.InvertSelection(App.ActiveCanvas);
                     break;
                 case GlobalCommands.SelectAll:
                     SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.SelectionTool);
-                    SelectionManager.m_Instance.SelectAll();
+                    SelectionManager.m_Instance.SelectAll(App.ActiveCanvas);
                     EatGazeObjectInput();
                     break;
                 case GlobalCommands.FlipSelection:
@@ -4959,6 +5020,16 @@ namespace TiltBrush
                     break;
             }
         }
+        public void ViewOnly(bool active)
+        {
+            RequestPanelsVisibility(!active);
+            PointerManager.m_Instance.RequestPointerRendering(!active);
+            // TODO - decide if this is a permanent change
+            // With this line, you can't set a tool such as fly or teleport
+            // and switch to View Only mode as the mode change disables all tools
+            //m_SketchSurface.SetActive(!m_ViewOnly);
+            m_Decor.SetActive(!active);
+        }
 
         private void LoadNamed(string path, bool quickload, bool additive)
         {
@@ -4999,9 +5070,10 @@ namespace TiltBrush
             {
                 case GlobalCommands.StraightEdge: return PointerManager.m_Instance.StraightEdgeModeEnabled;
                 case GlobalCommands.StraightEdgeMeterDisplay: return PointerManager.m_Instance.StraightEdgeGuide.IsShowingMeter();
-                case GlobalCommands.SymmetryPlane: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.SinglePlane;
-                case GlobalCommands.MultiMirror: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.MultiMirror;
-                case GlobalCommands.SymmetryTwoHanded: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.TwoHanded;
+                case GlobalCommands.SymmetryPlane: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.SinglePlane;
+                case GlobalCommands.MultiMirror: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.MultiMirror;
+                case GlobalCommands.SymmetryTwoHanded: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.TwoHanded;
+                case GlobalCommands.ScriptedSymmetryCommand: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.ScriptedSymmetryMode;
                 case GlobalCommands.AutoOrient: return m_AutoOrientAfterRotation;
                 case GlobalCommands.AudioVisualization: return VisualizerManager.m_Instance.VisualsRequested;
                 case GlobalCommands.AdvancedPanelsToggle: return m_PanelManager.AdvancedModeActive();
@@ -5051,8 +5123,18 @@ namespace TiltBrush
             SaveLoadScript.m_Instance.ResetLastFilename();
             SelectionManager.m_Instance.RemoveFromSelection(false);
             PointerManager.m_Instance.ResetSymmetryToHome();
+            PointerManager.m_Instance.FinalizeLine(false, true);
             App.Scene.ResetLayers(notify: true);
             ApiManager.Instance.ResetBrushTransform();
+            ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.None;
+            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None);
+            LuaManager.Instance.DeInitialize();
+            // Lua is normally initialized OnEnablePanel, but that method
+            // won't get called if the panel is already open
+            if (m_PanelManager.GetActivePanelByType(BasePanel.PanelType.Scripts) != null)
+            {
+                LuaManager.Instance.Init();
+            }
 
             // If we've got the camera path tool active, switch back to the default tool.
             // I'm doing this because if we leave the camera path tool active, the camera path
@@ -5149,7 +5231,7 @@ namespace TiltBrush
                 case GlobalCommands.SaveModel: return SelectionManager.m_Instance.HasSelection;
                 case GlobalCommands.SummonMirror:
                     return PointerManager.m_Instance.CurrentSymmetryMode !=
-                        SymmetryMode.None;
+                        PointerManager.SymmetryMode.None;
                 case GlobalCommands.InvertSelection:
                 case GlobalCommands.FlipSelection:
                     return SelectionManager.m_Instance.HasSelection;
@@ -5225,9 +5307,9 @@ namespace TiltBrush
                 m_WidgetManager.AnyCameraPathWidgetsActive;
         }
 
-        public void OpenPanelOfType(BasePanel.PanelType type, TrTransform trSpawnXf)
+        public void OpenPanelOfType(BasePanel.PanelType type, TrTransform trSpawnXf, bool forced = false)
         {
-            m_PanelManager.OpenPanel(type, trSpawnXf);
+            m_PanelManager.OpenPanel(type, trSpawnXf, forced);
             EatGazeObjectInput();
         }
 

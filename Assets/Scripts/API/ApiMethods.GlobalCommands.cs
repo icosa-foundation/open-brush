@@ -35,6 +35,23 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, -1, -1);
         }
 
+        [ApiEndpoint(
+            "save.as",
+            "Saves the current scene under a new name. (No need to include the .tilt suffix)",
+            "newSketch"
+
+        )]
+        public static void SaveAs(string filename)
+        {
+            string suffix = SaveLoadScript.TILT_SUFFIX;
+            if (filename.EndsWith(suffix))
+            {
+                filename = filename.Substring(0, filename.Length - suffix.Length);
+            }
+            var rEnum = SketchControlsScript.GlobalCommands.SaveAs;
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, sParam: filename);
+        }
+
         [ApiEndpoint("save.new", "Saves the current scene in a new slot")]
         public static void SaveNew()
         {
@@ -145,37 +162,60 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 2);
         }
 
-        [ApiEndpoint("load.user", "Loads the sketch from the user's sketch folder given an index (0 being most recent)")]
+        [ApiEndpoint(
+            "load.user",
+            "Loads the sketch from the user's sketch folder given an index (0 being most recent)",
+            "2"
+        )]
         public static void LoadUser(int slot)
         {
             var rEnum = SketchControlsScript.GlobalCommands.Load;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, slot, 0);
         }
 
-        [ApiEndpoint("load.curated", "Loads the sketch in the given slot number from the curated sketch list")]
-        public static void LoadCurated(int slot)
+        [ApiEndpoint("load.featured",
+            "Loads the sketch in the given slot number from the featured sketch list",
+            "2"
+        )]
+        public static void LoadFeatured(int slot)
         {
             var rEnum = SketchControlsScript.GlobalCommands.Load;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, slot, 1);
         }
 
-        [ApiEndpoint("load.liked", "Loads the sketch in the given slot number from the user's liked sketches")]
+        [ApiEndpoint(
+            "load.liked",
+            "Loads the sketch in the given slot number from the user's liked sketches",
+            "2"
+        )]
         public static void LoadLiked(int slot)
         {
             var rEnum = SketchControlsScript.GlobalCommands.Load;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, slot, 2);
         }
 
-        [ApiEndpoint("load.drive", "Loads the sketch in the given slot number from the user's Google Drive")]
+        [ApiEndpoint(
+            "load.drive",
+            "Loads the sketch in the given slot number from the user's Google Drive",
+            "2"
+        )]
         public static void LoadDrive(int slot)
         {
             var rEnum = SketchControlsScript.GlobalCommands.Load;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, slot, 3);
         }
 
-        [ApiEndpoint("load.named", "Loads the sketch with the given name from the user's sketch folder")]
+        [ApiEndpoint(
+            "load.named",
+            "Loads the sketch with the given name from the user's sketch folder",
+            "Untitled_1"
+        )]
         public static void LoadNamedFile(string filename)
         {
+            if (!filename.EndsWith(SaveLoadScript.TILT_SUFFIX))
+            {
+                filename += SaveLoadScript.TILT_SUFFIX;
+            }
             // TODO do we want to allow arbitrary directories?
             // Does this even check for directory traversal?;
             SketchControlsScript.m_Instance.IssueGlobalCommand(
@@ -187,7 +227,11 @@ namespace TiltBrush
             PanelManager.m_Instance.ToggleSketchbookPanels(true);
         }
 
-        [ApiEndpoint("merge.named", "Loads the sketch with the given name from the user's sketch folder")]
+        [ApiEndpoint(
+            "merge.named",
+            "Loads the sketch with the given name from the user's sketch folder",
+            "Untitled_1"
+        )]
         public static void MergeNamedFile(string filename)
         {
             // TODO do we want to allow arbitrary directories?
@@ -337,8 +381,7 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, index, (int)SketchSetType.User);
         }
 
-        // TODO Why no "enabled" counterpart?
-        [ApiEndpoint("guides.disable", "Disables all guides")]
+        [ApiEndpoint("guides.disable", "Toggles guides on and off")]
         public static void StencilsDisable()
         {
             var rEnum = SketchControlsScript.GlobalCommands.StencilsDisabled;
@@ -508,14 +551,14 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
 
-        [ApiEndpoint("select.all", "Selects all strokes and widgets in the scene")]
+        [ApiEndpoint("select.all", "Selects all strokes and widgets on the current layer")]
         public static void SelectAll()
         {
             var rEnum = SketchControlsScript.GlobalCommands.SelectAll;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
 
-        [ApiEndpoint("select.none", "Deselects all strokes and widgets in the scene")]
+        [ApiEndpoint("select.none", "Deselects all strokes and widgets on the current layer")]
         public static void SelectNone()
         {
             SelectionManager.m_Instance.ClearActiveSelection();

@@ -163,7 +163,11 @@ namespace TiltBrush
         private void _UpdateValueAbsolute(float fValue)
         {
             valueText.text = FormatValue(fValue);
-            if (onUpdateValue != null) onUpdateValue.Invoke(new Vector3(m_Param1, m_Param2, fValue));
+            if (onUpdateValue != null)
+            {
+                float resultingVal = SliderType == SliderTypes.Int ? Mathf.RoundToInt(fValue) : fValue;
+                onUpdateValue.Invoke(new Vector3(m_Param1, m_Param2, resultingVal));
+            }
             m_CurrentValue = Mathf.InverseLerp(Min, Max, fValue);
             SetSliderPositionToReflectValue();
         }

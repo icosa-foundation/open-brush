@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using OpenBrush.Multiplayer;
+using System;
 using UnityEngine;
 
 namespace TiltBrush
@@ -76,7 +77,8 @@ namespace TiltBrush
             return false;
         }
 
-        static Quaternion sm_OrientationAdjust = Quaternion.Euler(new Vector3(0, 180, 0));
+        public static Quaternion sm_OrientationAdjust = Quaternion.Euler(new Vector3(0, 180, 0));
+
         override public void UpdateTool()
         {
             // Don't call base.UpdateTool() because we have a different 'stop eating input' check
@@ -131,7 +133,23 @@ namespace TiltBrush
             {
                 // Allow API command to override painting mode
                 // (ignored if multiplayer is in view-only mode)
-                m_PaintingActive = m_PaintingActive || ApiManager.Instance.ForcePaintingOn;
+                switch (ApiManager.Instance.ForcePainting)
+                {
+                    case ApiManager.ForcePaintingMode.ForcedOn:
+                        m_PaintingActive = true;
+                        break;
+                    case ApiManager.ForcePaintingMode.ForcedOff:
+                        m_PaintingActive = false;
+                        break;
+                    case ApiManager.ForcePaintingMode.ForceNewStroke:
+                        m_PaintingActive = false;
+                        ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.WasForceNewStroke;
+                        break;
+                    case ApiManager.ForcePaintingMode.WasForceNewStroke:
+                        m_PaintingActive = true;
+                        ApiManager.Instance.ForcePainting = ApiManager.Instance.PreviousForcePaintingMode;
+                        break;
+                }
             }
 
 
@@ -176,7 +194,7 @@ namespace TiltBrush
             // When the pointer manager is processing our line, don't stomp its position.
             if (!PointerManager.m_Instance.IsMainPointerProcessingLine())
             {
-                PositionPointer();
+                // PositionPointer();
             }
         }
 
@@ -219,6 +237,14 @@ namespace TiltBrush
             }
         }
 
+        protected override (Vector3, Quaternion) GetPointerPosition()
+        {
+            Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
+            Vector3 pos_GS = rAttachPoint.position;
+            Quaternion rot_GS = rAttachPoint.rotation * sm_OrientationAdjust;
+            return (pos_GS, rot_GS);
+        }
+
         void PositionPointer()
         {
             // Discard the pointer if the controller is exactly zero
@@ -230,34 +256,51 @@ namespace TiltBrush
             }
 
             // Angle the pointer according to the user-defined pointer angle.
-            Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
-            Vector3 pos = rAttachPoint.position;
-            Quaternion rot = rAttachPoint.rotation * sm_OrientationAdjust;
+            (Vector3 pos_GS, Quaternion rot_GS) = GetPointerPosition();
 
             // Modify pointer position and rotation with stencils.
-            WidgetManager.m_Instance.MagnetizeToStencils(ref pos, ref rot);
+            WidgetManager.m_Instance.MagnetizeToStencils(ref pos_GS, ref rot_GS);
+
+            // Deciding where to capture this makes a big difference to the output
+            Quaternion pointerRot = rot_GS;
 
             if (m_BimanualTape)
             {
-                ApplyBimanualTape(ref pos, ref rot);
-                ApplyRevolver(ref pos, ref rot);
+                ApplyBimanualTape(ref pos_GS, ref rot_GS);
+                ApplyRevolver(ref pos_GS, ref rot_GS);
             }
             else
             {
-                ApplyLazyInput(ref pos, ref rot);
+                ApplyLazyInput(ref pos_GS, ref rot_GS);
             }
 
             if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
             {
-                pos = SnapToGrid(pos);
+                pos_GS = SnapToGrid(pos_GS);
             }
 
             if (PointerManager.m_Instance.positionJitter > 0)
             {
-                pos = PointerManager.m_Instance.GenerateJitteredPosition(pos, PointerManager.m_Instance.positionJitter);
+                pos_GS = PointerManager.m_Instance.GenerateJitteredPosition(pos_GS, PointerManager.m_Instance.positionJitter);
             }
 
-            PointerManager.m_Instance.SetPointerTransform(InputManager.ControllerName.Brush, pos, rot);
+            // TODO Should this only be turned on when scripts request it?
+            // Usually done in UpdateTool but FreePaintTool overrides that and does it here
+            // The reason for this is that we want to store the brush transforms after they've been processed above
+            Transform wandTr_GS = InputManager.m_Instance.GetWandControllerAttachPoint();
+            Transform headTr_GS = ViewpointScript.Head;
+            LuaManager.Instance.RecordPointerPositions(
+                pos_GS, rot_GS,
+                wandTr_GS.position, wandTr_GS.rotation,
+                headTr_GS.position, headTr_GS.rotation
+            );
+
+            if (LuaManager.Instance.PointerScriptsEnabled)
+            {
+                LuaManager.Instance.ApplyPointerScript(pointerRot, ref pos_GS, ref rot_GS);
+            }
+
+            PointerManager.m_Instance.SetPointerTransform(InputManager.ControllerName.Brush, pos_GS, rot_GS);
         }
 
         override public void UpdateSize(float fAdjustAmount)

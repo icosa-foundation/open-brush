@@ -408,6 +408,7 @@ namespace TiltBrush
         // ------------------------------------------------------------
 
         public bool RequestingAudioReactiveMode => m_RequestingAudioReactiveMode;
+        public bool RamLoggingActive = false;
 
         public void ToggleAudioReactiveModeRequest()
         {
@@ -419,6 +420,14 @@ namespace TiltBrush
             ToggleAudioReactiveModeRequest();
             AudioCaptureManager.m_Instance.CaptureAudio(m_RequestingAudioReactiveMode);
             VisualizerManager.m_Instance.EnableVisuals(m_RequestingAudioReactiveMode);
+            Switchboard.TriggerAudioReactiveStateChanged();
+        }
+
+        public void AudioReactiveBrushesActive(bool active)
+        {
+            m_RequestingAudioReactiveMode = ActiveCanvas;
+            AudioCaptureManager.m_Instance.CaptureAudio(active);
+            VisualizerManager.m_Instance.EnableVisuals(active);
             Switchboard.TriggerAudioReactiveStateChanged();
         }
 
@@ -695,41 +704,9 @@ namespace TiltBrush
 
             if (Config.m_SdkMode == SdkMode.Ods)
             {
-                m_OdsPivot = (GameObject)Instantiate(m_OdsPrefab);
-
-                OdsDriver driver = m_OdsPivot.GetComponent<OdsDriver>();
-                driver.FramesToCapture = Config.m_OdsNumFrames;
-                driver.m_fps = Config.m_OdsFps;
-                driver.TurnTableRotation = Config.m_OdsTurnTableDegrees;
-                driver.OutputFolder = Config.m_OdsOutputPath;
-                driver.OutputBasename = Config.m_OdsOutputPrefix;
-                if (!string.IsNullOrEmpty(App.Config.m_VideoPathToRender))
-                {
-                    driver.CameraPath = App.Config.m_VideoPathToRender;
-                }
-
-                ODS.HybridCamera cam = driver.OdsCamera;
-                cam.CollapseIpd = Config.m_OdsCollapseIpd;
-                cam.imageWidth /= Config.m_OdsPreview ? 4 : 1;
-                Debug.LogFormat("Configuring ODS:{0}" +
-                    "Frames: {1}{0}" +
-                    "FPS: {8}{0}" +
-                    "TurnTable: {2}{0}" +
-                    "Output: {3}{0}" +
-                    "Basename: {4}{0}" +
-                    "QuickLoad: {5}{0}" +
-                    "CollapseIPD: {6}{0}" +
-                    "ImageWidth: {7}{0}",
-                    System.Environment.NewLine,
-                    driver.FramesToCapture,
-                    driver.TurnTableRotation,
-                    driver.OutputFolder,
-                    driver.OutputBasename,
-                    Config.m_QuickLoad,
-                    cam.CollapseIpd,
-                    cam.imageWidth,
-                    driver.m_fps);
+                InitOds();
             }
+
 
             //these guys don't need to be alive just yet
             PointerManager.m_Instance.EnablePointerStrokeGeneration(false);
@@ -841,7 +818,8 @@ namespace TiltBrush
             }
 
             // Wait for the environment transition to complete before capturing.
-            if (m_OdsPivot
+            if (Config.m_SdkMode == SdkMode.Ods
+                && m_OdsPivot
                 && !m_OdsPivot.activeInHierarchy
                 && !SceneSettings.m_Instance.IsTransitioning
                 && ((m_CurrentAppState == AppState.Loading && !Config.m_QuickLoad)
@@ -2378,6 +2356,49 @@ namespace TiltBrush
             IcosaUserId = null;
             IcosaUserIcon = null;
             IcosaToken = null;
+        }
+
+        public OdsDriver InitOds()
+        {
+            m_OdsPivot = (GameObject)Instantiate(m_OdsPrefab);
+
+            OdsDriver driver = m_OdsPivot.GetComponent<OdsDriver>();
+            driver.FramesToCapture = Config.m_OdsNumFrames;
+            driver.m_fps = Config.m_OdsFps;
+            driver.TurnTableRotation = Config.m_OdsTurnTableDegrees;
+            driver.OutputFolder = Config.m_OdsOutputPath;
+            driver.OutputBasename = Config.m_OdsOutputPrefix;
+            if (!string.IsNullOrEmpty(App.Config.m_VideoPathToRender))
+            {
+                driver.CameraPath = App.Config.m_VideoPathToRender;
+            }
+
+            ODS.HybridCamera cam = driver.OdsCamera;
+            cam.CollapseIpd = Config.m_OdsCollapseIpd;
+            cam.imageWidth /= Config.m_OdsPreview ? 4 : 1;
+            if (Config.m_SdkMode == SdkMode.Ods)
+            {
+                Debug.LogFormat("Configuring ODS:{0}" +
+                    "Frames: {1}{0}" +
+                    "FPS: {8}{0}" +
+                    "TurnTable: {2}{0}" +
+                    "Output: {3}{0}" +
+                    "Basename: {4}{0}" +
+                    "QuickLoad: {5}{0}" +
+                    "CollapseIPD: {6}{0}" +
+                    "ImageWidth: {7}{0}",
+                    System.Environment.NewLine,
+                    driver.FramesToCapture,
+                    driver.TurnTableRotation,
+                    driver.OutputFolder,
+                    driver.OutputBasename,
+                    Config.m_QuickLoad,
+                    cam.CollapseIpd,
+                    cam.imageWidth,
+                    driver.m_fps
+                );
+            }
+            return driver;
         }
     } // class App
 }     // namespace TiltBrush

@@ -26,7 +26,6 @@ using Unity.VectorGraphics;
 using Debug = UnityEngine.Debug;
 using UObject = UnityEngine.Object;
 
-
 namespace TiltBrush
 {
 

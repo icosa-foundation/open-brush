@@ -44,6 +44,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_NoLikesMessage;
         [SerializeField] private GameObject m_NotLoggedInMessage;
         [SerializeField] private GameObject m_OutOfDateMessage;
+        [SerializeField] private GameObject m_NotSupportedMessage;
         [SerializeField] private GameObject m_NoPolyConnectionMessage;
 
         private IcosaSetType m_CurrentSet;
@@ -77,6 +78,8 @@ namespace TiltBrush
             m_NoLikesMessage.SetActive(false);
             m_NotLoggedInMessage.SetActive(false);
             m_OutOfDateMessage.SetActive(false);
+            if (m_NotSupportedMessage)
+                m_NotSupportedMessage.SetActive(false);
             m_NoPolyConnectionMessage.SetActive(false);
         }
 

@@ -72,6 +72,7 @@ namespace TiltBrush
 
         private Vector3 m_SlowFollowMoveVel;
         private Vector3 m_SlowFollowRotVel;
+        public bool isVisible => m_CurrentState == State.Visible;
 
         override protected void Awake()
         {

@@ -228,7 +228,7 @@ def animate(
 class Substroke:  # pylint: disable=too-many-instance-attributes
     def __init__(
         self, stroke, startVert, vertCount, startIndex, indexCount
-    ):  # pylint: disable=too-many-arguments
+    ):  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self.stroke = stroke
         self.startVert = startVert
         self.vertCount = vertCount
@@ -343,7 +343,7 @@ class Stroke:  # pylint: disable=too-many-instance-attributes
         indexOffsets,
         indexCounts,
         displayOpacity,
-    ):  # pylint: disable=too-many-arguments
+    ):  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self.dirty = True
         self.adj = 2 * random.random()
         self.prim = prim
