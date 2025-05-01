@@ -14,6 +14,7 @@
 
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using System.Collections.Generic;
@@ -622,6 +623,8 @@ namespace TiltBrush
         public string Name;
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public bool Visible;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TrTransform Transform { get; set; }
     }
 
 
@@ -724,12 +727,29 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public int[] FrameIds { get; set; }
         public bool[] TwoSidedFlags { get; set; }
+        public float[] ExtrusionDepths { get; set; }
+        public Color[] ExtrusionColors { get; set; }
     }
 
     [Serializable]
     public class Mirror
     {
         public TrTransform Transform { get; set; }
+    }
+
+    [Serializable]
+    public class TiltText
+    {
+        public TrTransform Transform { get; set; }
+        public string Text { get; set; }
+        public Color FillColor { get; set; }
+        public Color StrokeColor { get; set; }
+        public string Font { get; set; }
+        public float ExtrudeDepth { get; set; }
+        public TextWidgetMode Mode { get; set; }
+        public bool Pinned { get; set; }
+        public uint GroupId { get; set; }
+        public int LayerId { get; set; }
     }
 
     [Serializable]
@@ -774,13 +794,6 @@ namespace TiltBrush
         {
             return SceneTransformInRoomSpace != TrTransform.identity;
         }
-        public TrTransform CanvasTransformInSceneSpace = TrTransform.identity;
-        // Callback for JSON.net (name is magic and special)
-        public bool ShouldSerializeCanvasTransformInSceneSpace()
-        {
-            return CanvasTransformInSceneSpace != TrTransform.identity;
-        }
-
         // This was the old name of ThumbnailCameraTransformInRoomSpace.
         [Serializable]
         public struct UnusedSketchTransform
@@ -876,5 +889,8 @@ namespace TiltBrush
         public string ApplicationName { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string ApplicationVersion { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TiltText[] TextWidgets { get; set; }
     }
 } // namespace TiltBrush

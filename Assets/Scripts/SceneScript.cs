@@ -14,7 +14,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using UnityEngine;
 using TiltBrush.FrameAnimation;
@@ -39,6 +38,7 @@ namespace TiltBrush
 
         [SerializeField] public CanvasScript m_MainCanvas;
         [SerializeField] private CanvasScript m_SelectionCanvas;
+        [SerializeField] private Transform m_CanvasTransformPrefab;
 
         public AnimationUI_Manager animationUI_manager;
 
@@ -149,6 +149,7 @@ namespace TiltBrush
         /// The initial start-up canvas; guaranteed to always exist
         public CanvasScript MainCanvas { get { return m_MainCanvas; } }
         public CanvasScript SelectionCanvas { get { return m_SelectionCanvas; } }
+        public Transform CanvasTransformPrefab { get { return m_CanvasTransformPrefab; } }
 
         public IEnumerable<CanvasScript> AllCanvases
         {
@@ -186,6 +187,22 @@ namespace TiltBrush
                     }
                 }
             }
+        }
+
+        public CanvasScript GetLayerByIndex(int index)
+        {
+            if (index == 0) return MainCanvas;
+            if (m_LayerCanvases != null)
+            {
+                int count = 1;
+                for (int i = 0; i < m_LayerCanvases.Count; ++i)
+                {
+                    if (m_DeletedLayers.Contains(i)) continue;
+                    if (count == index) return m_LayerCanvases[i];
+                    count++;
+                }
+            }
+            return null;
         }
 
         public void ResetLayers(bool notify = false)
@@ -455,14 +472,15 @@ namespace TiltBrush
         public LayerMetadata[] LayerCanvasesSerialized()
         {
             var layers = LayerCanvases.ToArray();
-            var meta = new LayerMetadata[layers.Count()];
+            var meta = new LayerMetadata[layers.Length];
             for (var i = 0; i < layers.Length; i++)
             {
                 var layer = layers[i];
                 meta[i] = new LayerMetadata
                 {
                     Visible = layer.gameObject.activeSelf,
-                    Name = layer.name
+                    Name = layer.name,
+                    Transform = layer.LocalPose
                 };
             }
             return meta;

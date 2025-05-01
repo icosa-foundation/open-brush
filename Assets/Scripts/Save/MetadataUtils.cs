@@ -31,6 +31,8 @@ namespace TiltBrush
             public int layerId;
             public int frameId;
             public bool twoSided;
+            public float extrusionDepth;
+            public Color extrusionColor;
         }
 
         /// Sanitizes potentially-invalid data coming from the .tilt file.
@@ -155,6 +157,28 @@ namespace TiltBrush
             return models
                 .Concat(ModelCatalog.m_Instance.MissingModels)
                 .OrderBy(ByModelLocation).ToArray();
+        }
+
+        public static TiltText[] GetTiltText(GroupIdMapping groupIdMapping)
+        {
+            return WidgetManager.m_Instance.TextWidgets.Where(x => x.gameObject.activeSelf).Select(x => ConvertTextWidgetToTiltText(x)).ToArray();
+
+            TiltText ConvertTextWidgetToTiltText(TextWidget widget)
+            {
+                TiltText text = new TiltText
+                {
+                    Transform = widget.SaveTransform,
+                    Text = widget.Text,
+                    FillColor = widget.TextColor,
+                    Pinned = widget.Pinned,
+                    GroupId = groupIdMapping.GetId(widget.Group),
+                    StrokeColor = widget.StrokeColor,
+                    Font = "Oswald-Regular",
+                    ExtrudeDepth = 0,
+                    Mode = widget.Mode,
+                };
+                return text;
+            }
         }
 
         public static TiltVideo[] GetTiltVideos(GroupIdMapping groupIdMapping)
@@ -314,6 +338,8 @@ namespace TiltBrush
                 val.LayerIds = new int[ordered.Length];
                 val.FrameIds = new int[ordered.Length];
                 val.TwoSidedFlags = new bool[ordered.Length];
+                val.ExtrusionDepths = new float[ordered.Length];
+                val.ExtrusionColors = new Color[ordered.Length];
                 for (int i = 0; i < ordered.Length; ++i)
                 {
                     val.PinStates[i] = ordered[i].pinned;
@@ -323,6 +349,8 @@ namespace TiltBrush
                     val.LayerIds[i] = ordered[i].layerId;
                     val.FrameIds[i] = ordered[i].frameId;
                     val.TwoSidedFlags[i] = ordered[i].twoSided;
+                    val.ExtrusionDepths[i] = ordered[i].extrusionDepth;
+                    val.ExtrusionColors[i] = ordered[i].extrusionColor;
                 }
                 imageIndex.Add(val);
             }

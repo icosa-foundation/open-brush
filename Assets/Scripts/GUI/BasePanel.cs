@@ -733,7 +733,7 @@ namespace TiltBrush
             // If this popup isn't the active one, don't bother.
             if (activePopup == m_ActivePopUp)
             {
-                m_ActivePopUp = null;
+                m_ActivePopUp = activePopup.m_PreviousPopUp; // Might be null but that's ok
                 // Eat input when we close a popup so the close action doesn't carry over.
                 m_EatInput = true;
             }
@@ -1498,7 +1498,7 @@ namespace TiltBrush
             }
         }
 
-        public void CreatePopUp(
+        public GameObject CreatePopUp(
                             GameObject prefab, Vector3 position,
                             bool explicitPosition, bool transition, int iCommandParam = -1, int iCommandParam2 = -1,
                             SketchControlsScript.GlobalCommands delayedCommand = SketchControlsScript.GlobalCommands.Null,
@@ -1507,11 +1507,13 @@ namespace TiltBrush
             // Create a new popup.
             GameObject popUp = Instantiate(prefab,
                 m_Mesh.transform.position, m_Mesh.transform.rotation);
+
+            popUp.GetComponent<PopUpWindow>().m_PreviousPopUp = m_ActivePopUp;
             m_ActivePopUp = popUp.GetComponent<PopUpWindow>();
 
             if (explicitPosition)
             {
-                popUp.transform.position = position;
+                popUp.transform.localPosition = position;
             }
             else
             {
@@ -1542,6 +1544,7 @@ namespace TiltBrush
             m_DelayedCommandParam = iCommandParam;
             m_DelayedCommandParam2 = iCommandParam2;
 
+            return popUp;
         }
 
         public void PositionPopUp(Vector3 basePos)
@@ -1685,5 +1688,20 @@ namespace TiltBrush
           }
         }
         /**/
+
+        public void DetachFromWand(TrTransform tr, float initialTransitionAmount = 0)
+        {
+            m_WandTransitionTarget = tr;
+            m_Fixed = false;
+            m_TransitionState = FixedTransitionState.Floating;
+            m_WandTransitionPercent = initialTransitionAmount;
+        }
+
+        public void AttachToWand(float initialTransitionAmount = 0)
+        {
+            m_Fixed = true;
+            m_TransitionState = FixedTransitionState.Fixed;
+            m_WandTransitionPercent = initialTransitionAmount;
+        }
     }
 } // namespace TiltBrush

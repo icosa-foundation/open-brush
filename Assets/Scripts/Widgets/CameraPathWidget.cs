@@ -634,7 +634,7 @@ namespace TiltBrush
             return m_Path.SerializeToCameraPathMetadata();
         }
 
-        static public void CreateFromSaveData(CameraPathMetadata cameraPath)
+        static public CameraPathWidget CreateEmpty()
         {
             // Create a new widget.
             CameraPathWidget widget = Instantiate<CameraPathWidget>(
@@ -646,6 +646,14 @@ namespace TiltBrush
             widget.transform.localScale = Vector3.one;
             widget.transform.localPosition = Vector3.zero;
             widget.transform.localRotation = Quaternion.identity;
+
+            return widget;
+        }
+
+        static public CameraPathWidget CreateFromSaveData(CameraPathMetadata cameraPath)
+        {
+
+            CameraPathWidget widget = CreateEmpty();
 
             // Add the path knots and set their tangent speed.
             for (int i = 0; i < cameraPath.PathKnots.Length; ++i)
@@ -757,6 +765,7 @@ namespace TiltBrush
                     child.gameObject.SetActive(true);
                 }
             }
+            return widget;
         }
 
         void OnDrawGizmosSelected()
