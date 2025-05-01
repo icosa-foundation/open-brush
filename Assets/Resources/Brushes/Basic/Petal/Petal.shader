@@ -18,7 +18,7 @@ Shader "Brush/Special/Petal" {
     _Shininess("Shininess", Range(0.01, 1)) = 0.3
     _MainTex("Base (RGB) TransGloss (A)", 2D) = "white" {}
 
-    _Opacity("Opacity", Range(0,1)) = 1
+    _Dissolve("Dissolve", Range(0,1)) = 1
     _ClipStart("Clip Start", Float) = 0
     _ClipEnd("Clip End", Float) = -1
   }
@@ -46,9 +46,9 @@ Shader "Brush/Special/Petal" {
 
       half _Shininess;
 
-  	  uniform float _ClipStart;
-      uniform float _ClipEnd;
-      uniform half _Opacity;
+  	  uniform half _ClipStart;
+      uniform half _ClipEnd;
+      uniform half _Dissolve;
 
       struct appdata_full_plus_id {
         float4 vertex : POSITION;
@@ -72,8 +72,10 @@ Shader "Brush/Special/Petal" {
 
       void surf(Input IN, inout SurfaceOutputStandardSpecular o) {
 
+        #ifdef SHADER_SCRIPTING_ON
         if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
-        if (_Opacity < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Opacity) discard;
+        if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
+        #endif
 
         // Fade from center outward (dark to light)
         float4 darker_color = IN.color;

@@ -21,7 +21,7 @@ Properties {
   _BumpMap ("Normalmap", 2D) = "bump" {}
   _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
 
-  _Opacity ("Opacity", Range(0,1)) = 1
+  _Dissolve("Dissolve", Range(0,1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
 }
@@ -69,9 +69,9 @@ Properties {
     fixed4 _Color;
     half _Shininess;
 
-	  uniform float _ClipStart;
-	  uniform float _ClipEnd;
-    uniform half _Opacity;
+	  uniform half _ClipStart;
+	  uniform half _ClipEnd;
+    uniform half _Dissolve;
 
     void vert (inout appdata_full_plus_id i, out Input o) {
       UNITY_INITIALIZE_OUTPUT(Input, o);
@@ -82,9 +82,10 @@ Properties {
     }
 
     void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
-
+        #ifdef SHADER_SCRIPTING_ON
       if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
-      if (_Opacity < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Opacity) discard;
+      if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
+      #endif
 
       fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);
       o.Albedo = tex.rgb * _Color.rgb * IN.color.rgb;
@@ -150,9 +151,9 @@ Properties {
         fixed _Cutoff;
         half _MipScale;
 
-        uniform float _ClipStart;
-        uniform float _ClipEnd;
-        uniform half _Opacity;
+        uniform half _ClipStart;
+        uniform half _ClipEnd;
+        uniform half _Dissolve;
 
         float ComputeMipLevel(float2 uv) {
           float2 dx = ddx(uv);
@@ -179,9 +180,10 @@ Properties {
         }
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
-
+          #ifdef SHADER_SCRIPTING_ON
           if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-          if (_Opacity < 1 && Dither8x8(i.pos.xy) >= _Opacity) discard;
+          if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+          #endif
 
           fixed4 col = i.color;
           col.a = tex2D(_MainTex, i.uv).a * col.a;
@@ -262,9 +264,9 @@ Properties {
         half _Shininess;
 
         fixed _Cutoff;
-        uniform float _ClipStart;
-        uniform float _ClipEnd;
-        uniform half _Opacity;
+        uniform half _ClipStart;
+        uniform half _ClipEnd;
+        uniform half _Dissolve;
 
         v2f vert (appdata v) {
           v2f o;
@@ -286,9 +288,10 @@ Properties {
         }
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
-
+          #ifdef SHADER_SCRIPTING_ON
           if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-
+          if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+          #endif
 
           fixed4 col = i.color;
           col.a = tex2D(_MainTex, i.uv).a * col.a;
@@ -382,9 +385,9 @@ Properties {
 
         fixed _Cutoff;
 
-        uniform float _ClipStart;
-        uniform float _ClipEnd;
-        uniform half _Opacity;
+        uniform half _ClipStart;
+        uniform half _ClipEnd;
+        uniform half _Dissolve;
 
         v2f vert (appdata v) {
           v2f o;
@@ -404,9 +407,10 @@ Properties {
         }
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
-
+        #ifdef SHADER_SCRIPTING_ON
           if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-
+          if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+          #endif
 
           fixed4 col = i.color;
           col.a = tex2D(_MainTex, i.uv).a * col.a;
@@ -478,9 +482,9 @@ Properties {
         fixed _Cutoff;
         half _MipScale;
 
-        uniform float _ClipStart;
-        uniform float _ClipEnd;
-        uniform half _Opacity;
+        uniform half _ClipStart;
+        uniform half _ClipEnd;
+        uniform half _Dissolve;
 
         float ComputeMipLevel(float2 uv) {
           float2 dx = ddx(uv);
@@ -499,9 +503,10 @@ Properties {
         }
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
-
+          #ifdef SHADER_SCRIPTING_ON
           if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-          if (_Opacity < 1 && Dither8x8(i.pos.xy) >= _Opacity) discard;
+          if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+          #endif
 
           fixed4 col = i.color;
           col.a *= tex2D(_MainTex, i.uv).a;
@@ -575,9 +580,9 @@ Properties {
         fixed _Cutoff;
         half _MipScale;
 
-        uniform float _ClipStart;
-        uniform float _ClipEnd;
-        uniform half _Opacity;
+        uniform half _ClipStart;
+        uniform half _ClipEnd;
+        uniform half _Dissolve;
 
         float ComputeMipLevel(float2 uv) {
           float2 dx = ddx(uv);
@@ -596,9 +601,10 @@ Properties {
         }
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
-
+          #ifdef SHADER_SCRIPTING_ON
           if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-          if (_Opacity < 1 && Dither8x8(i.pos.xy) >= _Opacity) discard;
+          if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+          #endif
 
           fixed4 col = i.color;
           col.a = 1;
@@ -634,9 +640,9 @@ Properties {
       sampler2D _MainTex;
       fixed4 _Color;
 
-      uniform float _ClipStart;
-      uniform float _ClipEnd;
-      uniform half _Opacity;
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
+      uniform half _Dissolve;
 
       struct Input {
         float2 uv_MainTex;
@@ -665,9 +671,10 @@ Properties {
       }
 
       void surf (Input IN, inout SurfaceOutput o) {
-
+        #ifdef SHADER_SCRIPTING_ON
         if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
-        if (_Opacity < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Opacity) discard;
+        if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
+        #endif
 
         fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
         o.Albedo = c.rgb * IN.color.rgb;

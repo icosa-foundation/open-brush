@@ -30,6 +30,7 @@ namespace TiltBrush
         private Guid m_Guid;
         private BaseCommand m_Parent;
         protected List<BaseCommand> m_Children;
+        public bool HasChildren => m_Children.Count > 0;
         private int m_Timestamp;
         private int? m_NetworkTimestamp;
 

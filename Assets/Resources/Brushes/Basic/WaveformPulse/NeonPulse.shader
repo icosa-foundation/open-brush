@@ -15,14 +15,11 @@
 Shader "Brush/Visualizer/WaveformPulse" {
 
 Properties {
-  _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
-
-    [Toggle] _OverrideTime ("Overriden Time", Float) = 1.0
+    _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
     _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
     _TimeBlend("Time Blend", Float) = 0
     _TimeSpeed("Time Speed", Float) = 1.0
-
-  _Opacity ("Opacity", Range(0, 1)) = 1
+    _Dissolve("Dissolve", Range(0, 1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
 }
@@ -42,7 +39,6 @@ SubShader {
   // Faster compiles
   #pragma skip_variants INSTANCING_ON
 
-    #include "Assets/Shaders/Include/TimeOverride.cginc"
   #include "Assets/Shaders/Include/Brush.cginc"
   #include "Assets/Shaders/Include/MobileSelection.cginc"
 
@@ -70,9 +66,9 @@ SubShader {
 
   float _EmissionGain;
 
-  uniform float _ClipStart;
-  uniform float _ClipEnd;
-  uniform half _Opacity;
+  uniform half _ClipStart;
+  uniform half _ClipEnd;
+  uniform half _Dissolve;
 
   void vert (inout appdata i, out Input o) {
     PrepForOds(i.vertex);
@@ -84,9 +80,11 @@ SubShader {
   // Input color is srgb
   void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
+    #ifdef SHADER_SCRIPTING_ON
     if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
     // It's hard to get alpha curves right so use dithering for hdr shaders
-    if (_Opacity < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Opacity) discard;
+    if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
+    #endif
 
     o.Smoothness = .8;
     o.Specular = .05;
@@ -105,10 +103,10 @@ SubShader {
     half rim = 1.0 - saturate(dot (normalize(IN.viewDir), n));
     bloom *= pow(1-rim,5);
     o.Emission = SrgbToNative(bloom * neon);
-    o.Alpha *= _Opacity;
-    o.Emission *= _Opacity;
-    o.Albedo *= _Opacity;
-    o.Specular *= _Opacity;
+    o.Alpha *= _Dissolve;
+    o.Emission *= _Dissolve;
+    o.Albedo *= _Dissolve;
+    o.Specular *= _Dissolve;
     SURF_FRAG_MOBILESELECT(o);
   }
   ENDCG

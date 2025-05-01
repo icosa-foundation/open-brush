@@ -22,12 +22,12 @@ Shader "Brush/Special/Lacewing" {
 		_BumpMap("Normalmap", 2D) = "bump" {}
 		_Cutoff("Alpha cutoff", Range(0,1)) = 0.5
 
-		  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+
 		  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
 		  _TimeBlend("Time Blend", Float) = 0
 		  _TimeSpeed("Time Speed", Float) = 1.0
 
-          _Opacity("Opacity", Range(0,1)) = 1
+          _Dissolve("Dissolve", Range(0,1)) = 1
           _ClipStart("Clip Start", Float) = 0
           _ClipEnd("Clip End", Float) = -1
 	}
@@ -37,12 +37,13 @@ Shader "Brush/Special/Lacewing" {
 		LOD 100
 
 		CGPROGRAM
-#pragma target 4.0
-#pragma surface surf StandardSpecular vertex:vert alphatest:_Cutoff addshadow
-#pragma multi_compile __ AUDIO_REACTIVE
-#pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
-#include "Assets/Shaders/Include/TimeOverride.cginc"
-#include "Assets/Shaders/Include/Brush.cginc"
+
+    #pragma target 4.0
+    #pragma surface surf StandardSpecular vertex:vert alphatest:_Cutoff addshadow
+    #pragma multi_compile __ AUDIO_REACTIVE
+    #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
+
+    #include "Assets/Shaders/Include/Brush.cginc"
 
 	struct Input {
 		float2 uv_MainTex;
@@ -60,9 +61,9 @@ Shader "Brush/Special/Lacewing" {
 	fixed4 _Color;
 	half _Shininess;
 
-	uniform float _ClipStart;
-	uniform float _ClipEnd;
-    uniform half _Opacity;
+	uniform half _ClipStart;
+	uniform half _ClipEnd;
+    uniform half _Dissolve;
 
     struct appdata_full_plus_id {
         float4 vertex : POSITION;
@@ -100,8 +101,10 @@ Shader "Brush/Special/Lacewing" {
 
 	void surf(Input IN, inout SurfaceOutputStandardSpecular o) {
 
+		#ifdef SHADER_SCRIPTING_ON
         if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
-		if (_Opacity < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Opacity) discard;
+		if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
+		#endif
 
 		fixed4 spectex = tex2D(_SpecTex, IN.uv_SpecTex);
 		fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);

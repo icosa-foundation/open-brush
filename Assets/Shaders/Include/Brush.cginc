@@ -15,6 +15,10 @@
 // -*- c -*-
 
 // Canvas transform.
+#pragma multi_compile __ SHADER_SCRIPTING_ON
+
+#include "Assets/Shaders/Include/TimeOverride.cginc"
+
 uniform float4x4 xf_CS;
 // Inverse canvas transform.
 uniform float4x4 xf_I_CS;

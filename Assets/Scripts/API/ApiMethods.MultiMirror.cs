@@ -123,7 +123,7 @@ namespace TiltBrush
 
         private static PointerManager.ColorShiftComponentSetting _SymmetryColorShift(string mode, float amplitude, float frequency)
         {
-            Enum.TryParse(mode, ignoreCase: true, out PointerManager.ColorShiftMode _mode);
+            Enum.TryParse(mode, ignoreCase: true, out WaveGenerator.Mode _mode);
             return new PointerManager.ColorShiftComponentSetting
             {
                 mode = _mode,

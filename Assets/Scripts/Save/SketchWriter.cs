@@ -225,7 +225,7 @@ namespace TiltBrush
                 // length-prefixed stroke extensions are added
                 StrokeExtension strokeExtensionMask = StrokeExtension.Flags | StrokeExtension.Seed;
                 if (stroke.m_BrushScale != 1) { strokeExtensionMask |= StrokeExtension.Scale; }
-                if (stroke.m_Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
+                if (stroke.Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
                 strokeExtensionMask |= StrokeExtension.Layer;
 
                 writer.UInt32((uint)strokeExtensionMask);
@@ -241,7 +241,7 @@ namespace TiltBrush
                 }
                 if ((uint)(strokeExtensionMask & StrokeExtension.Group) != 0)
                 {
-                    writer.UInt32(groupIdMapping.GetId(stroke.m_Group));
+                    writer.UInt32(groupIdMapping.GetId(stroke.Group));
                 }
                 if ((uint)(strokeExtensionMask & StrokeExtension.Seed) != 0)
                 {
@@ -309,7 +309,7 @@ namespace TiltBrush
                 // Determine the stroke extension mask
                 StrokeExtension strokeExtensionMask = StrokeExtension.Flags | StrokeExtension.Seed;
                 if (stroke.m_BrushScale != 1) { strokeExtensionMask |= StrokeExtension.Scale; }
-                if (stroke.m_Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
+                if (stroke.Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
                 strokeExtensionMask |= StrokeExtension.Layer;
 
                 writer.UInt32((uint)strokeExtensionMask);
@@ -325,7 +325,7 @@ namespace TiltBrush
                 }
                 if ((uint)(strokeExtensionMask & StrokeExtension.Group) != 0)
                 {
-                    writer.UInt32(groupIdMapping.GetId(stroke.m_Group));
+                    writer.UInt32(groupIdMapping.GetId(stroke.Group));
                 }
                 if ((uint)(strokeExtensionMask & StrokeExtension.Seed) != 0)
                 {

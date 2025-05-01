@@ -22,7 +22,7 @@ Properties {
   _ScrollJitterFrequency("Scroll Jitter Frequency", Float) = 1.0
   _FalloffPower("Falloff Power", Float) = 2.0
 
-  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+
   _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
   _TimeBlend("Time Blend", Float) = 0
   _TimeSpeed("Time Speed", Float) = 1.0
@@ -43,7 +43,6 @@ Category {
       #pragma fragment frag
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
 
       sampler2D _MainTex;

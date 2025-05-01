@@ -22,7 +22,7 @@ Shader "Brush/Special/MarbledRainbow" {
 		_BumpMap("Normalmap", 2D) = "bump" {}
 		_Cutoff("Alpha cutoff", Range(0,1)) = 0.5
 
-		_Opacity("Opacity", Range(0,1)) = 1
+		_Dissolve("Dissolve", Range(0,1)) = 1
 	    _ClipStart("Clip Start", Float) = 0
 	    _ClipEnd("Clip End", Float) = -1
 	}
@@ -54,9 +54,9 @@ Shader "Brush/Special/MarbledRainbow" {
 		fixed4 _Color;
 		half _Shininess;
 
-		uniform float _ClipStart;
-		uniform float _ClipEnd;
-		uniform half _Opacity;
+		uniform half _ClipStart;
+		uniform half _ClipEnd;
+		uniform half _Dissolve;
 
 		struct appdata_full_plus_id {
 			float4 vertex : POSITION;
@@ -92,8 +92,10 @@ Shader "Brush/Special/MarbledRainbow" {
 
 	void surf(Input IN, inout SurfaceOutputStandardSpecular o) {
 
+		#ifdef SHADER_SCRIPTING_ON
 		if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
-        if (_Opacity < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Opacity) discard;
+        if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
+		#endif
 
 		fixed4 spectex = tex2D(_SpecTex, IN.uv_SpecTex);
 		fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);

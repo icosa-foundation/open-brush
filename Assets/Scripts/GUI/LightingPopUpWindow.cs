@@ -122,7 +122,7 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.ResetGrabbedPose(true);
         }
 
-        override protected void RefreshPage()
+        override public void RefreshPage()
         {
             base.RefreshPage();
             if (isPassThroughActive())
