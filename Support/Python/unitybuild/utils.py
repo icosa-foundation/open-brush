@@ -76,44 +76,44 @@ def msys_control_c_workaround():
     # abruptly ~100ms after the process receives SIGINT. This prevents us
     # from running cleanup handlers, like the one that kills the Unity.exe
     # subprocess.
-    if not os.getenv("MSYSTEM"):
-        return
+    if os.getenv("MSYSTEM"):
+        kernel32 = ctypes.windll.kernel32
+        kernel32.GetStdHandle.restype = HANDLE
+        kernel32.GetStdHandle.argtypes = (DWORD,)
+        # kernel32.GetConsoleMode.restype = BOOL
+        kernel32.GetConsoleMode.argtypes = (HANDLE, ctypes.POINTER(DWORD))
+        # kernel32.SetConsoleMode.restype = BOOL
+        kernel32.SetConsoleMode.argtypes = (HANDLE, DWORD)
+        STD_INPUT_HANDLE = DWORD(-10)
+        ENABLE_PROCESSED_INPUT = DWORD(1)
 
-    kernel32 = ctypes.windll.kernel32
-    kernel32.GetStdHandle.restype = HANDLE
-    kernel32.GetStdHandle.argtypes = (DWORD,)
-    # kernel32.GetConsoleMode.restype = BOOL
-    kernel32.GetConsoleMode.argtypes = (HANDLE, ctypes.POINTER(DWORD))
-    # kernel32.SetConsoleMode.restype = BOOL
-    kernel32.SetConsoleMode.argtypes = (HANDLE, DWORD)
-    STD_INPUT_HANDLE = DWORD(-10)
-    ENABLE_PROCESSED_INPUT = DWORD(1)
+        stdin = kernel32.GetStdHandle(STD_INPUT_HANDLE)
+        mode = DWORD()
+        kernel32.GetConsoleMode(stdin, ctypes.byref(mode))
+        mode.value = mode.value & ~(ENABLE_PROCESSED_INPUT.value)
+        kernel32.SetConsoleMode(stdin, mode)
 
-    stdin = kernel32.GetStdHandle(STD_INPUT_HANDLE)
-    mode = DWORD()
-    kernel32.GetConsoleMode(stdin, ctypes.byref(mode))
-    mode.value = mode.value & ~(ENABLE_PROCESSED_INPUT.value)
-    kernel32.SetConsoleMode(stdin, mode)
+        # interrupt_main won't interrupt WaitForSingleObject, so monkey-patch
+        def polling_wait(self):
+            while (
+                WaitForSingleObject(
+                    self._handle, 3000  # pylint: disable=protected-access
+                )
+                != WAIT_OBJECT_0
+            ):
+                continue
+            return self.poll()
 
-    # interrupt_main won't interrupt WaitForSingleObject, so monkey-patch
-    def polling_wait(self):
-        while (
-            WaitForSingleObject(self._handle, 3000)  # pylint: disable=protected-access
-            != WAIT_OBJECT_0
-        ):
-            continue
-        return self.poll()
+        subprocess.Popen.wait = polling_wait
 
-    subprocess.Popen.wait = polling_wait
+        def look_for_control_c():
+            while msvcrt.getch() != "\x03":
+                continue
+            _thread.interrupt_main()
 
-    def look_for_control_c():
-        while msvcrt.getch() != "\x03":
-            continue
-        _thread.interrupt_main()
-
-    t = threading.Thread(target=look_for_control_c)
-    t.daemon = True
-    t.start()
+        t = threading.Thread(target=look_for_control_c)
+        t.daemon = True
+        t.start()
 
 
 def get_file_version(filename):
