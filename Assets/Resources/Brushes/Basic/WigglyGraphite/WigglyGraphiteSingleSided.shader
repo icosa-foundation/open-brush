@@ -17,6 +17,11 @@ Shader "Brush/Special/WigglyGraphiteSingleSided" {
     _MainTex("Main Texture", 2D) = "white" {}
     _SecondaryTex("Diffuse Tex", 2D) = "white" {}
     _Cutoff("Alpha cutoff", Range(0,1)) = 0.5
+
+
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
   }
   SubShader{
     Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
@@ -48,10 +53,11 @@ Shader "Brush/Special/WigglyGraphiteSingleSided" {
       }
 
       void surf(Input IN, inout SurfaceOutputStandardSpecular o) {
+
         fixed2 scrollUV = IN.uv_MainTex;
 
         // Animate flipbook motion. Currently tuned to taste.
-        float anim = fmod(_Time.y * 12, 6);
+        float anim = fmod(GetTime().y * 12, 6);
         anim = ceil(anim);
         scrollUV.x += anim;
         scrollUV.x *= 1.1;
