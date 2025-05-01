@@ -277,6 +277,9 @@ namespace TiltBrush
                 case "circular":
                     cam.SetMode(DropCamWidget.Mode.Circular);
                     break;
+                case "camerapath":
+                    cam.SetMode(DropCamWidget.Mode.CameraPath);
+                    break;
             }
         }
 
