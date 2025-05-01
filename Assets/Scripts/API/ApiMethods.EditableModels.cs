@@ -1,4 +1,4 @@
-﻿// Copyright 2022 The Open Brush Authors
+// Copyright 2022 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -103,11 +103,6 @@ namespace TiltBrush
         )]
         public static ModelWidget ImportModel(string location)
         {
-            return _ImportModel(location, false);
-        }
-
-        public static ModelWidget _ImportModel(string location, bool editable)
-        {
             if (location.StartsWith("poly:"))
             {
                 location = location.Substring(5);
@@ -180,13 +175,12 @@ namespace TiltBrush
                     return null;
                 }
 
-                WidgetManager.m_Instance.WidgetsDormant = false;
-                SketchControlsScript.m_Instance.EatGazeObjectInput();
-                SelectionManager.m_Instance.RemoveFromSelection(false);
-                return widget;
-            }
-        }
+            WidgetManager.m_Instance.WidgetsDormant = false;
+            SketchControlsScript.m_Instance.EatGazeObjectInput();
+            SelectionManager.m_Instance.RemoveFromSelection(false);
 
+            return widget;
+        }
 
         private static EditableModelWidget GetActiveEditableModel(int index)
         {

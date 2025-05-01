@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System;
-using UnityEngine;
 
 namespace TiltBrush
 {
@@ -29,14 +28,7 @@ namespace TiltBrush
         {
             base.OnEnablePanel();
             // Safe to run multiple times as it checks m_IsInitialized
-            try
-            {
-                LuaManager.Instance?.Init();
-            }
-            catch (Exception e)
-            {
-                Debug.LogWarning($"Error initializing LuaManager: {e}");
-            }
+            LuaManager.Instance?.Init();
         }
 
         public void InitScriptUiNav()

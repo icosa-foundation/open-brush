@@ -66,7 +66,8 @@
     "com.unity.modules.unitywebrequestwww": "1.0.0",
     "com.unity.modules.vehicles": "1.0.0",
     "com.unity.modules.video": "1.0.0",
-    "com.unity.modules.wind": "1.0.0"
+    "com.unity.modules.wind": "1.0.0",
+    "moonsharp": "https://github.com/icosa-mirror/moonsharp-unity-upm.git"
   },
   "scopedRegistries": [
     {

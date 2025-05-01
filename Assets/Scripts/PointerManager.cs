@@ -1025,15 +1025,15 @@ namespace TiltBrush
                     CalculateMirrorColors(m_CustomMirrorMatrices.Count);
                     active = m_CustomMirrorMatrices.Count;
                     break;
-                case SymmetryMode.CustomSymmetryMode:
-                    vrPoly = PreviewPolyhedron.m_Instance;
-                    active = vrPoly.m_PolyMesh.Faces.Count;
-                    break;
                 case SymmetryMode.ScriptedSymmetryMode:
                     var script = LuaManager.Instance.GetActiveScript(LuaApiCategory.SymmetryScript);
                     LuaManager.Instance.InitScript(script);
                     GenerateScriptedPointerTransforms();
                     active = m_ScriptedTransforms.Count;
+                    break;
+                case SymmetryMode.CustomSymmetryMode:
+                    vrPoly = PreviewPolyhedron.m_Instance;
+                    active = vrPoly.m_PolyMesh.Faces.Count;
                     break;
                 case SymmetryMode.DebugMultiple:
                     active = DEBUG_MULTIPLE_NUM_POINTERS;

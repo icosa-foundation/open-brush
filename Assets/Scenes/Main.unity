@@ -15625,12 +15625,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_MultiplayerType: 2
   CurrentRoomName: 
-  data:
+  CurrentRoomData:
     roomName: 
     roomPassword: 
     private: 0
     maxPlayers: 0
-    voiceDisabled: 0
+    silentRoom: 0
+    viewOnlyRoom: 0
 --- !u!114 &1052269835
 MonoBehaviour:
   m_ObjectHideFlags: 0

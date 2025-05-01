@@ -1533,6 +1533,7 @@ namespace TiltBrush
                 m_loadingTiltModels75 = null;
             }
 
+
             if (m_loadingEditableTiltModels != null)
             {
                 OverlayManager.m_Instance.RefuseProgressBarChanges(true);

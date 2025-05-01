@@ -14,6 +14,7 @@
 
 using System;
 using OpenBrush.Multiplayer;
+using System;
 using UnityEngine;
 
 namespace TiltBrush
@@ -131,7 +132,8 @@ namespace TiltBrush
             }
             else
             {
-                // Allow API commands to override painting mode
+                // Allow API command to override painting mode
+                // (ignored if multiplayer is in view-only mode)
                 switch (ApiManager.Instance.ForcePainting)
                 {
                     case ApiManager.ForcePaintingMode.ForcedOn:

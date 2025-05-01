@@ -4291,6 +4291,20 @@ namespace TiltBrush
                         EatGazeObjectInput();
                         break;
                     }
+                case GlobalCommands.SaveAs:
+                    {
+                        if (!FileUtils.CheckDiskSpaceWithError(App.UserSketchPath()))
+                        {
+                            return;
+                        }
+                        if (iParam1 == 1)
+                        {
+                            GenerateBoundingBoxSaveIcon();
+                        }
+                        StartCoroutine(SaveLoadScript.m_Instance.SaveAs(sParam));
+                        EatGazeObjectInput();
+                        break;
+                    }
                 case GlobalCommands.SaveAndUpload:
                     {
                         if (!FileUtils.CheckDiskSpaceWithError(App.UserSketchPath()))
@@ -4988,7 +5002,6 @@ namespace TiltBrush
                     SketchSurfacePanel.m_Instance.EatToolsInput();
                     break;
                 case GlobalCommands.RepaintOptions:
-                case GlobalCommands.Null:
                 case GlobalCommands.MultiplayerPanelOptions:
                 case GlobalCommands.MultiplayerJoinRoom:
                 case GlobalCommands.MultiplayerLeaveRoom:
@@ -5003,6 +5016,7 @@ namespace TiltBrush
                 case GlobalCommands.MultiplayerMuteAllForAll:
                 case GlobalCommands.MultiplayerPlayerMuteForAll:
                 case GlobalCommands.WhatIsNew:
+                case GlobalCommands.Null:
                     break;// Intentionally blank.
                 default:
                     Debug.LogError($"Unrecognized command {rEnum}");
@@ -5062,8 +5076,8 @@ namespace TiltBrush
                 case GlobalCommands.SymmetryPlane: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.SinglePlane;
                 case GlobalCommands.MultiMirror: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.MultiMirror;
                 case GlobalCommands.SymmetryTwoHanded: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.TwoHanded;
-                case GlobalCommands.CustomSymmetryCommand: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.CustomSymmetryMode;
                 case GlobalCommands.ScriptedSymmetryCommand: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.ScriptedSymmetryMode;
+                case GlobalCommands.CustomSymmetryCommand: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.CustomSymmetryMode;
                 case GlobalCommands.AutoOrient: return m_AutoOrientAfterRotation;
                 case GlobalCommands.AudioVisualization: return VisualizerManager.m_Instance.VisualsRequested;
                 case GlobalCommands.AdvancedPanelsToggle: return m_PanelManager.AdvancedModeActive();
