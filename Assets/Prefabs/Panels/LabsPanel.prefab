@@ -399,6 +399,7 @@ MonoBehaviour:
   m_DescriptionZScale: 10
   m_Nob: {fileID: 193010}
   m_Mesh: {fileID: 2394778}
+  m_Orientation: 0
   references:
     version: 2
     RefIds: []
@@ -2740,7 +2741,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 77bf8765016e8ff4080d523e18a50722, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 56e5ebeba70465c44bf75491d40b6f3d, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
