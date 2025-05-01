@@ -62,10 +62,13 @@ namespace TiltBrush
                 LuaApiCategory.SymmetryScript => SymmetryScriptButton,
                 _ => throw new ArgumentOutOfRangeException(nameof(category), category, null)
             };
-            btn.SetDescriptionText($"{category}: {scriptName}");
-            if (description != null)
+            if (btn)
             {
-                btn.SetExtraDescriptionText(description);
+                btn.SetDescriptionText($"{category}: {scriptName}");
+                if (description != null)
+                {
+                    btn.SetExtraDescriptionText(description);
+                }
             }
         }
 
