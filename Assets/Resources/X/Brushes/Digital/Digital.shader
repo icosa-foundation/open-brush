@@ -16,6 +16,11 @@ Shader "Brush/Special/Digital" {
 Properties {
   _MainTex ("Particle Texture", 2D) = "white" {}
   _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+
+  _Opacity ("Opacity", Range(0, 1)) = 1
+  _Dissolve ("Dissolve", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -45,11 +50,17 @@ Category {
 
       sampler2D _MainTex;
 
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
+      uniform half _Dissolve;
+      uniform half _Opacity;
+
       struct appdata_t {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float3 normal : NORMAL;
         float2 texcoord : TEXCOORD0;
+        uint id : SV_VertexID;
 
         UNITY_VERTEX_INPUT_INSTANCE_ID
       };
@@ -59,6 +70,7 @@ Category {
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
         float2 st : TEXCOORD1;
+        uint id : TEXCOORD2;
 
         UNITY_VERTEX_OUTPUT_STEREO
       };
@@ -89,11 +101,18 @@ Category {
 
         // scale it up so we can make a grid
         o.st *= BRUSHES_DIGITAL_ROWS;
+        o.id = (float2)v.id;
         return o;
       }
 
       // Input color is srgb
       fixed4 frag (v2f i) : COLOR {
+
+        #ifdef SHADER_SCRIPTING_ON
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+        if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+        #endif
+
         float stroke_width = .1;
         float antialias_feather_px = 4;
 
@@ -174,7 +193,7 @@ Category {
         fixed4 color;
         color.a = 1;
         color.rgb = lum*bloomColor(i.color,lum*_EmissionGain);
-        return color;
+        return color * _Opacity;
       }
       ENDCG
     }

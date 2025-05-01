@@ -28,6 +28,7 @@ namespace TiltBrush
     public class SelectionManager : MonoBehaviour
     {
         public static SelectionManager m_Instance;
+
         private SnapGrid3D m_SnapGridVisualization;
 
         [SerializeField] private SelectionWidget m_SelectionWidget;
@@ -313,6 +314,57 @@ namespace TiltBrush
         public int CurrentSnapGridIndex => m_CurrentSnapGridIndex;
         public float SnappingAngle => m_snappingAngle;
         public float SnappingGridSize => m_snappingGridSize;
+
+        // Mainly stored for use in scripts
+        private Stroke m_LastSelectedStroke;
+        private Stroke m_LastStroke;
+
+        private GrabWidget m_LastSelectedWidget;
+        private ImageWidget m_LastSelectedImage;
+        private VideoWidget m_LastSelectedVideo;
+        private ModelWidget m_LastSelectedModel;
+        private StencilWidget m_LastSelectedStencil;
+
+        private List<TrTransform> m_LastSelectedStrokeCP;
+
+        private List<TrTransform> m_LastStrokeCP;
+
+
+        public Stroke LastSelectedStroke
+        {
+            get => m_LastSelectedStroke;
+            set => m_LastSelectedStroke = value;
+        }
+
+        public GrabWidget LastSelectedWidget
+        {
+            get => m_LastSelectedWidget;
+            set => m_LastSelectedWidget = value;
+        }
+
+        public ImageWidget LastSelectedImage
+        {
+            get => m_LastSelectedImage;
+            set => m_LastSelectedImage = value;
+        }
+
+        public VideoWidget LastSelectedVideo
+        {
+            get => m_LastSelectedVideo;
+            set => m_LastSelectedVideo = value;
+        }
+
+        public ModelWidget LastSelectedModel
+        {
+            get => m_LastSelectedModel;
+            set => m_LastSelectedModel = value;
+        }
+
+        public StencilWidget LastSelectedStencil
+        {
+            get => m_LastSelectedStencil;
+            set => m_LastSelectedStencil = value;
+        }
 
         /// Returns the active strokes in the given group.
         public IEnumerable<Stroke> StrokesInGroup(SketchGroupTag group)
@@ -685,6 +737,7 @@ namespace TiltBrush
                 Debug.Assert(!groupStrokes.Contains(stroke));
                 groupStrokes.Add(stroke);
             }
+            if (strokes.Any()) LastSelectedStroke = strokes.Last();
 
             // If the manager is tasked to select strokes, make sure the SelectionTool is active.
             // b/64029485 In the event that the user does not have the SelectionTool active and presses
@@ -704,26 +757,8 @@ namespace TiltBrush
                     Debug.LogWarning("Attempted to deselect stroke that is not selected.");
                     continue;
                 }
-                CanvasScript destinationCanvas;
-
-                // Deselected strokes are placed on (in order of preference):
-                // 1. Supplied targetCanvas
-                // 2. Their stored m_PreviousCanvas
-                // 3. The active canvas
-                if (IsValidDestination(targetCanvas))
-                {
-                    destinationCanvas = targetCanvas;
-                }
-                else if (IsValidDestination(stroke.m_PreviousCanvas))
-                {
-                    destinationCanvas = stroke.m_PreviousCanvas;
-                }
-                else
-                {
-                    destinationCanvas = App.Scene.ActiveCanvas;
-                }
-
-                stroke.SetParentKeepWorldPosition(destinationCanvas, SelectionTransform);
+                var destination = ChooseDestinationCanvas(targetCanvas, stroke.m_PreviousCanvas);
+                stroke.SetParentKeepWorldPosition(destination, SelectionTransform);
                 m_SelectedStrokes.Remove(stroke);
 
                 var groupStrokes = m_GroupToSelectedStrokes[stroke.Group];
@@ -748,6 +783,17 @@ namespace TiltBrush
             {
                 SelectWidget(widget);
             }
+
+            var lastWidget = widgets.LastOrDefault();
+            LastSelectedWidget = lastWidget != null ? lastWidget : LastSelectedWidget;
+            var imageWidget = widgets.LastOrDefault(w => w is ImageWidget) as ImageWidget;
+            LastSelectedImage = imageWidget != null ? imageWidget : LastSelectedImage;
+            var videoWidget = widgets.LastOrDefault(w => w is VideoWidget) as VideoWidget;
+            LastSelectedVideo = videoWidget != null ? videoWidget : LastSelectedVideo;
+            var modelWidget = widgets.LastOrDefault(w => w is ModelWidget) as ModelWidget;
+            LastSelectedModel = modelWidget != null ? modelWidget : LastSelectedModel;
+            var stencilWidget = widgets.LastOrDefault(w => w is StencilWidget) as StencilWidget;
+            LastSelectedStencil = stencilWidget != null ? stencilWidget : LastSelectedStencil;
 
             // If the manager is tasked to select something, make sure the SelectionTool is active.
             // b/64029485 In the event that the user does not have the SelectionTool active and presses
@@ -776,6 +822,11 @@ namespace TiltBrush
             groupWidgets.Add(widget);
         }
 
+        public void DeselectWidget(GrabWidget widget, CanvasScript targetCanvas = null)
+        {
+            DeselectWidgets(new[] { widget }, targetCanvas);
+        }
+
         public void DeselectWidgets(IEnumerable<GrabWidget> widgets, CanvasScript targetCanvas = null)
         {
             // Deselects to the canvas stored in m_PreviousCanvas for each stroke or widget
@@ -789,25 +840,9 @@ namespace TiltBrush
                     continue;
                 }
 
-                CanvasScript destinationCanvas;
-                // Deselected widgets  are placed on (in order of preference):
-                // 1. Supplied targetCanvas
-                // 2. Their stored m_PreviousCanvas
-                // 3. The active canvas
-                if (IsValidDestination(targetCanvas))
-                {
-                    destinationCanvas = targetCanvas;
-                }
-                else if (IsValidDestination(widget.m_PreviousCanvas))
-                {
-                    destinationCanvas = widget.m_PreviousCanvas;
-                }
-                else
-                {
-                    destinationCanvas = App.Scene.ActiveCanvas;
-                }
-                widget.SetCanvas(destinationCanvas);
-                widget.RestoreGameObjectLayer(App.ActiveCanvas.gameObject.layer);
+                var destination = ChooseDestinationCanvas(targetCanvas, widget.m_PreviousCanvas);
+                widget.SetCanvas(destination);
+                widget.RestoreGameObjectLayer(destination.gameObject.layer);
                 widget.gameObject.SetActive(true);
                 m_SelectedWidgets.Remove(widget);
 
@@ -823,6 +858,17 @@ namespace TiltBrush
             {
                 SelectionTransform = TrTransform.identity;
             }
+        }
+
+        // Deselected objects are placed on (in order of preference):
+        // 1. Supplied targetCanvas
+        // 2. Their stored m_PreviousCanvas
+        // 3. The active canvas
+        private CanvasScript ChooseDestinationCanvas(CanvasScript targetCanvas, CanvasScript previousCanvas)
+        {
+            if (IsValidDestination(targetCanvas)) return targetCanvas;
+            if (IsValidDestination(previousCanvas)) return previousCanvas;
+            return App.Scene.ActiveCanvas;
         }
 
         public void RegisterStrokesInSelectionCanvas(ICollection<Stroke> strokes)
@@ -865,15 +911,15 @@ namespace TiltBrush
             UpdateSelectionWidget();
         }
 
-        public void InvertSelection()
+        public void InvertSelection(CanvasScript canvas)
         {
             // Build a list of all the strokes in the active canvas.
             List<Stroke> unselectedStrokes =
-                SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes();
+                SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes(canvas);
 
             // Build a list of all the unpinned widgets in the active canvas.
             List<GrabWidget> unselectedWidgets =
-                WidgetManager.m_Instance.GetAllUnselectedActiveWidgets();
+                WidgetManager.m_Instance.GetAllUnselectedActiveWidgets(canvas);
 
             // Select everything that was in the active canvas.
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
@@ -902,15 +948,15 @@ namespace TiltBrush
                 new FlipSelectionCommand(m_SelectedStrokes, m_SelectedWidgets, flipPlaneInSelectionSpace));
         }
 
-        public void SelectAll()
+        public void SelectAll(CanvasScript canvas)
         {
             // Build a list of all the strokes in the active canvas.
             List<Stroke> unselectedStrokes =
-                SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes();
+                SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes(canvas);
 
             // Build a list of all the unpinned widgets in the active canvas.
             List<GrabWidget> unselectedWidgets =
-                WidgetManager.m_Instance.GetAllUnselectedActiveWidgets();
+                WidgetManager.m_Instance.GetAllUnselectedActiveWidgets(canvas);
 
             // Select em all.
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
@@ -1098,22 +1144,6 @@ namespace TiltBrush
             }
         }
 
-        public Quaternion QuantizeAngle(Quaternion rotation)
-        {
-            var snapAngle = SnappingAngle;
-            if (snapAngle == 0) return rotation;
-            float round(float val) { return Mathf.Round(val / snapAngle) * snapAngle; }
-            Vector3 euler = rotation.eulerAngles;
-            euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
-            return Quaternion.Euler(euler);
-        }
-
-        public float ScalarSnap(float val)
-        {
-            if (SnappingGridSize == 0) return val;
-            return Mathf.Round(val / SnappingGridSize) * SnappingGridSize;
-        }
-
         // All transforms are in canvas space
         public Vector3 SnapToGrid_CS(Vector3 position)
         {
@@ -1130,11 +1160,11 @@ namespace TiltBrush
 
         // Input is in global space, the snapping is done in canvas space
         // And the result is returned in global space
-        public Vector3 SnapToGrid_GS(Vector3 position)
+        public Vector3 SnapToGrid_GS(Vector3 position_GS)
         {
             float gridSize = SnappingGridSize;
-            if (gridSize == 0) return position;
-            Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position);
+            if (gridSize == 0) return position_GS;
+            Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position_GS);
             float round(float val) { return Mathf.Round(val / gridSize) * gridSize; }
             Vector3 roundedCanvasPos = new Vector3(
                 m_EnableSnapTranslationX ? round(localCanvasPos.x) : localCanvasPos.x,
@@ -1142,6 +1172,23 @@ namespace TiltBrush
                 m_EnableSnapTranslationZ ? round(localCanvasPos.z) : localCanvasPos.z
             );
             return App.ActiveCanvas.transform.localToWorldMatrix.MultiplyPoint3x4(roundedCanvasPos);
+        }
+
+        public Quaternion QuantizeAngle(Quaternion rotation)
+        {
+            var snapAngle = SnappingAngle;
+            if (snapAngle == 0) return rotation;
+            float round(float val) { return Mathf.Round(val / snapAngle) * snapAngle; }
+
+            Vector3 euler = rotation.eulerAngles;
+            euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
+            return Quaternion.Euler(euler);
+        }
+
+        public float ScalarSnap(float val)
+        {
+            if (SnappingGridSize == 0) return val;
+            return Mathf.Round(val / SnappingGridSize) * SnappingGridSize;
         }
 
         // Used by align/distribute etc
@@ -1153,6 +1200,8 @@ namespace TiltBrush
                 widget.GetType().IsSubclassOf(typeof(StencilWidget))
             )
             .ToList();
+
     }
 
 } // namespace TiltBrush
+
