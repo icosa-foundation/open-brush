@@ -16,6 +16,10 @@ Shader "Brush/Visualizer/WaveformTube" {
 Properties {
   _MainTex ("Particle Texture", 2D) = "white" {}
   _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+
+  _Dissolve("Dissolve", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -44,10 +48,15 @@ Category {
       float4 _MainTex_ST;
       float _EmissionGain;
 
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
+      uniform half _Dissolve;
+
       struct appdata_t {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        uint id : SV_VertexID;
 
         UNITY_VERTEX_INPUT_INSTANCE_ID
       };
@@ -56,6 +65,7 @@ Category {
         float4 vertex : POSITION;
         float4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        uint id : TEXCOORD2;
 
         UNITY_VERTEX_OUTPUT_STEREO
       };
@@ -74,11 +84,17 @@ Category {
         o.texcoord = TRANSFORM_TEX(v.texcoord, _MainTex);
 
         o.color = bloomColor(v.color, _EmissionGain);
+        o.id = (float2)v.id;
         return o;
       }
 
       fixed4 frag (v2f i) : COLOR
       {
+        #ifdef SHADER_SCRIPTING_ON
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+        if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+        #endif
+
         i.texcoord.x -= _BeatOutputAccum.x;
         i.texcoord.y += i.texcoord.x;
         i.texcoord.x *= .25;
@@ -86,7 +102,8 @@ Category {
         float wav = (tex2D(_WaveFormTex, float2(i.texcoord.x,0)).r - .5f);
         i.texcoord.y += wav;
         float4 c = i.color * tex2D(_MainTex, i.texcoord);
-        return encodeHdr(c.rgb * c.a);
+        c = encodeHdr(c.rgb * c.a);
+        return c * _Dissolve;
       }
       ENDCG
     }

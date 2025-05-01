@@ -340,7 +340,7 @@ namespace TiltBrush
                 try
                 {
                     stencil = Instantiate(
-                    WidgetManager.m_Instance.GetStencilPrefab(stencilType));
+                        WidgetManager.m_Instance.GetStencilPrefab(stencilType));
                 }
                 catch (ArgumentException e)
                 {
