@@ -19,6 +19,15 @@ Properties {
   _Scroll2 ("Scroll2", Float) = 0
   _DisplacementIntensity("Displacement", Float) = .1
   _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+
+
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
+
+    _Dissolve("Dissolve", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -58,6 +67,7 @@ Category {
         float2 texcoord : TEXCOORD0;
 #endif
         float3 worldPos : TEXCOORD1;
+        uint id : SV_VertexID;
 
         UNITY_VERTEX_INPUT_INSTANCE_ID
       };
@@ -71,6 +81,7 @@ Category {
         float2 texcoord : TEXCOORD0;
 #endif
         float3 worldPos : TEXCOORD1;
+        uint id : TEXCOORD2;
 
         UNITY_VERTEX_OUTPUT_STEREO
       };
@@ -80,6 +91,10 @@ Category {
       fixed _Scroll2;
       half _DisplacementIntensity;
       half _EmissionGain;
+
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
+      uniform half _Dissolve;
 
       v2f vert (appdata_t v)
       {
@@ -95,12 +110,19 @@ Category {
         o.color = bloomColor(v.color, _EmissionGain);
         o.pos = UnityObjectToClipPos(v.vertex);
         o.worldPos = mul(unity_ObjectToWorld, v.vertex);
+        o.id = (float2)v.id;
         return o;
       }
 
       // Note: input color is srgb
       fixed4 frag (v2f i) : COLOR
       {
+        #ifdef SHADER_SCRIPTING_ON
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+        // It's hard to get alpha curves right so use dithering for hdr shaders
+        if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+        #endif
+
         half2 displacement;
         float procedural_line = 0;
 #ifdef AUDIO_REACTIVE
@@ -109,7 +131,7 @@ Category {
         float envelopeHalf = sin(i.texcoord.x * 3.14159 * .5);
 
         // Basic fire effect
-        displacement = tex2D(_MainTex, i.texcoord + half2(-_Time.x * _Scroll1, 0)  ).a;
+        displacement = tex2D(_MainTex, i.texcoord + half2(-GetTime().x * _Scroll1, 0)  ).a;
 
         // Waveform fire effect
         float waveform = (tex2D(_WaveFormTex, float2(i.texcoord.x * .2 + .025*i.worldPos.y,0)).g - .5f) + displacement*.05;
@@ -122,10 +144,10 @@ Category {
         //procedural_line = pow(procedural_line, i.texcoord.x* 10);
 
 #else
-        displacement = tex2D(_MainTex, i.texcoord + half2(-_Time.x * _Scroll1, 0)  ).a;
+        displacement = tex2D(_MainTex, i.texcoord + half2(-GetTime().x * _Scroll1, 0)  ).a;
 #endif
 
-        half4 tex = tex2D(_MainTex, i.texcoord + half2(-_Time.x * _Scroll2, 0) - displacement * _DisplacementIntensity);
+        half4 tex = tex2D(_MainTex, i.texcoord + half2(-GetTime().x * _Scroll2, 0) - displacement * _DisplacementIntensity);
 		tex.xyz *= step(0.01, tex.xyz);
 
 #ifdef AUDIO_REACTIVE
@@ -135,7 +157,7 @@ Category {
         color = encodeHdr(color.rgb * color.a);
         color = SrgbToNative(color);
         FRAG_MOBILESELECT(color)
-        return color;
+        return color * _Dissolve;
       }
       ENDCG
     }

@@ -19,6 +19,15 @@ Properties {
   _ScrollJitterIntensity("Scroll Jitter Intensity", Float) = 1.0
   _ScrollJitterFrequency("Scroll Jitter Frequency", Float) = 1.0
   _SpreadRate ("Spread Rate", Range(0.3, 5)) = 1.539
+
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
+
+  _Opacity ("Opacity", Range(0, 1)) = 1
+  _Dissolve ("Dissolve", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -48,10 +57,16 @@ Category {
       sampler2D _MainTex;
       fixed4 _TintColor;
 
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
+      uniform half _Dissolve;
+      uniform half _Opacity;
+
       struct v2f {
         float4 vertex : SV_POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        uint id : TEXCOORD2;
 
         UNITY_VERTEX_OUTPUT_STEREO
       };
@@ -65,15 +80,15 @@ Category {
 
       float3 computeDisplacement(float3 seed, float timeOffset) {
         float3 jitter; {
-          float t = _Time.y * _ScrollRate + timeOffset;
-          jitter.x = sin(t       + _Time.y + seed.z * _ScrollJitterFrequency);
-          jitter.z = cos(t       + _Time.y + seed.x * _ScrollJitterFrequency);
-          jitter.y = cos(t * 1.2 + _Time.y + seed.x * _ScrollJitterFrequency);
+          float t = GetTime().y * _ScrollRate + timeOffset;
+          jitter.x = sin(t       + GetTime().y + seed.z * _ScrollJitterFrequency);
+          jitter.z = cos(t       + GetTime().y + seed.x * _ScrollJitterFrequency);
+          jitter.y = cos(t * 1.2 + GetTime().y + seed.x * _ScrollJitterFrequency);
           jitter *= _ScrollJitterIntensity;
         }
 
         float3 curl; {
-          float3 v = (seed + jitter) * .1 + _Time.x * 5;
+          float3 v = (seed + jitter) * .1 + GetTime().x * 5;
           float d = 30;
           curl = float3(curlX(v, d), curlY(v, d), curlZ(v, d)) * 10;
         }
@@ -82,6 +97,9 @@ Category {
       }
 
       v2f vert (ParticleVertexWithSpread_t v) {
+
+
+
         v2f o;
 
         UNITY_SETUP_INSTANCE_ID(v);
@@ -107,12 +125,18 @@ Category {
         o.color = v.color;
         o.color.a = 1;
         o.texcoord = TRANSFORM_TEX(v.texcoord.xy,_MainTex);
+        o.id = v.id;
 
         return o;
       }
 
       fixed4 frag (v2f i) : SV_Target
       {
+        #ifdef SHADER_SCRIPTING_ON
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+        if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+        #endif
+
         float4 tex = tex2D(_MainTex, i.texcoord);
 
         // RGB Channels of the texture are affected by color
@@ -129,7 +153,7 @@ Category {
         color.a = tex.a;
 #endif
 
-        return color;
+        return color * _Opacity;
       }
       ENDCG
     }

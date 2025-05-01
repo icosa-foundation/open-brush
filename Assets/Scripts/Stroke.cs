@@ -479,5 +479,86 @@ namespace TiltBrush
 
             TiltMeterScript.m_Instance.AdjustMeter(this, up: !hide);
         }
+
+        private void _CheckValidLayerState()
+        {
+            if (!Canvas.BatchManager.OneStrokePerBatch)
+            {
+                throw new StrokeShaderModifierException($"Please set OneStrokePerBatch=true for this stroke's layer");
+            }
+        }
+
+        public void SetShaderClipping(float clipStart, float clipEnd)
+        {
+            _CheckValidLayerState();
+            var batch = m_BatchSubset.m_ParentBatch;
+            var material = batch.InstantiatedMaterial;
+            if (!material.HasFloat("_ClipStart") || !material.HasFloat("_ClipEnd"))
+            {
+                throw new StrokeShaderModifierException($"Brush material {material.name} does not support shader clipping");
+            }
+            float startIndex = clipStart * batch.Geometry.NumVerts;
+            float endIndex = clipEnd * batch.Geometry.NumVerts;
+            batch.InstantiatedMaterial.EnableKeyword("SHADER_SCRIPTING_ON");
+            batch.InstantiatedMaterial.SetFloat("_ClipStart", startIndex);
+            batch.InstantiatedMaterial.SetFloat("_ClipEnd", endIndex);
+        }
+
+        public void SetShaderFloat(string parameter, float value)
+        {
+            _CheckValidLayerState();
+            var batch = m_BatchSubset.m_ParentBatch;
+            if (ApiManager.ParameterRequiresScriptingKeyword(parameter))
+            {
+                batch.InstantiatedMaterial.EnableKeyword("SHADER_SCRIPTING_ON");
+            }
+            var material = batch.InstantiatedMaterial;
+            if (!material.HasFloat(parameter))
+            {
+                throw new StrokeShaderModifierException($"Brush material {material.name} does not have a float parameter named {parameter}");
+            }
+            material.SetFloat(parameter, value);
+        }
+
+        public void SetShaderColor(string parameter, ColorApiWrapper color)
+        {
+            _CheckValidLayerState();
+            var batch = m_BatchSubset.m_ParentBatch;
+            var material = batch.InstantiatedMaterial;
+            if (!material.HasColor(parameter))
+            {
+                throw new StrokeShaderModifierException($"Brush material {material.name} does not have a Color parameter named {parameter}");
+            }
+            batch.InstantiatedMaterial.SetColor(parameter, color._Color);
+        }
+
+        public void SetShaderTexture(string parameter, Texture2D image)
+        {
+            _CheckValidLayerState();
+            var batch = m_BatchSubset.m_ParentBatch;
+            var material = batch.InstantiatedMaterial;
+            if (!material.HasTexture(parameter))
+            {
+                throw new StrokeShaderModifierException($"Brush material {material.name} does not have a Texture parameter named {parameter}");
+            }
+            batch.InstantiatedMaterial.SetTexture(parameter, image);
+        }
+
+        public void SetShaderVector(string parameter, float x, float y = 0, float z = 0, float w = 0)
+        {
+            _CheckValidLayerState();
+            var batch = m_BatchSubset.m_ParentBatch;
+            var material = batch.InstantiatedMaterial;
+            if (!material.HasVector(parameter))
+            {
+                throw new StrokeShaderModifierException($"Brush material {material.name} does not have a vector parameter named {parameter}");
+            }
+            batch.InstantiatedMaterial.SetVector(parameter, new Vector4(x, y, z, w));
+        }
+    }
+
+    public class StrokeShaderModifierException : NotSupportedException
+    {
+        public StrokeShaderModifierException(string s) : base(s) { }
     }
 } // namespace TiltBrush
