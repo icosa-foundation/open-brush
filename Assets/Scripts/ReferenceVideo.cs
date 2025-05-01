@@ -248,7 +248,7 @@ namespace TiltBrush
             }
         }
 
-        private IEnumerator<Null> PrepareVideoPlayer(Action onCompletion)
+        public IEnumerator<Null> PrepareVideoPlayer(Action onCompletion)
         {
             Error = null;
             var gobj = new GameObject(HumanName);

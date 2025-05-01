@@ -53,13 +53,15 @@ jobs:
             ${{ steps.filter.outputs.packages == 'true' && 'The following package files were changed:' || '' }}
 
             ${{ steps.filter.outputs.packages == 'true' && '```text' || '' }}
-            ${{ steps.filter.outputs.packages == 'true' && join(fromJson(steps.filter.outputs.packages_files || '[]'), '\n') || '' }}
+            ${{ steps.filter.outputs.packages == 'true' && join(fromJson(steps.filter.outputs.packages_files || '[]'), '
+            ') || '' }}
             ${{ steps.filter.outputs.packages == 'true' && '```' || '' }}
 
             ${{ steps.filter.outputs.projectsettings == 'true' && 'The following files from ProjectSettings were changed:' || '' }}
 
             ${{ steps.filter.outputs.projectsettings == 'true' && '```text' || '' }}
-            ${{ steps.filter.outputs.projectsettings == 'true' && join(fromJson(steps.filter.outputs.projectsettings_files || '[]'), '\n') || '' }}
+            ${{ steps.filter.outputs.projectsettings == 'true' && join(fromJson(steps.filter.outputs.projectsettings_files || '[]'), '
+            ') || '' }}
             ${{ steps.filter.outputs.projectsettings == 'true' && '```' || '' }}
 
             (Review: flagged files)

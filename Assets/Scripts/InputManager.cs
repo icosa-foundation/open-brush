@@ -86,6 +86,7 @@ namespace TiltBrush
             Trash,
             Share,
             Fly,
+            ScriptedTool = 6000,
             ToggleSculpt = 11100
         }
 
@@ -628,6 +629,8 @@ namespace TiltBrush
                 case SketchCommands.Redo:
                     return Wand.GetCommand(rCommand);
                 case SketchCommands.Fly:
+                    return Brush.GetCommand(rCommand);
+                case SketchCommands.ScriptedTool:
                     return Brush.GetCommand(rCommand);
             }
 

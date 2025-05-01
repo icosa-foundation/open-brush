@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.watertrans.glyphloader": "https://github.com/icosa-mirror/GlyphLoader-Unity.git#upm",
     "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
     "com.meta.xr.sdk.core": "https://github.com/icosa-mirror/com.meta.xr.sdk.core.git#68.0.2-openbrush-hotfix",
     "com.meta.xr.sdk.platform": "60.0.0",
@@ -63,7 +64,8 @@
     "com.unity.modules.unitywebrequestwww": "1.0.0",
     "com.unity.modules.vehicles": "1.0.0",
     "com.unity.modules.video": "1.0.0",
-    "com.unity.modules.wind": "1.0.0"
+    "com.unity.modules.wind": "1.0.0",
+    "moonsharp": "https://github.com/icosa-mirror/moonsharp-unity-upm.git"
   },
   "scopedRegistries": [
     {
@@ -73,7 +75,8 @@
         "com.atteneder",
         "org.nuget.google",
         "org.nuget.sharpziplib",
-        "org.nuget.system"
+        "org.nuget.system",
+        "com.openupm"
       ]
     },
     {

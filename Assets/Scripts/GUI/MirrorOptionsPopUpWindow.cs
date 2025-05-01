@@ -445,11 +445,11 @@ namespace TiltBrush
             };
             m_OptionsSliderAmp.UpdateValueAbsolute(currentSettings.amp);
             m_OptionsSliderFreq.UpdateValueAbsolute(currentSettings.freq);
-            m_OptionsButtonSine.SetButtonSelected(currentSettings.mode == PointerManager.ColorShiftMode.SineWave);
-            m_OptionsButtonSquare.SetButtonSelected(currentSettings.mode == PointerManager.ColorShiftMode.SquareWave);
-            m_OptionsButtonTriangle.SetButtonSelected(currentSettings.mode == PointerManager.ColorShiftMode.TriangleWave);
-            m_OptionsButtonSawtooth.SetButtonSelected(currentSettings.mode == PointerManager.ColorShiftMode.SawtoothWave);
-            m_OptionsButtonNoise.SetButtonSelected(currentSettings.mode == PointerManager.ColorShiftMode.Noise);
+            m_OptionsButtonSine.SetButtonSelected(currentSettings.mode == WaveGenerator.Mode.SineWave);
+            m_OptionsButtonSquare.SetButtonSelected(currentSettings.mode == WaveGenerator.Mode.SquareWave);
+            m_OptionsButtonTriangle.SetButtonSelected(currentSettings.mode == WaveGenerator.Mode.TriangleWave);
+            m_OptionsButtonSawtooth.SetButtonSelected(currentSettings.mode == WaveGenerator.Mode.SawtoothWave);
+            m_OptionsButtonNoise.SetButtonSelected(currentSettings.mode == WaveGenerator.Mode.WhiteNoise);
         }
 
         public void HandleColorComponentButtons(TextActionButton btn)
@@ -474,19 +474,19 @@ namespace TiltBrush
             switch (btn.m_ButtonLabel.ToLower())
             {
                 case "sine":
-                    UpdateActiveColorShiftMode(PointerManager.ColorShiftMode.SineWave);
+                    UpdateActiveColorShiftMode(WaveGenerator.Mode.SineWave);
                     break;
                 case "triangle":
-                    UpdateActiveColorShiftMode(PointerManager.ColorShiftMode.TriangleWave);
+                    UpdateActiveColorShiftMode(WaveGenerator.Mode.TriangleWave);
                     break;
                 case "sawtooth":
-                    UpdateActiveColorShiftMode(PointerManager.ColorShiftMode.SawtoothWave);
+                    UpdateActiveColorShiftMode(WaveGenerator.Mode.SawtoothWave);
                     break;
                 case "square":
-                    UpdateActiveColorShiftMode(PointerManager.ColorShiftMode.SquareWave);
+                    UpdateActiveColorShiftMode(WaveGenerator.Mode.SquareWave);
                     break;
                 case "noise":
-                    UpdateActiveColorShiftMode(PointerManager.ColorShiftMode.Noise);
+                    UpdateActiveColorShiftMode(WaveGenerator.Mode.WhiteNoise);
                     break;
             }
         }
@@ -529,7 +529,7 @@ namespace TiltBrush
             UpdateColorPreview();
         }
 
-        private void UpdateActiveColorShiftMode(PointerManager.ColorShiftMode mode)
+        private void UpdateActiveColorShiftMode(WaveGenerator.Mode mode)
         {
             switch (m_currentSelectedColorComponent)
             {
