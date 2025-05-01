@@ -687,17 +687,9 @@ namespace TiltBrush
                     App.Scene.Pose = jsonData.SceneTransformInRoomSpace;
                     App.Scene.ResetLayers(true);
                     App.Scene.animationUI_manager.StartTimeline();
-                    Coords.CanvasLocalPose = TrTransform.identity;
-                    if (jsonData.CanvasTransformInSceneSpace != TrTransform.identity)
-                    {
-                        Debug.LogWarning("This file has an unsupported, experimental Canvas Transform specified.");
-                        // Was experimental mode. Needs testing.
-                        // Saves sketches are unlikely to trigger this under normal usage
-                        if (false)
-                        {
-                            Coords.CanvasLocalPose = jsonData.CanvasTransformInSceneSpace;
-                        }
-                    }
+                    // This was a conflict between the animation branch and the plugin branch
+                    // Is it needed?
+                    //Coords.CanvasLocalPose = TrTransform.identity;
                     LastThumbnail_SS = App.Scene.Pose.inverse *
                         jsonData.ThumbnailCameraTransformInRoomSpace;
 
