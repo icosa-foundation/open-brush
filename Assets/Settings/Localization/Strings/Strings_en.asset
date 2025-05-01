@@ -605,7 +605,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7870646065012736
-    m_Localized: Scripts
+    m_Localized: Plugins & Scripts
     m_Metadata:
       m_Items: []
   - m_Id: 7870824155160576
@@ -3496,8 +3496,8 @@ MonoBehaviour:
   - m_Id: 217069105871577088
     m_Localized: 'You can continue without a VR headset.
 
-      Choose a sketch
-      below to enter Viewing Mode.'
+      Choose a sketch below
+      to enter Viewing Mode.'
     m_Metadata:
       m_Items: []
   - m_Id: 217070349893754880
