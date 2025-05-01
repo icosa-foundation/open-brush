@@ -406,6 +406,30 @@ namespace TiltBrush
             return Axis.Invalid;
         }
 
+        // Return the bounds
+        public virtual Bounds GetBounds()
+        {
+            if (m_BoxCollider != null)
+            {
+                TrTransform boxColliderToCanvasXf = TrTransform.FromTransform(m_BoxCollider.transform);
+                Bounds bounds = new Bounds(boxColliderToCanvasXf * m_BoxCollider.center, Vector3.zero);
+
+                // Transform the corners of the widget bounds into canvas space and extend the total bounds
+                // to encapsulate them.
+                for (int i = 0; i < 8; i++)
+                {
+                    bounds.Encapsulate(boxColliderToCanvasXf * (m_BoxCollider.center + Vector3.Scale(
+                        m_BoxCollider.size,
+                        new Vector3((i & 1) == 0 ? -0.5f : 0.5f,
+                            (i & 2) == 0 ? -0.5f : 0.5f,
+                            (i & 4) == 0 ? -0.5f : 0.5f))));
+                }
+
+                return bounds;
+            }
+            return new Bounds();
+        }
+
         // Return the bounds in selection canvas space.
         public virtual Bounds GetBounds_SelectionCanvasSpace()
         {
@@ -951,9 +975,7 @@ namespace TiltBrush
         {
             if (m_InitialMaterials == null)
             {
-                m_WidgetRenderers = GetComponentsInChildren<Renderer>();
-                m_InitialMaterials = m_WidgetRenderers.ToDictionary(x => x, x => x.sharedMaterials);
-                m_NewMaterials = m_WidgetRenderers.ToDictionary(x => x, x => x.materials);
+                CloneInitialMaterials(null);
             }
 
             foreach (var renderer in m_WidgetRenderers)
@@ -990,7 +1012,7 @@ namespace TiltBrush
         /// It is necessary to call this function when cloning a widget as the widget will be selected
         /// and the clone will not have these values set, although they will be expected when deselection
         /// happens.
-        protected void CloneInitialMaterials(GrabWidget other)
+        protected virtual void CloneInitialMaterials(GrabWidget other)
         {
             m_WidgetRenderers = GetComponentsInChildren<Renderer>();
             m_InitialMaterials = m_WidgetRenderers.ToDictionary(x => x, x => x.sharedMaterials);
@@ -1010,8 +1032,9 @@ namespace TiltBrush
             }
         }
 
-        public void HideNow()
+        public void HideNow(bool force = false)
         {
+            if (force) m_CurrentState = State.Tossed;
             if (m_CurrentState == State.Tossed)
             {
                 m_TossTimer = 0;

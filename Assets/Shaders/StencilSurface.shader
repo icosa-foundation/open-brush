@@ -21,7 +21,7 @@ Properties {
   _GridSize ("Grid Size", Float) = 1
   _GridLineWidth ("Grid Line Width", Float) = .01
   _FrameWidth ("Frame Width", Float) = .1
-  [KeywordEnum(Plane, Cube, Sphere, Capsule)] _Shape ("Shape Type", Float) = 0
+  [KeywordEnum(Plane, Cube, Sphere, Capsule, Mesh)] _Shape ("Shape Type", Float) = 0
 }
 
 CGINCLUDE
@@ -29,7 +29,7 @@ CGINCLUDE
   #include "Assets/Shaders/Include/Brush.cginc"
   #include "Assets/Shaders/Include/MobileSelection.cginc"
 
-  #pragma multi_compile _SHAPE_PLANE _SHAPE_CUBE _SHAPE_SPHERE _SHAPE_CAPSULE
+  #pragma multi_compile _SHAPE_PLANE _SHAPE_CUBE _SHAPE_SPHERE _SHAPE_CAPSULE _SHAPE_MESH
   #pragma multi_compile __ SELECTION_ON HIGHLIGHT_ON
 
   uniform float4 _Color;
@@ -186,6 +186,22 @@ CGINCLUDE
     outerEdges += abs(fmod(i.pos.x * 2 + 0 , 1)) < gridWidthX * 2;
     outerEdges += abs(fmod(i.pos.y * 2 + 0 , 1)) < gridWidthX * 2;
     outerEdges += abs(fmod(i.pos.z * 2 + 0 , 1)) < gridWidthX * 2;
+#elif _SHAPE_MESH
+    const float gridWidthX = _FrameWidth / _LocalScale.x;
+    const float gridWidthY = _FrameWidth / _LocalScale.y;
+    const float gridWidthZ = _FrameWidth / _LocalScale.z;
+
+    // top / bottom
+    outerEdges += facings.facingY * (abs(.5 - i.texcoord.x) > (.5 - gridWidthX));
+    outerEdges += facings.facingY * (abs(.5 - i.texcoord.y) > (.5 - gridWidthZ));
+
+    // left / right
+    outerEdges += facings.facingX * (abs(.5 - i.texcoord.x) > (.5 - gridWidthZ));
+    outerEdges += facings.facingX * (abs(.5 - i.texcoord.y) > (.5 - gridWidthY));
+
+    // front / back
+    outerEdges += facings.facingZ * (abs(.5 - i.texcoord.x) > (.5 - gridWidthX));
+    outerEdges += facings.facingZ * (abs(.5 - i.texcoord.y) > (.5 - gridWidthY));
 #else
     return float4(1,0,1,1);
 #endif

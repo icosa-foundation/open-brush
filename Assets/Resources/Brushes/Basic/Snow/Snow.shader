@@ -21,6 +21,16 @@ Properties {
   _ScrollJitterIntensity("Scroll Jitter Intensity", Float) = 1.0
   _ScrollJitterFrequency("Scroll Jitter Frequency", Float) = 1.0
   _SpreadRate ("Spread Rate", Range(0.3, 5)) = 1.539
+
+
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
+
+  _Opacity ("Opacity", Range(0, 1)) = 1
+  _Dissolve ("Dissolve", Range(0, 1)) = 1
+  _ClipStart("Clip Start", Float) = 0
+  _ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -50,10 +60,16 @@ Category {
       sampler2D _MainTex;
       fixed4 _TintColor;
 
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
+      uniform half _Dissolve;
+      uniform half _Opacity;
+
       struct v2f {
         float4 vertex : SV_POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        uint id : TEXCOORD2;
 
         UNITY_VERTEX_OUTPUT_STEREO
       };
@@ -82,11 +98,11 @@ Category {
         float4 center_WS = mul(unity_ObjectToWorld, center);
 
         // Custom vertex animation
-        float scrollAmount = _Time.y;
+        float scrollAmount = GetTime().y;
         float t = fmod(scrollAmount * _ScrollRate + v.color.a, 1);
         float4 dispVec = (t - .5f) * float4(_ScrollDistance, 0.0);
-        dispVec.x += sin(t * _ScrollJitterFrequency + _Time.y) * _ScrollJitterIntensity;
-        dispVec.z += cos(t * _ScrollJitterFrequency * .5 + _Time.y) * _ScrollJitterIntensity;
+        dispVec.x += sin(t * _ScrollJitterFrequency + GetTime().y) * _ScrollJitterIntensity;
+        dispVec.z += cos(t * _ScrollJitterFrequency * .5 + GetTime().y) * _ScrollJitterIntensity;
         dispVec.xyz = spreadProgress * dispVec * kDecimetersToWorldUnits;
         center_WS += mul(xf_CS, dispVec);
 
@@ -103,18 +119,25 @@ Category {
         o.vertex = mul(UNITY_MATRIX_VP, corner_WS);
         o.color.a = pow(1 - abs(2*(t - .5)), 3);
         o.texcoord = TRANSFORM_TEX(v.texcoord.xy, _MainTex);
+        o.id = (float2)v.id;
         return o;
       }
 
       // Input color is srgb
       fixed4 frag (v2f i) : SV_Target
       {
+        #ifdef SHADER_SCRIPTING_ON
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+        if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
+        #endif
+
         float4 texCol = tex2D(_MainTex, i.texcoord);
         float4 color = SrgbToNative(2.0f * i.color * _TintColor * texCol);
 #if SELECTION_ON
         color.rgb = GetSelectionColor() * texCol.r;
         color.a = texCol.a;
 #endif
+        color.a *= _Opacity;
         return color;
       }
       ENDCG
