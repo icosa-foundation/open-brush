@@ -185,6 +185,7 @@ namespace TiltBrush
             ScriptedSymmetryCommand = 6004,
             OpenScriptParametersPopup = 6005,
             SaveAs = 6006,
+            OpenPluginDocs = 6007,
             OpenColorOptionsPopup = 7000,
             ChangeSnapAngle = 8000,
             OpenColorPicker = 9000,
@@ -4942,6 +4943,9 @@ namespace TiltBrush
                     break;
                 case GlobalCommands.OpenExampleScriptsList:
                     OpenURLAndInformUser($"http://localhost:{App.HttpServer.HttpPort}/examplescripts");
+                    break;
+                case GlobalCommands.OpenPluginDocs:
+                    OpenURLAndInformUser("https://docs.openbrush.app/user-guide/using-plugins");
                     break;
                 case GlobalCommands.MultiplayerTogglePanel:
                     m_PanelManager.ToggleMultiplayerPanels();
