@@ -3243,6 +3243,10 @@ MonoBehaviour:
     m_Key: WEBCAM_PANEL_NEXT_DEVICE
     m_Metadata:
       m_Items: []
+  - m_Id: 141243230077059072
+    m_Key: MULTICAM_TOOL_DEPTH_TEXT
+    m_Metadata:
+      m_Items: []
   - m_Id: 137988464450723840
     m_Key: LAYERS_PANEL_MOVELAYER_BUTTON_DESCRIPTION
     m_Metadata:
@@ -3437,6 +3441,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 313111642914758656
     m_Key: ADMIN_PANEL_MULTIPLAYER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 317029250049335296
+    m_Key: VIEW_MODE_CONTROLS
     m_Metadata:
       m_Items: []
   - m_Id: 326532953040941056

@@ -86,20 +86,25 @@ namespace TiltBrush
                 //default to first page highlighted
                 m_PageIndex = 0;
                 m_BaseIndex = 0;
-                if (m_DataCount <= m_IconCountFullPage)
-                {
-                    m_NumPages = 1;
-                }
-                else
-                {
-                    m_NumPages = ((m_DataCount - 1) / m_IconCountNavPage) + 1;
-                }
+                CalcNumPages();
             }
 
             //base modifies scale, so we want to do this after we create our icons
             base.Init(rParent, sText);
 
             RefreshPage();
+        }
+
+        public void CalcNumPages()
+        {
+            if (m_DataCount <= m_IconCountFullPage)
+            {
+                m_NumPages = 1;
+            }
+            else
+            {
+                m_NumPages = ((m_DataCount - 1) / m_IconCountNavPage) + 1;
+            }
         }
 
         override protected void UpdateTransitionOut()
@@ -150,8 +155,10 @@ namespace TiltBrush
             }
         }
 
-        protected virtual void RefreshPage()
+        public virtual void RefreshPage()
         {
+            CalcNumPages(); // in case m_DataCount has changed
+
             //if we can fit all the icons on one page, turn off the nav buttons and do that
             if (m_DataCount <= m_IconCountFullPage)
             {
