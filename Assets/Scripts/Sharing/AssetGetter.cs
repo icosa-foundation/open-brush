@@ -181,7 +181,7 @@ namespace TiltBrush
                         else
                         {
                             // In other cases, we should fail and get out.
-                            Debug.LogErrorFormat("Can't download {0} in {1} format.", m_Asset.Id, m_Asset.DesiredType);
+                            Debug.LogWarning($"Can't download {m_Asset.Id} in {m_Asset.DesiredType} format.");
                             yield break;
                         }
                     }
