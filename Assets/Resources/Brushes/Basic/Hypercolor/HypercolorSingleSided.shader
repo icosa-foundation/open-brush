@@ -20,6 +20,11 @@ Properties {
   _MainTex ("Base (RGB) TransGloss (A)", 2D) = "white" {}
   _BumpMap ("Normalmap", 2D) = "bump" {}
   _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+
+
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
 }
     SubShader {
     Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
@@ -31,6 +36,7 @@ Properties {
     #pragma surface surf StandardSpecular vertex:vert alphatest:_Cutoff addshadow
     #pragma multi_compile __ AUDIO_REACTIVE
     #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
+
     #include "Assets/Shaders/Include/Brush.cginc"
 
     struct Input {
@@ -66,7 +72,7 @@ Properties {
     void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
       fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);
 
-      float scroll = _Time.z;
+      float scroll = GetTime().z;
 #ifdef AUDIO_REACTIVE
       float3 localPos = mul(xf_I_CS, float4(IN.worldPos, 1.0)).xyz;
       float t = length(localPos) * .5;
