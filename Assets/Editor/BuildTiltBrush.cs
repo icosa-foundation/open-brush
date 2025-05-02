@@ -1683,7 +1683,7 @@ static class BuildTiltBrush
                 m_buildStatus = buildDesc;
 
                 // Start building
-                var thing = BuildPipeline.BuildPlayer(scenes, location, target, options & BuildOptions.Development);
+                var thing = BuildPipeline.BuildPlayer(scenes, location, target, options);
                 string error = FormatBuildReport(thing);
                 if (!string.IsNullOrEmpty(error))
                 {

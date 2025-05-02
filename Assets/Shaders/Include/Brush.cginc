@@ -25,16 +25,6 @@ uniform float4x4 xf_I_CS;
 uniform uint _BatchID;  // NOTOOLKIT
 #include "Ods.cginc"  // NOTOOLKIT
 
-float4 GetTime() {
-  #ifdef TIME_OVERRIDES_DEFINED
-  if (_OverrideTime)
-  {
-    return lerp(_Time * _TimeSpeed, _TimeOverrideValue, _TimeBlend);
-  }
-  #endif
-  return _Time;
-}
-
 // Unity only guarantees signed 2.8 for fixed4.
 // In practice, 2*exp(_EmissionGain * 10) = 180, so we need to use float4
 float4 bloomColor(float4 color, float gain) {
@@ -53,7 +43,7 @@ float4 bloomColor(float4 color, float gain) {
 // Used by various shaders to animate selection outlines
 // Needs to be visible even when the color is black
 float4 GetAnimatedSelectionColor( float4 color) {
-  return color + sin(GetTime().w*2)*.1 + .2f;
+  return color + sin(_Time.w*2)*.1 + .2f;
 }
 
 //
