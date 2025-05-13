@@ -389,7 +389,7 @@ namespace TiltBrush
             }
 
             oldGroupToNewGroup = new Dictionary<int, int>();
-            var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, bAdditive);
+            var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, squashLayers: bAdditive);
             if (strokes == null) { return false; }
 
             // Check that the strokes are in timestamp order.
