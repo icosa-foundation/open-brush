@@ -82,6 +82,7 @@ namespace TiltBrush
         }
 
         public override bool NeedsSave { get { return true; } }
+        public bool IsFinal => m_Final;
 
         protected override void OnRedo()
         {
