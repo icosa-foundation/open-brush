@@ -278,8 +278,19 @@ namespace TiltBrush
         /// case of SetParentKeepWorldPosition() into here.
         public void Recreate(TrTransform? leftTransform = null, CanvasScript canvas = null)
         {
+            DoRecreate(leftTransform,null,canvas);
+        }
+
+        /// <inheritdoc cref="Recreate(System.Nullable{TiltBrush.TrTransform},TiltBrush.CanvasScript)"/>
+        public void Recreate(Matrix4x4 leftTransform, CanvasScript canvas = null)
+        {
+            DoRecreate(null,leftTransform,canvas);
+        }
+        
+        private void DoRecreate(TrTransform? xf, Matrix4x4? mat, CanvasScript canvas = null)
+        {
             // TODO: Try a fast-path that uses VertexLayout+GeometryPool to modify geo directly
-            if (leftTransform != null || m_Type == Type.NotCreated)
+            if (xf != null || mat != null || m_Type == Type.NotCreated)
             {
                 // Uncreate first, or SetParent() will do a lot of needless work
                 Uncreate();
@@ -287,10 +298,16 @@ namespace TiltBrush
                 {
                     SetParent(canvas);
                 }
-                if (leftTransform != null)
+                
+                if (mat != null)
                 {
-                    LeftTransformControlPoints(leftTransform.Value);
+                    LeftTransformControlPoints(mat.Value);
                 }
+                else if (xf != null)
+                {
+                    LeftTransformControlPoints(xf.Value);
+                }
+                
                 // PointerManager's pointer management is a complete mess.
                 // "5" is the most-likely to be unused. It's terrible that this
                 // needs to go through a pointer.
@@ -349,7 +366,21 @@ namespace TiltBrush
             m_BrushScale *= leftTransform.scale;
             InvalidateCopy();
         }
+        
+        private void LeftTransformControlPoints(Matrix4x4 leftTransform)
+        {
+            for (int i = 0; i < m_ControlPoints.Length; i++)
+            {
+                var point = m_ControlPoints[i];
+                point.m_Pos = leftTransform.MultiplyPoint3x4(point.m_Pos);
+                point.m_Orient = leftTransform.rotation * point.m_Orient;
+                m_ControlPoints[i] = point;
+            }
 
+            m_BrushScale *= Mathf.Abs(leftTransform.lossyScale.x);
+            InvalidateCopy();
+        }
+        
         /// Set the parent canvas of this stroke, preserving the _canvas_-relative position.
         /// There will be a pop if the previous and current canvases have different
         /// transforms.
