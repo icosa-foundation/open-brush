@@ -1160,46 +1160,6 @@ jobs:
             ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group MIXED_AGES
           fi
 
-  publish_oculus_quest1:
-    name: Publish Oculus Quest 1 Release
-    needs: [configuration, build]
-    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
-    if: |
-      github.event_name == 'push' &&
-      github.repository == 'icosa-foundation/open-brush' &&
-      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
-
-    steps:
-      - name: Download Build Artifacts (Oculus Quest 1)
-        uses: actions/download-artifact@v4
-        with:
-          name: Oculus Quest (1)
-          path: build_oculus_quest1
-      - name: Publish Oculus Builds
-        env:
-          VERSION: ${{ needs.configuration.outputs.version }}
-          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
-          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
-          OCULUS_QUEST_APP_ID: ${{ vars.OCULUS_QUEST_APP_ID }}
-          OCULUS_QUEST_APP_SECRET: ${{ secrets.OCULUS_QUEST_APP_SECRET }}
-        run: |
-          mkdir releases1
-          mv build_oculus_quest1/*/com.Icosa.OpenBrush*apk releases1/OpenBrush_Quest1_$VERSION.apk
-          mv build_oculus_quest1/*/com.Icosa.OpenBrush*.symbols.zip releases1/symbols.zip
-
-          cd releases1
-          unzip symbols.zip
-          curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
-          chmod 755 ovr-platform-util
-
-          if [ "$PRERELEASE" == "false" ]
-          then
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest1_$VERSION.apk --channel LIVE:quest1only --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --age-group MIXED_AGES
-          else
-            CHANGELOG="${RAW_CHANGELOG}"
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest1_$VERSION.apk --channel Beta:quest1only --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group MIXED_AGES
-          fi
-
   publish_oculus_quest_arborxr:
     name: Publish Oculus Quest 2+ Release ArborXR
     needs: [configuration, build]
