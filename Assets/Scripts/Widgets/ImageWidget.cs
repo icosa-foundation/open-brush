@@ -280,7 +280,13 @@ namespace TiltBrush
                     image.SetMissing(tiltImage.AspectRatio, tiltImage.FileName);
                 }
                 image.SetSignedWidgetSize(tiltImage.Transforms[i].scale);
-                image.SetExtrusion(extrusionDepths[i], extrusionColors[i]);
+                if (extrusionDepths != null &&
+                    extrusionColors != null &&
+                    i < extrusionDepths.Length &&
+                    i < extrusionColors.Length)
+                {
+                    image.SetExtrusion(extrusionDepths[i], extrusionColors[i]);
+                }
                 image.Show(bShow: true, bPlayAudio: false);
                 image.transform.localPosition = tiltImage.Transforms[i].translation;
                 image.transform.localRotation = tiltImage.Transforms[i].rotation;
