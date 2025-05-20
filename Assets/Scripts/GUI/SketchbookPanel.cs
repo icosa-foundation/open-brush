@@ -50,7 +50,6 @@ namespace TiltBrush
         [SerializeField] private GameObject m_NoShowcaseMessage;
         [SerializeField] private GameObject m_ContactingServerMessage;
         [SerializeField] private GameObject m_OutOfDateMessage;
-        [SerializeField] private GameObject m_NotSupportedMessage;
         [SerializeField] private GameObject m_NoIcosaConnectionMessage;
         [SerializeField] private Renderer m_OnlineGalleryButtonRenderer;
         [SerializeField] private GameObject[] m_IconsOnFirstPage;
