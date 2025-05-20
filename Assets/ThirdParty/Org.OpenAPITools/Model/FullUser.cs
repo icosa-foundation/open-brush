@@ -41,9 +41,9 @@ namespace Org.OpenAPITools.Model
         /// <param name="id">id (required).</param>
         /// <param name="url">url (required).</param>
         /// <param name="email">email (required).</param>
-        /// <param name="displayname">displayname (required).</param>
+        /// <param name="displayName">displayName (required).</param>
         /// <param name="description">description.</param>
-        public FullUser(string id = default(string), string url = default(string), string email = default(string), string displayname = default(string), string description = default(string))
+        public FullUser(string id = default(string), string url = default(string), string email = default(string), string displayName = default(string), string description = default(string))
         {
             // to ensure "id" is required (not null)
             if (id == null)
@@ -63,12 +63,12 @@ namespace Org.OpenAPITools.Model
                 throw new ArgumentNullException("email is a required property for FullUser and cannot be null");
             }
             this.Email = email;
-            // to ensure "displayname" is required (not null)
-            if (displayname == null)
+            // to ensure "displayName" is required (not null)
+            if (displayName == null)
             {
-                throw new ArgumentNullException("displayname is a required property for FullUser and cannot be null");
+                throw new ArgumentNullException("displayName is a required property for FullUser and cannot be null");
             }
-            this.Displayname = displayname;
+            this.Displayname = displayName;
             this.Description = description;
         }
 
@@ -93,7 +93,7 @@ namespace Org.OpenAPITools.Model
         /// <summary>
         /// Gets or Sets Displayname
         /// </summary>
-        [DataMember(Name = "displayname", IsRequired = true, EmitDefaultValue = true)]
+        [DataMember(Name = "displayName", IsRequired = true, EmitDefaultValue = true)]
         public string Displayname { get; set; }
 
         /// <summary>
