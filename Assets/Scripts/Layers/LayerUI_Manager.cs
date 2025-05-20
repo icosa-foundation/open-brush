@@ -48,6 +48,9 @@ namespace TiltBrush.Layers
 
         private void ResetUI()
         {
+            // TODO: We're probably calling this too much during sketch load
+            // But it's not a huge performance hog so we'll leave it for now
+
             m_Canvases = App.Scene.LayerCanvases.ToList();
 
             for (int i = 0; i < m_Widgets.Count; i++)
@@ -97,14 +100,14 @@ namespace TiltBrush.Layers
         }
 
         // Subscribes to events
-        private void OnEnable()
+        private void Awake()
         {
             App.Scene.ActiveCanvasChanged += ActiveSceneChanged;
             App.Scene.LayerCanvasesUpdate += OnLayerCanvasesUpdate;
         }
 
         // Unsubscribes to events
-        private void OnDisable()
+        private void OnDestroy()
         {
             App.Scene.ActiveCanvasChanged -= ActiveSceneChanged;
             App.Scene.LayerCanvasesUpdate -= OnLayerCanvasesUpdate;
