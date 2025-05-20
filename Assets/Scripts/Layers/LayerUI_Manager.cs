@@ -29,8 +29,8 @@ namespace TiltBrush.Layers
         [SerializeField] private LocalizedString m_AdditionalLayerName;
         [SerializeField] private NavButton m_PreviousPageButton;
         [SerializeField] private NavButton m_NextPageButton;
+        [SerializeField] private List<GameObject> m_Widgets;
 
-        public List<GameObject> m_Widgets;
         private List<CanvasScript> m_Canvases;
         private int m_StartingCanvasIndex;
         private bool m_RefreshNavButtons;
