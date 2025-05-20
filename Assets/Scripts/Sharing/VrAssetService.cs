@@ -468,7 +468,7 @@ namespace TiltBrush
                                 isDemoUpload);
                             break;
                     }
-                    var (url, totalUploadLength) = await m_UploadTask.Task;
+                    var (url, _) = await m_UploadTask.Task;
                     m_LastUploadCompleteUrl = url;
                     ControllerConsoleScript.m_Instance.AddNewLine("Upload succeeded!");
                     AudioManager.m_Instance.PlayUploadCompleteSound(InputManager.Wand.Transform.position);
@@ -719,12 +719,7 @@ namespace TiltBrush
                 zipName, progress, token, options, tempUploadDir);
             // TODO(b/146892613): return the UID and stick it into the .tilt file?
             // Or do we not care since we aren't recording provenance and remixing
-
-            // TODO(b/146892613): figure out this flow
-            // response.uri is not very useful; it is an API uri that gives you json of asset details.
-            // Also, the 3d-models URI might show that the asset is still processing. We can poll their
-            // API and find out when it's done and pop up the window then?
-            string uri = $"{response.edit_url}";
+            string uri = $"{response.publishUrl}";
             return (uri, 0);
         }
 

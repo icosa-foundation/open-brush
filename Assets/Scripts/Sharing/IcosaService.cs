@@ -238,8 +238,8 @@ namespace TiltBrush
         [Serializable, UsedImplicitly]
         public struct CreateResponse
         {
-            public string upload_job;
-            public string edit_url;
+            public string assetId;
+            public string publishUrl;
         }
     }
 } // namespace TiltBrush
