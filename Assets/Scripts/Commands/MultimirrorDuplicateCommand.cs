@@ -64,26 +64,20 @@ namespace TiltBrush
             {
                 targetCanvas = App.Scene.SelectionCanvas;
             }
-
+            
             foreach (var stroke in m_SelectedStrokes)
             {
-                TrTransform strokeTransform_GS = Coords.AsGlobal[stroke.StrokeTransform];
-                TrTransform tr_GS;
-                var xfCenter_GS = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget.transform);
+                // Use Unity transforms and Matrix4x4 because we are going
+                // to be dealing with non-uniform scale.
+                var xfCenter = PointerManager.m_Instance.SymmetryWidget.transform;
                 for (int i = 0; i < matrices.Count; i++)
                 {
-                    (TrTransform, TrTransform) trAndFix_WS;
-                    trAndFix_WS = PointerManager.m_Instance.TrFromMatrixWithFixedReflections(matrices[i]);
-                    tr_GS = xfCenter_GS * trAndFix_WS.Item1 * xfCenter_GS.inverse;                   // convert from widget-local coords to world coords
-                    var tmp = tr_GS * strokeTransform_GS * trAndFix_WS.Item2; // Work around 2018.3.x Mono parse bug
-
-                    // TODO strokes don't work correctly with reflections and I can't figure out why
-                    // Same logic is working for widgets and pointers (whilst drawing)...
-                    // So skip reflected strokes for now
-                    if (trAndFix_WS.Item2 != TrTransform.identity) continue;
-
-                    tmp = targetCanvas.Pose.inverse * tmp;
-                    var duplicatedStroke = SketchMemoryScript.m_Instance.DuplicateStroke(stroke, targetCanvas, tmp);
+                    var appScale = Matrix4x4.Scale(Vector3.one*App.Scene.Pose.scale);
+                    var leftXf = 
+                        targetCanvas.Pose.inverse.ToMatrix4x4() * xfCenter.localToWorldMatrix *
+                        appScale * matrices[i] * appScale.inverse *
+                        xfCenter.worldToLocalMatrix * stroke.Canvas.Pose.ToMatrix4x4();
+                    var duplicatedStroke = SketchMemoryScript.m_Instance.DuplicateStroke(stroke,targetCanvas,leftXf);
                     m_DuplicatedStrokes.Add(duplicatedStroke);
                 }
             }
