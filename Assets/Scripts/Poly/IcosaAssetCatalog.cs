@@ -500,7 +500,7 @@ namespace TiltBrush
                     }
                     else
                     {
-                        Debug.LogWarningFormat("Deleting invalid cache folder {0}", assetId);
+                        Debug.LogWarningFormat("Deleting invalid cache folder {0}", folderPath);
                         Directory.Delete(folderPath, true);
                     }
                 }
