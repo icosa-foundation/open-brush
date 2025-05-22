@@ -100,9 +100,10 @@ namespace TiltBrush
     {
         public static string
             ANY = "",
-            CC0 = "CC0",
+            CC0 = "CREATIVE_COMMONS_0",
+            REMIXABLE = "REMIXABLE",
+            ALL_CC = "ALL_CC",
             CREATIVE_COMMONS_BY = "CREATIVE_COMMONS_BY",
-            CREATIVE_COMMONS_BY_NC = "CREATIVE_COMMONS_BY_NC",
             CREATIVE_COMMONS_BY_ND = "CREATIVE_COMMONS_BY_ND",
             ALL_RIGHTS_RESERVED = "ALL_RIGHTS_RESERVED";
 
@@ -111,10 +112,11 @@ namespace TiltBrush
             return licence switch
             {
                 "ANY" => "Any",
-                "CC0" => "CC0",
+                "CC0" => "Creative Commons Zero",
                 "CREATIVE_COMMONS_BY" => "Creative Commons BY",
-                "CREATIVE_COMMONS_BY_NC" => "Creative Commons BY-NC",
                 "CREATIVE_COMMONS_BY_ND" => "Creative Commons BY-ND",
+                "REMIXABLE" => "Any Remixable Licence",
+                "ALL_CC" => "Any Creative Commons License",
                 "ALL_RIGHTS_RESERVED" => "All Rights Reserved",
                 _ => throw new ArgumentOutOfRangeException(nameof(licence), licence, null)
             };
@@ -354,7 +356,8 @@ namespace TiltBrush
                 }
             }
         }
-        public struct QueryParameters
+
+        public struct IcosaQueryParameters
         {
             public string SearchText;
             public int TriangleCountMax;
@@ -387,7 +390,7 @@ namespace TiltBrush
             public IEnumerator<Null> m_FetchMetadataCoroutine;
             public bool m_RefreshRequested;
             public float m_CooldownTimer;
-            public QueryParameters QueryParams;
+            public IcosaQueryParameters QueryParams;
         }
 
         /// A request to pull a Model into memory.
@@ -520,7 +523,7 @@ namespace TiltBrush
                     IcosaSetType.User,
                     new AssetSet
                     {
-                        QueryParams = new QueryParameters
+                        QueryParams = new IcosaQueryParameters
                         {
                             SearchText = "",
                             TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
@@ -536,11 +539,11 @@ namespace TiltBrush
                     IcosaSetType.Liked,
                     new AssetSet
                     {
-                        QueryParams = new QueryParameters
+                        QueryParams = new IcosaQueryParameters
                         {
                             SearchText = "",
                             TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
-                            License = LicenseChoices.CREATIVE_COMMONS_BY,
+                            License = LicenseChoices.REMIXABLE,
                             OrderBy = OrderByChoices.LIKED_TIME,
                             Format = FormatChoices.GLTF2,
                             Curated = CuratedChoices.ANY,
@@ -557,14 +560,14 @@ namespace TiltBrush
                     new AssetSet
                     {
                         m_RefreshRequested = true,
-                        QueryParams = new QueryParameters
+                        QueryParams = new IcosaQueryParameters
                         {
                             SearchText = "",
                             TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
-                            License = LicenseChoices.CREATIVE_COMMONS_BY,
+                            License = LicenseChoices.REMIXABLE,
                             OrderBy = OrderByChoices.BEST,
                             Format = FormatChoices.GLTF2,
-                            Curated = CuratedChoices.ANY,
+                            Curated = CuratedChoices.TRUE,
                             Category = CategoryChoices.ANY
                         }
                     }
@@ -1245,7 +1248,7 @@ namespace TiltBrush
             }
         }
 
-        public QueryParameters QueryOptionParametersForSet(IcosaSetType set)
+        public IcosaQueryParameters QueryOptionParametersForSet(IcosaSetType set)
         {
             return m_AssetSetByType[set].QueryParams;
         }

@@ -59,8 +59,6 @@ namespace TiltBrush
         private const string kUserAssetsUri = "/users/me/assets";
         private const string kUserLikesUri = "/users/me/likedassets";
 
-        public const string kCreativeCommonsLicense = "CREATIVE_COMMONS_BY";
-
         // Icosa API used by Open Brush.
         // If Icosa doesn't support this version, don't try to talk to Icosa and prompt the user to upgrade.
         private const string kIcosaApiVersion = "v1";
@@ -834,12 +832,12 @@ namespace TiltBrush
             return $"{uriPath}{separator}{additionalParams}";
         }
 
-        public AssetLister ListAssets(SketchSetType type)
+        public AssetLister ListAssets(SketchSetType sketchSetType, SketchCatalog.SketchQueryParameters queryParams)
         {
             string filteredUriPath = null;
             string errorMessage = null;
-            string commonParams = $"triangleCountMax={m_MaxPolySketchTriangles}&format=TILT&license={kCreativeCommonsLicense}";
-            switch (type)
+            string commonParams = $"triangleCountMax={m_MaxPolySketchTriangles}&format=TILT";
+            switch (sketchSetType)
             {
                 // TODO Add User sketches
                 // TODO Allow non-CC-BY sketches to be loaded as read-only
@@ -848,19 +846,21 @@ namespace TiltBrush
                     {
                         return null;
                     }
-                    filteredUriPath = CombineQueryParams(kUserLikesUri, $"{commonParams}&orderBy=LIKED_TIME");
+                    filteredUriPath = CombineQueryParams(kUserLikesUri, $"{commonParams}");
                     errorMessage = "Failed to access your liked sketches.";
                     break;
                 case SketchSetType.Curated:
-                    // Old way - newest curated
-                    filteredUriPath = CombineQueryParams(kListAssetsUri, $"{commonParams}&curated=true&orderBy=NEWEST");
-                    // Maybe just sort by "best"?
-                    // filteredUriPath = CombineQueryParams(kListAssetsUri, $"{commonParams}&orderBy=BEST");
+                    filteredUriPath = CombineQueryParams(kListAssetsUri, $"{commonParams}");
                     errorMessage = "Failed to access featured sketches.";
                     break;
             }
-
-            string uri = $"{IcosaApiRoot}{filteredUriPath}&pageSize={m_AssetsPerPage}&";
+            string uri = $"{IcosaApiRoot}{filteredUriPath}&";
+            uri += $"pageSize={m_AssetsPerPage}&";
+            uri += $"orderBy={queryParams.OrderBy}&";
+            if (!string.IsNullOrEmpty(queryParams.SearchText)) uri += $"name={queryParams.SearchText}&";
+            if (!string.IsNullOrEmpty(queryParams.License)) uri += $"license={queryParams.License}&";
+            if (!string.IsNullOrEmpty(queryParams.Curated)) uri += $"curated={queryParams.Curated}&";
+            if (!string.IsNullOrEmpty(queryParams.Category)) uri += $"category={queryParams.Category}&";
             return new AssetLister(uri, errorMessage);
         }
 
@@ -894,7 +894,7 @@ namespace TiltBrush
             infos.Insert(index, new IcosaSceneFileInfo(json.Root));
         }
 
-        public AssetLister ListAssets(IcosaSetType type, IcosaAssetCatalog.QueryParameters queryParams)
+        public AssetLister ListAssets(IcosaSetType type, IcosaAssetCatalog.IcosaQueryParameters queryParams)
         {
             string uri = type switch
             {

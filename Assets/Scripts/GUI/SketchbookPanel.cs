@@ -18,7 +18,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
-using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
@@ -28,7 +27,7 @@ namespace TiltBrush
         // Index of the "local sketches" button in m_GalleryButtons
         const int kElementNumberGalleryButtonLocal = 0;
         // Amount of extra space to put below the "local sketches" gallery button
-        const float kGalleryButtonLocalPadding = .15f;
+        const float kGalleryButtonLocalPadding = 0;
 
         [SerializeField] private Texture2D m_LoadingImageTexture;
         [SerializeField] private Texture2D m_UnknownImageTexture;
@@ -68,6 +67,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_DriveEnabledIcon;
         [SerializeField] private GameObject m_DriveDisabledIcon;
         [SerializeField] private GameObject m_DriveFullIcon;
+        [SerializeField] private GameObject m_IcosaSearchFilterUi;
         [SerializeField] private Vector2 m_SketchIconUvScale = new Vector2(0.7f, 0.7f);
         [SerializeField] private Vector3 m_ReadOnlyPopupOffset;
 
@@ -88,6 +88,7 @@ namespace TiltBrush
         private bool m_ReadOnlyShown = false;
 
         public float ImageAspect { get { return m_ImageAspect; } }
+        public SketchSetType CurrentSketchSetType => m_CurrentSketchSet;
 
         override public void SetInIntroMode(bool inIntro)
         {
@@ -342,6 +343,10 @@ namespace TiltBrush
                 !m_SketchSet.IsActivelyRefreshingSketches &&
                 App.IcosaIsLoggedIn);
 
+            m_IcosaSearchFilterUi.SetActive(
+                !(m_CurrentSketchSet == SketchSetType.Drive || m_CurrentSketchSet == SketchSetType.User)
+            );
+
             // Show Contacting Server if we're talking to Drive or Icosa
             m_ContactingServerMessage.SetActive(
                 m_SketchSet.NumSketches <= 0
@@ -452,7 +457,7 @@ namespace TiltBrush
                     m_DriveFullIcon.SetActive(false);
                     break;
                 case SketchSetType.Liked:
-                    m_LoadingGallery.SetActive(false);
+                    m_LoadingGallery.SetActive(m_SketchSet.IsActivelyRefreshingSketches);
                     m_DriveSyncProgress.SetActive(false);
                     m_SyncingDriveIcon.SetActive(false);
                     m_DriveEnabledIcon.SetActive(false);
@@ -512,7 +517,7 @@ namespace TiltBrush
             }
 
             // Position the gallery buttons so that they're centered.
-            float buttonPosY = (0.5f * (galleryButtonN - 1) * m_GalleryButtonHeight
+            float buttonPosY = (0.6f * (galleryButtonN - 1) * m_GalleryButtonHeight
                 + kGalleryButtonLocalPadding);
             for (int i = 0; i < galleryButtonAvailable; i++)
             {
@@ -579,26 +584,16 @@ namespace TiltBrush
                             lines.Add(icon.Description);
 
                             SceneFileInfo info = m_SketchSet.GetSketchSceneFileInfo(iSketchIndex);
-                            if (info is IcosaSceneFileInfo polyInfo && polyInfo.License != VrAssetService.kCreativeCommonsLicense)
+
+                            // Include primary author in description if available
+                            if (authors != null && authors.Length > 0)
                             {
-                                if (authors != null && authors.Length > 0)
-                                {
-                                    lines.Add($"© {authors[0]}");
-                                }
-                                lines.Add("All Rights Reserved");
+                                lines.Add(authors[0]);
                             }
-                            else
+                            // Include an actual description
+                            if (description != null)
                             {
-                                // Include primary author in description if available
-                                if (authors != null && authors.Length > 0)
-                                {
-                                    lines.Add(authors[0]);
-                                }
-                                // Include an actual description
-                                if (description != null)
-                                {
-                                    lines.Add(App.ShortenForDescriptionText(description));
-                                }
+                                lines.Add(App.ShortenForDescriptionText(description));
                             }
                             icon.SetDescriptionText(lines.ToArray());
                         }
@@ -794,5 +789,22 @@ namespace TiltBrush
         {
             m_IndexOffset = PageIndex == 0 ? 0 : m_IconsOnFirstPage.Length + (PageIndex - 1) * Icons.Count;
         }
+
+        public SketchCatalog.SketchQueryParameters CurrentQuery =>
+            SketchCatalog.m_Instance.QueryOptionParametersForSet(m_CurrentSketchSet);
+
+        public void RefreshCurrentSet()
+        {
+            SketchCatalog.m_Instance.RequestForcedRefresh(CurrentSketchSetType);
+            ResetPageIndex();
+            RefreshPage();
+        }
+
+        public void SetInitialSearchText(KeyboardPopupButton btn)
+        {
+            btn.m_CommandParam = (int)m_CurrentSketchSet;
+            KeyboardPopUpWindow.m_InitialText = CurrentQuery.SearchText;
+        }
+
     }
 } // namespace TiltBrush

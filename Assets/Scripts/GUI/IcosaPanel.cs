@@ -328,7 +328,7 @@ namespace TiltBrush
             KeyboardPopUpWindow.m_InitialText = CurrentQuery.SearchText;
         }
 
-        public IcosaAssetCatalog.QueryParameters CurrentQuery =>
+        public IcosaAssetCatalog.IcosaQueryParameters CurrentQuery =>
             App.IcosaAssetCatalog.QueryOptionParametersForSet(m_CurrentSet);
     }
 } // namespace TiltBrush

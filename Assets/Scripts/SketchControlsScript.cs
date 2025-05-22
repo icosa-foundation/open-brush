@@ -182,6 +182,8 @@ namespace TiltBrush
             OpenIcosaPanelSearchPopup = 5601,
             OpenIcosaPanelFilterPopup = 5602,
             OpenIcosaPanelOptionsPopup = 5603,
+            OpenSketchbookPanelSearchPopup = 5604,
+            OpenSketchbookPanelFilterPopup = 5605,
             OpenDirectorChooserPopup = 5800,
             OpenScriptsCommandsList = 6000,
             OpenScriptsList = 6001,
@@ -5014,11 +5016,13 @@ namespace TiltBrush
                 case GlobalCommands.MultiplayerMuteAllForAll:
                 case GlobalCommands.MultiplayerPlayerMuteForAll:
                 case GlobalCommands.WhatIsNew:
-                case GlobalCommands.LoginToIcosa: break;               // Intentionally blank.
-                case GlobalCommands.OpenIcosaPanelOptionsPopup: break; // Intentionally blank.
-                case GlobalCommands.OpenIcosaPanelFilterPopup: break;  // Intentionally blank.
+                case GlobalCommands.LoginToIcosa:
+                case GlobalCommands.OpenIcosaPanelOptionsPopup:
+                case GlobalCommands.OpenIcosaPanelFilterPopup:
+                case GlobalCommands.OpenSketchbookPanelFilterPopup:
+                case GlobalCommands.OpenSketchbookPanelSearchPopup:
                 case GlobalCommands.Null:
-                    break;// Intentionally blank.
+                    break; // Intentionally blank.
                 default:
                     Debug.LogError($"Unrecognized command {rEnum}");
                     break;

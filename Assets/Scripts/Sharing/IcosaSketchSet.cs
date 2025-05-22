@@ -107,6 +107,7 @@ namespace TiltBrush
         private Coroutine m_TextureLoaderCoroutine;
 
         public SketchSetType Type { get { return m_Type; } }
+        public SketchCatalog.SketchQueryParameters m_QueryParams;
 
         public VrAssetService VrAssetService
         {
@@ -130,6 +131,42 @@ namespace TiltBrush
             m_LoggedIn = false;
             m_RefreshRequested = true;
             m_CooldownTimer = VrAssetService.m_Instance.m_SketchbookRefreshInterval;
+
+            switch (m_Type)
+            {
+                case SketchSetType.Curated:
+                    m_QueryParams = new()
+                    {
+                        SearchText = "",
+                        License = LicenseChoices.REMIXABLE,
+                        OrderBy = OrderByChoices.BEST,
+                        Curated = CuratedChoices.TRUE,
+                        Category = CategoryChoices.ANY
+                    };
+                    break;
+                case SketchSetType.Liked:
+                    m_QueryParams = new()
+                    {
+                        SearchText = "",
+                        License = LicenseChoices.REMIXABLE,
+                        OrderBy = OrderByChoices.LIKED_TIME,
+                        Curated = CuratedChoices.ANY,
+                        Category = CategoryChoices.ANY
+                    };
+                    break;
+                case SketchSetType.User:
+                    m_QueryParams = new()
+                    {
+                        SearchText = "",
+                        License = LicenseChoices.ANY,
+                        OrderBy = OrderByChoices.NEWEST,
+                        Curated = CuratedChoices.ANY,
+                        Category = CategoryChoices.ANY
+                    };
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
 
         public bool IsReadyForAccess
@@ -160,6 +197,13 @@ namespace TiltBrush
         public void NotifySketchCreated(string fullpath) { }
 
         public void NotifySketchChanged(string fullpath) { }
+
+
+        public void RequestForcedRefresh()
+        {
+            m_CooldownTimer = 0;
+            RequestRefresh();
+        }
 
         public void RequestRefresh()
         {
@@ -288,11 +332,6 @@ namespace TiltBrush
                     yield return Refresh();
                     m_RefreshRequested = false;
 
-                    // Don't poll the showcase
-                    if (Type == SketchSetType.Curated)
-                    {
-                        yield break;
-                    }
                     m_CooldownTimer = VrAssetService.m_Instance.m_SketchbookRefreshInterval;
                 }
                 else
@@ -383,7 +422,7 @@ namespace TiltBrush
             }
             else
             {
-                lister = m_AssetService.ListAssets(Type);
+                lister = m_AssetService.ListAssets(Type, m_QueryParams);
             }
 
             bool changed = false;
@@ -427,11 +466,6 @@ namespace TiltBrush
                 if (m_CacheDir == null)
                 {
                     yield break;
-                }
-                if (m_Type == SketchSetType.Curated && !assetIds.Keys.Contains(kIntroSketchAssetId))
-                {
-                    yield return VrAssetService.m_Instance.InsertSketchInfo(
-                        kIntroSketchAssetId, kIntroSketchIndex, infos);
                 }
                 for (int i = 0; i < infos.Count; i++)
                 {

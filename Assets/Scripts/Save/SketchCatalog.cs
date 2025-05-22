@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
@@ -67,7 +68,7 @@ namespace TiltBrush
                 featuredSketchSet = new IcosaSketchSet(this, SketchSetType.Curated);
             }
 
-            m_Sets = new SketchSet[]
+            m_Sets = new []
             {
                 new FileSketchSet(),
                 featuredSketchSet,
@@ -123,6 +124,107 @@ namespace TiltBrush
         public void NotifyUserFileChanged(string fullpath)
         {
             m_Sets[(int)SketchSetType.User].NotifySketchChanged(fullpath);
+        }
+
+        private IcosaSketchSet GetIcosaSketchSet(SketchSetType setType)
+        {
+            var set = GetSet(setType);
+            var icosaSketchSet = set as IcosaSketchSet;
+            if (icosaSketchSet == null)
+            {
+                Debug.LogError($"SketchCatalog.QueryOptionParametersForSet: {setType} is not an IcosaSketchSet");
+                return null;
+            }
+            return icosaSketchSet;
+        }
+
+
+        public SketchQueryParameters QueryOptionParametersForSet(SketchSetType setType)
+        {
+            var icosaSketchSet = GetIcosaSketchSet(setType);
+            return icosaSketchSet.m_QueryParams;
+        }
+
+        public struct SketchQueryParameters
+        {
+            public string SearchText;
+            public string License;
+            public string OrderBy;
+            public string Curated;
+            public string Category;
+        }
+
+        public void UpdateSearchText(SketchSetType setType, string mLastInput, bool requestRefresh = false)
+        {
+            var queryParams = QueryOptionParametersForSet(setType);
+            queryParams.SearchText = mLastInput;
+            var icosaAssetSet = GetIcosaSketchSet(setType);
+            icosaAssetSet.m_QueryParams = queryParams;
+            if (requestRefresh) RefreshPanel();
+        }
+
+        public void UpdateLicense(SketchSetType setType, string license, bool requestRefresh = false)
+        {
+            var queryParams = QueryOptionParametersForSet(setType);
+            if (ChoicesHelper.IsValidChoice<LicenseChoices>(license))
+            {
+                queryParams.License = license;
+                var icosaAssetSet = GetIcosaSketchSet(setType);
+                icosaAssetSet.m_QueryParams = queryParams;
+                if (requestRefresh) RefreshPanel();
+            }
+        }
+
+        public void UpdateOrderBy(SketchSetType setType, string orderBy, bool requestRefresh = false)
+        {
+            var queryParams = QueryOptionParametersForSet(setType);
+            if (ChoicesHelper.IsValidChoice<OrderByChoices>(orderBy))
+            {
+                queryParams.OrderBy = orderBy;
+                var icosaAssetSet = GetIcosaSketchSet(setType);
+                icosaAssetSet.m_QueryParams = queryParams;
+                if (requestRefresh) RefreshPanel();
+            }
+        }
+
+        public void UpdateCurated(SketchSetType setType, string curated, bool requestRefresh = false)
+        {
+            var queryParams = QueryOptionParametersForSet(setType);
+            if (ChoicesHelper.IsValidChoice<CuratedChoices>(curated))
+            {
+                queryParams.Curated = curated;
+                var icosaAssetSet = GetIcosaSketchSet(setType);
+                icosaAssetSet.m_QueryParams = queryParams;
+                if (requestRefresh) RefreshPanel();
+            }
+        }
+
+        public void UpdateCategory(SketchSetType setType, string category, bool requestRefresh = false)
+        {
+            var queryParams = QueryOptionParametersForSet(setType);
+            if (ChoicesHelper.IsValidChoice<CategoryChoices>(category))
+            {
+                queryParams.Category = category;
+                var icosaAssetSet = GetIcosaSketchSet(setType);
+                icosaAssetSet.m_QueryParams = queryParams;
+                if (requestRefresh) RefreshPanel();
+            }
+        }
+
+        public void RequestForcedRefresh(SketchSetType setType)
+        {
+            var set = GetIcosaSketchSet(setType);
+            set.RequestForcedRefresh();
+        }
+
+        private void RefreshPanel()
+        {
+            var panel = (SketchbookPanel)PanelManager.m_Instance.GetActivePanelByType(BasePanel.PanelType.Sketchbook);
+            if (panel == null) panel = (SketchbookPanel)PanelManager.m_Instance.GetActivePanelByType(BasePanel.PanelType.SketchbookMobile);
+            if (panel != null)
+            {
+                panel.RefreshCurrentSet();
+            }
         }
     }
 
