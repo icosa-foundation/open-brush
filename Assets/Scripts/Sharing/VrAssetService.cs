@@ -308,7 +308,7 @@ namespace TiltBrush
 
         // Instance API
 
-        [SerializeField] private int m_AssetsPerPage;
+        private const int m_AssetsPerPage = 16;
         [SerializeField] public float m_SketchbookRefreshInterval;
         public bool m_UseLocalFeaturedSketches = false;
 
@@ -861,6 +861,7 @@ namespace TiltBrush
             if (!string.IsNullOrEmpty(queryParams.License)) uri += $"license={queryParams.License}&";
             if (!string.IsNullOrEmpty(queryParams.Curated)) uri += $"curated={queryParams.Curated}&";
             if (!string.IsNullOrEmpty(queryParams.Category)) uri += $"category={queryParams.Category}&";
+            Debug.Log($"Listing sketches for {sketchSetType}: {uri}");
             return new AssetLister(uri, errorMessage);
         }
 
