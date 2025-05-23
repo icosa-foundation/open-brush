@@ -87,7 +87,6 @@ namespace TiltBrush
         private bool m_DriveSetHasSketches;
         private bool m_ReadOnlyShown = false;
 
-        public float ImageAspect { get { return m_ImageAspect; } }
         public SketchSetType CurrentSketchSetType => m_CurrentSketchSet;
 
         override public void SetInIntroMode(bool inIntro)
