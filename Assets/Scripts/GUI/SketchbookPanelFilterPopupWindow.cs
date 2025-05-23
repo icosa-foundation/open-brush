@@ -39,6 +39,7 @@ namespace TiltBrush
             if (currentOrderByBtn != null) currentOrderByBtn.IsToggledOn = true;
             var currentCategoryBtn = m_CategoryButtonGroup.GetComponentsInChildren<RadioButton>().FirstOrDefault(x => x.m_Value == currentQuery.Category);
             if (currentCategoryBtn != null) currentCategoryBtn.IsToggledOn = true;
+            m_CuratedButton.IsToggledOn = currentQuery.Curated == CuratedChoices.TRUE;
         }
 
         private GameObject CurrentOrderByGroup
