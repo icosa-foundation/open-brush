@@ -201,8 +201,10 @@ namespace TiltBrush
 
         public void RequestForcedRefresh()
         {
-            m_CooldownTimer = 0;
-            RequestRefresh();
+            if (m_RefreshCoroutine == null)
+            {
+                m_RefreshCoroutine = m_Parent.StartCoroutine(PeriodicRefreshCoroutine());
+            }
         }
 
         public void RequestRefresh()
