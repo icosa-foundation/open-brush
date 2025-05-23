@@ -154,16 +154,16 @@ namespace TiltBrush
             public string Category;
         }
 
-        public void UpdateSearchText(SketchSetType setType, string mLastInput, bool requestRefresh = false)
+        public void UpdateSearchText(SketchSetType setType, string mLastInput, bool forceRefresh = false)
         {
             var queryParams = QueryOptionParametersForSet(setType);
             queryParams.SearchText = mLastInput;
             var icosaAssetSet = GetIcosaSketchSet(setType);
             icosaAssetSet.m_QueryParams = queryParams;
-            if (requestRefresh) RefreshPanel();
+            if (forceRefresh) ForceRefreshPanel();
         }
 
-        public void UpdateLicense(SketchSetType setType, string license, bool requestRefresh = false)
+        public void UpdateLicense(SketchSetType setType, string license, bool forceRefresh = false)
         {
             var queryParams = QueryOptionParametersForSet(setType);
             if (ChoicesHelper.IsValidChoice<LicenseChoices>(license))
@@ -171,11 +171,11 @@ namespace TiltBrush
                 queryParams.License = license;
                 var icosaAssetSet = GetIcosaSketchSet(setType);
                 icosaAssetSet.m_QueryParams = queryParams;
-                if (requestRefresh) RefreshPanel();
+                if (forceRefresh) ForceRefreshPanel();
             }
         }
 
-        public void UpdateOrderBy(SketchSetType setType, string orderBy, bool requestRefresh = false)
+        public void UpdateOrderBy(SketchSetType setType, string orderBy, bool forceRefresh = false)
         {
             var queryParams = QueryOptionParametersForSet(setType);
             if (ChoicesHelper.IsValidChoice<OrderByChoices>(orderBy))
@@ -183,11 +183,11 @@ namespace TiltBrush
                 queryParams.OrderBy = orderBy;
                 var icosaAssetSet = GetIcosaSketchSet(setType);
                 icosaAssetSet.m_QueryParams = queryParams;
-                if (requestRefresh) RefreshPanel();
+                if (forceRefresh) ForceRefreshPanel();
             }
         }
 
-        public void UpdateCurated(SketchSetType setType, string curated, bool requestRefresh = false)
+        public void UpdateCurated(SketchSetType setType, string curated, bool forceRefresh = false)
         {
             var queryParams = QueryOptionParametersForSet(setType);
             if (ChoicesHelper.IsValidChoice<CuratedChoices>(curated))
@@ -195,11 +195,11 @@ namespace TiltBrush
                 queryParams.Curated = curated;
                 var icosaAssetSet = GetIcosaSketchSet(setType);
                 icosaAssetSet.m_QueryParams = queryParams;
-                if (requestRefresh) RefreshPanel();
+                if (forceRefresh) ForceRefreshPanel();
             }
         }
 
-        public void UpdateCategory(SketchSetType setType, string category, bool requestRefresh = false)
+        public void UpdateCategory(SketchSetType setType, string category, bool forceRefresh = false)
         {
             var queryParams = QueryOptionParametersForSet(setType);
             if (ChoicesHelper.IsValidChoice<CategoryChoices>(category))
@@ -207,7 +207,7 @@ namespace TiltBrush
                 queryParams.Category = category;
                 var icosaAssetSet = GetIcosaSketchSet(setType);
                 icosaAssetSet.m_QueryParams = queryParams;
-                if (requestRefresh) RefreshPanel();
+                if (forceRefresh) ForceRefreshPanel();
             }
         }
 
@@ -217,13 +217,13 @@ namespace TiltBrush
             set.RequestForcedRefresh();
         }
 
-        private void RefreshPanel()
+        private void ForceRefreshPanel()
         {
             var panel = (SketchbookPanel)PanelManager.m_Instance.GetActivePanelByType(BasePanel.PanelType.Sketchbook);
             if (panel == null) panel = (SketchbookPanel)PanelManager.m_Instance.GetActivePanelByType(BasePanel.PanelType.SketchbookMobile);
             if (panel != null)
             {
-                panel.RefreshCurrentSet();
+                panel.ForceRefreshCurrentSet();
             }
         }
     }

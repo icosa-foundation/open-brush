@@ -72,7 +72,7 @@ namespace TiltBrush
             SketchCatalog.m_Instance.UpdateOrderBy(currentSet, currentOrderBy);
             SketchCatalog.m_Instance.UpdateCategory(currentSet, currentCategory);
             SketchCatalog.m_Instance.UpdateCurated(currentSet, m_CuratedButton.IsToggledOn ? CuratedChoices.TRUE : CuratedChoices.ANY);
-            ((SketchbookPanel)m_ParentPanel).RefreshCurrentSet();
+            ((SketchbookPanel)m_ParentPanel).ForceRefreshCurrentSet();
             RequestClose(true);
         }
     }

@@ -792,7 +792,7 @@ namespace TiltBrush
         public SketchCatalog.SketchQueryParameters CurrentQuery =>
             SketchCatalog.m_Instance.QueryOptionParametersForSet(m_CurrentSketchSet);
 
-        public void RefreshCurrentSet()
+        public void ForceRefreshCurrentSet()
         {
             SketchCatalog.m_Instance.RequestForcedRefresh(CurrentSketchSetType);
             ResetPageIndex();
