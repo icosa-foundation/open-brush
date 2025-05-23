@@ -27,6 +27,17 @@ namespace UnityGLTF.Plugins
                 return;
             }
 
+            // Remove lights automatically added to legacy Poly scenes by GOOGLE_lighting_rig
+            // This assumes these extras indicate the presence of GOOGLE_lighting_rig
+            // TODO Maybe we should check this on scene load and set a flag somewhere
+            // there's a small chance of false positives.
+            // TODO Should we destroy the node as well as the light component
+            if (((bool?)node.Extras["isHeadLight"] ?? false)
+             || ((bool?)node.Extras["isKeyLight"] ?? false))
+            {
+                Object.Destroy(light);
+            }
+
             if (node.Extensions["KHR_lights_punctual"] is KHR_LightsPunctualNodeExtension lightExtension)
             {
                 var intensity = (float)lightExtension.LightId.Value.Intensity;
