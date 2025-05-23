@@ -2543,12 +2543,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 5709631172441106665}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c7ffb8f867db4c65be5ca4725598ebf1, type: 3}
+  m_Script: {fileID: 11500000, guid: 1d24b89fbd7e49a59e0c07ded4dd0713, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Any
+  m_DescriptionText: 
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: 
@@ -2572,11 +2572,11 @@ MonoBehaviour:
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: c7e34f427cbbf7745a1aeca950177a6f, type: 3}
   m_AtlasTexture: 1
-  m_ToggleButton: 1
+  m_ToggleButton: 0
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 1
-  m_ZAdjustHover: -0.04
-  m_ZAdjustClick: -0.04
+  m_ZAdjustHover: -0.02
+  m_ZAdjustClick: 0.05
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
@@ -2607,12 +2607,11 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 2800000, guid: e42fc4ddd2ef7394c87d32484003b5de, type: 3}
-  m_AllowUnavailable: 1
+  m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
   m_OnToggle:
     m_PersistentCalls:
       m_Calls: []
-  m_Value: 
   references:
     version: 2
     RefIds: []
