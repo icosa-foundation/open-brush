@@ -68,7 +68,7 @@ namespace TiltBrush
                 featuredSketchSet = new IcosaSketchSet(this, SketchSetType.Curated);
             }
 
-            m_Sets = new []
+            m_Sets = new[]
             {
                 new FileSketchSet(),
                 featuredSketchSet,
