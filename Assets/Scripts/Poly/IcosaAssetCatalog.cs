@@ -1343,19 +1343,13 @@ namespace TiltBrush
             {
                 m_AssetJsonByAssetId = new Dictionary<string, JObject>();
             }
-            if (!m_AssetJsonByAssetId.TryGetValue(assetId, out JObject json))
-            {
-                json = null;
-            }
+            m_AssetJsonByAssetId.TryGetValue(assetId, out JObject json);
             return json;
         }
 
         public void SetJsonForAsset(string toString, JObject asset)
         {
-            if (m_AssetJsonByAssetId == null)
-            {
-                m_AssetJsonByAssetId = new Dictionary<string, JObject>();
-            }
+            m_AssetJsonByAssetId ??= new Dictionary<string, JObject>();
             m_AssetJsonByAssetId[toString] = asset;
         }
     }
