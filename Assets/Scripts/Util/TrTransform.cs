@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using JetBrains.Annotations;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace TiltBrush
@@ -76,6 +77,63 @@ namespace TiltBrush
             TrTransform ret;
             MathUtils.DecomposeMatrix4x4(m, out ret.translation, out ret.rotation, out ret.scale);
             return ret;
+        }
+        
+        /// <summary>
+        /// Attempt to convert a Matrix4x4 into a <see cref="TrTransform"/>.
+        /// If the parameter matrix's scale is non-uniform due to flipped axes,
+        /// ((e.g., (-1,1,1)), we will attempt to convert it to a uniform scale.
+        /// If no good conversion exists, we will return false and the parameter
+        /// transform will be best-effort.
+        /// </summary>
+        public static bool TryConvertToUniformScale(Matrix4x4 m, out TrTransform res)
+        {
+            double3x3 Rotation(Matrix4x4 m)
+            {
+                return new double3x3(m.m00,m.m01,m.m02,m.m10,m.m11,m.m12,m.m20,m.m21,m.m22);
+            }
+            
+            var r = Rotation(m);
+            var scale = new double3(math.length(r.c0),math.length(r.c1),math.length(r.c2));
+            
+            // Treat scale as if it was uniform. We'll check later whether it is.
+            var uniformScale = (scale.x + scale.y + scale.z)/3;
+            
+            var q = (1/uniformScale) * r;
+            var sx = math.sign(math.mul(q,r.c0).x);
+            var sy = math.sign(math.mul(q,r.c1).y);
+            var sz = math.sign(math.mul(q,r.c2).z);
+            if (math.determinant(q)*sx*sy*sz < 0)
+            {
+                sz *= -1;
+            }
+            
+            if (math.determinant(q) < 0)
+            {
+                if (sx > 0 || sy > 0 || sz > 0)
+                {
+                    if (sx < 0)
+                    {
+                        q *= Rotation(Matrix4x4.Rotate(Quaternion.Euler(180,0,0)));
+                    }
+                    else if (sy < 0)
+                    {
+                        q *= Rotation(Matrix4x4.Rotate(Quaternion.Euler(0,180,0)));
+                    }
+                    else
+                    {
+                        q *= Rotation(Matrix4x4.Rotate(Quaternion.Euler(0,0,180)));
+                    }
+                }
+            }
+            
+            res = TRS(t: m.GetPosition(),
+                r: math.rotation(new float3x3(q)),
+                scale: (float)(uniformScale * math.determinant(q)));
+            
+            return Mathf.Approximately((float)scale.x, (float)scale.y) &&
+                   Mathf.Approximately((float)scale.x, (float)scale.z) &&
+                   Mathf.Approximately((float)scale.y, (float)scale.z);
         }
 
         /// Results are undefined if xf has non-uniform scale.

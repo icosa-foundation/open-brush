@@ -382,34 +382,17 @@ namespace TiltBrush
         }
 
         /// Duplicates a stroke. Duplicated strokes have a timestamp that corresponds to the current time.
-        public Stroke DuplicateStroke(Stroke srcStroke, CanvasScript canvas, TrTransform? leftTransform)
-        {
-            return DoDuplicateStroke(srcStroke, canvas, leftTransform, null);
-        }
-        
-        /// <inheritdoc cref="DuplicateStroke(TiltBrush.Stroke,TiltBrush.CanvasScript,System.Nullable{TiltBrush.TrTransform})"/>
-        public Stroke DuplicateStroke(Stroke srcStroke, CanvasScript canvas, Matrix4x4 leftTransform)
-        {
-            return DoDuplicateStroke(srcStroke, canvas, null, leftTransform);
-        }
-        
-        private Stroke DoDuplicateStroke(Stroke srcStroke, CanvasScript canvas, TrTransform? xf, Matrix4x4? mat)
+        public Stroke DuplicateStroke(Stroke srcStroke, CanvasScript canvas, TrTransform? transform, bool absoluteScale = false)
         {
             Stroke duplicate = new Stroke(srcStroke);
             duplicate.m_PreviousCanvas = srcStroke.m_PreviousCanvas;
             if (srcStroke.m_Type == Stroke.Type.BatchedBrushStroke)
             {
-                if (mat != null)
+                if (transform != null)
                 {
                     // If this fires, consider adding transform support to CreateGeometryByCopying
                     Debug.LogWarning("Unexpected: Taking slow DuplicateStroke path");
-                    duplicate.Recreate(mat.Value, canvas);
-                }
-                else if (xf != null)
-                {
-                    // If this fires, consider adding transform support to CreateGeometryByCopying
-                    Debug.LogWarning("Unexpected: Taking slow DuplicateStroke path");
-                    duplicate.Recreate(xf, canvas);
+                    duplicate.Recreate(transform, canvas, absoluteScale);
                 }
                 else
                 {
@@ -418,14 +401,7 @@ namespace TiltBrush
             }
             else
             {
-                if (mat != null)
-                {
-                    duplicate.Recreate(mat.Value, canvas);
-                }
-                else
-                {
-                    duplicate.Recreate(xf, canvas);
-                }
+                duplicate.Recreate(transform, canvas, absoluteScale);
             }
             UpdateTimestampsToCurrentSketchTime(duplicate);
             MemoryListAdd(duplicate);

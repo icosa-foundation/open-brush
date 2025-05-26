@@ -44,6 +44,7 @@ namespace TiltBrush
 #endif
 
         }
+        
         /// Returns difference between two periodic values.
         /// Result range is [-period/2, period/2)
         static public float PeriodicDifference(
@@ -90,6 +91,19 @@ namespace TiltBrush
             uniformScale = (float)Math.Sqrt(x0 * x0 + x1 * x1 + x2 * x2) * scaleSign;
         }
 
+        static public Vector3 DecomposeMatrix4x4Scale(Matrix4x4 m)
+        {
+            return new Vector3(
+                x: (float)Magnitude(m.m00,m.m10,m.m20),
+                y: (float)Magnitude(m.m01,m.m11,m.m21),
+                z: (float)Magnitude(m.m02,m.m12,m.m22));
+        }
+        
+        static public double Magnitude(double x0, double x1, double x2)
+        {
+            return Math.Sqrt(x0 * x0 + x1 * x1 + x2 * x2);
+        }
+        
         /// Returns signed angle in degrees, in [-180, 180].
         /// "stability" is a metric of how stable the calculation is.
         /// If v1 and v2 are unit-length, then "stability" will range from

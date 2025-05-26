@@ -1,4 +1,4 @@
-// Copyright 2020 The Tilt Brush Authors
+// Copyright 2022 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,64 +20,216 @@ namespace TiltBrush
 {
     public class DuplicateSelectionCommand : BaseCommand
     {
-        // This command stores a copy of the selection and a copy of the duplicate.
         private List<Stroke> m_SelectedStrokes;
         private List<GrabWidget> m_SelectedWidgets;
+
+        private List<Stroke> m_DuplicatedSelectedStrokes;
 
         private List<Stroke> m_DuplicatedStrokes;
         private List<GrabWidget> m_DuplicatedWidgets;
 
         private TrTransform m_OriginTransform;
         private TrTransform m_DuplicateTransform;
-
+        
         private CanvasScript m_CurrentCanvas;
 
         private bool m_DupeInPlace;
+        private bool m_ModifySelection;
 
         public DuplicateSelectionCommand(TrTransform xf, BaseCommand parent = null) : base(parent)
         {
-            // Save selected and duplicated strokes.
-            m_SelectedStrokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
-            m_DuplicatedStrokes = m_SelectedStrokes
-                .Select(stroke => SketchMemoryScript.m_Instance.DuplicateStroke(
-                    stroke, App.Scene.SelectionCanvas, null))
-                .ToList();
-
-            // Save selected widgets.
-            m_SelectedWidgets = SelectionManager.m_Instance.SelectedWidgets.ToList();
-            // Save duplicated widgets
-            m_DuplicatedWidgets = new List<GrabWidget>();
-            foreach (var widget in m_SelectedWidgets)
-            {
-                var duplicatedWidget = widget.Clone();
-                m_DuplicatedWidgets.Add(duplicatedWidget);
-            }
-
             m_CurrentCanvas = App.ActiveCanvas;
-
-            GroupManager.MoveStrokesToNewGroups(m_DuplicatedStrokes, null);
-
             m_OriginTransform = SelectionManager.m_Instance.SelectionTransform;
             m_DuplicateTransform = xf;
             m_DupeInPlace = m_OriginTransform == m_DuplicateTransform;
+            
+            // Gather duplicate transforms based on current symmetry mode.
+            // Use Unity transforms and Matrix4x4 because we are going
+            // to be dealing with non-uniform scale.
+            List<TrTransform> xfMatricesGS = null; //
+            bool duplicateWidgetsAsTwoSided = false;
+            switch (PointerManager.m_Instance.CurrentSymmetryMode)
+            {
+                case PointerManager.SymmetryMode.SinglePlane:
+                    xfMatricesGS = new List<TrTransform>
+                    {
+                        TrTransform.identity,
+                        PointerManager.m_Instance.SymmetryWidget.ReflectionPlane.ToTrTransform()
+                    };
+                    break;
+                case PointerManager.SymmetryMode.MultiMirror:
+                    duplicateWidgetsAsTwoSided = true;
+                    xfMatricesGS = new List<TrTransform>();
+                    
+                    var xfCenter = TrTransform.FromTransform(
+                        PointerManager.m_Instance.m_SymmetryLockedToController 
+                            ? PointerManager.m_Instance.MainPointer.transform 
+                            : PointerManager.m_Instance.SymmetryWidget.GrabTransform_GS
+                    );
+                    
+                    foreach (var m in PointerManager.m_Instance.CustomMirrorMatrices)
+                    {
+                        // TrTransform.TryConvertToUniformScale(m,out var res);
+                        // xfMatricesGS.Add(res);
+                        xfMatricesGS.Add(TrTransform.FromMatrix4x4(m));//
+                    }
+                    for (int i = 0; i < xfMatricesGS.Count; i++)
+                    {
+                        var appScale = TrTransform.S(App.Scene.Pose.scale);
+                        var pre = xfCenter * appScale;
+                        xfMatricesGS[i] = pre * xfMatricesGS[i] * pre.inverse; 
+                    }
+                    break;
+                // TODO not currently working
+                // case PointerManager.SymmetryMode.ScriptedSymmetryMode:
+                //     PointerManager.m_Instance.CalcScriptedTransforms();
+                //     // matrices = PointerManager.m_Instance.ScriptedTransforms;
+                //     break;
+                // case PointerManager.SymmetryMode.CustomSymmetryMode:
+                //     break;
+                default:
+                    break;
+            }
+            
+            List<Vector3> testpositions = new List<Vector3>()
+            {
+                new Vector3(5,-1,7),
+                new Vector3(0,0,0),
+                new Vector3(-1,-1,-1),
+                new Vector3(-.01f,-.10f,.05f),
+                new Vector3(1892,-1923,8253),
+            };
+            
+            foreach (var m in PointerManager.m_Instance.CustomMirrorMatrices)
+            {
+                Debug.Log($"Matrix: {m}\n\nConvert: {TrTransform.TryConvertToUniformScale(m, out var res)}\n\nResult: {res}\n\n");
+                foreach (var position in testpositions)
+                {
+                    var original = m.MultiplyPoint3x4(position);
+                    var ours = res.MultiplyPoint(position);
+                    if (Mathf.Approximately(original.x,ours.x) && Mathf.Approximately(original.y,ours.y) && Mathf.Approximately(original.z,ours.z))
+                    {
+                        Debug.Log($"SUCCESS: original: {original}, ours: {ours}");
+                    }
+                    else
+                    {
+                        Debug.Log($"FAILURE: original: {original}, ours: {ours}");
+                    }
+                    var simple = TrTransform.FromMatrix4x4(m).MultiplyPoint(position);
+                    if (Mathf.Approximately(original.x,simple.x) && Mathf.Approximately(original.y,simple.y) && Mathf.Approximately(original.z,simple.z))
+                    {
+                        Debug.Log($"simple: SUCCESS: original: {original}, simple: {simple}");
+                    }
+                    else
+                    {
+                        Debug.Log($"simple: FAILURE: original: {original}, simple: {simple}");
+                    }
+                }
+            }
+            
+            // Save selected strokes.
+            m_SelectedStrokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
+            // Save selected widgets.
+            m_SelectedWidgets = SelectionManager.m_Instance.SelectedWidgets.ToList();
+
+            m_DuplicatedStrokes = new List<Stroke>();
+            m_DuplicatedWidgets = new List<GrabWidget>();
+            if (xfMatricesGS == null)
+            {
+                // Special case for non-symmetry to match legacy code. Duplicate
+                // selection into selection canvas, deselect the old selection,
+                // and change the selection transform to apply the transform
+                // parameter. Is this necessary...? Probably better safe than
+                // sorry.
+                m_ModifySelection = true;
+                
+                // Duplicate strokes.
+                foreach (var stroke in m_SelectedStrokes)
+                {
+                    m_DuplicatedStrokes.Add(
+                        SketchMemoryScript.m_Instance.DuplicateStroke(
+                            stroke,App.Scene.SelectionCanvas,null));
+                }
+                
+                // Duplicate widgets.
+                foreach (var widget in m_SelectedWidgets)
+                {
+                    m_DuplicatedWidgets.Add(widget.Clone());
+                }
+            }
+            else
+            {
+                // The new way, which works with arbitrary mirror matrices.
+                // Leave selection untouched and apply all transforms at 
+                // creation time.
+                if (!m_DupeInPlace)
+                {
+                    // Apply transform parameter.
+                    var xfDelta = m_DuplicateTransform * m_OriginTransform.inverse;
+                    for (int i = 0; i < xfMatricesGS.Count; i++)
+                    {
+                        xfMatricesGS[i] = xfMatricesGS[i] * xfDelta;
+                    }
+                }
+                
+                // Pre-calculate left transforms for canvas space.
+                var xfMatricesCS = new List<TrTransform>(xfMatricesGS);
+                var xfGSfromCS = App.Scene.SelectionCanvas.Pose;
+                var xfCSfromGS = m_CurrentCanvas.Pose.inverse;
+                for (int i = 0; i < xfMatricesGS.Count; i++)
+                {
+                    xfMatricesCS[i] = xfCSfromGS * xfMatricesGS[i] * xfGSfromCS;
+                }
+                
+                // Duplicate strokes.
+                foreach (var stroke in m_SelectedStrokes)
+                {
+                    for (int i = 0; i < xfMatricesCS.Count; i++)
+                    {
+                        m_DuplicatedStrokes.Add(
+                            SketchMemoryScript.m_Instance.DuplicateStroke(
+                                stroke,m_CurrentCanvas,xfMatricesCS[i],absoluteScale:true));
+                    }
+                }
+                
+                // Duplicate widgets.
+                foreach (var widget in m_SelectedWidgets)
+                {
+                    // Generally speaking we want both sides of 2d media to appear
+                    // when duplicating using multi-mirror.
+                    bool duplicateAsTwoSided = widget is Media2dWidget 
+                        && duplicateWidgetsAsTwoSided;
+
+                    for (int i = 0; i < xfMatricesGS.Count; i++)
+                    {
+                        var duplicatedWidget = widget.Clone();
+                        var widgetXf = Coords.AsGlobal[duplicatedWidget.GrabTransform_GS];
+                        widgetXf.scale = duplicatedWidget.GetSignedWidgetSize();
+                        widget.SetCanvas(m_CurrentCanvas);
+                        
+                        if (duplicateAsTwoSided)
+                        {
+                            ((Media2dWidget)duplicatedWidget).TwoSided = true;
+                        }
+
+                        var mat = xfMatricesGS[i] * widgetXf;
+                        duplicatedWidget.GrabTransform_GS.SetPositionAndRotation(
+                            position:mat.translation,
+                            rotation:mat.rotation);
+                        duplicatedWidget.SetSignedWidgetSize(mat.scale);
+
+                        m_DuplicatedWidgets.Add(duplicatedWidget);
+                    }
+                }
+            }
+            
+            GroupManager.MoveStrokesToNewGroups(m_DuplicatedStrokes, null);
         }
 
         public override bool NeedsSave { get { return true; } }
 
         protected override void OnRedo()
         {
-            // Deselect selected strokes to current canvas.
-            if (m_SelectedStrokes != null)
-            {
-                SelectionManager.m_Instance.DeselectStrokes(m_SelectedStrokes, m_CurrentCanvas);
-            }
-
-            // Deselect selected widgets.
-            if (m_SelectedWidgets != null)
-            {
-                SelectionManager.m_Instance.DeselectWidgets(m_SelectedWidgets, m_CurrentCanvas);
-            }
-
             // Place duplicated strokes.
             foreach (var stroke in m_DuplicatedStrokes)
             {
@@ -103,18 +255,42 @@ namespace TiltBrush
                 }
                 TiltMeterScript.m_Instance.AdjustMeter(stroke, up: true);
             }
-            SelectionManager.m_Instance.RegisterStrokesInSelectionCanvas(m_DuplicatedStrokes);
 
             // Place duplicated widgets.
             for (int i = 0; i < m_DuplicatedWidgets.Count; ++i)
             {
                 m_DuplicatedWidgets[i].RestoreFromToss();
             }
-            SelectionManager.m_Instance.RegisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
-
-            // Set selection widget transforms.
-            SelectionManager.m_Instance.SelectionTransform = m_DuplicateTransform;
-            SelectionManager.m_Instance.UpdateSelectionWidget();
+            
+            if (m_DuplicatedWidgets != null && !m_ModifySelection)
+            {
+                // Not sure why we need to do this, but if we don't we are left
+                // with selected widgets.
+                SelectionManager.m_Instance.SelectWidgets(m_DuplicatedWidgets);
+                SelectionManager.m_Instance.RegisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
+                SelectionManager.m_Instance.DeselectWidgets(m_DuplicatedWidgets,m_CurrentCanvas);
+                SelectionManager.m_Instance.UpdateSelectionWidget();
+            }
+            
+            if (m_ModifySelection)
+            {
+                if (m_SelectedStrokes != null)
+                {
+                    SelectionManager.m_Instance.DeselectStrokes(m_SelectedStrokes, m_CurrentCanvas);
+                }
+                
+                if (m_SelectedWidgets != null)
+                {
+                    SelectionManager.m_Instance.DeselectWidgets(m_SelectedWidgets, m_CurrentCanvas);
+                }
+                
+                SelectionManager.m_Instance.RegisterStrokesInSelectionCanvas(m_DuplicatedStrokes);
+                SelectionManager.m_Instance.RegisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
+                
+                // Set selection widget transforms.
+                SelectionManager.m_Instance.SelectionTransform = m_DuplicateTransform;
+                SelectionManager.m_Instance.UpdateSelectionWidget();
+            }
         }
 
         protected override void OnUndo()
@@ -144,29 +320,33 @@ namespace TiltBrush
                 }
                 TiltMeterScript.m_Instance.AdjustMeter(stroke, up: false);
             }
-            SelectionManager.m_Instance.DeregisterStrokesInSelectionCanvas(m_DuplicatedStrokes);
 
             // Remove duplicated widgets.
             for (int i = 0; i < m_DuplicatedWidgets.Count; ++i)
             {
                 m_DuplicatedWidgets[i].Hide();
             }
-            SelectionManager.m_Instance.DeregisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
 
-            // Reset the selection transform before we select strokes.
-            SelectionManager.m_Instance.SelectionTransform = m_OriginTransform;
-
-            // Select strokes.
-            if (m_SelectedStrokes != null)
+            if (m_ModifySelection)
             {
-                SelectionManager.m_Instance.SelectStrokes(m_SelectedStrokes);
-            }
-            if (m_SelectedWidgets != null)
-            {
-                SelectionManager.m_Instance.SelectWidgets(m_SelectedWidgets);
-            }
+                SelectionManager.m_Instance.DeregisterStrokesInSelectionCanvas(m_DuplicatedStrokes);
+                SelectionManager.m_Instance.DeregisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
 
-            SelectionManager.m_Instance.UpdateSelectionWidget();
+                // Reset the selection transform before we select strokes.
+                SelectionManager.m_Instance.SelectionTransform = m_OriginTransform;
+                
+                // Select strokes.
+                if (m_SelectedStrokes != null)
+                {
+                    SelectionManager.m_Instance.SelectStrokes(m_SelectedStrokes);
+                }
+                if (m_SelectedWidgets != null)
+                {
+                    SelectionManager.m_Instance.SelectWidgets(m_SelectedWidgets);
+                }
+             
+                SelectionManager.m_Instance.UpdateSelectionWidget();
+            }
         }
 
         public override bool Merge(BaseCommand other)

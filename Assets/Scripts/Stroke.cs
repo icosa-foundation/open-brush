@@ -276,21 +276,10 @@ namespace TiltBrush
         ///
         /// TODO: Consider moving the code from the "m_Type == StrokeType.BrushStroke"
         /// case of SetParentKeepWorldPosition() into here.
-        public void Recreate(TrTransform? leftTransform = null, CanvasScript canvas = null)
-        {
-            DoRecreate(leftTransform,null,canvas);
-        }
-
-        /// <inheritdoc cref="Recreate(System.Nullable{TiltBrush.TrTransform},TiltBrush.CanvasScript)"/>
-        public void Recreate(Matrix4x4 leftTransform, CanvasScript canvas = null)
-        {
-            DoRecreate(null,leftTransform,canvas);
-        }
-        
-        private void DoRecreate(TrTransform? xf, Matrix4x4? mat, CanvasScript canvas = null)
+        public void Recreate(TrTransform? leftTransform = null, CanvasScript canvas = null, bool absoluteScale = false)
         {
             // TODO: Try a fast-path that uses VertexLayout+GeometryPool to modify geo directly
-            if (xf != null || mat != null || m_Type == Type.NotCreated)
+            if (leftTransform != null || m_Type == Type.NotCreated)
             {
                 // Uncreate first, or SetParent() will do a lot of needless work
                 Uncreate();
@@ -298,14 +287,9 @@ namespace TiltBrush
                 {
                     SetParent(canvas);
                 }
-                
-                if (mat != null)
+                if (leftTransform != null)
                 {
-                    LeftTransformControlPoints(mat.Value);
-                }
-                else if (xf != null)
-                {
-                    LeftTransformControlPoints(xf.Value);
+                    LeftTransformControlPoints(leftTransform.Value,absoluteScale);
                 }
                 
                 // PointerManager's pointer management is a complete mess.
@@ -351,7 +335,7 @@ namespace TiltBrush
         }
 
         // TODO: Possibly could optimize this in C++ for 11.5% of time in selection.
-        private void LeftTransformControlPoints(TrTransform leftTransform)
+        private void LeftTransformControlPoints(TrTransform leftTransform, bool absoluteScale = false)
         {
             for (int i = 0; i < m_ControlPoints.Length; i++)
             {
@@ -363,7 +347,9 @@ namespace TiltBrush
                 m_ControlPoints[i] = point;
             }
 
-            m_BrushScale *= leftTransform.scale;
+            m_BrushScale *= absoluteScale 
+                ? Mathf.Abs(leftTransform.scale)
+                : leftTransform.scale;
             InvalidateCopy();
         }
         
