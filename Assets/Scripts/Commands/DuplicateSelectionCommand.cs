@@ -163,7 +163,6 @@ namespace TiltBrush
                         var duplicatedWidget = widget.Clone();
                         var widgetXf = Coords.AsGlobal[duplicatedWidget.GrabTransform_GS];
                         widgetXf.scale = duplicatedWidget.GetSignedWidgetSize();
-                        duplicatedWidget.SetCanvas(m_CurrentCanvas);
                         
                         if (duplicateAsTwoSided)
                         {
@@ -178,6 +177,12 @@ namespace TiltBrush
 
                         m_DuplicatedWidgets.Add(duplicatedWidget);
                     }
+                }
+                
+                if (m_DuplicatedWidgets.Count > 0)
+                {
+                    SelectionManager.m_Instance.RegisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
+                    SelectionManager.m_Instance.DeselectWidgets(m_DuplicatedWidgets,m_CurrentCanvas);
                 }
             }
             
