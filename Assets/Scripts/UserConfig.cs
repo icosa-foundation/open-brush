@@ -176,6 +176,7 @@ namespace TiltBrush
             {
                 get
                 {
+                    // TODO Should we avoid preload if we are running offline rendering?
                     return m_IcosaModelPreload ?? App.PlatformConfig.EnablePolyPreload;
                 }
                 set { m_IcosaModelPreload = value; }
