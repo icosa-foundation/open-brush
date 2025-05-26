@@ -75,6 +75,7 @@ namespace TiltBrush
                     var info = new IcosaSceneFileInfo(asset);
                     info.Author = asset["authorName"].ToString();
                     files.Add(info);
+                    App.IcosaAssetCatalog.SetJsonForAsset(asset["assetId"].ToString(), (JObject)asset);
                 }
             }
             m_PageToken = json["nextPageToken"]?.ToString();
