@@ -1,4 +1,4 @@
-// Copyright 2022 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@ namespace TiltBrush
     {
         private List<Stroke> m_SelectedStrokes;
         private List<GrabWidget> m_SelectedWidgets;
-
-        private List<Stroke> m_DuplicatedSelectedStrokes;
 
         private List<Stroke> m_DuplicatedStrokes;
         private List<GrabWidget> m_DuplicatedWidgets;
