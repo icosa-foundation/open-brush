@@ -201,6 +201,7 @@ namespace TiltBrush
 
         public void RequestForcedRefresh()
         {
+            ResetLists();
             // Stop the current refresh and start a new one
             m_Parent.StopCoroutine(m_RefreshCoroutine);
             m_RefreshRequested = true;
@@ -297,13 +298,10 @@ namespace TiltBrush
                     {
                         if (m_RefreshCoroutine != null)
                         {
+                            ResetLists();
                             m_Parent.StopCoroutine(m_RefreshCoroutine);
                             IsActivelyRefreshingSketches = false;
                             m_RefreshCoroutine = null;
-                            m_Sketches.Clear();
-                            m_AssetIds.Clear();
-                            m_TotalCount = 0;
-                            m_CacheDir = null;
                             OnChanged();
                         }
                     }
@@ -359,10 +357,7 @@ namespace TiltBrush
         {
             if (m_NeedsLogin && !m_LoggedIn)
             {
-                m_Sketches.Clear();
-                m_AssetIds.Clear();
-                m_TotalCount = 0;
-                m_CacheDir = null;
+                ResetLists();
                 OnChanged();
                 yield break;
             }
@@ -394,6 +389,14 @@ namespace TiltBrush
             IsActivelyRefreshingSketches = true;
             yield return PopulateSketchesCoroutine();
             IsActivelyRefreshingSketches = false;
+        }
+
+        private void ResetLists()
+        {
+            m_Sketches.Clear();
+            m_AssetIds.Clear();
+            m_TotalCount = 0;
+            m_CacheDir = null;
         }
 
         // Fetch asset metadata from server and populate m_Sketches
