@@ -2548,12 +2548,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: 
+  m_DescriptionText: All
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 369886448819200000
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -2596,7 +2596,7 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_ToggleOnDescription: 
+  m_ToggleOnDescription: Curated
   m_LocalizedToggleOnDescription:
     m_TableReference:
       m_TableCollectionName: 
