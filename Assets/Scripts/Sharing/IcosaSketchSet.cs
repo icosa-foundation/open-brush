@@ -689,6 +689,10 @@ namespace TiltBrush
         // Does this on a background thread so prevent hitches.
         private IEnumerator DeleteOldSketchesCoroutine()
         {
+            // We need to rethink this method
+            // Maybe delete when we have too many or when they are too old?
+            yield return null;
+
             if (m_CacheDir != null)
             {
                 var task = new Future<bool>(() =>
