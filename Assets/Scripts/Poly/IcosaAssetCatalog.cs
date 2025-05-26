@@ -1210,10 +1210,11 @@ namespace TiltBrush
         // Returns the filename of the .gltf/.gltf2 file, or null if not valid.
         private static string ValidGltfCache(string dir, string assetId)
         {
-            if (Directory.GetFiles(dir, "*.bin").Length == 0)
-            {
-                return null;
-            }
+            // We now don't require a .bin file, as some assets are glbs
+            // if (Directory.GetFiles(dir, "*.bin").Length == 0)
+            // {
+            //     return null;
+            // }
 
             var filesGltf1 = Directory.GetFiles(dir, "*.gltf");
             var filesGltf2 = Directory.GetFiles(dir, "*.gltf2");
