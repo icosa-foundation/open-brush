@@ -361,11 +361,6 @@ namespace TiltBrush
         public List<Matrix4x4> CustomMirrorMatrices => m_CustomMirrorMatrices.ToList(); // Ensure we return a clone
         public List<Vector2> CustomMirrorDomain => m_CustomMirrorDomain.ToList();
 
-        public List<TrTransform> ScriptedTransforms
-        {
-            get { UpdateScriptedTransforms(out _); return m_ScriptedTransforms.ToList(); }
-        }
-        
         public List<Color> SymmetryPointerColors
         {
             get { return m_SymmetryPointerColors; }
@@ -397,6 +392,16 @@ namespace TiltBrush
         public PointerScript GetTransientPointer(int i)
         {
             return m_Pointers[NumUserPointers + i].m_Script;
+        }
+        
+        public List<TrTransform> GetScriptedTransforms(bool update)
+        {
+            if (update)
+            {
+                UpdateScriptedTransforms(out _);
+            }
+            
+            return m_ScriptedTransforms.ToList();
         }
 
         public PointerScript CreateRemotePointer()

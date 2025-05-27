@@ -76,7 +76,7 @@ namespace TiltBrush
                     break;
                 case PointerManager.SymmetryMode.ScriptedSymmetryMode:
                     duplicateWidgetsAsTwoSided = true;
-                    xfSymmetriesGS = PointerManager.m_Instance.ScriptedTransforms;
+                    xfSymmetriesGS = PointerManager.m_Instance.GetScriptedTransforms(update:true);
                     break;
                 // case PointerManager.SymmetryMode.CustomSymmetryMode:
                 //     break;
