@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using JetBrains.Annotations;
-using Unity.Mathematics;
 using UnityEngine;
 
 namespace TiltBrush
