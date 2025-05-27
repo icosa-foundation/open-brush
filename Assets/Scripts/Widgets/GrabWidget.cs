@@ -1442,25 +1442,16 @@ namespace TiltBrush
 
         private TrTransform ApplyAxisLocks(TrTransform xf_GS)
         {
-            var pose = App.ActiveCanvas.Pose;
-            switch (this)
+            if (this is StencilWidget || this is MediaWidget || this is SelectionWidget)
             {
-                case StencilWidget g:
-                    xf_GS = g.CalculateAxisLocks(xf_GS, pose);
-                    break;
-                case MediaWidget m:
-                    xf_GS = m.CalculateAxisLocks(xf_GS, pose);
-                    break;
-                case SelectionWidget s:
-                    xf_GS = s.CalculateAxisLocks(xf_GS, pose);
-                    break;
+                xf_GS = CalculateAxisLocks(xf_GS);
             }
             return xf_GS;
         }
 
-        private TrTransform CalculateAxisLocks(TrTransform xf_GS, TrTransform pose)
+        private TrTransform CalculateAxisLocks(TrTransform xf_GS)
         {
-            var outXf_CS = pose.inverse * xf_GS;
+            var outXf_CS = App.ActiveCanvas.Pose.inverse * xf_GS;
             // Restore transforms for locked axes
             if (SelectionManager.m_Instance.m_LockTranslationX) outXf_CS.translation.x = transform.localPosition.x;
             if (SelectionManager.m_Instance.m_LockTranslationY) outXf_CS.translation.y = transform.localPosition.y;
@@ -1470,7 +1461,7 @@ namespace TiltBrush
             if (SelectionManager.m_Instance.m_LockRotationY) euler.y = transform.localRotation.eulerAngles.y;
             if (SelectionManager.m_Instance.m_LockRotationZ) euler.z = transform.localRotation.eulerAngles.z;
             outXf_CS.rotation.eulerAngles = euler;
-            return pose * outXf_CS;
+            return App.ActiveCanvas.Pose * outXf_CS;
         }
 
         protected virtual bool AllowSnapping()
