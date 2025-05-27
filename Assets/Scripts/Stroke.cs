@@ -289,9 +289,9 @@ namespace TiltBrush
                 }
                 if (leftTransform != null)
                 {
-                    LeftTransformControlPoints(leftTransform.Value,absoluteScale);
+                    LeftTransformControlPoints(leftTransform.Value, absoluteScale);
                 }
-                
+
                 // PointerManager's pointer management is a complete mess.
                 // "5" is the most-likely to be unused. It's terrible that this
                 // needs to go through a pointer.
@@ -347,12 +347,12 @@ namespace TiltBrush
                 m_ControlPoints[i] = point;
             }
 
-            m_BrushScale *= absoluteScale 
+            m_BrushScale *= absoluteScale
                 ? Mathf.Abs(leftTransform.scale)
                 : leftTransform.scale;
             InvalidateCopy();
         }
-        
+
         private void LeftTransformControlPoints(Matrix4x4 leftTransform)
         {
             for (int i = 0; i < m_ControlPoints.Length; i++)
@@ -366,7 +366,7 @@ namespace TiltBrush
             m_BrushScale *= Mathf.Abs(leftTransform.lossyScale.x);
             InvalidateCopy();
         }
-        
+
         /// Set the parent canvas of this stroke, preserving the _canvas_-relative position.
         /// There will be a pop if the previous and current canvases have different
         /// transforms.

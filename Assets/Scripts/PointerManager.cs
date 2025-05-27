@@ -249,12 +249,12 @@ namespace TiltBrush
         public event Action OnPointerColorChange = delegate { };
 
         // ---- public properties
-        
+
         public PointerScript MainPointer
         {
             get { return m_MainPointerData.m_Script; }
         }
-        
+
         /// Only call this if you don't want to update m_lastChosenColor
         /// Used by color jitter on new stroke
         private void ChangeAllPointerColorsDirectly(Color value)
@@ -393,14 +393,14 @@ namespace TiltBrush
         {
             return m_Pointers[NumUserPointers + i].m_Script;
         }
-        
+
         public List<TrTransform> GetScriptedTransforms(bool update)
         {
             if (update)
             {
                 UpdateScriptedTransforms(out _);
             }
-            
+
             return m_ScriptedTransforms.ToList();
         }
 

@@ -28,7 +28,7 @@ namespace TiltBrush
 
         private TrTransform m_OriginTransform;
         private TrTransform m_DuplicateTransform;
-        
+
         private CanvasScript m_CurrentCanvas;
 
         private bool m_DupeInPlace;
@@ -40,7 +40,7 @@ namespace TiltBrush
             m_OriginTransform = SelectionManager.m_Instance.SelectionTransform;
             m_DuplicateTransform = xf;
             m_DupeInPlace = m_OriginTransform == m_DuplicateTransform;
-            
+
             // Gather duplicate transforms based on current symmetry mode.
             // Use Unity transforms and Matrix4x4 because we are going
             // to be dealing with non-uniform scale.
@@ -59,10 +59,10 @@ namespace TiltBrush
                 case PointerManager.SymmetryMode.MultiMirror:
                     duplicateWidgetsAsTwoSided = true;
                     xfSymmetriesGS = new List<TrTransform>();
-                    
+
                     var xfCenter = TrTransform.FromTransform(
-                        PointerManager.m_Instance.m_SymmetryLockedToController 
-                            ? PointerManager.m_Instance.MainPointer.transform 
+                        PointerManager.m_Instance.m_SymmetryLockedToController
+                            ? PointerManager.m_Instance.MainPointer.transform
                             : PointerManager.m_Instance.SymmetryWidget.GrabTransform_GS
                     );
 
@@ -76,7 +76,7 @@ namespace TiltBrush
                     break;
                 case PointerManager.SymmetryMode.ScriptedSymmetryMode:
                     duplicateWidgetsAsTwoSided = true;
-                    xfSymmetriesGS = PointerManager.m_Instance.GetScriptedTransforms(update:true);
+                    xfSymmetriesGS = PointerManager.m_Instance.GetScriptedTransforms(update: true);
                     break;
                 // case PointerManager.SymmetryMode.CustomSymmetryMode:
                 //     break;
@@ -98,15 +98,15 @@ namespace TiltBrush
                 // parameter. Is this necessary...? Probably better safe than
                 // sorry.
                 m_NoSymmetrySpecialCase = true;
-                
+
                 // Duplicate strokes.
                 foreach (var stroke in m_SelectedStrokes)
                 {
                     m_DuplicatedStrokes.Add(
                         SketchMemoryScript.m_Instance.DuplicateStroke(
-                            stroke,App.Scene.SelectionCanvas,null));
+                            stroke, App.Scene.SelectionCanvas, null));
                 }
-                
+
                 // Duplicate widgets.
                 foreach (var widget in m_SelectedWidgets)
                 {
@@ -130,7 +130,7 @@ namespace TiltBrush
                         xfSymmetriesGS[i] = xfSymmetriesGS[i] * xfDeltaScaleAdj;
                     }
                 }
-                
+
                 // Pre-calculate left transforms for canvas space.
                 var xfSymmetriesCS = new List<TrTransform>(xfSymmetriesGS);
                 var xfGSfromCS = App.Scene.SelectionCanvas.Pose;
@@ -139,7 +139,7 @@ namespace TiltBrush
                 {
                     xfSymmetriesCS[i] = xfCSfromGS * xfSymmetriesGS[i] * xfGSfromCS;
                 }
-                
+
                 // Duplicate strokes.
                 foreach (var stroke in m_SelectedStrokes)
                 {
@@ -147,16 +147,16 @@ namespace TiltBrush
                     {
                         m_DuplicatedStrokes.Add(
                             SketchMemoryScript.m_Instance.DuplicateStroke(
-                                stroke,m_CurrentCanvas,xfSymmetriesCS[i],absoluteScale:true));
+                                stroke, m_CurrentCanvas, xfSymmetriesCS[i], absoluteScale: true));
                     }
                 }
-                
+
                 // Duplicate widgets.
                 foreach (var widget in m_SelectedWidgets)
                 {
                     // Generally speaking we want both sides of 2d media to appear
                     // when duplicating using multi-mirror.
-                    bool duplicateAsTwoSided = widget is Media2dWidget 
+                    bool duplicateAsTwoSided = widget is Media2dWidget
                         && duplicateWidgetsAsTwoSided;
 
                     for (int i = 0; i < xfSymmetriesGS.Count; i++)
@@ -164,7 +164,7 @@ namespace TiltBrush
                         var duplicatedWidget = widget.Clone();
                         var widgetXf = Coords.AsGlobal[duplicatedWidget.GrabTransform_GS];
                         widgetXf.scale = duplicatedWidget.GetSignedWidgetSize();
-                        
+
                         if (duplicateAsTwoSided)
                         {
                             ((Media2dWidget)duplicatedWidget).TwoSided = true;
@@ -172,21 +172,21 @@ namespace TiltBrush
 
                         var mat = xfSymmetriesGS[i] * widgetXf;
                         duplicatedWidget.GrabTransform_GS.SetPositionAndRotation(
-                            position:mat.translation,
-                            rotation:mat.rotation);
+                            position: mat.translation,
+                            rotation: mat.rotation);
                         duplicatedWidget.SetSignedWidgetSize(mat.scale);
 
                         m_DuplicatedWidgets.Add(duplicatedWidget);
                     }
                 }
-                
+
                 if (m_DuplicatedWidgets.Count > 0)
                 {
                     SelectionManager.m_Instance.RegisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
-                    SelectionManager.m_Instance.DeselectWidgets(m_DuplicatedWidgets,m_CurrentCanvas);
+                    SelectionManager.m_Instance.DeselectWidgets(m_DuplicatedWidgets, m_CurrentCanvas);
                 }
             }
-            
+
             GroupManager.MoveStrokesToNewGroups(m_DuplicatedStrokes, null);
         }
 
@@ -225,22 +225,22 @@ namespace TiltBrush
             {
                 m_DuplicatedWidgets[i].RestoreFromToss();
             }
-            
+
             if (m_NoSymmetrySpecialCase)
             {
                 if (m_SelectedStrokes != null)
                 {
                     SelectionManager.m_Instance.DeselectStrokes(m_SelectedStrokes, m_CurrentCanvas);
                 }
-                
+
                 if (m_SelectedWidgets != null)
                 {
                     SelectionManager.m_Instance.DeselectWidgets(m_SelectedWidgets, m_CurrentCanvas);
                 }
-                
+
                 SelectionManager.m_Instance.RegisterStrokesInSelectionCanvas(m_DuplicatedStrokes);
                 SelectionManager.m_Instance.RegisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
-                
+
                 // Set selection widget transforms.
                 SelectionManager.m_Instance.SelectionTransform = m_DuplicateTransform;
                 SelectionManager.m_Instance.UpdateSelectionWidget();
@@ -280,7 +280,7 @@ namespace TiltBrush
             {
                 m_DuplicatedWidgets[i].Hide();
             }
-            
+
             if (m_NoSymmetrySpecialCase)
             {
                 SelectionManager.m_Instance.DeregisterStrokesInSelectionCanvas(m_DuplicatedStrokes);
@@ -288,7 +288,7 @@ namespace TiltBrush
 
                 // Reset the selection transform before we select strokes.
                 SelectionManager.m_Instance.SelectionTransform = m_OriginTransform;
-                
+
                 // Select strokes.
                 if (m_SelectedStrokes != null)
                 {
@@ -298,7 +298,7 @@ namespace TiltBrush
                 {
                     SelectionManager.m_Instance.SelectWidgets(m_SelectedWidgets);
                 }
-             
+
                 SelectionManager.m_Instance.UpdateSelectionWidget();
             }
         }
