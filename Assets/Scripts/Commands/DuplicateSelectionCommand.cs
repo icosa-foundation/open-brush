@@ -49,6 +49,7 @@ namespace TiltBrush
             switch (PointerManager.m_Instance.CurrentSymmetryMode)
             {
                 case PointerManager.SymmetryMode.SinglePlane:
+                    duplicateWidgetsAsTwoSided = true;
                     xfSymmetriesGS = new List<TrTransform>
                     {
                         TrTransform.identity,
@@ -73,10 +74,10 @@ namespace TiltBrush
                         xfSymmetriesGS.Add(pre * tr * pre.inverse);
                     }
                     break;
-                // case PointerManager.SymmetryMode.ScriptedSymmetryMode:
-                //     PointerManager.m_Instance.CalcScriptedTransforms();
-                //     matrices = PointerManager.m_Instance.ScriptedTransforms;
-                //     break;
+                case PointerManager.SymmetryMode.ScriptedSymmetryMode:
+                    duplicateWidgetsAsTwoSided = true;
+                    xfSymmetriesGS = PointerManager.m_Instance.ScriptedTransforms;
+                    break;
                 // case PointerManager.SymmetryMode.CustomSymmetryMode:
                 //     break;
                 default:
