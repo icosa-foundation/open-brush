@@ -198,8 +198,16 @@ namespace TiltBrush
                     }
                     yield return snapshot;
                 }
+                else if (stroke.IsGeometryEnabled && !canvasToIndexMap.ContainsKey(stroke.Canvas))
+                {
+                    // This shouldn't happen
+                    Debug.Log($"Skipping layerless stroke {stroke.m_BrushGuid}");
+                    snapshot.layerIndex = canvasToIndexMap[App.Scene.MainCanvas];
+                    yield return snapshot;
+                }
                 else
                 {
+                    Debug.Log($"Skipping inactive stroke {stroke.m_BrushGuid}");
                     // Effectively, if the lead stroke of group is inactive (erased), we promote
                     // subsequent strokes to lead until one such stroke is active.
                     resetGroupContinue = !snapshot.adjustedStrokeFlags.HasFlag(StrokeFlags.IsGroupContinue);
