@@ -13,25 +13,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set up jq
-        run: sudo apt-get update && sudo apt-get install -y jq
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up GitHub CLI
-        uses: cli/cli-action@v2
-
-      - name: Print repository context
+      - name: Find open PRs with label 'periodic rebuild'
         run: |
-          echo "Repository: ${{ github.repository }}"
-          echo "Event: ${{ github.event_name }}"
-
-      - name: List open PRs with label 'periodic rebuild'
-        id: list_prs
-        run: |
-          echo "Listing PRs with label 'periodic rebuild'..."
+          echo "Finding PRs with label 'periodic rebuild'..."
           gh pr list --state open --label "periodic rebuild" --json number,title,headRefName | tee prs.json
           cat prs.json | jq -r '.[] | "PR #" + (.number|tostring) + ": " + .title + " (branch: " + .headRefName + ")"'
           cat prs.json | jq '.[].number' > prs.txt
           echo "Total PRs found:" $(wc -l < prs.txt)
+        env:
+          GH_TOKEN: ${{ secrets.REBUILD_PAT }}
+
+      - name: Get workflow ID for build.yml
+        id: get_workflow_id
+        run: |
+          workflow_id=$(gh api repos/${{ github.repository }}/actions/workflows --jq '.workflows[] | select(.path==".github/workflows/build.yml") | .id')
+          if [ -z "$workflow_id" ]; then
+            echo "Error: Couldn't find workflow_id for build.yml"
+            exit 1
+          fi
+          echo "Workflow ID for build.yml: $workflow_id"
+          echo "workflow_id=$workflow_id" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ secrets.REBUILD_PAT }}
 
@@ -43,6 +47,9 @@ jobs:
             exit 0
           fi
 
+          workflow_id="${{ steps.get_workflow_id.outputs.workflow_id }}"
+          echo "Using workflow_id: $workflow_id"
+
           while read pr_number; do
             echo "----------------------"
             echo "Processing PR #$pr_number"
@@ -52,10 +59,7 @@ jobs:
 
             echo "Finding latest workflow run for 'Builds' on branch '$pr_branch'..."
 
-            workflow_run=$(gh api repos/${{ github.repository }}/actions/runs \
-              --paginate \
-              -F "event=pull_request" \
-              -F "branch=$pr_branch" \
+            workflow_run=$(gh api "repos/${{ github.repository }}/actions/workflows/$workflow_id/runs?branch=$pr_branch&event=pull_request" \
               --jq '.workflow_runs[] | select(.name=="Builds")' | jq -s 'sort_by(.created_at) | reverse | .[0]')
 
             if [ "$workflow_run" = "null" ] || [ -z "$workflow_run" ]; then
@@ -72,6 +76,11 @@ jobs:
             echo "  Status: $run_status"
             echo "  Conclusion: $run_conclusion"
             echo "  Created At: $run_created_at"
+
+            if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
+              echo "Workflow run ID is null; skipping."
+              continue
+            fi
 
             echo "Rerunning workflow run ID $run_id..."
             gh api -X POST repos/${{ github.repository }}/actions/runs/$run_id/rerun
