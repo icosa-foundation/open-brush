@@ -385,7 +385,7 @@
       "hash": "dd39e8b23a399938e91a1088a78ef63ca64f2cd8"
     },
     "org.khronos.unitygltf": {
-      "version": "https://github.com/icosa-mirror/UnityGLTF.git#feature/should-node-export-hook",
+      "version": "https://github.com/KhronosGroup/UnityGLTF.git",
       "depth": 0,
       "source": "git",
       "dependencies": {
@@ -394,7 +394,7 @@
         "com.unity.shadergraph": "10.0.0",
         "com.unity.mathematics": "1.0.0"
       },
-      "hash": "59f0fd8d0722dd1156e0c4faf60964f841ced65b"
+      "hash": "1d3d93121c61ce9ba8e76189ec0ddf34ba374118"
     },
     "org.nuget.google.apis": {
       "version": "1.64.0",
