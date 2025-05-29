@@ -32,8 +32,8 @@ namespace UnityGLTF.Plugins
             // TODO Maybe we should check this on scene load and set a flag somewhere
             // there's a small chance of false positives.
             // TODO Should we destroy the node as well as the light component
-            if (((bool?)node.Extras["isHeadLight"] ?? false)
-             || ((bool?)node.Extras["isKeyLight"] ?? false))
+            if (((bool?)node.Extras?["isHeadLight"] ?? false)
+             || ((bool?)node.Extras?["isKeyLight"] ?? false))
             {
                 Object.Destroy(light);
             }
