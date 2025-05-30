@@ -34,6 +34,7 @@ Shader "Brush/Special/DiamondHull" {
     Fog{ Mode Off }
 
     CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
       #pragma target 4.0
       #pragma surface surf StandardSpecular vertex:vert nofog
       #pragma multi_compile __ AUDIO_REACTIVE
@@ -59,6 +60,7 @@ Shader "Brush/Special/DiamondHull" {
         float3 worldPos;
         float3 worldNormal;
         uint id : SV_VertexID;
+        float4 screenPos;
         INTERNAL_DATA
       };
 
@@ -184,7 +186,7 @@ Shader "Brush/Special/DiamondHull" {
 
         #ifdef SHADER_SCRIPTING_ON
         if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
-        if (_Dissolve < 1 && Dither8x8(IN.vertex.xy) >= _Dissolve) discard;
+        if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
         #endif
 
         // Hardcode some shiny specular values

@@ -34,6 +34,7 @@ Shader  "Blocks/BlocksGlass"  {
   Cull Off
 
   CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
   #pragma surface surf StandardSpecular vertex:vert fullforwardshadows nofog
   #pragma target 3.0
   #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM

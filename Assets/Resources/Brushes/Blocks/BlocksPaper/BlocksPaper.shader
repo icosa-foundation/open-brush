@@ -23,6 +23,7 @@ Properties {
     Cull Back
 
     CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
     #pragma target 4.0
     #pragma surface surf StandardSpecular vertex:vert
     #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM

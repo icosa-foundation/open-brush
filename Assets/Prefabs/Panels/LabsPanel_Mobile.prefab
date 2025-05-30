@@ -71,9 +71,9 @@ Transform:
   m_Children:
   - {fileID: 4000012490214276}
   - {fileID: 3219221680988349883}
-  - {fileID: 1139538046860859100}
   - {fileID: 4626429713668410}
   - {fileID: 4000011596321798}
+  - {fileID: 1139538046860859100}
   - {fileID: 2468152952838901612}
   - {fileID: 8809421544085413876}
   - {fileID: 2468055462235645184}
@@ -1237,7 +1237,7 @@ Transform:
   m_GameObject: {fileID: 2471663056078174956}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.215, y: -0.2119999, z: 0.05}
+  m_LocalPosition: {x: 0, y: -0.212, z: 0.05}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1574,12 +1574,12 @@ GameObject:
   - component: {fileID: 1408412152701508224}
   - component: {fileID: 769398838496988592}
   m_Layer: 16
-  m_Name: PolyLibrary
+  m_Name: IcosaLibrary
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1139538046860859100
 Transform:
   m_ObjectHideFlags: 0
@@ -1589,7 +1589,7 @@ Transform:
   m_GameObject: {fileID: 7776948797728914220}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.415, y: 0.212, z: 0.05}
+  m_LocalPosition: {x: -0.415, y: -0.212, z: 0.05}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1691,7 +1691,7 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Type: 29
+  m_Type: 22
   m_AlwaysSpawn: 0
   references:
     version: 2
@@ -1743,7 +1743,7 @@ PrefabInstance:
     - target: {fileID: 7020719392467468644, guid: 6e69b3bc22681fb44ac931399886cd69,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.19999993
+      value: 0.415
       objectReference: {fileID: 0}
     - target: {fileID: 7020719392467468644, guid: 6e69b3bc22681fb44ac931399886cd69,
         type: 3}

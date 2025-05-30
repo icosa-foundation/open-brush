@@ -35,6 +35,7 @@ Properties {
     Cull Off
 
     CGPROGRAM
+    #pragma multi_compile __ SHADER_SCRIPTING_ON
     #pragma target 4.0
     #pragma surface surf StandardSpecular vertex:vert alphatest:_Cutoff addshadow
     #pragma multi_compile __ AUDIO_REACTIVE
@@ -112,6 +113,7 @@ Properties {
       AlphaToMask On
 
       CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
         #pragma vertex vert
         #pragma fragment frag
         #pragma target 3.0
@@ -224,6 +226,7 @@ Properties {
       Tags { "LightMode"="ForwardBase" }
 
       CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
         #pragma vertex vert
         #pragma fragment frag
         #pragma target 3.0
@@ -349,6 +352,7 @@ Properties {
       Tags { "LightMode"="ForwardBase" }
 
       CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
         #pragma vertex vert
         #pragma fragment frag
         #pragma target 3.0
@@ -448,6 +452,7 @@ Properties {
       AlphaToMask On
 
       CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
         #pragma vertex vert
         #pragma fragment frag
         #pragma target 3.0
@@ -546,6 +551,7 @@ Properties {
       Tags { "LightMode"="ForwardBase" }
 
       CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
         #pragma vertex vert
         #pragma fragment frag
         #pragma target 3.0
@@ -632,6 +638,7 @@ Properties {
     Cull Off
 
     CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
       #pragma surface surf Lambert vertex:vert alphatest:_Cutoff
       #pragma target 3.0
 
