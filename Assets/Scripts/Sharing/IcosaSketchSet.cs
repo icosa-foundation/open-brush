@@ -550,7 +550,7 @@ namespace TiltBrush
                 m_AssetIds = assetIds;
                 if (changed)
                 {
-                    yield return DeleteOldSketchesCoroutine();
+                    yield return PruneOldSketchesCoroutine();
                 }
 
                 // Set new data live
@@ -567,7 +567,7 @@ namespace TiltBrush
                 // On first run populate, take the time to clean out any cobwebs.
                 // Note that this is particularly important for the curated sketches, which do not have
                 // a periodic refresh, meaning old sketches will never been deleted in the other path.
-                yield return DeleteOldSketchesCoroutine();
+                yield return PruneOldSketchesCoroutine();
                 OnChanged();
             }
         }
@@ -685,32 +685,104 @@ namespace TiltBrush
             yield return null;
         }
 
-        // Delete any files that aren't referenced in m_Sketches (actually m_AssetIds)
-        // Does this on a background thread so prevent hitches.
-        private IEnumerator DeleteOldSketchesCoroutine()
+        // If we've exceeded our max cache size, prune the cache by deleting the
+        // oldest entries first. Only delete files that aren't referenced in
+        // m_Sketches (actually m_AssetIds). Do this on a background thread so
+        // prevent hitches.
+        private IEnumerator PruneOldSketchesCoroutine()
         {
-            // TODO We need to rethink this method
-            // Maybe delete when we have too many or when they are too old?
             yield return null;
 
-            if (m_CacheDir != null)
-            {
-                var task = new Future<bool>(() =>
-                {
-                    var unknown = new DirectoryInfo(m_CacheDir).GetFiles().Where(
-                        f => !m_AssetIds.ContainsKey(Path.GetFileNameWithoutExtension(f.Name)));
-                    foreach (var f in unknown)
-                    {
-                        f.Delete();
-                    }
-                    return true;
-                });
+            if (m_CacheDir == null) yield break;
+            
+            long maxSize = App.PlatformConfig.SketchSetMaxCacheSize;
+            
+            var task = new Future<(int,long)>(() =>
+            { 
+                var cacheFiles = new DirectoryInfo(m_CacheDir).EnumerateFiles();
+                var pruneCandidates = new List<FileInfo>();
 
-                bool unused;
-                while (!task.TryGetResult(out unused))
+                var totalSize = (long)0;
+                foreach (var file in cacheFiles)
                 {
-                    yield return null;
+                    totalSize += file.Length;
+                        
+                    // Two types of files in the cache: icons and tilts.
+                    // Store reference to tilts only as we're interested in
+                    // when the tilts (rather than the icons) were last
+                    // loaded.
+                    if (file.Extension == ".tilt" &&
+                        !m_AssetIds.ContainsKey(Path.GetFileNameWithoutExtension(file.Name)))
+                    {
+                        // It's not possible for this tilt file to be loaded
+                        // until the sketch set is refreshed, so we can
+                        // safely prune it.
+                        pruneCandidates.Add(file);
+                    }
                 }
+                
+                if (totalSize <= maxSize)
+                {
+                    // No need to prune - sketch size within bounds.
+                    return (0,totalSize);
+                }
+                    
+                // Prune the cache.
+                var prunedCount = 0;
+                pruneCandidates.Sort(CompareLastAccessTimeAscending);
+                for (int i = 0; 
+                     i < pruneCandidates.Count && totalSize > maxSize; 
+                     i++)
+                {
+                    // Remove tilt and accompanying img.
+                    var candidateTilt = pruneCandidates[i];
+                    var candidateImg = new FileInfo(
+                        Path.ChangeExtension(candidateTilt.FullName,".png"));
+                    
+                    totalSize -= candidateImg.Length + candidateTilt.Length;
+                    
+                    candidateImg.Delete();
+                    candidateTilt.Delete();
+                    
+                    prunedCount++;
+                }
+                
+                return (prunedCount,totalSize);
+            });
+
+            // Poll for task complete.
+            while (true)
+            {
+                var taskComplete = false;
+                var prunedCountAndSize = (0,(long)0);
+                try
+                {
+                    taskComplete = task.TryGetResult(out prunedCountAndSize);
+                }
+                catch (FutureFailed e)
+                {
+                    // We're not too concerned if the cache couldn't be deleted.
+                    // Just make sure the error gets surfaced.
+                    Debug.LogWarning(e);
+                    yield break;
+                }
+                
+                if (taskComplete)
+                {
+                    Debug.Log($"Prune complete of set {m_CacheDir}. " +
+                        $"Pruned count: {prunedCountAndSize.Item1}, " +
+                        $"total size: {prunedCountAndSize.Item2}, " +
+                        $"max allowable size: {maxSize}");
+                    
+                    yield break;
+                }
+                
+                yield return null;
+            }
+
+            static int CompareLastAccessTimeAscending(FileInfo a, FileInfo b)
+            {
+                return (int)(a.LastAccessTimeUtc.Ticks - b.LastAccessTimeUtc.Ticks); 
             }
         }
 

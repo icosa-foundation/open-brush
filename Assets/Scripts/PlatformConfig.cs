@@ -40,6 +40,10 @@ namespace TiltBrush
         // If a Reference Image's dimensions are beyond this size but less than the max dimension, we
         // will attempt to load it but resize it to a more manageable size.
         public int ReferenceImagesResizeDimension;
+        
+        // If the cache for a given sketch set (e.g., curated, liked) exceeds
+        // this size in bytes, prune it back down.
+        public long SketchSetMaxCacheSize;
 
         public int MemoryWarningVertCount;
 
