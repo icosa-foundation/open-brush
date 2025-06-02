@@ -42,7 +42,6 @@ Category {
 
       CGPROGRAM
       #pragma multi_compile __ SHADER_SCRIPTING_ON
-      #pragma multi_compile __ SHADER_SCRIPTING_ON
       #pragma vertex vert
       #pragma fragment frag
       #pragma target 3.0
