@@ -19,6 +19,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+
 using Newtonsoft.Json.Linq;
 
 namespace TiltBrush
@@ -51,8 +52,8 @@ namespace TiltBrush
                 get
                 {
                     return m_FileInfo.Author != null
-                        ? new string[] { m_FileInfo.Author }
-                        : new string[] { };
+                      ? new string[] { m_FileInfo.Author }
+                      : new string[] { };
                 }
             }
 
@@ -115,7 +116,7 @@ namespace TiltBrush
         }
 
         public PolySketchSet(MonoBehaviour parent, SketchSetType type, int maxSceneTriangles,
-                             bool needsLogin = false)
+                              bool needsLogin = false)
         {
             m_Parent = parent;
             m_Sketches = new List<PolySketch>();
@@ -462,7 +463,7 @@ namespace TiltBrush
                     if (assetIds.ContainsKey(info.AssetId))
                     {
                         Debug.LogErrorFormat("VR Asset Service has returned two objects with asset id '{0}'.",
-                            info.AssetId);
+                                             info.AssetId);
                     }
                     else
                     {
@@ -547,7 +548,7 @@ namespace TiltBrush
         private void RemoveFailedDownloads(List<PolySketch> sketches)
         {
             sketches.RemoveAll(x => !x.PolySceneFileInfo.TiltDownloaded ||
-                !x.PolySceneFileInfo.IconDownloaded);
+                                    !x.PolySceneFileInfo.IconDownloaded);
         }
 
         // Download tilt files and thumbnails (that we don't already have)
@@ -664,7 +665,7 @@ namespace TiltBrush
                 var task = new Future<bool>(() =>
                 {
                     var unknown = new DirectoryInfo(m_CacheDir).GetFiles().Where(
-                        f => !m_AssetIds.ContainsKey(Path.GetFileNameWithoutExtension(f.Name)));
+                      f => !m_AssetIds.ContainsKey(Path.GetFileNameWithoutExtension(f.Name)));
                     foreach (var f in unknown)
                     {
                         f.Delete();
@@ -919,5 +920,11 @@ namespace TiltBrush
 
         // Not part of the interface
         public int GltfTriangleCount => m_GltfTriangleCount;
+
+        public IEnumerable<string> GetContentsAt(string path)
+        {
+            // This is only required for accessing custom brushes, which aren't supported by Poly.
+            return new string[] { };
+        }
     }
-} // namespace TiltBrush
+}  // namespace TiltBrush
