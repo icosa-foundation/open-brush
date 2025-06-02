@@ -33,6 +33,7 @@ Shader "Brush/Special/LightWire" {
   SubShader {
     Cull Back
     CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
     #pragma target 4.0
     #pragma surface surf StandardSpecular vertex:vert noshadow
     #pragma multi_compile __ AUDIO_REACTIVE
