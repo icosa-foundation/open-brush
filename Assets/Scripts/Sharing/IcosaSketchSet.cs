@@ -694,11 +694,11 @@ namespace TiltBrush
             yield return null;
 
             if (m_CacheDir == null) yield break;
-            
+
             long maxSize = App.PlatformConfig.SketchSetMaxCacheSize;
-            
-            var task = new Future<(int,long)>(() =>
-            { 
+
+            var task = new Future<(int, long)>(() =>
+            {
                 var cacheFiles = new DirectoryInfo(m_CacheDir).EnumerateFiles();
                 var pruneCandidates = new List<FileInfo>();
 
@@ -706,7 +706,7 @@ namespace TiltBrush
                 foreach (var file in cacheFiles)
                 {
                     totalSize += file.Length;
-                        
+
                     // Two types of files in the cache: icons and tilts.
                     // Store reference to tilts only as we're interested in
                     // when the tilts (rather than the icons) were last
@@ -720,41 +720,41 @@ namespace TiltBrush
                         pruneCandidates.Add(file);
                     }
                 }
-                
+
                 if (totalSize <= maxSize)
                 {
                     // No need to prune - sketch size within bounds.
-                    return (0,totalSize);
+                    return (0, totalSize);
                 }
-                    
+
                 // Prune the cache.
                 var prunedCount = 0;
                 pruneCandidates.Sort(CompareLastAccessTimeAscending);
-                for (int i = 0; 
-                     i < pruneCandidates.Count && totalSize > maxSize; 
+                for (int i = 0;
+                     i < pruneCandidates.Count && totalSize > maxSize;
                      i++)
                 {
                     // Remove tilt and accompanying img.
                     var candidateTilt = pruneCandidates[i];
                     var candidateImg = new FileInfo(
-                        Path.ChangeExtension(candidateTilt.FullName,".png"));
-                    
+                        Path.ChangeExtension(candidateTilt.FullName, ".png"));
+
                     totalSize -= candidateImg.Length + candidateTilt.Length;
-                    
+
                     candidateImg.Delete();
                     candidateTilt.Delete();
-                    
+
                     prunedCount++;
                 }
-                
-                return (prunedCount,totalSize);
+
+                return (prunedCount, totalSize);
             });
 
             // Poll for task complete.
             while (true)
             {
                 var taskComplete = false;
-                var prunedCountAndSize = (0,(long)0);
+                var prunedCountAndSize = (0, (long)0);
                 try
                 {
                     taskComplete = task.TryGetResult(out prunedCountAndSize);
@@ -766,23 +766,23 @@ namespace TiltBrush
                     Debug.LogWarning(e);
                     yield break;
                 }
-                
+
                 if (taskComplete)
                 {
                     Debug.Log($"Prune complete of set {m_CacheDir}. " +
                         $"Pruned count: {prunedCountAndSize.Item1}, " +
                         $"total size: {prunedCountAndSize.Item2}, " +
                         $"max allowable size: {maxSize}");
-                    
+
                     yield break;
                 }
-                
+
                 yield return null;
             }
 
             static int CompareLastAccessTimeAscending(FileInfo a, FileInfo b)
             {
-                return (int)(a.LastAccessTimeUtc.Ticks - b.LastAccessTimeUtc.Ticks); 
+                return (int)(a.LastAccessTimeUtc.Ticks - b.LastAccessTimeUtc.Ticks);
             }
         }
 
