@@ -155,8 +155,8 @@ namespace TiltBrush
                 // The sketch is not ready to load. Does this sketch set support 
                 // downloading from the cloud?
                 if (m_SketchSet.Type != SketchSetType.Drive
-                    || m_SketchSet.Type != SketchSetType.Curated
-                    || m_SketchSet.Type != SketchSetType.Liked)
+                    && m_SketchSet.Type != SketchSetType.Curated
+                    && m_SketchSet.Type != SketchSetType.Liked)
                 {
                     // No, not one of the cloud types.
                     return;
