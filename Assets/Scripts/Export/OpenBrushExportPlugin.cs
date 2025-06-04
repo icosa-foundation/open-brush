@@ -356,8 +356,8 @@ namespace TiltBrush
                     Debug.LogError($"No matching brush found for material {material.name}");
                     return;
                 case > 1:
-                    Debug.LogError($"Multiple brushes with the same material name: {material.name}");
-                    return;
+                    Debug.LogWarning($"Multiple brushes with the same material name: {material.name}: {string.Join(", ", brushes.Select(b => b.name))}");
+                    break;
             }
 
             var brush = brushes[0];

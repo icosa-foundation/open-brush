@@ -30,7 +30,7 @@
     "com.unity.xr.oculus": "4.2.0",
     "com.unity.xr.openxr": "1.10.0",
     "com.zappar.xr.zapbox": "https://github.com/zappar-xr/zapbox-xr-sdk.git#74fe120c1c9a0b31a186eb551ef25efe4a316c73",
-    "org.khronos.unitygltf": "https://github.com/icosa-mirror/UnityGLTF.git#feature/should-node-export-hook",
+    "org.khronos.unitygltf": "https://github.com/KhronosGroup/UnityGLTF.git",
     "org.nuget.google.apis": "1.64.0",
     "org.nuget.google.apis.auth": "1.64.0",
     "org.nuget.google.apis.core": "https://github.com/icosa-mirror/org.nuget.google.apis.core.git#1.64.0-openbrush",
