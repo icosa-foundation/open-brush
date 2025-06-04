@@ -4901,20 +4901,25 @@ namespace TiltBrush
                     break;
                 case GlobalCommands.LoadWaitOnDownload:
                     {
-                        bool download = false;
-                        if (iParam2 == (int)SketchSetType.Drive)
+                        var download = false;
+                        if (iParam2 == (int)SketchSetType.Drive
+                            || iParam2 == (int)SketchSetType.Curated
+                            || iParam2 == (int)SketchSetType.Liked)
                         {
-                            BasePanel sketchBook = m_PanelManager.GetSketchBookPanel();
-                            var googleSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Drive);
-                            if (sketchBook != null
-                                && googleSketchSet != null
-                                && googleSketchSet.IsSketchIndexValid(iParam1)
-                                && !googleSketchSet.GetSketchSceneFileInfo(iParam1).Available)
+                            var sketchBook = m_PanelManager.GetSketchBookPanel();
+                            var sketchSet = SketchCatalog.m_Instance.GetSet((SketchSetType)iParam2);
+
+                            download = sketchBook
+                                && sketchSet != null
+                                && sketchSet.IsSketchIndexValid(iParam1)
+                                && !sketchSet.GetSketchSceneFileInfo(iParam1).Available;
+
+                            if (download)
                             {
                                 sketchBook.CreatePopUp(GlobalCommands.LoadConfirmComplex, iParam1, iParam2, null);
-                                download = true;
                             }
                         }
+
                         if (!download)
                         {
                             IssueGlobalCommand(GlobalCommands.LoadConfirmComplex, iParam1, iParam2, null);

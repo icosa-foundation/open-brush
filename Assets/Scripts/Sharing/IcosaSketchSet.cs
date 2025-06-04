@@ -515,8 +515,8 @@ namespace TiltBrush
                     // (We don't have to worry about anything being removed)
                     if (fromEmpty)
                     {
-                        yield return DownloadFilesCoroutine(sketches);
-                        RemoveFailedDownloads(sketches);
+                        yield return DownloadIconsCoroutine(sketches);
+                        sketches.RemoveAll(x => !x.IcosaSceneFileInfo.IconDownloaded);
                         // Copying sketches to m_Sketches before sketches has completed populating is a bit
                         // dangerous, but as long as they're copied and then listeners are notified
                         // immediately afterward with OnChanged(), there data should be stable.
@@ -541,11 +541,11 @@ namespace TiltBrush
                 // Download new files before we notify our listeners that we've got new stuff for them.
                 if (changed)
                 {
-                    yield return DownloadFilesCoroutine(sketches);
-                    RemoveFailedDownloads(sketches);
+                    yield return DownloadIconsCoroutine(sketches);
+                    sketches.RemoveAll(x => !x.IcosaSceneFileInfo.IconDownloaded);
                 }
 
-                // DeleteOldSketchesCoroutine relies on m_AssetIds being up to date, so set these before
+                // PruneOldSketchesCoroutine relies on m_AssetIds being up to date, so set these before
                 // we try to cull the herd.
                 m_AssetIds = assetIds;
                 if (changed)
@@ -583,6 +583,12 @@ namespace TiltBrush
         // Download tilt files and thumbnails (that we don't already have)
         private IEnumerator DownloadFilesCoroutine(List<IcosaSketch> sketches)
         {
+            yield return DownloadIconsCoroutine(sketches);
+            yield return DownloadTiltsCoroutine(sketches);
+        }
+
+        private IEnumerator DownloadIconsCoroutine(List<IcosaSketch> sketches)
+        {
             bool notifyOnError = true;
             void NotifyCreateError(IcosaSceneFileInfo sceneFileInfo, string type, Exception ex)
             {
@@ -603,7 +609,6 @@ namespace TiltBrush
             }
 
             byte[] downloadBuffer = new byte[kDownloadBufferSize];
-            // Load the icons first, then the thumbnails
             foreach (IcosaSketch sketch in sketches)
             {
                 IcosaSceneFileInfo sceneFileInfo = sketch.IcosaSceneFileInfo;
@@ -643,7 +648,31 @@ namespace TiltBrush
                 }
                 yield return null;
             }
+            yield return null;
+        }
 
+        private IEnumerator DownloadTiltsCoroutine(List<IcosaSketch> sketches)
+        {
+            bool notifyOnError = true;
+            void NotifyCreateError(IcosaSceneFileInfo sceneFileInfo, string type, Exception ex)
+            {
+                string error = $"Error downloading {type} file for {sceneFileInfo.HumanName}.";
+                ControllerConsoleScript.m_Instance.AddNewLine(error, notifyOnError);
+                notifyOnError = false;
+                Debug.LogException(ex);
+                Debug.LogError($"{sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
+            }
+
+            void NotifyWriteError(IcosaSceneFileInfo sceneFileInfo, string type, UnityWebRequest www)
+            {
+                string error = $"Error downloading {type} file for {sceneFileInfo.HumanName}.\n" +
+                    "Out of disk space?";
+                ControllerConsoleScript.m_Instance.AddNewLine(error, notifyOnError);
+                notifyOnError = false;
+                Debug.LogError($"{www.error} {sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
+            }
+
+            byte[] downloadBuffer = new byte[kDownloadBufferSize];
             foreach (IcosaSketch sketch in sketches)
             {
                 IcosaSceneFileInfo sceneFileInfo = sketch.IcosaSceneFileInfo;

@@ -150,10 +150,17 @@ namespace TiltBrush
 
         override protected void OnButtonPressed()
         {
-            if (!m_SketchSet.GetSketchSceneFileInfo(m_SketchIndex).Available &&
-                m_SketchSet.Type != SketchSetType.Drive)
+            if (!m_SketchSet.GetSketchSceneFileInfo(m_SketchIndex).Available)
             {
-                return;
+                // The sketch is not ready to load. Does this sketch set support 
+                // downloading from the cloud?
+                if (m_SketchSet.Type != SketchSetType.Drive
+                    || m_SketchSet.Type != SketchSetType.Curated
+                    || m_SketchSet.Type != SketchSetType.Liked)
+                {
+                    // No, not one of the cloud types.
+                    return;
+                }
             }
 
             // Sequence on load is:

@@ -28,6 +28,9 @@ namespace TiltBrush
     {
         private FileStream m_File;
         private string m_Filename;
+        private ulong receivedContentLength;
+        private ulong totalContentLength;
+        private bool hasTotalContentLength;
 
         public DownloadHandlerFastFile(string filename, byte[] buffer) : base(buffer)
         {
@@ -65,7 +68,22 @@ namespace TiltBrush
                 }
                 return false;
             }
+
+            receivedContentLength += (uint)dataLength;
             return true;
+        }
+
+        protected override void ReceiveContentLengthHeader(ulong contentLength)
+        {
+            totalContentLength = contentLength;
+            hasTotalContentLength = true;
+        }
+
+        protected override float GetProgress()
+        {
+            return hasTotalContentLength
+                ? (float)(receivedContentLength / (double)totalContentLength)
+                : 0.0f;
         }
     }
 } // namespace TiltBrush
