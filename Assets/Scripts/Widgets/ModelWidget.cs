@@ -829,7 +829,7 @@ namespace TiltBrush
                 bool pin = (i < pinStates.Length) ? pinStates[i] : true;
                 uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
                 int layerId = (layerIds != null && i < layerIds.Length) ? layerIds[i] : 0;
-                CreateModel(model, subtrees[i], rawXfs[i], pin, isNonRawTransform: false, groupId, layerId, assetId);
+                CreateModel(model, subtrees?[i], rawXfs[i], pin, isNonRawTransform: false, groupId, layerId, assetId);
             }
         }
 
