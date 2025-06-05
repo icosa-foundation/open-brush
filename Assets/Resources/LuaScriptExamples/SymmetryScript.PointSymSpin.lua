@@ -6,7 +6,7 @@ Parameters = {
     symType={label="Symmetry Type", type=SymmetryPointType},
     symOrder={label="Symmetry Order", type="int", min=1, max=10, default=6},
     frequency={label="Frequency", type="float", min=0.01, max=10, default=5},
-    size={label="Size", type="float", min=1, max=10, default=1},
+    size={label="Size", type="float", min=0.1, max=10, default=1},
 }
 
 symmetryHueShift = require "symmetryHueShift"
