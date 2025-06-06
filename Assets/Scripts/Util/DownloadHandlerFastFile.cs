@@ -43,6 +43,12 @@ namespace TiltBrush
             m_File?.Close();
         }
 
+        public override void Dispose()
+        {
+            base.Dispose();
+            m_File?.Close();
+        }
+
         protected override bool ReceiveData(byte[] data, int dataLength)
         {
             try

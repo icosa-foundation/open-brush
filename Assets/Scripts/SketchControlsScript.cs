@@ -4346,7 +4346,7 @@ namespace TiltBrush
                         var sketchSetType = (SketchSetType)iParam2;
                         SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
                         SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
-                        if (rInfo != null)
+                        if (rInfo != null && rInfo.Available)
                         {
                             LoadSketch(rInfo);
                             if (m_ControlsType != ControlsType.ViewingOnly)

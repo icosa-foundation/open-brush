@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections;
+using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -29,8 +30,7 @@ namespace TiltBrush
 
         private TaskAndCts m_DownloadTask;
         private UnityWebRequest m_WebRequest;
-        private AsyncOperation m_AsyncOperation;
-        private double m_AsyncOperationStartTime;
+        private double m_WebRequestStartTime;
 
         override public void SetPopupCommandParameters(int commandParam, int commandParam2)
         {
@@ -38,6 +38,9 @@ namespace TiltBrush
                 && commandParam2 != (int)SketchSetType.Curated
                 && commandParam2 != (int)SketchSetType.Liked)
             {
+                Debug.LogWarning("Download popup window created for a " +
+                    "sketch in a non-cloud sketch set. Should still work but " +
+                    "it would be quicker to directly load the file.");
                 return;
             }
 
@@ -47,10 +50,21 @@ namespace TiltBrush
             var set = SketchCatalog.m_Instance.GetSet(m_SketchSetType);
             m_SceneFileInfo = set.GetSketchSceneFileInfo(m_SketchIndex);
 
-            if (m_SceneFileInfo.Available)
+            if (m_SceneFileInfo == null)
             {
+                Debug.LogWarning("Sketch file cannot be found for " +
+                    "download. Maybe the sketch set has refreshed.");
                 return;
             }
+
+            if (m_SceneFileInfo.Available)
+            {
+                Debug.LogWarning("Download popup window created for an " +
+                    "already available sketch. Should still work but " +
+                    "it would be quicker to directly load the file.");
+                return;
+            }
+
             m_ProgressBar.material.SetFloat("_Ratio", 0);
 
             m_DownloadTask = new TaskAndCts();
@@ -62,11 +76,35 @@ namespace TiltBrush
             else if (m_SketchSetType == SketchSetType.Curated
                      || m_SketchSetType == SketchSetType.Liked)
             {
-                StartCoroutine(DownloadTiltCoroutine());
+                StartCoroutine(RetryDownloadTiltCoroutine());
             }
         }
 
-        private IEnumerator DownloadTiltCoroutine()
+        private IEnumerator RetryDownloadTiltCoroutine()
+        {
+            const int kDownloadBufferSize = 1024 * 1024;
+            byte[] downloadBuffer = new byte[kDownloadBufferSize];
+            var info = m_SceneFileInfo as IcosaSceneFileInfo;
+            if (info == null)
+            {
+                Debug.LogWarning("Unexpected file info type.");
+                yield break;
+            }
+
+            const int kRetryAttempts = 3;
+            for (int i = 0; i < kRetryAttempts; i++)
+            {
+                if (info.TiltDownloaded || m_DownloadTask.Cts.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                yield return DownloadTiltCoroutine(info, downloadBuffer);
+                yield return null;
+            }
+        }
+
+        private IEnumerator DownloadTiltCoroutine(IcosaSceneFileInfo info, byte[] buffer)
         {
             bool notifyOnError = true;
             void NotifyCreateError(IcosaSceneFileInfo sceneFileInfo, string type, Exception ex)
@@ -74,8 +112,7 @@ namespace TiltBrush
                 string error = $"Error downloading {type} file for {sceneFileInfo.HumanName}.";
                 ControllerConsoleScript.m_Instance.AddNewLine(error, notifyOnError);
                 notifyOnError = false;
-                Debug.LogException(ex);
-                Debug.LogError($"{sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
+                Debug.LogWarning($"{ex} {sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
             }
 
             void NotifyWriteError(IcosaSceneFileInfo sceneFileInfo, string type, UnityWebRequest www)
@@ -84,29 +121,14 @@ namespace TiltBrush
                     "Out of disk space?";
                 ControllerConsoleScript.m_Instance.AddNewLine(error, notifyOnError);
                 notifyOnError = false;
-                Debug.LogError($"{www.error} {sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
-            }
-
-            const int kDownloadBufferSize = 1024 * 1024;
-            byte[] downloadBuffer = new byte[kDownloadBufferSize];
-            var info = m_SceneFileInfo as IcosaSceneFileInfo;
-            if (info.TiltDownloaded)
-            {
-                yield break;
-            }
-
-            if (System.IO.File.Exists(info.TiltPath))
-            {
-                info.TiltDownloaded = true;
-                yield break;
+                Debug.LogWarning($"{www.error} {sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
             }
 
             using (m_WebRequest = UnityWebRequest.Get(info.TiltFileUrl))
             {
                 try
                 {
-                    m_WebRequest.downloadHandler =
-                        new DownloadHandlerFastFile(info.TiltPath, downloadBuffer);
+                    m_WebRequest.downloadHandler = new DownloadHandlerFastFile(info.TiltPath, buffer);
                 }
                 catch (Exception ex)
                 {
@@ -114,33 +136,38 @@ namespace TiltBrush
                     yield break;
                 }
 
-                m_AsyncOperationStartTime = Time.realtimeSinceStartupAsDouble;
-                m_AsyncOperation = m_WebRequest.SendWebRequest();
-                while (!m_AsyncOperation.isDone)
+                // Do request and wait until done.
+                m_WebRequestStartTime = Time.realtimeSinceStartupAsDouble;
+                var op = m_WebRequest.SendWebRequest();
+                while (!op.isDone)
                 {
+                    // Be careful here. The coroutine may be stopped at any
+                    // time, never coming back to this point. If execution does
+                    // not make it to the end of the using block, file handles
+                    // etc will never be released, so this must be done manually
+                    // wherever the coroutine is stopped.
+                    yield return null;
                     if (m_DownloadTask.Cts.IsCancellationRequested)
                     {
-                        m_WebRequest.Abort();
-                        m_WebRequest = null;
-                        m_AsyncOperation = null;
-                        yield break;
+                        break;
                     }
-                    yield return null;
                 }
 
-                if (m_WebRequest.isNetworkError
-                    || m_WebRequest.responseCode >= 400
-                    || !string.IsNullOrEmpty(m_WebRequest.error))
+                if (m_WebRequest.isDone && !m_DownloadTask.Cts.IsCancellationRequested)
                 {
-                    NotifyWriteError(info, "sketch", m_WebRequest);
-                }
-                else
-                {
-                    info.TiltDownloaded = true;
+                    if (m_WebRequest.isNetworkError
+                        || m_WebRequest.responseCode >= 400
+                        || !string.IsNullOrEmpty(m_WebRequest.error))
+                    {
+                        NotifyWriteError(info, "sketch", m_WebRequest);
+                    }
+                    else
+                    {
+                        info.TiltDownloaded = true;
+                    }
                 }
             }
             m_WebRequest = null;
-            m_AsyncOperation = null;
         }
 
         protected override void UpdateVisuals()
@@ -160,26 +187,20 @@ namespace TiltBrush
             else if (m_SketchSetType == SketchSetType.Curated
                      || m_SketchSetType == SketchSetType.Liked)
             {
-                if (m_AsyncOperation == null)
+                // Make the bar go up while request is in-flight so the user
+                // knows something is happening.
+                const float kRequestProportion = 0.3f;
+                const float kDownloadProportion = 1 - kRequestProportion;
+                const float kRequestTime = 1.5f;
+                if (m_WebRequest == null || m_WebRequest.downloadProgress == 0)
                 {
-                    // Will only be null if the request is already complete.
-                    progress = 1.0f;
+                    var delta = Time.realtimeSinceStartupAsDouble - m_WebRequestStartTime;
+                    var deltaProportion = Mathf.Clamp01((float)delta / kRequestTime);
+                    progress = kRequestProportion * deltaProportion;
                 }
                 else
                 {
-                    // Make the bar go up while request is in-flight so the user
-                    // knows something is happening.
-                    const float kRequestProportion = 0.2f;
-                    const float kRequestTime = 1.0f;
-                    var opProgress = m_AsyncOperation.progress;
-                    var downloadProgress = (1 - kRequestProportion) * opProgress;
-                    var requestProgress = kRequestProportion;
-                    if (m_AsyncOperation.progress == 0)
-                    {
-                        var delta = Time.realtimeSinceStartupAsDouble - m_AsyncOperationStartTime;
-                        requestProgress *= Mathf.Clamp01((float)delta / kRequestTime);
-                    }
-                    progress = downloadProgress + requestProgress;
+                    progress = kRequestProportion + kDownloadProportion * m_WebRequest.downloadProgress;
                 }
             }
 
@@ -208,6 +229,45 @@ namespace TiltBrush
                 m_DownloadTask.Cts.Cancel();
             }
             return close;
+        }
+
+        private void OnDestroy()
+        {
+
+            if (m_DownloadTask != null)
+            {
+                m_DownloadTask.Cts.Cancel();
+                m_DownloadTask.Cts?.Dispose();
+                m_DownloadTask = null;
+            }
+
+            // If we are destroyed while in the middle of a coroutine, the
+            // coroutine will not finish, and 'using' blocks will not dispose
+            // their arguments. Do it manually if we never reached the end of
+            // the coroutine.
+            StopAllCoroutines();
+            if (m_WebRequest != null)
+            {
+                m_WebRequest.Dispose();
+                m_WebRequest = null;
+            }
+
+            if (m_SceneFileInfo is IcosaSceneFileInfo icosaSceneFileInfo
+                && !icosaSceneFileInfo.TiltDownloaded)
+            {
+                // If anything goes wrong we may be left with a partial download
+                // at TiltPath. Attempt to clean it up to prevent failed loads
+                // later.
+                try
+                {
+                    File.Delete(icosaSceneFileInfo.TiltPath);
+                }
+                catch (Exception e)
+                {
+                    // No big deal if we couldn't delete it.
+                    Debug.LogWarning($"Could not clean up failed download: {e}");
+                }
+            }
         }
     }
 } // namespace TiltBrush
