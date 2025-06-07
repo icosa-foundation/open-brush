@@ -31,10 +31,11 @@ namespace TiltBrush
     {
         public enum Mode
         {
-            SlowFollow,
-            Stationary,
-            Wobble,
-            Circular
+            SlowFollow = 0,
+            Stationary = 1,
+            Wobble = 2,
+            Circular = 3,
+            CameraPath = 5600
         }
 
         public const Mode kDefaultMode = Mode.Stationary;
@@ -168,6 +169,7 @@ namespace TiltBrush
                 case Mode.Stationary: return "Stationary";
                 case Mode.Wobble: return "Figure 8";
                 case Mode.Circular: return "Circular";
+                case Mode.CameraPath: return "Camera Path";
             }
             return "";
         }
@@ -328,7 +330,45 @@ namespace TiltBrush
                             m_GuideCircleObject.SetActive(false);
                         }
                         break;
+                    case Mode.CameraPath:
+                        if (m_UserInteracting)
+                        {
+                            ResetCam();
+                        }
+                        else
+                        {
+                            m_AnimatedPathTime += Time.deltaTime * (m_CircleSpeed * 20);
+                            FollowCameraPath();
+                        }
+                        break;
                 }
+            }
+        }
+
+        private void FollowCameraPath()
+        {
+            var currentPathWidget = WidgetManager.m_Instance.GetCurrentCameraPath().WidgetScript; // TODO Cache
+            var pathT = new PathT(m_AnimatedPathTime);
+            pathT.Clamp(currentPathWidget.Path.PositionKnots.Count);
+
+            if (currentPathWidget != null && currentPathWidget.Path.NumPositionKnots > 1)
+            {
+                float speed = Mathf.Max(currentPathWidget.Path.GetSpeed(pathT),
+                    CameraPathSpeedKnot.kMinSpeed);
+                bool completed = currentPathWidget.Path.MoveAlongPath(speed * Time.deltaTime,
+                    pathT, out pathT);
+                if (completed)
+                {
+                    // TODO optional looping?
+                    m_AnimatedPathTime = 0;
+                }
+
+                PathT t = pathT;
+                float fov = currentPathWidget.Path.GetFov(t);
+                var cam = GetComponentInChildren<Camera>();  // TODO Cache
+                cam.fieldOfView = fov;
+                transform.position = currentPathWidget.Path.GetPosition(t) - cam.transform.localPosition;
+                transform.rotation = currentPathWidget.Path.GetRotation(t) * cam.transform.localRotation.Negated();
             }
         }
 
