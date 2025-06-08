@@ -96,8 +96,8 @@ namespace TiltBrush
             {
                 StartCoroutine(FetchUserDataCoroutine(userData =>
                 {
-                    App.IcosaUserName = userData.Displayname;
-                    App.IcosaUserId = userData.Id;
+                    App.IcosaUserName = userData.DisplayName;
+                    App.IcosaUserId = userData.Url;
                     App.IcosaUserIcon = m_GenericPhoto; // TODO: Get icon from API
                     RefreshIcosaUserInfoUi();
                 }));
@@ -217,10 +217,11 @@ namespace TiltBrush
         private IEnumerator LoginCoroutine(string code)
         {
             var config = new Configuration();
-            var loginApi = new LoginApi(VrAssetService.m_Instance.IcosaApiRoot);
-            config.BasePath = VrAssetService.m_Instance.IcosaApiRoot;
+            var loginApi = new LoginApi(VrAssetService.m_Instance.IcosaApiRoot.Replace("/v1", ""));
+            // The generated client library uses the base path without the version
+            //config.BasePath = VrAssetService.m_Instance.IcosaApiRoot.Replace("/v1", "");
             loginApi.Configuration = config;
-            var loginTask = loginApi.DeviceLoginLoginDeviceLoginPostAsync(code);
+            var loginTask = loginApi.IcosaApiLoginDeviceLoginAsync(code);
             yield return new WaitUntil(() => loginTask.IsCompleted);
 
             if (loginTask.Exception != null)
@@ -245,13 +246,13 @@ namespace TiltBrush
             StartCoroutine(FetchUserDataCoroutine(userData => LoginSuccess(userData)));
         }
 
-        private IEnumerator FetchUserDataCoroutine(Action<FullUser> onSuccess)
+        private IEnumerator FetchUserDataCoroutine(Action<FullUserSchema> onSuccess)
         {
             var usersApi = new UsersApi(VrAssetService.m_Instance.IcosaApiRoot);
             var config = new Configuration { AccessToken = App.Instance.IcosaToken };
             config.BasePath = VrAssetService.m_Instance.IcosaApiRoot;
             usersApi.Configuration = config;
-            var getUserTask = usersApi.GetUsersMeUsersMeGetAsync();
+            var getUserTask = usersApi.IcosaApiUsersGetUsersMeAsync();
             yield return new WaitUntil(() => getUserTask.IsCompleted);
 
             if (getUserTask.Exception != null)
@@ -275,11 +276,11 @@ namespace TiltBrush
             onSuccess?.Invoke(userData);
         }
 
-        private void LoginSuccess(FullUser userData)
+        private void LoginSuccess(FullUserSchema userData)
         {
             // Call the callback delegate if it's provided (which means this was called from the first coroutine)
-            App.IcosaUserName = userData.Displayname;
-            App.IcosaUserId = userData.Id;
+            App.IcosaUserName = userData.DisplayName;
+            App.IcosaUserId = userData.Url;
             App.IcosaUserIcon = m_GenericPhoto; // TODO: Get icon from API
             RefreshIcosaUserInfoUi();
             HideIcosaLogin();
