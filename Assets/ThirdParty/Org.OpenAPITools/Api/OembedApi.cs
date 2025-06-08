@@ -23,66 +23,78 @@ namespace Org.OpenAPITools.Api
     /// <summary>
     /// Represents a collection of functions to interact with the API endpoints
     /// </summary>
-    public interface ILoginApiSync : IApiAccessor
+    public interface IOembedApiSync : IApiAccessor
     {
         #region Synchronous Operations
         /// <summary>
-        /// Device Login
+        /// Oembed
         /// </summary>
         /// <exception cref="Org.OpenAPITools.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <param name="deviceCode"></param>
-        /// <returns>LoginToken</returns>
-        LoginToken IcosaApiLoginDeviceLogin(string deviceCode);
+        /// <param name="url"> (optional)</param>
+        /// <param name="format"> (optional)</param>
+        /// <param name="maxwidth"> (optional)</param>
+        /// <param name="maxheight"> (optional)</param>
+        /// <returns>OembedOut</returns>
+        OembedOut IcosaApiOembedOembed(string url = default(string), string format = default(string), int? maxwidth = default(int?), int? maxheight = default(int?));
 
         /// <summary>
-        /// Device Login
+        /// Oembed
         /// </summary>
         /// <remarks>
         /// 
         /// </remarks>
         /// <exception cref="Org.OpenAPITools.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <param name="deviceCode"></param>
-        /// <returns>ApiResponse of LoginToken</returns>
-        ApiResponse<LoginToken> IcosaApiLoginDeviceLoginWithHttpInfo(string deviceCode);
+        /// <param name="url"> (optional)</param>
+        /// <param name="format"> (optional)</param>
+        /// <param name="maxwidth"> (optional)</param>
+        /// <param name="maxheight"> (optional)</param>
+        /// <returns>ApiResponse of OembedOut</returns>
+        ApiResponse<OembedOut> IcosaApiOembedOembedWithHttpInfo(string url = default(string), string format = default(string), int? maxwidth = default(int?), int? maxheight = default(int?));
         #endregion Synchronous Operations
     }
 
     /// <summary>
     /// Represents a collection of functions to interact with the API endpoints
     /// </summary>
-    public interface ILoginApiAsync : IApiAccessor
+    public interface IOembedApiAsync : IApiAccessor
     {
         #region Asynchronous Operations
         /// <summary>
-        /// Device Login
+        /// Oembed
         /// </summary>
         /// <remarks>
         /// 
         /// </remarks>
         /// <exception cref="Org.OpenAPITools.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <param name="deviceCode"></param>
+        /// <param name="url"> (optional)</param>
+        /// <param name="format"> (optional)</param>
+        /// <param name="maxwidth"> (optional)</param>
+        /// <param name="maxheight"> (optional)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
-        /// <returns>Task of LoginToken</returns>
-        System.Threading.Tasks.Task<LoginToken> IcosaApiLoginDeviceLoginAsync(string deviceCode, System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken));
+        /// <returns>Task of OembedOut</returns>
+        System.Threading.Tasks.Task<OembedOut> IcosaApiOembedOembedAsync(string url = default(string), string format = default(string), int? maxwidth = default(int?), int? maxheight = default(int?), System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken));
 
         /// <summary>
-        /// Device Login
+        /// Oembed
         /// </summary>
         /// <remarks>
         /// 
         /// </remarks>
         /// <exception cref="Org.OpenAPITools.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <param name="deviceCode"></param>
+        /// <param name="url"> (optional)</param>
+        /// <param name="format"> (optional)</param>
+        /// <param name="maxwidth"> (optional)</param>
+        /// <param name="maxheight"> (optional)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
-        /// <returns>Task of ApiResponse (LoginToken)</returns>
-        System.Threading.Tasks.Task<ApiResponse<LoginToken>> IcosaApiLoginDeviceLoginWithHttpInfoAsync(string deviceCode, System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken));
+        /// <returns>Task of ApiResponse (OembedOut)</returns>
+        System.Threading.Tasks.Task<ApiResponse<OembedOut>> IcosaApiOembedOembedWithHttpInfoAsync(string url = default(string), string format = default(string), int? maxwidth = default(int?), int? maxheight = default(int?), System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken));
         #endregion Asynchronous Operations
     }
 
     /// <summary>
     /// Represents a collection of functions to interact with the API endpoints
     /// </summary>
-    public interface ILoginApi : ILoginApiSync, ILoginApiAsync
+    public interface IOembedApi : IOembedApiSync, IOembedApiAsync
     {
 
     }
@@ -90,29 +102,29 @@ namespace Org.OpenAPITools.Api
     /// <summary>
     /// Represents a collection of functions to interact with the API endpoints
     /// </summary>
-    public partial class LoginApi : IDisposable, ILoginApi
+    public partial class OembedApi : IDisposable, IOembedApi
     {
         private Org.OpenAPITools.Client.ExceptionFactory _exceptionFactory = (name, response) => null;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="LoginApi"/> class.
+        /// Initializes a new instance of the <see cref="OembedApi"/> class.
         /// **IMPORTANT** This will also create an instance of HttpClient, which is less than ideal.
         /// It's better to reuse the <see href="https://docs.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/use-httpclientfactory-to-implement-resilient-http-requests#issues-with-the-original-httpclient-class-available-in-net">HttpClient and HttpClientHandler</see>.
         /// </summary>
         /// <returns></returns>
-        public LoginApi() : this((string)null)
+        public OembedApi() : this((string)null)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="LoginApi"/> class.
+        /// Initializes a new instance of the <see cref="OembedApi"/> class.
         /// **IMPORTANT** This will also create an instance of HttpClient, which is less than ideal.
         /// It's better to reuse the <see href="https://docs.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/use-httpclientfactory-to-implement-resilient-http-requests#issues-with-the-original-httpclient-class-available-in-net">HttpClient and HttpClientHandler</see>.
         /// </summary>
         /// <param name="basePath">The target service's base path in URL format.</param>
         /// <exception cref="ArgumentException"></exception>
         /// <returns></returns>
-        public LoginApi(string basePath)
+        public OembedApi(string basePath)
         {
             this.Configuration = Org.OpenAPITools.Client.Configuration.MergeConfigurations(
                 Org.OpenAPITools.Client.GlobalConfiguration.Instance,
@@ -125,14 +137,14 @@ namespace Org.OpenAPITools.Api
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="LoginApi"/> class using Configuration object.
+        /// Initializes a new instance of the <see cref="OembedApi"/> class using Configuration object.
         /// **IMPORTANT** This will also create an instance of HttpClient, which is less than ideal.
         /// It's better to reuse the <see href="https://docs.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/use-httpclientfactory-to-implement-resilient-http-requests#issues-with-the-original-httpclient-class-available-in-net">HttpClient and HttpClientHandler</see>.
         /// </summary>
         /// <param name="configuration">An instance of Configuration.</param>
         /// <exception cref="ArgumentNullException"></exception>
         /// <returns></returns>
-        public LoginApi(Org.OpenAPITools.Client.Configuration configuration)
+        public OembedApi(Org.OpenAPITools.Client.Configuration configuration)
         {
             if (configuration == null) throw new ArgumentNullException("configuration");
 
@@ -147,14 +159,14 @@ namespace Org.OpenAPITools.Api
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="LoginApi"/> class
+        /// Initializes a new instance of the <see cref="OembedApi"/> class
         /// using a Configuration object and client instance.
         /// </summary>
         /// <param name="client">The client interface for synchronous API access.</param>
         /// <param name="asyncClient">The client interface for asynchronous API access.</param>
         /// <param name="configuration">The configuration object.</param>
         /// <exception cref="ArgumentNullException"></exception>
-        public LoginApi(Org.OpenAPITools.Client.ISynchronousClient client, Org.OpenAPITools.Client.IAsynchronousClient asyncClient, Org.OpenAPITools.Client.IReadableConfiguration configuration)
+        public OembedApi(Org.OpenAPITools.Client.ISynchronousClient client, Org.OpenAPITools.Client.IAsynchronousClient asyncClient, Org.OpenAPITools.Client.IReadableConfiguration configuration)
         {
             if (client == null) throw new ArgumentNullException("client");
             if (asyncClient == null) throw new ArgumentNullException("asyncClient");
@@ -221,29 +233,31 @@ namespace Org.OpenAPITools.Api
         }
 
         /// <summary>
-        /// Device Login 
+        /// Oembed 
         /// </summary>
         /// <exception cref="Org.OpenAPITools.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <param name="deviceCode"></param>
-        /// <returns>LoginToken</returns>
-        public LoginToken IcosaApiLoginDeviceLogin(string deviceCode)
+        /// <param name="url"> (optional)</param>
+        /// <param name="format"> (optional)</param>
+        /// <param name="maxwidth"> (optional)</param>
+        /// <param name="maxheight"> (optional)</param>
+        /// <returns>OembedOut</returns>
+        public OembedOut IcosaApiOembedOembed(string url = default(string), string format = default(string), int? maxwidth = default(int?), int? maxheight = default(int?))
         {
-            Org.OpenAPITools.Client.ApiResponse<LoginToken> localVarResponse = IcosaApiLoginDeviceLoginWithHttpInfo(deviceCode);
+            Org.OpenAPITools.Client.ApiResponse<OembedOut> localVarResponse = IcosaApiOembedOembedWithHttpInfo(url, format, maxwidth, maxheight);
             return localVarResponse.Data;
         }
 
         /// <summary>
-        /// Device Login 
+        /// Oembed 
         /// </summary>
         /// <exception cref="Org.OpenAPITools.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <param name="deviceCode"></param>
-        /// <returns>ApiResponse of LoginToken</returns>
-        public Org.OpenAPITools.Client.ApiResponse<LoginToken> IcosaApiLoginDeviceLoginWithHttpInfo(string deviceCode)
+        /// <param name="url"> (optional)</param>
+        /// <param name="format"> (optional)</param>
+        /// <param name="maxwidth"> (optional)</param>
+        /// <param name="maxheight"> (optional)</param>
+        /// <returns>ApiResponse of OembedOut</returns>
+        public Org.OpenAPITools.Client.ApiResponse<OembedOut> IcosaApiOembedOembedWithHttpInfo(string url = default(string), string format = default(string), int? maxwidth = default(int?), int? maxheight = default(int?))
         {
-            // verify the required parameter 'deviceCode' is set
-            if (deviceCode == null)
-                throw new Org.OpenAPITools.Client.ApiException(400, "Missing required parameter 'deviceCode' when calling LoginApi->IcosaApiLoginDeviceLogin");
-
             Org.OpenAPITools.Client.RequestOptions localVarRequestOptions = new Org.OpenAPITools.Client.RequestOptions();
 
             string[] _contentTypes = new string[] {
@@ -260,15 +274,30 @@ namespace Org.OpenAPITools.Api
             var localVarAccept = Org.OpenAPITools.Client.ClientUtils.SelectHeaderAccept(_accepts);
             if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
-            localVarRequestOptions.QueryParameters.Add(Org.OpenAPITools.Client.ClientUtils.ParameterToMultiMap("", "device_code", deviceCode));
+            if (url != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(Org.OpenAPITools.Client.ClientUtils.ParameterToMultiMap("", "url", url));
+            }
+            if (format != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(Org.OpenAPITools.Client.ClientUtils.ParameterToMultiMap("", "format", format));
+            }
+            if (maxwidth != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(Org.OpenAPITools.Client.ClientUtils.ParameterToMultiMap("", "maxwidth", maxwidth));
+            }
+            if (maxheight != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(Org.OpenAPITools.Client.ClientUtils.ParameterToMultiMap("", "maxheight", maxheight));
+            }
 
 
             // make the HTTP request
-            var localVarResponse = this.Client.Post<LoginToken>("/v1/login/device_login", localVarRequestOptions, this.Configuration);
+            var localVarResponse = this.Client.Get<OembedOut>("/v1/oembed", localVarRequestOptions, this.Configuration);
 
             if (this.ExceptionFactory != null)
             {
-                Exception _exception = this.ExceptionFactory("IcosaApiLoginDeviceLogin", localVarResponse);
+                Exception _exception = this.ExceptionFactory("IcosaApiOembedOembed", localVarResponse);
                 if (_exception != null) throw _exception;
             }
 
@@ -276,36 +305,38 @@ namespace Org.OpenAPITools.Api
         }
 
         /// <summary>
-        /// Device Login 
+        /// Oembed 
         /// </summary>
         /// <exception cref="Org.OpenAPITools.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <param name="deviceCode"></param>
+        /// <param name="url"> (optional)</param>
+        /// <param name="format"> (optional)</param>
+        /// <param name="maxwidth"> (optional)</param>
+        /// <param name="maxheight"> (optional)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
-        /// <returns>Task of LoginToken</returns>
-        public async System.Threading.Tasks.Task<LoginToken> IcosaApiLoginDeviceLoginAsync(string deviceCode, System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+        /// <returns>Task of OembedOut</returns>
+        public async System.Threading.Tasks.Task<OembedOut> IcosaApiOembedOembedAsync(string url = default(string), string format = default(string), int? maxwidth = default(int?), int? maxheight = default(int?), System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
         {
-            var task = IcosaApiLoginDeviceLoginWithHttpInfoAsync(deviceCode, cancellationToken);
+            var task = IcosaApiOembedOembedWithHttpInfoAsync(url, format, maxwidth, maxheight, cancellationToken);
 #if UNITY_EDITOR || !UNITY_WEBGL
-            Org.OpenAPITools.Client.ApiResponse<LoginToken> localVarResponse = await task.ConfigureAwait(false);
+            Org.OpenAPITools.Client.ApiResponse<OembedOut> localVarResponse = await task.ConfigureAwait(false);
 #else
-            Org.OpenAPITools.Client.ApiResponse<LoginToken> localVarResponse = await task;
+            Org.OpenAPITools.Client.ApiResponse<OembedOut> localVarResponse = await task;
 #endif
             return localVarResponse.Data;
         }
 
         /// <summary>
-        /// Device Login 
+        /// Oembed 
         /// </summary>
         /// <exception cref="Org.OpenAPITools.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <param name="deviceCode"></param>
+        /// <param name="url"> (optional)</param>
+        /// <param name="format"> (optional)</param>
+        /// <param name="maxwidth"> (optional)</param>
+        /// <param name="maxheight"> (optional)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
-        /// <returns>Task of ApiResponse (LoginToken)</returns>
-        public async System.Threading.Tasks.Task<Org.OpenAPITools.Client.ApiResponse<LoginToken>> IcosaApiLoginDeviceLoginWithHttpInfoAsync(string deviceCode, System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+        /// <returns>Task of ApiResponse (OembedOut)</returns>
+        public async System.Threading.Tasks.Task<Org.OpenAPITools.Client.ApiResponse<OembedOut>> IcosaApiOembedOembedWithHttpInfoAsync(string url = default(string), string format = default(string), int? maxwidth = default(int?), int? maxheight = default(int?), System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
         {
-            // verify the required parameter 'deviceCode' is set
-            if (deviceCode == null)
-                throw new Org.OpenAPITools.Client.ApiException(400, "Missing required parameter 'deviceCode' when calling LoginApi->IcosaApiLoginDeviceLogin");
-
 
             Org.OpenAPITools.Client.RequestOptions localVarRequestOptions = new Org.OpenAPITools.Client.RequestOptions();
 
@@ -324,12 +355,27 @@ namespace Org.OpenAPITools.Api
             var localVarAccept = Org.OpenAPITools.Client.ClientUtils.SelectHeaderAccept(_accepts);
             if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
-            localVarRequestOptions.QueryParameters.Add(Org.OpenAPITools.Client.ClientUtils.ParameterToMultiMap("", "device_code", deviceCode));
+            if (url != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(Org.OpenAPITools.Client.ClientUtils.ParameterToMultiMap("", "url", url));
+            }
+            if (format != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(Org.OpenAPITools.Client.ClientUtils.ParameterToMultiMap("", "format", format));
+            }
+            if (maxwidth != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(Org.OpenAPITools.Client.ClientUtils.ParameterToMultiMap("", "maxwidth", maxwidth));
+            }
+            if (maxheight != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(Org.OpenAPITools.Client.ClientUtils.ParameterToMultiMap("", "maxheight", maxheight));
+            }
 
 
             // make the HTTP request
 
-            var task = this.AsynchronousClient.PostAsync<LoginToken>("/v1/login/device_login", localVarRequestOptions, this.Configuration, cancellationToken);
+            var task = this.AsynchronousClient.GetAsync<OembedOut>("/v1/oembed", localVarRequestOptions, this.Configuration, cancellationToken);
 
 #if UNITY_EDITOR || !UNITY_WEBGL
             var localVarResponse = await task.ConfigureAwait(false);
@@ -339,7 +385,7 @@ namespace Org.OpenAPITools.Api
 
             if (this.ExceptionFactory != null)
             {
-                Exception _exception = this.ExceptionFactory("IcosaApiLoginDeviceLogin", localVarResponse);
+                Exception _exception = this.ExceptionFactory("IcosaApiOembedOembed", localVarResponse);
                 if (_exception != null) throw _exception;
             }
 
