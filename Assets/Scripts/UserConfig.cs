@@ -252,12 +252,6 @@ namespace TiltBrush
         [Serializable]
         public struct ImportConfig
         {
-            bool? m_UseUnityGltf;
-            public bool UseUnityGltf
-            {
-                get { return m_UseUnityGltf ?? false; }
-                set { m_UseUnityGltf = value; }
-            }
         }
 
         [Serializable]

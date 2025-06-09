@@ -448,7 +448,7 @@ namespace TiltBrush
                 {
                     return ImportGltf.BeginImport(m_localPath, loader, options);
                 }
-                return NewGltfImporter.BeginImport(m_localPath);
+                return new NewGltfImporter.ImportState(AxisConvention.kGltf2);
             }
 
             protected override GameObject DoUnityThreadWork(IDisposable state__,
