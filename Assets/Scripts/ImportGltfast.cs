@@ -88,8 +88,7 @@ namespace TiltBrush
             }
             catch (Exception e)
             {
-                Debug.LogError("Failed to import using UnityGltf. Falling back to legacy import");
-                Debug.LogError($"UnityGltf Exception: {e}");
+                Debug.LogError("Failed to import using UnityGltf. Falling back to legacy import.\nUnityGltf Exception: {e}");
                 // Fall back to the older import code
                 GameObject go = _ImportUsingLegacyGltf(localPath, assetLocation);
                 model.CalcBoundsGltf(go);
