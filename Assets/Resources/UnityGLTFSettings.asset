@@ -123,6 +123,19 @@ MonoBehaviour:
   KHR_materials_emissive_strength: 1
   KHR_materials_sheen: 1
   KHR_materials_anisotropy: 1
+--- !u!114 &-6960108736307011653
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2239c10507484fb78bb19067a66500f2, type: 3}
+  m_Name: LodsImport
+  m_EditorClassIdentifier: 
+  enabled: 1
 --- !u!114 &-6871233445226533543
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -240,6 +253,19 @@ MonoBehaviour:
   m_Name: ObMeshExportPlugin
   m_EditorClassIdentifier: Assembly-CSharp:TiltBrush:ObMeshExportPlugin
   <Enabled>k__BackingField: 1
+--- !u!114 &-5026418160133471449
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8a499790d224828914fe49fb7b26368, type: 3}
+  m_Name: OpenBrushGltfSketchImport
+  m_EditorClassIdentifier: 
+  enabled: 1
 --- !u!114 &-5020980606651475385
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -536,9 +562,10 @@ MonoBehaviour:
   - {fileID: -2913368442722201512}
   - {fileID: -6871233445226533543}
   - {fileID: -4070862177138860178}
-  - {fileID: 8941286415716242271}
-  - {fileID: -2443238879481940950}
-  - {fileID: -94577699173582584}
+  - {fileID: 7545966955198979338}
+  - {fileID: -6960108736307011653}
+  - {fileID: 484358770689020591}
+  - {fileID: -5026418160133471449}
   ExportPlugins:
   - {fileID: 242952683485160214}
   - {fileID: -5728475199642485532}
@@ -553,8 +580,8 @@ MonoBehaviour:
   - {fileID: 2593049991224130751}
   - {fileID: -1747776196752816388}
   - {fileID: 1002102758676015575}
-  - {fileID: 5399653212648522013}
-  - {fileID: -2943850291617809413}
+  - {fileID: 7626200265741504706}
+  - {fileID: 5983092837072465177}
   exportNames: 1
   exportFullPath: 0
   EditorExportTransformMode: 0
@@ -583,6 +610,19 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c85d7bc6d6ea44f46b33f0a3a2e09283, type: 3}
   m_Name: BakeParticleSystem
+  m_EditorClassIdentifier: 
+  enabled: 1
+--- !u!114 &484358770689020591
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 837601ceb763400cadb3575e55885670, type: 3}
+  m_Name: MeshoptImport
   m_EditorClassIdentifier: 
   enabled: 1
 --- !u!114 &1002102758676015575
@@ -825,6 +865,28 @@ MonoBehaviour:
   m_Name: Ktx2Import
   m_EditorClassIdentifier: 
   enabled: 1
+--- !u!114 &5983092837072465177
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5152940c6ada2f3449baca5def38ea64, type: 3}
+  m_Name: MaterialExtensionsExport
+  m_EditorClassIdentifier: 
+  enabled: 1
+  KHR_materials_ior: 1
+  KHR_materials_transmission: 1
+  KHR_materials_volume: 1
+  KHR_materials_iridescence: 1
+  KHR_materials_specular: 1
+  KHR_materials_clearcoat: 1
+  KHR_materials_emissive_strength: 1
+  KHR_materials_sheen: 1
+  KHR_materials_anisotropy: 1
 --- !u!114 &6228052705860985836
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -915,6 +977,32 @@ MonoBehaviour:
   m_Script: {fileID: 0}
   m_Name: Ktx2Import
   m_EditorClassIdentifier: UnityGLTFScripts:UnityGLTF.Plugins:Ktx2Import
+  enabled: 1
+--- !u!114 &7545966955198979338
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 969cbb3ac6864c2f9e49e468eef2744c, type: 3}
+  m_Name: Ktx2Import
+  m_EditorClassIdentifier: 
+  enabled: 1
+--- !u!114 &7626200265741504706
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e63c00ddf0924f0c8bd05f7f16935dfe, type: 3}
+  m_Name: LodsExport
+  m_EditorClassIdentifier: 
   enabled: 1
 --- !u!114 &8207833083978872644
 MonoBehaviour:
