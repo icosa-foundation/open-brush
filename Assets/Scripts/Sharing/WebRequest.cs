@@ -538,8 +538,7 @@ namespace TiltBrush
                         {
                             throw new VrAssetServiceException(
                                 "Error connecting to server.",
-                                string.Format("Error connecting to {0} : {1}",
-                                    RedactUriForError(m_Uri), www.error));
+                                $"Error connecting to {RedactUriForError(m_Uri)} : {www.responseCode} {www.error}");
                         }
                         Debug.LogFormat("Network error ({0} retries remaining): {1} : {2}", retries, m_Uri, www.error);
                         await Awaiters.SecondsRealtime(BackoffSeconds(retries));
