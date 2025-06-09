@@ -798,11 +798,6 @@ namespace TiltBrush
 
                 if (taskComplete)
                 {
-                    Debug.Log($"Prune complete of set {m_CacheDir}. " +
-                        $"Pruned count: {prunedCountAndSize.Item1}, " +
-                        $"total size: {prunedCountAndSize.Item2}, " +
-                        $"max allowable size: {maxSize}");
-
                     yield break;
                 }
 
