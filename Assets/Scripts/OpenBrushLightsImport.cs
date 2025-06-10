@@ -20,6 +20,14 @@ namespace UnityGLTF.Plugins
         {
             base.OnAfterImportNode(node, nodeIndex, nodeObject);
             var light = nodeObject.GetComponent<Light>();
+
+            if (light != null)
+            {
+                // Disable lights because we need to do more work on brush shaders
+                // for additional lights to have any effect
+                light.gameObject.SetActive(false);
+            }
+
             if (light == null ||
                 node.Extensions == null ||
                 !node.Extensions.ContainsKey("KHR_lights_punctual"))
