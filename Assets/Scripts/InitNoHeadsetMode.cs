@@ -24,14 +24,14 @@ namespace TiltBrush
         public TextMeshPro m_Heading;
         public GameObject m_SketchLoadingUi;
         public string m_NonXRHelpURL;
-        private List<SketchSet> m_SketchSets;
+        private List<SceneFileInfo> m_Sketches;
         private TMP_Dropdown m_Dropdown;
 
         void Start()
         {
             m_Dropdown = GetComponentInChildren<TMP_Dropdown>();
             m_Dropdown.ClearOptions();
-            m_SketchSets = new List<SketchSet>();
+            m_Sketches = new List<SceneFileInfo>();
 
             StartCoroutine(UiInitCoroutine());
         }
@@ -50,8 +50,14 @@ namespace TiltBrush
 
                 for (int i = 0; i < sketchset.NumSketches; i++)
                 {
+                    var info = sketchset.GetSketchSceneFileInfo(i);
+                    if (info == null || !sketchset.IsSketchIndexValid(i) || !info.Available)
+                    {
+                        continue; // skip invalid sketches
+                    }
                     var sketchName = sketchset.GetSketchName(i);
-                    m_SketchSets.Add(sketchset);
+                    m_Sketches.Add(info);
+
                     sketchset.GetSketchIcon(i, out Texture2D icon,
                         out string[] _, out string __);
                     // TODO Icon will usually be null as
@@ -93,8 +99,7 @@ namespace TiltBrush
             App.VrSdk.GetVrCamera().transform.position = cameraPos;
             var dropdown = GetComponentInChildren<TMP_Dropdown>();
             var index = dropdown.value;
-            var sketchSet = m_SketchSets[index];
-            SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
+            SceneFileInfo rInfo = m_Sketches[index];
             SketchControlsScript.m_Instance.LoadSketch(rInfo, true);
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FlyTool);
             Destroy(gameObject);
