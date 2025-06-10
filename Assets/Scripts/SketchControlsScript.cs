@@ -5006,6 +5006,13 @@ namespace TiltBrush
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }
+                case GlobalCommands.OpenSketchbookPanelSearchPopup:
+                    {
+                        SketchSetType currentSet = (SketchSetType)iParam1;
+                        SketchCatalog.m_Instance.UpdateSearchText(currentSet, KeyboardPopUpWindow.m_LastInput, forceRefresh: true);
+                        DismissPopupOnCurrentGazeObject(false);
+                        break;
+                    }
                 case GlobalCommands.RepaintOptions:
                 case GlobalCommands.MultiplayerPanelOptions:
                 case GlobalCommands.MultiplayerJoinRoom:
@@ -5025,7 +5032,6 @@ namespace TiltBrush
                 case GlobalCommands.OpenIcosaPanelOptionsPopup:
                 case GlobalCommands.OpenIcosaPanelFilterPopup:
                 case GlobalCommands.OpenSketchbookPanelFilterPopup:
-                case GlobalCommands.OpenSketchbookPanelSearchPopup:
                 case GlobalCommands.Null:
                     break; // Intentionally blank.
                 default:
