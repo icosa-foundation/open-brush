@@ -1023,12 +1023,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10134247853236224
-    m_Localized: 'Error gathering sketches from Icosa
-
-      <color=#969696>
-
-      How''s
-      your Internet?</color>'
+    m_Localized: "No sketches found \n<color=#969696>\nTry a different search </color>"
     m_Metadata:
       m_Items: []
   - m_Id: 10134539248312320
