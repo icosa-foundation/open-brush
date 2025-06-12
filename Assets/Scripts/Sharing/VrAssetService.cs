@@ -308,7 +308,7 @@ namespace TiltBrush
 
         // Instance API
 
-        private const int m_AssetsPerPage = 9;
+        private const int m_AssetsPerPage = 9; // Doesn't have to match the number of icons per UI page
         [SerializeField] public float m_SketchbookRefreshInterval;
         public bool m_UseLocalFeaturedSketches = false;
 
