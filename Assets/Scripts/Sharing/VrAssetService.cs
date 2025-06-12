@@ -308,7 +308,7 @@ namespace TiltBrush
 
         // Instance API
 
-        private const int m_AssetsPerPage = 16;
+        private const int m_AssetsPerPage = 9;
         [SerializeField] public float m_SketchbookRefreshInterval;
         public bool m_UseLocalFeaturedSketches = false;
 

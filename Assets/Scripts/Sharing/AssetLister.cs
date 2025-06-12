@@ -27,7 +27,7 @@ namespace TiltBrush
         private string m_Uri;
         private string m_ErrorMessage;
         private string m_PageToken;
-        private int m_pageLimit = 10;
+        private int m_pageLimit = 12;
 
         // How do we decide when to stop?
         public bool HasMore =>
