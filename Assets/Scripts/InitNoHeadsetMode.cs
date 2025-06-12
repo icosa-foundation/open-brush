@@ -27,61 +27,107 @@ namespace TiltBrush
         private List<SceneFileInfo> m_Sketches;
         private TMP_Dropdown m_Dropdown;
 
-        void Start()
+        void Awake()
         {
             m_Dropdown = GetComponentInChildren<TMP_Dropdown>();
+            if (m_Dropdown != null)
+            {
+                m_Dropdown.gameObject.SetActive(false);
+            }
+        }
+
+        void Start()
+        {
+            // m_Dropdown is already assigned in Awake
             m_Dropdown.ClearOptions();
             m_Sketches = new List<SceneFileInfo>();
 
+            StartCoroutine(DownloadCuratedSketches(10));
             StartCoroutine(UiInitCoroutine());
         }
 
-        private IEnumerator UiInitCoroutine()
+        public IEnumerator DownloadCuratedSketches(int numSketches)
         {
-            IEnumerator AddDropdownItems(SketchSet sketchset)
-            {
-                // TODO Start loading icons and metadata
-                // sketchset.RequestRefresh();
-                // yield return new WaitUntil(() => !sketchset.IsActivelyRefreshingSketches);
-                // - then refresh the UI when done
-                // Maybe the dropdown itself is unwieldy for this -
-                // it leaves very little space for images.
-                yield return new WaitUntil(() => sketchset.IsReadyForAccess);
+            var curatedSketchSet = (IcosaSketchSet)SketchCatalog.m_Instance.GetSet(SketchSetType.Curated);
+            yield return new WaitUntil(() => curatedSketchSet.NumSketches >= numSketches);
+            yield return StartCoroutine(curatedSketchSet.DownloadFilesCoroutine(() => {
+                RefreshDropdownItemsForSet(curatedSketchSet);
+            }));
+        }
 
-                for (int i = 0; i < sketchset.NumSketches; i++)
-                {
-                    var info = sketchset.GetSketchSceneFileInfo(i);
-                    if (info == null || !sketchset.IsSketchIndexValid(i) || !info.Available)
-                    {
-                        continue; // skip invalid sketches
-                    }
-                    var sketchName = sketchset.GetSketchName(i);
-                    m_Sketches.Add(info);
-
-                    sketchset.GetSketchIcon(i, out Texture2D icon,
-                        out string[] _, out string __);
-                    // TODO Icon will usually be null as
-                    // we haven't called RequestLoadIconAndMetadata
-                    if (icon != null)
-                    {
-                        var sprite = Sprite.Create(icon, new Rect(0, 0,
-                            icon.width, icon.height), new Vector2(0.5f, 0.5f));
-                        m_Dropdown.options.Add(new TMP_Dropdown.OptionData(sketchName, sprite));
-                    }
-                    else
-                    {
-                        m_Dropdown.options.Add(new TMP_Dropdown.OptionData(sketchName));
-                    }
-                }
-            }
-
+        // Public so it can be called from the download callback
+        public void RefreshDropdownItemsForSet(SketchSet sketchset)
+        {
+            // Check if any set has items before clearing and repopulating
             var userSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.User);
             var curatedSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Curated);
             var likedSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Liked);
 
-            yield return StartCoroutine(AddDropdownItems(userSketchSet));
-            yield return StartCoroutine(AddDropdownItems(curatedSketchSet));
-            yield return StartCoroutine(AddDropdownItems(likedSketchSet));
+            bool anyHasItems =
+                (userSketchSet.IsReadyForAccess && userSketchSet.NumSketches > 0) ||
+                (curatedSketchSet.IsReadyForAccess && curatedSketchSet.NumSketches > 0) ||
+                (likedSketchSet.IsReadyForAccess && likedSketchSet.NumSketches > 0);
+
+            if (!anyHasItems)
+            {
+                // Don't clear or show the dropdown if nothing is ready
+                m_Dropdown.gameObject.SetActive(false);
+                return;
+            }
+
+            m_Dropdown.ClearOptions();
+            m_Sketches.Clear();
+
+            // Repopulate all sets
+            AddDropdownItems(userSketchSet);
+            AddDropdownItems(curatedSketchSet);
+            AddDropdownItems(likedSketchSet);
+
+            // Show dropdown if there is at least one item, otherwise hide it
+            m_Dropdown.gameObject.SetActive(m_Dropdown.options.Count > 0);
+        }
+
+        private void AddDropdownItems(SketchSet sketchset)
+        {
+            if (!sketchset.IsReadyForAccess) return;
+
+            for (int i = 0; i < sketchset.NumSketches; i++)
+            {
+                var info = sketchset.GetSketchSceneFileInfo(i);
+                if (info == null || !sketchset.IsSketchIndexValid(i) || !info.Available)
+                {
+                    continue; // skip invalid sketches
+                }
+                var sketchName = sketchset.GetSketchName(i);
+                m_Sketches.Add(info);
+
+                sketchset.GetSketchIcon(i, out Texture2D icon,
+                    out string[] _, out string __);
+                if (icon != null)
+                {
+                    var sprite = Sprite.Create(icon, new Rect(0, 0,
+                        icon.width, icon.height), new Vector2(0.5f, 0.5f));
+                    m_Dropdown.options.Add(new TMP_Dropdown.OptionData(sketchName, sprite));
+                }
+                else
+                {
+                    m_Dropdown.options.Add(new TMP_Dropdown.OptionData(sketchName));
+                }
+            }
+        }
+
+        private IEnumerator UiInitCoroutine()
+        {
+            // Initial population
+            var userSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.User);
+            var curatedSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Curated);
+            var likedSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Liked);
+
+            yield return new WaitUntil(() => userSketchSet.IsReadyForAccess);
+            yield return new WaitUntil(() => curatedSketchSet.IsReadyForAccess);
+            yield return new WaitUntil(() => likedSketchSet.IsReadyForAccess);
+
+            RefreshDropdownItemsForSet(null);
         }
 
         public void InitEditMode()

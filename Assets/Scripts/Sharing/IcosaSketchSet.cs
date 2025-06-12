@@ -580,11 +580,11 @@ namespace TiltBrush
                 !x.IcosaSceneFileInfo.IconDownloaded);
         }
 
-        // Download tilt files and thumbnails (that we don't already have)
-        private IEnumerator DownloadFilesCoroutine(List<IcosaSketch> sketches)
+        public IEnumerator DownloadFilesCoroutine(System.Action onComplete = null, Action onDownload = null)
         {
-            yield return DownloadIconsCoroutine(sketches);
-            yield return DownloadTiltsCoroutine(sketches);
+            yield return DownloadIconsCoroutine(m_Sketches);
+            yield return DownloadTiltsCoroutine(m_Sketches, onDownload);
+            onComplete?.Invoke();
         }
 
         private IEnumerator DownloadIconsCoroutine(List<IcosaSketch> sketches)
@@ -651,7 +651,7 @@ namespace TiltBrush
             yield return null;
         }
 
-        private IEnumerator DownloadTiltsCoroutine(List<IcosaSketch> sketches)
+        private IEnumerator DownloadTiltsCoroutine(List<IcosaSketch> sketches, Action onDownload = null)
         {
             bool notifyOnError = true;
             void NotifyCreateError(IcosaSceneFileInfo sceneFileInfo, string type, Exception ex)
@@ -708,6 +708,7 @@ namespace TiltBrush
                             }
                         }
                     }
+                    onDownload?.Invoke();
                 }
                 yield return null;
             }
