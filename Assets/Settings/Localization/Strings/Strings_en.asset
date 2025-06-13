@@ -925,7 +925,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8043915934146560
-    m_Localized: Featured Sketches
+    m_Localized: All Sketches
     m_Metadata:
       m_Items: []
   - m_Id: 8044071635099648
@@ -949,7 +949,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8051847228792832
-    m_Localized: Featured Sketches
+    m_Localized: All Sketches
     m_Metadata:
       m_Items: []
   - m_Id: 8052065399709696
