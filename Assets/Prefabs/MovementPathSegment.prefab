@@ -21,7 +21,7 @@ GameObject:
   - component: {fileID: 4061763051606536}
   - component: {fileID: 120718132064851390}
   m_Layer: 5
-  m_Name: CameraPathSegment
+  m_Name: MovementPathSegment
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
