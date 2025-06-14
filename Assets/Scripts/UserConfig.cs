@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
@@ -36,7 +37,7 @@ namespace TiltBrush
         {
             public bool DisableAudio;
             public bool DisableAutosave;
-            public bool DisablePoly;
+            [FormerlySerializedAs("DisablePoly")] public bool DisableIcosa;
             public bool UnlockScale;
             public bool GuideToggleVisiblityOnly;
             public bool HighResolutionSnapshots; // Deprecated
@@ -169,15 +170,16 @@ namespace TiltBrush
                 }
             }
 
-            private bool? m_PolyModelPreload;
-            public bool PolyModelPreloadValid => m_PolyModelPreload.HasValue;
-            public bool PolyModelPreload
+            private bool? m_IcosaModelPreload;
+            public bool PolyModelPreloadValid => m_IcosaModelPreload.HasValue;
+            public bool IcosaModelPreload
             {
                 get
                 {
-                    return m_PolyModelPreload ?? App.PlatformConfig.EnablePolyPreload;
+                    // TODO Should we avoid preload if we are running offline rendering?
+                    return m_IcosaModelPreload ?? App.PlatformConfig.EnablePolyPreload;
                 }
-                set { m_PolyModelPreload = value; }
+                set { m_IcosaModelPreload = value; }
             }
         }
 
@@ -250,12 +252,6 @@ namespace TiltBrush
         [Serializable]
         public struct ImportConfig
         {
-            bool? m_UseUnityGltf;
-            public bool UseUnityGltf
-            {
-                get { return m_UseUnityGltf ?? false; }
-                set { m_UseUnityGltf = value; }
-            }
         }
 
         [Serializable]
@@ -282,6 +278,7 @@ namespace TiltBrush
                 set { m_ExportStrokeTimestamp = value; }
             }
 
+            // Used by UnityGLTF exporter
             bool? m_ExportStrokeMetadata;
             public bool ExportStrokeMetadata
             {
@@ -289,6 +286,7 @@ namespace TiltBrush
                 set { m_ExportStrokeMetadata = value; }
             }
 
+            // Used by UnityGLTF exporter
             bool? m_KeepStrokes;
             public bool KeepStrokes
             {
@@ -296,11 +294,28 @@ namespace TiltBrush
                 set { m_KeepStrokes = value; }
             }
 
+            // Used by UnityGLTF exporter
             bool? m_KeepGroups;
             public bool KeepGroups
             {
                 get { return m_KeepGroups ?? true; }
                 set { m_KeepGroups = value; }
+            }
+
+            // Used by UnityGLTF exporter
+            private bool? m_ExportEnvironment;
+            public bool ExportEnvironment
+            {
+                get { return m_ExportEnvironment ?? false; }
+                set { m_ExportEnvironment = value; }
+            }
+
+            // Used by UnityGLTF exporter
+            private bool? m_ExportCustomSkybox;
+            public bool ExportCustomSkybox
+            {
+                get { return m_ExportCustomSkybox ?? false; }
+                set { m_ExportCustomSkybox = value; }
             }
 
             private Dictionary<string, bool> m_Formats;
@@ -318,9 +333,9 @@ namespace TiltBrush
         [Serializable]
         public struct SharingConfig
         {
-            // For Poly testing allow us to use a different API host and landing page URL.
-            [JsonProperty("VrAssetServiceHost")] public string VrAssetServiceHostOverride;
-            [JsonProperty("VrAssetServiceUrl")] public string VrAssetServiceUrlOverride;
+            public string IcosaApiRoot;
+            public string IcosaHomePage;
+            public bool UseNewGlb;
         }
         public SharingConfig Sharing;
 

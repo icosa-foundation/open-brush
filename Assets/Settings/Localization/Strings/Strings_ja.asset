@@ -500,7 +500,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7691576060649472
-    m_Localized: "Poly\u30E9\u30A4\u30D6\u30E9\u30EA"
+    m_Localized: "Icosa\u30E9\u30A4\u30D6\u30E9\u30EA"
     m_Metadata:
       m_Items: []
   - m_Id: 7691821452599296
@@ -760,7 +760,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7932977482539008
-    m_Localized: "Poly\u304B\u3089\u30E2\u30C7\u30EB\u3092\u8AAD\u307F\u8FBC\u307F\u4E2D\n\n\u3059\u3050\u306B\u3082\u3046\u4E00\u5EA6\u78BA\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044\uFF01"
+    m_Localized: "Icosa Gallery\u304B\u3089\u30E2\u30C7\u30EB\u3092\u8AAD\u307F\u8FBC\u307F\u4E2D\n\n\u3059\u3050\u306B\u3082\u3046\u4E00\u5EA6\u78BA\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044\uFF01"
     m_Metadata:
       m_Items: []
   - m_Id: 7933149889404928
@@ -921,7 +921,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8052065399709696
-    m_Localized: "Poly\u304B\u3089"
+    m_Localized: "Icosa Gallery\u304B\u3089"
     m_Metadata:
       m_Items: []
   - m_Id: 8052141249503232
@@ -929,7 +929,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8052215190888448
-    m_Localized: "Poly\u304B\u3089"
+    m_Localized: "Icosa Gallery\u304B\u3089"
     m_Metadata:
       m_Items: []
   - m_Id: 8052288863838208
@@ -941,7 +941,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8053396663410688
-    m_Localized: "Poly\u3092\u95B2\u89A7"
+    m_Localized: "Icosa Gallery\u3092\u95B2\u89A7"
     m_Metadata:
       m_Items: []
   - m_Id: 8053860821868544
@@ -981,7 +981,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10134247853236224
-    m_Localized: "Poly\u304B\u3089\u30B9\u30B1\u30C3\u30C1\u53CE\u96C6\u30A8\u30E9\u30FC\n<color=#969696>\n\u30A4\u30F3\u30BF\u30FC\u30CD\u30C3\u30C8\u306E\u72B6\u614B\u306F\u3044\u304B\u304C\u3067\u3059\u304B\uFF1F</color>"
+    m_Localized: "Icosa Gallery\u304B\u3089\u30B9\u30B1\u30C3\u30C1\u53CE\u96C6\u30A8\u30E9\u30FC\n<color=#969696>\n\u30A4\u30F3\u30BF\u30FC\u30CD\u30C3\u30C8\u306E\u72B6\u614B\u306F\u3044\u304B\u304C\u3067\u3059\u304B\uFF1F</color>"
     m_Metadata:
       m_Items: []
   - m_Id: 10134539248312320

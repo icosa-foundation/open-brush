@@ -28,6 +28,7 @@ public class SecretsConfig : ScriptableObject
         Pimax = 4,
         PhotonFusion = 5,
         PhotonVoice = 6,
+        Icosa = 7
     }
 
     [Serializable]
