@@ -67,6 +67,8 @@ public class VrStylusHandler : StylusHandler
     private float _hapticClickAmplitude = 0.9f;
     private float _hapticClickMinThreshold = 0.2f;
 
+    private OVRPlugin.Hand prevHandSetting = OVRPlugin.Hand.None;
+
     private void UpdatePose()
     {
         _positionIsTracked = false;
@@ -80,22 +82,54 @@ public class VrStylusHandler : StylusHandler
         // The MX Ink interaction profile is: /interaction_profiles/logitech/mx_ink_stylus_logitech
 
         // Find whether the Logitech MX Ink is on the left or the right hand
-        bool stylusIsOnLeftHand = leftDevice.Contains("logitech");
-        bool stylusIsOnRightHand = rightDevice.Contains("logitech");
-        // Debug.Log($"Device: Left hand: {leftDevice}, Right hand: {rightDevice}");
+        bool stylusIsAssignedLeft = leftDevice.Contains("logitech");
+        bool stylusIsAssignedRight = rightDevice.Contains("logitech");
+
         // Flag the stylus as active/inactive, on right/left hand
-        _stylus.isActive = stylusIsOnLeftHand || stylusIsOnRightHand;
-        _stylus.isOnRightHand = stylusIsOnRightHand;
-        // Hide the 3D model if not active
-        _mxInk_model.SetActive(_stylus.isActive);
-        // Hacky
-        InputManager.m_Instance.ShowController(!_stylus.isActive, stylusIsOnLeftHand ? 0 : 1);
-        InputManager.m_Instance.ShowController(true, stylusIsOnLeftHand ? 1 : 0);
+        _stylus.isActive = stylusIsAssignedLeft || stylusIsAssignedRight;
+        _stylus.isOnRightHand = stylusIsAssignedRight;
 
-        // Select the right/left hand stylus pose to be used
-        string MX_Ink_Pose = _stylus.isOnRightHand ? MX_Ink_Pose_Right : MX_Ink_Pose_Left;
+        if (!_stylus.isActive)
+        {
+            _mxInk_model.SetActive(false);
+            InputManager.m_Instance.ShowController(true, 0);
+            InputManager.m_Instance.ShowController(true, 1);
+            return;
+        }
 
-        if (OVRPlugin.GetActionStatePose(MX_Ink_Pose, out OVRPlugin.Posef handPose))
+        _mxInk_model.SetActive(true);
+
+        // Initial pass. Set our handedness based on the OS settings
+        if (prevHandSetting == OVRPlugin.Hand.None)
+        {
+            prevHandSetting = stylusIsAssignedRight ? OVRPlugin.Hand.HandRight : OVRPlugin.Hand.HandLeft;
+            // If both stylus and wand are assigned to the same hand, swap the controls
+            if (stylusIsAssignedRight == InputManager.m_Instance.WandOnRight)
+            {
+                SketchControlsScript.DoSwapControls();
+            }
+        }
+        else
+        {
+            // Subsequent passes. Check if the handedness has changed
+            var newHandSetting = stylusIsAssignedRight ? OVRPlugin.Hand.HandRight : OVRPlugin.Hand.HandLeft;
+            if (newHandSetting != prevHandSetting)
+            {
+                // If both stylus and wand are assigned to the same hand, swap the controls
+                if (stylusIsAssignedRight == InputManager.m_Instance.WandOnRight)
+                {
+                    SketchControlsScript.DoSwapControls();
+                }
+                prevHandSetting = newHandSetting;
+            }
+        }
+
+        // Not sure why but this works whether stylusIsAssignedRight or stylusIsAssignedLeft
+        InputManager.Brush.ShowController(false);
+        InputManager.Wand.ShowController(true);
+
+        string mxInkPose = stylusIsAssignedRight ? MX_Ink_Pose_Right : MX_Ink_Pose_Left;
+        if (OVRPlugin.GetActionStatePose(mxInkPose, out OVRPlugin.Posef handPose))
         {
             transform.localPosition = handPose.Position.FromFlippedZVector3f();
             transform.rotation = handPose.Orientation.FromFlippedZQuatf();
@@ -106,7 +140,7 @@ public class VrStylusHandler : StylusHandler
         }
         else
         {
-            Debug.LogError($"MX_Ink: Error getting Pose action name {MX_Ink_Pose}, check logcat for specifics.");
+            Debug.LogError($"MX_Ink: Error getting Pose action name {mxInkPose}, check logcat for specifics.");
         }
     }
 
