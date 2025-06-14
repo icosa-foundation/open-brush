@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -105,6 +104,9 @@ namespace TiltBrush
                 JObject json = App.IcosaAssetCatalog.GetJsonForAsset(m_Asset.Id);
                 if (json == null)
                 {
+                    // In theory this should never happen
+                    Debug.LogWarning($"AssetGetter: No JSON found for {m_Asset.Id}. Making additional request.");
+
                     WebRequest initialRequest = new WebRequest(m_URI);
                     using (var cr = initialRequest.SendAsync().AsIeNull())
                     {
