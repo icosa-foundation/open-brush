@@ -53,6 +53,8 @@ namespace TiltBrush
         [SerializeField] private AppQualitySettingLevels m_QualityLevels;
         [UsedImplicitly] // on Android
         [SerializeField] private AppQualitySettingLevels m_MobileQualityLevels;
+        [UsedImplicitly] // on Android
+        [SerializeField] private AppQualitySettingLevels m_LowEndMobileQualityLevels;
         [SerializeField] private GpuTextRender m_DebugText;
 
         /// Used to track when quality level actually changes.
@@ -121,7 +123,8 @@ namespace TiltBrush
             get
             {
 #if UNITY_ANDROID || UNITY_IOS
-                return m_MobileQualityLevels;
+                return App.PlatformConfig.LowEndDevice ?
+                    m_LowEndMobileQualityLevels : m_MobileQualityLevels;
 #else
                 return m_QualityLevels;
 #endif
