@@ -549,7 +549,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   packageVersion: 
   shaderStrippingSettings:
-    stripPassesFromAllShaders: 0
+    stripPassesFromAllShaders: 1
     stripPasses: 6
   ImportPlugins:
   - {fileID: 6228052705860985836}
@@ -565,7 +565,6 @@ MonoBehaviour:
   - {fileID: 7545966955198979338}
   - {fileID: -6960108736307011653}
   - {fileID: 484358770689020591}
-  - {fileID: -5026418160133471449}
   ExportPlugins:
   - {fileID: 242952683485160214}
   - {fileID: -5728475199642485532}
