@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6b654d369a29aa41b85040f6fac23f0, type: 3}
   m_Name: EditTimeAssetReferences
   m_EditorClassIdentifier: 
+  m_PlatformConfigPc: {fileID: 11400000, guid: 0764a106823cbec4e8d75b2816f3cbd3, type: 2}
   m_PlatformConfigMobile: {fileID: 11400000, guid: b773977c5f304704787fa9950b31967f,
     type: 2}
-  m_PlatformConfigPc: {fileID: 11400000, guid: 0764a106823cbec4e8d75b2816f3cbd3, type: 2}
+  m_PlatformConfigLowEndMobile: {fileID: 11400000, guid: af287a5e9f72e6046a340070db8db83c,
+    type: 2}

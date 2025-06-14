@@ -49,6 +49,13 @@ namespace TiltBrush
         Zapbox,
     }
 
+    public enum DeviceConfigType
+    {
+        Desktop = 0,
+        Mobile = 1,
+        LowEndMobile = 2,
+    }
+
     // The sdk mode indicates which SDK that we're using to drive the display.
     //  - These names are used in our analytics, so they must be protected from obfuscation.
     //    Do not change the names of any of them, unless they've never been released.
@@ -663,9 +670,9 @@ namespace TiltBrush
 
 #if UNITY_EDITOR
         /// Called at build time, just before this Config instance is saved to Main.unity
-        public void DoBuildTimeConfiguration(UnityEditor.BuildTarget target, bool disableAccountLogins = false)
+        public void DoBuildTimeConfiguration(DeviceConfigType deviceConfigType, bool disableAccountLogins = false)
         {
-            m_PlatformConfig = EditTimeAssetReferences.Instance.GetConfigForBuildTarget(target);
+            m_PlatformConfig = EditTimeAssetReferences.Instance.GetConfigForBuildTarget(deviceConfigType);
             DisableAccountLogins = disableAccountLogins;
         }
 #endif

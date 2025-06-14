@@ -70,6 +70,7 @@ static class BuildTiltBrush
         public bool AutoProfile;
         public bool Il2Cpp;
         public BuildTarget Target;
+        public DeviceConfigType DeviceConfig;
         public XrSdkMode XrSdk;
         public string Location;
         public string Stamp;
@@ -681,6 +682,8 @@ static class BuildTiltBrush
     static void CommandLine()
     {
         BuildTarget? target = null;
+        DeviceConfigType? deviceConfig = null;
+
         TiltBuildOptions tiltOptions = new TiltBuildOptions()
         {
             Stamp = "",
@@ -738,6 +741,10 @@ static class BuildTiltBrush
                 else if (args[i] == "-btb-target")
                 {
                     target = AsEnum<BuildTarget>(args[++i]);
+                }
+                else if (args[i] == "-btb-deviceConfig")
+                {
+                    deviceConfig = AsEnum<DeviceConfigType>(args[++i]);
                 }
                 else if (args[i] == "-customBuildPath")
                 {
@@ -1531,7 +1538,7 @@ static class BuildTiltBrush
             config.m_AutoProfile = tiltOptions.AutoProfile;
             config.m_BuildStamp = stamp;
             //config.OnValidate(xrSdk, TargetToGroup(target));
-            config.DoBuildTimeConfiguration(target, tiltOptions.disableAccountLogins);
+            config.DoBuildTimeConfiguration(tiltOptions.DeviceConfig, tiltOptions.disableAccountLogins);
             EditorUtility.SetDirty(config);
 
             if (GuiSelectedBuildTarget == BuildTarget.Android)
@@ -2032,6 +2039,7 @@ static class BuildTiltBrush
         // assume the continuation is enough notification for the user
 
         BuildTarget target = tiltOptions.Target;
+        DeviceConfigType deviceConfig = tiltOptions.DeviceConfig;
         string location = tiltOptions.Location;
         string stamp = tiltOptions.Stamp;
         XrSdkMode xrSdk = tiltOptions.XrSdk;
@@ -2050,6 +2058,7 @@ static class BuildTiltBrush
         args.Append("-executemethod BuildTiltBrush.CommandLine ");
         args.AppendFormat("-btb-display {0} ", xrSdk);
         args.AppendFormat("-btb-target {0} ", target);
+        args.AppendFormat("-btb-deviceConfig {0} ", deviceConfig);
         foreach (var value in Enum.GetValues(typeof(BuildOptions)))
         {
             if (((int)options & (int)value) != 0)
