@@ -108,6 +108,7 @@ public class MobileBloom : MonoBehaviour
     {
         if (m_Camera.stereoEnabled)
         {
+#if IS_XR_BUILD
             // Calculate the pixel values for the offsets into the area of the screen that receives bloom.
             m_width = (int)(XRSettings.eyeTextureWidth * m_xMult);
             m_height = (int)(XRSettings.eyeTextureHeight * m_yMult);
@@ -121,6 +122,7 @@ public class MobileBloom : MonoBehaviour
             {
                 m_xOffset[1] += XRSettings.eyeTextureWidth;
             }
+#endif
         }
         else
         {

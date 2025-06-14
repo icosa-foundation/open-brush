@@ -26,10 +26,11 @@ using UnityEditor.Build.Reporting;
 using UnityEditor.iOS.Xcode;
 #endif
 using UnityEditor.SceneManagement;
+#if IS_XR_BUILD
 using UnityEditor.XR.Management;
+#endif
 using UnityEngine;
 using UnityEngine.XR;
-using UnityEngine.XR.Management;
 using Environment = System.Environment;
 
 //----------------------------------------------------------------------------------------
@@ -1056,6 +1057,7 @@ static class BuildTiltBrush
 
     class TempSetOpenXrFeatureGroup : IDisposable
     {
+#if USE_OPENXR
         readonly List<UnityEngine.XR.OpenXR.Features.OpenXRFeature> enabledFeatures;
         readonly List<UnityEngine.XR.OpenXR.Features.OpenXRFeature> requiredFeatures;
         readonly BuildTargetGroup m_targetGroup;
@@ -1141,10 +1143,25 @@ static class BuildTiltBrush
                 enabledFeature.enabled = true;
             }
         }
+#else
+        public TempSetOpenXrFeatureGroup(TiltBuildOptions tiltOptions)
+        {
+
+        }
+
+        public void Dispose()
+        {
+
+        }
+#endif
     }
 
     class TempSetXrPlugin : IDisposable
     {
+        public TempSetXrPlugin(TiltBuildOptions tiltOptions)
+        {
+        }
+#if IS_XR_BUILD
         List<XRLoader> m_plugins;
         bool m_xrEnabled;
         BuildTargetGroup m_targetGroup;
@@ -1225,6 +1242,12 @@ static class BuildTiltBrush
             }
 
             EditorUtility.SetDirty(targetSettings);
+        }
+#else
+
+#endif
+        public void Dispose()
+        {
         }
     }
 
@@ -1738,8 +1761,8 @@ static class BuildTiltBrush
     // Get XR Plugins for selected build target.
     public static string GetXrPlugins()
     {
+#if IS_XR_BUILD
         var grp = BuildTiltBrush.TargetToGroup(GuiSelectedBuildTarget);
-
         XRGeneralSettings settings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(grp);
         if (settings == null)
             return "Not using XR";
@@ -1756,6 +1779,9 @@ static class BuildTiltBrush
             res += settings.Manager.activeLoaders[i].name + $" ({settings.Manager.activeLoaders[i].GetType().FullName})";
         }
         return res;
+#else
+        return "";
+#endif
     }
 
     // Returns null if no errors; otherwise a string with what went wrong.

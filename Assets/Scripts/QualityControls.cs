@@ -378,10 +378,10 @@ namespace TiltBrush
             {
                 m_msaaLevel = App.UserConfig.Profiling.MsaaLevel;
             }
-
+#if IS_XR_BUILD
             UnityEngine.XR.XRSettings.renderViewportScale = viewportScale;
             UnityEngine.XR.XRSettings.eyeTextureResolutionScale = eyeScale;
-
+#endif
             if (value != m_lastQualityLevel && Debug.isDebugBuild && App.UserConfig.Profiling.AutoProfile)
             {
                 Debug.Log("Profile: Quality Level: " + value

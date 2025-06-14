@@ -349,7 +349,9 @@ namespace TiltBrush
                 else if (args[i] == "--captureOds")
                 {
                     m_SdkMode = SdkMode.Ods;
+#if IS_XR_BUILD
                     UnityEngine.XR.XRSettings.enabled = false;
+#endif
                     Debug.Log("CaptureODS: Enable ");
 
                 }
@@ -478,7 +480,9 @@ namespace TiltBrush
                     }
                     m_VideoPathToRender = args[++i];
                     m_SdkMode = SdkMode.Monoscopic;
+#if IS_XR_BUILD
                     UnityEngine.XR.XRSettings.enabled = false;
+#endif
                 }
                 else if (args[i].Contains("."))
                 {

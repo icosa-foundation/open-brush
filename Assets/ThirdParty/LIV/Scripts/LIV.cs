@@ -482,8 +482,10 @@ namespace LIV.SDK.Unity
             output.applicationName = Application.productName;
             output.applicationVersion = Application.version;
             output.graphicsAPI = SystemInfo.graphicsDeviceType.ToString();
+#if IS_XR_BUILD
 #if UNITY_2017_2_OR_NEWER
             output.xrDeviceName = XRSettings.loadedDeviceName;
+#endif
 #endif
             SDKBridge.SubmitApplicationOutput(output);
         }

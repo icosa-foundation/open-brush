@@ -22,7 +22,9 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.XR;
+#if IS_XR_BUILD
 using UnityEngine.XR.Management;
+#endif
 using InputDevice = UnityEngine.XR.InputDevice;
 
 #if PICO_SUPPORTED
@@ -272,8 +274,10 @@ namespace TiltBrush
                 Application.onBeforeRender -= OnNewPoses;
                 InputDevices.deviceConnected -= OnUnityXRDeviceConnected;
                 InputDevices.deviceDisconnected -= OnUnityXRDeviceDisconnected;
+#if IS_XR_BUILD
                 XRGeneralSettings.Instance?.Manager?.StopSubsystems();
                 XRGeneralSettings.Instance?.Manager?.DeinitializeLoader();
+#endif
             }
         }
 
@@ -644,12 +648,14 @@ namespace TiltBrush
                 wandInfo.SwapLeftRight();
                 brushInfo.SwapLeftRight();
 
+#if IS_XR_BUILD
                 var wandPose = InputManager.Wand.Behavior.GetComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>();
                 var brushPose = InputManager.Brush.Behavior.GetComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>();
                 var tempSource = wandPose.poseSource;
                 var tempType = wandPose.deviceType;
                 wandPose.SetPoseSource(brushPose.deviceType, brushPose.poseSource);
                 brushPose.SetPoseSource(tempType, tempSource);
+#endif
             }
 
             return leftRightSwapped;
@@ -799,8 +805,10 @@ namespace TiltBrush
         {
             switch (App.Config.m_SdkMode)
             {
+#if IS_XR_BUILD
                 case SdkMode.UnityXR:
                     return XRGeneralSettings.Instance?.Manager?.activeLoader != null;
+#endif
                 default:
                     return true;
             }
@@ -928,11 +936,13 @@ namespace TiltBrush
 
         public void Initialize()
         {
+#if IS_XR_BUILD
             // Null checks are for Linux view mode
             // TODO: Need to investigate exactly why Linux hits an NRE here
             // When other platforms don't
             XRGeneralSettings.Instance?.Manager?.InitializeLoaderSync();
             XRGeneralSettings.Instance?.Manager?.StartSubsystems();
+#endif
         }
     }
 }
