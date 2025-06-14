@@ -529,6 +529,7 @@ namespace TiltBrush
 
                     if (www.isNetworkError)
                     {
+                        Debug.LogWarning($"Network error: {m_Uri} {www.responseCode} {www.error}");
                         // This is always a bug, rather than some error on the other end
                         if (www.error == "Malformed URL")
                         {
