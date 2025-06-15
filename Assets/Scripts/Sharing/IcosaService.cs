@@ -218,7 +218,7 @@ namespace TiltBrush
 
             // No compression because it's a compressed .zip already
             WebRequest uploader = new WebRequest(
-                $"{VrAssetService.m_Instance.IcosaApiRoot}/assets", m_accessToken, "POST", compress: false);
+                $"{VrAssetService.m_Instance.IcosaApiRoot}/users/me/assets", m_accessToken, "POST", compress: false);
 
             var moreParams = new List<(string, string)>();
 
