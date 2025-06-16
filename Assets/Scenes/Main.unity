@@ -714,7 +714,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 0
+  inputIsHDR: 1
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -29163,7 +29163,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 0
+  inputIsHDR: 1
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -30111,7 +30111,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 0
+  inputIsHDR: 1
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -32659,6 +32659,12 @@ PrefabInstance:
       propertyPath: m_Name
       value: NonVR Menu UI
       objectReference: {fileID: 0}
+    - target: {fileID: 2040737298705332481, guid: eec2c6d84d06c8243a91c52d96d79404,
+        type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 4413f4774e5410945873d36d030f1c15,
+        type: 3}
     - target: {fileID: 3114756803188682520, guid: eec2c6d84d06c8243a91c52d96d79404,
         type: 3}
       propertyPath: m_Pivot.x
