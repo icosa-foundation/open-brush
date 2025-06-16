@@ -814,8 +814,8 @@ namespace TiltBrush
             Model model = App.IcosaAssetCatalog.GetModel(assetId);
             if (model == null)
             {
-                // This Model is transient; the Widget will replace it with a good Model from the PAC
-                // as soon as the PAC loads it.
+                // This Model is transient; the Widget will replace it with a good Model from the Icosa Asset Catalog
+                // as soon as the Icosa Asset Catalog loads it.
                 model = new Model(assetId, null);
             }
             if (!model.m_Valid)
