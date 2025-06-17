@@ -262,6 +262,7 @@ namespace TiltBrush
             m_ModelInstance.parent = this.transform;
 
             Coords.AsLocal[m_ModelInstance] = TrTransform.identity;
+
             float maxExtent = 2 * Mathf.Max(m_Model.m_MeshBounds.extents.x,
                 Mathf.Max(m_Model.m_MeshBounds.extents.y, m_Model.m_MeshBounds.extents.z));
             float size;
