@@ -14,7 +14,6 @@
 
 using UnityEngine;
 using System.Collections.Generic;
-using GLTFast.Schema;
 using Unity.VectorGraphics;
 
 namespace TiltBrush

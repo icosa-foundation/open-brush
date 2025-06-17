@@ -38,7 +38,7 @@ namespace TiltBrush
         };
 
         // When we implemented Poly support the gltf spec didn't specify a forward direction.
-        public static readonly AxisConvention kGltfAccordingToPoly = new AxisConvention
+        public static readonly AxisConvention kGltfAccordingToIcosa = new AxisConvention
         {
             right = new Vector3(1, 0, 0),
             up = new Vector3(0, 1, 0),

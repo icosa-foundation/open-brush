@@ -13,8 +13,10 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -46,6 +48,30 @@ namespace TiltBrush
             }
             var destinationPath = Path.Combine("Models", uri.Host);
             string filename = _DownloadMediaFileFromUrl(uri, destinationPath);
+            // Very basic workaround for dependent files like .bin and textures
+            // TODO
+            // 1. Handle GLB
+            // 2. Handle other formats
+            // 3. Handle zip files
+            // 4. Create subdirectories for each model
+            if (ext == "gltf")
+            {
+                // Split the url into a base uri and the filename
+                var baseUri = new Uri(uri, ".");
+
+                var fullLocalPath = Path.Combine(App.ModelLibraryPath(), uri.Host);
+
+                var jsonString = File.ReadAllText(Path.Combine(fullLocalPath, filename));
+                JObject jsonObject = JObject.Parse(jsonString);
+                List<string> externalFiles = jsonObject["buffers"].Select(j => j["uri"].Value<string>()).ToList();
+                externalFiles.AddRange(jsonObject["images"].Select(j => j["uri"].Value<string>()).ToList());
+                foreach (var externalFile in externalFiles)
+                {
+                    var newUri = new Uri(baseUri, externalFile);
+                    var subdir = Path.GetDirectoryName(externalFile);
+                    _DownloadMediaFileFromUrl(newUri, Path.Combine(fullLocalPath, subdir));
+                }
+            }
             ImportModel(Path.Combine(uri.Host, filename));
         }
 
@@ -78,7 +104,7 @@ namespace TiltBrush
                 subtree = location.Substring(relativePath.Length + 1);
             }
             var tr = _CurrentTransform().TransformBy(Coords.CanvasPose);
-            var model = new Model(Model.Location.File(relativePath));
+            var model = new Model(relativePath);
 
             AsyncHelpers.RunSync(() => model.LoadModelAsync());
             model.EnsureCollectorExists();
