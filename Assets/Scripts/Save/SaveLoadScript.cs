@@ -758,17 +758,12 @@ namespace TiltBrush
 
                     if (jsonData.ModelIndex != null)
                     {
-                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.ModelIndex);
-                    }
-
-                    if (jsonData.ModelIndex != null)
-                    {
-                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.ModelIndex);
+                        WidgetManager.m_Instance.SetModelDataFromTilt(jsonData.ModelIndex);
                     }
 
                     if (jsonData.LightIndex != null)
                     {
-                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.LightIndex);
+                        WidgetManager.m_Instance.SetLightDataFromTilt(jsonData.LightIndex);
                     }
 
                     if (jsonData.GuideIndex != null)
@@ -790,15 +785,15 @@ namespace TiltBrush
                     {
                         if (ReferenceImageCatalog.m_Instance != null && jsonData.ImageIndex != null)
                         {
-                            WidgetManager.m_Instance.SetDataFromTilt(jsonData.ImageIndex);
+                            WidgetManager.m_Instance.SetImageDataFromTilt(jsonData.ImageIndex);
                         }
                         if (VideoCatalog.Instance != null && jsonData.Videos != null)
                         {
-                            WidgetManager.m_Instance.SetDataFromTilt(jsonData.Videos);
+                            WidgetManager.m_Instance.SetVideoDataFromTilt(jsonData.Videos);
                         }
                         if (jsonData.TextWidgets != null)
                         {
-                            WidgetManager.m_Instance.SetDataFromTilt(jsonData.TextWidgets);
+                            WidgetManager.m_Instance.SetTextDataFromTilt(jsonData.TextWidgets);
                         }
                     }
                     if (jsonData.Mirror != null)
@@ -807,7 +802,7 @@ namespace TiltBrush
                     }
                     if (jsonData.CameraPaths != null)
                     {
-                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.CameraPaths);
+                        WidgetManager.m_Instance.SetCameraPathDataFromTilt(jsonData.CameraPaths);
                     }
                     if (fileInfo is GoogleDriveSketchSet.GoogleDriveFileInfo gdInfo)
                     {
