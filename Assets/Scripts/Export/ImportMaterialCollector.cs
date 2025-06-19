@@ -96,6 +96,7 @@ namespace TiltBrush
 #endif
 
         // Used for UnityGLTF imports
+        // Can be removed once we stop using EnsureCollectorExists
         public void Add(Material unityMaterial)
         {
             TbtSettings.PbrMaterialInfo pbrInfo = TbtSettings.Instance.m_PbrOpaqueSingleSided;
