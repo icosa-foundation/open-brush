@@ -408,5 +408,10 @@ namespace TiltBrush
                     break;
             }
         }
+
+        public void CloseProfilePopup()
+        {
+            RequestClose(true);
+        }
     }
 } // namespace TiltBrush
