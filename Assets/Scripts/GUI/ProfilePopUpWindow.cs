@@ -192,7 +192,6 @@ namespace TiltBrush
             m_SketchfabSignedInElements.SetActive(true);
             m_GoogleSignedInElements.SetActive(true);
             m_GoogleSignedOutElements.SetActive(true);
-            m_Persistent = false;
             RefreshObjects();
         }
 
@@ -314,8 +313,6 @@ namespace TiltBrush
             {
                 m_ConfirmLoginElements.SetActive(m_CurrentMode == Mode.ConfirmLogin);
             }
-            // Reset persistent flag when switching modes.
-            m_Persistent = false;
         }
 
         void OnProfileUpdated(OAuth2Identity _)
@@ -358,7 +355,6 @@ namespace TiltBrush
                             if (userInfo == null)
                             {
                                 UpdateMode(Mode.TakeOffHeadset);
-                                m_Persistent = true;
                             }
                         }
                     }
@@ -375,7 +371,6 @@ namespace TiltBrush
 
                     App.OpenURL($"{VrAssetService.m_Instance.IcosaHomePage}/device");
                     ShowIcosaLogin();
-                    m_Persistent = true;
                     break;
                 case SketchControlsScript.GlobalCommands.AccountInfo:
                     // Identifier for triggering an info message.
@@ -412,11 +407,6 @@ namespace TiltBrush
                     }
                     break;
             }
-        }
-
-        public void CloseProfilePopup()
-        {
-            RequestClose(true);
         }
     }
 } // namespace TiltBrush
