@@ -50,7 +50,8 @@ namespace TiltBrush
         {
             var curatedSketchSet = (IcosaSketchSet)SketchCatalog.m_Instance.GetSet(SketchSetType.Curated);
             yield return new WaitUntil(() => curatedSketchSet.NumSketches >= numSketches);
-            yield return StartCoroutine(curatedSketchSet.DownloadFilesCoroutine(() => {
+            yield return StartCoroutine(curatedSketchSet.DownloadFilesCoroutine(() =>
+            {
                 RefreshDropdownItemsForSet(curatedSketchSet);
             }));
         }
