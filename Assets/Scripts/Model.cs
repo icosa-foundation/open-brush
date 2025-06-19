@@ -251,7 +251,7 @@ namespace TiltBrush
         /// Only allowed if AllowExport = true
         public IExportableMaterial GetExportableMaterial(Material material)
         {
-            EnsureCollectorExists();
+            EnsureCollectorExists(); // TODO Remove this and thus probably remove AssignMaterialsToCollector
             return m_ImportMaterialCollector.GetExportableMaterial(material);
         }
 
