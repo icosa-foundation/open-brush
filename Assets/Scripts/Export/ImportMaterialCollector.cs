@@ -95,12 +95,11 @@ namespace TiltBrush
         }
 #endif
 
-        // Used for GLTFast
+        // Used for UnityGLTF imports
+        // Can be removed once we stop using EnsureCollectorExists
         public void Add(Material unityMaterial)
         {
-            TbtSettings.PbrMaterialInfo pbrInfo = unityMaterial.renderQueue < 3000 // TODO Is this reliable?
-                ? TbtSettings.Instance.m_PbrBlendDoubleSided
-                : TbtSettings.Instance.m_PbrOpaqueDoubleSided;
+            TbtSettings.PbrMaterialInfo pbrInfo = TbtSettings.Instance.m_PbrOpaqueSingleSided;
 
             Color color = Color.magenta;
             bool hasColor = false;
@@ -110,6 +109,23 @@ namespace TiltBrush
                 {
                     color = unityMaterial.GetColor("baseColorFactor");
                     hasColor = true;
+
+                    if (unityMaterial.shader.name == "PBRGraph-Transparent-Double")
+                    {
+                        pbrInfo = TbtSettings.Instance.m_PbrBlendDoubleSided;
+                    }
+                    else if (unityMaterial.shader.name == "PBRGraph-Double")
+                    {
+                        pbrInfo = TbtSettings.Instance.m_PbrOpaqueDoubleSided;
+                    }
+                    else if (unityMaterial.shader.name == "PBRGraph-Transparent")
+                    {
+                        pbrInfo = TbtSettings.Instance.m_PbrBlendSingleSided;
+                    }
+                    else
+                    {
+                        pbrInfo = TbtSettings.Instance.m_PbrOpaqueSingleSided;
+                    }
                 }
             }
             if (!hasColor)
@@ -117,16 +133,16 @@ namespace TiltBrush
                 color = unityMaterial.color;
             }
 
-            m_MaterialToIem.Add(
-                unityMaterial,
-                new DynamicExportableMaterial(
-                    parent: pbrInfo.descriptor,
-                    durableName: unityMaterial.name,
-                    uniqueName: MakeDeterministicUniqueName(m_numAdded++, unityMaterial.name),
-                    uriBase: m_AssetLocation)
-                {
-                    BaseColorFactor = color
-                });
+            var dynMat = new DynamicExportableMaterial(
+                parent: pbrInfo.descriptor,
+                durableName: unityMaterial.name,
+                uniqueName: MakeDeterministicUniqueName(m_numAdded++, unityMaterial.name),
+                uriBase: m_AssetLocation);
+
+            dynMat.BaseColorFactor = color;
+
+            m_MaterialToIem.Add(unityMaterial, dynMat);
+
         }
 
         // Used for gltf imports

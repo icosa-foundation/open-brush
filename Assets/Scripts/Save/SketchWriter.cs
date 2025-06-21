@@ -181,7 +181,6 @@ namespace TiltBrush
                 }
                 else
                 {
-                    Debug.Log($"Skipping inactive stroke {stroke.m_BrushGuid}");
                     // Effectively, if the lead stroke of group is inactive (erased), we promote
                     // subsequent strokes to lead until one such stroke is active.
                     resetGroupContinue = !snapshot.adjustedStrokeFlags.HasFlag(StrokeFlags.IsGroupContinue);

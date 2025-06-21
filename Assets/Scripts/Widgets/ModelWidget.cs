@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System.Threading.Tasks;
@@ -29,6 +30,18 @@ namespace TiltBrush
         [SerializeField] private float m_MaxBloat;
 
         private Model m_Model;
+
+
+        // What is Subtree?
+        // e.g. if we have 3d model with 3 chairs with the hierarchy below,
+        // then when the model is broken apart, we create a separate ModelWidget for each Chair1,Chair2,Chair3
+        // e.g for Chair1, Subtree = "Root/Chair1"
+        /*
+         Root (empty node) 
+            Chair1 (mesh)
+            Chair2 (mesh)
+            Chair3 (mesh)
+         */
         private string m_Subtree;
         public string Subtree
         {
@@ -141,7 +154,7 @@ namespace TiltBrush
 
             if (m_PolyCallbackActive)
             {
-                App.PolyAssetCatalog.CatalogChanged -= OnPacCatalogChanged;
+                App.IcosaAssetCatalog.CatalogChanged -= OnPacCatalogChanged;
                 m_PolyCallbackActive = false;
             }
             // Set our model to null so its usage count is decremented.
@@ -187,7 +200,7 @@ namespace TiltBrush
 
             if (!clone.Model.m_Valid)
             {
-                App.PolyAssetCatalog.CatalogChanged += clone.OnPacCatalogChanged;
+                App.IcosaAssetCatalog.CatalogChanged += clone.OnPacCatalogChanged;
                 clone.m_PolyCallbackActive = true;
             }
             clone.CloneInitialMaterials(this);
@@ -202,7 +215,7 @@ namespace TiltBrush
 
         public void OnPacCatalogChanged()
         {
-            Model model = App.PolyAssetCatalog.GetModel(AssetId);
+            Model model = App.IcosaAssetCatalog.GetModel(AssetId);
             if (model != null && model.m_Valid)
             {
                 Model = model;
@@ -210,7 +223,7 @@ namespace TiltBrush
 
                 // TODO: We may not want to do this, eventually.  Perhaps we continue to receive messages,
                 // get our asset each time, and do a diff to see if we should reload it.
-                App.PolyAssetCatalog.CatalogChanged -= OnPacCatalogChanged;
+                App.IcosaAssetCatalog.CatalogChanged -= OnPacCatalogChanged;
                 m_PolyCallbackActive = false;
             }
         }
@@ -311,7 +324,7 @@ namespace TiltBrush
         public bool HasSubModels()
         {
             string ext = Model.GetLocation().Extension;
-            if (ext == ".gltf" || ext == ".glb")
+            if (ext == ".gltf" || ext == ".gltf2" || ext == ".glb")
             {
                 int lightCount = m_ObjModelScript.GetComponentsInChildren<SceneLightGizmo>().Length;
                 int meshCount = GetMeshes().Length;
@@ -324,6 +337,9 @@ namespace TiltBrush
             return false;
         }
 
+        // Update the transform hierarchy of this ModelWidget to only contain m_Subtree
+        // e.g if Subtree = "CarBody/Floor/Wheel1", then this method will update the transform hierarchy to contain nodes
+        // starting at CarBody/Floor/Wheel1
         public void SyncHierarchyToSubtree(string previousSubtree = null)
         {
             if (string.IsNullOrEmpty(Subtree)) return;
@@ -335,7 +351,18 @@ namespace TiltBrush
             string subpathToTraverse;
             if (!string.IsNullOrEmpty(previousSubtree))
             {
-                subpathToTraverse = m_Subtree.Substring(previousSubtree.Length);
+
+                // example case:
+                //      previousSubtree = CarBody/Floor
+                //      m_Subtree = CarBody/Floor/Wheel1
+                //      subpathToTraverse should be Floor/Wheel1
+
+                // Floor
+                string lastLevel = previousSubtree.Split("/")[^1];
+
+                int startIndex = previousSubtree.Length - (lastLevel.Length + "/".Length);
+
+                subpathToTraverse = m_Subtree.Substring(startIndex);
             }
             else
             {
@@ -346,7 +373,7 @@ namespace TiltBrush
             bool excludeChildren = false;
             if (subpathToTraverse.EndsWith(".mesh"))
             {
-                subpathToTraverse = subpathToTraverse.Substring(0, subpathToTraverse.Length - 5);
+                subpathToTraverse = subpathToTraverse.Substring(0, subpathToTraverse.Length - ".mesh".Length);
                 excludeChildren = true;
             }
             if (node.name == subpathToTraverse)
@@ -357,7 +384,7 @@ namespace TiltBrush
             }
             else
             {
-                // node will be null if not found
+                // - node will be null if not found
                 node = node.Find(subpathToTraverse);
             }
 
@@ -372,7 +399,17 @@ namespace TiltBrush
                 }
                 var newRoot = new GameObject();
                 newRoot.transform.SetParent(transform);
-                newRoot.name = $"LocalFile:{m_Model.RelativePath}#{m_Subtree}";
+                switch (m_Model.GetLocation().GetLocationType())
+                {
+                    case Model.Location.Type.LocalFile:
+                        newRoot.name = $"LocalFile:{m_Model.RelativePath}#{m_Subtree}";
+                        break;
+                    case Model.Location.Type.IcosaAssetId:
+                        newRoot.name = $"RemoteFile:{m_Model.AssetId}#{m_Subtree}";
+                        break;
+                    case Model.Location.Type.Invalid:
+                        throw new InvalidOperationException("Invalid model location type");
+                }
                 m_ObjModelScript = newRoot.AddComponent<ObjModelScript>();
                 node.SetParent(newRoot.transform, worldPositionStays: true);
 
@@ -762,7 +799,7 @@ namespace TiltBrush
 
             if (assetId != null && !model.m_Valid)
             {
-                App.PolyAssetCatalog.CatalogChanged += modelWidget.OnPacCatalogChanged;
+                App.IcosaAssetCatalog.CatalogChanged += modelWidget.OnPacCatalogChanged;
                 modelWidget.m_PolyCallbackActive = true;
             }
             modelWidget.Group = App.GroupManager.GetGroupFromId(groupId);
@@ -774,16 +811,16 @@ namespace TiltBrush
                                             bool[] pinStates, uint[] groupIds, int[] layerIds)
         {
             // Request model from Poly and if it doesn't exist, ask to load it.
-            Model model = App.PolyAssetCatalog.GetModel(assetId);
+            Model model = App.IcosaAssetCatalog.GetModel(assetId);
             if (model == null)
             {
-                // This Model is transient; the Widget will replace it with a good Model from the PAC
-                // as soon as the PAC loads it.
-                model = new Model(Model.Location.PolyAsset(assetId, null));
+                // This Model is transient; the Widget will replace it with a good Model from the Icosa Asset Catalog
+                // as soon as the Icosa Asset Catalog loads it.
+                model = new Model(assetId, null);
             }
             if (!model.m_Valid)
             {
-                App.PolyAssetCatalog.RequestModelLoad(assetId, "widget");
+                App.IcosaAssetCatalog.RequestModelLoad(assetId, "widget");
             }
 
             // Create a widget for each transform.
@@ -792,7 +829,7 @@ namespace TiltBrush
                 bool pin = (i < pinStates.Length) ? pinStates[i] : true;
                 uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
                 int layerId = (layerIds != null && i < layerIds.Length) ? layerIds[i] : 0;
-                CreateModel(model, subtrees[i], rawXfs[i], pin, isNonRawTransform: false, groupId, layerId, assetId);
+                CreateModel(model, subtrees?[i], rawXfs[i], pin, isNonRawTransform: false, groupId, layerId, assetId);
             }
         }
 

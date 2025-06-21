@@ -1055,7 +1055,7 @@ Transform:
   m_GameObject: {fileID: 1000010690061500}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.207, y: -0.3, z: 0.05}
+  m_LocalPosition: {x: 0, y: -0.3, z: 0.05}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2469,7 +2469,7 @@ Transform:
   m_GameObject: {fileID: 1016131236980122382}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.20799999, y: -0.3, z: 0.05}
+  m_LocalPosition: {x: 0.415, y: -0.3, z: 0.05}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2611,12 +2611,12 @@ GameObject:
   - component: {fileID: 4847028611873093419}
   - component: {fileID: 8302968001735879957}
   m_Layer: 16
-  m_Name: PolyLibrary
+  m_Name: IcosaLibrary
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1643836230823162033
 Transform:
   m_ObjectHideFlags: 0
@@ -2626,7 +2626,7 @@ Transform:
   m_GameObject: {fileID: 2720949118896594763}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.415, y: 0.15, z: 0.05}
+  m_LocalPosition: {x: -0.415, y: -0.3, z: 0.05}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []

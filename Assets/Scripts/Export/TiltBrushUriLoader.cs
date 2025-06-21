@@ -38,7 +38,7 @@ namespace TiltBrush
         public IBufferReader Load(string uri)
         {
             // null uri means the binary chunk of a .glb
-            uri = (uri == null) ? null : PolyRawAsset.GetPolySanitizedFilePath(uri);
+            uri = (uri == null) ? null : IcosaRawAsset.GetPolySanitizedFilePath(uri);
             return m_delegate.Load(uri);
         }
 
@@ -46,7 +46,7 @@ namespace TiltBrush
 
         public ToolkitRawImage LoadAsImage(string uri)
         {
-            uri = PolyRawAsset.GetPolySanitizedFilePath(uri);
+            uri = IcosaRawAsset.GetPolySanitizedFilePath(uri);
             string path = Path.Combine(m_uriBase, uri);
             RawImage rawImage = ImageUtils.FromImageData(File.ReadAllBytes(path), path);
             return new ToolkitRawImage
