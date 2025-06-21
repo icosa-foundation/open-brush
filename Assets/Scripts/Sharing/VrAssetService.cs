@@ -655,6 +655,13 @@ namespace TiltBrush
         private async Task<(string, long)> UploadCurrentSketchIcosaAsync(
             CancellationToken token, string tempUploadDir, bool _)
         {
+            // Until gallery viewer support for new glb files, prefer legacy
+            // unless we have elements that the old format can't handle
+            bool hasModels = WidgetManager.m_Instance.ActiveModelWidgets.Count > 0;
+            bool hasImages = WidgetManager.m_Instance.ActiveImageWidgets.Count > 0;
+            bool hasTexts = WidgetManager.m_Instance.ActiveTextWidgets.Count > 0;
+            bool publishLegacyGltf = !(hasModels || hasImages || hasTexts);
+
             DiskSceneFileInfo fileInfo = GetWritableFile();
 
             var currentScene = SaveLoadScript.m_Instance.SceneFile;
@@ -662,18 +669,27 @@ namespace TiltBrush
             string gltfUploadName = $"{uploadName}.gltf";
 
             SetUploadProgress(UploadStep.CreateGltf, 0);
-            // Do the glTF straight away as it relies on the meshes, not the stroke descriptions.
-            string gltfFile = Path.Combine(tempUploadDir, gltfUploadName);
-            var exportResults = await OverlayManager.m_Instance.RunInCompositorAsync(
-                OverlayType.Export, fadeDuration: 0.5f,
-                action: () => new ExportGlTF().ExportBrushStrokes(
-                    gltfFile,
-                    AxisConvention.kGltf2, binary: false, doExtras: true,
-                    includeLocalMediaContent: true, gltfVersion: 2,
-                    selfContained: true));
-            if (!exportResults.success)
+
+            // Collect files into a .zip file, including the .tilt file and thumbnail
+            string zipName = Path.Combine(tempUploadDir, "archive.zip");
+            var filesToZip = new List<string>();
+
+            if (publishLegacyGltf)
             {
-                throw new VrAssetServiceException("Internal error creating upload data.");
+                // Do the glTF straight away as it relies on the meshes, not the stroke descriptions.
+                string gltfFile = Path.Combine(tempUploadDir, gltfUploadName);
+                var exportResults = await OverlayManager.m_Instance.RunInCompositorAsync(
+                    OverlayType.Export, fadeDuration: 0.5f,
+                    action: () => new ExportGlTF().ExportBrushStrokes(
+                        gltfFile,
+                        AxisConvention.kGltf2, binary: false, doExtras: true,
+                        includeLocalMediaContent: true, gltfVersion: 2,
+                        selfContained: true));
+                if (!exportResults.success)
+                {
+                    throw new VrAssetServiceException("Internal error creating upload data.");
+                }
+                filesToZip.AddRange(exportResults.exportedFiles);
             }
 
             // Construct options to set the background color to the current environment's clear color.
@@ -681,8 +697,6 @@ namespace TiltBrush
             IcosaService.Options options = null;
             // options.SetBackgroundColor(bgColor);
 
-            // TODO(b/146892613): we're not uploading this at the moment. Should we be?
-            // If we don't, we can probably remove this step...?
             SetUploadProgress(UploadStep.CreateTilt, 0);
             var thumbnail = await CreateTiltForUploadAsync(fileInfo);
             token.ThrowIfCancellationRequested();
@@ -695,18 +709,16 @@ namespace TiltBrush
             string tempThumbnailPath = Path.Combine(tempUploadDir, "thumbnail.png");
             File.WriteAllBytes(tempThumbnailPath, thumbnail);
 
-            // Collect files into a .zip file, including the .tilt file and thumbnail
-            string zipName = Path.Combine(tempUploadDir, "archive.zip");
+            filesToZip.Append(tempTiltPath);
+            filesToZip.Append(tempThumbnailPath);
 
-            var filesToZip = exportResults.exportedFiles.ToList()
-                .Append(tempTiltPath)
-                .Append(tempThumbnailPath);
-
-            if (App.UserConfig?.Sharing.UseNewGlb ?? false)
+            // Always use new glb if we're not publishing legacy glTF.
+            // Otherwise it's based on user config.
+            if (App.UserConfig?.Sharing.UseNewGlb ?? !publishLegacyGltf)
             {
                 string newGlbPath = Path.Combine(tempUploadDir, $"{uploadName}.glb");
                 Export.ExportNewGlb(tempUploadDir, uploadName, true);
-                filesToZip = filesToZip.Append(newGlbPath);
+                filesToZip.Append(newGlbPath);
             }
 
             await CreateZipFileAsync(zipName, tempUploadDir, filesToZip.ToArray(), token);
