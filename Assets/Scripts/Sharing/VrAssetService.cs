@@ -1006,7 +1006,8 @@ namespace TiltBrush
 
         public void IcosaDeviceLogin(string code)
         {
-            RunOnMainThread(() => {
+            RunOnMainThread(() =>
+            {
                 StartCoroutine(_IcosaDeviceLogin(code));
             });
         }
