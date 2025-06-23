@@ -421,8 +421,6 @@ namespace TiltBrush
                 AudioManager.m_Instance.PlayUploadCanceledSound(InputManager.Wand.Transform.position);
             }
 
-            Debug.LogFormat("UploadCurrentSketch(demo: {0})", isDemoUpload);
-
             // Cancel previous upload coroutine if necessary.
             if (m_UploadTask != null)
             {
