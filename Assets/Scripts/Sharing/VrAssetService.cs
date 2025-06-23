@@ -712,7 +712,7 @@ namespace TiltBrush
 
             // Always use new glb if we're not publishing legacy glTF.
             // Otherwise it's based on user config.
-            if (App.UserConfig?.Sharing.UseNewGlb ?? !publishLegacyGltf)
+            if (App.UserConfig.Sharing.UseNewGlb || !publishLegacyGltf)
             {
                 string newGlbPath = Path.Combine(tempUploadDir, $"{uploadName}.glb");
                 Export.ExportNewGlb(tempUploadDir, uploadName, true);
