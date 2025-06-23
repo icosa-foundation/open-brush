@@ -707,8 +707,8 @@ namespace TiltBrush
             string tempThumbnailPath = Path.Combine(tempUploadDir, "thumbnail.png");
             File.WriteAllBytes(tempThumbnailPath, thumbnail);
 
-            filesToZip.Append(tempTiltPath);
-            filesToZip.Append(tempThumbnailPath);
+            filesToZip.Add(tempTiltPath);
+            filesToZip.Add(tempThumbnailPath);
 
             // Always use new glb if we're not publishing legacy glTF.
             // Otherwise it's based on user config.
@@ -716,7 +716,7 @@ namespace TiltBrush
             {
                 string newGlbPath = Path.Combine(tempUploadDir, $"{uploadName}.glb");
                 Export.ExportNewGlb(tempUploadDir, uploadName, true);
-                filesToZip.Append(newGlbPath);
+                filesToZip.Add(newGlbPath);
             }
 
             await CreateZipFileAsync(zipName, tempUploadDir, filesToZip.ToArray(), token);
