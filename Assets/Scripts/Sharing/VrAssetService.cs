@@ -989,8 +989,8 @@ namespace TiltBrush
         private IEnumerator _IcosaDeviceLogin(string code)
         {
             var config = new Configuration();
-            var loginApi = new LoginApi(VrAssetService.m_Instance.IcosaApiRoot);
-            config.BasePath = VrAssetService.m_Instance.IcosaApiRoot;
+            var loginApi = new LoginApi(m_Instance.IcosaApiRoot);
+            config.BasePath = m_Instance.IcosaApiRoot;
             loginApi.Configuration = config;
 
             var loginTask = loginApi.DeviceLoginLoginDeviceLoginPostAsync(code);
@@ -1018,6 +1018,13 @@ namespace TiltBrush
                 App.IcosaUserName = userData.Displayname;
                 App.IcosaUserId = userData.Id;
             }
+        }
+
+        public string GenerateDeviceCodeSecret()
+        {
+            m_CurrentDeviceCodeCreateTime = DateTime.UtcNow;
+            m_CurrentDeviceCodeSecret = Guid.NewGuid().ToString();
+            return m_CurrentDeviceCodeSecret;
         }
     }
 

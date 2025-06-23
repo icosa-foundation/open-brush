@@ -95,6 +95,7 @@ namespace TiltBrush
             App.HttpServer.AddHttpHandler($"/help", InfoCallback);
             App.HttpServer.AddHttpHandler($"/help/commands", InfoCallback);
             App.HttpServer.AddHttpHandler($"/help/brushes", InfoCallback);
+            App.HttpServer.AddHttpHandler($"/device_login/v1", DeviceLoginCallback);
             App.HttpServer.AddRawHttpHandler("/cameraview", CameraViewCallback);
             PopulateApi();
 
@@ -120,6 +121,38 @@ namespace TiltBrush
                 m_FileWatcher.EnableRaisingEvents = true;
             }
             App.Instance.StateChanged += RunStartupScript;
+        }
+
+        private string DeviceLoginCallback(HttpListenerRequest request)
+        {
+            // TODO Use AddRawHttpHandler and return appropriate status codes
+            var host = $"{request.LocalEndPoint.Address}:{request.LocalEndPoint.Port}";
+            host = host.Replace("127.0.0.1", "localhost");
+            if (host != "http://localhost") return "Please login from the local browser";
+            string formdata = null;
+            if (request.HasEntityBody)
+            {
+                using (Stream body = request.InputStream)
+                {
+                    using (var reader = new StreamReader(body, request.ContentEncoding))
+                    {
+                        formdata = Uri.UnescapeDataString(reader.ReadToEnd()).Trim();
+                    }
+                }
+            }
+#if UNITY_EDITOR
+            if (string.IsNullOrEmpty(formdata))
+            {
+                formdata = request.Url.Query;
+            }
+#endif
+            if (string.IsNullOrEmpty(formdata)) return "Invalid request";
+            string deviceCodeIfValid = _ValidateandExtractDeviceCode(formdata);
+            if (deviceCodeIfValid != null)
+            {
+                VrAssetService.m_Instance.IcosaDeviceLogin(deviceCodeIfValid);
+            }
+            return "OK";
         }
 
         void Start()
@@ -187,13 +220,14 @@ namespace TiltBrush
             return cmd;
         }
 
-        private string _ValidateandExtractDeviceCode(List<string> cmds)
+        private string _ValidateandExtractDeviceCode(string formdata)
         {
+            var cmds = formdata.Split("\n");
+
             // Handle device code login requests from local browser
-            if (cmds.Count > 1) return null;
+            if (cmds.Length > 1) return null;
             var cmd = cmds.First();
-            if (!cmd.StartsWith("_devicecode.login=")) return null;
-            var args = cmd.Split('=')[1].Split(",");
+            var args = cmd.Split(",");
             if (args.Length != 2) return null;
             if (args[1].Length != 5) return null;
             bool isValidSecret = VrAssetService.m_Instance.IsValidDeviceCodeSecret(args[0]);
@@ -608,17 +642,8 @@ namespace TiltBrush
                             .Where(s => s.Trim().Length > 0)
                             .ToList();
 
-                        string deviceCodeIfValid = _ValidateandExtractDeviceCode(formdataCommands);
-                        if (deviceCodeIfValid != null)
-                        {
-                            // Run on main thread?
-                            VrAssetService.IcosaDeviceLogin(deviceCodeIfValid);
-                        }
-                        else
-                        {
-                            // TODO also accept JSON
-                            commandStrings.AddRange(formdataCommands);
-                        }
+                        // TODO also accept JSON
+                        commandStrings.AddRange(formdataCommands);
                     }
                 }
             }

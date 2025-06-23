@@ -368,8 +368,8 @@ namespace TiltBrush
                             fPopScalar: 0.5f
                         );
                     }
-
-                    App.OpenURL($"{VrAssetService.m_Instance.IcosaHomePage}/device");
+                    string secret = VrAssetService.m_Instance.GenerateDeviceCodeSecret();
+                    App.OpenURL($"{VrAssetService.m_Instance.IcosaHomePage}/device?${secret}");
                     ShowIcosaLogin();
                     break;
                 case SketchControlsScript.GlobalCommands.AccountInfo:
