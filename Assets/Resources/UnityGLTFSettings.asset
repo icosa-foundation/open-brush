@@ -278,7 +278,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d9a5969691dba845877d0a52b6d9397, type: 3}
   m_Name: UnityGLTFSettings
   m_EditorClassIdentifier: 
-  packageVersion: 
+  packageVersion: 2.16.1
   shaderStrippingSettings:
     stripPassesFromAllShaders: 0
     stripPasses: 0
@@ -296,6 +296,7 @@ MonoBehaviour:
   - {fileID: -2913368442722201512}
   - {fileID: -6871233445226533543}
   - {fileID: -4070862177138860178}
+  - {fileID: 2947623761126565291}
   ExportPlugins:
   - {fileID: 242952683485160214}
   - {fileID: -5728475199642485532}
@@ -379,6 +380,19 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a3011a000a64498d8297909d5cc472a, type: 3}
   m_Name: SpriteRendererExport
+  m_EditorClassIdentifier: 
+  enabled: 1
+--- !u!114 &2947623761126565291
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8a499790d224828914fe49fb7b26368, type: 3}
+  m_Name: OpenBrushGltfSketchImport
   m_EditorClassIdentifier: 
   enabled: 1
 --- !u!114 &5798040331557388862

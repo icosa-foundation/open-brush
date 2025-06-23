@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using GLTF.Schema;
 #if FBX_SUPPORTED
 using Autodesk.Fbx;
 #endif
@@ -96,6 +97,54 @@ namespace TiltBrush
 #endif
 
         // Used for UnityGLTF imports
+        public void Add(Material unityMaterial, GLTFMaterial gltfMaterial, Dictionary<int, GLTFTexture> gltfTextures)
+        {
+            TbtSettings.PbrMaterialInfo pbrInfo = TbtSettings.Instance.m_PbrOpaqueSingleSided;
+
+            Color color = Color.magenta;
+            bool hasColor = false;
+            if (unityMaterial.shader.name.StartsWith("UnityGLTF"))
+            {
+                if (unityMaterial.HasColor("baseColorFactor"))
+                {
+                    color = unityMaterial.GetColor("baseColorFactor");
+                    hasColor = true;
+
+                    if (unityMaterial.shader.name == "PBRGraph-Transparent-Double")
+                    {
+                        pbrInfo = TbtSettings.Instance.m_PbrBlendDoubleSided;
+                    }
+                    else if (unityMaterial.shader.name == "PBRGraph-Double")
+                    {
+                        pbrInfo = TbtSettings.Instance.m_PbrOpaqueDoubleSided;
+                    }
+                    else if (unityMaterial.shader.name == "PBRGraph-Transparent")
+                    {
+                        pbrInfo = TbtSettings.Instance.m_PbrBlendSingleSided;
+                    }
+                    else
+                    {
+                        pbrInfo = TbtSettings.Instance.m_PbrOpaqueSingleSided;
+                    }
+                }
+            }
+            if (!hasColor)
+            {
+                color = unityMaterial.color;
+            }
+
+            var dynMat = new DynamicExportableMaterial(
+                parent: pbrInfo.descriptor,
+                durableName: unityMaterial.name,
+                uniqueName: MakeDeterministicUniqueName(m_numAdded++, unityMaterial.name),
+                uriBase: m_AssetLocation);
+
+            dynMat.BaseColorFactor = color;
+            var texIndex = gltfMaterial.PbrMetallicRoughness.BaseColorTexture.Index;
+            dynMat.BaseColorTex = texIndex.Value.Source.Value.Uri;
+            m_MaterialToIem.Add(unityMaterial, dynMat);
+        }
+
         // Can be removed once we stop using EnsureCollectorExists
         public void Add(Material unityMaterial)
         {
