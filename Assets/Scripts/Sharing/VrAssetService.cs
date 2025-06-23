@@ -22,6 +22,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -58,6 +59,10 @@ namespace TiltBrush
         private const string kListAssetsUri = "/assets";
         private const string kUserAssetsUri = "/users/me/assets";
         private const string kUserLikesUri = "/users/me/likedassets";
+
+        // Used when requesting a device code from the system browser
+        private string m_CurrentDeviceCodeSecret;
+        private DateTime? m_CurrentDeviceCodeCreateTime;
 
         // Icosa API used by Open Brush.
         // If Icosa doesn't support this version, don't try to talk to Icosa and prompt the user to upgrade.
@@ -960,6 +965,59 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(
                 SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: path);
             File.Delete(path);
+        }
+
+        public bool IsValidDeviceCodeSecret(string secret)
+        {
+            if (string.IsNullOrEmpty(secret) || string.IsNullOrEmpty(m_CurrentDeviceCodeSecret)) return false;
+            if (secret != m_CurrentDeviceCodeSecret) return false;
+            // Check the secret is less than 120 seconds old
+            if (!m_CurrentDeviceCodeCreateTime.HasValue) return false;
+            if (m_CurrentDeviceCodeCreateTime.Value + TimeSpan.FromSeconds(120) < DateTime.UtcNow)
+            {
+                // The secret is too old
+                return false;
+            }
+            return true;
+        }
+
+        public void IcosaDeviceLogin(string code)
+        {
+            StartCoroutine(_IcosaDeviceLogin(code));
+        }
+
+        private IEnumerator _IcosaDeviceLogin(string code)
+        {
+            var config = new Configuration();
+            var loginApi = new LoginApi(VrAssetService.m_Instance.IcosaApiRoot);
+            config.BasePath = VrAssetService.m_Instance.IcosaApiRoot;
+            loginApi.Configuration = config;
+
+            var loginTask = loginApi.DeviceLoginLoginDeviceLoginPostAsync(code);
+            while (!loginTask.IsCompleted)
+            {
+                yield return null;
+            }
+            var token = loginTask.Result;
+            App.Instance.IcosaToken = token.AccessToken;
+
+            var usersApi = new UsersApi(VrAssetService.m_Instance.IcosaApiRoot);
+            config = new Configuration { AccessToken = App.Instance.IcosaToken };
+            config.BasePath = VrAssetService.m_Instance.IcosaApiRoot;
+            usersApi.Configuration = config;
+
+            var userTask = usersApi.GetUsersMeUsersMeGetAsync();
+            while (!userTask.IsCompleted)
+            {
+                yield return null;
+            }
+            var userData = userTask.Result;
+
+            if (userData != null)
+            {
+                App.IcosaUserName = userData.Displayname;
+                App.IcosaUserId = userData.Id;
+            }
         }
     }
 

@@ -187,6 +187,19 @@ namespace TiltBrush
             return cmd;
         }
 
+        private string _ValidateandExtractDeviceCode(List<string> cmds)
+        {
+            // Handle device code login requests from local browser
+            if (cmds.Count > 1) return null;
+            var cmd = cmds.First();
+            if (!cmd.StartsWith("_devicecode.login=")) return null;
+            var args = cmd.Split('=')[1].Split(",");
+            if (args.Length != 2) return null;
+            if (args[1].Length != 5) return null;
+            bool isValidSecret = VrAssetService.m_Instance.IsValidDeviceCodeSecret(args[0]);
+            return isValidSecret ? args[1] : null;
+        }
+
         private void OnScriptsDirectoryChanged(object sender, FileSystemEventArgs e)
         {
             var fileinfo = new FileInfo(e.FullPath);
@@ -589,10 +602,23 @@ namespace TiltBrush
                 {
                     using (var reader = new StreamReader(body, request.ContentEncoding))
                     {
-                        // TODO also accept JSON
                         var formdata = Uri.UnescapeDataString(reader.ReadToEnd());
-                        var formdataCommands = formdata.Replace("+", " ").Split('&').Where(s => s.Trim().Length > 0);
-                        commandStrings.AddRange(formdataCommands);
+                        var formdataCommands = formdata.Replace("+", " ")
+                            .Split('&')
+                            .Where(s => s.Trim().Length > 0)
+                            .ToList();
+
+                        string deviceCodeIfValid = _ValidateandExtractDeviceCode(formdataCommands);
+                        if (deviceCodeIfValid != null)
+                        {
+                            // Run on main thread?
+                            VrAssetService.IcosaDeviceLogin(deviceCodeIfValid);
+                        }
+                        else
+                        {
+                            // TODO also accept JSON
+                            commandStrings.AddRange(formdataCommands);
+                        }
                     }
                 }
             }
