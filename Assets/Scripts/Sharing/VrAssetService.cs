@@ -71,6 +71,10 @@ namespace TiltBrush
         /// Change-of-basis transform
         public static readonly TrTransform kIcosaFromUnity;
 
+        // Used for device code logins
+        private static Action _pendingMainThreadAction;
+
+
         private static Dictionary<string, string> kGltfMimetypes = new Dictionary<string, string>
         {
             { ".gltf", "model/gltf+json" },
@@ -970,7 +974,8 @@ namespace TiltBrush
         public bool IsValidDeviceCodeSecret(string secret)
         {
             if (string.IsNullOrEmpty(secret) || string.IsNullOrEmpty(m_CurrentDeviceCodeSecret)) return false;
-            if (secret != m_CurrentDeviceCodeSecret) return false;
+            Debug.Log($"secret: {secret} m_CurrentDeviceCodeSecret: {m_CurrentDeviceCodeSecret}");
+            if (secret != $"${m_CurrentDeviceCodeSecret}") return false;
             // Check the secret is less than 120 seconds old
             if (!m_CurrentDeviceCodeCreateTime.HasValue) return false;
             if (m_CurrentDeviceCodeCreateTime.Value + TimeSpan.FromSeconds(120) < DateTime.UtcNow)
@@ -978,12 +983,32 @@ namespace TiltBrush
                 // The secret is too old
                 return false;
             }
+            // Invalidate the secret so it can't be used again
+            m_CurrentDeviceCodeSecret = null;
+            m_CurrentDeviceCodeCreateTime = null;
+
             return true;
+        }
+
+        public static void RunOnMainThread(Action action)
+        {
+            _pendingMainThreadAction = action;
+        }
+
+        void Update()
+        {
+            if (_pendingMainThreadAction != null)
+            {
+                _pendingMainThreadAction.Invoke();
+                _pendingMainThreadAction = null;
+            }
         }
 
         public void IcosaDeviceLogin(string code)
         {
-            StartCoroutine(_IcosaDeviceLogin(code));
+            RunOnMainThread(() => {
+                StartCoroutine(_IcosaDeviceLogin(code));
+            });
         }
 
         private IEnumerator _IcosaDeviceLogin(string code)
@@ -1018,6 +1043,7 @@ namespace TiltBrush
                 App.IcosaUserName = userData.Displayname;
                 App.IcosaUserId = userData.Id;
             }
+            PanelManager.m_Instance.GetAdminPanel().CloseActivePopUp(true);
         }
 
         public string GenerateDeviceCodeSecret()

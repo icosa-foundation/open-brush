@@ -128,7 +128,7 @@ namespace TiltBrush
             // TODO Use AddRawHttpHandler and return appropriate status codes
             var host = $"{request.LocalEndPoint.Address}:{request.LocalEndPoint.Port}";
             host = host.Replace("127.0.0.1", "localhost");
-            if (host != "http://localhost") return "Please login from the local browser";
+            if (host != $"localhost:{HttpServer.HTTP_PORT}") return "Please login from the local browser";
             string formdata = null;
             if (request.HasEntityBody)
             {
@@ -152,7 +152,7 @@ namespace TiltBrush
             {
                 VrAssetService.m_Instance.IcosaDeviceLogin(deviceCodeIfValid);
             }
-            return "OK";
+            return "You can now return to Open Brush";
         }
 
         void Start()
@@ -222,16 +222,18 @@ namespace TiltBrush
 
         private string _ValidateandExtractDeviceCode(string formdata)
         {
-            var cmds = formdata.Split("\n");
-
             // Handle device code login requests from local browser
-            if (cmds.Length > 1) return null;
-            var cmd = cmds.First();
-            var args = cmd.Split(",");
-            if (args.Length != 2) return null;
-            if (args[1].Length != 5) return null;
-            bool isValidSecret = VrAssetService.m_Instance.IsValidDeviceCodeSecret(args[0]);
-            return isValidSecret ? args[1] : null;
+            var queryParams = formdata.Split("&");
+            if (queryParams.Length != 2) return null;
+            var secret_param = queryParams[0].Split("=");
+            if (secret_param.Length != 2 || secret_param[0] != "client_secret") return null;
+            string secret = secret_param[1];
+            var device_code_param = queryParams[1].Split("=");
+            if (device_code_param.Length != 2 || device_code_param[0] != "device_code") return null;
+            string device_code = device_code_param[1];
+            if (device_code.Length != 5) return null;
+            bool isValidSecret = VrAssetService.m_Instance.IsValidDeviceCodeSecret(secret);
+            return isValidSecret ? device_code : null;
         }
 
         private void OnScriptsDirectoryChanged(object sender, FileSystemEventArgs e)
