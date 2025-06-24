@@ -3711,6 +3711,11 @@ MonoBehaviour:
     m_Localized: All
     m_Metadata:
       m_Items: []
+  - m_Id: 380760416547594240
+    m_Localized: 'Take off your headset or switch to the browser to continue logging
+      in '
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
