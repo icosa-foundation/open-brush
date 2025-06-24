@@ -974,8 +974,7 @@ namespace TiltBrush
         public bool IsValidDeviceCodeSecret(string secret)
         {
             if (string.IsNullOrEmpty(secret) || string.IsNullOrEmpty(m_CurrentDeviceCodeSecret)) return false;
-            Debug.Log($"secret: {secret} m_CurrentDeviceCodeSecret: {m_CurrentDeviceCodeSecret}");
-            if (secret != $"${m_CurrentDeviceCodeSecret}") return false;
+            if (secret != m_CurrentDeviceCodeSecret) return false;
             // Check the secret is less than 120 seconds old
             if (!m_CurrentDeviceCodeCreateTime.HasValue) return false;
             if (m_CurrentDeviceCodeCreateTime.Value + TimeSpan.FromSeconds(120) < DateTime.UtcNow)
