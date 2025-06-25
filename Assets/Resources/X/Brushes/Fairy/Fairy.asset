@@ -42,7 +42,7 @@ MonoBehaviour:
   m_BrushVolumeUpSpeed: 4
   m_BrushVolumeDownSpeed: 4
   m_VolumeVelocityRangeMultiplier: 1
-  m_AudioReactive: 1
+  m_AudioReactive: 0
   m_ButtonAudio: {fileID: 0}
   m_Material: {fileID: 2100000, guid: 9030155f396b6d840a99b48e65902b48, type: 2}
   m_TextureAtlasV: 1

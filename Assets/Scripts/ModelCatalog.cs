@@ -315,7 +315,7 @@ namespace TiltBrush
                         }
                         catch (KeyNotFoundException)
                         {
-                            rNewModel = new Model(Model.Location.File(WidgetManager.GetModelSubpath(path)));
+                            rNewModel = new Model(WidgetManager.GetModelSubpath(path));
                         }
                         // Should we skip this loop earlier if m_ModelsByRelativePath already contains the key?
                         m_ModelsByRelativePath.TryAdd(rNewModel.RelativePath, rNewModel);

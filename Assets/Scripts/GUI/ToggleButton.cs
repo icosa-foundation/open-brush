@@ -75,10 +75,13 @@ namespace TiltBrush
             return IsToggledOn;
         }
 
-        override protected void OnButtonPressed()
+        protected override void OnButtonPressed()
         {
             IsToggledOn = !IsToggledOn;
-            m_OnToggle.Invoke();
+            if (m_OnToggle != null)
+            {
+                m_OnToggle.Invoke();
+            }
         }
     }
 } // namespace TiltBrush
