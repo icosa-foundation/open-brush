@@ -30,18 +30,22 @@ namespace TiltBrush
             return m_ParentReferencePanel;
         }
 
-        protected override int m_DataCount => GetParentReferencePanel()?.CurrentSubdirectories.Length ?? 0;
+        protected override int m_DataCount => GetParentReferencePanel()?.CurrentSubdirectories.Count ?? 0;
 
         // Misleadingly named:
         // ImageIcon actually refers to a button gameobject and button script
         protected override void RefreshIcon(ImageIcon icon, int iCatalog)
         {
-            var btn = icon.m_IconScript as DirectoryChooserButton;
-            var parent = GetParentReferencePanel();
-            string path = parent.CurrentSubdirectories[iCatalog];
-            string root = parent.ExtraDirectories.Values;
-            btn.SetDirectory(path, directoryInfo.Name);
-            btn.m_Panel = parent;
+            // TODO this is broken after the last merge
+            //
+            // var btn = icon.m_IconScript as DirectoryChooserButton;
+            // var parent = GetParentReferencePanel();
+            // string path = parent.CurrentSubdirectories[iCatalog];
+            // string root = parent.ExtraDirectories.Values;
+            // btn.SetDirectory(path, directoryInfo.Name);
+            // btn.m_Panel = parent;
+
+            throw new System.NotImplementedException("Post-merge fix needed");
         }
 
         protected override void InitIcon(ImageIcon icon)
