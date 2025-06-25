@@ -495,7 +495,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7691576060649472
-    m_Localized: Poly Library
+    m_Localized: Icosa Library
     m_Metadata:
       m_Items: []
   - m_Id: 7691821452599296
@@ -755,7 +755,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7932977482539008
-    m_Localized: "\u6B63\u5728\u8BFB\u53D6Poly\u4E2D\u7684\u6A21\u578B\n\n\u8BF7\u7A0D\u5019\uFF01"
+    m_Localized: "\u6B63\u5728\u8BFB\u53D6Icosa Gallery\u4E2D\u7684\u6A21\u578B\n\n\u8BF7\u7A0D\u5019\uFF01"
     m_Metadata:
       m_Items: []
   - m_Id: 7933149889404928
@@ -916,7 +916,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8052065399709696
-    m_Localized: "\u6765\u81EAPoly"
+    m_Localized: "\u6765\u81EAIcosa Gallery"
     m_Metadata:
       m_Items: []
   - m_Id: 8052141249503232
@@ -924,7 +924,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8052215190888448
-    m_Localized: "\u6765\u81EAPoly"
+    m_Localized: "\u6765\u81EAIcosa Gallery"
     m_Metadata:
       m_Items: []
   - m_Id: 8052288863838208
@@ -936,7 +936,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8053396663410688
-    m_Localized: "\u6D4F\u89C8Poly"
+    m_Localized: "\u6D4F\u89C8Icosa Gallery"
     m_Metadata:
       m_Items: []
   - m_Id: 8053860821868544
@@ -976,7 +976,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10134247853236224
-    m_Localized: "\u4ECEPoly\u4E2D\u8BFB\u53D6\u8349\u56FE\u65F6\u53D1\u751F\u9519\u8BEF\n<color=#969696>\n\u8BF7\u68C0\u67E5\u4F60\u7684\u7F51\u7EDC\u8FDE\u63A5</color>"
+    m_Localized: "\u4ECEIcosa Gallery\u4E2D\u8BFB\u53D6\u8349\u56FE\u65F6\u53D1\u751F\u9519\u8BEF\n<color=#969696>\n\u8BF7\u68C0\u67E5\u4F60\u7684\u7F51\u7EDC\u8FDE\u63A5</color>"
     m_Metadata:
       m_Items: []
   - m_Id: 10134539248312320

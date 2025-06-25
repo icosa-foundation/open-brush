@@ -29,13 +29,13 @@ namespace TiltBrush
         private string m_LocalPath;
 
         public string RedirectUri =>
-            $"http://localhost:{App.HttpServer.HttpPort}{m_LocalPath}";
+            $"http://localhost:{HttpServer.HTTP_PORT}{m_LocalPath}";
 
         private TaskCompletionSource<NameValueCollection> m_QueryString;
 
         private string FinalRedirectPage => Application.platform == RuntimePlatform.Android
-            ? "http://localhost:40074/login/ReplaceHeadsetMobile.html"
-            : "http://localhost:40074/login/ReplaceHeadset.html";
+            ? $"http://localhost:{HttpServer.HTTP_PORT}/login/ReplaceHeadsetMobile.html"
+            : $"http://localhost:{HttpServer.HTTP_PORT}/login/ReplaceHeadset.html";
 
         public LocalHttpCodeReceiver(string localPath)
         {

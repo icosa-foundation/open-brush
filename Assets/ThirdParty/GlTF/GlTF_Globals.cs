@@ -472,6 +472,8 @@ public sealed class GlTF_Globals : IDisposable {
       WriteNamedInt(name, longValue);
     } else if (value is string stringValue) {
       WriteNamedString(name, stringValue);
+    } else if (value is float floatValue) {
+        WriteNamedFloat(name, floatValue);
     } else if (value is ExportFileReference fileValue) {
       WriteNamedFile(name, fileValue);
     } else {

@@ -210,6 +210,7 @@ Category {
   SubShader {
     Pass {
       CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
       #pragma vertex vert_1
       #pragma fragment frag
       #pragma target 3.0
@@ -222,6 +223,7 @@ Category {
 
     Pass {
       CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
       #pragma vertex vert_2
       #pragma fragment frag
       #pragma target 3.0
@@ -234,6 +236,7 @@ Category {
 
     Pass {
       CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
       #pragma vertex vert_3
       #pragma fragment frag
       #pragma target 3.0
