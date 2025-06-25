@@ -398,7 +398,7 @@ namespace TiltBrush
             {
                 if (AssetId != null)
                 {
-                    return Model.Location.PolyAsset(AssetId, null);
+                    return Model.Location.IcosaAsset(AssetId, null);
                 }
                 else if (FilePath != null)
                 {
@@ -416,7 +416,7 @@ namespace TiltBrush
                     FilePath = value.RelativePath;
                     AssetId = null;
                 }
-                else if (value.GetLocationType() == Model.Location.Type.PolyAssetId)
+                else if (value.GetLocationType() == Model.Location.Type.IcosaAssetId)
                 {
                     FilePath = null;
                     AssetId = value.AssetId;

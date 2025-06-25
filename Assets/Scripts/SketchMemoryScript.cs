@@ -382,26 +382,26 @@ namespace TiltBrush
         }
 
         /// Duplicates a stroke. Duplicated strokes have a timestamp that corresponds to the current time.
-        public Stroke DuplicateStroke(Stroke srcStroke, CanvasScript canvas, TrTransform? transform)
+        public Stroke DuplicateStroke(Stroke srcStroke, CanvasScript canvas, TrTransform? transform, bool absoluteScale = false)
         {
             Stroke duplicate = new Stroke(srcStroke);
             duplicate.m_PreviousCanvas = srcStroke.m_PreviousCanvas;
             if (srcStroke.m_Type == Stroke.Type.BatchedBrushStroke)
             {
-                if (transform == null)
-                {
-                    duplicate.CopyGeometry(canvas, srcStroke);
-                }
-                else
+                if (transform != null)
                 {
                     // If this fires, consider adding transform support to CreateGeometryByCopying
                     Debug.LogWarning("Unexpected: Taking slow DuplicateStroke path");
-                    duplicate.Recreate(transform, canvas);
+                    duplicate.Recreate(transform, canvas, absoluteScale);
+                }
+                else
+                {
+                    duplicate.CopyGeometry(canvas, srcStroke);
                 }
             }
             else
             {
-                duplicate.Recreate(transform, canvas);
+                duplicate.Recreate(transform, canvas, absoluteScale);
             }
             UpdateTimestampsToCurrentSketchTime(duplicate);
             MemoryListAdd(duplicate);

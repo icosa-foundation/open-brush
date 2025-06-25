@@ -1585,12 +1585,12 @@ GameObject:
   - component: {fileID: 1408412152701508224}
   - component: {fileID: 769398838496988592}
   m_Layer: 16
-  m_Name: PolyLibrary
+  m_Name: IcosaLibrary
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1139538046860859100
 Transform:
   m_ObjectHideFlags: 0
@@ -1600,7 +1600,7 @@ Transform:
   m_GameObject: {fileID: 7776948797728914220}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.415, y: 0.212, z: 0.05}
+  m_LocalPosition: {x: -0.415, y: -0.212, z: 0.05}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1702,7 +1702,7 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Type: 29
+  m_Type: 22
   m_AlwaysSpawn: 0
   references:
     version: 2
@@ -1744,12 +1744,17 @@ PrefabInstance:
     - target: {fileID: 6288973837766384822, guid: 6e69b3bc22681fb44ac931399886cd69,
         type: 3}
       propertyPath: m_ButtonTexture
-      value:
+      value: 
       objectReference: {fileID: 2800000, guid: 56e5ebeba70465c44bf75491d40b6f3d, type: 3}
     - target: {fileID: 7020719392467468644, guid: 6e69b3bc22681fb44ac931399886cd69,
         type: 3}
       propertyPath: m_RootOrder
       value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 7020719392467468644, guid: 6e69b3bc22681fb44ac931399886cd69,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.415
       objectReference: {fileID: 0}
     - target: {fileID: 7020719392467468644, guid: 6e69b3bc22681fb44ac931399886cd69,
         type: 3}
@@ -1832,12 +1837,12 @@ PrefabInstance:
     - target: {fileID: 6336503347136246605, guid: 2ec371d1549b7cd4fade21d343583f9a,
         type: 3}
       propertyPath: m_LocalizedPopup.m_TableReference.m_TableCollectionName
-      value:
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 6336503347136246605, guid: 2ec371d1549b7cd4fade21d343583f9a,
         type: 3}
       propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
-      value:
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 6608529110619887157, guid: 2ec371d1549b7cd4fade21d343583f9a,
         type: 3}
@@ -1992,7 +1997,7 @@ PrefabInstance:
     - target: {fileID: 5528323124350178624, guid: 9b78ac7655bfa2e4fa5b4d9aaa026f3f,
         type: 3}
       propertyPath: m_ButtonTexture
-      value:
+      value: 
       objectReference: {fileID: 2800000, guid: 999df53454881674aa1e5ebe583dd78f, type: 3}
     - target: {fileID: 5528323124350178624, guid: 9b78ac7655bfa2e4fa5b4d9aaa026f3f,
         type: 3}
