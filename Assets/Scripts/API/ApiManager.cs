@@ -85,6 +85,9 @@ namespace TiltBrush
         [NonSerialized] public Dictionary<string, string> CommandExamples;
         public string m_startupScriptName = "startup.sketchscript";
 
+        // Need to set this on the main thread because of localiztion
+        private string m_BrushesJson;
+
         public string UserScriptsPath() { return m_UserScriptsPath; }
 
         void Awake()
@@ -94,8 +97,10 @@ namespace TiltBrush
             App.HttpServer.AddHttpHandler($"/help", InfoCallback);
             App.HttpServer.AddHttpHandler($"/help/commands", InfoCallback);
             App.HttpServer.AddHttpHandler($"/help/brushes", InfoCallback);
+            App.HttpServer.AddHttpHandler($"/device_login/v1", DeviceLoginCallback);
             App.HttpServer.AddRawHttpHandler("/cameraview", CameraViewCallback);
             PopulateApi();
+
             m_UserScripts = new Dictionary<string, string>();
             m_ExampleScripts = new Dictionary<string, string>();
             m_CommandStatuses = new Dictionary<string, string>();
@@ -103,6 +108,7 @@ namespace TiltBrush
             PopulateUserScripts();
             BrushTransformStack = new Stack<(Vector3, Quaternion)>();
             ResetBrushTransform();
+
             if (!Directory.Exists(m_UserScriptsPath))
             {
                 Directory.CreateDirectory(m_UserScriptsPath);
@@ -117,6 +123,48 @@ namespace TiltBrush
                 m_FileWatcher.EnableRaisingEvents = true;
             }
             App.Instance.StateChanged += RunStartupScript;
+        }
+
+        private string DeviceLoginCallback(HttpListenerRequest request)
+        {
+            // TODO Use AddRawHttpHandler and return appropriate status codes
+            var host = $"{request.LocalEndPoint.Address}:{request.LocalEndPoint.Port}";
+            host = host.Replace("127.0.0.1", "localhost");
+            if (host != $"localhost:{HttpServer.HTTP_PORT}") return "Please login from the local browser";
+            string formdata = null;
+            if (request.HasEntityBody)
+            {
+                using (Stream body = request.InputStream)
+                {
+                    using (var reader = new StreamReader(body, request.ContentEncoding))
+                    {
+                        formdata = Uri.UnescapeDataString(reader.ReadToEnd()).Trim();
+                    }
+                }
+            }
+#if UNITY_EDITOR
+            if (string.IsNullOrEmpty(formdata))
+            {
+                formdata = request.Url.Query;
+            }
+#endif
+            if (string.IsNullOrEmpty(formdata)) return "Invalid request";
+            string deviceCodeIfValid = _ValidateandExtractDeviceCode(formdata);
+            if (deviceCodeIfValid != null)
+            {
+                VrAssetService.m_Instance.IcosaDeviceLogin(deviceCodeIfValid);
+            }
+            return "You can now return to Open Brush";
+        }
+
+        void Start()
+        {
+            // HTTP API String substitutions
+            // Don't move to Awake() as that runs too early
+            string[] brushNameList = BrushCatalog.m_Instance.GetTagFilteredBrushList()
+                .Select(ApiFriendlyBrushName)
+                .ToArray();
+            m_BrushesJson = JsonConvert.SerializeObject(brushNameList, Formatting.Indented);
         }
 
         public void ResetBrushTransform()
@@ -172,6 +220,22 @@ namespace TiltBrush
             EnqueuedApiCommand cmd = new EnqueuedApiCommand(commandPair[0], parameters);
             m_RequestedCommandQueue.Enqueue(cmd);
             return cmd;
+        }
+
+        private string _ValidateandExtractDeviceCode(string formdata)
+        {
+            // Handle device code login requests from local browser
+            var queryParams = formdata.Split("&");
+            if (queryParams.Length != 2) return null;
+            var secret_param = queryParams[0].Split("=");
+            if (secret_param.Length != 2 || secret_param[0] != "client_secret") return null;
+            string secret = secret_param[1];
+            var device_code_param = queryParams[1].Split("=");
+            if (device_code_param.Length != 2 || device_code_param[0] != "device_code") return null;
+            string device_code = device_code_param[1];
+            if (device_code.Length != 5) return null;
+            bool isValidSecret = VrAssetService.m_Instance.IsValidDeviceCodeSecret(secret);
+            return isValidSecret ? device_code : null;
         }
 
         private void OnScriptsDirectoryChanged(object sender, FileSystemEventArgs e)
@@ -503,29 +567,22 @@ namespace TiltBrush
         {
 
             // TODO Document these
+            html = html.Replace("{{brushesJson}}", m_BrushesJson);
 
-            string[] brushNameList = BrushCatalog.m_Instance.AllBrushes
-                .Where(x => x.Description != "")
-                .Where(x => x.m_SupersededBy == null)
-                .Select(x => x.Description.Replace(" ", "").Replace(".", "").Replace("(", "").Replace(")", ""))
-                .ToArray();
-            string brushesJson = JsonConvert.SerializeObject(brushNameList);
-            html = html.Replace("{{brushesJson}}", brushesJson);
-
-            string pointFamilies = JsonConvert.SerializeObject(Enum.GetNames(typeof(SymmetryGroup.R)));
+            string pointFamilies = JsonConvert.SerializeObject(Enum.GetNames(typeof(SymmetryGroup.R)), Formatting.Indented);
             html = html.Replace("{{pointFamiliesJson}}", pointFamilies);
 
-            string wallpaperGroups = JsonConvert.SerializeObject(Enum.GetNames(typeof(PointSymmetry.Family)));
+            string wallpaperGroups = JsonConvert.SerializeObject(Enum.GetNames(typeof(PointSymmetry.Family)), Formatting.Indented);
             html = html.Replace("{{wallpaperGroupsJson}}", wallpaperGroups);
 
             string[] environmentNameList = EnvironmentCatalog.m_Instance.m_EnvironmentDescriptions
                 .Select(x => x.Replace(" ", ""))
                 .ToArray();
 
-            string environmentsJson = JsonConvert.SerializeObject(environmentNameList);
+            string environmentsJson = JsonConvert.SerializeObject(environmentNameList, Formatting.Indented);
             html = html.Replace("{{environmentsJson}}", environmentsJson);
 
-            string commandsJson = JsonConvert.SerializeObject(ListApiCommands());
+            string commandsJson = JsonConvert.SerializeObject(ListApiCommands(), Formatting.Indented);
             html = html.Replace("{{commandsJson}}", commandsJson);
 
             var toolScripts = new List<string>();
@@ -549,6 +606,20 @@ namespace TiltBrush
             return html;
         }
 
+        public static string ApiFriendlyBrushName(BrushDescriptor brush)
+        {
+            if (brush.Description == null)
+            {
+                Debug.LogWarning($"Brush {brush.m_DurableName} has no description");
+                return "";
+            }
+            return brush.Description
+                .Replace(" ", "")
+                .Replace(".", "")
+                .Replace("(", "")
+                .Replace(")", "");
+        }
+
         public void ReceiveWebSocketMessage(WebSocketMessage message)
         {
             foreach (var cmd in message.data.Split("&"))
@@ -569,9 +640,13 @@ namespace TiltBrush
                 {
                     using (var reader = new StreamReader(body, request.ContentEncoding))
                     {
-                        // TODO also accept JSON
                         var formdata = Uri.UnescapeDataString(reader.ReadToEnd());
-                        var formdataCommands = formdata.Replace("+", " ").Split('&').Where(s => s.Trim().Length > 0);
+                        var formdataCommands = formdata.Replace("+", " ")
+                            .Split('&')
+                            .Where(s => s.Trim().Length > 0)
+                            .ToList();
+
+                        // TODO also accept JSON
                         commandStrings.AddRange(formdataCommands);
                     }
                 }
@@ -855,14 +930,14 @@ namespace TiltBrush
         {
             // Same as calling Model.RequestModelPreload -> RequestModelLoadInternal, except
             // this won't ignore the request if the load-into-memory previously failed.
-            App.PolyAssetCatalog.RequestModelLoad(assetId, reason);
+            App.IcosaAssetCatalog.RequestModelLoad(assetId, reason);
 
             // It is possible from this section forward that the user may have moved on to a different page
             // on the Poly panel, which is why we use a local copy of 'model' rather than m_Model.
             Model model;
             // A model in the catalog will become non-null once the gltf has been downloaded or is in the
             // cache.
-            while ((model = App.PolyAssetCatalog.GetModel(assetId)) == null)
+            while ((model = App.IcosaAssetCatalog.GetModel(assetId)) == null)
             {
                 yield return null;
             }

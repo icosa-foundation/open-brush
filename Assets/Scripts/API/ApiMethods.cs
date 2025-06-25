@@ -285,6 +285,9 @@ namespace TiltBrush
                 case "circular":
                     cam.SetMode(DropCamWidget.Mode.Circular);
                     break;
+                case "camerapath":
+                    cam.SetMode(DropCamWidget.Mode.CameraPath);
+                    break;
             }
         }
 
@@ -583,7 +586,7 @@ namespace TiltBrush
         [ApiEndpoint(
             "image.import",
             "Imports an image given a url or a filename in Media Library\\Images (Images loaded from a url are saved locally first)",
-            "TiltBrushLogo.png"
+            "OpenBrushLogo.png"
         )]
         public static ImageWidget ImportImage(string location)
         {

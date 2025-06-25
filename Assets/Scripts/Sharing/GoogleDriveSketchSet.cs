@@ -269,7 +269,7 @@ namespace TiltBrush
             if (i >= 0 && i < NumSketches)
             {
                 // TODO: this currently causes the models to also be loaded into memory
-                App.PolyAssetCatalog.PrecacheModels(m_Sketches[i], $"GoogleDriveSketchSet {i}");
+                App.IcosaAssetCatalog.PrecacheModels(m_Sketches[i], $"GoogleDriveSketchSet {i}");
             }
         }
 
