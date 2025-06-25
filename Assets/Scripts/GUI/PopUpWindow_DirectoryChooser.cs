@@ -39,7 +39,7 @@ namespace TiltBrush
             var btn = icon.m_IconScript as DirectoryChooserButton;
             var parent = GetParentReferencePanel();
             string path = parent.CurrentSubdirectories[iCatalog];
-            string root = parent.ExtraDirectories.Values
+            string root = parent.ExtraDirectories.Values;
             btn.SetDirectory(path, directoryInfo.Name);
             btn.m_Panel = parent;
         }
