@@ -102,8 +102,9 @@ namespace TiltBrush
         private OAuth2CredentialRequest m_CredentialRequest;
 
         public bool IsGoogle => m_Service == SecretsConfig.Service.Google;
+        public bool IsIcosa => m_Service == SecretsConfig.Service.Icosa;
         public UserCredential UserCredential => m_CredentialRequest?.UserCredential;
-        private SecretsConfig.ServiceAuthData ServiceAuthData => App.Config.Secrets[m_Service];
+        private SecretsConfig.ServiceAuthData ServiceAuthData => App.Config.Secrets?[m_Service];
         public string ClientId => ServiceAuthData?.ClientId;
         private string ClientSecret => ServiceAuthData?.ClientSecret;
 
@@ -229,7 +230,7 @@ namespace TiltBrush
 
         public async void LoginAsync()
         {
-            if (string.IsNullOrEmpty(ClientId) || string.IsNullOrEmpty(ClientSecret))
+            if (!IsIcosa && (string.IsNullOrEmpty(ClientId) || string.IsNullOrEmpty(ClientSecret)))
             {
                 Debug.LogWarning(
                     $"Attempted to log in to {m_Service} with missing Client Id or Client Secret.");
