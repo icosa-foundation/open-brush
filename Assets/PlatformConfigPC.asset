@@ -17,6 +17,7 @@ MonoBehaviour:
   ReferenceImagesMaxFileSize: 2147483647
   ReferenceImagesMaxDimension: 2147483647
   ReferenceImagesResizeDimension: 2147483647
+  SketchSetMaxCacheSize: 1574000000
   MemoryWarningVertCount: 2147483647
   UseFileSystemWatcher: 1
   EnableAutosave: 1
@@ -29,7 +30,6 @@ MonoBehaviour:
   EnableExportGlb: 1
   EnableExportJson: 1
   EnableExportUsd: 1
-  EnableExportLatk: 1
   EnableExportMemoryOptimization: 1
   EnableMulticamPreview: 1
   EnabledMulticamStyles: 0000000001000000020000000300000004000000

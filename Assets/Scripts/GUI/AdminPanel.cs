@@ -60,7 +60,9 @@ namespace TiltBrush
         void UpdateShareButtonText()
         {
             // Skip redundant updates
-            bool currentLoggedIn = App.GoogleIdentity.LoggedIn || App.SketchfabIdentity.LoggedIn;
+            bool currentLoggedIn = App.GoogleIdentity.LoggedIn
+                || App.SketchfabIdentity.LoggedIn
+                || App.IcosaIsLoggedIn;
             if (currentLoggedIn == m_UpdateShareButtonState) { return; }
             m_UpdateShareButtonState = currentLoggedIn;
 

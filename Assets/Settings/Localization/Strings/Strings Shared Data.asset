@@ -3283,6 +3283,14 @@ MonoBehaviour:
     m_Key: CONTROLLER_HINT_THUMBPAD_BRUSHSIZE
     m_Metadata:
       m_Items: []
+  - m_Id: 164911761917042688
+    m_Key: POPUP_ACCOUNTS_ICOSAINFO_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911966586494976
+    m_Key: POPUP_ACCOUNTS_ICOSAINFO_TITLE
+    m_Metadata:
+      m_Items: []
   - m_Id: 176764812224364544
     m_Key: BRUSH_PASSTHROUGHHULL
     m_Metadata:
@@ -3447,6 +3455,22 @@ MonoBehaviour:
     m_Key: VIEW_MODE_CONTROLS
     m_Metadata:
       m_Items: []
+  - m_Id: 317029250049335296
+    m_Key: VIEW_MODE_CONTROLS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332314407106863104
+    m_Key: ICOSAPANEL_PANEL_OPTIONS_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332573810292776960
+    m_Key: ICOSAPANEL_PANEL_SEARCH_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332574165927813120
+    m_Key: ICOSAPANEL_PANEL_FILTER_POPUP
+    m_Metadata:
+      m_Items: []
   - m_Id: 326532953040941056
     m_Key: MULTIPLAYER_PANEL_MAX_ROOM_NUMBER
     m_Metadata:
@@ -3525,6 +3549,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 341359317994790912
     m_Key: MULTIPLAYER_PANEL_ROOM_NOT_AVAIL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 369886448819200000
+    m_Key: FILTER_POPUP_CURATED_ON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 380760416547594240
+    m_Key: POPUP_ICOSA_LOGIN_DESCRIPTION
     m_Metadata:
       m_Items: []
   m_Metadata:
