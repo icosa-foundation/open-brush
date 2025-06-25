@@ -26,6 +26,18 @@ namespace TiltBrush
         [LuaDocsDescription("Check whether the brush trigger was released during the current frame")]
         public static bool triggerReleasedThisFrame => InputManager.Brush.BecameInactiveThisFrame;
 
+        [LuaDocsDescription("Check whether the brush button 1 is currently pressed")]
+        public static bool button1IsPressed => InputManager.Brush.GetVrInput(VrInput.Button01);
+
+        [LuaDocsDescription("Check whether the brush button 1 was pressed during the current frame")]
+        public static bool button1PressedThisFrame => InputManager.Brush.GetVrInputDown(VrInput.Button01);
+
+        [LuaDocsDescription("Check whether the brush button 2 is currently pressed")]
+        public static bool button2IsPressed => InputManager.Brush.GetVrInput(VrInput.Button02);
+
+        [LuaDocsDescription("Check whether the brush button 2 was pressed during the current frame")]
+        public static bool button2PressedThisFrame => InputManager.Brush.GetVrInputDown(VrInput.Button02);
+
         [LuaDocsDescription("The distance moved by the brush")]
         public static float distanceMoved => InputManager.Brush.DistanceMoved_CS;
 

@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 3
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: 77b09cb82a5ffa94fb37bccf98d2fc84, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -3600,6 +3600,7 @@ MonoBehaviour:
   m_EnableGlbVersion2: 1
   m_DebugUpload: 1
   m_TbtSettings: {fileID: 11400000, guid: 86eb32a1d469be44a99294025e7795de, type: 2}
+  m_UnityGLTFSettings: {fileID: 1, guid: 4bcbc565b83276a46b0353b376d2a77d, type: 2}
   m_ReplaceBrushesOnLoad: 0
   m_BrushReplacementMap: []
   m_IntroSketchUsdFilename: 
@@ -8069,13 +8070,11 @@ MonoBehaviour:
 
     Quality Level: ~~
 
-    #
-    FPS High: ~~~~ (> ~~)
+    # FPS High: ~~~~ (> ~~)
 
     # GPU Low: ~~~~ (< ~~.~~)
 
-    # FPS Low: ~~~~ (<
-    ~~)
+    # FPS Low: ~~~~ (< ~~)
 
     # GPU High: ~~~~ (> ~~.~~)
 
@@ -11080,7 +11079,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 59a80c71ac022374fbe28ebb361ab7ee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_ThumbnailSuffix: s128
+  m_ThumbnailSuffix: 
 --- !u!114 &652605562
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11194,8 +11193,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: adbbf4878d1751442bd198bcb9fe071d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_AssetsPerPage: 20
   m_SketchbookRefreshInterval: 10
+  m_UseLocalFeaturedSketches: 0
 --- !u!114 &652605567
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19027,6 +19026,7 @@ Transform:
   - {fileID: 1065755966}
   - {fileID: 1843608204}
   - {fileID: 1830711222}
+  - {fileID: 8494983682236033548}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1370550524
@@ -22937,6 +22937,58 @@ TextMesh:
     type: 3}
   m_PrefabInstance: {fileID: 622614087}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1611595290
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1611595291}
+  - component: {fileID: 1611595292}
+  m_Layer: 0
+  m_Name: IcosaIdentity
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1611595291
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1611595290}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1611595292
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1611595290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1689780c428aa14ea42c2125e391b45, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Service: 7
+  m_OAuthScopes: []
+  m_AdditionalDesktopOAuthScopes: []
+  m_CallbackPath: /icosa
+  m_LoggedInTexture: {fileID: 2800000, guid: 0d05cda193064458a9a7bb085905c5a1, type: 3}
+  m_TokenStorePrefix: IcosaOAuth2
+  m_AuthorizationServerUrl: 
+  m_TokenServerUrl: 
 --- !u!1 &1612665327
 GameObject:
   m_ObjectHideFlags: 0
@@ -25419,8 +25471,7 @@ MonoBehaviour:
   m_QuestSideLoadingHowToURL: https://docs.openbrush.app/user-guide/using-reference-images-on-oculus-quest
   m_ContributionPromoText: 'Open Brush is a free app entirely run by volunteers.
 
-    If
-    you enjoy the app, please consider donating in the settings menu!'
+    If you enjoy the app, please consider donating in the settings menu!'
   m_ContributionURL: https://opencollective.com/icosa
   m_WorldTransformMinScale: 0.1
   m_WorldTransformMaxScale: 10
@@ -25678,7 +25729,7 @@ MonoBehaviour:
   - m_PanelPrefab: {fileID: 141494, guid: a71be6f60d7230c46b3f4c851f6f5933, type: 3}
     m_ModeVr: 1
     m_ModeMono: 1
-    m_ModeQuest: 0
+    m_ModeQuest: 1
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 0}
@@ -25722,13 +25773,12 @@ MonoBehaviour:
     m_ModeQuest: 1
     m_Basic: 0
     m_Advanced: 1
-  - m_PanelPrefab: {fileID: 1736516471272333392, guid: 0bc38db0c1bbe92458ab389448255167,
-      type: 3}
+  - m_PanelPrefab: {fileID: 0}
     m_ModeVr: 0
     m_ModeMono: 0
-    m_ModeQuest: 1
+    m_ModeQuest: 0
     m_Basic: 0
-    m_Advanced: 1
+    m_Advanced: 0
   - m_PanelPrefab: {fileID: 199434, guid: da22f81315a0e724887dc7c8b38b71b4, type: 3}
     m_ModeVr: 0
     m_ModeMono: 0
@@ -32468,6 +32518,85 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: e26dd31bb70849e4da9f0b1230a62278, type: 3}
+--- !u!1001 &8494983682236033547
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1370550523}
+    m_Modifications:
+    - target: {fileID: 2455894836569734632, guid: fd97be770c9e84eb1b5fcc5c06bd0adf,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 2455894836569734632, guid: fd97be770c9e84eb1b5fcc5c06bd0adf,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2455894836569734632, guid: fd97be770c9e84eb1b5fcc5c06bd0adf,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2455894836569734632, guid: fd97be770c9e84eb1b5fcc5c06bd0adf,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2455894836569734632, guid: fd97be770c9e84eb1b5fcc5c06bd0adf,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2455894836569734632, guid: fd97be770c9e84eb1b5fcc5c06bd0adf,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2455894836569734632, guid: fd97be770c9e84eb1b5fcc5c06bd0adf,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2455894836569734632, guid: fd97be770c9e84eb1b5fcc5c06bd0adf,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2455894836569734632, guid: fd97be770c9e84eb1b5fcc5c06bd0adf,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2455894836569734632, guid: fd97be770c9e84eb1b5fcc5c06bd0adf,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2455894836569734632, guid: fd97be770c9e84eb1b5fcc5c06bd0adf,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5512400623774099615, guid: fd97be770c9e84eb1b5fcc5c06bd0adf,
+        type: 3}
+      propertyPath: m_Name
+      value: GltfExportStandinManager
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: fd97be770c9e84eb1b5fcc5c06bd0adf, type: 3}
+--- !u!4 &8494983682236033548 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2455894836569734632, guid: fd97be770c9e84eb1b5fcc5c06bd0adf,
+    type: 3}
+  m_PrefabInstance: {fileID: 8494983682236033547}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &8463577213852081383
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -32554,6 +32683,12 @@ PrefabInstance:
       propertyPath: m_Name
       value: NonVR Menu UI
       objectReference: {fileID: 0}
+    - target: {fileID: 2040737298705332481, guid: eec2c6d84d06c8243a91c52d96d79404,
+        type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 4413f4774e5410945873d36d030f1c15,
+        type: 3}
     - target: {fileID: 3114756803188682520, guid: eec2c6d84d06c8243a91c52d96d79404,
         type: 3}
       propertyPath: m_Pivot.x
@@ -32770,3 +32905,4 @@ SceneRoots:
   - {fileID: 1848773840}
   - {fileID: 2066419201}
   - {fileID: 1728487474}
+  - {fileID: 1611595291}

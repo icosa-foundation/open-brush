@@ -29,9 +29,7 @@ namespace TiltBrush
     /// Class for responding to Http Requests. request handlers can be added for specific paths.
     public class HttpServer : MonoBehaviour
     {
-        [SerializeField] private int m_httpListenerPort = 40074;
-
-        public int HttpPort => m_httpListenerPort;
+        public const int HTTP_PORT = 40074;
 
         private HttpListener m_HttpListener;
         private Dictionary<string, Action<HttpListenerContext>> m_HttpRequestHandlers =
@@ -47,7 +45,7 @@ namespace TiltBrush
             try
             {
                 m_HttpListener = new HttpListener();
-                m_HttpListener.Prefixes.Add(String.Format("http://+:{0}/", m_httpListenerPort));
+                m_HttpListener.Prefixes.Add(String.Format($"http://+:{HTTP_PORT}/"));
                 m_HttpListener.Start();
                 ThreadPool.QueueUserWorkItem((o) =>
                 {
