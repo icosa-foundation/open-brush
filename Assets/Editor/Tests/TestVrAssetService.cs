@@ -131,7 +131,7 @@ namespace TiltBrush
         public void TestConvertFruToPoly()
         {
             // Test that the basis-conversion transforms seem correct
-            var zFromU = VrAssetService.kPolyFromUnity;
+            var zFromU = VrAssetService.kIcosaFromUnity;
             var uFromZ = zFromU.inverse;
             Assert.AreEqual(kZForward, zFromU * Vector3.forward);
             Assert.AreEqual(kZRight, zFromU * Vector3.right);
@@ -145,7 +145,7 @@ namespace TiltBrush
         public void TestTransformByForBasisChange()
         {
             // This is more a test of TrTransform.TransformBy than anything else
-            var zFromU = VrAssetService.kPolyFromUnity;
+            var zFromU = VrAssetService.kIcosaFromUnity;
 
             // This rotates Unity-forward to Unity-right
             TrTransform xfFwdToRt_U = TrTransform.R(Quaternion.AngleAxis(90, Vector3.up));
