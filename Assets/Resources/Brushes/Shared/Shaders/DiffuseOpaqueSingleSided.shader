@@ -26,6 +26,7 @@ SubShader {
   Cull Back
 
   CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
   #pragma surface surf Lambert vertex:vert addshadow
 
   #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM

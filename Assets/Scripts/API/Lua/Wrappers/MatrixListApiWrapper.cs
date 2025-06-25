@@ -36,6 +36,21 @@ namespace TiltBrush
             _Matrices = matrices;
         }
 
+        private MatrixListApiWrapper(int count)
+        {
+            _Matrices = Enumerable.Repeat(Matrix4x4.identity, count).ToList();
+        }
+
+
+        [LuaDocsDescription("Creates a new MatrixList with the specified number of matrices")]
+        [LuaDocsExample("matrixList = MatrixListApiWrapper.New(5)")]
+        [LuaDocsParameter("count", "The number of matrices to create")]
+        public static MatrixListApiWrapper New(int count)
+        {
+            var instance = new MatrixListApiWrapper(count);
+            return instance;
+        }
+
         [LuaDocsDescription("Returns the matrix at the specified index")]
         public MatrixApiWrapper this[int index]
         {

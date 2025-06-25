@@ -35,6 +35,7 @@ Shader "Brush/StandardSingleSided" {
     Cull Back
 
     CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
       #pragma target 4.0
       #pragma surface surf StandardSpecular vertex:vert alphatest:_Cutoff addshadow
       #pragma multi_compile __ AUDIO_REACTIVE
@@ -109,6 +110,7 @@ Shader "Brush/StandardSingleSided" {
       AlphaToMask On
 
       CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
         #pragma vertex vert
         #pragma fragment frag
         #pragma target 3.0
@@ -221,6 +223,7 @@ Shader "Brush/StandardSingleSided" {
       Tags { "LightMode"="ForwardBase" }
 
       CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
         #pragma vertex vert
         #pragma fragment frag
         #pragma target 3.0
@@ -334,6 +337,7 @@ Shader "Brush/StandardSingleSided" {
       AlphaToMask On
 
       CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
         #pragma vertex vert
         #pragma fragment frag
         #pragma target 3.0
@@ -422,6 +426,7 @@ Shader "Brush/StandardSingleSided" {
     Cull Back
 
     CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
       #pragma surface surf Lambert vertex:vert alphatest:_Cutoff
       #pragma target 3.0
 

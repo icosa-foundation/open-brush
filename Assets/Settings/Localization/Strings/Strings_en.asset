@@ -501,7 +501,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7691576060649472
-    m_Localized: Poly Library
+    m_Localized: Icosa Library
     m_Metadata:
       m_Items: []
   - m_Id: 7691821452599296
@@ -743,7 +743,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7931780608532480
-    m_Localized: Browse Poly
+    m_Localized: Browse Icosa Gallery
     m_Metadata:
       m_Items: []
   - m_Id: 7931977472385024
@@ -759,11 +759,9 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7932559960547328
-    m_Localized: 'Share to Poly
+    m_Localized: 'Share to Icosa Gallery
 
-      to see models and
-
-      Blocks objects here'
+      to see models here'
     m_Metadata:
       m_Items: []
   - m_Id: 7932746569326592
@@ -771,17 +769,16 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7932977482539008
-    m_Localized: 'Loading models from Poly
+    m_Localized: 'Loading models from Icosa Gallery
 
 
-
-      Check back soon!'
+      Please wait.'
     m_Metadata:
       m_Items: []
   - m_Id: 7933149889404928
-    m_Localized: 'Like       models
+    m_Localized: 'Like models
 
-      on Poly to
+      on Icosa Gallery to
 
       see them here'
     m_Metadata:
@@ -791,11 +788,9 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7933450197377024
-    m_Localized: 'Sign in on desktop
+    m_Localized: 'Sign in to load
 
-      to load
-
-      Poly models'
+      Icosa Gallery models'
     m_Metadata:
       m_Items: []
   - m_Id: 7933561489039360
@@ -803,11 +798,9 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7933827554713600
-    m_Localized: 'Share to Poly
+    m_Localized: 'Share to Icosa Gallery
 
-      to see your
-
-      models here'
+      to see your models here'
     m_Metadata:
       m_Items: []
   - m_Id: 7933944802287616
@@ -830,7 +823,7 @@ MonoBehaviour:
   - m_Id: 7934199497203712
     m_Localized: 'Error Connecting
 
-      to Poly'
+      to Icosa Gallery'
     m_Metadata:
       m_Items: []
   - m_Id: 7939526611410944
@@ -932,7 +925,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8043915934146560
-    m_Localized: Featured Sketches
+    m_Localized: All Sketches
     m_Metadata:
       m_Items: []
   - m_Id: 8044071635099648
@@ -956,11 +949,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8051847228792832
-    m_Localized: Featured Sketches
+    m_Localized: All Sketches
     m_Metadata:
       m_Items: []
   - m_Id: 8052065399709696
-    m_Localized: From Poly
+    m_Localized: From Icosa Gallery
     m_Metadata:
       m_Items: []
   - m_Id: 8052141249503232
@@ -968,7 +961,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8052215190888448
-    m_Localized: From Poly
+    m_Localized: From Icosa Gallery
     m_Metadata:
       m_Items: []
   - m_Id: 8052288863838208
@@ -980,7 +973,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8053396663410688
-    m_Localized: Browse Poly
+    m_Localized: Browse Icosa Gallery
     m_Metadata:
       m_Items: []
   - m_Id: 8053860821868544
@@ -1014,11 +1007,10 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10133179773722624
-    m_Localized: 'Like       sketches
+    m_Localized: 'No matches.
 
-      on Poly to
-
-      see them here'
+      Like more sketches on Icosa or change your search
+      options...'
     m_Metadata:
       m_Items: []
   - m_Id: 10133306584309760
@@ -1032,18 +1024,13 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10134247853236224
-    m_Localized: 'Error gathering sketches from Poly
-
-      <color=#969696>
-
-      How''s
-      your Internet?</color>'
+    m_Localized: "No sketches found \n<color=#969696>\nTry a different search </color>"
     m_Metadata:
       m_Items: []
   - m_Id: 10134539248312320
     m_Localized: 'Sign in to access
 
-      Poly sketches'
+      Icosa sketches'
     m_Metadata:
       m_Items: []
   - m_Id: 10134688972382208
@@ -1068,7 +1055,7 @@ MonoBehaviour:
   - m_Id: 10134947404423168
     m_Localized: 'Error Connecting
 
-      to Poly'
+      to Icosa'
     m_Metadata:
       m_Items: []
   - m_Id: 10137717402476544
@@ -3474,6 +3461,16 @@ MonoBehaviour:
       for a step by step guide.'
     m_Metadata:
       m_Items: []
+  - m_Id: 164911761917042688
+    m_Localized: 'Sign in to an Icosa account to allow
+
+      uploading to Icosa.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911966586494976
+    m_Localized: Share to Icosa
+    m_Metadata:
+      m_Items: []
   - m_Id: 170004956477833216
     m_Localized: Please give Open Brush file access to save your creations!
     m_Metadata:
@@ -3626,6 +3623,18 @@ MonoBehaviour:
       move faster"
     m_Metadata:
       m_Items: []
+  - m_Id: 332314407106863104
+    m_Localized: Options
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332573810292776960
+    m_Localized: Search
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332574165927813120
+    m_Localized: Filter/Sorting
+    m_Metadata:
+      m_Items: []
   - m_Id: 326532953040941056
     m_Localized: 'Max Players: '
     m_Metadata:
@@ -3704,6 +3713,15 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 341359317994790912
     m_Localized: Room already exists
+    m_Metadata:
+      m_Items: []
+  - m_Id: 369886448819200000
+    m_Localized: All
+    m_Metadata:
+      m_Items: []
+  - m_Id: 380760416547594240
+    m_Localized: 'Take off your headset or switch to the browser to continue logging
+      in '
     m_Metadata:
       m_Items: []
   references:

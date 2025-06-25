@@ -382,6 +382,11 @@ namespace TiltBrush
             }
             for (int i = 0; i < m_LightWidgets.Count; ++i)
             {
+                // TODO: Temp fix for a bug:
+                // MissingReferenceException: The object of type 'GameObject'
+                // has been destroyed but you are still trying to access it.
+                // Happens when breaking apart imported models with lights then using undo
+                if (m_LightWidgets[i].m_WidgetObject == null) continue;
                 if (m_LightWidgets[i].m_WidgetObject.activeSelf)
                 {
                     yield return m_LightWidgets[i];
@@ -645,7 +650,7 @@ namespace TiltBrush
                         App.Config.m_EnableReferenceModelExport &&
                         ExportableModelWidgets.Any(
                             w => w.gameObject.activeSelf &&
-                                w.Model.GetLocation().GetLocationType() == Model.Location.Type.PolyAssetId);
+                                w.Model.GetLocation().GetLocationType() == Model.Location.Type.IcosaAssetId);
             }
         }
 
@@ -724,24 +729,24 @@ namespace TiltBrush
         }
 
         // Used only at .tilt-loading time
-        public void SetDataFromTilt(TiltModels75[] value)
+        public void SetModelDataFromTilt(TiltModels75[] value)
         {
             m_loadingTiltModels75 = value;
         }
 
         // Used only at .tilt-loading time
-        public void SetDataFromTilt(TiltImages75[] value)
+        public void SetImageDataFromTilt(TiltImages75[] value)
         {
             m_loadingTiltImages75 = value;
         }
 
         // Used only at .tilt-loading time
-        public void SetDataFromTilt(TiltLights[] value)
+        public void SetLightDataFromTilt(TiltLights[] value)
         {
             m_loadingTiltLights = value;
         }
 
-        public void SetDataFromTilt(CameraPathMetadata[] cameraPaths)
+        public void SetCameraPathDataFromTilt(CameraPathMetadata[] cameraPaths)
         {
             for (int i = 0; i < cameraPaths.Length; ++i)
             {
@@ -749,7 +754,7 @@ namespace TiltBrush
             }
         }
 
-        public void SetDataFromTilt(TiltText[] tiltText)
+        public void SetTextDataFromTilt(TiltText[] tiltText)
         {
             for (int i = 0; i < tiltText.Length; ++i)
             {
@@ -758,7 +763,7 @@ namespace TiltBrush
         }
 
 
-        public void SetDataFromTilt(TiltSoundClip[] tiltSoundClip)
+        public void SetSoundDataFromTilt(TiltSoundClip[] tiltSoundClip)
         {
             for (int i = 0; i < tiltSoundClip.Length; ++i)
             {
@@ -766,7 +771,7 @@ namespace TiltBrush
             }
         }
 
-        public void SetDataFromTilt(TiltVideo[] value)
+        public void SetVideoDataFromTilt(TiltVideo[] value)
         {
             m_loadingTiltVideos = value;
         }
@@ -1508,19 +1513,19 @@ namespace TiltBrush
                     // Kick off a bunch of loads...
                     foreach (var assetId in assetIds)
                     {
-                        if (App.PolyAssetCatalog.GetAssetLoadState(assetId)
-                            != PolyAssetCatalog.AssetLoadState.Loaded)
+                        if (App.IcosaAssetCatalog.GetAssetLoadState(assetId)
+                            != IcosaAssetCatalog.AssetLoadState.Loaded)
                         {
-                            App.PolyAssetCatalog.RequestModelLoad(assetId, "tiltload");
+                            App.IcosaAssetCatalog.RequestModelLoad(assetId, "tiltload");
                         }
                     }
                     // ... and wait for them to complete
                     // No widgets have been created yet, so we can't use AreMediaWidgetsStillLoading.
                     bool IsLoading(string assetId)
                     {
-                        var state = App.PolyAssetCatalog.GetAssetLoadState(assetId);
-                        return (state == PolyAssetCatalog.AssetLoadState.Downloading ||
-                            state == PolyAssetCatalog.AssetLoadState.Loading);
+                        var state = App.IcosaAssetCatalog.GetAssetLoadState(assetId);
+                        return (state == IcosaAssetCatalog.AssetLoadState.Downloading ||
+                            state == IcosaAssetCatalog.AssetLoadState.Loading);
                     }
                     while (assetIds.Any(IsLoading))
                     {
@@ -1583,16 +1588,16 @@ namespace TiltBrush
         {
             if (CreatingMediaWidgets) { return true; }
             // Widgets have been created, but some may not have their data yet
-            PolyAssetCatalog pac = App.PolyAssetCatalog;
+            IcosaAssetCatalog pac = App.IcosaAssetCatalog;
             foreach (var gwd in m_ModelWidgets)
             {
                 Model.Location loc = gwd.WidgetScript.Model.GetLocation();
-                if (loc.GetLocationType() == Model.Location.Type.PolyAssetId)
+                if (loc.GetLocationType() == Model.Location.Type.IcosaAssetId)
                 {
                     switch (pac.GetAssetLoadState(loc.AssetId))
                     {
-                        case PolyAssetCatalog.AssetLoadState.Downloading:
-                        case PolyAssetCatalog.AssetLoadState.Loading:
+                        case IcosaAssetCatalog.AssetLoadState.Downloading:
+                        case IcosaAssetCatalog.AssetLoadState.Loading:
                             return true;
                     }
                 }
