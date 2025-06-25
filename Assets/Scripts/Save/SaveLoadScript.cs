@@ -336,7 +336,7 @@ namespace TiltBrush
         /// we either preserve SourceId, or if this was a cloud sketch set it from the original asset.
         public string TransferredSourceIdFrom(SceneFileInfo info)
         {
-            if (info is PolySceneFileInfo polyInfo)
+            if (info is IcosaSceneFileInfo polyInfo)
             {
                 // If the original is a Poly sketch it becomes the source.
                 return polyInfo.AssetId;
@@ -785,17 +785,12 @@ namespace TiltBrush
 
                     if (jsonData.ModelIndex != null)
                     {
-                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.ModelIndex);
-                    }
-
-                    if (jsonData.ModelIndex != null)
-                    {
-                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.ModelIndex);
+                        WidgetManager.m_Instance.SetModelDataFromTilt(jsonData.ModelIndex);
                     }
 
                     if (jsonData.LightIndex != null)
                     {
-                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.LightIndex);
+                        WidgetManager.m_Instance.SetLightDataFromTilt(jsonData.LightIndex);
                     }
 
                     if (jsonData.GuideIndex != null)
@@ -813,19 +808,19 @@ namespace TiltBrush
                     CustomColorPaletteStorage.m_Instance.SetColorsFromPalette(jsonData.Palette);
                     // Images are not stored on Poly either.
                     // TODO - will this assumption still hold with Icosa?
-                    if (!(fileInfo is PolySceneFileInfo))
+                    if (!(fileInfo is IcosaSceneFileInfo))
                     {
                         if (ReferenceImageCatalog.m_Instance != null && jsonData.ImageIndex != null)
                         {
-                            WidgetManager.m_Instance.SetDataFromTilt(jsonData.ImageIndex);
+                            WidgetManager.m_Instance.SetImageDataFromTilt(jsonData.ImageIndex);
                         }
                         if (VideoCatalog.Instance != null && jsonData.Videos != null)
                         {
-                            WidgetManager.m_Instance.SetDataFromTilt(jsonData.Videos);
+                            WidgetManager.m_Instance.SetVideoDataFromTilt(jsonData.Videos);
                         }
                         if (jsonData.TextWidgets != null)
                         {
-                            WidgetManager.m_Instance.SetDataFromTilt(jsonData.TextWidgets);
+                            WidgetManager.m_Instance.SetTextDataFromTilt(jsonData.TextWidgets);
                         }
                     }
                     if (jsonData.Mirror != null)
@@ -834,7 +829,7 @@ namespace TiltBrush
                     }
                     if (jsonData.CameraPaths != null)
                     {
-                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.CameraPaths);
+                        WidgetManager.m_Instance.SetCameraPathDataFromTilt(jsonData.CameraPaths);
                     }
                     if (fileInfo is GoogleDriveSketchSet.GoogleDriveFileInfo gdInfo)
                     {

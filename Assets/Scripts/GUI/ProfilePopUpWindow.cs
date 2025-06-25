@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
+using System.Collections;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
+using Org.OpenAPITools.Model;
 using UnityEngine;
 using TMPro;
 
@@ -27,6 +32,7 @@ namespace TiltBrush
             GoogleHelp,
             DriveHelp,
             SketchfabHelp,
+            IcosaHelp,
             ConfirmLogin,
             Unavailable,
         }
@@ -37,10 +43,16 @@ namespace TiltBrush
         [SerializeField] private GameObject m_SketchfabSignedInElements;
         [SerializeField] private GameObject m_SketchfabSignedOutElements;
         [SerializeField] private GameObject m_SketchfabConfirmSignOutElements;
+        [SerializeField] private GameObject m_IcosaSignedInElements;
+        [SerializeField] private GameObject m_IcosaSignedOutElements;
+        [SerializeField] private GameObject m_IcosaConfirmSignOutElements;
+        [SerializeField] private GameObject m_IcosaLoginElements;
         [SerializeField] private Renderer m_GooglePhoto;
         [SerializeField] private Renderer m_SketchfabPhoto;
+        [SerializeField] private Renderer m_IcosaPhoto;
         [SerializeField] private TextMeshPro m_GoogleNameText;
         [SerializeField] private TextMeshPro m_SketchfabNameText;
+        [SerializeField] private TextMeshPro m_IcosaNameText;
         [SerializeField] private Texture2D m_GenericPhoto;
 
         [SerializeField] private GameObject m_Accounts;
@@ -48,8 +60,8 @@ namespace TiltBrush
         [SerializeField] private GameObject m_GoogleInfoElements;
         [SerializeField] private GameObject m_DriveInfoElements;
         [SerializeField] private GameObject m_SketchfabInfoElements;
+        [SerializeField] private GameObject m_IcosaInfoElements;
         [SerializeField] private GameObject m_UnavailableElements;
-
         [SerializeField] private GameObject m_DriveSyncEnabledElements;
         [SerializeField] private GameObject m_DriveSyncDisabledElements;
         [SerializeField] private GameObject m_DriveFullElements;
@@ -79,6 +91,18 @@ namespace TiltBrush
             base.Init(rParent, sText);
             OAuth2Identity.ProfileUpdated += OnProfileUpdated;
             RefreshObjects();
+            m_IcosaLoginElements.SetActive(false);
+            if (App.IcosaIsLoggedIn)
+            {
+                StartCoroutine(FetchUserDataCoroutine(userData =>
+                {
+                    App.IcosaUserName = userData.Displayname;
+                    App.IcosaUserId = userData.Id;
+                    App.IcosaUserIcon = m_GenericPhoto; // TODO: Get icon from API
+                    RefreshIcosaUserInfoUi();
+                }));
+            }
+
             App.DriveAccess.RefreshFreeSpaceAsync().AsAsyncVoid();
 
             // TODO: Make configurable by secrets/login data available at runtime.
@@ -138,6 +162,12 @@ namespace TiltBrush
                 m_SketchfabPhoto.material.mainTexture = sketchfabInfo.icon;
             }
 
+            // Icosa.
+            m_IcosaSignedInElements.SetActive(App.IcosaIsLoggedIn);
+            m_IcosaSignedOutElements.SetActive(!App.IcosaIsLoggedIn);
+            m_IcosaConfirmSignOutElements.SetActive(false);
+            RefreshIcosaUserInfoUi();
+
             m_DriveFullElements.SetActive(driveFull && driveSyncEnabled);
             m_DriveSyncEnabledElements.SetActive(!driveFull && driveSyncEnabled);
             m_DriveSyncDisabledElements.SetActive(!driveSyncEnabled);
@@ -145,6 +175,119 @@ namespace TiltBrush
             m_BackingUpElements.SetActive(driveSyncing);
             m_DriveSyncing = driveSyncing;
             RefreshBackupProgressText();
+        }
+
+        private void RefreshIcosaUserInfoUi()
+        {
+            m_IcosaNameText.text = App.IcosaUserName;
+            m_IcosaPhoto.material.mainTexture = App.IcosaUserIcon;
+        }
+
+        public void HideIcosaLogin()
+        {
+            m_IcosaLoginElements.SetActive(false);
+            m_IcosaSignedInElements.SetActive(true);
+            m_IcosaSignedOutElements.SetActive(true);
+            m_SketchfabSignedOutElements.SetActive(true);
+            m_SketchfabSignedInElements.SetActive(true);
+            m_GoogleSignedInElements.SetActive(true);
+            m_GoogleSignedOutElements.SetActive(true);
+            RefreshObjects();
+        }
+
+        public void ShowIcosaLogin()
+        {
+            m_IcosaLoginElements.SetActive(true);
+            m_IcosaLoginElements.GetComponent<IcosaLoginKeyboardController>().Clear();
+            m_IcosaSignedInElements.SetActive(false);
+            m_IcosaSignedOutElements.SetActive(false);
+            m_SketchfabSignedOutElements.SetActive(false);
+            m_SketchfabSignedInElements.SetActive(false);
+            m_GoogleSignedInElements.SetActive(false);
+            m_GoogleSignedOutElements.SetActive(false);
+        }
+
+        public void HandleIcosaLoginSubmit(string code)
+        {
+            if (App.IcosaIsLoggedIn) return;
+            StartCoroutine(LoginCoroutine(code));
+        }
+
+        private IEnumerator LoginCoroutine(string code)
+        {
+            var config = new Configuration();
+            var loginApi = new LoginApi(VrAssetService.m_Instance.IcosaApiRoot);
+            config.BasePath = VrAssetService.m_Instance.IcosaApiRoot;
+            loginApi.Configuration = config;
+            var loginTask = loginApi.DeviceLoginLoginDeviceLoginPostAsync(code);
+            yield return new WaitUntil(() => loginTask.IsCompleted);
+
+            if (loginTask.Exception != null)
+            {
+                if (loginTask.Exception.Message.Contains("401 Unauthorized"))
+                {
+                    // TODO: Show error message.
+                    LoginFailure();
+                    AudioManager.m_Instance.PlayTrashSound(transform.position);
+                }
+                yield break;
+            }
+
+            if (loginTask.Result?.AccessToken == null)
+            {
+                // TODO: Show error message.
+                LoginFailure();
+                AudioManager.m_Instance.PlayPinSound(transform.position, AudioManager.PinSoundType.Wobble);
+                yield break;
+            }
+            App.Instance.IcosaToken = loginTask.Result.AccessToken;
+            StartCoroutine(FetchUserDataCoroutine(userData => LoginSuccess(userData)));
+        }
+
+        private IEnumerator FetchUserDataCoroutine(Action<FullUser> onSuccess)
+        {
+            var usersApi = new UsersApi(VrAssetService.m_Instance.IcosaApiRoot);
+            var config = new Configuration { AccessToken = App.Instance.IcosaToken };
+            config.BasePath = VrAssetService.m_Instance.IcosaApiRoot;
+            usersApi.Configuration = config;
+            var getUserTask = usersApi.GetUsersMeUsersMeGetAsync();
+            yield return new WaitUntil(() => getUserTask.IsCompleted);
+
+            if (getUserTask.Exception != null)
+            {
+                if (getUserTask.Exception.Message.Contains("401 Unauthorized"))
+                {
+                    // Clear user token
+                    LoginFailure();
+                }
+                Debug.Log($"GetUser failed with exception: {getUserTask.Exception}");
+                yield break;
+            }
+
+            var userData = getUserTask.Result;
+            if (userData == null)
+            {
+                Debug.Log($"Failure - no user data received");
+                // TODO should we logout? Clear username/icon?
+                yield break;
+            }
+            onSuccess?.Invoke(userData);
+        }
+
+        private void LoginSuccess(FullUser userData)
+        {
+            // Call the callback delegate if it's provided (which means this was called from the first coroutine)
+            App.IcosaUserName = userData.Displayname;
+            App.IcosaUserId = userData.Id;
+            App.IcosaUserIcon = m_GenericPhoto; // TODO: Get icon from API
+            RefreshIcosaUserInfoUi();
+            HideIcosaLogin();
+        }
+
+        private void LoginFailure()
+        {
+            HideIcosaLogin();
+            App.Instance.LogoutIcosa();
         }
 
         void RefreshBackupProgressText()
@@ -164,13 +307,12 @@ namespace TiltBrush
             m_GoogleInfoElements.SetActive(m_CurrentMode == Mode.GoogleHelp);
             m_DriveInfoElements.SetActive(m_CurrentMode == Mode.DriveHelp);
             m_SketchfabInfoElements.SetActive(m_CurrentMode == Mode.SketchfabHelp);
+            m_IcosaInfoElements.SetActive(m_CurrentMode == Mode.IcosaHelp);
             m_UnavailableElements.SetActive(m_CurrentMode == Mode.Unavailable);
             if (m_ConfirmLoginElements != null)
             {
                 m_ConfirmLoginElements.SetActive(m_CurrentMode == Mode.ConfirmLogin);
             }
-            // Reset persistent flag when switching modes.
-            m_Persistent = false;
         }
 
         void OnProfileUpdated(OAuth2Identity _)
@@ -179,6 +321,7 @@ namespace TiltBrush
             // and they've done so correctly, switch back to the accounts view.
             if (m_CurrentMode == Mode.TakeOffHeadset)
             {
+                Debug.Log($"OnProfileUpdated set AccountMode");
                 UpdateMode(Mode.Accounts);
             }
             RefreshObjects();
@@ -212,10 +355,22 @@ namespace TiltBrush
                             if (userInfo == null)
                             {
                                 UpdateMode(Mode.TakeOffHeadset);
-                                m_Persistent = true;
                             }
                         }
                     }
+                    break;
+                case SketchControlsScript.GlobalCommands.LoginToIcosa:
+                    if (!App.Config.IsMobileHardware)
+                    {
+                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                            InputManager.ControllerName.Brush,
+                            SketchControlsScript.kRemoveHeadsetFyi,
+                            fPopScalar: 0.5f
+                        );
+                    }
+                    string secret = VrAssetService.m_Instance.GenerateDeviceCodeSecret();
+                    App.OpenURL($"{VrAssetService.m_Instance.IcosaHomePage}/device?{secret}");
+                    ShowIcosaLogin();
                     break;
                 case SketchControlsScript.GlobalCommands.AccountInfo:
                     // Identifier for triggering an info message.
@@ -230,25 +385,33 @@ namespace TiltBrush
                         case 2:
                             UpdateMode(Mode.SketchfabHelp);
                             break;
+                        case 3:
+                            UpdateMode(Mode.IcosaHelp);
+                            break;
                     }
                     break;
                 case SketchControlsScript.GlobalCommands.SignOutConfirm:
                     switch ((Cloud)button.m_CommandParam)
                     {
-                        case Cloud.Poly:
-                            m_GoogleSignedInElements.SetActive(false);
-                            m_GoogleSignedOutElements.SetActive(false);
-                            m_GoogleConfirmSignOutElements.SetActive(true);
-                            break;
                         case Cloud.Sketchfab:
                             m_SketchfabSignedInElements.SetActive(false);
                             m_SketchfabSignedOutElements.SetActive(false);
                             m_SketchfabConfirmSignOutElements.SetActive(true);
                             break;
+                        case Cloud.Icosa:
+                            m_IcosaSignedInElements.SetActive(false);
+                            m_IcosaSignedOutElements.SetActive(false);
+                            m_IcosaConfirmSignOutElements.SetActive(true);
+                            break;
                         case Cloud.None: break;
                     }
                     break;
             }
+        }
+
+        public void CloseProfilePopup()
+        {
+            RequestClose(true);
         }
     }
 } // namespace TiltBrush
