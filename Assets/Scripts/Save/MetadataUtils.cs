@@ -437,7 +437,7 @@ namespace TiltBrush
                     for (int j = 0; j < data.ModelIndex[i].PinStates.Length; ++j)
                     {
                         data.ModelIndex[i].PinStates[j] = (data.ModelIndex[i].Location.GetLocationType() !=
-                            Model.Location.Type.PolyAssetId);
+                            Model.Location.Type.IcosaAssetId);
                     }
                 }
             }
