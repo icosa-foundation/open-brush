@@ -503,7 +503,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7691576060649472
-    m_Localized: "Biblioth\xE8que Poly"
+    m_Localized: "Biblioth\xE8que Icosa"
     m_Metadata:
       m_Items: []
   - m_Id: 7691821452599296
@@ -766,7 +766,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7932977482539008
-    m_Localized: "Chargement des mod\xE8les depuis Poly\n\nNe tardez pas \xE0 revenir\_!"
+    m_Localized: "Chargement des mod\xE8les depuis Icosa Gallery\n\nNe tardez pas \xE0 revenir\_!"
     m_Metadata:
       m_Items: []
   - m_Id: 7933149889404928
@@ -927,7 +927,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8052065399709696
-    m_Localized: Depuis Poly
+    m_Localized: Depuis Icosa Gallery
     m_Metadata:
       m_Items: []
   - m_Id: 8052141249503232
@@ -935,7 +935,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8052215190888448
-    m_Localized: Depuis Poly
+    m_Localized: Depuis Icosa Gallery
     m_Metadata:
       m_Items: []
   - m_Id: 8052288863838208
@@ -947,7 +947,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8053396663410688
-    m_Localized: Parcourir Poly
+    m_Localized: Parcourir Icosa Gallery
     m_Metadata:
       m_Items: []
   - m_Id: 8053860821868544
@@ -987,7 +987,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10134247853236224
-    m_Localized: "Erreur de r\xE9cup\xE9ration des croquis depuis Poly\n<color=#969696>\nVotre
+    m_Localized: "Erreur de r\xE9cup\xE9ration des croquis depuis Icosa Gallery\n<color=#969696>\nVotre
       connexion Internet fonctionne-t-elle correctement\_?</color>"
     m_Metadata:
       m_Items: []

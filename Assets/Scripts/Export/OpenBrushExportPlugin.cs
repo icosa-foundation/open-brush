@@ -25,17 +25,88 @@ namespace TiltBrush
     public class OpenBrushExportPluginConfig : GLTFExportPluginContext
     {
         private Dictionary<int, Batch> _meshesToBatches;
-
-        private List<string> _ignoreList = new()
-        {
-            "SnapGrid3D",
-            "Preview Light"
-        };
+        private List<Camera> m_CameraPathsCameras;
 
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
-            SelectionManager.m_Instance.ClearActiveSelection();
+            if (Application.isPlaying && App.UserConfig.Export.ExportCustomSkybox)
+            {
+                GltfExportStandinManager.m_Instance.CreateSkyStandin();
+            }
+            SelectionManager.m_Instance?.ClearActiveSelection();
             _meshesToBatches = new Dictionary<int, Batch>();
+            GenerateCameraPathsCameras();
+        }
+
+        private void GenerateCameraPathsCameras()
+        {
+            if (!Application.isPlaying) return;
+            m_CameraPathsCameras = new List<Camera>();
+            var cameraPathWidgets = WidgetManager.m_Instance.CameraPathWidgets.ToArray();
+            for (var i = 0; i < cameraPathWidgets.Length; i++)
+            {
+                var widget = cameraPathWidgets[i];
+                var layer = widget.m_WidgetScript.Canvas;
+                var go = GameObject.Instantiate(new GameObject(), layer.transform);
+                go.name = $"CameraPath_{i}_{widget.m_WidgetScript.name}";
+                var cam = go.AddComponent<Camera>();
+                m_CameraPathsCameras.Add(cam);
+            }
+        }
+
+        private void ExportCameraPaths(GLTFSceneExporter exporter)
+        {
+            var cameraPathWidgets = WidgetManager.m_Instance.CameraPathWidgets.ToArray();
+            for (var i = 0; i < cameraPathWidgets.Length; i++)
+            {
+                var cam = m_CameraPathsCameras[i];
+                var widget = cameraPathWidgets[i];
+
+                GLTFAnimation anim = new GLTFAnimation();
+                anim.Name = cam.gameObject.name;
+
+                var posKnots = widget.WidgetScript.Path.PositionKnots;
+                var posTimes = new float[posKnots.Count];
+                var posValues = new object[posKnots.Count];
+                for (var j = 0; j < posKnots.Count; j++)
+                {
+                    var knot = posKnots[j];
+                    var xf = knot.KnotXf;
+                    var t = knot.PathT.T;
+                    posTimes[j] = t;
+                    posValues[j] = xf.position;
+                }
+                exporter.AddAnimationData(cam.gameObject, "translation", anim, posTimes, posValues);
+
+                var rotKnots = widget.WidgetScript.Path.RotationKnots;
+                var rotTimes = new float[rotKnots.Count];
+                var rotValues = new object[rotKnots.Count];
+                for (var j = 0; j < rotKnots.Count; j++)
+                {
+                    var knot = rotKnots[j];
+                    var xf = knot.KnotXf;
+                    var t = knot.PathT.T;
+                    posTimes[j] = t;
+                    posValues[j] = xf.rotation;
+                }
+                exporter.AddAnimationData(cam.gameObject, "rotation", anim, posTimes, posValues);
+
+                var fovKnots = widget.WidgetScript.Path.FovKnots;
+                var fovTimes = new float[fovKnots.Count];
+                var fovValues = new object[fovKnots.Count];
+                for (var j = 0; j < fovKnots.Count; j++)
+                {
+                    var knot = fovKnots[j];
+                    var xf = knot.KnotXf;
+                    var t = knot.PathT.T;
+                    posTimes[j] = t;
+                    posValues[j] = xf.rotation;
+                }
+                exporter.AddAnimationData(cam, "field of view", anim, fovTimes, fovValues);
+
+                exporter.GetRoot().Animations.Add(anim);
+                GameObject.Destroy(cam);
+            }
         }
 
         private Transform GetOrCreateGroupTransform(CanvasScript layer, int group)
@@ -70,18 +141,6 @@ namespace TiltBrush
         public void BeforeLayerExport(Transform transform)
         {
             var canvas = transform.GetComponent<CanvasScript>();
-            foreach (Transform child in transform)
-            {
-                if (_ignoreList.Contains(child.name))
-                {
-                    child.tag = "EditorOnly";
-                }
-
-                if (child.GetComponent<StencilWidget>() != null)
-                {
-                    child.tag = "EditorOnly";
-                }
-            }
 
             if (App.UserConfig.Export.KeepStrokes)
             {
@@ -115,14 +174,28 @@ namespace TiltBrush
             }
         }
 
+        public override bool ShouldNodeExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Transform transform)
+        {
+            Type[] excludedTypes =
+            {
+                typeof(SnapGrid3D),
+                typeof(StencilWidget),
+                typeof(CameraPathWidget)
+            };
+            bool hasExcludedComponent = excludedTypes.Any(t => transform.GetComponent(t) != null);
+            bool excludedName = false; // TODO
+            return !hasExcludedComponent && !excludedName;
+        }
+
         public override void BeforeNodeExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Transform transform, Node node)
         {
             if (transform.GetComponent<CanvasScript>() != null)
             {
                 BeforeLayerExport(transform);
             }
-
-            if (!App.UserConfig.Export.KeepStrokes && App.UserConfig.Export.ExportStrokeMetadata)
+            if (!Application.isPlaying) return;
+            if (!App.UserConfig.Export.KeepStrokes &&
+                App.UserConfig.Export.ExportStrokeMetadata)
             {
                 // We'll need a way to find the batch for each mesh later
                 var batch = transform.GetComponent<Batch>();
@@ -177,6 +250,7 @@ namespace TiltBrush
                 AfterLayerExport(transform);
             }
 
+            if (!Application.isPlaying) return;
             if (App.UserConfig.Export.KeepStrokes && App.UserConfig.Export.ExportStrokeMetadata)
             {
                 var brush = transform.GetComponent<BaseBrushScript>();
@@ -226,6 +300,7 @@ namespace TiltBrush
 
         public override void AfterPrimitiveExport(GLTFSceneExporter exporter, Mesh mesh, MeshPrimitive primitive, int index)
         {
+            if (!Application.isPlaying) return;
             if (App.UserConfig.Export.ExportStrokeMetadata)
             {
                 if (App.UserConfig.Export.KeepStrokes)
@@ -269,21 +344,82 @@ namespace TiltBrush
             // Only handle brush materials
             if (!material.shader.name.StartsWith("Brush/")) return;
 
-            // Strip the (Instance) suffix from the material node name
-            materialNode.Name = materialNode.Name.Replace("(Instance)", "").Trim();
-            materialNode.Name = $"ob-{materialNode.Name}";
+            // TODO - This assumes that every brush has a unique material with a unique name
+            // Currently, this is true, but it may not always be the case
+            var brushes = BrushCatalog.m_Instance.AllBrushes
+                .Where(b => b.Material.name == material.name)
+                .ToList();
 
-            var brush = BrushCatalog.m_Instance.AllBrushes.FirstOrDefault(b => b.DurableName == materialNode.Name);
-
-            if (brush != null && brush.BlendMode == ExportableMaterialBlendMode.AdditiveBlend)
+            switch (brushes.Count)
             {
-                AddExtension(materialNode, EXT_blend_operations.Add);
+                case 0:
+                    Debug.LogError($"No matching brush found for material {material.name}");
+                    return;
+                case > 1:
+                    Debug.LogWarning($"Multiple brushes with the same material name: {material.name}: {string.Join(", ", brushes.Select(b => b.name))}");
+                    break;
+            }
+
+            var brush = brushes[0];
+            var manifest = BrushCatalog.m_Instance.GetBrush(brush.m_Guid);
+
+            materialNode.Name = $"ob-{manifest.DurableName}";
+            // Do we need to override the regular UnityGLTF logic here?
+            materialNode.DoubleSided = manifest.m_RenderBackfaces;
+
+            switch (manifest.m_BlendMode)
+            {
+                case ExportableMaterialBlendMode.AdditiveBlend:
+                    AddExtension(materialNode, EXT_blend_operations.Add);
+                    materialNode.AlphaMode = AlphaMode.BLEND;
+                    break;
+                case ExportableMaterialBlendMode.AlphaMask:
+                    materialNode.AlphaMode = AlphaMode.MASK;
+                    break;
+                case ExportableMaterialBlendMode.AlphaBlend:
+                    materialNode.AlphaMode = AlphaMode.BLEND;
+                    break;
             }
         }
 
         public override void AfterSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
+            if (!Application.isPlaying) return;
+
+            ExportCameraPaths(exporter);
+            if (App.UserConfig.Export.ExportCustomSkybox)
+            {
+                GltfExportStandinManager.m_Instance.DestroySkyStandin();
+            }
+
             gltfRoot.Asset.Generator = $"Open Brush UnityGLTF Exporter {App.Config.m_VersionNumber}.{App.Config.m_BuildStamp})";
+
+            JToken ColorToJArray(Color c) => JToken.FromObject(new { c.r, c.g, c.b, c.a });
+            JToken Vector3ToJArray(Vector3 c) => JToken.FromObject(new { c.x, c.y, c.z });
+
+            var metadata = new SketchSnapshot().GetSketchMetadata();
+
+            var settings = SceneSettings.m_Instance;
+            Environment env = settings.GetDesiredPreset();
+            var extras = new JObject();
+
+            var pose = metadata.SceneTransformInRoomSpace;
+            extras["TB_EnvironmentGuid"] = env.m_Guid.ToString("D");
+            extras["TB_Environment"] = env.Description;
+            extras["TB_UseGradient"] = settings.InGradient ? "true" : "false";
+            extras["TB_SkyColorA"] = ColorToJArray(settings.SkyColorA);
+            extras["TB_SkyColorB"] = ColorToJArray(settings.SkyColorB);
+            Matrix4x4 exportFromUnity = AxisConvention.GetFromUnity(AxisConvention.kGltf2);
+            extras["TB_SkyGradientDirection"] = Vector3ToJArray(
+                exportFromUnity * (settings.GradientOrientation * Vector3.up));
+            extras["TB_FogColor"] = ColorToJArray(settings.FogColor);
+            extras["TB_FogDensity"] = settings.FogDensity;
+            extras["TB_PoseTranslation"] = Vector3ToJArray(pose.translation);
+            extras["TB_PoseRotation"] = Vector3ToJArray(pose.rotation.eulerAngles);
+            extras["TB_PoseScale"] = pose.scale;
+            // Experimental
+            // extras["TB_metadata"] = JObject.FromObject(metadata);
+            gltfRoot.Extras = extras;
         }
 
         private static void SafeDestroy(Object o)

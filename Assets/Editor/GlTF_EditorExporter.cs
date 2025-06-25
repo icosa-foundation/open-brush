@@ -20,8 +20,13 @@ using System.Text.RegularExpressions;
 using System.Text;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using SimpleJSON;
 using UnityEditor;
+using UnityEditor.ShaderGraph.Serialization;
 using UnityEngine;
+using UnityGLTF;
+using UnityGLTF.Extensions;
 using UObject = UnityEngine.Object;
 
 namespace TiltBrush
@@ -95,7 +100,7 @@ namespace TiltBrush
         {
             new ExportGlTF().ExportBrushStrokes(
                 GetExportBaseName() + ".gltf",
-                AxisConvention.kGltfAccordingToPoly,
+                AxisConvention.kGltfAccordingToIcosa,
                 binary: false,
                 doExtras: true,
                 gltfVersion: 1,
@@ -128,75 +133,135 @@ namespace TiltBrush
         [MenuItem("Open Brush/glTF/Export Environments to glTF", false, 4)]
         private static void ExportEnvironments()
         {
-#if !GAMEOBJ_EXPORT_TO_GLTF
-            Debug.LogError("Enable the define and fix up the code");
-#else
-    // Save the original RenderSettings
-    Environment.RenderSettingsLite originalRenderSettings = Environment.GetRenderSettings();
+            // Save the original RenderSettings
+            Environment.RenderSettingsLite originalRenderSettings = Environment.GetRenderSettings();
 
-    // Clear out the existing environments directory to do a clean export
-    string projectPath = Path.GetDirectoryName(Application.dataPath);
-    string environmentExportPath = Path.Combine(projectPath,
-                                                ExportUtils.kProjectRelativeEnvironmentExportRoot);
-    try {
-      Directory.Delete(environmentExportPath, recursive: true);
-    } catch (DirectoryNotFoundException) {
-      // It's okay if this directory doesn't exist yet as it will be created later.
-    }
+            // Clear out the existing environments directory to do a clean export
+            string projectPath = Path.GetDirectoryName(Application.dataPath);
+            string environmentExportPath = Path.Combine(projectPath,
+                                                        ExportUtils.kProjectRelativeEnvironmentExportRoot);
+            try
+            {
+                Directory.Delete(environmentExportPath, recursive: true);
+            }
+            catch (DirectoryNotFoundException)
+            {
+                // It's okay if this directory doesn't exist yet as it will be created later.
+            }
 
-    // Clear out the existing textures directory to do a clean export
-    string textureExportPath = Path.Combine(projectPath,
-                                            ExportUtils.kProjectRelativeTextureExportRoot);
-    try {
-      Directory.Delete(textureExportPath, recursive: true);
-    } catch (DirectoryNotFoundException) {
-      // It's okay if this directory doesn't exist yet as it will be created later.
-    }
-    if (!FileUtils.InitializeDirectoryWithUserError(
-        textureExportPath, "Failed to export, can't create texture export directory")) {
-      return;
-    }
+            // Clear out the existing textures directory to do a clean export
+            string textureExportPath = Path.Combine(projectPath,
+                                                    ExportUtils.kProjectRelativeTextureExportRoot);
+            try
+            {
+                Directory.Delete(textureExportPath, recursive: true);
+            }
+            catch (DirectoryNotFoundException)
+            {
+                // It's okay if this directory doesn't exist yet as it will be created later.
+            }
+            if (!FileUtils.InitializeDirectoryWithUserError(
+                textureExportPath, "Failed to export, can't create texture export directory"))
+            {
+                return;
+            }
 
-    // Get the environment
-    TiltBrushManifest manifest = AssetDatabase.LoadAssetAtPath<TiltBrushManifest>("Assets/Manifest.asset");
-    foreach (Environment env in manifest.Environments) {
-      // Copy over the RenderSettings
-      Environment.SetRenderSettings(env.m_RenderSettings);
+            // Get the environment
+            TiltBrushManifest manifest = AssetDatabase.LoadAssetAtPath<TiltBrushManifest>("Assets/Manifest.asset");
+            JToken colorToJArray(Color c) => JToken.FromObject(new { c.r, c.g, c.b, c.a });
+            JToken vector3ToJArray(Vector3 c) => JToken.FromObject(new { c.x, c.y, c.z });
+            var envJson = new JObject();
+            foreach (Environment env in manifest.Environments)
+            {
+                // Copy over the RenderSettings
+                Environment.SetRenderSettings(env.m_RenderSettings);
 
-      // Set up the environment
-      string envGuid = env.m_Guid.ToString("D");
-      Debug.LogFormat("Exporting environment: {0}", env.m_RenderSettings.m_EnvironmentPrefab);
-      GameObject envPrefab = Resources.Load<GameObject>(env.m_RenderSettings.m_EnvironmentPrefab);
-      GameObject envGameObject = UObject.Instantiate(envPrefab);
-      envGameObject.name = envGuid;
+                // Set up the environment
+                string envGuid = env.m_Guid.ToString("D");
+                var envJsonItem = new JObject();
+                envJsonItem["name"] = env.name;
+                envJsonItem["guid"] = envGuid;
+                var envRenderSettingsJson = new JObject();
+                envRenderSettingsJson["fogEnabled"] = env.m_RenderSettings.m_FogEnabled;
+                envRenderSettingsJson["fogColor"] = colorToJArray(env.m_RenderSettings.m_FogColor);
+                envRenderSettingsJson["fogDensity"] = env.m_RenderSettings.m_FogDensity;
+                envRenderSettingsJson["fogStartDistance"] = env.m_RenderSettings.m_FogStartDistance;
+                envRenderSettingsJson["fogEndDistance"] = env.m_RenderSettings.m_FogEndDistance;
+                envRenderSettingsJson["clearColor"] = colorToJArray(env.m_RenderSettings.m_ClearColor);
+                envRenderSettingsJson["ambientColor"] = colorToJArray(env.m_RenderSettings.m_AmbientColor);
+                envRenderSettingsJson["skyboxExposure"] = env.m_RenderSettings.m_SkyboxExposure;
+                envRenderSettingsJson["skyboxTint"] = colorToJArray(env.m_RenderSettings.m_SkyboxTint);
+                envRenderSettingsJson["environmentPrefab"] = env.m_RenderSettings.m_EnvironmentPrefab;
+                envRenderSettingsJson["environmentReverbZone"] = env.m_RenderSettings.m_EnvironmentReverbZonePrefab;
+                envRenderSettingsJson["skyboxCubemap"] = env.m_RenderSettings.m_SkyboxCubemap != null ?
+                    env.m_RenderSettings.m_SkyboxCubemap.name : "";
+                envRenderSettingsJson["reflectionCubemap"] = env.m_RenderSettings.m_ReflectionCubemap != null ?
+                    env.m_RenderSettings.m_ReflectionCubemap.name : "";
+                envRenderSettingsJson["reflectionIntensity"] = env.m_RenderSettings.m_ReflectionIntensity;
+                envJsonItem["renderSettings"] = envRenderSettingsJson;
+                var envLights = new JArray();
+                foreach (var light in env.m_Lights)
+                {
+                    var envLight = new JObject();
+                    envLight["color"] = colorToJArray(light.Color);
+                    envLight["position"] = vector3ToJArray(light.m_Position);
+                    envLight["rotation"] = vector3ToJArray(light.m_Rotation.eulerAngles);
+                    envLight["type"] = light.m_Type.ToString();
+                    envLight["range"] = light.m_Range;
+                    envLight["spotAngle"] = light.m_SpotAngle;
+                    envLight["shadowsEnabled"] = light.m_ShadowsEnabled;
+                    envLights.Add(envLight);
 
-      // Hide game objects that don't get exported to Poly.
-      foreach (Transform child in envGameObject.transform) {
-        if (SceneSettings.ExcludeFromPolyExport(child)) {
-          child.gameObject.SetActive(false);
-        }
-      }
+                }
+                envJsonItem["lights"] = envLights;
+                envJsonItem["teleportBoundsHalfWidth"] = env.m_TeleportBoundsHalfWidth;
+                envJsonItem["controllerXRayHeight"] = env.m_ControllerXRayHeight;
+                envJsonItem["widgetHome"] = vector3ToJArray(env.m_WidgetHome);
+                envJsonItem["skyboxColorA"] = colorToJArray(env.m_SkyboxColorA);
+                envJsonItem["skyboxColorB"] = colorToJArray(env.m_SkyboxColorB);
+                envJson[envGuid] = envJsonItem;
 
-      // Set up the environment export directory
-      string directoryName = Path.Combine(environmentExportPath, envGuid);
-      if (!FileUtils.InitializeDirectoryWithUserError(
-          directoryName, "Failed to export, can't create environment export directory")) {
-        return;
-      }
+                Debug.LogFormat("Exporting environment: {0}", env.m_RenderSettings.m_EnvironmentPrefab);
+                GameObject envPrefab = Resources.Load<GameObject>(env.m_RenderSettings.m_EnvironmentPrefab);
+                GameObject envGameObject = UObject.Instantiate(envPrefab);
+                envGameObject.name = envGuid;
 
-      string basename = FileUtils.SanitizeFilename(envGameObject.name);
-      string gltfName = Path.Combine(directoryName, basename + ".gltf");
+                // Hide game objects that don't get exported to Poly.
+                foreach (Transform child in envGameObject.transform)
+                {
+                    if (SceneSettings.ExcludeFromPolyExport(child))
+                    {
+                        child.gameObject.SetActive(false);
+                    }
+                }
 
-      var exporter = new ExportGlTF();
-      exporter.ExportGameObject(envGameObject, gltfName, env);
+                // Set up the environment export directory
+                string directoryName = Path.Combine(environmentExportPath, envGuid);
+                if (!FileUtils.InitializeDirectoryWithUserError(
+                    directoryName, "Failed to export, can't create environment export directory"))
+                {
+                    return;
+                }
 
-      // DestroyImmediate is required because editor mode never runs object garbage collection.
-      UObject.DestroyImmediate(envGameObject);
-    }
+                string basename = FileUtils.SanitizeFilename(envGameObject.name);
 
-    // Restore the original RenderSettings
-    Environment.SetRenderSettings(originalRenderSettings);
-#endif
+                var settings = GLTFSettings.GetOrCreateSettings();
+                settings.UseMainCameraVisibility = false;
+                var context = new ExportContext();
+                var unityGltfexporter = new GLTFSceneExporter(envGameObject.transform, context);
+                unityGltfexporter.SaveGLB(directoryName, basename + ".glb");
+
+                // DestroyImmediate is required because editor mode never runs object garbage collection.
+                UObject.DestroyImmediate(envGameObject);
+            }
+
+            string jsonString = envJson.ToString();
+            string path = Path.Combine(environmentExportPath, "environments.json");
+            File.WriteAllText(path, jsonString);
+
+            // Restore the original RenderSettings
+            Environment.SetRenderSettings(originalRenderSettings);
+
         }
 
         private static Dictionary<Guid, BrushDescriptor> GetBrushes()
