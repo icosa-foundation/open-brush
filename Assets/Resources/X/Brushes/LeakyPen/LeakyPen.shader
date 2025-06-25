@@ -30,6 +30,7 @@ Shader "Brush/Special/LeakyPen" {
 
 			LOD 200
 			CGPROGRAM
+			#pragma multi_compile __ SHADER_SCRIPTING_ON
 			#pragma surface surf StandardSpecular vertex:vert alphatest:_Cutoff addshadow
 			#pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 			#pragma target 4.0

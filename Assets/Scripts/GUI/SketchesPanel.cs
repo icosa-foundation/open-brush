@@ -37,7 +37,7 @@ namespace TiltBrush
             base.InitPanel();
 
             m_LastUploadProgress = -1.0f;
-            m_LoggedIn = App.GoogleIdentity.LoggedIn;
+            m_LoggedIn = App.GoogleIdentity.LoggedIn || App.IcosaIsLoggedIn;
             RefreshLoginButtonText(m_LoggedIn);
         }
 
@@ -52,7 +52,7 @@ namespace TiltBrush
             m_SaveOptionsButton.SetActive(alreadySaved);
 
             // Update share button's text.
-            bool loggedIn = App.GoogleIdentity.LoggedIn;
+            bool loggedIn = App.GoogleIdentity.LoggedIn || App.IcosaIsLoggedIn;
             if (loggedIn != m_LoggedIn)
             {
                 RefreshLoginButtonText(loggedIn);
