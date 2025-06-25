@@ -902,7 +902,7 @@ PlayerSettings:
     iPhone: 1
   scriptingBackend:
     Android: 1
-    Standalone: 0
+    Standalone: 1
     WP8: 2
     WebGL: 1
     Windows Store Apps: 2

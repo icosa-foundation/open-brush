@@ -29,10 +29,11 @@ namespace TiltBrush
 
     public class SketchControlsScript : MonoBehaviour
     {
+        // TODO L10n
         public const string kRemoveHeadsetFyi = "Remove headset to view.";
-        const string kTiltBrushGalleryUrl = "https://poly.google.com/tiltbrush";
-        const string kBlocksGalleryUrl = "https://poly.google.com/blocks";
-        const string kPolyMainPageUri = "https://poly.google.com";
+
+        private string m_OpenBrushGalleryUrl => $"{VrAssetService.m_Instance.IcosaHomePage}/openbrush";
+        private string m_BlocksGalleryUrl => $"{VrAssetService.m_Instance.IcosaHomePage}/blocks";
 
         static public SketchControlsScript m_Instance;
         static bool sm_enableGrabHaptics = true;
@@ -100,8 +101,8 @@ namespace TiltBrush
             Duplicate,
             ToggleGroupStrokesAndWidgets,
             SaveModel,
-            ViewPolyPage,
-            ViewPolyGallery,
+            ViewIcosaHomePage,
+            ViewBlocksGallery,
             ExportListed,
             RenderCameraPath,
             ToggleProfiling,
@@ -177,6 +178,12 @@ namespace TiltBrush
             RenameSketch = 5200,
             OpenLayerOptionsPopup = 5201,
             RenameLayer = 5202,
+            LoginToIcosa = 5600,
+            OpenIcosaPanelSearchPopup = 5601,
+            OpenIcosaPanelFilterPopup = 5602,
+            OpenIcosaPanelOptionsPopup = 5603,
+            OpenSketchbookPanelSearchPopup = 5604,
+            OpenSketchbookPanelFilterPopup = 5605,
             OpenDirectorChooserPopup = 5800,
             OpenScriptsCommandsList = 6000,
             OpenScriptsList = 6001,
@@ -4212,7 +4219,10 @@ namespace TiltBrush
             m_WidgetManager.FollowingPath = false;
             m_WidgetManager.CameraPathsVisible = false;
             m_WidgetManager.DestroyAllWidgets();
-            m_PanelManager.ToggleSketchbookPanels(isLoadingSketch: true);
+            if (m_PanelManager.SketchbookActive())
+            {
+                m_PanelManager.ToggleSketchbookPanels(isLoadingSketch: true);
+            }
             ResetGrabbedPose(everything: true);
             PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
             if (SaveLoadScript.m_Instance.Load(fileInfo, additive))
@@ -4373,7 +4383,7 @@ namespace TiltBrush
                         var sketchSetType = (SketchSetType)iParam2;
                         SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
                         SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
-                        if (rInfo != null)
+                        if (rInfo != null && rInfo.Available)
                         {
                             LoadSketch(rInfo);
                             if (m_ControlsType != ControlsType.ViewingOnly)
@@ -4614,9 +4624,19 @@ namespace TiltBrush
                     {
                         var sketchSetType = (SketchSetType)iParam2;
                         SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
+                        string newName = sParam;
+                        if (string.IsNullOrEmpty(newName))
+                        {
+                            newName = KeyboardPopUpWindow.m_LastInput;
+                            if (string.IsNullOrEmpty(newName))
+                            {
+                                break;
+                            }
+                        }
+
                         if (sketchSetType == SketchSetType.User)
                         {
-                            sketchSet.RenameSketch(iParam1, KeyboardPopUpWindow.m_LastInput);
+                            sketchSet.RenameSketch(iParam1, newName);
                         }
                         DismissPopupOnCurrentGazeObject(false);
                         break;
@@ -4672,18 +4692,41 @@ namespace TiltBrush
                     }
                 case GlobalCommands.LogOutOfGenericCloud:
                     {
-                        var ident = App.GetIdentity((Cloud)iParam1);
-                        if (ident.LoggedIn) { ident.Logout(); }
+                        Cloud cloud = (Cloud)iParam1;
+                        if (cloud == Cloud.Icosa)
+                        {
+                            App.Instance.IcosaToken = null;
+                            App.IcosaUserName = "";
+                            App.IcosaUserIcon = null;
+                            PanelManager.m_Instance.GetAdminPanel().CloseActivePopUp(true);
+                        }
+                        else
+                        {
+                            var ident = App.GetIdentity(cloud);
+                            if (ident.LoggedIn) { ident.Logout(); }
+                        }
                         break;
                     }
                 case GlobalCommands.UploadToGenericCloud:
                     {
                         Cloud cloud = (Cloud)iParam1;
-                        var ident = App.GetIdentity(cloud);
-                        if (!ident.LoggedIn)
+                        if (cloud == Cloud.Icosa)
                         {
-                            ident.LoginAsync();
-                            break;
+                            if (App.Instance.IcosaToken == null)
+                            {
+                                OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                                    InputManager.ControllerName.Brush,
+                                    "Not logged in", fPopScalar: 0.5f);
+                            }
+                        }
+                        else
+                        {
+                            var ident = App.GetIdentity(cloud);
+                            if (!ident.LoggedIn)
+                            {
+                                ident.LoginAsync();
+                                break;
+                            }
                         }
                         SelectionManager.m_Instance.ClearActiveSelection();
                         VrAssetService.m_Instance.UploadCurrentSketchAsync(cloud, isDemoUpload: false).AsAsyncVoid();
@@ -4691,7 +4734,7 @@ namespace TiltBrush
                         break;
                     }
                 case GlobalCommands.ViewOnlineGallery:
-                    OpenURLAndInformUser(kTiltBrushGalleryUrl);
+                    OpenURLAndInformUser(m_OpenBrushGalleryUrl);
                     break;
                 case GlobalCommands.CancelUpload:
                     VrAssetService.m_Instance.CancelUpload();
@@ -4781,11 +4824,11 @@ namespace TiltBrush
                 case GlobalCommands.SaveModel:
                     SaveModel();
                     break;
-                case GlobalCommands.ViewPolyPage:
-                    OpenURLAndInformUser(kPolyMainPageUri);
+                case GlobalCommands.ViewIcosaHomePage:
+                    OpenURLAndInformUser(VrAssetService.m_Instance.IcosaHomePage);
                     break;
-                case GlobalCommands.ViewPolyGallery:
-                    OpenURLAndInformUser(kBlocksGalleryUrl);
+                case GlobalCommands.ViewBlocksGallery:
+                    OpenURLAndInformUser(m_BlocksGalleryUrl);
                     break;
                 case GlobalCommands.ExportListed:
                     StartCoroutine(ExportListAndQuit());
@@ -4896,20 +4939,25 @@ namespace TiltBrush
                     break;
                 case GlobalCommands.LoadWaitOnDownload:
                     {
-                        bool download = false;
-                        if (iParam2 == (int)SketchSetType.Drive)
+                        var download = false;
+                        if (iParam2 == (int)SketchSetType.Drive
+                            || iParam2 == (int)SketchSetType.Curated
+                            || iParam2 == (int)SketchSetType.Liked)
                         {
-                            BasePanel sketchBook = m_PanelManager.GetSketchBookPanel();
-                            var googleSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Drive);
-                            if (sketchBook != null
-                                && googleSketchSet != null
-                                && googleSketchSet.IsSketchIndexValid(iParam1)
-                                && !googleSketchSet.GetSketchSceneFileInfo(iParam1).Available)
+                            var sketchBook = m_PanelManager.GetSketchBookPanel();
+                            var sketchSet = SketchCatalog.m_Instance.GetSet((SketchSetType)iParam2);
+
+                            download = sketchBook
+                                && sketchSet != null
+                                && sketchSet.IsSketchIndexValid(iParam1)
+                                && !sketchSet.GetSketchSceneFileInfo(iParam1).Available;
+
+                            if (download)
                             {
                                 sketchBook.CreatePopUp(GlobalCommands.LoadConfirmComplex, iParam1, iParam2, null);
-                                download = true;
                             }
                         }
+
                         if (!download)
                         {
                             IssueGlobalCommand(GlobalCommands.LoadConfirmComplex, iParam1, iParam2, null);
@@ -4973,13 +5021,13 @@ namespace TiltBrush
                     EatGazeObjectInput();
                     break;
                 case GlobalCommands.OpenScriptsCommandsList:
-                    OpenURLAndInformUser($"http://localhost:{App.HttpServer.HttpPort}/help/commands");
+                    OpenURLAndInformUser($"http://localhost:{HttpServer.HTTP_PORT}/help/commands");
                     break;
                 case GlobalCommands.OpenScriptsList:
-                    OpenURLAndInformUser($"http://localhost:{App.HttpServer.HttpPort}/scripts");
+                    OpenURLAndInformUser($"http://localhost:{HttpServer.HTTP_PORT}/scripts");
                     break;
                 case GlobalCommands.OpenExampleScriptsList:
-                    OpenURLAndInformUser($"http://localhost:{App.HttpServer.HttpPort}/examplescripts");
+                    OpenURLAndInformUser($"http://localhost:{HttpServer.HTTP_PORT}/examplescripts");
                     break;
                 case GlobalCommands.OpenPluginDocs:
                     OpenURLAndInformUser("https://docs.openbrush.app/user-guide/using-plugins");
@@ -4989,6 +5037,20 @@ namespace TiltBrush
                     PointerManager.m_Instance.EatLineEnabledInput();
                     SketchSurfacePanel.m_Instance.EatToolsInput();
                     break;
+                case GlobalCommands.OpenIcosaPanelSearchPopup:
+                    {
+                        IcosaSetType currentSet = (IcosaSetType)iParam1;
+                        App.IcosaAssetCatalog.UpdateSearchText(currentSet, KeyboardPopUpWindow.m_LastInput, requestRefresh: true);
+                        DismissPopupOnCurrentGazeObject(false);
+                        break;
+                    }
+                case GlobalCommands.OpenSketchbookPanelSearchPopup:
+                    {
+                        SketchSetType currentSet = (SketchSetType)iParam1;
+                        SketchCatalog.m_Instance.UpdateSearchText(currentSet, KeyboardPopUpWindow.m_LastInput, forceRefresh: true);
+                        DismissPopupOnCurrentGazeObject(false);
+                        break;
+                    }
                 case GlobalCommands.RepaintOptions:
                 case GlobalCommands.MultiplayerPanelOptions:
                 case GlobalCommands.MultiplayerJoinRoom:
@@ -5004,8 +5066,12 @@ namespace TiltBrush
                 case GlobalCommands.MultiplayerMuteAllForAll:
                 case GlobalCommands.MultiplayerPlayerMuteForAll:
                 case GlobalCommands.WhatIsNew:
+                case GlobalCommands.LoginToIcosa:
+                case GlobalCommands.OpenIcosaPanelOptionsPopup:
+                case GlobalCommands.OpenIcosaPanelFilterPopup:
+                case GlobalCommands.OpenSketchbookPanelFilterPopup:
                 case GlobalCommands.Null:
-                    break;// Intentionally blank.
+                    break; // Intentionally blank.
                 default:
                     Debug.LogError($"Unrecognized command {rEnum}");
                     break;
@@ -5151,8 +5217,8 @@ namespace TiltBrush
             // Re-set the quality level to reset simplification level
             QualityControls.m_Instance.QualityLevel = QualityControls.m_Instance.QualityLevel;
 
-            App.PolyAssetCatalog.ClearLoadingQueue();
-            App.PolyAssetCatalog.UnloadUnusedModels();
+            App.IcosaAssetCatalog.ClearLoadingQueue();
+            App.IcosaAssetCatalog.UnloadUnusedModels();
         }
 
         private bool WorldIsReset(bool toSavedXf)

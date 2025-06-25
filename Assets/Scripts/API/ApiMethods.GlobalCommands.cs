@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using System.IO;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
 
 namespace TiltBrush
 {
@@ -64,13 +66,31 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 1);
         }
 
-        // TODO 
-        // [ApiEndpoint("upload", "Saves the current scene and uploads it to Poly/Icosa")]
-        // public static void SaveAndUpload()
-        // {
-        //     var rEnum = SketchControlsScript.GlobalCommands.SaveAndUpload;
-        //     SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
-        // }
+#if UNITY_EDITOR
+        // Editor only for now to help with testing/debugging
+        // Unsure whether including these in builds would be a security risk.
+        [ApiEndpoint("icosa.devicelogin", "Login to the Icosa Gallery using a device code")]
+        public static void IcosaDeviceLogin(string code)
+        {
+            VrAssetService.m_Instance.IcosaDeviceLogin(code);
+        }
+
+        [ApiEndpoint("icosa.logout", "Logout of the Icosa Gallery")]
+        public static void IcosaLogout()
+        {
+            App.IcosaUserName = null;
+            App.IcosaUserId = null;
+            App.IcosaUserIcon = null;
+            App.Instance.IcosaToken = null;
+        }
+#endif
+
+        [ApiEndpoint("icosa.upload", "Uploads it to the Icosa Gallery")]
+        public static void IcosaUpload()
+        {
+            var rEnum = SketchControlsScript.GlobalCommands.UploadToGenericCloud;
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, (int)Cloud.Icosa);
+        }
 
         [ApiEndpoint("export.all", "Exports all the scenes in the users's sketch folder")]
         public static void ExportAll()
@@ -309,13 +329,12 @@ namespace TiltBrush
         //     SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         // }
 
-        [ApiEndpoint("showfolder.sketch", "Opens a Explorer/Finder window outside of VR showing the user's Sketches folder on the desktop (Mac/Windows only)")]
-        public static void ShowSketchFolder()
+        [ApiEndpoint("showfolder.sketch", "Opens the user's Sketches folder on the desktop")]
+        public static void ShowSketchFolder(int index)
         {
             var rEnum = SketchControlsScript.GlobalCommands.ShowSketchFolder;
-            // TODO iParam1 0 is the first sketch. Do we need to support the other folders?
-            // TODO iParam2 0 is User folder. Do we need to support the other SketchSetTypes?
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 0, 0);
+            // TODO Do we need to support the other SketchSetTypes?
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, index, (int)SketchSetType.User);
         }
 
         [ApiEndpoint("guides.disable", "Toggles guides on and off")]
@@ -598,6 +617,13 @@ namespace TiltBrush
         {
             var rEnum = SketchControlsScript.GlobalCommands.RecordCameraPath;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
+        }
+
+        [ApiEndpoint("camerapath.setactive", "Sets the active camera path")]
+        public static void SetActiveCameraPath(int index)
+        {
+            var widget = _GetActiveCameraPath(index);
+            WidgetManager.m_Instance.SetCurrentCameraPath(widget);
         }
     }
 }
