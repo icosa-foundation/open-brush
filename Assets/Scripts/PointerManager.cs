@@ -394,6 +394,16 @@ namespace TiltBrush
             return m_Pointers[NumUserPointers + i].m_Script;
         }
 
+        public List<TrTransform> GetScriptedTransforms(bool update)
+        {
+            if (update)
+            {
+                UpdateScriptedTransforms(out _);
+            }
+
+            return m_ScriptedTransforms.ToList();
+        }
+
         public PointerScript CreateRemotePointer()
         {
             GameObject obj = (GameObject)Instantiate(m_AuxPointerPrefab, transform, true);
@@ -871,7 +881,7 @@ namespace TiltBrush
             }
         }
 
-        public bool CalcScriptedTransforms()
+        private void UpdateScriptedTransforms(out bool bNeedsDummyPointer)
         {
             Transform rAttachPoint_GS = InputManager.m_Instance.GetBrushControllerAttachPoint();
 
@@ -881,7 +891,8 @@ namespace TiltBrush
             {
                 m_ScriptedTransforms = new List<TrTransform> { TrTransform.identity };
                 ChangeNumActivePointers(0);
-                return false;
+                bNeedsDummyPointer = false;
+                return;
             }
 
             List<TrTransform> transforms = result.AsSingleTrList();
@@ -899,7 +910,7 @@ namespace TiltBrush
                 m_ScriptedTrFixes.Clear();
             }
 
-            bool needsDummyPointer = true;
+            bNeedsDummyPointer = true;
             MatrixListApiWrapper matList = null;
 
             if (result._Space == ScriptCoordSpace.Widget)
@@ -919,7 +930,7 @@ namespace TiltBrush
                             // Check to see if any pointers have an unchanged position
                             if (tr.translation == SymmetryApiWrapper.brushOffset)
                             {
-                                needsDummyPointer = false;
+                                bNeedsDummyPointer = false;
                             }
                             var xfWidget_GS = TrTransform.FromTransform(m_SymmetryWidget);
                             var xfWidget_CS = App.Scene.MainCanvas.AsCanvas[m_SymmetryWidget];
@@ -945,7 +956,7 @@ namespace TiltBrush
                         break;
                     case ScriptCoordSpace.Canvas:
                         {
-                            needsDummyPointer = false;
+                            bNeedsDummyPointer = false;
                             newTr_CS = TrTransform.T(tr.translation - LuaManager.Instance.GetPastBrushPos(0));
                             break;
                         }
@@ -954,7 +965,7 @@ namespace TiltBrush
                             // Check to see if any pointers have an unchanged position
                             if (tr.translation == Vector3.zero)
                             {
-                                needsDummyPointer = false;
+                                bNeedsDummyPointer = false;
                             }
                             Quaternion pointerRot_GS = rAttachPoint_GS.rotation * FreePaintTool.sm_OrientationAdjust;
                             pointerRot_GS *= Quaternion.Euler(0, 180, 0);
@@ -964,13 +975,12 @@ namespace TiltBrush
                 }
                 m_ScriptedTransforms.Add(newTr_CS);
             }
-            return needsDummyPointer;
         }
 
 
         public void GenerateScriptedPointerTransforms()
         {
-            bool needsDummyPointer = CalcScriptedTransforms();
+            UpdateScriptedTransforms(out var needsDummyPointer);
             Transform rAttachPoint_GS = InputManager.m_Instance.GetBrushControllerAttachPoint();
 
             // If none of the pointers match the normal pointer location then we need to show a dummy pointer

@@ -115,6 +115,7 @@ Category {
       BlendOp Add, Min
 
       CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
         #pragma vertex vert
         #pragma fragment frag
       ENDCG
@@ -129,6 +130,7 @@ Category {
       BlendOp Max, Min
 
       CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
         #pragma vertex vert
         #pragma fragment frag
       ENDCG

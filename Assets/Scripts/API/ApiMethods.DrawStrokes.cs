@@ -284,7 +284,7 @@ namespace TiltBrush
                     brushDescriptor = BrushCatalog.m_Instance.AllBrushes
                         .First(x => AlphaNumericLowerCased(x.Description) == brushType);
                 }
-                catch (InvalidOperationException e)
+                catch (InvalidOperationException)
                 {
                     Debug.LogError($"No brush found called: {brushType}");
                 }
