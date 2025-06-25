@@ -14,8 +14,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Newtonsoft.Json.Linq;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace TiltBrush
@@ -27,8 +27,13 @@ namespace TiltBrush
         private string m_Uri;
         private string m_ErrorMessage;
         private string m_PageToken;
+        private int m_pageLimit = 12;
 
-        public bool HasMore { get { return m_PageToken != null; } }
+        // How do we decide when to stop?
+        public bool HasMore =>
+            m_PageToken != null // We have a page token
+            && Int16.TryParse(m_PageToken, out short _) // It's a valid number
+            && Int16.Parse(m_PageToken) < m_pageLimit; // We haven't hit the page limit
 
         public AssetLister(string uri, string errorMessage)
         {
@@ -36,12 +41,11 @@ namespace TiltBrush
             m_ErrorMessage = errorMessage;
         }
 
-        public IEnumerator<object> NextPage(List<PolySceneFileInfo> files)
+        public IEnumerator<object> NextPage(List<IcosaSceneFileInfo> files)
         {
-            string uri = m_PageToken == null ? m_Uri
-                : String.Format("{0}&page_token={1}", m_Uri, m_PageToken);
+            string uri = m_PageToken == null ? m_Uri : $"{m_Uri}pageToken={m_PageToken}&";
 
-            WebRequest request = new WebRequest(uri, App.GoogleIdentity, UnityWebRequest.kHttpVerbGET);
+            WebRequest request = new WebRequest(uri, App.Instance.IcosaToken);
             using (var cr = request.SendAsync().AsIeNull())
             {
                 while (!request.Done)
@@ -68,23 +72,21 @@ namespace TiltBrush
             {
                 foreach (var asset in assets)
                 {
-                    var info = new PolySceneFileInfo(asset);
-                    info.Author = asset["displayName"].ToString();
-                    ;
+                    var info = new IcosaSceneFileInfo(asset);
+                    info.Author = asset["authorName"].ToString();
                     files.Add(info);
+                    App.IcosaAssetCatalog.SetJsonForAsset(asset["assetId"].ToString(), (JObject)asset);
                 }
             }
-            JToken jPageToken = json["nextPageToken"];
-            m_PageToken = jPageToken != null ? jPageToken.ToString() : null;
+            m_PageToken = json["nextPageToken"]?.ToString();
         }
 
-        public IEnumerator<Null> NextPage(List<PolyAssetCatalog.AssetDetails> files,
-                                          string thumbnailSuffix)
+        public IEnumerator<Null> NextPage(List<IcosaAssetCatalog.AssetDetails> files,
+                                          string thumbnailSuffix, bool includePrivate = false)
         {
-            string uri = m_PageToken == null ? m_Uri
-                : String.Format("{0}&page_token={1}", m_Uri, m_PageToken);
+            string uri = m_PageToken == null ? m_Uri : $"{m_Uri}pageToken={m_PageToken}&";
 
-            WebRequest request = new WebRequest(uri, App.GoogleIdentity, UnityWebRequest.kHttpVerbGET);
+            WebRequest request = new WebRequest(uri, App.Instance.IcosaToken);
             using (var cr = request.SendAsync().AsIeNull())
             {
                 while (!request.Done)
@@ -108,24 +110,19 @@ namespace TiltBrush
             if (json.Count == 0) { yield break; }
 
             JToken lastAsset = null;
-            var assets = json["assets"] ?? json["userAssets"];
-            foreach (JToken possibleAsset in assets)
+            var assets = json["assets"];
+            foreach (JObject asset in assets)
             {
                 try
                 {
-                    // User assets are nested in an 'asset' node.
-                    JToken asset = possibleAsset["asset"] ?? possibleAsset;
-                    if (asset["visibility"].ToString() == "PRIVATE")
+                    if (!includePrivate && asset["visibility"].ToString() == "PRIVATE")
                     {
                         continue;
                     }
 
-                    // We now don't filter the liked Poly objects, but we don't want to return liked Tilt Brush
-                    // sketches so in this section we filter out anything with a Tilt file in it.
-                    // Also, although currently all Poly objects have a GLTF representation we should probably
-                    // not rely on that continuing, so we discard anything that doesn't have a GLTF (1)
-                    // representation. We look for PGLTF and GLTF as for a lot of objects Poly is returning
-                    // PGLTF without GLTF.
+                    // We don't want to return liked Tilt Brush sketches
+                    // so in this section we filter out anything with a Tilt file in it.
+                    // TODO We should record the generating app and allow filtering by that
                     bool skipObject = false;
                     foreach (var format in asset["formats"])
                     {
@@ -142,7 +139,8 @@ namespace TiltBrush
                     }
                     lastAsset = asset;
                     string accountName = asset["authorName"]?.ToString() ?? "Unknown";
-                    files.Add(new PolyAssetCatalog.AssetDetails(asset, accountName, thumbnailSuffix));
+                    files.Add(new IcosaAssetCatalog.AssetDetails(asset, accountName, thumbnailSuffix));
+                    App.IcosaAssetCatalog.SetJsonForAsset(asset["assetId"].ToString(), asset);
                 }
                 catch (NullReferenceException)
                 {
@@ -151,9 +149,7 @@ namespace TiltBrush
                 }
                 yield return null;
             }
-
-            JToken jPageToken = json["nextPageToken"];
-            m_PageToken = jPageToken != null ? jPageToken.ToString() : null;
+            m_PageToken = json["nextPageToken"]?.ToString();
         }
     }
 } // namespace TiltBrush

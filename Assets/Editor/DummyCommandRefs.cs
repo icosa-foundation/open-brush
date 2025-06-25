@@ -179,15 +179,15 @@ namespace TiltBrush
         public static void Prefabs_Panels_PolyPanel()
         {
             Use(GlobalCommands.LoginToGenericCloud);
-            Use(GlobalCommands.ViewPolyGallery);
-            Use(GlobalCommands.ViewPolyPage);
+            Use(GlobalCommands.ViewBlocksGallery);
+            Use(GlobalCommands.ViewIcosaHomePage);
         }
 
         public static void Prefabs_Panels_PolyPanel_Mobile()
         {
             Use(GlobalCommands.LoginToGenericCloud);
-            Use(GlobalCommands.ViewPolyGallery);
-            Use(GlobalCommands.ViewPolyPage);
+            Use(GlobalCommands.ViewBlocksGallery);
+            Use(GlobalCommands.ViewIcosaHomePage);
         }
 
         public static void Prefabs_Panels_ReferencePanel_ReferencePanel_Mobile()

@@ -41,4 +41,8 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
     vertex = posOS.xyz;
 
     vertexBuffer[id.x] = vertex;
+
+    // We can't use w as GLTF only supports float2 UVs
+    uv1.x = uv1.w;
+    uv1Buffer[id.x] = uv1;
 }
