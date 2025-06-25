@@ -51,9 +51,10 @@ namespace TiltBrush
         [LuaDocsExample("App:ShowExportFolder()")]
         public static void ShowExportFolder() => ApiMethods.OpenExportFolder();
 
-        [LuaDocsDescription("Opens an Explorer/Finder window outside of VR showing the user's Sketches folder on the desktop (Mac/Windows only)")]
-        [LuaDocsExample("App:ShowSketchesFolder()")]
-        public static void ShowSketchesFolder() => ApiMethods.ShowSketchFolder();
+        [LuaDocsDescription("Opens an Explorer/Finder window outside of VR a folder containing a given sketch (Mac/Windows only)")]
+        [LuaDocsExample("App:ShowSketchesFolder(index)")]
+        [LuaDocsParameter("index", "The index of the sketch (0 being the most recent, then 1 and so on)")]
+        public static void ShowSketchesFolder(int index) => ApiMethods.ShowSketchFolder(index);
 
         [LuaDocsDescription("Activate or deactivate straight edge mode")]
         [LuaDocsExample("App:StraightEdge(true)")]
