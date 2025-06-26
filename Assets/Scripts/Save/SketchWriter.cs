@@ -188,7 +188,8 @@ namespace TiltBrush
                 {
                     // This shouldn't happen
                     Debug.Log($"Skipping layerless stroke {stroke.m_BrushGuid}");
-                    snapshot.layerIndex = canvasToIndexMap[App.Scene.MainCanvas];
+                    snapshot.frameIndex = canvasToIndexMap[App.Scene.MainCanvas].Item1;
+                    snapshot.trackIndex = canvasToIndexMap[App.Scene.MainCanvas].Item2;
                     yield return snapshot;
                 }
                 else
