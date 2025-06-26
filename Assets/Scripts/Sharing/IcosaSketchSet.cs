@@ -19,7 +19,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-
 using Newtonsoft.Json.Linq;
 
 namespace TiltBrush
@@ -52,8 +51,8 @@ namespace TiltBrush
                 get
                 {
                     return m_FileInfo.Author != null
-                      ? new string[] { m_FileInfo.Author }
-                      : new string[] { };
+                        ? new string[] { m_FileInfo.Author }
+                        : new string[] { };
                 }
             }
 
@@ -115,8 +114,7 @@ namespace TiltBrush
             set { m_AssetService = value; }
         }
 
-        public IcosaSketchSet(MonoBehaviour parent, SketchSetType type, int maxSceneTriangles,
-                              bool needsLogin = false)
+        public IcosaSketchSet(MonoBehaviour parent, SketchSetType type, bool needsLogin = false)
         {
             m_Parent = parent;
             m_Sketches = new List<IcosaSketch>();
