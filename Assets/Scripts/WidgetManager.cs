@@ -1550,19 +1550,19 @@ namespace TiltBrush
                     // Kick off a bunch of loads...
                     foreach (var assetId in assetIds)
                     {
-                        if (App.PolyAssetCatalog.GetAssetLoadState(assetId)
-                            != PolyAssetCatalog.AssetLoadState.Loaded)
+                        if (App.IcosaAssetCatalog.GetAssetLoadState(assetId)
+                            != IcosaAssetCatalog.AssetLoadState.Loaded)
                         {
-                            App.PolyAssetCatalog.RequestModelLoad(assetId, "tiltload");
+                            App.IcosaAssetCatalog.RequestModelLoad(assetId, "tiltload");
                         }
                     }
                     // ... and wait for them to complete
                     // No widgets have been created yet, so we can't use AreMediaWidgetsStillLoading.
                     bool IsLoading(string assetId)
                     {
-                        var state = App.PolyAssetCatalog.GetAssetLoadState(assetId);
-                        return (state == PolyAssetCatalog.AssetLoadState.Downloading ||
-                            state == PolyAssetCatalog.AssetLoadState.Loading);
+                        var state = App.IcosaAssetCatalog.GetAssetLoadState(assetId);
+                        return (state == IcosaAssetCatalog.AssetLoadState.Downloading ||
+                            state == IcosaAssetCatalog.AssetLoadState.Loading);
                     }
                     while (assetIds.Any(IsLoading))
                     {
