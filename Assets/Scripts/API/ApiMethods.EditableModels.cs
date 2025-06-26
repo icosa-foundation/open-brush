@@ -126,7 +126,7 @@ namespace TiltBrush
             "Imports a model given a url or a filename in Media Library\\Models (Models loaded from a url are saved locally first)",
             "Andy\\Andy.obj"
         )]
-        public static ModelWidget ImportModel(string location, bool editable=false)
+        public static ModelWidget ImportModel(string location, bool editable = false)
         {
             if (location.StartsWith("poly:"))
             {
