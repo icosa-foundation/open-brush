@@ -145,7 +145,7 @@ namespace TiltBrush
             bool[] pinStates, uint[] groupIds, int[] layerIds)
         {
             // Request model from Poly and if it doesn't exist, ask to load it.
-            Model model = App.PolyAssetCatalog.GetModel(assetId);
+            Model model = App.IcosaAssetCatalog.GetModel(assetId);
             if (model == null)
             {
                 // This Model is transient; the Widget will replace it with a good Model from the PAC
@@ -154,7 +154,7 @@ namespace TiltBrush
             }
             if (!model.m_Valid)
             {
-                App.PolyAssetCatalog.RequestModelLoad(assetId, "widget");
+                App.IcosaAssetCatalog.RequestModelLoad(assetId, "widget");
             }
 
             // Create a widget for each transform.
