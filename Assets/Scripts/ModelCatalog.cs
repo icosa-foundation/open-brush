@@ -80,6 +80,28 @@ namespace TiltBrush
             }
         }
 
+        public IEnumerable<TiltEditableModels> MissingEditableModels
+        {
+            get
+            {
+                var missingModels = m_MissingModelsByRelativePath.Select(e => new TiltEditableModels
+                {
+                    FilePath = e.Key,
+                    Transforms = m_MissingNormalizedModelsByRelativePath.ContainsKey(e.Key) ?
+                        m_MissingNormalizedModelsByRelativePath[e.Key] : null,
+                    RawTransforms = e.Value
+                });
+                var missingNormalizedModels = m_MissingNormalizedModelsByRelativePath.Select(e =>
+                    m_MissingModelsByRelativePath.ContainsKey(e.Key) ? null :
+                        new TiltEditableModels
+                        {
+                            FilePath = e.Key,
+                            Transforms = e.Value
+                        }).Where(m => m != null);
+                return missingModels.Concat(missingNormalizedModels);
+            }
+        }
+
         void Awake()
         {
             m_Instance = this;
@@ -292,7 +314,7 @@ namespace TiltBrush
             {
                 string[] aFiles = Directory.GetFiles(sPath);
                 // Models we download from Poly are called ".gltf2", but ".gltf" is more standard
-                List<string> extensions = new() { ".gltf2", ".gltf", ".glb", ".ply", ".svg" };
+                List<string> extensions = new() { ".gltf2", ".gltf", ".glb", ".ply", ".off", ".svg" };
 
 #if USD_SUPPORTED
                 extensions.AddRange(new [] { ".usda", ".usdc", ".usd" });
