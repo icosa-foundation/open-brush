@@ -74,7 +74,8 @@ namespace TiltBrush
             Group = 1 << 2, // uint32, a value of 0 corresponds to SketchGroupTag.None so in that case,
             // we don't save out the group.
             Seed = 1 << 3, // int32; if not found then you get a random int.
-            Layer = 1 << 4, // uint32;
+            Track = 1 << 4, // uint32 - previously known as Layer;
+            Frame = 1 << 5, // uint32;
         }
 
         [Flags]
@@ -87,7 +88,8 @@ namespace TiltBrush
 
         public struct AdjustedMemoryBrushStroke
         {
-            public uint layerIndex;
+            public uint trackIndex;
+            public uint frameIndex;
             public StrokeData strokeData;
             public StrokeFlags adjustedStrokeFlags;
         }
@@ -136,12 +138,15 @@ namespace TiltBrush
             //     |0  |1Cx|2Cx|  =>  |0  |
             //     |0 x|1Cx|2C |  =>  |2  |
             bool resetGroupContinue = false;
-            var canvases = App.Scene.LayerCanvases.ToArray();
-            var canvasToIndexMap = new Dictionary<CanvasScript, uint>();
-            for (uint index = 0; index < canvases.Length; index++)
+            var canvases = App.Scene.animationUI_manager.GetTrackCanvases();
+            var canvasToIndexMap = new Dictionary<CanvasScript, Tuple<uint, uint>>();
+            for (uint indexFrame = 0; indexFrame < canvases.Count; indexFrame++)
             {
-                var canvas = canvases[index];
-                canvasToIndexMap[canvas] = index;
+                for (uint indexLayer = 0; indexLayer < canvases[0].Count; indexLayer++)
+                {
+                    var canvas = canvases[(int)indexFrame][(int)indexLayer];
+                    canvasToIndexMap[canvas] = new Tuple<uint, uint>(indexFrame, indexLayer);
+                }
             }
             foreach (var stroke in strokes)
             {
@@ -153,30 +158,38 @@ namespace TiltBrush
                     snapshot.adjustedStrokeFlags &= ~StrokeFlags.IsGroupContinue;
                     resetGroupContinue = false;
                 }
-                if (stroke.IsGeometryEnabled && stroke.Canvas == App.Scene.SelectionCanvas)
+                if (stroke.IsGeometryEnabled)
                 {
-                    if (canvasToIndexMap.ContainsKey(stroke.m_PreviousCanvas))
+                    if (stroke.Canvas == App.Scene.SelectionCanvas)
                     {
-                        snapshot.layerIndex = canvasToIndexMap[stroke.m_PreviousCanvas];
+                        if (canvasToIndexMap.ContainsKey(stroke.m_PreviousCanvas))
+                        {
+                            snapshot.frameIndex = canvasToIndexMap[stroke.m_PreviousCanvas].Item1;
+                            snapshot.trackIndex = canvasToIndexMap[stroke.m_PreviousCanvas].Item2;
+                        }
+                        else
+                        {
+                            // Previous canvas has been deleted?
+                            snapshot.frameIndex = canvasToIndexMap[App.Scene.ActiveCanvas].Item1;
+                            snapshot.trackIndex = canvasToIndexMap[App.Scene.ActiveCanvas].Item2;
+                        }
+                        yield return snapshot;
                     }
-                    else
+                    else if (canvasToIndexMap.ContainsKey(stroke.Canvas))
                     {
-                        // Previous canvas has been deleted?
-                        snapshot.layerIndex = canvasToIndexMap[App.Scene.ActiveCanvas];
+                        // Don't use the method in SceneScript as they count deleted layers
+                        snapshot.frameIndex = canvasToIndexMap[stroke.Canvas].Item1;
+                        snapshot.trackIndex = canvasToIndexMap[stroke.Canvas].Item2;
+
+                        yield return snapshot;
                     }
-                    yield return snapshot;
-                }
-                else if (stroke.IsGeometryEnabled && canvasToIndexMap.ContainsKey(stroke.Canvas))
-                {
-                    // Don't use the method in SceneScript as they count deleted layers
-                    snapshot.layerIndex = canvasToIndexMap[stroke.Canvas];
-                    yield return snapshot;
                 }
                 else if (stroke.IsGeometryEnabled && !canvasToIndexMap.ContainsKey(stroke.Canvas))
                 {
                     // This shouldn't happen
                     Debug.Log($"Skipping layerless stroke {stroke.m_BrushGuid}");
-                    snapshot.layerIndex = canvasToIndexMap[App.Scene.MainCanvas];
+                    snapshot.frameIndex = canvasToIndexMap[App.Scene.MainCanvas].Item1;
+                    snapshot.trackIndex = canvasToIndexMap[App.Scene.MainCanvas].Item2;
                     yield return snapshot;
                 }
                 else
@@ -230,7 +243,8 @@ namespace TiltBrush
                 StrokeExtension strokeExtensionMask = StrokeExtension.Flags | StrokeExtension.Seed;
                 if (stroke.m_BrushScale != 1) { strokeExtensionMask |= StrokeExtension.Scale; }
                 if (stroke.Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
-                strokeExtensionMask |= StrokeExtension.Layer;
+                strokeExtensionMask |= StrokeExtension.Track;
+                strokeExtensionMask |= StrokeExtension.Frame;
 
                 writer.UInt32((uint)strokeExtensionMask);
                 uint controlPointExtensionMask =
@@ -251,9 +265,13 @@ namespace TiltBrush
                 {
                     writer.Int32(stroke.m_Seed);
                 }
-                if ((uint)(strokeExtensionMask & StrokeExtension.Layer) != 0)
+                if ((uint)(strokeExtensionMask & StrokeExtension.Track) != 0)
                 {
-                    writer.UInt32(copy.layerIndex);
+                    writer.UInt32(copy.trackIndex);
+                }
+                if ((uint)(strokeExtensionMask & StrokeExtension.Frame) != 0)
+                {
+                    writer.UInt32(copy.frameIndex);
                 }
 
                 // Control points
@@ -314,7 +332,8 @@ namespace TiltBrush
                 StrokeExtension strokeExtensionMask = StrokeExtension.Flags | StrokeExtension.Seed;
                 if (stroke.m_BrushScale != 1) { strokeExtensionMask |= StrokeExtension.Scale; }
                 if (stroke.Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
-                strokeExtensionMask |= StrokeExtension.Layer;
+                strokeExtensionMask |= StrokeExtension.Track;
+                strokeExtensionMask |= StrokeExtension.Frame;
 
                 writer.UInt32((uint)strokeExtensionMask);
                 uint controlPointExtensionMask =
@@ -335,9 +354,13 @@ namespace TiltBrush
                 {
                     writer.Int32(stroke.m_Seed);
                 }
-                if ((uint)(strokeExtensionMask & StrokeExtension.Layer) != 0)
+                if ((uint)(strokeExtensionMask & StrokeExtension.Track) != 0)
                 {
-                    writer.UInt32(copy.layerIndex);
+                    writer.UInt32(copy.trackIndex);
+                }
+                if ((uint)(strokeExtensionMask & StrokeExtension.Frame) != 0)
+                {
+                    writer.UInt32(copy.frameIndex);
                 }
 
                 // Control points
@@ -498,6 +521,10 @@ namespace TiltBrush
                 // Iterate through set bits of mask starting from LSB via bit tricks:
                 //    isolate lowest set bit: x & ~(x-1)
                 //    clear lowest set bit: x & (x-1)
+
+                UInt32 thisTrack = 0;
+                int MaxTrack = 0, MaxFrame = 0;
+
                 for (var fields = strokeExtensionMask; fields != 0; fields &= (fields - 1))
                 {
                     uint bit = (fields & ~(fields - 1));
@@ -519,13 +546,18 @@ namespace TiltBrush
                                 stroke.Group = App.GroupManager.GetGroupFromId(groupId);
                                 break;
                             }
-                        case StrokeExtension.Layer:
+                        case StrokeExtension.Track:
                             UInt32 layerIndex = reader.UInt32();
                             if (squashLayers)
                             {
                                 layerIndex = 0;
                             }
-                            var canvas = App.Scene.GetOrCreateLayer((int)layerIndex);
+                            thisTrack = layerIndex;
+                            break;
+                        case StrokeExtension.Frame:
+                            UInt32 frameIndex = reader.UInt32();
+                            // For Loading Animation
+                            var canvas = App.Scene.animationUI_manager.GetTimelineCanvas((int)thisTrack, (int)frameIndex);
                             stroke.m_IntendedCanvas = canvas;
                             break;
                         case StrokeExtension.Seed:
@@ -672,6 +704,8 @@ namespace TiltBrush
                 }
 
                 // Process stroke extension fields...
+                UInt32 trackIndex = 0;
+                UInt32 frameIndex = 0;
                 for (var fields = strokeExtensionMask; fields != 0; fields &= (fields - 1))
                 {
                     uint bit = (fields & ~(fields - 1));
@@ -692,14 +726,19 @@ namespace TiltBrush
                                 stroke.Group = App.GroupManager.GetGroupFromId(groupId);
                                 break;
                             }
-                        case StrokeExtension.Layer:
-                            UInt32 layerIndex = reader.UInt32();
+                        case StrokeExtension.Track:
+                            trackIndex = reader.UInt32();
                             if (squashLayers)
                             {
-                                layerIndex = 0;
+                                trackIndex = 0;
                             }
-                            var canvas = App.Scene.GetOrCreateLayer((int)layerIndex);
-                            stroke.m_IntendedCanvas = canvas;
+                            break;
+                        case StrokeExtension.Frame:
+                            frameIndex = reader.UInt32();
+                            if (squashLayers)
+                            {
+                                frameIndex = 0;
+                            }
                             break;
                         case StrokeExtension.Seed:
                             stroke.m_Seed = reader.Int32();
@@ -720,6 +759,8 @@ namespace TiltBrush
                             }
                     }
                 }
+                var canvas = App.Scene.GetOrCreateLayer((int)trackIndex, (int)frameIndex);
+                stroke.m_IntendedCanvas = canvas;
 
                 // Process control points...
                 int nControlPoints = reader.Int32();

@@ -26,11 +26,11 @@ namespace TiltBrush
         public CameraPathKnot knot;
         // Refers to a part of the knot in reference, respective to the
         // type of knot.  This is usually cast to an enum defined by the knot class.
-        // For example, CameraPathPositionKnot has 3 controls in enum ControlType:
+        // For example, MovementPathPositionKnot has 3 controls in enum ControlType:
         // Knot == 0, TangentControlForward == 1, and TangentControlBack == 2.
         public int control = CameraPathKnot.kDefaultControl;
         // For PositionKnots, this value refers to the index into the path.  0 is the head
-        // knot, and CameraPath.m_PositionKnots.Count - 1 is the tail.  This is null for
+        // knot, and MovementPath.m_PositionKnots.Count - 1 is the tail.  This is null for
         // path constrained knots.
         public int? positionKnotIndex;
         // For path constrained knots (SpeedKnot, FovKnot, etc.), this value refers to
@@ -64,7 +64,7 @@ namespace TiltBrush
             }
         }
 
-        private float t; // in [0, CameraPath.PositionKnots.Count-1)
+        private float t; // in [0, MovementPath.PositionKnots.Count-1)
 
         public float T => t;
 
@@ -156,6 +156,9 @@ namespace TiltBrush
         // List of fov points sorted relative to the m_PositionKnots.
         public List<CameraPathFovKnot> FovKnots;
         public List<KnotSegment> Segments;
+
+        public bool belongsToAnimation = false;
+        public (int, int) timelineLocation = (-1, -1);
 
         private Transform m_Widget;
         private float m_SegmentRadius;
@@ -318,7 +321,7 @@ namespace TiltBrush
             return segment;
         }
 
-        /// The CameraPath class will not clean up this knot gameObject.  It is the duty of the caller
+        /// The MovementPath class will not clean up this knot gameObject.  It is the duty of the caller
         /// to clean up their mess.
         public CameraPathSpeedKnot CreateSpeedKnot(PathT pathT)
         {
@@ -354,7 +357,7 @@ namespace TiltBrush
                 (int)CameraPathSpeedKnot.ControlType.SpeedControl, null, pathT);
         }
 
-        /// The CameraPath class will not clean up this knot gameObject.  It is the duty of the caller
+        /// The MovementPath class will not clean up this knot gameObject.  It is the duty of the caller
         /// to clean up their mess.
         public CameraPathFovKnot CreateFovKnot(PathT pathT)
         {
@@ -390,7 +393,7 @@ namespace TiltBrush
                 (int)CameraPathFovKnot.ControlType.FovControl, null, pathT);
         }
 
-        /// The CameraPath class will not clean up this knot gameObject.  It is the duty of the caller
+        /// The MovementPath class will not clean up this knot gameObject.  It is the duty of the caller
         /// to clean up their mess.
         public CameraPathRotationKnot CreateRotationKnot(PathT pathT, Quaternion rot)
         {
@@ -441,7 +444,7 @@ namespace TiltBrush
             }
         }
 
-        /// The CameraPath class will not clean up this knot gameObject.  It is the duty of the caller
+        /// The MovementPath class will not clean up this knot gameObject.  It is the duty of the caller
         /// to clean up their mess.
         public CameraPathPositionKnot CreatePositionKnot(Vector3 pos)
         {
@@ -636,7 +639,7 @@ namespace TiltBrush
 
             int positionIndex = PositionKnots.IndexOf(knot as CameraPathPositionKnot);
 
-            // If we're removing an internal position knot, nothing will be orphaned.  
+            // If we're removing an internal position knot, nothing will be orphaned.
             if (positionIndex > 0 && positionIndex < PositionKnots.Count - 1)
             {
                 return orphanedKnots;
@@ -1336,8 +1339,8 @@ namespace TiltBrush
             return new PathT();
         }
 
-        // 
-        //  Knot 0             Knot 1             Knot 2     
+        //
+        //  Knot 0             Knot 1             Knot 2
         // pathT=0.0          pathT=1.0          pathT=2.0
         //    |__________________|__________________|_________...
         //
@@ -1765,6 +1768,9 @@ namespace TiltBrush
                 RotationKnots = RotationKnots.Select(k => k.AsSerializable()).ToArray(),
                 SpeedKnots = SpeedKnots.Select(k => k.AsSerializable()).ToArray(),
                 FovKnots = FovKnots.Select(k => k.AsSerializable()).ToArray(),
+                belongsAnimation = belongsToAnimation,
+                timelineLoc = timelineLocation,
+
             };
         }
 
