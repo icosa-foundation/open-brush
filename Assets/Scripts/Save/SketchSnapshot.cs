@@ -18,6 +18,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+
 using Newtonsoft.Json;
 using ICSharpCode.SharpZipLib.Zip;
 using static TiltBrush.SketchWriter;
@@ -139,7 +140,7 @@ namespace TiltBrush
                 Environment = SceneSettings.m_Instance.CustomEnvironment,
                 SceneTransformInRoomSpace = Coords.AsRoom[App.Instance.m_SceneTransform],
                 SourceId =
-                    SaveLoadScript.m_Instance.TransferredSourceIdFrom(SaveLoadScript.m_Instance.SceneFile),
+                  SaveLoadScript.m_Instance.TransferredSourceIdFrom(SaveLoadScript.m_Instance.SceneFile),
                 AssetId = SaveLoadScript.m_Instance.SceneFile.AssetId,
                 CameraPaths = MetadataUtils.GetCameraPaths(),
                 Layers = MetadataUtils.GetLayers(),
@@ -150,7 +151,7 @@ namespace TiltBrush
         }
 
         public IEnumerator<Timeslice> CreateSnapshotIcons(RenderTexture saveIconTexture,
-                                                          RenderTexture hiResTexture, RenderTexture[] gifTextures)
+            RenderTexture hiResTexture, RenderTexture[] gifTextures)
         {
             var tool = SketchControlsScript.m_Instance.GetSaveIconTool();
             var iconXform = tool.LastSaveCameraRigState;
@@ -237,7 +238,9 @@ namespace TiltBrush
 
                     // Write sketch data
                     zip.PutNextEntry(new ZipEntry(TiltFile.FN_SKETCH));
-                    WriteMemory(zip, strokeCopies, groupIdMapping, out brushList);
+                    List<Guid> fallbackGuids;
+                    WriteMemory(zip, strokeCopies, groupIdMapping, out brushList, out fallbackGuids);
+                    m_Metadata.FallbackBrushIndex = fallbackGuids.Select(GetForcePrecededBy).ToArray();
                     zip.CloseEntry();
 
                     // Write thumbnail if available
@@ -266,7 +269,7 @@ namespace TiltBrush
         {
             try
             {
-                using (var tiltWriter = new TiltFile.AtomicWriter(path))
+                using (var tiltWriter = new TiltFile.TiltAtomicWriter(path))
                 {
                     if (m_ThumbnailBytes != null)
                     {
@@ -285,16 +288,28 @@ namespace TiltBrush
                     }
 
                     List<Guid> brushGuids;
+                    List<Guid> fallbackGuids;
                     using (var stream = tiltWriter.GetWriteStream(TiltFile.FN_SKETCH))
                     {
-                        SketchWriter.WriteMemory(stream, m_Strokes, m_GroupIdMapping, out brushGuids);
+                        SketchWriter.WriteMemory(stream, m_Strokes, m_GroupIdMapping, out brushGuids,
+                          out fallbackGuids);
                     }
                     m_Metadata.BrushIndex = brushGuids.Select(GetForcePrecededBy).ToArray();
+                    m_Metadata.FallbackBrushIndex = fallbackGuids.Select(GetForcePrecededBy).ToArray();
 
                     using (var jsonWriter = new CustomJsonWriter(new StreamWriter(
                         tiltWriter.GetWriteStream(TiltFile.FN_METADATA))))
                     {
                         m_JsonSerializer.Serialize(jsonWriter, m_Metadata);
+                    }
+
+                    // write out any user brushes in the sketch
+                    var userBrushes = brushGuids.Select(x => BrushCatalog.m_Instance.GetBrush(x))
+                      .Where(x => x.UserVariantBrush != null && x.UserVariantBrush.EmbedInSketch);
+                    foreach (var brush in userBrushes)
+                    {
+                        brush.UserVariantBrush.Save(tiltWriter,
+                          Path.GetFileNameWithoutExtension(App.UserBrushesPath()));
                     }
 
                     tiltWriter.Commit();
@@ -310,7 +325,6 @@ namespace TiltBrush
             }
             return null;
         }
-
     }
 
-} // namespace TiltBrush
+}  // namespace TiltBrush

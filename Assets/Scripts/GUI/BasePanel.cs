@@ -110,6 +110,7 @@ namespace TiltBrush
             WebcamPanel = 5200,
             Scripts = 6000,
             SnapSettings = 8000,
+            EditBrush = 9000,
             StencilSettings = 20200,
             LayersPanel = 15000,
             TransformPanel = 12000,
