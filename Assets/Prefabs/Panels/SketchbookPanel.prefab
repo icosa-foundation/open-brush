@@ -5822,7 +5822,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0.236}
-  m_SizeDelta: {x: 1, y: 1}
+  m_SizeDelta: {x: 0.9, y: 1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!23 &1003378931634643767
 MeshRenderer:
@@ -6145,7 +6145,7 @@ Transform:
   m_GameObject: {fileID: 1000010567837980}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.1212, y: 0.383, z: -0.041999996}
+  m_LocalPosition: {x: -0.006, y: 0.68, z: -0.041999996}
   m_LocalScale: {x: 0.17, y: 0.17, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6560,7 +6560,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4000013760615668
 Transform:
   m_ObjectHideFlags: 0

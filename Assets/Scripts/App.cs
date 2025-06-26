@@ -71,7 +71,6 @@ namespace TiltBrush
 
         private const string kDefaultConfigPath = "DefaultConfig";
 
-        private const int kHttpListenerPort = 40074;
         private const string kProtocolHandlerPrefix = "tiltbrush://remix/";
         private const string kBuiltInSketchPrefix = "tiltbrush://builtin/";
         private const string kFileMoveFilename = "WhereHaveMyFilesGone.txt";

@@ -85,6 +85,16 @@ namespace TiltBrush
                 GameObject go = gltf.CreatedObject;
                 model.CalcBoundsGltf(go);
                 model.EndCreatePrefab(go, warnings);
+                var materialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: localPath);
+                // Gather all the unity materials created by UnityGltf
+                var mrs = go.GetComponentsInChildren<MeshRenderer>(true);
+                foreach (var mr in mrs)
+                {
+                    foreach (var material in mr.materials)
+                    {
+                        materialCollector.Add(material);
+                    }
+                }
             }
             catch (Exception e)
             {

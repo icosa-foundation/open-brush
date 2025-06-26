@@ -1009,7 +1009,8 @@ MonoBehaviour:
   - m_Id: 10133179773722624
     m_Localized: 'No matches.
 
-      Like more sketches on Icosa...'
+      Like more sketches on Icosa or change your search
+      options...'
     m_Metadata:
       m_Items: []
   - m_Id: 10133306584309760
@@ -3708,6 +3709,11 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 369886448819200000
     m_Localized: All
+    m_Metadata:
+      m_Items: []
+  - m_Id: 380760416547594240
+    m_Localized: 'Take off your headset or switch to the browser to continue logging
+      in '
     m_Metadata:
       m_Items: []
   references:

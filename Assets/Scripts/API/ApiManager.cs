@@ -95,6 +95,7 @@ namespace TiltBrush
             App.HttpServer.AddHttpHandler($"/help", InfoCallback);
             App.HttpServer.AddHttpHandler($"/help/commands", InfoCallback);
             App.HttpServer.AddHttpHandler($"/help/brushes", InfoCallback);
+            App.HttpServer.AddHttpHandler($"/device_login/v1", DeviceLoginCallback);
             App.HttpServer.AddRawHttpHandler("/cameraview", CameraViewCallback);
             PopulateApi();
 
@@ -120,6 +121,38 @@ namespace TiltBrush
                 m_FileWatcher.EnableRaisingEvents = true;
             }
             App.Instance.StateChanged += RunStartupScript;
+        }
+
+        private string DeviceLoginCallback(HttpListenerRequest request)
+        {
+            // TODO Use AddRawHttpHandler and return appropriate status codes
+            var host = $"{request.LocalEndPoint.Address}:{request.LocalEndPoint.Port}";
+            host = host.Replace("127.0.0.1", "localhost");
+            if (host != $"localhost:{HttpServer.HTTP_PORT}") return "Please login from the local browser";
+            string formdata = null;
+            if (request.HasEntityBody)
+            {
+                using (Stream body = request.InputStream)
+                {
+                    using (var reader = new StreamReader(body, request.ContentEncoding))
+                    {
+                        formdata = Uri.UnescapeDataString(reader.ReadToEnd()).Trim();
+                    }
+                }
+            }
+#if UNITY_EDITOR
+            if (string.IsNullOrEmpty(formdata))
+            {
+                formdata = request.Url.Query;
+            }
+#endif
+            if (string.IsNullOrEmpty(formdata)) return "Invalid request";
+            string deviceCodeIfValid = _ValidateandExtractDeviceCode(formdata);
+            if (deviceCodeIfValid != null)
+            {
+                VrAssetService.m_Instance.IcosaDeviceLogin(deviceCodeIfValid);
+            }
+            return "You can now return to Open Brush";
         }
 
         void Start()
@@ -185,6 +218,22 @@ namespace TiltBrush
             EnqueuedApiCommand cmd = new EnqueuedApiCommand(commandPair[0], parameters);
             m_RequestedCommandQueue.Enqueue(cmd);
             return cmd;
+        }
+
+        private string _ValidateandExtractDeviceCode(string formdata)
+        {
+            // Handle device code login requests from local browser
+            var queryParams = formdata.Split("&");
+            if (queryParams.Length != 2) return null;
+            var secret_param = queryParams[0].Split("=");
+            if (secret_param.Length != 2 || secret_param[0] != "client_secret") return null;
+            string secret = secret_param[1];
+            var device_code_param = queryParams[1].Split("=");
+            if (device_code_param.Length != 2 || device_code_param[0] != "device_code") return null;
+            string device_code = device_code_param[1];
+            if (device_code.Length != 5) return null;
+            bool isValidSecret = VrAssetService.m_Instance.IsValidDeviceCodeSecret(secret);
+            return isValidSecret ? device_code : null;
         }
 
         private void OnScriptsDirectoryChanged(object sender, FileSystemEventArgs e)
@@ -589,9 +638,13 @@ namespace TiltBrush
                 {
                     using (var reader = new StreamReader(body, request.ContentEncoding))
                     {
-                        // TODO also accept JSON
                         var formdata = Uri.UnescapeDataString(reader.ReadToEnd());
-                        var formdataCommands = formdata.Replace("+", " ").Split('&').Where(s => s.Trim().Length > 0);
+                        var formdataCommands = formdata.Replace("+", " ")
+                            .Split('&')
+                            .Where(s => s.Trim().Length > 0)
+                            .ToList();
+
+                        // TODO also accept JSON
                         commandStrings.AddRange(formdataCommands);
                     }
                 }

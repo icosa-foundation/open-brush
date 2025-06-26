@@ -4661,6 +4661,7 @@ namespace TiltBrush
                             App.Instance.IcosaToken = null;
                             App.IcosaUserName = "";
                             App.IcosaUserIcon = null;
+                            PanelManager.m_Instance.GetAdminPanel().CloseActivePopUp(true);
                         }
                         else
                         {
@@ -4983,13 +4984,13 @@ namespace TiltBrush
                     EatGazeObjectInput();
                     break;
                 case GlobalCommands.OpenScriptsCommandsList:
-                    OpenURLAndInformUser($"http://localhost:{App.HttpServer.HttpPort}/help/commands");
+                    OpenURLAndInformUser($"http://localhost:{HttpServer.HTTP_PORT}/help/commands");
                     break;
                 case GlobalCommands.OpenScriptsList:
-                    OpenURLAndInformUser($"http://localhost:{App.HttpServer.HttpPort}/scripts");
+                    OpenURLAndInformUser($"http://localhost:{HttpServer.HTTP_PORT}/scripts");
                     break;
                 case GlobalCommands.OpenExampleScriptsList:
-                    OpenURLAndInformUser($"http://localhost:{App.HttpServer.HttpPort}/examplescripts");
+                    OpenURLAndInformUser($"http://localhost:{HttpServer.HTTP_PORT}/examplescripts");
                     break;
                 case GlobalCommands.OpenPluginDocs:
                     OpenURLAndInformUser("https://docs.openbrush.app/user-guide/using-plugins");
