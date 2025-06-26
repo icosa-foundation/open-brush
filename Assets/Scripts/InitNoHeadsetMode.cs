@@ -27,23 +27,18 @@ namespace TiltBrush
         private List<SceneFileInfo> m_Sketches;
         private TMP_Dropdown m_Dropdown;
 
-        void Awake()
+        void Start()
         {
             m_Dropdown = GetComponentInChildren<TMP_Dropdown>();
             if (m_Dropdown != null)
             {
                 m_Dropdown.gameObject.SetActive(false);
             }
-        }
 
-        void Start()
-        {
-            // m_Dropdown is already assigned in Awake
             m_Dropdown.ClearOptions();
             m_Sketches = new List<SceneFileInfo>();
 
             StartCoroutine(DownloadCuratedSketches(10));
-            StartCoroutine(UiInitCoroutine());
         }
 
         public IEnumerator DownloadCuratedSketches(int numSketches)
@@ -149,7 +144,7 @@ namespace TiltBrush
             SceneFileInfo rInfo = m_Sketches[index];
             SketchControlsScript.m_Instance.LoadSketch(rInfo, true);
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FlyTool);
-            Destroy(gameObject);
+            gameObject.SetActive(false);
         }
 
         public void ShowSketchSelectorUi(bool active = true)
