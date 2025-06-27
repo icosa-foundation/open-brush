@@ -262,6 +262,7 @@ namespace TiltBrush
             m_ModelInstance.parent = this.transform;
 
             Coords.AsLocal[m_ModelInstance] = TrTransform.identity;
+
             float maxExtent = 2 * Mathf.Max(m_Model.m_MeshBounds.extents.x,
                 Mathf.Max(m_Model.m_MeshBounds.extents.y, m_Model.m_MeshBounds.extents.z));
             float size;
@@ -770,13 +771,25 @@ namespace TiltBrush
 
         /// isNonRawTransform - true if the transform uses the pre-M13 meaning of transform.scale.
         static void CreateModel(Model model, string subtree, TrTransform xf, bool pin,
-                                bool isNonRawTransform, uint groupId, int layerId, string assetId = null)
+                                bool isNonRawTransform, uint groupId, int layerId, string assetId = null, bool fromSave = false)
         {
 
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             modelWidget.transform.localPosition = xf.translation;
             modelWidget.transform.localRotation = xf.rotation;
             modelWidget.Model = model;
+            if (fromSave)
+            {
+                // TODO this fixes transforms for legacy models
+                // but might end up applied multiple times to new models
+                // Needs testing with new models
+                if (model.GetLocation().GetLocationType() == Model.Location.Type.IcosaAssetId)
+                {
+                    modelWidget.m_ModelInstance.position *= 10;
+                    modelWidget.m_ModelInstance.rotation *= Quaternion.Euler(0, 90, 0);
+                }
+
+            }
             modelWidget.m_Subtree = subtree;
             modelWidget.SyncHierarchyToSubtree();
             modelWidget.m_LoadingFromSketch = true;
@@ -814,8 +827,8 @@ namespace TiltBrush
             Model model = App.IcosaAssetCatalog.GetModel(assetId);
             if (model == null)
             {
-                // This Model is transient; the Widget will replace it with a good Model from the PAC
-                // as soon as the PAC loads it.
+                // This Model is transient; the Widget will replace it with a good Model from the Icosa Asset Catalog
+                // as soon as the Icosa Asset Catalog loads it.
                 model = new Model(assetId, null);
             }
             if (!model.m_Valid)
@@ -829,7 +842,7 @@ namespace TiltBrush
                 bool pin = (i < pinStates.Length) ? pinStates[i] : true;
                 uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
                 int layerId = (layerIds != null && i < layerIds.Length) ? layerIds[i] : 0;
-                CreateModel(model, subtrees?[i], rawXfs[i], pin, isNonRawTransform: false, groupId, layerId, assetId);
+                CreateModel(model, subtrees?[i], rawXfs[i], pin, isNonRawTransform: false, groupId, layerId, assetId, fromSave: false);
             }
         }
 

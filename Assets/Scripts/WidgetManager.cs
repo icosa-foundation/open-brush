@@ -714,24 +714,24 @@ namespace TiltBrush
         }
 
         // Used only at .tilt-loading time
-        public void SetDataFromTilt(TiltModels75[] value)
+        public void SetModelDataFromTilt(TiltModels75[] value)
         {
             m_loadingTiltModels75 = value;
         }
 
         // Used only at .tilt-loading time
-        public void SetDataFromTilt(TiltImages75[] value)
+        public void SetImageDataFromTilt(TiltImages75[] value)
         {
             m_loadingTiltImages75 = value;
         }
 
         // Used only at .tilt-loading time
-        public void SetDataFromTilt(TiltLights[] value)
+        public void SetLightDataFromTilt(TiltLights[] value)
         {
             m_loadingTiltLights = value;
         }
 
-        public void SetDataFromTilt(CameraPathMetadata[] cameraPaths)
+        public void SetCameraPathDataFromTilt(CameraPathMetadata[] cameraPaths)
         {
             for (int i = 0; i < cameraPaths.Length; ++i)
             {
@@ -739,7 +739,7 @@ namespace TiltBrush
             }
         }
 
-        public void SetDataFromTilt(TiltText[] tiltText)
+        public void SetTextDataFromTilt(TiltText[] tiltText)
         {
             for (int i = 0; i < tiltText.Length; ++i)
             {
@@ -748,7 +748,7 @@ namespace TiltBrush
         }
 
 
-        public void SetDataFromTilt(TiltVideo[] value)
+        public void SetVideoDataFromTilt(TiltVideo[] value)
         {
             m_loadingTiltVideos = value;
         }

@@ -610,7 +610,7 @@ jobs:
 
       - name: Save Library/ cache
         uses: actions/cache/save@v4
-        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
+        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true' && !matrix.flavors.development
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:

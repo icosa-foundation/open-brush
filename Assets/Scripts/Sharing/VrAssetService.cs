@@ -22,6 +22,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -59,12 +60,20 @@ namespace TiltBrush
         private const string kUserAssetsUri = "/users/me/assets";
         private const string kUserLikesUri = "/users/me/likedassets";
 
+        // Used when requesting a device code from the system browser
+        private string m_CurrentDeviceCodeSecret;
+        private DateTime? m_CurrentDeviceCodeCreateTime;
+
         // Icosa API used by Open Brush.
         // If Icosa doesn't support this version, don't try to talk to Icosa and prompt the user to upgrade.
         private const string kIcosaApiVersion = "v1";
 
         /// Change-of-basis transform
         public static readonly TrTransform kIcosaFromUnity;
+
+        // Used for device code logins
+        private static Action _pendingMainThreadAction;
+
 
         private static Dictionary<string, string> kGltfMimetypes = new Dictionary<string, string>
         {
@@ -421,8 +430,6 @@ namespace TiltBrush
                 AudioManager.m_Instance.PlayUploadCanceledSound(InputManager.Wand.Transform.position);
             }
 
-            Debug.LogFormat("UploadCurrentSketch(demo: {0})", isDemoUpload);
-
             // Cancel previous upload coroutine if necessary.
             if (m_UploadTask != null)
             {
@@ -655,6 +662,13 @@ namespace TiltBrush
         private async Task<(string, long)> UploadCurrentSketchIcosaAsync(
             CancellationToken token, string tempUploadDir, bool _)
         {
+            // Until gallery viewer support for new glb files, prefer legacy
+            // unless we have elements that the old format can't handle
+            bool hasModels = WidgetManager.m_Instance.ActiveModelWidgets.Count > 0;
+            bool hasImages = WidgetManager.m_Instance.ActiveImageWidgets.Count > 0;
+            bool hasTexts = WidgetManager.m_Instance.ActiveTextWidgets.Count > 0;
+            bool publishLegacyGltf = !(hasModels || hasImages || hasTexts);
+
             DiskSceneFileInfo fileInfo = GetWritableFile();
 
             var currentScene = SaveLoadScript.m_Instance.SceneFile;
@@ -662,18 +676,27 @@ namespace TiltBrush
             string gltfUploadName = $"{uploadName}.gltf";
 
             SetUploadProgress(UploadStep.CreateGltf, 0);
-            // Do the glTF straight away as it relies on the meshes, not the stroke descriptions.
-            string gltfFile = Path.Combine(tempUploadDir, gltfUploadName);
-            var exportResults = await OverlayManager.m_Instance.RunInCompositorAsync(
-                OverlayType.Export, fadeDuration: 0.5f,
-                action: () => new ExportGlTF().ExportBrushStrokes(
-                    gltfFile,
-                    AxisConvention.kGltf2, binary: false, doExtras: true,
-                    includeLocalMediaContent: true, gltfVersion: 2,
-                    selfContained: true));
-            if (!exportResults.success)
+
+            // Collect files into a .zip file, including the .tilt file and thumbnail
+            string zipName = Path.Combine(tempUploadDir, "archive.zip");
+            var filesToZip = new List<string>();
+
+            if (publishLegacyGltf)
             {
-                throw new VrAssetServiceException("Internal error creating upload data.");
+                // Do the glTF straight away as it relies on the meshes, not the stroke descriptions.
+                string gltfFile = Path.Combine(tempUploadDir, gltfUploadName);
+                var exportResults = await OverlayManager.m_Instance.RunInCompositorAsync(
+                    OverlayType.Export, fadeDuration: 0.5f,
+                    action: () => new ExportGlTF().ExportBrushStrokes(
+                        gltfFile,
+                        AxisConvention.kGltf2, binary: false, doExtras: true,
+                        includeLocalMediaContent: true, gltfVersion: 2,
+                        selfContained: true));
+                if (!exportResults.success)
+                {
+                    throw new VrAssetServiceException("Internal error creating upload data.");
+                }
+                filesToZip.AddRange(exportResults.exportedFiles);
             }
 
             // Construct options to set the background color to the current environment's clear color.
@@ -681,8 +704,6 @@ namespace TiltBrush
             IcosaService.Options options = null;
             // options.SetBackgroundColor(bgColor);
 
-            // TODO(b/146892613): we're not uploading this at the moment. Should we be?
-            // If we don't, we can probably remove this step...?
             SetUploadProgress(UploadStep.CreateTilt, 0);
             var thumbnail = await CreateTiltForUploadAsync(fileInfo);
             token.ThrowIfCancellationRequested();
@@ -695,18 +716,16 @@ namespace TiltBrush
             string tempThumbnailPath = Path.Combine(tempUploadDir, "thumbnail.png");
             File.WriteAllBytes(tempThumbnailPath, thumbnail);
 
-            // Collect files into a .zip file, including the .tilt file and thumbnail
-            string zipName = Path.Combine(tempUploadDir, "archive.zip");
+            filesToZip.Add(tempTiltPath);
+            filesToZip.Add(tempThumbnailPath);
 
-            var filesToZip = exportResults.exportedFiles.ToList()
-                .Append(tempTiltPath)
-                .Append(tempThumbnailPath);
-
-            if (App.UserConfig?.Sharing.UseNewGlb ?? false)
+            // Always use new glb if we're not publishing legacy glTF.
+            // Otherwise it's based on user config.
+            if (App.UserConfig.Sharing.UseNewGlb || !publishLegacyGltf)
             {
                 string newGlbPath = Path.Combine(tempUploadDir, $"{uploadName}.glb");
                 Export.ExportNewGlb(tempUploadDir, uploadName, true);
-                filesToZip = filesToZip.Append(newGlbPath);
+                filesToZip.Add(newGlbPath);
             }
 
             await CreateZipFileAsync(zipName, tempUploadDir, filesToZip.ToArray(), token);
@@ -950,6 +969,88 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(
                 SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: path);
             File.Delete(path);
+        }
+
+        public bool IsValidDeviceCodeSecret(string secret)
+        {
+            if (string.IsNullOrEmpty(secret) || string.IsNullOrEmpty(m_CurrentDeviceCodeSecret)) return false;
+            if (secret != m_CurrentDeviceCodeSecret) return false;
+            // Check the secret is less than 120 seconds old
+            if (!m_CurrentDeviceCodeCreateTime.HasValue) return false;
+            if (m_CurrentDeviceCodeCreateTime.Value + TimeSpan.FromSeconds(120) < DateTime.UtcNow)
+            {
+                // The secret is too old
+                return false;
+            }
+            // Invalidate the secret so it can't be used again
+            m_CurrentDeviceCodeSecret = null;
+            m_CurrentDeviceCodeCreateTime = null;
+
+            return true;
+        }
+
+        public static void RunOnMainThread(Action action)
+        {
+            _pendingMainThreadAction = action;
+        }
+
+        void Update()
+        {
+            if (_pendingMainThreadAction != null)
+            {
+                _pendingMainThreadAction.Invoke();
+                _pendingMainThreadAction = null;
+            }
+        }
+
+        public void IcosaDeviceLogin(string code)
+        {
+            RunOnMainThread(() =>
+            {
+                StartCoroutine(_IcosaDeviceLogin(code));
+            });
+        }
+
+        private IEnumerator _IcosaDeviceLogin(string code)
+        {
+            var config = new Configuration();
+            var loginApi = new LoginApi(m_Instance.IcosaApiRoot);
+            config.BasePath = m_Instance.IcosaApiRoot;
+            loginApi.Configuration = config;
+
+            var loginTask = loginApi.DeviceLoginLoginDeviceLoginPostAsync(code);
+            while (!loginTask.IsCompleted)
+            {
+                yield return null;
+            }
+            var token = loginTask.Result;
+            App.Instance.IcosaToken = token.AccessToken;
+
+            var usersApi = new UsersApi(VrAssetService.m_Instance.IcosaApiRoot);
+            config = new Configuration { AccessToken = App.Instance.IcosaToken };
+            config.BasePath = VrAssetService.m_Instance.IcosaApiRoot;
+            usersApi.Configuration = config;
+
+            var userTask = usersApi.GetUsersMeUsersMeGetAsync();
+            while (!userTask.IsCompleted)
+            {
+                yield return null;
+            }
+            var userData = userTask.Result;
+
+            if (userData != null)
+            {
+                App.IcosaUserName = userData.Displayname;
+                App.IcosaUserId = userData.Id;
+            }
+            PanelManager.m_Instance.GetAdminPanel().CloseActivePopUp(true);
+        }
+
+        public string GenerateDeviceCodeSecret()
+        {
+            m_CurrentDeviceCodeCreateTime = DateTime.UtcNow;
+            m_CurrentDeviceCodeSecret = Guid.NewGuid().ToString();
+            return m_CurrentDeviceCodeSecret;
         }
     }
 
