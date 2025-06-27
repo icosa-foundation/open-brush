@@ -408,6 +408,7 @@ namespace TiltBrush
 
         public bool RequestingAudioReactiveMode => m_RequestingAudioReactiveMode;
         public bool RamLoggingActive = false;
+        private InitNoHeadsetMode m_NoHeadsetInitScript;
 
         public void ToggleAudioReactiveModeRequest()
         {
@@ -1787,15 +1788,20 @@ namespace TiltBrush
 
         public void CreateFailedToDetectVrDialog(string msg = null, bool allowViewing = true)
         {
-            GameObject dialog = Instantiate(m_ErrorDialog);
-            var initScript = dialog.GetComponent<InitNoHeadsetMode>();
+            if (m_NoHeadsetInitScript == null)
+            {
+                GameObject dialog = Instantiate(m_ErrorDialog);
+                m_NoHeadsetInitScript = dialog.GetComponent<InitNoHeadsetMode>();
+            }
             if (!string.IsNullOrEmpty(msg))
             {
-                var textMesh = initScript.m_Heading;
+                var textMesh = m_NoHeadsetInitScript.m_Heading;
                 textMesh.text = @$"        Tiltasaurus says...
                    {msg}";
             }
-            initScript.ShowSketchSelectorUi(allowViewing && !StartupError);
+            bool show = allowViewing && !StartupError;
+            m_NoHeadsetInitScript.gameObject.SetActive(show);
+            m_NoHeadsetInitScript.ShowSketchSelectorUi(show);
         }
 
         static public bool AppAllowsCreation()
