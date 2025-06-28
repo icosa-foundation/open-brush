@@ -188,7 +188,7 @@ namespace TiltBrush
         const float kThumbnailFetchRate = 15;
         const int kThumbnailFetchMaxCount = 30;
         const int kThumbnailReadRate = 4;
-        private const int DEFAULT_MODEL_TRIANGLE_COUNT_MAX = 20000;
+        private const int DEFAULT_MODEL_TRIANGLE_COUNT_MAX = 80000;
 
         // This may be a bit broader than an asset id, but it's a safe set of
         // filename characters.
