@@ -323,6 +323,9 @@ namespace TiltBrush
 
         public bool HasSubModels()
         {
+            // Unsplit models always have the possibility of having subobjects.
+            if (!m_ObjModelScript.m_MeshHasBeenSplit) return true;
+
             string ext = Model.GetLocation().Extension;
             if (ext == ".gltf" || ext == ".gltf2" || ext == ".glb")
             {

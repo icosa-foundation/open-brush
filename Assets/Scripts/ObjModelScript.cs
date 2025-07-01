@@ -33,6 +33,7 @@ namespace TiltBrush
         // - root.activeInHierarchy  implies  gameObject.activeInHierarchy
         public MeshFilter[] m_MeshChildren;
         public SkinnedMeshRenderer[] m_SkinnedMeshChildren;
+        public bool m_MeshHasBeenSplit = false;
 
         public int NumMeshes
         {
@@ -136,6 +137,17 @@ namespace TiltBrush
                 App.Instance.SelectionEffect.UnregisterMesh(m_MeshChildren[i]);
             }
 #endif
+        }
+        public MeshFilter MatchMeshFilter(MeshFilter widgetMf)
+        {
+            foreach (var mf in m_MeshChildren)
+            {
+                if (mf.name == widgetMf.name)
+                {
+                    return mf;
+                }
+            }
+            return null;
         }
     }
 } // namespace TiltBrush

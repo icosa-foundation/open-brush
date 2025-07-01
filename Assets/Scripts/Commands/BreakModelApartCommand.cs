@@ -15,6 +15,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using UnityEditor.Localization.Plugins.XLIFF.V12;
 using UnityEngine;
 
 namespace TiltBrush
@@ -162,8 +163,32 @@ namespace TiltBrush
             m_InitialWidget = initialWidget;
             m_NewModelWidgets = new List<ModelWidget>();
             m_NewLightWidgets = new List<LightWidget>();
-            var root = initialWidget.GetComponentInChildren<ObjModelScript>().transform;
-            m_NodePaths = ExtractPaths(root);
+            var objModelScript = initialWidget.GetComponentInChildren<ObjModelScript>();
+            var root = objModelScript.transform;
+            var meshFilters = root.GetComponentsInChildren<MeshFilter>();
+            if (meshFilters.Length == 1)
+            {
+                var widgetMf = meshFilters[0];
+                var model = initialWidget.Model.m_ModelParent;
+                var modelMf = model.GetComponentInChildren<ObjModelScript>().MatchMeshFilter(widgetMf);
+                var splits = MeshSplitter.DoSplit(modelMf);
+                if (splits.Count > 1)
+                {
+                    // Destroy the original and adopt the splits
+                    modelMf.gameObject.SetActive(false);
+                    GameObject.Destroy(modelMf.gameObject);
+                    // objModelScript.m_MeshChildren = splits.ToArray();
+                    // m_InitialWidget.SyncHierarchyToSubtree();
+                }
+                else
+                {
+                    // Destroy the split as it simply duplicates the original
+                    GameObject.Destroy(splits[0].gameObject);
+                }
+                // Never try again
+                objModelScript.m_MeshHasBeenSplit = true;
+            }
+            m_NodePaths = ExtractPaths(objModelScript.transform);
         }
 
         private static string GetHierarchyPath(Transform root, Transform obj)
