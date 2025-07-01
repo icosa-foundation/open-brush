@@ -365,7 +365,7 @@ namespace TiltBrush
             public int TriangleCountMax;
             public string License;
             public string OrderBy;
-            public string Format;
+            public string[] Formats;
             public string Curated;
             public string Category;
         }
@@ -531,7 +531,7 @@ namespace TiltBrush
                             TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                             License = LicenseChoices.ANY,
                             OrderBy = OrderByChoices.NEWEST,
-                            Format = FormatChoices.GLTF2,
+                            Formats = new [] {FormatChoices.GLTF2, FormatChoices.OBJ},
                             Curated = CuratedChoices.ANY,
                             Category = CategoryChoices.ANY
                         }
@@ -547,7 +547,7 @@ namespace TiltBrush
                             TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                             License = LicenseChoices.REMIXABLE,
                             OrderBy = OrderByChoices.LIKED_TIME,
-                            Format = FormatChoices.GLTF2,
+                            Formats = new [] {FormatChoices.GLTF2, FormatChoices.OBJ},
                             Curated = CuratedChoices.ANY,
                             Category = CategoryChoices.ANY
                         }
@@ -568,7 +568,7 @@ namespace TiltBrush
                             TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                             License = LicenseChoices.REMIXABLE,
                             OrderBy = OrderByChoices.BEST,
-                            Format = FormatChoices.GLTF2,
+                            Formats = new [] {FormatChoices.GLTF2, FormatChoices.OBJ},
                             Curated = CuratedChoices.TRUE,
                             Category = CategoryChoices.ANY
                         }
@@ -1309,7 +1309,7 @@ namespace TiltBrush
             var queryParams = QueryOptionParametersForSet(set);
             if (ChoicesHelper.IsValidChoice<FormatChoices>(format))
             {
-                queryParams.Format = format;
+                queryParams.Formats = new [] {format};
                 m_AssetSetByType[set].QueryParams = queryParams;
                 if (requestRefresh) RefreshPanel();
             }

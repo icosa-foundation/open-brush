@@ -922,7 +922,10 @@ namespace TiltBrush
                 IcosaSetType.Featured => $"{IcosaApiRoot}{kListAssetsUri}?",
                 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
             };
-            uri += $"format={queryParams.Format}&";
+            foreach (var format in queryParams.Formats)
+            {
+                uri += $"format={format}&";
+            }
             uri += $"pageSize={m_AssetsPerPage}&";
             uri += $"triangleCountMax={queryParams.TriangleCountMax}&";
             uri += $"orderBy={queryParams.OrderBy}&";
