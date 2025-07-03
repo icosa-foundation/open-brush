@@ -341,7 +341,7 @@ namespace TiltBrush
                         UnityEngine.Profiling.Profiler.BeginSample("AssetDetails.DownloadThumbnail:LoadImage");
                         if (imageData != null)
                         {
-                            m_Thumbnail.Resize(imageData.ColorWidth, imageData.ColorHeight,
+                            m_Thumbnail.Reinitialize(imageData.ColorWidth, imageData.ColorHeight,
                                 TextureFormat.ARGB32, false);
                             m_Thumbnail.SetPixels32(imageData.ColorData);
                             m_Thumbnail.Apply(updateMipmaps: false, makeNoLongerReadable: true);
@@ -479,7 +479,7 @@ namespace TiltBrush
         {
             string cacheDir = Path.Combine(Application.persistentDataPath, "assetCache");
             m_CacheDir = cacheDir.Replace("\\", "/");
-            // Use a different directory from m_CacheDir to avoid having to make ValidGltfCache()
+            // Use a different directory from m_CacheDir to avoid having to make ValidModelCache()
             // smart enough to allow directories with only a thumbnail and no asset data.
             m_ThumbnailCacheDir = Path.Combine(Application.persistentDataPath, "assetThumbnail")
                 .Replace("\\", "/");
@@ -496,11 +496,11 @@ namespace TiltBrush
                 foreach (string folderPath in EnumerateCacheDirectories())
                 {
                     string assetId = Path.GetFileName(folderPath);
-                    string gltfFile = ValidGltfCache(folderPath, assetId);
-                    if (gltfFile != null)
+                    string modelFile = ValidModelCache(folderPath);
+                    if (modelFile != null)
                     {
                         string path = Path.Combine(folderPath, assetId);
-                        path = Path.Combine(path, gltfFile);
+                        path = Path.Combine(path, modelFile);
                         m_ModelsByAssetId[assetId] = new Model(assetId, path);
                     }
                     else
@@ -786,9 +786,11 @@ namespace TiltBrush
                     Debug.LogError("Cannot create directory for online asset download.");
                 }
 
+                var formats = new [] { VrAssetFormat.GLTF2, VrAssetFormat.OBJ };
+
                 // Then request the asset from Poly.
                 AssetGetter request = VrAssetService.m_Instance.GetAsset(
-                    assetId, VrAssetFormat.GLTF2, reason);
+                    assetId, formats, reason);
                 StartCoroutine(request.GetAssetCoroutine());
                 m_ActiveRequests.Add(request);
                 m_IsLoadingMemo.Add(assetId);
@@ -852,10 +854,6 @@ namespace TiltBrush
         /// into model loads?
         public void PrecacheModels(SceneFileInfo sceneFileInfo, string reason)
         {
-            if (string.IsNullOrEmpty(App.Config.GoogleSecrets?.ApiKey))
-            {
-                return;
-            }
             StartCoroutine(PrecacheModelsCoroutine(sceneFileInfo, reason));
         }
 
@@ -892,8 +890,9 @@ namespace TiltBrush
                 {
                     continue;
                 }
+                var formats = new [] { VrAssetFormat.GLTF2, VrAssetFormat.OBJ };
                 precacheCoroutines.Add(PrecacheCoroutine(
-                    VrAssetService.m_Instance.GetAsset(id, VrAssetFormat.GLTF2, reason)));
+                    VrAssetService.m_Instance.GetAsset(id, formats, reason)));
                 yield return null;
             }
 
@@ -1208,7 +1207,7 @@ namespace TiltBrush
         // Ideally we would check against the format info from Poly that we have all the required
         // elements but for now we know that there should be exactly one .gltf/.gltf2 and a .bin
         // Returns the filename of the .gltf/.gltf2 file, or null if not valid.
-        private static string ValidGltfCache(string dir, string assetId)
+        private static string ValidModelCache(string dir)
         {
             // We now don't require a .bin file, as some assets are glbs
             // if (Directory.GetFiles(dir, "*.bin").Length == 0)
@@ -1218,18 +1217,23 @@ namespace TiltBrush
 
             var filesGltf1 = Directory.GetFiles(dir, "*.gltf");
             var filesGltf2 = Directory.GetFiles(dir, "*.gltf2");
-            if (filesGltf1.Length + filesGltf2.Length != 1)
+            var filesObj = Directory.GetFiles(dir, "*.obj");
+
+            if (filesGltf1.Length + filesGltf2.Length + filesObj.Length != 1)
             {
                 return null;
             }
-            else if (filesGltf1.Length == 1)
-            {
-                return filesGltf1[0];
-            }
-            else
+
+            // We used to prefer gltf1 for some reason. Stop doing that.
+            if (filesGltf2.Length == 1)
             {
                 return filesGltf2[0];
             }
+            if (filesGltf1.Length == 1)
+            {
+                return filesGltf1[0];
+            }
+            return filesObj[0];
         }
 
         public void ClearLoadingQueue()

@@ -48,6 +48,7 @@ namespace TiltBrush
         TILT,
         GLTF,
         GLTF2,
+        OBJ
     }
 
     public class VrAssetService : MonoBehaviour
@@ -831,7 +832,7 @@ namespace TiltBrush
             return thumbnail;
         }
 
-        public AssetGetter GetAsset(string assetId, VrAssetFormat type, string reason)
+        public AssetGetter GetAsset(string assetId, VrAssetFormat[] assetTypes, string reason)
         {
             string uri;
             if (assetId.ToLower().StartsWith("https%3a%2f%2f") || assetId.ToLower().StartsWith("http%3a%2f%2f"))
@@ -842,7 +843,7 @@ namespace TiltBrush
             {
                 uri = String.Format("{0}{1}/{2}", IcosaApiRoot, kListAssetsUri, assetId);
             }
-            return new AssetGetter(uri, assetId, type, reason);
+            return new AssetGetter(uri, assetId, assetTypes, reason);
         }
 
         private string CombineQueryParams(string uriPath, string additionalParams)
@@ -933,6 +934,7 @@ namespace TiltBrush
             if (!string.IsNullOrEmpty(queryParams.License)) uri += $"license={queryParams.License}&";
             if (!string.IsNullOrEmpty(queryParams.Curated)) uri += $"curated={queryParams.Curated}&";
             if (!string.IsNullOrEmpty(queryParams.Category)) uri += $"category={queryParams.Category}&";
+
             return new AssetLister(uri, errorMessage: "Failed to connect to Icosa.");
         }
 

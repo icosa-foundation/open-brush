@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System.Collections.Generic;
@@ -80,11 +81,11 @@ namespace TiltBrush
 
         public string Reason { get; }
 
-        public AssetGetter(string uri, string assetId, VrAssetFormat assetType,
+        public AssetGetter(string uri, string assetId, VrAssetFormat[] assetTypes,
                            string reason)
         {
             m_URI = uri;
-            m_Asset = new IcosaRawAsset(assetId, assetType);
+            m_Asset = new IcosaRawAsset(assetId, assetTypes);
             m_JsonSerializer = new JsonSerializer();
             m_JsonSerializer.ContractResolver = new SnakeToCamelPropertyNameContractResolver();
             Reason = reason;
@@ -138,18 +139,34 @@ namespace TiltBrush
                 }
 
                 // Find the asset by looking through the format list for the specified type.
-                VrAssetFormat requestedType = m_Asset.DesiredType;
+                List<string> desiredTypes = m_Asset.DesiredTypes.Select(x => x.ToString()).ToList();
 
                 while (true)
                 {
-                    var format = json["formats"]?.FirstOrDefault(x =>
-                        x["formatType"]?.ToString() == requestedType.ToString());
+
+                    JToken format = null;
+                    var formats = json["formats"];
+                    VrAssetFormat selectedType = VrAssetFormat.Unknown;
+                    if (formats != null)
+                    {
+                        foreach (var x in formats)
+                        {
+                            var formatType = x["formatType"]?.ToString();
+                            if (desiredTypes.Contains(formatType))
+                            {
+                                format = x;
+                                selectedType = Enum.Parse<VrAssetFormat>(formatType);
+                                break;
+                            }
+                        }
+                    }
+
                     if (format != null)
                     {
                         string internalRootFilePath = format["root"]?["relativePath"].ToString();
                         // If we successfully get a gltf2 format file, internally change the extension to
                         // "gltf2" so that the cache knows that it is a gltf2 file.
-                        if (requestedType == VrAssetFormat.GLTF2)
+                        if (selectedType == VrAssetFormat.GLTF2)
                         {
                             internalRootFilePath = Path.ChangeExtension(internalRootFilePath, "gltf2");
                         }
@@ -175,15 +192,15 @@ namespace TiltBrush
                     {
                         // We asked for an asset in a format that it doesn't have.
                         // In some cases, we should look for a different format as backup.
-                        if (requestedType == VrAssetFormat.GLTF2)
+                        if (selectedType == VrAssetFormat.GLTF2)
                         {
                             Debug.LogWarning($"No GLTF2 format found for {m_Asset.Id}. Trying GLTF1.");
-                            requestedType = VrAssetFormat.GLTF;
+                            selectedType = VrAssetFormat.GLTF;
                         }
                         else
                         {
                             // In other cases, we should fail and get out.
-                            Debug.LogWarning($"Can't download {m_Asset.Id} in {m_Asset.DesiredType} format.");
+                            Debug.LogWarning($"Can't download {m_Asset.Id} in {m_Asset.DesiredTypes} format.");
                             yield break;
                         }
                     }
