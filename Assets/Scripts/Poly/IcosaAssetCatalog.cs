@@ -786,7 +786,7 @@ namespace TiltBrush
                     Debug.LogError("Cannot create directory for online asset download.");
                 }
 
-                var formats = new [] { VrAssetFormat.GLTF2, VrAssetFormat.OBJ };
+                var formats = new[] { VrAssetFormat.GLTF2, VrAssetFormat.OBJ };
 
                 // Then request the asset from Poly.
                 AssetGetter request = VrAssetService.m_Instance.GetAsset(
@@ -890,7 +890,7 @@ namespace TiltBrush
                 {
                     continue;
                 }
-                var formats = new [] { VrAssetFormat.GLTF2, VrAssetFormat.OBJ };
+                var formats = new[] { VrAssetFormat.GLTF2, VrAssetFormat.OBJ };
                 precacheCoroutines.Add(PrecacheCoroutine(
                     VrAssetService.m_Instance.GetAsset(id, formats, reason)));
                 yield return null;
@@ -1313,7 +1313,7 @@ namespace TiltBrush
             var queryParams = QueryOptionParametersForSet(set);
             if (ChoicesHelper.IsValidChoice<FormatChoices>(format))
             {
-                queryParams.Formats = new [] {format};
+                queryParams.Formats = new[] { format };
                 m_AssetSetByType[set].QueryParams = queryParams;
                 if (requestRefresh) RefreshPanel();
             }
