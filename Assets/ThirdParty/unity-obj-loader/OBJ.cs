@@ -361,8 +361,8 @@ public class OBJ : MonoBehaviour
             const string magicComment = "#!openblocks-material:";
             if (l.StartsWith(magicComment))
             {
-                var commentMetadata = l.Substring(magicComment.Length).Trim().Split(":");
-                current.blocksMaterialIndex = int.Parse(commentMetadata[1]);
+                var commentMetadata = l.Substring(magicComment.Length).Trim();
+                current.blocksMaterialIndex = int.Parse(commentMetadata);
                 continue;
             }
             if (l.IndexOf("#") != -1) l = l.Substring(0, l.IndexOf("#"));
