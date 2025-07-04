@@ -26,7 +26,7 @@ using UnityEngine.Networking;
 namespace TiltBrush
 {
 
-    /// Class that assists in getting a PolyRawAsset from Poly.
+    /// Class that assists in getting an IcosaRawAsset from an Icosa Gallery instance.
     public class AssetGetter
     {
         private bool m_Ready;

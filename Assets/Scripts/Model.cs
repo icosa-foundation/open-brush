@@ -609,8 +609,9 @@ namespace TiltBrush
                 var objLoader = gameObject.AddComponent<OBJ>();
                 // warningsOut.AddRange(warnings);
                 objLoader.objPath = m_Location.AbsolutePath;
-                objLoader.BeginLoad();
+                objLoader.BeginLoadSync(); // TODO Async
                 string assetLocation = Path.GetDirectoryName(m_Location.AbsolutePath);
+                GameObject.Destroy(objLoader);
                 m_ImportMaterialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: m_Location.AbsolutePath);
                 m_AllowExport = (m_ImportMaterialCollector != null);
                 return gameObject;
