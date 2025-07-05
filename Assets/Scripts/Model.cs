@@ -972,7 +972,7 @@ namespace TiltBrush
 #endif
 
             // !!! Add to material dictionary here?
-
+            AssignMaterialsToCollector(m_ImportMaterialCollector);
             m_Valid = true;
             DisplayWarnings(warnings);
         }
