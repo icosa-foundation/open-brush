@@ -229,7 +229,7 @@ namespace TiltBrush
                     else
                     {
                         // Save the the image to the dest texture.
-                        dest.Resize(result.ColorWidth, result.ColorHeight, TextureFormat.RGBA32, true);
+                        dest.Reinitialize(result.ColorWidth, result.ColorHeight, TextureFormat.RGBA32, true);
                         dest.SetPixels32(result.ColorData);
                         dest.Apply();
                     }
@@ -473,7 +473,7 @@ namespace TiltBrush
             }
             else
             {
-                outTex.Resize(outWidth, outHeight, TextureFormat.RGBA32, true);
+                outTex.Reinitialize(outWidth, outHeight, TextureFormat.RGBA32, true);
             }
 
             // Copy the data, starting from mip
@@ -602,7 +602,7 @@ namespace TiltBrush
                 }
                 else
                 {
-                    m_Icon.Resize(result.ColorWidth, result.ColorHeight, TextureFormat.RGBA32, true);
+                    m_Icon.Reinitialize(result.ColorWidth, result.ColorHeight, TextureFormat.RGBA32, true);
                 }
                 m_ImageAspect = result.ColorAspect;
                 m_Icon.wrapMode = TextureWrapMode.Clamp;

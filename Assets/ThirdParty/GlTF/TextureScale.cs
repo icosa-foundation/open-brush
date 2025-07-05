@@ -76,7 +76,7 @@ public class GltfTextureScale {
       }
     }
 
-    tex.Resize(newWidth, newHeight);
+    tex.Reinitialize(newWidth, newHeight);
     tex.SetPixels(newColors);
     tex.Apply();
 
