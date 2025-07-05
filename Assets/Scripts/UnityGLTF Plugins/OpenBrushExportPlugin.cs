@@ -342,43 +342,70 @@ namespace TiltBrush
         public override void AfterMaterialExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Material material, GLTFMaterial materialNode)
         {
             // Only handle brush materials
-            if (!material.shader.name.StartsWith("Brush/")) return;
+            string shaderName = material.shader.name;
 
-            // TODO - This assumes that every brush has a unique material with a unique name
-            // Currently, this is true, but it may not always be the case
-            var brushes = BrushCatalog.m_Instance.AllBrushes
-                .Where(b => b.Material.name == material.name)
-                .ToList();
-
-            switch (brushes.Count)
+            if (shaderName.StartsWith("Brush/"))
             {
-                case 0:
-                    Debug.LogError($"No matching brush found for material {material.name}");
-                    return;
-                case > 1:
-                    Debug.LogWarning($"Multiple brushes with the same material name: {material.name}: {string.Join(", ", brushes.Select(b => b.name))}");
-                    break;
+
+                // TODO - This assumes that every brush has a unique material with a unique name
+                // Currently, this is true, but it may not always be the case
+                var brushes = BrushCatalog.m_Instance.AllBrushes
+                    .Where(b => b.Material.name == material.name)
+                    .ToList();
+
+                switch (brushes.Count)
+                {
+                    case 0:
+                        Debug.LogError($"No matching brush found for material {material.name}");
+                        return;
+                    case > 1:
+                        Debug.LogWarning($"Multiple brushes with the same material name: {material.name}: {string.Join(", ", brushes.Select(b => b.name))}");
+                        break;
+                }
+
+                var brush = brushes[0];
+                var manifest = BrushCatalog.m_Instance.GetBrush(brush.m_Guid);
+
+                materialNode.Name = $"ob-{manifest.DurableName}";
+                // Do we need to override the regular UnityGLTF logic here?
+                materialNode.DoubleSided = manifest.m_RenderBackfaces;
+
+                switch (manifest.m_BlendMode)
+                {
+                    case ExportableMaterialBlendMode.AdditiveBlend:
+                        AddExtension(materialNode, EXT_blend_operations.Add);
+                        materialNode.AlphaMode = AlphaMode.BLEND;
+                        break;
+                    case ExportableMaterialBlendMode.AlphaMask:
+                        materialNode.AlphaMode = AlphaMode.MASK;
+                        break;
+                    case ExportableMaterialBlendMode.AlphaBlend:
+                        materialNode.AlphaMode = AlphaMode.BLEND;
+                        break;
+                }
             }
-
-            var brush = brushes[0];
-            var manifest = BrushCatalog.m_Instance.GetBrush(brush.m_Guid);
-
-            materialNode.Name = $"ob-{manifest.DurableName}";
-            // Do we need to override the regular UnityGLTF logic here?
-            materialNode.DoubleSided = manifest.m_RenderBackfaces;
-
-            switch (manifest.m_BlendMode)
+            else if (shaderName.StartsWith("Blocks/"))
             {
-                case ExportableMaterialBlendMode.AdditiveBlend:
-                    AddExtension(materialNode, EXT_blend_operations.Add);
+                float r = material.color.r;
+                float g = material.color.g;
+                float b = material.color.b;
+                float a = material.color.a;
+                var pbr = new PbrMetallicRoughness
+                {
+                    BaseColorFactor = new GLTF.Math.Color(r, g, b, a),
+                    MetallicFactor = 0.0f,
+                    RoughnessFactor = Mathf.Sqrt(2f / (material.GetFloat("_Shininess") + 2f))
+                };
+                if (shaderName == "Blocks/BlocksGlass")
+                {
                     materialNode.AlphaMode = AlphaMode.BLEND;
-                    break;
-                case ExportableMaterialBlendMode.AlphaMask:
-                    materialNode.AlphaMode = AlphaMode.MASK;
-                    break;
-                case ExportableMaterialBlendMode.AlphaBlend:
+                    materialNode.DoubleSided = true;
+                }
+                else if (shaderName == "Blocks/BlocksGem")
+                {
                     materialNode.AlphaMode = AlphaMode.BLEND;
-                    break;
+                }
+                materialNode.PbrMetallicRoughness = pbr;
             }
         }
 
