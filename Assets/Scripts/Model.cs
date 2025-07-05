@@ -614,6 +614,7 @@ namespace TiltBrush
                 GameObject.Destroy(objLoader);
                 m_ImportMaterialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: m_Location.AbsolutePath);
                 m_AllowExport = (m_ImportMaterialCollector != null);
+                m_Valid = true;
                 return gameObject;
             }
             catch (Exception ex)
