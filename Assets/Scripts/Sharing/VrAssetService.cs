@@ -725,7 +725,7 @@ namespace TiltBrush
             if (App.UserConfig.Sharing.UseNewGlb || !publishLegacyGltf)
             {
                 string newGlbPath = Path.Combine(tempUploadDir, $"{uploadName}.glb");
-                Export.ExportNewGlb(tempUploadDir, uploadName, true);
+                Export.ExportNewGlb(tempUploadDir, uploadName, App.UserConfig.Export.ExportEnvironment);
                 filesToZip.Add(newGlbPath);
             }
 
