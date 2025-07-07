@@ -444,7 +444,7 @@ namespace TiltBrush
             extras["TB_PoseTranslation"] = Vector3ToJArray(pose.translation);
             extras["TB_PoseRotation"] = Vector3ToJArray(pose.rotation.eulerAngles);
             extras["TB_PoseScale"] = pose.scale;
-            
+
             TrTransform cameraPose = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
             // TODO - this seemed like a sensible alternative, but doesn't seem to work
             // TrTransform cameraPose = SketchControlsScript.m_Instance.GetSaveIconTool().LastSaveCameraRigState.GetLossyTrTransform();
