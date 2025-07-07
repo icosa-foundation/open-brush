@@ -623,6 +623,7 @@ public class OBJ : MonoBehaviour
         {
             gameObject.AddComponent(typeof(MeshFilter));
             gameObject.AddComponent(typeof(MeshRenderer));
+            gameObject.AddComponent<BoxCollider>();
             ms[0] = gameObject;
         }
         else if (buffer.numObjects > 1)
