@@ -421,8 +421,8 @@ namespace TiltBrush
 
             gltfRoot.Asset.Generator = $"Open Brush UnityGLTF Exporter {App.Config.m_VersionNumber}.{App.Config.m_BuildStamp})";
 
-            JToken ColorToJArray(Color c) => JToken.FromObject(new { c.r, c.g, c.b, c.a });
-            JToken Vector3ToJArray(Vector3 c) => JToken.FromObject(new { c.x, c.y, c.z });
+            JToken ColorToJString(Color c) => $"{c.r}, {c.g}, {c.b}, {c.a}";
+            JToken Vector3ToJString(Vector3 c) => $"{c.x}, {c.y}, {c.z}";
 
             var metadata = new SketchSnapshot().GetSketchMetadata();
 
@@ -434,23 +434,29 @@ namespace TiltBrush
             extras["TB_EnvironmentGuid"] = env.m_Guid.ToString("D");
             extras["TB_Environment"] = env.Description;
             extras["TB_UseGradient"] = settings.InGradient ? "true" : "false";
-            extras["TB_SkyColorA"] = ColorToJArray(settings.SkyColorA);
-            extras["TB_SkyColorB"] = ColorToJArray(settings.SkyColorB);
+            extras["TB_SkyColorA"] = ColorToJString(settings.SkyColorA);
+            extras["TB_SkyColorB"] = ColorToJString(settings.SkyColorB);
             Matrix4x4 exportFromUnity = AxisConvention.GetFromUnity(AxisConvention.kGltf2);
-            extras["TB_SkyGradientDirection"] = Vector3ToJArray(
+            extras["TB_SkyGradientDirection"] = Vector3ToJString(
                 exportFromUnity * (settings.GradientOrientation * Vector3.up));
-            extras["TB_FogColor"] = ColorToJArray(settings.FogColor);
+            extras["TB_FogColor"] = ColorToJString(settings.FogColor);
             extras["TB_FogDensity"] = settings.FogDensity;
-            extras["TB_PoseTranslation"] = Vector3ToJArray(pose.translation);
-            extras["TB_PoseRotation"] = Vector3ToJArray(pose.rotation.eulerAngles);
+            Vector3 gltfPoseTranslation = pose.translation;
+            gltfPoseTranslation.x = -gltfPoseTranslation.x; // Flip X for GLTF
+            extras["TB_PoseTranslation"] = Vector3ToJString(gltfPoseTranslation);
+            extras["TB_PoseRotation"] = Vector3ToJString(pose.rotation.eulerAngles);
             extras["TB_PoseScale"] = pose.scale;
+            extras["TB_ExportedFromVersion"] = App.Config.m_VersionNumber;
 
             TrTransform cameraPose = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
             // TODO - this seemed like a sensible alternative, but doesn't seem to work
+            // TODO - We should also export a real GLTF camera object
             // TrTransform cameraPose = SketchControlsScript.m_Instance.GetSaveIconTool().LastSaveCameraRigState.GetLossyTrTransform();
 
-            extras["TB_CameraTranslation"] = Vector3ToJArray(cameraPose.translation);
-            extras["TB_CameraRotation"] = Vector3ToJArray(cameraPose.rotation.eulerAngles);
+            Vector3 gltfCamTranslation = cameraPose.translation;
+            gltfCamTranslation.x = -gltfCamTranslation.x; // Flip X for GLTF
+            extras["TB_CameraTranslation"] = Vector3ToJString(gltfCamTranslation);
+            extras["TB_CameraRotation"] = Vector3ToJString(cameraPose.rotation.eulerAngles);
             // Experimental
             // extras["TB_metadata"] = JObject.FromObject(metadata);
             gltfRoot.Extras = extras;
