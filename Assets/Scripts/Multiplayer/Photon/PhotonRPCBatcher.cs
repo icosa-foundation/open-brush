@@ -18,6 +18,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using Debug = UnityEngine.Debug;
 
 
 // A static class for batching Photon RPC calls using async/await.
