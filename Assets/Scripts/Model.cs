@@ -976,7 +976,7 @@ namespace TiltBrush
 
             // !!! Add to material dictionary here?
             m_Valid = true;
-            AssignMaterialsToCollector(m_ImportMaterialCollector);
+            EnsureCollectorExists();
             DisplayWarnings(warnings);
         }
 
@@ -1126,7 +1126,6 @@ namespace TiltBrush
                     Path.GetDirectoryName(localPath),
                     uniqueSeed: localPath
                 );
-                AssignMaterialsToCollector(m_ImportMaterialCollector);
             }
         }
     }
