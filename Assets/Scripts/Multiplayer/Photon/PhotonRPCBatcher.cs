@@ -48,7 +48,16 @@ public static class PhotonRPCBatcher
 
         while (!cts.Token.IsCancellationRequested)
         {
-            if (rpcQueue.TryDequeue(out Action rpcAction)) rpcAction?.Invoke();
+            if (rpcQueue.TryDequeue(out Action rpcAction)) {
+                try
+                {
+                    rpcAction?.Invoke();
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Exception in RPC action: {ex}");
+                }
+            }
             else
             {
                 isRunning = false;
