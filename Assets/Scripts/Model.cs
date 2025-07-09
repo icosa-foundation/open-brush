@@ -848,8 +848,8 @@ namespace TiltBrush
                     await t;
                 }
 #if FBX_SUPPORTED
-                // Only use the new loader if user has enabled it.
-                else if (ext == ".obj" && App.UserConfig.Import.UseNewObj)
+                // Allow users to force the old OBJ loader.
+                else if (ext == ".obj" && !App.UserConfig.Import.UseLegacyObj)
 #else
                 // Always use the new loader when FBX SDK is not supported.
                 else if (ext == ".obj")
