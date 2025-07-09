@@ -712,7 +712,8 @@ namespace TiltBrush
 
             if (m_Location.GetLocationType() == Location.Type.IcosaAssetId)
             {
-                if (m_Location.Extension == ".gltf")
+                if (m_Location.Extension == ".gltf" || m_Location.Extension == ".gltf2" ||
+                    m_Location.Extension == ".glb")
                 {
                     m_builder = new GltfModelBuilder(m_Location, useThreadedImageLoad);
                 }
