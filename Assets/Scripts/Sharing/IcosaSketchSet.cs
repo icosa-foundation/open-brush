@@ -506,10 +506,11 @@ namespace TiltBrush
                 // Which results in a bad user experience.
                 if ((++pagesFetched & 1) == 0 || lister == null || !lister.HasMore)
                 {
-                    if (Type == SketchSetType.Curated)
-                    {
-                        sketches.Sort(CompareSketchesByTriangleCountAndDownloadIndex);
-                    }
+                    // TODO - check it's ok to remove this and rely entirely on server sorting
+                    // if (Type == SketchSetType.Curated)
+                    // {
+                    //     sketches.Sort(CompareSketchesByTriangleCountAndDownloadIndex);
+                    // }
 
                     // If populating the set from new then show stuff as it comes in.
                     // (We don't have to worry about anything being removed)
