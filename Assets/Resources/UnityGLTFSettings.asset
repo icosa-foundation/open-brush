@@ -162,19 +162,6 @@ MonoBehaviour:
   m_Name: TextureTransformImport
   m_EditorClassIdentifier: 
   enabled: 1
---- !u!114 &-4467015392833122160
-MonoBehaviour:
-  m_ObjectHideFlags: 3
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 13416558369ebcb46a99c28ceb137930, type: 3}
-  m_Name: VisualScriptingExportPlugin
-  m_EditorClassIdentifier: 
-  enabled: 0
 --- !u!114 &-4300759631978224901
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -324,7 +311,7 @@ MonoBehaviour:
   - {fileID: -8874749437110775378}
   - {fileID: 2593049991224130751}
   - {fileID: -1747776196752816388}
-  - {fileID: -4467015392833122160}
+  - {fileID: 1002102758676015575}
   exportNames: 1
   exportFullPath: 0
   EditorExportTransformMode: 0
@@ -367,6 +354,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb76c8816d3a4724ebef125401472ac6, type: 3}
   m_Name: VisualScriptingExportPlugin
   m_EditorClassIdentifier: 
+  enabled: 0
 --- !u!114 &1115410688402324010
 MonoBehaviour:
   m_ObjectHideFlags: 3
