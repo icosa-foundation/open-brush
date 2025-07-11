@@ -537,8 +537,7 @@ namespace TiltBrush
             {
                 GameObject rootObject = new GameObject("ImportedObjModel");
                 var objLoader = rootObject.AddComponent<OBJ>();
-                objLoader.objPath = m_localPath;
-                objLoader.BeginLoad();
+                objLoader.BeginLoad(m_localPath);
                 meshEnumerable = null;
                 importMaterialCollector = null;
                 string assetLocation = Path.GetDirectoryName(m_localPath);
@@ -607,8 +606,7 @@ namespace TiltBrush
             {
                 GameObject gameObject = new GameObject("ImportedObjRoot");
                 var objLoader = gameObject.AddComponent<OBJ>();
-                objLoader.objPath = m_Location.AbsolutePath;
-                await objLoader.BeginLoadAsync();
+                await objLoader.BeginLoadAsync(m_Location.AbsolutePath);
                 string assetLocation = Path.GetDirectoryName(m_Location.AbsolutePath);
                 gameObject.transform.localScale = Vector3.one * 10f; // Match the scale of the legacy obj importer
                 m_ImportMaterialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: m_Location.AbsolutePath);

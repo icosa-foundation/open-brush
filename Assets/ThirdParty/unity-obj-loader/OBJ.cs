@@ -11,7 +11,9 @@ using UnityEngine.Networking;
 public class OBJ : MonoBehaviour
 {
 
-    public string objPath;
+    #if UNITY_EDITOR
+    public string inspectorPath;
+    #endif
 
     /* OBJ file tags */
     private const string O = "o";
@@ -42,26 +44,29 @@ public class OBJ : MonoBehaviour
     private string basepath;
     private string mtllib;
     private GeometryBuffer buffer;
+    bool finished = false;
 
+    #if UNITY_EDITOR
     void Start()
     {
-        if (!string.IsNullOrEmpty(objPath))
+        if (!string.IsNullOrEmpty(inspectorPath))
         {
-            BeginLoad();
+            BeginLoad(inspectorPath);
         }
     }
+    #endif
 
-    public void BeginLoad()
+    public void BeginLoad(string path)
     {
         buffer = new GeometryBuffer();
-        StartCoroutine(Load(objPath));
+        StartCoroutine(Load(path));
     }
 
-    public Task BeginLoadAsync()
+    public Task BeginLoadAsync(string path)
     {
         var tcs = new TaskCompletionSource<bool>();
         buffer = new GeometryBuffer();
-        StartCoroutine(LoadAsyncWrapper(objPath, tcs));
+        StartCoroutine(LoadAsyncWrapper(path, tcs));
         return tcs.Task;
     }
 
@@ -73,6 +78,7 @@ public class OBJ : MonoBehaviour
 
     public IEnumerator Load(string path)
     {
+        if (finished) yield break;
         basepath = Path.GetDirectoryName(path);
         if (!string.IsNullOrEmpty(basepath))
             basepath += Path.DirectorySeparatorChar;
@@ -137,6 +143,7 @@ public class OBJ : MonoBehaviour
         }
 
         Build();
+        finished = true;
 
     }
 
