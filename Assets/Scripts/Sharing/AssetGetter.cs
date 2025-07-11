@@ -105,7 +105,8 @@ namespace TiltBrush
                 JObject json = App.IcosaAssetCatalog.GetJsonForAsset(m_Asset.Id);
                 if (json == null)
                 {
-                    // In theory this should never happen
+                    // Usually implies we are loading a model not via a list query
+                    // i.e. from a reference in a saved sketch file
                     Debug.LogWarning($"AssetGetter: No JSON found for {m_Asset.Id}. Making additional request.");
 
                     WebRequest initialRequest = new WebRequest(m_URI);
