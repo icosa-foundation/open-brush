@@ -392,10 +392,10 @@ public class OBJ : MonoBehaviour
                     break;
                 case D:
                     // Original obj loader treated this the same as TR
-                    current.alpha = 1f - cf(p[1]);
+                    current.alpha = cf(p[1]);
                     break;
                 case TR:
-                    current.alpha = cf(p[1]);
+                    current.alpha = 1 - cf(p[1]);
                     break;
                 case MAP_KD:
                     current.diffuseTexPath = p[p.Length - 1].Trim();
