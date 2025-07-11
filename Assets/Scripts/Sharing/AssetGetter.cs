@@ -151,6 +151,7 @@ namespace TiltBrush
                     if (formats != null)
                     {
                         // This assumes that desiredTypes are ordered by preference (best to worst).
+                        bool found = false;
                         foreach (var typeByPreference in desiredTypes)
                         {
                             foreach (var x in formats)
@@ -160,9 +161,11 @@ namespace TiltBrush
                                 {
                                     format = x;
                                     selectedType = Enum.Parse<VrAssetFormat>(formatType);
+                                    found = true;
                                     break;
                                 }
                             }
+                            if (found) break;
                         }
                     }
 
