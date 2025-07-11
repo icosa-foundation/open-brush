@@ -32,7 +32,7 @@ namespace UnityGLTF.Plugins
 
             foreach (var image in gltfRoot.Images)
             {
-                if (image.Uri == null)  continue;
+                if (image.Uri == null) continue;
 
                 var match = brushRegex.Match(image.Uri);
                 if (match.Success)
