@@ -296,6 +296,7 @@ MonoBehaviour:
   - {fileID: -2913368442722201512}
   - {fileID: -6871233445226533543}
   - {fileID: -4070862177138860178}
+  - {fileID: 637454249380963975}
   ExportPlugins:
   - {fileID: 242952683485160214}
   - {fileID: -5728475199642485532}
@@ -340,6 +341,19 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c85d7bc6d6ea44f46b33f0a3a2e09283, type: 3}
   m_Name: BakeParticleSystem
+  m_EditorClassIdentifier: 
+  enabled: 1
+--- !u!114 &637454249380963975
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9a3fd901e1e4ecdb175e939718d5f76, type: 3}
+  m_Name: PolyLegacyGltfImport
   m_EditorClassIdentifier: 
   enabled: 1
 --- !u!114 &1002102758676015575
