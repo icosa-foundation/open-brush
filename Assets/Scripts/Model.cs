@@ -976,8 +976,9 @@ namespace TiltBrush
             // !!! Add to material dictionary here?
             m_Valid = true;
             EnsureCollectorExists();
-            // TODO - at one point the following seemed necessary, but I'm commenting it out while I do further testing
-            // AssignMaterialsToCollector(m_ImportMaterialCollector);
+            // TODO We are probably calling the following too many times on import
+            // However the code paths have become a bit convoluted so err on the side of caution
+            AssignMaterialsToCollector(m_ImportMaterialCollector);
             DisplayWarnings(warnings);
         }
 
