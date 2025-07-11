@@ -854,7 +854,8 @@ namespace TiltBrush
         /// into model loads?
         public void PrecacheModels(SceneFileInfo sceneFileInfo, string reason)
         {
-            StartCoroutine(PrecacheModelsCoroutine(sceneFileInfo, reason));
+            // TODO precaching can end up getting us rate limited on archive.org
+            //StartCoroutine(PrecacheModelsCoroutine(sceneFileInfo, reason));
         }
 
         /// Waits for the json data to be read on a background thread, and then executes a precache
