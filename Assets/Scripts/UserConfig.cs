@@ -252,7 +252,7 @@ namespace TiltBrush
         [Serializable]
         public struct ImportConfig
         {
-            public bool UseLegacyObj;
+            public bool UseLegacyObjForIcosa;
         }
 
         [Serializable]

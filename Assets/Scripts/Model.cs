@@ -849,7 +849,9 @@ namespace TiltBrush
                 }
 #if FBX_SUPPORTED
                 // Allow users to force the old OBJ loader.
-                else if (ext == ".obj" && !App.UserConfig.Import.UseLegacyObj)
+                // Currently - always use the legacy OBJ loader for local files.
+                // This is to ensure we don't change the behavior of existing sketches
+                else if (ext == ".obj" && (!App.UserConfig.Import.UseLegacyObjForIcosa || isLocal))
 #else
                 // Always use the new loader when FBX SDK is not supported.
                 else if (ext == ".obj")
