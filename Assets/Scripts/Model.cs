@@ -832,10 +832,10 @@ namespace TiltBrush
                 // TODO: if it's not already null, why did we get here? Probably want to check for error
                 // and bail at a higher level, and require as a precondition that error == null
                 m_LoadError = null;
+                bool isLocal = m_Location.GetLocationType() == Location.Type.LocalFile;
 
                 string ext = m_Location.Extension;
-                if (m_Location.GetLocationType() == Location.Type.LocalFile &&
-                    ext == ".usd")
+                if (isLocal && ext == ".usd")
                 {
                     // Experimental usd loading.
                     go = LoadUsd(warnings);
