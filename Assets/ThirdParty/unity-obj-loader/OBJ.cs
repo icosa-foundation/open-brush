@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.IO;
+using System.Threading.Tasks;
 using TiltBrush;
 using UnityEngine.Networking;
 
@@ -56,17 +57,18 @@ public class OBJ : MonoBehaviour
         StartCoroutine(Load(objPath));
     }
 
-    public void BeginLoadSync()
+    public Task BeginLoadAsync()
     {
+        var tcs = new TaskCompletionSource<bool>();
         buffer = new GeometryBuffer();
-        var loadCoroutine = Load(objPath);
-        while (loadCoroutine.MoveNext())
-        {
-#if UNITY_EDITOR
-            // In editor, process pending events to avoid freezing the editor
-            System.Threading.Thread.Sleep(1);
-#endif
-        }
+        StartCoroutine(LoadAsyncWrapper(objPath, tcs));
+        return tcs.Task;
+    }
+
+    private IEnumerator LoadAsyncWrapper(string path, TaskCompletionSource<bool> tcs)
+    {
+        yield return Load(path);
+        tcs.SetResult(true);
     }
 
     public IEnumerator Load(string path)

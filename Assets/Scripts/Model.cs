@@ -601,22 +601,21 @@ namespace TiltBrush
             }
         }
 
-        GameObject LoadObj()
+        async Task<GameObject> LoadObj()
         {
             try
             {
                 GameObject gameObject = new GameObject("ImportedObjRoot");
                 var objLoader = gameObject.AddComponent<OBJ>();
                 objLoader.objPath = m_Location.AbsolutePath;
-                objLoader.BeginLoadSync(); // TODO Async
+                await objLoader.BeginLoadAsync();
                 string assetLocation = Path.GetDirectoryName(m_Location.AbsolutePath);
                 gameObject.transform.localScale = Vector3.one * 10f; // Match the scale of the legacy obj importer
-                GameObject parent = new GameObject("ImportedObjParent");
-                gameObject.transform.SetParent(parent.transform, true);
-                GameObject.Destroy(objLoader);
                 m_ImportMaterialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: m_Location.AbsolutePath);
                 m_AllowExport = (m_ImportMaterialCollector != null);
-                m_Valid = true;
+                // m_Valid = true;
+                GameObject parent = new GameObject("ImportedObjParent");
+                gameObject.transform.SetParent(parent.transform, true);
                 return parent;
             }
             catch (Exception ex)
@@ -857,7 +856,7 @@ namespace TiltBrush
                 else if (ext == ".obj")
 #endif
                 {
-                    go = LoadObj();
+                    go = await LoadObj();
                     CalcBoundsNonGltf(go);
                     EndCreatePrefab(go, warnings);
                 }
