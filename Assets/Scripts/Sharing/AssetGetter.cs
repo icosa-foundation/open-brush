@@ -150,14 +150,18 @@ namespace TiltBrush
                     VrAssetFormat selectedType = VrAssetFormat.Unknown;
                     if (formats != null)
                     {
-                        foreach (var x in formats)
+                        // This assumes that desiredTypes are ordered by preference (best to worst).
+                        foreach (var typeByPreference in desiredTypes)
                         {
-                            var formatType = x["formatType"]?.ToString();
-                            if (desiredTypes.Contains(formatType))
+                            foreach (var x in formats)
                             {
-                                format = x;
-                                selectedType = Enum.Parse<VrAssetFormat>(formatType);
-                                break;
+                                var formatType = x["formatType"]?.ToString();
+                                if (formatType == typeByPreference)
+                                {
+                                    format = x;
+                                    selectedType = Enum.Parse<VrAssetFormat>(formatType);
+                                    break;
+                                }
                             }
                         }
                     }
