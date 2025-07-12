@@ -26,7 +26,7 @@ namespace TiltBrush
         private static readonly Regex kWindowsRootedPath = new Regex("^[A-Za-z]:[/\\\\]");
 
         private string m_AssetId;
-        private VrAssetFormat m_DesiredAssetType;
+        private VrAssetFormat[] _mDesiredAssetTypes;
 
         public class ElementInfo
         {
@@ -42,9 +42,9 @@ namespace TiltBrush
             get { return m_AssetId; }
         }
 
-        public VrAssetFormat DesiredType
+        public VrAssetFormat[] DesiredTypes
         {
-            get { return m_DesiredAssetType; }
+            get { return _mDesiredAssetTypes; }
         }
 
         public string RootFilePath
@@ -86,10 +86,10 @@ namespace TiltBrush
             m_ResourceElements.Add(info);
         }
 
-        public IcosaRawAsset(string assetId, VrAssetFormat assetType)
+        public IcosaRawAsset(string assetId, VrAssetFormat[] assetTypes)
         {
             m_AssetId = assetId;
-            m_DesiredAssetType = assetType;
+            _mDesiredAssetTypes = assetTypes;
             m_RootElement = new ElementInfo();
             m_ResourceElements = new List<ElementInfo>();
         }

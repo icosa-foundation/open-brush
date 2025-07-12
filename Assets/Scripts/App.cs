@@ -231,6 +231,7 @@ namespace TiltBrush
         public Transform m_CanvasTransform;
         /// The object "/SceneParent/EnvironmentParent"
         public Transform m_EnvironmentTransform;
+        public GameObject m_NoVrUi;
         [SerializeField] GameObject m_SketchSurface;
         [SerializeField] GameObject m_ErrorDialog;
         [SerializeField] GameObject m_OdsPrefab;

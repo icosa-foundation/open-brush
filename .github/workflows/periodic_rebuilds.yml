@@ -11,6 +11,7 @@ on:  # yamllint disable-line rule:truthy
 jobs:
   find-and-rerun-prs:
     runs-on: ubuntu-latest
+    if: github.repository == 'icosa-foundation/open-brush'
 
     steps:
       - name: Checkout repository

@@ -323,21 +323,19 @@ namespace TiltBrush
 
         public bool HasSubModels()
         {
-            // Unsplit models always have the possibility of having subobjects.
-            if (!m_ObjModelScript.m_MeshHasBeenSplit) return true;
-
-            string ext = Model.GetLocation().Extension;
-            if (ext == ".gltf" || ext == ".gltf2" || ext == ".glb")
-            {
-                int lightCount = m_ObjModelScript.GetComponentsInChildren<SceneLightGizmo>().Length;
-                int meshCount = GetMeshes().Length;
-                return lightCount + meshCount > 1;
-            }
-            else if (m_Model.GetLocation().Extension == ".svg")
+            if (m_Model.GetLocation().Extension == ".svg")
             {
                 return m_ObjModelScript.SvgSceneInfo.HasSubShapes();
             }
-            return false;
+
+            // Unsplit models always have the possibility of having subobjects.
+            if (!m_ObjModelScript.m_MeshHasBeenSplit) return true;
+
+            // TODO test all other 3d model formats work with "break apart" command
+            // Currently we assume that they do
+            int lightCount = m_ObjModelScript.GetComponentsInChildren<SceneLightGizmo>().Length;
+            int meshCount = GetMeshes().Length;
+            return lightCount + meshCount > 1;
         }
 
         // Update the transform hierarchy of this ModelWidget to only contain m_Subtree
