@@ -88,10 +88,6 @@ namespace TiltBrush
 
         protected override void OnButtonPressed()
         {
-            // Early out if this model had errors loading.
-            Debug.Log($"zzzz1 m_Model == null: {m_Model == null}");
-            Debug.Log($"zzzz1 m_Model.Error == null: {m_Model.Error == null}");
-            Debug.Log($"zzzz1 m_Model.Error: {m_Model.Error.Value}");
             if (m_Model != null && m_Model.Error != null)
             {
                 return;
