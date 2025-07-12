@@ -18,6 +18,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using Debug = UnityEngine.Debug;
 
 
 // A static class for batching Photon RPC calls using async/await.
@@ -48,7 +49,16 @@ public static class PhotonRPCBatcher
 
         while (!cts.Token.IsCancellationRequested)
         {
-            if (rpcQueue.TryDequeue(out Action rpcAction)) rpcAction?.Invoke();
+            if (rpcQueue.TryDequeue(out Action rpcAction)) {
+                try
+                {
+                    rpcAction?.Invoke();
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Exception in RPC action: {ex}");
+                }
+            }
             else
             {
                 isRunning = false;

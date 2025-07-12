@@ -188,7 +188,7 @@ namespace TiltBrush
                 if (iMapIndex < numCloudModels)
                 {
                     IcosaAssetCatalog.AssetDetails asset =
-                        App.IcosaAssetCatalog.GetPolyAsset(m_CurrentSet, iMapIndex);
+                        App.IcosaAssetCatalog.GetIcosaAsset(m_CurrentSet, iMapIndex);
                     go.SetActive(true);
 
                     if (icon.Asset != null && asset.AssetId != icon.Asset.AssetId)

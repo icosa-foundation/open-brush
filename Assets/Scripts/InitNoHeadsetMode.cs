@@ -29,6 +29,7 @@ namespace TiltBrush
 
         void Start()
         {
+            App.Instance.m_NoVrUi.SetActive(true);
             m_Dropdown = GetComponentInChildren<TMP_Dropdown>();
             if (m_Dropdown != null)
             {

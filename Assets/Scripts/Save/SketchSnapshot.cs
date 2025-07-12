@@ -86,6 +86,7 @@ namespace TiltBrush
             m_SaveIconCapture = null;
             m_GroupIdMapping = new GroupIdMapping();
             m_Metadata = GetSketchMetadata();
+            m_LastThumbnail_SS = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
         }
 
         private IEnumerator<Timeslice> TimeslicedConstructor()

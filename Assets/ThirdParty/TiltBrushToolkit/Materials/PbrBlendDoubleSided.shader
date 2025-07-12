@@ -16,7 +16,9 @@
 // https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/schema/material.pbrMetallicRoughness.schema.json
 Shader "Poly/PbrBlendDoubleSided" {
   Properties {
+    [MainColor]
     _BaseColorFactor ("Base Color Factor", Color) = (1,1,1,1)
+    [MainTex]
     _BaseColorTex ("Base Color Texture", 2D) = "white" {}
     _MetallicFactor ("Metallic Factor", Range(0,1)) = 1.0
     _RoughnessFactor ("Roughness Factor", Range(0,1)) = 1.0

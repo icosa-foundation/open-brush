@@ -2,6 +2,7 @@ using GLTF.Schema;
 using GLTF.Schema.KHR_lights_punctual;
 using UnityEngine;
 using LightType = UnityEngine.LightType;
+
 namespace UnityGLTF.Plugins
 {
     public class OpenBrushLightsImport : GLTFImportPlugin
