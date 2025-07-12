@@ -1200,7 +1200,7 @@ namespace TiltBrush
             return m_AssetSetByType[type].m_Models.Count();
         }
 
-        public AssetDetails GetPolyAsset(IcosaSetType type, int index)
+        public AssetDetails GetIcosaAsset(IcosaSetType type, int index)
         {
             return m_AssetSetByType[type].m_Models[index];
         }
