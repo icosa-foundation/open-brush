@@ -70,7 +70,7 @@ namespace TiltBrush
         // Do not mutate the return value.
         public MeshFilter[] GetMeshes()
         {
-            return m_ObjModelScript.m_MeshChildren;
+            return m_ObjModelScript?.m_MeshChildren ?? Array.Empty<MeshFilter>();
         }
 
         public Model Model
