@@ -86,7 +86,6 @@ public class OBJ : MonoBehaviour
             basepath = "";
 
         path = FixLocalPaths(path);
-        Debug.Log($"xxOBJxx Loading OBJ file from: {path}");
 
         var geomRequest = UnityWebRequest.Get(path);
         yield return geomRequest.SendWebRequest();
@@ -103,7 +102,6 @@ public class OBJ : MonoBehaviour
         {
             string mtlPath = basepath + mtllib;
             mtlPath = FixLocalPaths(mtlPath);
-            Debug.Log($"xxOBJxx Loading mtl from: {mtlPath}");
             var mtlRequest = UnityWebRequest.Get(mtlPath);
             yield return mtlRequest.SendWebRequest();
 
@@ -167,7 +165,6 @@ public class OBJ : MonoBehaviour
 
         using (UnityWebRequest texRequest = UnityWebRequestTexture.GetTexture(path))
         {
-            Debug.Log($"xxOBJxx Loading texture from: {path}");
             yield return texRequest.SendWebRequest();
             if (texRequest.result != UnityWebRequest.Result.Success)
             {
