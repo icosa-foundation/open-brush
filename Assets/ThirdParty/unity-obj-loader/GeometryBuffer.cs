@@ -11,6 +11,8 @@ public class GeometryBuffer
     public List<Vector3> normals;
     public int unnamedGroupIndex = 1; // naming index for unnamed group. like "Unnamed-1"
 
+    private readonly Material defaultMaterial = new (Shader.Find("Standard"));
+
     private ObjectData current;
     private class ObjectData
     {
@@ -187,6 +189,7 @@ public class GeometryBuffer
                 else
                 {
                     Debug.LogWarning("PopulateMeshes mat:" + matName + " not found.");
+                    gs[i].GetComponent<Renderer>().material = defaultMaterial;
                 }
                 int[] triangles = new int[gd.faces.Count];
                 for (int j = 0; j < triangles.Length; j++) triangles[j] = j;
@@ -210,6 +213,7 @@ public class GeometryBuffer
                     else
                     {
                         Debug.LogWarning("PopulateMeshes mat:" + matName + " not found.");
+                        materials[j] = defaultMaterial;
                     }
 
                     int[] triangles = new int[od.groups[j].faces.Count];

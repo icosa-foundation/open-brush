@@ -114,6 +114,11 @@ public class OBJ : MonoBehaviour
                 SetMaterialData(mtlRequest.downloadHandler.text);
             }
 
+            if (materialData == null)
+            {
+                materialData = new List<MaterialData>();
+            }
+
             foreach (MaterialData m in materialData)
             {
                 if (m.diffuseTexPath != null)
@@ -161,9 +166,8 @@ public class OBJ : MonoBehaviour
             Debug.LogWarning("maybe unsupported texture format:" + ext);
         }
 
-        string path = FixLocalPaths(texpath + filename);
-
-        using (UnityWebRequest texRequest = UnityWebRequestTexture.GetTexture(path))
+        texpath = FixLocalPaths(Path.Combine(basepath, texpath));
+        using (UnityWebRequest texRequest = UnityWebRequestTexture.GetTexture(texpath))
         {
             yield return texRequest.SendWebRequest();
             if (texRequest.result != UnityWebRequest.Result.Success)
@@ -182,7 +186,7 @@ public class OBJ : MonoBehaviour
     {
         if (!path.StartsWith("http://") && !path.StartsWith("https://"))
         {
-            path = "file://" + path;
+            path = "file:///" + path;
         }
         return path;
     }
