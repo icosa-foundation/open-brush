@@ -170,7 +170,14 @@ namespace TiltBrush
             GLTF1 = "GLTF1",
             GLTF2 = "GLTF2",
             OBJ = "OBJ",
-            FBX = "FBX";
+            FBX = "FBX",
+            NOT_TILT = "-TILT",
+            NOT_BLOCKS = "-BLOCKS",
+            NOT_GLTF = "-GLTF",
+            NOT_GLTF1 = "-GLTF1",
+            NOT_GLTF2 = "-GLTF2",
+            NOT_OBJ = "-OBJ",
+            NOT_FBX = "-FBX";
     }
 
     public class CuratedChoices
@@ -531,7 +538,7 @@ namespace TiltBrush
                             TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                             License = LicenseChoices.ANY,
                             OrderBy = OrderByChoices.NEWEST,
-                            Formats = new [] {FormatChoices.GLTF2, FormatChoices.OBJ},
+                            Formats = new [] {FormatChoices.NOT_TILT},
                             Curated = CuratedChoices.ANY,
                             Category = CategoryChoices.ANY
                         }
@@ -547,7 +554,7 @@ namespace TiltBrush
                             TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                             License = LicenseChoices.REMIXABLE,
                             OrderBy = OrderByChoices.LIKED_TIME,
-                            Formats = new [] {FormatChoices.GLTF2, FormatChoices.OBJ},
+                            Formats = new [] {FormatChoices.NOT_TILT},
                             Curated = CuratedChoices.ANY,
                             Category = CategoryChoices.ANY
                         }
@@ -568,7 +575,7 @@ namespace TiltBrush
                             TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                             License = LicenseChoices.REMIXABLE,
                             OrderBy = OrderByChoices.BEST,
-                            Formats = new [] {FormatChoices.GLTF2, FormatChoices.OBJ},
+                            Formats = new [] {FormatChoices.NOT_TILT},
                             Curated = CuratedChoices.TRUE,
                             Category = CategoryChoices.ANY
                         }
@@ -786,7 +793,7 @@ namespace TiltBrush
                     Debug.LogError("Cannot create directory for online asset download.");
                 }
 
-                var formats = new[] { VrAssetFormat.GLTF2, VrAssetFormat.OBJ };
+                var formats = new[] { VrAssetFormat.NOT_TILT };
 
                 // Then request the asset from Poly.
                 AssetGetter request = VrAssetService.m_Instance.GetAsset(
@@ -891,7 +898,7 @@ namespace TiltBrush
                 {
                     continue;
                 }
-                var formats = new[] { VrAssetFormat.GLTF2, VrAssetFormat.OBJ };
+                var formats = new[] { VrAssetFormat.NOT_TILT };
                 precacheCoroutines.Add(PrecacheCoroutine(
                     VrAssetService.m_Instance.GetAsset(id, formats, reason)));
                 yield return null;
@@ -1103,6 +1110,7 @@ namespace TiltBrush
                 // So for now, just don't show them.
                 // bool includePrivate = type == IcosaSetType.User;
                 bool includePrivate = false;
+
                 using (var cr = lister.NextPage(models, m_ThumbnailSuffix, includePrivate))
                 {
                     int prevCount = models.Count;
