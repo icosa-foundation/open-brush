@@ -59,7 +59,7 @@ public class OBJ : MonoBehaviour
     public void BeginLoad(string path)
     {
         buffer = new GeometryBuffer();
-        StartCoroutine(Load(path));
+        StartCoroutine(_Load(path));
     }
 
     public Task BeginLoadAsync(string path)
@@ -72,11 +72,11 @@ public class OBJ : MonoBehaviour
 
     private IEnumerator LoadAsyncWrapper(string path, TaskCompletionSource<bool> tcs)
     {
-        yield return Load(path);
+        yield return _Load(path);
         tcs.SetResult(true);
     }
 
-    public IEnumerator Load(string path)
+    private IEnumerator _Load(string path)
     {
         if (finished) yield break;
         basepath = Path.GetDirectoryName(path);
@@ -84,6 +84,8 @@ public class OBJ : MonoBehaviour
             basepath += Path.DirectorySeparatorChar;
         else
             basepath = "";
+
+        path = FixLocalPaths(path);
 
         var geomRequest = UnityWebRequest.Get(path);
         yield return geomRequest.SendWebRequest();
@@ -99,6 +101,7 @@ public class OBJ : MonoBehaviour
         if (hasMaterials)
         {
             string mtlPath = basepath + mtllib;
+            mtlPath = FixLocalPaths(mtlPath);
             var mtlRequest = UnityWebRequest.Get(mtlPath);
             yield return mtlRequest.SendWebRequest();
 
@@ -111,43 +114,48 @@ public class OBJ : MonoBehaviour
                 SetMaterialData(mtlRequest.downloadHandler.text);
             }
 
+            if (materialData == null)
+            {
+                materialData = new List<MaterialData>();
+            }
+
             foreach (MaterialData m in materialData)
             {
                 if (m.diffuseTexPath != null)
                 {
-                    WWW texloader = GetTextureLoader(m, m.diffuseTexPath);
-                    yield return texloader;
-                    if (texloader.error != null)
+                    yield return StartCoroutine(GetTextureLoader(m.diffuseTexPath, tex =>
                     {
-                        Debug.LogError(texloader.error);
-                    }
-                    else
-                    {
-                        m.diffuseTex = texloader.texture;
-                    }
+                        if (tex == null)
+                        {
+                            Debug.LogError("Failed to load texture: " + m.diffuseTexPath);
+                        }
+                        else
+                        {
+                            m.diffuseTex = tex;
+                        }
+                    }));
                 }
                 if (m.bumpTexPath != null)
                 {
-                    WWW texloader = GetTextureLoader(m, m.bumpTexPath);
-                    yield return texloader;
-                    if (texloader.error != null)
+                    yield return StartCoroutine(GetTextureLoader(m.bumpTexPath, tex =>
                     {
-                        Debug.LogError(texloader.error);
-                    }
-                    else
-                    {
-                        m.bumpTex = texloader.texture;
-                    }
+                        if (tex == null)
+                        {
+                            Debug.LogError("Failed to load texture: " + m.bumpTexPath);
+                        }
+                        else
+                        {
+                            m.bumpTex = tex;
+                        }
+                    }));
                 }
             }
         }
-
         Build();
         finished = true;
-
     }
 
-    private WWW GetTextureLoader(MaterialData m, string texpath)
+    private IEnumerator GetTextureLoader(string texpath, Action<Texture2D> onLoaded)
     {
         char[] separators = { '/', '\\' };
         string[] components = texpath.Split(separators);
@@ -157,8 +165,30 @@ public class OBJ : MonoBehaviour
         {
             Debug.LogWarning("maybe unsupported texture format:" + ext);
         }
-        WWW texloader = new WWW(basepath + filename);
-        return texloader;
+
+        texpath = FixLocalPaths(Path.Combine(basepath, texpath));
+        using (UnityWebRequest texRequest = UnityWebRequestTexture.GetTexture(texpath))
+        {
+            yield return texRequest.SendWebRequest();
+            if (texRequest.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogError(texRequest.error);
+                onLoaded?.Invoke(null);
+            }
+            else
+            {
+                Texture2D tex = DownloadHandlerTexture.GetContent(texRequest);
+                onLoaded?.Invoke(tex);
+            }
+        }
+    }
+    private string FixLocalPaths(string path)
+    {
+        if (!path.StartsWith("http://") && !path.StartsWith("https://"))
+        {
+            path = "file:///" + path;
+        }
+        return path;
     }
 
     private void GetFaceIndicesByOneFaceLine(FaceIndices[] faces, string[] p, bool isFaceIndexPlus)

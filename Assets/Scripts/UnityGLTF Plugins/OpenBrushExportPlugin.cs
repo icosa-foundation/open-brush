@@ -341,7 +341,8 @@ namespace TiltBrush
 
         public override void AfterMaterialExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Material material, GLTFMaterial materialNode)
         {
-            // Only handle brush materials
+            // Only process Open Brush or Open Blocks materials
+            // Use shaderName to determine if this is the case
             string shaderName = material.shader.name;
 
             if (shaderName.StartsWith("Brush/"))
