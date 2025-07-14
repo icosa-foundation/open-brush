@@ -167,7 +167,6 @@ namespace TiltBrush
                             }
                             if (found) break;
                         }
-                        Debug.Log($"AssetGetter: Found format {selectedType} for {desiredTypes}");
                     }
 
                     if (found)
