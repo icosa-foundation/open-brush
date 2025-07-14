@@ -50,13 +50,7 @@ namespace TiltBrush
         GLTF2,
         OBJ,
         BLOCKS,
-        PLY,
-        NOT_TILT,
-        NOT_GLTF,
-        NOT_GLTF2,
-        NOT_OBJ,
-        NOT_BLOCKS,
-        NOT_PLY,
+        PLY
     }
 
     public class VrAssetService : MonoBehaviour

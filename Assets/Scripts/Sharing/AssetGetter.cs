@@ -144,13 +144,10 @@ namespace TiltBrush
 
                 while (true)
                 {
-
                     JToken format = null;
                     var formats = json["formats"];
                     VrAssetFormat selectedType = VrAssetFormat.Unknown;
-                    // Mixing negated and non-negated formats is going to be confusing
-                    // We don't support parentheses or similar in queries
-                    // so the resulting logic will be unintuitive
+
                     if (formats != null)
                     {
                         // This assumes that desiredTypes are ordered by preference (best to worst).
@@ -161,14 +158,7 @@ namespace TiltBrush
                             foreach (var x in formats)
                             {
                                 var formatType = x["formatType"]?.ToString();
-                                bool negate = false;
-                                if (currentType.StartsWith("NOT_"))
-                                {
-                                    currentType = currentType.Substring(4);
-                                    negate = true;
-                                }
-                                bool match = formatType == typeByPreference;
-                                if (negate) match = !match;
+                                bool match = formatType == currentType;
                                 if (match)
                                 {
                                     format = x;

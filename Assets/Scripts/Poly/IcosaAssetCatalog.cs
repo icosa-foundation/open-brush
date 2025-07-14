@@ -793,7 +793,14 @@ namespace TiltBrush
                     Debug.LogError("Cannot create directory for online asset download.");
                 }
 
-                var formats = new[] { VrAssetFormat.NOT_TILT };
+                // In order of preference
+                var formats = new[]
+                {
+                    VrAssetFormat.GLTF2,
+                    VrAssetFormat.GLTF,
+                    VrAssetFormat.OBJ,
+                    VrAssetFormat.PLY
+                };
 
                 // Then request the asset from Poly.
                 AssetGetter request = VrAssetService.m_Instance.GetAsset(
@@ -898,7 +905,16 @@ namespace TiltBrush
                 {
                     continue;
                 }
-                var formats = new[] { VrAssetFormat.NOT_TILT };
+
+                // In order of preference
+                var formats = new[]
+                {
+                    VrAssetFormat.GLTF2,
+                    VrAssetFormat.GLTF,
+                    VrAssetFormat.OBJ,
+                    VrAssetFormat.PLY
+                };
+
                 precacheCoroutines.Add(PrecacheCoroutine(
                     VrAssetService.m_Instance.GetAsset(id, formats, reason)));
                 yield return null;
