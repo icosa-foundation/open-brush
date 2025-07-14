@@ -147,19 +147,17 @@ namespace TiltBrush
                     JToken format = null;
                     var formats = json["formats"];
                     VrAssetFormat selectedType = VrAssetFormat.Unknown;
+                    bool found = false;
 
                     if (formats != null)
                     {
                         // This assumes that desiredTypes are ordered by preference (best to worst).
-                        bool found = false;
                         foreach (var typeByPreference in desiredTypes)
                         {
-                            string currentType = typeByPreference;
                             foreach (var x in formats)
                             {
                                 var formatType = x["formatType"]?.ToString();
-                                bool match = formatType == currentType;
-                                if (match)
+                                if (formatType == typeByPreference)
                                 {
                                     format = x;
                                     selectedType = Enum.Parse<VrAssetFormat>(formatType);
@@ -169,9 +167,10 @@ namespace TiltBrush
                             }
                             if (found) break;
                         }
+                        Debug.Log($"AssetGetter: Found format {selectedType} for {desiredTypes}");
                     }
 
-                    if (format != null)
+                    if (found)
                     {
                         string internalRootFilePath = format["root"]?["relativePath"].ToString();
                         // If we successfully get a gltf2 format file, internally change the extension to
@@ -198,22 +197,9 @@ namespace TiltBrush
                         }
                         break;
                     }
-                    else
-                    {
-                        // We asked for an asset in a format that it doesn't have.
-                        // In some cases, we should look for a different format as backup.
-                        if (selectedType == VrAssetFormat.GLTF2)
-                        {
-                            Debug.LogWarning($"No GLTF2 format found for {m_Asset.Id}. Trying GLTF1.");
-                            selectedType = VrAssetFormat.GLTF;
-                        }
-                        else
-                        {
-                            // In other cases, we should fail and get out.
-                            Debug.LogWarning($"Can't download {m_Asset.Id} in {m_Asset.DesiredTypes} format.");
-                            yield break;
-                        }
-                    }
+
+                    Debug.LogWarning($"Can't download {m_Asset.Id} in {m_Asset.DesiredTypes} format.");
+                    yield break;
                 }
             }
 
