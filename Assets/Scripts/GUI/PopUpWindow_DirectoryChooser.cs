@@ -36,16 +36,14 @@ namespace TiltBrush
         // ImageIcon actually refers to a button gameobject and button script
         protected override void RefreshIcon(ImageIcon icon, int iCatalog)
         {
-            // TODO this is broken after the last merge
-            //
-            // var btn = icon.m_IconScript as DirectoryChooserButton;
-            // var parent = GetParentReferencePanel();
-            // string path = parent.CurrentSubdirectories[iCatalog];
-            // string root = parent.ExtraDirectories.Values;
-            // btn.SetDirectory(path, directoryInfo.Name);
-            // btn.m_Panel = parent;
-
-            throw new System.NotImplementedException("Post-merge fix needed");
+            var catalog = m_ParentReferencePanel.CurrentTab.Catalog;
+            var currentDir = new DirectoryInfo(catalog.GetCurrentDirectory());
+            var btn = icon.m_IconScript as DirectoryChooserButton;
+            var parent = GetParentReferencePanel();
+            string path = parent.CurrentSubdirectories[iCatalog];
+            string root = catalog.GetCurrentDirectory();
+            btn.SetDirectory(path, root, currentDir.Name);
+            btn.m_Panel = parent;
         }
 
         protected override void InitIcon(ImageIcon icon)
