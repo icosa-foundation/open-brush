@@ -341,44 +341,72 @@ namespace TiltBrush
 
         public override void AfterMaterialExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Material material, GLTFMaterial materialNode)
         {
-            // Only handle brush materials
-            if (!material.shader.name.StartsWith("Brush/")) return;
+            // Only process Open Brush or Open Blocks materials
+            // Use shaderName to determine if this is the case
+            string shaderName = material.shader.name;
 
-            // TODO - This assumes that every brush has a unique material with a unique name
-            // Currently, this is true, but it may not always be the case
-            var brushes = BrushCatalog.m_Instance.AllBrushes
-                .Where(b => b.Material.name == material.name)
-                .ToList();
-
-            switch (brushes.Count)
+            if (shaderName.StartsWith("Brush/"))
             {
-                case 0:
-                    Debug.LogError($"No matching brush found for material {material.name}");
-                    return;
-                case > 1:
-                    Debug.LogWarning($"Multiple brushes with the same material name: {material.name}: {string.Join(", ", brushes.Select(b => b.name))}");
-                    break;
+
+                // TODO - This assumes that every brush has a unique material with a unique name
+                // Currently, this is true, but it may not always be the case
+                var brushes = BrushCatalog.m_Instance.AllBrushes
+                    .Where(b => b.Material.name == material.name)
+                    .ToList();
+
+                switch (brushes.Count)
+                {
+                    case 0:
+                        Debug.LogError($"No matching brush found for material {material.name}");
+                        return;
+                    case > 1:
+                        Debug.LogWarning($"Multiple brushes with the same material name: {material.name}: {string.Join(", ", brushes.Select(b => b.name))}");
+                        break;
+                }
+
+                var brush = brushes[0];
+                var manifest = BrushCatalog.m_Instance.GetBrush(brush.m_Guid);
+
+                materialNode.Name = $"ob-{manifest.DurableName}";
+                // Do we need to override the regular UnityGLTF logic here?
+                materialNode.DoubleSided = manifest.m_RenderBackfaces;
+
+                switch (manifest.m_BlendMode)
+                {
+                    case ExportableMaterialBlendMode.AdditiveBlend:
+                        AddExtension(materialNode, EXT_blend_operations.Add);
+                        materialNode.AlphaMode = AlphaMode.BLEND;
+                        break;
+                    case ExportableMaterialBlendMode.AlphaMask:
+                        materialNode.AlphaMode = AlphaMode.MASK;
+                        break;
+                    case ExportableMaterialBlendMode.AlphaBlend:
+                        materialNode.AlphaMode = AlphaMode.BLEND;
+                        break;
+                }
             }
-
-            var brush = brushes[0];
-            var manifest = BrushCatalog.m_Instance.GetBrush(brush.m_Guid);
-
-            materialNode.Name = $"ob-{manifest.DurableName}";
-            // Do we need to override the regular UnityGLTF logic here?
-            materialNode.DoubleSided = manifest.m_RenderBackfaces;
-
-            switch (manifest.m_BlendMode)
+            else if (shaderName.StartsWith("Blocks/"))
             {
-                case ExportableMaterialBlendMode.AdditiveBlend:
-                    AddExtension(materialNode, EXT_blend_operations.Add);
+                float r = material.color.r;
+                float g = material.color.g;
+                float b = material.color.b;
+                float a = material.color.a;
+                var pbr = new PbrMetallicRoughness
+                {
+                    BaseColorFactor = new GLTF.Math.Color(r, g, b, a),
+                    MetallicFactor = 0.0f,
+                    RoughnessFactor = Mathf.Sqrt(2f / (material.GetFloat("_Shininess") + 2f))
+                };
+                if (shaderName == "Blocks/BlocksGlass")
+                {
                     materialNode.AlphaMode = AlphaMode.BLEND;
-                    break;
-                case ExportableMaterialBlendMode.AlphaMask:
-                    materialNode.AlphaMode = AlphaMode.MASK;
-                    break;
-                case ExportableMaterialBlendMode.AlphaBlend:
+                    materialNode.DoubleSided = true;
+                }
+                else if (shaderName == "Blocks/BlocksGem")
+                {
                     materialNode.AlphaMode = AlphaMode.BLEND;
-                    break;
+                }
+                materialNode.PbrMetallicRoughness = pbr;
             }
         }
 
@@ -394,8 +422,8 @@ namespace TiltBrush
 
             gltfRoot.Asset.Generator = $"Open Brush UnityGLTF Exporter {App.Config.m_VersionNumber}.{App.Config.m_BuildStamp})";
 
-            JToken ColorToJArray(Color c) => JToken.FromObject(new { c.r, c.g, c.b, c.a });
-            JToken Vector3ToJArray(Vector3 c) => JToken.FromObject(new { c.x, c.y, c.z });
+            JToken ColorToJString(Color c) => $"{c.r}, {c.g}, {c.b}, {c.a}";
+            JToken Vector3ToJString(Vector3 c) => $"{c.x}, {c.y}, {c.z}";
 
             var metadata = new SketchSnapshot().GetSketchMetadata();
 
@@ -407,16 +435,29 @@ namespace TiltBrush
             extras["TB_EnvironmentGuid"] = env.m_Guid.ToString("D");
             extras["TB_Environment"] = env.Description;
             extras["TB_UseGradient"] = settings.InGradient ? "true" : "false";
-            extras["TB_SkyColorA"] = ColorToJArray(settings.SkyColorA);
-            extras["TB_SkyColorB"] = ColorToJArray(settings.SkyColorB);
+            extras["TB_SkyColorA"] = ColorToJString(settings.SkyColorA);
+            extras["TB_SkyColorB"] = ColorToJString(settings.SkyColorB);
             Matrix4x4 exportFromUnity = AxisConvention.GetFromUnity(AxisConvention.kGltf2);
-            extras["TB_SkyGradientDirection"] = Vector3ToJArray(
+            extras["TB_SkyGradientDirection"] = Vector3ToJString(
                 exportFromUnity * (settings.GradientOrientation * Vector3.up));
-            extras["TB_FogColor"] = ColorToJArray(settings.FogColor);
+            extras["TB_FogColor"] = ColorToJString(settings.FogColor);
             extras["TB_FogDensity"] = settings.FogDensity;
-            extras["TB_PoseTranslation"] = Vector3ToJArray(pose.translation);
-            extras["TB_PoseRotation"] = Vector3ToJArray(pose.rotation.eulerAngles);
+            Vector3 gltfPoseTranslation = pose.translation;
+            gltfPoseTranslation.x = -gltfPoseTranslation.x; // Flip X for GLTF
+            extras["TB_PoseTranslation"] = Vector3ToJString(gltfPoseTranslation);
+            extras["TB_PoseRotation"] = Vector3ToJString(pose.rotation.eulerAngles);
             extras["TB_PoseScale"] = pose.scale;
+            extras["TB_ExportedFromVersion"] = App.Config.m_VersionNumber;
+
+            TrTransform cameraPose = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
+            // TODO - this seemed like a sensible alternative, but doesn't seem to work
+            // TODO - We should also export a real GLTF camera object
+            // TrTransform cameraPose = SketchControlsScript.m_Instance.GetSaveIconTool().LastSaveCameraRigState.GetLossyTrTransform();
+
+            Vector3 gltfCamTranslation = cameraPose.translation;
+            gltfCamTranslation.x = -gltfCamTranslation.x; // Flip X for GLTF
+            extras["TB_CameraTranslation"] = Vector3ToJString(gltfCamTranslation);
+            extras["TB_CameraRotation"] = Vector3ToJString(cameraPose.rotation.eulerAngles);
             // Experimental
             // extras["TB_metadata"] = JObject.FromObject(metadata);
             gltfRoot.Extras = extras;

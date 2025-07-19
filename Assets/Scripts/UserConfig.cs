@@ -279,6 +279,8 @@ namespace TiltBrush
                 get { return m_ExtraBackgroundImageDirectories; }
                 set { m_ExtraBackgroundImageDirectories = value; }
             }
+            
+            public bool UseLegacyObjForIcosa;
         }
 
         [Serializable]
