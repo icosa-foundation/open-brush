@@ -70,7 +70,7 @@ namespace TiltBrush
         // Do not mutate the return value.
         public MeshFilter[] GetMeshes()
         {
-            return m_ObjModelScript.m_MeshChildren;
+            return m_ObjModelScript?.m_MeshChildren ?? Array.Empty<MeshFilter>();
         }
 
         public Model Model
@@ -324,18 +324,16 @@ namespace TiltBrush
 
         public bool HasSubModels()
         {
-            string ext = Model.GetLocation().Extension;
-            if (ext == ".gltf" || ext == ".gltf2" || ext == ".glb")
-            {
-                int lightCount = m_ObjModelScript.GetComponentsInChildren<SceneLightGizmo>().Length;
-                int meshCount = GetMeshes().Length;
-                return lightCount + meshCount > 1;
-            }
-            else if (m_Model.GetLocation().Extension == ".svg")
+            if (m_Model.GetLocation().Extension == ".svg")
             {
                 return m_ObjModelScript.SvgSceneInfo.HasSubShapes();
             }
-            return false;
+
+            // TODO test all other 3d model formats work with "break apart" command
+            // Currently we assume that they do
+            int lightCount = m_ObjModelScript.GetComponentsInChildren<SceneLightGizmo>().Length;
+            int meshCount = GetMeshes().Length;
+            return lightCount + meshCount > 1;
         }
 
         // Update the transform hierarchy of this ModelWidget to only contain m_Subtree
