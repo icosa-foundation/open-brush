@@ -88,7 +88,6 @@ namespace TiltBrush
 
         protected override void OnButtonPressed()
         {
-            // Early out if this model had errors loading.
             if (m_Model != null && m_Model.Error != null)
             {
                 return;
