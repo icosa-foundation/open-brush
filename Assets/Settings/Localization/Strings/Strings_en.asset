@@ -723,7 +723,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7930206087782400
-    m_Localized: Poly Library
+    m_Localized: Icosa Library
     m_Metadata:
       m_Items: []
   - m_Id: 7930412489482240
@@ -1326,7 +1326,7 @@ MonoBehaviour:
   - m_Id: 76069893405466624
     m_Localized: 'Non-remixable sketches can''t
 
-      be uploaded to Poly'
+      be uploaded to Icosa'
     m_Metadata:
       m_Items: []
   - m_Id: 76070234092003328
@@ -1336,7 +1336,7 @@ MonoBehaviour:
   - m_Id: 76070420314906624
     m_Localized: 'There was an error connecting
 
-      to the Poly server. Try again
+      to the Icosa server. Try again
       later.'
     m_Metadata:
       m_Items: []
@@ -1395,7 +1395,7 @@ MonoBehaviour:
   - m_Id: 76072667581046784
     m_Localized: 'Update Tilt Brush to share
 
-      sketches to Poly and Sketchfab'
+      sketches to Icosa and Sketchfab'
     m_Metadata:
       m_Items: []
   - m_Id: 76080842438926336
