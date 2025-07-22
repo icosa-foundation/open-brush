@@ -40,6 +40,7 @@ namespace TiltBrush
         // The other is post-m13 and contains raw transforms (original model's pivot and size)
         private Dictionary<string, TrTransform[]> m_MissingModelsByRelativePath;
 
+        // Maps directories to a list of model names in that directory.
         private Dictionary<string, List<string>> m_OrderedModelNames;
         private bool m_FolderChanged;
         private FileWatcher m_FileWatcher;
@@ -338,6 +339,7 @@ namespace TiltBrush
         /// GetModel, for .tilt files written by TB 7.5 and up
         /// Paths are always relative to Media Library/, unless someone hacked the tilt file
         /// in which case we ignore the model.
+        /// NEW: We special-case a prefix that we remap to the Blocks Offline directory.
         public Model GetModel(string relativePath)
         {
             Model m;

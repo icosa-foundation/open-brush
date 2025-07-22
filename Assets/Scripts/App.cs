@@ -1852,24 +1852,25 @@ namespace TiltBrush
             }
         }
 
-        void InitUserPath()
+        public string GetUserDocumentsPath()
         {
+            string docsPath;
             switch (Application.platform)
             {
                 case RuntimePlatform.WindowsPlayer:
                 case RuntimePlatform.WindowsEditor:
                     // user Documents folder
-                    m_UserPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
+                    docsPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
 
                     // GetFolderPath() can fail, returning an empty string.
-                    if (m_UserPath == "")
+                    if (docsPath == "")
                     {
                         // If that happens, try a bunch of other folders.
-                        m_UserPath = System.Environment.GetFolderPath(
+                        docsPath = System.Environment.GetFolderPath(
                             System.Environment.SpecialFolder.MyDocuments);
-                        if (m_UserPath == "")
+                        if (docsPath == "")
                         {
-                            m_UserPath = System.Environment.GetFolderPath(
+                            docsPath = System.Environment.GetFolderPath(
                                 System.Environment.SpecialFolder.DesktopDirectory);
                         }
                     }
@@ -1879,21 +1880,25 @@ namespace TiltBrush
                 case RuntimePlatform.LinuxPlayer:
                 case RuntimePlatform.LinuxEditor:
                     // user Documents folder
-                    m_UserPath = Path.Combine(System.Environment.GetFolderPath(
+                    docsPath = Path.Combine(System.Environment.GetFolderPath(
                             System.Environment.SpecialFolder.Personal),
                         "Documents");
                     break;
                 case RuntimePlatform.Android:
-                    m_UserPath = "/sdcard/";
+                    docsPath = "/sdcard/";
                     m_OldUserPath = Application.persistentDataPath;
                     break;
                 case RuntimePlatform.IPhonePlayer:
                 default:
-                    m_UserPath = Application.persistentDataPath;
+                    docsPath = Application.persistentDataPath;
                     break;
             }
+            return docsPath;
+        }
 
-            m_UserPath = Path.Combine(m_UserPath, App.kAppFolderName);
+        void InitUserPath()
+        {
+            m_UserPath = Path.Combine(GetUserDocumentsPath(), kAppFolderName);
 
             // In the case that we have changed the location of the user data, move the user data from the
             // old location to the new one.
@@ -2120,6 +2125,12 @@ namespace TiltBrush
         {
             return Path.Combine(MediaLibraryPath(), "Models");
         }
+
+        public static string OpenBlocksModelPath()
+        {
+            return Path.Combine(MediaLibraryPath(), "Models");
+        }
+
 
         public static string ReferenceImagePath()
         {

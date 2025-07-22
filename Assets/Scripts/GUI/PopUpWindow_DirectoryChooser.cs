@@ -12,9 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using UnityEngine;
 namespace TiltBrush
 {
+    public enum DirectoryPopupModeButtonMode
+    {
+        OpenBrush,
+        OpenBlocks
+    }
+
     class PopUpWindow_DirectoryChooser : PagingPopUpWindow
     {
         private ReferencePanel m_ParentReferencePanel;
@@ -45,6 +50,13 @@ namespace TiltBrush
         protected override void InitIcon(ImageIcon icon)
         {
             icon.m_Valid = true;
+        }
+
+        public void ChangeMode(DirectoryPopupModeButton btn)
+        {
+            var panel = GetParentReferencePanel();
+            var tab = (ReferencePanelModelTab)panel.CurrentTab;
+            tab.SetMode(btn.m_Mode);
         }
     }
 }

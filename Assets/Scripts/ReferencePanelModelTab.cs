@@ -73,5 +73,16 @@ namespace TiltBrush
                 }
             }
         }
+
+        public void SetMode(DirectoryPopupModeButtonMode btnMode)
+        {
+            switch (btnMode)
+            {
+                case DirectoryPopupModeButtonMode.OpenBlocks:
+                    break;
+                case DirectoryPopupModeButtonMode.OpenBrush:
+                    break;
+            }
+        }
     }
 } // namespace TiltBrush
