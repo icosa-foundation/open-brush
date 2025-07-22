@@ -2270,8 +2270,8 @@ Transform:
   m_GameObject: {fileID: 1000011686355436}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.693, y: 0.942, z: 0}
-  m_LocalScale: {x: 0.27, y: 0.27, z: 0.27}
+  m_LocalPosition: {x: -0.693, y: 1.045, z: 0}
+  m_LocalScale: {x: 0.15, y: 0.15, z: 0.15}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 465812}
@@ -2383,7 +2383,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: ca2b2689a21743448be1a5306c61e90b, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 66810c7a71de6154ebe0b21ae4d8ada1, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
