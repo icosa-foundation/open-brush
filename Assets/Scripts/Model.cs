@@ -990,19 +990,15 @@ namespace TiltBrush
         {
             void SetUniqueNameForNode(Transform node)
             {
-                // GetInstanceID returns a unique ID for every GameObject during a runtime session
-                node.name += " uid: " + node.gameObject.GetInstanceID();
-
+                int index = 0;
                 foreach (Transform child in node)
                 {
+                    child.name += $"[{index++}]";
                     SetUniqueNameForNode(child);
                 }
             }
 
-            foreach (Transform child in rootNode)
-            {
-                SetUniqueNameForNode(child);
-            }
+            SetUniqueNameForNode(rootNode);
         }
 
         public void UnloadModel()
