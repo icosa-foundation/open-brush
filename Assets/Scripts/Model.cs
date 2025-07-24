@@ -212,6 +212,9 @@ namespace TiltBrush
         // How many widgets are using this model?
         public int m_UsageCount;
 
+        // Store the paths of meshes that have been through MeshSplitter
+        public List<string> m_SplitMeshPaths;
+
         private Location m_Location;
 
         // Can the geometry in this model be exported.
@@ -248,6 +251,11 @@ namespace TiltBrush
             get { return m_AllowExport; }
         }
 
+        private void Init()
+        {
+            m_SplitMeshPaths = new List<string>();
+        }
+
         /// Only allowed if AllowExport = true
         public IExportableMaterial GetExportableMaterial(Material material)
         {
@@ -259,12 +267,14 @@ namespace TiltBrush
         public Model(string relativePath)
         {
             m_Location = Location.File(relativePath);
+            Init();
         }
 
         // Constructor for remote models i.e. Icosa Gallery assets
         public Model(string assetId, string path)
         {
             m_Location = Location.IcosaAsset(assetId, path);
+            Init();
         }
 
         public Location GetLocation() { return m_Location; }

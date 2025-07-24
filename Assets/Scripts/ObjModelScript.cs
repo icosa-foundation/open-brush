@@ -33,7 +33,6 @@ namespace TiltBrush
         // - root.activeInHierarchy  implies  gameObject.activeInHierarchy
         public MeshFilter[] m_MeshChildren;
         public SkinnedMeshRenderer[] m_SkinnedMeshChildren;
-        public List<string> m_SplitMeshPaths;
 
         public int NumMeshes
         {
@@ -96,9 +95,6 @@ namespace TiltBrush
             GetAllMeshes(filters, smrs, transform, isRoot: true);
             m_MeshChildren = filters.ToArray();
             m_SkinnedMeshChildren = smrs.ToArray();
-
-            // TODO don't reset this when called from the break mesh command
-            m_SplitMeshPaths = new List<string>();
         }
 
         void Awake()

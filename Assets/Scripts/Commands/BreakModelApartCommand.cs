@@ -213,9 +213,7 @@ namespace TiltBrush
                 {
                     m_NodePaths.Add($"{prevNodePath}/{split.name}");
                 }
-
-                // TODO Store the splits
-                ////objModelScript.m_SplitMeshPaths.Add(GetHierarchyPath(modelObjModelScript.transform, widgetMf.transform));
+                m_InitialWidget.Model.m_SplitMeshPaths.Add(prevNodePath);
             }
 
             // Create new widgets for each path

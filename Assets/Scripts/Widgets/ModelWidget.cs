@@ -328,8 +328,16 @@ namespace TiltBrush
             }
 
             // Unsplit models always have the possibility of having subobjects.
-            // todo
-            if (!m_ObjModelScript.m_SplitMeshPaths.Contains(this.name)) return true;
+            bool isSpilt = false;
+            foreach (var path in m_Model.m_SplitMeshPaths)
+            {
+                if (Subtree.StartsWith(path))
+                {
+                    isSpilt = true;
+                    break;
+                }
+            }
+            if (!isSpilt) return true;
 
             // TODO test all other 3d model formats work with "break apart" command
             // Currently we assume that they do
