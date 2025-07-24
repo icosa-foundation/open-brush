@@ -12,12 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace TiltBrush
 {
@@ -266,13 +264,13 @@ namespace TiltBrush
             foreach (var widget in m_NewModelWidgets)
             {
                 WidgetManager.m_Instance.UnregisterGrabWidget(widget.gameObject);
-                Object.Destroy(widget.gameObject);
+                GameObject.Destroy(widget.gameObject);
             }
             SelectionManager.m_Instance.DeselectWidgets(m_NewLightWidgets);
             foreach (var widget in m_NewLightWidgets)
             {
                 WidgetManager.m_Instance.UnregisterGrabWidget(widget.gameObject);
-                Object.Destroy(widget.gameObject);
+                GameObject.Destroy(widget.gameObject);
             }
             m_InitialWidget.gameObject.SetActive(true);
             SelectionManager.m_Instance.SelectWidget(m_InitialWidget);
