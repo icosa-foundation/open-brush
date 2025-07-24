@@ -304,7 +304,7 @@ namespace TiltBrush
             m_NumVertsTrackedByWidgetManager = 0;
 
             m_ObjModelScript = GetComponentInChildren<ObjModelScript>();
-            m_ObjModelScript.Init();
+            m_ObjModelScript.UpdateAllMeshChildren();
             if (m_ObjModelScript.NumMeshes == 0)
             {
                 OutputWindowScript.Error("No usable geometry in model");
@@ -329,7 +329,8 @@ namespace TiltBrush
             }
 
             // Unsplit models always have the possibility of having subobjects.
-            if (!m_ObjModelScript.m_MeshHasBeenSplit) return true;
+            // todo
+            if (!m_ObjModelScript.m_SplitMeshPaths.Contains(this.name)) return true;
 
             // TODO test all other 3d model formats work with "break apart" command
             // Currently we assume that they do
@@ -338,36 +339,28 @@ namespace TiltBrush
             return lightCount + meshCount > 1;
         }
 
-        // Update the transform hierarchy of this ModelWidget to only contain m_Subtree
-        // e.g if Subtree = "CarBody/Floor/Wheel1", then this method will update the transform hierarchy to contain nodes
-        // starting at CarBody/Floor/Wheel1
-        public void SyncHierarchyToSubtree(string previousSubtree = null)
+        public static (Transform node, bool excludeChildren) FindSubtreeRoot(Transform root, string subtree, string previousSubtree = null)
         {
-            if (string.IsNullOrEmpty(Subtree)) return;
+            if (string.IsNullOrEmpty(subtree)) return (null, false);
             // Walk the hierarchy and find the matching node
-            Transform oldRoot = m_ObjModelScript.transform;
-            Transform node = oldRoot;
+            Transform node = root;
 
             // We only want to walk the new part of the hierarchy
             string subpathToTraverse;
             if (!string.IsNullOrEmpty(previousSubtree))
             {
-
                 // example case:
                 //      previousSubtree = CarBody/Floor
                 //      m_Subtree = CarBody/Floor/Wheel1
                 //      subpathToTraverse should be Floor/Wheel1
 
-                // Floor
-                string lastLevel = previousSubtree.Split("/")[^1];
-
+                string lastLevel = previousSubtree.Split("/")[^1]; // Floor
                 int startIndex = previousSubtree.Length - (lastLevel.Length + "/".Length);
-
-                subpathToTraverse = m_Subtree.Substring(startIndex);
+                subpathToTraverse = subtree.Substring(startIndex);
             }
             else
             {
-                subpathToTraverse = m_Subtree;
+                subpathToTraverse = subtree;
             }
             subpathToTraverse = subpathToTraverse.Trim('/');
 
@@ -388,7 +381,21 @@ namespace TiltBrush
                 // - node will be null if not found
                 node = node.Find(subpathToTraverse);
             }
+            return (node, excludeChildren);
+        }
 
+        // Update the transform hierarchy of this ModelWidget to only contain m_Subtree
+        // e.g if Subtree = "CarBody/Floor/Wheel1", then this method will update the transform hierarchy to contain nodes
+        // starting at CarBody/Floor/Wheel1
+        public void SyncHierarchyToSubtree(string previousSubtree = null)
+        {
+            var (node, excludeChildren) = FindSubtreeRoot(
+                m_ObjModelScript.transform,
+                Subtree,
+                previousSubtree
+            );
+
+            Transform oldRoot = m_ObjModelScript.transform;
             if (node != null)
             {
                 if (excludeChildren)
@@ -417,7 +424,7 @@ namespace TiltBrush
                 oldRoot.gameObject.SetActive(false); // TODO destroy might fail on first load so also hide
                 Destroy(oldRoot.gameObject);
 
-                m_ObjModelScript.Init();
+                m_ObjModelScript.UpdateAllMeshChildren();
                 if (excludeChildren)
                 {
                     // Destroyed children aren't destroyed immediately, so we need to assign them manually

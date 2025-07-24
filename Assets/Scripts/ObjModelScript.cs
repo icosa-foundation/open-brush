@@ -33,7 +33,7 @@ namespace TiltBrush
         // - root.activeInHierarchy  implies  gameObject.activeInHierarchy
         public MeshFilter[] m_MeshChildren;
         public SkinnedMeshRenderer[] m_SkinnedMeshChildren;
-        public bool m_MeshHasBeenSplit = false;
+        public List<string> m_SplitMeshPaths;
 
         public int NumMeshes
         {
@@ -89,13 +89,16 @@ namespace TiltBrush
             foreach (Transform child in t) GetAllMeshes(filters, smrs, child, isRoot: false);
         }
 
-        public void Init()
+        public void UpdateAllMeshChildren()
         {
             var filters = new List<MeshFilter>();
             var smrs = new List<SkinnedMeshRenderer>();
             GetAllMeshes(filters, smrs, transform, isRoot: true);
             m_MeshChildren = filters.ToArray();
             m_SkinnedMeshChildren = smrs.ToArray();
+
+            // TODO don't reset this when called from the break mesh command
+            m_SplitMeshPaths = new List<string>();
         }
 
         void Awake()
@@ -138,16 +141,6 @@ namespace TiltBrush
             }
 #endif
         }
-        public MeshFilter MatchMeshFilter(MeshFilter widgetMf)
-        {
-            foreach (var mf in m_MeshChildren)
-            {
-                if (mf.name == widgetMf.name)
-                {
-                    return mf;
-                }
-            }
-            return null;
-        }
+        
     }
 } // namespace TiltBrush

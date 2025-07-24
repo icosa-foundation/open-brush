@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace TiltBrush
 {
@@ -153,7 +155,6 @@ namespace TiltBrush
                 }
             }
 
-
             return resultPaths;
         }
 
@@ -162,34 +163,11 @@ namespace TiltBrush
             m_InitialWidget = initialWidget;
             m_NewModelWidgets = new List<ModelWidget>();
             m_NewLightWidgets = new List<LightWidget>();
-            var objModelScript = initialWidget.GetComponentInChildren<ObjModelScript>();
-            var root = objModelScript.transform;
-            var meshFilters = root.GetComponentsInChildren<MeshFilter>();
-            if (meshFilters.Length == 1)
-            {
-                var widgetMf = meshFilters[0];
-                var model = initialWidget.Model.m_ModelParent;
-                var modelMf = model.GetComponentInChildren<ObjModelScript>().MatchMeshFilter(widgetMf);
-                var splits = MeshSplitter.DoSplit(modelMf);
-                if (splits.Count > 1)
-                {
-                    // Destroy the original and adopt the splits
-                    modelMf.gameObject.SetActive(false);
-                    GameObject.Destroy(modelMf.gameObject);
-                    // objModelScript.m_MeshChildren = splits.ToArray();
-                    // m_InitialWidget.SyncHierarchyToSubtree();
-                }
-                else
-                {
-                    // Destroy the split as it simply duplicates the original
-                    GameObject.Destroy(splits[0].gameObject);
-                }
-                // Never try again
-                objModelScript.m_MeshHasBeenSplit = true;
-            }
-            m_NodePaths = ExtractPaths(objModelScript.transform);
+            var widgetObjScript = initialWidget.GetComponentInChildren<ObjModelScript>();
+            m_NodePaths = ExtractPaths(widgetObjScript.transform);
         }
 
+        // Constructs a path from the root to the object, including the object's name
         private static string GetHierarchyPath(Transform root, Transform obj)
         {
             StringBuilder stringBuilder = new StringBuilder();
@@ -207,6 +185,42 @@ namespace TiltBrush
         protected override void OnRedo()
         {
             SelectionManager.m_Instance.DeselectWidgets(new List<GrabWidget> { m_InitialWidget });
+
+            var widgetObjScript = m_InitialWidget.GetComponentInChildren<ObjModelScript>();
+
+            // If we only have one mesh filter, we next have to split the mesh based on connected regions
+            if (widgetObjScript.m_MeshChildren.Length == 1)
+            {
+                var modelObjScript = m_InitialWidget.Model.m_ModelParent.GetComponent<ObjModelScript>();
+                Transform destRoot;
+                if (string.IsNullOrEmpty(m_InitialWidget.Subtree))
+                {
+                    destRoot = modelObjScript.m_MeshChildren[0].transform;
+                }
+                else
+                {
+                    var (subTreeRoot, _) = ModelWidget.FindSubtreeRoot(
+                        modelObjScript.transform,
+                        m_InitialWidget.Subtree
+                    );
+                    destRoot = subTreeRoot;
+                }
+                var modelMf = destRoot.GetComponentInChildren<MeshFilter>();
+                var splits = MeshSplitter.DoSplit(modelMf);
+                modelObjScript.UpdateAllMeshChildren();
+
+                var prevNodePath = m_NodePaths[0];
+                m_NodePaths = new List<string>();
+                foreach (var split in splits)
+                {
+                    m_NodePaths.Add($"{prevNodePath}/{split.name}");
+                }
+
+                // TODO Store the splits
+                ////objModelScript.m_SplitMeshPaths.Add(GetHierarchyPath(modelObjModelScript.transform, widgetMf.transform));
+            }
+
+            // Create new widgets for each path
             foreach (var path in m_NodePaths)
             {
                 var newWidget = m_InitialWidget.Clone() as ModelWidget;

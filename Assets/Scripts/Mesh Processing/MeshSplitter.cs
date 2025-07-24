@@ -64,24 +64,22 @@ namespace TiltBrush
                     newMesh.uv4 = part.uv4;
                 newMesh.RecalculateBounds();
 
-                GameObject go = new GameObject($"{meshFilter.name} Split {partNum++}")
-                {
-                    transform = {
-                        localPosition = meshFilter.transform.localPosition,
-                        localRotation = meshFilter.transform.localRotation,
-                        localScale = meshFilter.transform.localScale
-                    }
-                };
+                GameObject go = new GameObject($"{meshFilter.name}[obsplit:{partNum++}]");
                 var split = go.AddComponent<MeshFilter>();
                 split.mesh = newMesh;
                 go.AddComponent<MeshRenderer>().sharedMaterial = sharedMat;
-                go.transform.SetParent(meshFilter.transform.parent, false);
+                go.transform.SetParent(meshFilter.transform, false);
                 splits.Add(split);
             }
 
             // stopwatch.Stop();
             // Debug.Log($"Mesh splitting completed in {stopwatch.ElapsedMilliseconds / 1000f} seconds.");
 
+            // Remove the meshfilter from the original game object
+            if (meshFilter != null)
+            {
+                Object.DestroyImmediate(meshFilter.GetComponent<MeshFilter>());
+            }
             return splits;
         }
 

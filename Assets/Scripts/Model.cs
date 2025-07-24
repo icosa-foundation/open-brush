@@ -954,7 +954,7 @@ namespace TiltBrush
 
             // Adopt the GameObject
             go.name = m_Location.ToString();
-            go.AddComponent<ObjModelScript>().Init();
+            go.AddComponent<ObjModelScript>().UpdateAllMeshChildren();
             go.SetActive(false);
             if (m_ModelParent != null)
             {
@@ -993,7 +993,7 @@ namespace TiltBrush
                 int index = 0;
                 foreach (Transform child in node)
                 {
-                    child.name += $"[{index++}]";
+                    child.name += $"[ob:{index++}]";
                     SetUniqueNameForNode(child);
                 }
             }
