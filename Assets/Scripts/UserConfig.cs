@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using UnityEngine;
 using UnityEngine.Serialization;
 
 namespace TiltBrush
@@ -171,13 +172,12 @@ namespace TiltBrush
             }
 
             private bool? m_IcosaModelPreload;
-            public bool PolyModelPreloadValid => m_IcosaModelPreload.HasValue;
             public bool IcosaModelPreload
             {
                 get
                 {
                     // TODO Should we avoid preload if we are running offline rendering?
-                    return m_IcosaModelPreload ?? App.PlatformConfig.EnablePolyPreload;
+                    return m_IcosaModelPreload ?? App.PlatformConfig.EnableIcosaPreload;
                 }
                 set { m_IcosaModelPreload = value; }
             }

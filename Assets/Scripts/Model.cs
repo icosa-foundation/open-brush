@@ -212,6 +212,10 @@ namespace TiltBrush
         // How many widgets are using this model?
         public int m_UsageCount;
 
+        // Store the paths of meshes that have been through MeshSplitter
+        public List<string> m_SplitMeshPaths;
+        public List<string> m_NotSplittableMeshPaths;
+
         private Location m_Location;
 
         // Can the geometry in this model be exported.
@@ -248,6 +252,12 @@ namespace TiltBrush
             get { return m_AllowExport; }
         }
 
+        private void Init()
+        {
+            m_SplitMeshPaths = new List<string>();
+            m_NotSplittableMeshPaths = new List<string>();
+        }
+
         /// Only allowed if AllowExport = true
         public IExportableMaterial GetExportableMaterial(Material material)
         {
@@ -259,12 +269,14 @@ namespace TiltBrush
         public Model(string relativePath)
         {
             m_Location = Location.File(relativePath);
+            Init();
         }
 
         // Constructor for remote models i.e. Icosa Gallery assets
         public Model(string assetId, string path)
         {
             m_Location = Location.IcosaAsset(assetId, path);
+            Init();
         }
 
         public Location GetLocation() { return m_Location; }
@@ -954,7 +966,7 @@ namespace TiltBrush
 
             // Adopt the GameObject
             go.name = m_Location.ToString();
-            go.AddComponent<ObjModelScript>().Init();
+            go.AddComponent<ObjModelScript>().UpdateAllMeshChildren();
             go.SetActive(false);
             if (m_ModelParent != null)
             {
@@ -993,7 +1005,7 @@ namespace TiltBrush
                 int index = 0;
                 foreach (Transform child in node)
                 {
-                    child.name += $"[{index++}]";
+                    child.name += $"[ob:{index++}]";
                     SetUniqueNameForNode(child);
                 }
             }
@@ -1124,6 +1136,45 @@ namespace TiltBrush
                     Path.GetDirectoryName(localPath),
                     uniqueSeed: localPath
                 );
+            }
+        }
+
+
+        public static List<MeshFilter> ApplySplits(MeshFilter rootMf)
+        {
+            var splits = MeshSplitter.DoSplit(rootMf);
+            return splits;
+        }
+
+        public void InitMeshSplits()
+        {
+            foreach (var split in m_SplitMeshPaths)
+            {
+                var modelObjScript = m_ModelParent.GetComponentInChildren<ObjModelScript>();
+                Transform destRoot;
+                if (string.IsNullOrEmpty(split))
+                {
+                    destRoot = modelObjScript.m_MeshChildren[0].transform;
+                }
+                else
+                {
+                    var (subTreeRoot, _) = ModelWidget.FindSubtreeRoot(
+                        modelObjScript.transform,
+                        split
+                    );
+                    destRoot = subTreeRoot;
+                }
+
+                var modelMf = destRoot?.GetComponentInChildren<MeshFilter>();
+                if (modelMf == null)
+                {
+                    Debug.LogError($"Model {m_Location} has no mesh filter for split {split}: {destRoot}");
+                    continue;
+                }
+                ApplySplits(modelMf);
+                // Remove the meshfilter from the original game object
+                GameObject.DestroyImmediate(modelMf.GetComponent<MeshFilter>());
+                modelObjScript.UpdateAllMeshChildren();
             }
         }
     }

@@ -191,6 +191,7 @@ namespace TiltBrush
     /// Used as an accessor for files downloaded from Poly and cached on local storage.
     public partial class IcosaAssetCatalog : MonoBehaviour
     {
+        // TODO limit for non-desktop builds?
         const int kAssetDiskCacheSize = 1000;
         const float kThumbnailFetchRate = 15;
         const int kThumbnailFetchMaxCount = 30;
