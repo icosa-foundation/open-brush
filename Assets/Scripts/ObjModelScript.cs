@@ -137,6 +137,6 @@ namespace TiltBrush
             }
 #endif
         }
-        
+
     }
 } // namespace TiltBrush
