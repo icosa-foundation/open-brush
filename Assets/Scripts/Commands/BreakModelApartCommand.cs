@@ -190,8 +190,10 @@ namespace TiltBrush
             if (widgetObjScript.m_MeshChildren.Length == 1)
             {
                 var modelObjScript = m_InitialWidget.Model.m_ModelParent.GetComponent<ObjModelScript>();
+                string subtree = m_InitialWidget.Subtree;
+
                 Transform destRoot;
-                if (string.IsNullOrEmpty(m_InitialWidget.Subtree))
+                if (string.IsNullOrEmpty(subtree))
                 {
                     destRoot = modelObjScript.m_MeshChildren[0].transform;
                 }
@@ -199,13 +201,13 @@ namespace TiltBrush
                 {
                     var (subTreeRoot, _) = ModelWidget.FindSubtreeRoot(
                         modelObjScript.transform,
-                        m_InitialWidget.Subtree
+                        subtree
                     );
                     destRoot = subTreeRoot;
                 }
+
                 var modelMf = destRoot.GetComponentInChildren<MeshFilter>();
-                var splits = MeshSplitter.DoSplit(modelMf);
-                modelObjScript.UpdateAllMeshChildren();
+                var splits = Model.ApplySplits(modelMf, modelObjScript);
 
                 var prevNodePath = m_NodePaths[0];
                 m_NodePaths = new List<string>();

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System.Threading.Tasks;
@@ -712,17 +713,29 @@ namespace TiltBrush
             {
 
                 Task<bool> okTask = CreateModelsFromRelativePath(
-                    modelDatas.FilePath, modelDatas.Subtrees,
-                    modelDatas.Transforms, modelDatas.RawTransforms, modelDatas.PinStates,
-                    modelDatas.GroupIds, modelDatas.LayerIds);
+                    modelDatas.FilePath,
+                    modelDatas.Subtrees,
+                    modelDatas.Transforms,
+                    modelDatas.RawTransforms,
+                    modelDatas.PinStates,
+                    modelDatas.GroupIds,
+                    modelDatas.LayerIds,
+                    modelDatas.SplitMeshPaths
+                );
                 ok = await okTask;
 
             }
             else if (modelDatas.AssetId != null)
             {
                 CreateModelsFromAssetId(
-                    modelDatas.AssetId, modelDatas.Subtrees,
-                    modelDatas.RawTransforms, modelDatas.PinStates, modelDatas.GroupIds, modelDatas.LayerIds);
+                    modelDatas.AssetId,
+                    modelDatas.Subtrees,
+                    modelDatas.RawTransforms,
+                    modelDatas.PinStates,
+                    modelDatas.GroupIds,
+                    modelDatas.LayerIds,
+                    modelDatas.SplitMeshPaths
+                );
                 ok = true;
             }
             else
@@ -742,7 +755,8 @@ namespace TiltBrush
         /// Returns false if the model can't be loaded -- in this case, caller is responsible
         /// for creating the missing-model placeholder.
         public static async Task<bool> CreateModelsFromRelativePath(
-            string relativePath, string[] subtrees, TrTransform[] xfs, TrTransform[] rawXfs, bool[] pinStates, uint[] groupIds, int[] layerIds)
+            string relativePath, string[] subtrees, TrTransform[] xfs, TrTransform[] rawXfs,
+            bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths)
         {
             // Verify model is loaded.  Or, at least, has been tried to be loaded.
             Model model = ModelCatalog.m_Instance.GetModel(relativePath);
@@ -758,6 +772,8 @@ namespace TiltBrush
             {
                 return false;
             }
+
+            model.m_SplitMeshPaths = splitMeshPaths.ToList();
 
             if (xfs != null)
             {
@@ -787,6 +803,11 @@ namespace TiltBrush
         static void CreateModel(Model model, string subtree, TrTransform xf, bool pin,
                                 bool isNonRawTransform, uint groupId, int layerId, string assetId = null)
         {
+
+            if (model.m_SplitMeshPaths != null)
+            {
+                model.InitMeshSplits();
+            }
 
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             modelWidget.transform.localPosition = xf.translation;
@@ -823,7 +844,7 @@ namespace TiltBrush
 
         // Used when loading model assetIds from a serialized format (e.g. Tilt file).
         static void CreateModelsFromAssetId(string assetId, string[] subtrees, TrTransform[] rawXfs,
-                                            bool[] pinStates, uint[] groupIds, int[] layerIds)
+                bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths)
         {
             // Request model from Poly and if it doesn't exist, ask to load it.
             Model model = App.IcosaAssetCatalog.GetModel(assetId);
@@ -838,13 +859,16 @@ namespace TiltBrush
                 App.IcosaAssetCatalog.RequestModelLoad(assetId, "widget");
             }
 
+            model.m_SplitMeshPaths = splitMeshPaths.ToList();
+
             // Create a widget for each transform.
             for (int i = 0; i < rawXfs.Length; ++i)
             {
                 bool pin = (i < pinStates.Length) ? pinStates[i] : true;
                 uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
                 int layerId = (layerIds != null && i < layerIds.Length) ? layerIds[i] : 0;
-                CreateModel(model, subtrees?[i], rawXfs[i], pin, isNonRawTransform: false, groupId, layerId, assetId);
+                CreateModel(model, subtrees?[i], rawXfs[i], pin, isNonRawTransform: false,
+                    groupId, layerId, assetId);
             }
         }
 

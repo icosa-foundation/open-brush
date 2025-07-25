@@ -1136,5 +1136,37 @@ namespace TiltBrush
                 );
             }
         }
+
+
+        public static List<MeshFilter> ApplySplits(MeshFilter rootMf, ObjModelScript objModelScript)
+        {
+            var splits = MeshSplitter.DoSplit(rootMf);
+            objModelScript.UpdateAllMeshChildren();
+            return splits;
+        }
+
+        public void InitMeshSplits()
+        {
+            foreach (var split in m_SplitMeshPaths)
+            {
+                var modelObjScript = this.m_ModelParent.GetComponentInChildren<ObjModelScript>();
+                Transform destRoot;
+                if (string.IsNullOrEmpty(split))
+                {
+                    destRoot = modelObjScript.m_MeshChildren[0].transform;
+                }
+                else
+                {
+                    var (subTreeRoot, _) = ModelWidget.FindSubtreeRoot(
+                        modelObjScript.transform,
+                        split
+                    );
+                    destRoot = subTreeRoot;
+                }
+
+                var modelMf = destRoot.GetComponentInChildren<MeshFilter>();
+                ApplySplits(modelMf, modelObjScript);
+            }
+        }
     }
 } // namespace TiltBrush;

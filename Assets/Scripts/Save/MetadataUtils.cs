@@ -102,9 +102,12 @@ namespace TiltBrush
 
             Dictionary<Model.Location, List<WidgetMetadata>> modelLocationMap =
                 new Dictionary<Model.Location, List<WidgetMetadata>>();
+            var modelSplitsMap = new Dictionary<Model.Location, List<string>>();
             foreach (var model in widgetModels)
             {
-                modelLocationMap[model.GetLocation()] = new List<WidgetMetadata>();
+                var loc = model.GetLocation();
+                modelLocationMap[loc] = new List<WidgetMetadata>();
+                modelSplitsMap[loc] = model.m_SplitMeshPaths;
             }
             foreach (var widget in widgets)
             {
@@ -123,6 +126,7 @@ namespace TiltBrush
                 var val = new TiltModels75
                 {
                     Location = elem.Key,
+                    SplitMeshPaths = modelSplitsMap[elem.Key],
                 };
 
                 // Order and align the metadata.
