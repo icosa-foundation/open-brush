@@ -45,7 +45,7 @@ namespace TiltBrush
         private string m_Subtree;
         public string Subtree
         {
-            get => m_Subtree;
+            get => m_Subtree ??= "";
             set => m_Subtree = value;
         }
 
@@ -323,28 +323,34 @@ namespace TiltBrush
 
         public bool HasSubModels()
         {
+            // TODO test all other 3d model formats work with "break apart" command
+            // Currently we assume that they do
+
             if (m_Model.GetLocation().Extension == ".svg")
             {
                 return m_ObjModelScript.SvgSceneInfo.HasSubShapes();
             }
 
+            // Check if we have more than one light or mesh
+            int meshCount = GetMeshes().Length;
+            int lightCount = m_ObjModelScript.GetComponentsInChildren<SceneLightGizmo>().Length;
+            if (lightCount + meshCount > 1) return true;
+
             // Unsplit models always have the possibility of having subobjects.
-            bool isSpilt = false;
-            foreach (var path in m_Model.m_SplitMeshPaths)
+            bool hasBeenSplit = false;
+            var allSplits = m_Model.m_SplitMeshPaths.Concat(m_Model.m_NotSplittableMeshPaths);
+            foreach (var path in allSplits)
             {
+                Debug.Log($"Subtree {Subtree} starts with {path} ? {Subtree.StartsWith(path)}");
                 if (Subtree.StartsWith(path))
                 {
-                    isSpilt = true;
+                    hasBeenSplit = true;
                     break;
                 }
             }
-            if (!isSpilt) return true;
 
-            // TODO test all other 3d model formats work with "break apart" command
-            // Currently we assume that they do
-            int lightCount = m_ObjModelScript.GetComponentsInChildren<SceneLightGizmo>().Length;
-            int meshCount = GetMeshes().Length;
-            return lightCount + meshCount > 1;
+            // If the model hasn't been split, then assume it could be split via meshsplitter
+            return !hasBeenSplit;
         }
 
         public static (Transform node, bool excludeChildren) FindSubtreeRoot(Transform root, string subtree, string previousSubtree = null)
@@ -720,7 +726,8 @@ namespace TiltBrush
                     modelDatas.PinStates,
                     modelDatas.GroupIds,
                     modelDatas.LayerIds,
-                    modelDatas.SplitMeshPaths
+                    modelDatas.SplitMeshPaths,
+                    modelDatas.NotSplittableMeshPaths
                 );
                 ok = await okTask;
 
@@ -734,7 +741,8 @@ namespace TiltBrush
                     modelDatas.PinStates,
                     modelDatas.GroupIds,
                     modelDatas.LayerIds,
-                    modelDatas.SplitMeshPaths
+                    modelDatas.SplitMeshPaths,
+                    modelDatas.NotSplittableMeshPaths
                 );
                 ok = true;
             }
@@ -756,7 +764,7 @@ namespace TiltBrush
         /// for creating the missing-model placeholder.
         public static async Task<bool> CreateModelsFromRelativePath(
             string relativePath, string[] subtrees, TrTransform[] xfs, TrTransform[] rawXfs,
-            bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths)
+            bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths, List<string> noSplitMeshPaths)
         {
             // Verify model is loaded.  Or, at least, has been tried to be loaded.
             Model model = ModelCatalog.m_Instance.GetModel(relativePath);
@@ -774,6 +782,7 @@ namespace TiltBrush
             }
 
             model.m_SplitMeshPaths = splitMeshPaths?.ToList() ?? new List<string>();
+            model.m_NotSplittableMeshPaths = noSplitMeshPaths?.ToList() ?? new List<string>();
 
             if (xfs != null)
             {
@@ -844,7 +853,7 @@ namespace TiltBrush
 
         // Used when loading model assetIds from a serialized format (e.g. Tilt file).
         static void CreateModelsFromAssetId(string assetId, string[] subtrees, TrTransform[] rawXfs,
-                bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths)
+                bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths, List<string> noSplitMeshPaths)
         {
             // Request model from Poly and if it doesn't exist, ask to load it.
             Model model = App.IcosaAssetCatalog.GetModel(assetId);
@@ -860,6 +869,7 @@ namespace TiltBrush
             }
 
             model.m_SplitMeshPaths = splitMeshPaths?.ToList() ?? new List<string>();
+            model.m_NotSplittableMeshPaths = noSplitMeshPaths?.ToList() ?? new List<string>();
 
             // Create a widget for each transform.
             for (int i = 0; i < rawXfs.Length; ++i)

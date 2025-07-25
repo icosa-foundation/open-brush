@@ -75,11 +75,6 @@ namespace TiltBrush
             // stopwatch.Stop();
             // Debug.Log($"Mesh splitting completed in {stopwatch.ElapsedMilliseconds / 1000f} seconds.");
 
-            // Remove the meshfilter from the original game object
-            if (meshFilter != null)
-            {
-                Object.DestroyImmediate(meshFilter.GetComponent<MeshFilter>());
-            }
             return splits;
         }
 

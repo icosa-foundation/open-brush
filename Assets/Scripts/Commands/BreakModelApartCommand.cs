@@ -207,15 +207,28 @@ namespace TiltBrush
                 }
 
                 var modelMf = destRoot.GetComponentInChildren<MeshFilter>();
-                var splits = Model.ApplySplits(modelMf, modelObjScript);
+                var splits = Model.ApplySplits(modelMf);
 
                 var prevNodePath = m_NodePaths[0];
-                m_NodePaths = new List<string>();
-                foreach (var split in splits)
+                if (splits.Count == 1)
                 {
-                    m_NodePaths.Add($"{prevNodePath}/{split.name}");
+                    // Destroy the split as it's superfluous
+                    GameObject.DestroyImmediate(splits[0].gameObject);
+                    m_InitialWidget.Model.m_NotSplittableMeshPaths.Add(subtree);
                 }
-                m_InitialWidget.Model.m_SplitMeshPaths.Add(prevNodePath);
+                else
+                {
+                    // Remove the meshfilter from the original game object
+                    GameObject.DestroyImmediate(modelMf.GetComponent<MeshFilter>());
+
+                    m_NodePaths = new List<string>();
+                    foreach (var split in splits)
+                    {
+                        m_NodePaths.Add($"{prevNodePath}/{split.name}");
+                    }
+                    m_InitialWidget.Model.m_SplitMeshPaths.Add(prevNodePath);
+                }
+                modelObjScript.UpdateAllMeshChildren();
             }
 
             // Create new widgets for each path

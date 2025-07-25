@@ -214,6 +214,7 @@ namespace TiltBrush
 
         // Store the paths of meshes that have been through MeshSplitter
         public List<string> m_SplitMeshPaths;
+        public List<string> m_NotSplittableMeshPaths;
 
         private Location m_Location;
 
@@ -254,6 +255,7 @@ namespace TiltBrush
         private void Init()
         {
             m_SplitMeshPaths = new List<string>();
+            m_NotSplittableMeshPaths = new List<string>();
         }
 
         /// Only allowed if AllowExport = true
@@ -1138,10 +1140,9 @@ namespace TiltBrush
         }
 
 
-        public static List<MeshFilter> ApplySplits(MeshFilter rootMf, ObjModelScript objModelScript)
+        public static List<MeshFilter> ApplySplits(MeshFilter rootMf)
         {
             var splits = MeshSplitter.DoSplit(rootMf);
-            objModelScript.UpdateAllMeshChildren();
             return splits;
         }
 
@@ -1149,7 +1150,7 @@ namespace TiltBrush
         {
             foreach (var split in m_SplitMeshPaths)
             {
-                var modelObjScript = this.m_ModelParent.GetComponentInChildren<ObjModelScript>();
+                var modelObjScript = m_ModelParent.GetComponentInChildren<ObjModelScript>();
                 Transform destRoot;
                 if (string.IsNullOrEmpty(split))
                 {
@@ -1164,8 +1165,16 @@ namespace TiltBrush
                     destRoot = subTreeRoot;
                 }
 
-                var modelMf = destRoot.GetComponentInChildren<MeshFilter>();
-                ApplySplits(modelMf, modelObjScript);
+                var modelMf = destRoot?.GetComponentInChildren<MeshFilter>();
+                if (modelMf == null)
+                {
+                    Debug.LogError($"Model {m_Location} has no mesh filter for split {split}: {destRoot}");
+                    continue;
+                }
+                ApplySplits(modelMf);
+                // Remove the meshfilter from the original game object
+                GameObject.DestroyImmediate(modelMf.GetComponent<MeshFilter>());
+                modelObjScript.UpdateAllMeshChildren();
             }
         }
     }
