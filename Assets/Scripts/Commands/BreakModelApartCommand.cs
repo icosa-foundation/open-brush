@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -214,7 +215,7 @@ namespace TiltBrush
                 {
                     // Destroy the split as it's superfluous
                     GameObject.DestroyImmediate(splits[0].gameObject);
-                    m_InitialWidget.Model.m_NotSplittableMeshPaths.Add(subtree);
+                    m_InitialWidget.Model.m_SplitMeshPaths.Add(String.IsNullOrEmpty(subtree) ? prevNodePath : subtree);
                 }
                 else
                 {
@@ -226,7 +227,7 @@ namespace TiltBrush
                     {
                         m_NodePaths.Add($"{prevNodePath}/{split.name}");
                     }
-                    m_InitialWidget.Model.m_SplitMeshPaths.Add(prevNodePath);
+                    m_InitialWidget.Model.m_SplitMeshPaths.Add(String.IsNullOrEmpty(subtree) ? prevNodePath : subtree);
                 }
                 modelObjScript.UpdateAllMeshChildren();
             }
