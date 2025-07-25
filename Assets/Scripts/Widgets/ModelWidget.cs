@@ -773,7 +773,7 @@ namespace TiltBrush
                 return false;
             }
 
-            model.m_SplitMeshPaths = splitMeshPaths.ToList();
+            model.m_SplitMeshPaths = splitMeshPaths?.ToList() ?? new List<string>();
 
             if (xfs != null)
             {
@@ -859,7 +859,7 @@ namespace TiltBrush
                 App.IcosaAssetCatalog.RequestModelLoad(assetId, "widget");
             }
 
-            model.m_SplitMeshPaths = splitMeshPaths.ToList();
+            model.m_SplitMeshPaths = splitMeshPaths?.ToList() ?? new List<string>();
 
             // Create a widget for each transform.
             for (int i = 0; i < rawXfs.Length; ++i)
