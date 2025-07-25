@@ -180,7 +180,6 @@ namespace TiltBrush
                 int c = vertexMap[triangles[i + 2]];
                 uf.Union(a, b);
                 uf.Union(b, c);
-                uf.Union(c, a);
             }
 
             var componentTriangles = new Dictionary<int, List<int>>(uniqueCount);
