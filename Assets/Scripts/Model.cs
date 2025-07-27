@@ -505,6 +505,48 @@ namespace TiltBrush
             }
         } // GltfModelBuilder
 
+        // Untested. Not used as we aren't using the async path currently
+        // I sketched out an implementation before realizing this
+        // so keeping it here for reference.
+        class ObjModelBuilder : ModelBuilder
+        {
+            private readonly bool m_useThreadedImageLoad;
+            private readonly bool m_fromIcosa;
+
+            public ObjModelBuilder(Location location, bool useThreadedImageLoad)
+                : base(location.AbsolutePath)
+            {
+                m_useThreadedImageLoad = useThreadedImageLoad;
+                m_fromIcosa = (location.GetLocationType() == Location.Type.IcosaAssetId);
+            }
+
+            class DummyDisposable : IDisposable
+            {
+                public void Dispose() { }
+            }
+
+            protected override IDisposable DoBackgroundThreadWork()
+            {
+                return new DummyDisposable();
+            }
+
+            protected override GameObject DoUnityThreadWork(IDisposable state__,
+                                                            out IEnumerable<Null> meshEnumerable,
+                                                            out ImportMaterialCollector
+                                                                importMaterialCollector)
+            {
+                GameObject rootObject = new GameObject("ImportedObjModel");
+                var objLoader = rootObject.AddComponent<OBJ>();
+                objLoader.BeginLoad(m_localPath);
+                meshEnumerable = null;
+                importMaterialCollector = null;
+                string assetLocation = Path.GetDirectoryName(m_localPath);
+                importMaterialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: m_localPath);
+                IsValid = rootObject != null;
+                return rootObject;
+            }
+        }
+
         GameObject LoadUsd(List<string> warnings)
         {
 #if USD_SUPPORTED
@@ -554,6 +596,31 @@ namespace TiltBrush
                 m_AllowExport = false;
                 Debug.LogException(ex);
                 sceneInfo = new SVGParser.SceneInfo();
+                return null;
+            }
+        }
+
+        async Task<GameObject> LoadObj()
+        {
+            try
+            {
+                GameObject gameObject = new GameObject("ImportedObjRoot");
+                var objLoader = gameObject.AddComponent<OBJ>();
+                await objLoader.BeginLoadAsync(m_Location.AbsolutePath);
+                string assetLocation = Path.GetDirectoryName(m_Location.AbsolutePath);
+                gameObject.transform.localScale = Vector3.one * 10f; // Match the scale of the legacy obj importer
+                m_ImportMaterialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: m_Location.AbsolutePath);
+                m_AllowExport = (m_ImportMaterialCollector != null);
+                // m_Valid = true;
+                GameObject parent = new GameObject("ImportedObjParent");
+                gameObject.transform.SetParent(parent.transform, true);
+                return parent;
+            }
+            catch (Exception ex)
+            {
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
                 return null;
             }
         }
@@ -639,10 +706,22 @@ namespace TiltBrush
             {
                 throw new NotImplementedException();
             }
-            else if (m_Location.GetLocationType() == Location.Type.IcosaAssetId)
+
+            if (m_Location.GetLocationType() == Location.Type.IcosaAssetId)
             {
-                // If we pulled this from Icosa, it's going to be a gltf file.
-                m_builder = new GltfModelBuilder(m_Location, useThreadedImageLoad);
+                if (m_Location.Extension == ".gltf" || m_Location.Extension == ".gltf2" ||
+                    m_Location.Extension == ".glb")
+                {
+                    m_builder = new GltfModelBuilder(m_Location, useThreadedImageLoad);
+                }
+                else if (m_Location.Extension == ".obj")
+                {
+                    m_builder = new ObjModelBuilder(m_Location, useThreadedImageLoad);
+                }
+                else
+                {
+                    throw new NotImplementedException($"Unsupported format {m_Location.Extension}");
+                }
             }
             else
             {
@@ -750,22 +829,34 @@ namespace TiltBrush
                 // TODO: if it's not already null, why did we get here? Probably want to check for error
                 // and bail at a higher level, and require as a precondition that error == null
                 m_LoadError = null;
+                bool isLocal = m_Location.GetLocationType() == Location.Type.LocalFile;
 
                 string ext = m_Location.Extension;
-                if (m_Location.GetLocationType() == Location.Type.LocalFile &&
-                    ext == ".usd")
+                if (isLocal && ext == ".usd")
                 {
                     // Experimental usd loading.
                     go = LoadUsd(warnings);
                     CalcBoundsNonGltf(go);
                     EndCreatePrefab(go, warnings);
                 }
-                else if (m_Location.GetLocationType() == Location.Type.IcosaAssetId ||
-                    ext == ".gltf2" || ext == ".gltf" || ext == ".glb")
+                else if (ext == ".gltf2" || ext == ".gltf" || ext == ".glb")
                 {
-                    // If we pulled this from Icosa, it's going to be a gltf file.
                     Task t = LoadGltf(warnings);
                     await t;
+                }
+#if FBX_SUPPORTED
+                // Allow users to force the old OBJ loader.
+                // Currently - always use the legacy OBJ loader for local files.
+                // This is to ensure we don't change the behavior of existing sketches
+                else if (ext == ".obj" && (!App.UserConfig.Import.UseLegacyObjForIcosa || isLocal))
+#else
+                // Always use the new loader when FBX SDK is not supported.
+                else if (ext == ".obj")
+#endif
+                {
+                    go = await LoadObj();
+                    CalcBoundsNonGltf(go);
+                    EndCreatePrefab(go, warnings);
                 }
                 else if (ext == ".fbx" || ext == ".obj")
                 {
@@ -883,8 +974,11 @@ namespace TiltBrush
 #endif
 
             // !!! Add to material dictionary here?
-
             m_Valid = true;
+            EnsureCollectorExists();
+            // TODO We are probably calling the following too many times on import
+            // However the code paths have become a bit convoluted so err on the side of caution
+            AssignMaterialsToCollector(m_ImportMaterialCollector);
             DisplayWarnings(warnings);
         }
 
@@ -896,19 +990,15 @@ namespace TiltBrush
         {
             void SetUniqueNameForNode(Transform node)
             {
-                // GetInstanceID returns a unique ID for every GameObject during a runtime session
-                node.name += " uid: " + node.gameObject.GetInstanceID();
-
+                int index = 0;
                 foreach (Transform child in node)
                 {
+                    child.name += $"[{index++}]";
                     SetUniqueNameForNode(child);
                 }
             }
 
-            foreach (Transform child in rootNode)
-            {
-                SetUniqueNameForNode(child);
-            }
+            SetUniqueNameForNode(rootNode);
         }
 
         public void UnloadModel()
@@ -1034,7 +1124,6 @@ namespace TiltBrush
                     Path.GetDirectoryName(localPath),
                     uniqueSeed: localPath
                 );
-                AssignMaterialsToCollector(m_ImportMaterialCollector);
             }
         }
     }

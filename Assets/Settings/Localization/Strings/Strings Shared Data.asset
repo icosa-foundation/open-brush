@@ -3575,6 +3575,10 @@ MonoBehaviour:
     m_Key: POPUP_ICOSA_LOGIN_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 381885131211235328
+    m_Key: VIEW_MODE_LOADING_SKETCHES
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

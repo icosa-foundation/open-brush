@@ -170,7 +170,14 @@ namespace TiltBrush
             GLTF1 = "GLTF1",
             GLTF2 = "GLTF2",
             OBJ = "OBJ",
-            FBX = "FBX";
+            FBX = "FBX",
+            NOT_TILT = "-TILT",
+            NOT_BLOCKS = "-BLOCKS",
+            NOT_GLTF = "-GLTF",
+            NOT_GLTF1 = "-GLTF1",
+            NOT_GLTF2 = "-GLTF2",
+            NOT_OBJ = "-OBJ",
+            NOT_FBX = "-FBX";
     }
 
     public class CuratedChoices
@@ -188,7 +195,7 @@ namespace TiltBrush
         const float kThumbnailFetchRate = 15;
         const int kThumbnailFetchMaxCount = 30;
         const int kThumbnailReadRate = 4;
-        private const int DEFAULT_MODEL_TRIANGLE_COUNT_MAX = 20000;
+        private const int DEFAULT_MODEL_TRIANGLE_COUNT_MAX = 80000;
 
         // This may be a bit broader than an asset id, but it's a safe set of
         // filename characters.
@@ -341,7 +348,7 @@ namespace TiltBrush
                         UnityEngine.Profiling.Profiler.BeginSample("AssetDetails.DownloadThumbnail:LoadImage");
                         if (imageData != null)
                         {
-                            m_Thumbnail.Resize(imageData.ColorWidth, imageData.ColorHeight,
+                            m_Thumbnail.Reinitialize(imageData.ColorWidth, imageData.ColorHeight,
                                 TextureFormat.ARGB32, false);
                             m_Thumbnail.SetPixels32(imageData.ColorData);
                             m_Thumbnail.Apply(updateMipmaps: false, makeNoLongerReadable: true);
@@ -365,7 +372,7 @@ namespace TiltBrush
             public int TriangleCountMax;
             public string License;
             public string OrderBy;
-            public string Format;
+            public string[] Formats;
             public string Curated;
             public string Category;
         }
@@ -479,7 +486,7 @@ namespace TiltBrush
         {
             string cacheDir = Path.Combine(Application.persistentDataPath, "assetCache");
             m_CacheDir = cacheDir.Replace("\\", "/");
-            // Use a different directory from m_CacheDir to avoid having to make ValidGltfCache()
+            // Use a different directory from m_CacheDir to avoid having to make ValidModelCache()
             // smart enough to allow directories with only a thumbnail and no asset data.
             m_ThumbnailCacheDir = Path.Combine(Application.persistentDataPath, "assetThumbnail")
                 .Replace("\\", "/");
@@ -496,11 +503,11 @@ namespace TiltBrush
                 foreach (string folderPath in EnumerateCacheDirectories())
                 {
                     string assetId = Path.GetFileName(folderPath);
-                    string gltfFile = ValidGltfCache(folderPath, assetId);
-                    if (gltfFile != null)
+                    string modelFile = ValidModelCache(folderPath);
+                    if (modelFile != null)
                     {
                         string path = Path.Combine(folderPath, assetId);
-                        path = Path.Combine(path, gltfFile);
+                        path = Path.Combine(path, modelFile);
                         m_ModelsByAssetId[assetId] = new Model(assetId, path);
                     }
                     else
@@ -531,7 +538,7 @@ namespace TiltBrush
                             TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                             License = LicenseChoices.ANY,
                             OrderBy = OrderByChoices.NEWEST,
-                            Format = FormatChoices.GLTF2,
+                            Formats = new [] {FormatChoices.NOT_TILT},
                             Curated = CuratedChoices.ANY,
                             Category = CategoryChoices.ANY
                         }
@@ -547,7 +554,7 @@ namespace TiltBrush
                             TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                             License = LicenseChoices.REMIXABLE,
                             OrderBy = OrderByChoices.LIKED_TIME,
-                            Format = FormatChoices.GLTF2,
+                            Formats = new [] {FormatChoices.NOT_TILT},
                             Curated = CuratedChoices.ANY,
                             Category = CategoryChoices.ANY
                         }
@@ -568,7 +575,7 @@ namespace TiltBrush
                             TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                             License = LicenseChoices.REMIXABLE,
                             OrderBy = OrderByChoices.BEST,
-                            Format = FormatChoices.GLTF2,
+                            Formats = new [] {FormatChoices.NOT_TILT},
                             Curated = CuratedChoices.TRUE,
                             Category = CategoryChoices.ANY
                         }
@@ -786,9 +793,18 @@ namespace TiltBrush
                     Debug.LogError("Cannot create directory for online asset download.");
                 }
 
+                // In order of preference
+                var formats = new[]
+                {
+                    VrAssetFormat.GLTF2,
+                    VrAssetFormat.GLTF,
+                    VrAssetFormat.OBJ,
+                    VrAssetFormat.PLY
+                };
+
                 // Then request the asset from Poly.
                 AssetGetter request = VrAssetService.m_Instance.GetAsset(
-                    assetId, VrAssetFormat.GLTF2, reason);
+                    assetId, formats, reason);
                 StartCoroutine(request.GetAssetCoroutine());
                 m_ActiveRequests.Add(request);
                 m_IsLoadingMemo.Add(assetId);
@@ -852,11 +868,8 @@ namespace TiltBrush
         /// into model loads?
         public void PrecacheModels(SceneFileInfo sceneFileInfo, string reason)
         {
-            if (string.IsNullOrEmpty(App.Config.GoogleSecrets?.ApiKey))
-            {
-                return;
-            }
-            StartCoroutine(PrecacheModelsCoroutine(sceneFileInfo, reason));
+            // TODO precaching can end up getting us rate limited on archive.org
+            //StartCoroutine(PrecacheModelsCoroutine(sceneFileInfo, reason));
         }
 
         /// Waits for the json data to be read on a background thread, and then executes a precache
@@ -892,8 +905,18 @@ namespace TiltBrush
                 {
                     continue;
                 }
+
+                // In order of preference
+                var formats = new[]
+                {
+                    VrAssetFormat.GLTF2,
+                    VrAssetFormat.GLTF,
+                    VrAssetFormat.OBJ,
+                    VrAssetFormat.PLY
+                };
+
                 precacheCoroutines.Add(PrecacheCoroutine(
-                    VrAssetService.m_Instance.GetAsset(id, VrAssetFormat.GLTF2, reason)));
+                    VrAssetService.m_Instance.GetAsset(id, formats, reason)));
                 yield return null;
             }
 
@@ -1103,6 +1126,7 @@ namespace TiltBrush
                 // So for now, just don't show them.
                 // bool includePrivate = type == IcosaSetType.User;
                 bool includePrivate = false;
+
                 using (var cr = lister.NextPage(models, m_ThumbnailSuffix, includePrivate))
                 {
                     int prevCount = models.Count;
@@ -1200,7 +1224,7 @@ namespace TiltBrush
             return m_AssetSetByType[type].m_Models.Count();
         }
 
-        public AssetDetails GetPolyAsset(IcosaSetType type, int index)
+        public AssetDetails GetIcosaAsset(IcosaSetType type, int index)
         {
             return m_AssetSetByType[type].m_Models[index];
         }
@@ -1208,7 +1232,7 @@ namespace TiltBrush
         // Ideally we would check against the format info from Poly that we have all the required
         // elements but for now we know that there should be exactly one .gltf/.gltf2 and a .bin
         // Returns the filename of the .gltf/.gltf2 file, or null if not valid.
-        private static string ValidGltfCache(string dir, string assetId)
+        private static string ValidModelCache(string dir)
         {
             // We now don't require a .bin file, as some assets are glbs
             // if (Directory.GetFiles(dir, "*.bin").Length == 0)
@@ -1218,18 +1242,23 @@ namespace TiltBrush
 
             var filesGltf1 = Directory.GetFiles(dir, "*.gltf");
             var filesGltf2 = Directory.GetFiles(dir, "*.gltf2");
-            if (filesGltf1.Length + filesGltf2.Length != 1)
+            var filesObj = Directory.GetFiles(dir, "*.obj");
+
+            if (filesGltf1.Length + filesGltf2.Length + filesObj.Length != 1)
             {
                 return null;
             }
-            else if (filesGltf1.Length == 1)
-            {
-                return filesGltf1[0];
-            }
-            else
+
+            // We used to prefer gltf1 for some reason. Stop doing that.
+            if (filesGltf2.Length == 1)
             {
                 return filesGltf2[0];
             }
+            if (filesGltf1.Length == 1)
+            {
+                return filesGltf1[0];
+            }
+            return filesObj[0];
         }
 
         public void ClearLoadingQueue()
@@ -1309,7 +1338,7 @@ namespace TiltBrush
             var queryParams = QueryOptionParametersForSet(set);
             if (ChoicesHelper.IsValidChoice<FormatChoices>(format))
             {
-                queryParams.Format = format;
+                queryParams.Formats = new[] { format };
                 m_AssetSetByType[set].QueryParams = queryParams;
                 if (requestRefresh) RefreshPanel();
             }
