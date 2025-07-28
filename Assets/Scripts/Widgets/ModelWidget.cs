@@ -321,27 +321,29 @@ namespace TiltBrush
             }
         }
 
-        public bool HasSubModels()
+        public bool MeshSplitPossible()
         {
             // TODO test all other 3d model formats work with "break apart" command
             // Currently we assume that they do
 
+            // Check SVG models using different logic
             if (m_Model.GetLocation().Extension == ".svg")
             {
                 return m_ObjModelScript.SvgSceneInfo.HasSubShapes();
             }
 
             // Check if we have more than one light or mesh
+            // Currently we only split single meshes as groups are checked separately
             int meshCount = GetMeshes().Length;
             int lightCount = m_ObjModelScript.GetComponentsInChildren<SceneLightGizmo>().Length;
-            if (lightCount + meshCount > 1) return true;
+            if (lightCount + meshCount > 1) return false;
 
-            // Unsplit models always have the possibility of having subobjects.
+            // Unsplit models initially always have the possibility of being split.
+            // We only return false if we're already tried to split this mesh
             bool hasBeenSplit = false;
             var allSplits = m_Model.m_SplitMeshPaths.Concat(m_Model.m_NotSplittableMeshPaths);
             foreach (var path in allSplits)
             {
-                Debug.Log($"Subtree {Subtree} starts with {path} ? {Subtree.StartsWith(path)}");
                 if (Subtree.StartsWith(path))
                 {
                     hasBeenSplit = true;
@@ -349,7 +351,7 @@ namespace TiltBrush
                 }
             }
 
-            // If the model hasn't been split, then assume it could be split via meshsplitter
+            // If the model hasn't been split, then assume it splitting is possible.
             return !hasBeenSplit;
         }
 

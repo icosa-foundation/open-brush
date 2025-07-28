@@ -126,19 +126,22 @@ namespace TiltBrush
         {
             get
             {
-                return SelectionIsInOneGroup || SelectionIsCompositeImport;
+                return SelectionIsInOneGroup || SelectionIsSplittable;
             }
         }
 
-        public bool SelectionIsCompositeImport
+        // Return true if this is something we can call MeshSplit or similar on
+        // Note that groups should return false. They are checked separately.
+        public bool SelectionIsSplittable
         {
             get
             {
+                // Currently only a single widget can be split.
                 if (m_SelectedWidgets.Count != 1) return false;
                 GrabWidget widget = m_SelectedWidgets.First();
                 if (widget is ModelWidget modelWidget)
                 {
-                    return modelWidget.HasSubModels();
+                    return modelWidget.MeshSplitPossible();
                 }
 
                 if (widget is ImageWidget imageWidget)
@@ -148,7 +151,6 @@ namespace TiltBrush
                     {
                         return imageWidget.HasSubShapes();
                     }
-                    return false;
                 }
 
                 return false;
@@ -974,7 +976,7 @@ namespace TiltBrush
                 return;
             }
 
-            if (SelectionIsCompositeImport)
+            if (SelectionIsSplittable)
             {
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                     new BreakModelApartCommand(m_SelectedWidgets.First() as ModelWidget));

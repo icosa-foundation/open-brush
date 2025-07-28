@@ -847,6 +847,9 @@ MonoBehaviour:
   - m_PopUpPrefab: {fileID: 1887799951535888, guid: a600c48c5f105874e8e750977bb95d4b,
       type: 3}
     m_Command: 11500
+  - m_PopUpPrefab: {fileID: 1559017956401146, guid: 3b86d3238205be14d9b6a07d506135f2,
+      type: 3}
+    m_Command: 55
   m_PanelDescription: ADVANCEDTOOLS_PANEL_DESCRIPTION
   m_LocalizedPanelDescription:
     m_TableReference:
@@ -2908,6 +2911,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_ShowOnToolType
       value: 21
+      objectReference: {fileID: 0}
+    - target: {fileID: 2130795022144400380, guid: 9b674e23f212f5a40b5d981d3ba5f4e2,
+        type: 3}
+      propertyPath: m_RequiresPopup
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8146683654292829881, guid: 9b674e23f212f5a40b5d981d3ba5f4e2,
         type: 3}
