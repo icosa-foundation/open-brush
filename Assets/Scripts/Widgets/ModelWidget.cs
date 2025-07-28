@@ -403,6 +403,7 @@ namespace TiltBrush
         // starting at CarBody/Floor/Wheel1
         public void SyncHierarchyToSubtree(string previousSubtree = null)
         {
+            var originalCost = GetTiltMeterCost();
             var (node, excludeChildren) = FindSubtreeRoot(
                 m_ObjModelScript.transform,
                 Subtree,
@@ -450,6 +451,12 @@ namespace TiltBrush
 
                 CloneInitialMaterials(null);
                 RecalculateColliderBounds();
+
+                // Adjust the tilt meter cost based on the new model
+                var newCost = GetTiltMeterCost();
+                TiltMeterScript.m_Instance.AdjustMeterWithWidget(originalCost, up: false);
+                TiltMeterScript.m_Instance.AdjustMeterWithWidget(newCost, up: true);
+
             }
         }
 
