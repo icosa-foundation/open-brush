@@ -22,7 +22,7 @@ namespace TiltBrush
         protected override void OnButtonPressed()
         {
             // Require user confirmation if a mesh split will be performed
-            m_RequiresPopup = SelectionManager.m_Instance.SelectionIsSplittable;
+            m_RequiresPopup = SelectionManager.m_Instance.SelectionIsMeshSplittable;
             base.OnButtonPressed();
         }
     }

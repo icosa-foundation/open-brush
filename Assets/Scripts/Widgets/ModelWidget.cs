@@ -321,7 +321,7 @@ namespace TiltBrush
             }
         }
 
-        public bool MeshSplitPossible()
+        public bool HasMultipleNodes()
         {
             // TODO test all other 3d model formats work with "break apart" command
             // Currently we assume that they do
@@ -333,11 +333,14 @@ namespace TiltBrush
             }
 
             // Check if we have more than one light or mesh
-            // Currently we only split single meshes as groups are checked separately
             int meshCount = GetMeshes().Length;
             int lightCount = m_ObjModelScript.GetComponentsInChildren<SceneLightGizmo>().Length;
-            if (lightCount + meshCount > 1) return false;
+            if (lightCount + meshCount > 1) return true;
+            return false;
+        }
 
+        public bool MeshSplitPossible()
+        {
             // Unsplit models initially always have the possibility of being split.
             // We only return false if we're already tried to split this mesh
             bool hasBeenSplit = false;

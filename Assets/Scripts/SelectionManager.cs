@@ -122,21 +122,41 @@ namespace TiltBrush
             }
         }
 
-        public bool UngroupingAllowed
+        public bool UngroupingAllowed => SelectionIsInOneGroup ||
+            (m_SelectedWidgets.Count == 1 &&
+                (SelectionIsMultipleNodes || SelectionIsMeshSplittable)
+            );
+
+        // Currently this means "multiple mesh filters and/or lights"
+        private bool SelectionIsMultipleNodes
         {
             get
             {
-                return SelectionIsInOneGroup || SelectionIsSplittable;
+                GrabWidget widget = m_SelectedWidgets.First();
+                if (widget is ModelWidget modelWidget)
+                {
+                    return modelWidget.HasMultipleNodes();
+                }
+
+                if (widget is ImageWidget imageWidget)
+                {
+                    string ext = Path.GetExtension(imageWidget.ReferenceImage.FileName).ToLower();
+                    if (ext == ".svg")
+                    {
+                        return imageWidget.HasSubShapes();
+                    }
+                }
+                return false;
             }
         }
 
         // Return true if this is something we can call MeshSplit or similar on
         // Note that groups should return false. They are checked separately.
-        public bool SelectionIsSplittable
+        public bool SelectionIsMeshSplittable
         {
             get
             {
-                // Currently only a single widget can be split.
+                // Currently, only a single widget can be split.
                 if (m_SelectedWidgets.Count != 1) return false;
                 GrabWidget widget = m_SelectedWidgets.First();
                 if (widget is ModelWidget modelWidget)
@@ -152,7 +172,6 @@ namespace TiltBrush
                         return imageWidget.HasSubShapes();
                     }
                 }
-
                 return false;
             }
         }
@@ -976,7 +995,7 @@ namespace TiltBrush
                 return;
             }
 
-            if (SelectionIsSplittable)
+            if (SelectionIsMeshSplittable)
             {
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                     new BreakModelApartCommand(m_SelectedWidgets.First() as ModelWidget));
