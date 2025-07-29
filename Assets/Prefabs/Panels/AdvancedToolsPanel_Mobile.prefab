@@ -936,6 +936,9 @@ MonoBehaviour:
   - m_PopUpPrefab: {fileID: 1887799951535888, guid: a600c48c5f105874e8e750977bb95d4b,
       type: 3}
     m_Command: 11500
+  - m_PopUpPrefab: {fileID: 1559017956401146, guid: 3b86d3238205be14d9b6a07d506135f2,
+      type: 3}
+    m_Command: 55
   m_PanelDescription: ADVANCEDTOOLS_PANEL_DESCRIPTION
   m_LocalizedPanelDescription:
     m_TableReference:

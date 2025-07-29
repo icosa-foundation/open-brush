@@ -3720,6 +3720,14 @@ MonoBehaviour:
     m_Localized: Loading Sketches. Please wait...
     m_Metadata:
       m_Items: []
+  - m_Id: 393175499957428224
+    m_Localized: Split Mesh?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175792879230976
+    m_Localized: Splitting complex meshes might be slow. Save your sketch regularly.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
