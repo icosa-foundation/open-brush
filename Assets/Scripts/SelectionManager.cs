@@ -128,10 +128,14 @@ namespace TiltBrush
             );
 
         // Currently this means "multiple mesh filters and/or lights"
-        private bool SelectionIsMultipleNodes
+        public bool SelectionIsMultipleNodes
         {
             get
             {
+                if (m_SelectedWidgets == null || m_SelectedWidgets.Count == 0)
+                {
+                    return false;
+                }
                 GrabWidget widget = m_SelectedWidgets.First();
                 if (widget is ModelWidget modelWidget)
                 {
