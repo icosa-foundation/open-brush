@@ -1150,6 +1150,7 @@ namespace TiltBrush
         {
             foreach (var split in m_SplitMeshPaths)
             {
+                if (m_NotSplittableMeshPaths.Contains(split)) continue;
                 var modelObjScript = m_ModelParent.GetComponentInChildren<ObjModelScript>();
                 Transform destRoot;
                 if (string.IsNullOrEmpty(split))

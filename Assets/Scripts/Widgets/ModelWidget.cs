@@ -796,6 +796,11 @@ namespace TiltBrush
             model.m_SplitMeshPaths = splitMeshPaths?.ToList() ?? new List<string>();
             model.m_NotSplittableMeshPaths = noSplitMeshPaths?.ToList() ?? new List<string>();
 
+            if (model.m_SplitMeshPaths != null)
+            {
+                model.InitMeshSplits();
+            }
+
             if (xfs != null)
             {
                 // Pre M13 format
@@ -824,12 +829,6 @@ namespace TiltBrush
         static void CreateModel(Model model, string subtree, TrTransform xf, bool pin,
                                 bool isNonRawTransform, uint groupId, int layerId, string assetId = null)
         {
-
-            if (model.m_SplitMeshPaths != null)
-            {
-                model.InitMeshSplits();
-            }
-
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             modelWidget.transform.localPosition = xf.translation;
             modelWidget.transform.localRotation = xf.rotation;
@@ -882,6 +881,11 @@ namespace TiltBrush
 
             model.m_SplitMeshPaths = splitMeshPaths?.ToList() ?? new List<string>();
             model.m_NotSplittableMeshPaths = noSplitMeshPaths?.ToList() ?? new List<string>();
+
+            if (model.m_SplitMeshPaths != null)
+            {
+                model.InitMeshSplits();
+            }
 
             // Create a widget for each transform.
             for (int i = 0; i < rawXfs.Length; ++i)
