@@ -796,6 +796,11 @@ namespace TiltBrush
             model.m_SplitMeshPaths = splitMeshPaths?.ToList() ?? new List<string>();
             model.m_NotSplittableMeshPaths = noSplitMeshPaths?.ToList() ?? new List<string>();
 
+            if (model.m_SplitMeshPaths != null)
+            {
+                model.InitMeshSplits();
+            }
+
             if (xfs != null)
             {
                 // Pre M13 format
