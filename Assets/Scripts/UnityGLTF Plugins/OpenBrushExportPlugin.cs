@@ -351,7 +351,7 @@ namespace TiltBrush
                 // TODO - This assumes that every brush has a unique material with a unique name
                 // Currently, this is true, but it may not always be the case
                 var brushes = BrushCatalog.m_Instance.AllBrushes
-                    .Where(b => b.Material.name == material.name)
+                    .Where(b => b.Material.name == material.name.Replace("(Instance)", "").TrimEnd())
                     .ToList();
 
                 switch (brushes.Count)
