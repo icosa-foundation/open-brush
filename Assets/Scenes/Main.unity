@@ -25538,17 +25538,16 @@ MonoBehaviour:
     m_ModeQuest: 1
     m_Basic: 1
     m_Advanced: 1
-  - m_PanelPrefab: {fileID: 1865477934442706, guid: b57c606c7c23d6547b7b136a53c8118c,
-      type: 3}
+  - m_PanelPrefab: {fileID: 0}
     m_ModeVr: 0
     m_ModeMono: 0
-    m_ModeQuest: 1
-    m_Basic: 1
+    m_ModeQuest: 0
+    m_Basic: 0
     m_Advanced: 0
   - m_PanelPrefab: {fileID: 152754, guid: 1f98c5464e57ca042986684865c6c8e0, type: 3}
     m_ModeVr: 1
     m_ModeMono: 1
-    m_ModeQuest: 0
+    m_ModeQuest: 1
     m_Basic: 1
     m_Advanced: 0
   - m_PanelPrefab: {fileID: 0}
@@ -25557,11 +25556,10 @@ MonoBehaviour:
     m_ModeQuest: 0
     m_Basic: 0
     m_Advanced: 0
-  - m_PanelPrefab: {fileID: 1543516286980528, guid: 8143a5d07ca44f3469740c23ad742c85,
-      type: 3}
+  - m_PanelPrefab: {fileID: 0}
     m_ModeVr: 0
     m_ModeMono: 0
-    m_ModeQuest: 1
+    m_ModeQuest: 0
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 1002243801905128, guid: d544a96827bc4554993b25909f237c88,
@@ -25662,7 +25660,7 @@ MonoBehaviour:
       type: 3}
     m_ModeVr: 1
     m_ModeMono: 1
-    m_ModeQuest: 0
+    m_ModeQuest: 1
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 1769143079597906, guid: dcbd812f016610942a11d04c69dc3a7c,
