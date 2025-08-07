@@ -25681,16 +25681,15 @@ MonoBehaviour:
       type: 3}
     m_ModeVr: 1
     m_ModeMono: 1
-    m_ModeQuest: 0
-    m_Basic: 0
-    m_Advanced: 1
-  - m_PanelPrefab: {fileID: 1185791771697282, guid: 757ae00c043360a4bae0ebf6c3ef5254,
-      type: 3}
-    m_ModeVr: 0
-    m_ModeMono: 0
     m_ModeQuest: 1
     m_Basic: 0
     m_Advanced: 1
+  - m_PanelPrefab: {fileID: 0}
+    m_ModeVr: 0
+    m_ModeMono: 0
+    m_ModeQuest: 0
+    m_Basic: 0
+    m_Advanced: 0
   - m_PanelPrefab: {fileID: 0}
     m_ModeVr: 0
     m_ModeMono: 0
