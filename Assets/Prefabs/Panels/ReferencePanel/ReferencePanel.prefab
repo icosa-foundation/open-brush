@@ -126,6 +126,7 @@ MonoBehaviour:
   m_DirectoryHomeButton: {fileID: 6481406375137946442}
   m_DirectoryUpButton: {fileID: 2296272619075040047}
   m_InfoText: {fileID: 2664662148934677177}
+  m_AddMediaButton: {fileID: 1000011504539966}
   references:
     version: 2
     RefIds: []

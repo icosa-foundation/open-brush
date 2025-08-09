@@ -284,6 +284,8 @@ namespace TiltBrush
             bool loggedIn = App.IcosaIsLoggedIn;
             if (loggedIn != m_LoggedIn)
             {
+                App.IcosaAssetCatalog.RequestForcedRefresh(IcosaSetType.Liked);
+                App.IcosaAssetCatalog.RequestForcedRefresh(IcosaSetType.User);
                 m_LoggedIn = loggedIn;
                 RefreshPage();
             }

@@ -12815,7 +12815,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: -1
   m_DescriptionYOffset: 0
-  m_DescriptionText: Sign out of Poly
+  m_DescriptionText: Sign in to Icosa
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: 
@@ -12848,7 +12848,7 @@ MonoBehaviour:
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
   m_Command: 95
-  m_CommandParam: 1
+  m_CommandParam: 3
   m_CommandParam2: -1
   m_RequiresPopup: 1
   m_CenterPopupOnButton: 0

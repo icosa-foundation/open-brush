@@ -33,6 +33,7 @@ namespace TiltBrush
         [SerializeField] private ActionButton m_DirectoryHomeButton;
         [SerializeField] private ActionButton m_DirectoryUpButton;
         [SerializeField] private TextMeshPro m_InfoText;
+        [SerializeField] private GameObject m_AddMediaButton;
         private ReferencePanelTab m_CurrentTab;
         private int m_EnabledCount = 0;
         private string[] m_CurrentSubdirectories;
@@ -135,7 +136,9 @@ namespace TiltBrush
                 tab.InitTab();
                 tab.Catalog.CatalogChanged += OnCatalogChanged;
             }
-
+#if UNITY_IOS || UNITY_ANDROID
+            m_AddMediaButton.SetActive(false);
+#endif
             m_CurrentPageFlipState = PageFlipState.Standard;
         }
 
