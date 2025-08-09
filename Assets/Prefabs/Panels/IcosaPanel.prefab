@@ -2259,7 +2259,7 @@ GameObject:
   - component: {fileID: 65000013129908112}
   - component: {fileID: 114000011188303058}
   m_Layer: 16
-  m_Name: PolyGallery
+  m_Name: IcosaWebGallery
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
