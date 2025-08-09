@@ -3571,6 +3571,10 @@ MonoBehaviour:
     m_Key: POPUP_SPLIT_MESH_TEXT
     m_Metadata:
       m_Items: []
+  - m_Id: 397532058527293440
+    m_Key: NOT_SIGNED_IN
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

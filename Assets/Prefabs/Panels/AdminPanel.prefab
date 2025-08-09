@@ -452,7 +452,7 @@ MonoBehaviour:
   m_CommandParam2: -1
   m_RequiresPopup: 1
   m_CenterPopupOnButton: 0
-  m_PopupOffset: {x: 0, y: 0, z: 0}
+  m_PopupOffset: {x: 0, y: 0, z: -0.2}
   m_PopupText: 
   m_LocalizedPopup:
     m_TableReference:
@@ -812,7 +812,7 @@ MonoBehaviour:
   m_CommandParam2: -1
   m_RequiresPopup: 1
   m_CenterPopupOnButton: 0
-  m_PopupOffset: {x: 0, y: 0, z: 0}
+  m_PopupOffset: {x: 0, y: 0, z: -0.2}
   m_PopupText: 
   m_LocalizedPopup:
     m_TableReference:
@@ -1105,7 +1105,7 @@ MonoBehaviour:
   m_CommandParam2: -1
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
-  m_PopupOffset: {x: 0, y: 0, z: 0}
+  m_PopupOffset: {x: 0, y: 0, z: -0.2}
   m_PopupText: 
   m_LocalizedPopup:
     m_TableReference:
@@ -1447,7 +1447,7 @@ MonoBehaviour:
   m_CommandParam2: -1
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
-  m_PopupOffset: {x: 0, y: 0, z: 0}
+  m_PopupOffset: {x: 0, y: 0, z: -0.2}
   m_PopupText: 
   m_LocalizedPopup:
     m_TableReference:
@@ -1631,7 +1631,7 @@ MonoBehaviour:
   m_CommandParam2: -1
   m_RequiresPopup: 1
   m_CenterPopupOnButton: 0
-  m_PopupOffset: {x: 0, y: 0, z: 0}
+  m_PopupOffset: {x: 0, y: 0, z: -0.2}
   m_PopupText: ADMIN_PANEL_MOREOPTIONS_BUTTON_POPUP
   m_LocalizedPopup:
     m_TableReference:
@@ -1815,7 +1815,7 @@ MonoBehaviour:
   m_CommandParam2: -1
   m_RequiresPopup: 1
   m_CenterPopupOnButton: 1
-  m_PopupOffset: {x: 0, y: 0, z: 0}
+  m_PopupOffset: {x: 0, y: 0, z: -0.2}
   m_PopupText: ADMIN_PANEL_NEW_BUTTON_POPUP
   m_LocalizedPopup:
     m_TableReference:
@@ -2096,7 +2096,7 @@ MonoBehaviour:
   m_CommandParam2: -1
   m_RequiresPopup: 1
   m_CenterPopupOnButton: 0
-  m_PopupOffset: {x: 0, y: 0, z: 0}
+  m_PopupOffset: {x: 0, y: 0, z: -0.2}
   m_PopupText: 
   m_LocalizedPopup:
     m_TableReference:
@@ -2635,7 +2635,7 @@ MonoBehaviour:
   m_CommandParam2: -1
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
-  m_PopupOffset: {x: 0, y: 0, z: 0}
+  m_PopupOffset: {x: 0, y: 0, z: -0.2}
   m_PopupText: 
   m_LocalizedPopup:
     m_TableReference:
@@ -2819,7 +2819,7 @@ MonoBehaviour:
   m_CommandParam2: -1
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
-  m_PopupOffset: {x: 0, y: 0, z: 0}
+  m_PopupOffset: {x: 0, y: 0, z: -0.2}
   m_PopupText: 
   m_LocalizedPopup:
     m_TableReference:
@@ -3003,7 +3003,7 @@ MonoBehaviour:
   m_CommandParam2: -1
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
-  m_PopupOffset: {x: 0, y: 0, z: 0}
+  m_PopupOffset: {x: 0, y: 0, z: -0.2}
   m_PopupText: 
   m_LocalizedPopup:
     m_TableReference:
@@ -3187,7 +3187,7 @@ MonoBehaviour:
   m_CommandParam2: -1
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
-  m_PopupOffset: {x: 0, y: 0, z: 0}
+  m_PopupOffset: {x: 0, y: 0, z: -0.2}
   m_PopupText: 
   m_LocalizedPopup:
     m_TableReference:
@@ -3371,7 +3371,7 @@ MonoBehaviour:
   m_CommandParam2: -1
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
-  m_PopupOffset: {x: 0, y: 0, z: 0}
+  m_PopupOffset: {x: 0, y: 0, z: -0.2}
   m_PopupText: 
   m_LocalizedPopup:
     m_TableReference:
@@ -3555,7 +3555,7 @@ MonoBehaviour:
   m_CommandParam2: -1
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
-  m_PopupOffset: {x: 0, y: 0, z: 0}
+  m_PopupOffset: {x: 0, y: 0, z: -0.2}
   m_PopupText: 
   m_LocalizedPopup:
     m_TableReference:
