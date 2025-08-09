@@ -131,6 +131,7 @@ namespace TiltBrush
 
         public static OAuth2Identity GoogleIdentity => m_Instance.m_GoogleIdentity;
         public static OAuth2Identity SketchfabIdentity => m_Instance.m_SketchfabIdentity;
+        public static OAuth2Identity IcosaIdentity => m_Instance.m_IcosaIdentity;
 
         public string IcosaToken
         {
@@ -250,6 +251,7 @@ namespace TiltBrush
         [Header("Identities")]
         [SerializeField] private OAuth2Identity m_GoogleIdentity;
         [SerializeField] private OAuth2Identity m_SketchfabIdentity;
+        [SerializeField] private OAuth2Identity m_IcosaIdentity;
 
         // ------------------------------------------------------------
         // Private data
