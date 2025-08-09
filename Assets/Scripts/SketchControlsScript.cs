@@ -4661,7 +4661,7 @@ namespace TiltBrush
                             App.Instance.IcosaToken = null;
                             App.IcosaUserName = "";
                             App.IcosaUserIcon = null;
-                            PanelManager.m_Instance.GetAdminPanel().CloseActivePopUp(true);
+                            PanelManager.m_Instance.LastPanelInteractedWith.CloseActivePopUp(true);
                         }
                         else
                         {
