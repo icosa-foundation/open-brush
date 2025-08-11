@@ -353,12 +353,11 @@ Transform:
   - {fileID: 4326328857157656}
   - {fileID: 4954222507157760}
   - {fileID: 4649548371373582}
-  - {fileID: 4020115478564282}
   - {fileID: 8211543910910235730}
   - {fileID: 7161901348231431177}
+  - {fileID: 3298845783872388597}
   - {fileID: 7656778960772056826}
   - {fileID: 2183017126753138076}
-  - {fileID: 3298845783872388597}
   - {fileID: 689087006347697308}
   - {fileID: 6599179350145049481}
   - {fileID: 4159606566656768}
@@ -986,163 +985,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.4157543, y: 1.8264773, z: 0.5}
   m_Center: {x: 0, y: -0.0017643273, z: 0}
---- !u!1 &1767336290005566
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4020115478564282}
-  - component: {fileID: 33366336263875812}
-  - component: {fileID: 23815722978137772}
-  - component: {fileID: 114371723258161948}
-  - component: {fileID: 65748055602659206}
-  m_Layer: 16
-  m_Name: PolyLibrary
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!4 &4020115478564282
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1767336290005566}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.20199996, z: 0.05}
-  m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4232412870837608}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &33366336263875812
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1767336290005566}
-  m_Mesh: {fileID: 4300000, guid: 5501f437160666942ae970f3648fbeb8, type: 3}
---- !u!23 &23815722978137772
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1767336290005566}
-  m_Enabled: 1
-  m_CastShadows: 0
-  m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 0
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 40d29de2bdc11f04dbfa25059165916e, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 0
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &114371723258161948
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1767336290005566}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 03222d9718beeb748bf9e9be379fea39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_DescriptionType: 0
-  m_DescriptionYOffset: 0
-  m_DescriptionText: LABS_PANEL_POLY_BUTTON_DESCRIPTION
-  m_LocalizedDescription:
-    m_TableReference:
-      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
-    m_TableEntryReference:
-      m_KeyId: 7691576060649472
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
-  m_DescriptionTextExtra: 
-  m_LocalizedDescriptionExtra:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
-  m_DescriptionActivateSpeed: 12
-  m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 5a019d4d662bea54097664b24cd6cb24, type: 3}
-  m_AtlasTexture: 1
-  m_ToggleButton: 1
-  m_LongPressReleaseButton: 0
-  m_ButtonHasPressedAudio: 1
-  m_ZAdjustHover: -0.02
-  m_ZAdjustClick: 0.05
-  m_HoverScale: 1.1
-  m_HoverBoxColliderGrow: 0.2
-  m_AddOverlay: 0
-  m_Type: 22
-  m_AlwaysSpawn: 0
-  references:
-    version: 2
-    RefIds: []
---- !u!65 &65748055602659206
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1767336290005566}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 0.01}
-  m_Center: {x: 0, y: 0, z: -0.05}
 --- !u!1 &1871313576491328
 GameObject:
   m_ObjectHideFlags: 0
@@ -1511,7 +1353,7 @@ GameObject:
   - component: {fileID: 7907346581598191195}
   - component: {fileID: 4552316798443024834}
   m_Layer: 16
-  m_Name: PanelButton_Scripts
+  m_Name: PluginsScripts
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2141,7 +1983,7 @@ PrefabInstance:
     - target: {fileID: 4969199155606796208, guid: 3a98611722d498f4c93e269bfc1ba325,
         type: 3}
       propertyPath: m_Name
-      value: OptionButton_SnapSettings
+      value: SnapSettings
       objectReference: {fileID: 0}
     - target: {fileID: 5992996673163279405, guid: 3a98611722d498f4c93e269bfc1ba325,
         type: 3}
@@ -2245,7 +2087,7 @@ PrefabInstance:
     - target: {fileID: 4969199155606796208, guid: 3a98611722d498f4c93e269bfc1ba325,
         type: 3}
       propertyPath: m_Name
-      value: OptionButton_TransformPanel
+      value: TransformPanel
       objectReference: {fileID: 0}
     - target: {fileID: 5992996673163279405, guid: 3a98611722d498f4c93e269bfc1ba325,
         type: 3}
