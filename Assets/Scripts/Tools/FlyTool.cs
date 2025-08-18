@@ -156,14 +156,18 @@ namespace TiltBrush
                         }
                     }
 
-                    if (EnhancedTouchSupport.enabled && Touch.activeTouches.Count > 0 && !virtualButtonPressed)
+                    if (EnhancedTouchSupport.enabled && Touch.activeTouches.Count == 1 && !virtualButtonPressed)
                     {
-                        mv = Touch.activeTouches[0].screenPosition;
-                        mv = new Vector2(
-                            mv.x / (Screen.width * 0.5f),
-                            mv.y / (Screen.height * 0.5f)
-                        ); // 0 to 2
-                        mv -= Vector2.one; // -1 to +1
+                        var t = Touch.activeTouches[0];
+                        Vector2 delta = t.delta;
+
+                        // Normalize to screen size
+                        delta.x /= Screen.width;
+                        delta.y /= Screen.height;
+
+                        // Sensitivity tuning
+                        float touchLookSensitivity = 300f; // tweak as needed
+                        mv = delta * touchLookSensitivity;
                     }
                 }
 
@@ -189,7 +193,8 @@ namespace TiltBrush
                     if (x < 0f) x += 360f;
                     cameraRotation.x = x;
 
-                    App.VrSdk.GetVrCamera().transform.localEulerAngles = cameraRotation;                }
+                    App.VrSdk.GetVrCamera().transform.localEulerAngles = cameraRotation;
+                }
 
                 Vector3 cameraTranslation = Vector3.zero;
 
