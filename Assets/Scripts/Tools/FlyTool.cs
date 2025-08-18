@@ -181,9 +181,15 @@ namespace TiltBrush
                     }
 
                     cameraRotation.x -= m_InvertLook ? -mv.y : mv.y;
-                    cameraRotation.x = Mathf.Clamp(cameraRotation.x, -MaxPitch, MaxPitch);
-                    App.VrSdk.GetVrCamera().transform.localEulerAngles = cameraRotation;
-                }
+
+                    // Clamp the pitch to prevent flipping
+                    float x = cameraRotation.x;
+                    if (x > 180f) x -= 360f;
+                    x = Mathf.Clamp(x, -MaxPitch, MaxPitch);
+                    if (x < 0f) x += 360f;
+                    cameraRotation.x = x;
+
+                    App.VrSdk.GetVrCamera().transform.localEulerAngles = cameraRotation;                }
 
                 Vector3 cameraTranslation = Vector3.zero;
 
