@@ -4190,7 +4190,7 @@ namespace TiltBrush
             }
         }
 
-        public void LoadSketch(SceneFileInfo fileInfo, bool quickload = false, bool additive = false)
+        public void LoadSketch(SceneFileInfo fileInfo, bool quickload = false)
         {
             LightsControlScript.m_Instance.DiscoMode = false;
             m_WidgetManager.FollowingPath = false;
@@ -4202,7 +4202,7 @@ namespace TiltBrush
             }
             ResetGrabbedPose(everything: true);
             PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
-            if (SaveLoadScript.m_Instance.Load(fileInfo, additive))
+            if (SaveLoadScript.m_Instance.Load(fileInfo, bAdditive: false))
             {
                 SketchMemoryScript.m_Instance.SetPlaybackMode(m_SketchPlaybackMode, m_DefaultSketchLoadSpeed);
                 SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true);
@@ -5066,7 +5066,14 @@ namespace TiltBrush
                 Debug.LogWarning(string.Format("Error reading metadata for {0}.\n{1}",
                     fileInfo.FullPath, SaveLoadScript.m_Instance.LastMetadataError));
             }
-            LoadSketch(fileInfo, quickload, additive);
+            if (additive)
+            {
+                MergeBrushStrokes(fileInfo);
+            }
+            else
+            {
+                LoadSketch(fileInfo, quickload);
+            }
             if (m_ControlsType != ControlsType.ViewingOnly)
             {
                 EatGazeObjectInput();
