@@ -4176,7 +4176,7 @@ namespace TiltBrush
                 m_PanelManager.ToggleSketchbookPanels(isLoadingSketch: true);
             }
             PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
-            if (SaveLoadScript.m_Instance.Load(fileInfo, true))
+            if (SaveLoadScript.m_Instance.Load(fileInfo, bAdditive: true))
             {
                 SketchMemoryScript.m_Instance.SetPlaybackMode(m_SketchPlaybackMode, m_DefaultSketchLoadSpeed);
                 SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true, false, false);
