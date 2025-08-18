@@ -4178,6 +4178,10 @@ namespace TiltBrush
             PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
             if (SaveLoadScript.m_Instance.Load(fileInfo, bAdditive: true))
             {
+                // A new layer will have been created for the merged strokes.
+                // Rename it accordingly
+                var newLayer = App.Scene.LayerCanvases.Last();
+                App.Scene.RenameLayer(newLayer, fileInfo.HumanName);
                 SketchMemoryScript.m_Instance.SetPlaybackMode(m_SketchPlaybackMode, m_DefaultSketchLoadSpeed);
                 SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true, false, false);
                 // the order of these two lines are important as ExitIntroSketch is setting the
