@@ -117,12 +117,17 @@ namespace TiltBrush
             // Handle non-VR navigation
             if (!App.VrSdk.IsHmdInitialized())
             {
-
                 if (!EnhancedTouchSupport.enabled) EnhancedTouchSupport.Enable();
+
+                Gamepad gamepad = Gamepad.current;
                 Vector2 mv = Vector2.zero;
                 if (Mouse.current != null && Mouse.current.leftButton.isPressed)
                 {
-                    mv = InputManager.m_Instance.GetMouseMoveDelta();
+                    mv += InputManager.m_Instance.GetMouseMoveDelta();
+                }
+                if (gamepad != null)
+                {
+                    mv += gamepad.rightStick.ReadValue() * 3f;
                 }
 
                 var virtualButtons = new Dictionary<char, bool> { { 'W', false }, { 'A', false }, { 'S', false }, { 'D', false } };
@@ -170,34 +175,43 @@ namespace TiltBrush
 
                 Vector3 cameraTranslation = Vector3.zero;
 
-                bool isSprinting = InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.SprintMode);
+                bool isSprinting = InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.SprintMode) ||
+                                   (gamepad != null && gamepad.leftStickButton.isPressed);
                 float movementSpeed = isSprinting ? 0.3f : 0.05f;
+
+                if (gamepad != null)
+                {
+                    Vector2 move = gamepad.leftStick.ReadValue();
+                    cameraTranslation += new Vector3(move.x, 0f, move.y);
+                    float upDown = gamepad.rightTrigger.ReadValue() - gamepad.leftTrigger.ReadValue();
+                    cameraTranslation += Vector3.up * upDown;
+                }
 
                 if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveForward) || virtualButtons['W'])
                 {
-                    cameraTranslation = Vector3.forward;
+                    cameraTranslation += Vector3.forward;
                 }
-                else if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveBackwards) || virtualButtons['S'])
+                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveBackwards) || virtualButtons['S'])
                 {
-                    cameraTranslation = Vector3.back;
+                    cameraTranslation += Vector3.back;
                 }
-                else if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveUp))
+                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveUp))
                 {
-                    cameraTranslation = Vector3.up;
+                    cameraTranslation += Vector3.up;
                 }
-                else if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveDown))
+                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveDown))
                 {
-                    cameraTranslation = Vector3.down;
+                    cameraTranslation += Vector3.down;
                 }
-                else if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveLeft) || virtualButtons['A'])
+                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveLeft) || virtualButtons['A'])
                 {
-                    cameraTranslation = Vector3.left;
+                    cameraTranslation += Vector3.left;
                 }
-                else if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveRight) || virtualButtons['D'])
+                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveRight) || virtualButtons['D'])
                 {
-                    cameraTranslation = Vector3.right;
+                    cameraTranslation += Vector3.right;
                 }
-                else if (InputManager.m_Instance.GetKeyboardShortcutDown(InputManager.KeyboardShortcut.InvertLook))
+                if (InputManager.m_Instance.GetKeyboardShortcutDown(InputManager.KeyboardShortcut.InvertLook))
                 {
                     m_InvertLook = !m_InvertLook;
                 }
