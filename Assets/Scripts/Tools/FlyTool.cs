@@ -50,7 +50,7 @@ namespace TiltBrush
         private const float SprintMultiplier = 6f;
         private const float MaxPitch = 85f;
 
-        bool m_IsTouchScreen => Application.isEditor || (!App.VrSdk.IsHmdInitialized() && App.Config.IsMobileHardware);
+        bool m_IsTouchScreen => !App.VrSdk.IsHmdInitialized() && App.Config.IsMobileHardware;
 
         public override void Init()
         {
