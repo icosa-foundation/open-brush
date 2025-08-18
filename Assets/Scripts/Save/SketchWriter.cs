@@ -396,7 +396,10 @@ namespace TiltBrush
             }
 
             oldGroupToNewGroup = new Dictionary<int, int>();
-            var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, bAdditive);
+            // bAdditive previously forwarded into GetStrokes() as "squashLayers",
+            // which collapsed every stroke onto layer 0 during additive loads.
+            // Layers should always be preserved when loading additively.
+            var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, squashLayers: false);
             if (strokes == null) { return false; }
 
             // Check that the strokes are in timestamp order.
