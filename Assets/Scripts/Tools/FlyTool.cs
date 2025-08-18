@@ -45,9 +45,9 @@ namespace TiltBrush
 
         private Vector3 m_Velocity;
 
-        private const float LookSpeed = 1.5f;
+        private const float LookSpeed = 1f;
         private const float MoveSpeed = 0.05f;
-        private const float SprintMultiplier = 6f;
+        private const float SprintMultiplier = 5f;
         private const float MaxPitch = 85f;
 
         bool m_IsTouchScreen => !App.VrSdk.IsHmdInitialized() && App.Config.IsMobileHardware;
