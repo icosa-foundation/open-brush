@@ -612,7 +612,7 @@ namespace TiltBrush
         /// All imported strokes are collapsed onto a fresh layer so existing
         /// layers remain untouched. Loading the same sketch multiple times
         /// will duplicate geometry on separate layers.
-        public bool Load(SceneFileInfo fileInfo, bool bAdditive = false)
+        public bool Load(SceneFileInfo fileInfo, bool bAdditive)
         {
             m_LastThumbnailBytes = null;
             if (!fileInfo.IsHeaderValid())
@@ -1088,7 +1088,7 @@ namespace TiltBrush
 
                 // Load the temporary file into the scene
                 var fileInfo = new DiskSceneFileInfo(tempFilePath);
-                if (Load(fileInfo))
+                if (Load(fileInfo, bAdditive: false))
                 {
                     Debug.Log("LoadFromBytes: Scene successfully loaded from bytes.");
                 }
