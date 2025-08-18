@@ -609,8 +609,9 @@ namespace TiltBrush
 
         /// bAdditive is an experimental feature.
         /// Additive loads append strokes without clearing existing ones.
-        /// Loading the same sketch multiple times will duplicate geometry,
-        /// but layers are preserved.
+        /// All imported strokes are collapsed onto a fresh layer so existing
+        /// layers remain untouched. Loading the same sketch multiple times
+        /// will duplicate geometry on separate layers.
         public bool Load(SceneFileInfo fileInfo, bool bAdditive = false)
         {
             m_LastThumbnailBytes = null;

@@ -396,11 +396,18 @@ namespace TiltBrush
             }
 
             oldGroupToNewGroup = new Dictionary<int, int>();
-            // bAdditive previously forwarded into GetStrokes() as "squashLayers",
-            // which collapsed every stroke onto layer 0 during additive loads.
-            // Layers should always be preserved when loading additively.
-            var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, squashLayers: false);
+            // When loading additively we want all strokes on a single new layer;
+            // start by squashing them to the main canvas then remap below.
+            var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, squashLayers: bAdditive);
             if (strokes == null) { return false; }
+            if (bAdditive)
+            {
+                var additiveLayer = App.Scene.AddLayerNow();
+                foreach (var stroke in strokes)
+                {
+                    stroke.m_IntendedCanvas = additiveLayer;
+                }
+            }
 
             // Check that the strokes are in timestamp order.
             uint headMs = uint.MinValue;
