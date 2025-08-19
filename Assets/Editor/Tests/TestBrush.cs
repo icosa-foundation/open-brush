@@ -125,7 +125,7 @@ namespace TiltBrush
             {
                 var bufferedStream = new BufferedStream(stream, 4096);
                 return SketchWriter.GetStrokes(
-                    bufferedStream, metadata.BrushIndex, BitConverter.IsLittleEndian);
+                    bufferedStream, metadata.BrushIndex, BitConverter.IsLittleEndian, squashLayers: false, timestampOffset: 0);
             }
         }
 
