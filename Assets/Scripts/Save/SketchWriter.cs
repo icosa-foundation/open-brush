@@ -398,7 +398,7 @@ namespace TiltBrush
             oldGroupToNewGroup = new Dictionary<int, int>();
             // When loading additively we want all strokes on a single new layer;
             // start by squashing them to the main canvas then remap below.
-            var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, squashLayers: bAdditive);
+            var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, squashLayers: bAdditive, timestampOffset: 0);
             if (strokes == null) { return false; }
             if (bAdditive)
             {
@@ -443,7 +443,7 @@ namespace TiltBrush
         /// Parses a binary file into List of MemoryBrushStroke.
         /// Returns null on parse error.
         public static List<Stroke> GetStrokes(
-            Stream stream, Guid[] brushList, bool allowFastPath, bool squashLayers = false)
+            Stream stream, Guid[] brushList, bool allowFastPath, bool squashLayers, uint timestampOffset)
         {
             var reader = new TiltBrush.SketchBinaryReader(stream);
 
@@ -605,7 +605,7 @@ namespace TiltBrush
                                     rControlPoint.m_Pressure = reader.Float();
                                     break;
                                 case ControlPointExtension.Timestamp:
-                                    rControlPoint.m_TimestampMs = reader.UInt32();
+                                    rControlPoint.m_TimestampMs = reader.UInt32() + timestampOffset;
                                     break;
                                 default:
                                     // skip unknown extension
