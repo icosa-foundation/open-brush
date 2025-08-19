@@ -190,7 +190,8 @@ namespace TiltBrush
                     float x = cameraRotation.x;
                     if (x > 180f) x -= 360f;
                     x = Mathf.Clamp(x, -MaxPitch, MaxPitch);
-                    if (x < 0f) x += 360f;
+                    // Only normalize if x is less than -MaxPitch (outside clamped range)
+                    if (x < 0f && x < -MaxPitch) x += 360f;
                     cameraRotation.x = x;
 
                     App.VrSdk.GetVrCamera().transform.localEulerAngles = cameraRotation;
