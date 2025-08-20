@@ -33,7 +33,7 @@ namespace TiltBrush
         //
 
         public const string UNTITLED_PREFIX = "Untitled_";
-        public const string SAVESELECTED_PREFIX = "Selection_";
+        public const string SAVESELECTED_PREFIX = "Selection_0";
         public const string TILTASAURUS_PREFIX = "Tiltasaurus_";
         public const string TILT_SUFFIX = ".tilt";
 
@@ -385,7 +385,7 @@ namespace TiltBrush
 
         public DiskSceneFileInfo GetNewSaveSelectedFileInfo()
         {
-            DiskSceneFileInfo fileInfo = new DiskSceneFileInfo(GenerateNewFilename(m_SaveSelectedDir, TILT_SUFFIX, SAVESELECTED_PREFIX));
+            DiskSceneFileInfo fileInfo = new DiskSceneFileInfo(GenerateNewFilename(SAVESELECTED_PREFIX, m_SaveSelectedDir, TILT_SUFFIX));
             if (m_LastSceneFile.Valid)
             {
                 fileInfo.SourceId = TransferredSourceIdFrom(m_LastSceneFile);
