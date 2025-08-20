@@ -466,7 +466,7 @@ namespace TiltBrush
             }
         }
 
-        /// Renders depth-normal data to a texture for use with SaveDepth/SaveNormals methods.
+        /// Renders depth-normal data to a texture for use with SaveNormals method.
         /// If m_AutoAlignRig is set, you should pass in a RenderTexture created
         /// with CreateTemporaryTargetForSave().
         public void RenderDepthNormalToTexture(RenderTexture rTexture)
@@ -495,6 +495,38 @@ namespace TiltBrush
                 Graphics.Blit(targetA, rTexture);
                 RenderTexture.ReleaseTemporary(targetA);
             }
+        }
+
+        /// Renders depth data to a texture for use with SaveDepth method.
+        /// If m_AutoAlignRig is set, you should pass in a RenderTexture created
+        /// with CreateTemporaryTargetForSave().
+        public void RenderDepthToTexture(RenderTexture rTexture)
+        {
+            var camera = LeftInfo.camera;
+            
+            // Use DepthNormalsTexture shader to render depth+normals, then extract depth
+            var prevTarget = camera.targetTexture;
+            var prevDepthTextureMode = camera.depthTextureMode;
+            
+            camera.targetTexture = rTexture;
+            camera.depthTextureMode = DepthTextureMode.Depth;
+            
+            // Render with DepthNormalsTexture shader (we know this works)
+            Shader depthNormalsShader = Shader.Find("Hidden/Internal-DepthNormalsTexture");
+            if (depthNormalsShader != null)
+            {
+                Debug.Log("Found DepthNormalsTexture shader, rendering with it");
+                camera.RenderWithShader(depthNormalsShader, "");
+            }
+            else
+            {
+                Debug.LogError("DepthNormalsTexture shader not found! Using normal render");
+                camera.Render(); // Fallback
+            }
+            
+            // Restore camera state  
+            camera.targetTexture = prevTarget;
+            camera.depthTextureMode = prevDepthTextureMode;
         }
 
         static public void Save(Stream outf, RenderTexture rTextureToSave, bool bSaveAsPng)
@@ -543,35 +575,51 @@ namespace TiltBrush
             return bytes;
         }
 
-        static public byte[] SaveDepthToMemory(RenderTexture depthNormalTexture)
+        static public byte[] SaveDepthToMemory(RenderTexture depthTexture)
         {
-            Debug.Assert(depthNormalTexture.format == RenderTextureFormat.ARGB32);
+            Debug.Assert(depthTexture.format == RenderTextureFormat.ARGB32);
 
             // Copy out of the RenderTexture
-            Texture2D depthTexture;
+            Texture2D texture;
             {
                 RenderTexture prev = RenderTexture.active;
-                RenderTexture.active = depthNormalTexture;
-                depthTexture = new Texture2D(depthNormalTexture.width, depthNormalTexture.height, TextureFormat.ARGB32, false);
-                depthTexture.ReadPixels(new Rect(0, 0, depthNormalTexture.width, depthNormalTexture.height), 0, 0);
+                RenderTexture.active = depthTexture;
+                texture = new Texture2D(depthTexture.width, depthTexture.height, TextureFormat.ARGB32, false);
+                texture.ReadPixels(new Rect(0, 0, depthTexture.width, depthTexture.height), 0, 0);
                 RenderTexture.active = prev;
             }
 
-            // Extract depth from alpha channel to grayscale
-            Color[] pixels = depthTexture.GetPixels();
+            // Unity's EncodeDepthNormal puts depth in blue/alpha channels using EncodeFloatRG
+            // Decode using: dot(enc, float2(1.0, 1/255.0))
+            Color[] pixels = texture.GetPixels();
+            
+            // Debug: Check what we're actually getting
+            if (pixels.Length > 0)
+            {
+                Color centerPixel = pixels[pixels.Length / 2];
+                float decodedDepth = centerPixel.b * 1.0f + centerPixel.a * (1.0f / 255.0f);
+                Debug.Log($"Depth render center pixel RGBA: {centerPixel.r:F3}, {centerPixel.g:F3}, {centerPixel.b:F3}, {centerPixel.a:F3}");
+                Debug.Log($"Decoded depth value: {decodedDepth:F3}");
+            }
+            
             for (int i = 0; i < pixels.Length; i++)
             {
-                float depth = pixels[i].a;
+                Color pixel = pixels[i];
+                
+                // DecodeFloatRG: dot(enc, float2(1.0, 1/255.0))
+                // Blue=enc.x, Alpha=enc.y
+                float depth = pixel.b * 1.0f + pixel.a * (1.0f / 255.0f);
+                
                 pixels[i] = new Color(depth, depth, depth, 1.0f);
             }
 
             // Create new texture with grayscale depth values
-            Texture2D grayscaleDepthTexture = new Texture2D(depthNormalTexture.width, depthNormalTexture.height, TextureFormat.RGB24, false);
+            Texture2D grayscaleDepthTexture = new Texture2D(depthTexture.width, depthTexture.height, TextureFormat.RGB24, false);
             grayscaleDepthTexture.SetPixels(pixels);
             grayscaleDepthTexture.Apply();
 
             byte[] bytes = grayscaleDepthTexture.EncodeToPNG();
-            Destroy(depthTexture);
+            Destroy(texture);
             Destroy(grayscaleDepthTexture);
 
             return bytes;

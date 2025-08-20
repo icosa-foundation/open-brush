@@ -182,8 +182,9 @@ namespace TiltBrush
         [LuaDocsParameter("width", "Image width")]
         [LuaDocsParameter("height", "Image height")]
         [LuaDocsParameter("superSampling", "The supersampling strength to apply (between 0.125 and 4.0)")]
-        [LuaDocsParameter("renderDepth", "If true then render the depth buffer instead of the image")]
-        public static void TakeSnapshot(TrTransform tr, string filename, int width, int height, float superSampling = 1f, bool renderDepth = false, bool removeBackground = false)
+        [LuaDocsParameter("renderDepth", "If true then render as a depth map")]
+        [LuaDocsParameter("renderNormals", "If true then render as a normals map")]
+        public static void TakeSnapshot(TrTransform tr, string filename, int width, int height, float superSampling = 1f, bool removeBackground = false, bool renderDepth = false, bool renderNormals = false)
         {
             bool saveAsPng;
             if (filename.ToLower().EndsWith(".jpg") || filename.ToLower().EndsWith(".jpeg"))
@@ -213,32 +214,33 @@ namespace TiltBrush
                 RenderWrapper wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
                 float ssaaRestore = wrapper.SuperSampling;
                 wrapper.SuperSampling = superSampling;
+
                 if (renderDepth)
                 {
-                    rMgr.RenderDepthNormalToTexture(tmp);
-                    
-                    // Save depth and normals as separate files when rendering depth
+                    rMgr.RenderDepthToTexture(tmp);
                     var depthPath = path.Replace(Path.GetExtension(path), "_depth.png");
-                    var normalPath = path.Replace(Path.GetExtension(path), "_normals.png");
-                    
                     using (var fs = new FileStream(depthPath, FileMode.Create))
                     {
                         ScreenshotManager.SaveDepth(fs, tmp);
                     }
-                    
+                }
+
+                if (renderNormals)
+                {
+                    rMgr.RenderDepthNormalToTexture(tmp);
+                    var normalPath = path.Replace(Path.GetExtension(path), "_normals.png");
                     using (var fs = new FileStream(normalPath, FileMode.Create))
                     {
                         ScreenshotManager.SaveNormals(fs, tmp);
                     }
                 }
-                else
+
+                rMgr.RenderToTexture(tmp, removeBackground: removeBackground);
+                using (var fs = new FileStream(path, FileMode.Create))
                 {
-                    rMgr.RenderToTexture(tmp, removeBackground: removeBackground);
-                    using (var fs = new FileStream(path, FileMode.Create))
-                    {
-                        ScreenshotManager.Save(fs, tmp, bSaveAsPng: saveAsPng);
-                    }
+                    ScreenshotManager.Save(fs, tmp, bSaveAsPng: saveAsPng);
                 }
+
                 wrapper.SuperSampling = ssaaRestore;
                 rig.gameObject.SetActive(initialState);
             }
