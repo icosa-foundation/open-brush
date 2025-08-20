@@ -27,19 +27,22 @@ namespace TiltBrush
 
             if (m_SavedStrokeFile != null)
             {
-                var prevLayer = App.Scene.ActiveCanvas;
-                if (SaveLoadScript.m_Instance.Load(m_SavedStrokeFile.FileInfo, bAdditive: true))
+                var currentLayer = App.Scene.ActiveCanvas;
+                int currentLayerIndex = App.Scene.GetIndexOfCanvas(currentLayer);
+                if (SaveLoadScript.m_Instance.Load(m_SavedStrokeFile.FileInfo, bAdditive: true, currentLayerIndex, out List<Stroke> strokes))
                 {
-                    var tempLayer = App.Scene.LayerCanvases.Last();
+                    SelectionManager.m_Instance.ClearActiveSelection();
                     SketchMemoryScript.m_Instance.SetPlaybackMode(SketchMemoryScript.PlaybackMode.Distance, 54);
                     SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true, false, false);
-                    var strokes = SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes();
-                    var widgets = WidgetManager.m_Instance.GetAllUnselectedActiveWidgets(null);
+                    SketchMemoryScript.m_Instance.QuickLoadDrawingMemory();
+                    SketchMemoryScript.m_Instance.ContinueDrawingFromMemory();
                     var group = App.GroupManager.NewUnusedGroup();
-                    for (int i = 0; i < strokes.Count; i++) { strokes[i].Group = group; }
-                    for (int i = 0; i < widgets.Count; i++) { widgets[i].Group = group; }
-                    SquashLayerCommand cmd = new SquashLayerCommand(tempLayer, prevLayer);
-                    SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+                    for (int i = 0; i < strokes.Count; i++)
+                    {
+                        strokes[i].Group = group;
+                    }
+                    AudioManager.m_Instance.PlayDuplicateSound(Vector3.zero);
+                    AudioManager.m_Instance.PlayGroupedSound(Vector3.zero);
                 }
             }
         }

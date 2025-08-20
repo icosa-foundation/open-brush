@@ -632,13 +632,14 @@ namespace TiltBrush
         /// All imported strokes are collapsed onto a fresh layer so existing
         /// layers remain untouched. Loading the same sketch multiple times
         /// will duplicate geometry on separate layers.
-        public bool Load(SceneFileInfo fileInfo, bool bAdditive)
+        public bool Load(SceneFileInfo fileInfo, bool bAdditive, int targetLayer, out List<Stroke> strokes)
         {
             m_LastThumbnailBytes = null;
             if (!fileInfo.IsHeaderValid())
             {
                 OutputWindowScript.m_Instance.AddNewLine(
                     "Could not load: {0}", fileInfo.HumanName);
+                strokes = null;
                 return false;
             }
 
@@ -647,6 +648,7 @@ namespace TiltBrush
             if (metadata == null)
             {
                 OutputWindowScript.m_Instance.AddNewLine("Could not load: {0}", fileInfo.HumanName);
+                strokes = null;
                 return false;
             }
             using (var jsonReader = new JsonTextReader(new StreamReader(metadata)))
@@ -672,6 +674,7 @@ namespace TiltBrush
                         OutputWindowScript.m_Instance.AddNewLine(
                             "Lacking a capability to load {0}.  Upgrade Tilt Brush?",
                             fileInfo.HumanName);
+                        strokes = null;
                         return false;
                     }
                 }
@@ -749,7 +752,7 @@ namespace TiltBrush
                 {
                     Guid[] brushGuids = jsonData.BrushIndex.Select(GetForceSupersededBy).ToArray();
                     bool legacySketch;
-                    bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive, out legacySketch, out oldGroupToNewGroup);
+                    bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive, targetLayer, out legacySketch, out oldGroupToNewGroup, out strokes);
                     m_LastSceneIsLegacy |= legacySketch;
                     if (!success)
                     {
@@ -1108,7 +1111,7 @@ namespace TiltBrush
 
                 // Load the temporary file into the scene
                 var fileInfo = new DiskSceneFileInfo(tempFilePath);
-                if (Load(fileInfo, bAdditive: false))
+                if (Load(fileInfo, bAdditive: false, targetLayer: -1, out List<Stroke> _))
                 {
                     Debug.Log("LoadFromBytes: Scene successfully loaded from bytes.");
                 }
