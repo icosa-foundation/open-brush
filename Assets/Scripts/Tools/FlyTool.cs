@@ -50,6 +50,23 @@ namespace TiltBrush
         private const float SprintMultiplier = 5f;
         private const float MaxPitch = 85f;
 
+        // Touch gesture variables
+        private Vector2 m_LastSingleTouchPosition;
+        private float m_LastPinchDistance;
+        private Vector2 m_PinchCenter;
+        private bool m_IsPinching;
+        private float m_SwipeThreshold = 50f; // pixels
+        private float m_PinchThreshold = 20f; // pixels
+        private float m_TouchLookSensitivity = 300f;
+        private float m_PinchMoveSpeed = 0.1f;
+        private Vector2 m_TouchStartPosition;
+        private bool m_IsSwipeGesture;
+        
+        // UI toggle variables
+        private float m_LastTapTime;
+        private const float m_DoubleTapTimeWindow = 0.3f;
+        private bool m_VirtualUIVisible = false;
+
         bool m_IsTouchScreen => !App.VrSdk.IsHmdInitialized() && App.Config.IsMobileHardware;
 
         public override void Init()
@@ -66,9 +83,18 @@ namespace TiltBrush
             {
                 EatInput();
 
-                // Enable onscreenUI if no headset present and we're on a touchscreen device
-                // TODO logic for detecting mice/gamepads on mobile and disabling on-screen controls
-                m_NonVRFlyingUi.SetActive(m_IsTouchScreen);
+                // Enable onscreen UI as fallback for touchscreen devices
+                // Users can toggle virtual buttons with double-tap
+                // Primary interaction is through gestures
+                if (m_IsTouchScreen)
+                {
+                    m_VirtualUIVisible = false;
+                    m_NonVRFlyingUi.SetActive(false); // Start with gestures only
+                }
+                else
+                {
+                    m_NonVRFlyingUi.SetActive(false); // No UI for non-touchscreen
+                }
             }
 
             m_Armed = false;
@@ -142,33 +168,11 @@ namespace TiltBrush
                 }
 
                 var virtualButtons = new Dictionary<char, bool> { { 'W', false }, { 'A', false }, { 'S', false }, { 'D', false } };
+                Vector3 cameraTranslation = Vector3.zero;
 
                 if (m_IsTouchScreen)
                 {
-                    TouchscreenVirtualKey[] btns = m_NonVRFlyingUi.GetComponentsInChildren<TouchscreenVirtualKey>();
-                    bool virtualButtonPressed = false;
-                    foreach (var btn in btns)
-                    {
-                        if (btn.m_IsPressed)
-                        {
-                            virtualButtons[btn.m_Key] = true;
-                            virtualButtonPressed = true;
-                        }
-                    }
-
-                    if (EnhancedTouchSupport.enabled && Touch.activeTouches.Count == 1 && !virtualButtonPressed)
-                    {
-                        var t = Touch.activeTouches[0];
-                        Vector2 delta = t.delta;
-
-                        // Normalize to screen size
-                        delta.x /= Screen.width;
-                        delta.y /= Screen.height;
-
-                        // Sensitivity tuning
-                        float touchLookSensitivity = 300f; // tweak as needed
-                        mv = delta * touchLookSensitivity;
-                    }
+                    HandleTouchGestures(ref mv, ref cameraTranslation, ref virtualButtons);
                 }
 
                 if (mv != Vector2.zero)
@@ -196,8 +200,6 @@ namespace TiltBrush
 
                     App.VrSdk.GetVrCamera().transform.localEulerAngles = cameraRotation;
                 }
-
-                Vector3 cameraTranslation = Vector3.zero;
 
                 bool isSprinting = InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.SprintMode) ||
                                    (gamepad != null && gamepad.leftStickButton.isPressed);
@@ -294,6 +296,184 @@ namespace TiltBrush
             }
 
             PointerManager.m_Instance.SetMainPointerPosition(rAttachPoint.position);
+        }
+
+        void HandleTouchGestures(ref Vector2 mv, ref Vector3 cameraTranslation, ref Dictionary<char, bool> virtualButtons)
+        {
+            if (!EnhancedTouchSupport.enabled) return;
+
+            var touches = Touch.activeTouches;
+            int touchCount = touches.Count;
+
+            // Check for virtual button presses first
+            TouchscreenVirtualKey[] btns = m_NonVRFlyingUi.GetComponentsInChildren<TouchscreenVirtualKey>();
+            bool virtualButtonPressed = false;
+            foreach (var btn in btns)
+            {
+                if (btn.m_IsPressed)
+                {
+                    virtualButtons[btn.m_Key] = true;
+                    virtualButtonPressed = true;
+                }
+            }
+
+            // Only process gestures if no virtual buttons are pressed
+            if (virtualButtonPressed) return;
+
+            if (touchCount == 1)
+            {
+                HandleSingleTouchGesture(touches[0], ref mv, ref cameraTranslation);
+            }
+            else if (touchCount == 2)
+            {
+                HandlePinchGesture(touches[0], touches[1], ref cameraTranslation);
+            }
+            else if (touchCount == 0)
+            {
+                // Reset gesture state when no touches
+                ResetGestureState();
+            }
+        }
+
+        void HandleSingleTouchGesture(Touch touch, ref Vector2 mv, ref Vector3 cameraTranslation)
+        {
+            Vector2 touchPosition = touch.screenPosition;
+            Vector2 touchDelta = touch.delta;
+
+            switch (touch.phase)
+            {
+                case UnityEngine.InputSystem.TouchPhase.Began:
+                    m_TouchStartPosition = touchPosition;
+                    m_LastSingleTouchPosition = touchPosition;
+                    m_IsSwipeGesture = false;
+                    
+                    // Check for double-tap to toggle virtual UI
+                    float currentTime = Time.time;
+                    if (currentTime - m_LastTapTime < m_DoubleTapTimeWindow)
+                    {
+                        ToggleVirtualUI();
+                        m_LastTapTime = 0f; // Reset to prevent triple-tap
+                    }
+                    else
+                    {
+                        m_LastTapTime = currentTime;
+                    }
+                    break;
+
+                case UnityEngine.InputSystem.TouchPhase.Moved:
+                    Vector2 swipeVector = touchPosition - m_TouchStartPosition;
+                    float swipeDistance = swipeVector.magnitude;
+
+                    // Determine if this is a swipe gesture or camera look
+                    if (!m_IsSwipeGesture && swipeDistance > m_SwipeThreshold)
+                    {
+                        m_IsSwipeGesture = true;
+                        HandleSwipeMovement(swipeVector, ref cameraTranslation);
+                    }
+                    else if (!m_IsSwipeGesture)
+                    {
+                        // Camera look control - only when not swiping
+                        Vector2 normalizedDelta = new Vector2(
+                            touchDelta.x / Screen.width,
+                            touchDelta.y / Screen.height
+                        );
+                        mv = normalizedDelta * m_TouchLookSensitivity;
+                    }
+                    else
+                    {
+                        // Continue swipe movement
+                        Vector2 moveDelta = touchPosition - m_LastSingleTouchPosition;
+                        HandleSwipeMovement(moveDelta, ref cameraTranslation);
+                    }
+
+                    m_LastSingleTouchPosition = touchPosition;
+                    break;
+
+                case UnityEngine.InputSystem.TouchPhase.Ended:
+                case UnityEngine.InputSystem.TouchPhase.Canceled:
+                    ResetGestureState();
+                    break;
+            }
+        }
+
+        void HandleSwipeMovement(Vector2 swipeVector, ref Vector3 cameraTranslation)
+        {
+            // Convert screen swipe to movement direction
+            Vector2 normalizedSwipe = swipeVector.normalized;
+            float swipeMagnitude = Mathf.Min(swipeVector.magnitude / Screen.height, 1f);
+
+            // Map swipe directions to movement
+            Vector3 movement = Vector3.zero;
+            
+            // Forward/backward (vertical swipe)
+            if (Mathf.Abs(normalizedSwipe.y) > 0.3f)
+            {
+                movement += Vector3.forward * normalizedSwipe.y * swipeMagnitude;
+            }
+            
+            // Left/right (horizontal swipe)
+            if (Mathf.Abs(normalizedSwipe.x) > 0.3f)
+            {
+                movement += Vector3.right * normalizedSwipe.x * swipeMagnitude;
+            }
+
+            cameraTranslation += movement * 2f; // Boost swipe movement
+        }
+
+        void HandlePinchGesture(Touch touch1, Touch touch2, ref Vector3 cameraTranslation)
+        {
+            Vector2 touch1Pos = touch1.screenPosition;
+            Vector2 touch2Pos = touch2.screenPosition;
+            float currentDistance = Vector2.Distance(touch1Pos, touch2Pos);
+            Vector2 currentCenter = (touch1Pos + touch2Pos) * 0.5f;
+
+            if (!m_IsPinching)
+            {
+                // Start pinch gesture
+                m_IsPinching = true;
+                m_LastPinchDistance = currentDistance;
+                m_PinchCenter = currentCenter;
+            }
+            else
+            {
+                // Continue pinch gesture
+                float distanceDelta = currentDistance - m_LastPinchDistance;
+                
+                if (Mathf.Abs(distanceDelta) > m_PinchThreshold)
+                {
+                    // Pinch to zoom - translate forward/backward
+                    float zoomDirection = Mathf.Sign(distanceDelta);
+                    float zoomAmount = Mathf.Abs(distanceDelta) / Screen.height;
+                    cameraTranslation += Vector3.forward * zoomDirection * zoomAmount * m_PinchMoveSpeed;
+                    
+                    m_LastPinchDistance = currentDistance;
+                }
+
+                // Two-finger pan for up/down movement
+                Vector2 centerDelta = currentCenter - m_PinchCenter;
+                if (centerDelta.magnitude > 10f) // minimum movement threshold
+                {
+                    Vector2 normalizedDelta = centerDelta / Screen.height;
+                    cameraTranslation += Vector3.up * normalizedDelta.y * m_PinchMoveSpeed;
+                    m_PinchCenter = currentCenter;
+                }
+            }
+        }
+
+        void ResetGestureState()
+        {
+            m_IsPinching = false;
+            m_IsSwipeGesture = false;
+            m_LastPinchDistance = 0f;
+        }
+
+        void ToggleVirtualUI()
+        {
+            if (m_IsTouchScreen && m_NonVRFlyingUi != null)
+            {
+                m_VirtualUIVisible = !m_VirtualUIVisible;
+                m_NonVRFlyingUi.SetActive(m_VirtualUIVisible);
+            }
         }
 
         void ApplyVelocity(Vector3 velocity)
