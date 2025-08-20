@@ -213,12 +213,33 @@ namespace TiltBrush
                 RenderWrapper wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
                 float ssaaRestore = wrapper.SuperSampling;
                 wrapper.SuperSampling = superSampling;
-                rMgr.RenderToTexture(tmp, asDepth: renderDepth, removeBackground: removeBackground);
-                wrapper.SuperSampling = ssaaRestore;
-                using (var fs = new FileStream(path, FileMode.Create))
+                if (renderDepth)
                 {
-                    ScreenshotManager.Save(fs, tmp, bSaveAsPng: saveAsPng);
+                    rMgr.RenderDepthNormalToTexture(tmp);
+                    
+                    // Save depth and normals as separate files when rendering depth
+                    var depthPath = path.Replace(Path.GetExtension(path), "_depth.png");
+                    var normalPath = path.Replace(Path.GetExtension(path), "_normals.png");
+                    
+                    using (var fs = new FileStream(depthPath, FileMode.Create))
+                    {
+                        ScreenshotManager.SaveDepth(fs, tmp);
+                    }
+                    
+                    using (var fs = new FileStream(normalPath, FileMode.Create))
+                    {
+                        ScreenshotManager.SaveNormals(fs, tmp);
+                    }
                 }
+                else
+                {
+                    rMgr.RenderToTexture(tmp, removeBackground: removeBackground);
+                    using (var fs = new FileStream(path, FileMode.Create))
+                    {
+                        ScreenshotManager.Save(fs, tmp, bSaveAsPng: saveAsPng);
+                    }
+                }
+                wrapper.SuperSampling = ssaaRestore;
                 rig.gameObject.SetActive(initialState);
             }
         }
