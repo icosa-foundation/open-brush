@@ -4171,10 +4171,17 @@ namespace TiltBrush
 
         private void MergeBrushStrokes(SceneFileInfo fileInfo)
         {
-            m_PanelManager.ToggleSketchbookPanels(isLoadingSketch: true);
-            PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
-            if (SaveLoadScript.m_Instance.Load(fileInfo, true))
+            if (m_PanelManager.SketchbookActive())
             {
+                m_PanelManager.ToggleSketchbookPanels(isLoadingSketch: true);
+            }
+            PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
+            if (SaveLoadScript.m_Instance.Load(fileInfo, bAdditive: true))
+            {
+                // A new layer will have been created for the merged strokes.
+                // Rename it accordingly
+                var newLayer = App.Scene.LayerCanvases.Last();
+                App.Scene.RenameLayer(newLayer, fileInfo.HumanName);
                 SketchMemoryScript.m_Instance.SetPlaybackMode(m_SketchPlaybackMode, m_DefaultSketchLoadSpeed);
                 SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true, false, false);
                 // the order of these two lines are important as ExitIntroSketch is setting the
@@ -4187,7 +4194,7 @@ namespace TiltBrush
             }
         }
 
-        public void LoadSketch(SceneFileInfo fileInfo, bool quickload = false, bool additive = false)
+        public void LoadSketch(SceneFileInfo fileInfo, bool quickload = false)
         {
             LightsControlScript.m_Instance.DiscoMode = false;
             m_WidgetManager.FollowingPath = false;
@@ -4199,7 +4206,7 @@ namespace TiltBrush
             }
             ResetGrabbedPose(everything: true);
             PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
-            if (SaveLoadScript.m_Instance.Load(fileInfo, additive))
+            if (SaveLoadScript.m_Instance.Load(fileInfo, bAdditive: false))
             {
                 SketchMemoryScript.m_Instance.SetPlaybackMode(m_SketchPlaybackMode, m_DefaultSketchLoadSpeed);
                 SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true);
@@ -5063,7 +5070,14 @@ namespace TiltBrush
                 Debug.LogWarning(string.Format("Error reading metadata for {0}.\n{1}",
                     fileInfo.FullPath, SaveLoadScript.m_Instance.LastMetadataError));
             }
-            LoadSketch(fileInfo, quickload, additive);
+            if (additive)
+            {
+                MergeBrushStrokes(fileInfo);
+            }
+            else
+            {
+                LoadSketch(fileInfo, quickload);
+            }
             if (m_ControlsType != ControlsType.ViewingOnly)
             {
                 EatGazeObjectInput();
