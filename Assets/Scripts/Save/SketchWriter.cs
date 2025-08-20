@@ -396,7 +396,14 @@ namespace TiltBrush
             }
 
             oldGroupToNewGroup = new Dictionary<int, int>();
-            var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, squashLayers: bAdditive);
+            // When loading additively we want all strokes on a single new layer;
+            int targetLayer = -1;
+            if (bAdditive)
+            {
+                var additiveLayer = App.Scene.AddLayerNow();
+                targetLayer = App.Scene.GetIndexOfCanvas(additiveLayer);
+            }
+            var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, targetLayer: targetLayer, timestampOffset: 0);
             if (strokes == null) { return false; }
 
             // Check that the strokes are in timestamp order.
@@ -433,7 +440,7 @@ namespace TiltBrush
         /// Parses a binary file into List of MemoryBrushStroke.
         /// Returns null on parse error.
         public static List<Stroke> GetStrokes(
-            Stream stream, Guid[] brushList, bool allowFastPath, bool squashLayers = false)
+            Stream stream, Guid[] brushList, bool allowFastPath, int targetLayer, uint timestampOffset)
         {
             var reader = new TiltBrush.SketchBinaryReader(stream);
 
@@ -521,9 +528,9 @@ namespace TiltBrush
                             }
                         case StrokeExtension.Layer:
                             UInt32 layerIndex = reader.UInt32();
-                            if (squashLayers)
+                            if (targetLayer != -1)
                             {
-                                layerIndex = 0;
+                                layerIndex = (uint)targetLayer;
                             }
                             var canvas = App.Scene.GetOrCreateLayer((int)layerIndex);
                             stroke.m_IntendedCanvas = canvas;
@@ -595,7 +602,7 @@ namespace TiltBrush
                                     rControlPoint.m_Pressure = reader.Float();
                                     break;
                                 case ControlPointExtension.Timestamp:
-                                    rControlPoint.m_TimestampMs = reader.UInt32();
+                                    rControlPoint.m_TimestampMs = reader.UInt32() + timestampOffset;
                                     break;
                                 default:
                                     // skip unknown extension

@@ -3571,6 +3571,22 @@ MonoBehaviour:
     m_Key: POPUP_ICOSA_LOGIN_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 381885131211235328
+    m_Key: VIEW_MODE_LOADING_SKETCHES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175499957428224
+    m_Key: POPUP_SPLIT_MESH
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175792879230976
+    m_Key: POPUP_SPLIT_MESH_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 397532058527293440
+    m_Key: NOT_SIGNED_IN
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
