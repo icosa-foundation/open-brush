@@ -397,17 +397,14 @@ namespace TiltBrush
 
             oldGroupToNewGroup = new Dictionary<int, int>();
             // When loading additively we want all strokes on a single new layer;
-            // start by squashing them to the main canvas then remap below.
-            var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, squashLayers: bAdditive, timestampOffset: 0);
-            if (strokes == null) { return false; }
+            int targetLayer = -1;
             if (bAdditive)
             {
                 var additiveLayer = App.Scene.AddLayerNow();
-                foreach (var stroke in strokes)
-                {
-                    stroke.m_IntendedCanvas = additiveLayer;
-                }
+                targetLayer = App.Scene.GetIndexOfCanvas(additiveLayer);
             }
+            var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, targetLayer: targetLayer, timestampOffset: 0);
+            if (strokes == null) { return false; }
 
             // Check that the strokes are in timestamp order.
             uint headMs = uint.MinValue;
@@ -443,7 +440,7 @@ namespace TiltBrush
         /// Parses a binary file into List of MemoryBrushStroke.
         /// Returns null on parse error.
         public static List<Stroke> GetStrokes(
-            Stream stream, Guid[] brushList, bool allowFastPath, bool squashLayers, uint timestampOffset)
+            Stream stream, Guid[] brushList, bool allowFastPath, int targetLayer, uint timestampOffset)
         {
             var reader = new TiltBrush.SketchBinaryReader(stream);
 
@@ -531,9 +528,9 @@ namespace TiltBrush
                             }
                         case StrokeExtension.Layer:
                             UInt32 layerIndex = reader.UInt32();
-                            if (squashLayers)
+                            if (targetLayer != -1)
                             {
-                                layerIndex = 0;
+                                layerIndex = (uint)targetLayer;
                             }
                             var canvas = App.Scene.GetOrCreateLayer((int)layerIndex);
                             stroke.m_IntendedCanvas = canvas;
