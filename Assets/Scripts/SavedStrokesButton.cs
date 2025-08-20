@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 namespace TiltBrush
 {
@@ -27,19 +28,19 @@ namespace TiltBrush
             if (m_SavedStrokeFile != null)
             {
                 var prevLayer = App.Scene.ActiveCanvas;
-                var tempLayer = App.Scene.AddLayerNow();
-                if (SaveLoadScript.m_Instance.Load(m_SavedStrokeFile.FileInfo, true))
+                if (SaveLoadScript.m_Instance.Load(m_SavedStrokeFile.FileInfo, bAdditive: true))
                 {
+                    var tempLayer = App.Scene.LayerCanvases.Last();
                     SketchMemoryScript.m_Instance.SetPlaybackMode(SketchMemoryScript.PlaybackMode.Distance, 54);
                     SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true, false, false);
+                    var strokes = SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes();
+                    var widgets = WidgetManager.m_Instance.GetAllUnselectedActiveWidgets(null);
+                    var group = App.GroupManager.NewUnusedGroup();
+                    for (int i = 0; i < strokes.Count; i++) { strokes[i].Group = group; }
+                    for (int i = 0; i < widgets.Count; i++) { widgets[i].Group = group; }
+                    SquashLayerCommand cmd = new SquashLayerCommand(tempLayer, prevLayer);
+                    SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
                 }
-                var strokes = SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes();
-                var widgets = WidgetManager.m_Instance.GetAllUnselectedActiveWidgets(null);
-                var group = App.GroupManager.NewUnusedGroup();
-                for (int i = 0; i < strokes.Count; i++) { strokes[i].Group = group; }
-                for (int i = 0; i < widgets.Count; i++) { widgets[i].Group = group; }
-                SquashLayerCommand cmd = new SquashLayerCommand(tempLayer, prevLayer);
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
             }
         }
 
