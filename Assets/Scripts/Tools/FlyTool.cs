@@ -156,7 +156,7 @@ namespace TiltBrush
                         }
                     }
 
-                    if (EnhancedTouchSupport.enabled && Touch.activeTouches.Count == 1 && !virtualButtonPressed)
+                    if (EnhancedTouchSupport.enabled && Touch.activeTouches.Count > 0 && !virtualButtonPressed)
                     {
                         var t = Touch.activeTouches[0];
                         Vector2 delta = t.delta;
