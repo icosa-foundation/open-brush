@@ -28,6 +28,9 @@ namespace TiltBrush
         private List<SceneFileInfo> m_Sketches;
         private TMP_Dropdown m_Dropdown;
 
+        private const int BatchSize = 2;
+        private const int MaxSketches = 20;
+
         void Start()
         {
             App.Instance.m_NoVrUi.SetActive(true);
