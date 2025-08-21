@@ -31,8 +31,11 @@ namespace TiltBrush
         private const int BatchSize = 2;
         private const int MaxSketches = 20;
 
+        public static InitNoHeadsetMode m_Instance;
+
         void Start()
         {
+            m_Instance = this;
             App.Instance.m_NoVrUi.SetActive(true);
             m_Dropdown = GetComponentInChildren<TMP_Dropdown>();
             if (m_Dropdown != null)
@@ -180,6 +183,7 @@ namespace TiltBrush
             var cameraPos = App.VrSdk.GetVrCamera().transform.position;
             cameraPos.y = 12;
             App.VrSdk.GetVrCamera().transform.position = cameraPos;
+            m_Instance = null;
             Destroy(gameObject);
         }
 
