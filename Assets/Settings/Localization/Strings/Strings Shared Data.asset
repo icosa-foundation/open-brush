@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
   m_Name: Strings Shared Data
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_TableCollectionName: Strings
   m_TableCollectionNameGuidString: c84355079ab3f3e4f8f3812258805f86
   m_Entries:
@@ -3585,6 +3585,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 397532058527293440
     m_Key: NOT_SIGNED_IN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 401824908597354496
+    m_Key: POPUP_REFERENCEPANEL_NOSAVEDSTROKES_TEXT
     m_Metadata:
       m_Items: []
   m_Metadata:
