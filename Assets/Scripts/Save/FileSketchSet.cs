@@ -406,7 +406,7 @@ namespace TiltBrush
                 // If we ever start doing something special (like warning the user) with deleted or added, we
                 // may need to add an explicit 'changed' queue, but delete then create works fine for now.
 
-                fileCreatedHandler =  (_, e) =>
+                fileCreatedHandler = (_, e) =>
                 {
                     m_ToAdd.Enqueue(e.FullPath);
                 };
