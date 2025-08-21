@@ -102,8 +102,8 @@ namespace TiltBrush
             IEnumerable<Stroke> strokes;
             if (m_SelectedOnly)
             {
-                strokes = SelectionManager.m_Instance.SelectedStrokes;
-                SelectionManager.m_Instance.ClearActiveSelection();
+                strokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
+                SelectionManager.m_Instance.DeselectStrokes(strokes, App.ActiveCanvas);
             }
             else
             {
@@ -126,7 +126,8 @@ namespace TiltBrush
             if (m_SelectedOnly)
             {
                 // Reselect strokes
-                SelectionManager.m_Instance.SelectStrokes(strokes);
+                SelectionManager.m_Instance.SelectionTransform = TrTransform.identity;
+                SelectionManager.m_Instance.SelectStrokes(strokes, true);
             }
         }
 
