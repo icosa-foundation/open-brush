@@ -103,14 +103,14 @@ namespace TiltBrush
             if (m_SelectedOnly)
             {
                 strokes = SelectionManager.m_Instance.SelectedStrokes;
+                SelectionManager.m_Instance.ClearActiveSelection();
             }
             else
             {
                 strokes = SketchMemoryScript.AllStrokes();
             }
-            int numStrokes = SketchMemoryScript.AllStrokesCount();
-            m_Strokes = new List<SketchWriter.AdjustedMemoryBrushStroke>(numStrokes);
-            foreach (var strokeSnapshot in SketchWriter.EnumerateAdjustedSnapshots(strokes))
+            m_Strokes = new List<AdjustedMemoryBrushStroke>(strokes.Count());
+            foreach (var strokeSnapshot in EnumerateAdjustedSnapshots(strokes))
             {
                 if (stopwatch.ElapsedTicks > maxTicks)
                 {
@@ -123,6 +123,11 @@ namespace TiltBrush
             stopwatch.Stop();
 
             m_Metadata = GetSketchMetadata();
+            if (m_SelectedOnly)
+            {
+                // Reselect strokes
+                SelectionManager.m_Instance.SelectStrokes(strokes);
+            }
         }
 
         public SketchMetadata GetSketchMetadata()
