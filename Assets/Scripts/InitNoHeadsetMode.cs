@@ -39,7 +39,7 @@ namespace TiltBrush
 
             m_Dropdown.ClearOptions();
             m_Sketches = new List<SceneFileInfo>();
-            StartCoroutine(DownloadAllCuratedSketchesInBatches(2, 30));
+            StartCoroutine(DownloadAllCuratedSketchesInBatches(BatchSize, MaxSketches));
         }
 
         private IEnumerator DownloadAllCuratedSketchesInBatches(int numSketches, int maxSketches)

@@ -156,7 +156,7 @@ namespace TiltBrush
                         }
                     }
 
-                    if (EnhancedTouchSupport.enabled && Touch.activeTouches.Count == 1 && !virtualButtonPressed)
+                    if (EnhancedTouchSupport.enabled && Touch.activeTouches.Count > 0 && !virtualButtonPressed)
                     {
                         var t = Touch.activeTouches[0];
                         Vector2 delta = t.delta;
@@ -191,7 +191,6 @@ namespace TiltBrush
                     if (x > 180f) x -= 360f;
                     x = Mathf.Clamp(x, -MaxPitch, MaxPitch);
                     // Only normalize if x is less than -MaxPitch (outside clamped range)
-                    if (x < 0f && x < -MaxPitch) x += 360f;
                     cameraRotation.x = x;
 
                     App.VrSdk.GetVrCamera().transform.localEulerAngles = cameraRotation;
