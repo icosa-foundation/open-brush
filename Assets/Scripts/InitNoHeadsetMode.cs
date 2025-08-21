@@ -189,7 +189,7 @@ namespace TiltBrush
             var dropdown = GetComponentInChildren<TMP_Dropdown>();
             var index = dropdown.value;
             SceneFileInfo rInfo = m_Sketches[index];
-            SketchControlsScript.m_Instance.LoadSketch(rInfo, false);
+            SketchControlsScript.m_Instance.LoadSketch(rInfo, quickload: true);
             gameObject.SetActive(false);
         }
 
