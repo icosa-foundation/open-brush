@@ -124,17 +124,16 @@ namespace TiltBrush
         private void OnDirectoryChanged(object source, FileSystemEventArgs e)
         {
             m_DirectoryScanRequired = true;
-            if (e.ChangeType == WatcherChangeTypes.Changed)
-            {
-                lock (m_ChangedFiles)
-                {
-                    m_ChangedFiles.Add(e.FullPath);
-                }
-            }
         }
 
         private IEnumerator<object> ScanReferenceDirectory()
         {
+            if (m_ScanningDirectory)
+            {
+                yield break; // Already scanning, skip
+            }
+            m_ScanningDirectory = true;
+            m_SavedStrokeFiles.Clear();
             var catalog = SketchCatalog.m_Instance.GetSet(SketchSetType.SavedStrokes);
             if (!catalog.IsReadyForAccess)
             {
@@ -151,7 +150,6 @@ namespace TiltBrush
 
             m_ScanningDirectory = false;
             CatalogChanged?.Invoke();
-            yield break;
         }
     }
 }

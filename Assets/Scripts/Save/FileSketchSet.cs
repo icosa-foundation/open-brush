@@ -25,6 +25,10 @@ namespace TiltBrush
 
     public class FileSketchSet : SketchSet
     {
+        private FileSystemEventHandler fileCreatedHandler;
+        private FileSystemEventHandler fileDeletedHandler;
+        private FileSystemEventHandler fileChangedHandler;
+
         static int ICON_LOAD_PER_FRAME = 3;
 
         /// Synchronously read thumbnail. Returns null on error.
@@ -387,25 +391,39 @@ namespace TiltBrush
 
             if (Directory.Exists(m_SketchesPath) && !m_ReadOnly)
             {
+                if (m_FileWatcher != null)
+                {
+                    m_FileWatcher.FileCreated -= fileCreatedHandler;
+                    m_FileWatcher.FileDeleted -= fileDeletedHandler;
+                    m_FileWatcher.FileChanged -= fileChangedHandler;
+                }
+
                 m_FileWatcher = new FileWatcher(m_SketchesPath, "*" + SaveLoadScript.TILT_SUFFIX);
+
                 // TODO: improve robustness.  Using Created works for typical copy and move operations, but
                 // doesn't handle e.g. streaming file.
                 // Note: Renamed event not implemented on OS X, so we rely on Deleted + Created
                 // If we ever start doing something special (like warning the user) with deleted or added, we
                 // may need to add an explicit 'changed' queue, but delete then create works fine for now.
-                m_FileWatcher.FileCreated += (object sender, FileSystemEventArgs e) =>
+
+                fileCreatedHandler =  (_, e) =>
                 {
                     m_ToAdd.Enqueue(e.FullPath);
                 };
-                m_FileWatcher.FileDeleted += (object sender, FileSystemEventArgs e) =>
+                fileDeletedHandler = (_, e) =>
                 {
                     m_ToDelete.Enqueue(e.FullPath);
                 };
-                m_FileWatcher.FileChanged += (object sender, FileSystemEventArgs e) =>
+                fileChangedHandler = (_, e) =>
                 {
                     m_ToDelete.Enqueue(e.FullPath);
                     m_ToAdd.Enqueue(e.FullPath);
                 };
+
+                m_FileWatcher.FileCreated += fileCreatedHandler;
+                m_FileWatcher.FileDeleted += fileDeletedHandler;
+                m_FileWatcher.FileChanged += fileChangedHandler;
+
                 m_FileWatcher.EnableRaisingEvents = true;
             }
         }
