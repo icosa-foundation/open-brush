@@ -20,6 +20,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using Newtonsoft.Json;
 using TMPro;
@@ -662,8 +663,15 @@ namespace TiltBrush
             }
 
 #if USD_SUPPORTED
-            // Load the Usd Plugins
-            InitUsd.Initialize();
+            try
+            {
+                // Load the Usd Plugins
+                InitUsd.Initialize();
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("Failed to initialize USD: " + e.Message);
+            }
 #endif
 
             foreach (string s in Config.m_SketchFiles)

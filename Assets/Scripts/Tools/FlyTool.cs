@@ -45,7 +45,12 @@ namespace TiltBrush
 
         private Vector3 m_Velocity;
 
-        bool m_IsTouchScreen => Application.isEditor || (!App.VrSdk.IsHmdInitialized() && App.Config.IsMobileHardware);
+        private const float LookSpeed = 1f;
+        private const float MoveSpeed = 0.05f;
+        private const float SprintMultiplier = 5f;
+        private const float MaxPitch = 85f;
+
+        bool m_IsTouchScreen => !App.VrSdk.IsHmdInitialized() && App.Config.IsMobileHardware;
 
         public override void Init()
         {
@@ -127,7 +132,13 @@ namespace TiltBrush
                 }
                 if (gamepad != null)
                 {
-                    mv += gamepad.rightStick.ReadValue() * 3f;
+                    Vector2 look = gamepad.rightStick.ReadValue();
+                    look = new Vector2(look.x * Mathf.Abs(look.x), look.y * Mathf.Abs(look.y));
+                    mv += look * LookSpeed;
+                    if (gamepad.rightStickButton.wasPressedThisFrame)
+                    {
+                        m_InvertLook = !m_InvertLook;
+                    }
                 }
 
                 var virtualButtons = new Dictionary<char, bool> { { 'W', false }, { 'A', false }, { 'S', false }, { 'D', false } };
@@ -145,14 +156,18 @@ namespace TiltBrush
                         }
                     }
 
-                    if (EnhancedTouchSupport.enabled && Touch.activeTouches.Count > 0 && !virtualButtonPressed)
+                    if (EnhancedTouchSupport.enabled && Touch.activeTouches.Count == 1 && !virtualButtonPressed)
                     {
-                        mv = Touch.activeTouches[0].screenPosition;
-                        mv = new Vector2(
-                            mv.x / (Screen.width * 0.5f),
-                            mv.y / (Screen.height * 0.5f)
-                        ); // 0 to 2
-                        mv -= Vector2.one; // -1 to +1
+                        var t = Touch.activeTouches[0];
+                        Vector2 delta = t.delta;
+
+                        // Normalize to screen size
+                        delta.x /= Screen.width;
+                        delta.y /= Screen.height;
+
+                        // Sensitivity tuning
+                        float touchLookSensitivity = 300f; // tweak as needed
+                        mv = delta * touchLookSensitivity;
                     }
                 }
 
@@ -170,6 +185,15 @@ namespace TiltBrush
                     }
 
                     cameraRotation.x -= m_InvertLook ? -mv.y : mv.y;
+
+                    // Clamp the pitch to prevent flipping
+                    float x = cameraRotation.x;
+                    if (x > 180f) x -= 360f;
+                    x = Mathf.Clamp(x, -MaxPitch, MaxPitch);
+                    // Only normalize if x is less than -MaxPitch (outside clamped range)
+                    if (x < 0f && x < -MaxPitch) x += 360f;
+                    cameraRotation.x = x;
+
                     App.VrSdk.GetVrCamera().transform.localEulerAngles = cameraRotation;
                 }
 
@@ -177,7 +201,7 @@ namespace TiltBrush
 
                 bool isSprinting = InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.SprintMode) ||
                                    (gamepad != null && gamepad.leftStickButton.isPressed);
-                float movementSpeed = isSprinting ? 0.3f : 0.05f;
+                float movementSpeed = MoveSpeed * (isSprinting ? SprintMultiplier : 1f);
 
                 if (gamepad != null)
                 {
