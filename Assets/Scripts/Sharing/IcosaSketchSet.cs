@@ -588,6 +588,18 @@ namespace TiltBrush
             onComplete?.Invoke();
         }
 
+        public IEnumerator DownloadFilesCoroutine(List<int> indices, Action onComplete = null, Action onDownload = null)
+        {
+            var sketchesToDownload = indices
+                .Where(i => i >= 0 && i < m_Sketches.Count)
+                .Select(i => m_Sketches[i])
+                .ToList();
+
+            yield return DownloadIconsCoroutine(sketchesToDownload);
+            yield return DownloadTiltsCoroutine(sketchesToDownload, onDownload);
+            onComplete?.Invoke();
+        }
+
         private IEnumerator DownloadIconsCoroutine(List<IcosaSketch> sketches)
         {
             bool notifyOnError = true;
