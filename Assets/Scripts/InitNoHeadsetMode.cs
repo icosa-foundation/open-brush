@@ -183,8 +183,7 @@ namespace TiltBrush
             var cameraPos = App.VrSdk.GetVrCamera().transform.position;
             cameraPos.y = 12;
             App.VrSdk.GetVrCamera().transform.position = cameraPos;
-            m_Instance = null;
-            Destroy(gameObject);
+            ShutdownSelf();
         }
 
         public void InitViewOnlyMode()
@@ -197,7 +196,13 @@ namespace TiltBrush
             var index = dropdown.value;
             SceneFileInfo rInfo = m_Sketches[index];
             SketchControlsScript.m_Instance.LoadSketch(rInfo, quickload: true);
-            gameObject.SetActive(false);
+            ShutdownSelf();
+        }
+
+        private void ShutdownSelf()
+        {
+            m_Instance = null;
+            Destroy(gameObject);
         }
 
         public void ShowSketchSelectorUi(bool active = true)
