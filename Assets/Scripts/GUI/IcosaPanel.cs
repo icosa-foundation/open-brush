@@ -197,8 +197,8 @@ namespace TiltBrush
                     }
                     icon.SetPreset(asset, iMapIndex);
 
-                    // Note that App.UserConfig.Flags.PolyModelPreload falls through to
-                    // App.PlatformConfig.EnablePolyPreload if it isn't set in Tilt Brush.cfg.
+                    // Note that App.UserConfig.Flags.IcosaModelPreload falls through to
+                    // App.PlatformConfig.EnableIcosaPreload if it isn't set in Tilt Brush.cfg.
                     if (App.UserConfig.Flags.IcosaModelPreload)
                     {
                         icon.RequestModelPreload(PageIndex);
@@ -284,6 +284,8 @@ namespace TiltBrush
             bool loggedIn = App.IcosaIsLoggedIn;
             if (loggedIn != m_LoggedIn)
             {
+                App.IcosaAssetCatalog.RequestForcedRefresh(IcosaSetType.Liked);
+                App.IcosaAssetCatalog.RequestForcedRefresh(IcosaSetType.User);
                 m_LoggedIn = loggedIn;
                 RefreshPage();
             }

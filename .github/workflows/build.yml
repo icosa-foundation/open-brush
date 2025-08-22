@@ -1078,7 +1078,7 @@ jobs:
 
   publish_itch:
     name: Publish Itch.io Release
-    needs: [configuration, build]
+    needs: [configuration, build, createdmg]
     runs-on: ubuntu-latest
     env:
       ITCH_SUBCHANNEL_NAME: ${{ needs.configuration.outputs.itchchannelname }}
@@ -1104,11 +1104,19 @@ jobs:
           name: Oculus Quest (2+)
           path: build_oculus_quest
 
+      - name: Download Build Artifacts (Mac)
+        uses: actions/download-artifact@v4
+        with:
+          name: MacOS (DMG)
+          path: build_macos
+
       - name: Package Artifacts for release
         run: |
           mkdir releases
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64/ releases/OpenBrush_Desktop_$VERSION/
+          mv build_macos/*.dmg releases/OpenBrush_Mac_$VERSION.dmg
+
       - name: Publish Windows
         uses: josephbmanley/butler-publish-itchio-action@master
         env:
@@ -1119,6 +1127,11 @@ jobs:
         env:
           CHANNEL: android-quest-${{ env.ITCH_SUBCHANNEL_NAME }}
           PACKAGE: releases/OpenBrush_Quest_${{ needs.configuration.outputs.version }}.apk
+      - name: Publish Mac
+        uses: josephbmanley/butler-publish-itchio-action@master
+        env:
+          CHANNEL: mac-${{ env.ITCH_SUBCHANNEL_NAME }}
+          PACKAGE: releases/OpenBrush_Mac_${{ needs.configuration.outputs.version }}.dmg
 
   publish_oculus_quest:
     name: Publish Oculus Quest 2+ Release
@@ -1196,24 +1209,7 @@ jobs:
           ARBORXR_APP_ID: ${{ vars.ARBORXR_Q2_APP_ID }}
           ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_Q2_LIVE_CHANNEL }}
           ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_Q2_BETA_CHANNEL }}
-        run: |
-          mkdir releases
-          mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
-
-          cd releases
-
-          set -x
-          if [ "$PRERELEASE" == "false" ]
-          then
-            CHANGELOG="Version $VERSION"
-            ARBORXR_CHANNEL="${ARBORXR_LIVE_CHANNEL}"
-          else
-            CHANGELOG="${RAW_CHANGELOG}"
-            ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
-          fi
-          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION | jq -r '.id')"
-          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version $VERSION_ID
-
+        run: "mkdir releases\nmv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk\n          #magic___^_^___line\ncd releases\n          #magic___^_^___line\nset -x\nif [ \"$PRERELEASE\" == \"false\" ]\nthen\n  CHANGELOG=\"Version $VERSION\"\n  ARBORXR_CHANNEL=\"${ARBORXR_LIVE_CHANNEL}\"\nelse\n  CHANGELOG=\"${RAW_CHANGELOG}\"\n  ARBORXR_CHANNEL=\"${ARBORXR_BETA_CHANNEL}\"\nfi\nVERSION_ID=\"$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest_$VERSION.apk --notes \"${CHANGELOG}\" --version $VERSION | jq -r '.id')\"\n# Allow some time for the version to be processed \nsleep 30\nabxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID\n          #magic___^_^___line\n"
   publish_oculus_quest1_arborxr:
     name: Publish Oculus Quest 1 Release ArborXR
     needs: [configuration, build]
@@ -1249,23 +1245,7 @@ jobs:
           ARBORXR_APP_ID: ${{ vars.ARBORXR_Q1_APP_ID }}
           ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_Q1_LIVE_CHANNEL }}
           ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_Q1_BETA_CHANNEL }}
-        run: |
-          mkdir releases1
-          mv build_oculus_quest1/*/com.Icosa.OpenBrush*apk releases1/OpenBrush_Quest1_$VERSION.apk
-
-          cd releases1
-
-          if [ "$PRERELEASE" == "false" ]
-          then
-            CHANGELOG="Version $VERSION"
-            ARBORXR_CHANNEL="${ARBORXR_LIVE_CHANNEL}"
-          else
-            CHANGELOG="${RAW_CHANGELOG}"
-            ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
-          fi
-          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest1_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION | jq -r '.id')"
-          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version $VERSION_ID
-
+        run: "mkdir releases1\nmv build_oculus_quest1/*/com.Icosa.OpenBrush*apk releases1/OpenBrush_Quest1_$VERSION.apk\n          #magic___^_^___line\ncd releases1\n          #magic___^_^___line\nif [ \"$PRERELEASE\" == \"false\" ]\nthen\n  CHANGELOG=\"Version $VERSION\"\n  ARBORXR_CHANNEL=\"${ARBORXR_LIVE_CHANNEL}\"\nelse\n  CHANGELOG=\"${RAW_CHANGELOG}\"\n  ARBORXR_CHANNEL=\"${ARBORXR_BETA_CHANNEL}\"\nfi\nVERSION_ID=\"$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest1_$VERSION.apk --notes \"${CHANGELOG}\" --version $VERSION | jq -r '.id')\"\n# Allow some time for the version to be processed \nsleep 30\nabxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID\n          #magic___^_^___line\n"
   publish_oculus_rift:
     name: Publish Oculus Rift Release
     needs: [configuration, build]
@@ -1386,23 +1366,7 @@ jobs:
           ARBORXR_APP_ID: ${{ vars.ARBORXR_PICO_APP_ID }}
           ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_PICO_LIVE_CHANNEL }}
           ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_PICO_BETA_CHANNEL }}
-        run: |
-          mkdir releases
-          mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
-
-          cd releases
-
-          if [ "$PRERELEASE" == "false" ]
-          then
-            CHANGELOG="Version $VERSION"
-            ARBORXR_CHANNEL="${ARBORXR_LIVE_CHANNEL}"
-          else
-            CHANGELOG="${RAW_CHANGELOG}"
-            ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
-          fi
-          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Pico_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION | jq -r '.id')"
-          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version $VERSION_ID
-
+        run: "mkdir releases\nmv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk\n          #magic___^_^___line\ncd releases\n          #magic___^_^___line\nif [ \"$PRERELEASE\" == \"false\" ]\nthen\n  CHANGELOG=\"Version $VERSION\"\n  ARBORXR_CHANNEL=\"${ARBORXR_LIVE_CHANNEL}\"\nelse\n  CHANGELOG=\"${RAW_CHANGELOG}\"\n  ARBORXR_CHANNEL=\"${ARBORXR_BETA_CHANNEL}\"\nfi\nVERSION_ID=\"$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Pico_$VERSION.apk --notes \"${CHANGELOG}\" --version $VERSION | jq -r '.id')\"\n# Allow some time for the version to be processed \nsleep 30\nabxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID\n          #magic___^_^___line\n"
   publish_ios_zapbox:
     name: Publish Zapbox iOS
     needs: [configuration, build]

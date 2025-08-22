@@ -1050,7 +1050,7 @@ namespace TiltBrush
                 App.IcosaUserName = userData.Displayname;
                 App.IcosaUserId = userData.Id;
             }
-            PanelManager.m_Instance.GetAdminPanel().CloseActivePopUp(true);
+            PanelManager.m_Instance.LastPanelInteractedWith.CloseActivePopUp(true);
         }
 
         public string GenerateDeviceCodeSecret()

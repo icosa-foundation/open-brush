@@ -25,6 +25,7 @@ namespace TiltBrush
         Curated,
         Liked,
         Drive,
+        SavedStrokes,
     }
 
     // SketchCatalog.Awake must come after App.Awake
@@ -60,7 +61,7 @@ namespace TiltBrush
             SketchSet featuredSketchSet = null;
             if (false) // TODO this fails because of initialization order: (VrAssetService.m_Instance.m_UseLocalFeaturedSketches)
             {
-                featuredSketchSet = new FileSketchSet(App.FeaturedSketchesPath());
+                featuredSketchSet = new FileSketchSet(SketchSetType.Curated);
                 InitFeaturedSketchesPath();
             }
             else
@@ -70,10 +71,11 @@ namespace TiltBrush
 
             m_Sets = new[]
             {
-                new FileSketchSet(),
+                new FileSketchSet(SketchSetType.User),
                 featuredSketchSet,
                 new IcosaSketchSet(this, SketchSetType.Liked, needsLogin: true),
                 new GoogleDriveSketchSet(),
+                new FileSketchSet(SketchSetType.SavedStrokes)
             };
         }
 
