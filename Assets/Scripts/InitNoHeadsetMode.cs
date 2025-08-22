@@ -16,6 +16,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace TiltBrush
 {
@@ -27,8 +28,14 @@ namespace TiltBrush
         private List<SceneFileInfo> m_Sketches;
         private TMP_Dropdown m_Dropdown;
 
+        private const int BatchSize = 2;
+        private const int MaxSketches = 20;
+
+        public static InitNoHeadsetMode m_Instance;
+
         void Start()
         {
+            m_Instance = this;
             App.Instance.m_NoVrUi.SetActive(true);
             m_Dropdown = GetComponentInChildren<TMP_Dropdown>();
             if (m_Dropdown != null)
@@ -38,18 +45,69 @@ namespace TiltBrush
 
             m_Dropdown.ClearOptions();
             m_Sketches = new List<SceneFileInfo>();
-
-            StartCoroutine(DownloadCuratedSketches(10));
+            StartCoroutine(DownloadAllCuratedSketchesInBatches(BatchSize, MaxSketches));
         }
 
-        public IEnumerator DownloadCuratedSketches(int numSketches)
+        private IEnumerator DownloadAllCuratedSketchesInBatches(int numSketches, int maxSketches)
         {
             var curatedSketchSet = (IcosaSketchSet)SketchCatalog.m_Instance.GetSet(SketchSetType.Curated);
-            yield return new WaitUntil(() => curatedSketchSet.NumSketches >= numSketches);
-            yield return StartCoroutine(curatedSketchSet.DownloadFilesCoroutine(() =>
+
+            while (true)
+            {
+                yield return StartCoroutine(DownloadCuratedSketches(numSketches, maxSketches));
+                RefreshDropdownItemsForSet(curatedSketchSet);
+
+                // Count how many are now available
+                int available = 0;
+                for (int i = 0; i < curatedSketchSet.NumSketches; i++)
+                {
+                    var info = curatedSketchSet.GetSketchSceneFileInfo(i);
+                    if (info != null && info.Available)
+                        available++;
+                }
+                if (available >= maxSketches)
+                    break;
+            }
+        }
+
+        public IEnumerator DownloadCuratedSketches(int numSketches, int maxSketches)
+        {
+            var curatedSketchSet = (IcosaSketchSet)SketchCatalog.m_Instance.GetSet(SketchSetType.Curated);
+
+            // Count already downloaded sketches
+            int alreadyDownloaded = 0;
+            for (int i = 0; i < curatedSketchSet.NumSketches; i++)
+            {
+                var info = curatedSketchSet.GetSketchSceneFileInfo(i);
+                if (info != null && info.Available)
+                    alreadyDownloaded++;
+            }
+
+            int toDownload = Mathf.Min(numSketches, maxSketches - alreadyDownloaded);
+            if (toDownload <= 0)
+                yield break;
+
+            yield return new WaitUntil(() => curatedSketchSet.NumSketches >= alreadyDownloaded + toDownload);
+
+            List<int> indicesToDownload = new List<int>();
+            for (int i = alreadyDownloaded; i < alreadyDownloaded + toDownload; i++)
+            {
+                indicesToDownload.Add(i);
+            }
+
+            yield return StartCoroutine(curatedSketchSet.DownloadFilesCoroutine(indicesToDownload, () =>
             {
                 RefreshDropdownItemsForSet(curatedSketchSet);
             }));
+        }
+
+        public void OnClickOutsideDropdown()
+        {
+            // Hide the dropdown when clicking outside
+            if (m_Dropdown != null && m_Dropdown.gameObject.activeSelf)
+            {
+                m_Dropdown.Hide();
+            }
         }
 
         // Public so it can be called from the download callback
@@ -82,6 +140,13 @@ namespace TiltBrush
 
             // Show dropdown if there is at least one item, otherwise hide it
             m_Dropdown.gameObject.SetActive(m_Dropdown.options.Count > 0);
+            // Select the first item if available
+            if (m_Dropdown.options.Count > 0)
+            {
+                m_Dropdown.value = 0;
+                m_Dropdown.RefreshShownValue();
+            }
+
         }
 
         private void AddDropdownItems(SketchSet sketchset)
@@ -113,39 +178,31 @@ namespace TiltBrush
             }
         }
 
-        private IEnumerator UiInitCoroutine()
-        {
-            // Initial population
-            var userSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.User);
-            var curatedSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Curated);
-            var likedSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Liked);
-
-            yield return new WaitUntil(() => userSketchSet.IsReadyForAccess);
-            yield return new WaitUntil(() => curatedSketchSet.IsReadyForAccess);
-            yield return new WaitUntil(() => likedSketchSet.IsReadyForAccess);
-
-            RefreshDropdownItemsForSet(null);
-        }
-
         public void InitEditMode()
         {
             var cameraPos = App.VrSdk.GetVrCamera().transform.position;
-            cameraPos.y += 12;
+            cameraPos.y = 12;
             App.VrSdk.GetVrCamera().transform.position = cameraPos;
-            Destroy(gameObject);
+            ShutdownSelf();
         }
 
         public void InitViewOnlyMode()
         {
             var cameraPos = App.VrSdk.GetVrCamera().transform.position;
-            cameraPos.y += 12;
+            cameraPos.y = 12;
             App.VrSdk.GetVrCamera().transform.position = cameraPos;
+            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FlyTool);
             var dropdown = GetComponentInChildren<TMP_Dropdown>();
             var index = dropdown.value;
             SceneFileInfo rInfo = m_Sketches[index];
-            SketchControlsScript.m_Instance.LoadSketch(rInfo);
-            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FlyTool);
-            gameObject.SetActive(false);
+            SketchControlsScript.m_Instance.LoadSketch(rInfo, quickload: true);
+            ShutdownSelf();
+        }
+
+        private void ShutdownSelf()
+        {
+            m_Instance = null;
+            Destroy(gameObject);
         }
 
         public void ShowSketchSelectorUi(bool active = true)
