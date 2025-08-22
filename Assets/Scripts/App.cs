@@ -2115,6 +2115,28 @@ namespace TiltBrush
             return true;
         }
 
+        public static bool InitSavedStrokesLibraryPath(string[] defaultSavedStrokes)
+        {
+            string savedStrokesDirectory = SavedStrokesPath();
+            if (Directory.Exists(savedStrokesDirectory))
+            {
+                return true;
+            }
+            if (!InitDirectoryAtPath(savedStrokesDirectory))
+            {
+                return false;
+            }
+            foreach (var savedStroke in defaultSavedStrokes)
+            {
+                string destFilename = Path.GetFileName(savedStroke);
+                FileUtils.WriteBytesFromResources(savedStroke, Path.Combine(savedStrokesDirectory, destFilename));
+            }
+
+            return true;
+        }
+
+
+
         public static string FeaturedSketchesPath()
         {
             return Path.Combine(Application.persistentDataPath, "Featured Sketches");
