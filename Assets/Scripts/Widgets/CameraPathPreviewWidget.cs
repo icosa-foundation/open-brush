@@ -68,8 +68,9 @@ namespace TiltBrush
                     bool completed = m_CurrentPathWidget.Path.MoveAlongPath(speed * Time.deltaTime,
                         m_PathT, out m_PathT);
 
-                    if (VideoRecorderUtils.ActiveVideoRecording != null && completed)
+                    if ((VideoRecorderUtils.ActiveVideoRecording != null || VideoRecorderUtils.ActiveStillFrameExporter != null) && completed)
                     {
+                        UnityEngine.Debug.Log("Camera path completed - stopping recording");
                         SketchControlsScript.m_Instance.CameraPathCaptureRig.StopRecordingPath(true);
                     }
                 }

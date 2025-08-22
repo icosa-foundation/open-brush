@@ -17,6 +17,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace TiltBrush
 {
@@ -38,10 +39,22 @@ namespace TiltBrush
 #endif
 
         static private VideoRecorder m_ActiveVideoRecording;
+        static private StillFrameSequenceExporter m_ActiveStillFrameExporter;
+        static private bool m_UsingStillFrameFallback = false;
 
         static public VideoRecorder ActiveVideoRecording
         {
             get { return m_ActiveVideoRecording; }
+        }
+
+        static public StillFrameSequenceExporter ActiveStillFrameExporter
+        {
+            get { return m_ActiveStillFrameExporter; }
+        }
+
+        static public bool IsUsingStillFrameFallback
+        {
+            get { return m_UsingStillFrameFallback; }
         }
 
         static public int NumFramesInUsdSerializer
@@ -105,6 +118,22 @@ namespace TiltBrush
             {
                 m_UsdPathSerializer.Time = (float)m_RecordingStopwatch.Elapsed.TotalSeconds;
                 m_UsdPathSerializer.Serialize();
+                
+                
+                // Capture still frame if using fallback mode - only when USD is actively recording
+                if (m_UsingStillFrameFallback && m_ActiveStillFrameExporter != null)
+                {
+                    float currentTime = (float)m_RecordingStopwatch.Elapsed.TotalSeconds;
+                    m_ActiveStillFrameExporter.CaptureFrame(currentTime);
+                }
+                
+                // Check if the path is finished and stop still frame capture
+                if (m_UsingStillFrameFallback && m_UsdPathSerializer.IsFinished)
+                {
+                    Debug.Log($"Camera path finished. Captured {(m_ActiveStillFrameExporter != null ? m_ActiveStillFrameExporter.FrameCount : 0)} frames.");
+                    // The path recording will be stopped by the normal camera path system
+                    // We don't need to manually stop here since StopVideoCapture will be called
+                }
             }
 #endif
         }
@@ -113,7 +142,7 @@ namespace TiltBrush
                                              UsdPathSerializer usdPathSerializer, bool offlineRender = false)
         {
             // Only one video at a time.
-            if (m_ActiveVideoRecording != null)
+            if (m_ActiveVideoRecording != null || m_ActiveStillFrameExporter != null)
             {
                 return false;
             }
@@ -124,6 +153,18 @@ namespace TiltBrush
                 "Failed to start video capture"))
             {
                 return false;
+            }
+
+            // Check if ffmpeg is available or if forcing still frame fallback - if not, use still frame fallback
+            string ffmpegPath = FfmpegPipe.GetFfmpegExe();
+            bool shouldUseFallback = (ffmpegPath == null || App.Config.m_ForceStillFrameFallback) && !offlineRender;
+            Debug.Log($"Video capture check - ffmpeg available: {ffmpegPath != null}, force fallback: {App.Config.m_ForceStillFrameFallback}, offline: {offlineRender}, using fallback: {shouldUseFallback}");
+            
+            if (shouldUseFallback)
+            {
+                // Use still frame sequence export as fallback
+                Debug.Log("Starting still frame sequence capture as fallback");
+                return StartStillFrameSequenceCapture(filePath, recorder, usdPathSerializer);
             }
 
             // Vertical video is disabled.
@@ -198,6 +239,66 @@ namespace TiltBrush
             return true;
         }
 
+        static private bool StartStillFrameSequenceCapture(string filePath, VideoRecorder recorder,
+                                                          UsdPathSerializer usdPathSerializer)
+        {
+            // Get or create the still frame exporter component
+            StillFrameSequenceExporter exporter = recorder.gameObject.GetComponent<StillFrameSequenceExporter>();
+            if (exporter == null)
+            {
+                exporter = recorder.gameObject.AddComponent<StillFrameSequenceExporter>();
+            }
+
+            float fps = App.UserConfig.Video.FPS;
+            
+            if (!exporter.StartCapture(filePath, fps))
+            {
+                OutputWindowScript.ReportFileSaved("Failed to start still frame sequence capture!", null,
+                    OutputWindowScript.InfoCardSpawnPos.Brush);
+                return false;
+            }
+
+            m_ActiveStillFrameExporter = exporter;
+            m_UsingStillFrameFallback = true;
+
+            // Setup quality settings (same as video recording)
+            if (m_DebugVideoCaptureQualityLevel != -1)
+            {
+                m_PreCaptureQualityLevel = QualityControls.m_Instance.QualityLevel;
+                QualityControls.m_Instance.QualityLevel = m_DebugVideoCaptureQualityLevel;
+            }
+
+            // Setup SSAA (same as video recording)
+            RenderWrapper wrapper = recorder.gameObject.GetComponent<RenderWrapper>();
+            if (wrapper != null)
+            {
+                m_PreCaptureSuperSampling = wrapper.SuperSampling;
+                wrapper.SuperSampling = m_SuperSampling;
+            }
+
+#if USD_SUPPORTED
+            // Handle USD path serialization for camera path recording
+            m_UsdPathSerializer = usdPathSerializer;
+            m_UsdPath = SaveLoadScript.m_Instance.SceneFile.Valid ?
+                Path.ChangeExtension(filePath, "usda") : null;
+            m_RecordingStopwatch = new System.Diagnostics.Stopwatch();
+            m_RecordingStopwatch.Start();
+            if (m_UsdPathSerializer != null && !m_UsdPathSerializer.StartRecording(m_UsdPath))
+            {
+                Debug.LogWarning("USD Path Serializer failed to start recording");
+                UnityEngine.Object.Destroy(m_UsdPathSerializer);
+                m_UsdPathSerializer = null;
+            }
+            else if (m_UsdPathSerializer != null)
+            {
+                Debug.Log($"USD Path Serializer started. IsRecording: {m_UsdPathSerializer.IsRecording}");
+            }
+#endif
+
+            return true;
+        }
+
+
         static public void StopVideoCapture(bool saveCapture)
         {
             // Debug reset changes to quality settings.
@@ -206,10 +307,30 @@ namespace TiltBrush
                 QualityControls.m_Instance.QualityLevel = m_PreCaptureQualityLevel;
             }
 
-            // Stop capturing, reset colors
-            m_ActiveVideoRecording.gameObject.GetComponent<RenderWrapper>().SuperSampling =
-                m_PreCaptureSuperSampling;
-            m_ActiveVideoRecording.StopCapture(save: saveCapture);
+            // Handle different capture modes
+            if (m_UsingStillFrameFallback && m_ActiveStillFrameExporter != null)
+            {
+                // Stop still frame sequence capture
+                m_ActiveStillFrameExporter.StopCapture(saveCapture);
+                
+                // Reset render wrapper if it exists
+                var wrapper = m_ActiveStillFrameExporter.gameObject.GetComponent<RenderWrapper>();
+                if (wrapper != null)
+                {
+                    wrapper.SuperSampling = m_PreCaptureSuperSampling;
+                }
+                
+                m_ActiveStillFrameExporter = null;
+                m_UsingStillFrameFallback = false;
+            }
+            else if (m_ActiveVideoRecording != null)
+            {
+                // Stop video capture
+                m_ActiveVideoRecording.gameObject.GetComponent<RenderWrapper>().SuperSampling =
+                    m_PreCaptureSuperSampling;
+                m_ActiveVideoRecording.StopCapture(save: saveCapture);
+                m_ActiveVideoRecording = null;
+            }
 
 #if USD_SUPPORTED
             if (m_UsdPathSerializer != null)
@@ -234,7 +355,6 @@ namespace TiltBrush
             m_RecordingStopwatch = null;
 #endif
 
-            m_ActiveVideoRecording = null;
             App.Switchboard.TriggerVideoRecordingStopped();
         }
 

@@ -129,9 +129,26 @@ namespace TiltBrush
 
         public void StopRecordingPath(bool saveCapture)
         {
-            string message = saveCapture ? m_PathRecorded.GetLocalizedStringAsync().Result : m_PathCancelled.GetLocalizedStringAsync().Result;
+            string message;
+            if (saveCapture)
+            {
+                if (VideoRecorderUtils.IsUsingStillFrameFallback)
+                {
+                    message = "Camera path exported as still frame sequence.";
+                }
+                else
+                {
+                    message = m_PathRecorded.GetLocalizedStringAsync().Result;
+                }
+            }
+            else
+            {
+                message = m_PathCancelled.GetLocalizedStringAsync().Result;
+            }
+            
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
                 InputManager.ControllerName.Brush, message);
+            
             if (saveCapture)
             {
                 string filePath = null;
@@ -139,11 +156,17 @@ namespace TiltBrush
                 {
                     filePath = VideoRecorderUtils.ActiveVideoRecording.FilePath;
                 }
+                else if (VideoRecorderUtils.ActiveStillFrameExporter != null)
+                {
+                    filePath = VideoRecorderUtils.ActiveStillFrameExporter.FilePath;
+                }
+                
                 if (filePath != null)
                 {
                     ControllerConsoleScript.m_Instance.AddNewLine(filePath);
                 }
             }
+            
             VideoRecorderUtils.StopVideoCapture(saveCapture);
             WidgetManager.m_Instance.FollowingPath = false;
             m_Widget.ResetToPathStart();
