@@ -2150,6 +2150,11 @@ namespace TiltBrush
             return Path.Combine(UserPath(), "Sketches");
         }
 
+        static public string SavedStrokesPath()
+        {
+            return Path.Combine(MediaLibraryPath(), "Saved Strokes");
+        }
+
         static public string AutosavePath()
         {
             return Path.Combine(UserPath(), "Sketches/Autosave");

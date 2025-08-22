@@ -371,7 +371,8 @@ namespace TiltBrush
 
 
         /// Leaves stream in indeterminate state; caller should Close() upon return.
-        public static bool ReadMemory(Stream stream, Guid[] brushList, bool bAdditive, out bool isLegacy, out Dictionary<int, int> oldGroupToNewGroup)
+        public static bool ReadMemory(Stream stream, Guid[] brushList, bool bAdditive, int targetLayer,
+            out bool isLegacy, out Dictionary<int, int> oldGroupToNewGroup, out List<Stroke> strokes)
         {
             bool allowFastPath = BitConverter.IsLittleEndian;
             // Buffering speeds up fast path ~1.4x, slow path ~2.3x
@@ -397,13 +398,7 @@ namespace TiltBrush
 
             oldGroupToNewGroup = new Dictionary<int, int>();
             // When loading additively we want all strokes on a single new layer;
-            int targetLayer = -1;
-            if (bAdditive)
-            {
-                var additiveLayer = App.Scene.AddLayerNow();
-                targetLayer = App.Scene.GetIndexOfCanvas(additiveLayer);
-            }
-            var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, targetLayer: targetLayer, timestampOffset: 0);
+            strokes = GetStrokes(bufferedStream, brushList, allowFastPath, targetLayer: targetLayer, timestampOffset: 0);
             if (strokes == null) { return false; }
 
             // Check that the strokes are in timestamp order.
