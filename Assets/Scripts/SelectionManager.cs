@@ -741,7 +741,7 @@ namespace TiltBrush
             UpdateSelectionWidget();
         }
 
-        public void SelectStrokes(IEnumerable<Stroke> strokes)
+        public void SelectStrokes(IEnumerable<Stroke> strokes, bool preserveTool = false)
         {
             foreach (var stroke in strokes)
             {
@@ -767,7 +767,10 @@ namespace TiltBrush
             // If the manager is tasked to select strokes, make sure the SelectionTool is active.
             // b/64029485 In the event that the user does not have the SelectionTool active and presses
             // undo causing strokes to be highlighted, force the user to have the SelectionTool.
-            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.SelectionTool);
+            if (!preserveTool)
+            {
+                SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.SelectionTool);
+            }
         }
 
         public void DeselectStrokes(IEnumerable<Stroke> strokes, CanvasScript targetCanvas = null)

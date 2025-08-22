@@ -3339,6 +3339,18 @@ MonoBehaviour:
     m_Key: DirectoryChooserPopupButton
     m_Metadata:
       m_Items: []
+  - m_Id: 234808679492837376
+    m_Key: PANEL_REFERENCE_SAVED_STROKE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235160207315525632
+    m_Key: LABS_PANEL_EXPORT_STROKES_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235163428054458368
+    m_Key: PANEL_SAVED_STROKES_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   - m_Id: 238556149774557184
     m_Key: PANEL_REFERENCE_ICONIMAGE_LOADERRORTEXT
     m_Metadata:
@@ -3573,6 +3585,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 397532058527293440
     m_Key: NOT_SIGNED_IN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 401824908597354496
+    m_Key: POPUP_REFERENCEPANEL_NOSAVEDSTROKES_TEXT
     m_Metadata:
       m_Items: []
   m_Metadata:
