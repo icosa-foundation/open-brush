@@ -63,7 +63,7 @@ namespace TiltBrush
             CreateSpeedKnots(pathWidget, simplifiedFrames);
 
             // Refresh the path to build splines
-            pathWidget.Path.RefreshPath();
+            pathWidget.Path.RefreshEntirePath();
             
             Debug.Log($"CameraPathFromFrames: Created camera path with {pathWidget.Path.PositionKnots.Count} position knots");
             
@@ -113,17 +113,18 @@ namespace TiltBrush
 
         private static CameraPathWidget CreateCameraPathWidget()
         {
-            // Create a new camera path widget
-            GameObject pathGo = new GameObject("RecordedCameraPath");
-            CameraPathWidget pathWidget = pathGo.AddComponent<CameraPathWidget>();
+            // Use the widget manager to create a camera path widget properly
+            TrTransform xfSpawn = new TrTransform();
+            CreateWidgetCommand createCommand = new CreateWidgetCommand(
+                WidgetManager.m_Instance.CameraPathWidgetPrefab, xfSpawn, Quaternion.identity, true
+            );
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
             
-            // Initialize the widget
-            pathWidget.transform.parent = App.Instance.m_WidgetManager.transform;
-            
-            // Make sure the path has the necessary components
-            if (pathWidget.Path == null)
+            CameraPathWidget pathWidget = createCommand.Widget as CameraPathWidget;
+            if (pathWidget == null)
             {
-                pathWidget.CreatePath();
+                Debug.LogError("CameraPathFromFrames: Failed to create CameraPathWidget");
+                return null;
             }
             
             return pathWidget;
@@ -152,7 +153,7 @@ namespace TiltBrush
                 knotXf_SS.scale = 1.0f;
                 
                 // Convert to local space and set transform
-                TrTransform knotXf_LS = Coords.ScenePose.inverse * knotXf_SS;
+                TrTransform knotXf_LS = Coords.CanvasPose.inverse * knotXf_SS;
                 knotGo.transform.position = knotXf_LS.translation;
                 knotGo.transform.rotation = knotXf_LS.rotation;
                 
@@ -167,8 +168,8 @@ namespace TiltBrush
                     posKnot.TangentMagnitude = 1.0f; // Default for last knot
                 }
                 
-                // Add to path
-                pathWidget.Path.AddPositionKnot(posKnot);
+                // Add to path using proper method
+                pathWidget.Path.InsertPositionKnot(posKnot, pathWidget.Path.PositionKnots.Count);
             }
         }
 
@@ -200,12 +201,12 @@ namespace TiltBrush
                 rotKnotXf_SS.rotation = frame.rotation;
                 rotKnotXf_SS.scale = 1.0f;
                 
-                TrTransform rotKnotXf_LS = Coords.ScenePose.inverse * rotKnotXf_SS;
+                TrTransform rotKnotXf_LS = Coords.CanvasPose.inverse * rotKnotXf_SS;
                 knotGo.transform.position = rotKnotXf_LS.translation;
                 knotGo.transform.rotation = rotKnotXf_LS.rotation;
                 
                 // Add to path
-                pathWidget.Path.AddRotationKnot(rotKnot);
+                pathWidget.Path.AddRotationKnot(rotKnot, rotKnot.PathT);
             }
         }
 
@@ -242,11 +243,11 @@ namespace TiltBrush
                 speedKnotXf_SS.rotation = Quaternion.identity;
                 speedKnotXf_SS.scale = 1.0f;
                 
-                TrTransform speedKnotXf_LS = Coords.ScenePose.inverse * speedKnotXf_SS;
+                TrTransform speedKnotXf_LS = Coords.CanvasPose.inverse * speedKnotXf_SS;
                 knotGo.transform.position = speedKnotXf_LS.translation;
                 
                 // Add to path
-                pathWidget.Path.AddSpeedKnot(speedKnot);
+                pathWidget.Path.AddSpeedKnot(speedKnot, speedKnot.PathT);
             }
         }
 
