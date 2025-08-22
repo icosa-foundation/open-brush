@@ -19,7 +19,7 @@ MonoBehaviour:
   ReferenceImagesResizeDimension: 1536
   SketchSetMaxCacheSize: 537000000
   MemoryWarningVertCount: 2000000
-  UseFileSystemWatcher: 1
+  UseFileSystemWatcher: 0
   EnableAutosave: 0
   QuickLoadMaxDistancePerFrame: 4
   IntroSketchPrefab: {fileID: 1843608203, guid: ddfd362fa9a8d5840bf47df17d2eba8a,
