@@ -146,16 +146,9 @@ namespace TiltBrush
                     continue;
                 }
                 
-                // Set position in scene space
-                TrTransform knotXf_SS = new TrTransform();
-                knotXf_SS.translation = frame.position;
-                knotXf_SS.rotation = Quaternion.LookRotation(GetDirectionToNext(frames, i), Vector3.up);
-                knotXf_SS.scale = 1.0f;
-                
-                // Convert to local space and set transform
-                TrTransform knotXf_LS = Coords.CanvasPose.inverse * knotXf_SS;
-                knotGo.transform.position = knotXf_LS.translation;
-                knotGo.transform.rotation = knotXf_LS.rotation;
+                // Set position directly from recorded frame
+                knotGo.transform.position = frame.position;
+                knotGo.transform.rotation = Quaternion.LookRotation(GetDirectionToNext(frames, i), Vector3.up);
                 
                 // Set tangent magnitude based on distance to next knot
                 if (i < frames.Count - 1)
@@ -195,15 +188,9 @@ namespace TiltBrush
                 float pathT = (float)i / (frames.Count - 1) * (pathWidget.Path.PositionKnots.Count - 1);
                 rotKnot.PathT = new PathT(pathT);
                 
-                // Set the actual rotation
-                TrTransform rotKnotXf_SS = new TrTransform();
-                rotKnotXf_SS.translation = frame.position;
-                rotKnotXf_SS.rotation = frame.rotation;
-                rotKnotXf_SS.scale = 1.0f;
-                
-                TrTransform rotKnotXf_LS = Coords.CanvasPose.inverse * rotKnotXf_SS;
-                knotGo.transform.position = rotKnotXf_LS.translation;
-                knotGo.transform.rotation = rotKnotXf_LS.rotation;
+                // Set position and rotation directly from recorded frame
+                knotGo.transform.position = frame.position;
+                knotGo.transform.rotation = frame.rotation;
                 
                 // Add to path
                 pathWidget.Path.AddRotationKnot(rotKnot, rotKnot.PathT);
@@ -236,15 +223,8 @@ namespace TiltBrush
                 float normalizedSpeed = Mathf.Clamp(frame.speed * 0.5f, 0.1f, 2.0f); // Scale and clamp speed
                 speedKnot.SpeedValue = normalizedSpeed;
                 
-                // Position the speed knot on the path
-                Vector3 pathPos = pathWidget.Path.GetPosition(speedKnot.PathT);
-                TrTransform speedKnotXf_SS = new TrTransform();
-                speedKnotXf_SS.translation = pathPos;
-                speedKnotXf_SS.rotation = Quaternion.identity;
-                speedKnotXf_SS.scale = 1.0f;
-                
-                TrTransform speedKnotXf_LS = Coords.CanvasPose.inverse * speedKnotXf_SS;
-                knotGo.transform.position = speedKnotXf_LS.translation;
+                // Position the speed knot at the recorded frame position
+                knotGo.transform.position = frame.position;
                 
                 // Add to path
                 pathWidget.Path.AddSpeedKnot(speedKnot, speedKnot.PathT);
