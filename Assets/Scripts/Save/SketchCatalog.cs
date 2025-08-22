@@ -120,12 +120,14 @@ namespace TiltBrush
 
         public void NotifyUserFileCreated(string fullpath)
         {
-            m_Sets[(int)SketchSetType.User].NotifySketchCreated(fullpath);
+            var setType = fullpath.StartsWith(App.SavedStrokesPath()) ? SketchSetType.SavedStrokes : SketchSetType.User;
+            m_Sets[(int)setType].NotifySketchCreated(fullpath);
         }
 
         public void NotifyUserFileChanged(string fullpath)
         {
-            m_Sets[(int)SketchSetType.User].NotifySketchChanged(fullpath);
+            var setType = fullpath.StartsWith(App.SavedStrokesPath()) ? SketchSetType.SavedStrokes : SketchSetType.User;
+            m_Sets[(int)setType].NotifySketchChanged(fullpath);
         }
 
         private IcosaSketchSet GetIcosaSketchSet(SketchSetType setType)
