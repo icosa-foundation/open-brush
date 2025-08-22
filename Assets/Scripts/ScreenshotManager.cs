@@ -503,14 +503,14 @@ namespace TiltBrush
         public void RenderDepthToTexture(RenderTexture rTexture)
         {
             var camera = LeftInfo.camera;
-            
+
             // Use DepthNormalsTexture shader to render depth+normals, then extract depth
             var prevTarget = camera.targetTexture;
             var prevDepthTextureMode = camera.depthTextureMode;
-            
+
             camera.targetTexture = rTexture;
             camera.depthTextureMode = DepthTextureMode.Depth;
-            
+
             // Render with DepthNormalsTexture shader (we know this works)
             Shader depthNormalsShader = Shader.Find("Hidden/Internal-DepthNormalsTexture");
             if (depthNormalsShader != null)
@@ -523,7 +523,7 @@ namespace TiltBrush
                 Debug.LogError("DepthNormalsTexture shader not found! Using normal render");
                 camera.Render(); // Fallback
             }
-            
+
             // Restore camera state  
             camera.targetTexture = prevTarget;
             camera.depthTextureMode = prevDepthTextureMode;
@@ -592,7 +592,7 @@ namespace TiltBrush
             // Unity's EncodeDepthNormal puts depth in blue/alpha channels using EncodeFloatRG
             // Decode using: dot(enc, float2(1.0, 1/255.0))
             Color[] pixels = texture.GetPixels();
-            
+
             // Debug: Check what we're actually getting
             if (pixels.Length > 0)
             {
@@ -601,15 +601,15 @@ namespace TiltBrush
                 Debug.Log($"Depth render center pixel RGBA: {centerPixel.r:F3}, {centerPixel.g:F3}, {centerPixel.b:F3}, {centerPixel.a:F3}");
                 Debug.Log($"Decoded depth value: {decodedDepth:F3}");
             }
-            
+
             for (int i = 0; i < pixels.Length; i++)
             {
                 Color pixel = pixels[i];
-                
+
                 // DecodeFloatRG: dot(enc, float2(1.0, 1/255.0))
                 // Blue=enc.x, Alpha=enc.y
                 float depth = pixel.b * 1.0f + pixel.a * (1.0f / 255.0f);
-                
+
                 pixels[i] = new Color(depth, depth, depth, 1.0f);
             }
 
@@ -650,7 +650,7 @@ namespace TiltBrush
                 float nx = pixels[i].r * 2.0f - 1.0f;
                 float ny = pixels[i].g * 2.0f - 1.0f;
                 float nz = Mathf.Sqrt(1.0f - Mathf.Clamp01(nx * nx + ny * ny));
-                
+
                 // Convert back to 0-1 range for storage
                 pixels[i] = new Color(nx * 0.5f + 0.5f, ny * 0.5f + 0.5f, nz * 0.5f + 0.5f, 1.0f);
             }

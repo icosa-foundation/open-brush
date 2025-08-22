@@ -1872,7 +1872,7 @@ namespace TiltBrush
                         if (renderDepth)
                         {
                             var fullDepthPath = Path.GetFullPath(saveName.Replace(".png", "_depth.png"));
-                            
+
                             using (var fs = new FileStream(fullDepthPath, FileMode.Create))
                             {
                                 ScreenshotManager.SaveDepth(fs, tmpDepth);
