@@ -126,6 +126,22 @@ namespace TiltBrush
             m_DirectoryScanRequired = true;
         }
 
+        public void NotifyFileCreated(string fullpath)
+        {
+            if (fullpath.StartsWith(m_CurrentSavedStrokesDirectory))
+            {
+                m_DirectoryScanRequired = true;
+            }
+        }
+
+        public void NotifyFileChanged(string fullpath)
+        {
+            if (fullpath.StartsWith(m_CurrentSavedStrokesDirectory))
+            {
+                m_DirectoryScanRequired = true;
+            }
+        }
+
         private IEnumerator<object> ScanReferenceDirectory()
         {
             if (m_ScanningDirectory)
