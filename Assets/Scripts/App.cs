@@ -131,6 +131,7 @@ namespace TiltBrush
 
         public static OAuth2Identity GoogleIdentity => m_Instance.m_GoogleIdentity;
         public static OAuth2Identity SketchfabIdentity => m_Instance.m_SketchfabIdentity;
+        public static OAuth2Identity IcosaIdentity => m_Instance.m_IcosaIdentity;
 
         public string IcosaToken
         {
@@ -250,6 +251,7 @@ namespace TiltBrush
         [Header("Identities")]
         [SerializeField] private OAuth2Identity m_GoogleIdentity;
         [SerializeField] private OAuth2Identity m_SketchfabIdentity;
+        [SerializeField] private OAuth2Identity m_IcosaIdentity;
 
         // ------------------------------------------------------------
         // Private data
@@ -660,8 +662,15 @@ namespace TiltBrush
             }
 
 #if USD_SUPPORTED
-            // Load the Usd Plugins
-            InitUsd.Initialize();
+            try
+            {
+                // Load the Usd Plugins
+                InitUsd.Initialize();
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("Failed to initialize USD: " + e.Message);
+            }
 #endif
 
             foreach (string s in Config.m_SketchFiles)
@@ -2139,6 +2148,11 @@ namespace TiltBrush
         static public string UserSketchPath()
         {
             return Path.Combine(UserPath(), "Sketches");
+        }
+
+        static public string SavedStrokesPath()
+        {
+            return Path.Combine(MediaLibraryPath(), "Saved Strokes");
         }
 
         static public string AutosavePath()
