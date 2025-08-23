@@ -29,11 +29,7 @@ namespace TiltBrush
         private ScreenshotManager m_ScreenshotManager;
         private float m_LastCaptureTime;
         private float m_FrameInterval;
-        
-        public bool IsCapturing => m_IsCapturing;
-        public bool IsSaving => m_IsSaving;
-        public int FrameCount => m_FrameCount;
-        public float FPS => m_FPS;
+
         public string FilePath => m_FilePath;
         
         
@@ -99,7 +95,7 @@ namespace TiltBrush
             
             m_LastCaptureTime = currentTime;
             
-            string frameFileName = string.Format("{0}_frame_{1:D6}.jpg", m_BaseFileName, m_FrameCount + 1);
+            string frameFileName = string.Format($"{m_BaseFileName}_frame_{m_FrameCount + 1:D6}.{FilenameExtension}");
             string frameFilePath = Path.Combine(m_DirectoryPath, frameFileName);
             
             // Create a render texture for the screenshot
@@ -112,8 +108,7 @@ namespace TiltBrush
                 // Render the current frame
                 m_ScreenshotManager.RenderToTexture(renderTexture);
                 
-                // Save as JPG
-                byte[] frameData = ScreenshotManager.SaveToMemory(renderTexture, false); // false = JPG
+                byte[] frameData = ScreenshotManager.SaveToMemory(renderTexture, UsePng); // false = JPG
                 File.WriteAllBytes(frameFilePath, frameData);
                 
                 m_FrameCount++;
@@ -127,7 +122,9 @@ namespace TiltBrush
                 RenderTexture.ReleaseTemporary(renderTexture);
             }
         }
-        
+        public string FilenameExtension => UsePng ? "png" : "jpg";
+        public bool UsePng => App.UserConfig.Video.UsePngForStillFrameSequence;
+
         public void StopCapture(bool save)
         {
             if (!m_IsCapturing)
@@ -163,13 +160,13 @@ namespace TiltBrush
                     writer.WriteLine("Open Brush Camera Path Frame Sequence");
                     writer.WriteLine($"Base Name: {m_BaseFileName}");
                     writer.WriteLine($"Frame Rate: {m_FPS} fps");
-                    writer.WriteLine($"Format: JPG");
+                    writer.WriteLine($"Format: {FilenameExtension}");
                     writer.WriteLine($"Resolution: {App.UserConfig.Video.Resolution}x{(App.UserConfig.Video.Resolution * 9) / 16}");
                     writer.WriteLine($"Start Time: {System.DateTime.Now:yyyy-MM-dd HH:mm:ss}");
                     writer.WriteLine("Status: Recording");
                     writer.WriteLine("");
                     writer.WriteLine("To convert to video, use a tool like ffmpeg:");
-                    writer.WriteLine($"ffmpeg -r {m_FPS} -i \"{m_BaseFileName}_frame_%06d.jpg\" -c:v libx264 -pix_fmt yuv420p \"../{m_BaseFileName}.mp4\"");
+                    writer.WriteLine($"ffmpeg -r {m_FPS} -i \"{m_BaseFileName}_frame_%06d.{FilenameExtension}\" -c:v libx264 -pix_fmt yuv420p \"../{m_BaseFileName}.mp4\"");
                     writer.WriteLine("");
                     writer.WriteLine("(Run this command from inside the frames folder, or adjust paths accordingly)");
                 }
@@ -205,7 +202,7 @@ namespace TiltBrush
                 // Delete all frame files
                 for (int i = 1; i <= m_FrameCount; i++)
                 {
-                    string frameFileName = string.Format("{0}_frame_{1:D6}.jpg", m_BaseFileName, i);
+                    string frameFileName = string.Format("{0}_frame_{1:D6}.{FilenameExtension}", m_BaseFileName, i);
                     string frameFilePath = Path.Combine(m_DirectoryPath, frameFileName);
                     if (File.Exists(frameFilePath))
                     {

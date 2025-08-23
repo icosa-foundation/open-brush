@@ -427,6 +427,26 @@ namespace TiltBrush
                 }
             }
 
+            bool? m_UsePngForStillFrameSequence;
+            public bool UsePngForStillFrameSequence
+            {
+                get { return m_UsePngForStillFrameSequence ?? false; }
+                set
+                {
+                    m_UsePngForStillFrameSequence = value;
+                }
+            }
+
+            bool? m_RenderToNumberedFrames;
+            public bool RenderToNumberedFrames
+            {
+                get { return m_RenderToNumberedFrames ?? false; }
+                set
+                {
+                    m_RenderToNumberedFrames = value;
+                }
+            }
+
             int? m_Resolution;
             public int Resolution
             {

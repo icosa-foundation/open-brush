@@ -189,7 +189,6 @@ namespace TiltBrush
         public bool m_AllowWidgetPinning;
         public bool m_DebugWebRequest;
         public bool m_ToggleProfileOnAppButton = false;
-        public bool m_ForceStillFrameFallback = false;
 
         [Header("Global Shaders")]
         public Shader m_BlitToComputeShader;
