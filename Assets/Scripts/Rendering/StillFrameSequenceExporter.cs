@@ -31,8 +31,8 @@ namespace TiltBrush
         private float m_FrameInterval;
 
         public string FilePath => m_FilePath;
-        
-        
+
+
         private void Awake()
         {
             m_ScreenshotManager = GetComponent<ScreenshotManager>();
@@ -41,14 +41,14 @@ namespace TiltBrush
                 Debug.LogError("StillFrameSequenceExporter requires a ScreenshotManager component");
             }
         }
-        
+
         public bool StartCapture(string filePath, float fps)
         {
             if (m_IsCapturing)
             {
                 return true;
             }
-            
+
             m_FilePath = filePath;
             m_BaseFileName = Path.GetFileNameWithoutExtension(filePath);
             // Create subfolder for still frames using the same naming as the video file
@@ -58,7 +58,7 @@ namespace TiltBrush
             m_FrameCount = 0;
             m_FrameInterval = 1.0f / fps;
             m_LastCaptureTime = 0f;
-            
+
             // Ensure directory exists
             if (!FileUtils.InitializeDirectoryWithUserError(
                 m_DirectoryPath,
@@ -66,51 +66,51 @@ namespace TiltBrush
             {
                 return false;
             }
-            
+
             m_IsCapturing = true;
             m_IsSaving = false;
-            
+
             // Create metadata file with frame rate information
             CreateMetadataFile();
-            
+
             return true;
         }
-        
+
         public bool ShouldCapture(float currentTime)
         {
             if (!m_IsCapturing)
             {
                 return false;
             }
-            
+
             return currentTime >= m_LastCaptureTime + m_FrameInterval;
         }
-        
+
         public void CaptureFrame(float currentTime)
         {
             if (!m_IsCapturing || !ShouldCapture(currentTime))
             {
                 return;
             }
-            
+
             m_LastCaptureTime = currentTime;
-            
+
             string frameFileName = string.Format($"{m_BaseFileName}_frame_{m_FrameCount + 1:D6}.{FilenameExtension}");
             string frameFilePath = Path.Combine(m_DirectoryPath, frameFileName);
-            
+
             // Create a render texture for the screenshot
             RenderTexture renderTexture = m_ScreenshotManager.CreateTemporaryTargetForSave(
-                App.UserConfig.Video.Resolution, 
+                App.UserConfig.Video.Resolution,
                 (App.UserConfig.Video.Resolution * 9) / 16); // 16:9 aspect ratio
-            
+
             try
             {
                 // Render the current frame
                 m_ScreenshotManager.RenderToTexture(renderTexture);
-                
+
                 byte[] frameData = ScreenshotManager.SaveToMemory(renderTexture, UsePng); // false = JPG
                 File.WriteAllBytes(frameFilePath, frameData);
-                
+
                 m_FrameCount++;
             }
             catch (System.Exception e)
@@ -131,9 +131,9 @@ namespace TiltBrush
             {
                 return;
             }
-            
+
             m_IsCapturing = false;
-            
+
             if (save)
             {
                 m_IsSaving = true;
@@ -147,12 +147,12 @@ namespace TiltBrush
                 DeleteFrameSequence();
             }
         }
-        
+
         private void CreateMetadataFile()
         {
             string baseDir = Path.GetDirectoryName(m_FilePath);
             string metadataPath = Path.Combine(baseDir, m_BaseFileName + "_sequence.txt");
-            
+
             try
             {
                 using (StreamWriter writer = new StreamWriter(metadataPath))
@@ -176,7 +176,7 @@ namespace TiltBrush
                 Debug.LogWarning($"Failed to create metadata file: {e.Message}");
             }
         }
-        
+
 
         private void UpdateMetadataFile()
         {
@@ -194,7 +194,7 @@ namespace TiltBrush
                 Debug.LogWarning($"Failed to update metadata file: {e.Message}");
             }
         }
-        
+
         private void DeleteFrameSequence()
         {
             try
@@ -209,7 +209,7 @@ namespace TiltBrush
                         File.Delete(frameFilePath);
                     }
                 }
-                
+
                 // Delete metadata file
                 string baseDir = Path.GetDirectoryName(m_FilePath);
                 string metadataPath = Path.Combine(baseDir, m_BaseFileName + "_sequence.txt");

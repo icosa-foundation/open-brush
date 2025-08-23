@@ -145,10 +145,10 @@ namespace TiltBrush
             {
                 message = m_PathCancelled.GetLocalizedStringAsync().Result;
             }
-            
+
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
                 InputManager.ControllerName.Brush, message);
-            
+
             if (saveCapture)
             {
                 string filePath = null;
@@ -160,13 +160,13 @@ namespace TiltBrush
                 {
                     filePath = VideoRecorderUtils.ActiveStillFrameExporter.FilePath;
                 }
-                
+
                 if (filePath != null)
                 {
                     ControllerConsoleScript.m_Instance.AddNewLine(filePath);
                 }
             }
-            
+
             VideoRecorderUtils.StopVideoCapture(saveCapture);
             WidgetManager.m_Instance.FollowingPath = false;
             m_Widget.ResetToPathStart();

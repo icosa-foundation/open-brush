@@ -239,7 +239,7 @@ namespace TiltBrush
             }
 
             float fps = App.UserConfig.Video.FPS;
-            
+
             if (!exporter.StartCapture(filePath, fps))
             {
                 OutputWindowScript.ReportFileSaved("Failed to start still frame sequence capture!", null,
@@ -297,14 +297,14 @@ namespace TiltBrush
             {
                 // Stop still frame sequence capture
                 m_ActiveStillFrameExporter.StopCapture(saveCapture);
-                
+
                 // Reset render wrapper if it exists
                 var wrapper = m_ActiveStillFrameExporter.gameObject.GetComponent<RenderWrapper>();
                 if (wrapper != null)
                 {
                     wrapper.SuperSampling = m_PreCaptureSuperSampling;
                 }
-                
+
                 m_ActiveStillFrameExporter = null;
                 m_UsingStillFrameFallback = false;
             }
@@ -374,5 +374,4 @@ namespace TiltBrush
 
         }
     }
-
 } // namespace TiltBrush

@@ -1359,14 +1359,14 @@ namespace TiltBrush
             {
                 string baseFileName = Path.GetFileNameWithoutExtension(fullpath);
                 string directory = Path.GetDirectoryName(fullpath);
-                
+
                 // Check for still frame directory
                 string frameDirectory = Path.Combine(directory, baseFileName + "_frames");
                 if (Directory.Exists(frameDirectory))
                 {
                     return true;
                 }
-                
+
                 // Check for USD file
                 string usdFile = Path.ChangeExtension(fullpath, ".usda");
                 if (File.Exists(usdFile))
