@@ -126,14 +126,6 @@ namespace TiltBrush
                     float currentTime = (float)m_RecordingStopwatch.Elapsed.TotalSeconds;
                     m_ActiveStillFrameExporter.CaptureFrame(currentTime);
                 }
-                
-                // Check if the path is finished and stop still frame capture
-                if (m_UsingStillFrameFallback && m_UsdPathSerializer.IsFinished)
-                {
-                    Debug.Log($"Camera path finished. Captured {(m_ActiveStillFrameExporter != null ? m_ActiveStillFrameExporter.FrameCount : 0)} frames.");
-                    // The path recording will be stopped by the normal camera path system
-                    // We don't need to manually stop here since StopVideoCapture will be called
-                }
             }
 #endif
         }
@@ -158,12 +150,9 @@ namespace TiltBrush
             // Check if ffmpeg is available or if forcing still frame fallback - if not, use still frame fallback
             string ffmpegPath = FfmpegPipe.GetFfmpegExe();
             bool shouldUseFallback = (ffmpegPath == null || App.Config.m_ForceStillFrameFallback) && !offlineRender;
-            Debug.Log($"Video capture check - ffmpeg available: {ffmpegPath != null}, force fallback: {App.Config.m_ForceStillFrameFallback}, offline: {offlineRender}, using fallback: {shouldUseFallback}");
-            
+
             if (shouldUseFallback)
             {
-                // Use still frame sequence export as fallback
-                Debug.Log("Starting still frame sequence capture as fallback");
                 return StartStillFrameSequenceCapture(filePath, recorder, usdPathSerializer);
             }
 
@@ -288,10 +277,6 @@ namespace TiltBrush
                 Debug.LogWarning("USD Path Serializer failed to start recording");
                 UnityEngine.Object.Destroy(m_UsdPathSerializer);
                 m_UsdPathSerializer = null;
-            }
-            else if (m_UsdPathSerializer != null)
-            {
-                Debug.Log($"USD Path Serializer started. IsRecording: {m_UsdPathSerializer.IsRecording}");
             }
 #endif
 

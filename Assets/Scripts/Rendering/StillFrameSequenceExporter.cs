@@ -55,7 +55,7 @@ namespace TiltBrush
             
             m_FilePath = filePath;
             m_BaseFileName = Path.GetFileNameWithoutExtension(filePath);
-            // Create subfolder for still frames
+            // Create subfolder for still frames using the same naming as the video file
             string baseDir = Path.GetDirectoryName(filePath);
             m_DirectoryPath = Path.Combine(baseDir, m_BaseFileName + "_frames");
             m_FPS = fps;
@@ -153,7 +153,8 @@ namespace TiltBrush
         
         private void CreateMetadataFile()
         {
-            string metadataPath = Path.Combine(m_DirectoryPath, m_BaseFileName + "_sequence.txt");
+            string baseDir = Path.GetDirectoryName(m_FilePath);
+            string metadataPath = Path.Combine(baseDir, m_BaseFileName + "_sequence.txt");
             
             try
             {
@@ -182,7 +183,8 @@ namespace TiltBrush
 
         private void UpdateMetadataFile()
         {
-            string metadataPath = Path.Combine(m_DirectoryPath, m_BaseFileName + "_sequence.txt");
+            string baseDir = Path.GetDirectoryName(m_FilePath);
+            string metadataPath = Path.Combine(baseDir, m_BaseFileName + "_sequence.txt");
             try
             {
                 string content = File.ReadAllText(metadataPath);
@@ -212,7 +214,8 @@ namespace TiltBrush
                 }
                 
                 // Delete metadata file
-                string metadataPath = Path.Combine(m_DirectoryPath, m_BaseFileName + "_sequence.txt");
+                string baseDir = Path.GetDirectoryName(m_FilePath);
+                string metadataPath = Path.Combine(baseDir, m_BaseFileName + "_sequence.txt");
                 if (File.Exists(metadataPath))
                 {
                     File.Delete(metadataPath);
