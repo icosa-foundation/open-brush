@@ -202,7 +202,7 @@ namespace TiltBrush
                 // Delete all frame files
                 for (int i = 1; i <= m_FrameCount; i++)
                 {
-                    string frameFileName = string.Format("{0}_frame_{1:D6}.{FilenameExtension}", m_BaseFileName, i);
+                    string frameFileName = string.Format($"{m_BaseFileName}_frame_{i:D6}.{FilenameExtension}");
                     string frameFilePath = Path.Combine(m_DirectoryPath, frameFileName);
                     if (File.Exists(frameFilePath))
                     {
