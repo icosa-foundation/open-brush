@@ -123,7 +123,7 @@ namespace TiltBrush
             }
         }
         public string FilenameExtension => UsePng ? "png" : "jpg";
-        public bool UsePng => App.UserConfig.Video.UsePngForStillFrameSequence;
+        public bool UsePng => App.UserConfig.Video.UsePngForFrameSequence;
 
         public void StopCapture(bool save)
         {

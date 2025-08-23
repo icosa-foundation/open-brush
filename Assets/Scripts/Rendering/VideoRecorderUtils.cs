@@ -149,7 +149,7 @@ namespace TiltBrush
 
             // Check if ffmpeg is available or if forcing still frame fallback - if not, use still frame fallback
             string ffmpegPath = FfmpegPipe.GetFfmpegExe();
-            bool shouldUseFallback = (ffmpegPath == null || App.UserConfig.Video.RenderToNumberedFrames) && !offlineRender;
+            bool shouldUseFallback = (ffmpegPath == null || App.UserConfig.Video.ForceFrameSequenceRender) && !offlineRender;
 
             if (shouldUseFallback)
             {
