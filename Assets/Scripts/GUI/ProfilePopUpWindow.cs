@@ -369,7 +369,7 @@ namespace TiltBrush
                         );
                     }
                     string secret = VrAssetService.m_Instance.GenerateDeviceCodeSecret();
-                    App.OpenURL($"{VrAssetService.m_Instance.IcosaHomePage}/device?{secret}");
+                    App.OpenURL($"{VrAssetService.m_Instance.IcosaHomePage}/device?appId=openbrush&secret={secret}");
                     ShowIcosaLogin();
                     break;
                 case SketchControlsScript.GlobalCommands.AccountInfo:
@@ -393,6 +393,11 @@ namespace TiltBrush
                 case SketchControlsScript.GlobalCommands.SignOutConfirm:
                     switch ((Cloud)button.m_CommandParam)
                     {
+                        case Cloud.Google:
+                            m_GoogleSignedInElements.SetActive(false);
+                            m_GoogleSignedOutElements.SetActive(false);
+                            m_GoogleConfirmSignOutElements.SetActive(true);
+                            break;
                         case Cloud.Sketchfab:
                             m_SketchfabSignedInElements.SetActive(false);
                             m_SketchfabSignedOutElements.SetActive(false);

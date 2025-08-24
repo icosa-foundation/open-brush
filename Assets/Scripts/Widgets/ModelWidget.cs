@@ -45,7 +45,7 @@ namespace TiltBrush
         private string m_Subtree;
         public string Subtree
         {
-            get => m_Subtree;
+            get => m_Subtree ??= "";
             set => m_Subtree = value;
         }
 
@@ -70,7 +70,7 @@ namespace TiltBrush
         // Do not mutate the return value.
         public MeshFilter[] GetMeshes()
         {
-            return m_ObjModelScript.m_MeshChildren;
+            return m_ObjModelScript?.m_MeshChildren ?? Array.Empty<MeshFilter>();
         }
 
         public Model Model
@@ -304,7 +304,7 @@ namespace TiltBrush
             m_NumVertsTrackedByWidgetManager = 0;
 
             m_ObjModelScript = GetComponentInChildren<ObjModelScript>();
-            m_ObjModelScript.Init();
+            m_ObjModelScript.UpdateAllMeshChildren();
             if (m_ObjModelScript.NumMeshes == 0)
             {
                 OutputWindowScript.Error("No usable geometry in model");
@@ -321,52 +321,65 @@ namespace TiltBrush
             }
         }
 
-        public bool HasSubModels()
+        public bool HasMultipleNodes()
         {
-            string ext = Model.GetLocation().Extension;
-            if (ext == ".gltf" || ext == ".gltf2" || ext == ".glb")
-            {
-                int lightCount = m_ObjModelScript.GetComponentsInChildren<SceneLightGizmo>().Length;
-                int meshCount = GetMeshes().Length;
-                return lightCount + meshCount > 1;
-            }
-            else if (m_Model.GetLocation().Extension == ".svg")
+            // TODO test all other 3d model formats work with "break apart" command
+            // Currently we assume that they do
+
+            // Check SVG models using different logic
+            if (m_Model.GetLocation().Extension == ".svg")
             {
                 return m_ObjModelScript.SvgSceneInfo.HasSubShapes();
             }
+
+            // Check if we have more than one light or mesh
+            int meshCount = GetMeshes().Length;
+            int lightCount = m_ObjModelScript.GetComponentsInChildren<SceneLightGizmo>().Length;
+            if (lightCount + meshCount > 1) return true;
             return false;
         }
 
-        // Update the transform hierarchy of this ModelWidget to only contain m_Subtree
-        // e.g if Subtree = "CarBody/Floor/Wheel1", then this method will update the transform hierarchy to contain nodes
-        // starting at CarBody/Floor/Wheel1
-        public void SyncHierarchyToSubtree(string previousSubtree = null)
+        public bool MeshSplitPossible()
         {
-            if (string.IsNullOrEmpty(Subtree)) return;
+            // Unsplit models initially always have the possibility of being split.
+            // We only return false if we're already tried to split this mesh
+            bool hasBeenSplit = false;
+            var allSplits = m_Model.m_SplitMeshPaths.Concat(m_Model.m_NotSplittableMeshPaths);
+            foreach (var path in allSplits)
+            {
+                if (Subtree.StartsWith(path))
+                {
+                    hasBeenSplit = true;
+                    break;
+                }
+            }
+
+            // If the model hasn't been split, then assume it splitting is possible.
+            return !hasBeenSplit;
+        }
+
+        public static (Transform node, bool excludeChildren) FindSubtreeRoot(Transform root, string subtree, string previousSubtree = null)
+        {
+            if (string.IsNullOrEmpty(subtree)) return (null, false);
             // Walk the hierarchy and find the matching node
-            Transform oldRoot = m_ObjModelScript.transform;
-            Transform node = oldRoot;
+            Transform node = root;
 
             // We only want to walk the new part of the hierarchy
             string subpathToTraverse;
             if (!string.IsNullOrEmpty(previousSubtree))
             {
-
                 // example case:
                 //      previousSubtree = CarBody/Floor
                 //      m_Subtree = CarBody/Floor/Wheel1
                 //      subpathToTraverse should be Floor/Wheel1
 
-                // Floor
-                string lastLevel = previousSubtree.Split("/")[^1];
-
+                string lastLevel = previousSubtree.Split("/")[^1]; // Floor
                 int startIndex = previousSubtree.Length - (lastLevel.Length + "/".Length);
-
-                subpathToTraverse = m_Subtree.Substring(startIndex);
+                subpathToTraverse = subtree.Substring(startIndex);
             }
             else
             {
-                subpathToTraverse = m_Subtree;
+                subpathToTraverse = subtree;
             }
             subpathToTraverse = subpathToTraverse.Trim('/');
 
@@ -387,7 +400,22 @@ namespace TiltBrush
                 // - node will be null if not found
                 node = node.Find(subpathToTraverse);
             }
+            return (node, excludeChildren);
+        }
 
+        // Update the transform hierarchy of this ModelWidget to only contain m_Subtree
+        // e.g if Subtree = "CarBody/Floor/Wheel1", then this method will update the transform hierarchy to contain nodes
+        // starting at CarBody/Floor/Wheel1
+        public void SyncHierarchyToSubtree(string previousSubtree = null)
+        {
+            var originalCost = GetTiltMeterCost();
+            var (node, excludeChildren) = FindSubtreeRoot(
+                m_ObjModelScript.transform,
+                Subtree,
+                previousSubtree
+            );
+
+            Transform oldRoot = m_ObjModelScript.transform;
             if (node != null)
             {
                 if (excludeChildren)
@@ -416,7 +444,7 @@ namespace TiltBrush
                 oldRoot.gameObject.SetActive(false); // TODO destroy might fail on first load so also hide
                 Destroy(oldRoot.gameObject);
 
-                m_ObjModelScript.Init();
+                m_ObjModelScript.UpdateAllMeshChildren();
                 if (excludeChildren)
                 {
                     // Destroyed children aren't destroyed immediately, so we need to assign them manually
@@ -428,6 +456,12 @@ namespace TiltBrush
 
                 CloneInitialMaterials(null);
                 RecalculateColliderBounds();
+
+                // Adjust the tilt meter cost based on the new model
+                var newCost = GetTiltMeterCost();
+                TiltMeterScript.m_Instance.AdjustMeterWithWidget(originalCost, up: false);
+                TiltMeterScript.m_Instance.AdjustMeterWithWidget(newCost, up: true);
+
             }
         }
 
@@ -697,17 +731,31 @@ namespace TiltBrush
             {
 
                 Task<bool> okTask = CreateModelsFromRelativePath(
-                    modelDatas.FilePath, modelDatas.Subtrees,
-                    modelDatas.Transforms, modelDatas.RawTransforms, modelDatas.PinStates,
-                    modelDatas.GroupIds, modelDatas.LayerIds);
+                    modelDatas.FilePath,
+                    modelDatas.Subtrees,
+                    modelDatas.Transforms,
+                    modelDatas.RawTransforms,
+                    modelDatas.PinStates,
+                    modelDatas.GroupIds,
+                    modelDatas.LayerIds,
+                    modelDatas.SplitMeshPaths,
+                    modelDatas.NotSplittableMeshPaths
+                );
                 ok = await okTask;
 
             }
             else if (modelDatas.AssetId != null)
             {
                 CreateModelsFromAssetId(
-                    modelDatas.AssetId, modelDatas.Subtrees,
-                    modelDatas.RawTransforms, modelDatas.PinStates, modelDatas.GroupIds, modelDatas.LayerIds);
+                    modelDatas.AssetId,
+                    modelDatas.Subtrees,
+                    modelDatas.RawTransforms,
+                    modelDatas.PinStates,
+                    modelDatas.GroupIds,
+                    modelDatas.LayerIds,
+                    modelDatas.SplitMeshPaths,
+                    modelDatas.NotSplittableMeshPaths
+                );
                 ok = true;
             }
             else
@@ -727,7 +775,8 @@ namespace TiltBrush
         /// Returns false if the model can't be loaded -- in this case, caller is responsible
         /// for creating the missing-model placeholder.
         public static async Task<bool> CreateModelsFromRelativePath(
-            string relativePath, string[] subtrees, TrTransform[] xfs, TrTransform[] rawXfs, bool[] pinStates, uint[] groupIds, int[] layerIds)
+            string relativePath, string[] subtrees, TrTransform[] xfs, TrTransform[] rawXfs,
+            bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths, List<string> noSplitMeshPaths)
         {
             // Verify model is loaded.  Or, at least, has been tried to be loaded.
             Model model = ModelCatalog.m_Instance.GetModel(relativePath);
@@ -742,6 +791,14 @@ namespace TiltBrush
             if (!model.m_Valid)
             {
                 return false;
+            }
+
+            model.m_SplitMeshPaths = splitMeshPaths?.ToList() ?? new List<string>();
+            model.m_NotSplittableMeshPaths = noSplitMeshPaths?.ToList() ?? new List<string>();
+
+            if (model.m_SplitMeshPaths != null)
+            {
+                model.InitMeshSplits();
             }
 
             if (xfs != null)
@@ -772,7 +829,6 @@ namespace TiltBrush
         static void CreateModel(Model model, string subtree, TrTransform xf, bool pin,
                                 bool isNonRawTransform, uint groupId, int layerId, string assetId = null)
         {
-
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             modelWidget.transform.localPosition = xf.translation;
             modelWidget.transform.localRotation = xf.rotation;
@@ -808,7 +864,7 @@ namespace TiltBrush
 
         // Used when loading model assetIds from a serialized format (e.g. Tilt file).
         static void CreateModelsFromAssetId(string assetId, string[] subtrees, TrTransform[] rawXfs,
-                                            bool[] pinStates, uint[] groupIds, int[] layerIds)
+                bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths, List<string> noSplitMeshPaths)
         {
             // Request model from Poly and if it doesn't exist, ask to load it.
             Model model = App.IcosaAssetCatalog.GetModel(assetId);
@@ -823,13 +879,22 @@ namespace TiltBrush
                 App.IcosaAssetCatalog.RequestModelLoad(assetId, "widget");
             }
 
+            model.m_SplitMeshPaths = splitMeshPaths?.ToList() ?? new List<string>();
+            model.m_NotSplittableMeshPaths = noSplitMeshPaths?.ToList() ?? new List<string>();
+
+            if (model.m_SplitMeshPaths != null)
+            {
+                model.InitMeshSplits();
+            }
+
             // Create a widget for each transform.
             for (int i = 0; i < rawXfs.Length; ++i)
             {
                 bool pin = (i < pinStates.Length) ? pinStates[i] : true;
                 uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
                 int layerId = (layerIds != null && i < layerIds.Length) ? layerIds[i] : 0;
-                CreateModel(model, subtrees?[i], rawXfs[i], pin, isNonRawTransform: false, groupId, layerId, assetId);
+                CreateModel(model, subtrees?[i], rawXfs[i], pin, isNonRawTransform: false,
+                    groupId, layerId, assetId);
             }
         }
 
