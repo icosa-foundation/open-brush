@@ -31,7 +31,7 @@
     "com.watertrans.glyphloader": "https://github.com/icosa-mirror/GlyphLoader-Unity.git#upm",
     "com.zappar.xr.zapbox": "https://github.com/zappar-xr/zapbox-xr-sdk.git#74fe120c1c9a0b31a186eb551ef25efe4a316c73",
     "moonsharp": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",
-    "org.khronos.unitygltf": "https://github.com/KhronosGroup/UnityGLTF.git",
+    "org.khronos.unitygltf": "https://github.com/KhronosGroup/UnityGLTF.git#release/2.17.0",
     "org.nuget.google.apis": "1.64.0",
     "org.nuget.google.apis.auth": "1.64.0",
     "org.nuget.google.apis.core": "https://github.com/icosa-mirror/org.nuget.google.apis.core.git#1.64.0-openbrush",

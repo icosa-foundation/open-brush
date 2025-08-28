@@ -7,7 +7,7 @@ RWStructuredBuffer<float3> vertexBuffer;
 StructuredBuffer<float3> normalBuffer;
 StructuredBuffer<float4> colorBuffer;
 StructuredBuffer<float3> uvBuffer;
-StructuredBuffer<float4> uv1Buffer;
+RWStructuredBuffer<float4> uv1Buffer;
 
 float _SqueezeAmount;
 

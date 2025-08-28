@@ -238,13 +238,13 @@ namespace TiltBrush
                 if (m_MissingModelsByRelativePath.ContainsKey(relativePath))
                 {
                     ModelWidget.CreateModelsFromRelativePath(
-                        relativePath, null, null, m_MissingModelsByRelativePath[relativePath], null, null, null);
+                        relativePath, null, null, m_MissingModelsByRelativePath[relativePath], null, null, null, null, null);
                     m_MissingModelsByRelativePath.Remove(relativePath);
                 }
                 if (m_MissingNormalizedModelsByRelativePath.ContainsKey(relativePath))
                 {
                     ModelWidget.CreateModelsFromRelativePath(
-                        relativePath, null, m_MissingNormalizedModelsByRelativePath[relativePath], null, null, null, null);
+                        relativePath, null, m_MissingNormalizedModelsByRelativePath[relativePath], null, null, null, null, null, null);
                     m_MissingModelsByRelativePath.Remove(relativePath);
                 }
             }
@@ -275,13 +275,13 @@ namespace TiltBrush
                 if (m_MissingModelsByRelativePath.ContainsKey(relativePath))
                 {
                     ModelWidget.CreateModelsFromRelativePath(
-                        relativePath, null, m_MissingModelsByRelativePath[relativePath], null, null, null, null);
+                        relativePath, null, m_MissingModelsByRelativePath[relativePath], null, null, null, null, null, null);
                     m_MissingModelsByRelativePath.Remove(relativePath);
                 }
                 if (m_MissingNormalizedModelsByRelativePath.ContainsKey(relativePath))
                 {
                     ModelWidget.CreateModelsFromRelativePath(
-                        relativePath, null, m_MissingNormalizedModelsByRelativePath[relativePath], null, null, null, null);
+                        relativePath, null, m_MissingNormalizedModelsByRelativePath[relativePath], null, null, null, null, null, null);
                     m_MissingModelsByRelativePath.Remove(relativePath);
                 }
             }
@@ -314,13 +314,13 @@ namespace TiltBrush
             {
                 string[] aFiles = Directory.GetFiles(sPath);
                 // Models we download from Poly are called ".gltf2", but ".gltf" is more standard
-                List<string> extensions = new() { ".gltf2", ".gltf", ".glb", ".ply", ".off", ".svg" };
+                List<string> extensions = new() { ".gltf2", ".gltf", ".glb", ".ply", ".svg", ".obj" };
 
 #if USD_SUPPORTED
                 extensions.AddRange(new [] { ".usda", ".usdc", ".usd" });
 #endif
 #if FBX_SUPPORTED
-                extensions.AddRange(new [] { ".obj", ".fbx" });
+                extensions.Add( ".fbx" );
 #endif
 
                 for (int i = 0; i < aFiles.Length; ++i)

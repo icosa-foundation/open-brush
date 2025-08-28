@@ -131,6 +131,7 @@ namespace TiltBrush
 
         public static OAuth2Identity GoogleIdentity => m_Instance.m_GoogleIdentity;
         public static OAuth2Identity SketchfabIdentity => m_Instance.m_SketchfabIdentity;
+        public static OAuth2Identity IcosaIdentity => m_Instance.m_IcosaIdentity;
 
         public string IcosaToken
         {
@@ -231,6 +232,7 @@ namespace TiltBrush
         public Transform m_CanvasTransform;
         /// The object "/SceneParent/EnvironmentParent"
         public Transform m_EnvironmentTransform;
+        public GameObject m_NoVrUi;
         [SerializeField] GameObject m_SketchSurface;
         [SerializeField] GameObject m_ErrorDialog;
         [SerializeField] GameObject m_OdsPrefab;
@@ -249,6 +251,7 @@ namespace TiltBrush
         [Header("Identities")]
         [SerializeField] private OAuth2Identity m_GoogleIdentity;
         [SerializeField] private OAuth2Identity m_SketchfabIdentity;
+        [SerializeField] private OAuth2Identity m_IcosaIdentity;
 
         // ------------------------------------------------------------
         // Private data
@@ -408,6 +411,7 @@ namespace TiltBrush
 
         public bool RequestingAudioReactiveMode => m_RequestingAudioReactiveMode;
         public bool RamLoggingActive = false;
+        private InitNoHeadsetMode m_NoHeadsetInitScript;
 
         public void ToggleAudioReactiveModeRequest()
         {
@@ -658,8 +662,15 @@ namespace TiltBrush
             }
 
 #if USD_SUPPORTED
-            // Load the Usd Plugins
-            InitUsd.Initialize();
+            try
+            {
+                // Load the Usd Plugins
+                InitUsd.Initialize();
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("Failed to initialize USD: " + e.Message);
+            }
 #endif
 
             foreach (string s in Config.m_SketchFiles)
@@ -1787,15 +1798,20 @@ namespace TiltBrush
 
         public void CreateFailedToDetectVrDialog(string msg = null, bool allowViewing = true)
         {
-            GameObject dialog = Instantiate(m_ErrorDialog);
-            var initScript = dialog.GetComponent<InitNoHeadsetMode>();
+            if (m_NoHeadsetInitScript == null)
+            {
+                GameObject dialog = Instantiate(m_ErrorDialog);
+                m_NoHeadsetInitScript = dialog.GetComponent<InitNoHeadsetMode>();
+            }
             if (!string.IsNullOrEmpty(msg))
             {
-                var textMesh = initScript.m_Heading;
+                var textMesh = m_NoHeadsetInitScript.m_Heading;
                 textMesh.text = @$"        Tiltasaurus says...
                    {msg}";
             }
-            initScript.ShowSketchSelectorUi(allowViewing && !StartupError);
+            bool show = allowViewing && !StartupError;
+            m_NoHeadsetInitScript.gameObject.SetActive(show);
+            m_NoHeadsetInitScript.ShowSketchSelectorUi(show);
         }
 
         static public bool AppAllowsCreation()
@@ -2174,6 +2190,11 @@ namespace TiltBrush
         static public string UserSketchPath()
         {
             return Path.Combine(UserPath(), "Sketches");
+        }
+
+        static public string SavedStrokesPath()
+        {
+            return Path.Combine(MediaLibraryPath(), "Saved Strokes");
         }
 
         static public string AutosavePath()

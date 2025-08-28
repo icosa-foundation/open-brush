@@ -44,7 +44,12 @@ namespace TiltBrush
 
         private Vector3 m_Velocity;
 
-        bool m_IsTouchScreen => Application.isEditor || (!App.VrSdk.IsHmdInitialized() && App.Config.IsMobileHardware);
+        private const float LookSpeed = 1f;
+        private const float MoveSpeed = 0.05f;
+        private const float SprintMultiplier = 5f;
+        private const float MaxPitch = 85f;
+
+        bool m_IsTouchScreen => !App.VrSdk.IsHmdInitialized() && App.Config.IsMobileHardware;
 
         public override void Init()
         {
@@ -116,12 +121,23 @@ namespace TiltBrush
             // Handle non-VR navigation
             if (!App.VrSdk.IsHmdInitialized())
             {
-
                 if (!EnhancedTouchSupport.enabled) EnhancedTouchSupport.Enable();
+
+                Gamepad gamepad = Gamepad.current;
                 Vector2 mv = Vector2.zero;
                 if (Mouse.current != null && Mouse.current.leftButton.isPressed)
                 {
-                    mv = InputManager.m_Instance.GetMouseMoveDelta();
+                    mv += InputManager.m_Instance.GetMouseMoveDelta();
+                }
+                if (gamepad != null)
+                {
+                    Vector2 look = gamepad.rightStick.ReadValue();
+                    look = new Vector2(look.x * Mathf.Abs(look.x), look.y * Mathf.Abs(look.y));
+                    mv += look * LookSpeed;
+                    if (gamepad.rightStickButton.wasPressedThisFrame)
+                    {
+                        m_InvertLook = !m_InvertLook;
+                    }
                 }
 
                 var virtualButtons = new Dictionary<char, bool> { { 'W', false }, { 'A', false }, { 'S', false }, { 'D', false } };
@@ -141,12 +157,16 @@ namespace TiltBrush
 
                     if (EnhancedTouchSupport.enabled && Touch.activeTouches.Count > 0 && !virtualButtonPressed)
                     {
-                        mv = Touch.activeTouches[0].screenPosition;
-                        mv = new Vector2(
-                            mv.x / (Screen.width * 0.5f),
-                            mv.y / (Screen.height * 0.5f)
-                        ); // 0 to 2
-                        mv -= Vector2.one; // -1 to +1
+                        var t = Touch.activeTouches[0];
+                        Vector2 delta = t.delta;
+
+                        // Normalize to screen size
+                        delta.x /= Screen.width;
+                        delta.y /= Screen.height;
+
+                        // Sensitivity tuning
+                        float touchLookSensitivity = 300f; // tweak as needed
+                        mv = delta * touchLookSensitivity;
                     }
                 }
 
@@ -164,39 +184,56 @@ namespace TiltBrush
                     }
 
                     cameraRotation.x -= m_InvertLook ? -mv.y : mv.y;
+
+                    // Clamp the pitch to prevent flipping
+                    float x = cameraRotation.x;
+                    if (x > 180f) x -= 360f;
+                    x = Mathf.Clamp(x, -MaxPitch, MaxPitch);
+                    // Only normalize if x is less than -MaxPitch (outside clamped range)
+                    cameraRotation.x = x;
+
                     App.VrSdk.GetVrCamera().transform.localEulerAngles = cameraRotation;
                 }
 
                 Vector3 cameraTranslation = Vector3.zero;
 
-                bool isSprinting = InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.SprintMode);
-                float movementSpeed = isSprinting ? 0.3f : 0.05f;
+                bool isSprinting = InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.SprintMode) ||
+                                   (gamepad != null && gamepad.leftStickButton.isPressed);
+                float movementSpeed = MoveSpeed * (isSprinting ? SprintMultiplier : 1f);
+
+                if (gamepad != null)
+                {
+                    Vector2 move = gamepad.leftStick.ReadValue();
+                    cameraTranslation += new Vector3(move.x, 0f, move.y);
+                    float upDown = gamepad.rightTrigger.ReadValue() - gamepad.leftTrigger.ReadValue();
+                    cameraTranslation += Vector3.up * upDown;
+                }
 
                 if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveForward) || virtualButtons['W'])
                 {
-                    cameraTranslation = Vector3.forward;
+                    cameraTranslation += Vector3.forward;
                 }
-                else if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveBackwards) || virtualButtons['S'])
+                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveBackwards) || virtualButtons['S'])
                 {
-                    cameraTranslation = Vector3.back;
+                    cameraTranslation += Vector3.back;
                 }
-                else if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveUp))
+                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveUp))
                 {
-                    cameraTranslation = Vector3.up;
+                    cameraTranslation += Vector3.up;
                 }
-                else if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveDown))
+                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveDown))
                 {
-                    cameraTranslation = Vector3.down;
+                    cameraTranslation += Vector3.down;
                 }
-                else if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveLeft) || virtualButtons['A'])
+                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveLeft) || virtualButtons['A'])
                 {
-                    cameraTranslation = Vector3.left;
+                    cameraTranslation += Vector3.left;
                 }
-                else if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveRight) || virtualButtons['D'])
+                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveRight) || virtualButtons['D'])
                 {
-                    cameraTranslation = Vector3.right;
+                    cameraTranslation += Vector3.right;
                 }
-                else if (InputManager.m_Instance.GetKeyboardShortcutDown(InputManager.KeyboardShortcut.InvertLook))
+                if (InputManager.m_Instance.GetKeyboardShortcutDown(InputManager.KeyboardShortcut.InvertLook))
                 {
                     m_InvertLook = !m_InvertLook;
                 }

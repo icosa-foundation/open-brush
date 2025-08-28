@@ -122,19 +122,22 @@ namespace TiltBrush
         }
 
         [ApiEndpoint(
+            "model.icosaimport",
+            "Imports a model from the Icosa Gallery given a model id",
+            "9L2Lt-sxzdp"
+        )]
+        public static void ImportIcosaModel(string modelId)
+        {
+            ApiManager.Instance.LoadPolyModel(modelId);
+        }
+
+        [ApiEndpoint(
             "model.import",
-            "Imports a model given a url or a filename in Media Library\\Models (Models loaded from a url are saved locally first)",
-            "Andy\\Andy.obj"
+            "Imports a model given a filename in Media Library\\Models (Models loaded from a url are saved locally first)",
+            "Andy.glb"
         )]
         public static ModelWidget ImportModel(string location, bool editable = false)
         {
-            if (location.StartsWith("poly:"))
-            {
-                location = location.Substring(5);
-                ApiManager.Instance.LoadPolyModel(location);
-                return null; // TODO
-            }
-
             // Normalize path slashes
             location = location.Replace(@"\\", "/");
             location = location.Replace(@"//", "/");
@@ -704,6 +707,18 @@ namespace TiltBrush
                 recipe,
                 _CurrentTransform()
             );
+        }
+
+        [ApiEndpoint(
+            "model.breakapart",
+            "Breaks apart a model",
+            "0"
+        )]
+        public static void BreakApartModel(int index)
+        {
+            var model = _GetActiveModel(index);
+            var cmd = new BreakModelApartCommand(model);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
     }
 }
