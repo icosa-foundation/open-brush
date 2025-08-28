@@ -12815,7 +12815,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: -1
   m_DescriptionYOffset: 0
-  m_DescriptionText: Sign out of Poly
+  m_DescriptionText: Sign in to Icosa
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: 
@@ -12848,7 +12848,7 @@ MonoBehaviour:
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
   m_Command: 95
-  m_CommandParam: 1
+  m_CommandParam: 3
   m_CommandParam2: -1
   m_RequiresPopup: 1
   m_CenterPopupOnButton: 0
@@ -13825,7 +13825,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -0.839, y: 1.013, z: -0.0311}
-  m_LocalScale: {x: 0.25, y: 0.25, z: 0.25}
+  m_LocalScale: {x: 0.15, y: 0.15, z: 0.15}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 473678}
@@ -13937,7 +13937,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: ca2b2689a21743448be1a5306c61e90b, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 66810c7a71de6154ebe0b21ae4d8ada1, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0

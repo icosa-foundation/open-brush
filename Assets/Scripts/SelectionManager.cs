@@ -122,23 +122,24 @@ namespace TiltBrush
             }
         }
 
-        public bool UngroupingAllowed
-        {
-            get
-            {
-                return SelectionIsInOneGroup || SelectionIsCompositeImport;
-            }
-        }
+        public bool UngroupingAllowed => SelectionIsInOneGroup ||
+            (m_SelectedWidgets.Count == 1 &&
+                (SelectionIsMultipleNodes || SelectionIsMeshSplittable)
+            );
 
-        public bool SelectionIsCompositeImport
+        // Currently this means "multiple mesh filters and/or lights"
+        public bool SelectionIsMultipleNodes
         {
             get
             {
-                if (m_SelectedWidgets.Count != 1) return false;
+                if (m_SelectedWidgets == null || m_SelectedWidgets.Count == 0)
+                {
+                    return false;
+                }
                 GrabWidget widget = m_SelectedWidgets.First();
                 if (widget is ModelWidget modelWidget)
                 {
-                    return modelWidget.HasSubModels();
+                    return modelWidget.HasMultipleNodes();
                 }
 
                 if (widget is ImageWidget imageWidget)
@@ -148,9 +149,33 @@ namespace TiltBrush
                     {
                         return imageWidget.HasSubShapes();
                     }
-                    return false;
+                }
+                return false;
+            }
+        }
+
+        // Return true if this is something we can call MeshSplit or similar on
+        // Note that groups should return false. They are checked separately.
+        public bool SelectionIsMeshSplittable
+        {
+            get
+            {
+                // Currently, only a single widget can be split.
+                if (m_SelectedWidgets.Count != 1) return false;
+                GrabWidget widget = m_SelectedWidgets.First();
+                if (widget is ModelWidget modelWidget)
+                {
+                    return modelWidget.MeshSplitPossible();
                 }
 
+                if (widget is ImageWidget imageWidget)
+                {
+                    string ext = Path.GetExtension(imageWidget.ReferenceImage.FileName).ToLower();
+                    if (ext == ".svg")
+                    {
+                        return imageWidget.HasSubShapes();
+                    }
+                }
                 return false;
             }
         }
@@ -717,7 +742,7 @@ namespace TiltBrush
             UpdateSelectionWidget();
         }
 
-        public void SelectStrokes(IEnumerable<Stroke> strokes)
+        public void SelectStrokes(IEnumerable<Stroke> strokes, bool preserveTool = false)
         {
             foreach (var stroke in strokes)
             {
@@ -743,7 +768,10 @@ namespace TiltBrush
             // If the manager is tasked to select strokes, make sure the SelectionTool is active.
             // b/64029485 In the event that the user does not have the SelectionTool active and presses
             // undo causing strokes to be highlighted, force the user to have the SelectionTool.
-            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.SelectionTool);
+            if (!preserveTool)
+            {
+                SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.SelectionTool);
+            }
         }
 
         public void DeselectStrokes(IEnumerable<Stroke> strokes, CanvasScript targetCanvas = null)
@@ -975,7 +1003,7 @@ namespace TiltBrush
                 return;
             }
 
-            if (SelectionIsCompositeImport)
+            if (SelectionIsMeshSplittable)
             {
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                     new BreakModelApartCommand(m_SelectedWidgets.First() as ModelWidget));

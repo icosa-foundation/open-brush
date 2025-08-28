@@ -48,6 +48,9 @@ namespace TiltBrush
         TILT,
         GLTF,
         GLTF2,
+        OBJ,
+        BLOCKS,
+        PLY
     }
 
     public class VrAssetService : MonoBehaviour
@@ -724,7 +727,7 @@ namespace TiltBrush
             if (App.UserConfig.Sharing.UseNewGlb || !publishLegacyGltf)
             {
                 string newGlbPath = Path.Combine(tempUploadDir, $"{uploadName}.glb");
-                Export.ExportNewGlb(tempUploadDir, uploadName, true);
+                Export.ExportNewGlb(tempUploadDir, uploadName, App.UserConfig.Export.ExportEnvironment);
                 filesToZip.Add(newGlbPath);
             }
 
@@ -831,7 +834,7 @@ namespace TiltBrush
             return thumbnail;
         }
 
-        public AssetGetter GetAsset(string assetId, VrAssetFormat type, string reason)
+        public AssetGetter GetAsset(string assetId, VrAssetFormat[] assetTypes, string reason)
         {
             string uri;
             if (assetId.ToLower().StartsWith("https%3a%2f%2f") || assetId.ToLower().StartsWith("http%3a%2f%2f"))
@@ -842,7 +845,7 @@ namespace TiltBrush
             {
                 uri = String.Format("{0}{1}/{2}", IcosaApiRoot, kListAssetsUri, assetId);
             }
-            return new AssetGetter(uri, assetId, type, reason);
+            return new AssetGetter(uri, assetId, assetTypes, reason);
         }
 
         private string CombineQueryParams(string uriPath, string additionalParams)
@@ -922,7 +925,10 @@ namespace TiltBrush
                 IcosaSetType.Featured => $"{IcosaApiRoot}{kListAssetsUri}?",
                 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
             };
-            uri += $"format={queryParams.Format}&";
+            foreach (var format in queryParams.Formats)
+            {
+                uri += $"format={format}&";
+            }
             uri += $"pageSize={m_AssetsPerPage}&";
             uri += $"triangleCountMax={queryParams.TriangleCountMax}&";
             uri += $"orderBy={queryParams.OrderBy}&";
@@ -930,6 +936,7 @@ namespace TiltBrush
             if (!string.IsNullOrEmpty(queryParams.License)) uri += $"license={queryParams.License}&";
             if (!string.IsNullOrEmpty(queryParams.Curated)) uri += $"curated={queryParams.Curated}&";
             if (!string.IsNullOrEmpty(queryParams.Category)) uri += $"category={queryParams.Category}&";
+
             return new AssetLister(uri, errorMessage: "Failed to connect to Icosa.");
         }
 
@@ -1043,7 +1050,7 @@ namespace TiltBrush
                 App.IcosaUserName = userData.Displayname;
                 App.IcosaUserId = userData.Id;
             }
-            PanelManager.m_Instance.GetAdminPanel().CloseActivePopUp(true);
+            PanelManager.m_Instance.LastPanelInteractedWith.CloseActivePopUp(true);
         }
 
         public string GenerateDeviceCodeSecret()

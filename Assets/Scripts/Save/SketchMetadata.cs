@@ -431,6 +431,12 @@ namespace TiltBrush
         public int[] LayerIds { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public List<string> SplitMeshPaths { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public List<string> NotSplittableMeshPaths { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public int[] FrameIds { get; set; }
     }
 

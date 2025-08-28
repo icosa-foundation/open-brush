@@ -189,22 +189,6 @@ namespace TiltBrush
             }
         }
 
-        public CanvasScript GetLayerByIndex(int index)
-        {
-            if (index == 0) return MainCanvas;
-            if (m_LayerCanvases != null)
-            {
-                int count = 1;
-                for (int i = 0; i < m_LayerCanvases.Count; ++i)
-                {
-                    if (m_DeletedLayers.Contains(i)) continue;
-                    if (count == index) return m_LayerCanvases[i];
-                    count++;
-                }
-            }
-            return null;
-        }
-
         public void ResetLayers(bool notify = false)
         {
             if (m_LayerCanvases != null)
