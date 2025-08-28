@@ -796,7 +796,7 @@ namespace TiltBrush
             uint[] groupIds,
             int[] layerIds,
             List<string> splitMeshPaths,
-            List<string> noSplitMeshPaths),
+            List<string> noSplitMeshPaths,
             int[] frameIds)
         {
             // Verify model is loaded.  Or, at least, has been tried to be loaded.
