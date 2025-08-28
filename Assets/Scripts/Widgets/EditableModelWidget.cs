@@ -116,7 +116,7 @@ namespace TiltBrush
                 var task = CreateModelsFromRelativePath(
                     modelDatas.FilePath, null,
                     modelDatas.Transforms, modelDatas.RawTransforms, modelDatas.PinStates,
-                    modelDatas.GroupIds, modelDatas.LayerIds);
+                    modelDatas.GroupIds, modelDatas.LayerIds, null, null);
                 ok = task.IsCompletedSuccessfully;
             }
             else if (modelDatas.AssetId != null)
