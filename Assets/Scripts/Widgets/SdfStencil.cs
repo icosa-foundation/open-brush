@@ -33,7 +33,7 @@ namespace TiltBrush
                 }
                 else
                 {
-                    throw new ArgumentException("SphereStencil does not support non-uniform extents");
+                    throw new ArgumentException("SDF Stencil does not support non-uniform extents");
                 }
             }
         }
@@ -42,18 +42,60 @@ namespace TiltBrush
         {
             base.Awake();
             m_Type = StencilType.SDF;
-            WidgetManager.m_Instance.m_SDFManager.transform.SetParent(transform);
+            var sdfTransform = WidgetManager.m_Instance.m_SDFManager.transform;
+            sdfTransform.SetParent(transform, false);
+            sdfTransform.localPosition = Vector3.zero;
+            sdfTransform.localRotation = Quaternion.identity;
+            sdfTransform.localScale = Vector3.one;
         }
 
         protected override void OnHideStart()
         {
             base.OnHideStart();
-            WidgetManager.m_Instance.m_SDFManager.transform.SetParent(WidgetManager.m_Instance.transform);
+            var sdfTransform = WidgetManager.m_Instance.m_SDFManager.transform;
+            sdfTransform.SetParent(WidgetManager.m_Instance.transform, false);
+            sdfTransform.localPosition = Vector3.zero;
+            sdfTransform.localRotation = Quaternion.identity;
+            sdfTransform.localScale = Vector3.one;
         }
 
+        /// <summary>
+        /// Convenience accessor for the SDF manager's transform in world space.
+        /// </summary>
+        private TrTransform SdfTransform
+        {
+            get { return TrTransform.FromTransform(WidgetManager.m_Instance.m_SDFManager.transform); }
+        }
+
+        /// <summary>
+        /// Casts a single ray against the SDF volume. The incoming ray is in world space,
+        /// so convert to the SDF manager's local canvas space before raymarching and then
+        /// convert the results back to world space.
+        /// </summary>
         private bool CastSingleDirection(Vector3 origin, Vector3 dir, out Vector3 pos, out Vector3 normal)
         {
-            return WidgetManager.m_Instance.m_SDFManager.Mapper.Raymarch(origin, dir, out pos, out normal);
+            var sdfTransform = SdfTransform;
+            var worldToSdf = sdfTransform.inverse;
+
+            Vector3 localOrigin = worldToSdf * origin;
+            Vector3 localDir = worldToSdf.MultiplyVector(dir);
+
+            Vector3 localPos, localNormal;
+            bool hit = WidgetManager.m_Instance.m_SDFManager.Mapper.Raymarch(
+                localOrigin, localDir, out localPos, out localNormal);
+
+            if (hit)
+            {
+                pos = sdfTransform * localPos;
+                normal = sdfTransform.MultiplyNormal(localNormal);
+            }
+            else
+            {
+                pos = Vector3.zero;
+                normal = Vector3.zero;
+            }
+
+            return hit;
         }
 
         override protected void OnUpdate()
@@ -65,21 +107,20 @@ namespace TiltBrush
 
         public override void RaycastToNearest(Vector3 origin, Quaternion rot, out Vector3 surfacePos, out Vector3 surfaceNorm)
         {
+            // Start the ray from the controller origin and shoot it backwards along the
+            // controller's orientation to find the nearest point on the SDF surface.
             surfacePos = origin;
             surfaceNorm = transform.forward;
             var dir = Vector3.back * WidgetManager.m_Instance.StencilAttractDist * 4f;
-            var ray = (rot * dir);
+            var ray = rot * dir;
             var lr = GetComponentInChildren<LineRenderer>(includeInactive: true);
+
             if (CastSingleDirection(origin, ray, out surfacePos, out surfaceNorm))
             {
                 lr.gameObject.SetActive(true);
                 lr.transform.position = surfacePos;
                 lr.transform.rotation = Quaternion.LookRotation(surfaceNorm, Vector3.up);
-                lr.SetPositions(new[]
-                {
-                    surfacePos,
-                    origin
-                });
+                lr.SetPositions(new[] { surfacePos, origin });
             }
             else
             {
