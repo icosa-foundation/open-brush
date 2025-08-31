@@ -122,7 +122,8 @@ namespace TiltBrush
                         m_Pos = tr.translation,
                         m_Orient = tr.rotation,
                         m_Pressure = tr.scale,
-                        m_TimestampMs = (uint)Mathf.RoundToInt(Mathf.Lerp(startTime, endTime, i))
+                        m_TimestampMs = (uint)Mathf.RoundToInt(Mathf.Lerp(startTime, endTime, i)),
+                        m_Color = m_CurrentColor
                     });
                 }
             }
@@ -571,6 +572,12 @@ namespace TiltBrush
 
                 m_ControlPoints.Clear();
                 m_ControlPoints.AddRange(m_CurrentCreator.GetPoints(xf_LS));
+                for (int i = 0; i < m_ControlPoints.Count; ++i)
+                {
+                    var cp = m_ControlPoints[i];
+                    cp.m_Color = m_CurrentColor;
+                    m_ControlPoints[i] = cp;
+                }
                 float scale = xf_LS.scale;
                 m_CurrentLine.ResetBrushForPreview(
                     TrTransform.TRS(m_ControlPoints[0].m_Pos, m_ControlPoints[0].m_Orient, scale));
@@ -634,6 +641,7 @@ namespace TiltBrush
         public void UpdateLineFromControlPoint(PointerManager.ControlPoint cp)
         {
             float scale = m_CurrentLine.StrokeScale;
+            m_CurrentLine.SetColor(cp.m_Color);
             m_CurrentLine.UpdatePosition_LS(
                 TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure);
         }
@@ -651,6 +659,7 @@ namespace TiltBrush
             float scale = m_CurrentLine.StrokeScale;
             foreach (var cp in stroke.m_ControlPoints.Where((x, i) => !stroke.m_ControlPointsToDrop[i]))
             {
+                m_CurrentLine.SetColor(cp.m_Color);
                 m_CurrentLine.UpdatePosition_LS(TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure);
             }
         }
@@ -855,6 +864,7 @@ namespace TiltBrush
             rControlPoint.m_Orient = lastSpawnXf_LS.rotation;
             rControlPoint.m_Pressure = m_CurrentPressure;
             rControlPoint.m_TimestampMs = (uint)(App.Instance.CurrentSketchTime * 1000);
+            rControlPoint.m_Color = m_CurrentColor;
 
             if (m_ControlPoints.Count == 0 || m_LastControlPointIsKeeper)
             {

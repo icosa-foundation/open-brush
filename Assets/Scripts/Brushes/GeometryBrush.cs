@@ -299,7 +299,8 @@ namespace TiltBrush
                     // TODO: better value for pressure?
                     m_Pos = pos,
                     m_Orient = ori,
-                    m_Pressure = 1
+                    m_Pressure = 1,
+                    m_Color = m_Color
                 },
                 length = 0,
                 smoothedPos = pos
@@ -344,7 +345,8 @@ namespace TiltBrush
                 {
                     m_Pos = pos,
                     m_Orient = ori,
-                    m_Pressure = 1
+                    m_Pressure = 1,
+                    m_Color = m_Color
                 },
                 length = 0,
                 smoothedPos = pos

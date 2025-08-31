@@ -241,7 +241,8 @@ namespace TiltBrush
                 m_Pos = ApiManager.Instance.BrushPosition,
                 m_Orient = ApiManager.Instance.BrushRotation,
                 m_Pressure = prevCP.m_Pressure,
-                m_TimestampMs = prevCP.m_TimestampMs
+                m_TimestampMs = prevCP.m_TimestampMs,
+                m_Color = stroke.m_Color
             };
 
             stroke.m_ControlPoints[stroke.m_ControlPoints.Length - 1] = cp;

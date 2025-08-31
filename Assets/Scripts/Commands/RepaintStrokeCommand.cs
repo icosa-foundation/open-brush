@@ -62,6 +62,10 @@ namespace TiltBrush
         {
             stroke.m_Color = ColorPickerUtils.ClampLuminance(
                 color, BrushCatalog.m_Instance.GetBrush(brushGuid).m_ColorLuminanceMin);
+            for (int i = 0; i < stroke.m_ControlPoints.Length; ++i)
+            {
+                stroke.m_ControlPoints[i].m_Color = stroke.m_Color;
+            }
             stroke.m_BrushGuid = brushGuid;
             stroke.m_BrushSize = brushSize;
             stroke.InvalidateCopy();

@@ -105,9 +105,11 @@ namespace TiltBrush
 
             public const uint EXTENSIONS = (uint)(
                 SketchWriter.ControlPointExtension.Pressure |
-                SketchWriter.ControlPointExtension.Timestamp);
+                SketchWriter.ControlPointExtension.Timestamp |
+                SketchWriter.ControlPointExtension.Color);
             public float m_Pressure;
             public uint m_TimestampMs; // CurrentSketchTime of creation, in milliseconds
+            public Color32 m_Color;
         }
 
         // TODO: all this should be stored in the PointerScript instead of kept alongside

@@ -149,6 +149,7 @@ namespace TiltBrush
 
                 foreach (var cp in stroke.m_ControlPoints)
                 {
+                    bbs.SetColor(cp.m_Color);
                     bbs.UpdatePosition_LS(
                         TrTransform.TRS(cp.m_Pos, cp.m_Orient, stroke.m_BrushScale), cp.m_Pressure);
                 }

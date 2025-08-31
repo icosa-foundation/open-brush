@@ -229,6 +229,11 @@ namespace TiltBrush
             GetComponent<Renderer>().material = m_Desc.Material;
         }
 
+        public void SetColor(Color rColor)
+        {
+            m_Color = rColor;
+        }
+
         public void DestroyMesh()
         {
             MeshFilter mf = GetComponent<MeshFilter>();

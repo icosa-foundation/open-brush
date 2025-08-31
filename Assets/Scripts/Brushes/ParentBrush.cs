@@ -375,6 +375,7 @@ namespace TiltBrush
             {
                 PbChild child = m_children[i];
                 var childXf = child.CalculateChildXfFixedScale(m_knots);
+                child.m_brush.SetColor(m_Color);
                 if (child.m_brush.UpdatePosition_LS(childXf, pressure))
                 {
                     // Need to save off any control point which is applicable to any of our children.

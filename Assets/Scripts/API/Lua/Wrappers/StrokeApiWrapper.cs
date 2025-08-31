@@ -46,7 +46,8 @@ namespace TiltBrush
                         m_Pos = tr.translation,
                         m_Orient = tr.rotation,
                         m_Pressure = tr.scale,
-                        m_TimestampMs = (uint)Mathf.RoundToInt(Mathf.Lerp(startTime, endTime, i))
+                        m_TimestampMs = (uint)Mathf.RoundToInt(Mathf.Lerp(startTime, endTime, i)),
+                        m_Color = _Stroke.m_Color
                     };
                 }
                 _Stroke.Recreate();

@@ -90,9 +90,11 @@ namespace OpenBrush.Multiplayer
 
         public const uint EXTENSIONS = (uint)(
                 SketchWriter.ControlPointExtension.Pressure |
-                SketchWriter.ControlPointExtension.Timestamp);
+                SketchWriter.ControlPointExtension.Timestamp |
+                SketchWriter.ControlPointExtension.Color);
         public float m_Pressure;
         public uint m_TimestampMs; // CurrentSketchTime of creation, in milliseconds
+        public Color32 m_Color;
 
         public NetworkedControlPoint Init(PointerManager.ControlPoint point)
         {
@@ -100,6 +102,7 @@ namespace OpenBrush.Multiplayer
             m_Orient = point.m_Orient;
             m_Pressure = point.m_Pressure;
             m_TimestampMs = point.m_TimestampMs;
+            m_Color = point.m_Color;
 
             return this;
         }
@@ -111,7 +114,8 @@ namespace OpenBrush.Multiplayer
                 m_Pos = networkedControlPoint.m_Pos,
                 m_Orient = networkedControlPoint.m_Orient,
                 m_Pressure = networkedControlPoint.m_Pressure,
-                m_TimestampMs = networkedControlPoint.m_TimestampMs
+                m_TimestampMs = networkedControlPoint.m_TimestampMs,
+                m_Color = networkedControlPoint.m_Color
             };
 
             return point;

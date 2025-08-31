@@ -83,6 +83,7 @@ namespace TiltBrush
             None = 0,
             Pressure = 1 << 0,  // float, 1.0 is nominal
             Timestamp = 1 << 1, // uint32, milliseconds
+            Color = 1 << 2,     // uint32, rgba
         }
 
         public struct AdjustedMemoryBrushStroke
@@ -96,8 +97,8 @@ namespace TiltBrush
         private const int REQUIRED_SKETCH_VERSION_MAX = 6;
         private static readonly uint SKETCH_SENTINEL = 0xc576a5cd; // introduced at v5
         // 5: added sketch sentinel, explicit version
-        // 6: reserved for when we add a length-prefixed stroke extension, or more header data
-        private static readonly int SKETCH_VERSION = 5;
+        // 6: per-control-point color
+        private static readonly int SKETCH_VERSION = 6;
 
         static public void RuntimeSelfCheck()
         {
@@ -233,8 +234,7 @@ namespace TiltBrush
                 strokeExtensionMask |= StrokeExtension.Layer;
 
                 writer.UInt32((uint)strokeExtensionMask);
-                uint controlPointExtensionMask =
-                    (uint)(ControlPointExtension.Pressure | ControlPointExtension.Timestamp);
+                uint controlPointExtensionMask = PointerManager.ControlPoint.EXTENSIONS;
                 writer.UInt32(controlPointExtensionMask);
 
                 // Stroke extension fields, in order of appearance in the mask
@@ -280,6 +280,10 @@ namespace TiltBrush
                         // Control point extension fields, in order of appearance in the mask
                         writer.Float(rControlPoint.m_Pressure);
                         writer.UInt32(rControlPoint.m_TimestampMs);
+                        writer.UInt32((uint)(rControlPoint.m_Color.r |
+                                              (rControlPoint.m_Color.g << 8) |
+                                              (rControlPoint.m_Color.b << 16) |
+                                              (rControlPoint.m_Color.a << 24)));
                     }
                 }
             }
@@ -317,8 +321,7 @@ namespace TiltBrush
                 strokeExtensionMask |= StrokeExtension.Layer;
 
                 writer.UInt32((uint)strokeExtensionMask);
-                uint controlPointExtensionMask =
-                    (uint)(ControlPointExtension.Pressure | ControlPointExtension.Timestamp);
+                uint controlPointExtensionMask = PointerManager.ControlPoint.EXTENSIONS;
                 writer.UInt32(controlPointExtensionMask);
 
                 // Stroke extension fields, in order of appearance in the mask
@@ -364,6 +367,10 @@ namespace TiltBrush
                         // Control point extension fields, in order of appearance in the mask
                         writer.Float(rControlPoint.m_Pressure);
                         writer.UInt32(rControlPoint.m_TimestampMs);
+                        writer.UInt32((uint)(rControlPoint.m_Color.r |
+                                              (rControlPoint.m_Color.g << 8) |
+                                              (rControlPoint.m_Color.b << 16) |
+                                              (rControlPoint.m_Color.a << 24)));
                     }
                 }
             }
@@ -583,6 +590,7 @@ namespace TiltBrush
                         // known extension field defaults
                         rControlPoint.m_Pressure = 1.0f;
                         rControlPoint.m_TimestampMs = 0;
+                        rControlPoint.m_Color = stroke.m_Color;
 
                         // control point extension fields
                         for (var fields = controlPointExtensionMask; fields != 0; fields &= (fields - 1))
@@ -598,6 +606,14 @@ namespace TiltBrush
                                     break;
                                 case ControlPointExtension.Timestamp:
                                     rControlPoint.m_TimestampMs = reader.UInt32() + timestampOffset;
+                                    break;
+                                case ControlPointExtension.Color:
+                                    uint rgba = reader.UInt32();
+                                    rControlPoint.m_Color = new Color32(
+                                        (byte)(rgba & 0xFF),
+                                        (byte)((rgba >> 8) & 0xFF),
+                                        (byte)((rgba >> 16) & 0xFF),
+                                        (byte)(rgba >> 24));
                                     break;
                                 default:
                                     // skip unknown extension
@@ -753,6 +769,7 @@ namespace TiltBrush
 
                         rControlPoint.m_Pressure = 1.0f;
                         rControlPoint.m_TimestampMs = 0;
+                        rControlPoint.m_Color = stroke.m_Color;
 
                         for (var fields = controlPointExtensionMask; fields != 0; fields &= (fields - 1))
                         {
@@ -766,6 +783,14 @@ namespace TiltBrush
                                     break;
                                 case ControlPointExtension.Timestamp:
                                     rControlPoint.m_TimestampMs = reader.UInt32();
+                                    break;
+                                case ControlPointExtension.Color:
+                                    uint rgba = reader.UInt32();
+                                    rControlPoint.m_Color = new Color32(
+                                        (byte)(rgba & 0xFF),
+                                        (byte)((rgba >> 8) & 0xFF),
+                                        (byte)((rgba >> 16) & 0xFF),
+                                        (byte)(rgba >> 24));
                                     break;
                                 default:
                                     reader.Int32();

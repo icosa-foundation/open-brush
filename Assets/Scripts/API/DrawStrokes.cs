@@ -62,7 +62,8 @@ namespace TiltBrush
                             m_Pos = pos,
                             m_Orient = orientation,
                             m_Pressure = pressure,
-                            m_TimestampMs = time++
+                            m_TimestampMs = time++,
+                            m_Color = color
                         });
                     }
 
