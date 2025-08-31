@@ -743,13 +743,19 @@ namespace TiltBrush
                         case MultiCamStyle.Snapshot:
                             if (FileUtils.CheckDiskSpaceWithError(saveName))
                             {
-                                StartCoroutine(TakeScreenshotAsync(saveName));
+                                StartCoroutine(TakeScreenshotAsync(saveName, MultiCamStyle.Snapshot));
                             }
                             break;
                         case MultiCamStyle.Depth:
                             if (FileUtils.CheckDiskSpaceWithError(saveName))
                             {
-                                StartCoroutine(TakeScreenshotAsync(saveName, true));
+                                StartCoroutine(TakeScreenshotAsync(saveName, MultiCamStyle.Depth));
+                            }
+                            break;
+                        case MultiCamStyle.Snapshot360:
+                            if (FileUtils.CheckDiskSpaceWithError(saveName))
+                            {
+                                StartCoroutine(TakeScreenshotAsync(saveName, MultiCamStyle.Snapshot360));
                             }
                             break;
                         case MultiCamStyle.AutoGif:
@@ -875,6 +881,7 @@ namespace TiltBrush
                         case MultiCamStyle.Snapshot:
                         case MultiCamStyle.Depth:
                         case MultiCamStyle.AutoGif:
+                        case MultiCamStyle.Snapshot360:
                             break;
                     }
 
@@ -1280,6 +1287,7 @@ namespace TiltBrush
                     break;
                 case MultiCamStyle.Snapshot:
                 case MultiCamStyle.Depth:
+                case MultiCamStyle.Snapshot360:
                     ext = ".png";
                     break;
                 case MultiCamStyle.TimeGif:
@@ -1799,7 +1807,7 @@ namespace TiltBrush
         // Snapshot
         //
 
-        public IEnumerator TakeScreenshotAsync(string saveName, bool renderDepth = false)
+        public IEnumerator TakeScreenshotAsync(string saveName, MultiCamStyle style)
         {
             // There are multiple expensive bits here, the most expensive of which
             // is the png conversion. Eventually we might want to run that on some other
@@ -1820,7 +1828,7 @@ namespace TiltBrush
                 yield return null;
             }
 
-            ScreenshotManager rMgr = GetScreenshotManager(renderDepth ? MultiCamStyle.Depth : MultiCamStyle.Snapshot);
+            ScreenshotManager rMgr = GetScreenshotManager(style);
             if (rMgr != null)
             {
                 // Default to the multicam values, and overwrite with user config values.
@@ -1849,7 +1857,7 @@ namespace TiltBrush
                         wrapper.SuperSampling = m_superSampling;
                     }
                     rMgr.RenderToTexture(tmp, asDepth: false);
-                    if (renderDepth)
+                    if (style == MultiCamStyle.Depth)
                     {
                         tmpDepth = rMgr.CreateTemporaryTargetForSave(
                             snapshotWidth, snapshotHeight);
@@ -1868,7 +1876,7 @@ namespace TiltBrush
                         {
                             ScreenshotManager.Save(fs, tmp, bSaveAsPng: true);
                         }
-                        if (renderDepth)
+                        if (style == MultiCamStyle.Depth)
                         {
                             var fullDepthPath = Path.GetFullPath(saveName.Replace(".png", "_depth.png"));
                             using (var fs = new FileStream(fullDepthPath, FileMode.Create))

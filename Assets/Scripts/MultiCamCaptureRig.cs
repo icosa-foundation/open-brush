@@ -26,6 +26,7 @@ namespace TiltBrush
         TimeGif,
         Video,
         Depth,
+        Snapshot360,
         Num,
     }
 
@@ -84,8 +85,13 @@ namespace TiltBrush
                     m_CaptureObjects[i].m_Camera.GetComponentInChildren<HybridCamera>(true);
                 if (odsCam != null)
                 {
-                    // Use slice rendering for higher-quality 360 captures
-                    odsCam.SetOdsRendererType(HybridCamera.OdsRendererType.Slice);
+                    MultiCamStyle style = (MultiCamStyle)i;
+                    // Only the dedicated 360 snapshot uses the ODS slice renderer.
+                    // Other multicam modes manage their own rendering paths.
+                    if (style == MultiCamStyle.Snapshot360)
+                    {
+                        odsCam.SetOdsRendererType(HybridCamera.OdsRendererType.Slice);
+                    }
                 }
             }
 
