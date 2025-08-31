@@ -1202,6 +1202,7 @@ namespace TiltBrush
             else if (generic is StencilWidget stencil)
             {
                 m_StencilWidgets.Add(new TypedWidgetData<StencilWidget>(stencil));
+                GlobalStencilSdfCache.InvalidateCache();
             }
             else if (generic is ImageWidget image)
             {
@@ -1263,7 +1264,7 @@ namespace TiltBrush
 
             if (RemoveFrom(m_ModelWidgets, rWidget)) { return; }
             if (RemoveFrom(m_LightWidgets, rWidget)) { return; }
-            if (RemoveFrom(m_StencilWidgets, rWidget)) { return; }
+            if (RemoveFrom(m_StencilWidgets, rWidget)) { GlobalStencilSdfCache.InvalidateCache(); return; }
             if (RemoveFrom(m_ImageWidgets, rWidget)) { return; }
             if (RemoveFrom(m_TextWidgets, rWidget)) { return; }
             if (RemoveFrom(m_VideoWidgets, rWidget)) { return; }
