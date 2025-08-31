@@ -14,6 +14,7 @@
 
 using System.Collections;
 using UnityEngine;
+using ODS;
 
 namespace TiltBrush
 {
@@ -78,6 +79,14 @@ namespace TiltBrush
                     m_CaptureObjects[i].m_CameraComponent.nearClipPlane;
                 m_CaptureObjects[i].m_CameraClipPlanesBase.y =
                     m_CaptureObjects[i].m_CameraComponent.farClipPlane;
+
+                HybridCamera odsCam =
+                    m_CaptureObjects[i].m_Camera.GetComponentInChildren<HybridCamera>(true);
+                if (odsCam != null)
+                {
+                    // Use slice rendering for higher-quality 360 captures
+                    odsCam.SetOdsRendererType(HybridCamera.OdsRendererType.Slice);
+                }
             }
 
             m_VideoUsdSerializer = m_CaptureObjects[(int)MultiCamStyle.Video].m_Camera.GetComponentInChildren<UsdPathSerializer>(true);
