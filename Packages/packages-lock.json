@@ -436,19 +436,19 @@
       },
       "url": "https://package.openupm.com"
     },
-    "tw.hoba.isomesh": {
-      "version": "https://github.com/shinabebel/IsoMesh.git#upm",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "517b7ca1efa8399d31db1c6449a3886e83714ff3"
-    },
     "tv.superla.radiancehdr": {
       "version": "https://github.com/superlatv/RadianceHDRUnity.git#upm",
       "depth": 0,
       "source": "git",
       "dependencies": {},
       "hash": "731ce73482c74c1bccb84d53c1771f9c4a0d511b"
+    },
+    "tw.hoba.isomesh": {
+      "version": "https://github.com/icosa-mirror/IsoMesh.git#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "517b7ca1efa8399d31db1c6449a3886e83714ff3"
     },
     "com.unity.modules.ai": {
       "version": "1.0.0",
