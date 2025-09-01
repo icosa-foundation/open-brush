@@ -32,11 +32,9 @@ namespace TiltBrush
         static private float m_SuperSampling = 2.0f;
         static private float m_PreCaptureSuperSampling = 1.0f;
 
-#if USD_SUPPORTED
         static private UsdPathSerializer m_UsdPathSerializer;
         static private System.Diagnostics.Stopwatch m_RecordingStopwatch;
         static private string m_UsdPath;
-#endif
 
         static private VideoRecorder m_ActiveVideoRecording;
         static private StillFrameSequenceExporter m_ActiveStillFrameExporter;
@@ -61,13 +59,11 @@ namespace TiltBrush
         {
             get
             {
-#if USD_SUPPORTED
                 if (m_UsdPathSerializer != null && !m_UsdPathSerializer.IsRecording)
                 {
                     return Mathf.CeilToInt((float)m_UsdPathSerializer.Duration *
                         (int)m_ActiveVideoRecording.FPS);
                 }
-#endif
                 return 0;
             }
         }
@@ -76,13 +72,9 @@ namespace TiltBrush
         {
             get
             {
-#if USD_SUPPORTED
                 return (m_UsdPathSerializer != null &&
                     !m_UsdPathSerializer.IsRecording &&
                     !m_UsdPathSerializer.IsFinished);
-#else
-                return false;
-#endif
             }
         }
 
@@ -90,30 +82,23 @@ namespace TiltBrush
         {
             get
             {
-#if USD_SUPPORTED
                 return (m_UsdPathSerializer != null && m_UsdPathSerializer.IsFinished);
-#else
-                return true;
-#endif
             }
         }
 
         static public Transform AdvanceAndDeserializeUsd()
         {
-#if USD_SUPPORTED
             if (m_UsdPathSerializer != null)
             {
                 m_UsdPathSerializer.Time += Time.deltaTime;
                 m_UsdPathSerializer.Deserialize();
                 return m_UsdPathSerializer.transform;
             }
-#endif
             return null;
         }
 
         static public void SerializerNewUsdFrame()
         {
-#if USD_SUPPORTED
             if (m_UsdPathSerializer != null && m_UsdPathSerializer.IsRecording)
             {
                 m_UsdPathSerializer.Time = (float)m_RecordingStopwatch.Elapsed.TotalSeconds;
@@ -127,7 +112,6 @@ namespace TiltBrush
                     m_ActiveStillFrameExporter.CaptureFrame(currentTime);
                 }
             }
-#endif
         }
 
         static public bool StartVideoCapture(string filePath, VideoRecorder recorder,
@@ -194,7 +178,6 @@ namespace TiltBrush
             m_PreCaptureSuperSampling = wrapper.SuperSampling;
             wrapper.SuperSampling = m_SuperSampling;
 
-#if USD_SUPPORTED
             // Read from the Usd serializer if we're recording offline.  Write to it otherwise.
             m_UsdPathSerializer = usdPathSerializer;
             if (!offlineRender)
@@ -223,7 +206,6 @@ namespace TiltBrush
                     m_UsdPathSerializer = null;
                 }
             }
-#endif
 
             return true;
         }
@@ -265,7 +247,6 @@ namespace TiltBrush
                 wrapper.SuperSampling = m_SuperSampling;
             }
 
-#if USD_SUPPORTED
             // Handle USD path serialization for camera path recording
             m_UsdPathSerializer = usdPathSerializer;
             m_UsdPath = SaveLoadScript.m_Instance.SceneFile.Valid ?
@@ -278,7 +259,6 @@ namespace TiltBrush
                 UnityEngine.Object.Destroy(m_UsdPathSerializer);
                 m_UsdPathSerializer = null;
             }
-#endif
 
             return true;
         }
@@ -317,7 +297,6 @@ namespace TiltBrush
                 m_ActiveVideoRecording = null;
             }
 
-#if USD_SUPPORTED
             if (m_UsdPathSerializer != null)
             {
                 bool wasRecording = m_UsdPathSerializer.IsRecording;
@@ -338,7 +317,6 @@ namespace TiltBrush
 
             m_UsdPathSerializer = null;
             m_RecordingStopwatch = null;
-#endif
 
             App.Switchboard.TriggerVideoRecordingStopped();
         }

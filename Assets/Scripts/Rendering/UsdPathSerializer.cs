@@ -259,6 +259,32 @@ namespace TiltBrush
             m_UsdCamera.fov = m_RecordingCamera.fieldOfView;
             m_Scene.Write(m_xformName, m_UsdCamera);
         }
+        
+#else
+        public bool IsRecording => false;
+        public bool IsFinished => true;
+        public double Duration => 0;
+        public double Time { get; set; }
+
+        public bool StartRecording(string path, string sketchName = "/Sketch", string xformName = "/VideoCamera")
+        {
+            return false;
+        }
+
+        public void Stop() { }
+
+        public void Save() { }
+
+        public bool Load(string path)
+        {
+            return false;
+        }
+
+        public void StartPlayback(string sketchName = "/Sketch", string xformName = "/VideoCamera", float smoothing = 0) { }
+
+        public void Deserialize() { }
+
+        public void Serialize() { }
 #endif
     }
 } // namespace TiltBrush
