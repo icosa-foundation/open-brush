@@ -103,8 +103,8 @@ namespace TiltBrush
             {
                 m_UsdPathSerializer.Time = (float)m_RecordingStopwatch.Elapsed.TotalSeconds;
                 m_UsdPathSerializer.Serialize();
-                
-                
+
+
                 // Capture still frame if using fallback mode - only when USD is actively recording
                 if (m_UsingStillFrameFallback && m_ActiveStillFrameExporter != null)
                 {
