@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace TiltBrush
@@ -67,69 +68,87 @@ namespace TiltBrush
             get { return TrTransform.FromTransform(WidgetManager.m_Instance.m_SDFManager.transform); }
         }
 
-        /// <summary>
-        /// Casts a single ray against the SDF volume. The incoming ray is in world space,
-        /// so convert to the SDF manager's local canvas space before raymarching and then
-        /// convert the results back to world space.
-        /// </summary>
-        private bool CastSingleDirection(Vector3 origin, Vector3 dir, out Vector3 pos, out Vector3 normal)
-        {
-            var sdfTransform = SdfTransform;
-            var worldToSdf = sdfTransform.inverse;
-
-            Vector3 localOrigin = worldToSdf * origin;
-            Vector3 localDir = worldToSdf.MultiplyVector(dir);
-
-            Vector3 localPos, localNormal;
-            bool hit = WidgetManager.m_Instance.m_SDFManager.Mapper.Raymarch(
-                localOrigin, localDir, out localPos, out localNormal);
-
-            if (hit)
-            {
-                pos = sdfTransform * localPos;
-                normal = sdfTransform.MultiplyNormal(localNormal);
-            }
-            else
-            {
-                pos = Vector3.zero;
-                normal = Vector3.zero;
-            }
-
-            return hit;
-        }
-
-        override protected void OnUpdate()
-        {
-            base.OnUpdate();
-            var lr = GetComponentInChildren<LineRenderer>(includeInactive: true);
-            lr.gameObject.SetActive(false);
-        }
+        // Smoothing for jitter reduction
+        private Vector3 m_lastHitPos = Vector3.zero;
+        private Vector3 m_lastHitNormal = Vector3.forward;
+        private bool m_hasValidHit = false;
+        private const float SMOOTHING_FACTOR = 0.7f;
 
         public override void RaycastToNearest(Vector3 origin, Quaternion rot, out Vector3 surfacePos, out Vector3 surfaceNorm)
         {
-            // Start the ray from the controller origin and shoot it backwards along the
-            // controller's orientation to find the nearest point on the SDF surface.
-            surfacePos = origin;
-            surfaceNorm = transform.forward;
-            var dir = Vector3.back * WidgetManager.m_Instance.StencilAttractDist * 4f;
-            var ray = rot * dir;
-            var lr = GetComponentInChildren<LineRenderer>(includeInactive: true);
-
-            if (CastSingleDirection(origin, ray, out surfacePos, out surfaceNorm))
+            // Cast multiple rays in a cone pattern in front of the controller
+            // Try -forward since controller might be pointing backwards
+            Vector3 forward = rot * (-Vector3.forward);
+            Vector3 right = rot * Vector3.right;
+            Vector3 up = rot * Vector3.up;
+            
+            Vector3 closestHit = origin;
+            Vector3 closestNormal = forward;
+            float closestDistance = float.MaxValue;
+            bool foundHit = false;
+            
+            // Create cone of rays (forward + angled directions)
+            Vector3[] rayDirections = {
+                forward,                                    // Center
+                forward + right * 0.3f,                    // Right
+                forward - right * 0.3f,                    // Left  
+                forward + up * 0.3f,                       // Up
+                forward - up * 0.3f,                       // Down
+                forward + (right + up) * 0.2f,             // Top-right
+                forward + (right - up) * 0.2f,             // Bottom-right
+                forward + (-right + up) * 0.2f,            // Top-left
+                forward + (-right - up) * 0.2f,            // Bottom-left
+            };
+            
+            foreach (Vector3 rayDir in rayDirections) {
+                Vector3 normalizedDir = rayDir.normalized;
+                
+                if (WidgetManager.m_Instance.m_SDFManager.Raycast(origin, normalizedDir, out Vector3 hitPoint, out Vector3 hitNormal)) {
+                    float distance = Vector3.Distance(origin, hitPoint);
+                    
+                    // Increased range - consider hits up to 0.5 units away
+                    if (distance > 0.05f && distance < closestDistance) {
+                        closestHit = hitPoint;
+                        closestNormal = hitNormal;
+                        closestDistance = distance;
+                        foundHit = true;
+                    }
+                }
+            }
+            
+            if (foundHit)
             {
-                lr.gameObject.SetActive(true);
-                lr.transform.position = surfacePos;
-                lr.transform.rotation = Quaternion.LookRotation(surfaceNorm, Vector3.up);
-                lr.SetPositions(new[] { surfacePos, origin });
+                // Apply smoothing to reduce jitter
+                if (m_hasValidHit) {
+                    closestHit = Vector3.Lerp(m_lastHitPos, closestHit, 1f - SMOOTHING_FACTOR);
+                    closestNormal = Vector3.Slerp(m_lastHitNormal, closestNormal, 1f - SMOOTHING_FACTOR).normalized;
+                }
+                
+                m_lastHitPos = closestHit;
+                m_lastHitNormal = closestNormal;
+                m_hasValidHit = true;
+                
+                surfacePos = closestHit;
+                surfaceNorm = closestNormal;
+                
+                // Transform normal from canvas space to world space
+                Vector3 worldNormal = Coords.CanvasPose.rotation * closestNormal;
+                surfaceNorm = worldNormal;
+                
+                // Debug rotation issue
+                if (Time.frameCount % 60 == 0) {
+                    Debug.Log($"ROTATION_DEBUG: widget rotation={transform.rotation.eulerAngles}");
+                    Debug.Log($"ROTATION_DEBUG: canvas rotation={Coords.CanvasPose.rotation.eulerAngles}");
+                    Debug.Log($"ROTATION_DEBUG: original normal={closestNormal}, transformed normal={worldNormal}");
+                }
             }
             else
             {
-                lr.gameObject.SetActive(false);
-                surfacePos = transform.position;
-                surfaceNorm = transform.forward;
+                surfacePos = origin;
+                surfaceNorm = forward;
             }
         }
-
+        
         override public float GetActivationScore(
             Vector3 vControllerPos, InputManager.ControllerName name)
         {
