@@ -27,7 +27,7 @@ namespace TiltBrush
 
         public FileWatcher(string path)
         {
-            if (App.PlatformConfig.UseFileSystemWatcher)
+            if (UserConfig.PerformanceOverrides.UseFileSystemWatcher)
             {
                 m_InternalFileWatcher = new FileSystemWatcher(path);
                 m_InternalFileWatcher.IncludeSubdirectories = true;
@@ -37,7 +37,7 @@ namespace TiltBrush
 
         public FileWatcher(string path, string filter)
         {
-            if (App.PlatformConfig.UseFileSystemWatcher)
+            if (UserConfig.PerformanceOverrides.UseFileSystemWatcher)
             {
                 m_InternalFileWatcher = new FileSystemWatcher(path, filter);
                 AddEventsToInternalFileWatcher();
