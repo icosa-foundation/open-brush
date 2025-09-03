@@ -131,11 +131,14 @@ namespace TiltBrush
                 return false;
             }
 
-            // Check if ffmpeg is available or if forcing still frame fallback - if not, use still frame fallback
-            string ffmpegPath = FfmpegPipe.GetFfmpegExe();
-            bool shouldUseFallback = (ffmpegPath == null || App.UserConfig.Video.ForceFrameSequenceRender) && !offlineRender;
+#if UNITY_ANDROID || UNITY_IOS
+            // No ffmpeg binary on mobile, so always do still frame capture.
+            bool stillFrameCapture = true;
+#else
+            bool stillFrameCapture = App.UserConfig.Video.ForceFrameSequenceRender;
+#endif
 
-            if (shouldUseFallback)
+            if (stillFrameCapture)
             {
                 return StartStillFrameSequenceCapture(filePath, recorder, usdPathSerializer);
             }
