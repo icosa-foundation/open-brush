@@ -162,6 +162,7 @@ namespace TiltBrush
                 AssetId = SaveLoadScript.m_Instance.SceneFile.AssetId,
                 CameraPaths = MetadataUtils.GetCameraPaths(),
                 Layers = MetadataUtils.GetLayers(),
+                AnimationTracks = MetadataUtils.GetAnimationTracks(),
                 SchemaVersion = SketchMetadata.kSchemaVersion,
                 ApplicationName = App.kAppDisplayName,
                 ApplicationVersion = App.Config.m_VersionNumber,
@@ -306,6 +307,7 @@ namespace TiltBrush
                     List<Guid> brushGuids;
                     using (var stream = tiltWriter.GetWriteStream(TiltFile.FN_SKETCH))
                     {
+                        Console.WriteLine("WRITE DATA ");
                         SketchWriter.WriteMemory(stream, m_Strokes, m_GroupIdMapping, out brushGuids);
                     }
                     m_Metadata.BrushIndex = brushGuids.Select(GetForcePrecededBy).ToArray();
@@ -313,6 +315,7 @@ namespace TiltBrush
                     using (var jsonWriter = new CustomJsonWriter(new StreamWriter(
                         tiltWriter.GetWriteStream(TiltFile.FN_METADATA))))
                     {
+                        Console.WriteLine("WRITE JSON ");
                         m_JsonSerializer.Serialize(jsonWriter, m_Metadata);
                     }
 
