@@ -504,25 +504,14 @@ namespace TiltBrush
         {
             var camera = LeftInfo.camera;
 
-            // Use DepthNormalsTexture shader to render depth+normals, then extract depth
             var prevTarget = camera.targetTexture;
             var prevDepthTextureMode = camera.depthTextureMode;
 
             camera.targetTexture = rTexture;
             camera.depthTextureMode = DepthTextureMode.Depth;
 
-            // Render with DepthNormalsTexture shader (we know this works)
             Shader depthNormalsShader = Shader.Find("Hidden/Internal-DepthNormalsTexture");
-            if (depthNormalsShader != null)
-            {
-                Debug.Log("Found DepthNormalsTexture shader, rendering with it");
-                camera.RenderWithShader(depthNormalsShader, "");
-            }
-            else
-            {
-                Debug.LogError("DepthNormalsTexture shader not found! Using normal render");
-                camera.Render(); // Fallback
-            }
+            camera.RenderWithShader(depthNormalsShader, "");
 
             // Restore camera state  
             camera.targetTexture = prevTarget;
@@ -665,6 +654,75 @@ namespace TiltBrush
             Destroy(normalOutputTexture);
 
             return bytes;
+        }
+
+        public static void TakeSnapshot(TrTransform tr, string filename, int width, int height, float superSampling = 1f, bool removeBackground = false, bool renderDepth = false, bool renderNormals = false)
+        {
+            bool saveAsPng;
+            if (filename.ToLower().EndsWith(".jpg") || filename.ToLower().EndsWith(".jpeg"))
+            {
+                saveAsPng = false;
+            }
+            else if (filename.ToLower().EndsWith(".png"))
+            {
+                saveAsPng = true;
+            }
+            else
+            {
+                saveAsPng = false;
+                filename += ".jpg";
+            }
+            string path = Path.Join(App.SnapshotPath(), filename);
+            MultiCamTool cam = SketchSurfacePanel.m_Instance.GetToolOfType(BaseTool.ToolType.MultiCamTool) as MultiCamTool;
+
+            if (cam != null)
+            {
+                var rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
+                App.Scene.AsScene[rig.gameObject.transform] = tr;
+                var rMgr = rig.ManagerFromStyle(MultiCamStyle.Snapshot);
+                var initialState = rig.gameObject.activeSelf;
+                rig.gameObject.SetActive(true);
+                RenderTexture tmp = rMgr.CreateTemporaryTargetForSave(width, height);
+                RenderWrapper wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
+                float ssaaRestore = wrapper.SuperSampling;
+                wrapper.SuperSampling = superSampling;
+
+                bool watermarkEnabled = CameraConfig.Watermark;
+                CameraConfig.Watermark = false;
+                bool postEffectsEnabled = CameraConfig.PostEffects;
+                CameraConfig.PostEffects = false;
+
+                if (renderDepth)
+                {
+                    rMgr.RenderDepthToTexture(tmp);
+                    var depthPath = path.Replace(Path.GetExtension(path), "_depth.png");
+                    using (var fs = new FileStream(depthPath, FileMode.Create))
+                    {
+                        SaveDepth(fs, tmp);
+                    }
+                }
+
+                if (renderNormals)
+                {
+                    rMgr.RenderDepthNormalToTexture(tmp);
+                    var normalPath = path.Replace(Path.GetExtension(path), "_normals.png");
+                    using (var fs = new FileStream(normalPath, FileMode.Create))
+                    {
+                        SaveNormals(fs, tmp);
+                    }
+                }
+                CameraConfig.Watermark = watermarkEnabled;
+                CameraConfig.PostEffects = postEffectsEnabled;
+
+                rMgr.RenderToTexture(tmp, removeBackground: removeBackground);
+                using (var fs = new FileStream(path, FileMode.Create))
+                {
+                    Save(fs, tmp, bSaveAsPng: saveAsPng);
+                }
+
+                wrapper.SuperSampling = ssaaRestore;
+                rig.gameObject.SetActive(initialState);
+            }
         }
     }
 } // namespace TiltBrush

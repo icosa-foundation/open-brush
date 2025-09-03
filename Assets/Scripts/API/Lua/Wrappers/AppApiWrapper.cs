@@ -186,64 +186,7 @@ namespace TiltBrush
         [LuaDocsParameter("renderNormals", "If true then render as a normals map")]
         public static void TakeSnapshot(TrTransform tr, string filename, int width, int height, float superSampling = 1f, bool removeBackground = false, bool renderDepth = false, bool renderNormals = false)
         {
-            bool saveAsPng;
-            if (filename.ToLower().EndsWith(".jpg") || filename.ToLower().EndsWith(".jpeg"))
-            {
-                saveAsPng = false;
-            }
-            else if (filename.ToLower().EndsWith(".png"))
-            {
-                saveAsPng = true;
-            }
-            else
-            {
-                saveAsPng = false;
-                filename += ".jpg";
-            }
-            string path = Path.Join(App.SnapshotPath(), filename);
-            MultiCamTool cam = SketchSurfacePanel.m_Instance.GetToolOfType(BaseTool.ToolType.MultiCamTool) as MultiCamTool;
-
-            if (cam != null)
-            {
-                var rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
-                App.Scene.AsScene[rig.gameObject.transform] = tr;
-                var rMgr = rig.ManagerFromStyle(MultiCamStyle.Snapshot);
-                var initialState = rig.gameObject.activeSelf;
-                rig.gameObject.SetActive(true);
-                RenderTexture tmp = rMgr.CreateTemporaryTargetForSave(width, height);
-                RenderWrapper wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
-                float ssaaRestore = wrapper.SuperSampling;
-                wrapper.SuperSampling = superSampling;
-
-                if (renderDepth)
-                {
-                    rMgr.RenderDepthToTexture(tmp);
-                    var depthPath = path.Replace(Path.GetExtension(path), "_depth.png");
-                    using (var fs = new FileStream(depthPath, FileMode.Create))
-                    {
-                        ScreenshotManager.SaveDepth(fs, tmp);
-                    }
-                }
-
-                if (renderNormals)
-                {
-                    rMgr.RenderDepthNormalToTexture(tmp);
-                    var normalPath = path.Replace(Path.GetExtension(path), "_normals.png");
-                    using (var fs = new FileStream(normalPath, FileMode.Create))
-                    {
-                        ScreenshotManager.SaveNormals(fs, tmp);
-                    }
-                }
-
-                rMgr.RenderToTexture(tmp, removeBackground: removeBackground);
-                using (var fs = new FileStream(path, FileMode.Create))
-                {
-                    ScreenshotManager.Save(fs, tmp, bSaveAsPng: saveAsPng);
-                }
-
-                wrapper.SuperSampling = ssaaRestore;
-                rig.gameObject.SetActive(initialState);
-            }
+            ScreenshotManager.TakeSnapshot(tr, filename, width, height, superSampling, removeBackground, renderDepth, renderNormals);
         }
 
         [LuaDocsDescription("Take a 360-degree snapshot of the scene and save it")]
