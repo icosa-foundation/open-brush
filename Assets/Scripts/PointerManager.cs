@@ -1820,5 +1820,47 @@ namespace TiltBrush
                 ChangeAllPointerColorsDirectly(GenerateJitteredColor(MainPointer.CurrentBrush.m_ColorLuminanceMin));
             }
         }
+
+        public List<TrTransform> GetSymmetriesForCurrentMode()
+        {
+            List<TrTransform> xfSymmetriesGS;
+
+            switch (CurrentSymmetryMode)
+            {
+                case SymmetryMode.SinglePlane:
+                    xfSymmetriesGS = new List<TrTransform>
+                    {
+                        TrTransform.identity,
+                        SymmetryWidget.ReflectionPlane.ToTrTransform()
+                    };
+                    break;
+                case SymmetryMode.MultiMirror:
+                    xfSymmetriesGS = new List<TrTransform>();
+
+                    var xfCenter = TrTransform.FromTransform(
+                        m_SymmetryLockedToController
+                            ? MainPointer.transform
+                            : SymmetryWidget.GrabTransform_GS
+                    );
+
+                    var appScale = TrTransform.S(App.Scene.Pose.scale);
+                    var pre = xfCenter * appScale;
+                    foreach (var m in CustomMirrorMatrices)
+                    {
+                        var tr = TrTransform.FromMatrix4x4(m);
+                        xfSymmetriesGS.Add(pre * tr * pre.inverse);
+                    }
+                    break;
+                case SymmetryMode.ScriptedSymmetryMode:
+                    xfSymmetriesGS = GetScriptedTransforms(update: true);
+                    break;
+                // case PointerManager.SymmetryMode.CustomSymmetryMode:
+                //     break;
+                default:
+                    xfSymmetriesGS = new List<TrTransform>();
+                    break;
+            }
+            return xfSymmetriesGS;
+        }
     }
 } // namespace TiltBrush
