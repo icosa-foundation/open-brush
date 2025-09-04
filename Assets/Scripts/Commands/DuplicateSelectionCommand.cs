@@ -44,7 +44,7 @@ namespace TiltBrush
             // Gather duplicate transforms based on current symmetry mode.
             // Use Unity transforms and Matrix4x4 because we are going
             // to be dealing with non-uniform scale.
-            
+
             // Save selected strokes.
             m_SelectedStrokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
             // Save selected widgets.

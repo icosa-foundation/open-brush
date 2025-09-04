@@ -1820,11 +1820,11 @@ namespace TiltBrush
                 ChangeAllPointerColorsDirectly(GenerateJitteredColor(MainPointer.CurrentBrush.m_ColorLuminanceMin));
             }
         }
-        
+
         public List<TrTransform> GetSymmetriesForCurrentMode()
         {
             List<TrTransform> xfSymmetriesGS;
-            
+
             switch (CurrentSymmetryMode)
             {
                 case SymmetryMode.SinglePlane:
