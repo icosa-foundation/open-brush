@@ -18,7 +18,7 @@ public class VrStylusHandler : StylusHandler
         m_Instance = this;
     }
 
-#if false
+#if OCULUS_SUPPORTED
     private bool _inUiInteraction = false;
 
     public bool InUiInteraction
