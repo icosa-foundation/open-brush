@@ -44,45 +44,7 @@ namespace TiltBrush
             // Gather duplicate transforms based on current symmetry mode.
             // Use Unity transforms and Matrix4x4 because we are going
             // to be dealing with non-uniform scale.
-            List<TrTransform> xfSymmetriesGS = null;
-            bool duplicateWidgetsAsTwoSided = false;
-            switch (PointerManager.m_Instance.CurrentSymmetryMode)
-            {
-                case PointerManager.SymmetryMode.SinglePlane:
-                    duplicateWidgetsAsTwoSided = true;
-                    xfSymmetriesGS = new List<TrTransform>
-                    {
-                        TrTransform.identity,
-                        PointerManager.m_Instance.SymmetryWidget.ReflectionPlane.ToTrTransform()
-                    };
-                    break;
-                case PointerManager.SymmetryMode.MultiMirror:
-                    duplicateWidgetsAsTwoSided = true;
-                    xfSymmetriesGS = new List<TrTransform>();
-
-                    var xfCenter = TrTransform.FromTransform(
-                        PointerManager.m_Instance.m_SymmetryLockedToController
-                            ? PointerManager.m_Instance.MainPointer.transform
-                            : PointerManager.m_Instance.SymmetryWidget.GrabTransform_GS
-                    );
-
-                    var appScale = TrTransform.S(App.Scene.Pose.scale);
-                    var pre = xfCenter * appScale;
-                    foreach (var m in PointerManager.m_Instance.CustomMirrorMatrices)
-                    {
-                        var tr = TrTransform.FromMatrix4x4(m);
-                        xfSymmetriesGS.Add(pre * tr * pre.inverse);
-                    }
-                    break;
-                case PointerManager.SymmetryMode.ScriptedSymmetryMode:
-                    duplicateWidgetsAsTwoSided = true;
-                    xfSymmetriesGS = PointerManager.m_Instance.GetScriptedTransforms(update: true);
-                    break;
-                // case PointerManager.SymmetryMode.CustomSymmetryMode:
-                //     break;
-                default:
-                    break;
-            }
+            
             // Save selected strokes.
             m_SelectedStrokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
             // Save selected widgets.
@@ -90,7 +52,8 @@ namespace TiltBrush
 
             m_DuplicatedStrokes = new List<Stroke>();
             m_DuplicatedWidgets = new List<GrabWidget>();
-            if (xfSymmetriesGS == null)
+            var xfSymmetriesGS = PointerManager.m_Instance.GetSymmetriesForCurrentMode();
+            if (xfSymmetriesGS.Count == 0)
             {
                 // Special case for non-symmetry to match legacy code. Duplicate
                 // selection into selection canvas, deselect the old selection,
@@ -118,6 +81,7 @@ namespace TiltBrush
                 // The new way, which works with arbitrary mirror matrices.
                 // Leave selection untouched and apply all transforms at 
                 // creation time.
+
                 if (!m_DupeInPlace)
                 {
                     // Apply transform parameter.
@@ -156,8 +120,7 @@ namespace TiltBrush
                 {
                     // Generally speaking we want both sides of 2d media to appear
                     // when duplicating using multi-mirror.
-                    bool duplicateAsTwoSided = widget is Media2dWidget
-                        && duplicateWidgetsAsTwoSided;
+                    bool duplicateAsTwoSided = widget is Media2dWidget;
 
                     for (int i = 0; i < xfSymmetriesGS.Count; i++)
                     {

@@ -1249,7 +1249,37 @@ namespace TiltBrush
 
             tr_CS.rotation = SelectionManager.m_Instance.QuantizeAngle(tr_CS.rotation);
 
-            if (transforms != null) DrawStrokes.DrawNestedTrList(transforms, tr_CS, result._Colors, brushScale);
+            if (transforms != null)
+            {
+                var xfSymmetriesGS = PointerManager.m_Instance.GetSymmetriesForCurrentMode();
+                if (xfSymmetriesGS.Count == 0)
+                {
+                    DrawStrokes.DrawNestedTrList(transforms, tr_CS, result._Colors, brushScale);
+                }
+                else
+                {
+                    // Pre-calculate left transforms for canvas space.
+                    var xfSymmetriesCS = new List<TrTransform>();
+                    var xfCSfromGS = App.ActiveCanvas.Pose.inverse;
+                    var xfGSfromCS = App.ActiveCanvas.Pose;
+                    foreach (var sym in xfSymmetriesGS)
+                    {
+                        xfSymmetriesCS.Add(xfCSfromGS * sym * xfGSfromCS);
+                    }
+
+                    var newTransforms = new List<List<TrTransform>>();
+                    foreach (var trList in transforms)
+                    {
+                        foreach (var sym in xfSymmetriesCS)
+                        {
+                            var newTrList = trList.Select(x => sym * x * tr_CS).ToList();
+                            newTransforms.Add(newTrList);
+                        }
+                    }
+                    DrawStrokes.DrawNestedTrList(newTransforms, TrTransform.identity, result._Colors, brushScale);
+                }
+            }
+            
             if (result._Colors == null)
             {
                 // If our script doesn't generate colors
