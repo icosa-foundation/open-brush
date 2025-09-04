@@ -1275,7 +1275,18 @@ namespace TiltBrush
                             var newTrList = trList.Select(x => {
                                 // Apply full tr_CS transform to the original transform, then apply symmetry
                                 var transformedByTrCS = tr_CS * x;
-                                return sym * transformedByTrCS;
+                                var symmetriedTransform = sym * transformedByTrCS;
+                                
+                                // Check if symmetry transform has negative scale (reflection)
+                                // If so, remove it by applying a compensating reflection
+                                if (sym.scale < 0)
+                                {
+                                    // Apply the same fix as TrFromMatrixWithFixedReflections - X-axis reflection
+                                    var kReflectX = new Plane(new Vector3(1, 0, 0), 0).ToTrTransform();
+                                    symmetriedTransform = symmetriedTransform * kReflectX;
+                                }
+                                
+                                return symmetriedTransform;
                             }).ToList();
                             newTransforms.Add(newTrList);
                         }
