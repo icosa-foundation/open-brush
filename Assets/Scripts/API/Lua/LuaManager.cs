@@ -1272,7 +1272,11 @@ namespace TiltBrush
                     {
                         foreach (var sym in xfSymmetriesCS)
                         {
-                            var newTrList = trList.Select(x => sym * x * tr_CS).ToList();
+                            var newTrList = trList.Select(x => {
+                                // Apply full tr_CS transform to the original transform, then apply symmetry
+                                var transformedByTrCS = tr_CS * x;
+                                return sym * transformedByTrCS;
+                            }).ToList();
                             newTransforms.Add(newTrList);
                         }
                     }
