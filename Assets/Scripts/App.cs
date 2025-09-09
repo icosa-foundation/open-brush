@@ -2006,7 +2006,10 @@ namespace TiltBrush
 
             if (!Directory.Exists(modelsDirectory))
             {
-                if (!InitDirectoryAtPath(modelsDirectory)) { return false; }
+                if (!InitDirectoryAtPath(modelsDirectory))
+                {
+                    return;
+                }
             }
 
             // Copy if the directory is empty
@@ -2029,7 +2032,6 @@ namespace TiltBrush
                 }
                 PlayerPrefs.SetInt(kPlayerPrefSeededDefaultModels, 1);
             }
-            return true;
         }
 
         /// Creates the Background Images directory and copies in the provided default images.
@@ -2043,7 +2045,7 @@ namespace TiltBrush
             {
                 if (!FileUtils.InitializeDirectoryWithUserError(path))
                 {
-                    return false;
+                    return;
                 }
             }
 
@@ -2065,7 +2067,6 @@ namespace TiltBrush
                 }
                 PlayerPrefs.SetInt(kPlayerPrefSeededDefaultBackgroundImages, 1);
             }
-            return true;
         }
 
         /// Creates the Reference Images directory and copies in the provided default images.
@@ -2079,7 +2080,7 @@ namespace TiltBrush
             {
                 if (!FileUtils.InitializeDirectoryWithUserError(path))
                 {
-                    return false;
+                    return;
                 }
             }
 
@@ -2102,7 +2103,6 @@ namespace TiltBrush
                 }
                 PlayerPrefs.SetInt(kPlayerPrefSeededDefaultReferenceImages, 1);
             }
-            return true;
         }
 
         public static void InitVideoLibraryPath(string[] defaultVideos)
@@ -2113,7 +2113,7 @@ namespace TiltBrush
             {
                 if (!InitDirectoryAtPath(videosDirectory))
                 {
-                    return false;
+                    return;
                 }
             }
 
@@ -2135,8 +2135,6 @@ namespace TiltBrush
                 }
                 PlayerPrefs.SetInt(kPlayerPrefSeededDefaultVideos, 1);
             }
-
-            return true;
         }
 
         public static string FeaturedSketchesPath()
