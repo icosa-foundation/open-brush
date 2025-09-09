@@ -373,7 +373,7 @@
       "hash": "dd39e8b23a399938e91a1088a78ef63ca64f2cd8"
     },
     "org.khronos.unitygltf": {
-      "version": "https://github.com/KhronosGroup/UnityGLTF.git",
+      "version": "https://github.com/KhronosGroup/UnityGLTF.git#release/2.17.0",
       "depth": 0,
       "source": "git",
       "dependencies": {
@@ -382,7 +382,7 @@
         "com.unity.shadergraph": "10.0.0",
         "com.unity.mathematics": "1.0.0"
       },
-      "hash": "7dd9c55b70ac5fc9cc70b0e634a27bbc90517ffa"
+      "hash": "f6acc50ba741a0da979b381b55cabfd716a4a5eb"
     },
     "org.nuget.google.apis": {
       "version": "1.64.0",
