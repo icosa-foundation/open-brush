@@ -69,7 +69,7 @@ namespace TiltBrush
         public const string kPlayerPrefSeededDefaultBackgroundImages = "SeededDefaultBackgroundImages";
         public const string kPlayerPrefSeededDefaultReferenceImages = "SeededDefaultReferenceImages";
         public const string kPlayerPrefSeededDefaultVideos = "SeededDefaultVideos";
-        public const string kShapeRecipesSeeded = "Shape Recipes seeded";
+        public const string kPlayerPrefSeededDefaultShapeRecipes = "SeededShapeRecipes";
 
         private const string kDefaultConfigPath = "DefaultConfig";
 
@@ -2106,43 +2106,6 @@ namespace TiltBrush
         }
 
         public static void InitVideoLibraryPath(string[] defaultVideos)
-        /// Creates the Shape Recipes directory and copies in the provided default json and thumbnails.
-        /// Returns true if the directory already exists or if it is created successfully, false if the
-        /// directory could not be created.
-        public static bool InitShapeRecipesPath()
-        {
-
-            string path = $"{ShapeRecipesPath()}/Examples";
-            if (!Directory.Exists(path))
-            {
-                if (!FileUtils.InitializeDirectoryWithUserError(path))
-                {
-                    return false;
-                }
-            }
-
-            // Populate the shape recipes folder exactly once.
-            int seeded = PlayerPrefs.GetInt(kShapeRecipesSeeded);
-            PlayerPrefs.SetInt(kShapeRecipesSeeded, 0);
-            if (seeded == 0)
-            {
-                string defaultRecipePath = "Default Shape Recipes";
-                TextAsset[] defaultRecipes = Resources.LoadAll<TextAsset>(defaultRecipePath);
-                foreach (TextAsset recipe in defaultRecipes)
-                {
-                    Texture2D thumbnail = Resources.Load<Texture2D>(Path.Combine(defaultRecipePath, recipe.name));
-                    string thumbResourcePath = $"{defaultRecipePath}/{thumbnail.name}.png";
-                    string recipeResourcePath = $"{defaultRecipePath}/{recipe.name}";
-                    FileUtils.WriteTextureFromResources(thumbResourcePath, Path.Combine(path, $"{Path.GetFileName(thumbnail.name)}.png"));
-                    FileUtils.WriteTextFromResources(recipeResourcePath, Path.Combine(path, $"{Path.GetFileName(recipe.name)}.json"));
-                }
-                // TODO uncomment this when I've settled on an initial set of presets
-                //PlayerPrefs.SetInt(kShapeRecipesSeeded, 1);
-            }
-            return true;
-        }
-
-        public static bool InitVideoLibraryPath(string[] defaultVideos)
         {
             string videosDirectory = VideoLibraryPath();
 
@@ -2171,6 +2134,42 @@ namespace TiltBrush
                     FileUtils.WriteBytesFromResources(video, Path.Combine(videosDirectory, destFilename));
                 }
                 PlayerPrefs.SetInt(kPlayerPrefSeededDefaultVideos, 1);
+            }
+        }
+
+        public static void InitShapeRecipesPath()
+        {
+            string recipesDirectory = $"{ShapeRecipesPath()}/Examples";
+
+            if (!Directory.Exists(recipesDirectory))
+            {
+                if (!FileUtils.InitializeDirectoryWithUserError(recipesDirectory))
+                {
+                    return;
+                }
+            }
+
+            // Copy if the directory is empty
+            bool shouldCopy = Directory.GetFileSystemEntries(recipesDirectory).Length == 0;
+
+            // But only once per clean install
+            if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultShapeRecipes, 0) != 0)
+            {
+                shouldCopy = false;
+            }
+
+            if (shouldCopy)
+            {
+                string defaultRecipePath = "Default Shape Recipes";
+                TextAsset[] defaultRecipes = Resources.LoadAll<TextAsset>(defaultRecipePath);
+                foreach (TextAsset recipe in defaultRecipes)
+                {
+                    Texture2D thumbnail = Resources.Load<Texture2D>(Path.Combine(defaultRecipePath, recipe.name));
+                    string thumbResourcePath = $"{defaultRecipePath}/{thumbnail.name}.png";
+                    string recipeResourcePath = $"{defaultRecipePath}/{recipe.name}";
+                    FileUtils.WriteTextureFromResources(thumbResourcePath, Path.Combine(path, $"{Path.GetFileName(thumbnail.name)}.png"));
+                    FileUtils.WriteTextFromResources(recipeResourcePath, Path.Combine(path, $"{Path.GetFileName(recipe.name)}.json"));
+                }
             }
         }
 
