@@ -80,6 +80,12 @@ namespace TiltBrush
         public override void OnTabEnable()
         {
             m_TabActive = true;
+            // If we have no filewatcher, we need to check if any files have changed since the user
+            // last had the panel open.
+            if (!App.PlatformConfig.UseFileSystemWatcher)
+            {
+                Catalog.ForceCatalogScan();
+            }
         }
 
         public override void OnTabDisable()
