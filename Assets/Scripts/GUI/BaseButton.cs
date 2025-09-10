@@ -339,12 +339,12 @@ namespace TiltBrush
         override public void ButtonPressed(RaycastHit rHitInfo)
         {
             // Long press buttons don't trigger press until release.
+            SetDescriptionActive(true);
             if (m_LongPressReleaseButton)
             {
                 bool available = IsAvailable();
                 SetButtonActivated(available);
                 SetDescriptionVisualsAvailable(available);
-                SetDescriptionActive(true);
             }
             else
             {
@@ -384,27 +384,31 @@ namespace TiltBrush
             }
         }
 
+        public virtual bool ShouldShowHoverState()
+        {
+            return !m_LongPressReleaseButton;
+        }
+
         override public void GainFocus()
         {
-            if (!m_LongPressReleaseButton)
-            {
-                if (IsAvailable())
-                {
-                    AdjustButtonPositionAndScale(m_ZAdjustHover, m_HoverScale, m_HoverBoxColliderGrow);
-                    if (m_CurrentButtonState != ButtonState.Pressed)
-                    {
-                        AudioManager.m_Instance.ItemHover(transform.position);
-                    }
+            if (!ShouldShowHoverState()) return;
 
-                    m_CurrentButtonState = ButtonState.Hover;
-                    SetDescriptionActive(true);
-                    SetDescriptionVisualsAvailable(true);
-                }
-                else
+            if (IsAvailable())
+            {
+                AdjustButtonPositionAndScale(m_ZAdjustHover, m_HoverScale, m_HoverBoxColliderGrow);
+                if (m_CurrentButtonState != ButtonState.Pressed)
                 {
-                    SetDescriptionActive(true);
-                    SetDescriptionVisualsAvailable(false);
+                    AudioManager.m_Instance.ItemHover(transform.position);
                 }
+
+                m_CurrentButtonState = ButtonState.Hover;
+                SetDescriptionActive(true);
+                SetDescriptionVisualsAvailable(true);
+            }
+            else
+            {
+                SetDescriptionActive(true);
+                SetDescriptionVisualsAvailable(false);
             }
         }
 
