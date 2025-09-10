@@ -2167,8 +2167,8 @@ namespace TiltBrush
                     Texture2D thumbnail = Resources.Load<Texture2D>(Path.Combine(defaultRecipePath, recipe.name));
                     string thumbResourcePath = $"{defaultRecipePath}/{thumbnail.name}.png";
                     string recipeResourcePath = $"{defaultRecipePath}/{recipe.name}";
-                    FileUtils.WriteTextureFromResources(thumbResourcePath, Path.Combine(path, $"{Path.GetFileName(thumbnail.name)}.png"));
-                    FileUtils.WriteTextFromResources(recipeResourcePath, Path.Combine(path, $"{Path.GetFileName(recipe.name)}.json"));
+                    FileUtils.WriteTextureFromResources(thumbResourcePath, Path.Combine(recipesDirectory, $"{Path.GetFileName(thumbnail.name)}.png"));
+                    FileUtils.WriteTextFromResources(recipeResourcePath, Path.Combine(recipesDirectory, $"{Path.GetFileName(recipe.name)}.json"));
                 }
             }
         }
