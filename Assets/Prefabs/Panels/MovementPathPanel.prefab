@@ -260,7 +260,7 @@ GameObject:
   - component: {fileID: 33801423852497992}
   - component: {fileID: 23611759271376402}
   - component: {fileID: 65326711721676598}
-  - component: {fileID: 114776587011213156}
+  - component: {fileID: 1466499030800816686}
   m_Layer: 16
   m_Name: Button_AddPositionKnot
   m_TagString: Untagged
@@ -346,7 +346,7 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1, y: 1, z: 0.1}
   m_Center: {x: -0.000000074505806, y: 0.000000022351742, z: 0}
---- !u!114 &114776587011213156
+--- !u!114 &1466499030800816686
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -355,7 +355,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1340142928231240}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d39271dcac5ef145b3edfb04874cc88, type: 3}
+  m_Script: {fileID: 11500000, guid: 967c894945223aa4380b6db857bf29b6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
@@ -365,7 +365,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 7676879580143616
+      m_KeyId: 7677371119017984
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -409,7 +409,7 @@ GameObject:
   - component: {fileID: 65814235754513454}
   - component: {fileID: 114616287424630988}
   m_Layer: 14
-  m_Name: CameraPathPreview
+  m_Name: MovementPathPreview
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -498,7 +498,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1422790072601250}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8d764c03dbed5064f835832f1cebad54, type: 3}
+  m_Script: {fileID: 11500000, guid: 68ac45d9682815849b6e6fcebd8e67d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: -1
@@ -535,7 +535,7 @@ MonoBehaviour:
   m_HoverScale: 1.05
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Command: 87
+  m_Command: 0
   m_CommandParam: -1
   m_CommandParam2: -1
   m_RequiresPopup: 0
@@ -588,7 +588,7 @@ GameObject:
   - component: {fileID: 114621861754939858}
   - component: {fileID: 114507774338423928}
   m_Layer: 16
-  m_Name: CameraPathPanel
+  m_Name: MovementPathPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1024,7 +1024,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1717402578153906}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d39271dcac5ef145b3edfb04874cc88, type: 3}
+  m_Script: {fileID: 11500000, guid: 967c894945223aa4380b6db857bf29b6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: -1
@@ -1195,7 +1195,7 @@ GameObject:
   - component: {fileID: 33698633843537228}
   - component: {fileID: 23852062681546192}
   - component: {fileID: 65662454516871054}
-  - component: {fileID: 114996894459006598}
+  - component: {fileID: 1623614782930873572}
   m_Layer: 16
   m_Name: Button_AddFovKnot
   m_TagString: Untagged
@@ -1281,7 +1281,7 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1, y: 1, z: 0.1}
   m_Center: {x: -0.000000074505806, y: 0.000000022351742, z: 0}
---- !u!114 &114996894459006598
+--- !u!114 &1623614782930873572
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1290,7 +1290,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1785916753093744}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d39271dcac5ef145b3edfb04874cc88, type: 3}
+  m_Script: {fileID: 11500000, guid: 967c894945223aa4380b6db857bf29b6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
@@ -1300,7 +1300,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 7677508033683456
+      m_KeyId: 7677371119017984
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -1343,7 +1343,7 @@ GameObject:
   - component: {fileID: 33640980021624566}
   - component: {fileID: 23283915757692552}
   - component: {fileID: 65780406826653482}
-  - component: {fileID: 114686471519418664}
+  - component: {fileID: 6854069887419900860}
   m_Layer: 16
   m_Name: Button_DeleteKnots
   m_TagString: Untagged
@@ -1429,7 +1429,7 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1, y: 1, z: 0.1}
   m_Center: {x: -0.000000074505806, y: 0.000000022351742, z: 0}
---- !u!114 &114686471519418664
+--- !u!114 &6854069887419900860
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1438,17 +1438,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 1822569104503666}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d39271dcac5ef145b3edfb04874cc88, type: 3}
+  m_Script: {fileID: 11500000, guid: 967c894945223aa4380b6db857bf29b6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: CAMERAPATH_PANEL_DELETEKNOT_BUTTON_DESCRIPTION
+  m_DescriptionText: CAMERAPATH_PANEL_DELETEKNOT_BUTTON_DESCRIPTIONN_DESCRIPTION
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 7677024573038592
+      m_KeyId: 7677371119017984
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -1491,7 +1491,7 @@ GameObject:
   - component: {fileID: 33912759654505108}
   - component: {fileID: 23470785835067802}
   - component: {fileID: 65006259885598518}
-  - component: {fileID: 114146911975218374}
+  - component: {fileID: 5560684723117502954}
   m_Layer: 16
   m_Name: Button_AddSpeedKnot
   m_TagString: Untagged
@@ -1577,7 +1577,7 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1, y: 1, z: 0.1}
   m_Center: {x: -0.000000074505806, y: 0.000000022351742, z: 0}
---- !u!114 &114146911975218374
+--- !u!114 &5560684723117502954
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1586,7 +1586,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1879776611258194}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d39271dcac5ef145b3edfb04874cc88, type: 3}
+  m_Script: {fileID: 11500000, guid: 967c894945223aa4380b6db857bf29b6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
@@ -1596,7 +1596,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 7677444783579136
+      m_KeyId: 7677371119017984
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -1734,7 +1734,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1918326807535558}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d39271dcac5ef145b3edfb04874cc88, type: 3}
+  m_Script: {fileID: 11500000, guid: 967c894945223aa4380b6db857bf29b6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
@@ -1785,10 +1785,10 @@ GameObject:
   m_Component:
   - component: {fileID: 4573350974195002}
   - component: {fileID: 65369600531511936}
-  - component: {fileID: 114073511056823558}
   - component: {fileID: 114635686858250188}
+  - component: {fileID: 1575462547579432345}
   m_Layer: 16
-  m_Name: CameraPathButtons
+  m_Name: MovementPathButtons
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1824,7 +1824,7 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1.35, y: 1.8, z: 0.01}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &114073511056823558
+--- !u!114 &114635686858250188
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1833,7 +1833,19 @@ MonoBehaviour:
   m_GameObject: {fileID: 1967780500478444}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 63bafd01872414c43a23f62bae399696, type: 3}
+  m_Script: {fileID: 11500000, guid: 739d5b1996234d64992a2ae60c3723e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1575462547579432345
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1967780500478444}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4655d0a0ef5e1a4294d782b676149f2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: -1
@@ -1869,18 +1881,6 @@ MonoBehaviour:
   references:
     version: 2
     RefIds: []
---- !u!114 &114635686858250188
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1967780500478444}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 739d5b1996234d64992a2ae60c3723e9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1982714309259906
 GameObject:
   m_ObjectHideFlags: 0
