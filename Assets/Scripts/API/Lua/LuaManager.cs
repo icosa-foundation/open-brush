@@ -727,11 +727,11 @@ namespace TiltBrush
                 }
                 else // It's hopefully an IPathApiWrapper instance
                 {
-                    if (result.UserData.Descriptor.Type == typeof(MatrixListApiWrapper))
+                    if (result.UserData?.Descriptor?.Type == typeof(MatrixListApiWrapper))
                     {
                         wrapper = result.ToObject<MatrixListApiWrapper>();
                     }
-                    else if (result.UserData.Descriptor.Type == typeof(PathApiWrapper))
+                    else if (result.UserData?.Descriptor?.Type == typeof(PathApiWrapper))
                     {
                         wrapper = result.ToObject<PathApiWrapper>();
                     }
