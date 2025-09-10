@@ -560,7 +560,7 @@ namespace TiltBrush
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultModels);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultBackgroundImages);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultReferenceImages);
-                PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultVideos)
+                PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultVideos);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultSavedStrokes);
                 PlayerPrefs.DeleteKey(PanelManager.kPlayerPrefAdvancedMode);
                 AdvancedPanelLayouts.ClearPlayerPrefs();
@@ -2156,8 +2156,9 @@ namespace TiltBrush
             // But only once per clean install
             if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultSavedStrokes, 0) != 0)
             {
-                shouldCopy = false;s
+                shouldCopy = false;
             }
+            
             if (shouldCopy)
             {
                 foreach (var savedStroke in defaultSavedStrokes)
@@ -2166,7 +2167,7 @@ namespace TiltBrush
                     FileUtils.WriteBytesFromResources(savedStroke, Path.Combine(savedStrokesDirectory, destFilename));
                 }
             }
-            
+
             return true;
         }
 
