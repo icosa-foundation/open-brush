@@ -69,7 +69,7 @@ namespace TiltBrush
         public const string kPlayerPrefSeededDefaultBackgroundImages = "SeededDefaultBackgroundImages";
         public const string kPlayerPrefSeededDefaultReferenceImages = "SeededDefaultReferenceImages";
         public const string kPlayerPrefSeededDefaultVideos = "SeededDefaultVideos";
-
+        public const string kPlayerPrefSeededDefaultSavedStrokes = "SeededDefaultSavedStrokes";
 
         private const string kDefaultConfigPath = "DefaultConfig";
 
@@ -560,7 +560,8 @@ namespace TiltBrush
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultModels);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultBackgroundImages);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultReferenceImages);
-                PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultVideos);
+                PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultVideos)
+                PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultSavedStrokes);
                 PlayerPrefs.DeleteKey(PanelManager.kPlayerPrefAdvancedMode);
                 AdvancedPanelLayouts.ClearPlayerPrefs();
                 PointerManager.ClearPlayerPrefs();
@@ -2140,20 +2141,32 @@ namespace TiltBrush
         public static bool InitSavedStrokesLibraryPath(string[] defaultSavedStrokes)
         {
             string savedStrokesDirectory = SavedStrokesPath();
-            if (Directory.Exists(savedStrokesDirectory))
+
+            if (!Directory.Exists(savedStrokesDirectory))
             {
-                return true;
-            }
-            if (!InitDirectoryAtPath(savedStrokesDirectory))
-            {
-                return false;
-            }
-            foreach (var savedStroke in defaultSavedStrokes)
-            {
-                string destFilename = Path.GetFileName(savedStroke);
-                FileUtils.WriteBytesFromResources(savedStroke, Path.Combine(savedStrokesDirectory, destFilename));
+                if (!InitDirectoryAtPath(savedStrokesDirectory))
+                {
+                    return;
+                }
             }
 
+            // Copy if the directory is empty
+            bool shouldCopy = Directory.GetFileSystemEntries(savedStrokesDirectory).Length == 0;
+
+            // But only once per clean install
+            if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultSavedStrokes, 0) != 0)
+            {
+                shouldCopy = false;s
+            }
+            if (shouldCopy)
+            {
+                foreach (var savedStroke in defaultSavedStrokes)
+                {
+                    string destFilename = Path.GetFileName(savedStroke);
+                    FileUtils.WriteBytesFromResources(savedStroke, Path.Combine(savedStrokesDirectory, destFilename));
+                }
+            }
+            
             return true;
         }
 

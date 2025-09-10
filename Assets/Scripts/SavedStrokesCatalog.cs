@@ -42,7 +42,7 @@ namespace TiltBrush
         private void Init()
         {
             App.InitMediaLibraryPath();
-            App.InitVideoLibraryPath(m_DefaultSavedStrokes);
+            App.InitSavedStrokesLibraryPath(m_DefaultSavedStrokes);
             ChangeDirectory(HomeDirectory);
         }
 
