@@ -386,3 +386,4 @@ Code in experimental mode is usually surrounded by the following block:
 
 Experimental brushes and environments are located in the `Assets/Resources/X`
 folder. They are not visible in non-experimental mode.
+
