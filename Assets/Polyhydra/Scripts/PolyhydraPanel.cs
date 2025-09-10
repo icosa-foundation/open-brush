@@ -1964,7 +1964,14 @@ namespace TiltBrush
                 btn.SetDescriptionText(LabelFormatter(opName));
                 var tex = GetButtonTexture(PolyhydraButtonTypes.OperatorType, opName);
                 btn.gameObject.SetActive(true);
-                btn.SetButtonTexture(tex);
+                try
+                {
+                    btn.SetButtonTexture(tex);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"Error setting button texture for op {i} type {opName}: {btn.name}");
+                }
 
                 btn.SetButtonOverlay(op.disabled);
 
