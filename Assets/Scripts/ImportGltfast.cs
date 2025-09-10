@@ -77,7 +77,8 @@ namespace TiltBrush
                 options.CameraImport = CameraImportOption.None;
 
                 var normalizedPath = Uri.UnescapeDataString(localPath).Replace("\\", "/");
-                if (normalizedPath.StartsWith("/")) {
+                if (normalizedPath.StartsWith("/"))
+                {
                     normalizedPath = normalizedPath.TrimStart('/');
                 }
 
