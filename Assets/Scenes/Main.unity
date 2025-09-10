@@ -8149,11 +8149,13 @@ MonoBehaviour:
 
     Quality Level: ~~
 
-    # FPS High: ~~~~ (> ~~)
+    #
+    FPS High: ~~~~ (> ~~)
 
     # GPU Low: ~~~~ (< ~~.~~)
 
-    # FPS Low: ~~~~ (< ~~)
+    # FPS Low: ~~~~ (<
+    ~~)
 
     # GPU High: ~~~~ (> ~~.~~)
 
@@ -11493,13 +11495,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd22834ba3234e3288ca0802bf460a3a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Materials:
-  - {fileID: 2100000, guid: 6d1406f44cadf7f449141eaa97f23094, type: 2}
-  - {fileID: 2100000, guid: f45e71efac2a5234885e87c7f2aedf64, type: 2}
-  - {fileID: 2100000, guid: df887d38197707e46b58d67a46d32399, type: 2}
-  - {fileID: 2100000, guid: 3cb42ab6bbf292b499ebfd9b6f7c1b17, type: 2}
-  - {fileID: 2100000, guid: fda2b47fe6beca54298ca41cf21b374f, type: 2}
-  - {fileID: 2100000, guid: 06a1baad1b2fd4942bf2aeb5408ed9c8, type: 2}
 --- !u!4 &669339392 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4492044767078796625, guid: 382dabebd59956d499aefb54b02f804d,
@@ -25466,7 +25461,8 @@ MonoBehaviour:
   m_QuestSideLoadingHowToURL: https://docs.openbrush.app/user-guide/using-reference-images-on-oculus-quest
   m_ContributionPromoText: 'Open Brush is a free app entirely run by volunteers.
 
-    If you enjoy the app, please consider donating in the settings menu!'
+    If
+    you enjoy the app, please consider donating in the settings menu!'
   m_ContributionURL: https://opencollective.com/icosa
   m_WorldTransformMinScale: 0.1
   m_WorldTransformMaxScale: 10
@@ -25612,6 +25608,30 @@ MonoBehaviour:
     m_ModeQuest: 0
     m_Basic: 0
     m_Advanced: 0
+  - m_PanelPrefab: {fileID: 0}
+    m_ModeVr: 0
+    m_ModeMono: 0
+    m_ModeQuest: 0
+    m_Basic: 0
+    m_Advanced: 0
+  - m_PanelPrefab: {fileID: 152754, guid: 1f98c5464e57ca042986684865c6c8e0, type: 3}
+    m_ModeVr: 1
+    m_ModeMono: 1
+    m_ModeQuest: 1
+    m_Basic: 1
+    m_Advanced: 0
+  - m_PanelPrefab: {fileID: 0}
+    m_ModeVr: 0
+    m_ModeMono: 0
+    m_ModeQuest: 0
+    m_Basic: 0
+    m_Advanced: 0
+  - m_PanelPrefab: {fileID: 0}
+    m_ModeVr: 0
+    m_ModeMono: 0
+    m_ModeQuest: 0
+    m_Basic: 0
+    m_Advanced: 1
   - m_PanelPrefab: {fileID: 1002243801905128, guid: d544a96827bc4554993b25909f237c88,
       type: 3}
     m_ModeVr: 1
@@ -25746,30 +25766,6 @@ MonoBehaviour:
     m_ModeQuest: 0
     m_Basic: 0
     m_Advanced: 0
-  - m_PanelPrefab: {fileID: 0}
-    m_ModeVr: 0
-    m_ModeMono: 0
-    m_ModeQuest: 0
-    m_Basic: 0
-    m_Advanced: 0
-  - m_PanelPrefab: {fileID: 152754, guid: 1f98c5464e57ca042986684865c6c8e0, type: 3}
-    m_ModeVr: 1
-    m_ModeMono: 1
-    m_ModeQuest: 1
-    m_Basic: 1
-    m_Advanced: 0
-  - m_PanelPrefab: {fileID: 0}
-    m_ModeVr: 0
-    m_ModeMono: 0
-    m_ModeQuest: 0
-    m_Basic: 0
-    m_Advanced: 0
-  - m_PanelPrefab: {fileID: 0}
-    m_ModeVr: 0
-    m_ModeMono: 0
-    m_ModeQuest: 0
-    m_Basic: 0
-    m_Advanced: 1
   - m_PanelPrefab: {fileID: 199434, guid: da22f81315a0e724887dc7c8b38b71b4, type: 3}
     m_ModeVr: 0
     m_ModeMono: 0
@@ -25801,14 +25797,14 @@ MonoBehaviour:
     m_ModeQuest: 1
     m_Basic: 1
     m_Advanced: 1
-  - m_PanelPrefab: {fileID: 1272310558547734, guid: 38a4b95a5f6824c41994709bfbd012ad,
-      type: 3}
+  - m_PanelPrefab: {fileID: 159900, guid: 3b3f1e1277e63dd44987818705e0821b, type: 3}
     m_ModeVr: 1
     m_ModeMono: 1
     m_ModeQuest: 0
     m_Basic: 0
     m_Advanced: 1
-  - m_PanelPrefab: {fileID: 159900, guid: 3b3f1e1277e63dd44987818705e0821b, type: 3}
+  - m_PanelPrefab: {fileID: 1272310558547734, guid: 38a4b95a5f6824c41994709bfbd012ad,
+      type: 3}
     m_ModeVr: 1
     m_ModeMono: 1
     m_ModeQuest: 1
@@ -25832,16 +25828,10 @@ MonoBehaviour:
     m_ModeQuest: 1
     m_Basic: 0
     m_Advanced: 1
-  - m_PanelPrefab: {fileID: 199434, guid: 6dafd36d9488aba4a998d2ef69ea2553, type: 3}
-    m_ModeVr: 1
-    m_ModeMono: 1
-    m_ModeQuest: 1
-    m_Basic: 0
-    m_Advanced: 1
   - m_PanelPrefab: {fileID: 176644, guid: d620d9effac3e6c4eaae746d85edf13c, type: 3}
     m_ModeVr: 1
     m_ModeMono: 1
-    m_ModeQuest: 0
+    m_ModeQuest: 1
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 160214, guid: 2b8f8dc5c7f70ba4eaf8f6a7181d8fc7, type: 3}
@@ -31367,8 +31357,8 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: [{fileID: 2448956754603515421, guid: 382dabebd59956d499aefb54b02f804d,
-        type: 3}]
+    m_RemovedGameObjects:
+    - {fileID: 2448956754603515421, guid: 382dabebd59956d499aefb54b02f804d, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 382dabebd59956d499aefb54b02f804d, type: 3}
