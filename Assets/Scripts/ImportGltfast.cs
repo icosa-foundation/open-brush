@@ -75,6 +75,7 @@ namespace TiltBrush
                 ImportOptions options = new ImportOptions();
                 // TODO - should we import disabled to help round-tripping?
                 options.CameraImport = CameraImportOption.None;
+                options.AnimationMethod = AnimationMethod.Legacy;
 
                 var normalizedPath = Uri.UnescapeDataString(localPath).Replace("\\", "/");
                 if (normalizedPath.StartsWith("/"))
