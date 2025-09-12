@@ -78,7 +78,7 @@ namespace UnityGLTF.Plugins
                         }
                     }
                     childIndex++;
-                    
+
                     // Recursively process this child's children (matches Model.GenerateUniqueNames)
                     ProcessNodeHierarchy(gltfRoot, childId.Id);
                 }
