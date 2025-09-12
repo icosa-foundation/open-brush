@@ -1,7 +1,5 @@
 using System.Text.RegularExpressions;
 using GLTF.Schema;
-using UnityEditor.Rendering;
-using UnityEngine;
 
 namespace UnityGLTF.Plugins
 {
