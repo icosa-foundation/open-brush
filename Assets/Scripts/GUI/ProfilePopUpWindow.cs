@@ -393,6 +393,11 @@ namespace TiltBrush
                 case SketchControlsScript.GlobalCommands.SignOutConfirm:
                     switch ((Cloud)button.m_CommandParam)
                     {
+                        case Cloud.Google:
+                            m_GoogleSignedInElements.SetActive(false);
+                            m_GoogleSignedOutElements.SetActive(false);
+                            m_GoogleConfirmSignOutElements.SetActive(true);
+                            break;
                         case Cloud.Sketchfab:
                             m_SketchfabSignedInElements.SetActive(false);
                             m_SketchfabSignedOutElements.SetActive(false);

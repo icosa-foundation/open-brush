@@ -10509,6 +10509,7 @@ GameObject:
   - component: {fileID: 652605572}
   - component: {fileID: 652605564}
   - component: {fileID: 652605570}
+  - component: {fileID: 652605574}
   m_Layer: 0
   m_Name: App
   m_TagString: Untagged
@@ -10554,6 +10555,7 @@ MonoBehaviour:
   m_ShaderWarmup: {fileID: 2094189264}
   m_GoogleIdentity: {fileID: 1209128957}
   m_SketchfabIdentity: {fileID: 2095572865}
+  m_IcosaIdentity: {fileID: 1611595292}
   RamLoggingActive: 0
 --- !u!4 &652605545
 Transform:
@@ -11325,6 +11327,18 @@ MonoBehaviour:
   - DefaultBackgroundImages/panorama.jpg
   - DefaultBackgroundImages/stereopanorama.jpg
   - DefaultBackgroundImages/ATTRIBUTION.txt
+--- !u!114 &652605574
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 652605543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd22834ba3234e3288ca0802bf460a3a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &669339392 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4492044767078796625, guid: 382dabebd59956d499aefb54b02f804d,
@@ -11718,11 +11732,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 652605545}
     m_Modifications:
-    - target: {fileID: 167830897998540590, guid: cb0a1a7968495024690ad9a1c0d38548,
-        type: 3}
-      propertyPath: m_RootOrder
-      value: 5
-      objectReference: {fileID: 0}
     - target: {fileID: 167830897998540590, guid: cb0a1a7968495024690ad9a1c0d38548,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -22861,58 +22870,18 @@ TextMesh:
     type: 3}
   m_PrefabInstance: {fileID: 622614087}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1611595290
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1611595291}
-  - component: {fileID: 1611595292}
-  m_Layer: 0
-  m_Name: IcosaIdentity
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1611595291
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1611595290}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1611595292
+--- !u!114 &1611595292 stripped
 MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 8175897227024117725, guid: 382dabebd59956d499aefb54b02f804d,
+    type: 3}
+  m_PrefabInstance: {fileID: 4492044766644994641}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1611595290}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e1689780c428aa14ea42c2125e391b45, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Service: 7
-  m_OAuthScopes: []
-  m_AdditionalDesktopOAuthScopes: []
-  m_CallbackPath: /icosa
-  m_LoggedInTexture: {fileID: 2800000, guid: 0d05cda193064458a9a7bb085905c5a1, type: 3}
-  m_TokenStorePrefix: IcosaOAuth2
-  m_AuthorizationServerUrl: 
-  m_TokenServerUrl: 
 --- !u!1 &1612665327
 GameObject:
   m_ObjectHideFlags: 0
@@ -25536,24 +25505,22 @@ MonoBehaviour:
     m_ModeQuest: 0
     m_Basic: 0
     m_Advanced: 0
-  - m_PanelPrefab: {fileID: 1101360102585764085, guid: fa1eb8dde798ea54e95ddf4744cc180e,
-      type: 3}
+  - m_PanelPrefab: {fileID: 0}
     m_ModeVr: 0
     m_ModeMono: 0
-    m_ModeQuest: 1
-    m_Basic: 1
-    m_Advanced: 1
-  - m_PanelPrefab: {fileID: 1865477934442706, guid: b57c606c7c23d6547b7b136a53c8118c,
-      type: 3}
+    m_ModeQuest: 0
+    m_Basic: 0
+    m_Advanced: 0
+  - m_PanelPrefab: {fileID: 0}
     m_ModeVr: 0
     m_ModeMono: 0
-    m_ModeQuest: 1
-    m_Basic: 1
+    m_ModeQuest: 0
+    m_Basic: 0
     m_Advanced: 0
   - m_PanelPrefab: {fileID: 152754, guid: 1f98c5464e57ca042986684865c6c8e0, type: 3}
     m_ModeVr: 1
     m_ModeMono: 1
-    m_ModeQuest: 0
+    m_ModeQuest: 1
     m_Basic: 1
     m_Advanced: 0
   - m_PanelPrefab: {fileID: 0}
@@ -25562,11 +25529,10 @@ MonoBehaviour:
     m_ModeQuest: 0
     m_Basic: 0
     m_Advanced: 0
-  - m_PanelPrefab: {fileID: 1543516286980528, guid: 8143a5d07ca44f3469740c23ad742c85,
-      type: 3}
+  - m_PanelPrefab: {fileID: 0}
     m_ModeVr: 0
     m_ModeMono: 0
-    m_ModeQuest: 1
+    m_ModeQuest: 0
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 1002243801905128, guid: d544a96827bc4554993b25909f237c88,
@@ -25617,7 +25583,7 @@ MonoBehaviour:
   - m_PanelPrefab: {fileID: 141494, guid: 0053ac08708148641bd0b629e8e3e2e5, type: 3}
     m_ModeVr: 1
     m_ModeMono: 1
-    m_ModeQuest: 0
+    m_ModeQuest: 1
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 159900, guid: c5747cd6fc6d92b4b941d58d649877ef, type: 3}
@@ -25661,13 +25627,13 @@ MonoBehaviour:
     m_ModeVr: 0
     m_ModeMono: 0
     m_ModeQuest: 0
-    m_Basic: 1
-    m_Advanced: 1
+    m_Basic: 0
+    m_Advanced: 0
   - m_PanelPrefab: {fileID: 1284305836696064, guid: 9e8a7ecc535b86c42a6d0752d1590e9f,
       type: 3}
     m_ModeVr: 1
     m_ModeMono: 1
-    m_ModeQuest: 0
+    m_ModeQuest: 1
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 1769143079597906, guid: dcbd812f016610942a11d04c69dc3a7c,
@@ -25681,23 +25647,22 @@ MonoBehaviour:
       type: 3}
     m_ModeVr: 1
     m_ModeMono: 1
-    m_ModeQuest: 0
+    m_ModeQuest: 1
     m_Basic: 1
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 1272310558547734, guid: 6f8d5fd33c3621841bfcab343300ec72,
       type: 3}
     m_ModeVr: 1
     m_ModeMono: 1
-    m_ModeQuest: 0
-    m_Basic: 0
-    m_Advanced: 1
-  - m_PanelPrefab: {fileID: 1185791771697282, guid: 757ae00c043360a4bae0ebf6c3ef5254,
-      type: 3}
-    m_ModeVr: 0
-    m_ModeMono: 0
     m_ModeQuest: 1
     m_Basic: 0
     m_Advanced: 1
+  - m_PanelPrefab: {fileID: 0}
+    m_ModeVr: 0
+    m_ModeMono: 0
+    m_ModeQuest: 0
+    m_Basic: 0
+    m_Advanced: 0
   - m_PanelPrefab: {fileID: 0}
     m_ModeVr: 0
     m_ModeMono: 0
@@ -25710,13 +25675,12 @@ MonoBehaviour:
     m_ModeQuest: 1
     m_Basic: 0
     m_Advanced: 1
-  - m_PanelPrefab: {fileID: 4470684113445036128, guid: 67d9c3f0bfc633440901c0281f11b46e,
-      type: 3}
+  - m_PanelPrefab: {fileID: 0}
     m_ModeVr: 0
     m_ModeMono: 0
-    m_ModeQuest: 1
+    m_ModeQuest: 0
     m_Basic: 0
-    m_Advanced: 1
+    m_Advanced: 0
   - m_PanelPrefab: {fileID: 1513704753240124, guid: 16a494a2ae54cba4d94ef4c0515bdaee,
       type: 3}
     m_ModeVr: 1
@@ -32492,4 +32456,3 @@ SceneRoots:
   - {fileID: 1848773840}
   - {fileID: 2066419201}
   - {fileID: 1728487474}
-  - {fileID: 1611595291}

@@ -65,8 +65,10 @@ namespace TiltBrush
         public const string kDriveFolderName = kAppDisplayName;
 
         public const string kPlayerPrefHasPlayedBefore = "Has played before";
-        public const string kReferenceImagesSeeded = "Reference Images seeded";
-        public const string kBackgroundImagesSeeded = "Background Images seeded";
+        public const string kPlayerPrefSeededDefaultModels = "SeededDefaultModels";
+        public const string kPlayerPrefSeededDefaultBackgroundImages = "SeededDefaultBackgroundImages";
+        public const string kPlayerPrefSeededDefaultReferenceImages = "SeededDefaultReferenceImages";
+        public const string kPlayerPrefSeededDefaultVideos = "SeededDefaultVideos";
 
 
         private const string kDefaultConfigPath = "DefaultConfig";
@@ -131,6 +133,7 @@ namespace TiltBrush
 
         public static OAuth2Identity GoogleIdentity => m_Instance.m_GoogleIdentity;
         public static OAuth2Identity SketchfabIdentity => m_Instance.m_SketchfabIdentity;
+        public static OAuth2Identity IcosaIdentity => m_Instance.m_IcosaIdentity;
 
         public string IcosaToken
         {
@@ -250,6 +253,7 @@ namespace TiltBrush
         [Header("Identities")]
         [SerializeField] private OAuth2Identity m_GoogleIdentity;
         [SerializeField] private OAuth2Identity m_SketchfabIdentity;
+        [SerializeField] private OAuth2Identity m_IcosaIdentity;
 
         // ------------------------------------------------------------
         // Private data
@@ -553,7 +557,10 @@ namespace TiltBrush
             if (m_UserConfig.Testing.FirstRun)
             {
                 PlayerPrefs.DeleteKey(kPlayerPrefHasPlayedBefore);
-                PlayerPrefs.DeleteKey(kReferenceImagesSeeded);
+                PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultModels);
+                PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultBackgroundImages);
+                PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultReferenceImages);
+                PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultVideos);
                 PlayerPrefs.DeleteKey(PanelManager.kPlayerPrefAdvancedMode);
                 AdvancedPanelLayouts.ClearPlayerPrefs();
                 PointerManager.ClearPlayerPrefs();
@@ -660,8 +667,15 @@ namespace TiltBrush
             }
 
 #if USD_SUPPORTED
-            // Load the Usd Plugins
-            InitUsd.Initialize();
+            try
+            {
+                // Load the Usd Plugins
+                InitUsd.Initialize();
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("Failed to initialize USD: " + e.Message);
+            }
 #endif
 
             foreach (string s in Config.m_SketchFiles)
@@ -1986,124 +2000,141 @@ namespace TiltBrush
         /// Creates the Model Catalog directory and copies in the provided default models.
         /// Returns true if the directory already exists or if it is created successfully, false if the
         /// directory could not be created.
-        public static bool InitModelLibraryPath(string[] defaultModels)
+        public static void InitModelLibraryPath(string[] defaultModels)
         {
             string modelsDirectory = ModelLibraryPath();
 
-            // TODO:Mikesky - Re-enable this check in a few versions,
-            // and remove the one in the obj removal loop.
-
-            // if (Directory.Exists(modelsDirectory)) { return true; }
-
-            if (!InitDirectoryAtPath(modelsDirectory)) { return false; }
-
-            // Tidy up old obj models and replace with gltfs
-            // We can remove this at some point.
-            var targetDirs = new string[] { "Andy", "Tiltasaurus" };
-            foreach (string target in targetDirs)
+            if (!Directory.Exists(modelsDirectory))
             {
-                var path = Path.Combine(modelsDirectory, target);
-                if (Directory.Exists(path))
+                if (!InitDirectoryAtPath(modelsDirectory))
                 {
-                    Debug.Log($"Found old model file: \"{path}\", removing.");
-                    Directory.Delete(path, true);
-                }
-                else
-                {
-                    // We've already tidied up the old models, or the user has and understands
-                    // the reference library. Let's not interfere.
-                    return true;
+                    return;
                 }
             }
 
-            foreach (string fileName in defaultModels)
-            {
-                string[] path = fileName.Split(
-                    new[] { '\\', '/' }, 3, StringSplitOptions.RemoveEmptyEntries);
-                string newModel = Path.Combine(modelsDirectory, path[1]);
+            // Copy if the directory is empty
+            bool shouldCopy = Directory.GetFileSystemEntries(modelsDirectory).Length == 0;
 
-                if (!File.Exists(newModel))
+            // But only once per clean install
+            if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultModels, 0) != 0)
+            {
+                shouldCopy = false;
+            }
+
+            if (shouldCopy)
+            {
+                foreach (string fileName in defaultModels)
                 {
+                    string[] path = fileName.Split(
+                        new[] { '\\', '/' }, 3, StringSplitOptions.RemoveEmptyEntries);
+                    string newModel = Path.Combine(modelsDirectory, path[1]);
                     FileUtils.WriteBytesFromResources(fileName, newModel);
                 }
+                PlayerPrefs.SetInt(kPlayerPrefSeededDefaultModels, 1);
             }
-            return true;
         }
 
         /// Creates the Background Images directory and copies in the provided default images.
         /// Returns true if the directory already exists or if it is created successfully, false if the
         /// directory could not be created.
-        public static bool InitBackgroundImagesPath(string[] defaultBackgroundImages)
+        public static void InitBackgroundImagesPath(string[] defaultBackgroundImages)
         {
             string path = BackgroundImagesLibraryPath();
+
             if (!Directory.Exists(path))
             {
                 if (!FileUtils.InitializeDirectoryWithUserError(path))
                 {
-                    return false;
+                    return;
                 }
             }
 
-            // Populate the reference images folder exactly once.
-            int seeded = PlayerPrefs.GetInt(kBackgroundImagesSeeded);
-            if (seeded == 0)
+            // Copy if the directory is empty
+            bool shouldCopy = Directory.GetFileSystemEntries(path).Length == 0;
+
+            // But only once per clean install
+            if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultBackgroundImages, 0) != 0)
+            {
+                shouldCopy = false;
+            }
+
+            if (shouldCopy)
             {
                 foreach (string fileName in defaultBackgroundImages)
                 {
-                    FileUtils.WriteBytesFromResources(fileName,
-                        Path.Combine(path, Path.GetFileName(fileName.Replace(".bytes", ""))));
+                    string dest = Path.Combine(path, Path.GetFileName(fileName.Replace(".bytes", "")));
+                    FileUtils.WriteBytesFromResources(fileName, dest);
                 }
-                PlayerPrefs.SetInt(kBackgroundImagesSeeded, 1);
+                PlayerPrefs.SetInt(kPlayerPrefSeededDefaultBackgroundImages, 1);
             }
-            return true;
         }
 
         /// Creates the Reference Images directory and copies in the provided default images.
         /// Returns true if the directory already exists or if it is created successfully, false if the
         /// directory could not be created.
-        public static bool InitReferenceImagePath(string[] defaultImages)
+        public static void InitReferenceImagePath(string[] defaultImages)
         {
             string path = ReferenceImagePath();
+
             if (!Directory.Exists(path))
             {
                 if (!FileUtils.InitializeDirectoryWithUserError(path))
                 {
-                    return false;
+                    return;
                 }
             }
 
-            // Populate the reference images folder exactly once.
-            int seeded = PlayerPrefs.GetInt(kReferenceImagesSeeded);
-            if (seeded == 0)
+            // Copy if the directory is empty
+            bool shouldCopy = Directory.GetFileSystemEntries(path).Length == 0;
+
+            // But only once per clean install
+            if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultReferenceImages, 0) != 0)
+            {
+                shouldCopy = false;
+            }
+
+
+            if (shouldCopy)
             {
                 foreach (string fileName in defaultImages)
                 {
-                    FileUtils.WriteTextureFromResources(fileName,
-                        Path.Combine(path, Path.GetFileName(fileName)));
+                    string dest = Path.Combine(path, Path.GetFileName(fileName));
+                    FileUtils.WriteTextureFromResources(fileName, dest);
                 }
-                PlayerPrefs.SetInt(kReferenceImagesSeeded, 1);
+                PlayerPrefs.SetInt(kPlayerPrefSeededDefaultReferenceImages, 1);
             }
-            return true;
         }
 
-        public static bool InitVideoLibraryPath(string[] defaultVideos)
+        public static void InitVideoLibraryPath(string[] defaultVideos)
         {
             string videosDirectory = VideoLibraryPath();
-            if (Directory.Exists(videosDirectory))
+
+            if (!Directory.Exists(videosDirectory))
             {
-                return true;
-            }
-            if (!InitDirectoryAtPath(videosDirectory))
-            {
-                return false;
-            }
-            foreach (var video in defaultVideos)
-            {
-                string destFilename = Path.GetFileName(video);
-                FileUtils.WriteBytesFromResources(video, Path.Combine(videosDirectory, destFilename));
+                if (!InitDirectoryAtPath(videosDirectory))
+                {
+                    return;
+                }
             }
 
-            return true;
+            // Copy if the directory is empty
+            bool shouldCopy = Directory.GetFileSystemEntries(videosDirectory).Length == 0;
+
+            // But only once per clean install
+            if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultVideos, 0) != 0)
+            {
+                shouldCopy = false;
+            }
+
+            if (shouldCopy)
+            {
+                foreach (var video in defaultVideos)
+                {
+                    string destFilename = Path.GetFileName(video);
+                    FileUtils.WriteBytesFromResources(video, Path.Combine(videosDirectory, destFilename));
+                }
+                PlayerPrefs.SetInt(kPlayerPrefSeededDefaultVideos, 1);
+            }
         }
 
         public static string FeaturedSketchesPath()
@@ -2139,6 +2170,11 @@ namespace TiltBrush
         static public string UserSketchPath()
         {
             return Path.Combine(UserPath(), "Sketches");
+        }
+
+        static public string SavedStrokesPath()
+        {
+            return Path.Combine(MediaLibraryPath(), "Saved Strokes");
         }
 
         static public string AutosavePath()
