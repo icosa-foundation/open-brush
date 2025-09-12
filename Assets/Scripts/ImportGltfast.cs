@@ -92,7 +92,7 @@ namespace TiltBrush
                 AsyncHelpers.RunSync(() => gltf.LoadSceneAsync());
                 GameObject go = gltf.CreatedObject;
 
-                var clip = gltf.CreatedAnimationClips?.First();
+                var clip = gltf.CreatedAnimationClips?.FirstOrDefault();
                 if (clip != null)
                 {
                     var player = go.AddComponent<PlayGltfAnimationClip>();
