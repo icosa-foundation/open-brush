@@ -90,10 +90,10 @@ namespace TiltBrush
             // - "action": Blender's default Action name
             // - "default"/"base": Generic fallback names
             string[] preferredNames = { "idle", "animation", "take 001", "action", "default", "base" };
-            
+
             foreach (string preferredName in preferredNames)
             {
-                var matchingClip = clips.FirstOrDefault(clip => 
+                var matchingClip = clips.FirstOrDefault(clip =>
                     clip.name.ToLowerInvariant().Contains(preferredName));
                 if (matchingClip != null)
                 {
@@ -103,9 +103,9 @@ namespace TiltBrush
 
             // No preferred name found: pick the longest clip
             // Longer animations are often more comprehensive/primary
-            var largestClip = clips.OrderByDescending(clip => 
+            var largestClip = clips.OrderByDescending(clip =>
                 GetAnimationScore(clip)).FirstOrDefault();
-            
+
             // Final fallback: use first clip
             return largestClip ?? clips[0];
         }
