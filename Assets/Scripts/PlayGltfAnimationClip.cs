@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Assets/Scripts/PlayGltfAnimationClip.cs
-using UnityEditor;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.Animations;
 using UnityEngine.Playables;
 
 namespace TiltBrush
@@ -23,19 +23,11 @@ namespace TiltBrush
     {
         private Animator animator;
         private PlayableGraph graph;
-        private bool graphInitialized = false;
+        private bool graphInitialized;
 
-        public void PlayAnimation(AnimationClip clip)
+        public void PlayAnimation(AnimationClip[] clips)
         {
-            if (clip == null) return;
-
-            // Log animation bindings
-            var bindings = AnimationUtility.GetCurveBindings(clip);
-            Debug.Log($"Animation has {bindings.Length} curve bindings:");
-            foreach (var binding in bindings)
-            {
-                Debug.Log($"  Path: '{binding.path}', Property: '{binding.propertyName}', Type: {binding.type}");
-            }
+            if (clips == null || clips.Length == 0) return;
 
             if (graphInitialized && graph.IsValid())
             {
@@ -49,9 +41,25 @@ namespace TiltBrush
                 animator = gameObject.AddComponent<Animator>();
             }
 
+            AnimationClip selectedClip = SelectAnimationClip(clips);
+            if (selectedClip == null) return;
+
             try
             {
-                AnimationPlayableUtilities.PlayClip(animator, clip, out graph);
+                graph = PlayableGraph.Create();
+                var playable = AnimationClipPlayable.Create(graph, selectedClip);
+                var output = AnimationPlayableOutput.Create(graph, "Animation", animator);
+
+                playable.SetTime(0);
+                playable.Play();
+
+                bool shouldLoop = clips.Length == 1;
+                if (shouldLoop)
+                {
+                    playable.SetDuration(double.PositiveInfinity);
+                }
+
+                output.SetSourcePlayable(playable);
 
                 if (graph.IsValid())
                 {
@@ -64,6 +72,49 @@ namespace TiltBrush
                 Debug.LogError($"Failed to play animation clip: {e.Message}");
                 graphInitialized = false;
             }
+        }
+
+        private AnimationClip SelectAnimationClip(AnimationClip[] clips)
+        {
+            // Single clip: return it (will be auto-looped)
+            if (clips.Length == 1)
+            {
+                return clips[0];
+            }
+
+            // Multiple clips: use name-based heuristic to find the most appropriate default
+            // Priority order based on common naming patterns from popular 3D software:
+            // - "idle": Mixamo and game industry standard for default/rest animations
+            // - "animation": Unity's default AnimationClip name
+            // - "take 001": Maya/Cinema 4D export pattern
+            // - "action": Blender's default Action name
+            // - "default"/"base": Generic fallback names
+            string[] preferredNames = { "idle", "animation", "take 001", "action", "default", "base" };
+            
+            foreach (string preferredName in preferredNames)
+            {
+                var matchingClip = clips.FirstOrDefault(clip => 
+                    clip.name.ToLowerInvariant().Contains(preferredName));
+                if (matchingClip != null)
+                {
+                    return matchingClip;
+                }
+            }
+
+            // No preferred name found: pick the longest clip
+            // Longer animations are often more comprehensive/primary
+            var largestClip = clips.OrderByDescending(clip => 
+                GetAnimationScore(clip)).FirstOrDefault();
+            
+            // Final fallback: use first clip
+            return largestClip ?? clips[0];
+        }
+
+        private float GetAnimationScore(AnimationClip clip)
+        {
+            // Use duration as primary complexity indicator since we can't access track count at runtime
+            // Longer animations are often more comprehensive/primary
+            return clip.length;
         }
 
         void OnDestroy()

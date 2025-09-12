@@ -92,12 +92,12 @@ namespace TiltBrush
                 AsyncHelpers.RunSync(() => gltf.LoadSceneAsync());
                 GameObject go = gltf.CreatedObject;
 
-                var clip = gltf.CreatedAnimationClips?.FirstOrDefault();
-                if (clip != null)
+                var clips = gltf.CreatedAnimationClips;
+                if (clips != null && clips.Length > 0)
                 {
                     var player = go.AddComponent<PlayGltfAnimationClip>();
                     // TODO - allow users to control autoplay
-                    player.PlayAnimation(clip);
+                    player.PlayAnimation(clips);
                 }
 
                 model.CalcBoundsGltf(go);
