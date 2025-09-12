@@ -1168,10 +1168,8 @@ namespace TiltBrush
 
         ~@UnityXRInputAction()
         {
-#if !UNITY_EDITOR
             Debug.Assert(!m_Brush.enabled, "This will cause a leak and performance issues, UnityXRInputAction.Brush.Disable() has not been called.");
             Debug.Assert(!m_Wand.enabled, "This will cause a leak and performance issues, UnityXRInputAction.Wand.Disable() has not been called.");
-#endif
         }
 
         public void Dispose()

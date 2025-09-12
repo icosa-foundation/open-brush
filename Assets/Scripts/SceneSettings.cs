@@ -357,7 +357,7 @@ namespace TiltBrush
             Camera[] aSceneCameras = UnityEngine.Object.FindObjectsOfType<Camera>();
             for (int i = 0; i < aSceneCameras.Length; ++i)
             {
-                if (aSceneCameras[i].tag != "Ignore")
+                if (!aSceneCameras[i].CompareTag("Ignore"))
                 {
                     m_Cameras.Add(aSceneCameras[i]);
                 }
@@ -663,8 +663,7 @@ namespace TiltBrush
                     Light rLight = App.Scene.GetLight(i);
                     rLight.enabled = true;
                     rLight.type = m_TransitionLights[i].m_InterimValues.m_Type;
-                    rLight.transform.localPosition = m_TransitionLights[i].m_InterimValues.m_Position;
-                    rLight.transform.localRotation = m_TransitionLights[i].m_InterimValues.m_Rotation;
+                    rLight.transform.SetLocalPositionAndRotation(m_TransitionLights[i].m_InterimValues.m_Position, m_TransitionLights[i].m_InterimValues.m_Rotation);
                     rLight.color = m_TransitionLights[i].m_InterimValues.Color;
                     rLight.range = m_TransitionLights[i].m_InterimValues.m_Range;
                     rLight.spotAngle = m_TransitionLights[i].m_InterimValues.m_SpotAngle;

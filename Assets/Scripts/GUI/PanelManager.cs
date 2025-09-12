@@ -186,8 +186,7 @@ namespace TiltBrush
 
             public void UpdateTransform()
             {
-                xf.position = parentXf.position;
-                xf.rotation = parentXf.rotation;
+                xf.SetPositionAndRotation(parentXf.position, parentXf.rotation);
                 Vector3 scale = shape.scale;
                 scale.x = parentXf.localScale.x * bounds.x;
                 scale.y = parentXf.localScale.y * bounds.y;
@@ -485,8 +484,7 @@ namespace TiltBrush
             obj.name += advancedPanel ? "_Advanced" : "_Basic";
 
             BasePanel p = obj.GetComponent<BasePanel>();
-            obj.transform.position = p.m_InitialSpawnPos;
-            obj.transform.rotation = Quaternion.Euler(p.m_InitialSpawnRotEulers);
+            obj.transform.SetPositionAndRotation(p.m_InitialSpawnPos, Quaternion.Euler(p.m_InitialSpawnRotEulers));
             obj.transform.parent = transform;
 
             if (p.ShouldRegister)
@@ -1399,8 +1397,7 @@ namespace TiltBrush
                 float fAngle = panel.m_WandAttachAngle + m_WandPanelsOriginAngleOffset;
                 Quaternion qRotation = Quaternion.AngleAxis(m_WandPanelsOriginAngle + fAngle, wandXf.forward);
                 Vector3 vRotatedOffset = qRotation * vBaseOffset;
-                m_WandPaneVisuals.transform.position = wandXf.position + vRotatedOffset;
-                m_WandPaneVisuals.transform.rotation = qRotation * wandXf.rotation;
+                m_WandPaneVisuals.transform.SetPositionAndRotation(wandXf.position + vRotatedOffset, qRotation * wandXf.rotation);
             }
             else
             {
@@ -1758,10 +1755,9 @@ namespace TiltBrush
             Transform rBaseTransform = InputManager.Wand.Geometry.MainAxisAttachPoint;
             SetPanelXfFromWand(panel, rBaseTransform, m_WandPanelsOriginAngle,
                 m_WandPanelsOriginAngleOffset, m_WandRadius);
-            panel.transform.position =
-                Vector3.Lerp(panel.transform.position, target.translation, percent);
-            panel.transform.rotation =
-                Quaternion.Slerp(panel.transform.rotation, target.rotation, percent);
+            panel.transform.SetPositionAndRotation(
+Vector3.Lerp(panel.transform.position, target.translation, percent),
+Quaternion.Slerp(panel.transform.rotation, target.rotation, percent));
         }
 
         public Vector3 GetFixedPanelPosClosestToPoint(Vector3 vPos)

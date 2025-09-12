@@ -233,8 +233,7 @@ namespace TiltBrush
         public GameObject DuplicateCollider()
         {
             GameObject go = new GameObject("DisposableCollider");
-            go.transform.position = transform.position;
-            go.transform.rotation = transform.rotation;
+            go.transform.SetPositionAndRotation(transform.position, transform.rotation);
             go.transform.localScale = transform.localScale;
             go.transform.parent = transform.parent;
             BoxCollider goCollider = go.AddComponent<BoxCollider>();

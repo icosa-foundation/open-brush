@@ -1143,9 +1143,7 @@ namespace TiltBrush
 
             // This transform used to be incorrect, but we didn't notice.
             // That implies this isn't necessary?
-            transform.position = xf_RS.translation;
-            transform.rotation = xf_RS.rotation;
-
+            transform.SetPositionAndRotation(xf_RS.translation, xf_RS.rotation);
             m_CurrentBrush = rBrush;
             m_CurrentBrushSize = stroke.m_BrushSize;
             m_CurrentPressure = cp0.m_Pressure;

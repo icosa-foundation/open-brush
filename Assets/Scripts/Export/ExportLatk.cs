@@ -191,7 +191,7 @@ namespace TiltBrush
 
             foreach (ZipEntry entry in zipFile)
             {
-                if (Path.GetExtension(entry.Name).ToLower() == ".json")
+                if (string.Equals(Path.GetExtension(entry.Name), ".json", System.StringComparison.OrdinalIgnoreCase))
                 {
                     Stream zippedStream = zipFile.GetInputStream(entry);
                     StreamReader read = new StreamReader(zippedStream, true);

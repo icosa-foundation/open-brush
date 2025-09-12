@@ -173,7 +173,7 @@ namespace TiltBrush
                 cameras.UnionWith(m_OptInCamerasForPC);
                 cameras.ExceptWith(m_OptOutCamerasForPC);
             }
-            m_Cameras = cameras.Where(x => x.tag != "Ignore").ToList();
+            m_Cameras = cameras.Where(x => !x.CompareTag("Ignore")).ToList();
 
             foreach (var camera in m_Cameras)
             {

@@ -837,7 +837,7 @@ namespace TiltBrush
         public AssetGetter GetAsset(string assetId, VrAssetFormat[] assetTypes, string reason)
         {
             string uri;
-            if (assetId.ToLower().StartsWith("https%3a%2f%2f") || assetId.ToLower().StartsWith("http%3a%2f%2f"))
+            if (assetId.StartsWith("https%3a%2f%2f", StringComparison.OrdinalIgnoreCase) || assetId.StartsWith("http%3a%2f%2f", StringComparison.OrdinalIgnoreCase))
             {
                 uri = UnityWebRequest.UnEscapeURL(assetId);
             }

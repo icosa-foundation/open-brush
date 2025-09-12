@@ -75,8 +75,7 @@ namespace TiltBrush
                         Vector3 vPos = vBaseIconPosition;
                         vPos += (transform.right * (float)x * m_IconSpacing * transform.localScale.x);
                         vPos += (-transform.up * (float)y * m_IconSpacing * transform.localScale.x);
-                        m_Icons[iIndex].m_Icon.transform.position = vPos;
-                        m_Icons[iIndex].m_Icon.transform.rotation = transform.rotation;
+                        m_Icons[iIndex].m_Icon.transform.SetPositionAndRotation(vPos, transform.rotation);
                         m_Icons[iIndex].m_Icon.transform.parent = transform;
                         // Register after parent has been assisgned.
                         m_Icons[iIndex].m_IconScript.RegisterComponent();

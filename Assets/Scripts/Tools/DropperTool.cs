@@ -150,8 +150,7 @@ namespace TiltBrush
 
             //keep description locked to controller
             Transform attach = InputManager.Brush.Geometry.DropperDescAttachPoint;
-            m_DropperDescription.transform.position = attach.position;
-            m_DropperDescription.transform.rotation = attach.rotation;
+            m_DropperDescription.transform.SetPositionAndRotation(attach.position, attach.rotation);
             SnapIntersectionObjectToController();
 
             // Check for reference widget intersection first because it's cheap.
@@ -251,8 +250,7 @@ namespace TiltBrush
         {
             Vector3 vPos = InputManager.Brush.Geometry.ToolAttachPoint.position +
                 InputManager.Brush.Geometry.ToolAttachPoint.forward * m_PointerForwardOffset;
-            m_DropperTransform.position = vPos;
-            m_DropperTransform.rotation = InputManager.Brush.Geometry.ToolAttachPoint.rotation;
+            m_DropperTransform.SetPositionAndRotation(vPos, InputManager.Brush.Geometry.ToolAttachPoint.rotation);
         }
 
         override protected void HandleIntersection(Stroke stroke)

@@ -159,8 +159,7 @@ namespace TiltBrush
             }
             videoWidget.SetSignedWidgetSize(tiltVideo.Transform.scale);
             videoWidget.Show(bShow: true, bPlayAudio: false);
-            videoWidget.transform.localPosition = tiltVideo.Transform.translation;
-            videoWidget.transform.localRotation = tiltVideo.Transform.rotation;
+            videoWidget.transform.SetLocalPositionAndRotation(tiltVideo.Transform.translation, tiltVideo.Transform.rotation);
             if (tiltVideo.Pinned)
             {
                 videoWidget.PinFromSave();
@@ -188,8 +187,7 @@ namespace TiltBrush
             clone.SetVideo(m_Video);
             clone.SetSignedWidgetSize(size);
             clone.Show(bShow: true, bPlayAudio: false);
-            clone.transform.position = position;
-            clone.transform.rotation = rotation;
+            clone.transform.SetPositionAndRotation(position, rotation);
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
             clone.CloneInitialMaterials(this);

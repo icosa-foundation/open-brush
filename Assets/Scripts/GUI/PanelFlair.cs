@@ -49,8 +49,7 @@ namespace TiltBrush
 
         public void ParentToPanel(Transform parent, Vector3 panelOffset)
         {
-            transform.position = parent.position;
-            transform.rotation = parent.rotation;
+            transform.SetPositionAndRotation(parent.position, parent.rotation);
             transform.SetParent(parent);
             m_Offset = panelOffset;
         }
@@ -77,9 +76,7 @@ namespace TiltBrush
             itemDescriptionOffset.x *= m_Offset.x;
             itemDescriptionOffset.y *= m_Offset.y;
             Vector3 transformedOffset = transform.parent.rotation * itemDescriptionOffset;
-            transform.position = transform.parent.position + transformedOffset;
-            transform.rotation = orient;
-
+            transform.SetPositionAndRotation(transform.parent.position + transformedOffset, orient);
             if (m_TextMesh != null)
             {
                 Color color = m_TextColor;

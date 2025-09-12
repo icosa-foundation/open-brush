@@ -120,8 +120,7 @@ namespace TiltBrush
         {
             TextWidget clone = Instantiate(WidgetManager.m_Instance.TextWidgetPrefab);
             clone.m_PreviousCanvas = m_PreviousCanvas;
-            clone.transform.position = position;
-            clone.transform.rotation = rotation;
+            clone.transform.SetPositionAndRotation(position, rotation);
             // We're obviously not loading from a sketch.  This is to prevent the intro animation.
             // TODO: Change variable name to something more explicit of what this flag does.
             clone.m_LoadingFromSketch = true;
@@ -148,8 +147,7 @@ namespace TiltBrush
             textWidget.Text = tiltText.Text;
             textWidget.SetSignedWidgetSize(tiltText.Transform.scale);
             textWidget.Show(bShow: true, bPlayAudio: false);
-            textWidget.transform.localPosition = tiltText.Transform.translation;
-            textWidget.transform.localRotation = tiltText.Transform.rotation;
+            textWidget.transform.SetLocalPositionAndRotation(tiltText.Transform.translation, tiltText.Transform.rotation);
             if (tiltText.Pinned)
             {
                 textWidget.PinFromSave();

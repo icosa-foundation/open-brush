@@ -109,11 +109,7 @@ namespace TiltBrush
         public bool PrimaryScrollDirectionIsX(InputManager.ControllerName name)
         {
             var behavior = GetBehavior(name);
-            if (behavior.ControllerGeometry.Style == ControllerStyle.LogitechPen)
-            {
-                return false;
-            }
-            return true;
+            return behavior.ControllerGeometry.Style != ControllerStyle.LogitechPen;
         }
 
         /// Enable or disable tracking

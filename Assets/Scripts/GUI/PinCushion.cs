@@ -66,11 +66,8 @@ namespace TiltBrush
                         Transform pinCushionXf = InputManager.m_Instance.GetPinCushionSpawn();
                         if (pinCushionXf != null)
                         {
-                            m_RootObject.position = pinCushionXf.position;
-                            m_RootObject.rotation = pinCushionXf.rotation;
-
-                            m_DefaultCollider.transform.position = pinCushionXf.position;
-                            m_DefaultCollider.transform.rotation = pinCushionXf.rotation;
+                            m_RootObject.SetPositionAndRotation(pinCushionXf.position, pinCushionXf.rotation);
+                            m_DefaultCollider.transform.SetPositionAndRotation(pinCushionXf.position, pinCushionXf.rotation);
 
                             // Reset selection.
                             m_SelectionObject.position = m_RootObject.position + m_BaseSelectionObjectOffset;

@@ -81,8 +81,7 @@ namespace TiltBrush
             PanelManager.m_Instance.HideAllPanels();
             await Task.Delay(1000);
             var cam = Camera.main;
-            cam.transform.position = new Vector3(0, 10, -5);
-            cam.transform.rotation = Quaternion.identity;
+            cam.transform.SetPositionAndRotation(new Vector3(0, 10, -5), Quaternion.identity);
             cam.fieldOfView = 110;
             cam.aspect = 1;
             foreach (var env in EnvironmentCatalog.m_Instance.AllEnvironments)
@@ -177,8 +176,7 @@ namespace TiltBrush
         private static Camera InitScreenshotCamera()
         {
             var cam = Camera.main;
-            cam.transform.position = new Vector3(0, 100, 0);
-            cam.transform.rotation = Quaternion.identity;
+            cam.transform.SetPositionAndRotation(new Vector3(0, 100, 0), Quaternion.identity);
             return cam;
         }
 

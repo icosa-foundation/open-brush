@@ -98,16 +98,14 @@ namespace TiltBrush
             // with regards to the world origin, so we have to reset the local transformation to have
             // the mesh properly track with the parent.
             m_UserHeadMesh.SetParent(GetEyeTransform());
-            m_UserHeadMesh.localPosition = Vector3.zero;
-            m_UserHeadMesh.localRotation = Quaternion.identity;
+            m_UserHeadMesh.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
             m_UserHeadMesh.gameObject.SetActive(true);
 
             // Position full screen overlay in front of the camera.
             m_FullScreenOverlay.transform.parent = GetEyeTransform();
             Vector3 vLocalPos = Vector3.zero;
             vLocalPos.z += App.VrSdk.GetVrCamera().nearClipPlane + 0.001f;
-            m_FullScreenOverlay.transform.localPosition = vLocalPos;
-            m_FullScreenOverlay.transform.localRotation = Quaternion.LookRotation(-Vector3.forward);
+            m_FullScreenOverlay.transform.SetLocalPositionAndRotation(vLocalPos, Quaternion.LookRotation(-Vector3.forward));
 
             // Make the full screen overlay 20% bigger than the center fov so it covers both eyes.
             float fSize = 1.2f
@@ -118,8 +116,7 @@ namespace TiltBrush
             // Same with exception overlay.
             var headTransform = GetHeadTransform();
             m_ExceptionOverlay.parent = headTransform;
-            m_ExceptionOverlay.localPosition = Vector3.zero;
-            m_ExceptionOverlay.localRotation = Quaternion.identity;
+            m_ExceptionOverlay.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
         }
 
         public void SetOverlayToBlack()

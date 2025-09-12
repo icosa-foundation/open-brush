@@ -234,8 +234,7 @@ namespace TiltBrush
 
         virtual protected void OnDescriptionChanged()
         {
-            m_Description.transform.position = transform.position;
-            m_Description.transform.rotation = transform.rotation;
+            m_Description.transform.SetPositionAndRotation(transform.position, transform.rotation);
             m_Description.transform.parent = transform;
             m_DescriptionScript.AdjustDescriptionScale();
         }

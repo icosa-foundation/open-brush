@@ -274,7 +274,7 @@ namespace TiltBrush
         /// Removes any filesystem-invalid characters from a filename.
         public static string SanitizeFilename(string filename)
         {
-            if (filename == null || filename == "")
+            if (string.IsNullOrEmpty(filename))
             {
                 return "";
             }
@@ -289,7 +289,7 @@ namespace TiltBrush
         /// filename. Ie., two different inputs should return two different sanitized outputs.
         public static string SanitizeFilenameAndPreserveUniqueness(string filename)
         {
-            if (filename == null || filename == "")
+            if (string.IsNullOrEmpty(filename))
             {
                 return "";
             }

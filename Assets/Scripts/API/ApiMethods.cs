@@ -309,7 +309,7 @@ namespace TiltBrush
         public static void BrushMoveToHand(string hand, bool alsoRotate = false)
         {
             Transform tr;
-            if (hand.ToLower().StartsWith("l"))
+            if (hand.StartsWith("l", StringComparison.OrdinalIgnoreCase))
             {
                 tr = InputManager.Wand.Transform;
 
@@ -631,7 +631,7 @@ namespace TiltBrush
         public static void SetEnvironment(string name)
         {
             Environment env = EnvironmentCatalog.m_Instance.AllEnvironments
-                .First(x => x.name.ToLower() == name.ToLower());
+                .First(x => string.Equals(x.name, name, StringComparison.OrdinalIgnoreCase));
             SceneSettings.m_Instance.SetDesiredPreset(env, false, true);
         }
 
@@ -1035,14 +1035,14 @@ namespace TiltBrush
             var bytes = Convert.FromBase64String(base64);
             if (bytes.Length > 4 && bytes[1] == 'P' && bytes[2] == 'N' && bytes[3] == 'G')
             {
-                if (!filename.ToLower().EndsWith(".png"))
+                if (!filename.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
                 {
                     filename += ".png";
                 }
             }
             else if (bytes.Length > 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF)
             {
-                if (!filename.ToLower().EndsWith(".jpg") && !filename.ToLower().EndsWith(".jpeg"))
+                if (!filename.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) && !filename.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase))
                 {
                     filename += ".jpg";
                 }

@@ -294,8 +294,7 @@ namespace TiltBrush
 
             // Move the viewer camera, so the user can see what's going on.
             Transform viewerXform = App.VrSdk.GetVrCamera().transform;
-            viewerXform.position = transform.position;
-            viewerXform.rotation = transform.rotation;
+            viewerXform.SetPositionAndRotation(transform.position, transform.rotation);
             viewerXform.localScale = transform.localScale;
 
             m_renderTimer.Reset();

@@ -206,13 +206,11 @@ namespace TiltBrush
             {
                 Vector3 toolPos = InputManager.Brush.Geometry.ToolAttachPoint.position +
                     InputManager.Brush.Geometry.ToolAttachPoint.forward * m_PointerForwardOffset;
-                m_ToolTransform.position = toolPos;
-                m_ToolTransform.rotation = InputManager.Brush.Geometry.ToolAttachPoint.rotation;
+                m_ToolTransform.SetPositionAndRotation(toolPos, InputManager.Brush.Geometry.ToolAttachPoint.rotation);
             }
             else
             {
-                transform.position = SketchSurfacePanel.m_Instance.transform.position;
-                transform.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
+                transform.SetPositionAndRotation(SketchSurfacePanel.m_Instance.transform.position, SketchSurfacePanel.m_Instance.transform.rotation);
             }
         }
 

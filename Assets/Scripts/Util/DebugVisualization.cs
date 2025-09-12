@@ -128,8 +128,7 @@ namespace TiltBrush
             {
                 visObject.transform.parent = parent;
             }
-            visObject.transform.localPosition = pos;
-            visObject.transform.localRotation = rot;
+            visObject.transform.SetLocalPositionAndRotation(pos, rot);
             visObject.transform.localScale = scale;
             visObject.transform.SetParent(null, true);
             m_VisObjects[type].Push(visObject);

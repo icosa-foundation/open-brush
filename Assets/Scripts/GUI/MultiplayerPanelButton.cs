@@ -29,15 +29,15 @@ namespace TiltBrush
             // notify the popup that we were pressed.  Which happens below.
             if (!m_CommandIgnored)
             {
-                if (m_RequiresPopup & m_Command == SketchControlsScript.GlobalCommands.EditMultiplayerRoomName)
+                if (m_RequiresPopup && m_Command == SketchControlsScript.GlobalCommands.EditMultiplayerRoomName)
                 {
                     KeyboardPopUpWindow.m_InitialText = popup.RoomName;
                 }
-                else if (m_RequiresPopup & m_Command == SketchControlsScript.GlobalCommands.EditMultiplayerNickName)
+                else if (m_RequiresPopup && m_Command == SketchControlsScript.GlobalCommands.EditMultiplayerNickName)
                 {
                     KeyboardPopUpWindow.m_InitialText = popup.NickName;
                 }
-                else if (m_RequiresPopup & m_Command == SketchControlsScript.GlobalCommands.EditMultiplayerRoomMaxPlayers)
+                else if (m_RequiresPopup && m_Command == SketchControlsScript.GlobalCommands.EditMultiplayerRoomMaxPlayers)
                 {
                     KeyboardPopUpWindow.m_InitialText = popup.MaxPlayers.ToString();
                 }

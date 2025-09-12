@@ -182,8 +182,7 @@ namespace TiltBrush
         {
             Vector3 vPos = InputManager.Brush.Geometry.ToolAttachPoint.position +
                 InputManager.Brush.Geometry.ToolAttachPoint.forward * m_PointerForwardOffset;
-            m_DropperTransform.position = vPos;
-            m_DropperTransform.rotation = InputManager.Brush.Geometry.ToolAttachPoint.rotation;
+            m_DropperTransform.SetPositionAndRotation(vPos, InputManager.Brush.Geometry.ToolAttachPoint.rotation);
         }
 
         override protected void HandleIntersection(Stroke stroke)

@@ -89,8 +89,7 @@ namespace TiltBrush
         public void ResetButtonHighlightXf()
         {
             m_ButtonHighlightMesh.transform.localScale = m_ButtonHighlightMeshBaseScale;
-            m_ButtonHighlightMesh.transform.localPosition = m_ButtonHighlightMeshBasePos;
-            m_ButtonHighlightMesh.transform.localRotation = Quaternion.identity;
+            m_ButtonHighlightMesh.transform.SetLocalPositionAndRotation(m_ButtonHighlightMeshBasePos, Quaternion.identity);
         }
 
         public bool ShouldPausePromos

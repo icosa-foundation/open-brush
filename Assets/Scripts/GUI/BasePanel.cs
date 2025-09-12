@@ -507,8 +507,7 @@ namespace TiltBrush
             if (m_PanelDescriptionPrefab != null)
             {
                 m_PanelDescriptionObject = (GameObject)Instantiate(m_PanelDescriptionPrefab);
-                m_PanelDescriptionObject.transform.position = m_Mesh.transform.position;
-                m_PanelDescriptionObject.transform.rotation = m_Mesh.transform.rotation;
+                m_PanelDescriptionObject.transform.SetPositionAndRotation(m_Mesh.transform.position, m_Mesh.transform.rotation);
                 m_PanelDescriptionObject.transform.SetParent(transform);
                 Vector3 vScale = m_PanelDescriptionObject.transform.localScale;
                 vScale *= transform.localScale.x;

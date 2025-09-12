@@ -176,7 +176,7 @@ namespace TiltBrush
             // Only select from the active layer
             if (!removeFromSelection && (widget.Canvas != App.Scene.ActiveCanvas)) return true;
 
-            if ((removeFromSelection && !isSelected) || (!removeFromSelection && isSelected))
+            if (removeFromSelection ^ isSelected)
             {
                 Debug.LogWarning(
                     "Attempted to " + (removeFromSelection ? "deselect" : "select") +
@@ -224,7 +224,7 @@ namespace TiltBrush
             // Only select from the active layer
             if (!removeFromSelection && (rGroup.Canvas != App.Scene.ActiveCanvas)) return true;
 
-            if ((removeFromSelection && !isSelected) || (!removeFromSelection && isSelected))
+            if (removeFromSelection ^ isSelected)
             {
                 // I think it's actually expected that this happens every now and then.
                 // The intersection results are from some time in the past.

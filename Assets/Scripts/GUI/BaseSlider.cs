@@ -65,8 +65,7 @@ namespace TiltBrush
 
         override protected void OnDescriptionChanged()
         {
-            m_Description.transform.position = m_Nob.transform.position;
-            m_Description.transform.rotation = m_Nob.transform.rotation;
+            m_Description.transform.SetPositionAndRotation(m_Nob.transform.position, m_Nob.transform.rotation);
             m_Description.transform.parent = m_Nob.transform;
         }
 

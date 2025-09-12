@@ -341,8 +341,7 @@ namespace TiltBrush
 
         public void FromMirror(Mirror data)
         {
-            transform.localPosition = data.Transform.translation;
-            transform.localRotation = data.Transform.rotation;
+            transform.SetLocalPositionAndRotation(data.Transform.translation, data.Transform.rotation);
             if (m_NonScaleChild != null)
             {
                 m_NonScaleChild.OnPosRotChanged();

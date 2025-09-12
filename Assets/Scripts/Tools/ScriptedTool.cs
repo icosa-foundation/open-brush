@@ -266,14 +266,12 @@ namespace TiltBrush
             // Lock tool to camera controller.
             if (m_LockToController)
             {
-                tr.position = m_BrushController.position;
-                tr.rotation = m_BrushController.rotation;
+                tr.SetPositionAndRotation(m_BrushController.position, m_BrushController.rotation);
             }
             else
             {
                 var panelTr = SketchSurfacePanel.m_Instance.transform;
-                tr.position = panelTr.position;
-                tr.rotation = panelTr.rotation;
+                tr.SetPositionAndRotation(panelTr.position, panelTr.rotation);
             }
         }
     }

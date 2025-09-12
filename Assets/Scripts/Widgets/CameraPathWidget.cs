@@ -638,9 +638,7 @@ namespace TiltBrush
             // The scale of path widgets is arbitrary.  However, the scale should be one at creation
             // time so the knots added below have appropriate mesh scales.
             widget.transform.localScale = Vector3.one;
-            widget.transform.localPosition = Vector3.zero;
-            widget.transform.localRotation = Quaternion.identity;
-
+            widget.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
             return widget;
         }
 
@@ -654,8 +652,7 @@ namespace TiltBrush
             {
                 GameObject go = Instantiate<GameObject>(
                     WidgetManager.m_Instance.CameraPathPositionKnotPrefab);
-                go.transform.position = cameraPath.PathKnots[i].Xf.translation;
-                go.transform.rotation = cameraPath.PathKnots[i].Xf.rotation;
+                go.transform.SetPositionAndRotation(cameraPath.PathKnots[i].Xf.translation, cameraPath.PathKnots[i].Xf.rotation);
                 go.transform.parent = widget.transform;
 
                 CameraPathPositionKnot knot = go.GetComponent<CameraPathPositionKnot>();
@@ -682,8 +679,7 @@ namespace TiltBrush
             {
                 GameObject go = Instantiate<GameObject>(
                     WidgetManager.m_Instance.CameraPathRotationKnotPrefab);
-                go.transform.position = cameraPath.RotationKnots[i].Xf.translation;
-                go.transform.rotation = cameraPath.RotationKnots[i].Xf.rotation;
+                go.transform.SetPositionAndRotation(cameraPath.RotationKnots[i].Xf.translation, cameraPath.RotationKnots[i].Xf.rotation);
                 go.transform.parent = widget.transform;
 
                 CameraPathRotationKnot knot = go.GetComponent<CameraPathRotationKnot>();
@@ -703,8 +699,7 @@ namespace TiltBrush
             {
                 GameObject go = Instantiate<GameObject>(
                     WidgetManager.m_Instance.CameraPathSpeedKnotPrefab);
-                go.transform.position = cameraPath.SpeedKnots[i].Xf.translation;
-                go.transform.rotation = cameraPath.SpeedKnots[i].Xf.rotation;
+                go.transform.SetPositionAndRotation(cameraPath.SpeedKnots[i].Xf.translation, cameraPath.SpeedKnots[i].Xf.rotation);
                 go.transform.parent = widget.transform;
 
                 CameraPathSpeedKnot knot = go.GetComponent<CameraPathSpeedKnot>();
@@ -723,8 +718,7 @@ namespace TiltBrush
             {
                 GameObject go = Instantiate<GameObject>(
                     WidgetManager.m_Instance.CameraPathFovKnotPrefab);
-                go.transform.position = cameraPath.FovKnots[i].Xf.translation;
-                go.transform.rotation = cameraPath.FovKnots[i].Xf.rotation;
+                go.transform.SetPositionAndRotation(cameraPath.FovKnots[i].Xf.translation, cameraPath.FovKnots[i].Xf.rotation);
                 go.transform.parent = widget.transform;
 
                 CameraPathFovKnot knot = go.GetComponent<CameraPathFovKnot>();

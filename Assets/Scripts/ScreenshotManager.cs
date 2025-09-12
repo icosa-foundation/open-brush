@@ -153,8 +153,7 @@ namespace TiltBrush
                     dst.name = src.name + "_Right";
                     DestroyImmediate(dst.GetComponent<ScreenshotManager>());
                     dst.transform.parent = src.transform.parent;
-                    dst.transform.localPosition = Vector3.zero;
-                    dst.transform.localRotation = Quaternion.identity;
+                    dst.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
                     m_RightInfo = new CameraInfo();
                     m_RightInfo.camera = dst.GetComponent<Camera>();
                 }
@@ -165,8 +164,7 @@ namespace TiltBrush
                     var dst = Instantiate(src);
                     dst.name = src.name + "_Right";
                     dst.transform.parent = src.transform.parent;
-                    dst.transform.localPosition = src.transform.localPosition;
-                    dst.transform.localRotation = src.transform.localRotation;
+                    dst.transform.SetLocalPositionAndRotation(src.transform.localPosition, src.transform.localRotation);
                     dst.transform.localScale = src.transform.localScale; // ugh
                     dst.layer = LayerMask.NameToLayer("SteamVRRightEye");
                     src.layer = LayerMask.NameToLayer("SteamVRLeftEye");

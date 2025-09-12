@@ -138,8 +138,7 @@ namespace TiltBrush
             if (enabled)
             {
                 var xfNewGlobal = current * m_xfLocal;
-                transform.position = xfNewGlobal.translation;
-                transform.rotation = xfNewGlobal.rotation;
+                transform.SetPositionAndRotation(xfNewGlobal.translation, xfNewGlobal.rotation);
             }
         }
 

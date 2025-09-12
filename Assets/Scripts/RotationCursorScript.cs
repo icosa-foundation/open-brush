@@ -65,8 +65,7 @@ namespace TiltBrush
             rCursorColor.a = fAlpha;
 
             m_ToCursorLine.transform.localScale = vToCursorScale;
-            m_ToCursorLine.transform.rotation = Quaternion.LookRotation(vToCursor, vSurfaceNormal);
-            m_ToCursorLine.transform.position = vSurfaceCenter + (vToCursor * fDistToCursor * 0.5f);
+            m_ToCursorLine.transform.SetPositionAndRotation(vSurfaceCenter + (vToCursor * fDistToCursor * 0.5f), Quaternion.LookRotation(vToCursor, vSurfaceNormal));
             m_ToCursorLine.GetComponent<Renderer>().material.SetColor("_Color", rCursorColor);
 
             //and now the cross section line
@@ -77,8 +76,7 @@ namespace TiltBrush
             rCrossSectionColor.a = fAlpha;
 
             m_CrossSectionLine.transform.localScale = vCrossSectionScale;
-            m_CrossSectionLine.transform.rotation = m_ToCursorLine.transform.rotation;
-            m_CrossSectionLine.transform.position = vSurfaceCenter;
+            m_CrossSectionLine.transform.SetPositionAndRotation(vSurfaceCenter, m_ToCursorLine.transform.rotation);
             m_CrossSectionLine.GetComponent<Renderer>().material.SetColor("_Color", rCrossSectionColor);
         }
 

@@ -17,14 +17,10 @@ public class RenderCubeMap : EditorWindow
         // cam.fieldOfView = 45;
         // cam.farClipPlane = 4000;
         // cam.allowMSAA = false;
-
-        cam.transform.position = new Vector3(0, 10, 0);
-        cam.transform.rotation = Quaternion.identity;
-
+        cam.transform.SetPositionAndRotation(new Vector3(0, 10, 0), Quaternion.identity);
         RenderToCubeMap(Camera.main);
 
-        cam.transform.position = camPos;
-        cam.transform.rotation = camRot;
+        cam.transform.SetPositionAndRotation(camPos, camRot);
     }
 
     static void RenderToCubeMap(Camera Cam)

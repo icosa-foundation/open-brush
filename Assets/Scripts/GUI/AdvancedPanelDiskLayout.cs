@@ -57,7 +57,7 @@ namespace TiltBrush
 
             // Early out if we've got a blank string.
             string advLayout = PlayerPrefs.GetString(kPlayerPrefAdvancedLayout, "");
-            if (advLayout == "")
+            if (advLayout?.Length == 0)
             {
                 return;
             }
@@ -162,8 +162,7 @@ namespace TiltBrush
                     }
                     else
                     {
-                        p.transform.position = layouts[i].pos;
-                        p.transform.rotation = layouts[i].rot;
+                        p.transform.SetPositionAndRotation(layouts[i].pos, layouts[i].rot);
                     }
                     return true;
                 }

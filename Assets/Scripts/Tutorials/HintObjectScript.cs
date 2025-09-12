@@ -185,15 +185,12 @@ namespace TiltBrush
             }
             else
             {
-                m_HintObject.localPosition = m_OriginalHintObjectPosition.Value;
-                m_HintObject.localRotation = m_OriginalHintObjectRotation.Value;
+                m_HintObject.SetLocalPositionAndRotation(m_OriginalHintObjectPosition.Value, m_OriginalHintObjectRotation.Value);
             }
 
-            var pos = m_HintObject.position;
-            var rot = m_HintObject.rotation;
+            m_HintObject.GetPositionAndRotation(out var pos, out var rot);
             m_HintObject.SetParent(m_HintObjectParent.transform);
-            m_HintObject.position = pos;
-            m_HintObject.rotation = rot;
+            m_HintObject.SetPositionAndRotation(pos, rot);
             m_HintObject.localScale = Vector3.one * m_HintObjectScale;
 
             transform.localScale = oldScale;
@@ -210,8 +207,7 @@ namespace TiltBrush
 
             if (m_OriginalHintObjectPosition.HasValue)
             {
-                m_HintObject.localPosition = m_OriginalHintObjectPosition.Value;
-                m_HintObject.localRotation = m_OriginalHintObjectRotation.Value;
+                m_HintObject.SetLocalPositionAndRotation(m_OriginalHintObjectPosition.Value, m_OriginalHintObjectRotation.Value);
             }
 
             m_HintObject.localScale = Vector3.one * m_HintObjectScale;

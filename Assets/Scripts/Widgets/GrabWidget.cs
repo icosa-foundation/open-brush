@@ -367,8 +367,7 @@ namespace TiltBrush
                 }
                 else
                 {
-                    transform.localPosition = value.translation;
-                    transform.localRotation = value.rotation;
+                    transform.SetLocalPositionAndRotation(value.translation, value.rotation);
                 }
                 SetSignedWidgetSize(value.scale);
             }
@@ -826,8 +825,7 @@ namespace TiltBrush
             Debug.LogWarning("You're cloning a base GrabWidget. This is probably not what you intended.");
             GrabWidget clone = Instantiate(this);
             clone.m_PreviousCanvas = m_PreviousCanvas;
-            clone.transform.position = position;
-            clone.transform.rotation = rotation;
+            clone.transform.SetPositionAndRotation(position, rotation);
             clone.SetSignedWidgetSize(size);
             clone.transform.parent = transform.parent;
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
@@ -1202,9 +1200,7 @@ namespace TiltBrush
             }
             else
             {
-                transform.position = xf_GS.translation;
-                transform.rotation = xf_GS.rotation;
-
+                transform.SetPositionAndRotation(xf_GS.translation, xf_GS.rotation);
                 if (m_NonScaleChild != null)
                 {
                     m_NonScaleChild.OnPosRotChanged();
@@ -1213,8 +1209,7 @@ namespace TiltBrush
 
             if (m_SnapGhost != null && SnapEnabled)
             {
-                m_SnapGhost.position = inputXf.translation;
-                m_SnapGhost.rotation = inputXf.rotation;
+                m_SnapGhost.SetPositionAndRotation(inputXf.translation, inputXf.rotation);
             }
 
             m_bWasSnapping = SnapEnabled;
@@ -1255,8 +1250,7 @@ namespace TiltBrush
         {
             if (m_SnapGhost)
             {
-                m_SnapGhost.localPosition = Vector3.zero;
-                m_SnapGhost.localRotation = Quaternion.identity;
+                m_SnapGhost.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
                 m_SnapGhost.gameObject.SetActive(true);
                 m_PrevValidSnapRotationIndex = -1;
                 if (CanSnapToHome())
@@ -1340,8 +1334,7 @@ namespace TiltBrush
         {
             m_SnapGhost = Instantiate(media);
             m_SnapGhost.gameObject.name = "SnapGhost";
-            m_SnapGhost.position = parent.position;
-            m_SnapGhost.rotation = parent.rotation;
+            m_SnapGhost.SetPositionAndRotation(parent.position, parent.rotation);
             m_SnapGhost.parent = parent;
             m_SnapGhost.localScale = Vector3.one;
             HierarchyUtils.RecursivelySetLayer(m_SnapGhost, LayerMask.NameToLayer("Panels"));

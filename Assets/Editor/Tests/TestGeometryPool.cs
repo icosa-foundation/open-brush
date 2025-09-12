@@ -102,7 +102,7 @@ namespace TiltBrush
             }
 
             outWhy += why;
-            return (why == "");
+            return (why?.Length == 0);
         }
 
         static bool AreEqual(TexcoordData lhs, TexcoordData rhs, int size, ref string why)

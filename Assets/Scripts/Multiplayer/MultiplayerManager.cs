@@ -221,7 +221,7 @@ namespace OpenBrush.Multiplayer
             else State = ConnectionState.IN_LOBBY;
 
 
-            return successData & successVoice;
+            return successData && successVoice;
         }
 
         public async Task<bool> JoinRoom(RoomCreateData RoomData)
@@ -254,7 +254,7 @@ namespace OpenBrush.Multiplayer
             //asing the room name to the current room name
             RoomCreateData CurrentRoomData = RoomData;
 
-            return successData & successVoice;
+            return successData && successVoice;
         }
 
         public async Task<bool> LeaveRoom(bool force = false)
@@ -280,7 +280,7 @@ namespace OpenBrush.Multiplayer
             }
             else State = ConnectionState.IN_LOBBY;
 
-            return successData & successVoice;
+            return successData && successVoice;
         }
 
         public async Task<bool> Disconnect()
@@ -734,8 +734,7 @@ namespace OpenBrush.Multiplayer
 
         public bool IsRemotePlayerStillConnected(int playerId)
         {
-            if (m_RemotePlayers.List.Any(player => player.PlayerId == playerId)) return true;
-            return false;
+            return m_RemotePlayers.List.Any(player => player.PlayerId == playerId);
         }
 
         public int? GetNetworkedTimestampMilliseconds()
