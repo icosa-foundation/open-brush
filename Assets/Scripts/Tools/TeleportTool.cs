@@ -309,8 +309,7 @@ namespace TiltBrush
             {
                 m_LastParabolaRay.origin = rAttachPoint.position;
                 m_LastParabolaRay.direction = rAttachPoint.forward;
-                m_BadTeleportIcon.transform.position = rAttachPoint.position;
-                m_BadTeleportIcon.transform.rotation = rAttachPoint.rotation;
+                m_BadTeleportIcon.transform.SetPositionAndRotation(rAttachPoint.position, rAttachPoint.rotation);
             }
             else
             {
@@ -501,13 +500,11 @@ namespace TiltBrush
             // Lock tool to camera controller.
             if (m_LockToController)
             {
-                transform.position = m_BrushController.position;
-                transform.rotation = m_BrushController.rotation;
+                transform.SetPositionAndRotation(m_BrushController.position, m_BrushController.rotation);
             }
             else
             {
-                transform.position = SketchSurfacePanel.m_Instance.transform.position;
-                transform.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
+                transform.SetPositionAndRotation(SketchSurfacePanel.m_Instance.transform.position, SketchSurfacePanel.m_Instance.transform.rotation);
             }
         }
 

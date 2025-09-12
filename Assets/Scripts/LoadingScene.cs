@@ -51,8 +51,7 @@ namespace TiltBrush
 
             // Position screen overlay in front of the camera.
             m_Overlay.transform.parent = m_VrCamera.transform;
-            m_Overlay.transform.localPosition = Vector3.zero;
-            m_Overlay.transform.localRotation = Quaternion.identity;
+            m_Overlay.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
             float scale = 0.5f * m_VrCamera.farClipPlane / m_VrCamera.transform.lossyScale.z;
             m_Overlay.transform.localScale = Vector3.one * scale;
 

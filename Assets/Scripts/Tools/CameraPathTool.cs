@@ -309,9 +309,7 @@ namespace TiltBrush
         override public void LateUpdateTool()
         {
             Transform xf = InputManager.Brush.Geometry.ToolAttachPoint;
-            m_RemoveKnot.transform.position = xf.position;
-            m_RemoveKnot.transform.rotation = xf.rotation;
-
+            m_RemoveKnot.transform.SetPositionAndRotation(xf.position, xf.rotation);
             if (m_LastPlacedKnot == null)
             {
                 // Detect point nearest to path and jump to path if close enough.
@@ -393,14 +391,10 @@ namespace TiltBrush
                     }
                 }
 
-                m_PositionKnot.transform.position = m_LastValidPosition;
-                m_PositionKnot.transform.rotation = xf.rotation;
-                m_RotationKnot.transform.position = m_LastValidPosition;
-                m_RotationKnot.transform.rotation = xf.rotation;
-                m_SpeedKnot.transform.position = m_LastValidPosition;
-                m_SpeedKnot.transform.rotation = Quaternion.identity;
-                m_FovKnot.transform.position = m_LastValidPosition;
-                m_FovKnot.transform.rotation = Quaternion.identity;
+                m_PositionKnot.transform.SetPositionAndRotation(m_LastValidPosition, xf.rotation);
+                m_RotationKnot.transform.SetPositionAndRotation(m_LastValidPosition, xf.rotation);
+                m_SpeedKnot.transform.SetPositionAndRotation(m_LastValidPosition, Quaternion.identity);
+                m_FovKnot.transform.SetPositionAndRotation(m_LastValidPosition, Quaternion.identity);
 
                 // If we're not colliding with a path, but we are colliding with an end, show the preview
                 // segment.

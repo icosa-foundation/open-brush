@@ -265,12 +265,12 @@ namespace TiltBrush
             }
 
             // TODO - make this smarter
-            if (filename.ToLower().EndsWith(".jpg") || filename.ToLower().EndsWith(".jpeg") ||
-                filename.ToLower().EndsWith(".png") || filename.ToLower().EndsWith(".mp4") ||
-                filename.ToLower().EndsWith(".hdr") || filename.ToLower().EndsWith(".svg") ||
-                filename.ToLower().EndsWith(".obj") || filename.ToLower().EndsWith(".off") ||
-                filename.ToLower().EndsWith(".gltf") || filename.ToLower().EndsWith(".glb") ||
-                filename.ToLower().EndsWith(".usd") || filename.ToLower().EndsWith(".fbx"))
+            if (filename.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || filename.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) ||
+                filename.EndsWith(".png", StringComparison.OrdinalIgnoreCase) || filename.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase) ||
+                filename.EndsWith(".hdr", StringComparison.OrdinalIgnoreCase) || filename.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) ||
+                filename.EndsWith(".obj", StringComparison.OrdinalIgnoreCase) || filename.EndsWith(".off", StringComparison.OrdinalIgnoreCase) ||
+                filename.EndsWith(".gltf", StringComparison.OrdinalIgnoreCase) || filename.EndsWith(".glb", StringComparison.OrdinalIgnoreCase) ||
+                filename.EndsWith(".usd", StringComparison.OrdinalIgnoreCase) || filename.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
             {
 
                 WebClient wc = new WebClient();

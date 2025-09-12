@@ -1032,7 +1032,7 @@ namespace TiltBrush
             {
                 return m_ModelWidgets
                     .Select(w => w == null ? null : w.WidgetScript)
-                    .Where(w => w != null).Where(w => !w.Model.AllowExport);
+                    .Where(w => w != null && !w.Model.AllowExport);
             }
         }
 
@@ -1042,7 +1042,7 @@ namespace TiltBrush
             {
                 return m_ModelWidgets
                     .Select(w => w == null ? null : w.WidgetScript)
-                    .Where(w => w != null).Where(w => w.Model.AllowExport);
+                    .Where(w => w != null && w.Model.AllowExport);
             }
         }
 

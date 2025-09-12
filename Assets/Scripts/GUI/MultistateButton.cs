@@ -203,8 +203,7 @@ namespace TiltBrush
             m_OptionContainer = new GameObject();
             m_OptionContainer.name = "Options Container";
             m_OptionContainer.transform.parent = transform;
-            m_OptionContainer.transform.localPosition = new Vector3(0, 0, OptionSideDistance);
-            m_OptionContainer.transform.localRotation = Quaternion.identity;
+            m_OptionContainer.transform.SetLocalPositionAndRotation(new Vector3(0, 0, OptionSideDistance), Quaternion.identity);
             m_OptionContainer.transform.localScale = Vector3.one;
 
             for (int i = 0; i < NumOptions; i++)
@@ -229,8 +228,7 @@ namespace TiltBrush
                     tmpText.alignment = TextAlignmentOptions.Center;
                 }
 
-                side.transform.localRotation = Quaternion.Euler(0, OptionAngleDeltaDegrees * (i + 1), 0);
-                side.transform.localPosition = side.transform.localRotation * new Vector3(0, 0, -OptionSideDistance);
+                side.transform.SetLocalPositionAndRotation(side.transform.localRotation * new Vector3(0, 0, -OptionSideDistance), Quaternion.Euler(0, OptionAngleDeltaDegrees * (i + 1), 0));
                 side.transform.localScale = Vector3.one;
 
                 Renderer renderer = side.GetComponent<Renderer>();

@@ -1482,8 +1482,7 @@ namespace TiltBrush
                         // Add the offset.
                         GameObject newParent = new GameObject();
                         newParent.transform.SetParent(head.parent);
-                        newParent.transform.localPosition = Vector3.zero;
-                        newParent.transform.localRotation = Quaternion.identity;
+                        newParent.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
                         newParent.transform.localScale = Vector3.one;
                         head.SetParent(newParent.transform);
                         TrTransform offsetTransform = TrTransform.TR(
@@ -1498,8 +1497,7 @@ namespace TiltBrush
                                 PlayerPrefs.GetFloat("HeadOffset_localRotationW", 1)));
                         TrTransform originalTransformInverse = TrTransform.FromLocalTransform(head).inverse;
                         TrTransform newParentTransform = offsetTransform * originalTransformInverse;
-                        newParent.transform.localPosition = newParentTransform.translation;
-                        newParent.transform.localRotation = newParentTransform.rotation;
+                        newParent.transform.SetLocalPositionAndRotation(newParentTransform.translation, newParentTransform.rotation);
                         m_HeadOffset = true;
                     }
                 }
@@ -2487,8 +2485,7 @@ namespace TiltBrush
                         m_WorldTransformFadeAmount = 1.0f;
                         m_WorldTransformResetState = WorldTransformResetState.FadingToScene;
                         ViewpointScript.m_Instance.FadeToScene(m_GrabWorldFadeSpeed);
-                        m_DropCam.transform.position = m_xfDropCamReset_RS.translation;
-                        m_DropCam.transform.rotation = m_xfDropCamReset_RS.rotation;
+                        m_DropCam.transform.SetPositionAndRotation(m_xfDropCamReset_RS.translation, m_xfDropCamReset_RS.rotation);
                         PointerManager.m_Instance.AllowPointerPreviewLine(true);
                     }
                     break;
@@ -3449,8 +3446,7 @@ namespace TiltBrush
 
                     //set position of rotation cursor
                     Vector3 vNewTransformedOffset = qNewRotation * m_RotationCursorOffset;
-                    m_RotationCursor.transform.position = m_SketchSurface.transform.position + vNewTransformedOffset;
-                    m_RotationCursor.transform.rotation = qNewRotation;
+                    m_RotationCursor.transform.SetPositionAndRotation(m_SketchSurface.transform.position + vNewTransformedOffset, qNewRotation);
 
                     //set position of guide lines
                     Vector2 vToCenter = m_RotationCursorOffset;
@@ -3517,8 +3513,7 @@ namespace TiltBrush
                 Quaternion qDiff = m_CurrentHeadOrientation * Quaternion.Inverse(m_SurfaceLockBaseHeadRotation);
                 Quaternion qNewSurfaceRot = qDiff * m_SurfaceLockBaseSurfaceRotation;
 
-                m_SketchSurface.transform.position = vSurfacePos;
-                m_SketchSurface.transform.rotation = qNewSurfaceRot;
+                m_SketchSurface.transform.SetPositionAndRotation(vSurfacePos, qNewSurfaceRot);
             }
             else
             {
@@ -5456,10 +5451,8 @@ namespace TiltBrush
             float controllerDirection = App.UserConfig.Profiling.ShowControllers ? 1f : -1f;
             Vector3 roffset = Camera.main.transform.right * 2f;
             Vector3 fOffset = Camera.main.transform.forward * 4f * controllerDirection;
-            InputManager.Brush.Geometry.transform.position = Camera.main.transform.position + roffset + fOffset;
-            InputManager.Brush.Geometry.transform.rotation = Camera.main.transform.rotation;
-            InputManager.Wand.Geometry.transform.position = Camera.main.transform.position - roffset + fOffset;
-            InputManager.Wand.Geometry.transform.rotation = Camera.main.transform.rotation;
+            InputManager.Brush.Geometry.transform.SetPositionAndRotation(Camera.main.transform.position + roffset + fOffset, Camera.main.transform.rotation);
+            InputManager.Wand.Geometry.transform.SetPositionAndRotation(Camera.main.transform.position - roffset + fOffset, Camera.main.transform.rotation);
             m_PanelManager.LockPanelsToController();
 
             ProfilingManager.Instance.StartProfiling(App.UserConfig.Profiling.ProfilingMode);

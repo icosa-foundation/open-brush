@@ -54,8 +54,7 @@ namespace TiltBrush
             m_ParentPanel = panel;
             App.Scene.PoseChanged += (TrTransform prev, TrTransform current) =>
             {
-                transform.rotation = current.rotation * m_Rotation_SS;
-                transform.position = m_ParentPanel.LightWidgetPosition(transform.rotation);
+                transform.SetPositionAndRotation(m_ParentPanel.LightWidgetPosition(transform.rotation), current.rotation * m_Rotation_SS);
             };
         }
 
@@ -200,10 +199,9 @@ namespace TiltBrush
             if (m_Light != null && m_ParentPanel != null)
             {
                 Quaternion rotation = m_Light.transform.rotation;
-                transform.position = m_ParentPanel.LightWidgetPosition(rotation);
-                transform.rotation =
-                    Quaternion.LookRotation(rotation * Vector3.forward,
-                        (ViewpointScript.Head.position - transform.position).normalized);
+                transform.SetPositionAndRotation(m_ParentPanel.LightWidgetPosition(rotation),
+Quaternion.LookRotation(rotation * Vector3.forward,
+                        (ViewpointScript.Head.position - transform.position).normalized));
             }
         }
     }

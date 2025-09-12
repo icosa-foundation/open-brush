@@ -215,8 +215,7 @@ namespace TiltBrush
                 transform.position,
                 transform.rotation) as GameObject;
             rEffect.transform.parent = m_ControllerGeometry.transform;
-            rEffect.transform.localPosition = highlightEffectPrefab.transform.localPosition;
-            rEffect.transform.localRotation = highlightEffectPrefab.transform.localRotation;
+            rEffect.transform.SetLocalPositionAndRotation(highlightEffectPrefab.transform.localPosition, highlightEffectPrefab.transform.localRotation);
         }
 
         // -------------------------------------------------------------------------------------------- //
@@ -244,8 +243,7 @@ namespace TiltBrush
             {
                 GameObject rGlow = Instantiate(activateEffectPrefab, transform.position, transform.rotation) as GameObject;
                 rGlow.transform.parent = m_ControllerGeometry.transform;
-                rGlow.transform.localPosition = activateEffectPrefab.transform.localPosition;
-                rGlow.transform.localRotation = activateEffectPrefab.transform.localRotation;
+                rGlow.transform.SetLocalPositionAndRotation(activateEffectPrefab.transform.localPosition, activateEffectPrefab.transform.localRotation);
             }
         }
 
@@ -254,14 +252,11 @@ namespace TiltBrush
         {
             // Since the parents are the same, we can take a shortcut and swap the local transform
             Debug.Assert(a.parent == b.parent);
-            Vector3 tmpPosition = a.localPosition;
-            Quaternion tmpRotation = a.localRotation;
+            a.GetLocalPositionAndRotation(out Vector3 tmpPosition, out Quaternion tmpRotation);
             Vector3 tmpScale = a.localScale;
-            a.localPosition = b.localPosition;
-            a.localRotation = b.localRotation;
+            a.SetLocalPositionAndRotation(b.localPosition, b.localRotation);
             a.localScale = b.localScale;
-            b.localPosition = tmpPosition;
-            b.localRotation = tmpRotation;
+            b.SetLocalPositionAndRotation(tmpPosition, tmpRotation);
             b.localScale = tmpScale;
         }
 

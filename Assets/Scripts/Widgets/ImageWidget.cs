@@ -69,8 +69,7 @@ namespace TiltBrush
         {
             ImageWidget clone = Instantiate(WidgetManager.m_Instance.ImageWidgetPrefab);
             clone.m_PreviousCanvas = m_PreviousCanvas;
-            clone.transform.position = position;
-            clone.transform.rotation = rotation;
+            clone.transform.SetPositionAndRotation(position, rotation);
             // We're obviously not loading from a sketch.  This is to prevent the intro animation.
             // TODO: Change variable name to something more explicit of what this flag does.
             clone.m_LoadingFromSketch = true;
@@ -288,8 +287,7 @@ namespace TiltBrush
                     image.SetExtrusion(extrusionDepths[i], extrusionColors[i]);
                 }
                 image.Show(bShow: true, bPlayAudio: false);
-                image.transform.localPosition = tiltImage.Transforms[i].translation;
-                image.transform.localRotation = tiltImage.Transforms[i].rotation;
+                image.transform.SetLocalPositionAndRotation(tiltImage.Transforms[i].translation, tiltImage.Transforms[i].rotation);
                 if (tiltImage.PinStates[i])
                 {
                     image.PinFromSave();

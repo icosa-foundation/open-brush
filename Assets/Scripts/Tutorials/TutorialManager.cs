@@ -335,8 +335,7 @@ namespace TiltBrush
                             {
                                 m_LightGizmoHint.Activate(true);
                             }
-                            m_LightGizmoHint.transform.position = lightsPanel.ActiveLightGizmoPosition;
-                            m_LightGizmoHint.transform.rotation = lightsPanel.transform.rotation;
+                            m_LightGizmoHint.transform.SetPositionAndRotation(lightsPanel.ActiveLightGizmoPosition, lightsPanel.transform.rotation);
                         }
                     }
                     else

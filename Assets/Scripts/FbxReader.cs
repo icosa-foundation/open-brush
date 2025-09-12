@@ -78,7 +78,7 @@ namespace TiltBrush
             float fbxUnitToTiltUnit;
             {
                 var unit = scene.GetGlobalSettings().GetSystemUnit();
-                if (Path.GetExtension(m_path).ToLower() == ".obj")
+                if (string.Equals(Path.GetExtension(m_path), ".obj", StringComparison.OrdinalIgnoreCase))
                 {
                     // Obj doesn't specify units. We'd rather assume m, but fbx assumes cm.
                     unit = FbxSystemUnit.m;
@@ -609,7 +609,7 @@ namespace TiltBrush
             if (!Path.IsPathRooted(path)) { return path; }
             relativeTo = relativeTo.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             // It's actually not an easy thing to do to make a path relative, but this works
-            if (path.ToLowerInvariant().StartsWith(relativeTo.ToLowerInvariant()))
+            if (path.StartsWith(relativeTo, StringComparison.InvariantCultureIgnoreCase))
             {
                 return path.Substring(relativeTo.Length + 1);
             }
