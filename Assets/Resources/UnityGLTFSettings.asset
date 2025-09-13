@@ -84,6 +84,19 @@ MonoBehaviour:
   KHR_materials_emissive_strength: 1
   KHR_materials_sheen: 1
   KHR_materials_anisotropy: 1
+--- !u!114 &-7011229683044967540
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17db1d580a51435d8ac25324d3ff3457, type: 3}
+  m_Name: EnsureUniquePathsImport
+  m_EditorClassIdentifier: 
+  enabled: 1
 --- !u!114 &-6871233445226533543
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -297,6 +310,7 @@ MonoBehaviour:
   - {fileID: -6871233445226533543}
   - {fileID: -4070862177138860178}
   - {fileID: 637454249380963975}
+  - {fileID: -7011229683044967540}
   ExportPlugins:
   - {fileID: 242952683485160214}
   - {fileID: -5728475199642485532}
