@@ -53,7 +53,14 @@ jobs:
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
-
+      - name: Check for tags and fetch from Open Brush repo if needed
+        if: github.repository != 'icosa-foundation/open-brush'
+        run: |
+          if [ $(git tag | wc -l) -eq 0 ]; then
+            echo "No tags found in current repository. Fetching tags from icosa-foundation/open-brush..."
+            git remote add openbrush https://github.com/icosa-foundation/open-brush.git
+            git fetch --tags openbrush
+          fi
       - name: Calculate version and stamp
         id: version
         run: |
