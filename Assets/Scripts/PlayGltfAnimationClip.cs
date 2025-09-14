@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Animations;
@@ -21,7 +22,8 @@ namespace TiltBrush
 {
     public class PlayGltfAnimationClip : MonoBehaviour
     {
-        private Animator animator;
+        private Animation animationComponent;
+        private Animator animator; // Keep for debugging/fallback
         private PlayableGraph graph;
         private bool graphInitialized;
 
@@ -29,48 +31,16 @@ namespace TiltBrush
         {
             if (clips == null || clips.Length == 0) return;
 
-            if (graphInitialized && graph.IsValid())
-            {
-                graph.Destroy();
-                graphInitialized = false;
-            }
-
-            animator = GetComponent<Animator>();
-            if (animator == null)
-            {
-                animator = gameObject.AddComponent<Animator>();
-            }
-
             AnimationClip selectedClip = SelectAnimationClip(clips);
             if (selectedClip == null) return;
 
-            try
+            if (selectedClip.legacy)
             {
-                graph = PlayableGraph.Create();
-                var playable = AnimationClipPlayable.Create(graph, selectedClip);
-                var output = AnimationPlayableOutput.Create(graph, "Animation", animator);
-
-                playable.SetTime(0);
-                playable.Play();
-
-                bool shouldLoop = clips.Length == 1;
-                if (shouldLoop)
-                {
-                    playable.SetDuration(double.PositiveInfinity);
-                }
-
-                output.SetSourcePlayable(playable);
-
-                if (graph.IsValid())
-                {
-                    graph.Play();
-                    graphInitialized = true;
-                }
+                PlayLegacyAnimation(selectedClip, clips.Length == 1);
             }
-            catch (System.Exception e)
+            else
             {
-                Debug.LogError($"Failed to play animation clip: {e.Message}");
-                graphInitialized = false;
+                PlayMecanimAnimation(selectedClip, clips.Length == 1);
             }
         }
 
@@ -110,12 +80,96 @@ namespace TiltBrush
             return largestClip ?? clips[0];
         }
 
+        private void PlayLegacyAnimation(AnimationClip clip, bool shouldLoop)
+        {
+            // Remove existing Animator if present (can't have both)
+            animator = GetComponent<Animator>();
+            if (animator != null)
+            {
+                DestroyImmediate(animator);
+            }
+
+            // Get or create Animation component
+            animationComponent = GetComponent<Animation>();
+            if (animationComponent == null)
+            {
+                animationComponent = gameObject.AddComponent<Animation>();
+            }
+
+            // Clear existing clips
+            animationComponent.Stop();
+            foreach (AnimationState state in animationComponent)
+            {
+                animationComponent.RemoveClip(state.clip);
+            }
+
+            // Add and configure the clip
+            string clipName = clip.name;
+            animationComponent.AddClip(clip, clipName);
+
+            if (shouldLoop)
+            {
+                animationComponent[clipName].wrapMode = WrapMode.Loop;
+            }
+            else
+            {
+                animationComponent[clipName].wrapMode = WrapMode.Once;
+            }
+
+            // Play the animation
+            animationComponent.Play(clipName);
+        }
+
+        private void PlayMecanimAnimation(AnimationClip clip, bool shouldLoop)
+        {
+            if (graphInitialized && graph.IsValid())
+            {
+                graph.Destroy();
+                graphInitialized = false;
+            }
+
+            animator = GetComponent<Animator>();
+            if (animator == null)
+            {
+                animator = gameObject.AddComponent<Animator>();
+            }
+
+            try
+            {
+                graph = PlayableGraph.Create();
+                var playable = AnimationClipPlayable.Create(graph, clip);
+                var output = AnimationPlayableOutput.Create(graph, "Animation", animator);
+
+                playable.SetTime(0);
+                playable.Play();
+
+                if (shouldLoop)
+                {
+                    playable.SetDuration(double.PositiveInfinity);
+                }
+
+                output.SetSourcePlayable(playable);
+
+                if (graph.IsValid())
+                {
+                    graph.Play();
+                    graphInitialized = true;
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Failed to play animation clip: {e.Message}");
+                graphInitialized = false;
+            }
+        }
+
         private float GetAnimationScore(AnimationClip clip)
         {
             // Use duration as primary complexity indicator since we can't access track count at runtime
             // Longer animations are often more comprehensive/primary
             return clip.length;
         }
+
 
         void OnDestroy()
         {
