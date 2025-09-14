@@ -283,13 +283,14 @@ def extract_and_convert_fragment(unity_code, shader_type):
     # Texture sampling
     if 'tex2D(' in frag_body:
         conversions.append("// Unity tex2D() -> Godot texture()")
-        if '_MainTex' in frag_body:
-            conversions.append("vec4 main_tex = texture(_MainTex, UV);")
+        if '_MainTex' in frag_body or 'MainTex' in frag_body:
+            conversions.append("vec4 main_tex = texture(MainTex, UV);")
             conversions.append("ALBEDO = main_tex.rgb;")
 
     # Color operations
-    if '_TintColor' in frag_body or '_Color' in frag_body:
-        conversions.append("ALBEDO *= _TintColor.rgb; // or _Color.rgb")
+    if '_TintColor' in frag_body or '_Color' in frag_body or 'TintColor' in frag_body or 'Color' in frag_body:
+        conversions.append("// Apply tint if available")
+        conversions.append("// ALBEDO *= TintColor.rgb; // or Color.rgb")
 
     # Alpha operations
     if 'SV_Target' in unity_code and ('c.a' in frag_body or 'o.Alpha' in frag_body):
@@ -305,8 +306,8 @@ def extract_and_convert_fragment(unity_code, shader_type):
         conversions.append("// Use ALPHA = 0.0 or conditional logic")
 
     # Opacity
-    if '_Opacity' in frag_body:
-        conversions.append("ALPHA *= _Opacity;")
+    if '_Opacity' in frag_body or 'Opacity' in frag_body:
+        conversions.append("ALPHA *= Opacity;")
 
     converted_code = '\n    '.join(conversions) if conversions else get_basic_fragment_conversion(unity_code)
 
@@ -350,6 +351,13 @@ def create_godot_import_file(texture_path, texture_type="texture"):
     import_path = texture_path.with_suffix(texture_path.suffix + ".import")
 
     # Basic Godot texture import settings
+    try:
+        rel_under_output = texture_path.relative_to(OUTPUT_ROOT)
+        res_rel_str = f"{OUTPUT_ROOT.name}/{str(rel_under_output).replace('\\', '/')}"
+    except ValueError:
+        # Fallback; best-effort path including the output root directory name
+        res_rel_str = f"{OUTPUT_ROOT.name}/{texture_path.name}"
+
     import_content = f"""[remap]
 
 importer="texture"
@@ -362,7 +370,7 @@ metadata={{
 
 [deps]
 
-source_file="res://{str(texture_path.relative_to(OUTPUT_ROOT)).replace(chr(92), '/')}"
+source_file="res://{res_rel_str}"
 dest_files=["res://.godot/imported/{texture_path.name}-{hash(str(texture_path)) % 1000000:06x}.ctex"]
 
 [params]
@@ -419,14 +427,14 @@ def get_basic_fragment_conversion(unity_code):
         conversions.append("// Unity tex2D() -> Godot texture()")
         conversions.append("// tex2D(_MainTex, uv) -> texture(_MainTex, uv)")
 
-    if '_MainTex' in unity_code:
-        conversions.append("ALBEDO = texture(_MainTex, UV).rgb;")
+    if '_MainTex' in unity_code or 'MainTex' in unity_code:
+        conversions.append("ALBEDO = texture(MainTex, UV).rgb;")
 
-    if '_Color' in unity_code:
-        conversions.append("ALBEDO *= _Color.rgb;")
+    if '_Color' in unity_code or 'Color' in unity_code:
+        conversions.append("// ALBEDO *= Color.rgb;")
 
     if 'o.Alpha' in unity_code or 'c.a' in unity_code:
-        conversions.append("ALPHA = texture(_MainTex, UV).a;")
+        conversions.append("ALPHA = texture(MainTex, UV).a;")
 
     return '\n    '.join(conversions) if conversions else "ALBEDO = vec3(1.0);"
 
@@ -463,52 +471,68 @@ def write_tres(name, tex, floats, colors, shader_guid, guid_map, out_dir):
     resource_lines = [
         f'resource_name = "{name}"'
     ]
+    shader_params = {}
 
     # ----- Color parameters -----
-    if "_Color" in colors:
-        c = colors["_Color"]
-        resource_lines.append(f'albedo_color = Color({c["r"]}, {c["g"]}, {c["b"]}, {c["a"]})')
-    if "_EmissionColor" in colors:
-        e = colors["_EmissionColor"]
-        if any(e.values()):
-            if not any("emission_enabled = true" in line for line in resource_lines):
-                resource_lines.append("emission_enabled = true")
-            resource_lines.append(f'emission_color = Color({e["r"]}, {e["g"]}, {e["b"]}, 1.0)')
+    if material_type != "ShaderMaterial":
+        if "_Color" in colors:
+            c = colors["_Color"]
+            resource_lines.append(f'albedo_color = Color({c["r"]}, {c["g"]}, {c["b"]}, {c["a"]})')
+        if "_EmissionColor" in colors:
+            e = colors["_EmissionColor"]
+            if any(e.values()):
+                if not any("emission_enabled = true" in line for line in resource_lines):
+                    resource_lines.append("emission_enabled = true")
+                resource_lines.append(f'emission_color = Color({e["r"]}, {e["g"]}, {e["b"]}, 1.0)')
+    else:
+        # For ShaderMaterial, wire colors as shader parameters
+        for k, c in colors.items():
+            pname = k.lstrip('_')
+            shader_params[pname] = f'Color({c["r"]}, {c["g"]}, {c["b"]}, {c["a"]})'
 
     # ----- Scalar/flag parameters -----
-    if "_Metallic" in floats:
-        resource_lines.append(f'metallic = {floats["_Metallic"]}')
-    if "_Glossiness" in floats:
-        resource_lines.append(f'roughness = {1 - floats["_Glossiness"]}')
-    if "_BumpScale" in floats:
-        resource_lines.append(f'normal_scale = {floats["_BumpScale"]}')
-    if "_OcclusionStrength" in floats:
-        resource_lines.append(f'ao_light_affect = {floats["_OcclusionStrength"]}')
-    if "_Cutoff" in floats:
-        resource_lines.append(f'alpha_scissor_threshold = {floats["_Cutoff"]}')
-    if "_Mode" in floats:
-        mode = int(floats["_Mode"])  # Unity: 0 Opaque, 1 Cutout, 2 Fade, 3 Transparent
-        unity_to_godot = {0:0, 1:2, 2:1, 3:1}
-        resource_lines.append(f"transparency = {unity_to_godot.get(mode,0)}")
-        if mode in (2,3):
-            resource_lines.append("flags_transparent = true")
-    if floats.get("_AlphaToMask", 0) > 0:
-        resource_lines.append("alpha_antialiasing_mode = 1")
+    if material_type != "ShaderMaterial":
+        if "_Metallic" in floats:
+            resource_lines.append(f'metallic = {floats["_Metallic"]}')
+        if "_Glossiness" in floats:
+            resource_lines.append(f'roughness = {1 - floats["_Glossiness"]}')
+        if "_BumpScale" in floats:
+            resource_lines.append(f'normal_scale = {floats["_BumpScale"]}')
+        if "_OcclusionStrength" in floats:
+            resource_lines.append(f'ao_light_affect = {floats["_OcclusionStrength"]}')
+        if "_Cutoff" in floats:
+            resource_lines.append(f'alpha_scissor_threshold = {floats["_Cutoff"]}')
+        if "_Mode" in floats:
+            mode = int(floats["_Mode"])  # Unity: 0 Opaque, 1 Cutout, 2 Fade, 3 Transparent
+            unity_to_godot = {0:0, 1:2, 2:1, 3:1}
+            resource_lines.append(f"transparency = {unity_to_godot.get(mode,0)}")
+            if mode in (2,3):
+                resource_lines.append("flags_transparent = true")
+        if floats.get("_AlphaToMask", 0) > 0:
+            resource_lines.append("alpha_antialiasing_mode = 1")
+    else:
+        # For ShaderMaterial, forward all floats as shader parameters
+        for k, v in floats.items():
+            # Skip known Unity-only pipeline flags that don't map well as uniforms
+            if k in {"_Mode", "_Cull", "_DstBlend", "_SrcBlend", "_ZWrite"}:
+                continue
+            pname = k.lstrip('_')
+            shader_params[pname] = str(v)
 
     # Culling from material or shader
-    if "_Cull" in floats:
+    if material_type != "ShaderMaterial" and "_Cull" in floats:
         cull_map = {0:"double_sided = true", 1:"cull_mode = 1", 2:"cull_mode = 2"}
         resource_lines.append(cull_map.get(int(floats["_Cull"]), ""))
-    elif "Cull" in shader_directives:
+    elif material_type != "ShaderMaterial" and "Cull" in shader_directives:
         val = shader_directives["Cull"][0]
         cull_map = {"Off":"double_sided = true", "Front":"cull_mode = 1", "Back":"cull_mode = 2"}
         cull_setting = cull_map.get(val, f"# TODO: Cull {val}")
         if cull_setting:  # Only append if not empty
             resource_lines.append(cull_setting)
 
-    if "ZWrite" in shader_directives and shader_directives["ZWrite"][0] == "Off":
+    if material_type != "ShaderMaterial" and "ZWrite" in shader_directives and shader_directives["ZWrite"][0] == "Off":
         resource_lines.append("no_depth_test = true")
-    if "ZTest" in shader_directives:
+    if material_type != "ShaderMaterial" and "ZTest" in shader_directives:
         ztest = shader_directives["ZTest"][0]
         ztest_map = {
             "Less": "depth_func = 1",
@@ -525,16 +549,16 @@ def write_tres(name, tex, floats, colors, shader_guid, guid_map, out_dir):
             resource_lines.append(f"# TODO: ZTest {ztest}")
 
     # Handle render queue for transparency ordering
-    if "Queue" in shader_directives:
+    if material_type != "ShaderMaterial" and "Queue" in shader_directives:
         queue = shader_directives["Queue"][0]
         if "Transparent" in queue:
             resource_lines.append("flags_transparent = true")
         elif "Overlay" in queue:
             resource_lines.append("flags_do_not_receive_shadows = true")
 
-    if "AlphaToMask" in shader_directives and shader_directives["AlphaToMask"][0] == "On":
+    if material_type != "ShaderMaterial" and "AlphaToMask" in shader_directives and shader_directives["AlphaToMask"][0] == "On":
         resource_lines.append("alpha_antialiasing_mode = 1")
-    if "Blend" in shader_directives:
+    if material_type != "ShaderMaterial" and "Blend" in shader_directives:
         sf, df = shader_directives["Blend"]
         # Common Unity -> Godot blend mode mappings
         blend_modes = {
@@ -549,14 +573,14 @@ def write_tres(name, tex, floats, colors, shader_guid, guid_map, out_dir):
             resource_lines.append("flags_transparent = true")
         else:
             resource_lines.append(f"# TODO: Blend {sf} {df}")
-    if "ColorMask" in shader_directives:
+    if material_type != "ShaderMaterial" and "ColorMask" in shader_directives:
         resource_lines.append(f"# TODO: ColorMask {shader_directives['ColorMask'][0]}")
 
-    if floats.get("_VertexColorUseAsAlbedo", 0) > 0:
+    if material_type != "ShaderMaterial" and floats.get("_VertexColorUseAsAlbedo", 0) > 0:
         resource_lines.append("vertex_color_use_as_albedo = true")
 
     # Handle emission gain for brush materials
-    if "_EmissionGain" in floats:
+    if material_type != "ShaderMaterial" and "_EmissionGain" in floats:
         gain = floats["_EmissionGain"]
         if not any("emission_enabled = true" in line for line in resource_lines):
             resource_lines.append("emission_enabled = true")
@@ -599,51 +623,50 @@ def write_tres(name, tex, floats, colors, shader_guid, guid_map, out_dir):
         copied_texture_path = copy_texture_to_godot(texture_path, guid_map, out_dir)
 
         if copied_texture_path:
-            if mapping:
-                prop, extra = mapping
-                if extra:
-                    resource_lines.append(extra)
+            # Build res:// path for texture and register as ext_resource
+            tex_abs = out_dir / copied_texture_path
+            try:
+                res_rel = tex_abs.relative_to(OUTPUT_ROOT)
+                res_path = f'res://{OUTPUT_ROOT.name}/{str(res_rel).replace("\\", "/")}'
+            except ValueError:
+                # Fallback: best-effort include output root name
+                res_path = f'res://{OUTPUT_ROOT.name}/{copied_texture_path}'
 
-                # Build res:// path for texture and register as ext_resource
-                tex_abs = out_dir / copied_texture_path
-                try:
-                    res_rel = tex_abs.relative_to(OUTPUT_ROOT)
-                    res_path = f'res://{str(res_rel).replace("\\", "/")}'
-                except ValueError:
-                    # Fallback: treat as absolute under OUTPUT_ROOT name
-                    res_path = f'res://{copied_texture_path}'
+            tex_id = str(next_ext_id)
+            next_ext_id += 1
+            ext_resources.append({
+                "id": tex_id,
+                "type": "Texture2D",
+                "path": res_path,
+            })
 
-                tex_id = str(next_ext_id)
-                next_ext_id += 1
-                ext_resources.append({
-                    "id": tex_id,
-                    "type": "Texture2D",
-                    "path": res_path,
-                })
-                resource_lines.append(f'{prop} = ExtResource("{tex_id}")')
-
-                # Handle UV transforms with proper Godot format
-                if scale != {"x":1, "y":1}:
-                    sx, sy = scale["x"], scale["y"]
-                    resource_lines.append(f'uv1_scale = Vector3({sx}, {sy}, 1.0)')
-                if offset != {"x":0, "y":0}:
-                    ox, oy = offset["x"], offset["y"]
-                    resource_lines.append(f'uv1_offset = Vector3({ox}, {oy}, 0.0)')
-
-                # Handle texture tiling for special cases
-                if scale["x"] > 1 or scale["y"] > 1:
-                    resource_lines.append("# Note: Large UV scale values may need texture import settings adjusted")
+            if material_type != "ShaderMaterial":
+                # Map into StandardMaterial3D properties
+                if mapping:
+                    prop, extra = mapping
+                    if extra:
+                        resource_lines.append(extra)
+                    resource_lines.append(f'{prop} = ExtResource("{tex_id}")')
+                else:
+                    resource_lines.append(f'# TODO: {slot} -> res:// path for {copied_texture_path}')
             else:
-                resource_lines.append(f'# TODO: {slot} -> res:// path for {copied_texture_path}')
-                if scale != {"x":1, "y":1} or offset != {"x":0, "y":0}:
-                    resource_lines.append(f'# TODO: {slot} UV1 scale {scale} offset {offset}')
+                # Wire to shader parameter using Unity slot name without underscore
+                pname = slot.lstrip('_')
+                shader_params[pname] = f'ExtResource("{tex_id}")'
+
+            # Handle UV transforms comments (shader should deal with UVs)
+            if scale != {"x":1, "y":1} or offset != {"x":0, "y":0}:
+                resource_lines.append(f'# Note: {slot} has UV scale {scale} offset {offset} (wire in shader if needed)')
         else:
             # Texture couldn't be copied - leave a note
             original_path = texture_path.replace("\\", "/")
             resource_lines.append(f'# MISSING: {slot} texture could not be copied from {original_path}')
             if mapping:
                 prop, extra = mapping
-                resource_lines.append(f'# {prop} = ExtResource("<id>")  # missing')
+                if material_type != "ShaderMaterial":
+                    resource_lines.append(f'# {prop} = ExtResource("<id>")  # missing')
+                else:
+                    resource_lines.append(f'# shader_parameter/{slot.lstrip("_")} = ExtResource("<id>")  # missing')
 
     # ----- Reference to shader file -----
     if shader_exists and not use_standard_material:
@@ -689,9 +712,9 @@ def write_tres(name, tex, floats, colors, shader_guid, guid_map, out_dir):
         # Even if commented out initially, this keeps the .tres valid when enabled
         try:
             shader_res_rel = godot_shader_path.relative_to(OUTPUT_ROOT)
-            shader_res_path = f'res://{str(shader_res_rel).replace("\\", "/")}'
+            shader_res_path = f'res://{OUTPUT_ROOT.name}/{str(shader_res_rel).replace("\\", "/")}'
         except ValueError:
-            shader_res_path = f'res://{str(godot_shader_path).replace("\\", "/")}'
+            shader_res_path = f'res://{OUTPUT_ROOT.name}/{str(godot_shader_path.name).replace("\\", "/")}'
 
         shader_id = str(next_ext_id)
         next_ext_id += 1
@@ -701,8 +724,8 @@ def write_tres(name, tex, floats, colors, shader_guid, guid_map, out_dir):
             "path": shader_res_path,
         })
 
-        resource_lines.append(f'\n# TODO: Uncomment the line below once shader conversion is complete')
-        resource_lines.append(f'# shader = ExtResource("{shader_id}")')
+        # Assign the shader immediately
+        resource_lines.append(f'shader = ExtResource("{shader_id}")')
         resource_lines.append(f'# Original Unity shader: {shader_path.as_posix()}')
     elif use_standard_material and shader_path:
         resource_lines.append(f'\n# Replaced Unity shader with StandardMaterial3D: {shader_path.as_posix()}')
@@ -713,6 +736,11 @@ def write_tres(name, tex, floats, colors, shader_guid, guid_map, out_dir):
     for res in ext_resources:
         ext_lines.append(f'[ext_resource type="{res["type"]}" path="{res["path"]}" id="{res["id"]}"]')
     body = ["[resource]"] + resource_lines
+
+    # Append shader parameters if we have any (for ShaderMaterial only)
+    if material_type == "ShaderMaterial" and shader_params:
+        for k, v in shader_params.items():
+            body.append(f'shader_parameter/{k} = {v}')
 
     contents = []
     contents.extend(header)
