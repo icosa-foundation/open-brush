@@ -1232,7 +1232,7 @@ jobs:
             CHANGELOG="${RAW_CHANGELOG}"
             ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
           fi
-          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait-time 600 | jq -r '.id')"
+          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait_time 600 | jq -r '.id')"
           abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID
 
   publish_oculus_quest1_arborxr:
@@ -1285,7 +1285,7 @@ jobs:
             CHANGELOG="${RAW_CHANGELOG}"
             ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
           fi
-          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest1_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait-time 300 | jq -r '.id')"
+          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest1_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait_time 300 | jq -r '.id')"
           abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID
 
   publish_oculus_rift:
@@ -1423,7 +1423,7 @@ jobs:
             CHANGELOG="${RAW_CHANGELOG}"
             ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
           fi
-          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Pico_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait-time 300 | jq -r '.id')"
+          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Pico_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait_time 300 | jq -r '.id')"
           abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID
 
   publish_ios_zapbox:
