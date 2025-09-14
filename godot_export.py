@@ -174,31 +174,27 @@ def extract_unity_properties(unity_code):
 def determine_godot_shader_type(unity_code):
     """Determine Godot shader type and render modes from Unity code"""
 
-    # Check for particle/canvas shaders
-    if any(keyword in unity_code for keyword in ['_particles', 'Particle', 'UI', 'Canvas']):
-        shader_type = "canvas_item"
-        render_modes_str = "render_mode blend_mix;"
-    else:
-        shader_type = "spatial"
-        render_modes = []
+    # All brush shaders are for 3D meshes, so always use spatial
+    shader_type = "spatial"
+    render_modes = []
 
-        # Determine render modes from Unity tags/settings
-        if 'Cull Off' in unity_code:
-            render_modes.append("cull_disabled")
-        if 'ZWrite Off' in unity_code:
-            render_modes.append("depth_draw_never")
-        if '"Queue"="Transparent"' in unity_code:
-            render_modes.append("blend_mix")
-        if '"RenderType"="TransparentCutout"' in unity_code:
-            render_modes.append("depth_test_disabled")
-        if 'Blend SrcAlpha OneMinusSrcAlpha' in unity_code:
-            render_modes.append("blend_mix")
-        elif 'Blend SrcAlpha One' in unity_code:
-            render_modes.append("blend_add")
-        elif 'Blend DstColor Zero' in unity_code:
-            render_modes.append("blend_mul")
+    # Determine render modes from Unity tags/settings
+    if 'Cull Off' in unity_code:
+        render_modes.append("cull_disabled")
+    if 'ZWrite Off' in unity_code:
+        render_modes.append("depth_draw_never")
+    if '"Queue"="Transparent"' in unity_code:
+        render_modes.append("blend_mix")
+    if '"RenderType"="TransparentCutout"' in unity_code:
+        render_modes.append("depth_test_disabled")
+    if 'Blend SrcAlpha OneMinusSrcAlpha' in unity_code:
+        render_modes.append("blend_mix")
+    elif 'Blend SrcAlpha One' in unity_code:
+        render_modes.append("blend_add")
+    elif 'Blend DstColor Zero' in unity_code:
+        render_modes.append("blend_mul")
 
-        render_modes_str = "render_mode " + ", ".join(render_modes) + ";" if render_modes else ""
+    render_modes_str = "render_mode " + ", ".join(render_modes) + ";" if render_modes else ""
 
     return shader_type, render_modes_str
 
@@ -228,7 +224,8 @@ def extract_and_convert_vertex(unity_code, shader_type):
 
     # Position transformations
     if 'UnityObjectToClipPos' in vertex_body:
-        conversions.append("VERTEX = (MODELVIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;")
+        conversions.append("// Unity UnityObjectToClipPos -> Godot built-in vertex processing")
+        conversions.append("// VERTEX is automatically transformed by Godot")
 
     # UV transformations
     if 'TRANSFORM_TEX' in vertex_body:
@@ -277,7 +274,7 @@ def extract_and_convert_fragment(unity_code, shader_type):
     {get_basic_fragment_conversion(unity_code)}
 }}"""
 
-    # Convert fragment operations
+    # Convert fragment operations (all brush shaders are spatial)
     conversions = []
 
     # Texture sampling
@@ -309,7 +306,7 @@ def extract_and_convert_fragment(unity_code, shader_type):
     if '_Opacity' in frag_body or 'Opacity' in frag_body:
         conversions.append("ALPHA *= Opacity;")
 
-    converted_code = '\n    '.join(conversions) if conversions else get_basic_fragment_conversion(unity_code)
+    converted_code = '\n    '.join(conversions) if conversions else get_basic_fragment_conversion(unity_code, shader_type)
 
     return f"""void fragment() {{
     {converted_code}
@@ -334,7 +331,7 @@ def get_unity_builtin_conversions(unity_code):
         conversions.append("// Unity unity_ObjectToWorld -> Godot WORLD_MATRIX")
 
     if 'UNITY_MATRIX_VP' in unity_code:
-        conversions.append("// Unity UNITY_MATRIX_VP -> Godot PROJECTION_MATRIX * MODELVIEW_MATRIX")
+        conversions.append("// Unity UNITY_MATRIX_VP -> Godot PROJECTION_MATRIX * VIEW_MATRIX * MODEL_MATRIX")
 
     # Screen/UV conversions
     if '_ScreenParams' in unity_code:
@@ -353,7 +350,7 @@ def create_godot_import_file(texture_path, texture_type="texture"):
     # Basic Godot texture import settings
     try:
         rel_under_output = texture_path.relative_to(OUTPUT_ROOT)
-        res_rel_str = f"{OUTPUT_ROOT.name}/{str(rel_under_output).replace('\\', '/')}"
+        res_rel_str = f"{OUTPUT_ROOT.name}/{str(rel_under_output).replace(chr(92), '/')}"
     except ValueError:
         # Fallback; best-effort path including the output root directory name
         res_rel_str = f"{OUTPUT_ROOT.name}/{texture_path.name}"
@@ -419,8 +416,8 @@ def copy_texture_to_godot(texture_path, guid_map, material_dir):
         print(f"Warning: Could not copy texture {texture_path}: {e}")
         return None
 
-def get_basic_fragment_conversion(unity_code):
-    """Generate basic fragment shader conversion hints"""
+def get_basic_fragment_conversion(unity_code, shader_type="spatial"):
+    """Generate basic fragment shader conversion hints (all brush shaders are spatial)"""
     conversions = []
 
     if 'tex2D(' in unity_code:
@@ -627,7 +624,7 @@ def write_tres(name, tex, floats, colors, shader_guid, guid_map, out_dir):
             tex_abs = out_dir / copied_texture_path
             try:
                 res_rel = tex_abs.relative_to(OUTPUT_ROOT)
-                res_path = f'res://{OUTPUT_ROOT.name}/{str(res_rel).replace("\\", "/")}'
+                res_path = f'res://{OUTPUT_ROOT.name}/{str(res_rel).replace(chr(92), "/")}'
             except ValueError:
                 # Fallback: best-effort include output root name
                 res_path = f'res://{OUTPUT_ROOT.name}/{copied_texture_path}'
@@ -712,9 +709,9 @@ def write_tres(name, tex, floats, colors, shader_guid, guid_map, out_dir):
         # Even if commented out initially, this keeps the .tres valid when enabled
         try:
             shader_res_rel = godot_shader_path.relative_to(OUTPUT_ROOT)
-            shader_res_path = f'res://{OUTPUT_ROOT.name}/{str(shader_res_rel).replace("\\", "/")}'
+            shader_res_path = f'res://{OUTPUT_ROOT.name}/{str(shader_res_rel).replace(chr(92), "/")}'
         except ValueError:
-            shader_res_path = f'res://{OUTPUT_ROOT.name}/{str(godot_shader_path.name).replace("\\", "/")}'
+            shader_res_path = f'res://{OUTPUT_ROOT.name}/{str(godot_shader_path.name).replace(chr(92), "/")}'
 
         shader_id = str(next_ext_id)
         next_ext_id += 1
