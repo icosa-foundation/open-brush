@@ -1218,12 +1218,12 @@ jobs:
           ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_Q2_LIVE_CHANNEL }}
           ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_Q2_BETA_CHANNEL }}
         run: |
+          set -x
           mkdir releases
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
 
           cd releases
 
-          set -x
           if [ "$PRERELEASE" == "false" ]
           then
             CHANGELOG="Version $VERSION"
@@ -1232,8 +1232,7 @@ jobs:
             CHANGELOG="${RAW_CHANGELOG}"
             ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
           fi
-          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait | jq -r '.id')"
-          sleep 30
+          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait-time 600 | jq -r '.id')"
           abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID
 
   publish_oculus_quest1_arborxr:
@@ -1272,6 +1271,7 @@ jobs:
           ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_Q1_LIVE_CHANNEL }}
           ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_Q1_BETA_CHANNEL }}
         run: |
+          set -x
           mkdir releases1
           mv build_oculus_quest1/*/com.Icosa.OpenBrush*apk releases1/OpenBrush_Quest1_$VERSION.apk
 
@@ -1285,8 +1285,7 @@ jobs:
             CHANGELOG="${RAW_CHANGELOG}"
             ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
           fi
-          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest1_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait | jq -r '.id')"
-          sleep 30
+          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest1_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait-time 300 | jq -r '.id')"
           abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID
 
   publish_oculus_rift:
@@ -1410,6 +1409,7 @@ jobs:
           ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_PICO_LIVE_CHANNEL }}
           ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_PICO_BETA_CHANNEL }}
         run: |
+          set -x
           mkdir releases
           mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
 
@@ -1423,8 +1423,7 @@ jobs:
             CHANGELOG="${RAW_CHANGELOG}"
             ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
           fi
-          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Pico_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait | jq -r '.id')"
-          sleep 30
+          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Pico_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait-time 300 | jq -r '.id')"
           abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID
 
   publish_ios_zapbox:
@@ -1457,6 +1456,7 @@ jobs:
       - name: Use xcode 16.2 / ios 18.2
         run: |
           sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer  # The default in macos-latest (i.e., 14) is currently 15.4.
+          xcrun simctl list > /dev/null  # Because of https://github.com/actions/runner-images/issues/12862
           xcodebuild -downloadPlatform iOS -buildVersion 18.2  # Because of https://github.com/actions/runner-images/issues/11335
 
       - name: Download iOS Artifact
