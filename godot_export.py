@@ -468,7 +468,8 @@ def write_tres(name, tex, floats, colors, shader_guid, guid_map, out_dir):
                 standard_material_settings = STANDARD_MATERIAL_SHADERS[shader_name]
                 print(f"Using StandardMaterial3D for {name} (was {shader_name})")
 
-    shader_directives = parse_shader(shader_path) if shader_path and not use_standard_material else {}
+    # Always parse shader directives to get transparency and cutout information
+    shader_directives = parse_shader(shader_path) if shader_path and shader_exists else {}
 
     # Determine material type
     material_type = "StandardMaterial3D" if (use_standard_material or not shader_exists) else "ShaderMaterial"
@@ -509,20 +510,46 @@ def write_tres(name, tex, floats, colors, shader_guid, guid_map, out_dir):
             resource_lines.append(f'normal_scale = {floats["_BumpScale"]}')
         if "_OcclusionStrength" in floats:
             resource_lines.append(f'ao_light_affect = {floats["_OcclusionStrength"]}')
+        # Check if this material should use cutout mode based on shader directives
+        is_cutout_material = False
+        if "RenderType" in shader_directives and shader_directives["RenderType"][0] == "TransparentCutout":
+            is_cutout_material = True
+        elif "Queue" in shader_directives and ("AlphaTest" in shader_directives["Queue"][0] or "Cutout" in shader_directives["Queue"][0]):
+            is_cutout_material = True
+
         if "_Cutoff" in floats:
             cutoff_value = floats["_Cutoff"]
             resource_lines.append(f'alpha_scissor_threshold = {cutoff_value}')
             # Enable alpha scissoring for cutoff materials
-            if cutoff_value > 0.0:
+            if cutoff_value > 0.0 or is_cutout_material:
                 resource_lines.append("alpha_antialiasing_mode = 0")  # None - sharp cutoff
+                if is_cutout_material:
+                    # Force cutout transparency mode for materials that should be cutout
+                    resource_lines.append("transparency = 2")  # Alpha scissor mode
+
         if "_Mode" in floats:
             mode = int(floats["_Mode"])  # Unity: 0 Opaque, 1 Cutout, 2 Fade, 3 Transparent
+
+            # Override mode if shader indicates cutout
+            if is_cutout_material and mode == 0:
+                mode = 1  # Force to cutout mode
+
             unity_to_godot = {0:0, 1:2, 2:1, 3:1}
-            resource_lines.append(f"transparency = {unity_to_godot.get(mode,0)}")
+            transparency_mode = unity_to_godot.get(mode, 0)
+
+            # Don't override if we already set transparency mode for cutout materials above
+            if not (is_cutout_material and "_Cutoff" in floats):
+                resource_lines.append(f"transparency = {transparency_mode}")
+
             if mode == 1:  # Cutout mode - enable alpha scissoring
                 resource_lines.append("alpha_antialiasing_mode = 0")
             if mode in (2,3):
                 resource_lines.append("flags_transparent = true")
+        elif is_cutout_material and "_Cutoff" not in floats:
+            # Cutout shader but no _Cutoff parameter - set defaults
+            resource_lines.append("alpha_scissor_threshold = 0.5")
+            resource_lines.append("alpha_antialiasing_mode = 0")
+            resource_lines.append("transparency = 2")
         if floats.get("_AlphaToMask", 0) > 0:
             resource_lines.append("alpha_antialiasing_mode = 1")
     else:
@@ -568,21 +595,9 @@ def write_tres(name, tex, floats, colors, shader_guid, guid_map, out_dir):
         queue = shader_directives["Queue"][0]
         if "Transparent" in queue:
             resource_lines.append("flags_transparent = true")
-        elif "AlphaTest" in queue or "Cutout" in queue:
-            # Enable alpha scissoring for cutout queue materials
-            if not any("alpha_scissor_threshold" in line for line in resource_lines):
-                resource_lines.append("alpha_scissor_threshold = 0.5")
-            resource_lines.append("alpha_antialiasing_mode = 0")
         elif "Overlay" in queue:
             resource_lines.append("flags_do_not_receive_shadows = true")
-
-    # Handle RenderType for alpha cutoff
-    if material_type != "ShaderMaterial" and "RenderType" in shader_directives:
-        render_type = shader_directives["RenderType"][0]
-        if render_type == "TransparentCutout":
-            if not any("alpha_scissor_threshold" in line for line in resource_lines):
-                resource_lines.append("alpha_scissor_threshold = 0.5")
-            resource_lines.append("alpha_antialiasing_mode = 0")
+        # AlphaTest/Cutout handling is now done above with _Cutoff processing
 
     if material_type != "ShaderMaterial" and "AlphaToMask" in shader_directives and shader_directives["AlphaToMask"][0] == "On":
         resource_lines.append("alpha_antialiasing_mode = 1")
@@ -763,7 +778,19 @@ def write_tres(name, tex, floats, colors, shader_guid, guid_map, out_dir):
     ext_lines = []
     for res in ext_resources:
         ext_lines.append(f'[ext_resource type="{res["type"]}" path="{res["path"]}" id="{res["id"]}"]')
-    body = ["[resource]"] + resource_lines
+
+    # Remove duplicate property lines while preserving order
+    seen_properties = set()
+    deduplicated_lines = []
+    for line in resource_lines:
+        if ' = ' in line and not line.startswith('#'):
+            property_name = line.split(' = ')[0].strip()
+            if property_name in seen_properties:
+                continue  # Skip duplicate
+            seen_properties.add(property_name)
+        deduplicated_lines.append(line)
+
+    body = ["[resource]"] + deduplicated_lines
 
     # Append shader parameters if we have any (for ShaderMaterial only)
     if material_type == "ShaderMaterial" and shader_params:
