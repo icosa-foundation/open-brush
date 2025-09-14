@@ -297,10 +297,17 @@ def extract_and_convert_fragment(unity_code, shader_type):
     if 'o.Emission' in frag_body:
         conversions.append("EMISSION = emission_color.rgb;")
 
-    # Clipping/Dissolve
-    if 'discard' in frag_body:
-        conversions.append("// TODO: Convert Unity discard to Godot")
-        conversions.append("// Use ALPHA = 0.0 or conditional logic")
+    # Alpha cutoff/clipping (Unity discard -> Godot ALPHA_SCISSOR_THRESHOLD)
+    if 'discard' in frag_body or 'clip(' in frag_body:
+        conversions.append("// Unity discard/clip -> Godot alpha scissor")
+        if 'clip(' in frag_body:
+            # Unity clip(value) discards if value < 0
+            conversions.append("// Use alpha_scissor_threshold in material settings")
+            conversions.append("// Unity clip(x) -> if (ALPHA < ALPHA_SCISSOR_THRESHOLD) discard;")
+        else:
+            # Direct discard statement
+            conversions.append("// Manual discard -> if (condition) { ALPHA = 0.0; }")
+        conversions.append("// Note: Set alpha_scissor_threshold in StandardMaterial3D or use ALPHA_SCISSOR_THRESHOLD in shader")
 
     # Opacity
     if '_Opacity' in frag_body or 'Opacity' in frag_body:
@@ -340,6 +347,11 @@ def get_unity_builtin_conversions(unity_code):
     # Camera conversions
     if '_WorldSpaceCameraPos' in unity_code:
         conversions.append("// Unity _WorldSpaceCameraPos -> Godot CAMERA_POSITION_WORLD")
+
+    # Alpha test / cutoff uniforms
+    if '_Cutoff' in unity_code or 'ALPHATEST_ON' in unity_code or 'clip(' in unity_code:
+        conversions.append("// Unity alpha cutoff -> Godot built-in ALPHA_SCISSOR_THRESHOLD")
+        conversions.append("// Access via ALPHA_SCISSOR_THRESHOLD uniform (automatically provided)")
 
     return '\n'.join([f"// {conv}" for conv in conversions]) if conversions else ""
 
@@ -498,11 +510,17 @@ def write_tres(name, tex, floats, colors, shader_guid, guid_map, out_dir):
         if "_OcclusionStrength" in floats:
             resource_lines.append(f'ao_light_affect = {floats["_OcclusionStrength"]}')
         if "_Cutoff" in floats:
-            resource_lines.append(f'alpha_scissor_threshold = {floats["_Cutoff"]}')
+            cutoff_value = floats["_Cutoff"]
+            resource_lines.append(f'alpha_scissor_threshold = {cutoff_value}')
+            # Enable alpha scissoring for cutoff materials
+            if cutoff_value > 0.0:
+                resource_lines.append("alpha_antialiasing_mode = 0")  # None - sharp cutoff
         if "_Mode" in floats:
             mode = int(floats["_Mode"])  # Unity: 0 Opaque, 1 Cutout, 2 Fade, 3 Transparent
             unity_to_godot = {0:0, 1:2, 2:1, 3:1}
             resource_lines.append(f"transparency = {unity_to_godot.get(mode,0)}")
+            if mode == 1:  # Cutout mode - enable alpha scissoring
+                resource_lines.append("alpha_antialiasing_mode = 0")
             if mode in (2,3):
                 resource_lines.append("flags_transparent = true")
         if floats.get("_AlphaToMask", 0) > 0:
@@ -550,8 +568,21 @@ def write_tres(name, tex, floats, colors, shader_guid, guid_map, out_dir):
         queue = shader_directives["Queue"][0]
         if "Transparent" in queue:
             resource_lines.append("flags_transparent = true")
+        elif "AlphaTest" in queue or "Cutout" in queue:
+            # Enable alpha scissoring for cutout queue materials
+            if not any("alpha_scissor_threshold" in line for line in resource_lines):
+                resource_lines.append("alpha_scissor_threshold = 0.5")
+            resource_lines.append("alpha_antialiasing_mode = 0")
         elif "Overlay" in queue:
             resource_lines.append("flags_do_not_receive_shadows = true")
+
+    # Handle RenderType for alpha cutoff
+    if material_type != "ShaderMaterial" and "RenderType" in shader_directives:
+        render_type = shader_directives["RenderType"][0]
+        if render_type == "TransparentCutout":
+            if not any("alpha_scissor_threshold" in line for line in resource_lines):
+                resource_lines.append("alpha_scissor_threshold = 0.5")
+            resource_lines.append("alpha_antialiasing_mode = 0")
 
     if material_type != "ShaderMaterial" and "AlphaToMask" in shader_directives and shader_directives["AlphaToMask"][0] == "On":
         resource_lines.append("alpha_antialiasing_mode = 1")
