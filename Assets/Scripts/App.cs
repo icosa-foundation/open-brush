@@ -2138,7 +2138,7 @@ namespace TiltBrush
             }
         }
 
-        public static bool InitSavedStrokesLibraryPath(string[] defaultSavedStrokes)
+        public static void InitSavedStrokesLibraryPath(string[] defaultSavedStrokes)
         {
             string savedStrokesDirectory = SavedStrokesPath();
 
@@ -2167,8 +2167,6 @@ namespace TiltBrush
                     FileUtils.WriteBytesFromResources(savedStroke, Path.Combine(savedStrokesDirectory, destFilename));
                 }
             }
-
-            return true;
         }
 
 
