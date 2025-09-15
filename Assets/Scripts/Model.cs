@@ -1086,16 +1086,11 @@ namespace TiltBrush
             }
             m_ModelParent = go.transform;
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            ProfilerMarker generateUniqueNamesPerfMarker = new ProfilerMarker("Model.GenerateUniqueNames");
-            generateUniqueNamesPerfMarker.Begin();
-#endif
-
+            // For glTF format models, we will have already done this via the import plugin
+            // It's safe to run for all formats as it checks for existing suffixes
+            // For a small performance improvement on deep hierarchies
+            // we could skip this for glTF models
             GenerateUniqueNames(m_ModelParent);
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            generateUniqueNamesPerfMarker.End();
-#endif
 
             // !!! Add to material dictionary here?
             m_Valid = true;
@@ -1110,6 +1105,10 @@ namespace TiltBrush
         // This method is called when the model has been loaded and the node tree is available
         // This method is necessary because (1) nodes in e.g glTF files don't need to have unique names
         // and (2) there's code in at least ModelWidget that searches for specific nodes using node names
+        // 
+        // CRITICAL: This logic must match EnsureUniquePathsImportContext exactly.
+        // Both functions ensure unique node names using the same naming pattern and safety checks.
+        // If you modify this function, you MUST update EnsureUniquePathsImportContext accordingly.
         private static void GenerateUniqueNames(Transform rootNode)
         {
             void SetUniqueNameForNode(Transform node)
@@ -1117,11 +1116,18 @@ namespace TiltBrush
                 int index = 0;
                 foreach (Transform child in node)
                 {
-                    child.name += $"[ob:{index++}]";
+                    string oldName = child.name;
+
+                    // Skip renaming if already has our suffix (safety check - matches EnsureUniquePathsImportContext)
+                    if (!System.Text.RegularExpressions.Regex.IsMatch(oldName, @"\[ob:\d+\]$"))
+                    {
+                        string newName = oldName + $"[ob:{index}]";
+                        child.name = newName;
+                    }
+                    index++;
                     SetUniqueNameForNode(child);
                 }
             }
-
             SetUniqueNameForNode(rootNode);
         }
 
