@@ -637,6 +637,11 @@ def write_tres(name, tex, floats, colors, shader_guid, guid_map, out_dir):
             else:
                 resource_lines.append(f"{setting} = {value}")
 
+        # Enable vertex colors for all brush materials since Unity shaders use them extensively
+        # Unity brushes multiply both albedo and alpha by vertex colors: o.Albedo = tex * _Color * IN.color.rgb
+        resource_lines.append("vertex_color_use_as_albedo = true")
+        resource_lines.append("vertex_color_is_srgb = false")  # Unity uses linear vertex colors for Tilt Brush
+
     # Preserve custom shader parameters as comments for manual handling
     custom_props = []
     for key, value in floats.items():
