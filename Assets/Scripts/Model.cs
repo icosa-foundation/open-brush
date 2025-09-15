@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using TiltBrush.MeshEditing;
 using System.Threading.Tasks;
 using TiltBrushToolkit;
 using Unity.Profiling;
@@ -37,7 +38,13 @@ namespace TiltBrush
             {
                 Invalid,
                 LocalFile,
-                IcosaAssetId
+                IcosaAssetId,
+                Generated
+            }
+
+            public bool IsGenerated()
+            {
+                return type == Type.Generated;
             }
 
             private Type type;
@@ -76,6 +83,29 @@ namespace TiltBrush
                 };
             }
 
+            public static Location Generated(String id)
+            {
+                return new Location
+                {
+                    type = Type.Generated,
+                    id = id
+                };
+            }
+
+            // public static Location Generated(string guid)
+            // {
+            //     if (!EditableModelManager.m_Instance.EditableModels.ContainsKey(guid))
+            //     {
+            //         Debug.LogError($"Failed to generate editable model location for id: {guid}");
+            //         return new Location();
+            //     }
+            //     return new Location
+            //     {
+            //         type = Type.Generated,
+            //         id = guid
+            //     };
+            // }
+
             /// Can return null if this is a location for a fake Model (like the ones ModelWidget
             /// assigns itself while the real Model content is in progress of being loaded).
             public string AbsolutePath
@@ -112,7 +142,7 @@ namespace TiltBrush
             {
                 get
                 {
-                    if (type == Type.IcosaAssetId) { return id; }
+                    if (type == Type.IcosaAssetId || type == Type.Generated) { return id; }
                     throw new Exception("Invalid Icosa asset id request");
                 }
             }
@@ -127,7 +157,7 @@ namespace TiltBrush
             public override string ToString()
             {
                 string str;
-                if (type == Type.IcosaAssetId)
+                if (type == Type.IcosaAssetId || type == Type.Generated)
                 {
                     str = $"{type}:{id}";
                 }
@@ -239,6 +269,7 @@ namespace TiltBrush
         {
             get
             {
+                if (GetLocation().GetLocationType() == Location.Type.Generated) { return "[Generated]"; }
                 if (m_Location.GetLocationType() == Location.Type.IcosaAssetId)
                 {
                     return AssetId;
@@ -270,6 +301,15 @@ namespace TiltBrush
         {
             m_Location = Location.File(relativePath);
             Init();
+        }
+
+        public Model(Location location)
+        {
+            m_Location = location;
+            if (location.GetLocationType() == Location.Type.Generated)
+            {
+                m_Valid = true;
+            }
         }
 
         // Constructor for remote models i.e. Icosa Gallery assets
@@ -570,7 +610,6 @@ namespace TiltBrush
 
         GameObject LoadPly(List<string> warningsOut)
         {
-
             try
             {
                 var reader = new PlyReader(m_Location.AbsolutePath);
@@ -587,7 +626,47 @@ namespace TiltBrush
                 Debug.LogException(ex);
                 return null;
             }
+        }
 
+        GameObject LoadOff(List<string> warningsOut)
+        {
+            try
+            {
+                var reader = new OffReader(m_Location.AbsolutePath);
+                var (gameObject, warnings, collector) = reader.Import();
+                warningsOut.AddRange(warnings);
+                m_ImportMaterialCollector = collector;
+                m_AllowExport = (m_ImportMaterialCollector != null);
+                return gameObject;
+            }
+            catch (Exception ex)
+            {
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+                return null;
+            }
+        }
+
+        // New Obj loader for editable models
+        GameObject LoadObj(List<string> warningsOut, bool editable)
+        {
+            try
+            {
+                var reader = new ObjReader(m_Location.AbsolutePath);
+                var (gameObject, warnings, collector) = reader.Import(editable);
+                warningsOut.AddRange(warnings);
+                m_ImportMaterialCollector = collector;
+                m_AllowExport = (m_ImportMaterialCollector != null);
+                return gameObject;
+            }
+            catch (Exception ex)
+            {
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+                return null;
+            }
         }
 
         GameObject LoadSvg(List<string> warningsOut, out SVGParser.SceneInfo sceneInfo)
@@ -793,7 +872,7 @@ namespace TiltBrush
             else
             {
                 m_AllowExport = go != null;
-                StartCreatePrefab(go);
+                StartCreatePrefab(go, false);
             }
 
             AssignMaterialsToCollector(m_ImportMaterialCollector);
@@ -805,14 +884,18 @@ namespace TiltBrush
 
         public async Task LoadModelAsync()
         {
-            Task t = StartCreatePrefab(null);
+            Task t = StartCreatePrefab(null, false);
             await t;
 
         }
         public void LoadModel()
         {
-            StartCreatePrefab(null);
+            StartCreatePrefab(null, false);
+        }
 
+        public void LoadEditableModel(GameObject go = null)
+        {
+            StartCreatePrefab(go, true);
         }
 
         /// Either synchronously load a GameObject hierarchy and convert it to a "prefab"
@@ -824,15 +907,31 @@ namespace TiltBrush
         /// - Its transform is identity
         /// - Every visible mesh also has a BoxCollider
         /// - Every BoxCollider also has a visible mesh
-        private async Task StartCreatePrefab(GameObject go)
+        private async Task StartCreatePrefab(GameObject go, bool editable)
         {
             if (m_Valid)
             {
                 // This case is handled properly but it seems wasteful.
-                Debug.LogWarning($"Replacing already-loaded {m_Location}: did you mean to?");
+                if (!m_Location.IsGenerated())
+                {
+                    Debug.LogWarning($"Replacing already-loaded {m_Location}: did you mean to?");
+                }
             }
 
             List<string> warnings = new List<string>();
+
+#if !FBX_SUPPORTED
+            bool nofbx = true;
+#else
+            bool nofbx = false;
+#endif
+
+            if (m_Location.GetLocationType() == Location.Type.Generated)
+            {
+                m_AllowExport = true;
+                m_ImportMaterialCollector = new ImportMaterialCollector("generated", "generated");
+                m_ImportMaterialCollector.AddAllEditableModelMaterials();
+            }
 
             // If we weren't provided a GameObject, construct one now.
             if (go == null)
@@ -855,6 +954,10 @@ namespace TiltBrush
                 {
                     Task t = LoadGltf(warnings);
                     await t;
+                }
+                else if (editable && ext == ".obj" || nofbx)
+                {
+                    go = LoadObj(warnings, editable);
                 }
 #if FBX_SUPPORTED
                 // Allow users to force the old OBJ loader.
@@ -882,6 +985,10 @@ namespace TiltBrush
                     CalcBoundsNonGltf(go);
                     EndCreatePrefab(go, warnings);
                 }
+                else if (ext == ".off")
+                {
+                    go = LoadOff(warnings);
+                }
                 else if (ext == ".svg")
                 {
                     go = LoadSvg(warnings, out SVGParser.SceneInfo sceneInfo);
@@ -893,6 +1000,11 @@ namespace TiltBrush
                 {
                     m_LoadError = new LoadError("Unknown format", ext);
                 }
+            }
+            else
+            {
+                CalcBoundsNonGltf(go);
+                EndCreatePrefab(go, warnings);
             }
 
         }
