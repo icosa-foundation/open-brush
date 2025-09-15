@@ -36,18 +36,20 @@ namespace TiltBrush
                     SketchMemoryScript.m_Instance.QuickLoadDrawingMemory();
                     SketchMemoryScript.m_Instance.ContinueDrawingFromMemory();
 
-                    // Button forward is into the panel, not out of the panel; so flip it around
-                    TrTransform xfSpawn = Coords.AsGlobal[transform]
-                        * TrTransform.R(Quaternion.AngleAxis(180, Vector3.up));
+                    Vector3 buttonPosition = Coords.AsGlobal[transform].translation;
+                    Vector3 cameraPosition = Camera.main.transform.position;
+                    Vector3 midpoint = (buttonPosition + cameraPosition) * 0.5f;
 
-                    App.Scene.MoveStrokesCentroidTo(strokes, xfSpawn.translation, true, xfSpawn.rotation * Vector3.forward);
+                    App.Scene.MoveStrokesCentroidTo(strokes, midpoint);
                     var group = App.GroupManager.NewUnusedGroup();
                     for (int i = 0; i < strokes.Count; i++)
                     {
                         strokes[i].Group = group;
                     }
-                    AudioManager.m_Instance.PlayDuplicateSound(Vector3.zero);
-                    AudioManager.m_Instance.PlayGroupedSound(Vector3.zero);
+                    SelectionManager.m_Instance.SelectStrokes(strokes);
+                    SelectionManager.m_Instance.UpdateSelectionWidget();
+                    AudioManager.m_Instance.PlayDuplicateSound(midpoint);
+                    AudioManager.m_Instance.PlayGroupedSound(midpoint);
                 }
             }
         }

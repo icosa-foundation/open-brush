@@ -363,7 +363,7 @@ namespace TiltBrush
         /// </summary>
         /// <param name="strokes">Collection of strokes to move.</param>
         /// <param name="worldPosition">Target world-space position for the centroid.</param>
-        public void MoveStrokesCentroidTo(IEnumerable<Stroke> strokes, Vector3 worldPosition, bool clearBoundingBox, Vector3 offsetDirection)
+        public void MoveStrokesCentroidTo(IEnumerable<Stroke> strokes, Vector3 worldPosition)
         {
             if (strokes == null) { throw new ArgumentNullException(nameof(strokes)); }
 
@@ -410,35 +410,10 @@ namespace TiltBrush
             if (!initialized) { return; }
 
             Vector3 currentCenter = canvas.transform.TransformPoint(bounds.center);
-            Vector3 offset;
-
-            if (clearBoundingBox)
-            {
-                // Calculate how far the bounding box extends in the negative offset direction from the current center
-                Vector3 boundsSize = bounds.size;
-                Vector3 boundsCenter = bounds.center;
-
-                // Transform the offset direction to canvas local space
-                Vector3 localOffsetDirection = canvas.transform.InverseTransformDirection(offsetDirection).normalized;
-
-                // Calculate the extent of the bounding box in the negative offset direction
-                float extent = 0f;
-                extent += Mathf.Abs(localOffsetDirection.x) * boundsSize.x * 0.5f;
-                extent += Mathf.Abs(localOffsetDirection.y) * boundsSize.y * 0.5f;
-                extent += Mathf.Abs(localOffsetDirection.z) * boundsSize.z * 0.5f;
-
-                // Move the center to the worldPosition, then move it forward by the extent
-                offset = (worldPosition - currentCenter) + offsetDirection * extent;
-            }
-            else
-            {
-                offset = worldPosition - currentCenter;
-            }
+            Vector3 offset = worldPosition - currentCenter;
 
             if (offset == Vector3.zero) { return; }
-
-            TransformItemsCommand cmd = new TransformItemsCommand(strokeList, null, TrTransform.T(offset), Vector3.zero);
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+            TransformItems.Transform(strokeList, null, Vector3.zero, TrTransform.T(offset));
         }
 
         public void MarkLayerAsNotDeleted(CanvasScript layer)
