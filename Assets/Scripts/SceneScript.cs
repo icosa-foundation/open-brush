@@ -380,16 +380,17 @@ namespace TiltBrush
 
                 if (stroke.m_BatchSubset != null)
                 {
-                    strokeBounds = stroke.m_BatchSubset.m_Bounds;
+                    // Convert canvas-local bounds to world space
+                    Bounds localBounds = stroke.m_BatchSubset.m_Bounds;
+                    Vector3 worldMin = canvas.transform.TransformPoint(localBounds.min);
+                    Vector3 worldMax = canvas.transform.TransformPoint(localBounds.max);
+                    strokeBounds = new Bounds((worldMin + worldMax) * 0.5f, worldMax - worldMin);
                 }
                 else if (stroke.m_Object != null)
                 {
                     var renderer = stroke.m_Object.GetComponent<Renderer>();
                     if (renderer == null) { continue; }
-                    Bounds worldBounds = renderer.bounds;
-                    Vector3 min = canvas.transform.InverseTransformPoint(worldBounds.min);
-                    Vector3 max = canvas.transform.InverseTransformPoint(worldBounds.max);
-                    strokeBounds = new Bounds((min + max) * 0.5f, max - min);
+                    strokeBounds = renderer.bounds; // Already in world space
                 }
                 else
                 {
@@ -409,11 +410,19 @@ namespace TiltBrush
 
             if (!initialized) { return; }
 
-            Vector3 currentCenter = canvas.transform.TransformPoint(bounds.center);
-            Vector3 offset = worldPosition - currentCenter;
+            Vector3 currentCenter = bounds.center; // Already in world space
+            Vector3 worldOffset = worldPosition - currentCenter;
 
-            if (offset == Vector3.zero) { return; }
-            TransformItems.Transform(strokeList, null, Vector3.zero, TrTransform.T(offset));
+            if (worldOffset == Vector3.zero) { return; }
+
+            // Convert world-space offset to canvas-local space for Recreate
+            Vector3 localOffset = canvas.transform.InverseTransformVector(worldOffset);
+
+            // Apply translation by recreating strokes with local-space offset transform
+            foreach (var stroke in strokeList)
+            {
+                stroke.Recreate(TrTransform.T(localOffset));
+            }
         }
 
         public void MarkLayerAsNotDeleted(CanvasScript layer)
