@@ -27,8 +27,7 @@ namespace TiltBrush
 
             if (m_SavedStrokeFile != null)
             {
-                var currentLayer = App.Scene.ActiveCanvas;
-                int currentLayerIndex = App.Scene.GetIndexOfCanvas(currentLayer);
+                int currentLayerIndex = App.Scene.GetIndexOfCanvas(App.Scene.ActiveCanvas);
                 if (SaveLoadScript.m_Instance.Load(m_SavedStrokeFile.FileInfo, bAdditive: true, currentLayerIndex, out List<Stroke> strokes))
                 {
                     SelectionManager.m_Instance.ClearActiveSelection();
@@ -36,6 +35,12 @@ namespace TiltBrush
                     SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true, false, false);
                     SketchMemoryScript.m_Instance.QuickLoadDrawingMemory();
                     SketchMemoryScript.m_Instance.ContinueDrawingFromMemory();
+
+                    // Button forward is into the panel, not out of the panel; so flip it around
+                    TrTransform xfSpawn = Coords.AsGlobal[transform]
+                        * TrTransform.R(Quaternion.AngleAxis(180, Vector3.up));
+
+                    App.Scene.MoveStrokesCentroidTo(strokes, xfSpawn.translation, true, xfSpawn.rotation * Vector3.forward);
                     var group = App.GroupManager.NewUnusedGroup();
                     for (int i = 0; i < strokes.Count; i++)
                     {

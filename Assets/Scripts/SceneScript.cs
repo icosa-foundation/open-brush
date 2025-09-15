@@ -357,6 +357,90 @@ namespace TiltBrush
             App.Scene.LayerCanvasesUpdate?.Invoke();
         }
 
+        /// <summary>
+        /// Translates the provided strokes so that the center of their
+        /// bounding box is positioned at the given world space location.
+        /// </summary>
+        /// <param name="strokes">Collection of strokes to move.</param>
+        /// <param name="worldPosition">Target world-space position for the centroid.</param>
+        public void MoveStrokesCentroidTo(IEnumerable<Stroke> strokes, Vector3 worldPosition, bool clearBoundingBox, Vector3 offsetDirection)
+        {
+            if (strokes == null) { throw new ArgumentNullException(nameof(strokes)); }
+
+            var strokeList = strokes as IList<Stroke> ?? strokes.ToList();
+            if (strokeList.Count == 0) { return; }
+
+            CanvasScript canvas = strokeList[0].Canvas;
+            Bounds bounds = new Bounds();
+            bool initialized = false;
+
+            foreach (var stroke in strokeList)
+            {
+                Bounds strokeBounds;
+
+                if (stroke.m_BatchSubset != null)
+                {
+                    strokeBounds = stroke.m_BatchSubset.m_Bounds;
+                }
+                else if (stroke.m_Object != null)
+                {
+                    var renderer = stroke.m_Object.GetComponent<Renderer>();
+                    if (renderer == null) { continue; }
+                    Bounds worldBounds = renderer.bounds;
+                    Vector3 min = canvas.transform.InverseTransformPoint(worldBounds.min);
+                    Vector3 max = canvas.transform.InverseTransformPoint(worldBounds.max);
+                    strokeBounds = new Bounds((min + max) * 0.5f, max - min);
+                }
+                else
+                {
+                    continue;
+                }
+
+                if (!initialized)
+                {
+                    bounds = strokeBounds;
+                    initialized = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(strokeBounds);
+                }
+            }
+
+            if (!initialized) { return; }
+
+            Vector3 currentCenter = canvas.transform.TransformPoint(bounds.center);
+            Vector3 offset;
+
+            if (clearBoundingBox)
+            {
+                // Calculate how far the bounding box extends in the negative offset direction from the current center
+                Vector3 boundsSize = bounds.size;
+                Vector3 boundsCenter = bounds.center;
+
+                // Transform the offset direction to canvas local space
+                Vector3 localOffsetDirection = canvas.transform.InverseTransformDirection(offsetDirection).normalized;
+
+                // Calculate the extent of the bounding box in the negative offset direction
+                float extent = 0f;
+                extent += Mathf.Abs(localOffsetDirection.x) * boundsSize.x * 0.5f;
+                extent += Mathf.Abs(localOffsetDirection.y) * boundsSize.y * 0.5f;
+                extent += Mathf.Abs(localOffsetDirection.z) * boundsSize.z * 0.5f;
+
+                // Move the center to the worldPosition, then move it forward by the extent
+                offset = (worldPosition - currentCenter) + offsetDirection * extent;
+            }
+            else
+            {
+                offset = worldPosition - currentCenter;
+            }
+
+            if (offset == Vector3.zero) { return; }
+
+            TransformItemsCommand cmd = new TransformItemsCommand(strokeList, null, TrTransform.T(offset), Vector3.zero);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+        }
+
         public void MarkLayerAsNotDeleted(CanvasScript layer)
         {
             m_DeletedLayers.Remove(GetIndexOfCanvas(layer) - 1);
