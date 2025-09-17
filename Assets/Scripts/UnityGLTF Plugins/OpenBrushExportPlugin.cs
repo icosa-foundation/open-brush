@@ -115,8 +115,7 @@ namespace TiltBrush
             {
                 var groupTransform = new GameObject($"_StrokeGroup_{group}").transform;
                 groupTransform.parent = layer.transform;
-                groupTransform.localPosition = Vector3.zero;
-                groupTransform.localRotation = Quaternion.identity;
+                groupTransform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
                 groupTransform.localScale = Vector3.one;
                 return groupTransform;
             }
@@ -131,8 +130,7 @@ namespace TiltBrush
                 }
                 var groupTransform = new GameObject($"_StrokeGroup_{group}").transform;
                 groupTransform.parent = layer.transform;
-                groupTransform.localPosition = Vector3.zero;
-                groupTransform.localRotation = Quaternion.identity;
+                groupTransform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
                 groupTransform.localScale = Vector3.one;
                 return groupTransform;
             }

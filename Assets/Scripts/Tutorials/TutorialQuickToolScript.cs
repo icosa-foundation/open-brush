@@ -50,8 +50,7 @@ namespace TiltBrush
             m_SwitchPosition = m_Controller.transform.localPosition;
             m_SwitchRotation = m_Controller.transform.localRotation;
             m_OtherCircle.SetActive(false);
-            m_Controller.transform.localPosition = Vector3.zero;
-            m_Controller.transform.localRotation = Quaternion.Euler(m_DefaultRotation);
+            m_Controller.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.Euler(m_DefaultRotation));
         }
 
         void Update()

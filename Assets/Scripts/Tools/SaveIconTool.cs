@@ -27,8 +27,7 @@ namespace TiltBrush
 
         public void Apply()
         {
-            child.position = parent.position + parent.rotation * localPosition;
-            child.rotation = parent.rotation;
+            child.SetPositionAndRotation(parent.position + parent.rotation * localPosition, parent.rotation);
         }
     }
 
@@ -165,8 +164,7 @@ namespace TiltBrush
             }
             set
             {
-                CameraRig.position = value.vRigPosition;
-                CameraRig.rotation = value.qRigRotation;
+                CameraRig.SetPositionAndRotation(value.vRigPosition, value.qRigRotation);
                 m_CameraRigAutoOrientJoint.localRotation = value.qAutoOrientJointLocalRotation;
             }
         }
@@ -366,13 +364,11 @@ namespace TiltBrush
             // Lock tool to camera controller.
             if (m_LockToController)
             {
-                transform.position = m_CameraController.position;
-                transform.rotation = m_CameraController.rotation;
+                transform.SetPositionAndRotation(m_CameraController.position, m_CameraController.rotation);
             }
             else
             {
-                transform.position = SketchSurfacePanel.m_Instance.transform.position;
-                transform.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
+                transform.SetPositionAndRotation(SketchSurfacePanel.m_Instance.transform.position, SketchSurfacePanel.m_Instance.transform.rotation);
             }
 
             m_CameraRigAttachment.Apply();

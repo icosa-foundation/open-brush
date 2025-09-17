@@ -122,8 +122,7 @@ namespace TiltBrush
             }
             else
             {
-                transform.position = SketchSurfacePanel.m_Instance.transform.position;
-                transform.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
+                transform.SetPositionAndRotation(SketchSurfacePanel.m_Instance.transform.position, SketchSurfacePanel.m_Instance.transform.rotation);
             }
         }
 

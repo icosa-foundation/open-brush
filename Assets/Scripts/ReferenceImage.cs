@@ -632,14 +632,7 @@ namespace TiltBrush
         {
 
             // Cast to long as maxDimension is big enough on desktop to overflow
-            if (imageWidth * imageHeight > ((long)maxDimension * (long)maxDimension))
-            {
-                return false;
-            }
-            else
-            {
-                return true;
-            }
+            return imageWidth * imageHeight <= ((long)maxDimension * (long)maxDimension);
 
         }
 

@@ -170,8 +170,7 @@ namespace TiltBrush
         {
             ModelWidget clone = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab);
             clone.m_PreviousCanvas = m_PreviousCanvas;
-            clone.transform.position = position;
-            clone.transform.rotation = rotation;
+            clone.transform.SetPositionAndRotation(position, rotation);
             clone.Model = Model;
             // We're obviously not loading from a sketch.  This is to prevent the intro animation.
             // TODO: Change variable name to something more explicit of what this flag does.
@@ -335,8 +334,7 @@ namespace TiltBrush
             // Check if we have more than one light or mesh
             int meshCount = GetMeshes().Length;
             int lightCount = m_ObjModelScript.GetComponentsInChildren<SceneLightGizmo>().Length;
-            if (lightCount + meshCount > 1) return true;
-            return false;
+            return lightCount + meshCount > 1;
         }
 
         public bool MeshSplitPossible()
@@ -471,19 +469,16 @@ namespace TiltBrush
 
             // Save the widget's original transform
             var oldParent = widgetTransform.parent;
-            var oldPosition = widgetTransform.localPosition;
-            var oldRotation = widgetTransform.localRotation;
+            widgetTransform.GetLocalPositionAndRotation(out var oldPosition, out var oldRotation);
             var oldScale = widgetTransform.localScale;
 
             // Move it to the origin
             widgetTransform.SetParent(null);
-            widgetTransform.localPosition = Vector3.zero;
-            widgetTransform.localRotation = Quaternion.identity;
+            widgetTransform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
             widgetTransform.localScale = Vector3.one;
 
             // Reset the collider gameobject transform
-            m_BoxCollider.transform.localPosition = Vector3.zero;
-            m_BoxCollider.transform.localRotation = Quaternion.identity;
+            m_BoxCollider.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
             m_BoxCollider.transform.localScale = Vector3.one;
 
             // Collect the renderers
@@ -519,8 +514,7 @@ namespace TiltBrush
 
             // Restore the widget's original transform
             widgetTransform.SetParent(oldParent);
-            widgetTransform.localPosition = oldPosition;
-            widgetTransform.localRotation = oldRotation;
+            widgetTransform.SetLocalPositionAndRotation(oldPosition, oldRotation);
             widgetTransform.localScale = oldScale;
         }
 
@@ -830,8 +824,7 @@ namespace TiltBrush
                                 bool isNonRawTransform, uint groupId, int layerId, string assetId = null)
         {
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
-            modelWidget.transform.localPosition = xf.translation;
-            modelWidget.transform.localRotation = xf.rotation;
+            modelWidget.transform.SetLocalPositionAndRotation(xf.translation, xf.rotation);
             modelWidget.Model = model;
             modelWidget.m_Subtree = subtree;
             modelWidget.SyncHierarchyToSubtree();

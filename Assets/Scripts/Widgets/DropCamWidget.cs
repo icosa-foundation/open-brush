@@ -195,16 +195,14 @@ namespace TiltBrush
             m_CircleOrientation = Quaternion.Euler(eulers) * qCamOrient;
 
             // Position the guide circle.
-            m_GuideCircleObject.transform.localPosition =
-                Quaternion.Inverse(transform.rotation) * Quaternion.Euler(0, (float)(-m_CircleRadians * Mathf.Rad2Deg), 0) * new Vector3(-m_CircleRadius, 0, 0);
-            m_GuideCircleObject.transform.localRotation = Quaternion.Inverse(transform.rotation) * Quaternion.Euler(0, (float)(-m_CircleRadians * Mathf.Rad2Deg), 0);
+            m_GuideCircleObject.transform.SetLocalPositionAndRotation(
+Quaternion.Inverse(transform.rotation) * Quaternion.Euler(0, (float)(-m_CircleRadians * Mathf.Rad2Deg), 0) * new Vector3(-m_CircleRadius, 0, 0), Quaternion.Inverse(transform.rotation) * Quaternion.Euler(0, (float)(-m_CircleRadians * Mathf.Rad2Deg), 0));
             m_GuideCircleObject.transform.localScale = 2.0f * m_CircleRadius * Vector3.one;
 
             // On slow follow reset, snap to head.
             if (m_CurrentMode == Mode.SlowFollow)
             {
-                transform.position = ViewpointScript.Head.position;
-                transform.rotation = ViewpointScript.Head.rotation;
+                transform.SetPositionAndRotation(ViewpointScript.Head.position, ViewpointScript.Head.rotation);
             }
         }
 
@@ -367,8 +365,7 @@ namespace TiltBrush
                 float fov = currentPathWidget.Path.GetFov(t);
                 var cam = GetComponentInChildren<Camera>();  // TODO Cache
                 cam.fieldOfView = fov;
-                transform.position = currentPathWidget.Path.GetPosition(t) - cam.transform.localPosition;
-                transform.rotation = currentPathWidget.Path.GetRotation(t) * cam.transform.localRotation.Negated();
+                transform.SetPositionAndRotation(currentPathWidget.Path.GetPosition(t) - cam.transform.localPosition, currentPathWidget.Path.GetRotation(t) * cam.transform.localRotation.Negated());
             }
         }
 

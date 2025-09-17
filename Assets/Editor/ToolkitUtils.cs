@@ -576,8 +576,7 @@ namespace TiltBrush
             {
                 var lsettings = environment.m_Lights[li];
                 var light = new GameObject("Light " + li, typeof(Light)).GetComponent<Light>();
-                light.transform.position = lsettings.m_Position;
-                light.transform.rotation = lsettings.m_Rotation;
+                light.transform.SetPositionAndRotation(lsettings.m_Position, lsettings.m_Rotation);
                 light.color = lsettings.Color;
                 light.type = lsettings.m_Type;
                 light.range = lsettings.m_Range;

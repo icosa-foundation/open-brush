@@ -90,15 +90,13 @@ namespace TiltBrush
         {
             for (int i = 0; i < m_CaptureObjects.Length; ++i)
             {
-                m_CaptureObjects[i].m_Visuals.transform.position = xf.position;
-                m_CaptureObjects[i].m_Visuals.transform.rotation = xf.rotation;
+                m_CaptureObjects[i].m_Visuals.transform.SetPositionAndRotation(xf.position, xf.rotation);
             }
         }
 
         public void UpdateObjectVisualsTransform(MultiCamStyle style, Transform xf)
         {
-            m_CaptureObjects[(int)style].m_Visuals.transform.position = xf.position;
-            m_CaptureObjects[(int)style].m_Visuals.transform.rotation = xf.rotation;
+            m_CaptureObjects[(int)style].m_Visuals.transform.SetPositionAndRotation(xf.position, xf.rotation);
         }
 
         public void UpdateAllObjectCameraTransform(Transform xf, float videoCameraLerpT)
@@ -112,8 +110,7 @@ namespace TiltBrush
                 }
                 else
                 {
-                    obj.m_Camera.transform.position = xf.position;
-                    obj.m_Camera.transform.rotation = xf.rotation;
+                    obj.m_Camera.transform.SetPositionAndRotation(xf.position, xf.rotation);
                 }
             }
         }
@@ -126,8 +123,7 @@ namespace TiltBrush
             // the view through the viewfinder. The camera is placed at the vr camera position.
             if (!App.PlatformConfig.EnableMulticamPreview)
             {
-                obj.m_Camera.transform.position = App.VrSdk.GetVrCamera().transform.position;
-                obj.m_Camera.transform.rotation = xf.rotation;
+                obj.m_Camera.transform.SetPositionAndRotation(App.VrSdk.GetVrCamera().transform.position, xf.rotation);
                 float distance = (xf.position - obj.m_Camera.transform.position).magnitude;
                 float height = obj.m_Screen.transform.localScale.y * 0.5f;
                 float fov = 2f * Mathf.Atan2(height, distance) * Mathf.Rad2Deg;
@@ -137,17 +133,15 @@ namespace TiltBrush
             }
             else
             {
-                obj.m_Camera.transform.position =
-                    Vector3.Lerp(obj.m_Camera.transform.position, xf.position, cameraLerpT);
-                obj.m_Camera.transform.rotation =
-                    Quaternion.Slerp(obj.m_Camera.transform.rotation, xf.rotation, cameraLerpT);
+                obj.m_Camera.transform.SetPositionAndRotation(
+Vector3.Lerp(obj.m_Camera.transform.position, xf.position, cameraLerpT),
+Quaternion.Slerp(obj.m_Camera.transform.rotation, xf.rotation, cameraLerpT));
             }
         }
 
         public void UpdateObjectCameraLocalTransform(MultiCamStyle style, TrTransform xf_LS)
         {
-            m_CaptureObjects[(int)style].m_Manager.transform.localPosition = xf_LS.translation;
-            m_CaptureObjects[(int)style].m_Manager.transform.localRotation = xf_LS.rotation;
+            m_CaptureObjects[(int)style].m_Manager.transform.SetLocalPositionAndRotation(xf_LS.translation, xf_LS.rotation);
         }
 
         public void ForceClippingPlanes(MultiCamStyle style)

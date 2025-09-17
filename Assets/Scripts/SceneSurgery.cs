@@ -167,8 +167,7 @@ namespace TiltBrush
             // that may not currently have any strokes.
             foreach (var t in AllStrokeTransforms())
             {
-                t.position = Vector3.zero;
-                t.rotation = Quaternion.identity;
+                t.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
                 t.localScale = Vector3.one;
             }
 

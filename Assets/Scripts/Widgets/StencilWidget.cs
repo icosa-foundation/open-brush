@@ -80,8 +80,7 @@ namespace TiltBrush
         {
             set
             {
-                transform.localPosition = value.Transform.translation;
-                transform.localRotation = value.Transform.rotation;
+                transform.SetLocalPositionAndRotation(value.Transform.translation, value.Transform.rotation);
                 Extents = value.Extents;
                 if (value.Pinned)
                 {
@@ -157,8 +156,7 @@ namespace TiltBrush
         {
             StencilWidget clone = Instantiate(WidgetManager.m_Instance.GetStencilPrefab(this.Type));
             clone.m_PreviousCanvas = m_PreviousCanvas;
-            clone.transform.position = position;
-            clone.transform.rotation = rotation;
+            clone.transform.SetPositionAndRotation(position, rotation);
             clone.m_SkipIntroAnim = true;
             // We want to lie about our intro transition amount.
             clone.m_ShowTimer = clone.m_ShowDuration;

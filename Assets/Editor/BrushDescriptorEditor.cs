@@ -133,7 +133,7 @@ namespace TiltBrush
                 return false;
             }
 
-            if (brushVersion == "")
+            if (brushVersion?.Length == 0)
             {
                 // Looks like a new/experimental brush.
                 reason = null;

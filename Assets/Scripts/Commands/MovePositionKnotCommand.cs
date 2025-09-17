@@ -46,8 +46,7 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
-            Knot.transform.localPosition = m_EndXf_CS.translation;
-            Knot.transform.localRotation = m_EndXf_CS.rotation;
+            Knot.transform.SetLocalPositionAndRotation(m_EndXf_CS.translation, m_EndXf_CS.rotation);
             // If we're the tail and we've attached to the head, or vice versa, we need to match
             // our tangent magnitude to our buddy.
             m_Path.PathLoops = m_Path.ShouldPathLoop();
@@ -67,8 +66,7 @@ namespace TiltBrush
 
         protected override void OnUndo()
         {
-            Knot.transform.localPosition = m_StartXf_CS.translation;
-            Knot.transform.localRotation = m_StartXf_CS.rotation;
+            Knot.transform.SetLocalPositionAndRotation(m_StartXf_CS.translation, m_StartXf_CS.rotation);
             m_Path.ValidatePathLooping();
             Knot.TangentMagnitude = m_StartTangentMagnitude;
             Knot.RefreshVisuals();

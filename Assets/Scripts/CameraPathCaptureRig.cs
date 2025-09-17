@@ -100,8 +100,7 @@ namespace TiltBrush
 
         public void UpdateCameraTransform(Transform xf)
         {
-            m_Camera.transform.position = xf.position;
-            m_Camera.transform.rotation = xf.rotation;
+            m_Camera.transform.SetPositionAndRotation(xf.position, xf.rotation);
         }
 
         public void SetFov(float fov)

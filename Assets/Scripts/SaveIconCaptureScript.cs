@@ -55,10 +55,9 @@ namespace TiltBrush
             Vector3 vTransformedOffset = qRotate * vTargetOffset;
 
             //set position as [rotated] offset from target
-            transform.position = vTarget - vTransformedOffset;
-
+            
             //point rig toward target
-            transform.rotation = qRotate * baseRot;
+            transform.SetPositionAndRotation(vTarget - vTransformedOffset, qRotate * baseRot);
         }
     }
 } // namespace TiltBrush

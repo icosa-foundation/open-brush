@@ -112,10 +112,9 @@ namespace TiltBrush
                 {
                     // Set new arrow position and rotation.
                     float fLineT = fDistToTarget / fLineDistance;
-                    m_Arrows[i].m_Arrow.transform.position =
-                        Vector3.Lerp(target.translation, origin.translation, fLineT);
-                    m_Arrows[i].m_Arrow.transform.rotation =
-                        Quaternion.Slerp(target.rotation, origin.rotation, fLineT);
+                    m_Arrows[i].m_Arrow.transform.SetPositionAndRotation(
+Vector3.Lerp(target.translation, origin.translation, fLineT),
+Quaternion.Slerp(target.rotation, origin.rotation, fLineT));
 
                     // Update scale.
                     if (fDistToTarget < ScaleDistance)

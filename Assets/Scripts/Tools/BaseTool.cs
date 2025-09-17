@@ -286,13 +286,9 @@ namespace TiltBrush
 
         protected bool PointInTriangle(ref Vector3 rPoint, ref Vector3 rA, ref Vector3 rB, ref Vector3 rC)
         {
-            if (SameSide(ref rPoint, ref rA, ref rB, ref rC) &&
+            return SameSide(ref rPoint, ref rA, ref rB, ref rC) &&
                 SameSide(ref rPoint, ref rB, ref rA, ref rC) &&
-                SameSide(ref rPoint, ref rC, ref rA, ref rB))
-            {
-                return true;
-            }
-            return false;
+                SameSide(ref rPoint, ref rC, ref rA, ref rB);
         }
 
         protected bool SameSide(ref Vector3 rPoint1, ref Vector3 rPoint2, ref Vector3 rA, ref Vector3 rB)
@@ -335,8 +331,7 @@ namespace TiltBrush
         protected virtual (Vector3, Quaternion) GetPointerPosition()
         {
             Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
-            Vector3 pos_GS = rAttachPoint.position;
-            Quaternion rot_GS = rAttachPoint.rotation;
+            rAttachPoint.GetPositionAndRotation(out Vector3 pos_GS, out Quaternion rot_GS);
             return (pos_GS, rot_GS);
         }
     }

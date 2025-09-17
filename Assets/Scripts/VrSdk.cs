@@ -883,8 +883,7 @@ namespace TiltBrush
             if (m_TrackingBackupXf != null)
             {
                 Transform camXf = GetVrCamera().transform;
-                camXf.position = m_TrackingBackupXf.Value.translation;
-                camXf.rotation = m_TrackingBackupXf.Value.rotation;
+                camXf.SetPositionAndRotation(m_TrackingBackupXf.Value.translation, m_TrackingBackupXf.Value.rotation);
                 camXf.localScale = Vector3.one;
                 m_TrackingBackupXf = null;
             }
