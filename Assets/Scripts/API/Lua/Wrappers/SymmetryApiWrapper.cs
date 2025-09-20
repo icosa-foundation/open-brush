@@ -273,7 +273,7 @@ namespace TiltBrush
             ).ToList();
         }
 
-        [LuaDocsDescription("Converts a path to a format suitable for using as a symmetry path")]
+        [LuaDocsDescription("Converts a path to a format suitable for using as a symmetry path in polar mode")]
         [LuaDocsParameter("path", "The path to convert")]
         [LuaDocsExample("pointers = Symmetry:PathToPolar(myPath):OnY()")]
         public static PathApiWrapper PathToPolar(PathApiWrapper path)
@@ -312,6 +312,49 @@ namespace TiltBrush
                 );
             }
             return polarCoordinates;
+        }
+
+        [LuaDocsDescription("Creates multiple copies of a path based on the current symmetry settings")]
+        [LuaDocsParameter("path", "The path to duplicate")]
+        [LuaDocsExample("pathList = Symmetry:ApplyToPath(myPath)")]
+        public static PathListApiWrapper ApplyToPath(PathApiWrapper path)
+        {
+            var xfSymmetriesGS = PointerManager.m_Instance.GetSymmetriesForCurrentMode();
+            if (xfSymmetriesGS.Count == 0)
+            {
+                return new PathListApiWrapper(path);
+            }
+            // Pre-calculate left transforms for canvas space.
+            var xfSymmetriesCS = new List<TrTransform>();
+            var xfCSfromGS = App.ActiveCanvas.Pose.inverse;
+            var xfGSfromCS = App.ActiveCanvas.Pose;
+            foreach (var sym in xfSymmetriesGS)
+            {
+                xfSymmetriesCS.Add(xfCSfromGS * sym * xfGSfromCS);
+            }
+
+            var newTransforms = new List<List<TrTransform>>();
+            foreach (var sym in xfSymmetriesCS)
+            {
+                var newTrList = path._Path.Select(x =>
+                {
+                    var symmetrifiedTransform = sym * x;
+
+                    // Check if symmetry transform has negative scale (reflection)
+                    // If so, remove it by applying a compensating reflection
+                    if (sym.scale < 0)
+                    {
+                        // Apply the same fix as TrFromMatrixWithFixedReflections - X-axis reflection
+                        var kReflectX = new Plane(new Vector3(1, 0, 0), 0).ToTrTransform();
+                        symmetrifiedTransform *= kReflectX;
+                    }
+
+                    return symmetrifiedTransform;
+                }).ToList();
+                newTransforms.Add(newTrList);
+            }
+            var pathList = new PathListApiWrapper(newTransforms);
+            return pathList;
         }
     }
 }
