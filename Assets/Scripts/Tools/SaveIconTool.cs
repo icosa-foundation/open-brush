@@ -249,22 +249,34 @@ namespace TiltBrush
             if (bCanTakePicture && !m_EatInput && !m_ToolHidden &&
                 InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
-                //snapshot the current scene and push it to the preview window
-                RenderWrapper wrapper = m_SaveIconScreenshotManager.gameObject.GetComponent<RenderWrapper>();
-                float ssaaRestore = wrapper.SuperSampling;
-                wrapper.SuperSampling = m_superSampling;
-                m_SaveIconScreenshotManager.RenderToTexture(
-                    SaveLoadScript.m_Instance.GetSaveIconRenderTexture());
-                wrapper.SuperSampling = ssaaRestore;
+                // Disable selection effects during save icon capture
+                bool prevSelectionEffectsState = SelectionEffect.DisableSelectionEffects;
+                SelectionEffect.DisableSelectionEffects = true;
 
-                // save off camera transform from the position we took the snapshot
-                m_LastSaveCameraRigState = CurrentCameraRigState;
+                try
+                {
+                    //snapshot the current scene and push it to the preview window
+                    RenderWrapper wrapper = m_SaveIconScreenshotManager.gameObject.GetComponent<RenderWrapper>();
+                    float ssaaRestore = wrapper.SuperSampling;
+                    wrapper.SuperSampling = m_superSampling;
+                    m_SaveIconScreenshotManager.RenderToTexture(
+                        SaveLoadScript.m_Instance.GetSaveIconRenderTexture());
+                    wrapper.SuperSampling = ssaaRestore;
 
-                AudioManager.m_Instance.PlaySaveSound(InputManager.Brush.m_Position);
-                SketchControlsScript.m_Instance.IssueGlobalCommand(SketchControlsScript.GlobalCommands.SaveNew);
+                    // save off camera transform from the position we took the snapshot
+                    m_LastSaveCameraRigState = CurrentCameraRigState;
 
-                m_CurrentState = State.Off;
-                m_RequestExit = true;
+                    AudioManager.m_Instance.PlaySaveSound(InputManager.Brush.m_Position);
+                    SketchControlsScript.m_Instance.IssueGlobalCommand(SketchControlsScript.GlobalCommands.SaveNew);
+
+                    m_CurrentState = State.Off;
+                    m_RequestExit = true;
+                }
+                finally
+                {
+                    // Restore selection effects state
+                    SelectionEffect.DisableSelectionEffects = prevSelectionEffectsState;
+                }
             }
             else if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.MenuContextClick))
             {
@@ -344,21 +356,32 @@ namespace TiltBrush
             var prev = CurrentCameraRigState;
             CurrentCameraRigState = state;
 
-            // TODO XXX: Why is this Render() necessary?
-            m_SaveIconScreenshotManager.LeftEye.Render();
+            // Disable selection effects during save icon capture
+            bool prevSelectionEffectsState = SelectionEffect.DisableSelectionEffects;
+            SelectionEffect.DisableSelectionEffects = true;
 
-            //snapshot the current scene and push it to the preview window
-            RenderWrapper wrapper = m_SaveIconScreenshotManager.gameObject.GetComponent<RenderWrapper>();
-            float ssaaRestore = wrapper.SuperSampling;
-            wrapper.SuperSampling = m_superSampling;
-            m_SaveIconScreenshotManager.RenderToTexture(
-                SaveLoadScript.m_Instance.GetSaveIconRenderTexture());
-            // save off camera transform from the position we took the snapshot
-            wrapper.SuperSampling = ssaaRestore;
-            m_LastSaveCameraRigState = CurrentCameraRigState;
+            try
+            {
+                // TODO XXX: Why is this Render() necessary?
+                m_SaveIconScreenshotManager.LeftEye.Render();
 
-            CurrentCameraRigState = prev;
-            CameraRig.gameObject.SetActive(wasActive);
+                //snapshot the current scene and push it to the preview window
+                RenderWrapper wrapper = m_SaveIconScreenshotManager.gameObject.GetComponent<RenderWrapper>();
+                float ssaaRestore = wrapper.SuperSampling;
+                wrapper.SuperSampling = m_superSampling;
+                m_SaveIconScreenshotManager.RenderToTexture(
+                    SaveLoadScript.m_Instance.GetSaveIconRenderTexture());
+                // save off camera transform from the position we took the snapshot
+                wrapper.SuperSampling = ssaaRestore;
+                m_LastSaveCameraRigState = CurrentCameraRigState;
+            }
+            finally
+            {
+                // Restore selection effects state
+                SelectionEffect.DisableSelectionEffects = prevSelectionEffectsState;
+                CurrentCameraRigState = prev;
+                CameraRig.gameObject.SetActive(wasActive);
+            }
         }
 
         private void UpdateTransformsFromControllers()
