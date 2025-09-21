@@ -1807,6 +1807,13 @@ function Svg:DrawDocument(svg, tr, includeColors) end
 ---@field wandOffset Vector3 | number[] Gets the offset between the current wand position and the symmetry widget
 Symmetry = {}
 
+---@enum SymmetryPointerPaintMode
+SymmetryPointerPaintMode = {
+    Inherit = 0,
+    ForcedOn = 1,
+    ForcedOff = 2,
+}
+
 function Symmetry:SummonWidget() end
 
 ---@param angle number The angle in degrees to sample the radius at
@@ -1867,8 +1874,28 @@ function Symmetry:GetBrushNames() end
 ---@return string[] # 
 function Symmetry:GetBrushGuids() end
 
+---@param pointerIndex integer Zero-based pointer index matching the transform order returned by the symmetry script
+---@param mode SymmetryPointerPaintMode The override to apply
+function Symmetry:SetPointerPaintMode(pointerIndex, mode) end
+
+---@param pointerIndex integer Zero-based pointer index matching the transform order returned by the symmetry script
+---@return SymmetryPointerPaintMode #
+function Symmetry:GetPointerPaintMode(pointerIndex) end
+
+---@return SymmetryPointerPaintMode[] #
+function Symmetry:GetPointerPaintModes() end
+
+---@param pointerIndex integer Zero-based pointer index matching the transform order returned by the symmetry script
+function Symmetry:StartPointer(pointerIndex) end
+
+---@param pointerIndex integer Zero-based pointer index matching the transform order returned by the symmetry script
+function Symmetry:StopPointer(pointerIndex) end
+
+---@param pointerIndex integer Zero-based pointer index matching the transform order returned by the symmetry script
+function Symmetry:ForcePointerNewStroke(pointerIndex) end
+
 ---@param path Path The path to convert
----@return Path # 
+---@return Path #
 function Symmetry:PathToPolar(path) end
 
 
