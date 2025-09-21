@@ -1539,6 +1539,10 @@ namespace TiltBrush
 
         public Color CalculateJitteredColor(Color currentColor)
         {
+            if (LuaManager.Instance.JitterScriptsEnabled)
+            {
+                return LuaManager.Instance.CallActiveJitterScript("main", currentColor);
+            }
             Color.RGBToHSV(currentColor, out var h, out var s, out var v);
             return Random.ColorHSV(
                 h - colorJitter.x, h + colorJitter.x,
