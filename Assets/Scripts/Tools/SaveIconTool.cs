@@ -379,9 +379,10 @@ namespace TiltBrush
             {
                 // Restore selection effects state
                 SelectionEffect.DisableSelectionEffects = prevSelectionEffectsState;
-                CurrentCameraRigState = prev;
-                CameraRig.gameObject.SetActive(wasActive);
             }
+
+            CurrentCameraRigState = prev;
+            CameraRig.gameObject.SetActive(wasActive);
         }
 
         private void UpdateTransformsFromControllers()
