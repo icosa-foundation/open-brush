@@ -172,6 +172,17 @@ namespace TiltBrush
 
         public void Init()
         {
+            StartCoroutine(
+                OverlayManager.m_Instance.RunInCompositor(
+                    OverlayType.LoadGeneric,
+                    _InitImpl,
+                    0.25f
+                )
+            );
+        }
+
+        private void _InitImpl()
+        {
             if (m_IsInitialized) return;
             m_WebRequests = new LinkedList<LuaWebRequest>();
             m_TransformBuffers = new TransformBuffers(128);
