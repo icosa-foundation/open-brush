@@ -200,7 +200,9 @@ namespace TiltBrush
         private List<TrTransform> m_ScriptedTrFixes; // Fixes for reflection transforms
 
         private List<PointerPaintingOverride> m_ScriptedPointerPaintOverrides;
+        private List<bool> m_ScriptedPointerHasRecordedStrokeThisLine;
         private HashSet<int> m_ScriptedPointerForceNewStrokeRequests;
+        private bool m_ScriptedPointersNeedMainStrokeMerge;
 
         private bool m_InPlaybackMode;
 
@@ -900,6 +902,11 @@ namespace TiltBrush
                 m_ScriptedPointerPaintOverrides = new List<PointerPaintingOverride>();
             }
 
+            if (m_ScriptedPointerHasRecordedStrokeThisLine == null)
+            {
+                m_ScriptedPointerHasRecordedStrokeThisLine = new List<bool>();
+            }
+
             if (m_ScriptedPointerForceNewStrokeRequests == null)
             {
                 m_ScriptedPointerForceNewStrokeRequests = new HashSet<int>();
@@ -918,6 +925,19 @@ namespace TiltBrush
                     m_ScriptedPointerPaintOverrides.Count - pointerCount);
             }
 
+            if (m_ScriptedPointerHasRecordedStrokeThisLine.Count < pointerCount)
+            {
+                while (m_ScriptedPointerHasRecordedStrokeThisLine.Count < pointerCount)
+                {
+                    m_ScriptedPointerHasRecordedStrokeThisLine.Add(false);
+                }
+            }
+            else if (m_ScriptedPointerHasRecordedStrokeThisLine.Count > pointerCount)
+            {
+                m_ScriptedPointerHasRecordedStrokeThisLine.RemoveRange(pointerCount,
+                    m_ScriptedPointerHasRecordedStrokeThisLine.Count - pointerCount);
+            }
+
             if (m_ScriptedPointerForceNewStrokeRequests.Count > 0)
             {
                 m_ScriptedPointerForceNewStrokeRequests.RemoveWhere(i => i >= pointerCount);
@@ -927,7 +947,22 @@ namespace TiltBrush
         private void ResetScriptedPointerPaintData()
         {
             m_ScriptedPointerPaintOverrides?.Clear();
+            m_ScriptedPointerHasRecordedStrokeThisLine?.Clear();
             m_ScriptedPointerForceNewStrokeRequests?.Clear();
+            m_ScriptedPointersNeedMainStrokeMerge = false;
+        }
+
+        private void ResetScriptedPointerStrokeContinuationState()
+        {
+            if (m_ScriptedPointerHasRecordedStrokeThisLine != null)
+            {
+                for (int i = 0; i < m_ScriptedPointerHasRecordedStrokeThisLine.Count; ++i)
+                {
+                    m_ScriptedPointerHasRecordedStrokeThisLine[i] = false;
+                }
+            }
+
+            m_ScriptedPointersNeedMainStrokeMerge = false;
         }
 
         private bool IsValidScriptedPointerIndex(int index, bool logModeWarning = true)
@@ -1132,16 +1167,39 @@ namespace TiltBrush
             script.SetControlPoint(xfPointer_CS, isKeeper: true);
         }
 
-        private void StopPointerStroke(int pointerIndex, bool discard)
+        private void StopPointerStroke(int pointerIndex, bool discard, bool markGroupContinue = false)
         {
             if (pointerIndex < 0 || pointerIndex >= m_NumActivePointers)
             {
                 return;
             }
 
+            var pointer = m_Pointers[pointerIndex].m_Script;
+            if (!pointer.IsCreatingStroke())
+            {
+                return;
+            }
+
             PointerScript groupStart = null;
             uint groupStartTime = 0;
-            DetachPointerStroke(pointerIndex, discard, ref groupStart, ref groupStartTime, isFinalStroke: true);
+            DetachPointerStroke(pointerIndex, discard, ref groupStart, ref groupStartTime,
+                isFinalStroke: true, forceGroupContinue: markGroupContinue);
+
+            if (discard)
+            {
+                return;
+            }
+
+            bool duringRecording = m_CurrentLineCreationState == LineCreationState.RecordingInput;
+            if (m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode && duringRecording)
+            {
+                EnsureScriptedPointerPaintData(m_NumActivePointers);
+                if (pointerIndex < m_ScriptedPointerHasRecordedStrokeThisLine.Count)
+                {
+                    m_ScriptedPointersNeedMainStrokeMerge = true;
+                    m_ScriptedPointerHasRecordedStrokeThisLine[pointerIndex] = true;
+                }
+            }
         }
 
         private void DetachPointerStroke(
@@ -1149,7 +1207,8 @@ namespace TiltBrush
             bool discard,
             ref PointerScript groupStart,
             ref uint groupStartTime,
-            bool isFinalStroke)
+            bool isFinalStroke,
+            bool forceGroupContinue = false)
         {
             if (pointerIndex < 0 || pointerIndex >= m_NumActivePointers)
             {
@@ -1181,6 +1240,11 @@ namespace TiltBrush
                     Debug.Assert(pointer.TimestampMs == groupStartTime);
                 }
 
+                if (forceGroupContinue)
+                {
+                    flags |= SketchMemoryScript.StrokeFlags.IsGroupContinue;
+                }
+
                 pointer.DetachLine(false, null, flags, isFinalStroke);
             }
         }
@@ -1204,7 +1268,9 @@ namespace TiltBrush
                 {
                     if (isPainting)
                     {
-                        StopPointerStroke(i, discard: false);
+                        bool markContinue =
+                            m_ScriptedPointerHasRecordedStrokeThisLine[i];
+                        StopPointerStroke(i, discard: false, markGroupContinue: markContinue);
                         isPainting = false;
                     }
 
@@ -1226,7 +1292,9 @@ namespace TiltBrush
                 }
                 else if (isPainting)
                 {
-                    StopPointerStroke(i, discard: false);
+                    bool markContinue =
+                        m_ScriptedPointerHasRecordedStrokeThisLine[i];
+                    StopPointerStroke(i, discard: false, markGroupContinue: markContinue);
                 }
             }
         }
@@ -1255,7 +1323,10 @@ namespace TiltBrush
                 {
                     for (int i = transforms.Count; i < prevCount && i < m_NumActivePointers; ++i)
                     {
-                        StopPointerStroke(i, discard: false);
+                        bool markContinue =
+                            i < m_ScriptedPointerHasRecordedStrokeThisLine.Count &&
+                            m_ScriptedPointerHasRecordedStrokeThisLine[i];
+                        StopPointerStroke(i, discard: false, markGroupContinue: markContinue);
                     }
                 }
                 ChangeNumActivePointers(transforms.Count);
@@ -2040,6 +2111,11 @@ namespace TiltBrush
         // stopped and started a new one.
         void InitiateLine(bool isContinue = false)
         {
+            if (!isContinue && m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
+            {
+                ResetScriptedPointerStrokeContinuationState();
+            }
+
             // Turn off the preview when we start drawing
             for (int i = 0; i < m_NumActivePointers; ++i)
             {
@@ -2087,7 +2163,13 @@ namespace TiltBrush
             for (int i = 0; i < m_NumActivePointers; ++i)
             {
                 bool isFinalStroke = (i == m_NumActivePointers - 1);
-                DetachPointerStroke(i, discard, ref groupStart, ref groupStartTime, isFinalStroke);
+                bool forceGroupContinue =
+                    !discard &&
+                    m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode &&
+                    m_ScriptedPointersNeedMainStrokeMerge &&
+                    i == 0;
+                DetachPointerStroke(i, discard, ref groupStart, ref groupStartTime, isFinalStroke,
+                    forceGroupContinue: forceGroupContinue);
             }
         }
 
