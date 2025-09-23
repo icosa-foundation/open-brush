@@ -288,15 +288,13 @@ namespace TiltBrush
 
         public void ToTransform(Transform xf)
         {
-            xf.position = this.translation;
-            xf.rotation = this.rotation;
+            xf.SetPositionAndRotation(this.translation, this.rotation);
             xf.SetUniformScale(this.scale);
         }
 
         public void ToLocalTransform(Transform xf)
         {
-            xf.localPosition = this.translation;
-            xf.localRotation = this.rotation;
+            xf.SetLocalPositionAndRotation(this.translation, this.rotation);
             xf.localScale = new Vector3(scale, scale, scale);
         }
 

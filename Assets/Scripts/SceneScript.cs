@@ -225,8 +225,7 @@ namespace TiltBrush
                 GameObject go = new GameObject(string.Format("SceneLight {0}", i));
                 Transform t = go.transform;
                 t.parent = App.Instance.m_EnvironmentTransform;
-                t.localPosition = Vector3.zero;
-                t.localRotation = Quaternion.identity;
+                t.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
                 t.localScale = Vector3.one;
                 Light newLight = go.AddComponent<Light>();
                 m_Lights[i] = newLight;

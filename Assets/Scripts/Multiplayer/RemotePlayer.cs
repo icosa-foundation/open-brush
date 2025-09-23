@@ -33,7 +33,7 @@ namespace OpenBrush.Multiplayer
 
             get
             {
-                if (_nickname == "") _nickname = RetrieveNickNameFromRig();
+                if (_nickname?.Length == 0) _nickname = RetrieveNickNameFromRig();
                 return _nickname;
             }
             set { _nickname = value; }

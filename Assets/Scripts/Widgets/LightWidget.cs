@@ -85,8 +85,7 @@ namespace TiltBrush
         {
             LightWidget clone = Instantiate(WidgetManager.m_Instance.LightWidgetPrefab);
             clone.m_PreviousCanvas = m_PreviousCanvas;
-            clone.transform.position = position;
-            clone.transform.rotation = rotation;
+            clone.transform.SetPositionAndRotation(position, rotation);
             // We want to lie about our intro transition amount.
             clone.m_ShowTimer = clone.m_ShowDuration;
             clone.transform.parent = transform.parent;
@@ -136,8 +135,7 @@ namespace TiltBrush
 
             lightWidget.SetSignedWidgetSize(tiltLight.Transform.scale);
             lightWidget.Show(bShow: true, bPlayAudio: false);
-            lightWidget.transform.localPosition = tiltLight.Transform.translation;
-            lightWidget.transform.localRotation = tiltLight.Transform.rotation;
+            lightWidget.transform.SetLocalPositionAndRotation(tiltLight.Transform.translation, tiltLight.Transform.rotation);
             var light = lightWidget.SetLightType(tiltLight.PunctualLightType);
             light.color = tiltLight.LightColor.Value;
             light.intensity = tiltLight.Intensity.Value;

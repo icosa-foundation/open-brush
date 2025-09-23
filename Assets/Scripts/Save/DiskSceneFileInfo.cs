@@ -59,8 +59,7 @@ namespace TiltBrush
         {
             get
             {
-                return m_humanName != null
-                    && m_humanName != ""
+                return !string.IsNullOrEmpty(m_humanName)
                     && m_humanName != kInvalidHumanName;
             }
         }

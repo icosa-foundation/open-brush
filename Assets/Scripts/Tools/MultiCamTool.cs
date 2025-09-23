@@ -627,8 +627,7 @@ namespace TiltBrush
             // Force pointer to controller if we're in controller mode.
             if (m_LockToController)
             {
-                transform.position = InputManager.Brush.Geometry.CameraAttachPoint.position;
-                transform.rotation = InputManager.Brush.Geometry.CameraAttachPoint.rotation;
+                transform.SetPositionAndRotation(InputManager.Brush.Geometry.CameraAttachPoint.position, InputManager.Brush.Geometry.CameraAttachPoint.rotation);
 
                 // Does the viewfinder need to face the user?
                 if (!App.PlatformConfig.EnableMulticamPreview)
@@ -647,9 +646,8 @@ namespace TiltBrush
             }
             else
             {
-                transform.position = SketchSurfacePanel.m_Instance.transform.position;
-                transform.rotation = SketchSurfacePanel.m_Instance.transform.rotation *
-                    Quaternion.Euler(m_SketchSurfaceAdditionalRotation);
+                transform.SetPositionAndRotation(SketchSurfacePanel.m_Instance.transform.position, SketchSurfacePanel.m_Instance.transform.rotation *
+                    Quaternion.Euler(m_SketchSurfaceAdditionalRotation));
             }
         }
 

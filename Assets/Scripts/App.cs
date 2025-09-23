@@ -868,11 +868,11 @@ namespace TiltBrush
                         }
                     }
 
-                    if (driver.OutputBasename == null || driver.OutputBasename == "")
+                    if (string.IsNullOrEmpty(driver.OutputBasename))
                     {
                         driver.OutputBasename =
                             FileUtils.SanitizeFilename(SaveLoadScript.m_Instance.SceneFile.HumanName);
-                        if (driver.OutputBasename == null || driver.OutputBasename == "")
+                        if (string.IsNullOrEmpty(driver.OutputBasename))
                         {
                             if (Config.m_SketchFiles.Length > 0)
                             {
@@ -886,7 +886,7 @@ namespace TiltBrush
                         }
                     }
 
-                    if (driver.OutputFolder == null || driver.OutputFolder == "")
+                    if (string.IsNullOrEmpty(driver.OutputFolder))
                     {
                         driver.OutputFolder = App.VrVideosPath();
                         FileUtils.InitializeDirectoryWithUserError(driver.OutputFolder);
@@ -1876,12 +1876,12 @@ namespace TiltBrush
                     m_UserPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
 
                     // GetFolderPath() can fail, returning an empty string.
-                    if (m_UserPath == "")
+                    if (m_UserPath?.Length == 0)
                     {
                         // If that happens, try a bunch of other folders.
                         m_UserPath = System.Environment.GetFolderPath(
                             System.Environment.SpecialFolder.MyDocuments);
-                        if (m_UserPath == "")
+                        if (m_UserPath?.Length == 0)
                         {
                             m_UserPath = System.Environment.GetFolderPath(
                                 System.Environment.SpecialFolder.DesktopDirectory);
@@ -1963,15 +1963,7 @@ namespace TiltBrush
 
         public static bool InitDirectoryAtPath(string path)
         {
-            if (Directory.Exists(path))
-            {
-                return true;
-            }
-            if (!FileUtils.InitializeDirectoryWithUserError(path))
-            {
-                return false;
-            }
-            return true;
+            return Directory.Exists(path) || FileUtils.InitializeDirectoryWithUserError(path);
         }
 
         public static string ShortenForDescriptionText(string desc)

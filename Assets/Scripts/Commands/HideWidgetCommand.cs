@@ -62,8 +62,7 @@ namespace TiltBrush
             {
                 m_Widget.gameObject.SetActive(true);
                 m_Widget.RestoreFromToss();
-                m_Widget.transform.localPosition = m_WidgetTransform.translation;
-                m_Widget.transform.localRotation = m_WidgetTransform.rotation;
+                m_Widget.transform.SetLocalPositionAndRotation(m_WidgetTransform.translation, m_WidgetTransform.rotation);
                 m_Widget.SetSignedWidgetSize(m_WidgetTransform.scale);
                 WidgetManager.m_Instance.RefreshPinAndUnpinLists();
                 TiltMeterScript.m_Instance.AdjustMeterWithWidget(m_TiltMeterCost, up: true);

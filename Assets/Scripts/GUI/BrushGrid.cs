@@ -394,8 +394,7 @@ namespace TiltBrush
                     updatedPosition = Vector3.Lerp(updateVector, updatedPosition, 1 - rotationAmount);
                 }
 
-                m_BrushButtons[i].transform.localPosition = updatedPosition;
-                m_BrushButtons[i].transform.localRotation = updatedRotation;
+                m_BrushButtons[i].transform.SetLocalPositionAndRotation(updatedPosition, updatedRotation);
             }
             RefreshButtonProperties();
             RefreshNavigationButtons();

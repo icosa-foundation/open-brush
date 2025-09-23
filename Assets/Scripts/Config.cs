@@ -332,10 +332,7 @@ namespace TiltBrush
             bool isInBatchMode = false;
 
             // If someone entered a sketch via the editor, we need to preserve that here.
-            foreach (var s in m_SketchFiles)
-            {
-                files.Add(s);
-            }
+            files.AddRange(m_SketchFiles);
 
             // Process all args.
             for (int i = 0; i < args.Length; i++)

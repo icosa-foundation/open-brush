@@ -443,14 +443,9 @@ namespace TiltBrush
 
         public static bool MainPointerIsPainting()
         {
-            if (
-                m_Instance.IsMainPointerProcessingLine()
+            return m_Instance.IsMainPointerProcessingLine()
                 || m_Instance.IsMainPointerCreatingStroke()
-                || m_Instance.IsLineEnabled()
-            )
-                return true;
-
-            return false;
+                || m_Instance.IsLineEnabled();
         }
 
         public void SetInPlaybackMode(bool bInPlaybackMode)
@@ -615,23 +610,19 @@ namespace TiltBrush
                 {
                     if (m_CurrentSymmetryMode == SymmetryMode.SinglePlane)
                     {
-                        m_SymmetryWidget.position = Vector3.zero;
-                        m_SymmetryWidget.rotation = Quaternion.identity;
+                        m_SymmetryWidget.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
                     }
                     else if (m_CurrentSymmetryMode == SymmetryMode.MultiMirror)
                     {
-                        m_SymmetryWidget.position = SketchSurfacePanel.m_Instance.transform.position;
-                        m_SymmetryWidget.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
+                        m_SymmetryWidget.SetPositionAndRotation(SketchSurfacePanel.m_Instance.transform.position, SketchSurfacePanel.m_Instance.transform.rotation);
                     }
                     else if (m_CurrentSymmetryMode == SymmetryMode.CustomSymmetryMode)
                     {
-                        m_SymmetryWidget.position = SketchSurfacePanel.m_Instance.transform.position;
-                        m_SymmetryWidget.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
+                        m_SymmetryWidget.SetPositionAndRotation(SketchSurfacePanel.m_Instance.transform.position, SketchSurfacePanel.m_Instance.transform.rotation);
                     }
                     else if (m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
                     {
-                        m_SymmetryWidget.position = SketchSurfacePanel.m_Instance.transform.position;
-                        m_SymmetryWidget.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
+                        m_SymmetryWidget.SetPositionAndRotation(SketchSurfacePanel.m_Instance.transform.position, SketchSurfacePanel.m_Instance.transform.rotation);
                     }
                 }
             }
@@ -851,8 +842,7 @@ namespace TiltBrush
         public void SetPointerTransform(ControllerName name, Vector3 v, Quaternion q)
         {
             Transform pointer = GetPointer(name).transform;
-            pointer.position = v;
-            pointer.rotation = q;
+            pointer.SetPositionAndRotation(v, q);
             UpdateSymmetryPointerTransforms();
         }
 
@@ -1313,16 +1303,14 @@ namespace TiltBrush
                         for (int i = 1; i < m_NumActivePointers; ++i)
                         {
                             var xf = m_Pointers[i].m_Script.transform;
-                            xf.position = xf0.position + m_SymmetryDebugMultipleOffset * i;
-                            xf.rotation = xf0.rotation;
+                            xf.SetPositionAndRotation(xf0.position + m_SymmetryDebugMultipleOffset * i, xf0.rotation);
                         }
                         break;
                     }
                 case SymmetryMode.TwoHanded:
                     {
                         var xf = m_Pointers[1].m_Script.transform;
-                        xf.position = InputManager.m_Instance.GetWandControllerAttachPoint().position;
-                        xf.rotation = InputManager.m_Instance.GetWandControllerAttachPoint().rotation;
+                        xf.SetPositionAndRotation(InputManager.m_Instance.GetWandControllerAttachPoint().position, InputManager.m_Instance.GetWandControllerAttachPoint().rotation);
                     }
                     break;
             }

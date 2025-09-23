@@ -186,11 +186,11 @@ namespace TiltBrush
         public static void TakeSnapshot(TrTransform tr, string filename, int width, int height, float superSampling = 1f, bool renderDepth = false, bool removeBackground = false)
         {
             bool saveAsPng;
-            if (filename.ToLower().EndsWith(".jpg") || filename.ToLower().EndsWith(".jpeg"))
+            if (filename.EndsWith(".jpg", System.StringComparison.OrdinalIgnoreCase) || filename.EndsWith(".jpeg", System.StringComparison.OrdinalIgnoreCase))
             {
                 saveAsPng = false;
             }
-            else if (filename.ToLower().EndsWith(".png"))
+            else if (filename.EndsWith(".png", System.StringComparison.OrdinalIgnoreCase))
             {
                 saveAsPng = true;
             }

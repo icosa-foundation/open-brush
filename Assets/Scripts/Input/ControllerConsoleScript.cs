@@ -98,8 +98,7 @@ namespace TiltBrush
 
                 Vector3 vLocalPos = m_BaseLineLocalPositionOffset;
                 vLocalPos.y += m_LineSpacing * (float)i;
-                rLine.transform.localPosition = vLocalPos;
-                rLine.transform.localRotation = Quaternion.identity;
+                rLine.transform.SetLocalPositionAndRotation(vLocalPos, Quaternion.identity);
             }
 
             m_LineOperateIndex = m_InfoLines.Length - 1;
@@ -410,12 +409,10 @@ namespace TiltBrush
         {
             ControllerGeometry geo = behavior.ControllerGeometry;
             transform.parent = null;
-            transform.position = geo.ConsoleAttachPoint.position;
-            transform.rotation = geo.ConsoleAttachPoint.rotation;
+            transform.SetPositionAndRotation(geo.ConsoleAttachPoint.position, geo.ConsoleAttachPoint.rotation);
             transform.parent = geo.ConsoleAttachPoint.transform;
 
-            m_NotificationAnchor.position = geo.BaseAttachPoint.position;
-            m_NotificationAnchor.rotation = geo.BaseAttachPoint.rotation;
+            m_NotificationAnchor.SetPositionAndRotation(geo.BaseAttachPoint.position, geo.BaseAttachPoint.rotation);
 
             // The logitech pen has a custom activation angle.
             ControllerStyle geoStyle = geo.Style;

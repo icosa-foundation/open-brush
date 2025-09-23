@@ -194,9 +194,8 @@ namespace TiltBrush
                 }
 
                 var brushSize = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute;
-                m_MeterDisplay.transform.rotation = Quaternion.LookRotation(vPlaneProj, vUp);
-                m_MeterDisplay.transform.position += vUp *
-                    (m_MeterDisplay.rectTransform.rect.height * m_MeterYOffset + brushSize * 0.5f);
+                m_MeterDisplay.transform.SetPositionAndRotation(vUp *
+                    (m_MeterDisplay.rectTransform.rect.height * m_MeterYOffset + brushSize * 0.5f), Quaternion.LookRotation(vPlaneProj, vUp));
                 m_MeterDisplay.gameObject.SetActive(true);
             }
             else
