@@ -238,6 +238,8 @@ namespace TiltBrush
         [SerializeField] GameObject m_SketchSurface;
         [SerializeField] GameObject m_ErrorDialog;
         [SerializeField] GameObject m_OdsPrefab;
+        [SerializeField] Transform m_GaussianCapturePrefab;
+
         GameObject m_OdsPivot;
 
         [Header("Intro")]

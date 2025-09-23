@@ -1,0 +1,99 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1172868486959084137
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1782612775646965092}
+  - component: {fileID: 6201357069329769655}
+  - component: {fileID: 462240973006427450}
+  m_Layer: 0
+  m_Name: GaussianCapture
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1782612775646965092
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1172868486959084137}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -23.523207, y: -1.2179766, z: 34.713844}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6201357069329769655
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1172868486959084137}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53764e1e4564c5642a574e15de1c89d6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cameraToUse: {fileID: 0}
+  width: 1920
+  height: 1080
+  raysPerView: 1000
+  outputFolder: 
+  runtimeSequence: 0
+  fbs: 25
+  duration: 1
+  trainPostShot: 0
+  postShotCliPath: C:\Program Files\Jawset Postshot\bin\postshot-cli.exe
+  trainSteps: 5
+  outputFormat: 0
+  profile: 0
+  target: {fileID: 0}
+  eyeDepthShader: {fileID: 4800000, guid: 92dc4e129e718a549bac62147f1f27e8, type: 3}
+  numRings: 4
+  viewsPerRing: 20
+  radius: 5
+  heightOffset: 1.5
+  volumeCenter: {x: 0, y: 0, z: 0}
+  volumeSize: {x: 5, y: 5, z: 5}
+  subdivX: 2
+  subdivY: 2
+  subdivZ: 2
+  includeTransparentsAndParticles: 1
+  alphaThreshold: 0.05
+  depthReplacementShader: {fileID: 4800000, guid: 0da7fe4fde6d6784696f9dd8e3c781f4,
+    type: 3}
+--- !u!114 &462240973006427450
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1172868486959084137}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b38b8a2cec099384ca0d0b404c816a45, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 0}
+  numRings: 4
+  viewsPerRing: 20
+  radius: 5
+  height: 1.5
+  volumeCenter: {x: 0, y: 0, z: 0}
+  volumeSize: {x: 5, y: 5, z: 5}
+  subdivX: 2
+  subdivY: 2
+  subdivZ: 2
+  showDome: 1
+  showVolume: 0
