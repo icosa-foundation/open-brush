@@ -494,10 +494,7 @@ namespace TiltBrush
         )]
         public static void AddText(string text)
         {
-            var tr = TrTransform.TR(
-                ApiManager.Instance.BrushPosition,
-                ApiManager.Instance.BrushRotation
-            );
+            var tr = _CurrentTransform();
 
             var cmd = new CreateWidgetCommand(
                 WidgetManager.m_Instance.TextWidgetPrefab, tr, null, true
@@ -542,10 +539,7 @@ namespace TiltBrush
             }
             location = Path.Combine(App.VideoLibraryPath(), location);
 
-            // TODO don't use "turtle" coordinates
-            var tr = new TrTransform();
-            tr.translation = ApiManager.Instance.BrushPosition;
-            tr.rotation = ApiManager.Instance.BrushRotation;
+            var tr = _CurrentTransform();
             var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.VideoWidgetPrefab, tr);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
             var videoWidget = cmd.Widget as VideoWidget;
@@ -589,10 +583,7 @@ namespace TiltBrush
 
             ReferenceImage image = _LoadReferenceImage(location);
 
-            // TODO don't use "turtle" coordinates
-            var tr = new TrTransform();
-            tr.translation = ApiManager.Instance.BrushPosition;
-            tr.rotation = ApiManager.Instance.BrushRotation;
+            var tr = _CurrentTransform();
             var cmd = new CreateWidgetCommand(
                 WidgetManager.m_Instance.ImageWidgetPrefab, tr, null, true
             );

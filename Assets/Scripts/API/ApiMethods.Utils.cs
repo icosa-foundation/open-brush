@@ -81,7 +81,7 @@ namespace TiltBrush
                 ApiManager.Instance.BrushPosition,
                 ApiManager.Instance.BrushRotation
             );
-            return tr;
+            return tr.TransformBy(Coords.CanvasPose);
         }
 
         private static Vector3 _QuantizePosition(Vector3 pos, Vector3 grid)

@@ -106,7 +106,7 @@ namespace TiltBrush
             {
                 subtree = location.Substring(relativePath.Length + 1);
             }
-            var tr = _CurrentTransform().TransformBy(Coords.CanvasPose);
+            var tr = _CurrentTransform();
             var model = new Model(relativePath);
 
             AsyncHelpers.RunSync(() => model.LoadModelAsync());
