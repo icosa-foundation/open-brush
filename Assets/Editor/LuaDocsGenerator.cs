@@ -33,7 +33,7 @@ namespace TiltBrush
                 return;
             }
             
-            LuaManager.Instance.Init();
+            LuaManager.Instance.Init(immediate: true);
             Script script = new Script();
 
             // Initializing this list triggers the docs generation via RegisterApiClasses

@@ -170,15 +170,22 @@ namespace TiltBrush
             m_ScriptPathsToUpdate.Add(e.FullPath);
         }
 
-        public void Init()
+        public void Init(bool immediate = false)
         {
-            StartCoroutine(
-                OverlayManager.m_Instance.RunInCompositor(
-                    OverlayType.LoadGeneric,
-                    _InitImpl,
-                    0.25f
-                )
-            );
+            if (immediate)
+            {
+                _InitImpl();
+            }
+            else
+            {
+                StartCoroutine(
+                    OverlayManager.m_Instance.RunInCompositor(
+                        OverlayType.LoadGeneric,
+                        _InitImpl,
+                        0.25f
+                    )
+                );
+            }
         }
 
         private void _InitImpl()
