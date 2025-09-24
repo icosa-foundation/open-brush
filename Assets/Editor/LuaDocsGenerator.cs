@@ -32,7 +32,7 @@ namespace TiltBrush
                 Debug.LogError("You can only run this whilst in Play Mode");
                 return;
             }
-            
+
             LuaManager.Instance.Init(immediate: true);
             Script script = new Script();
 
