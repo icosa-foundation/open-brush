@@ -32,7 +32,8 @@ namespace TiltBrush
                 Debug.LogError("You can only run this whilst in Play Mode");
                 return;
             }
-
+            
+            LuaManager.Instance.Init();
             Script script = new Script();
 
             // Initializing this list triggers the docs generation via RegisterApiClasses
