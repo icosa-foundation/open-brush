@@ -841,7 +841,7 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("model.scale", "Set a model's scale to the amount")]
-        public static void RotateModel(int index, float scale)
+        public static void ScaleModel(int index, float scale)
         {
             _SetWidgetScale(_GetActiveModel(index), scale);
         }
@@ -997,9 +997,9 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("image.scale", "Set a images scale to the amount")]
-        public static void RotateImage(int index, float scale)
+        public static void ScaleImage(int index, float scale)
         {
-            _SetWidgetScale(_GetActiveModel(index), scale);
+            _SetWidgetScale(_GetActiveImage(index), scale);
         }
 
         [ApiEndpoint("light.position", "Move a light to the given coordinates")]
