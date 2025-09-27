@@ -75,13 +75,14 @@ namespace TiltBrush
             return point;
         }
 
-        private static TrTransform _CurrentTransform()
+        private static TrTransform _CurrentBrushTransform()
         {
             var tr = TrTransform.TR(
                 ApiManager.Instance.BrushPosition,
                 ApiManager.Instance.BrushRotation
             );
-            return tr.TransformBy(Coords.CanvasPose);
+            var result = App.Scene.Pose * tr;
+            return result;
         }
 
         private static Vector3 _QuantizePosition(Vector3 pos, Vector3 grid)

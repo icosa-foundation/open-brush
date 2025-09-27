@@ -106,16 +106,13 @@ namespace TiltBrush
             {
                 subtree = location.Substring(relativePath.Length + 1);
             }
-            var tr = _CurrentTransform();
             var model = new Model(relativePath);
 
             AsyncHelpers.RunSync(() => model.LoadModelAsync());
             model.EnsureCollectorExists();
-            CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.ModelWidgetPrefab, tr, null, forceTransform: true
-            );
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-            ModelWidget widget = createCommand.Widget as ModelWidget;
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+            ModelWidget widget = cmd.Widget as ModelWidget;
             if (widget != null)
             {
                 widget.Model = model;
@@ -123,7 +120,7 @@ namespace TiltBrush
                 widget.SyncHierarchyToSubtree();
                 widget.Show(true);
                 widget.AddSceneLightGizmos();
-                createCommand.SetWidgetCost(widget.GetTiltMeterCost());
+                cmd.SetWidgetCost(widget.GetTiltMeterCost());
             }
             else
             {

@@ -494,12 +494,7 @@ namespace TiltBrush
         )]
         public static void AddText(string text)
         {
-            var tr = _CurrentTransform();
-
-            var cmd = new CreateWidgetCommand(
-                WidgetManager.m_Instance.TextWidgetPrefab, tr, null, true
-            );
-
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.TextWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
 
             var textWidget = cmd.Widget as TextWidget;
@@ -539,8 +534,7 @@ namespace TiltBrush
             }
             location = Path.Combine(App.VideoLibraryPath(), location);
 
-            var tr = _CurrentTransform();
-            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.VideoWidgetPrefab, tr);
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.VideoWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
             var videoWidget = cmd.Widget as VideoWidget;
             if (videoWidget != null)
@@ -582,12 +576,7 @@ namespace TiltBrush
             }
 
             ReferenceImage image = _LoadReferenceImage(location);
-
-            var tr = _CurrentTransform();
-            var cmd = new CreateWidgetCommand(
-                WidgetManager.m_Instance.ImageWidgetPrefab, tr, null, true
-            );
-
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ImageWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
             var imageWidget = cmd.Widget as ImageWidget;
             if (imageWidget != null)
@@ -1180,10 +1169,8 @@ namespace TiltBrush
                     break;
             }
 
-            var tr = _CurrentTransform();
-            CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.GetStencilPrefab(stencilType), tr, null, true);
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.GetStencilPrefab(stencilType), _CurrentBrushTransform(), forceTransform: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
 
         [ApiEndpoint(
