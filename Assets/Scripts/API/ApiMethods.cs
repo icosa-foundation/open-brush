@@ -98,7 +98,7 @@ namespace TiltBrush
         public static void MoveUserTo(Vector3 position)
         {
             TrTransform pose = App.Scene.Pose;
-            pose.translation = position;
+            pose.translation = -position;
             float BoundsRadius = SceneSettings.m_Instance.HardBoundsRadiusMeters_SS;
             pose = SketchControlsScript.MakeValidScenePose(pose, BoundsRadius);
             App.Scene.Pose = pose;
@@ -203,7 +203,7 @@ namespace TiltBrush
         public static void ChangeUserBearing(float angle, Vector3 axis)
         {
             TrTransform lookPose = App.Scene.Pose;
-            lookPose.rotation *= Quaternion.AngleAxis(angle, axis);
+            lookPose.rotation *= Quaternion.AngleAxis(-angle, axis);
             App.Scene.Pose = lookPose;
         }
 
