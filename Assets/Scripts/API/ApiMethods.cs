@@ -539,6 +539,13 @@ namespace TiltBrush
             var videoWidget = cmd.Widget as VideoWidget;
             if (videoWidget != null)
             {
+                // Set consistent size regardless of scene scale, then enable preservation
+                float consistentSize = 2.0f;
+                videoWidget.SetSignedWidgetSize(consistentSize);
+
+                // Now enable preservation to prevent async overrides
+                videoWidget.SetPreserveCustomSize(true);
+
                 var video = new ReferenceVideo(location);
                 videoWidget.SetVideo(video);
                 videoWidget.Show(true);
