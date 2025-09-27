@@ -156,11 +156,6 @@ namespace TiltBrush
 
         private static void _SetWidgetScale(GrabWidget widget, float scale)
         {
-            // Don't override size for ImageWidgets that have preserve flag set
-            if (widget is ImageWidget imageWidget && imageWidget.ShouldPreserveCustomSizePublic())
-            {
-                return;
-            }
             widget.SetSignedWidgetSize(scale);
         }
 
