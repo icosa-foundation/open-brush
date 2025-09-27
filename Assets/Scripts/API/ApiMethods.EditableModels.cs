@@ -116,6 +116,24 @@ namespace TiltBrush
             if (widget != null)
             {
                 widget.Model = model;
+
+                // Calculate proper size based on model bounds (same as normal model loading)
+                float maxExtent = 2 * Mathf.Max(model.m_MeshBounds.extents.x,
+                    Mathf.Max(model.m_MeshBounds.extents.y, model.m_MeshBounds.extents.z));
+                float consistentSize;
+                if (maxExtent == 0.0f)
+                {
+                    consistentSize = 1.0f;
+                }
+                else
+                {
+                    consistentSize = 0.25f * App.METERS_TO_UNITS / maxExtent;
+                }
+
+                widget.SetSignedWidgetSize(consistentSize);
+
+                // Now enable preservation to prevent async overrides
+                widget.SetPreserveCustomSize(true);
                 widget.Subtree = subtree;
                 widget.SyncHierarchyToSubtree();
                 widget.Show(true);
