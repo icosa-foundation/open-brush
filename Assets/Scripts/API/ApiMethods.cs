@@ -581,6 +581,12 @@ namespace TiltBrush
             var imageWidget = cmd.Widget as ImageWidget;
             if (imageWidget != null)
             {
+                // Set consistent size regardless of scene scale
+                float consistentSize = 2.0f;
+                imageWidget.SetSignedWidgetSize(consistentSize);
+                // Now enable preservation to prevent async overrides
+                imageWidget.SetPreserveCustomSize(true);
+
                 imageWidget.ReferenceImage = image;
                 imageWidget.Show(true);
                 cmd.SetWidgetCost(imageWidget.GetTiltMeterCost());
