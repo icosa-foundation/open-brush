@@ -211,9 +211,6 @@ namespace TiltBrush
                         }
                         m_Size = newSize;
                     }
-                    else
-                    {
-                    }
                     UpdateScale();
 
                     m_NumVertsTrackedByWidgetManager = (int)((m_ReferenceImage.FullSize.width *
