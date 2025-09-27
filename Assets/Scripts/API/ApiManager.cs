@@ -934,15 +934,12 @@ namespace TiltBrush
             }
             else
             {
-                TrTransform xfSpawn = new TrTransform();
-                CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                    WidgetManager.m_Instance.ModelWidgetPrefab, xfSpawn, Quaternion.identity, true
-                );
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-                ModelWidget modelWidget = createCommand.Widget as ModelWidget;
+                var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab, new TrTransform(), forceTransform: true);
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+                ModelWidget modelWidget = cmd.Widget as ModelWidget;
                 modelWidget.Model = model;
                 modelWidget.Show(true);
-                createCommand.SetWidgetCost(modelWidget.GetTiltMeterCost());
+                cmd.SetWidgetCost(modelWidget.GetTiltMeterCost());
 
                 WidgetManager.m_Instance.WidgetsDormant = false;
                 SketchControlsScript.m_Instance.EatGazeObjectInput();

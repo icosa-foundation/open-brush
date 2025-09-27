@@ -30,6 +30,7 @@ namespace TiltBrush
         [SerializeField] private float m_MaxBloat;
 
         private Model m_Model;
+        private bool m_PreserveCustomSize;
 
 
         // What is Subtree?
@@ -242,6 +243,34 @@ namespace TiltBrush
             return Model.GetExportName();
         }
 
+        /// Prevents automatic size recalculation when model is set
+        public void SetPreserveCustomSize(bool preserve)
+        {
+            m_PreserveCustomSize = preserve;
+        }
+
+        /// Override to check if custom size should be preserved
+        protected override bool ShouldPreserveCustomSize()
+        {
+            return m_PreserveCustomSize;
+        }
+
+        /// Public accessor for API to check preserve flag
+        public bool ShouldPreserveCustomSizePublic()
+        {
+            return m_PreserveCustomSize;
+        }
+
+        /// Override SetSignedWidgetSize to respect preserve flag
+        public new void SetSignedWidgetSize(float fScale)
+        {
+            if (m_PreserveCustomSize)
+            {
+                return;
+            }
+            base.SetSignedWidgetSize(fScale);
+        }
+
         void LoadModel()
         {
             // Clean up existing model
@@ -276,7 +305,10 @@ namespace TiltBrush
                 size = kInitialSizeMeters_RS * App.METERS_TO_UNITS / maxExtent;
             }
 
-            m_InitSize_CS = size / Coords.CanvasPose.scale;
+            if (!m_PreserveCustomSize)
+            {
+                m_InitSize_CS = size / Coords.CanvasPose.scale;
+            }
 
             // Models are created in the main canvas.  Cache model layer in case it's overridden later.
             HierarchyUtils.RecursivelySetLayer(transform, App.Scene.MainCanvas.gameObject.layer);
@@ -699,6 +731,7 @@ namespace TiltBrush
         protected void SetWidgetSizeAboutCenterOfMass(float size)
         {
             if (m_Size == size) { return; }
+            if (m_PreserveCustomSize) { return; }
 
             // Use WithUnitScale because we want only the pos/rot difference
             // Find delta such that delta * new = old

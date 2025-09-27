@@ -26,8 +26,8 @@ namespace TiltBrush
         [LuaDocsDescription("Gets a Camera Path by it's index")]
         public CameraPathApiWrapper this[int index]
         {
-            get => new(_CameraPaths[index]);
-            set => _CameraPaths[index] = value._CameraPathWidget;
+            get => new(Utils.WrappedIndexerGet(() => _CameraPaths[index]));
+            set => Utils.WrappedIndexerSet(() => _CameraPaths[index] = value._CameraPathWidget);
         }
 
         [LuaDocsDescription("The number of Camera Paths")]
@@ -37,7 +37,7 @@ namespace TiltBrush
         [LuaDocsDescription("The active Camera Path")]
         public CameraPathApiWrapper active
         {
-            get => new CameraPathApiWrapper(WidgetManager.m_Instance.GetCurrentCameraPath().WidgetScript);
+            get => new(WidgetManager.m_Instance.GetCurrentCameraPath().WidgetScript);
             set => WidgetManager.m_Instance.SetCurrentCameraPath(value._CameraPathWidget);
         }
 
