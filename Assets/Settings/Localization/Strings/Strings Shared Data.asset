@@ -3591,6 +3591,10 @@ MonoBehaviour:
     m_Key: POPUP_REFERENCEPANEL_NOSAVEDSTROKES_TEXT
     m_Metadata:
       m_Items: []
+  - m_Id: 415628836388560896
+    m_Key: BRUSH_DARK
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
