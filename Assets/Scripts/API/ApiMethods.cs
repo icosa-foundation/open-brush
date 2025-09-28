@@ -818,7 +818,7 @@ namespace TiltBrush
         }
 
         [ApiEndpoint(
-            "model.set.position",
+            "model.position",
             "Move a 3d model to the given coordinates",
             "2,6,8"
         )]
@@ -840,7 +840,7 @@ namespace TiltBrush
         }
 
         [ApiEndpoint(
-            "symmetry.set.position",
+            "symmetry.position",
             "Move the symmetry widget to the given coordinates",
             "2,6,8"
         )]
