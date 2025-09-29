@@ -39,6 +39,7 @@ namespace TiltBrush
         Google = 1,
         Sketchfab = 2,
         Icosa = 3,
+        Vive = 4
     }
 
     [Serializable]
