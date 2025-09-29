@@ -172,6 +172,7 @@ namespace TiltBrush
 
         public void Init(bool immediate = false)
         {
+            if (m_IsInitialized) return;
             if (immediate)
             {
                 _InitImpl();
@@ -190,7 +191,6 @@ namespace TiltBrush
 
         private void _InitImpl()
         {
-            if (m_IsInitialized) return;
             m_WebRequests = new LinkedList<LuaWebRequest>();
             m_TransformBuffers = new TransformBuffers(128);
             m_ScriptPathsToUpdate = new List<string>();
