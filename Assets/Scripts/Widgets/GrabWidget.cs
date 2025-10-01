@@ -370,7 +370,10 @@ namespace TiltBrush
                     transform.localPosition = value.translation;
                     transform.localRotation = value.rotation;
                 }
-                SetSignedWidgetSize(value.scale);
+                if (!ShouldPreserveCustomSize())
+                {
+                    SetSignedWidgetSize(value.scale);
+                }
             }
         }
 
@@ -1959,6 +1962,12 @@ namespace TiltBrush
 
         /// Size of the widget, which may be negative if SupportsNegativeSize is true.
         virtual public float GetSignedWidgetSize() { return 1.0f; }
+
+        /// Override in derived classes to prevent size changes when custom size should be preserved
+        protected virtual bool ShouldPreserveCustomSize()
+        {
+            return false;
+        }
 
         /// This sets the overall size of a widget. For non-uniformly scalable widgets, this will be the
         /// scale along the maximum aspect ratio. It is an error to try to set a negative scale if
