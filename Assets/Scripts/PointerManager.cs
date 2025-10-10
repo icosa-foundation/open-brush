@@ -47,6 +47,13 @@ namespace TiltBrush
             TwoHanded = 6001
         }
 
+        public enum PointerPaintingOverride
+        {
+            Inherit,
+            ForcedOn,
+            ForcedOff,
+        }
+
         [Serializable]
         public enum CustomSymmetryType
         {
@@ -191,6 +198,11 @@ namespace TiltBrush
         private List<PointerScript> m_ScriptedPointers;
         private List<TrTransform> m_ScriptedTransforms;
         private List<TrTransform> m_ScriptedTrFixes; // Fixes for reflection transforms
+
+        private List<PointerPaintingOverride> m_ScriptedPointerPaintOverrides;
+        private List<bool> m_ScriptedPointerHasRecordedStrokeThisLine;
+        private HashSet<int> m_ScriptedPointerForceNewStrokeRequests;
+        private bool m_ScriptedPointersNeedMainStrokeMerge;
 
         private bool m_InPlaybackMode;
 
@@ -503,6 +515,8 @@ namespace TiltBrush
             m_RemoteUserPointers = new List<PointerScript>();
             m_CustomMirrorMatrices = new List<Matrix4x4>();
             m_ScriptedPointers = new List<PointerScript>();
+            m_ScriptedPointerPaintOverrides = new List<PointerPaintingOverride>();
+            m_ScriptedPointerForceNewStrokeRequests = new HashSet<int>();
 
             for (int i = 0; i < m_Pointers.Length; ++i)
             {
@@ -881,6 +895,410 @@ namespace TiltBrush
             }
         }
 
+        private void EnsureScriptedPointerPaintData(int pointerCount)
+        {
+            if (m_ScriptedPointerPaintOverrides == null)
+            {
+                m_ScriptedPointerPaintOverrides = new List<PointerPaintingOverride>();
+            }
+
+            if (m_ScriptedPointerHasRecordedStrokeThisLine == null)
+            {
+                m_ScriptedPointerHasRecordedStrokeThisLine = new List<bool>();
+            }
+
+            if (m_ScriptedPointerForceNewStrokeRequests == null)
+            {
+                m_ScriptedPointerForceNewStrokeRequests = new HashSet<int>();
+            }
+
+            if (m_ScriptedPointerPaintOverrides.Count < pointerCount)
+            {
+                while (m_ScriptedPointerPaintOverrides.Count < pointerCount)
+                {
+                    m_ScriptedPointerPaintOverrides.Add(PointerPaintingOverride.Inherit);
+                }
+            }
+            else if (m_ScriptedPointerPaintOverrides.Count > pointerCount)
+            {
+                m_ScriptedPointerPaintOverrides.RemoveRange(pointerCount,
+                    m_ScriptedPointerPaintOverrides.Count - pointerCount);
+            }
+
+            if (m_ScriptedPointerHasRecordedStrokeThisLine.Count < pointerCount)
+            {
+                while (m_ScriptedPointerHasRecordedStrokeThisLine.Count < pointerCount)
+                {
+                    m_ScriptedPointerHasRecordedStrokeThisLine.Add(false);
+                }
+            }
+            else if (m_ScriptedPointerHasRecordedStrokeThisLine.Count > pointerCount)
+            {
+                m_ScriptedPointerHasRecordedStrokeThisLine.RemoveRange(pointerCount,
+                    m_ScriptedPointerHasRecordedStrokeThisLine.Count - pointerCount);
+            }
+
+            if (m_ScriptedPointerForceNewStrokeRequests.Count > 0)
+            {
+                m_ScriptedPointerForceNewStrokeRequests.RemoveWhere(i => i >= pointerCount);
+            }
+        }
+
+        private void ResetScriptedPointerPaintData()
+        {
+            m_ScriptedPointerPaintOverrides?.Clear();
+            m_ScriptedPointerHasRecordedStrokeThisLine?.Clear();
+            m_ScriptedPointerForceNewStrokeRequests?.Clear();
+            m_ScriptedPointersNeedMainStrokeMerge = false;
+        }
+
+        private void ResetScriptedPointerStrokeContinuationState()
+        {
+            if (m_ScriptedPointerHasRecordedStrokeThisLine != null)
+            {
+                for (int i = 0; i < m_ScriptedPointerHasRecordedStrokeThisLine.Count; ++i)
+                {
+                    m_ScriptedPointerHasRecordedStrokeThisLine[i] = false;
+                }
+            }
+
+            m_ScriptedPointersNeedMainStrokeMerge = false;
+        }
+
+        private bool IsValidScriptedPointerIndex(int index, bool logModeWarning = true)
+        {
+            if (m_CurrentSymmetryMode != SymmetryMode.ScriptedSymmetryMode)
+            {
+                if (logModeWarning)
+                {
+                    Debug.LogWarning("Pointer paint overrides are only available in scripted symmetry mode.");
+                }
+                return false;
+            }
+
+            if (index < 0 || index >= m_NumActivePointers)
+            {
+                Debug.LogWarning($"Pointer index {index} is out of range for scripted overrides.");
+                return false;
+            }
+
+            EnsureScriptedPointerPaintData(m_NumActivePointers);
+            return true;
+        }
+
+        public PointerPaintingOverride GetScriptedPointerPaintOverride(int index)
+        {
+            if (!IsValidScriptedPointerIndex(index, logModeWarning: false))
+            {
+                return PointerPaintingOverride.Inherit;
+            }
+
+            return m_ScriptedPointerPaintOverrides[index];
+        }
+
+        public List<PointerPaintingOverride> GetScriptedPointerPaintOverridesSnapshot()
+        {
+            if (m_CurrentSymmetryMode != SymmetryMode.ScriptedSymmetryMode)
+            {
+                return new List<PointerPaintingOverride>();
+            }
+
+            EnsureScriptedPointerPaintData(m_NumActivePointers);
+            return m_ScriptedPointerPaintOverrides.Take(m_NumActivePointers).ToList();
+        }
+
+        public void SetScriptedPointerPaintOverride(int index, PointerPaintingOverride mode)
+        {
+            if (!IsValidScriptedPointerIndex(index))
+            {
+                return;
+            }
+
+            m_ScriptedPointerPaintOverrides[index] = mode;
+
+            if (mode != PointerPaintingOverride.ForcedOn)
+            {
+                m_ScriptedPointerForceNewStrokeRequests.Remove(index);
+            }
+        }
+
+        public void ForceScriptedPointerNewStroke(int index)
+        {
+            if (!IsValidScriptedPointerIndex(index))
+            {
+                return;
+            }
+
+            m_ScriptedPointerForceNewStrokeRequests.Add(index);
+        }
+
+        private bool ShouldPointerPaint(int index)
+        {
+            bool shouldPaint = m_LineEnabled;
+
+            if (m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode &&
+                m_ScriptedPointerPaintOverrides != null &&
+                index < m_ScriptedPointerPaintOverrides.Count)
+            {
+                switch (m_ScriptedPointerPaintOverrides[index])
+                {
+                    case PointerPaintingOverride.ForcedOn:
+                        shouldPaint = true;
+                        break;
+                    case PointerPaintingOverride.ForcedOff:
+                        shouldPaint = false;
+                        break;
+                }
+            }
+
+            return shouldPaint;
+        }
+
+        private bool IsLineRequested()
+        {
+            if (m_LineEnabled)
+            {
+                return true;
+            }
+
+            if (m_CurrentSymmetryMode != SymmetryMode.ScriptedSymmetryMode ||
+                m_ScriptedPointerPaintOverrides == null)
+            {
+                return false;
+            }
+
+            int pointerCount = Mathf.Min(m_NumActivePointers, m_ScriptedPointerPaintOverrides.Count);
+            for (int i = 0; i < pointerCount; ++i)
+            {
+                if (m_ScriptedPointerPaintOverrides[i] == PointerPaintingOverride.ForcedOn)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void StartPointerStroke(int pointerIndex)
+        {
+            StartPointerStroke(pointerIndex, App.Scene.ActiveCanvas);
+        }
+
+        private void StartPointerStroke(int pointerIndex, CanvasScript canvas)
+        {
+            if (pointerIndex < 0 || pointerIndex >= m_NumActivePointers)
+            {
+                return;
+            }
+
+            if (!ShouldPointerPaint(pointerIndex))
+            {
+                return;
+            }
+
+            PointerData pointerData = m_Pointers[pointerIndex];
+            PointerScript script = pointerData.m_Script;
+
+            if (script.IsCreatingStroke())
+            {
+                return;
+            }
+
+            script.DisablePreviewLine();
+            script.AllowPreviewLine(false);
+
+            var xfPointer_CS = canvas.AsCanvas[script.transform];
+
+            ParametricStrokeCreator currentCreator = null;
+            if (m_StraightEdgeEnabled)
+            {
+                switch (StraightEdgeGuide.CurrentShape)
+                {
+                    case StraightEdgeGuideScript.Shape.Line:
+                        currentCreator = new LineCreator(xfPointer_CS, flat: true);
+                        break;
+                    case StraightEdgeGuideScript.Shape.Circle:
+                        currentCreator = new CircleCreator(xfPointer_CS);
+                        break;
+                    case StraightEdgeGuideScript.Shape.Sphere:
+                        currentCreator = new SphereCreator(
+                            xfPointer_CS,
+                            script.BrushSizeAbsolute,
+                            canvas.transform.GetUniformScale());
+                        break;
+                }
+            }
+
+            bool resetColors = true;
+            bool resetBrushes = true;
+            if (CurrentSymmetryMode is SymmetryMode.ScriptedSymmetryMode or SymmetryMode.MultiMirror)
+            {
+                if (m_SymmetryPointerColors != null && m_SymmetryPointerColors.Count > 0)
+                {
+                    script.SetColor(m_SymmetryPointerColors[pointerIndex % m_SymmetryPointerColors.Count]);
+                    resetColors = false;
+                }
+
+                if (m_SymmetryPointerBrushes != null && m_SymmetryPointerBrushes.Count > 0)
+                {
+                    script.SetBrush(m_SymmetryPointerBrushes[pointerIndex % m_SymmetryPointerBrushes.Count]);
+                    resetBrushes = false;
+                }
+            }
+
+            if (resetBrushes)
+            {
+                script.CurrentBrush = MainPointer.CurrentBrush;
+            }
+
+            if (resetColors)
+            {
+                var color = JitterEnabled
+                    ? GenerateJitteredColor(m_lastChosenColor, script.CurrentBrush.m_ColorLuminanceMin)
+                    : m_lastChosenColor;
+                script.SetColor(color);
+            }
+
+            script.CreateNewLine(
+                canvas,
+                xfPointer_CS,
+                currentCreator,
+                m_StraightEdgeProxyActive ? m_StraightEdgeProxyBrush : null);
+            script.SetControlPoint(xfPointer_CS, isKeeper: true);
+        }
+
+        private void StopPointerStroke(int pointerIndex, bool discard, bool markGroupContinue = false)
+        {
+            if (pointerIndex < 0 || pointerIndex >= m_NumActivePointers)
+            {
+                return;
+            }
+
+            var pointer = m_Pointers[pointerIndex].m_Script;
+            if (!pointer.IsCreatingStroke())
+            {
+                return;
+            }
+
+            PointerScript groupStart = null;
+            uint groupStartTime = 0;
+            DetachPointerStroke(pointerIndex, discard, ref groupStart, ref groupStartTime,
+                isFinalStroke: true, forceGroupContinue: markGroupContinue);
+
+            if (discard)
+            {
+                return;
+            }
+
+            bool duringRecording = m_CurrentLineCreationState == LineCreationState.RecordingInput;
+            if (m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode && duringRecording)
+            {
+                EnsureScriptedPointerPaintData(m_NumActivePointers);
+                if (pointerIndex < m_ScriptedPointerHasRecordedStrokeThisLine.Count)
+                {
+                    m_ScriptedPointersNeedMainStrokeMerge = true;
+                    m_ScriptedPointerHasRecordedStrokeThisLine[pointerIndex] = true;
+                }
+            }
+        }
+
+        private void DetachPointerStroke(
+            int pointerIndex,
+            bool discard,
+            ref PointerScript groupStart,
+            ref uint groupStartTime,
+            bool isFinalStroke,
+            bool forceGroupContinue = false)
+        {
+            if (pointerIndex < 0 || pointerIndex >= m_NumActivePointers)
+            {
+                return;
+            }
+
+            var pointer = m_Pointers[pointerIndex].m_Script;
+            if (!pointer.IsCreatingStroke())
+            {
+                return;
+            }
+
+            bool bDiscardLine = discard || pointer.ShouldDiscardCurrentLine();
+            if (bDiscardLine)
+            {
+                pointer.DetachLine(true, null, SketchMemoryScript.StrokeFlags.None, false);
+            }
+            else
+            {
+                SketchMemoryScript.StrokeFlags flags = SketchMemoryScript.StrokeFlags.None;
+                if (groupStart == null)
+                {
+                    groupStart = pointer;
+                    groupStartTime = groupStart.TimestampMs;
+                }
+                else
+                {
+                    flags |= SketchMemoryScript.StrokeFlags.IsGroupContinue;
+                    Debug.Assert(pointer.TimestampMs == groupStartTime);
+                }
+
+                if (forceGroupContinue)
+                {
+                    flags |= SketchMemoryScript.StrokeFlags.IsGroupContinue;
+                }
+
+                pointer.DetachLine(false, null, flags, isFinalStroke);
+            }
+        }
+
+        private void UpdateScriptedPointerPaintingDuringRecording()
+        {
+            if (m_CurrentSymmetryMode != SymmetryMode.ScriptedSymmetryMode)
+            {
+                return;
+            }
+
+            EnsureScriptedPointerPaintData(m_NumActivePointers);
+            var canvas = App.Scene.ActiveCanvas;
+
+            for (int i = 0; i < m_NumActivePointers; ++i)
+            {
+                var script = m_Pointers[i].m_Script;
+                bool isPainting = script.IsCreatingStroke();
+
+                if (m_ScriptedPointerForceNewStrokeRequests.Remove(i))
+                {
+                    if (isPainting)
+                    {
+                        bool markContinue =
+                            m_ScriptedPointerHasRecordedStrokeThisLine[i];
+                        StopPointerStroke(i, discard: false, markGroupContinue: markContinue);
+                        isPainting = false;
+                    }
+
+                    if (ShouldPointerPaint(i) ||
+                        m_ScriptedPointerPaintOverrides[i] == PointerPaintingOverride.ForcedOn)
+                    {
+                        StartPointerStroke(i, canvas);
+                        continue;
+                    }
+                }
+
+                bool shouldPaint = ShouldPointerPaint(i);
+                if (shouldPaint)
+                {
+                    if (!isPainting)
+                    {
+                        StartPointerStroke(i, canvas);
+                    }
+                }
+                else if (isPainting)
+                {
+                    bool markContinue =
+                        m_ScriptedPointerHasRecordedStrokeThisLine[i];
+                    StopPointerStroke(i, discard: false, markGroupContinue: markContinue);
+                }
+            }
+        }
+
         private void UpdateScriptedTransforms(out bool bNeedsDummyPointer)
         {
             Transform rAttachPoint_GS = InputManager.m_Instance.GetBrushControllerAttachPoint();
@@ -891,6 +1309,7 @@ namespace TiltBrush
             {
                 m_ScriptedTransforms = new List<TrTransform> { TrTransform.identity };
                 ChangeNumActivePointers(0);
+                ResetScriptedPointerPaintData();
                 bNeedsDummyPointer = false;
                 return;
             }
@@ -900,7 +1319,18 @@ namespace TiltBrush
             int prevCount = m_ScriptedTransforms != null ? m_ScriptedTransforms.Count : 0;
             if (transforms.Count != prevCount || m_ScriptedTransforms == null)
             {
+                if (prevCount > transforms.Count)
+                {
+                    for (int i = transforms.Count; i < prevCount && i < m_NumActivePointers; ++i)
+                    {
+                        bool markContinue =
+                            i < m_ScriptedPointerHasRecordedStrokeThisLine.Count &&
+                            m_ScriptedPointerHasRecordedStrokeThisLine[i];
+                        StopPointerStroke(i, discard: false, markGroupContinue: markContinue);
+                    }
+                }
                 ChangeNumActivePointers(transforms.Count);
+                EnsureScriptedPointerPaintData(transforms.Count);
                 m_ScriptedTransforms = new List<TrTransform>(transforms.Count);
                 m_ScriptedTrFixes = new List<TrTransform>(transforms.Count);
             }
@@ -909,6 +1339,8 @@ namespace TiltBrush
                 m_ScriptedTransforms.Clear();
                 m_ScriptedTrFixes.Clear();
             }
+
+            EnsureScriptedPointerPaintData(m_NumActivePointers);
 
             bNeedsDummyPointer = true;
             MatrixListApiWrapper matList = null;
@@ -1012,6 +1444,7 @@ namespace TiltBrush
             if (m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
             {
                 LuaManager.Instance.EndActiveScript(LuaApiCategory.SymmetryScript);
+                ResetScriptedPointerPaintData();
             }
 
             int active = m_NumActivePointers;
@@ -1379,11 +1812,12 @@ namespace TiltBrush
         public void UpdateLine()
         {
             bool playbackPointersAvailable = m_NumActivePointers <= NumFreePlaybackPointers();
+            bool lineRequested = IsLineRequested();
 
             switch (m_CurrentLineCreationState)
             {
                 case LineCreationState.WaitingForInput:
-                    if (m_LineEnabled)
+                    if (lineRequested)
                     {
                         if (playbackPointersAvailable)
                         {
@@ -1398,7 +1832,7 @@ namespace TiltBrush
 
                 // TODO: unique state for capturing straightedge 2nd point rather than overload RecordingInput
                 case LineCreationState.RecordingInput:
-                    if (m_LineEnabled)
+                    if (lineRequested)
                     {
                         if (playbackPointersAvailable)
                         {
@@ -1426,6 +1860,12 @@ namespace TiltBrush
                         {
                             OnDrawDisallowed();
                             Transition_RecordingInput_WaitingForInput();
+                        }
+
+                        if (m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode &&
+                            m_CurrentLineCreationState == LineCreationState.RecordingInput)
+                        {
+                            UpdateScriptedPointerPaintingDuringRecording();
                         }
                     }
                     else
@@ -1675,6 +2115,11 @@ namespace TiltBrush
         // stopped and started a new one.
         void InitiateLine(bool isContinue = false)
         {
+            if (!isContinue && m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
+            {
+                ResetScriptedPointerStrokeContinuationState();
+            }
+
             // Turn off the preview when we start drawing
             for (int i = 0; i < m_NumActivePointers; ++i)
             {
@@ -1698,65 +2143,7 @@ namespace TiltBrush
             CanvasScript canvas = App.Scene.ActiveCanvas;
             for (int i = 0; i < m_NumActivePointers; ++i)
             {
-                PointerScript script = m_Pointers[i].m_Script;
-                var xfPointer_CS = canvas.AsCanvas[script.transform];
-
-                // Pass in parametric stroke creator.
-                ParametricStrokeCreator currentCreator = null;
-                if (m_StraightEdgeEnabled)
-                {
-                    switch (StraightEdgeGuide.CurrentShape)
-                    {
-                        case StraightEdgeGuideScript.Shape.Line:
-                            currentCreator = new LineCreator(xfPointer_CS, flat: true);
-                            break;
-                        case StraightEdgeGuideScript.Shape.Circle:
-                            currentCreator = new CircleCreator(xfPointer_CS);
-                            break;
-                        case StraightEdgeGuideScript.Shape.Sphere:
-                            currentCreator = new SphereCreator(xfPointer_CS, script.BrushSizeAbsolute,
-                                canvas.transform.GetUniformScale());
-                            break;
-                    }
-                }
-
-                bool resetColors = true;
-                bool resetBrushes = true;
-                // Currently only Multimirror mode shows UI for color shift
-                // So disable it for all other modes
-                // TODO Better logic around when to set and revert colors
-                if (CurrentSymmetryMode is SymmetryMode.ScriptedSymmetryMode or SymmetryMode.MultiMirror)
-                {
-                    if (m_SymmetryPointerColors != null && m_SymmetryPointerColors.Count > 0)
-                    {
-                        script.SetColor(m_SymmetryPointerColors[i % m_SymmetryPointerColors.Count]);
-                        resetColors = false;
-                    }
-
-                    if (m_SymmetryPointerBrushes != null && m_SymmetryPointerBrushes.Count > 0)
-                    {
-                        script.SetBrush(m_SymmetryPointerBrushes[i % m_SymmetryPointerBrushes.Count]);
-                        resetBrushes = false;
-                    }
-                }
-
-                // Ensure brush and color is reset after using scripts
-                if (resetBrushes)
-                {
-                    script.CurrentBrush = MainPointer.CurrentBrush;
-                }
-                if (resetColors)
-                {
-                    var color = JitterEnabled ?
-                        GenerateJitteredColor(m_lastChosenColor, script.CurrentBrush.m_ColorLuminanceMin) :
-                        m_lastChosenColor;
-                    script.SetColor(color);
-                }
-
-                script.CreateNewLine(
-                    canvas, xfPointer_CS, currentCreator,
-                    m_StraightEdgeProxyActive ? m_StraightEdgeProxyBrush : null);
-                script.SetControlPoint(xfPointer_CS, isKeeper: true);
+                StartPointerStroke(i, canvas);
             }
         }
 
@@ -1779,39 +2166,14 @@ namespace TiltBrush
             //discard or solidify every pointer's active line
             for (int i = 0; i < m_NumActivePointers; ++i)
             {
-                var pointer = m_Pointers[i].m_Script;
-                // XXX: when would an active pointer not be creating a line?
-                // Well - actually! When a plugin can override line creation per pointer...
-                // And also perhaps multiplayer
-                if (pointer.IsCreatingStroke())
-                {
-                    bool bDiscardLine = discard || pointer.ShouldDiscardCurrentLine();
-                    if (bDiscardLine)
-                    {
-                        pointer.DetachLine(bDiscardLine, null, SketchMemoryScript.StrokeFlags.None);
-                    }
-                    else
-                    {
-
-                        SketchMemoryScript.StrokeFlags flags = SketchMemoryScript.StrokeFlags.None;
-                        if (groupStart == null)
-                        {
-                            groupStart = pointer;
-                            // Capture this, because stroke becomes invalid after being detached.
-                            groupStartTime = groupStart.TimestampMs;
-                        }
-                        else
-                        {
-                            flags |= SketchMemoryScript.StrokeFlags.IsGroupContinue;
-                            // Verify IsGroupContinue invariant
-                            Debug.Assert(pointer.TimestampMs == groupStartTime);
-                        }
-
-                        // Set isFinalStroke to true only for the last pointer to ensure command chain invokes once all strokes are chained
-                        bool isFinalStroke = (i == m_NumActivePointers - 1);
-                        pointer.DetachLine(bDiscardLine, null, flags, isFinalStroke);
-                    }
-                }
+                bool isFinalStroke = (i == m_NumActivePointers - 1);
+                bool forceGroupContinue =
+                    !discard &&
+                    m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode &&
+                    m_ScriptedPointersNeedMainStrokeMerge &&
+                    i == 0;
+                DetachPointerStroke(i, discard, ref groupStart, ref groupStartTime, isFinalStroke,
+                    forceGroupContinue: forceGroupContinue);
             }
         }
 

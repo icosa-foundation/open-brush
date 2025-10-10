@@ -174,9 +174,27 @@ namespace TiltBrush
             m_ScriptPathsToUpdate.Add(e.FullPath);
         }
 
-        public void Init()
+        public void Init(bool immediate = false)
         {
             if (m_IsInitialized) return;
+            if (immediate)
+            {
+                _InitImpl();
+            }
+            else
+            {
+                StartCoroutine(
+                    OverlayManager.m_Instance.RunInCompositor(
+                        OverlayType.LoadGeneric,
+                        _InitImpl,
+                        0.25f
+                    )
+                );
+            }
+        }
+
+        private void _InitImpl()
+        {
             m_WebRequests = new LinkedList<LuaWebRequest>();
             m_TransformBuffers = new TransformBuffers(128);
             m_ScriptPathsToUpdate = new List<string>();
