@@ -66,7 +66,7 @@ namespace TiltBrush
         [NonSerialized] public Vector3 BrushOrigin = new Vector3(0, 13, 3);
         [NonSerialized] public Quaternion BrushInitialRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
         [NonSerialized] public Vector3 BrushPosition = new Vector3(0, 13, 3); // Good origin for monoscopic
-        [NonSerialized] public float PathSmoothing = 0.1f;
+        [NonSerialized] public float PathSmoothing = 0.25f;
         [NonSerialized] public Quaternion BrushRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
         [NonSerialized] public ForcePaintingMode ForcePainting;
         [NonSerialized] public ForcePaintingMode PreviousForcePaintingMode;
@@ -934,15 +934,12 @@ namespace TiltBrush
             }
             else
             {
-                TrTransform xfSpawn = new TrTransform();
-                CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                    WidgetManager.m_Instance.ModelWidgetPrefab, xfSpawn, Quaternion.identity, true
-                );
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-                ModelWidget modelWidget = createCommand.Widget as ModelWidget;
+                var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab, new TrTransform(), forceTransform: true);
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+                ModelWidget modelWidget = cmd.Widget as ModelWidget;
                 modelWidget.Model = model;
                 modelWidget.Show(true);
-                createCommand.SetWidgetCost(modelWidget.GetTiltMeterCost());
+                cmd.SetWidgetCost(modelWidget.GetTiltMeterCost());
 
                 WidgetManager.m_Instance.WidgetsDormant = false;
                 SketchControlsScript.m_Instance.EatGazeObjectInput();

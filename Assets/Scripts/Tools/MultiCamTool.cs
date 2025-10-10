@@ -1328,7 +1328,7 @@ namespace TiltBrush
             {
                 upper = i;
                 fullpath = string.Format(basename, upper - 1);
-                if (!File.Exists(fullpath))
+                if (!IsFilenameInUse(fullpath, style))
                 {
                     break;
                 }
@@ -1341,7 +1341,7 @@ namespace TiltBrush
             {
                 int middle = lower + (upper - lower) / 2;
                 fullpath = string.Format(basename, middle);
-                if (!File.Exists(fullpath))
+                if (!IsFilenameInUse(fullpath, style))
                 {
                     upper = middle;
                 }
@@ -1352,6 +1352,38 @@ namespace TiltBrush
             }
 
             return string.Format(basename, upper);
+        }
+
+        static private bool IsFilenameInUse(string fullpath, MultiCamStyle style)
+        {
+            // Check if the main file exists
+            if (File.Exists(fullpath))
+            {
+                return true;
+            }
+
+            // For video files, also check for associated still frame directory and USD file
+            if (style == MultiCamStyle.Video)
+            {
+                string baseFileName = Path.GetFileNameWithoutExtension(fullpath);
+                string directory = Path.GetDirectoryName(fullpath);
+
+                // Check for still frame directory
+                string frameDirectory = Path.Combine(directory, baseFileName + "_frames");
+                if (Directory.Exists(frameDirectory))
+                {
+                    return true;
+                }
+
+                // Check for USD file
+                string usdFile = Path.ChangeExtension(fullpath, ".usda");
+                if (File.Exists(usdFile))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         ScreenshotManager GetScreenshotManager(MultiCamStyle style)
