@@ -31,6 +31,7 @@ namespace TiltBrush
         private bool m_UseLegacyTint;
         private ReferenceImage m_ReferenceImage;
         private bool m_TextureAcquired;
+        private bool m_PreserveCustomSize;
 
         public string FileName =>
             m_ReferenceImage?.FileName ?? m_MissingInfo?.fileName ?? Unused("Error");
@@ -52,6 +53,34 @@ namespace TiltBrush
                 float tintValue = m_UseLegacyTint ? 1.0f : 0.0f;
                 m_ImageQuad.material.SetFloat("_LegacyReferenceImageTint", tintValue);
             }
+        }
+
+        /// Prevents automatic size recalculation when ReferenceImage is set
+        public void SetPreserveCustomSize(bool preserve)
+        {
+            m_PreserveCustomSize = preserve;
+        }
+
+        /// Override to check if custom size should be preserved
+        protected override bool ShouldPreserveCustomSize()
+        {
+            return m_PreserveCustomSize;
+        }
+
+        /// Public accessor for API to check preserve flag
+        public bool ShouldPreserveCustomSizePublic()
+        {
+            return m_PreserveCustomSize;
+        }
+
+        /// Override SetSignedWidgetSize to respect preserve flag
+        public new void SetSignedWidgetSize(float fScale)
+        {
+            if (m_PreserveCustomSize)
+            {
+                return;
+            }
+            base.SetSignedWidgetSize(fScale);
         }
 
         override protected void OnDestroy()
@@ -164,16 +193,23 @@ namespace TiltBrush
                 {
                     //update the aspect ratio of our mesh to match the image
                     m_Mesh.transform.localScale = Vector3.one * 0.5f;
-                    var sizeRange = GetWidgetSizeRange();
-                    if (m_ReferenceImage.ImageAspect > 1)
+
+                    // Only recalculate size if we're not preserving a custom size
+                    if (!m_PreserveCustomSize)
                     {
-                        m_Size = Mathf.Clamp(2 / m_ReferenceImage.ImageAspect / Coords.CanvasPose.scale,
-                            sizeRange.x, sizeRange.y);
-                    }
-                    else
-                    {
-                        m_Size = Mathf.Clamp(2 * m_ReferenceImage.ImageAspect / Coords.CanvasPose.scale,
-                            sizeRange.x, sizeRange.y);
+                        var sizeRange = GetWidgetSizeRange();
+                        float newSize;
+                        if (m_ReferenceImage.ImageAspect > 1)
+                        {
+                            newSize = Mathf.Clamp(2 / m_ReferenceImage.ImageAspect / Coords.CanvasPose.scale,
+                                sizeRange.x, sizeRange.y);
+                        }
+                        else
+                        {
+                            newSize = Mathf.Clamp(2 * m_ReferenceImage.ImageAspect / Coords.CanvasPose.scale,
+                                sizeRange.x, sizeRange.y);
+                        }
+                        m_Size = newSize;
                     }
                     UpdateScale();
 
@@ -280,7 +316,13 @@ namespace TiltBrush
                     image.SetMissing(tiltImage.AspectRatio, tiltImage.FileName);
                 }
                 image.SetSignedWidgetSize(tiltImage.Transforms[i].scale);
-                image.SetExtrusion(extrusionDepths[i], extrusionColors[i]);
+                if (extrusionDepths != null &&
+                    extrusionColors != null &&
+                    i < extrusionDepths.Length &&
+                    i < extrusionColors.Length)
+                {
+                    image.SetExtrusion(extrusionDepths[i], extrusionColors[i]);
+                }
                 image.Show(bShow: true, bPlayAudio: false);
                 image.transform.localPosition = tiltImage.Transforms[i].translation;
                 image.transform.localRotation = tiltImage.Transforms[i].rotation;

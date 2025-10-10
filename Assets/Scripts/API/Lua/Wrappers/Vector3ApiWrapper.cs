@@ -43,8 +43,8 @@ namespace TiltBrush
         [LuaDocsDescription("The component at the specified index")]
         public float this[int index]
         {
-            get => _Vector3[index];
-            set => _Vector3[index] = value;
+            get => Utils.WrappedIndexerGet(() => _Vector3[index]);
+            set => Utils.WrappedIndexerSet(() => _Vector3[index] = value);
         }
 
         [LuaDocsDescription("The x coordinate")]

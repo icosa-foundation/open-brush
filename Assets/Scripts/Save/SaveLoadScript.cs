@@ -33,6 +33,7 @@ namespace TiltBrush
         //
 
         public const string UNTITLED_PREFIX = "Untitled_";
+        public const string SAVESELECTED_PREFIX = "Selection_0";
         public const string TILTASAURUS_PREFIX = "Tiltasaurus_";
         public const string TILT_SUFFIX = ".tilt";
 
@@ -114,6 +115,7 @@ namespace TiltBrush
         [SerializeField] private int m_AutosaveFileCount;
 
         private string m_SaveDir;
+        private string m_SaveSelectedDir;
         private SceneFileInfo m_LastSceneFile;
         private bool m_LastSceneIsLegacy;
 
@@ -245,6 +247,8 @@ namespace TiltBrush
 
             m_SaveDir = App.UserSketchPath();
             FileUtils.InitializeDirectoryWithUserError(m_SaveDir);
+            m_SaveSelectedDir = App.SavedStrokesPath();
+            FileUtils.InitializeDirectoryWithUserError(m_SaveSelectedDir);
 
             MarkAsAutosaveDone();
             m_AutosaveThumbnailBytes = m_AutosaveThumbnail.EncodeToPNG();
@@ -272,7 +276,7 @@ namespace TiltBrush
                 string attempt = desiredFilename;
                 if (iIndex > 0)
                 {
-                    attempt += "_" + iIndex;
+                    attempt = desiredFilename + iIndex.ToString();
                 }
                 --iSanity;
                 ++iIndex;
@@ -336,7 +340,7 @@ namespace TiltBrush
         /// we either preserve SourceId, or if this was a cloud sketch set it from the original asset.
         public string TransferredSourceIdFrom(SceneFileInfo info)
         {
-            if (info is PolySceneFileInfo polyInfo)
+            if (info is IcosaSceneFileInfo polyInfo)
             {
                 // If the original is a Poly sketch it becomes the source.
                 return polyInfo.AssetId;
@@ -379,6 +383,16 @@ namespace TiltBrush
             return fileInfo;
         }
 
+        public DiskSceneFileInfo GetNewSaveSelectedFileInfo()
+        {
+            DiskSceneFileInfo fileInfo = new DiskSceneFileInfo(GenerateNewFilename(SAVESELECTED_PREFIX, m_SaveSelectedDir, TILT_SUFFIX));
+            if (m_LastSceneFile.Valid)
+            {
+                fileInfo.SourceId = TransferredSourceIdFrom(m_LastSceneFile);
+            }
+            return fileInfo;
+        }
+
         /// Save a snapshot directly to a location.
         /// The snapshot's AssetId is the source of truth
         public IEnumerator<Timeslice> SaveSnapshot(SceneFileInfo fileInfo, SketchSnapshot snapshot)
@@ -412,14 +426,19 @@ namespace TiltBrush
             return SaveLow(GetNewNameSceneFileInfo(false, filename));
         }
 
+        public IEnumerator<Timeslice> SaveSelected()
+        {
+            return SaveLow(GetNewSaveSelectedFileInfo(), selectedOnly: true);
+        }
+
         /// In order to for this to work properly:
         /// - m_SaveIconRenderTexture must contain data
         /// - SaveIconTool.LastSaveCameraRigState must be good
         /// SaveIconTool.ProgrammaticCaptureSaveIcon() does both of these things
         private IEnumerator<Timeslice> SaveLow(
-            SceneFileInfo info, bool bNotify = true, SketchSnapshot snapshot = null)
+            SceneFileInfo info, bool bNotify = true, SketchSnapshot snapshot = null, bool selectedOnly = false)
         {
-            Debug.Assert(!SelectionManager.m_Instance.HasSelection);
+            Debug.Assert(selectedOnly || !SelectionManager.m_Instance.HasSelection);
             if (snapshot != null && info.AssetId != snapshot.AssetId)
             {
                 Debug.LogError($"AssetId in FileInfo '{info.AssetId}' != shapshot '{snapshot.AssetId}'");
@@ -437,12 +456,13 @@ namespace TiltBrush
             m_LastSceneFile = info;
             AbortAutosave();
 
-            m_SaveCoroutine = ThreadedSave(info, bNotify, snapshot);
+            m_SaveCoroutine = ThreadedSave(info, selectedOnly, bNotify, snapshot);
             return m_SaveCoroutine;
         }
 
-        private IEnumerator<Timeslice> ThreadedSave(SceneFileInfo fileInfo,
-                                                    bool bNotify = true, SketchSnapshot snapshot = null)
+        private IEnumerator<Timeslice> ThreadedSave(
+            SceneFileInfo fileInfo, bool selectedOnly,
+            bool bNotify = true, SketchSnapshot snapshot = null)
         {
             // Cancel any pending transfers of this file.
             var cancelTask = App.DriveSync.CancelTransferAsync(fileInfo.FullPath);
@@ -452,7 +472,7 @@ namespace TiltBrush
             if (snapshot == null)
             {
                 IEnumerator<Timeslice> timeslicedConstructor;
-                snapshot = CreateSnapshotWithIcons(out timeslicedConstructor);
+                snapshot = CreateSnapshotWithIcons(out timeslicedConstructor, selectedOnly);
                 if (App.CurrentState != App.AppState.Reset)
                 {
                     App.Instance.SetDesiredState(App.AppState.Saving);
@@ -608,17 +628,18 @@ namespace TiltBrush
         }
 
         /// bAdditive is an experimental feature.
-        /// XXX: bAdditive is buggy; it re-draws any pre-existing strokes.
-        /// We never noticed before because the duplicate geometry draws on top of itself.
-        /// It begins to be noticeable now that loading goes into the active canvas,
-        /// which may not be the canvas of the original strokes.
-        public bool Load(SceneFileInfo fileInfo, bool bAdditive = false)
+        /// Additive loads append strokes without clearing existing ones.
+        /// All imported strokes are collapsed onto a fresh layer so existing
+        /// layers remain untouched. Loading the same sketch multiple times
+        /// will duplicate geometry on separate layers.
+        public bool Load(SceneFileInfo fileInfo, bool bAdditive, int targetLayer, out List<Stroke> strokes)
         {
             m_LastThumbnailBytes = null;
             if (!fileInfo.IsHeaderValid())
             {
                 OutputWindowScript.m_Instance.AddNewLine(
                     "Could not load: {0}", fileInfo.HumanName);
+                strokes = null;
                 return false;
             }
 
@@ -627,6 +648,7 @@ namespace TiltBrush
             if (metadata == null)
             {
                 OutputWindowScript.m_Instance.AddNewLine("Could not load: {0}", fileInfo.HumanName);
+                strokes = null;
                 return false;
             }
             using (var jsonReader = new JsonTextReader(new StreamReader(metadata)))
@@ -652,6 +674,7 @@ namespace TiltBrush
                         OutputWindowScript.m_Instance.AddNewLine(
                             "Lacking a capability to load {0}.  Upgrade Tilt Brush?",
                             fileInfo.HumanName);
+                        strokes = null;
                         return false;
                     }
                 }
@@ -729,7 +752,7 @@ namespace TiltBrush
                 {
                     Guid[] brushGuids = jsonData.BrushIndex.Select(GetForceSupersededBy).ToArray();
                     bool legacySketch;
-                    bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive, out legacySketch, out oldGroupToNewGroup);
+                    bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive, targetLayer, out legacySketch, out oldGroupToNewGroup, out strokes);
                     m_LastSceneIsLegacy |= legacySketch;
                     if (!success)
                     {
@@ -758,17 +781,12 @@ namespace TiltBrush
 
                     if (jsonData.ModelIndex != null)
                     {
-                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.ModelIndex);
-                    }
-
-                    if (jsonData.ModelIndex != null)
-                    {
-                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.ModelIndex);
+                        WidgetManager.m_Instance.SetModelDataFromTilt(jsonData.ModelIndex);
                     }
 
                     if (jsonData.LightIndex != null)
                     {
-                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.LightIndex);
+                        WidgetManager.m_Instance.SetLightDataFromTilt(jsonData.LightIndex);
                     }
 
                     if (jsonData.GuideIndex != null)
@@ -786,19 +804,19 @@ namespace TiltBrush
                     CustomColorPaletteStorage.m_Instance.SetColorsFromPalette(jsonData.Palette);
                     // Images are not stored on Poly either.
                     // TODO - will this assumption still hold with Icosa?
-                    if (!(fileInfo is PolySceneFileInfo))
+                    if (!(fileInfo is IcosaSceneFileInfo))
                     {
                         if (ReferenceImageCatalog.m_Instance != null && jsonData.ImageIndex != null)
                         {
-                            WidgetManager.m_Instance.SetDataFromTilt(jsonData.ImageIndex);
+                            WidgetManager.m_Instance.SetImageDataFromTilt(jsonData.ImageIndex);
                         }
                         if (VideoCatalog.Instance != null && jsonData.Videos != null)
                         {
-                            WidgetManager.m_Instance.SetDataFromTilt(jsonData.Videos);
+                            WidgetManager.m_Instance.SetVideoDataFromTilt(jsonData.Videos);
                         }
                         if (jsonData.TextWidgets != null)
                         {
-                            WidgetManager.m_Instance.SetDataFromTilt(jsonData.TextWidgets);
+                            WidgetManager.m_Instance.SetTextDataFromTilt(jsonData.TextWidgets);
                         }
                     }
                     if (jsonData.Mirror != null)
@@ -807,7 +825,7 @@ namespace TiltBrush
                     }
                     if (jsonData.CameraPaths != null)
                     {
-                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.CameraPaths);
+                        WidgetManager.m_Instance.SetCameraPathDataFromTilt(jsonData.CameraPaths);
                     }
                     if (fileInfo is GoogleDriveSketchSet.GoogleDriveFileInfo gdInfo)
                     {
@@ -914,7 +932,7 @@ namespace TiltBrush
 
             IEnumerator<Timeslice> timeslicedConstructor;
             SketchSnapshot snapshot = new SketchSnapshot(
-                m_JsonSerializer, m_SaveIconCapture, out timeslicedConstructor);
+                m_JsonSerializer, m_SaveIconCapture, out timeslicedConstructor, false);
             while (timeslicedConstructor.MoveNext())
             {
                 yield return timeslicedConstructor.Current;
@@ -1028,7 +1046,7 @@ namespace TiltBrush
         /// Like the SketchSnapshot constructor, but also populates the snapshot with icons.
         public async Task<SketchSnapshot> CreateSnapshotWithIconsAsync()
         {
-            var snapshot = CreateSnapshotWithIcons(out var coroutine);
+            var snapshot = CreateSnapshotWithIcons(out var coroutine, false);
             await coroutine; // finishes off the snapshot
             return snapshot;
         }
@@ -1036,11 +1054,11 @@ namespace TiltBrush
         /// Like the SketchSnapshot constructor, but also populates the snapshot with icons.
         /// As with the constructor, you must run the coroutine to completion before the snapshot
         /// is usable.
-        public SketchSnapshot CreateSnapshotWithIcons(out IEnumerator<Timeslice> coroutine)
+        public SketchSnapshot CreateSnapshotWithIcons(out IEnumerator<Timeslice> coroutine, bool selectedOnly)
         {
             IEnumerator<Timeslice> timeslicedConstructor;
             SketchSnapshot snapshot = new SketchSnapshot(
-                m_JsonSerializer, m_SaveIconCapture, out timeslicedConstructor);
+                m_JsonSerializer, m_SaveIconCapture, out timeslicedConstructor, selectedOnly);
             coroutine = CoroutineUtil.Sequence(
                 timeslicedConstructor,
                 snapshot.CreateSnapshotIcons(m_SaveIconRenderTexture,
@@ -1093,7 +1111,7 @@ namespace TiltBrush
 
                 // Load the temporary file into the scene
                 var fileInfo = new DiskSceneFileInfo(tempFilePath);
-                if (Load(fileInfo))
+                if (Load(fileInfo, bAdditive: false, targetLayer: -1, out List<Stroke> _))
                 {
                     Debug.Log("LoadFromBytes: Scene successfully loaded from bytes.");
                 }

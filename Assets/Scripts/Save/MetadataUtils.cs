@@ -102,9 +102,12 @@ namespace TiltBrush
 
             Dictionary<Model.Location, List<WidgetMetadata>> modelLocationMap =
                 new Dictionary<Model.Location, List<WidgetMetadata>>();
+            var modelSplitsMap = new Dictionary<Model.Location, (List<string> m_SplitMeshPaths, List<string> m_NotSplittableMeshPaths)>();
             foreach (var model in widgetModels)
             {
-                modelLocationMap[model.GetLocation()] = new List<WidgetMetadata>();
+                var loc = model.GetLocation();
+                modelLocationMap[loc] = new List<WidgetMetadata>();
+                modelSplitsMap[loc] = (model.m_SplitMeshPaths, model.m_NotSplittableMeshPaths);
             }
             foreach (var widget in widgets)
             {
@@ -123,6 +126,8 @@ namespace TiltBrush
                 var val = new TiltModels75
                 {
                     Location = elem.Key,
+                    SplitMeshPaths = modelSplitsMap[elem.Key].m_SplitMeshPaths,
+                    NotSplittableMeshPaths = modelSplitsMap[elem.Key].m_NotSplittableMeshPaths,
                 };
 
                 // Order and align the metadata.
@@ -431,7 +436,7 @@ namespace TiltBrush
                     for (int j = 0; j < data.ModelIndex[i].PinStates.Length; ++j)
                     {
                         data.ModelIndex[i].PinStates[j] = (data.ModelIndex[i].Location.GetLocationType() !=
-                            Model.Location.Type.PolyAssetId);
+                            Model.Location.Type.IcosaAssetId);
                     }
                 }
             }

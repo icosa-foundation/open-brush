@@ -14,7 +14,6 @@
 
 using UnityEngine;
 using System.Collections.Generic;
-using GLTFast.Schema;
 using Unity.VectorGraphics;
 
 namespace TiltBrush
@@ -89,7 +88,7 @@ namespace TiltBrush
             foreach (Transform child in t) GetAllMeshes(filters, smrs, child, isRoot: false);
         }
 
-        public void Init()
+        public void UpdateAllMeshChildren()
         {
             var filters = new List<MeshFilter>();
             var smrs = new List<SkinnedMeshRenderer>();
@@ -138,5 +137,6 @@ namespace TiltBrush
             }
 #endif
         }
+
     }
 } // namespace TiltBrush

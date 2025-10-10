@@ -28,8 +28,8 @@ function App:ShowScriptsFolder() end
 
 function App:ShowExportFolder() end
 
-
-function App:ShowSketchesFolder() end
+---@param index number The index of the sketch (0 being the most recent, then 1 and so on)
+function App:ShowSketchesFolder(index) end
 
 ---@param active boolean True means activate, false means deactivate
 function App:StraightEdge(active) end
@@ -96,6 +96,10 @@ function App:Take360Snapshot(tr, filename, width) end
 ---@field triggerIsPressed boolean Check whether the brush trigger is currently pressed
 ---@field triggerPressedThisFrame boolean Check whether the brush trigger was pressed during the current frame
 ---@field triggerReleasedThisFrame boolean Check whether the brush trigger was released during the current frame
+---@field button1IsPressed boolean Check whether the brush button 1 is currently pressed
+---@field button1PressedThisFrame boolean Check whether the brush button 1 was pressed during the current frame
+---@field button2IsPressed boolean Check whether the brush button 2 is currently pressed
+---@field button2PressedThisFrame boolean Check whether the brush button 2 was pressed during the current frame
 ---@field distanceMoved number The distance moved by the brush
 ---@field distanceDrawn number The distance drawn by the brush (i.e. distance since the trigger was last pressed)
 ---@field position Vector3 | number[] The 3D position of the Brush Controller's tip
@@ -1104,6 +1108,10 @@ function Matrix:NewTRS(translation, rotation, scale) end
 ---@class MatrixList
 ---@field count number The number of matrices
 MatrixList = {}
+---@param count number The number of matrices to create
+---@return MatrixList # 
+function MatrixList:New(count) end
+
 
 
 ---@class Model
@@ -1862,6 +1870,31 @@ function Symmetry:GetBrushGuids() end
 ---@param path Path The path to convert
 ---@return Path # 
 function Symmetry:PathToPolar(path) end
+
+---@param pointerIndex number Zero-based pointer index matching the transform order returned by the symmetry script.
+---@param mode SymmetryPointerPaintMode The override to apply to the pointer.
+function Symmetry:SetPointerPaintMode(pointerIndex, mode) end
+
+---@param pointerIndex number Zero-based pointer index matching the transform order returned by the symmetry script.
+---@return SymmetryPointerPaintMode # 
+function Symmetry:GetPointerPaintMode(pointerIndex) end
+
+
+---@return System.Collections.Generic.List`1[SymmetryPointerPaintMode] # 
+function Symmetry:GetPointerPaintModes() end
+
+---@param pointerIndex number Zero-based pointer index matching the transform order returned by the symmetry script.
+function Symmetry:StartPointer(pointerIndex) end
+
+---@param pointerIndex number Zero-based pointer index matching the transform order returned by the symmetry script.
+function Symmetry:StopPointer(pointerIndex) end
+
+---@param pointerIndex number Zero-based pointer index matching the transform order returned by the symmetry script.
+function Symmetry:ForcePointerNewStroke(pointerIndex) end
+
+---@param path Path The path to duplicate
+---@return PathList # 
+function Symmetry:ApplyToPath(path) end
 
 
 

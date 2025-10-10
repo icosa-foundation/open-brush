@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 109932, guid: 11a71a8b70e19254abe00d5e569f428c, type: 3}
@@ -63,16 +64,26 @@ PrefabInstance:
     - target: {fileID: 2478559423573741591, guid: 11a71a8b70e19254abe00d5e569f428c,
         type: 3}
       propertyPath: m_PanelPopUpMap.Array.size
-      value: 12
+      value: 13
       objectReference: {fileID: 0}
     - target: {fileID: 2478559423573741591, guid: 11a71a8b70e19254abe00d5e569f428c,
         type: 3}
       propertyPath: m_PanelPopUpMap.Array.data[10].m_Command
-      value: 50
+      value: 5200
       objectReference: {fileID: 0}
     - target: {fileID: 2478559423573741591, guid: 11a71a8b70e19254abe00d5e569f428c,
         type: 3}
       propertyPath: m_PanelPopUpMap.Array.data[11].m_Command
+      value: 5604
+      objectReference: {fileID: 0}
+    - target: {fileID: 2478559423573741591, guid: 11a71a8b70e19254abe00d5e569f428c,
+        type: 3}
+      propertyPath: m_PanelPopUpMap.Array.data[12].m_Command
+      value: 5605
+      objectReference: {fileID: 0}
+    - target: {fileID: 2478559423573741591, guid: 11a71a8b70e19254abe00d5e569f428c,
+        type: 3}
+      propertyPath: m_PanelPopUpMap.Array.data[13].m_Command
       value: 5200
       objectReference: {fileID: 0}
     - target: {fileID: 2478559423573741591, guid: 11a71a8b70e19254abe00d5e569f428c,
@@ -103,7 +114,7 @@ PrefabInstance:
         type: 3}
       propertyPath: m_PanelPopUpMap.Array.data[10].m_PopUpPrefab
       value: 
-      objectReference: {fileID: 1867976667913174, guid: f454fbf43a220d645a14594cb79db0af,
+      objectReference: {fileID: 8644332587479430734, guid: bdb7d2ac05cca8346b210c2b576878cb,
         type: 3}
     - target: {fileID: 2478559423573741591, guid: 11a71a8b70e19254abe00d5e569f428c,
         type: 3}
@@ -111,5 +122,20 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 8644332587479430734, guid: bdb7d2ac05cca8346b210c2b576878cb,
         type: 3}
+    - target: {fileID: 2478559423573741591, guid: 11a71a8b70e19254abe00d5e569f428c,
+        type: 3}
+      propertyPath: m_PanelPopUpMap.Array.data[12].m_PopUpPrefab
+      value: 
+      objectReference: {fileID: 1386358278955912, guid: 1aabadb277d16b648bf005f3616a1f03,
+        type: 3}
+    - target: {fileID: 2478559423573741591, guid: 11a71a8b70e19254abe00d5e569f428c,
+        type: 3}
+      propertyPath: m_PanelPopUpMap.Array.data[13].m_PopUpPrefab
+      value: 
+      objectReference: {fileID: 8644332587479430734, guid: bdb7d2ac05cca8346b210c2b576878cb,
+        type: 3}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 11a71a8b70e19254abe00d5e569f428c, type: 3}

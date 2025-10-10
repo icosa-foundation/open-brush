@@ -30,6 +30,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_Warning;
         [SerializeField] private Material m_WarningMaterial;
         [SerializeField] private Material m_ErrorMaterial;
+        [SerializeField] private bool m_IsMergeStrokesButton;
 
         private bool m_ThumbnailLoaded = false;
         private bool m_SizeOk = true;
@@ -150,17 +151,27 @@ namespace TiltBrush
 
         override protected void OnButtonPressed()
         {
-            if (!m_SketchSet.GetSketchSceneFileInfo(m_SketchIndex).Available &&
-                m_SketchSet.Type != SketchSetType.Drive)
+            if (!m_SketchSet.GetSketchSceneFileInfo(m_SketchIndex).Available)
             {
-                return;
+                // The sketch is not ready to load. Does this sketch set support 
+                // downloading from the cloud?
+                if (m_SketchSet.Type != SketchSetType.Drive
+                    && m_SketchSet.Type != SketchSetType.Curated
+                    && m_SketchSet.Type != SketchSetType.Liked)
+                {
+                    // No, not one of the cloud types.
+                    return;
+                }
             }
 
             // Sequence on load is:
             // LoadConfirmUnsaved -> LoadWaitOnDownload -> LoadConfirmComplex -> LoadComplexHigh ->  Load
+            var cmd = m_IsMergeStrokesButton ?
+                SketchControlsScript.GlobalCommands.MergeBrushStrokes :
+                SketchControlsScript.GlobalCommands.LoadConfirmUnsaved;
             SketchControlsScript.m_Instance.IssueGlobalCommand(
-                SketchControlsScript.GlobalCommands.LoadConfirmUnsaved,
-                m_SketchIndex, (int)m_SketchSet.Type);
+                cmd, m_SketchIndex, (int)m_SketchSet.Type
+            );
             ResetState();
         }
 

@@ -172,6 +172,13 @@ namespace TiltBrush
                     snapshot.layerIndex = canvasToIndexMap[stroke.Canvas];
                     yield return snapshot;
                 }
+                else if (stroke.IsGeometryEnabled && !canvasToIndexMap.ContainsKey(stroke.Canvas))
+                {
+                    // This shouldn't happen
+                    Debug.Log($"Skipping layerless stroke {stroke.m_BrushGuid}");
+                    snapshot.layerIndex = canvasToIndexMap[App.Scene.MainCanvas];
+                    yield return snapshot;
+                }
                 else
                 {
                     // Effectively, if the lead stroke of group is inactive (erased), we promote
@@ -364,7 +371,8 @@ namespace TiltBrush
 
 
         /// Leaves stream in indeterminate state; caller should Close() upon return.
-        public static bool ReadMemory(Stream stream, Guid[] brushList, bool bAdditive, out bool isLegacy, out Dictionary<int, int> oldGroupToNewGroup)
+        public static bool ReadMemory(Stream stream, Guid[] brushList, bool bAdditive, int targetLayer,
+            out bool isLegacy, out Dictionary<int, int> oldGroupToNewGroup, out List<Stroke> strokes)
         {
             bool allowFastPath = BitConverter.IsLittleEndian;
             // Buffering speeds up fast path ~1.4x, slow path ~2.3x
@@ -389,7 +397,8 @@ namespace TiltBrush
             }
 
             oldGroupToNewGroup = new Dictionary<int, int>();
-            var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, bAdditive);
+            // When loading additively we want all strokes on a single new layer;
+            strokes = GetStrokes(bufferedStream, brushList, allowFastPath, targetLayer: targetLayer, timestampOffset: 0);
             if (strokes == null) { return false; }
 
             // Check that the strokes are in timestamp order.
@@ -426,7 +435,7 @@ namespace TiltBrush
         /// Parses a binary file into List of MemoryBrushStroke.
         /// Returns null on parse error.
         public static List<Stroke> GetStrokes(
-            Stream stream, Guid[] brushList, bool allowFastPath, bool squashLayers = false)
+            Stream stream, Guid[] brushList, bool allowFastPath, int targetLayer, uint timestampOffset)
         {
             var reader = new TiltBrush.SketchBinaryReader(stream);
 
@@ -514,9 +523,9 @@ namespace TiltBrush
                             }
                         case StrokeExtension.Layer:
                             UInt32 layerIndex = reader.UInt32();
-                            if (squashLayers)
+                            if (targetLayer != -1)
                             {
-                                layerIndex = 0;
+                                layerIndex = (uint)targetLayer;
                             }
                             var canvas = App.Scene.GetOrCreateLayer((int)layerIndex);
                             stroke.m_IntendedCanvas = canvas;
@@ -588,7 +597,7 @@ namespace TiltBrush
                                     rControlPoint.m_Pressure = reader.Float();
                                     break;
                                 case ControlPointExtension.Timestamp:
-                                    rControlPoint.m_TimestampMs = reader.UInt32();
+                                    rControlPoint.m_TimestampMs = reader.UInt32() + timestampOffset;
                                     break;
                                 default:
                                     // skip unknown extension

@@ -25,7 +25,6 @@ MonoBehaviour:
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
   m_ButtonTexture: {fileID: 2800000, guid: 99541d4e474bcb8449e92a310a2222c0, type: 3}
-  m_Description: BRUSH_LOFTEDHUESHIFT
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
@@ -43,7 +42,7 @@ MonoBehaviour:
   m_BrushVolumeUpSpeed: 4
   m_BrushVolumeDownSpeed: 4
   m_VolumeVelocityRangeMultiplier: 1
-  m_AudioReactive: 1
+  m_AudioReactive: 0
   m_ButtonAudio: {fileID: 0}
   m_Material: {fileID: 2100000, guid: d6e449a36e7a99c43963150911e57ece, type: 2}
   m_TextureAtlasV: 1
