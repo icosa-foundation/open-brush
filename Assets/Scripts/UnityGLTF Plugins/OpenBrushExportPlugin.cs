@@ -656,6 +656,12 @@ namespace TiltBrush
                 }
             }
 
+            // Simulate additive blending using emissive color
+            if (brushData.blendMode == 2)
+            {
+                materialNode.EmissiveFactor = GLTF.Math.Color.White;
+            }
+
             // Log texture status for debugging
             string normalStatus = materialNode.NormalTexture != null ? "YES" : "NO";
             string occlusionStatus = materialNode.OcclusionTexture != null ? "YES" : "NO";
