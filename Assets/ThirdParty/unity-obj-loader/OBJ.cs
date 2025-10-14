@@ -46,6 +46,10 @@ public class OBJ : MonoBehaviour
     private GeometryBuffer buffer;
     bool finished = false;
 
+    // Compiled regex patterns for performance
+    private static readonly Regex RegexWhitespaces = new Regex(@"\s+", RegexOptions.Compiled);
+    private static readonly Regex RegexNumber = new Regex(@"^[-+]?[0-9]*\.?[0-9]+$", RegexOptions.Compiled);
+
     #if UNITY_EDITOR
     void Start()
     {
@@ -197,7 +201,7 @@ public class OBJ : MonoBehaviour
         {
             for (int j = 1; j < p.Length; j++)
             {
-                string[] c = p[j].Trim().Split("/".ToCharArray());
+                string[] c = p[j].Trim().Split('/');
                 FaceIndices fi = new FaceIndices();
                 // vertex
                 int vi = ci(c[0]);
@@ -227,7 +231,7 @@ public class OBJ : MonoBehaviour
             int uvCount = buffer.uvs.Count;
             for (int j = 1; j < p.Length; j++)
             {
-                string[] c = p[j].Trim().Split("/".ToCharArray());
+                string[] c = p[j].Trim().Split('/');
                 FaceIndices fi = new FaceIndices();
                 // vertex
                 int vi = ci(c[0]);
@@ -255,8 +259,7 @@ public class OBJ : MonoBehaviour
 
     private void SetGeometryData(string data)
     {
-        string[] lines = data.Split("\n".ToCharArray());
-        Regex regexWhitespaces = new Regex(@"\s+");
+        string[] lines = data.Split('\n');
         bool isFirstInGroup = true;
         bool isFaceIndexPlus = true;
         for (int i = 0; i < lines.Length; i++)
@@ -267,7 +270,7 @@ public class OBJ : MonoBehaviour
             { // comment line
                 continue;
             }
-            string[] p = regexWhitespaces.Split(l);
+            string[] p = RegexWhitespaces.Split(l);
             switch (p[0])
             {
                 case O:
@@ -297,28 +300,27 @@ public class OBJ : MonoBehaviour
                     if (isFirstInGroup)
                     {
                         isFirstInGroup = false;
-                        string[] c = p[1].Trim().Split("/".ToCharArray());
+                        string[] c = p[1].Trim().Split('/');
                         isFaceIndexPlus = (ci(c[0]) >= 0);
                     }
                     GetFaceIndicesByOneFaceLine(faces, p, isFaceIndexPlus);
-                    if (p.Length == 4)
+
+                    // Use fan triangulation for all polygons (triangles, quads, and n-gons)
+                    // For a polygon with n vertices, create (n-2) triangles
+                    int numVertices = faces.Length;
+                    if (numVertices < 3)
                     {
-                        buffer.PushFace(faces[0]);
-                        buffer.PushFace(faces[1]);
-                        buffer.PushFace(faces[2]);
-                    }
-                    else if (p.Length == 5)
-                    {
-                        buffer.PushFace(faces[0]);
-                        buffer.PushFace(faces[1]);
-                        buffer.PushFace(faces[3]);
-                        buffer.PushFace(faces[3]);
-                        buffer.PushFace(faces[1]);
-                        buffer.PushFace(faces[2]);
+                        Debug.LogWarning($"Face has less than 3 vertices ({numVertices}), skipping");
                     }
                     else
                     {
-                        Debug.LogWarning("face vertex count :" + (p.Length - 1) + " larger than 4:");
+                        // Fan triangulation: pivot around first vertex (faces[0])
+                        for (int j = 1; j < numVertices - 1; j++)
+                        {
+                            buffer.PushFace(faces[0]);
+                            buffer.PushFace(faces[j]);
+                            buffer.PushFace(faces[j + 1]);
+                        }
                     }
                     break;
                 case MTL:
@@ -335,28 +337,22 @@ public class OBJ : MonoBehaviour
 
     private float cf(string v)
     {
-        try
+        if (float.TryParse(v, out float result))
         {
-            return float.Parse(v);
+            return result;
         }
-        catch (Exception e)
-        {
-            print(e);
-            return 0;
-        }
+        Debug.LogWarning($"Failed to parse float value: {v}");
+        return 0;
     }
 
     private int ci(string v)
     {
-        try
+        if (int.TryParse(v, out int result))
         {
-            return int.Parse(v);
+            return result;
         }
-        catch (Exception e)
-        {
-            print(e);
-            return 0;
-        }
+        Debug.LogWarning($"Failed to parse int value: {v}");
+        return 0;
     }
 
     private bool hasMaterials
@@ -387,11 +383,10 @@ public class OBJ : MonoBehaviour
 
     private void SetMaterialData(string data)
     {
-        string[] lines = data.Split("\n".ToCharArray());
+        string[] lines = data.Split('\n');
 
         materialData = new List<MaterialData>();
         MaterialData current = new MaterialData();
-        Regex regexWhitespaces = new Regex(@"\s+");
 
         for (int i = 0; i < lines.Length; i++)
         {
@@ -405,7 +400,7 @@ public class OBJ : MonoBehaviour
                 continue;
             }
             if (l.IndexOf("#") != -1) l = l.Substring(0, l.IndexOf("#"));
-            string[] p = regexWhitespaces.Split(l);
+            string[] p = RegexWhitespaces.Split(l);
             if (p[0].Trim() == "") continue;
 
             switch (p[0])
@@ -542,8 +537,6 @@ public class OBJ : MonoBehaviour
 
     private void BumpParameter(MaterialData m, string[] p)
     {
-        Regex regexNumber = new Regex(@"^[-+]?[0-9]*\.?[0-9]+$");
-
         var bumpParams = new Dictionary<String, BumpParamDef>();
         bumpParams.Add("bm", new BumpParamDef("bm", "string", 1, 1));
         bumpParams.Add("clamp", new BumpParamDef("clamp", "string", 1, 1));
@@ -585,7 +578,7 @@ public class OBJ : MonoBehaviour
                 }
                 if (def.valueType == "number")
                 {
-                    Match match = regexNumber.Match(p[pos]);
+                    Match match = RegexNumber.Match(p[pos]);
                     if (!match.Success)
                     {
                         isOptionNotEnough = true;
@@ -603,7 +596,7 @@ public class OBJ : MonoBehaviour
             {
                 if (def.valueType == "number")
                 {
-                    Match match = regexNumber.Match(p[pos]);
+                    Match match = RegexNumber.Match(p[pos]);
                     if (!match.Success)
                     {
                         break;
