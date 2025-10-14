@@ -87,6 +87,7 @@ namespace TiltBrush
         protected float m_BaseIconScale;
 
         public Action m_OnClose;
+        [NonSerialized] public PopUpWindow m_PreviousPopUp;
 
         public Collider GetCollider() { return m_WindowCollider; }
         public BasePanel GetParentPanel() { return m_ParentPanel; }
@@ -154,6 +155,7 @@ namespace TiltBrush
 
             Debug.Assert(rParent != null, "Why is the popup's parent null?");
             m_ParentPanel = rParent.GetComponent<BasePanel>();
+            PanelManager.m_Instance.LastPanelInteractedWith = m_ParentPanel;
 
             m_UIComponentManager = GetComponent<UIComponentManager>();
             m_UIComponentManager.SetColor(Color.white);

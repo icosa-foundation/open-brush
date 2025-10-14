@@ -276,7 +276,7 @@ namespace TiltBrush
         ///
         /// TODO: Consider moving the code from the "m_Type == StrokeType.BrushStroke"
         /// case of SetParentKeepWorldPosition() into here.
-        public void Recreate(TrTransform? leftTransform = null, CanvasScript canvas = null)
+        public void Recreate(TrTransform? leftTransform = null, CanvasScript canvas = null, bool absoluteScale = false)
         {
             // TODO: Try a fast-path that uses VertexLayout+GeometryPool to modify geo directly
             if (leftTransform != null || m_Type == Type.NotCreated)
@@ -289,8 +289,9 @@ namespace TiltBrush
                 }
                 if (leftTransform != null)
                 {
-                    LeftTransformControlPoints(leftTransform.Value);
+                    LeftTransformControlPoints(leftTransform.Value, absoluteScale);
                 }
+
                 // PointerManager's pointer management is a complete mess.
                 // "5" is the most-likely to be unused. It's terrible that this
                 // needs to go through a pointer.
@@ -334,7 +335,7 @@ namespace TiltBrush
         }
 
         // TODO: Possibly could optimize this in C++ for 11.5% of time in selection.
-        private void LeftTransformControlPoints(TrTransform leftTransform)
+        private void LeftTransformControlPoints(TrTransform leftTransform, bool absoluteScale = false)
         {
             for (int i = 0; i < m_ControlPoints.Length; i++)
             {
@@ -346,7 +347,23 @@ namespace TiltBrush
                 m_ControlPoints[i] = point;
             }
 
-            m_BrushScale *= leftTransform.scale;
+            m_BrushScale *= absoluteScale
+                ? Mathf.Abs(leftTransform.scale)
+                : leftTransform.scale;
+            InvalidateCopy();
+        }
+
+        private void LeftTransformControlPoints(Matrix4x4 leftTransform)
+        {
+            for (int i = 0; i < m_ControlPoints.Length; i++)
+            {
+                var point = m_ControlPoints[i];
+                point.m_Pos = leftTransform.MultiplyPoint3x4(point.m_Pos);
+                point.m_Orient = leftTransform.rotation * point.m_Orient;
+                m_ControlPoints[i] = point;
+            }
+
+            m_BrushScale *= Mathf.Abs(leftTransform.lossyScale.x);
             InvalidateCopy();
         }
 
@@ -479,5 +496,86 @@ namespace TiltBrush
 
             TiltMeterScript.m_Instance.AdjustMeter(this, up: !hide);
         }
+
+        private void _CheckValidLayerState()
+        {
+            if (!Canvas.BatchManager.OneStrokePerBatch)
+            {
+                throw new StrokeShaderModifierException($"Please set OneStrokePerBatch=true for this stroke's layer");
+            }
+        }
+
+        public void SetShaderClipping(float clipStart, float clipEnd)
+        {
+            _CheckValidLayerState();
+            var batch = m_BatchSubset.m_ParentBatch;
+            var material = batch.InstantiatedMaterial;
+            if (!material.HasFloat("_ClipStart") || !material.HasFloat("_ClipEnd"))
+            {
+                throw new StrokeShaderModifierException($"Brush material {material.name} does not support shader clipping");
+            }
+            float startIndex = clipStart * batch.Geometry.NumVerts;
+            float endIndex = clipEnd * batch.Geometry.NumVerts;
+            batch.InstantiatedMaterial.EnableKeyword("SHADER_SCRIPTING_ON");
+            batch.InstantiatedMaterial.SetFloat("_ClipStart", startIndex);
+            batch.InstantiatedMaterial.SetFloat("_ClipEnd", endIndex);
+        }
+
+        public void SetShaderFloat(string parameter, float value)
+        {
+            _CheckValidLayerState();
+            var batch = m_BatchSubset.m_ParentBatch;
+            if (ApiManager.ParameterRequiresScriptingKeyword(parameter))
+            {
+                batch.InstantiatedMaterial.EnableKeyword("SHADER_SCRIPTING_ON");
+            }
+            var material = batch.InstantiatedMaterial;
+            if (!material.HasFloat(parameter))
+            {
+                throw new StrokeShaderModifierException($"Brush material {material.name} does not have a float parameter named {parameter}");
+            }
+            material.SetFloat(parameter, value);
+        }
+
+        public void SetShaderColor(string parameter, ColorApiWrapper color)
+        {
+            _CheckValidLayerState();
+            var batch = m_BatchSubset.m_ParentBatch;
+            var material = batch.InstantiatedMaterial;
+            if (!material.HasColor(parameter))
+            {
+                throw new StrokeShaderModifierException($"Brush material {material.name} does not have a Color parameter named {parameter}");
+            }
+            batch.InstantiatedMaterial.SetColor(parameter, color._Color);
+        }
+
+        public void SetShaderTexture(string parameter, Texture2D image)
+        {
+            _CheckValidLayerState();
+            var batch = m_BatchSubset.m_ParentBatch;
+            var material = batch.InstantiatedMaterial;
+            if (!material.HasTexture(parameter))
+            {
+                throw new StrokeShaderModifierException($"Brush material {material.name} does not have a Texture parameter named {parameter}");
+            }
+            batch.InstantiatedMaterial.SetTexture(parameter, image);
+        }
+
+        public void SetShaderVector(string parameter, float x, float y = 0, float z = 0, float w = 0)
+        {
+            _CheckValidLayerState();
+            var batch = m_BatchSubset.m_ParentBatch;
+            var material = batch.InstantiatedMaterial;
+            if (!material.HasVector(parameter))
+            {
+                throw new StrokeShaderModifierException($"Brush material {material.name} does not have a vector parameter named {parameter}");
+            }
+            batch.InstantiatedMaterial.SetVector(parameter, new Vector4(x, y, z, w));
+        }
+    }
+
+    public class StrokeShaderModifierException : NotSupportedException
+    {
+        public StrokeShaderModifierException(string s) : base(s) { }
     }
 } // namespace TiltBrush

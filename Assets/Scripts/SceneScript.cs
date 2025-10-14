@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
@@ -38,6 +39,7 @@ namespace TiltBrush
 
         [SerializeField] private CanvasScript m_MainCanvas;
         [SerializeField] private CanvasScript m_SelectionCanvas;
+        [SerializeField] private Transform m_CanvasTransformPrefab;
 
         private bool m_bInitialized;
         private Light[] m_Lights;
@@ -144,6 +146,7 @@ namespace TiltBrush
         /// The initial start-up canvas; guaranteed to always exist
         public CanvasScript MainCanvas { get { return m_MainCanvas; } }
         public CanvasScript SelectionCanvas { get { return m_SelectionCanvas; } }
+        public Transform CanvasTransformPrefab { get { return m_CanvasTransformPrefab; } }
 
         public IEnumerable<CanvasScript> AllCanvases
         {
@@ -354,6 +357,74 @@ namespace TiltBrush
             App.Scene.LayerCanvasesUpdate?.Invoke();
         }
 
+        /// <summary>
+        /// Translates the provided strokes so that the center of their
+        /// bounding box is positioned at the given world space location.
+        /// </summary>
+        /// <param name="strokes">Collection of strokes to move.</param>
+        /// <param name="worldPosition">Target world-space position for the centroid.</param>
+        public void MoveStrokesCentroidTo(IEnumerable<Stroke> strokes, Vector3 worldPosition)
+        {
+            if (strokes == null) { throw new ArgumentNullException(nameof(strokes)); }
+
+            var strokeList = strokes as IList<Stroke> ?? strokes.ToList();
+            if (strokeList.Count == 0) { return; }
+
+            CanvasScript canvas = strokeList[0].Canvas;
+            Bounds bounds = new Bounds();
+            bool initialized = false;
+
+            foreach (var stroke in strokeList)
+            {
+                Bounds strokeBounds;
+
+                if (stroke.m_BatchSubset != null)
+                {
+                    // Convert canvas-local bounds to world space
+                    Bounds localBounds = stroke.m_BatchSubset.m_Bounds;
+                    Vector3 worldMin = canvas.transform.TransformPoint(localBounds.min);
+                    Vector3 worldMax = canvas.transform.TransformPoint(localBounds.max);
+                    strokeBounds = new Bounds((worldMin + worldMax) * 0.5f, worldMax - worldMin);
+                }
+                else if (stroke.m_Object != null)
+                {
+                    var renderer = stroke.m_Object.GetComponent<Renderer>();
+                    if (renderer == null) { continue; }
+                    strokeBounds = renderer.bounds; // Already in world space
+                }
+                else
+                {
+                    continue;
+                }
+
+                if (!initialized)
+                {
+                    bounds = strokeBounds;
+                    initialized = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(strokeBounds);
+                }
+            }
+
+            if (!initialized) { return; }
+
+            Vector3 currentCenter = bounds.center; // Already in world space
+            Vector3 worldOffset = worldPosition - currentCenter;
+
+            if (worldOffset == Vector3.zero) { return; }
+
+            // Convert world-space offset to canvas-local space for Recreate
+            Vector3 localOffset = canvas.transform.InverseTransformVector(worldOffset);
+
+            // Apply translation by recreating strokes with local-space offset transform
+            foreach (var stroke in strokeList)
+            {
+                stroke.Recreate(TrTransform.T(localOffset));
+            }
+        }
+
         public void MarkLayerAsNotDeleted(CanvasScript layer)
         {
             m_DeletedLayers.Remove(GetIndexOfCanvas(layer) - 1);
@@ -373,14 +444,15 @@ namespace TiltBrush
         public LayerMetadata[] LayerCanvasesSerialized()
         {
             var layers = LayerCanvases.ToArray();
-            var meta = new LayerMetadata[layers.Count()];
+            var meta = new LayerMetadata[layers.Length];
             for (var i = 0; i < layers.Length; i++)
             {
                 var layer = layers[i];
                 meta[i] = new LayerMetadata
                 {
                     Visible = layer.gameObject.activeSelf,
-                    Name = layer.name
+                    Name = layer.name,
+                    Transform = layer.LocalPose
                 };
             }
             return meta;

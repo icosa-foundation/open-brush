@@ -503,7 +503,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7691576060649472
-    m_Localized: "Biblioth\xE8que Poly"
+    m_Localized: "Biblioth\xE8que Icosa"
     m_Metadata:
       m_Items: []
   - m_Id: 7691821452599296
@@ -721,7 +721,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7930206087782400
-    m_Localized: "Biblioth\xE8que Poly"
+    m_Localized: "Biblioth\xE8que Icosa"
     m_Metadata:
       m_Items: []
   - m_Id: 7930412489482240
@@ -741,7 +741,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7931780608532480
-    m_Localized: Parcourir Poly
+    m_Localized: Parcourir Icosa
     m_Metadata:
       m_Items: []
   - m_Id: 7931977472385024
@@ -757,7 +757,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7932559960547328
-    m_Localized: "Partagez sur Poly\npour voir les mod\xE8les\net les objets \xE0
+    m_Localized: "Partagez sur Icosa\npour voir les mod\xE8les\net les objets \xE0
       blocs ici"
     m_Metadata:
       m_Items: []
@@ -766,11 +766,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7932977482539008
-    m_Localized: "Chargement des mod\xE8les depuis Poly\n\nNe tardez pas \xE0 revenir\_!"
+    m_Localized: "Chargement des mod\xE8les depuis Icosa Gallery\n\nNe tardez pas \xE0 revenir\_!"
     m_Metadata:
       m_Items: []
   - m_Id: 7933149889404928
-    m_Localized: "Aimez les mod\xE8les       \nsur Poly pour\nles voir ici"
+    m_Localized: "Aimez les mod\xE8les       \nsur Icosa pour\nles voir ici"
     m_Metadata:
       m_Items: []
   - m_Id: 7933313635033088
@@ -778,7 +778,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7933450197377024
-    m_Localized: "Connectez-vous sur le bureau\npour charger\nles mod\xE8les Poly"
+    m_Localized: "Connectez-vous sur le bureau\npour charger\nles mod\xE8les Icosa"
     m_Metadata:
       m_Items: []
   - m_Id: 7933561489039360
@@ -786,7 +786,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7933827554713600
-    m_Localized: "Partagez sur Poly\npour voir vos\nmod\xE8les ici"
+    m_Localized: "Partagez sur Icosa\npour voir vos\nmod\xE8les ici"
     m_Metadata:
       m_Items: []
   - m_Id: 7933944802287616
@@ -799,7 +799,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7934199497203712
-    m_Localized: "Erreur de connexion\n\xE0 Poly"
+    m_Localized: "Erreur de connexion\n\xE0 Icosa"
     m_Metadata:
       m_Items: []
   - m_Id: 7939526611410944
@@ -927,7 +927,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8052065399709696
-    m_Localized: Depuis Poly
+    m_Localized: Depuis Icosa Gallery
     m_Metadata:
       m_Items: []
   - m_Id: 8052141249503232
@@ -935,7 +935,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8052215190888448
-    m_Localized: Depuis Poly
+    m_Localized: Depuis Icosa Gallery
     m_Metadata:
       m_Items: []
   - m_Id: 8052288863838208
@@ -947,7 +947,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8053396663410688
-    m_Localized: Parcourir Poly
+    m_Localized: Parcourir Icosa Gallery
     m_Metadata:
       m_Items: []
   - m_Id: 8053860821868544
@@ -975,7 +975,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10133179773722624
-    m_Localized: "Aimez les croquis       \nsur Poly pour\nles voir ici"
+    m_Localized: "Aimez les croquis       \nsur Icosa pour\nles voir ici"
     m_Metadata:
       m_Items: []
   - m_Id: 10133306584309760
@@ -987,12 +987,12 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10134247853236224
-    m_Localized: "Erreur de r\xE9cup\xE9ration des croquis depuis Poly\n<color=#969696>\nVotre
+    m_Localized: "Erreur de r\xE9cup\xE9ration des croquis depuis Icosa Gallery\n<color=#969696>\nVotre
       connexion Internet fonctionne-t-elle correctement\_?</color>"
     m_Metadata:
       m_Items: []
   - m_Id: 10134539248312320
-    m_Localized: "Connectez-vous pour acc\xE9der \naux croquis Poly"
+    m_Localized: "Connectez-vous pour acc\xE9der \naux croquis Icosa"
     m_Metadata:
       m_Items: []
   - m_Id: 10134688972382208
@@ -1005,7 +1005,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10134947404423168
-    m_Localized: "Erreur de connexion\n\xE0 Poly"
+    m_Localized: "Erreur de connexion\n\xE0 Icosa"
     m_Metadata:
       m_Items: []
   - m_Id: 10137717402476544
@@ -1267,7 +1267,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76069893405466624
-    m_Localized: "Impossible de transf\xE9rer les croquis\nnon remixables sur Poly"
+    m_Localized: "Impossible de transf\xE9rer les croquis\nnon remixables sur Icosa"
     m_Metadata:
       m_Items: []
   - m_Id: 76070234092003328
@@ -1276,7 +1276,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 76070420314906624
     m_Localized: "Une erreur s\u2019est produite lors de la connexion \nau serveur
-      Poly. Veuillez r\xE9essayer plus tard."
+      Icosa. Veuillez r\xE9essayer plus tard."
     m_Metadata:
       m_Items: []
   - m_Id: 76070518675529728
@@ -1326,7 +1326,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76072667581046784
-    m_Localized: "Mettez \xE0 jour la Tilt Brush pour\npartager des croquis sur Poly
+    m_Localized: "Mettez \xE0 jour la Tilt Brush pour\npartager des croquis sur Icosa
       et Sketchfab"
     m_Metadata:
       m_Items: []
@@ -3503,7 +3503,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 217070349893754880
-    m_Localized: "\xC9chec de la d\xE9tection du VR"
+    m_Localized: 
     m_Metadata:
       m_Items: []
   - m_Id: 217069105871577088

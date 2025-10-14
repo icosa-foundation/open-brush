@@ -34,6 +34,7 @@ MonoBehaviour:
     - org.nuget.google
     - org.nuget.sharpziplib
     - org.nuget.system
+    - com.openupm
     m_IsDefault: 0
     m_Capabilities: 0
     m_ConfigSource: 4

@@ -21,6 +21,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using Newtonsoft.Json;
 using UnityEngine;
@@ -31,6 +32,7 @@ namespace TiltBrush
 {
     public class ApiManager : MonoBehaviour
     {
+        public const string WEBREQUEST_USER_AGENT = "Open Brush API Web Request";
         private const string ROOT_API_URL = "/api/v1";
         private const string BASE_USER_SCRIPTS_URL = "/scripts";
         private const string BASE_EXAMPLE_SCRIPTS_URL = "/examplescripts";
@@ -52,11 +54,24 @@ namespace TiltBrush
         private bool cameraViewRequested;
         private bool cameraViewGenerated;
 
-        [NonSerialized] public Vector3 BrushOrigin = new(0, 13, 3); // Good origin for monoscopic
+        public enum ForcePaintingMode
+        {
+            None,
+            ForcedOn,
+            ForcedOff,
+            ForceNewStroke,
+            WasForceNewStroke,
+        }
+
+        [NonSerialized] public Vector3 BrushOrigin = new Vector3(0, 13, 3);
         [NonSerialized] public Quaternion BrushInitialRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
-        [NonSerialized] public Vector3 BrushPosition;
-        [NonSerialized] public Quaternion BrushRotation;
-        public bool ForcePaintingOn = false;
+        [NonSerialized] public Vector3 BrushPosition = new Vector3(0, 13, 3); // Good origin for monoscopic
+        [NonSerialized] public float PathSmoothing = 0.25f;
+        [NonSerialized] public Quaternion BrushRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
+        [NonSerialized] public ForcePaintingMode ForcePainting;
+        [NonSerialized] public ForcePaintingMode PreviousForcePaintingMode;
+        public BaseCommand ActiveUndo { get; set; }
+
         private Dictionary<string, string> m_UserScripts;
         private Dictionary<string, string> m_ExampleScripts;
 
@@ -68,6 +83,9 @@ namespace TiltBrush
         [NonSerialized] public Dictionary<string, string> CommandExamples;
         public string m_startupScriptName = "startup.sketchscript";
 
+        // Need to set this on the main thread because of localiztion
+        private string m_BrushesJson;
+
         public string UserScriptsPath() { return m_UserScriptsPath; }
 
         void Awake()
@@ -77,8 +95,10 @@ namespace TiltBrush
             App.HttpServer.AddHttpHandler($"/help", InfoCallback);
             App.HttpServer.AddHttpHandler($"/help/commands", InfoCallback);
             App.HttpServer.AddHttpHandler($"/help/brushes", InfoCallback);
+            App.HttpServer.AddHttpHandler($"/device_login/v1", DeviceLoginCallback);
             App.HttpServer.AddRawHttpHandler("/cameraview", CameraViewCallback);
             PopulateApi();
+
             m_UserScripts = new Dictionary<string, string>();
             m_ExampleScripts = new Dictionary<string, string>();
             m_CommandStatuses = new Dictionary<string, string>();
@@ -86,6 +106,7 @@ namespace TiltBrush
             PopulateUserScripts();
             BrushTransformStack = new Stack<(Vector3, Quaternion)>();
             ResetBrushTransform();
+
             if (!Directory.Exists(m_UserScriptsPath))
             {
                 Directory.CreateDirectory(m_UserScriptsPath);
@@ -99,64 +120,57 @@ namespace TiltBrush
                 // m_FileWatcher.FileDeleted += OnScriptsDirectoryChanged; TODO
                 m_FileWatcher.EnableRaisingEvents = true;
             }
-            if (CommandExamples == null)
-            {
-                CommandExamples = new Dictionary<string, string>();
-            }
-            CommandExamples["draw.paths"] = "[[0,0,0],[1,0,0],[1,1,0]],[[0,0,-1],[-1,0,-1],[-1,1,-1]]";
-            CommandExamples["draw.path"] = "[0,0,0],[1,0,0],[1,1,0],[0,1,0]";
-            CommandExamples["draw.stroke"] = "[0,0,0,0,180,90,.75],[1,0,0,0,180,90,.75],[1,1,0,0,180,90,.75],[0,1,0,0,180,90,.75]";
-            CommandExamples["listenfor.strokes"] = "http://localhost:8000/";
-            CommandExamples["draw.polygon"] = "5,1,0";
-            CommandExamples["draw.text"] = "hello";
-            CommandExamples["draw.svg"] = "M 184,199 116,170 53,209.6 60,136.2 4.3,88";
-            CommandExamples["draw.camerapath"] = "0";
-            CommandExamples["brush.type"] = "ink";
-            CommandExamples["color.add.hsv"] = "0.1,0.2,0.3";
-            CommandExamples["color.add.rgb"] = "0.1,0.2,0.3";
-            CommandExamples["color.set.rgb"] = "0.1,0.2,0.3";
-            CommandExamples["color.set.hsv"] = "0.1,0.2,0.3";
-            CommandExamples["color.set.html"] = "darkblue";
-            CommandExamples["brush.size.set"] = ".5";
-            CommandExamples["brush.size.add"] = ".1";
-            CommandExamples["spectator.move.to"] = "1,1,1";
-            CommandExamples["spectator.move.by"] = "1,1,1";
-            CommandExamples["spectator.turn.y"] = "45";
-            CommandExamples["spectator.turn.x"] = "45";
-            CommandExamples["spectator.turn.z"] = "45";
-            CommandExamples["spectator.direction"] = "45,45,0";
-            CommandExamples["spectator.look.at"] = "1,2,3";
-            CommandExamples["spectator.mode"] = "circular";
-            CommandExamples["spectator.show"] = "panels";
-            CommandExamples["spectator.hide"] = "widgets";
-            CommandExamples["user.move.to"] = "1,1,1";
-            CommandExamples["user.move.by"] = "1,1,1";
-            CommandExamples["brush.move.to"] = "1,1,1";
-            CommandExamples["brush.move.by"] = "1,1,1";
-            CommandExamples["brush.move"] = "1";
-            CommandExamples["brush.draw"] = "1";
-            CommandExamples["brush.turn.y"] = "45";
-            CommandExamples["brush.turn.x"] = "45";
-            CommandExamples["brush.turn.z"] = "45";
-            CommandExamples["brush.look.at"] = "1,1,1";
-            CommandExamples["stroke.delete"] = "0";
-            CommandExamples["stroke.select"] = "0";
-            CommandExamples["strokes.select"] = "0,3";
-            CommandExamples["selection.trim"] = "2";
-            CommandExamples["selection.points.addnoise"] = "x,0.5";
-            CommandExamples["selection.points.quantize"] = "0.1";
-            CommandExamples["strokes.join"] = "0,2";
-            CommandExamples["stroke.add"] = "0";
-            CommandExamples["load.user"] = "0";
-            CommandExamples["load.curated"] = "0";
-            CommandExamples["load.liked"] = "0";
-            CommandExamples["load.drive"] = "0";
-            CommandExamples["load.named"] = "Untitled_0.tilt";
-            CommandExamples["showfolder.sketch"] = "0";
-            CommandExamples["import.model"] = "Andy\\Andy.obj";
-            CommandExamples["import.image"] = "TiltBrushLogo.png";
-            CommandExamples["import.video"] = "animated-logo.mp4";
             App.Instance.StateChanged += RunStartupScript;
+        }
+
+        private string DeviceLoginCallback(HttpListenerRequest request)
+        {
+            // TODO Use AddRawHttpHandler and return appropriate status codes
+            var host = $"{request.LocalEndPoint.Address}:{request.LocalEndPoint.Port}";
+            host = host.Replace("127.0.0.1", "localhost");
+            if (host != $"localhost:{HttpServer.HTTP_PORT}") return "Please login from the local browser";
+            string formdata = null;
+            if (request.HasEntityBody)
+            {
+                using (Stream body = request.InputStream)
+                {
+                    using (var reader = new StreamReader(body, request.ContentEncoding))
+                    {
+                        formdata = Uri.UnescapeDataString(reader.ReadToEnd()).Trim();
+                    }
+                }
+            }
+#if UNITY_EDITOR
+            if (string.IsNullOrEmpty(formdata))
+            {
+                formdata = request.Url.Query;
+            }
+#endif
+            if (string.IsNullOrEmpty(formdata)) return "Invalid request";
+            string deviceCodeIfValid = _ValidateandExtractDeviceCode(formdata);
+            if (deviceCodeIfValid != null)
+            {
+                VrAssetService.m_Instance.IcosaDeviceLogin(deviceCodeIfValid);
+            }
+            var successPageUrl = $"{VrAssetService.m_Instance.IcosaHomePage}/device-login-success";
+            var redirectHtml = $@"<!doctype html><html lang='en'><head><meta charset='UTF-8'>
+<meta http-equiv='refresh' content='0; url={successPageUrl}' />
+<title>Login Successful</title>
+</head>
+<body>
+Success. If you are not automatically redirected, please visit <a href='{successPageUrl}'>{successPageUrl}</a>
+</body></html>";
+            return redirectHtml;
+        }
+
+        void Start()
+        {
+            // HTTP API String substitutions
+            // Don't move to Awake() as that runs too early
+            string[] brushNameList = BrushCatalog.m_Instance.GetTagFilteredBrushList()
+                .Select(ApiFriendlyBrushName)
+                .ToArray();
+            m_BrushesJson = JsonConvert.SerializeObject(brushNameList, Formatting.Indented);
         }
 
         public void ResetBrushTransform()
@@ -212,6 +226,22 @@ namespace TiltBrush
             EnqueuedApiCommand cmd = new EnqueuedApiCommand(commandPair[0], parameters);
             m_RequestedCommandQueue.Enqueue(cmd);
             return cmd;
+        }
+
+        private string _ValidateandExtractDeviceCode(string formdata)
+        {
+            // Handle device code login requests from local browser
+            var queryParams = formdata.Split("&");
+            if (queryParams.Length != 2) return null;
+            var secret_param = queryParams[0].Split("=");
+            if (secret_param.Length != 2 || secret_param[0] != "client_secret") return null;
+            string secret = secret_param[1];
+            var device_code_param = queryParams[1].Split("=");
+            if (device_code_param.Length != 2 || device_code_param[0] != "device_code") return null;
+            string device_code = device_code_param[1];
+            if (device_code.Length != 5) return null;
+            bool isValidSecret = VrAssetService.m_Instance.IsValidDeviceCodeSecret(secret);
+            return isValidSecret ? device_code : null;
         }
 
         private void OnScriptsDirectoryChanged(object sender, FileSystemEventArgs e)
@@ -436,22 +466,41 @@ namespace TiltBrush
             }
         }
 
+        public (string paramInfo, string Description) GetCommandInfo(string endpoint)
+        {
+            var paramInfoText = new List<string>();
+            foreach (var param in endpoints[endpoint].parameterInfo)
+            {
+                string typeName = param.ParameterType.Name
+                    .Replace("Single", "float")
+                    .Replace("Int32", "int")
+                    .Replace("String", "string");
+                paramInfoText.Add($"{typeName} {param.Name}");
+            }
+            string paramInfo = String.Join(", ", paramInfoText);
+            return (paramInfo, endpoints[endpoint].Description);
+        }
+
+        public (string paramInfo, string Description) GetRuntimeCommandInfo(string luaName)
+        {
+            var paramInfoText = new List<string>();
+            // Convert lua name to Http Api name (split camel case parts and add ".")
+            string[] parts = Regex.Split(luaName, @"(?<!^)(?=[A-Z])");
+            string endpoint = string.Join(".", parts).ToLower();
+            foreach (var param in endpoints[endpoint].parameterInfo)
+            {
+                paramInfoText.Add($"{param.Name}");
+            }
+            string paramInfo = String.Join(", ", paramInfoText);
+            return (paramInfo, endpoints[endpoint].Description);
+        }
+
         Dictionary<string, (string, string)> ListApiCommandsAsStrings()
         {
             var commandList = new Dictionary<string, (string, string)>();
             foreach (var endpoint in endpoints.Keys)
             {
-                var paramInfoText = new List<string>();
-                foreach (var param in endpoints[endpoint].parameterInfo)
-                {
-                    string typeName = param.ParameterType.Name
-                        .Replace("Single", "float")
-                        .Replace("Int32", "int")
-                        .Replace("String", "string");
-                    paramInfoText.Add($"{typeName} {param.Name}");
-                }
-                string paramInfo = String.Join(", ", paramInfoText);
-                commandList[endpoint] = (paramInfo, endpoints[endpoint].Description);
+                commandList[endpoint] = GetCommandInfo(endpoint);
             }
             return commandList;
         }
@@ -524,31 +573,57 @@ namespace TiltBrush
         {
 
             // TODO Document these
+            html = html.Replace("{{brushesJson}}", m_BrushesJson);
 
-            string[] brushNameList = BrushCatalog.m_Instance.AllBrushes
-                .Where(x => x.Description != "")
-                .Where(x => x.m_SupersededBy == null)
-                .Select(x => x.Description.Replace(" ", "").Replace(".", "").Replace("(", "").Replace(")", ""))
-                .ToArray();
-            string brushesJson = JsonConvert.SerializeObject(brushNameList);
-            html = html.Replace("{{brushesJson}}", brushesJson);
-
-            string pointFamilies = JsonConvert.SerializeObject(Enum.GetNames(typeof(SymmetryGroup.R)));
+            string pointFamilies = JsonConvert.SerializeObject(Enum.GetNames(typeof(SymmetryGroup.R)), Formatting.Indented);
             html = html.Replace("{{pointFamiliesJson}}", pointFamilies);
 
-            string wallpaperGroups = JsonConvert.SerializeObject(Enum.GetNames(typeof(PointSymmetry.Family)));
+            string wallpaperGroups = JsonConvert.SerializeObject(Enum.GetNames(typeof(PointSymmetry.Family)), Formatting.Indented);
             html = html.Replace("{{wallpaperGroupsJson}}", wallpaperGroups);
 
-            string[] environmentNameList = EnvironmentCatalog.m_Instance.AllEnvironments
-                .Select(x => x.Description.Replace(" ", ""))
+            string[] environmentNameList = EnvironmentCatalog.m_Instance.m_EnvironmentDescriptions
+                .Select(x => x.Replace(" ", ""))
                 .ToArray();
-            string environmentsJson = JsonConvert.SerializeObject(environmentNameList);
+
+            string environmentsJson = JsonConvert.SerializeObject(environmentNameList, Formatting.Indented);
             html = html.Replace("{{environmentsJson}}", environmentsJson);
 
-            string commandsJson = JsonConvert.SerializeObject(ListApiCommands());
+            string commandsJson = JsonConvert.SerializeObject(ListApiCommands(), Formatting.Indented);
             html = html.Replace("{{commandsJson}}", commandsJson);
 
+            var toolScripts = new List<string>();
+            var symmetryScripts = new List<string>();
+            var pointerScripts = new List<string>();
+            var backgroundScripts = new List<string>();
+
+            if (LuaManager.Instance.IsInitialized)
+            {
+                toolScripts = LuaManager.Instance.GetScriptNames(LuaApiCategory.ToolScript);
+                symmetryScripts = LuaManager.Instance.GetScriptNames(LuaApiCategory.SymmetryScript);
+                pointerScripts = LuaManager.Instance.GetScriptNames(LuaApiCategory.PointerScript);
+                backgroundScripts = LuaManager.Instance.GetScriptNames(LuaApiCategory.BackgroundScript);
+            }
+
+            html = html.Replace("{{toolScripts}}", JsonConvert.SerializeObject(toolScripts));
+            html = html.Replace("{{symmetryScripts}}", JsonConvert.SerializeObject(symmetryScripts));
+            html = html.Replace("{{pointerScripts}}", JsonConvert.SerializeObject(pointerScripts));
+            html = html.Replace("{{backgroundScripts}}", JsonConvert.SerializeObject(backgroundScripts));
+
             return html;
+        }
+
+        public static string ApiFriendlyBrushName(BrushDescriptor brush)
+        {
+            if (brush.Description == null)
+            {
+                Debug.LogWarning($"Brush {brush.m_DurableName} has no description");
+                return "";
+            }
+            return brush.Description
+                .Replace(" ", "")
+                .Replace(".", "")
+                .Replace("(", "")
+                .Replace(")", "");
         }
 
         public void ReceiveWebSocketMessage(WebSocketMessage message)
@@ -571,9 +646,13 @@ namespace TiltBrush
                 {
                     using (var reader = new StreamReader(body, request.ContentEncoding))
                     {
-                        // TODO also accept JSON
                         var formdata = Uri.UnescapeDataString(reader.ReadToEnd());
-                        var formdataCommands = formdata.Replace("+", " ").Split('&').Where(s => s.Trim().Length > 0);
+                        var formdataCommands = formdata.Replace("+", " ")
+                            .Split('&')
+                            .Where(s => s.Trim().Length > 0)
+                            .ToList();
+
+                        // TODO also accept JSON
                         commandStrings.AddRange(formdataCommands);
                     }
                 }
@@ -628,6 +707,31 @@ namespace TiltBrush
 
         public bool HasOutgoingListeners => m_OutgoingApiListeners != null && m_OutgoingApiListeners.Count > 0;
 
+        // TODO Find a better home for this. It won't always be API specific
+        public CHRFont TextFont
+        {
+            get
+            {
+                if (m_TextFont == null)
+                {
+                    TextFont = Resources.Load<CHRFont>("arcade");
+                }
+                return m_TextFont;
+            }
+
+            set
+            {
+                m_TextFont = value;
+            }
+        }
+        private CHRFont m_TextFont;
+
+        public void SetTextFont(string chrData)
+        {
+            TextFont.DataRaw = chrData;
+            TextFont.Initialize();
+        }
+
         public void EnqueueOutgoingCommands(List<KeyValuePair<string, string>> commands)
         {
             if (!HasOutgoingListeners) return;
@@ -662,7 +766,7 @@ namespace TiltBrush
             foreach (var listenerUrl in m_OutgoingApiListeners)
             {
                 string getUri = $"{listenerUrl}?{command.Key}={command.Value}";
-                if (getUri.Length < 512)  // Actually limit is 2083 but let's be conservative 
+                if (getUri.Length < 512)  // Actually limit is 2083 but let's be conservative
                 {
                     StartCoroutine(GetRequest(getUri));
                 }
@@ -811,14 +915,14 @@ namespace TiltBrush
         {
             // Same as calling Model.RequestModelPreload -> RequestModelLoadInternal, except
             // this won't ignore the request if the load-into-memory previously failed.
-            App.PolyAssetCatalog.RequestModelLoad(assetId, reason);
+            App.IcosaAssetCatalog.RequestModelLoad(assetId, reason);
 
             // It is possible from this section forward that the user may have moved on to a different page
             // on the Poly panel, which is why we use a local copy of 'model' rather than m_Model.
             Model model;
             // A model in the catalog will become non-null once the gltf has been downloaded or is in the
             // cache.
-            while ((model = App.PolyAssetCatalog.GetModel(assetId)) == null)
+            while ((model = App.IcosaAssetCatalog.GetModel(assetId)) == null)
             {
                 yield return null;
             }
@@ -838,15 +942,12 @@ namespace TiltBrush
             }
             else
             {
-                TrTransform xfSpawn = new TrTransform();
-                CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                    WidgetManager.m_Instance.ModelWidgetPrefab, xfSpawn, Quaternion.identity, true
-                );
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-                ModelWidget modelWidget = createCommand.Widget as ModelWidget;
+                var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab, new TrTransform(), forceTransform: true);
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+                ModelWidget modelWidget = cmd.Widget as ModelWidget;
                 modelWidget.Model = model;
                 modelWidget.Show(true);
-                createCommand.SetWidgetCost(modelWidget.GetTiltMeterCost());
+                cmd.SetWidgetCost(modelWidget.GetTiltMeterCost());
 
                 WidgetManager.m_Instance.WidgetsDormant = false;
                 SketchControlsScript.m_Instance.EatGazeObjectInput();
@@ -873,6 +974,35 @@ namespace TiltBrush
                     new ("draw.stroke", string.Join(",", pointsAsStrings))
                 }
             );
+        }
+
+        // Undo currently only affects stroke creation
+        // but any command can be supported as long as you set it's parent to ActiveUndo
+        // Mainly used by lua scripts at the moment.
+
+        public void StartUndo()
+        {
+            ActiveUndo = new BaseCommand();
+        }
+
+        public void EndUndo()
+        {
+            if (ActiveUndo != null && ActiveUndo.HasChildren)
+            {
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(ActiveUndo);
+            }
+            ActiveUndo = null;
+        }
+
+        public static bool ParameterRequiresScriptingKeyword(string parameter)
+        {
+            return parameter is
+                "_ClipStart" or
+                "_ClipEnd" or
+                "_Dissolve" or
+                "_TimeOverrideValue" or
+                "_TimeBlend" or
+                "_TimeSpeed";
         }
     }
 }

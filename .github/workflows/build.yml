@@ -53,7 +53,14 @@ jobs:
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
-
+      - name: Check for tags and fetch from Open Brush repo if needed
+        if: github.repository != 'icosa-foundation/open-brush'
+        run: |
+          if [ $(git tag | wc -l) -eq 0 ]; then
+            echo "No tags found in current repository. Fetching tags from icosa-foundation/open-brush..."
+            git remote add openbrush https://github.com/icosa-foundation/open-brush.git
+            git fetch --tags openbrush
+          fi
       - name: Calculate version and stamp
         id: version
         run: |
@@ -513,6 +520,7 @@ jobs:
       - name: Build project
         uses: Wandalen/wretry.action@v3
         env:
+          GIT_LFS_SKIP_SMUDGE: "1"
           VERSION: ${{ needs.configuration.outputs.version}}
           UNITY_EMAIL: ${{ fromJSON(format('["unitytest@mikeage.net", "{0}"]', vars.UNITY_EMAIL))[secrets.UNITY_SERIAL != null] }}
           UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
@@ -599,7 +607,7 @@ jobs:
 
       - name: Save Library/ cache
         uses: actions/cache/save@v4
-        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
+        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true' && !matrix.flavors.development
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -1078,7 +1086,7 @@ jobs:
 
   publish_itch:
     name: Publish Itch.io Release
-    needs: [configuration, build]
+    needs: [configuration, build, createdmg]
     runs-on: ubuntu-latest
     env:
       ITCH_SUBCHANNEL_NAME: ${{ needs.configuration.outputs.itchchannelname }}
@@ -1104,11 +1112,19 @@ jobs:
           name: Oculus Quest (2+)
           path: build_oculus_quest
 
+      - name: Download Build Artifacts (Mac)
+        uses: actions/download-artifact@v4
+        with:
+          name: MacOS (DMG)
+          path: build_macos
+
       - name: Package Artifacts for release
         run: |
           mkdir releases
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64/ releases/OpenBrush_Desktop_$VERSION/
+          mv build_macos/*.dmg releases/OpenBrush_Mac_$VERSION.dmg
+
       - name: Publish Windows
         uses: josephbmanley/butler-publish-itchio-action@master
         env:
@@ -1119,6 +1135,11 @@ jobs:
         env:
           CHANNEL: android-quest-${{ env.ITCH_SUBCHANNEL_NAME }}
           PACKAGE: releases/OpenBrush_Quest_${{ needs.configuration.outputs.version }}.apk
+      - name: Publish Mac
+        uses: josephbmanley/butler-publish-itchio-action@master
+        env:
+          CHANNEL: mac-${{ env.ITCH_SUBCHANNEL_NAME }}
+          PACKAGE: releases/OpenBrush_Mac_${{ needs.configuration.outputs.version }}.dmg
 
   publish_oculus_quest:
     name: Publish Oculus Quest 2+ Release
@@ -1160,46 +1181,6 @@ jobs:
             ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group MIXED_AGES
           fi
 
-  publish_oculus_quest1:
-    name: Publish Oculus Quest 1 Release
-    needs: [configuration, build]
-    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
-    if: |
-      github.event_name == 'push' &&
-      github.repository == 'icosa-foundation/open-brush' &&
-      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
-
-    steps:
-      - name: Download Build Artifacts (Oculus Quest 1)
-        uses: actions/download-artifact@v4
-        with:
-          name: Oculus Quest (1)
-          path: build_oculus_quest1
-      - name: Publish Oculus Builds
-        env:
-          VERSION: ${{ needs.configuration.outputs.version }}
-          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
-          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
-          OCULUS_QUEST_APP_ID: ${{ vars.OCULUS_QUEST_APP_ID }}
-          OCULUS_QUEST_APP_SECRET: ${{ secrets.OCULUS_QUEST_APP_SECRET }}
-        run: |
-          mkdir releases1
-          mv build_oculus_quest1/*/com.Icosa.OpenBrush*apk releases1/OpenBrush_Quest1_$VERSION.apk
-          mv build_oculus_quest1/*/com.Icosa.OpenBrush*.symbols.zip releases1/symbols.zip
-
-          cd releases1
-          unzip symbols.zip
-          curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
-          chmod 755 ovr-platform-util
-
-          if [ "$PRERELEASE" == "false" ]
-          then
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest1_$VERSION.apk --channel LIVE:quest1only --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --age-group MIXED_AGES
-          else
-            CHANGELOG="${RAW_CHANGELOG}"
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest1_$VERSION.apk --channel Beta:quest1only --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group MIXED_AGES
-          fi
-
   publish_oculus_quest_arborxr:
     name: Publish Oculus Quest 2+ Release ArborXR
     needs: [configuration, build]
@@ -1237,12 +1218,12 @@ jobs:
           ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_Q2_LIVE_CHANNEL }}
           ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_Q2_BETA_CHANNEL }}
         run: |
+          set -x
           mkdir releases
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
 
           cd releases
 
-          set -x
           if [ "$PRERELEASE" == "false" ]
           then
             CHANGELOG="Version $VERSION"
@@ -1251,8 +1232,8 @@ jobs:
             CHANGELOG="${RAW_CHANGELOG}"
             ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
           fi
-          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION | jq -r '.id')"
-          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version $VERSION_ID
+          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait_time 600 | jq -r '.id')"
+          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID
 
   publish_oculus_quest1_arborxr:
     name: Publish Oculus Quest 1 Release ArborXR
@@ -1290,6 +1271,7 @@ jobs:
           ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_Q1_LIVE_CHANNEL }}
           ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_Q1_BETA_CHANNEL }}
         run: |
+          set -x
           mkdir releases1
           mv build_oculus_quest1/*/com.Icosa.OpenBrush*apk releases1/OpenBrush_Quest1_$VERSION.apk
 
@@ -1303,8 +1285,8 @@ jobs:
             CHANGELOG="${RAW_CHANGELOG}"
             ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
           fi
-          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest1_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION | jq -r '.id')"
-          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version $VERSION_ID
+          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest1_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait_time 300 | jq -r '.id')"
+          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID
 
   publish_oculus_rift:
     name: Publish Oculus Rift Release
@@ -1384,11 +1366,11 @@ jobs:
           if [ "$PRERELEASE" == "false" ]
           then
             # The order here matters, because the Chinese build has a slightly higher version code due to the suffix of 1 vs 0
-            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 2 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
-            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_CN_$VERSION.apk --channel 1 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 2 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4,PICO 4 Ultra,PICO 4 Pro'
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_CN_$VERSION.apk --channel 1 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4,PICO 4 Ultra,PICO 4 Pro'
           else
             # For Pico, Beta channels can only get one build, not a separate China / non-China build
-            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 3 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 3 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4,PICO 4 Ultra,PICO 4 Pro'
           fi
 
   publish_pico_arborxr:
@@ -1427,6 +1409,7 @@ jobs:
           ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_PICO_LIVE_CHANNEL }}
           ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_PICO_BETA_CHANNEL }}
         run: |
+          set -x
           mkdir releases
           mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
 
@@ -1440,8 +1423,8 @@ jobs:
             CHANGELOG="${RAW_CHANGELOG}"
             ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
           fi
-          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Pico_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION | jq -r '.id')"
-          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version $VERSION_ID
+          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Pico_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait_time 300 | jq -r '.id')"
+          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID
 
   publish_ios_zapbox:
     name: Publish Zapbox iOS
@@ -1473,6 +1456,7 @@ jobs:
       - name: Use xcode 16.2 / ios 18.2
         run: |
           sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer  # The default in macos-latest (i.e., 14) is currently 15.4.
+          xcrun simctl list > /dev/null  # Because of https://github.com/actions/runner-images/issues/12862
           xcodebuild -downloadPlatform iOS -buildVersion 18.2  # Because of https://github.com/actions/runner-images/issues/11335
 
       - name: Download iOS Artifact

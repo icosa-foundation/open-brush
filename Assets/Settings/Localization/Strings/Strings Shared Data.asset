@@ -3243,6 +3243,10 @@ MonoBehaviour:
     m_Key: WEBCAM_PANEL_NEXT_DEVICE
     m_Metadata:
       m_Items: []
+  - m_Id: 141243230077059072
+    m_Key: MULTICAM_TOOL_DEPTH_TEXT
+    m_Metadata:
+      m_Items: []
   - m_Id: 137988464450723840
     m_Key: LAYERS_PANEL_MOVELAYER_BUTTON_DESCRIPTION
     m_Metadata:
@@ -3277,6 +3281,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 172767995928834048
     m_Key: CONTROLLER_HINT_THUMBPAD_BRUSHSIZE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911761917042688
+    m_Key: POPUP_ACCOUNTS_ICOSAINFO_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911966586494976
+    m_Key: POPUP_ACCOUNTS_ICOSAINFO_TITLE
     m_Metadata:
       m_Items: []
   - m_Id: 176764812224364544
@@ -3325,6 +3337,18 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 224363142209691648
     m_Key: DirectoryChooserPopupButton
+    m_Metadata:
+      m_Items: []
+  - m_Id: 234808679492837376
+    m_Key: PANEL_REFERENCE_SAVED_STROKE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235160207315525632
+    m_Key: LABS_PANEL_EXPORT_STROKES_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235163428054458368
+    m_Key: PANEL_SAVED_STROKES_DESCRIPTION
     m_Metadata:
       m_Items: []
   - m_Id: 238556149774557184
@@ -3439,6 +3463,26 @@ MonoBehaviour:
     m_Key: ADMIN_PANEL_MULTIPLAYER_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 317029250049335296
+    m_Key: VIEW_MODE_CONTROLS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 317029250049335296
+    m_Key: VIEW_MODE_CONTROLS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332314407106863104
+    m_Key: ICOSAPANEL_PANEL_OPTIONS_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332573810292776960
+    m_Key: ICOSAPANEL_PANEL_SEARCH_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332574165927813120
+    m_Key: ICOSAPANEL_PANEL_FILTER_POPUP
+    m_Metadata:
+      m_Items: []
   - m_Id: 326532953040941056
     m_Key: MULTIPLAYER_PANEL_MAX_ROOM_NUMBER
     m_Metadata:
@@ -3517,6 +3561,34 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 341359317994790912
     m_Key: MULTIPLAYER_PANEL_ROOM_NOT_AVAIL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 369886448819200000
+    m_Key: FILTER_POPUP_CURATED_ON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 380760416547594240
+    m_Key: POPUP_ICOSA_LOGIN_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 381885131211235328
+    m_Key: VIEW_MODE_LOADING_SKETCHES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175499957428224
+    m_Key: POPUP_SPLIT_MESH
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175792879230976
+    m_Key: POPUP_SPLIT_MESH_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 397532058527293440
+    m_Key: NOT_SIGNED_IN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 401824908597354496
+    m_Key: POPUP_REFERENCEPANEL_NOSAVEDSTROKES_TEXT
     m_Metadata:
       m_Items: []
   m_Metadata:

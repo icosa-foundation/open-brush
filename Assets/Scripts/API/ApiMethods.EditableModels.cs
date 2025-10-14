@@ -13,17 +13,26 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
-using System.Threading.Tasks;
 
 namespace TiltBrush
 {
     public static partial class ApiMethods
     {
-        [ApiEndpoint("model.webimport", "Imports a model given a url or a filename in Media Library\\Models (Models loaded from a url are saved locally first)")]
-        [ApiEndpoint("import.webmodel", "Same as model.webimport (backwards compatibility for poly.pizza)")]
+        [ApiEndpoint(
+            "model.webimport",
+            "Imports a model given a url or a filename in Media Library\\Models (Models loaded from a url are saved locally first)",
+            "Andy\\Andy.obj"
+        )]
+        [ApiEndpoint(
+            "import.webmodel",
+            "Same as model.webimport (backwards compatibility for poly.pizza)",
+            "Andy\\Andy.obj"
+        )]
         public static void ImportWebModel(string url)
         {
             Uri uri;
@@ -39,19 +48,50 @@ namespace TiltBrush
             }
             var destinationPath = Path.Combine("Models", uri.Host);
             string filename = _DownloadMediaFileFromUrl(uri, destinationPath);
+            // Very basic workaround for dependent files like .bin and textures
+            // TODO
+            // 1. Handle GLB
+            // 2. Handle other formats
+            // 3. Handle zip files
+            // 4. Create subdirectories for each model
+            if (ext == "gltf")
+            {
+                // Split the url into a base uri and the filename
+                var baseUri = new Uri(uri, ".");
+
+                var fullLocalPath = Path.Combine(App.ModelLibraryPath(), uri.Host);
+
+                var jsonString = File.ReadAllText(Path.Combine(fullLocalPath, filename));
+                JObject jsonObject = JObject.Parse(jsonString);
+                List<string> externalFiles = jsonObject["buffers"].Select(j => j["uri"].Value<string>()).ToList();
+                externalFiles.AddRange(jsonObject["images"].Select(j => j["uri"].Value<string>()).ToList());
+                foreach (var externalFile in externalFiles)
+                {
+                    var newUri = new Uri(baseUri, externalFile);
+                    var subdir = Path.GetDirectoryName(externalFile);
+                    _DownloadMediaFileFromUrl(newUri, Path.Combine(fullLocalPath, subdir));
+                }
+            }
             ImportModel(Path.Combine(uri.Host, filename));
         }
 
-        [ApiEndpoint("model.import", "Imports a model given a url or a filename in Media Library\\Models (Models loaded from a url are saved locally first)")]
-        public static void ImportModel(string location)
+        [ApiEndpoint(
+            "model.icosaimport",
+            "Imports a model from the Icosa Gallery given a model id",
+            "9L2Lt-sxzdp"
+        )]
+        public static void ImportIcosaModel(string modelId)
         {
-            if (location.StartsWith("poly:"))
-            {
-                location = location.Substring(5);
-                ApiManager.Instance.LoadPolyModel(location);
-                return; // TODO
-            }
+            ApiManager.Instance.LoadPolyModel(modelId);
+        }
 
+        [ApiEndpoint(
+            "model.import",
+            "Imports a model given a filename in Media Library\\Models (Models loaded from a url are saved locally first)",
+            "Andy.glb"
+        )]
+        public static ModelWidget ImportModel(string location)
+        {
             // Normalize path slashes
             location = location.Replace(@"\\", "/");
             location = location.Replace(@"//", "/");
@@ -66,34 +106,63 @@ namespace TiltBrush
             {
                 subtree = location.Substring(relativePath.Length + 1);
             }
-            var tr = _CurrentTransform().TransformBy(Coords.CanvasPose);
-            var model = new Model(Model.Location.File(relativePath));
+            var model = new Model(relativePath);
 
             AsyncHelpers.RunSync(() => model.LoadModelAsync());
             model.EnsureCollectorExists();
-            CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.ModelWidgetPrefab, tr, null, forceTransform: true
-            );
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-            ModelWidget widget = createCommand.Widget as ModelWidget;
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+            ModelWidget widget = cmd.Widget as ModelWidget;
             if (widget != null)
             {
                 widget.Model = model;
+
+                // Calculate proper size based on model bounds (same as normal model loading)
+                float maxExtent = 2 * Mathf.Max(model.m_MeshBounds.extents.x,
+                    Mathf.Max(model.m_MeshBounds.extents.y, model.m_MeshBounds.extents.z));
+                float consistentSize;
+                if (maxExtent == 0.0f)
+                {
+                    consistentSize = 1.0f;
+                }
+                else
+                {
+                    consistentSize = 0.25f * App.METERS_TO_UNITS / maxExtent;
+                }
+
+                widget.SetSignedWidgetSize(consistentSize);
+
+                // Now enable preservation to prevent async overrides
+                widget.SetPreserveCustomSize(true);
                 widget.Subtree = subtree;
                 widget.SyncHierarchyToSubtree();
                 widget.Show(true);
                 widget.AddSceneLightGizmos();
-                createCommand.SetWidgetCost(widget.GetTiltMeterCost());
+                cmd.SetWidgetCost(widget.GetTiltMeterCost());
             }
             else
             {
                 Debug.LogWarning("Failed to create EditableModelWidget");
-                return;
+                return null;
             }
 
             WidgetManager.m_Instance.WidgetsDormant = false;
             SketchControlsScript.m_Instance.EatGazeObjectInput();
             SelectionManager.m_Instance.RemoveFromSelection(false);
+
+            return widget;
+        }
+
+        [ApiEndpoint(
+            "model.breakapart",
+            "Breaks apart a model",
+            "0"
+        )]
+        public static void BreakApartModel(int index)
+        {
+            var model = _GetActiveModel(index);
+            var cmd = new BreakModelApartCommand(model);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
     }
 }
