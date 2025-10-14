@@ -799,6 +799,7 @@ namespace TiltBrush
                 {
                     VrAssetFormat.GLTF2,
                     VrAssetFormat.GLTF,
+                    VrAssetFormat.OBJ_NGON,
                     VrAssetFormat.OBJ,
                     VrAssetFormat.PLY
                 };

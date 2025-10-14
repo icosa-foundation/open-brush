@@ -142,34 +142,48 @@ namespace TiltBrush
                 // Find the asset by looking through the format list for the specified type.
                 List<string> desiredTypes = m_Asset.DesiredTypes.Select(x => x.ToString()).ToList();
 
+                JToken GetBestFormat(IEnumerable<JToken> formats, List<string> types)
+                {
+                    bool found = false;
+                    JToken bestFormat = null;
+                    foreach (var typeByPreference in types)
+                    {
+                        foreach (var x in formats)
+                        {
+                            var formatType = x["formatType"]?.ToString();
+                            if (formatType == typeByPreference)
+                            {
+                                bestFormat = x;
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (found) break;
+                    }
+                    return bestFormat;
+                }
+
                 while (true)
                 {
                     JToken format = null;
-                    var formats = json["formats"];
+                    string formatType = null;
+                    var allFormats = json["formats"].ToList();
                     VrAssetFormat selectedType = VrAssetFormat.Unknown;
-                    bool found = false;
 
-                    if (formats != null)
+                    if (allFormats != null)
                     {
                         // This assumes that desiredTypes are ordered by preference (best to worst).
-                        foreach (var typeByPreference in desiredTypes)
-                        {
-                            foreach (var x in formats)
-                            {
-                                var formatType = x["formatType"]?.ToString();
-                                if (formatType == typeByPreference)
-                                {
-                                    format = x;
-                                    selectedType = Enum.Parse<VrAssetFormat>(formatType);
-                                    found = true;
-                                    break;
-                                }
-                            }
-                            if (found) break;
-                        }
-                    }
+                        // Try the preferred formats first, then all formats.
+                        // var preferredFormats = allFormats.Where(f => f["isPreferredForDownload"].Value<bool>());
+                        // format = GetBestFormat(preferredFormats, desiredTypes) ?? GetBestFormat(allFormats, desiredTypes);
 
-                    if (found)
+                        // Temporary hack
+                        bool hasBlocks = GetBestFormat(allFormats, new List<string>{"BLOCKS"}).HasValues;
+                        format = GetBestFormat(allFormats, hasBlocks ? new List<string> { "OBJ", "OBJ_NGON" } : desiredTypes);
+                        formatType = format["formatType"]?.ToString();
+                        selectedType = Enum.Parse<VrAssetFormat>(formatType);
+                    }
+                    if (format != null)
                     {
                         string internalRootFilePath = format["root"]?["relativePath"].ToString();
                         // If we successfully get a gltf2 format file, internally change the extension to
@@ -196,8 +210,7 @@ namespace TiltBrush
                         }
                         break;
                     }
-
-                    Debug.LogWarning($"Can't download {m_Asset.Id} in {m_Asset.DesiredTypes} format.");
+                    Debug.LogWarning($"Can't download {m_Asset.Id} in {formatType} format.");
                     yield break;
                 }
             }
