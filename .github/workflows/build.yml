@@ -49,7 +49,7 @@ jobs:
       flavors: ${{ steps.flavors.outputs.flavors }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -341,7 +341,7 @@ jobs:
           df -h /
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
 
@@ -401,7 +401,7 @@ jobs:
 
       - name: Checkout private photon repository if available
         if: ${{ env.PHOTON_PAT }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ env.PHOTON_PAT }}
           repository: icosa-mirror/photon-fusion
@@ -625,7 +625,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -633,7 +633,7 @@ jobs:
             Support/macos
 
       - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: MacOS
           path: build_macos
@@ -704,7 +704,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -712,7 +712,7 @@ jobs:
             Support/macos
 
       - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: MacOS (signed)
           path: build_macos
@@ -803,43 +803,43 @@ jobs:
         run: echo "$CHANGELOG"
 
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: Windows OpenXR
           path: build_windows_openxr
 
       - name: Download Build Artifacts (Windows Rift)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: Windows Rift
           path: build_windows_rift
 
       - name: Download Build Artifacts (Android OpenXR)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: Android OpenXR
           path: build_android_openxr
 
       - name: Download Build Artifacts (Oculus Quest 2+)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: Oculus Quest (2+)
           path: build_oculus_quest
 
       - name: Download Build Artifacts (Pico)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: Android Pico
           path: build_android_pico
 
       - name: Download Build Artifacts (Linux)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: Linux
           path: build_linux
 
       - name: Download Build Artifacts (Mac)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: MacOS (DMG)
           path: build_macos
@@ -921,7 +921,7 @@ jobs:
             }
 
       - name: Get the current contents of the docs repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: icosa-foundation/open-brush-docs
           path: open-brush-docs
@@ -959,7 +959,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           sparse-checkout: |
@@ -973,17 +973,17 @@ jobs:
           echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - | gunzip - > /home/runner/Steam/config/config.vdf
           md5sum /home/runner/Steam/config/config.vdf
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: Windows OpenXR
           path: build_windows_openxr
       - name: Download Build Artifacts (MacOS Signed)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: MacOS (signed)
           path: build_macos
       - name: Download Build Artifacts (Linux)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: Linux
           path: build_linux
@@ -1038,7 +1038,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows Pimax)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: Windows Pimax
           path: build_windows_pimax
@@ -1070,7 +1070,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: Windows OpenXR
           path: build_windows_openxr
@@ -1101,19 +1101,19 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: Windows OpenXR
           path: build_windows_openxr
 
       - name: Download Build Artifacts (Oculus Quest 2+)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: Oculus Quest (2+)
           path: build_oculus_quest
 
       - name: Download Build Artifacts (Mac)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: MacOS (DMG)
           path: build_macos
@@ -1152,7 +1152,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Oculus Quest 2+)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: Oculus Quest (2+)
           path: build_oculus_quest
@@ -1192,7 +1192,7 @@ jobs:
 
     steps:
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           ignore-empty-workdir: true
           enable-cache: false
@@ -1202,7 +1202,7 @@ jobs:
           uv tool install abxrcli
 
       - name: Download Build Artifacts (Oculus Quest 2+)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: Oculus Quest (2+)
           path: build_oculus_quest
@@ -1246,7 +1246,7 @@ jobs:
 
     steps:
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           ignore-empty-workdir: true
           enable-cache: false
@@ -1256,7 +1256,7 @@ jobs:
           uv tool install abxrcli
 
       - name: Download Build Artifacts (Oculus Quest 1)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: Oculus Quest (1)
           path: build_oculus_quest1
@@ -1299,7 +1299,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows Rift)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: Windows Rift
           path: build_windows_rift
@@ -1337,12 +1337,12 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Android Pico)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: Android Pico
           path: build_android_pico
       - name: Download Build Artifacts (Android Pico CN)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: Android Pico (CN)
           path: build_android_pico_cn
@@ -1384,7 +1384,7 @@ jobs:
 
     steps:
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           ignore-empty-workdir: true
           enable-cache: false
@@ -1394,7 +1394,7 @@ jobs:
           uv tool install abxrcli
 
       - name: Download Build Artifacts (Android Pico)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: Android Pico
           path: build_android_pico
@@ -1436,7 +1436,7 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           sparse-checkout: |
@@ -1460,7 +1460,7 @@ jobs:
           xcodebuild -downloadPlatform iOS -buildVersion 18.2  # Because of https://github.com/actions/runner-images/issues/11335
 
       - name: Download iOS Artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: iOS Zapbox
           path: build
