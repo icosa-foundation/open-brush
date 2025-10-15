@@ -7,6 +7,7 @@ using System.IO;
 using System.Threading.Tasks;
 using TiltBrush;
 using UnityEngine.Networking;
+using static TiltBrush.OverlayManager;
 
 public class OBJ : MonoBehaviour
 {
@@ -99,7 +100,11 @@ public class OBJ : MonoBehaviour
         }
         else
         {
-            SetGeometryData(geomRequest.downloadHandler.text);
+            string geomData = geomRequest.downloadHandler.text;
+            yield return OverlayManager.m_Instance.RunInCompositor(
+                OverlayType.LoadModel,
+                () => SetGeometryData(geomData),
+                0.25f);
         }
 
         if (hasMaterials)
@@ -155,7 +160,10 @@ public class OBJ : MonoBehaviour
                 }
             }
         }
-        Build();
+        yield return OverlayManager.m_Instance.RunInCompositor(
+            OverlayType.LoadModel,
+            () => Build(),
+            0.25f);
         finished = true;
     }
 
