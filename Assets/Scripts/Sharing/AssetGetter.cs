@@ -178,7 +178,7 @@ namespace TiltBrush
                         // format = GetBestFormat(preferredFormats, desiredTypes) ?? GetBestFormat(allFormats, desiredTypes);
 
                         // Temporary hack
-                        bool hasBlocks = GetBestFormat(allFormats, new List<string> { "BLOCKS" }).HasValues;
+                        bool hasBlocks = GetBestFormat(allFormats, new List<string> { "BLOCKS" })?.HasValues ?? false;
                         format = GetBestFormat(allFormats, hasBlocks ? new List<string> { "OBJ", "OBJ_NGON" } : desiredTypes);
                         formatType = format["formatType"]?.ToString();
                         selectedType = Enum.Parse<VrAssetFormat>(formatType);
