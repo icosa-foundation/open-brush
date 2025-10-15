@@ -461,8 +461,18 @@ namespace TiltBrush
             return m_IsLoadingMemo.Contains(assetId);
         }
 
+        private void EnsureCatalogsExist()
+        {
+            Debug.Log($"XXX EnsureCatalogsExist");
+            if (m_AssetSetByType == null || m_AssetSetByType.Count == 0)
+            {
+                InitCatalogQueries();
+            }
+        }
+
         public void RequestAutoRefresh(IcosaSetType type)
         {
+            EnsureCatalogsExist();
             // We don't update featured except on startup
             if (type != IcosaSetType.Featured && App.IcosaIsLoggedIn)
             {
@@ -472,6 +482,7 @@ namespace TiltBrush
 
         public void RequestForcedRefresh(IcosaSetType type)
         {
+            EnsureCatalogsExist();
             var set = m_AssetSetByType[type];
             if (set.m_FetchMetadataCoroutine != null)
             {
@@ -497,8 +508,9 @@ namespace TiltBrush
 
             FileUtils.InitializeDirectoryWithUserError(m_CacheDir, "Failed to create asset cache");
 
-            // Create and populate model map.
             m_ModelsByAssetId = new Dictionary<string, Model>();
+            // InitCatalogQueries();
+
             try
             {
                 foreach (string folderPath in EnumerateCacheDirectories())
@@ -527,62 +539,8 @@ namespace TiltBrush
                 Debug.LogException(e);
             }
 
-            m_AssetSetByType = new Dictionary<IcosaSetType, AssetSet>
-            {
-                {
-                    IcosaSetType.User,
-                    new AssetSet
-                    {
-                        QueryParams = new IcosaQueryParameters
-                        {
-                            SearchText = "",
-                            TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
-                            License = LicenseChoices.ANY,
-                            OrderBy = OrderByChoices.NEWEST,
-                            Formats = new [] {FormatChoices.NOT_TILT},
-                            Curated = CuratedChoices.ANY,
-                            Category = CategoryChoices.ANY
-                        }
-                    }
-                },
-                {
-                    IcosaSetType.Liked,
-                    new AssetSet
-                    {
-                        QueryParams = new IcosaQueryParameters
-                        {
-                            SearchText = "",
-                            TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
-                            License = LicenseChoices.REMIXABLE,
-                            OrderBy = OrderByChoices.LIKED_TIME,
-                            Formats = new [] {FormatChoices.NOT_TILT},
-                            Curated = CuratedChoices.ANY,
-                            Category = CategoryChoices.ANY
-                        }
-                    }
-                },
-                // Old way - newest curated
-                // "?curated=true&orderBy=NEWEST"
-                // For now try just sorting by "best"
-                // Something like orderBy=TRENDING would be good - BEST but weighted by recency
-                {
-                    IcosaSetType.Featured,
-                    new AssetSet
-                    {
-                        m_RefreshRequested = true,
-                        QueryParams = new IcosaQueryParameters
-                        {
-                            SearchText = "",
-                            TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
-                            License = LicenseChoices.REMIXABLE,
-                            OrderBy = OrderByChoices.BEST,
-                            Formats = new [] {FormatChoices.NOT_TILT},
-                            Curated = CuratedChoices.TRUE,
-                            Category = CategoryChoices.ANY
-                        }
-                    }
-                }
-            };
+            m_AssetSetByType = new Dictionary<IcosaSetType, AssetSet>();
+            // InitCatalogQueries();
 
             App.Instance.AppExit += () =>
             {
@@ -593,6 +551,63 @@ namespace TiltBrush
                     Directory.Delete(models[excess - 1], true);
                 }
             };
+        }
+
+        public void InitCatalogQueries()
+        {
+            m_AssetSetByType[IcosaSetType.User] = new AssetSet
+            {
+                QueryParams = new IcosaQueryParameters
+                {
+                    SearchText = "",
+                    TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
+                    License = LicenseChoices.ANY,
+                    OrderBy = OrderByChoices.NEWEST,
+                    Formats = new[] { FormatChoices.GLTF2, FormatChoices.OBJ },
+                    Curated = CuratedChoices.ANY,
+                    Category = CategoryChoices.ANY
+                }
+            };
+
+            m_AssetSetByType[IcosaSetType.Liked] = new AssetSet
+            {
+                QueryParams = new IcosaQueryParameters
+                {
+                    SearchText = "",
+                    TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
+                    License = LicenseChoices.REMIXABLE,
+                    OrderBy = OrderByChoices.LIKED_TIME,
+                    Formats = new[] { FormatChoices.GLTF2, FormatChoices.OBJ },
+                    Curated = CuratedChoices.ANY,
+                    Category = CategoryChoices.ANY
+                }
+            };
+
+            // Old way - newest curated
+            // "?curated=true&orderBy=NEWEST"
+            // For now try just sorting by "best"
+            // Something like orderBy=TRENDING would be good - BEST but weighted by recency
+            m_AssetSetByType[IcosaSetType.Featured] = new AssetSet
+            {
+                m_RefreshRequested = true,
+                QueryParams = new IcosaQueryParameters
+                {
+                    SearchText = "",
+                    TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
+                    License = LicenseChoices.REMIXABLE,
+                    OrderBy = OrderByChoices.BEST,
+                    Formats = new[] { FormatChoices.GLTF2, FormatChoices.OBJ },
+                    Curated = CuratedChoices.TRUE,
+                    Category = CategoryChoices.ANY
+                }
+            };
+
+            if (App.IcosaIsLoggedIn)
+            {
+                m_AssetSetByType[IcosaSetType.Featured].m_RefreshRequested = true;
+            }
+
+            RefreshFetchCoroutines();
         }
 
         public AssetLoadState GetAssetLoadState(string assetId)
@@ -668,7 +683,6 @@ namespace TiltBrush
         void Start()
         {
             OAuth2Identity.ProfileUpdated += OnProfileUpdated;
-            RefreshFetchCoroutines();
         }
 
         public Model GetModel(string assetId)
@@ -761,6 +775,7 @@ namespace TiltBrush
         /// If you aren't trying to do a hot-reload, you should check Model.m_Valid first.
         public void RequestModelLoad(string assetId, string reason)
         {
+            Debug.Log($"RequestModelLoad {assetId} for {reason}");
             // Don't attempt to load models which are already loading.
             if (IsLoading(assetId))
             {
@@ -1223,6 +1238,7 @@ namespace TiltBrush
 
         public int NumCloudModels(IcosaSetType type)
         {
+            EnsureCatalogsExist();
             return m_AssetSetByType[type].m_Models.Count();
         }
 

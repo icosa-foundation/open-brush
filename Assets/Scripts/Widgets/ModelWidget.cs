@@ -273,6 +273,7 @@ namespace TiltBrush
 
         void LoadModel()
         {
+            Debug.Log($"Load Model");
             // Clean up existing model
             if (m_ModelInstance != null)
             {
@@ -441,6 +442,13 @@ namespace TiltBrush
         public void SyncHierarchyToSubtree(string previousSubtree = null)
         {
             var originalCost = GetTiltMeterCost();
+            if (!m_ObjModelScript)
+            {
+                Debug.LogWarning($"Can't get m_ObjModelScript...");
+                return;
+                // m_ObjModelScript = m_Model.m_ModelParent.gameObject.AddComponent<ObjModelScript>();
+            }
+
             var (node, excludeChildren) = FindSubtreeRoot(
                 m_ObjModelScript.transform,
                 Subtree,
@@ -862,6 +870,7 @@ namespace TiltBrush
         static void CreateModel(Model model, string subtree, TrTransform xf, bool pin,
                                 bool isNonRawTransform, uint groupId, int layerId, string assetId = null)
         {
+            Debug.Log($"Create Model");
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             modelWidget.transform.localPosition = xf.translation;
             modelWidget.transform.localRotation = xf.rotation;
