@@ -94,7 +94,6 @@ namespace TiltBrush
         // Initiates the contact with Icosa
         public IEnumerator<Null> GetAssetCoroutine()
         {
-
             if (!m_URI.StartsWith(VrAssetService.m_Instance.IcosaApiRoot))
             {
                 m_Asset.SetRootElement(UnityWebRequest.EscapeURL(m_URI), m_URI);
@@ -215,50 +214,54 @@ namespace TiltBrush
                 }
             }
 
-            // Download root asset.
-            var request = new WebRequest(m_Asset.RootDataURL);
-            using (var cr = request.SendAsync().AsIeNull())
-            {
-                while (!request.Done)
-                {
-                    try
-                    {
-                        cr.MoveNext();
-                    }
-                    catch (VrAssetServiceException e)
-                    {
-                        Debug.LogErrorFormat("Error downloading {0} at {1}\n{2}",
-                            m_Asset.Id, m_Asset.RootDataURL, e);
-                        yield break;
-                    }
-                    yield return cr.Current;
-                }
-            }
-            m_Asset.CopyBytesToRootElement(request.ResultBytes);
+            // Download root asset and all resources in parallel.
+            var rootRequest = new WebRequest(m_Asset.RootDataURL);
+            var resourceRequests = new List<(IcosaRawAsset.ElementInfo element, WebRequest request)>();
 
-            // Download all resource assets.
+            // Start root download
+            var rootEnumerator = rootRequest.SendAsync().AsIeNull();
+
+            // Start all resource downloads
             foreach (var e in m_Asset.ResourceElements)
             {
-                request = new WebRequest(e.dataURL);
-                using (var cr = request.SendAsync().AsIeNull())
+                var resourceRequest = new WebRequest(e.dataURL);
+                resourceRequests.Add((e, resourceRequest));
+            }
+
+            var resourceEnumerators = resourceRequests.Select(r => r.request.SendAsync().AsIeNull()).ToList();
+
+            // Wait for all downloads to complete
+            while (!rootRequest.Done || resourceRequests.Any(r => !r.request.Done))
+            {
+                try
                 {
-                    while (!request.Done)
+                    if (!rootRequest.Done)
                     {
-                        try
+                        rootEnumerator.MoveNext();
+                    }
+
+                    for (int i = 0; i < resourceEnumerators.Count; i++)
+                    {
+                        if (!resourceRequests[i].request.Done)
                         {
-                            cr.MoveNext();
+                            resourceEnumerators[i].MoveNext();
                         }
-                        catch (VrAssetServiceException ex)
-                        {
-                            Debug.LogErrorFormat("Error downloading {0} at {1}\n{2}",
-                                m_Asset.Id, m_Asset.RootDataURL, ex);
-                            e.assetBytes = null;
-                            yield break;
-                        }
-                        yield return cr.Current;
                     }
                 }
-                e.assetBytes = request.ResultBytes;
+                catch (VrAssetServiceException e)
+                {
+                    Debug.LogErrorFormat("Error downloading {0}\n{1}", m_Asset.Id, e);
+                    yield break;
+                }
+                yield return null;
+            }
+
+            // All downloads complete - copy bytes
+            m_Asset.CopyBytesToRootElement(rootRequest.ResultBytes);
+
+            foreach (var (element, request) in resourceRequests)
+            {
+                element.assetBytes = request.ResultBytes;
             }
 
             m_Ready = true;
