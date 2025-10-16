@@ -441,6 +441,15 @@ namespace TiltBrush
         // starting at CarBody/Floor/Wheel1
         public void SyncHierarchyToSubtree(string previousSubtree = null)
         {
+            if (m_ObjModelScript == null)
+            {
+                m_ObjModelScript = GetComponentInChildren<ObjModelScript>(includeInactive: true);
+            }
+            if (m_ObjModelScript == null)
+            {
+                Debug.LogError("No ObjModelScript found in children");
+                return;
+            }
             var originalCost = GetTiltMeterCost();
             if (!m_ObjModelScript)
             {

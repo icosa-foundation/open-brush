@@ -463,7 +463,6 @@ namespace TiltBrush
 
         private void EnsureCatalogsExist()
         {
-            Debug.Log($"XXX EnsureCatalogsExist");
             if (m_AssetSetByType == null || m_AssetSetByType.Count == 0)
             {
                 InitCatalogQueries();
