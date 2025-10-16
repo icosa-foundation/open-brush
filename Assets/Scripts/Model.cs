@@ -215,6 +215,7 @@ namespace TiltBrush
         // Store the paths of meshes that have been through MeshSplitter
         public List<string> m_SplitMeshPaths;
         public List<string> m_NotSplittableMeshPaths;
+        private HashSet<string> m_AppliedMeshSplits;
 
         private Location m_Location;
 
@@ -256,6 +257,7 @@ namespace TiltBrush
         {
             m_SplitMeshPaths = new List<string>();
             m_NotSplittableMeshPaths = new List<string>();
+            m_AppliedMeshSplits = new HashSet<string>();
         }
 
         /// Only allowed if AllowExport = true
@@ -811,7 +813,6 @@ namespace TiltBrush
         }
         public void LoadModel()
         {
-            Debug.Log($"Load Model Model {this.AssetId}");
             StartCreatePrefab(null);
 
         }
@@ -959,7 +960,6 @@ namespace TiltBrush
 
         public void EndCreatePrefab(GameObject go, List<string> warnings)
         {
-            Debug.Log($"End Create Prefab model {AssetId}");
             if (go == null)
             {
                 m_LoadError = m_LoadError ?? new LoadError("Bad data");
@@ -981,6 +981,11 @@ namespace TiltBrush
             // For a small performance improvement on deep hierarchies
             // we could skip this for glTF models
             GenerateUniqueNames(m_ModelParent);
+
+            if (m_SplitMeshPaths != null && m_SplitMeshPaths.Count > 0)
+            {
+                InitMeshSplits();
+            }
 
             // !!! Add to material dictionary here?
             m_Valid = true;
@@ -1042,6 +1047,7 @@ namespace TiltBrush
                 UObject.Destroy(m_ModelParent.gameObject);
                 m_ModelParent = null;
             }
+            m_AppliedMeshSplits?.Clear();
         }
 
         /// Resets this.Error and tries to load the model again.
@@ -1148,6 +1154,40 @@ namespace TiltBrush
         }
 
 
+        public void SetMeshSplitData(IEnumerable<string> splitMeshPaths, IEnumerable<string> notSplittableMeshPaths)
+        {
+            m_SplitMeshPaths = splitMeshPaths?.ToList() ?? new List<string>();
+            m_NotSplittableMeshPaths = notSplittableMeshPaths?.ToList() ?? new List<string>();
+            if (m_AppliedMeshSplits == null)
+            {
+                m_AppliedMeshSplits = new HashSet<string>();
+            }
+            m_AppliedMeshSplits.Clear();
+        }
+
+        public void RegisterMeshSplit(string splitPath)
+        {
+            splitPath ??= string.Empty;
+            if (m_SplitMeshPaths == null)
+            {
+                m_SplitMeshPaths = new List<string>();
+            }
+            if (!m_SplitMeshPaths.Contains(splitPath))
+            {
+                m_SplitMeshPaths.Add(splitPath);
+            }
+            if (m_NotSplittableMeshPaths == null)
+            {
+                m_NotSplittableMeshPaths = new List<string>();
+            }
+            m_NotSplittableMeshPaths.Remove(splitPath);
+            if (m_AppliedMeshSplits == null)
+            {
+                m_AppliedMeshSplits = new HashSet<string>();
+            }
+            m_AppliedMeshSplits.Remove(splitPath);
+        }
+
         public static List<MeshFilter> ApplySplits(MeshFilter rootMf)
         {
             var splits = MeshSplitter.DoSplit(rootMf);
@@ -1156,15 +1196,46 @@ namespace TiltBrush
 
         public void InitMeshSplits()
         {
-            if (!m_ModelParent) return;
+            if (m_ModelParent == null)
+            {
+                return;
+            }
+            if (m_SplitMeshPaths == null || m_SplitMeshPaths.Count == 0)
+            {
+                return;
+            }
+            if (m_AppliedMeshSplits == null)
+            {
+                m_AppliedMeshSplits = new HashSet<string>();
+            }
+
+            var modelObjScript = m_ModelParent.GetComponentInChildren<ObjModelScript>();
+            if (modelObjScript == null)
+            {
+                Debug.LogError($"Model {m_Location} has no ObjModelScript to process mesh splits");
+                return;
+            }
+
             foreach (var split in m_SplitMeshPaths)
             {
-                if (m_NotSplittableMeshPaths.Contains(split)) continue;
-                var modelObjScript = m_ModelParent.GetComponentInChildren<ObjModelScript>();
+                if (m_NotSplittableMeshPaths != null && m_NotSplittableMeshPaths.Contains(split))
+                {
+                    continue;
+                }
+                if (m_AppliedMeshSplits.Contains(split))
+                {
+                    continue;
+                }
+
                 Transform destRoot;
                 if (string.IsNullOrEmpty(split))
                 {
-                    destRoot = modelObjScript.m_MeshChildren[0].transform;
+                    if (modelObjScript.m_MeshChildren == null || modelObjScript.m_MeshChildren.Length == 0)
+                    {
+                        Debug.LogError($"Model {m_Location} has no meshes to split for root path");
+                        continue;
+                    }
+                    destRoot = modelObjScript.m_MeshChildren[0]?.transform;
                 }
                 else
                 {
@@ -1175,16 +1246,25 @@ namespace TiltBrush
                     destRoot = subTreeRoot;
                 }
 
-                var modelMf = destRoot?.GetComponentInChildren<MeshFilter>();
-                if (modelMf == null)
+                if (destRoot == null)
                 {
-                    Debug.LogError($"Model {m_Location} has no mesh filter for split {split}: {destRoot}");
+                    Debug.LogError($"Model {m_Location} has no subtree for split {split}");
                     continue;
                 }
+
+                var modelMf = destRoot.GetComponent<MeshFilter>();
+                if (modelMf == null)
+                {
+                    // Already split or nothing to split at this node.
+                    m_AppliedMeshSplits.Add(split);
+                    continue;
+                }
+
                 ApplySplits(modelMf);
                 // Remove the meshfilter from the original game object
-                GameObject.DestroyImmediate(modelMf.GetComponent<MeshFilter>());
+                GameObject.DestroyImmediate(modelMf);
                 modelObjScript.UpdateAllMeshChildren();
+                m_AppliedMeshSplits.Add(split);
             }
         }
     }
