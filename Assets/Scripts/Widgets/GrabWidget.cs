@@ -1304,9 +1304,8 @@ namespace TiltBrush
                     }
                 }
 
-                // Apply the resulting change in rotation to the original transform
-                var rotationDelta = m_PrevSnapRotation * Quaternion.Inverse(rot_CS);
-                outXf_GS.rotation = rotationDelta * outXf_GS.rotation;
+                // Convert the scene-space snapped rotation back to global space
+                outXf_GS.rotation = App.Scene.Pose.rotation * m_PrevSnapRotation;
 
                 Quaternion qDelta = outXf_GS.rotation * Quaternion.Inverse(xf_GS.rotation);
                 Vector3 grabSpot = InputManager.m_Instance.GetControllerPosition(m_InteractingController);
