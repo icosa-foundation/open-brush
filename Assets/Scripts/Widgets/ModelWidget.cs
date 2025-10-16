@@ -790,7 +790,7 @@ namespace TiltBrush
 
         /// I believe (but am not sure) that Media Library content loads synchronously,
         /// and PAC content loads asynchronously.
-        public static async void CreateModelFromSaveData(TiltModels75 modelDatas)
+        public static async Task CreateModelFromSaveData(TiltModels75 modelDatas)
         {
             Debug.AssertFormat(modelDatas.AssetId == null || modelDatas.FilePath == null,
                 "Model Data should not have an AssetID *and* a File Path");
