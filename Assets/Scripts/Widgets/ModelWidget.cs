@@ -54,6 +54,7 @@ namespace TiltBrush
 
         private Transform m_ModelInstance;
         private ObjModelScript m_ObjModelScript;
+        private bool m_SyncHierarchyPending;
         private float m_InitSize_CS;
         public float InitSize_CS => m_InitSize_CS;
         private float m_HideSize_CS;
@@ -90,6 +91,8 @@ namespace TiltBrush
                 {
                     m_Model.m_UsageCount++;
                 }
+
+                m_SyncHierarchyPending = m_Model != null && !string.IsNullOrEmpty(Subtree);
                 LoadModel();
             }
         }
@@ -173,6 +176,7 @@ namespace TiltBrush
             clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.transform.position = position;
             clone.transform.rotation = rotation;
+            clone.m_Subtree = m_Subtree;
             clone.Model = Model;
             // We're obviously not loading from a sketch.  This is to prevent the intro animation.
             // TODO: Change variable name to something more explicit of what this flag does.
@@ -181,8 +185,6 @@ namespace TiltBrush
             clone.AddSceneLightGizmos();
             clone.transform.parent = transform.parent;
             clone.SetSignedWidgetSize(size);
-            clone.m_Subtree = m_Subtree;
-            clone.SyncHierarchyToSubtree();
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
 
@@ -284,7 +286,6 @@ namespace TiltBrush
             // This can happen if model loading is deferred.
             if (m_Model == null || m_Model.m_ModelParent == null)
             {
-                Debug.LogError($"no model to load in LoadModel()");
                 return;
             }
 
@@ -338,7 +339,18 @@ namespace TiltBrush
             m_NumVertsTrackedByWidgetManager = 0;
 
             m_ObjModelScript = GetComponentInChildren<ObjModelScript>();
+            if (m_ObjModelScript == null)
+            {
+                OutputWindowScript.Error("Failed to find ObjModelScript on loaded model");
+                return;
+            }
             m_ObjModelScript.UpdateAllMeshChildren();
+
+            if (m_SyncHierarchyPending && m_ObjModelScript != null)
+            {
+                SyncHierarchyToSubtree();
+                m_SyncHierarchyPending = false;
+            }
             if (m_ObjModelScript.NumMeshes == 0)
             {
                 OutputWindowScript.Error("No usable geometry in model");
@@ -892,9 +904,8 @@ namespace TiltBrush
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             modelWidget.transform.localPosition = xf.translation;
             modelWidget.transform.localRotation = xf.rotation;
-            modelWidget.Model = model;
             modelWidget.m_Subtree = subtree;
-            modelWidget.SyncHierarchyToSubtree();
+            modelWidget.Model = model;
             modelWidget.m_LoadingFromSketch = true;
             modelWidget.Show(true, false);
             if (isNonRawTransform)
