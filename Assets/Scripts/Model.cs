@@ -811,6 +811,7 @@ namespace TiltBrush
         }
         public void LoadModel()
         {
+            Debug.Log($"Load Model Model {this.AssetId}");
             StartCreatePrefab(null);
 
         }
@@ -958,6 +959,7 @@ namespace TiltBrush
 
         public void EndCreatePrefab(GameObject go, List<string> warnings)
         {
+            Debug.Log($"End Create Prefab model {AssetId}");
             if (go == null)
             {
                 m_LoadError = m_LoadError ?? new LoadError("Bad data");
@@ -1154,6 +1156,7 @@ namespace TiltBrush
 
         public void InitMeshSplits()
         {
+            if (!m_ModelParent) return;
             foreach (var split in m_SplitMeshPaths)
             {
                 if (m_NotSplittableMeshPaths.Contains(split)) continue;

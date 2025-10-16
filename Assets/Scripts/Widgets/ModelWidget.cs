@@ -273,7 +273,7 @@ namespace TiltBrush
 
         void LoadModel()
         {
-            Debug.Log($"Load Model");
+            Debug.Log($"Load Model Widget {m_Model?.AssetId}");
             // Clean up existing model
             if (m_ModelInstance != null)
             {
@@ -284,6 +284,7 @@ namespace TiltBrush
             // This can happen if model loading is deferred.
             if (m_Model == null || m_Model.m_ModelParent == null)
             {
+                Debug.LogError($"no model to load in LoadModel()");
                 return;
             }
 
@@ -448,6 +449,11 @@ namespace TiltBrush
             if (m_ObjModelScript == null)
             {
                 Debug.LogError("No ObjModelScript found in children");
+                // This is clunky but widgets with broken apart models weren't initialized properly when loading from sketch
+                var container = GetComponentInChildren<BoxCollider>().gameObject;
+                m_ObjModelScript = container.AddComponent<ObjModelScript>();
+                m_ObjModelScript.UpdateAllMeshChildren();
+                SyncHierarchyToSubtree();
                 return;
             }
             var originalCost = GetTiltMeterCost();
@@ -457,6 +463,7 @@ namespace TiltBrush
                 return;
                 // m_ObjModelScript = m_Model.m_ModelParent.gameObject.AddComponent<ObjModelScript>();
             }
+            Debug.Log($"ObjModelScript found - syncing subtree: {Subtree}");
 
             var (node, excludeChildren) = FindSubtreeRoot(
                 m_ObjModelScript.transform,
@@ -505,6 +512,8 @@ namespace TiltBrush
 
                 CloneInitialMaterials(null);
                 RecalculateColliderBounds();
+
+                Debug.Log($"Subtree sync subtree: {name}: {Model.AssetId}");
 
                 // Adjust the tilt meter cost based on the new model
                 var newCost = GetTiltMeterCost();
@@ -879,7 +888,7 @@ namespace TiltBrush
         static void CreateModel(Model model, string subtree, TrTransform xf, bool pin,
                                 bool isNonRawTransform, uint groupId, int layerId, string assetId = null)
         {
-            Debug.Log($"Create Model");
+            Debug.Log($"Create Model widget {model.AssetId}");
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             modelWidget.transform.localPosition = xf.translation;
             modelWidget.transform.localRotation = xf.rotation;

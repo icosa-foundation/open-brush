@@ -748,6 +748,7 @@ namespace TiltBrush
         /// Pass the reason the Model is being pulled into memory, for logging purposes.
         public void RequestModelLoad(Model model, string reason)
         {
+            Debug.Log($"Requesting model load {model} for {reason}");
             // Verify assumption that byAssetId[model.asset] == model; otherwise, caller may wait
             // indefinitely for model's loaded state to change and that bug will be hard to track down.
             string assetId = model.GetLocation().AssetId;
@@ -778,11 +779,13 @@ namespace TiltBrush
             // Don't attempt to load models which are already loading.
             if (IsLoading(assetId))
             {
+                Debug.LogWarning($"RequestModelLoad {assetId} IsLoading");
                 return;
             }
 
             if (m_ModelsByAssetId.ContainsKey(assetId))
             {
+                Debug.Log($"Already in memory: {assetId}");
                 // Already downloaded.
                 // It may be in memory already, but it's safe to ask for it to be brought in again.
                 // That way we get the behavior of "ignore a failed load-into-memory"
@@ -791,6 +794,7 @@ namespace TiltBrush
             }
             else
             {
+                Debug.Log($"Not already in memory: {assetId}");
                 // Not downloaded yet.
                 // Kick off a download; when done the load will  and arrange for the download-complete to kick off the
                 // load-into-memory work.
