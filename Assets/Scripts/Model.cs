@@ -628,6 +628,11 @@ namespace TiltBrush
                 // m_Valid = true;
                 GameObject parent = new GameObject("ImportedObjParent");
                 gameObject.transform.SetParent(parent.transform, true);
+
+                // Apply unique naming during import (matching GLTF EnsureUniquePathsImport plugin behavior)
+                // This ensures OBJ files have unique node names immediately after loading
+                GenerateUniqueNames(parent.transform);
+
                 return parent;
             }
             catch (Exception ex)
