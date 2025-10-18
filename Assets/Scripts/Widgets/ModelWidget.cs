@@ -864,13 +864,17 @@ namespace TiltBrush
                 return false;
             }
 
-            model.m_SplitMeshPaths = splitMeshPaths?.ToList() ?? new List<string>();
-            model.m_NotSplittableMeshPaths = noSplitMeshPaths?.ToList() ?? new List<string>();
-
-            if (model.m_SplitMeshPaths != null)
+            // Use SetMeshSplitData to properly clear m_AppliedMeshSplits before applying splits
+            Debug.Log($"[MeshSplit] Setting split data for model. Split count: {splitMeshPaths?.Count ?? 0}");
+            if (splitMeshPaths != null)
             {
-                model.InitMeshSplits();
+                foreach (var path in splitMeshPaths)
+                {
+                    Debug.Log($"[MeshSplit] - Split path: '{path}'");
+                }
             }
+            model.SetMeshSplitData(splitMeshPaths, noSplitMeshPaths);
+            model.InitMeshSplits();
 
             if (xfs != null)
             {
@@ -950,13 +954,17 @@ namespace TiltBrush
                 App.IcosaAssetCatalog.RequestModelLoad(assetId, "widget");
             }
 
-            model.m_SplitMeshPaths = splitMeshPaths?.ToList() ?? new List<string>();
-            model.m_NotSplittableMeshPaths = noSplitMeshPaths?.ToList() ?? new List<string>();
-
-            if (model.m_SplitMeshPaths != null)
+            // Use SetMeshSplitData to properly clear m_AppliedMeshSplits before applying splits
+            Debug.Log($"[MeshSplit] Setting split data for model. Split count: {splitMeshPaths?.Count ?? 0}");
+            if (splitMeshPaths != null)
             {
-                model.InitMeshSplits();
+                foreach (var path in splitMeshPaths)
+                {
+                    Debug.Log($"[MeshSplit] - Split path: '{path}'");
+                }
             }
+            model.SetMeshSplitData(splitMeshPaths, noSplitMeshPaths);
+            model.InitMeshSplits();
 
             // Create a widget for each transform.
             for (int i = 0; i < rawXfs.Length; ++i)
