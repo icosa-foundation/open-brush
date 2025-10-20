@@ -86,6 +86,7 @@ namespace TiltBrush
         public static string IsExampleScriptBool => "_IsExampleScript";
         public static string ToolPreviewType => "previewType";
         public static string ToolPreviewAxis => "previewAxis";
+        public static string ToolPreviewMode => "previewMode";
 
         // Injected Toolscript properties
 
@@ -141,6 +142,9 @@ namespace TiltBrush
         private bool m_IsInitialized;
         public bool IsInitialized => m_IsInitialized;
 
+        private readonly List<PointerManager.ControlPoint> m_LatestToolScriptControlPoints = new();
+        public ScriptCoordSpace LatestToolScriptControlPointSpace { get; private set; } = ScriptCoordSpace.Default;
+
         public string LuaModulesPath => Path.Join(UserPluginsPath(), "LuaModules");
 
         public struct ScriptTrTransform
@@ -153,6 +157,44 @@ namespace TiltBrush
                 Transform = transform;
                 Space = space;
             }
+        }
+
+        public class ToolScriptExecutionResult
+        {
+            public ToolScriptExecutionResult(
+                PathListApiWrapper pathList,
+                ScriptCoordSpace space,
+                TrTransform baseTransformCs,
+                List<List<TrTransform>> canvasTransforms,
+                List<PointerManager.ControlPoint> previewControlPoints)
+            {
+                PathList = pathList;
+                Space = space;
+                BaseTransformCs = baseTransformCs;
+                CanvasTransforms = canvasTransforms;
+                PreviewControlPoints = previewControlPoints ?? new List<PointerManager.ControlPoint>();
+            }
+
+            public PathListApiWrapper PathList { get; }
+            public ScriptCoordSpace Space { get; }
+            public TrTransform BaseTransformCs { get; }
+            public List<List<TrTransform>> CanvasTransforms { get; }
+            public List<PointerManager.ControlPoint> PreviewControlPoints { get; }
+        }
+
+        public IReadOnlyList<PointerManager.ControlPoint> GetLatestToolScriptControlPoints()
+        {
+            return m_LatestToolScriptControlPoints;
+        }
+
+        private void SetLatestToolScriptControlPoints(IEnumerable<PointerManager.ControlPoint> controlPoints, ScriptCoordSpace space)
+        {
+            m_LatestToolScriptControlPoints.Clear();
+            if (controlPoints != null)
+            {
+                m_LatestToolScriptControlPoints.AddRange(controlPoints);
+            }
+            LatestToolScriptControlPointSpace = space;
         }
 
         void Awake()
@@ -911,6 +953,8 @@ namespace TiltBrush
             RegisterApiClass(script, "ModelList", typeof(ModelListApiWrapper));
             RegisterApiClass(script, "Path", typeof(PathApiWrapper));
             RegisterApiClass(script, "PathList", typeof(PathListApiWrapper));
+            RegisterApiClass(script, "ControlPoint", typeof(ControlPointApiWrapper));
+            RegisterApiClass(script, "ControlPointList", typeof(ControlPointListApiWrapper));
             RegisterApiClass(script, "Path2d", typeof(Path2dApiWrapper));
             RegisterApiClass(script, "Pointer", typeof(PointerApiWrapper));
             RegisterApiClass(script, "Random", typeof(RandomApiWrapper));
@@ -936,6 +980,7 @@ namespace TiltBrush
             RegisterApiClass(script, "Wand", typeof(WandApiWrapper));
             RegisterApiClass(script, "Waveform", typeof(WaveformApiWrapper));
             RegisterApiClass(script, "WebRequest", typeof(WebRequestApiWrapper));
+            RegisterApiClass(script, "Tool", typeof(ToolApiWrapper));
 
             // TODO Proxy this.
             UserData.RegisterType<Texture2D>();
@@ -1230,53 +1275,85 @@ namespace TiltBrush
             public DynValue context;
         }
 
-        public void DoToolScript(string fnName, TrTransform firstTr_CS, TrTransform secondTr_CS)
+        public ToolScriptExecutionResult DoToolScript(string fnName, TrTransform firstTr_CS, TrTransform secondTr_CS)
         {
-            var result = CallActiveToolScript(fnName);
-            if (result == null) return;
-            List<List<TrTransform>> transforms = null;
+            var pathWrapper = CallActiveToolScript(fnName);
+            if (pathWrapper == null)
+            {
+                SetLatestToolScriptControlPoints(null, ScriptCoordSpace.Canvas);
+                return null;
+            }
+
             var drawnVector_CS = secondTr_CS.translation - firstTr_CS.translation;
-            // Quantize the positions to the grid
-            // Rotation will be quantized later based on (non-quantized) drawnVector_CS
             firstTr_CS.translation = SelectionManager.m_Instance.SnapToGrid_CS(firstTr_CS.translation);
             secondTr_CS.translation = SelectionManager.m_Instance.SnapToGrid_CS(secondTr_CS.translation);
             var quantizedVector_CS = secondTr_CS.translation - firstTr_CS.translation;
 
             var tr_CS = new TrTransform();
+            List<List<TrTransform>> previewTransforms = new();
 
-            switch (result._Space)
+            switch (pathWrapper._Space)
             {
                 case ScriptCoordSpace.Default:
                 case ScriptCoordSpace.Pointer:
-
+                {
                     Vector3 upVector = InputManager.m_Instance.GetBrushControllerAttachPoint().rotation * Vector3.up;
                     tr_CS.translation = firstTr_CS.translation;
                     tr_CS.rotation = drawnVector_CS == Vector3.zero ?
                         Quaternion.identity : Quaternion.LookRotation(drawnVector_CS, upVector);
                     tr_CS.scale = quantizedVector_CS.magnitude;
-                    transforms = result.AsMultiTrList();
+                    previewTransforms = pathWrapper.AsMultiTrList()
+                        .Select(trList => trList.Select(tr => tr_CS * tr).ToList())
+                        .ToList();
                     break;
+                }
                 case ScriptCoordSpace.Canvas:
-                    tr_CS.translation = Vector3.zero;
-                    tr_CS.rotation = Quaternion.identity;
-                    tr_CS.scale = 1f;
-                    transforms = result.AsMultiTrList();
+                {
+                    tr_CS = TrTransform.identity;
+                    previewTransforms = pathWrapper.AsMultiTrList()
+                        .Select(trList => trList.Select(tr => tr).ToList())
+                        .ToList();
+                    break;
+                }
+                default:
+                    previewTransforms = new List<List<TrTransform>>();
                     break;
             }
-            float brushScale = 1f;
 
             tr_CS.rotation = SelectionManager.m_Instance.QuantizeAngle(tr_CS.rotation);
+
+            List<PointerManager.ControlPoint> previewControlPoints = new();
+            var firstPath = previewTransforms.FirstOrDefault(path => path != null && path.Count > 0);
+            if (firstPath != null)
+            {
+                previewControlPoints = ConvertTransformsToControlPoints(firstPath);
+            }
+
+            SetLatestToolScriptControlPoints(previewControlPoints, ScriptCoordSpace.Canvas);
+
+            return new ToolScriptExecutionResult(pathWrapper, pathWrapper._Space, tr_CS, previewTransforms, previewControlPoints);
+        }
+
+        public void DrawToolScriptResult(ToolScriptExecutionResult executionResult)
+        {
+            if (executionResult?.PathList == null)
+            {
+                return;
+            }
+
+            var transforms = executionResult.PathList.AsMultiTrList();
+            var tr_CS = executionResult.BaseTransformCs;
+            float brushScale = 1f;
 
             if (transforms != null)
             {
                 var xfSymmetriesGS = PointerManager.m_Instance.GetSymmetriesForCurrentMode();
                 if (xfSymmetriesGS.Count == 0)
                 {
-                    DrawStrokes.DrawNestedTrList(transforms, tr_CS, result._Colors, brushScale);
+                    DrawStrokes.DrawNestedTrList(transforms, tr_CS, executionResult.PathList._Colors, brushScale);
                 }
                 else
                 {
-                    // Pre-calculate left transforms for canvas space.
                     var xfSymmetriesCS = new List<TrTransform>();
                     var xfCSfromGS = App.ActiveCanvas.Pose.inverse;
                     var xfGSfromCS = App.ActiveCanvas.Pose;
@@ -1292,15 +1369,11 @@ namespace TiltBrush
                         {
                             var newTrList = trList.Select(x =>
                             {
-                                // Apply full tr_CS transform to the original transform, then apply symmetry
                                 var transformedByTrCS = tr_CS * x;
                                 var symmetriedTransform = sym * transformedByTrCS;
 
-                                // Check if symmetry transform has negative scale (reflection)
-                                // If so, remove it by applying a compensating reflection
                                 if (sym.scale < 0)
                                 {
-                                    // Apply the same fix as TrFromMatrixWithFixedReflections - X-axis reflection
                                     var kReflectX = new Plane(new Vector3(1, 0, 0), 0).ToTrTransform();
                                     symmetriedTransform = symmetriedTransform * kReflectX;
                                 }
@@ -1310,17 +1383,51 @@ namespace TiltBrush
                             newTransforms.Add(newTrList);
                         }
                     }
-                    DrawStrokes.DrawNestedTrList(newTransforms, TrTransform.identity, result._Colors, brushScale);
+                    DrawStrokes.DrawNestedTrList(newTransforms, TrTransform.identity, executionResult.PathList._Colors, brushScale);
                 }
             }
 
-            if (result._Colors == null)
+            if (executionResult.PathList._Colors == null)
             {
-                // If our script doesn't generate colors
-                // then DrawNestedTrList will use the current brush color
-                // so we can assume that jitter (if enabled) should be applied
                 LuaApiMethods.JitterColor();
             }
+        }
+
+        private static List<PointerManager.ControlPoint> ConvertTransformsToControlPoints(IEnumerable<TrTransform> transforms)
+        {
+            var controlPoints = new List<PointerManager.ControlPoint>();
+            if (transforms == null)
+            {
+                return controlPoints;
+            }
+
+            uint baseTimestamp = (uint)(App.Instance.CurrentSketchTime * 1000);
+            int index = 0;
+            foreach (var tr in transforms)
+            {
+                var rotation = tr.rotation;
+                if (rotation == Quaternion.identity)
+                {
+                    rotation = Quaternion.LookRotation(Vector3.forward);
+                }
+
+                float pressure = tr.scale;
+                if (Mathf.Approximately(pressure, 0f))
+                {
+                    pressure = 1f;
+                }
+
+                controlPoints.Add(new PointerManager.ControlPoint
+                {
+                    m_Pos = tr.translation,
+                    m_Orient = rotation,
+                    m_Pressure = pressure,
+                    m_TimestampMs = (uint)(baseTimestamp + (uint)index)
+                });
+                index++;
+            }
+
+            return controlPoints;
         }
 
         // Stop scripts and clear data structures. Used when clearing the sketch
