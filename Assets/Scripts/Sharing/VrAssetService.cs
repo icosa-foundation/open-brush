@@ -49,6 +49,7 @@ namespace TiltBrush
         GLTF,
         GLTF2,
         OBJ,
+        OBJ_NGON,
         BLOCKS,
         PLY
     }

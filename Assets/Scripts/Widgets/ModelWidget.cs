@@ -54,6 +54,7 @@ namespace TiltBrush
 
         private Transform m_ModelInstance;
         private ObjModelScript m_ObjModelScript;
+        private bool m_SyncHierarchyPending;
         private float m_InitSize_CS;
         public float InitSize_CS => m_InitSize_CS;
         private float m_HideSize_CS;
@@ -90,6 +91,8 @@ namespace TiltBrush
                 {
                     m_Model.m_UsageCount++;
                 }
+
+                m_SyncHierarchyPending = m_Model != null && !string.IsNullOrEmpty(Subtree);
                 LoadModel();
             }
         }
@@ -173,6 +176,7 @@ namespace TiltBrush
             clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.transform.position = position;
             clone.transform.rotation = rotation;
+            clone.m_Subtree = m_Subtree;
             clone.Model = Model;
             // We're obviously not loading from a sketch.  This is to prevent the intro animation.
             // TODO: Change variable name to something more explicit of what this flag does.
@@ -181,8 +185,6 @@ namespace TiltBrush
             clone.AddSceneLightGizmos();
             clone.transform.parent = transform.parent;
             clone.SetSignedWidgetSize(size);
-            clone.m_Subtree = m_Subtree;
-            clone.SyncHierarchyToSubtree();
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
 
@@ -273,6 +275,7 @@ namespace TiltBrush
 
         void LoadModel()
         {
+            Debug.Log($"Load Model Widget {m_Model?.AssetId}");
             // Clean up existing model
             if (m_ModelInstance != null)
             {
@@ -336,7 +339,18 @@ namespace TiltBrush
             m_NumVertsTrackedByWidgetManager = 0;
 
             m_ObjModelScript = GetComponentInChildren<ObjModelScript>();
+            if (m_ObjModelScript == null)
+            {
+                OutputWindowScript.Error("Failed to find ObjModelScript on loaded model");
+                return;
+            }
             m_ObjModelScript.UpdateAllMeshChildren();
+
+            if (m_SyncHierarchyPending && m_ObjModelScript != null)
+            {
+                SyncHierarchyToSubtree();
+                m_SyncHierarchyPending = false;
+            }
             if (m_ObjModelScript.NumMeshes == 0)
             {
                 OutputWindowScript.Error("No usable geometry in model");
@@ -440,7 +454,29 @@ namespace TiltBrush
         // starting at CarBody/Floor/Wheel1
         public void SyncHierarchyToSubtree(string previousSubtree = null)
         {
+            if (m_ObjModelScript == null)
+            {
+                m_ObjModelScript = GetComponentInChildren<ObjModelScript>(includeInactive: true);
+            }
+            if (m_ObjModelScript == null)
+            {
+                Debug.LogError("No ObjModelScript found in children");
+                // This is clunky but widgets with broken apart models weren't initialized properly when loading from sketch
+                var container = GetComponentInChildren<BoxCollider>().gameObject;
+                m_ObjModelScript = container.AddComponent<ObjModelScript>();
+                m_ObjModelScript.UpdateAllMeshChildren();
+                SyncHierarchyToSubtree();
+                return;
+            }
             var originalCost = GetTiltMeterCost();
+            if (!m_ObjModelScript)
+            {
+                Debug.LogWarning($"Can't get m_ObjModelScript...");
+                return;
+                // m_ObjModelScript = m_Model.m_ModelParent.gameObject.AddComponent<ObjModelScript>();
+            }
+            Debug.Log($"ObjModelScript found - syncing subtree: {Subtree}");
+
             var (node, excludeChildren) = FindSubtreeRoot(
                 m_ObjModelScript.transform,
                 Subtree,
@@ -488,6 +524,8 @@ namespace TiltBrush
 
                 CloneInitialMaterials(null);
                 RecalculateColliderBounds();
+
+                Debug.Log($"Subtree sync subtree: {name}: {Model.AssetId}");
 
                 // Adjust the tilt meter cost based on the new model
                 var newCost = GetTiltMeterCost();
@@ -752,7 +790,7 @@ namespace TiltBrush
 
         /// I believe (but am not sure) that Media Library content loads synchronously,
         /// and PAC content loads asynchronously.
-        public static async void CreateModelFromSaveData(TiltModels75 modelDatas)
+        public static async Task CreateModelFromSaveData(TiltModels75 modelDatas)
         {
             Debug.AssertFormat(modelDatas.AssetId == null || modelDatas.FilePath == null,
                 "Model Data should not have an AssetID *and* a File Path");
@@ -862,12 +900,12 @@ namespace TiltBrush
         static void CreateModel(Model model, string subtree, TrTransform xf, bool pin,
                                 bool isNonRawTransform, uint groupId, int layerId, string assetId = null)
         {
+            Debug.Log($"Create Model widget {model.AssetId}");
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             modelWidget.transform.localPosition = xf.translation;
             modelWidget.transform.localRotation = xf.rotation;
-            modelWidget.Model = model;
             modelWidget.m_Subtree = subtree;
-            modelWidget.SyncHierarchyToSubtree();
+            modelWidget.Model = model;
             modelWidget.m_LoadingFromSketch = true;
             modelWidget.Show(true, false);
             if (isNonRawTransform)
