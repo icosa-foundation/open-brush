@@ -275,7 +275,6 @@ namespace TiltBrush
 
         void LoadModel()
         {
-            Debug.Log($"Load Model Widget {m_Model?.AssetId}");
             // Clean up existing model
             if (m_ModelInstance != null)
             {
@@ -475,7 +474,6 @@ namespace TiltBrush
                 return;
                 // m_ObjModelScript = m_Model.m_ModelParent.gameObject.AddComponent<ObjModelScript>();
             }
-            Debug.Log($"ObjModelScript found - syncing subtree: {Subtree}");
 
             var (node, excludeChildren) = FindSubtreeRoot(
                 m_ObjModelScript.transform,
@@ -524,8 +522,6 @@ namespace TiltBrush
 
                 CloneInitialMaterials(null);
                 RecalculateColliderBounds();
-
-                Debug.Log($"Subtree sync subtree: {name}: {Model.AssetId}");
 
                 // Adjust the tilt meter cost based on the new model
                 var newCost = GetTiltMeterCost();
@@ -864,13 +860,9 @@ namespace TiltBrush
                 return false;
             }
 
-            model.m_SplitMeshPaths = splitMeshPaths?.ToList() ?? new List<string>();
-            model.m_NotSplittableMeshPaths = noSplitMeshPaths?.ToList() ?? new List<string>();
-
-            if (model.m_SplitMeshPaths != null)
-            {
-                model.InitMeshSplits();
-            }
+            // Use SetMeshSplitData to properly clear m_AppliedMeshSplits before applying splits
+            model.SetMeshSplitData(splitMeshPaths, noSplitMeshPaths);
+            model.InitMeshSplits();
 
             if (xfs != null)
             {
@@ -900,7 +892,6 @@ namespace TiltBrush
         static void CreateModel(Model model, string subtree, TrTransform xf, bool pin,
                                 bool isNonRawTransform, uint groupId, int layerId, string assetId = null)
         {
-            Debug.Log($"Create Model widget {model.AssetId}");
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             modelWidget.transform.localPosition = xf.translation;
             modelWidget.transform.localRotation = xf.rotation;
@@ -950,13 +941,9 @@ namespace TiltBrush
                 App.IcosaAssetCatalog.RequestModelLoad(assetId, "widget");
             }
 
-            model.m_SplitMeshPaths = splitMeshPaths?.ToList() ?? new List<string>();
-            model.m_NotSplittableMeshPaths = noSplitMeshPaths?.ToList() ?? new List<string>();
-
-            if (model.m_SplitMeshPaths != null)
-            {
-                model.InitMeshSplits();
-            }
+            // Use SetMeshSplitData to properly clear m_AppliedMeshSplits before applying splits
+            model.SetMeshSplitData(splitMeshPaths, noSplitMeshPaths);
+            model.InitMeshSplits();
 
             // Create a widget for each transform.
             for (int i = 0; i < rawXfs.Length; ++i)
