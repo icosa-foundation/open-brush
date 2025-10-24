@@ -632,10 +632,7 @@ namespace TiltBrush
                 // Apply unique naming during import (matching GLTF EnsureUniquePathsImport plugin behavior)
                 // This ensures OBJ files have unique node names immediately after loading
                 // Note: Apply to gameObject, not parent, since the OBJ hierarchy is under gameObject
-                Debug.Log($"[MeshSplit] Applying unique names to OBJ hierarchy for {m_Location.AbsolutePath}");
                 GenerateUniqueNames(gameObject.transform);
-                Debug.Log($"[MeshSplit] Unique names applied to OBJ");
-
                 return parent;
             }
             catch (Exception ex)
@@ -994,7 +991,6 @@ namespace TiltBrush
             // This ensures splits are re-applied when models are reloaded
             if (m_AppliedMeshSplits != null)
             {
-                Debug.Log($"[MeshSplit] Clearing applied splits tracker for {m_Location} (was: {m_AppliedMeshSplits.Count})");
                 m_AppliedMeshSplits.Clear();
             }
 
@@ -1214,20 +1210,17 @@ namespace TiltBrush
         {
             if (m_ModelParent == null)
             {
-                Debug.Log($"[MeshSplit] Model {m_Location}: m_ModelParent is null, skipping");
+                Debug.LogWarning($"[MeshSplit] Model {m_Location}: m_ModelParent is null, skipping");
                 return;
             }
             if (m_SplitMeshPaths == null || m_SplitMeshPaths.Count == 0)
             {
-                Debug.Log($"[MeshSplit] Model {m_Location}: No split paths to apply");
                 return;
             }
             if (m_AppliedMeshSplits == null)
             {
                 m_AppliedMeshSplits = new HashSet<string>();
             }
-
-            Debug.Log($"[MeshSplit] Model {m_Location}: Attempting to apply {m_SplitMeshPaths.Count} splits. Applied so far: {m_AppliedMeshSplits.Count}");
 
             var modelObjScript = m_ModelParent.GetComponentInChildren<ObjModelScript>();
             if (modelObjScript == null)
@@ -1238,16 +1231,12 @@ namespace TiltBrush
 
             foreach (var split in m_SplitMeshPaths)
             {
-                Debug.Log($"[MeshSplit] Processing split path: '{split}'");
-
                 if (m_NotSplittableMeshPaths != null && m_NotSplittableMeshPaths.Contains(split))
                 {
-                    Debug.Log($"[MeshSplit] Split '{split}' is in NotSplittable list, skipping");
                     continue;
                 }
                 if (m_AppliedMeshSplits.Contains(split))
                 {
-                    Debug.Log($"[MeshSplit] Split '{split}' already applied, skipping");
                     continue;
                 }
 
@@ -1260,17 +1249,14 @@ namespace TiltBrush
                         continue;
                     }
                     destRoot = modelObjScript.m_MeshChildren[0]?.transform;
-                    Debug.Log($"[MeshSplit] Using root mesh: {destRoot?.name}");
                 }
                 else
                 {
-                    Debug.Log($"[MeshSplit] Searching for subtree: '{split}' in {modelObjScript.transform.name}");
                     var (subTreeRoot, _) = ModelWidget.FindSubtreeRoot(
                         modelObjScript.transform,
                         split
                     );
                     destRoot = subTreeRoot;
-                    Debug.Log($"[MeshSplit] FindSubtreeRoot returned: {(destRoot != null ? destRoot.name : "NULL")}");
                 }
 
                 if (destRoot == null)
@@ -1285,19 +1271,17 @@ namespace TiltBrush
                 var modelMf = destRoot.GetComponent<MeshFilter>();
                 if (modelMf == null)
                 {
-                    Debug.Log($"[MeshSplit] Node '{destRoot.name}' has no MeshFilter (already split or not a mesh)");
+                    Debug.LogWarning($"[MeshSplit] Node '{destRoot.name}' has no MeshFilter (already split or not a mesh)");
                     // Already split or nothing to split at this node.
                     m_AppliedMeshSplits.Add(split);
                     continue;
                 }
 
-                Debug.Log($"[MeshSplit] Applying split to mesh: {destRoot.name}");
                 ApplySplits(modelMf);
                 // Remove the meshfilter from the original game object
                 GameObject.DestroyImmediate(modelMf);
                 modelObjScript.UpdateAllMeshChildren();
                 m_AppliedMeshSplits.Add(split);
-                Debug.Log($"[MeshSplit] Successfully split '{split}'");
             }
         }
 

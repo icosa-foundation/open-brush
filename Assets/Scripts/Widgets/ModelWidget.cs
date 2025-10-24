@@ -275,7 +275,6 @@ namespace TiltBrush
 
         void LoadModel()
         {
-            Debug.Log($"Load Model Widget {m_Model?.AssetId}");
             // Clean up existing model
             if (m_ModelInstance != null)
             {
@@ -475,7 +474,6 @@ namespace TiltBrush
                 return;
                 // m_ObjModelScript = m_Model.m_ModelParent.gameObject.AddComponent<ObjModelScript>();
             }
-            Debug.Log($"ObjModelScript found - syncing subtree: {Subtree}");
 
             var (node, excludeChildren) = FindSubtreeRoot(
                 m_ObjModelScript.transform,
@@ -524,8 +522,6 @@ namespace TiltBrush
 
                 CloneInitialMaterials(null);
                 RecalculateColliderBounds();
-
-                Debug.Log($"Subtree sync subtree: {name}: {Model.AssetId}");
 
                 // Adjust the tilt meter cost based on the new model
                 var newCost = GetTiltMeterCost();
@@ -865,14 +861,6 @@ namespace TiltBrush
             }
 
             // Use SetMeshSplitData to properly clear m_AppliedMeshSplits before applying splits
-            Debug.Log($"[MeshSplit] Setting split data for model. Split count: {splitMeshPaths?.Count ?? 0}");
-            if (splitMeshPaths != null)
-            {
-                foreach (var path in splitMeshPaths)
-                {
-                    Debug.Log($"[MeshSplit] - Split path: '{path}'");
-                }
-            }
             model.SetMeshSplitData(splitMeshPaths, noSplitMeshPaths);
             model.InitMeshSplits();
 
@@ -904,7 +892,6 @@ namespace TiltBrush
         static void CreateModel(Model model, string subtree, TrTransform xf, bool pin,
                                 bool isNonRawTransform, uint groupId, int layerId, string assetId = null)
         {
-            Debug.Log($"Create Model widget {model.AssetId}");
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             modelWidget.transform.localPosition = xf.translation;
             modelWidget.transform.localRotation = xf.rotation;
@@ -955,14 +942,6 @@ namespace TiltBrush
             }
 
             // Use SetMeshSplitData to properly clear m_AppliedMeshSplits before applying splits
-            Debug.Log($"[MeshSplit] Setting split data for model. Split count: {splitMeshPaths?.Count ?? 0}");
-            if (splitMeshPaths != null)
-            {
-                foreach (var path in splitMeshPaths)
-                {
-                    Debug.Log($"[MeshSplit] - Split path: '{path}'");
-                }
-            }
             model.SetMeshSplitData(splitMeshPaths, noSplitMeshPaths);
             model.InitMeshSplits();
 
