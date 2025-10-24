@@ -45,7 +45,7 @@ namespace TiltBrush
         private Shape m_CurrentShape;
         private Shape m_TempShape;
         private readonly List<Vector3> m_PreviousLineEndpoints = new List<Vector3>();
-        private readonly Stack<int> m_EndpointCountStack = new Stack<int>(); // Track how many endpoints each command added
+        private readonly List<int> m_EndpointCountHistory = new List<int>(); // Track how many endpoints each command added
         private readonly HashSet<Vector3Int> m_EndpointHashSet = new HashSet<Vector3Int>();
         private readonly Dictionary<Vector3Int, List<int>> m_SpatialHashGrid = new Dictionary<Vector3Int, List<int>>();
         private const float kEndpointQuantization = 0.0001f; // 0.1mm grid for duplicate detection
@@ -130,23 +130,30 @@ namespace TiltBrush
                     if (AddEndpoint(origin_CS)) addedCount++;
                     if (AddEndpoint(target_CS)) addedCount++;
 
-                    m_EndpointCountStack.Push(addedCount);
+                    m_EndpointCountHistory.Add(addedCount);
                 }
             }
         }
 
         private void OnCommandUndo(BaseCommand command)
         {
-            // Remove endpoints associated with this command using stack-based LIFO approach
-            if (command is BrushStrokeCommand brushCommand && m_EndpointCountStack.Count > 0)
+            // Remove endpoints associated with this command using LIFO history tracking
+            if (command is BrushStrokeCommand brushCommand && m_EndpointCountHistory.Count > 0)
             {
-                int removeCount = m_EndpointCountStack.Pop();
+                int index = m_EndpointCountHistory.Count - 1;
+                int removeCount = m_EndpointCountHistory[index];
+                m_EndpointCountHistory.RemoveAt(index);
 
-                // Remove that many endpoints from the end of the list
-                int startIndex = Mathf.Max(0, m_PreviousLineEndpoints.Count - removeCount);
-                if (removeCount > 0)
+                // Remove that many endpoints from the end of the list.
+                // Note that when our capped history evicts old endpoints we also trim the
+                // earliest command counts. However, the user can still undo a much older
+                // stroke after its endpoints were discarded, so we clamp the removal to the
+                // entries that remain to avoid the ArgumentException that prompted this fix.
+                int actualRemove = Mathf.Min(removeCount, m_PreviousLineEndpoints.Count);
+                if (actualRemove > 0)
                 {
-                    m_PreviousLineEndpoints.RemoveRange(startIndex, removeCount);
+                    int startIndex = m_PreviousLineEndpoints.Count - actualRemove;
+                    m_PreviousLineEndpoints.RemoveRange(startIndex, actualRemove);
                     // Rebuild hash set for remaining endpoints
                     m_EndpointHashSet.Clear();
                     foreach (Vector3 ep in m_PreviousLineEndpoints)
@@ -376,9 +383,36 @@ namespace TiltBrush
         public void ClearEndpointHistory()
         {
             m_PreviousLineEndpoints.Clear();
-            m_EndpointCountStack.Clear();
+            m_EndpointCountHistory.Clear();
             m_EndpointHashSet.Clear();
             m_SpatialHashGrid.Clear();
+        }
+
+        private void RemoveOldestEndpointFromHistory()
+        {
+            if (m_PreviousLineEndpoints.Count == 0)
+            {
+                return;
+            }
+
+            m_PreviousLineEndpoints.RemoveAt(0);
+
+            // Decrement the count for the oldest command that still has tracked endpoints
+            while (m_EndpointCountHistory.Count > 0)
+            {
+                if (m_EndpointCountHistory[0] > 0)
+                {
+                    m_EndpointCountHistory[0]--;
+                    if (m_EndpointCountHistory[0] == 0)
+                    {
+                        m_EndpointCountHistory.RemoveAt(0);
+                    }
+                    break;
+                }
+
+                // Discard commands that had no endpoints recorded (e.g. duplicate snaps)
+                m_EndpointCountHistory.RemoveAt(0);
+            }
         }
 
         private Vector3Int QuantizeEndpoint(Vector3 endpoint)
@@ -430,6 +464,7 @@ namespace TiltBrush
             if (maxCount == 0)
             {
                 m_PreviousLineEndpoints.Clear();
+                m_EndpointCountHistory.Clear();
                 m_EndpointHashSet.Clear();
                 return false;
             }
@@ -445,7 +480,7 @@ namespace TiltBrush
             bool needsHashSetRebuild = false;
             while (m_PreviousLineEndpoints.Count >= maxCount)
             {
-                m_PreviousLineEndpoints.RemoveAt(0);
+                RemoveOldestEndpointFromHistory();
                 needsHashSetRebuild = true;
             }
 
