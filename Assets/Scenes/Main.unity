@@ -10198,6 +10198,8 @@ MonoBehaviour:
   - {fileID: 2800000, guid: 20b076a1d91c04a0a8880683b317bac4, type: 3}
   - {fileID: 2800000, guid: ff5316b1de05b694397fd3576833045a, type: 3}
   m_MeterYOffset: 0.75
+  m_EndpointSnapDistance: 0.1
+  m_EndpointHistoryLength: 256
 --- !u!4 &635119618 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4237745945251962, guid: f158162c2f61e2142b099443643a1f93,
