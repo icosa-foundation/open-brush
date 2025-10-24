@@ -628,6 +628,11 @@ namespace TiltBrush
                 // m_Valid = true;
                 GameObject parent = new GameObject("ImportedObjParent");
                 gameObject.transform.SetParent(parent.transform, true);
+
+                // Apply unique naming during import (matching GLTF EnsureUniquePathsImport plugin behavior)
+                // This ensures OBJ files have unique node names immediately after loading
+                // Note: Apply to gameObject, not parent, since the OBJ hierarchy is under gameObject
+                GenerateUniqueNames(gameObject.transform);
                 return parent;
             }
             catch (Exception ex)
@@ -982,6 +987,13 @@ namespace TiltBrush
             // we could skip this for glTF models
             GenerateUniqueNames(m_ModelParent);
 
+            // Clear the applied splits tracker since we have a new hierarchy
+            // This ensures splits are re-applied when models are reloaded
+            if (m_AppliedMeshSplits != null)
+            {
+                m_AppliedMeshSplits.Clear();
+            }
+
             if (m_SplitMeshPaths != null && m_SplitMeshPaths.Count > 0)
             {
                 InitMeshSplits();
@@ -1198,6 +1210,7 @@ namespace TiltBrush
         {
             if (m_ModelParent == null)
             {
+                Debug.LogWarning($"[MeshSplit] Model {m_Location}: m_ModelParent is null, skipping");
                 return;
             }
             if (m_SplitMeshPaths == null || m_SplitMeshPaths.Count == 0)
@@ -1212,7 +1225,7 @@ namespace TiltBrush
             var modelObjScript = m_ModelParent.GetComponentInChildren<ObjModelScript>();
             if (modelObjScript == null)
             {
-                Debug.LogError($"Model {m_Location} has no ObjModelScript to process mesh splits");
+                Debug.LogError($"[MeshSplit] Model {m_Location} has no ObjModelScript to process mesh splits");
                 return;
             }
 
@@ -1232,7 +1245,7 @@ namespace TiltBrush
                 {
                     if (modelObjScript.m_MeshChildren == null || modelObjScript.m_MeshChildren.Length == 0)
                     {
-                        Debug.LogError($"Model {m_Location} has no meshes to split for root path");
+                        Debug.LogError($"[MeshSplit] Model {m_Location} has no meshes to split for root path");
                         continue;
                     }
                     destRoot = modelObjScript.m_MeshChildren[0]?.transform;
@@ -1248,13 +1261,17 @@ namespace TiltBrush
 
                 if (destRoot == null)
                 {
-                    Debug.LogError($"Model {m_Location} has no subtree for split {split}");
+                    Debug.LogError($"[MeshSplit] Model {m_Location} has no subtree for split '{split}'");
+                    // Log the hierarchy to help debug
+                    Debug.LogError($"[MeshSplit] Available hierarchy under {modelObjScript.transform.name}:");
+                    LogHierarchy(modelObjScript.transform, 0);
                     continue;
                 }
 
                 var modelMf = destRoot.GetComponent<MeshFilter>();
                 if (modelMf == null)
                 {
+                    Debug.LogWarning($"[MeshSplit] Node '{destRoot.name}' has no MeshFilter (already split or not a mesh)");
                     // Already split or nothing to split at this node.
                     m_AppliedMeshSplits.Add(split);
                     continue;
@@ -1265,6 +1282,16 @@ namespace TiltBrush
                 GameObject.DestroyImmediate(modelMf);
                 modelObjScript.UpdateAllMeshChildren();
                 m_AppliedMeshSplits.Add(split);
+            }
+        }
+
+        private void LogHierarchy(Transform root, int depth)
+        {
+            string indent = new string(' ', depth * 2);
+            Debug.LogError($"[MeshSplit] {indent}- {root.name} (MeshFilter: {root.GetComponent<MeshFilter>() != null})");
+            foreach (Transform child in root)
+            {
+                LogHierarchy(child, depth + 1);
             }
         }
     }
