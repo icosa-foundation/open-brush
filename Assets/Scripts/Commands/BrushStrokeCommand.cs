@@ -98,6 +98,12 @@ namespace TiltBrush
                 m_Widget.AdjustLift(m_LineLength_CS);
             }
 
+            // Add back to snap hash if this is a straight edge stroke
+            if ((m_Stroke.m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0)
+            {
+                StraightEdgeGuideScript.m_Instance?.AddStrokeToHash(m_Stroke);
+            }
+
             TiltMeterScript.m_Instance.AdjustMeter(m_Stroke, up: true);
         }
 
@@ -133,6 +139,12 @@ namespace TiltBrush
             if (m_Widget != null)
             {
                 m_Widget.AdjustLift(-m_LineLength_CS);
+            }
+
+            // Remove from snap hash if this is a straight edge stroke
+            if ((m_Stroke.m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0)
+            {
+                StraightEdgeGuideScript.m_Instance?.RemoveStrokeFromHash(m_Stroke);
             }
 
             TiltMeterScript.m_Instance.AdjustMeter(m_Stroke, up: false);
