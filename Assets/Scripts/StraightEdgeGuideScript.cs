@@ -55,6 +55,9 @@ namespace TiltBrush
         // Whether to snap only to active canvas or all canvases
         [SerializeField] private bool m_SnapToActiveCanvasOnly = true;
 
+        // Track if we're currently snapped to an endpoint (for haptic feedback)
+        private bool m_IsCurrentlySnapped = false;
+
         public Shape CurrentShape { get { return m_CurrentShape; } }
         public Shape TempShape { get { return m_TempShape; } }
 
@@ -266,14 +269,22 @@ namespace TiltBrush
 
         public bool TryGetEndpointSnap(Vector3 position_WS, out Vector3 snapped_WS)
         {
-            if (m_SnapToActiveCanvasOnly)
+            bool foundSnap = m_SnapToActiveCanvasOnly
+                ? QuerySingleCanvas(App.Scene.ActiveCanvas, position_WS, out snapped_WS)
+                : QueryAllCanvases(position_WS, out snapped_WS);
+
+            // Trigger haptic pulse on snap transition (not-snapped → snapped)
+            if (foundSnap && !m_IsCurrentlySnapped)
             {
-                return QuerySingleCanvas(App.Scene.ActiveCanvas, position_WS, out snapped_WS);
+                InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.05f);
+                m_IsCurrentlySnapped = true;
             }
-            else
+            else if (!foundSnap && m_IsCurrentlySnapped)
             {
-                return QueryAllCanvases(position_WS, out snapped_WS);
+                m_IsCurrentlySnapped = false;
             }
+
+            return foundSnap;
         }
 
         private bool QuerySingleCanvas(CanvasScript canvas, Vector3 position_WS, out Vector3 snapped_WS)
