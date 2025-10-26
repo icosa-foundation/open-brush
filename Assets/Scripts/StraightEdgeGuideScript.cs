@@ -20,6 +20,8 @@ namespace TiltBrush
 
     public class StraightEdgeGuideScript : MonoBehaviour
     {
+        static public StraightEdgeGuideScript m_Instance;
+
         [SerializeField] private float m_MinDisplayLength;
         [SerializeField] private float m_SnapDisabledDelay = 0.1f;
         [SerializeField] private Texture2D[] m_ShapeTextures;
@@ -44,11 +46,14 @@ namespace TiltBrush
         private bool m_SnapActive;
         private Shape m_CurrentShape;
         private Shape m_TempShape;
-        private readonly List<Vector3> m_PreviousLineEndpoints = new List<Vector3>();
-        private readonly List<int> m_EndpointCountHistory = new List<int>(); // Track how many endpoints each command added
-        private readonly HashSet<Vector3Int> m_EndpointHashSet = new HashSet<Vector3Int>();
-        private readonly Dictionary<Vector3Int, List<int>> m_SpatialHashGrid = new Dictionary<Vector3Int, List<int>>();
-        private const float kEndpointQuantization = 0.0001f; // 0.1mm grid for duplicate detection
+
+        // Spatial hash for efficient snap point queries
+        // One hash per canvas, stored in canvas-space coordinates
+        private readonly Dictionary<CanvasScript, Dictionary<Vector3Int, List<(Stroke stroke, int pointIndex)>>> m_HashPerCanvas =
+            new Dictionary<CanvasScript, Dictionary<Vector3Int, List<(Stroke, int)>>>();
+
+        // Whether to snap only to active canvas or all canvases
+        [SerializeField] private bool m_SnapToActiveCanvasOnly = true;
 
         public Shape CurrentShape { get { return m_CurrentShape; } }
         public Shape TempShape { get { return m_TempShape; } }
@@ -86,82 +91,9 @@ namespace TiltBrush
 
         void Awake()
         {
+            m_Instance = this;
             m_MeterDisplay = GetComponentInChildren<TMPro.TextMeshPro>();
             HideGuide();
-            ClearEndpointHistory();
-        }
-
-        void Start()
-        {
-            // Subscribe to command events for endpoint tracking
-            // Using Start() instead of Awake() ensures SketchMemoryScript.m_Instance exists
-            if (SketchMemoryScript.m_Instance != null)
-            {
-                SketchMemoryScript.m_Instance.CommandPerformed += OnCommandPerformed;
-                SketchMemoryScript.m_Instance.CommandUndo += OnCommandUndo;
-            }
-        }
-
-        void OnDestroy()
-        {
-            if (SketchMemoryScript.m_Instance != null)
-            {
-                SketchMemoryScript.m_Instance.CommandPerformed -= OnCommandPerformed;
-                SketchMemoryScript.m_Instance.CommandUndo -= OnCommandUndo;
-            }
-        }
-
-        private void OnCommandPerformed(BaseCommand command)
-        {
-            // Record endpoints when a straight edge line is created
-            if (command is BrushStrokeCommand brushCommand &&
-                PointerManager.m_Instance.StraightEdgeModeEnabled &&
-                m_CurrentShape == Shape.Line)
-            {
-                Stroke stroke = brushCommand.m_Stroke;
-                if (stroke != null && stroke.m_ControlPoints != null && stroke.m_ControlPoints.Length >= 2)
-                {
-                    // Endpoints are in canvas space
-                    Vector3 origin_CS = stroke.m_ControlPoints[0].m_Pos;
-                    Vector3 target_CS = stroke.m_ControlPoints[stroke.m_ControlPoints.Length - 1].m_Pos;
-
-                    // Track how many endpoints were actually added (0, 1, or 2 depending on duplicates)
-                    int addedCount = 0;
-                    if (AddEndpoint(origin_CS)) addedCount++;
-                    if (AddEndpoint(target_CS)) addedCount++;
-
-                    m_EndpointCountHistory.Add(addedCount);
-                }
-            }
-        }
-
-        private void OnCommandUndo(BaseCommand command)
-        {
-            // Remove endpoints associated with this command using LIFO history tracking
-            if (command is BrushStrokeCommand brushCommand && m_EndpointCountHistory.Count > 0)
-            {
-                int index = m_EndpointCountHistory.Count - 1;
-                int removeCount = m_EndpointCountHistory[index];
-                m_EndpointCountHistory.RemoveAt(index);
-
-                // Remove that many endpoints from the end of the list.
-                // Note that when our capped history evicts old endpoints we also trim the
-                // earliest command counts. However, the user can still undo a much older
-                // stroke after its endpoints were discarded, so we clamp the removal to the
-                // entries that remain to avoid the ArgumentException that prompted this fix.
-                int actualRemove = Mathf.Min(removeCount, m_PreviousLineEndpoints.Count);
-                if (actualRemove > 0)
-                {
-                    int startIndex = m_PreviousLineEndpoints.Count - actualRemove;
-                    m_PreviousLineEndpoints.RemoveRange(startIndex, actualRemove);
-                    // Rebuild hash set for remaining endpoints
-                    m_EndpointHashSet.Clear();
-                    foreach (Vector3 ep in m_PreviousLineEndpoints)
-                    {
-                        m_EndpointHashSet.Add(QuantizeEndpoint(ep));
-                    }
-                }
-            }
         }
 
         public void ShowGuide(Vector3 vOrigin)
@@ -334,20 +266,72 @@ namespace TiltBrush
 
         public bool TryGetEndpointSnap(Vector3 position_WS, out Vector3 snapped_WS)
         {
-            // Snap distance must be in world space to be consistent regardless of canvas scale/rotation
-            float maxDistanceSqr = m_EndpointSnapDistance * m_EndpointSnapDistance;
-            float closestDistanceSqr = maxDistanceSqr;
+            if (m_SnapToActiveCanvasOnly)
+            {
+                return QuerySingleCanvas(App.Scene.ActiveCanvas, position_WS, out snapped_WS);
+            }
+            else
+            {
+                return QueryAllCanvases(position_WS, out snapped_WS);
+            }
+        }
+
+        private bool QuerySingleCanvas(CanvasScript canvas, Vector3 position_WS, out Vector3 snapped_WS)
+        {
+            snapped_WS = position_WS;
+            if (canvas == null || !m_HashPerCanvas.TryGetValue(canvas, out var hash))
+            {
+                return false; // No snap points on this canvas
+            }
+
+            // Transform query position to canvas space
+            Vector3 queryPos_CS = canvas.Pose.inverse * position_WS;
+
+            return QueryCanvasHash(canvas, hash, queryPos_CS, position_WS, out snapped_WS);
+        }
+
+        private bool QueryAllCanvases(Vector3 position_WS, out Vector3 snapped_WS)
+        {
+            snapped_WS = position_WS;
+            float maxDistSqr = m_EndpointSnapDistance * m_EndpointSnapDistance;
+            float closestDistSqr = maxDistSqr;
             bool found = false;
             Vector3 closest_WS = Vector3.zero;
 
-            int checkedCount = 0;
+            foreach (var (canvas, hash) in m_HashPerCanvas)
+            {
+                if (canvas == null) continue;
+
+                Vector3 queryPos_CS = canvas.Pose.inverse * position_WS;
+                if (QueryCanvasHash(canvas, hash, queryPos_CS, position_WS, out Vector3 result_WS))
+                {
+                    float distSqr = (result_WS - position_WS).sqrMagnitude;
+                    if (distSqr < closestDistSqr)
+                    {
+                        closestDistSqr = distSqr;
+                        closest_WS = result_WS;
+                        found = true;
+                    }
+                }
+            }
+
+            if (found) snapped_WS = closest_WS;
+            return found;
+        }
+
+        private bool QueryCanvasHash(CanvasScript canvas, Dictionary<Vector3Int, List<(Stroke, int)>> hash,
+                                      Vector3 queryPos_CS, Vector3 position_WS, out Vector3 snapped_WS)
+        {
+            snapped_WS = position_WS;
+            float maxDistSqr = m_EndpointSnapDistance * m_EndpointSnapDistance;
+            float closestDistSqr = maxDistSqr;
+            bool found = false;
+            Vector3 closest_WS = Vector3.zero;
+
+            // Query 3x3x3 neighborhood in canvas space
             float cellSize = m_EndpointSnapDistance;
-            Vector3Int centerCell = SpatialHashPosition(position_WS, cellSize);
+            Vector3Int centerCell = SpatialHashPosition(queryPos_CS, cellSize);
 
-            // Rebuild spatial hash in world space for current canvas pose
-            RebuildSpatialHashWorldSpace();
-
-            // Check the current cell and all 26 adjacent cells (3x3x3 neighborhood)
             for (int dx = -1; dx <= 1; dx++)
             {
                 for (int dy = -1; dy <= 1; dy++)
@@ -355,19 +339,24 @@ namespace TiltBrush
                     for (int dz = -1; dz <= 1; dz++)
                     {
                         Vector3Int cell = centerCell + new Vector3Int(dx, dy, dz);
-                        if (m_SpatialHashGrid.TryGetValue(cell, out List<int> indices))
+                        if (hash.TryGetValue(cell, out var entries))
                         {
-                            foreach (int i in indices)
+                            foreach (var (stroke, pointIndex) in entries)
                             {
-                                // Convert endpoint from canvas space to world space for distance check
-                                Vector3 endpoint_WS = Coords.CanvasPose * m_PreviousLineEndpoints[i];
-                                float distanceSqr = (endpoint_WS - position_WS).sqrMagnitude;
-                                checkedCount++;
+                                if (stroke?.m_ControlPoints == null) continue;
 
-                                if (distanceSqr <= closestDistanceSqr)
+                                // Get snap point from control points (already in canvas space)
+                                int cpIndex = pointIndex == 0 ? 0 : stroke.m_ControlPoints.Length - 1;
+                                Vector3 snapPoint_CS = stroke.m_ControlPoints[cpIndex].m_Pos;
+
+                                // Transform to world space for distance check
+                                Vector3 snapPoint_WS = canvas.Pose * snapPoint_CS;
+                                float distSqr = (snapPoint_WS - position_WS).sqrMagnitude;
+
+                                if (distSqr < closestDistSqr)
                                 {
-                                    closestDistanceSqr = distanceSqr;
-                                    closest_WS = endpoint_WS;
+                                    closestDistSqr = distSqr;
+                                    closest_WS = snapPoint_WS;
                                     found = true;
                                 }
                             }
@@ -376,55 +365,10 @@ namespace TiltBrush
                 }
             }
 
-            snapped_WS = found ? closest_WS : position_WS;
+            if (found) snapped_WS = closest_WS;
             return found;
         }
 
-        public void ClearEndpointHistory()
-        {
-            m_PreviousLineEndpoints.Clear();
-            m_EndpointCountHistory.Clear();
-            m_EndpointHashSet.Clear();
-            m_SpatialHashGrid.Clear();
-        }
-
-        private void RemoveOldestEndpointFromHistory()
-        {
-            if (m_PreviousLineEndpoints.Count == 0)
-            {
-                return;
-            }
-
-            m_PreviousLineEndpoints.RemoveAt(0);
-
-            // Decrement the count for the oldest command that still has tracked endpoints
-            while (m_EndpointCountHistory.Count > 0)
-            {
-                if (m_EndpointCountHistory[0] > 0)
-                {
-                    m_EndpointCountHistory[0]--;
-                    if (m_EndpointCountHistory[0] == 0)
-                    {
-                        m_EndpointCountHistory.RemoveAt(0);
-                    }
-                    break;
-                }
-
-                // Discard commands that had no endpoints recorded (e.g. duplicate snaps)
-                m_EndpointCountHistory.RemoveAt(0);
-            }
-        }
-
-        private Vector3Int QuantizeEndpoint(Vector3 endpoint)
-        {
-            // Quantize to fine grid for duplicate detection (0.1mm)
-            float invQuant = 1f / kEndpointQuantization;
-            return new Vector3Int(
-                Mathf.RoundToInt(endpoint.x * invQuant),
-                Mathf.RoundToInt(endpoint.y * invQuant),
-                Mathf.RoundToInt(endpoint.z * invQuant)
-            );
-        }
 
         private Vector3Int SpatialHashPosition(Vector3 position, float cellSize)
         {
@@ -437,69 +381,136 @@ namespace TiltBrush
             );
         }
 
-        private void RebuildSpatialHashWorldSpace()
+        /// <summary>
+        /// Add a stroke's endpoints to the spatial hash.
+        /// Called when a straight edge stroke is created.
+        /// </summary>
+        public void AddStrokeToHash(Stroke stroke)
         {
-            // Rebuild spatial hash in world space for current canvas pose
-            // This ensures snap distance is consistent in world space
-            m_SpatialHashGrid.Clear();
+            if (stroke?.Canvas == null || stroke.m_ControlPoints == null || stroke.m_ControlPoints.Length < 2)
+            {
+                return;
+            }
+
+            var canvas = stroke.Canvas;
+            if (!m_HashPerCanvas.TryGetValue(canvas, out var hash))
+            {
+                hash = new Dictionary<Vector3Int, List<(Stroke, int)>>();
+                m_HashPerCanvas[canvas] = hash;
+            }
+
+            // Get endpoints in canvas space (already there!)
+            Vector3 origin_CS = stroke.m_ControlPoints[0].m_Pos;
+            Vector3 target_CS = stroke.m_ControlPoints[stroke.m_ControlPoints.Length - 1].m_Pos;
             float cellSize = m_EndpointSnapDistance;
 
-            for (int i = 0; i < m_PreviousLineEndpoints.Count; i++)
+            // Add origin (pointIndex 0)
+            Vector3Int originCell = SpatialHashPosition(origin_CS, cellSize);
+            if (!hash.TryGetValue(originCell, out var originList))
             {
-                // Convert from canvas space to world space
-                Vector3 endpoint_WS = Coords.CanvasPose * m_PreviousLineEndpoints[i];
-                Vector3Int cell = SpatialHashPosition(endpoint_WS, cellSize);
-                if (!m_SpatialHashGrid.TryGetValue(cell, out List<int> indices))
-                {
-                    indices = new List<int>();
-                    m_SpatialHashGrid[cell] = indices;
-                }
-                indices.Add(i);
+                originList = new List<(Stroke, int)>();
+                hash[originCell] = originList;
             }
+            originList.Add((stroke, 0));
+
+            // Add target (pointIndex 1)
+            Vector3Int targetCell = SpatialHashPosition(target_CS, cellSize);
+            if (!hash.TryGetValue(targetCell, out var targetList))
+            {
+                targetList = new List<(Stroke, int)>();
+                hash[targetCell] = targetList;
+            }
+            targetList.Add((stroke, 1));
         }
 
-        private bool AddEndpoint(Vector3 endpoint)
+        /// <summary>
+        /// Remove a stroke's endpoints from the spatial hash.
+        /// Called when a straight edge stroke is deleted.
+        /// </summary>
+        public void RemoveStrokeFromHash(Stroke stroke)
         {
-            int maxCount = Mathf.Max(0, m_EndpointHistoryLength) * 2;
-            if (maxCount == 0)
+            if (stroke?.Canvas == null || !m_HashPerCanvas.TryGetValue(stroke.Canvas, out var hash))
             {
-                m_PreviousLineEndpoints.Clear();
-                m_EndpointCountHistory.Clear();
-                m_EndpointHashSet.Clear();
-                return false;
+                return;
             }
 
-            // Check for duplicates using spatial hashing - O(1) instead of O(n)
-            Vector3Int quantized = QuantizeEndpoint(endpoint);
-            if (m_EndpointHashSet.Contains(quantized))
+            if (stroke.m_ControlPoints == null || stroke.m_ControlPoints.Length < 2)
             {
-                return false;
+                return;
             }
 
-            // Remove oldest endpoints if we've reached capacity
-            bool needsHashSetRebuild = false;
-            while (m_PreviousLineEndpoints.Count >= maxCount)
-            {
-                RemoveOldestEndpointFromHistory();
-                needsHashSetRebuild = true;
-            }
+            // Get endpoints in canvas space
+            Vector3 origin_CS = stroke.m_ControlPoints[0].m_Pos;
+            Vector3 target_CS = stroke.m_ControlPoints[stroke.m_ControlPoints.Length - 1].m_Pos;
+            float cellSize = m_EndpointSnapDistance;
 
-            // Rebuild hash set if we removed any endpoints
-            if (needsHashSetRebuild)
+            // Remove origin (pointIndex 0)
+            Vector3Int originCell = SpatialHashPosition(origin_CS, cellSize);
+            if (hash.TryGetValue(originCell, out var originList))
             {
-                m_EndpointHashSet.Clear();
-                foreach (Vector3 ep in m_PreviousLineEndpoints)
+                originList.Remove((stroke, 0));
+                if (originList.Count == 0)
                 {
-                    m_EndpointHashSet.Add(QuantizeEndpoint(ep));
+                    hash.Remove(originCell);
                 }
-                // Note: Spatial hash is rebuilt in world space during queries, not here
             }
 
-            // Add the new endpoint
-            m_PreviousLineEndpoints.Add(endpoint);
-            m_EndpointHashSet.Add(quantized);
-            // Note: Spatial hash will be rebuilt in world space on next TryGetEndpointSnap call
-            return true;
+            // Remove target (pointIndex 1)
+            Vector3Int targetCell = SpatialHashPosition(target_CS, cellSize);
+            if (hash.TryGetValue(targetCell, out var targetList))
+            {
+                targetList.Remove((stroke, 1));
+                if (targetList.Count == 0)
+                {
+                    hash.Remove(targetCell);
+                }
+            }
+
+            // Clean up empty canvas hash
+            if (hash.Count == 0)
+            {
+                m_HashPerCanvas.Remove(stroke.Canvas);
+            }
         }
+
+        /// <summary>
+        /// Update a stroke's position in the spatial hash after transformation.
+        /// Called when a straight edge stroke is moved/rotated/scaled.
+        /// </summary>
+        public void UpdateStrokeInHash(Stroke stroke)
+        {
+            // Simply remove and re-add (efficient for single strokes)
+            RemoveStrokeFromHash(stroke);
+            AddStrokeToHash(stroke);
+        }
+
+        /// <summary>
+        /// Rebuild all canvas hashes from scratch.
+        /// Called when loading a sketch or for rare full-rebuild scenarios.
+        /// </summary>
+        public void RebuildAllCanvasHashes()
+        {
+            m_HashPerCanvas.Clear();
+
+            if (SketchMemoryScript.m_Instance == null)
+            {
+                return;
+            }
+
+            // Iterate through all strokes in memory
+            var currentNode = SketchMemoryScript.m_Instance.GetMemoryList.First;
+            while (currentNode != null)
+            {
+                Stroke stroke = currentNode.Value;
+                if (stroke != null &&
+                    (stroke.m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0 &&
+                    stroke.m_ControlPoints != null && stroke.m_ControlPoints.Length >= 2)
+                {
+                    AddStrokeToHash(stroke);
+                }
+                currentNode = currentNode.Next;
+            }
+        }
+
     }
 } // namespace TiltBrush

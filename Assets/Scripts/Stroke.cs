@@ -350,6 +350,13 @@ namespace TiltBrush
             m_BrushScale *= absoluteScale
                 ? Mathf.Abs(leftTransform.scale)
                 : leftTransform.scale;
+
+            // Update snap hash if this is a straight edge stroke
+            if ((m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0)
+            {
+                StraightEdgeGuideScript.m_Instance?.UpdateStrokeInHash(this);
+            }
+
             InvalidateCopy();
         }
 
@@ -364,6 +371,13 @@ namespace TiltBrush
             }
 
             m_BrushScale *= Mathf.Abs(leftTransform.lossyScale.x);
+
+            // Update snap hash if this is a straight edge stroke
+            if ((m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0)
+            {
+                StraightEdgeGuideScript.m_Instance?.UpdateStrokeInHash(this);
+            }
+
             InvalidateCopy();
         }
 
