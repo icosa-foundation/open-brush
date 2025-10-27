@@ -73,11 +73,14 @@ namespace TiltBrush
         private static void LogInGoogle() => App.GoogleIdentity.LoginAsync();
         [MenuItem("Open Brush/Cloud/Log in (Sketchfab)")]
         private static void LogInSketchfab() => App.SketchfabIdentity.LoginAsync();
+        [MenuItem("Open Brush/Cloud/Log in (Viverse)")]
+        private static void LogInViverse() => App.ViveIdentity.LoginAsync();
         [MenuItem("Open Brush/Cloud/Log out (All)")]
         private static void LogOutAll()
         {
             App.GoogleIdentity.Logout();
             App.SketchfabIdentity.Logout();
+            App.ViveIdentity.Logout();
         }
         [MenuItem("Open Brush/Cloud/Log in (Sketchfab)", true)]
         [MenuItem("Open Brush/Cloud/Log in (Google)", true)]
@@ -107,6 +110,8 @@ namespace TiltBrush
         private SecretsConfig.ServiceAuthData ServiceAuthData => App.Config.Secrets?[m_Service];
         public string ClientId => ServiceAuthData?.ClientId;
         private string ClientSecret => ServiceAuthData?.ClientSecret;
+        private ViverseHttpServer m_ViverseServer;
+        private ViverseTokenData m_ViverseToken;
 
         public UserInfo Profile
         {
@@ -131,6 +136,18 @@ namespace TiltBrush
 
         public async Task<string> GetAccessToken()
         {
+            if (m_Service == SecretsConfig.Service.Vive)
+            {
+                if (m_ViverseToken != null && m_ViverseToken.IsValid)
+                {
+                    return m_ViverseToken.AccessToken;
+                }
+                
+                // Token expired or missing
+                Debug.LogWarning("VIVERSE: Token is expired or missing, need to re-authenticate");
+                return null;
+            }
+            
             if (UserCredential == null) { return null; }
             return await UserCredential.GetAccessTokenForRequestAsync();
         }
@@ -144,12 +161,59 @@ namespace TiltBrush
         /// This is only public so it can be used in unit tests.
         public async Task InitializeAsync()
         {
+            
+            if (m_Service == SecretsConfig.Service.Vive)
+            {
+                Debug.Log("Initializing VIVERSE OAuth (browser-based flow)");
+                
+                // Create and configure HTTP server for OAuth callback
+                m_ViverseServer = gameObject.AddComponent<ViverseHttpServer>();
+                m_ViverseServer.OnAuthComplete += OnViverseAuthComplete;
+                m_ViverseServer.OnAuthError += OnViverseAuthError;
+                
+                // Try to load existing token
+                string tokenJson = PlayerPrefs.GetString("viverse_token", "");
+                if (!string.IsNullOrEmpty(tokenJson))
+                {
+                    try
+                    {
+                        m_ViverseToken = JsonUtility.FromJson<ViverseTokenData>(tokenJson);
+                        
+                        if (m_ViverseToken != null && m_ViverseToken.IsValid)
+                        {
+                            Debug.Log("VIVERSE: Loaded valid token from storage");
+                            
+                            // Get user info with existing token
+                            await GetUserInfoAsync(onStartup: true, forTesting: !Application.isPlaying);
+                            
+                            if (LoggedIn)
+                            {
+                                OnSuccessfulAuthorization?.Invoke();
+                            }
+                        }
+                        else
+                        {
+                            Debug.Log("VIVERSE: Stored token is expired");
+                            m_ViverseToken = null;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogWarning($"VIVERSE: Could not load token: {ex.Message}");
+                        m_ViverseToken = null;
+                    }
+                }
+
+                return;
+            }
+            
             if (string.IsNullOrEmpty(ClientId) || string.IsNullOrEmpty(ClientSecret))
             {
                 Debug.LogWarning(
                     $"Attempted to initialize to {m_Service} with missing Client Id or Client Secret.");
                 return;
             }
+            
             m_TokenDataStore = new PlayerPrefsDataStore(m_TokenStorePrefix);
             var scopes = App.Config.IsMobileHardware
                 ? m_OAuthScopes
@@ -192,18 +256,106 @@ namespace TiltBrush
                     m_AuthorizationServerUrl,
                     m_TokenServerUrl);
             }
-
-            bool forTesting = !Application.isPlaying;
+            
             // If we have a stored user token, see if we can refresh it and log in automatically.
             if (m_TokenDataStore.UserTokens() != null)
             {
                 await ReauthorizeAsync();
-                await GetUserInfoAsync(onStartup: true, forTesting: forTesting);
+                await GetUserInfoAsync(onStartup: true, forTesting: !Application.isPlaying);
                 if (LoggedIn)
                 {
                     OnSuccessfulAuthorization?.Invoke();
                 }
             }
+        }
+
+        private void OnViverseAuthComplete(string accessToken, string refreshToken, int expiresIn)
+        {
+            Debug.Log("VIVERSE: Authentication successful");
+            
+            try
+            {
+                // Create VIVERSE-specific token (no Google dependency)
+                m_ViverseToken = ViverseTokenData.FromAuthResponse(accessToken, refreshToken, expiresIn);
+                
+                // Save to PlayerPrefs as JSON
+                string tokenJson = JsonUtility.ToJson(m_ViverseToken);
+                PlayerPrefs.SetString("viverse_token", tokenJson);
+                PlayerPrefs.Save();
+                
+                Debug.Log($"VIVERSE: Token saved, expires at {m_ViverseToken.ExpiresAt}");
+                
+                // Fetch user info
+                GetUserInfoAsync().WrapErrors();
+                
+                // Notify success
+                OnSuccessfulAuthorization?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"VIVERSE: Error saving token: {ex.Message}");
+                OnViverseAuthError($"Failed to save token: {ex.Message}");
+            }
+        }
+
+        private async Task LoginViverseAsync()
+        {
+            if (m_ViverseServer == null)
+            {
+                Debug.LogError("VIVERSE server not initialized");
+                ControllerConsoleScript.m_Instance?.AddNewLine("VIVERSE: Server not initialized");
+                return;
+            }
+            
+            Debug.Log("VIVERSE: Starting login flow");
+            
+            // Start HTTP server
+            if (!m_ViverseServer.StartServer())
+            {
+                Debug.LogError("Failed to start VIVERSE auth server");
+                ControllerConsoleScript.m_Instance?.AddNewLine("Failed to start VIVERSE auth server");
+                return;
+            }
+            
+            // Open browser
+            string authUrl = m_ViverseServer.GetAuthUrl();
+            Debug.Log($"VIVERSE: Opening auth URL");
+            
+            try
+            {
+                App.OpenURL(authUrl);
+                ControllerConsoleScript.m_Instance?.AddNewLine("Opening VIVERSE login in browser...");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Failed to open browser: {ex.Message}");
+                ControllerConsoleScript.m_Instance?.AddNewLine($"Failed to open browser: {ex.Message}");
+                m_ViverseServer.StopServer();
+            }
+        }
+
+        private void OnViverseAuthError(string error)
+        {
+            Debug.LogError($"VIVERSE auth failed: {error}");
+            if (ControllerConsoleScript.m_Instance != null)
+            {
+                ControllerConsoleScript.m_Instance.AddNewLine($"VIVERSE login failed: {error}");
+            }
+        }
+
+        private async Task<UserInfo> GetUserInfoViverseAsync(bool forTesting)
+        {
+            // TODO: Replace with actual VIVERSE user info endpoint when available
+            Debug.LogWarning("VIVERSE: Using placeholder user info");
+            
+            return new UserInfo
+            {
+                id = "viverse_user",
+                name = "VIVERSE User",
+                email = "",
+                icon = m_LoggedInTexture,
+                isGoogle = false
+            };
         }
 
         /// Force-performs authentication - will cancel any current authentication in progress.
@@ -229,6 +381,12 @@ namespace TiltBrush
 
         public async void LoginAsync()
         {
+            if (m_Service == SecretsConfig.Service.Vive)
+            {
+                await LoginViverseAsync();
+                return;
+            }
+
             if (!IsIcosa && (string.IsNullOrEmpty(ClientId) || string.IsNullOrEmpty(ClientSecret)))
             {
                 Debug.LogWarning(
@@ -245,6 +403,28 @@ namespace TiltBrush
 
         public void Logout()
         {
+            if (m_Service == SecretsConfig.Service.Vive)
+            {
+                if (m_ViverseServer != null)
+                {
+                    m_ViverseServer.StopServer();
+                }
+                
+                if (Profile != null && ControllerConsoleScript.m_Instance != null)
+                {
+                    ControllerConsoleScript.m_Instance.AddNewLine(Profile.name + " logged out.");
+                }
+                
+                // Clear VIVERSE token
+                m_ViverseToken = null;
+                PlayerPrefs.DeleteKey("viverse_token");
+                PlayerPrefs.Save();
+                
+                Profile = null;
+                OnLogout?.Invoke();
+                return;
+            }
+            
             if (UserCredential?.Token?.RefreshToken != null)
             {
                 // Not sure if it's possible for m_User to be null here.
@@ -266,6 +446,17 @@ namespace TiltBrush
         /// Sign an outgoing request.
         public async Task Authenticate(UnityWebRequest www)
         {
+            
+            if (m_Service == SecretsConfig.Service.Vive)
+            {
+                string accessToken = await GetAccessToken();
+                if (!string.IsNullOrEmpty(accessToken))
+                {
+                    www.SetRequestHeader("AccessToken", accessToken);
+                }
+                return;
+            }
+            
             if (UserCredential?.Token != null)
             {
                 string accessToken = await GetAccessToken();
@@ -276,6 +467,26 @@ namespace TiltBrush
         // Attempts to fill in this.Profile
         private async Task GetUserInfoAsync(bool onStartup = false, bool forTesting = false)
         {
+            if (m_Service == SecretsConfig.Service.Vive)
+            {
+                if (m_ViverseToken != null && m_ViverseToken.IsValid)
+                {
+                    Profile = await GetUserInfoViverseAsync(forTesting);
+                    
+                    if (!forTesting && ControllerConsoleScript.m_Instance != null)
+                    {
+                        ControllerConsoleScript.m_Instance.AddNewLine(Profile.name + " logged in.");
+                    }
+                    return;
+                }
+                
+                if (forTesting)
+                {
+                    throw new InvalidOperationException("You must have a valid token to test VIVERSE");
+                }
+                return;
+            }
+            
             if (String.IsNullOrEmpty(UserCredential?.Token?.RefreshToken))
             {
                 if (forTesting)
@@ -287,7 +498,9 @@ namespace TiltBrush
 
             Task<UserInfo> infoTask = IsGoogle
                 ? GetUserInfoGoogleAsync(forTesting)
-                : GetUserInfoSketchfabAsync(forTesting);
+                : m_Service == SecretsConfig.Service.Vive
+                    ? GetUserInfoViverseAsync(forTesting)
+                    : GetUserInfoSketchfabAsync(forTesting);
 
             Profile = await infoTask; // Triggers OnProfileUpdated event
 
@@ -346,6 +559,14 @@ namespace TiltBrush
                 user.icon = m_LoggedInTexture;
             }
             return user;
+        }
+
+        private void OnDestroy()
+        {
+            if (m_Service == SecretsConfig.Service.Vive && m_ViverseServer != null)
+            {
+                m_ViverseServer.StopServer();
+            }
         }
     }
 
