@@ -44,24 +44,25 @@ namespace TiltBrush
         {
             ModifyStroke(m_InitialStroke, m_SnippedCP1);
             ModifyStroke(m_NewStroke, m_SnippedCP2);
+            // Update snap hash for both pieces after modifying control points
+            if ((m_InitialStroke.m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0)
+            {
+                StraightEdgeGuideScript.m_Instance?.UpdateStrokeInHash(m_InitialStroke);
+            }
+            if ((m_NewStroke.m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0)
+            {
+                StraightEdgeGuideScript.m_Instance?.UpdateStrokeInHash(m_NewStroke);
+            }
         }
 
         protected override void OnUndo()
         {
             ModifyStroke(m_InitialStroke, m_InitialCP);
-
-            switch (m_NewStroke.m_Type)
+            m_NewStroke.Hide(true);
+            // Update snap hash for restored stroke if it has straight edge flag
+            if ((m_InitialStroke.m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0)
             {
-                case Stroke.Type.BrushStroke:
-                    BaseBrushScript brushScript = m_NewStroke.m_Object.GetComponent<BaseBrushScript>();
-                    if (brushScript)
-                    {
-                        brushScript.HideBrush(true);
-                    }
-                    break;
-                case Stroke.Type.BatchedBrushStroke:
-                    m_NewStroke.m_BatchSubset.m_ParentBatch.DisableSubset(m_NewStroke.m_BatchSubset);
-                    break;
+                StraightEdgeGuideScript.m_Instance?.UpdateStrokeInHash(m_InitialStroke);
             }
         }
 

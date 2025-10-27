@@ -579,13 +579,12 @@ namespace TiltBrush
             subset.m_Stroke = rNewStroke;
 
             // Mark stroke if created with straight edge tool
+            // Note: Stroke will be added to snap hash via Stroke.Hide(false) when appropriate
             if (PointerManager.m_Instance.StraightEdgeModeEnabled &&
                 StraightEdgeGuideScript.m_Instance.CurrentShape == StraightEdgeGuideScript.Shape.Line &&
                 rNewStroke.m_ControlPoints != null && rNewStroke.m_ControlPoints.Length >= 2)
             {
                 rNewStroke.m_Flags |= StrokeFlags.CreatedWithStraightEdge;
-                // Add to spatial hash immediately for snapping
-                StraightEdgeGuideScript.m_Instance.AddStrokeToHash(rNewStroke);
             }
 
             PerformAndRecordCommand(
@@ -630,13 +629,12 @@ namespace TiltBrush
             brushScript.Stroke = rNewStroke;
 
             // Mark stroke if created with straight edge tool
+            // Note: Stroke will be added to snap hash via Stroke.Hide(false) when appropriate
             if (PointerManager.m_Instance.StraightEdgeModeEnabled &&
                 StraightEdgeGuideScript.m_Instance.CurrentShape == StraightEdgeGuideScript.Shape.Line &&
                 rNewStroke.m_ControlPoints != null && rNewStroke.m_ControlPoints.Length >= 2)
             {
                 rNewStroke.m_Flags |= StrokeFlags.CreatedWithStraightEdge;
-                // Add to spatial hash immediately for snapping
-                StraightEdgeGuideScript.m_Instance.AddStrokeToHash(rNewStroke);
             }
 
             SketchMemoryScript.m_Instance.RecordCommand(

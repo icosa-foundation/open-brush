@@ -485,11 +485,14 @@ namespace TiltBrush
             switch (m_Type)
             {
                 case Type.BrushStroke:
-                    BaseBrushScript rBrushScript =
-                        m_Object.GetComponent<BaseBrushScript>();
-                    if (rBrushScript)
+                    if (m_Object)
                     {
-                        rBrushScript.HideBrush(hide);
+                        BaseBrushScript rBrushScript =
+                            m_Object.GetComponent<BaseBrushScript>();
+                        if (rBrushScript)
+                        {
+                            rBrushScript.HideBrush(hide);
+                        }
                     }
                     break;
                 case Type.BatchedBrushStroke:
@@ -506,6 +509,20 @@ namespace TiltBrush
                 case Type.NotCreated:
                     Debug.LogError("Unexpected: NotCreated stroke");
                     break;
+            }
+
+            // Manage snap hash based on visibility state
+            // Hidden strokes should not be snappable
+            if ((m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0)
+            {
+                if (hide)
+                {
+                    StraightEdgeGuideScript.m_Instance?.RemoveStrokeFromHash(this);
+                }
+                else
+                {
+                    StraightEdgeGuideScript.m_Instance?.AddStrokeToHash(this);
+                }
             }
 
             TiltMeterScript.m_Instance.AdjustMeter(this, up: !hide);

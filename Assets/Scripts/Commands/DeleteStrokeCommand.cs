@@ -52,12 +52,6 @@ namespace TiltBrush
             }
             m_SilenceFirstAudio = false;
             m_TargetStroke.Hide(true);
-
-            // Remove from snap hash if this is a straight edge stroke
-            if ((m_TargetStroke.m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0)
-            {
-                StraightEdgeGuideScript.m_Instance?.RemoveStrokeFromHash(m_TargetStroke);
-            }
         }
 
         protected override void OnUndo()
@@ -68,12 +62,6 @@ namespace TiltBrush
             }
             m_SilenceFirstAudio = false;
             m_TargetStroke.Hide(false);
-
-            // Add back to snap hash if this is a straight edge stroke
-            if ((m_TargetStroke.m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0)
-            {
-                StraightEdgeGuideScript.m_Instance?.AddStrokeToHash(m_TargetStroke);
-            }
         }
     }
 } // namespace TiltBrush

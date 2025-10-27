@@ -69,27 +69,18 @@ namespace TiltBrush
             switch (m_Stroke.m_Type)
             {
                 case Stroke.Type.BrushStroke:
-                    {
-                        GameObject gameObj = m_Stroke.m_Object;
-                        if (gameObj)
-                        {
-                            BaseBrushScript rBrushScript = gameObj.GetComponent<BaseBrushScript>();
-                            if (rBrushScript)
-                            {
-                                rBrushScript.HideBrush(false);
-                            }
-                        }
-                        break;
-                    }
                 case Stroke.Type.BatchedBrushStroke:
-                    {
-                        var batch = m_Stroke.m_BatchSubset.m_ParentBatch;
-                        batch.EnableSubset(m_Stroke.m_BatchSubset);
-                        break;
-                    }
+                    m_Stroke.Hide(false);
+                    break;
                 case Stroke.Type.NotCreated:
                     Debug.LogError("Unexpected: redo NotCreated stroke");
                     m_Stroke.Recreate();
+                    // Add to snap hash if needed
+                    if ((m_Stroke.m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0)
+                    {
+                        StraightEdgeGuideScript.m_Instance?.AddStrokeToHash(m_Stroke);
+                    }
+                    TiltMeterScript.m_Instance.AdjustMeter(m_Stroke, up: true);
                     break;
             }
 
@@ -97,57 +88,17 @@ namespace TiltBrush
             {
                 m_Widget.AdjustLift(m_LineLength_CS);
             }
-
-            // Add back to snap hash if this is a straight edge stroke
-            if ((m_Stroke.m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0)
-            {
-                StraightEdgeGuideScript.m_Instance?.AddStrokeToHash(m_Stroke);
-            }
-
-            TiltMeterScript.m_Instance.AdjustMeter(m_Stroke, up: true);
         }
 
         protected override void OnUndo()
         {
             AudioManager.m_Instance.PlayUndoSound(CommandAudioPosition);
-            switch (m_Stroke.m_Type)
-            {
-                case Stroke.Type.BrushStroke:
-                    {
-                        GameObject gameObj = m_Stroke.m_Object;
-                        if (gameObj)
-                        {
-                            BaseBrushScript rBrushScript = gameObj.GetComponent<BaseBrushScript>();
-                            if (rBrushScript)
-                            {
-                                rBrushScript.HideBrush(true);
-                            }
-                        }
-                        break;
-                    }
-                case Stroke.Type.BatchedBrushStroke:
-                    {
-                        var batch = m_Stroke.m_BatchSubset.m_ParentBatch;
-                        batch.DisableSubset(m_Stroke.m_BatchSubset);
-                        break;
-                    }
-                case Stroke.Type.NotCreated:
-                    Debug.LogError("Unexpected: undo NotCreated stroke");
-                    break;
-            }
+            m_Stroke.Hide(true);
 
             if (m_Widget != null)
             {
                 m_Widget.AdjustLift(-m_LineLength_CS);
             }
-
-            // Remove from snap hash if this is a straight edge stroke
-            if ((m_Stroke.m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0)
-            {
-                StraightEdgeGuideScript.m_Instance?.RemoveStrokeFromHash(m_Stroke);
-            }
-
-            TiltMeterScript.m_Instance.AdjustMeter(m_Stroke, up: false);
         }
 
         public override bool Merge(BaseCommand other)
