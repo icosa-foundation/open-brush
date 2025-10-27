@@ -172,6 +172,7 @@ namespace TiltBrush
                 case Cloud.Google: return GoogleIdentity;
                 case Cloud.Sketchfab: return SketchfabIdentity;
                 case Cloud.Icosa: throw new InvalidOperationException("Icosa does not use OAuth2");
+                case Cloud.Vive: return ViveIdentity;
                 default: throw new InvalidOperationException($"No OAuth2 identity for {cloud}");
             }
         }
