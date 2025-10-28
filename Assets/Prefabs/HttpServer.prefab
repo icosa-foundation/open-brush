@@ -52,6 +52,58 @@ MonoBehaviour:
   m_TokenStorePrefix: IcosaOAuth2
   m_AuthorizationServerUrl: 
   m_TokenServerUrl: 
+--- !u!1 &3958860084479242702
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 398125585352888055}
+  - component: {fileID: 8765693133069968461}
+  m_Layer: 0
+  m_Name: ViverseIdentity
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &398125585352888055
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3958860084479242702}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4492044767078796625}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8765693133069968461
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3958860084479242702}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1689780c428aa14ea42c2125e391b45, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Service: 8
+  m_OAuthScopes: []
+  m_AdditionalDesktopOAuthScopes: []
+  m_CallbackPath: /viverse/callback
+  m_LoggedInTexture: {fileID: 2800000, guid: 0d05cda193064458a9a7bb085905c5a1, type: 3}
+  m_TokenStorePrefix: viverse_
+  m_AuthorizationServerUrl: 
+  m_TokenServerUrl: 
 --- !u!1 &4492044765706507690
 GameObject:
   m_ObjectHideFlags: 0
@@ -230,6 +282,7 @@ Transform:
   m_Children:
   - {fileID: 4492044765854677289}
   - {fileID: 4492044765921076689}
+  - {fileID: 398125585352888055}
   - {fileID: 5246980054839990154}
   - {fileID: 3281745900092082848}
   m_Father: {fileID: 0}
