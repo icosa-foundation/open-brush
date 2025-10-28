@@ -677,6 +677,11 @@ namespace TiltBrush
 
             var currentScene = SaveLoadScript.m_Instance.SceneFile;
             string uploadName = currentScene.Valid ? currentScene.HumanName : kDefaultName;
+            uploadName = FileUtils.GetValidFilename(uploadName);
+            if (string.IsNullOrEmpty(uploadName))
+            {
+                uploadName = FileUtils.GetValidFilename(kDefaultName);
+            }
             string gltfUploadName = $"{uploadName}.gltf";
 
             SetUploadProgress(UploadStep.CreateGltf, 0);
