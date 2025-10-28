@@ -289,13 +289,8 @@ namespace TiltBrush
         /// and any character that isn't alphanumeric, dash, underscore, or dot is stripped.
         public static string GetValidFilename(string filename)
         {
-            if (string.IsNullOrEmpty(filename))
-            {
-                return "";
-            }
-
-            string trimmed = filename.Trim();
-            if (trimmed.Length == 0)
+            string trimmed = filename?.Trim();
+            if (string.IsNullOrEmpty(trimmed))
             {
                 return "";
             }
