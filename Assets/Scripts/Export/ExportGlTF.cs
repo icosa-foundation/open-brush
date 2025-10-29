@@ -219,6 +219,16 @@ namespace TiltBrush
             exporter.G.extras["TB_PoseTranslation"] = CommaFormattedVector3(pose.translation);
             exporter.G.extras["TB_PoseRotation"] = CommaFormattedVector3(pose.rotation.eulerAngles);
             exporter.G.extras["TB_PoseScale"] = pose.scale;
+
+            exporter.G.extras["TB_ExportedFromVersion"] = App.Config.m_VersionNumber;
+
+            if (SaveLoadScript.m_Instance != null)
+            {
+                TrTransform cameraPose = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
+                Vector3 gltfCameraTranslation = exportFromUnity.MultiplyPoint3x4(cameraPose.translation);
+                exporter.G.extras["TB_CameraTranslation"] = CommaFormattedVector3(gltfCameraTranslation);
+                exporter.G.extras["TB_CameraRotation"] = CommaFormattedVector3(cameraPose.rotation.eulerAngles);
+            }
         }
 
         // Returns a GlTF_Node; null means "there is no node for this group".
