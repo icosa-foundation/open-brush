@@ -254,6 +254,12 @@ namespace TiltBrush
             }
 
             m_Type = Type.NotCreated;
+
+            // Remove from snap hash when geometry is destroyed
+            if ((m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0)
+            {
+                StraightEdgeGuideScript.m_Instance?.RemoveStrokeFromHash(this);
+            }
         }
 
         /// Like Recreate except the translation are interpreted as a destination point relative to the canvas
@@ -297,6 +303,12 @@ namespace TiltBrush
                 // needs to go through a pointer.
                 var pointer = PointerManager.m_Instance.GetTransientPointer(5);
                 pointer.RecreateLineFromMemory(this);
+
+                // Add to snap hash when geometry is created (visible by default)
+                if ((m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0)
+                {
+                    StraightEdgeGuideScript.m_Instance?.AddStrokeToHash(this);
+                }
             }
             else if (canvas != null)
             {
@@ -332,6 +344,12 @@ namespace TiltBrush
             m_Object = null;
             m_IntendedCanvas = null;
             m_Type = Type.BatchedBrushStroke;
+
+            // Add to snap hash when geometry is created (visible by default)
+            if ((m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0)
+            {
+                StraightEdgeGuideScript.m_Instance?.AddStrokeToHash(this);
+            }
         }
 
         // TODO: Possibly could optimize this in C++ for 11.5% of time in selection.
