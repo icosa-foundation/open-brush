@@ -44,9 +44,8 @@ namespace TiltBrush
         private bool m_SnapActive;
         private Shape m_CurrentShape;
         private Shape m_TempShape;
-        private readonly List<Vector3> m_PreviousLineEndpoints = new List<Vector3>();
-        private readonly HashSet<Vector3Int> m_EndpointHashSet = new HashSet<Vector3Int>();
-        private const float kEndpointQuantization = 0.0001f; // 0.1mm grid for duplicate detection
+        // Stack of line endpoints for undo support (most recent at end)
+        private readonly List<(Vector3 origin, Vector3 target)> m_LineHistory = new List<(Vector3, Vector3)>();
 
         public Shape CurrentShape { get { return m_CurrentShape; } }
         public Shape TempShape { get { return m_TempShape; } }
@@ -123,19 +122,24 @@ namespace TiltBrush
                     Vector3 origin_CS = stroke.m_ControlPoints[0].m_Pos;
                     Vector3 target_CS = stroke.m_ControlPoints[stroke.m_ControlPoints.Length - 1].m_Pos;
 
-                    AddEndpoint(origin_CS);
-                    AddEndpoint(target_CS);
+                    // Add to history
+                    m_LineHistory.Add((origin_CS, target_CS));
+
+                    // Keep only last N lines (m_EndpointHistoryLength)
+                    while (m_LineHistory.Count > m_EndpointHistoryLength)
+                    {
+                        m_LineHistory.RemoveAt(0);
+                    }
                 }
             }
         }
 
         private void OnCommandUndo(BaseCommand command)
         {
-            // With history length = 1 (max 2 endpoints), just clear on any undo
-            // This is simple and correct: undoing removes the most recent line's endpoints
-            if (command is BrushStrokeCommand)
+            // Remove the most recent line from history
+            if (command is BrushStrokeCommand && m_LineHistory.Count > 0)
             {
-                ClearEndpointHistory();
+                m_LineHistory.RemoveAt(m_LineHistory.Count - 1);
             }
         }
 
@@ -315,17 +319,26 @@ namespace TiltBrush
             bool found = false;
             Vector3 closest_WS = Vector3.zero;
 
-            // Simple linear search - efficient for small endpoint counts (2-16 points)
-            for (int i = 0; i < m_PreviousLineEndpoints.Count; i++)
+            // Check all lines in history (each line has 2 endpoints)
+            foreach (var line in m_LineHistory)
             {
-                // Convert endpoint from canvas space to world space for distance check
-                Vector3 endpoint_WS = Coords.CanvasPose * m_PreviousLineEndpoints[i];
-                float distanceSqr = (endpoint_WS - position_WS).sqrMagnitude;
-
-                if (distanceSqr <= closestDistanceSqr)
+                // Check origin
+                Vector3 origin_WS = Coords.CanvasPose * line.origin;
+                float distSqr = (origin_WS - position_WS).sqrMagnitude;
+                if (distSqr <= closestDistanceSqr)
                 {
-                    closestDistanceSqr = distanceSqr;
-                    closest_WS = endpoint_WS;
+                    closestDistanceSqr = distSqr;
+                    closest_WS = origin_WS;
+                    found = true;
+                }
+
+                // Check target
+                Vector3 target_WS = Coords.CanvasPose * line.target;
+                distSqr = (target_WS - position_WS).sqrMagnitude;
+                if (distSqr <= closestDistanceSqr)
+                {
+                    closestDistanceSqr = distSqr;
+                    closest_WS = target_WS;
                     found = true;
                 }
             }
@@ -336,42 +349,7 @@ namespace TiltBrush
 
         public void ClearEndpointHistory()
         {
-            m_PreviousLineEndpoints.Clear();
-            m_EndpointHashSet.Clear();
-        }
-
-        private Vector3Int QuantizeEndpoint(Vector3 endpoint)
-        {
-            // Quantize to fine grid for duplicate detection (0.1mm)
-            float invQuant = 1f / kEndpointQuantization;
-            return new Vector3Int(
-                Mathf.RoundToInt(endpoint.x * invQuant),
-                Mathf.RoundToInt(endpoint.y * invQuant),
-                Mathf.RoundToInt(endpoint.z * invQuant)
-            );
-        }
-
-        private void AddEndpoint(Vector3 endpoint)
-        {
-            // Check for duplicates using quantized hash set - O(1) lookup
-            Vector3Int quantized = QuantizeEndpoint(endpoint);
-            if (m_EndpointHashSet.Contains(quantized))
-            {
-                return;
-            }
-
-            // With history length = 1, max = 2 endpoints
-            // Remove oldest if at capacity
-            if (m_PreviousLineEndpoints.Count >= 2)
-            {
-                Vector3Int oldQuantized = QuantizeEndpoint(m_PreviousLineEndpoints[0]);
-                m_PreviousLineEndpoints.RemoveAt(0);
-                m_EndpointHashSet.Remove(oldQuantized);
-            }
-
-            // Add the new endpoint
-            m_PreviousLineEndpoints.Add(endpoint);
-            m_EndpointHashSet.Add(quantized);
+            m_LineHistory.Clear();
         }
     }
 } // namespace TiltBrush
