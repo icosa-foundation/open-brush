@@ -75,12 +75,6 @@ namespace TiltBrush
                 case Stroke.Type.NotCreated:
                     Debug.LogError("Unexpected: redo NotCreated stroke");
                     m_Stroke.Recreate();
-                    // Add to snap hash if needed
-                    if ((m_Stroke.m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0)
-                    {
-                        StraightEdgeGuideScript.m_Instance?.AddStrokeToHash(m_Stroke);
-                    }
-                    TiltMeterScript.m_Instance.AdjustMeter(m_Stroke, up: true);
                     break;
             }
 
@@ -88,6 +82,8 @@ namespace TiltBrush
             {
                 m_Widget.AdjustLift(m_LineLength_CS);
             }
+
+            TiltMeterScript.m_Instance.AdjustMeter(m_Stroke, up: true);
         }
 
         protected override void OnUndo()
@@ -99,6 +95,8 @@ namespace TiltBrush
             {
                 m_Widget.AdjustLift(-m_LineLength_CS);
             }
+
+            TiltMeterScript.m_Instance.AdjustMeter(m_Stroke, up: false);
         }
 
         public override bool Merge(BaseCommand other)
