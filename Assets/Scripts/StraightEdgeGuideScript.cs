@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -23,6 +25,8 @@ namespace TiltBrush
         [SerializeField] private float m_SnapDisabledDelay = 0.1f;
         [SerializeField] private Texture2D[] m_ShapeTextures;
         [SerializeField] private float m_MeterYOffset = 0.75f;
+        [SerializeField] private float m_EndpointSnapDistance = 0.05f;
+        [SerializeField] private int m_EndpointHistoryLength = 8;
 
         public enum Shape
         {
@@ -41,9 +45,16 @@ namespace TiltBrush
         private bool m_SnapActive;
         private Shape m_CurrentShape;
         private Shape m_TempShape;
+        // Stack of line endpoints for undo support (most recent at end)
+        private readonly List<(Vector3 origin, Vector3 target)> m_LineHistory = new List<(Vector3, Vector3)>();
+        // Track all straight edge strokes to support undo/redo properly
+        private readonly Dictionary<Stroke, (Vector3 origin, Vector3 target)> m_StrokeToLine = new Dictionary<Stroke, (Vector3, Vector3)>();
 
         public Shape CurrentShape { get { return m_CurrentShape; } }
         public Shape TempShape { get { return m_TempShape; } }
+
+        // Returns origin pos in Canvas space
+        public Vector3 GetOriginPos() { return m_vOrigin_CS; }
 
         // Returns target pos in Canvas space
         public Vector3 GetTargetPos() { return m_TargetPos_CS; }
@@ -77,6 +88,124 @@ namespace TiltBrush
         {
             m_MeterDisplay = GetComponentInChildren<TMPro.TextMeshPro>();
             HideGuide();
+            ClearEndpointHistory();
+        }
+
+        void Start()
+        {
+            // Subscribe to command events for endpoint tracking
+            // Using Start() instead of Awake() ensures SketchMemoryScript.m_Instance exists
+            if (SketchMemoryScript.m_Instance != null)
+            {
+                SketchMemoryScript.m_Instance.CommandPerformed += OnCommandPerformed;
+                SketchMemoryScript.m_Instance.CommandUndo += OnCommandUndo;
+                SketchMemoryScript.m_Instance.CommandRedo += OnCommandRedo;
+            }
+        }
+
+        void OnDestroy()
+        {
+            if (SketchMemoryScript.m_Instance != null)
+            {
+                SketchMemoryScript.m_Instance.CommandPerformed -= OnCommandPerformed;
+                SketchMemoryScript.m_Instance.CommandUndo -= OnCommandUndo;
+                SketchMemoryScript.m_Instance.CommandRedo -= OnCommandRedo;
+            }
+        }
+
+        private void OnCommandPerformed(BaseCommand command)
+        {
+            // Record endpoints when a straight edge line is created
+            if (command is BrushStrokeCommand brushCommand)
+            {
+                bool isStraightEdge = PointerManager.m_Instance.StraightEdgeModeEnabled;
+                bool isLine = m_CurrentShape == Shape.Line;
+
+                if (isStraightEdge && isLine)
+                {
+                    Stroke stroke = brushCommand.m_Stroke;
+                    if (stroke != null && stroke.m_ControlPoints != null && stroke.m_ControlPoints.Length >= 2)
+                    {
+                        // Endpoints are in canvas space
+                        Vector3 origin_CS = stroke.m_ControlPoints[0].m_Pos;
+                        Vector3 target_CS = stroke.m_ControlPoints[stroke.m_ControlPoints.Length - 1].m_Pos;
+
+                        // Store mapping from stroke to its line endpoints for undo tracking
+                        m_StrokeToLine[stroke] = (origin_CS, target_CS);
+
+                        // Add directly to history (don't rebuild - stroke isn't in AllStrokes yet)
+                        m_LineHistory.Add((origin_CS, target_CS));
+
+                        // Keep only last N lines (m_EndpointHistoryLength)
+                        while (m_LineHistory.Count > m_EndpointHistoryLength)
+                        {
+                            m_LineHistory.RemoveAt(0);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void OnCommandUndo(BaseCommand command)
+        {
+            // Rebuild history from current sketch state after undo
+            if (command is BrushStrokeCommand brushCommand)
+            {
+                // Remove the stroke mapping since it's being undone
+                if (m_StrokeToLine.ContainsKey(brushCommand.m_Stroke))
+                {
+                    m_StrokeToLine.Remove(brushCommand.m_Stroke);
+                }
+                RebuildHistory();
+            }
+        }
+
+        private void OnCommandRedo(BaseCommand command)
+        {
+            // Rebuild history from current sketch state after redo
+            if (command is BrushStrokeCommand brushCommand)
+            {
+                // Re-add the stroke mapping since it's being redone
+                bool isStraightEdge = PointerManager.m_Instance.StraightEdgeModeEnabled;
+                bool isLine = m_CurrentShape == Shape.Line;
+
+                Stroke stroke = brushCommand.m_Stroke;
+                if (stroke != null && stroke.m_ControlPoints != null && stroke.m_ControlPoints.Length >= 2)
+                {
+                    // Check if this was a straight edge stroke by seeing if we can extract endpoints
+                    Vector3 origin_CS = stroke.m_ControlPoints[0].m_Pos;
+                    Vector3 target_CS = stroke.m_ControlPoints[stroke.m_ControlPoints.Length - 1].m_Pos;
+
+                    // Re-add to mapping
+                    m_StrokeToLine[stroke] = (origin_CS, target_CS);
+                }
+                RebuildHistory();
+            }
+        }
+
+        private void RebuildHistory()
+        {
+            m_LineHistory.Clear();
+
+            // Get all strokes that are currently in the sketch (not undone)
+            var currentStrokes = SketchMemoryScript.AllStrokes();
+            var currentStrokesSet = new HashSet<Stroke>(currentStrokes);
+
+            // Find straight edge strokes and add their endpoints to history
+            foreach (var kvp in m_StrokeToLine)
+            {
+                if (currentStrokesSet.Contains(kvp.Key))
+                {
+                    m_LineHistory.Add(kvp.Value);
+                    Debug.Log($"[SNAP_UNDO] RebuildHistory: Added stroke to history");
+                }
+            }
+
+            // Keep only last N lines (m_EndpointHistoryLength)
+            while (m_LineHistory.Count > m_EndpointHistoryLength)
+            {
+                m_LineHistory.RemoveAt(0);
+            }
         }
 
         public void ShowGuide(Vector3 vOrigin)
@@ -85,7 +214,13 @@ namespace TiltBrush
             m_SnapActive = false;
 
             // Place widgets at the origin
-            m_vOrigin_CS = Coords.CanvasPose.inverse * vOrigin;
+            Vector3 origin = vOrigin;
+            if (m_CurrentShape == Shape.Line &&
+                TryGetEndpointSnap(vOrigin, out Vector3 snappedOrigin))
+            {
+                origin = snappedOrigin;
+            }
+            m_vOrigin_CS = Coords.CanvasPose.inverse * origin;
         }
 
         public void HideGuide()
@@ -222,12 +357,65 @@ namespace TiltBrush
                 vTarget = vOrigin + ApplySnap(vTarget - vOrigin);
             }
 
+            if (m_CurrentShape == Shape.Line &&
+                TryGetEndpointSnap(vTarget, out Vector3 snappedTarget))
+            {
+                // Avoid snapping to the origin which can create degenerate strokes.
+                if ((snappedTarget - vOrigin).sqrMagnitude > 1e-6f)
+                {
+                    vTarget = snappedTarget;
+                }
+            }
+
             if (m_ShowMeter)
             {
                 UpdateMeter(vOrigin, vTarget);
             }
 
             m_TargetPos_CS = xfWorldFromCanvas.inverse * vTarget;
+        }
+
+
+        public bool TryGetEndpointSnap(Vector3 position_WS, out Vector3 snapped_WS)
+        {
+            // Snap distance must be in world space to be consistent regardless of canvas scale/rotation
+            float maxDistanceSqr = m_EndpointSnapDistance * m_EndpointSnapDistance;
+            float closestDistanceSqr = maxDistanceSqr;
+            bool found = false;
+            Vector3 closest_WS = Vector3.zero;
+
+            // Check all lines in history (each line has 2 endpoints)
+            foreach (var line in m_LineHistory)
+            {
+                // Check origin
+                Vector3 origin_WS = Coords.CanvasPose * line.origin;
+                float distSqr = (origin_WS - position_WS).sqrMagnitude;
+                if (distSqr <= closestDistanceSqr)
+                {
+                    closestDistanceSqr = distSqr;
+                    closest_WS = origin_WS;
+                    found = true;
+                }
+
+                // Check target
+                Vector3 target_WS = Coords.CanvasPose * line.target;
+                distSqr = (target_WS - position_WS).sqrMagnitude;
+                if (distSqr <= closestDistanceSqr)
+                {
+                    closestDistanceSqr = distSqr;
+                    closest_WS = target_WS;
+                    found = true;
+                }
+            }
+
+            snapped_WS = found ? closest_WS : position_WS;
+            return found;
+        }
+
+        public void ClearEndpointHistory()
+        {
+            m_LineHistory.Clear();
+            m_StrokeToLine.Clear();
         }
     }
 } // namespace TiltBrush
