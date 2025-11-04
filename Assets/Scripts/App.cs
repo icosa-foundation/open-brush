@@ -65,13 +65,14 @@ namespace TiltBrush
         public const string kDriveFolderName = kAppDisplayName;
 
         public const string kPlayerPrefHasPlayedBefore = "Has played before";
-        public const string kReferenceImagesSeeded = "Reference Images seeded";
-        public const string kBackgroundImagesSeeded = "Background Images seeded";
+        public const string kPlayerPrefSeededDefaultModels = "SeededDefaultModels";
+        public const string kPlayerPrefSeededDefaultBackgroundImages = "SeededDefaultBackgroundImages";
+        public const string kPlayerPrefSeededDefaultReferenceImages = "SeededDefaultReferenceImages";
+        public const string kPlayerPrefSeededDefaultVideos = "SeededDefaultVideos";
 
 
         private const string kDefaultConfigPath = "DefaultConfig";
 
-        private const int kHttpListenerPort = 40074;
         private const string kProtocolHandlerPrefix = "tiltbrush://remix/";
         private const string kBuiltInSketchPrefix = "tiltbrush://builtin/";
         private const string kFileMoveFilename = "WhereHaveMyFilesGone.txt";
@@ -117,7 +118,7 @@ namespace TiltBrush
 
         public static CanvasScript ActiveCanvas => Scene.ActiveCanvas;
 
-        public static PolyAssetCatalog PolyAssetCatalog => m_Instance.m_PolyAssetCatalog;
+        public static IcosaAssetCatalog IcosaAssetCatalog => m_Instance.m_IcosaAssetCatalog;
 
         public static Switchboard Switchboard => m_Instance.m_Switchboard;
 
@@ -132,6 +133,18 @@ namespace TiltBrush
 
         public static OAuth2Identity GoogleIdentity => m_Instance.m_GoogleIdentity;
         public static OAuth2Identity SketchfabIdentity => m_Instance.m_SketchfabIdentity;
+        public static OAuth2Identity IcosaIdentity => m_Instance.m_IcosaIdentity;
+
+        public string IcosaToken
+        {
+            get => PlayerPrefs.HasKey("IcosaToken") ? PlayerPrefs.GetString("IcosaToken") : null;
+            set => PlayerPrefs.SetString("IcosaToken", value);
+        }
+        public static bool IcosaIsLoggedIn => !string.IsNullOrEmpty(App.Instance.IcosaToken);
+
+        public static string IcosaUserName;
+        public static string IcosaUserId;
+        public static Texture IcosaUserIcon;
 
         public static GoogleUserSettings GoogleUserSettings => m_Instance.m_GoogleUserSettings;
 
@@ -155,9 +168,10 @@ namespace TiltBrush
         {
             switch (cloud)
             {
-                case Cloud.Poly: return GoogleIdentity;
+                case Cloud.Google: return GoogleIdentity;
                 case Cloud.Sketchfab: return SketchfabIdentity;
-                default: throw new InvalidOperationException($"No identity for {cloud}");
+                case Cloud.Icosa: throw new InvalidOperationException("Icosa does not use OAuth2");
+                default: throw new InvalidOperationException($"No OAuth2 identity for {cloud}");
             }
         }
 
@@ -220,6 +234,7 @@ namespace TiltBrush
         public Transform m_CanvasTransform;
         /// The object "/SceneParent/EnvironmentParent"
         public Transform m_EnvironmentTransform;
+        public GameObject m_NoVrUi;
         [SerializeField] GameObject m_SketchSurface;
         [SerializeField] GameObject m_ErrorDialog;
         [SerializeField] GameObject m_OdsPrefab;
@@ -238,6 +253,7 @@ namespace TiltBrush
         [Header("Identities")]
         [SerializeField] private OAuth2Identity m_GoogleIdentity;
         [SerializeField] private OAuth2Identity m_SketchfabIdentity;
+        [SerializeField] private OAuth2Identity m_IcosaIdentity;
 
         // ------------------------------------------------------------
         // Private data
@@ -255,7 +271,7 @@ namespace TiltBrush
         private string m_UserPath;
         private string m_OldUserPath;
 
-        private PolyAssetCatalog m_PolyAssetCatalog;
+        private IcosaAssetCatalog m_IcosaAssetCatalog;
         private Switchboard m_Switchboard;
         private BrushColorController m_BrushColorController;
         private GroupManager m_GroupManager;
@@ -398,6 +414,8 @@ namespace TiltBrush
         // ------------------------------------------------------------
 
         public bool RequestingAudioReactiveMode => m_RequestingAudioReactiveMode;
+        public bool RamLoggingActive = false;
+        private InitNoHeadsetMode m_NoHeadsetInitScript;
 
         public void ToggleAudioReactiveModeRequest()
         {
@@ -409,6 +427,14 @@ namespace TiltBrush
             ToggleAudioReactiveModeRequest();
             AudioCaptureManager.m_Instance.CaptureAudio(m_RequestingAudioReactiveMode);
             VisualizerManager.m_Instance.EnableVisuals(m_RequestingAudioReactiveMode);
+            Switchboard.TriggerAudioReactiveStateChanged();
+        }
+
+        public void AudioReactiveBrushesActive(bool active)
+        {
+            m_RequestingAudioReactiveMode = ActiveCanvas;
+            AudioCaptureManager.m_Instance.CaptureAudio(active);
+            VisualizerManager.m_Instance.EnableVisuals(active);
             Switchboard.TriggerAudioReactiveStateChanged();
         }
 
@@ -519,11 +545,6 @@ namespace TiltBrush
             // See if this is the first time
             HasPlayedBefore = PlayerPrefs.GetInt(kPlayerPrefHasPlayedBefore, 0) == 1;
 
-#if ZAPBOX_SUPPORTED
-            // TODO:Mikesky - fix zapbox support.
-            HasPlayedBefore = true;
-#endif
-
             // Copy files into Support directory
             CopySupportFiles();
 
@@ -542,7 +563,10 @@ namespace TiltBrush
             if (m_UserConfig.Testing.FirstRun)
             {
                 PlayerPrefs.DeleteKey(kPlayerPrefHasPlayedBefore);
-                PlayerPrefs.DeleteKey(kReferenceImagesSeeded);
+                PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultModels);
+                PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultBackgroundImages);
+                PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultReferenceImages);
+                PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultVideos);
                 PlayerPrefs.DeleteKey(PanelManager.kPlayerPrefAdvancedMode);
                 AdvancedPanelLayouts.ClearPlayerPrefs();
                 PointerManager.ClearPlayerPrefs();
@@ -555,8 +579,8 @@ namespace TiltBrush
             m_Switchboard = new Switchboard();
             m_GroupManager = new GroupManager();
 
-            m_PolyAssetCatalog = GetComponent<PolyAssetCatalog>();
-            m_PolyAssetCatalog.Init();
+            m_IcosaAssetCatalog = GetComponent<IcosaAssetCatalog>();
+            m_IcosaAssetCatalog.Init();
 
             m_BrushColorController = GetComponent<BrushColorController>();
 
@@ -649,8 +673,15 @@ namespace TiltBrush
             }
 
 #if USD_SUPPORTED
-            // Load the Usd Plugins
-            InitUsd.Initialize();
+            try
+            {
+                // Load the Usd Plugins
+                InitUsd.Initialize();
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("Failed to initialize USD: " + e.Message);
+            }
 #endif
 
             foreach (string s in Config.m_SketchFiles)
@@ -694,41 +725,9 @@ namespace TiltBrush
 
             if (Config.m_SdkMode == SdkMode.Ods)
             {
-                m_OdsPivot = (GameObject)Instantiate(m_OdsPrefab);
-
-                OdsDriver driver = m_OdsPivot.GetComponent<OdsDriver>();
-                driver.FramesToCapture = Config.m_OdsNumFrames;
-                driver.m_fps = Config.m_OdsFps;
-                driver.TurnTableRotation = Config.m_OdsTurnTableDegrees;
-                driver.OutputFolder = Config.m_OdsOutputPath;
-                driver.OutputBasename = Config.m_OdsOutputPrefix;
-                if (!string.IsNullOrEmpty(App.Config.m_VideoPathToRender))
-                {
-                    driver.CameraPath = App.Config.m_VideoPathToRender;
-                }
-
-                ODS.HybridCamera cam = driver.OdsCamera;
-                cam.CollapseIpd = Config.m_OdsCollapseIpd;
-                cam.imageWidth /= Config.m_OdsPreview ? 4 : 1;
-                Debug.LogFormat("Configuring ODS:{0}" +
-                    "Frames: {1}{0}" +
-                    "FPS: {8}{0}" +
-                    "TurnTable: {2}{0}" +
-                    "Output: {3}{0}" +
-                    "Basename: {4}{0}" +
-                    "QuickLoad: {5}{0}" +
-                    "CollapseIPD: {6}{0}" +
-                    "ImageWidth: {7}{0}",
-                    System.Environment.NewLine,
-                    driver.FramesToCapture,
-                    driver.TurnTableRotation,
-                    driver.OutputFolder,
-                    driver.OutputBasename,
-                    Config.m_QuickLoad,
-                    cam.CollapseIpd,
-                    cam.imageWidth,
-                    driver.m_fps);
+                InitOds();
             }
+
 
             //these guys don't need to be alive just yet
             PointerManager.m_Instance.EnablePointerStrokeGeneration(false);
@@ -840,7 +839,8 @@ namespace TiltBrush
             }
 
             // Wait for the environment transition to complete before capturing.
-            if (m_OdsPivot
+            if (Config.m_SdkMode == SdkMode.Ods
+                && m_OdsPivot
                 && !m_OdsPivot.activeInHierarchy
                 && !SceneSettings.m_Instance.IsTransitioning
                 && ((m_CurrentAppState == AppState.Loading && !Config.m_QuickLoad)
@@ -910,7 +910,7 @@ namespace TiltBrush
                 }
             }
 
-            m_PolyAssetCatalog.UpdateCatalog();
+            m_IcosaAssetCatalog.UpdateCatalog();
 
             //update state
             switch (m_CurrentAppState)
@@ -1809,15 +1809,20 @@ namespace TiltBrush
 
         public void CreateFailedToDetectVrDialog(string msg = null, bool allowViewing = true)
         {
-            GameObject dialog = Instantiate(m_ErrorDialog);
-            var initScript = dialog.GetComponent<InitNoHeadsetMode>();
+            if (m_NoHeadsetInitScript == null)
+            {
+                GameObject dialog = Instantiate(m_ErrorDialog);
+                m_NoHeadsetInitScript = dialog.GetComponent<InitNoHeadsetMode>();
+            }
             if (!string.IsNullOrEmpty(msg))
             {
-                var textMesh = initScript.m_Heading;
+                var textMesh = m_NoHeadsetInitScript.m_Heading;
                 textMesh.text = @$"        Tiltasaurus says...
                    {msg}";
             }
-            initScript.ShowSketchSelectorUi(allowViewing && !StartupError);
+            bool show = allowViewing && !StartupError;
+            m_NoHeadsetInitScript.gameObject.SetActive(show);
+            m_NoHeadsetInitScript.ShowSketchSelectorUi(show);
         }
 
         static public bool AppAllowsCreation()
@@ -2001,124 +2006,141 @@ namespace TiltBrush
         /// Creates the Model Catalog directory and copies in the provided default models.
         /// Returns true if the directory already exists or if it is created successfully, false if the
         /// directory could not be created.
-        public static bool InitModelLibraryPath(string[] defaultModels)
+        public static void InitModelLibraryPath(string[] defaultModels)
         {
             string modelsDirectory = ModelLibraryPath();
 
-            // TODO:Mikesky - Re-enable this check in a few versions,
-            // and remove the one in the obj removal loop.
-
-            // if (Directory.Exists(modelsDirectory)) { return true; }
-
-            if (!InitDirectoryAtPath(modelsDirectory)) { return false; }
-
-            // Tidy up old obj models and replace with gltfs
-            // We can remove this at some point.
-            var targetDirs = new string[] { "Andy", "Tiltasaurus" };
-            foreach (string target in targetDirs)
+            if (!Directory.Exists(modelsDirectory))
             {
-                var path = Path.Combine(modelsDirectory, target);
-                if (Directory.Exists(path))
+                if (!InitDirectoryAtPath(modelsDirectory))
                 {
-                    Debug.Log($"Found old model file: \"{path}\", removing.");
-                    Directory.Delete(path, true);
-                }
-                else
-                {
-                    // We've already tidied up the old models, or the user has and understands
-                    // the reference library. Let's not interfere.
-                    return true;
+                    return;
                 }
             }
 
-            foreach (string fileName in defaultModels)
-            {
-                string[] path = fileName.Split(
-                    new[] { '\\', '/' }, 3, StringSplitOptions.RemoveEmptyEntries);
-                string newModel = Path.Combine(modelsDirectory, path[1]);
+            // Copy if the directory is empty
+            bool shouldCopy = Directory.GetFileSystemEntries(modelsDirectory).Length == 0;
 
-                if (!File.Exists(newModel))
+            // But only once per clean install
+            if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultModels, 0) != 0)
+            {
+                shouldCopy = false;
+            }
+
+            if (shouldCopy)
+            {
+                foreach (string fileName in defaultModels)
                 {
+                    string[] path = fileName.Split(
+                        new[] { '\\', '/' }, 3, StringSplitOptions.RemoveEmptyEntries);
+                    string newModel = Path.Combine(modelsDirectory, path[1]);
                     FileUtils.WriteBytesFromResources(fileName, newModel);
                 }
+                PlayerPrefs.SetInt(kPlayerPrefSeededDefaultModels, 1);
             }
-            return true;
         }
 
         /// Creates the Background Images directory and copies in the provided default images.
         /// Returns true if the directory already exists or if it is created successfully, false if the
         /// directory could not be created.
-        public static bool InitBackgroundImagesPath(string[] defaultBackgroundImages)
+        public static void InitBackgroundImagesPath(string[] defaultBackgroundImages)
         {
             string path = BackgroundImagesLibraryPath();
+
             if (!Directory.Exists(path))
             {
                 if (!FileUtils.InitializeDirectoryWithUserError(path))
                 {
-                    return false;
+                    return;
                 }
             }
 
-            // Populate the reference images folder exactly once.
-            int seeded = PlayerPrefs.GetInt(kBackgroundImagesSeeded);
-            if (seeded == 0)
+            // Copy if the directory is empty
+            bool shouldCopy = Directory.GetFileSystemEntries(path).Length == 0;
+
+            // But only once per clean install
+            if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultBackgroundImages, 0) != 0)
+            {
+                shouldCopy = false;
+            }
+
+            if (shouldCopy)
             {
                 foreach (string fileName in defaultBackgroundImages)
                 {
-                    FileUtils.WriteBytesFromResources(fileName,
-                        Path.Combine(path, Path.GetFileName(fileName.Replace(".bytes", ""))));
+                    string dest = Path.Combine(path, Path.GetFileName(fileName.Replace(".bytes", "")));
+                    FileUtils.WriteBytesFromResources(fileName, dest);
                 }
-                PlayerPrefs.SetInt(kBackgroundImagesSeeded, 1);
+                PlayerPrefs.SetInt(kPlayerPrefSeededDefaultBackgroundImages, 1);
             }
-            return true;
         }
 
         /// Creates the Reference Images directory and copies in the provided default images.
         /// Returns true if the directory already exists or if it is created successfully, false if the
         /// directory could not be created.
-        public static bool InitReferenceImagePath(string[] defaultImages)
+        public static void InitReferenceImagePath(string[] defaultImages)
         {
             string path = ReferenceImagePath();
+
             if (!Directory.Exists(path))
             {
                 if (!FileUtils.InitializeDirectoryWithUserError(path))
                 {
-                    return false;
+                    return;
                 }
             }
 
-            // Populate the reference images folder exactly once.
-            int seeded = PlayerPrefs.GetInt(kReferenceImagesSeeded);
-            if (seeded == 0)
+            // Copy if the directory is empty
+            bool shouldCopy = Directory.GetFileSystemEntries(path).Length == 0;
+
+            // But only once per clean install
+            if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultReferenceImages, 0) != 0)
+            {
+                shouldCopy = false;
+            }
+
+
+            if (shouldCopy)
             {
                 foreach (string fileName in defaultImages)
                 {
-                    FileUtils.WriteTextureFromResources(fileName,
-                        Path.Combine(path, Path.GetFileName(fileName)));
+                    string dest = Path.Combine(path, Path.GetFileName(fileName));
+                    FileUtils.WriteTextureFromResources(fileName, dest);
                 }
-                PlayerPrefs.SetInt(kReferenceImagesSeeded, 1);
+                PlayerPrefs.SetInt(kPlayerPrefSeededDefaultReferenceImages, 1);
             }
-            return true;
         }
 
-        public static bool InitVideoLibraryPath(string[] defaultVideos)
+        public static void InitVideoLibraryPath(string[] defaultVideos)
         {
             string videosDirectory = VideoLibraryPath();
-            if (Directory.Exists(videosDirectory))
+
+            if (!Directory.Exists(videosDirectory))
             {
-                return true;
-            }
-            if (!InitDirectoryAtPath(videosDirectory))
-            {
-                return false;
-            }
-            foreach (var video in defaultVideos)
-            {
-                string destFilename = Path.GetFileName(video);
-                FileUtils.WriteBytesFromResources(video, Path.Combine(videosDirectory, destFilename));
+                if (!InitDirectoryAtPath(videosDirectory))
+                {
+                    return;
+                }
             }
 
-            return true;
+            // Copy if the directory is empty
+            bool shouldCopy = Directory.GetFileSystemEntries(videosDirectory).Length == 0;
+
+            // But only once per clean install
+            if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultVideos, 0) != 0)
+            {
+                shouldCopy = false;
+            }
+
+            if (shouldCopy)
+            {
+                foreach (var video in defaultVideos)
+                {
+                    string destFilename = Path.GetFileName(video);
+                    FileUtils.WriteBytesFromResources(video, Path.Combine(videosDirectory, destFilename));
+                }
+                PlayerPrefs.SetInt(kPlayerPrefSeededDefaultVideos, 1);
+            }
         }
 
         public static string FeaturedSketchesPath()
@@ -2154,6 +2176,11 @@ namespace TiltBrush
         static public string UserSketchPath()
         {
             return Path.Combine(UserPath(), "Sketches");
+        }
+
+        static public string SavedStrokesPath()
+        {
+            return Path.Combine(MediaLibraryPath(), "Saved Strokes");
         }
 
         static public string AutosavePath()
@@ -2371,5 +2398,55 @@ namespace TiltBrush
             }
         }
 
+        public void LogoutIcosa()
+        {
+            IcosaUserName = null;
+            IcosaUserId = null;
+            IcosaUserIcon = null;
+            IcosaToken = null;
+        }
+
+        public OdsDriver InitOds()
+        {
+            m_OdsPivot = (GameObject)Instantiate(m_OdsPrefab);
+
+            OdsDriver driver = m_OdsPivot.GetComponent<OdsDriver>();
+            driver.FramesToCapture = Config.m_OdsNumFrames;
+            driver.m_fps = Config.m_OdsFps;
+            driver.TurnTableRotation = Config.m_OdsTurnTableDegrees;
+            driver.OutputFolder = Config.m_OdsOutputPath;
+            driver.OutputBasename = Config.m_OdsOutputPrefix;
+            if (!string.IsNullOrEmpty(App.Config.m_VideoPathToRender))
+            {
+                driver.CameraPath = App.Config.m_VideoPathToRender;
+            }
+
+            ODS.HybridCamera cam = driver.OdsCamera;
+            cam.CollapseIpd = Config.m_OdsCollapseIpd;
+            cam.imageWidth /= Config.m_OdsPreview ? 4 : 1;
+            if (Config.m_SdkMode == SdkMode.Ods)
+            {
+                Debug.LogFormat("Configuring ODS:{0}" +
+                    "Frames: {1}{0}" +
+                    "FPS: {8}{0}" +
+                    "TurnTable: {2}{0}" +
+                    "Output: {3}{0}" +
+                    "Basename: {4}{0}" +
+                    "QuickLoad: {5}{0}" +
+                    "CollapseIPD: {6}{0}" +
+                    "ImageWidth: {7}{0}",
+                    System.Environment.NewLine,
+                    driver.FramesToCapture,
+                    driver.TurnTableRotation,
+                    driver.OutputFolder,
+                    driver.OutputBasename,
+                    Config.m_QuickLoad,
+                    cam.CollapseIpd,
+                    cam.imageWidth,
+                    driver.m_fps
+                );
+            }
+            return driver;
+        }
     } // class App
 }     // namespace TiltBrush

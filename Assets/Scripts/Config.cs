@@ -31,6 +31,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using UnityGLTF;
 
 namespace TiltBrush
 {
@@ -205,6 +206,7 @@ namespace TiltBrush
         [Tooltip("Causes the temporary Upload directory to be kept around (Editor only)")]
         public bool m_DebugUpload;
         public TiltBrushToolkit.TbtSettings m_TbtSettings;
+        public GLTFSettings m_UnityGLTFSettings;
 
         [Header("Loading")]
         public bool m_ReplaceBrushesOnLoad;

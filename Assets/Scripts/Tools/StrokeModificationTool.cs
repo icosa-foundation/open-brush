@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using OpenBrush.Multiplayer;
 using UnityEngine;
 
 namespace TiltBrush
@@ -55,7 +56,9 @@ namespace TiltBrush
         {
             get
             {
-                return !m_EatInput && !m_ToolHidden &&
+                return !m_EatInput &&
+                    !m_ToolHidden &&
+                    !MultiplayerManager.m_Instance.IsViewOnly &&
                     InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate);
             }
         }
@@ -145,7 +148,7 @@ namespace TiltBrush
             return LayerMask.NameToLayer("SelectionCanvas");
         }
 
-        void Update()
+        protected void Update()
         {
             // Note this isn't in UpdateAudioVisuals() because we want it to run while the
             // tool is deactivated.

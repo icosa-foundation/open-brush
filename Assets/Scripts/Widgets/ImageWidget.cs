@@ -14,6 +14,7 @@
 
 using UnityEngine;
 using System.IO;
+using Unity.VectorGraphics;
 
 namespace TiltBrush
 {
@@ -30,6 +31,7 @@ namespace TiltBrush
         private bool m_UseLegacyTint;
         private ReferenceImage m_ReferenceImage;
         private bool m_TextureAcquired;
+        private bool m_PreserveCustomSize;
 
         public string FileName =>
             m_ReferenceImage?.FileName ?? m_MissingInfo?.fileName ?? Unused("Error");
@@ -51,6 +53,34 @@ namespace TiltBrush
                 float tintValue = m_UseLegacyTint ? 1.0f : 0.0f;
                 m_ImageQuad.material.SetFloat("_LegacyReferenceImageTint", tintValue);
             }
+        }
+
+        /// Prevents automatic size recalculation when ReferenceImage is set
+        public void SetPreserveCustomSize(bool preserve)
+        {
+            m_PreserveCustomSize = preserve;
+        }
+
+        /// Override to check if custom size should be preserved
+        protected override bool ShouldPreserveCustomSize()
+        {
+            return m_PreserveCustomSize;
+        }
+
+        /// Public accessor for API to check preserve flag
+        public bool ShouldPreserveCustomSizePublic()
+        {
+            return m_PreserveCustomSize;
+        }
+
+        /// Override SetSignedWidgetSize to respect preserve flag
+        public new void SetSignedWidgetSize(float fScale)
+        {
+            if (m_PreserveCustomSize)
+            {
+                return;
+            }
+            base.SetSignedWidgetSize(fScale);
         }
 
         override protected void OnDestroy()
@@ -163,16 +193,23 @@ namespace TiltBrush
                 {
                     //update the aspect ratio of our mesh to match the image
                     m_Mesh.transform.localScale = Vector3.one * 0.5f;
-                    var sizeRange = GetWidgetSizeRange();
-                    if (m_ReferenceImage.ImageAspect > 1)
+
+                    // Only recalculate size if we're not preserving a custom size
+                    if (!m_PreserveCustomSize)
                     {
-                        m_Size = Mathf.Clamp(2 / m_ReferenceImage.ImageAspect / Coords.CanvasPose.scale,
-                            sizeRange.x, sizeRange.y);
-                    }
-                    else
-                    {
-                        m_Size = Mathf.Clamp(2 * m_ReferenceImage.ImageAspect / Coords.CanvasPose.scale,
-                            sizeRange.x, sizeRange.y);
+                        var sizeRange = GetWidgetSizeRange();
+                        float newSize;
+                        if (m_ReferenceImage.ImageAspect > 1)
+                        {
+                            newSize = Mathf.Clamp(2 / m_ReferenceImage.ImageAspect / Coords.CanvasPose.scale,
+                                sizeRange.x, sizeRange.y);
+                        }
+                        else
+                        {
+                            newSize = Mathf.Clamp(2 * m_ReferenceImage.ImageAspect / Coords.CanvasPose.scale,
+                                sizeRange.x, sizeRange.y);
+                        }
+                        m_Size = newSize;
                     }
                     UpdateScale();
 
@@ -188,6 +225,50 @@ namespace TiltBrush
                 InitSnapGhost(m_ImageQuad.transform, transform);
             }
             get { return m_ReferenceImage; }
+        }
+
+        public void SetExtrusion(float depth, Color color)
+        {
+            var extruder = gameObject.GetComponentInChildren<SpriteExtruder>();
+            var importer = new RuntimeSVGImporter();
+            var imageMeshRenderer = m_Mesh.GetComponent<MeshRenderer>();
+            if (m_ReferenceImage.FilePath.EndsWith(".svg"))
+            {
+                var extruderMeshFilter = extruder.GetComponent<MeshFilter>();
+                if (depth > 0)
+                {
+                    imageMeshRenderer.enabled = false;
+                    var scaleFix = new Vector3(0.002f, -0.002f, 0.5f);
+                    var positionFix = new Vector3(-0.5f, 0.5f, 0);
+                    var tr = Matrix4x4.TRS(positionFix, Quaternion.identity, scaleFix);
+                    var sceneInfo = importer.ImportAsSceneInfo(m_ReferenceImage.FilePath);
+                    extruderMeshFilter.mesh = importer.SceneInfoToMesh(sceneInfo, tr, depth);
+                }
+                else
+                {
+                    imageMeshRenderer.enabled = false;
+                    extruderMeshFilter.mesh = null;
+                }
+            }
+            else
+            {
+                SpriteRenderer spriteRenderer = gameObject.GetComponentInChildren<SpriteRenderer>();
+                spriteRenderer.enabled = true;
+                if (depth > 0)
+                {
+                    Sprite sprite = importer.ImportAsVectorSprite(m_ReferenceImage.FilePath);
+                    spriteRenderer.sprite = sprite;
+                    extruder.AssignSprite(sprite);
+                    extruder.extrudeColor = color;
+                    extruder.frontDistance = 0;
+                    extruder.backDistance = depth;
+                    extruder.Generate();
+                }
+                else
+                {
+                    spriteRenderer.enabled = false;
+                }
+            }
         }
 
         public bool IsImageValid()
@@ -217,6 +298,8 @@ namespace TiltBrush
             var groupIds = tiltImage.GroupIds;
             var layerIds = tiltImage.LayerIds;
             var twoSidedFlags = tiltImage.TwoSidedFlags;
+            var extrusionDepths = tiltImage.ExtrusionDepths;
+            var extrusionColors = tiltImage.ExtrusionColors;
             for (int i = 0; i < tiltImage.Transforms.Length; ++i)
             {
                 ImageWidget image = Instantiate(WidgetManager.m_Instance.ImageWidgetPrefab);
@@ -233,6 +316,13 @@ namespace TiltBrush
                     image.SetMissing(tiltImage.AspectRatio, tiltImage.FileName);
                 }
                 image.SetSignedWidgetSize(tiltImage.Transforms[i].scale);
+                if (extrusionDepths != null &&
+                    extrusionColors != null &&
+                    i < extrusionDepths.Length &&
+                    i < extrusionColors.Length)
+                {
+                    image.SetExtrusion(extrusionDepths[i], extrusionColors[i]);
+                }
                 image.Show(bShow: true, bPlayAudio: false);
                 image.transform.localPosition = tiltImage.Transforms[i].translation;
                 image.transform.localRotation = tiltImage.Transforms[i].rotation;

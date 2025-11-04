@@ -27,7 +27,7 @@ namespace TiltBrush
         // Index of the "local sketches" button in m_GalleryButtons
         const int kElementNumberGalleryButtonLocal = 0;
         // Amount of extra space to put below the "local sketches" gallery button
-        const float kGalleryButtonLocalPadding = .15f;
+        const float kGalleryButtonLocalPadding = 0;
 
         [SerializeField] private Texture2D m_LoadingImageTexture;
         [SerializeField] private Texture2D m_UnknownImageTexture;
@@ -49,7 +49,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_NoShowcaseMessage;
         [SerializeField] private GameObject m_ContactingServerMessage;
         [SerializeField] private GameObject m_OutOfDateMessage;
-        [SerializeField] private GameObject m_NoPolyConnectionMessage;
+        [SerializeField] private GameObject m_NoIcosaConnectionMessage;
         [SerializeField] private Renderer m_OnlineGalleryButtonRenderer;
         [SerializeField] private GameObject[] m_IconsOnFirstPage;
         [SerializeField] private GameObject[] m_IconsOnNormalPage;
@@ -67,6 +67,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_DriveEnabledIcon;
         [SerializeField] private GameObject m_DriveDisabledIcon;
         [SerializeField] private GameObject m_DriveFullIcon;
+        [SerializeField] private GameObject m_IcosaSearchFilterUi;
         [SerializeField] private Vector2 m_SketchIconUvScale = new Vector2(0.7f, 0.7f);
         [SerializeField] private Vector3 m_ReadOnlyPopupOffset;
 
@@ -86,7 +87,7 @@ namespace TiltBrush
         private bool m_DriveSetHasSketches;
         private bool m_ReadOnlyShown = false;
 
-        public float ImageAspect { get { return m_ImageAspect; } }
+        public SketchSetType CurrentSketchSetType => m_CurrentSketchSet;
 
         override public void SetInIntroMode(bool inIntro)
         {
@@ -174,9 +175,9 @@ namespace TiltBrush
 
             Action refresh = () =>
             {
-                if (m_ContactingServerMessage.activeSelf ||
-                    m_NoShowcaseMessage.activeSelf ||
-                    m_LoadingGallery.activeSelf)
+                if ((m_ContactingServerMessage && m_ContactingServerMessage.activeSelf) ||
+                    (m_NoShowcaseMessage && m_NoShowcaseMessage.activeSelf) ||
+                    (m_LoadingGallery && m_LoadingGallery.activeSelf))
                 {
                     // Update the overlays more frequently when these overlays are shown to reflect whether
                     // we are actively trying to get sketches from Poly.
@@ -299,15 +300,16 @@ namespace TiltBrush
             // Base Refresh updates the modal parts of the panel, and we always want those refreshed.
             base.RefreshPage();
 
-            bool requiresPoly = m_CurrentSketchSet == SketchSetType.Liked;
+            bool requiresIcosa = m_CurrentSketchSet == SketchSetType.Liked || m_CurrentSketchSet == SketchSetType.Curated;
+            bool requiresGoogle = m_CurrentSketchSet == SketchSetType.Drive;
 
-            bool polyDown = VrAssetService.m_Instance.NoConnection && requiresPoly;
-            m_NoPolyConnectionMessage.SetActive(polyDown);
+            bool icosaDown = VrAssetService.m_Instance.NoConnection && requiresIcosa;
+            m_NoIcosaConnectionMessage.SetActive(icosaDown);
 
-            bool outOfDate = !polyDown && !VrAssetService.m_Instance.Available && requiresPoly;
+            bool outOfDate = !icosaDown && !VrAssetService.m_Instance.Available && requiresIcosa;
             m_OutOfDateMessage.SetActive(outOfDate);
 
-            if (outOfDate || polyDown)
+            if (outOfDate || icosaDown)
             {
                 m_NoSketchesMessage.SetActive(false);
                 m_NoDriveSketchesMessage.SetActive(false);
@@ -327,27 +329,31 @@ namespace TiltBrush
                 (m_CurrentSketchSet == SketchSetType.Drive) && (m_SketchSet.NumSketches <= 0));
 
             // Show sign in popup if signed out for liked or drive sketchsets
-            bool showNotLoggedIn = !App.GoogleIdentity.LoggedIn &&
-                (m_CurrentSketchSet == SketchSetType.Liked ||
-                m_CurrentSketchSet == SketchSetType.Drive);
-            refreshIcons = refreshIcons && !showNotLoggedIn;
-            m_NotLoggedInMessage.SetActive(showNotLoggedIn && m_CurrentSketchSet == SketchSetType.Liked);
-            m_NotLoggedInDriveMessage.SetActive(showNotLoggedIn &&
-                m_CurrentSketchSet == SketchSetType.Drive);
+            bool showIcosaNotLoggedIn = !App.IcosaIsLoggedIn && m_CurrentSketchSet == SketchSetType.Liked;
+            bool showGoogleNotLoggedIn = !App.GoogleIdentity.LoggedIn && m_CurrentSketchSet == SketchSetType.Drive;
+            refreshIcons = refreshIcons && !showIcosaNotLoggedIn;
+            m_NotLoggedInMessage.SetActive(showIcosaNotLoggedIn && m_CurrentSketchSet == SketchSetType.Liked);
+            m_NotLoggedInDriveMessage.SetActive(showGoogleNotLoggedIn);
 
             // Show no likes text & gallery button if we don't have liked sketches.
             m_NoLikesMessage.SetActive(
                 (m_CurrentSketchSet == SketchSetType.Liked) &&
                 (m_SketchSet.NumSketches <= 0) &&
                 !m_SketchSet.IsActivelyRefreshingSketches &&
-                App.GoogleIdentity.LoggedIn);
+                App.IcosaIsLoggedIn);
 
-            // Show Contacting Server if we're talking to Poly.
+            m_IcosaSearchFilterUi.SetActive(
+                !(m_CurrentSketchSet == SketchSetType.Drive || m_CurrentSketchSet == SketchSetType.User)
+            );
+
+            // Show Contacting Server if we're talking to Drive or Icosa
             m_ContactingServerMessage.SetActive(
-                (requiresPoly ||
-                m_CurrentSketchSet == SketchSetType.Drive) &&
-                (m_SketchSet.NumSketches <= 0) &&
-                (m_SketchSet.IsActivelyRefreshingSketches && App.GoogleIdentity.LoggedIn));
+                m_SketchSet.NumSketches <= 0
+                && m_SketchSet.IsActivelyRefreshingSketches
+                && (
+                    (requiresIcosa && App.IcosaIsLoggedIn) ||
+                    (requiresGoogle && App.GoogleIdentity.LoggedIn)
+                ));
 
             // Show Showcase error if we're in Showcase and don't have sketches.
             m_NoShowcaseMessage.SetActive(
@@ -450,7 +456,7 @@ namespace TiltBrush
                     m_DriveFullIcon.SetActive(false);
                     break;
                 case SketchSetType.Liked:
-                    m_LoadingGallery.SetActive(false);
+                    m_LoadingGallery.SetActive(m_SketchSet.IsActivelyRefreshingSketches);
                     m_DriveSyncProgress.SetActive(false);
                     m_SyncingDriveIcon.SetActive(false);
                     m_DriveEnabledIcon.SetActive(false);
@@ -510,7 +516,7 @@ namespace TiltBrush
             }
 
             // Position the gallery buttons so that they're centered.
-            float buttonPosY = (0.5f * (galleryButtonN - 1) * m_GalleryButtonHeight
+            float buttonPosY = (0.6f * (galleryButtonN - 1) * m_GalleryButtonHeight
                 + kGalleryButtonLocalPadding);
             for (int i = 0; i < galleryButtonAvailable; i++)
             {
@@ -577,24 +583,16 @@ namespace TiltBrush
                             lines.Add(icon.Description);
 
                             SceneFileInfo info = m_SketchSet.GetSketchSceneFileInfo(iSketchIndex);
-                            if (info is PolySceneFileInfo polyInfo &&
-                                polyInfo.License != VrAssetService.kCreativeCommonsLicense)
+
+                            // Include primary author in description if available
+                            if (authors != null && authors.Length > 0)
                             {
-                                lines.Add(String.Format("© {0}", authors[0]));
-                                lines.Add("All Rights Reserved");
+                                lines.Add(authors[0]);
                             }
-                            else
+                            // Include an actual description
+                            if (description != null)
                             {
-                                // Include primary author in description if available
-                                if (authors != null && authors.Length > 0)
-                                {
-                                    lines.Add(authors[0]);
-                                }
-                                // Include an actual description
-                                if (description != null)
-                                {
-                                    lines.Add(App.ShortenForDescriptionText(description));
-                                }
+                                lines.Add(App.ShortenForDescriptionText(description));
                             }
                             icon.SetDescriptionText(lines.ToArray());
                         }
@@ -790,5 +788,22 @@ namespace TiltBrush
         {
             m_IndexOffset = PageIndex == 0 ? 0 : m_IconsOnFirstPage.Length + (PageIndex - 1) * Icons.Count;
         }
+
+        public SketchCatalog.SketchQueryParameters CurrentQuery =>
+            SketchCatalog.m_Instance.QueryOptionParametersForSet(m_CurrentSketchSet);
+
+        public void ForceRefreshCurrentSet()
+        {
+            SketchCatalog.m_Instance.RequestForcedRefresh(CurrentSketchSetType);
+            ResetPageIndex();
+            RefreshPage();
+        }
+
+        public void SetInitialSearchText(KeyboardPopupButton btn)
+        {
+            btn.m_CommandParam = (int)m_CurrentSketchSet;
+            KeyboardPopUpWindow.m_InitialText = CurrentQuery.SearchText;
+        }
+
     }
 } // namespace TiltBrush

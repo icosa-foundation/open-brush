@@ -16,9 +16,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+#if MP_FUSION
+using Fusion;
+#endif
 using UnityEngine;
 using OVRPlatform = Oculus.Platform;
 using TiltBrush;
+using UnityEngine.Serialization;
 
 namespace OpenBrush.Multiplayer
 {
@@ -40,10 +44,11 @@ namespace OpenBrush.Multiplayer
         private IVoiceConnectionHandler m_VoiceManager;
 
         public ITransientData<PlayerRigData> m_LocalPlayer;
-        public List<ITransientData<PlayerRigData>> m_RemotePlayers;
+        [HideInInspector] public RemotePlayers m_RemotePlayers;
 
         public Action<int, ITransientData<PlayerRigData>> localPlayerJoined;
-        public Action<int, ITransientData<PlayerRigData>> remotePlayerJoined;
+        public Action<RemotePlayer> remotePlayerJoined;
+        public Action<int, GameObject> remoteVoiceAdded;
         public Action<int> playerLeft;
         public Action<List<RoomData>> roomDataRefreshed;
 
@@ -90,7 +95,7 @@ namespace OpenBrush.Multiplayer
         }
         private string m_oldNickName = null;
 
-        [HideInInspector] public RoomCreateData data;
+        [HideInInspector] public RoomCreateData CurrentRoomData;
 
         private bool _isUserRoomOwner = false;
         private bool isUserRoomOwner
@@ -103,11 +108,28 @@ namespace OpenBrush.Multiplayer
             }
         }
 
+        private bool _isViewOnly;
+
+        [NonSerialized] public bool m_IsAllMutedForMe;
+        [NonSerialized] public bool m_IsAllMutedForAll;
+
+        public bool IsViewOnly
+        {
+            get
+            {
+                // If the user is not in a room, then they can't be view only
+                if (State != ConnectionState.IN_ROOM) return false;
+                // Room owners are never in view-only mode
+                if (isUserRoomOwner) return false;
+                return _isViewOnly;
+            }
+            set => _isViewOnly = value;
+        }
+
         void Awake()
         {
             m_Instance = this;
             oculusPlayerIds = new List<ulong>();
-            m_RemotePlayers = new List<ITransientData<PlayerRigData>>();
         }
 
         void Start()
@@ -152,6 +174,7 @@ namespace OpenBrush.Multiplayer
             roomDataRefreshed += OnRoomDataRefreshed;
             localPlayerJoined += OnLocalPlayerJoined;
             remotePlayerJoined += OnRemotePlayerJoined;
+            remoteVoiceAdded += OnRemoteVoiceConnected;
             playerLeft += OnPlayerLeft;
             StateUpdated += UpdateSketchMemoryScriptTimeOffset;
 
@@ -165,6 +188,7 @@ namespace OpenBrush.Multiplayer
             roomDataRefreshed -= OnRoomDataRefreshed;
             localPlayerJoined -= OnLocalPlayerJoined;
             remotePlayerJoined -= OnRemotePlayerJoined;
+            remoteVoiceAdded -= OnRemoteVoiceConnected;
             playerLeft -= OnPlayerLeft;
             StateUpdated -= UpdateSketchMemoryScriptTimeOffset;
 
@@ -226,6 +250,9 @@ namespace OpenBrush.Multiplayer
             }
             else State = ConnectionState.IN_ROOM;
 
+            //asing the room name to the current room name
+            RoomCreateData CurrentRoomData = RoomData;
+
             return successData & successVoice;
         }
 
@@ -268,16 +295,16 @@ namespace OpenBrush.Multiplayer
             if (!successData)
             {
                 State = ConnectionState.ERROR;
-                LastError = m_Manager.LastError;
+                LastError = m_Manager?.LastError;
             }
             else if (!successVoice)
             {
                 State = ConnectionState.ERROR;
-                LastError = m_VoiceManager.LastError;
+                LastError = m_VoiceManager?.LastError;
             }
             else State = ConnectionState.DISCONNECTED;
 
-            return successData & successVoice;
+            return successData && successVoice;
         }
 
         public bool DoesRoomNameExist(string roomName)
@@ -301,6 +328,67 @@ namespace OpenBrush.Multiplayer
             else isUserRoomOwner = false; // not empty user is not the room owner
 
             return true;
+        }
+
+        public void RoomOwnershipReceived(RemotePlayerSettings[] playerSettings, RoomCreateData roomData)
+        {
+
+            CurrentRoomData = roomData;
+
+            foreach (var p in playerSettings)
+            {
+                var PlayerId = p.m_PlayerId;
+                var mplayer = m_Instance.GetPlayerById(PlayerId);
+                if (mplayer == null) continue;
+                mplayer.m_IsMutedForAll = p.m_IsMutedForAll;
+                mplayer.m_IsViewOnly = p.m_IsViewOnly;
+            }
+            // TODO Refresh GUI
+
+            isUserRoomOwner = true;
+        }
+
+        public void RoomOwnershipTransferToUser(int playerId)
+        {
+            if (!isUserRoomOwner) return;
+
+            var playerSettings = new RemotePlayerSettings[m_RemotePlayers.List.Count];
+
+            for (var i = 0; i < m_RemotePlayers.List.Count; i++)
+            {
+                var player = m_RemotePlayers.List[i];
+                playerSettings[i] = new RemotePlayerSettings(player.PlayerId, player.m_IsMutedForAll, player.m_IsViewOnly);
+            }
+            m_Manager.RpcTransferRoomOwnership(playerId, playerSettings, CurrentRoomData);
+            isUserRoomOwner = false;
+        }
+
+        // Not really a multiplayer function but placing it here for consistency with other methods
+        public void MutePlayerForMe(bool muted, int playerId)
+        {
+            GetPlayerById(playerId).m_IsMutedForMe = muted;
+            MultiplayerAudioSourcesManager.m_Instance.SetMuteForPlayer(playerId, muted);
+        }
+
+        public void MutePlayerForAll(bool muted, int playerId)
+        {
+            if (!isUserRoomOwner) return;
+            GetPlayerById(playerId).m_IsMutedForAll = muted;
+            MultiplayerAudioSourcesManager.m_Instance.SetMuteForPlayer(playerId, muted);
+            m_Manager.RpcMutePlayer(muted, playerId);
+        }
+
+        public void SetUserViewOnlyMode(bool isViewOnly, int playerId)
+        {
+            if (!isUserRoomOwner) return;
+            GetPlayerById(playerId).m_IsViewOnly = isViewOnly;
+            m_Manager.RpcSetUserViewOnlyMode(isViewOnly, playerId);
+        }
+
+        public void KickPlayerOut(int playerId)
+        {
+            if (!isUserRoomOwner) return;
+            m_Manager.RpcKickPlayerOut(playerId);
         }
 
         void OnRoomDataRefreshed(List<RoomData> rooms)
@@ -348,7 +436,7 @@ namespace OpenBrush.Multiplayer
                 {
                     Color = PointerManager.m_Instance.MainPointer.GetCurrentColor(),
                     Size = PointerManager.m_Instance.MainPointer.BrushSize01,
-                    Guid = BrushController.m_Instance.ActiveBrush.m_Guid.ToString(),
+                    Guid = BrushController.m_Instance.ActiveBrush?.m_Guid.ToString(),
                 },
                 ExtraData = new ExtraData
                 {
@@ -370,8 +458,10 @@ namespace OpenBrush.Multiplayer
 
             // Update remote user refs, and send Anchors if new player joins.
             bool newUser = false;
-            foreach (var player in m_RemotePlayers)
+            foreach (var playerData in m_RemotePlayers.List)
             {
+                ITransientData<PlayerRigData> player = playerData.TransientData;
+
                 if (!player.IsSpawned) continue;
 
                 data = player.ReceiveData();
@@ -405,24 +495,88 @@ namespace OpenBrush.Multiplayer
 
         }
 
-        void OnRemotePlayerJoined(int id, ITransientData<PlayerRigData> playerData)
+        void OnRemotePlayerJoined(RemotePlayer newRemotePlayer)
         {
-            playerData.PlayerId = id;
-            m_RemotePlayers.Add(playerData);
+            m_RemotePlayers.AddPlayer(newRemotePlayer);
 
-            if (isUserRoomOwner)
+            if (!isUserRoomOwner) return;  //below this line is only room owner responsability 
+
+            MultiplayerSceneSync.m_Instance.StartSyncronizationForUser(newRemotePlayer.PlayerId);
+            if (CurrentRoomData.silentRoom == true) MutePlayerForAll(true, newRemotePlayer.PlayerId);
+            if (CurrentRoomData.viewOnlyRoom == true) SetUserViewOnlyMode(true, newRemotePlayer.PlayerId);
+        }
+
+        public void SetRoomSilent(bool isSilent)
+        {
+            if (!isUserRoomOwner) return;
+            CurrentRoomData.silentRoom = isSilent;
+            for (int i = 0; i < m_RemotePlayers.List.Count; i++)
             {
-                MultiplayerSceneSync.m_Instance.StartSyncronizationForUser(id);
+                var player = m_RemotePlayers.List[i];
+                player.m_IsMutedForAll = CurrentRoomData.silentRoom;
+                MutePlayerForAll(player.m_IsMutedForAll, player.PlayerId);
             }
         }
 
-        public void SendLargeDataToPlayer(int playerId, byte[] Data)
+        public void SetRoomViewOnly(bool isViewOnly)
         {
-            m_Manager.SendLargeDataToPlayer(playerId, Data);
+            if (!isUserRoomOwner) return;
+            CurrentRoomData.viewOnlyRoom = isViewOnly;
+            for (int i = 0; i < m_RemotePlayers.List.Count; i++)
+            {
+                var player = m_RemotePlayers.List[i];
+                player.m_IsViewOnly = CurrentRoomData.viewOnlyRoom;
+                SetUserViewOnlyMode(player.m_IsViewOnly, player.PlayerId);
+            }
         }
 
+        public RemotePlayer GetPlayerById(int id)
+        {
+            RemotePlayer playerData = m_RemotePlayers.List.FirstOrDefault(x => x.PlayerId == id);
+            if (playerData == null)
+            {
+                Debug.LogWarning($"PlayerRigData with ID {id} not found");
+                return null;
+            }
 
+            if (playerData.PlayerGameObject == null)
+            {
+                Debug.LogWarning($"RemotePlayerGameObject with ID {id} not found");
+                return null;
+            }
 
+            return playerData;
+        }
+
+        public void OnRemoteVoiceConnected(int id, GameObject voicePrefab)
+        {
+            var playerData = GetPlayerById(id);
+            if (playerData == null) return;
+
+            Transform headTransform = playerData.PlayerGameObject.transform.Find("HeadTransform");
+            if (headTransform != null)
+            {
+                voicePrefab.transform.SetParent(headTransform, false);
+                playerData.VoiceGameObject = voicePrefab;
+            }
+            else
+            {
+                Debug.LogWarning($"HeadTransform not found in {playerData.PlayerGameObject.name}");
+            }
+
+            AudioSource audioSource = voicePrefab.GetComponent<AudioSource>();
+            if (audioSource == null)
+            {
+                Debug.LogWarning($"VoicePrefab with ID {id} lack AudioSource :S ");
+                return;
+            }
+            MultiplayerAudioSourcesManager.m_Instance.AddAudioSource(id, audioSource);
+        }
+
+        public void SendLargeDataToPlayer(int playerId, byte[] Data, int percentage)
+        {
+            m_Manager.SendLargeDataToPlayer(playerId, Data, percentage);
+        }
 
         void OnPlayerLeft(int id)
         {
@@ -432,25 +586,19 @@ namespace OpenBrush.Multiplayer
                 Debug.Log("Possible to get here!");
                 return;
             }
-            var copy = m_RemotePlayers.ToList();
-            foreach (var player in copy)
-            {
-                if (player.PlayerId == id)
-                {
-                    m_RemotePlayers.Remove(player);
-                }
-            }
+
+            m_RemotePlayers.RemovePlayerById(id);
 
             // Reassign Ownership if needed 
             // Check if any remaining player is the room owner
-            bool anyRoomOwner = m_RemotePlayers.Any(player => m_Manager.GetPlayerRoomOwnershipStatus(player.PlayerId))
+            bool anyRoomOwner = m_RemotePlayers.List.Any(player => m_Manager.GetPlayerRoomOwnershipStatus(player.PlayerId))
                                 || isUserRoomOwner;
 
             // If there's still a room owner, no reassignment is needed
             if (anyRoomOwner) return;
 
             // If there are no other players left, the local player becomes the room owner
-            if (m_RemotePlayers.Count == 0)
+            if (m_RemotePlayers.List.Count == 0)
             {
                 isUserRoomOwner = true;
                 return;
@@ -458,8 +606,8 @@ namespace OpenBrush.Multiplayer
 
             // Since There are other players left
             // Determine the new room owner by the lowest PlayerId
-            var allPlayers = new List<ITransientData<PlayerRigData>> { m_LocalPlayer };
-            allPlayers.AddRange(m_RemotePlayers);
+            var allPlayers = new List<RemotePlayer> { new RemotePlayer { PlayerId = m_LocalPlayer.PlayerId } };
+            allPlayers.AddRange(m_RemotePlayers.List);
 
             // Find the player with the lowest PlayerId
             var newOwner = allPlayers.OrderBy(player => player.PlayerId).First();
@@ -521,30 +669,6 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        public async void StartSynchHistory(int id)
-        {
-            if (State == ConnectionState.IN_ROOM)
-            {
-                await m_Manager.RpcStartSyncHistory(id);
-            }
-        }
-
-        public async void SynchHistoryPercentage(int id, int expected, int sent)
-        {
-            if (State == ConnectionState.IN_ROOM)
-            {
-                await m_Manager.RpcSyncHistoryPercentage(id, expected, sent);
-            }
-        }
-
-        public async void SynchHistoryComplete(int id)
-        {
-            if (State == ConnectionState.IN_ROOM)
-            {
-                await m_Manager.RpcHistorySyncComplete(id);
-            }
-        }
-
         async void ShareAnchors()
         {
 #if OCULUS_SUPPORTED
@@ -564,7 +688,7 @@ namespace OpenBrush.Multiplayer
         private void OnConnectionHandlerDisconnected()
         {
             m_LocalPlayer = null;// Clean up local player reference
-            m_RemotePlayers.Clear();// Clean up remote player references
+            m_RemotePlayers.ClearList();// Clean up remote player references
             LastError = null;
             State = ConnectionState.DISCONNECTED;
             StateUpdated?.Invoke(State);
@@ -609,7 +733,7 @@ namespace OpenBrush.Multiplayer
 
         public bool IsRemotePlayerStillConnected(int playerId)
         {
-            if (m_RemotePlayers.Any(player => player.PlayerId == playerId)) return true;
+            if (m_RemotePlayers.List.Any(player => player.PlayerId == playerId)) return true;
             return false;
         }
 
@@ -635,10 +759,7 @@ namespace OpenBrush.Multiplayer
                 m_NetworkOffsetTimestamp = (int)(App.Instance.CurrentSketchTime * 1000);
                 SketchMemoryScript.m_Instance.SetTimeOffsetToAllStacks((int)m_NetworkOffsetTimestamp);
             }
-
         }
-
-
     }
 }
 

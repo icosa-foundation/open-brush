@@ -14,7 +14,7 @@ on:  # yamllint disable-line rule:truthy
     - cron: "34 19 * * sat"  # Weekly, Saturday at 19:34 UTC
 
 env:
-  UNITY_VERSION: "2022.3.34f1"
+  UNITY_VERSION: "2022.3.62f2"
   PHOTON_PAT: ${{ secrets.PHOTON_PAT }}  # This needs to be here, since you can't use a ${{ secrets }} within an if: condition
 jobs:
   configuration:
@@ -49,11 +49,18 @@ jobs:
       flavors: ${{ steps.flavors.outputs.flavors }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
-
+      - name: Check for tags and fetch from Open Brush repo if needed
+        if: github.repository != 'icosa-foundation/open-brush'
+        run: |
+          if [ $(git tag | wc -l) -eq 0 ]; then
+            echo "No tags found in current repository. Fetching tags from icosa-foundation/open-brush..."
+            git remote add openbrush https://github.com/icosa-foundation/open-brush.git
+            git fetch --tags openbrush
+          fi
       - name: Calculate version and stamp
         id: version
         run: |
@@ -186,16 +193,19 @@ jobs:
             targetPlatform: StandaloneWindows64
             vrsdk: OpenXR
             cache: Windows
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: Linux
             targetPlatform: StandaloneLinux64
             vrsdk: Monoscopic  # All builds include monoscopic, but this one has no additional XrSdk, so we'll keep the name monoscopic
             cache: Linux
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: MacOS
             targetPlatform: StandaloneOSX
             vrsdk: Monoscopic
             cache: MacOS
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: Android OpenXR
             targetPlatform: Android
@@ -203,6 +213,7 @@ jobs:
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
             versionSuffix: 0
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: Android Quest
             targetPlatform: Android
@@ -211,6 +222,7 @@ jobs:
             extraoptions: -btb-il2cpp
             versionSuffix: 0
             extra_defines: USE_QUEST_PACKAGE_NAME  # :(
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: iOS Zapbox
             targetPlatform: iOS
@@ -219,6 +231,7 @@ jobs:
             extraoptions: -btb-il2cpp
             extra_defines: ZAPBOX_SUPPORTED
             packages_to_remove: com.unity.formats.usd
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2  # The Fusion plugin does *not* set FUSION_WEAVER and FUSION2 for iOS, unlike other platforms. However, it does get set elsewhere, but only when we go through the Editor. From the command line, it doesn't get set properly, and thus the builds fail without these two defines.
 
     steps:
       - name: Set masking
@@ -235,21 +248,56 @@ jobs:
           dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
           echo "Removing unneeded large packages"
           sudo apt update
-          sudo apt remove -y '^ghc-.*' '^dotnet-.*' azure-cli powershell google-chrome-stable firefox microsoft-edge-stable 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' default-jre-headless  mono-devel libgl1-mesa-dri # Removes ~6GB
-          sudo apt autoremove -y
-          sudo apt clean
+
+          echo "Disabling slow triggers and package update hooks"
+          sudo rm -rf /var/lib/man-db # remove man-db database completely
+          sudo mkdir -p /etc/dpkg/dpkg.cfg.d/
+          echo "path-exclude=/usr/share/man/*" | sudo tee /etc/dpkg/dpkg.cfg.d/01_nodoc > /dev/null
+          echo "path-exclude=/usr/share/icons/hicolor/*" | sudo tee -a /etc/dpkg/dpkg.cfg.d/01_nodoc > /dev/null
+          sudo dpkg-divert --local --rename --add /usr/bin/update-mime-database
+          sudo dpkg-divert --local --rename --add /usr/bin/update-desktop-database
+          sudo dpkg-divert --local --rename --add /usr/bin/update-icon-caches
+          sudo dpkg-divert --local --rename --add /usr/bin/mandb
+          sudo ln -sf /bin/true /usr/bin/mandb
+
+          # Disable dpkg triggers temporarily
+          if [ -d /var/lib/dpkg/triggers ]; then
+            sudo mv /var/lib/dpkg/triggers /var/lib/dpkg/triggers.bak
+            sudo mkdir -p /var/lib/dpkg/triggers
+          fi
+
+          # Force remove google-cloud-cli directly instead of using apt
+          echo "Removing Google Cloud CLI directly"
+          sudo rm -rf /usr/lib/google-cloud-sdk
+          sudo find /etc/apt/ /var/lib/dpkg/ -name 'google-cloud*' -delete
+
+          # Remove packages with faster options
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" -yq remove \
+            '^ghc-.*' '^dotnet-.*' azure-cli powershell google-chrome-stable firefox \
+            microsoft-edge-stable 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' \
+            default-jre-headless mono-devel libgl1-mesa-dri man-db hicolor-icon-theme
+
+          sudo apt-get autoremove -y --purge
+          sudo apt-get clean
+
+          if [ -d /var/lib/dpkg/triggers.bak ]; then
+            sudo rm -rf /var/lib/dpkg/triggers
+            sudo mv /var/lib/dpkg/triggers.bak /var/lib/dpkg/triggers
+          fi
+
           df -h /
           echo "Removing Android"
           sudo rm -rf /usr/local/lib/android # Removes ~9GB
           df -h /
           echo "Removing remaining large directories"
-          rm -rf /usr/share/dotnet/  # Removes ~1GB
-          rm -rf "$AGENT_TOOLSDIRECTORY"  # Removes ~7GB
+          sudo rm -rf /usr/share/dotnet/  # ~1GB
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"  # ~7GB
           echo "Disk space after cleanup"
           df -h /
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
 
@@ -277,7 +325,7 @@ jobs:
 
       - name: Checkout private photon repository if available
         if: ${{ env.PHOTON_PAT }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ env.PHOTON_PAT }}
           repository: icosa-mirror/photon-fusion
@@ -303,6 +351,7 @@ jobs:
 
       - name: Restore Library/PackageCache
         id: cache_packagecache
+        if: false
         uses: actions/cache/restore@v4
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
@@ -378,11 +427,6 @@ jobs:
         run: |
           sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
 
-      - name: Add PHOTON_PAT specific define
-        if: ${{ env.PHOTON_PAT }}
-        run: |
-          echo -e "\n -define:MP_PHOTON \n -define:PHOTON_UNITY_NETWORKING \n-define:PUN_2_0_OR_NEWER \n-define:PUN_2_OR_NEWER \n-define:PUN_2_19_OR_NEWER \n-define:FUSION_WEAVER \n-define:FUSION2 \n-define:CROSS_PLATFORM_INPUT \n-define:MOBILE_INPUT \n-define:PHOTON_VOICE_DEFINED" | tee -a Assets/csc.rsp
-
       - name: Update build matrix specific defines in csc.rsp
         if: ${{ matrix.extra_defines }}
         run: |
@@ -390,9 +434,17 @@ jobs:
             echo -e "\n-define:$DEFINE" | tee -a Assets/csc.rsp
           done
 
+      - name: Update build matrix specific defines in csc.rsp (PHOTON_PAT only)
+        if: ${{ env.PHOTON_PAT && matrix.extra_photon_defines }}
+        run: |
+          for DEFINE in ${{ matrix.extra_photon_defines }}; do
+            echo -e "\n-define:$DEFINE" | tee -a Assets/csc.rsp
+          done
+
       - name: Build project
         uses: Wandalen/wretry.action@v3
         env:
+          GIT_LFS_SKIP_SMUDGE: "1"
           VERSION: ${{ needs.configuration.outputs.version}}
           UNITY_EMAIL: ${{ fromJSON(format('["unitytest@mikeage.net", "{0}"]', vars.UNITY_EMAIL))[secrets.UNITY_SERIAL != null] }}
           UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
@@ -430,7 +482,7 @@ jobs:
           mv OpenBrush.tgz build/${{ matrix.vrsdk }}/
 
       - name: Upload build/
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.name }} ${{ matrix.flavors.title }}
           path: |
@@ -439,6 +491,7 @@ jobs:
             !build/**/*_BackUpThisFolder_ButDontShipItWithYourGame
 
       - name: Check if packages-lock.json has changed or if it's cacheable
+        if: false
         id: check_packagecache
         run: |
           # Check if there are any changes to the packages-lock.json file
@@ -451,7 +504,7 @@ jobs:
 
       - name: Save Library/PackageCache cache
         uses: actions/cache/save@v4
-        if: github.ref == 'refs/heads/main' && steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
+        if: false && github.ref == 'refs/heads/main' && steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -478,7 +531,7 @@ jobs:
 
       - name: Save Library/ cache
         uses: actions/cache/save@v4
-        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
+        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true' && !matrix.flavors.development
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -496,7 +549,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -504,7 +557,7 @@ jobs:
             Support/macos
 
       - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: MacOS
           path: build_macos
@@ -558,7 +611,7 @@ jobs:
 
           tar -c -v -z -f OpenBrush.tgz StandaloneOSX
       - name: Upload signed app
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: MacOS (signed)
           path: |
@@ -575,7 +628,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -583,7 +636,7 @@ jobs:
             Support/macos
 
       - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: MacOS (signed)
           path: build_macos
@@ -615,7 +668,7 @@ jobs:
           xcrun stapler staple dist/OpenBrush.dmg
 
       - name: Upload notarized dmg
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: MacOS (DMG)
           path: |
@@ -633,7 +686,7 @@ jobs:
     steps:
       - name: "Build Changelog"
         id: changelog
-        uses: mikepenz/release-changelog-builder-action@v5
+        uses: mikepenz/release-changelog-builder-action@v6
         with:
           fromTag: "${{ needs.configuration.outputs.previousrelease }}"
           toTag: "${{ needs.configuration.outputs.currentrelease }}"
@@ -674,25 +727,25 @@ jobs:
         run: echo "$CHANGELOG"
 
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Windows OpenXR
           path: build_windows_openxr
 
       - name: Download Build Artifacts (Android OpenXR)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Android OpenXR
           path: build_android_openxr
 
       - name: Download Build Artifacts (Linux)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Linux
           path: build_linux
 
       - name: Download Build Artifacts (Mac)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: MacOS (DMG)
           path: build_macos
@@ -732,7 +785,7 @@ jobs:
     steps:
       - name: "Build Changelog"
         id: changelog
-        uses: mikepenz/release-changelog-builder-action@v5
+        uses: mikepenz/release-changelog-builder-action@v6
         with:
           fromTag: "${{ needs.configuration.outputs.previousfullrelease }}"
           toTag: "${{ needs.configuration.outputs.currentrelease }}"
@@ -769,7 +822,7 @@ jobs:
             }
 
       - name: Get the current contents of the docs repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: icosa-foundation/open-brush-docs
           path: open-brush-docs
@@ -807,7 +860,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           sparse-checkout: |
@@ -821,17 +874,17 @@ jobs:
           echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - | gunzip - > /home/runner/Steam/config/config.vdf
           md5sum /home/runner/Steam/config/config.vdf
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Windows OpenXR
           path: build_windows_openxr
       - name: Download Build Artifacts (MacOS Signed)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: MacOS (signed)
           path: build_macos
       - name: Download Build Artifacts (Linux)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Linux
           path: build_linux
@@ -864,7 +917,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.SECRET_UPDATER_PAT }}
       - name: Save logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: ${{ failure() }}
         with:
           name: steamcmd logs
@@ -886,7 +939,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows Pimax)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Windows Pimax
           path: build_windows_pimax
@@ -918,7 +971,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Windows OpenXR
           path: build_windows_openxr
@@ -934,7 +987,7 @@ jobs:
 
   publish_itch:
     name: Publish Itch.io Release
-    needs: [configuration, build]
+    needs: [configuration, build, createdmg]
     runs-on: ubuntu-latest
     env:
       ITCH_SUBCHANNEL_NAME: ${{ needs.configuration.outputs.itchchannelname }}
@@ -949,22 +1002,30 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Windows OpenXR
           path: build_windows_openxr
 
       - name: Download Build Artifacts (Android OpenXR)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Android OpenXR
           path: build_android_openxr
+
+      - name: Download Build Artifacts (Mac)
+        uses: actions/download-artifact@v6
+        with:
+          name: MacOS (DMG)
+          path: build_macos
 
       - name: Package Artifacts for release
         run: |
           mkdir releases
           mv build_android_openxr/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Android_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64/ releases/OpenBrush_Desktop_$VERSION/
+          mv build_macos/*.dmg releases/OpenBrush_Mac_$VERSION.dmg
+
       - name: Publish Windows
         uses: josephbmanley/butler-publish-itchio-action@master
         env:
@@ -975,6 +1036,11 @@ jobs:
         env:
           CHANNEL: android-quest-${{ env.ITCH_SUBCHANNEL_NAME }}
           PACKAGE: releases/OpenBrush_Android_${{ needs.configuration.outputs.version }}.apk
+      - name: Publish Mac
+        uses: josephbmanley/butler-publish-itchio-action@master
+        env:
+          CHANNEL: mac-${{ env.ITCH_SUBCHANNEL_NAME }}
+          PACKAGE: releases/OpenBrush_Mac_${{ needs.configuration.outputs.version }}.dmg
 
   publish_oculus_quest:
     name: Publish Android Quest Release
@@ -987,7 +1053,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Android Quest)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Android Quest
           path: build_android_quest
@@ -1010,10 +1076,10 @@ jobs:
 
           if [ "$PRERELEASE" == "false" ]
           then
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel LIVE --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --age-group MIXED_AGES
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel LIVE --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --age-group TEENS_AND_ADULTS
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group MIXED_AGES
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group TEENS_AND_ADULTS
           fi
 
   publish_oculus_quest_arborxr:
@@ -1026,11 +1092,22 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
-      - name: Download Build Artifacts (Oculus Quest 2+)
-        uses: actions/download-artifact@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          ignore-empty-workdir: true
+          enable-cache: false
+
+      - name: Install ArborXR CLI
+        run: |
+          uv tool install abxrcli
+
+      - name: Download Build Artifacts (Android Quest)
+        uses: actions/download-artifact@v6
         with:
           name: Oculus Quest (2+)
           path: build_oculus_quest
+
       - name: Publish Oculus Builds
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
@@ -1042,22 +1119,22 @@ jobs:
           ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_Q2_LIVE_CHANNEL }}
           ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_Q2_BETA_CHANNEL }}
         run: |
+          set -x
           mkdir releases
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
 
           cd releases
-          wget -O arborxr-cli.zip https://graphql.xrdm.app/download/system-content/channel/fe7633a5-d733-4885-8b3c-580c11c4842d
-          unzip arborxr-cli.zip
-          ln -s arborxr-cli-linux-* arborxr-cli
-          chmod 755 arborxr-cli
 
           if [ "$PRERELEASE" == "false" ]
           then
-            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_LIVE_CHANNEL OpenBrush_Quest_$VERSION.apk
+            CHANGELOG="Version $VERSION"
+            ARBORXR_CHANNEL="${ARBORXR_LIVE_CHANNEL}"
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_BETA_CHANNEL OpenBrush_Quest_$VERSION.apk --release-notes "${CHANGELOG}"
+            ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
           fi
+          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait_time 600 | jq -r '.id')"
+          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID
 
   publish_oculus_quest1_arborxr:
     name: Publish Oculus Quest 1 Release ArborXR
@@ -1069,8 +1146,18 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          ignore-empty-workdir: true
+          enable-cache: false
+
+      - name: Install ArborXR CLI
+        run: |
+          uv tool install abxrcli
+
       - name: Download Build Artifacts (Oculus Quest 1)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Oculus Quest (1)
           path: build_oculus_quest1
@@ -1085,22 +1172,22 @@ jobs:
           ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_Q1_LIVE_CHANNEL }}
           ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_Q1_BETA_CHANNEL }}
         run: |
+          set -x
           mkdir releases1
           mv build_oculus_quest1/*/com.Icosa.OpenBrush*apk releases1/OpenBrush_Quest1_$VERSION.apk
 
           cd releases1
-          wget -O arborxr-cli.zip https://graphql.xrdm.app/download/system-content/channel/fe7633a5-d733-4885-8b3c-580c11c4842d
-          unzip arborxr-cli.zip
-          ln -s arborxr-cli-linux-* arborxr-cli
-          chmod 755 arborxr-cli
 
           if [ "$PRERELEASE" == "false" ]
           then
-            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_LIVE_CHANNEL OpenBrush_Quest1_$VERSION.apk
+            CHANGELOG="Version $VERSION"
+            ARBORXR_CHANNEL="${ARBORXR_LIVE_CHANNEL}"
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_BETA_CHANNEL OpenBrush_Quest1_$VERSION.apk --release-notes "${CHANGELOG}"
+            ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
           fi
+          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest1_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait_time 300 | jq -r '.id')"
+          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID
 
   publish_oculus_rift:
     name: Publish Oculus Rift Release
@@ -1113,10 +1200,11 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Windows OpenXR
           path: build_windows_openxr
+
       - name: Publish Oculus Builds
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
@@ -1151,7 +1239,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Android OpenXR)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Android OpenXR
           path: build_android_openxr
@@ -1173,11 +1261,11 @@ jobs:
 
           if [ "$PRERELEASE" == "false" ]
           then
-            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 2 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
-            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region cn --apk OpenBrush_Pico_$VERSION.apk --channel 1 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 2 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4,PICO 4 Ultra,PICO 4 Pro'
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region cn --apk OpenBrush_Pico_$VERSION.apk --channel 1 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4,PICO 4 Ultra,PICO 4 Pro'
           else
             # For Pico, Beta channels can only get one build, not a separate China / non-China build
-            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 3 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4'
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 3 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4,PICO 4 Ultra,PICO 4 Pro'
           fi
 
   publish_pico_arborxr:
@@ -1190,8 +1278,18 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          ignore-empty-workdir: true
+          enable-cache: false
+
+      - name: Install ArborXR CLI
+        run: |
+          uv tool install abxrcli
+
       - name: Download Build Artifacts (Android Pico)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Android Pico
           path: build_android_pico
@@ -1206,22 +1304,22 @@ jobs:
           ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_PICO_LIVE_CHANNEL }}
           ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_PICO_BETA_CHANNEL }}
         run: |
+          set -x
           mkdir releases
           mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
 
           cd releases
-          wget -O arborxr-cli.zip https://graphql.xrdm.app/download/system-content/channel/fe7633a5-d733-4885-8b3c-580c11c4842d
-          unzip arborxr-cli.zip
-          ln -s arborxr-cli-linux-* arborxr-cli
-          chmod 755 arborxr-cli
 
           if [ "$PRERELEASE" == "false" ]
           then
-            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_LIVE_CHANNEL OpenBrush_Pico_$VERSION.apk
+            CHANGELOG="Version $VERSION"
+            ARBORXR_CHANNEL="${ARBORXR_LIVE_CHANNEL}"
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            ./arborxr-cli content channel upload $ARBORXR_APP_ID --release-channel $ARBORXR_BETA_CHANNEL OpenBrush_Pico_$VERSION.apk --release-notes "${CHANGELOG}"
+            ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
           fi
+          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Pico_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait_time 300 | jq -r '.id')"
+          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID
 
   publish_ios_zapbox:
     name: Publish Zapbox iOS
@@ -1233,7 +1331,7 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           sparse-checkout: |
@@ -1253,10 +1351,11 @@ jobs:
       - name: Use xcode 16.2 / ios 18.2
         run: |
           sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer  # The default in macos-latest (i.e., 14) is currently 15.4.
+          xcrun simctl list > /dev/null  # Because of https://github.com/actions/runner-images/issues/12862
           xcodebuild -downloadPlatform iOS -buildVersion 18.2  # Because of https://github.com/actions/runner-images/issues/11335
 
       - name: Download iOS Artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: iOS Zapbox
           path: build
@@ -1295,7 +1394,7 @@ jobs:
           bundle exec fastlane ios ${FASTLANE_LANE}
 
       - name: Save logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: ${{ failure() }}
         with:
           name: fastlane logs

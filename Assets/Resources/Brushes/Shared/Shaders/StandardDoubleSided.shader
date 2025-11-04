@@ -20,6 +20,10 @@ Properties {
   _MainTex ("Base (RGB) TransGloss (A)", 2D) = "white" {}
   _BumpMap ("Normalmap", 2D) = "bump" {}
   _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+
+  _Dissolve("Dissolve", Range(0,1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
   // -------------------------------------------------------------------------------------------- //
@@ -31,7 +35,8 @@ Properties {
     Cull Off
 
     CGPROGRAM
-    #pragma target 3.0
+    #pragma multi_compile __ SHADER_SCRIPTING_ON
+    #pragma target 4.0
     #pragma surface surf StandardSpecular vertex:vert alphatest:_Cutoff addshadow
     #pragma multi_compile __ AUDIO_REACTIVE
     #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
@@ -43,6 +48,21 @@ Properties {
       float2 uv_BumpMap;
       float4 color : Color;
       fixed vface : VFACE;
+      uint id : SV_VertexID;
+      float4 screenPos;
+    };
+
+    struct appdata_full_plus_id {
+      float4 vertex : POSITION;
+      float4 tangent : TANGENT;
+      float3 normal : NORMAL;
+      float4 texcoord : TEXCOORD0;
+      float4 texcoord1 : TEXCOORD1;
+      float4 texcoord2 : TEXCOORD2;
+      float4 texcoord3 : TEXCOORD3;
+      fixed4 color : COLOR;
+      uint id : SV_VertexID;
+      UNITY_VERTEX_INPUT_INSTANCE_ID
     };
 
     sampler2D _MainTex;
@@ -50,14 +70,24 @@ Properties {
     fixed4 _Color;
     half _Shininess;
 
-    void vert (inout appdata_full i /*, out Input o*/) {
-      // UNITY_INITIALIZE_OUTPUT(Input, o);
+	  uniform half _ClipStart;
+	  uniform half _ClipEnd;
+    uniform half _Dissolve;
+
+    void vert (inout appdata_full_plus_id i, out Input o) {
+      UNITY_INITIALIZE_OUTPUT(Input, o);
       // o.tangent = v.tangent;
       PrepForOds(i.vertex);
       i.color = TbVertToNative(i.color);
+      o.id = i.id;
     }
 
     void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
+        #ifdef SHADER_SCRIPTING_ON
+      if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
+      if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
+      #endif
+
       fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);
       o.Albedo = tex.rgb * _Color.rgb * IN.color.rgb;
       o.Smoothness = _Shininess;
@@ -83,10 +113,12 @@ Properties {
       AlphaToMask On
 
       CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
         #pragma vertex vert
         #pragma fragment frag
         #pragma target 3.0
 
+        #include "Assets/Shaders/Include/Brush.cginc"
         #include "UnityCG.cginc"
         #include "Lighting.cginc"
 
@@ -99,6 +131,7 @@ Properties {
           half3 normal : NORMAL;
           fixed4 color : COLOR;
           float4 tangent : TANGENT;
+          uint id : SV_VertexID;
         };
 
         struct v2f {
@@ -109,6 +142,7 @@ Properties {
           half3 tspace0 : TEXCOORD1;
           half3 tspace1 : TEXCOORD2;
           half3 tspace2 : TEXCOORD3;
+          uint id : TEXCOORD4;
         };
 
         sampler2D _MainTex;
@@ -118,6 +152,10 @@ Properties {
 
         fixed _Cutoff;
         half _MipScale;
+
+        uniform half _ClipStart;
+        uniform half _ClipEnd;
+        uniform half _Dissolve;
 
         float ComputeMipLevel(float2 uv) {
           float2 dx = ddx(uv);
@@ -144,6 +182,11 @@ Properties {
         }
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
+          #ifdef SHADER_SCRIPTING_ON
+          if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+          if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+          #endif
+
           fixed4 col = i.color;
           col.a = tex2D(_MainTex, i.uv).a * col.a;
           col.a *= 1 + max(0, ComputeMipLevel(i.uv * _MainTex_TexelSize.zw)) * _MipScale;
@@ -183,6 +226,7 @@ Properties {
       Tags { "LightMode"="ForwardBase" }
 
       CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
         #pragma vertex vert
         #pragma fragment frag
         #pragma target 3.0
@@ -202,6 +246,7 @@ Properties {
             half3 normal : NORMAL;
             fixed4 color : COLOR;
             float4 tangent : TANGENT;
+            uint id : SV_VertexID;
         };
 
         struct v2f {
@@ -212,6 +257,7 @@ Properties {
             half3 tspace1 : TANGENT;
             half3 tspace2 : NORMAL;
             float4 worldPos : TEXCOORD4;
+            float2 id : TEXCOORD6;
             UNITY_FOG_COORDS(5)
         };
 
@@ -221,6 +267,9 @@ Properties {
         half _Shininess;
 
         fixed _Cutoff;
+        uniform half _ClipStart;
+        uniform half _ClipEnd;
+        uniform half _Dissolve;
 
         v2f vert (appdata v) {
           v2f o;
@@ -237,10 +286,16 @@ Properties {
           o.tspace2 = half3(wTangent.z, wBitangent.z, wNormal.z);
           o.worldPos = mul (unity_ObjectToWorld, v.vertex);
           UNITY_TRANSFER_FOG(o, o.pos);
+          o.id = (float2)v.id;
           return o;
         }
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
+          #ifdef SHADER_SCRIPTING_ON
+          if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+          if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+          #endif
+
           fixed4 col = i.color;
           col.a = tex2D(_MainTex, i.uv).a * col.a;
           if (col.a < _Cutoff) { discard; }
@@ -297,6 +352,7 @@ Properties {
       Tags { "LightMode"="ForwardBase" }
 
       CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
         #pragma vertex vert
         #pragma fragment frag
         #pragma target 3.0
@@ -313,6 +369,7 @@ Properties {
             half3 normal : NORMAL;
             fixed4 color : COLOR;
             float4 tangent : TANGENT;
+            uint id : SV_VertexID;
         };
 
         struct v2f {
@@ -323,6 +380,7 @@ Properties {
             half3 tspace0 : TEXCOORD1;
             half3 tspace1 : TEXCOORD2;
             half3 tspace2 : TEXCOORD3;
+            uint id : TEXCOORD4;
         };
 
         sampler2D _MainTex;
@@ -330,6 +388,10 @@ Properties {
         sampler2D _BumpMap;
 
         fixed _Cutoff;
+
+        uniform half _ClipStart;
+        uniform half _ClipEnd;
+        uniform half _Dissolve;
 
         v2f vert (appdata v) {
           v2f o;
@@ -349,6 +411,11 @@ Properties {
         }
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
+        #ifdef SHADER_SCRIPTING_ON
+          if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+          if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+          #endif
+
           fixed4 col = i.color;
           col.a = tex2D(_MainTex, i.uv).a * col.a;
           //if (col.a < _Cutoff) { discard; }
@@ -385,10 +452,12 @@ Properties {
       AlphaToMask On
 
       CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
         #pragma vertex vert
         #pragma fragment frag
         #pragma target 3.0
 
+        #include "Assets/Shaders/Include/Brush.cginc"
         #include "UnityCG.cginc"
         #include "Lighting.cginc"
 
@@ -400,6 +469,7 @@ Properties {
             float2 uv : TEXCOORD0;
             half3 normal : NORMAL;
             fixed4 color : COLOR;
+            uint id : SV_VertexID;
         };
 
         struct v2f {
@@ -407,6 +477,7 @@ Properties {
             float2 uv : TEXCOORD0;
             half3 worldNormal : NORMAL;
             fixed4 color : COLOR;
+            uint id : TEXCOORD2;
         };
 
         sampler2D _MainTex;
@@ -415,6 +486,10 @@ Properties {
 
         fixed _Cutoff;
         half _MipScale;
+
+        uniform half _ClipStart;
+        uniform half _ClipEnd;
+        uniform half _Dissolve;
 
         float ComputeMipLevel(float2 uv) {
           float2 dx = ddx(uv);
@@ -433,6 +508,11 @@ Properties {
         }
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
+          #ifdef SHADER_SCRIPTING_ON
+          if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+          if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+          #endif
+
           fixed4 col = i.color;
           col.a *= tex2D(_MainTex, i.uv).a;
           col.a *= 1 + max(0, ComputeMipLevel(i.uv * _MainTex_TexelSize.zw)) * _MipScale;
@@ -471,10 +551,12 @@ Properties {
       Tags { "LightMode"="ForwardBase" }
 
       CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
         #pragma vertex vert
         #pragma fragment frag
         #pragma target 3.0
 
+        #include "Assets/Shaders/Include/Brush.cginc"
         #include "UnityCG.cginc"
         #include "Lighting.cginc"
 
@@ -486,6 +568,7 @@ Properties {
             float2 uv : TEXCOORD0;
             half3 normal : NORMAL;
             fixed4 color : COLOR;
+            uint id : SV_VertexID;
         };
 
         struct v2f {
@@ -493,6 +576,7 @@ Properties {
             float2 uv : TEXCOORD0;
             half3 worldNormal : NORMAL;
             fixed4 color : COLOR;
+            uint id : TEXCOORD2;
         };
 
         sampler2D _MainTex;
@@ -501,6 +585,10 @@ Properties {
 
         fixed _Cutoff;
         half _MipScale;
+
+        uniform half _ClipStart;
+        uniform half _ClipEnd;
+        uniform half _Dissolve;
 
         float ComputeMipLevel(float2 uv) {
           float2 dx = ddx(uv);
@@ -519,6 +607,11 @@ Properties {
         }
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
+          #ifdef SHADER_SCRIPTING_ON
+          if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+          if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+          #endif
+
           fixed4 col = i.color;
           col.a = 1;
 
@@ -545,22 +638,51 @@ Properties {
     Cull Off
 
     CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
       #pragma surface surf Lambert vertex:vert alphatest:_Cutoff
       #pragma target 3.0
 
+      #include "Assets/Shaders/Include/Brush.cginc"
+
       sampler2D _MainTex;
       fixed4 _Color;
+
+      uniform half _ClipStart;
+      uniform half _ClipEnd;
+      uniform half _Dissolve;
 
       struct Input {
         float2 uv_MainTex;
         float4 color : COLOR;
         fixed vface : VFACE;
+        uint id : SV_VertexID;
+        float4 screenPos;
       };
 
-      void vert (inout appdata_full v) {
+      struct appdata_full_plus_id {
+        float4 vertex : POSITION;
+        float4 tangent : TANGENT;
+        float3 normal : NORMAL;
+        float4 texcoord : TEXCOORD0;
+        float4 texcoord1 : TEXCOORD1;
+        float4 texcoord2 : TEXCOORD2;
+        float4 texcoord3 : TEXCOORD3;
+        fixed4 color : COLOR;
+        uint id : SV_VertexID;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+      };
+
+      void vert (inout appdata_full_plus_id v, out Input o) {
+        UNITY_INITIALIZE_OUTPUT(Input, o);
+        o.id = v.id;
       }
 
       void surf (Input IN, inout SurfaceOutput o) {
+        #ifdef SHADER_SCRIPTING_ON
+        if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
+        if (_Dissolve < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Dissolve) discard;
+        #endif
+
         fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
         o.Albedo = c.rgb * IN.color.rgb;
         o.Alpha = c.a * IN.color.a;

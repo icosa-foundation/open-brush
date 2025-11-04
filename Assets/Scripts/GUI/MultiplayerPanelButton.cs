@@ -33,6 +33,14 @@ namespace TiltBrush
                 {
                     KeyboardPopUpWindow.m_InitialText = popup.RoomName;
                 }
+                else if (m_RequiresPopup & m_Command == SketchControlsScript.GlobalCommands.EditMultiplayerNickName)
+                {
+                    KeyboardPopUpWindow.m_InitialText = popup.NickName;
+                }
+                else if (m_RequiresPopup & m_Command == SketchControlsScript.GlobalCommands.EditMultiplayerRoomMaxPlayers)
+                {
+                    KeyboardPopUpWindow.m_InitialText = popup.MaxPlayers.ToString();
+                }
 
                 base.OnButtonPressed();
             }

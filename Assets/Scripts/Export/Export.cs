@@ -128,9 +128,12 @@ URL=" + kExportDocumentationUrl;
         public static void ExportScene()
         {
             var current = SaveLoadScript.m_Instance.SceneFile;
-            string safeHumanName = FileUtils.SanitizeFilename(current.HumanName);
-            string basename = FileUtils.SanitizeFilename(
-                (current.Valid && (safeHumanName != "")) ? safeHumanName : "Untitled");
+            string validHumanName = FileUtils.GetValidFilename(current.HumanName);
+            if (string.IsNullOrEmpty(validHumanName))
+            {
+                validHumanName = FileUtils.GetValidFilename("Untitled");
+            }
+            string basename = validHumanName;
 
             string parent = FileUtils.GenerateNonexistentFilename(App.UserExportPath(), basename, "");
             if (!FileUtils.InitializeDirectoryWithUserError(
@@ -266,6 +269,7 @@ URL=" + kExportDocumentationUrl;
 
             if (App.PlatformConfig.EnableExportGlb && IsExportEnabled("glb"))
             {
+                // Legacy GLTF export
                 string extension = App.Config.m_EnableGlbVersion2 ? "glb" : "glb1";
                 int gltfVersion = App.Config.m_EnableGlbVersion2 ? 2 : 1;
                 filename = MakeExportPath(parent, basename, extension);
@@ -280,7 +284,7 @@ URL=" + kExportDocumentationUrl;
                         // http textures so if uploaded, this glb will have missing textures.
                         var exporter = new ExportGlTF();
                         exporter.ExportBrushStrokes(
-                            filename, AxisConvention.kGltf2, binary: true, doExtras: false,
+                            filename, AxisConvention.kGltf2, binary: true, doExtras: true,
                             includeLocalMediaContent: true,
                             gltfVersion: gltfVersion,
                             selfContained: true
@@ -292,19 +296,10 @@ URL=" + kExportDocumentationUrl;
 
             if (App.PlatformConfig.EnableExportGlb && IsExportEnabled("newglb"))
             {
-                string extension = "glb";
                 using (var unused = new AutoTimer("glb export"))
                 {
                     OverlayManager.m_Instance.UpdateProgress(0.7f);
-                    var settings = GLTFSettings.GetOrCreateSettings();
-                    settings.UseMainCameraVisibility = false;
-                    var context = new ExportContext
-                    {
-                        ExportLayers = LayerMask.GetMask("MainCanvas")
-                    };
-                    var layers = App.Scene.LayerCanvases.Select(x => x.transform).ToArray();
-                    var unityGltfexporter = new GLTFSceneExporter(layers, context);
-                    unityGltfexporter.SaveGLB(Path.Combine(parent, $"newglb"), $"{basename}.{extension}");
+                    ExportNewGlb(Path.Combine(parent, $"newglb"), basename, App.UserConfig.Export.ExportEnvironment);
                 }
                 progress.CompleteWork("newglb");
             }
@@ -319,6 +314,25 @@ URL=" + kExportDocumentationUrl;
             {
                 File.WriteAllText(readmeFilename, kExportReadmeBody);
             }
+        }
+
+        public static void ExportNewGlb(string destinationPath, string fileBaseName, bool exportEnvironment)
+        {
+            // 'New' GLTF style export. Exports to GLB format using UnityGLTF
+            var settings = App.Config.m_UnityGLTFSettings;
+            var context = new ExportContext(settings);
+
+            // Beware the two meanings of "layer" in the following code - Unity layers and Open Brush layers
+            var layerCanvases = App.Scene.LayerCanvases.Select(x => x.transform).ToList();
+            var layerMask = LayerMask.GetMask("MainCanvas");
+            if (exportEnvironment)
+            {
+                layerCanvases.Add(App.Instance.m_EnvironmentTransform);
+                layerMask |= LayerMask.GetMask("Environment");
+            }
+            context.ExportLayers = layerMask;
+            var unityGltfexporter = new GLTFSceneExporter(layerCanvases.ToArray(), context);
+            unityGltfexporter.SaveGLB(destinationPath, $"{fileBaseName}.glb");
         }
     }
 } // namespace TiltBrush

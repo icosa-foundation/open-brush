@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 
 namespace TiltBrush
@@ -67,13 +69,11 @@ namespace TiltBrush
             bool hasValidDirectChildren(Transform node)
             {
                 if (node.gameObject.activeInHierarchy == false) return false;
-                int count = 0;
                 foreach (Transform child in node)
                 {
-                    if (!isValid(child)) continue;
-                    count++;
+                    if (isValid(child)) return true;
                 }
-                return count > 0;
+                return false;
             }
 
             bool isSubPath(string basePath, string potentialSubPath)
@@ -154,7 +154,6 @@ namespace TiltBrush
                 }
             }
 
-
             return resultPaths;
         }
 
@@ -163,24 +162,77 @@ namespace TiltBrush
             m_InitialWidget = initialWidget;
             m_NewModelWidgets = new List<ModelWidget>();
             m_NewLightWidgets = new List<LightWidget>();
-            var root = initialWidget.GetComponentInChildren<ObjModelScript>().transform;
-            m_NodePaths = ExtractPaths(root);
+            var widgetObjScript = initialWidget.GetComponentInChildren<ObjModelScript>();
+            m_NodePaths = ExtractPaths(widgetObjScript.transform);
         }
 
+        // Constructs a path from the root to the object, including the object's name
         private static string GetHierarchyPath(Transform root, Transform obj)
         {
-            string path = "/" + obj.name;
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.Insert(0, "/" + obj.name);
+
             while (obj.transform.parent != root)
             {
                 obj = obj.transform.parent;
-                path = "/" + obj.name + path;
+                stringBuilder.Insert(0, "/" + obj.name);
             }
-            return path;
+
+            return stringBuilder.ToString();
         }
 
         protected override void OnRedo()
         {
             SelectionManager.m_Instance.DeselectWidgets(new List<GrabWidget> { m_InitialWidget });
+
+            var widgetObjScript = m_InitialWidget.GetComponentInChildren<ObjModelScript>();
+
+            // If we only have one mesh filter, we next have to split the mesh based on connected regions
+            if (widgetObjScript.m_MeshChildren.Length == 1)
+            {
+                var modelObjScript = m_InitialWidget.Model.m_ModelParent.GetComponent<ObjModelScript>();
+                string subtree = m_InitialWidget.Subtree;
+
+                Transform destRoot;
+                if (string.IsNullOrEmpty(subtree))
+                {
+                    destRoot = modelObjScript.m_MeshChildren[0].transform;
+                }
+                else
+                {
+                    var (subTreeRoot, _) = ModelWidget.FindSubtreeRoot(
+                        modelObjScript.transform,
+                        subtree
+                    );
+                    destRoot = subTreeRoot;
+                }
+
+                var modelMf = destRoot.GetComponentInChildren<MeshFilter>();
+                var splits = Model.ApplySplits(modelMf);
+
+                var prevNodePath = m_NodePaths[0];
+                if (splits.Count == 1)
+                {
+                    // Destroy the split as it's superfluous
+                    GameObject.DestroyImmediate(splits[0].gameObject);
+                    m_InitialWidget.Model.RegisterMeshSplit(String.IsNullOrEmpty(subtree) ? prevNodePath : subtree);
+                }
+                else
+                {
+                    // Remove the meshfilter from the original game object
+                    GameObject.DestroyImmediate(modelMf.GetComponent<MeshFilter>());
+
+                    m_NodePaths = new List<string>();
+                    foreach (var split in splits)
+                    {
+                        m_NodePaths.Add($"{prevNodePath}/{split.name}");
+                    }
+                    m_InitialWidget.Model.RegisterMeshSplit(String.IsNullOrEmpty(subtree) ? prevNodePath : subtree);
+                }
+                modelObjScript.UpdateAllMeshChildren();
+            }
+
+            // Create new widgets for each path
             foreach (var path in m_NodePaths)
             {
                 var newWidget = m_InitialWidget.Clone() as ModelWidget;
@@ -226,13 +278,13 @@ namespace TiltBrush
             foreach (var widget in m_NewModelWidgets)
             {
                 WidgetManager.m_Instance.UnregisterGrabWidget(widget.gameObject);
-                Object.Destroy(widget.gameObject);
+                GameObject.Destroy(widget.gameObject);
             }
             SelectionManager.m_Instance.DeselectWidgets(m_NewLightWidgets);
             foreach (var widget in m_NewLightWidgets)
             {
                 WidgetManager.m_Instance.UnregisterGrabWidget(widget.gameObject);
-                Object.Destroy(widget.gameObject);
+                GameObject.Destroy(widget.gameObject);
             }
             m_InitialWidget.gameObject.SetActive(true);
             SelectionManager.m_Instance.SelectWidget(m_InitialWidget);

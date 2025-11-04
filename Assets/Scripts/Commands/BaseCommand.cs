@@ -30,6 +30,7 @@ namespace TiltBrush
         private Guid m_Guid;
         private BaseCommand m_Parent;
         protected List<BaseCommand> m_Children;
+        public bool HasChildren => m_Children.Count > 0;
         private int m_Timestamp;
         private int? m_NetworkTimestamp;
 
@@ -130,6 +131,8 @@ namespace TiltBrush
         /// only for SwitchEnvironmentCommand and PropVisibleCommand as they are
         /// the only commands whose merge functions can put them in no-op states.
         virtual protected bool IsNoop { get { return false; } }
+
+        public virtual bool IsAvailable => true;
 
         /// Undo this entire command tree.
         /// Parent is always undone after all children.

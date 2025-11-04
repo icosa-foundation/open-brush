@@ -12,27 +12,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 64b74d0bcb749d44090497441f5cf44b, type: 3}
   m_Name: PlatformConfigMobile
   m_EditorClassIdentifier: 
-  HullBrushMaxVertInputs: 400
-  HullBrushMaxKnots: 900
-  ReferenceImagesMaxFileSize: 10485760
-  ReferenceImagesMaxDimension: 4352
-  ReferenceImagesResizeDimension: 1024
-  MemoryWarningVertCount: 1000000
-  UseFileSystemWatcher: 1
+  HullBrushMaxVertInputs: 800
+  HullBrushMaxKnots: 1800
+  ReferenceImagesMaxFileSize: 20971520
+  ReferenceImagesMaxDimension: 6144
+  ReferenceImagesResizeDimension: 1536
+  SketchSetMaxCacheSize: 537000000
+  MemoryWarningVertCount: 2000000
+  UseFileSystemWatcher: 0
   EnableAutosave: 0
   QuickLoadMaxDistancePerFrame: 4
   IntroSketchPrefab: {fileID: 1843608203, guid: ddfd362fa9a8d5840bf47df17d2eba8a,
     type: 3}
-  EnablePolyPreload: 0
+  EnableIcosaPreload: 0
   AvoidUploadHandlerFile: 0
   EnableExportFbx: 0
   EnableExportGlb: 1
   EnableExportJson: 0
   EnableExportUsd: 0
-  EnableExportLatk: 1
   EnableExportMemoryOptimization: 1
   EnableMulticamPreview: 1
-  EnabledMulticamStyles: 000000000100000002000000
+  EnabledMulticamStyles: 00000000010000000200000004000000
   MaxSnapshotDimension: 4096
   FrameRateToPreviewRenderGap:
     serializedVersion: 2

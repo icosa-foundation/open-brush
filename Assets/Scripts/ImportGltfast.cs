@@ -14,8 +14,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using GLTFast;
 using TiltBrushToolkit;
 using UnityEngine;
 using UnityGLTF;
@@ -24,14 +24,6 @@ namespace TiltBrush
 {
     internal class NewGltfImporter
     {
-        public static ImportState BeginImport(string localPath)
-        {
-            var go = new GameObject();
-            var gltf = go.AddComponent<GLTFast.GltfAsset>();
-            gltf.Url = localPath;
-            var state = new ImportState(AxisConvention.kGltf2);
-            return state;
-        }
 
         public sealed class ImportState : IDisposable
         {
@@ -56,9 +48,7 @@ namespace TiltBrush
 
         public static Task StartSyncImport(string localPath, string assetLocation, Model model, List<string> warnings)
         {
-            return App.UserConfig.Import.UseUnityGltf ?
-                _ImportUsingUnityGltf(localPath, assetLocation, model, warnings) :
-                _ImportUsingGltfast(localPath, assetLocation, model, warnings);
+            return _ImportUsingUnityGltf(localPath, assetLocation, model, warnings);
         }
 
         private static GameObject _ImportUsingLegacyGltf(string localPath, string assetLocation)
@@ -75,42 +65,6 @@ namespace TiltBrush
             return result.root;
         }
 
-        private static async Task _ImportUsingGltfast(
-            string localPath,
-            string assetLocation,
-            Model model,
-            List<string> warnings)
-        {
-            var gltf = new GltfImport();
-            bool success = await gltf.Load(localPath);
-            var go = new GameObject();
-            if (success)
-            {
-                var settings = new InstantiationSettings
-                {
-                    LightIntensityFactor = 0.0001f,
-                    Mask = ~ComponentType.Camera
-                };
-                success = await gltf.InstantiateMainSceneAsync(
-                    new GameObjectInstantiator(gltf, go.transform, null, settings)
-                );
-            }
-
-            if (success)
-            {
-                model.CalcBoundsGltf(go);
-                model.EndCreatePrefab(go, warnings);
-            }
-            else
-            {
-                Debug.LogError("Failed to import using GLTFast. Falling back to legacy import");
-                // Fall back to the older import code
-                go = _ImportUsingLegacyGltf(localPath, assetLocation);
-                model.CalcBoundsGltf(go);
-                model.EndCreatePrefab(go, warnings);
-            }
-        }
-
         private static async Task _ImportUsingUnityGltf(
             string localPath,
             string assetLocation,
@@ -120,17 +74,48 @@ namespace TiltBrush
             try
             {
                 ImportOptions options = new ImportOptions();
-                GLTFSceneImporter gltf = new GLTFSceneImporter(localPath, options);
+                // TODO - should we import disabled to help round-tripping?
+                options.CameraImport = CameraImportOption.None;
+                options.AnimationMethod = AnimationMethod.Legacy;
+
+                var normalizedPath = Uri.UnescapeDataString(localPath).Replace("\\", "/");
+                if (normalizedPath.StartsWith("/"))
+                {
+                    normalizedPath = normalizedPath.TrimStart('/');
+                }
+
+                // See https://github.com/KhronosGroup/UnityGLTF/issues/805
+                var uriPath = $"file:///{normalizedPath}";
+                GLTFSceneImporter gltf = new GLTFSceneImporter(uriPath, options);
 
                 gltf.IsMultithreaded = false;
                 AsyncHelpers.RunSync(() => gltf.LoadSceneAsync());
                 GameObject go = gltf.CreatedObject;
+
+                var clips = gltf.CreatedAnimationClips;
+                if (clips != null && clips.Length > 0)
+                {
+                    var player = go.AddComponent<PlayGltfAnimationClip>();
+                    // TODO - allow users to control autoplay
+                    player.PlayAnimation(clips);
+                }
+
                 model.CalcBoundsGltf(go);
                 model.EndCreatePrefab(go, warnings);
+                var materialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: localPath);
+                // Gather all the unity materials created by UnityGltf
+                var mrs = go.GetComponentsInChildren<MeshRenderer>(true);
+                foreach (var mr in mrs)
+                {
+                    foreach (var material in mr.materials)
+                    {
+                        materialCollector.Add(material);
+                    }
+                }
             }
             catch (Exception e)
             {
-                Debug.LogError("Failed to import using UnityGltf. Falling back to legacy import");
+                Debug.LogError("Failed to import using UnityGltf. Falling back to legacy import.\nUnityGltf Exception: {e}");
                 // Fall back to the older import code
                 GameObject go = _ImportUsingLegacyGltf(localPath, assetLocation);
                 model.CalcBoundsGltf(go);

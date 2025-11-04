@@ -501,7 +501,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7691576060649472
-    m_Localized: Biblioteca de Poly
+    m_Localized: Biblioteca de Icosa
     m_Metadata:
       m_Items: []
   - m_Id: 7691821452599296
@@ -719,7 +719,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7930206087782400
-    m_Localized: Biblioteca de Poly
+    m_Localized: Biblioteca de Icosa
     m_Metadata:
       m_Items: []
   - m_Id: 7930412489482240
@@ -739,7 +739,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7931780608532480
-    m_Localized: Navegar por Poly
+    m_Localized: Navegar por Icosa
     m_Metadata:
       m_Items: []
   - m_Id: 7931977472385024
@@ -755,7 +755,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7932559960547328
-    m_Localized: 'Comparte en Poly
+    m_Localized: 'Comparte en Icosa
 
       para ver modelos y
 
@@ -767,11 +767,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7932977482539008
-    m_Localized: "Cargando modelos de Poly\n\n\xA1Vuelve pronto!"
+    m_Localized: "Cargando modelos de Icosa Gallery\n\n\xA1Vuelve pronto!"
     m_Metadata:
       m_Items: []
   - m_Id: 7933149889404928
-    m_Localized: "Da Me gusta a modelos\nen Poly para\nverlos aqu\xED"
+    m_Localized: "Da Me gusta a modelos\nen Icosa para\nverlos aqu\xED"
     m_Metadata:
       m_Items: []
   - m_Id: 7933313635033088
@@ -779,7 +779,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7933450197377024
-    m_Localized: "Suscr\xEDbete en el escritorio\npara cargar\nmodelos Poly"
+    m_Localized: "Suscr\xEDbete en el escritorio\npara cargar\nmodelos Icosa"
     m_Metadata:
       m_Items: []
   - m_Id: 7933561489039360
@@ -787,7 +787,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7933827554713600
-    m_Localized: "Comparte en Poly\npara ver tus\nmodelos aqu\xED"
+    m_Localized: "Comparte en Icosa\npara ver tus\nmodelos aqu\xED"
     m_Metadata:
       m_Items: []
   - m_Id: 7933944802287616
@@ -802,7 +802,7 @@ MonoBehaviour:
   - m_Id: 7934199497203712
     m_Localized: 'Error al conectar
 
-      a Poly'
+      a Icosa'
     m_Metadata:
       m_Items: []
   - m_Id: 7939526611410944
@@ -930,7 +930,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8052065399709696
-    m_Localized: De Poly
+    m_Localized: De Icosa Gallery
     m_Metadata:
       m_Items: []
   - m_Id: 8052141249503232
@@ -938,7 +938,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8052215190888448
-    m_Localized: De Poly
+    m_Localized: De Icosa Gallery
     m_Metadata:
       m_Items: []
   - m_Id: 8052288863838208
@@ -950,7 +950,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8053396663410688
-    m_Localized: Navegar por Poly
+    m_Localized: Navegar por Icosa Gallery
     m_Metadata:
       m_Items: []
   - m_Id: 8053860821868544
@@ -984,7 +984,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10133179773722624
-    m_Localized: "Da Me gusta a esquemas\nen Poly para\nverlos aqu\xED"
+    m_Localized: "Da Me gusta a esquemas\nen Icosa para\nverlos aqu\xED"
     m_Metadata:
       m_Items: []
   - m_Id: 10133306584309760
@@ -998,12 +998,12 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10134247853236224
-    m_Localized: "Error al recuperar esquemas de Poly\n<color=#969696>\n\xBFC\xF3mo
+    m_Localized: "Error al recuperar esquemas de Icosa Gallery\n<color=#969696>\n\xBFC\xF3mo
       va tu Internet?</color>"
     m_Metadata:
       m_Items: []
   - m_Id: 10134539248312320
-    m_Localized: "Inscr\xEDbete para acceder\na los esquemas de Poly"
+    m_Localized: "Inscr\xEDbete para acceder\na los esquemas de Icosa"
     m_Metadata:
       m_Items: []
   - m_Id: 10134688972382208
@@ -1018,7 +1018,7 @@ MonoBehaviour:
   - m_Id: 10134947404423168
     m_Localized: 'Error al conectar
 
-      a Poly'
+      a Icosa'
     m_Metadata:
       m_Items: []
   - m_Id: 10137717402476544
@@ -1283,7 +1283,7 @@ MonoBehaviour:
   - m_Id: 76069893405466624
     m_Localized: 'Los bosquejos no remezclables no
 
-      se pueden subir a Poly'
+      se pueden subir a Icosa'
     m_Metadata:
       m_Items: []
   - m_Id: 76070234092003328
@@ -1291,7 +1291,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76070420314906624
-    m_Localized: "Ha habido un error al conectar al servidor\nde Poly. Int\xE9ntalo
+    m_Localized: "Ha habido un error al conectar al servidor\nde Icosa. Int\xE9ntalo
       de nuevo m\xE1s tarde."
     m_Metadata:
       m_Items: []
@@ -1347,7 +1347,7 @@ MonoBehaviour:
     m_Localized: 'Actualiza el pincel inclinado para compartir
 
       los bosquejos
-      en Poly y Sketchfab'
+      en Icosa y Sketchfab'
     m_Metadata:
       m_Items: []
   - m_Id: 76080842438926336
@@ -3534,7 +3534,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 217070349893754880
-    m_Localized: No se pudo detectar el VR
+    m_Localized: 
     m_Metadata:
       m_Items: []
   - m_Id: 217069105871577088
@@ -3606,6 +3606,70 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 313111533204348928
     m_Localized: "Men\xFA Multijugador"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326532953040941056
+    m_Localized: "Jugadores M\xE1ximos: "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326549804571619328
+    m_Localized: "Configuraci\xF3n de la Sala: "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326570591894564864
+    m_Localized: "Panel de Habitaci\xF3n: "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326572252843143168
+    m_Localized: "Editar m\xE1ximo de jugadores: "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326807657823793152
+    m_Localized: ' Transferir la propiedad de la sala a este jugador'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326808393542463488
+    m_Localized: Silenciar jugador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326808972507410432
+    m_Localized: Activar el sonido del jugador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326832067431559168
+    m_Localized: Establecer solo vista de usuario
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326833306865168384
+    m_Localized: Desactivar solo vista de usuario
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326852018926186496
+    m_Localized: "En la configuraci\xF3n de la sala"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326852593516474368
+    m_Localized: Lista de jugadores
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326864334061236224
+    m_Localized: Expulsar al jugador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326869993834082304
+    m_Localized: Silenciar a todos los jugadores
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326870578603945984
+    m_Localized: Activar el sonido de todos los jugadores
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326871085665939456
+    m_Localized: "Configurar a todos los jugadores en modo solo visualizaci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326871757446639616
+    m_Localized: Permitir que todos los jugadores editen
     m_Metadata:
       m_Items: []
   references:

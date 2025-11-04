@@ -505,7 +505,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7691576060649472
-    m_Localized: Poly-Bibliothek
+    m_Localized: Icosa-Bibliothek
     m_Metadata:
       m_Items: []
   - m_Id: 7691821452599296
@@ -723,7 +723,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7930206087782400
-    m_Localized: Poly-Bibliothek
+    m_Localized: Icosa-Bibliothek
     m_Metadata:
       m_Items: []
   - m_Id: 7930412489482240
@@ -743,7 +743,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7931780608532480
-    m_Localized: "Poly durchbl\xE4ttern"
+    m_Localized: "Icosa durchbl\xE4ttern"
     m_Metadata:
       m_Items: []
   - m_Id: 7931977472385024
@@ -759,7 +759,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7932559960547328
-    m_Localized: 'Mit Poly teilen,
+    m_Localized: 'Mit Icosa teilen,
 
       um hier Modelle und
 
@@ -772,7 +772,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7932977482539008
-    m_Localized: 'Modelle werden von Poly geladen.
+    m_Localized: 'Modelle werden von Icosa Gallery geladen.
 
 
 
@@ -780,7 +780,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7933149889404928
-    m_Localized: 'Gib Modellen auf Poly
+    m_Localized: 'Gib Modellen auf Icosa
 
       ein Like       , um
 
@@ -795,7 +795,7 @@ MonoBehaviour:
   - m_Id: 7933450197377024
     m_Localized: 'Melde dich beim Desktop an,
 
-      um Poly-Modelle
+      um Icosa-Modelle
 
       zu laden'
     m_Metadata:
@@ -805,7 +805,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7933827554713600
-    m_Localized: 'Mit Poly teilen,
+    m_Localized: 'Mit Icosa teilen,
 
       um deine Modelle
 
@@ -832,7 +832,7 @@ MonoBehaviour:
   - m_Id: 7934199497203712
     m_Localized: 'Fehler bei der Verbindung
 
-      mit Poly'
+      mit Icosa'
     m_Metadata:
       m_Items: []
   - m_Id: 7939526611410944
@@ -960,7 +960,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8052065399709696
-    m_Localized: Von Poly
+    m_Localized: Von Icosa Gallery
     m_Metadata:
       m_Items: []
   - m_Id: 8052141249503232
@@ -968,7 +968,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8052215190888448
-    m_Localized: Von Poly
+    m_Localized: Von Icosa Gallery
     m_Metadata:
       m_Items: []
   - m_Id: 8052288863838208
@@ -980,7 +980,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8053396663410688
-    m_Localized: "Poly durchbl\xE4ttern"
+    m_Localized: "Icosa Gallery durchbl\xE4ttern"
     m_Metadata:
       m_Items: []
   - m_Id: 8053860821868544
@@ -1010,7 +1010,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10133179773722624
-    m_Localized: 'Gib Skizzen auf Poly
+    m_Localized: 'Gib Skizzen auf Icosa
 
       ein Like       , um
 
@@ -1027,7 +1027,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10134247853236224
-    m_Localized: 'Fehler beim Sammeln von Skizzen von Poly
+    m_Localized: 'Fehler beim Sammeln von Skizzen von Icosa Gallery
 
       <color=#969696>
 
@@ -1038,7 +1038,7 @@ MonoBehaviour:
   - m_Id: 10134539248312320
     m_Localized: 'Melde dich an, um auf
 
-      Poly-Skizzen zuzugreifen'
+      Icosa-Skizzen zuzugreifen'
     m_Metadata:
       m_Items: []
   - m_Id: 10134688972382208
@@ -1063,7 +1063,7 @@ MonoBehaviour:
   - m_Id: 10134947404423168
     m_Localized: 'Fehler bei der Verbindung
 
-      mit Poly'
+      mit Icosa'
     m_Metadata:
       m_Items: []
   - m_Id: 10137717402476544
@@ -1324,7 +1324,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76069893405466624
-    m_Localized: "Nicht abmischbare Skizzen k\xF6nnen\nnicht auf Poly hochgeladen
+    m_Localized: "Nicht abmischbare Skizzen k\xF6nnen\nnicht auf Icosa hochgeladen
       werden"
     m_Metadata:
       m_Items: []
@@ -1333,7 +1333,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76070420314906624
-    m_Localized: "Bei der Verbindung zum Server von Poly ist ein\nFehler aufgetreten.
+    m_Localized: "Bei der Verbindung zum Server von Icosa ist ein\nFehler aufgetreten.
       Versuche es sp\xE4ter noch einmal."
     m_Metadata:
       m_Items: []
@@ -1394,7 +1394,7 @@ MonoBehaviour:
   - m_Id: 76072667581046784
     m_Localized: 'Aktualisiere Tilt Brush, um Skizzen
 
-      auf Poly und Sketchfab
+      auf Icosa und Sketchfab
       zu teilen'
     m_Metadata:
       m_Items: []
@@ -3561,7 +3561,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 217070349893754880
-    m_Localized: VR-Erkennung fehlgeschlagen
+    m_Localized: 
     m_Metadata:
       m_Items: []
   - m_Id: 217069105871577088
@@ -3636,6 +3636,70 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 313111533204348928
     m_Localized: "Mehrspieler-Men\xFC"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326532953040941056
+    m_Localized: 'Maximale Spieler: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326549804571619328
+    m_Localized: 'Raumeinstellungen: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326570591894564864
+    m_Localized: 'Raum-Panel: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326572252843143168
+    m_Localized: 'Maximale Spieler bearbeiten: '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326807657823793152
+    m_Localized: "\xDCbertrage die Raumverwaltung an diesen Spieler"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326808393542463488
+    m_Localized: Spieler stummschalten
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326808972507410432
+    m_Localized: Spieler stumm schalten aufheben
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326832067431559168
+    m_Localized: Nur Benutzeransicht festlegen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326833306865168384
+    m_Localized: Nur Benutzeransicht deaktivieren
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326852018926186496
+    m_Localized: In den Raumeinstellungen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326852593516474368
+    m_Localized: Spielerliste
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326864334061236224
+    m_Localized: Spieler entfernen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326869993834082304
+    m_Localized: Alle Spieler stummschalten
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326870578603945984
+    m_Localized: Alle Spieler stumm schalten aufheben
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326871085665939456
+    m_Localized: Alle Spieler auf Nur-Ansicht setzen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 326871757446639616
+    m_Localized: Allen Spielern das Bearbeiten erlauben
     m_Metadata:
       m_Items: []
   references:

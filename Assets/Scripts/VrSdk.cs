@@ -216,14 +216,6 @@ namespace TiltBrush
             if (packagePresent)
             {
                 Oculus.Platform.Core.Initialize(oculusAppId);
-
-                Oculus.Platform.UserAgeCategory.Get()?.OnComplete((msg) =>
-                {
-                    if (!msg.IsError)
-                    {
-                        var unused = msg.Data.AgeCategory;
-                    }
-                });
             }
         }
 
@@ -245,14 +237,6 @@ namespace TiltBrush
             {
                 ControllerConsoleScript.m_Instance.AttachToController(m_VrControls.Brush);
                 m_NeedsToAttachConsoleScript = false;
-            }
-        }
-
-        void Update()
-        {
-            if (App.Config.m_SdkMode == SdkMode.UnityXR)
-            {
-                OnNewPoses();
             }
         }
 

@@ -23,6 +23,9 @@ namespace TiltBrush
         LockSnapTranslateX,
         LockSnapTranslateY,
         LockSnapTranslateZ,
+        LockSnapAngleX,
+        LockSnapAngleY,
+        LockSnapAngleZ,
         SnapToGuides
     }
 
@@ -42,6 +45,15 @@ namespace TiltBrush
                 case SnapSettingsPanelToggleType.LockSnapTranslateZ:
                     SelectionManager.m_Instance.m_EnableSnapTranslationZ = btn.ToggleState;
                     break;
+                case SnapSettingsPanelToggleType.LockSnapAngleX:
+                    SelectionManager.m_Instance.m_EnableSnapRotationX = btn.ToggleState;
+                    break;
+                case SnapSettingsPanelToggleType.LockSnapAngleY:
+                    SelectionManager.m_Instance.m_EnableSnapRotationY = btn.ToggleState;
+                    break;
+                case SnapSettingsPanelToggleType.LockSnapAngleZ:
+                    SelectionManager.m_Instance.m_EnableSnapRotationZ = btn.ToggleState;
+                    break;
             }
         }
 
@@ -59,7 +71,5 @@ namespace TiltBrush
         {
             TransformItems.SnapSelectedRotationAngles();
         }
-
     }
-
 } // namespace TiltBrush

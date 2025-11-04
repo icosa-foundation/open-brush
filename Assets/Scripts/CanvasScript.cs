@@ -49,6 +49,8 @@ namespace TiltBrush
         private const float kScaleMax = 1e4f;
 
         private bool m_bInitialized;
+        private Transform m_CanvasTransformPrefab;
+        private CanvasTransformGizmo m_CanvasTransformGizmo;
         private BatchManager m_BatchManager;
 
         public event PoseChangedEventHandler PoseChanged;
@@ -130,6 +132,9 @@ namespace TiltBrush
             {
                 return;
             }
+            m_CanvasTransformPrefab = Instantiate(App.Scene.CanvasTransformPrefab, transform);
+            m_CanvasTransformGizmo = m_CanvasTransformPrefab.GetComponent<CanvasTransformGizmo>();
+            HideGizmo();
             m_bInitialized = true;
 
             AsCanvas = new TransformExtensions.RelativeAccessor(transform);
@@ -152,9 +157,12 @@ namespace TiltBrush
         {
 #if UNITY_EDITOR
             // All changes must go through .Pose accessor
+            // TODO there's one case that hits this every time on startup
+            // It's harmless but confusing to see an error in the console.
+            // I'm downgrading this to a warning for now.
             if (transform.hasChanged)
             {
-                Debug.LogError("Detected unsanctioned change to transform");
+                Debug.LogWarning("Detected unsanctioned change to transform");
                 transform.hasChanged = false;
             }
 #endif
@@ -167,9 +175,20 @@ namespace TiltBrush
         }
 
         // Returns a bounds object that encompasses all strokes on the canvas.
-        public Bounds GetCanvasBoundingBox(bool onlyActive = false)
+        public Bounds GetCanvasBoundingBox(bool onlyActive = false, bool includeWidgets = false)
         {
-            return m_BatchManager.GetBoundsOfAllStrokes(onlyActive);
+            var bounds = m_BatchManager.GetBoundsOfAllStrokes(onlyActive);
+
+            if (includeWidgets)
+            {
+                foreach (GrabWidget widget in WidgetManager.m_Instance.GetAllUnselectedActiveWidgets(this))
+                {
+                    if (widget.Canvas != this) continue;
+                    Bounds widgetBounds_CS = widget.GetBounds();
+                    bounds.Encapsulate(widgetBounds_CS);
+                }
+            }
+            return bounds;
         }
 
         // Should only be called by friend classes (Coords, SceneScript)
@@ -182,6 +201,48 @@ namespace TiltBrush
             if (PoseChanged != null)
             {
                 PoseChanged(previousScene * local, currentScene * local);
+            }
+        }
+
+        private void UpdateBoundsGizmo()
+        {
+            var bounds_CS = GetCanvasBoundingBox(onlyActive: true, includeWidgets: true);
+            m_CanvasTransformGizmo.SetBoundsGhost(bounds_CS);
+        }
+
+        public void ShowGizmo()
+        {
+            UpdateBoundsGizmo();
+            m_CanvasTransformPrefab.gameObject.SetActive(true);
+        }
+
+        public void HideGizmo()
+        {
+            m_CanvasTransformPrefab.gameObject.SetActive(false);
+        }
+
+        public void CenterPivot()
+        {
+            var pose_WS = Pose;
+            var bounds_CS = GetCanvasBoundingBox(true);
+            var center_WS = bounds_CS.center + pose_WS.translation;
+            var offset = pose_WS.translation - center_WS;
+            pose_WS.translation -= offset;
+            Pose = pose_WS;
+
+            // Reposition strokes
+            var strokes = SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes(this);
+            foreach (var stroke in strokes)
+            {
+                stroke.Recreate(TrTransform.T(offset));
+            }
+
+            // Reposition widgets
+            foreach (GrabWidget widget in WidgetManager.m_Instance.GetAllUnselectedActiveWidgets(this))
+            {
+                var tr = widget.LocalTransform;
+                tr.translation += offset;
+                widget.LocalTransform = tr;
             }
         }
     }

@@ -211,7 +211,22 @@ namespace TiltBrush
 
         public Stroke GetStrokeAtIndex(int index)
         {
-            return m_Instance.m_MemoryList.ElementAt(index);
+            // Supports Python-style negative indexing
+            try
+            {
+                if (index < 0)
+                {
+                    return m_Instance.m_MemoryList.ElementAt(m_Instance.m_MemoryList.Count - Mathf.Abs(index));
+                }
+                if (index >= 0)
+                {
+                    return m_Instance.m_MemoryList.ElementAt(index);
+                }
+            }
+            catch (IndexOutOfRangeException e)
+            {
+            }
+            return null;
         }
 
         public Stroke MostRecentStroke
@@ -367,26 +382,26 @@ namespace TiltBrush
         }
 
         /// Duplicates a stroke. Duplicated strokes have a timestamp that corresponds to the current time.
-        public Stroke DuplicateStroke(Stroke srcStroke, CanvasScript canvas, TrTransform? transform)
+        public Stroke DuplicateStroke(Stroke srcStroke, CanvasScript canvas, TrTransform? transform, bool absoluteScale = false)
         {
             Stroke duplicate = new Stroke(srcStroke);
             duplicate.m_PreviousCanvas = srcStroke.m_PreviousCanvas;
             if (srcStroke.m_Type == Stroke.Type.BatchedBrushStroke)
             {
-                if (transform == null)
-                {
-                    duplicate.CopyGeometry(canvas, srcStroke);
-                }
-                else
+                if (transform != null)
                 {
                     // If this fires, consider adding transform support to CreateGeometryByCopying
                     Debug.LogWarning("Unexpected: Taking slow DuplicateStroke path");
-                    duplicate.Recreate(transform, canvas);
+                    duplicate.Recreate(transform, canvas, absoluteScale);
+                }
+                else
+                {
+                    duplicate.CopyGeometry(canvas, srcStroke);
                 }
             }
             else
             {
-                duplicate.Recreate(transform, canvas);
+                duplicate.Recreate(transform, canvas, absoluteScale);
             }
             UpdateTimestampsToCurrentSketchTime(duplicate);
             MemoryListAdd(duplicate);
@@ -395,6 +410,7 @@ namespace TiltBrush
 
         public void PerformAndRecordCommand(BaseCommand command, bool discardIfNotMerged = false, bool invoke = true)
         {
+            if (!command.IsAvailable) return;
             SketchSurfacePanel.m_Instance.m_LastCommand = command;
             bool discardCommand = discardIfNotMerged;
             BaseCommand delta = command;
@@ -438,6 +454,7 @@ namespace TiltBrush
 
         // TODO: deprecate in favor of PerformAndRecordCommand
         // Used by BrushStrokeCommand and ModifyLightCommmand while in Disco mode
+        // IMPORTANT: Bypasses the check for Command.IsAvailable (currently used for multiplayer view-only mode)
         public void RecordCommand(BaseCommand command)
         {
             ClearRedo();
@@ -558,8 +575,13 @@ namespace TiltBrush
             rNewStroke.m_Seed = seed;
             subset.m_Stroke = rNewStroke;
 
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                new BrushStrokeCommand(rNewStroke, stencil, lineLength),
+            PerformAndRecordCommand(
+                new BrushStrokeCommand(
+                    rNewStroke,
+                    stencil,
+                    lineLength,
+                    ApiManager.Instance.ActiveUndo
+                ),
                 invoke: isFinalStroke
             );
 
@@ -595,7 +617,7 @@ namespace TiltBrush
             brushScript.Stroke = rNewStroke;
 
             SketchMemoryScript.m_Instance.RecordCommand(
-                new BrushStrokeCommand(rNewStroke, stencil, lineLength));
+                new BrushStrokeCommand(rNewStroke, stencil, lineLength, ApiManager.Instance.ActiveUndo));
 
             MemoryListAdd(rNewStroke);
 
@@ -791,12 +813,33 @@ namespace TiltBrush
             }
         }
 
-        public List<Stroke> GetAllUnselectedActiveStrokes()
+        public List<Stroke> GetAllUnselectedActiveStrokes(CanvasScript layer)
         {
             return m_MemoryList.Where(
-                s => s.IsGeometryEnabled && s.Canvas == App.Scene.ActiveCanvas &&
+                s => s.IsGeometryEnabled && s.Canvas == layer &&
                     (s.m_Type != Stroke.Type.BatchedBrushStroke ||
                     s.m_BatchSubset.m_VertLength > 0)).ToList();
+        }
+
+        public List<Stroke> GetAllActiveStrokes()
+        {
+            return m_MemoryList.Where(
+                s => s.IsGeometryEnabled &&
+                    (s.m_Type != Stroke.Type.BatchedBrushStroke ||
+                    s.m_BatchSubset.m_VertLength > 0)).ToList();
+        }
+
+        public List<Stroke> GetAllActiveStrokes(CanvasScript layer)
+        {
+            return m_MemoryList.Where(
+                s => s.IsGeometryEnabled && s.Canvas == layer &&
+                    (s.m_Type != Stroke.Type.BatchedBrushStroke ||
+                    s.m_BatchSubset.m_VertLength > 0)).ToList();
+        }
+
+        public List<Stroke> GetAllUnselectedActiveStrokes()
+        {
+            return GetAllUnselectedActiveStrokes(App.Scene.ActiveCanvas);
         }
 
         public void ClearRedo()
