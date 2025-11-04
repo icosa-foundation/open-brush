@@ -941,13 +941,13 @@ jobs:
       - name: Download Build Artifacts (Windows Pimax)
         uses: actions/download-artifact@v6
         with:
-          name: Windows Pimax
-          path: build_windows_pimax
+          name: Windows OpenXR
+          path: build_windows_openxr
 
       - name: Publish Pimax Builds
         run: |
           New-Item "releases" -Type Directory
-          Move-Item -Path build_windows_pimax/StandaloneWindows64/* releases/
+          Move-Item -Path build_windows_openxr/StandaloneWindows64/* releases/
           Set-Location -Path "releases"
           Compress-Archive -Path ./* -DestinationPath OpenBrush_Pimax_${Env:VERSION}.zip
           Invoke-WebRequest -Uri https://dl.appstore.pimax.com/tools/pimax-dev-util.exe -OutFile pimax-dev-util.exe
@@ -1102,11 +1102,11 @@ jobs:
         run: |
           uv tool install abxrcli
 
-      - name: Download Build Artifacts (Android Quest)
+      - name: Download Build Artifacts (Android OpenXR)
         uses: actions/download-artifact@v6
         with:
-          name: Oculus Quest (2+)
-          path: build_oculus_quest
+          name: Android OpenXR
+          path: build_android_openxr
 
       - name: Publish Oculus Builds
         env:
@@ -1121,7 +1121,7 @@ jobs:
         run: |
           set -x
           mkdir releases
-          mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
+          mv build_android_openxr/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
 
           cd releases
 
@@ -1156,11 +1156,11 @@ jobs:
         run: |
           uv tool install abxrcli
 
-      - name: Download Build Artifacts (Oculus Quest 1)
+      - name: Download Build Artifacts (Android OpenXR)
         uses: actions/download-artifact@v6
         with:
-          name: Oculus Quest (1)
-          path: build_oculus_quest1
+          name: Android OpenXR
+          path: build_android_openxr
       - name: Publish Oculus Builds
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
@@ -1174,7 +1174,7 @@ jobs:
         run: |
           set -x
           mkdir releases1
-          mv build_oculus_quest1/*/com.Icosa.OpenBrush*apk releases1/OpenBrush_Quest1_$VERSION.apk
+          mv build_android_openxr/*/com.Icosa.OpenBrush*apk releases1/OpenBrush_Quest1_$VERSION.apk
 
           cd releases1
 
@@ -1288,11 +1288,11 @@ jobs:
         run: |
           uv tool install abxrcli
 
-      - name: Download Build Artifacts (Android Pico)
+      - name: Download Build Artifacts (Android OpenXR)
         uses: actions/download-artifact@v6
         with:
-          name: Android Pico
-          path: build_android_pico
+          name: Android OpenXR
+          path: build_android_openxr
       - name: Publish Pico Builds
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
@@ -1306,7 +1306,7 @@ jobs:
         run: |
           set -x
           mkdir releases
-          mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
+          mv build_android_openxr/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
 
           cd releases
 
