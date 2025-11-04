@@ -383,40 +383,7 @@ namespace TiltBrush
                             };
                             if (userInfo == null)
                             {
-                                // Not logged in - start login process
-                                Debug.Log($"Starting login for service {button.m_CommandParam}");
-
-                                switch (button.m_CommandParam)
-                                {
-                                    case 1: // Google
-                                        App.GoogleIdentity.LoginAsync();
-                                        UpdateMode(Mode.TakeOffHeadset);
-                                        break;
-
-                                    case 2: // Sketchfab
-                                        App.SketchfabIdentity.LoginAsync();
-                                        UpdateMode(Mode.TakeOffHeadset);
-                                        break;
-
-                                    case 3: // VIVERSE
-                                        App.ViveIdentity.LoginAsync();
-                                        // VIVERSE uses browser, so show different message
-                                        if (!App.Config.IsMobileHardware)
-                                        {
-                                            OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                                                InputManager.ControllerName.Brush,
-                                                "Check your browser to complete VIVERSE login",
-                                                fPopScalar: 0.5f
-                                            );
-                                        }
-                                        // Stay in Accounts mode for VIVERSE (browser handles UI)
-                                        break;
-                                }
-                            }
-                            else
-                            {
-                                // Already logged in
-                                Debug.Log($"Already logged in as: {userInfo.name}");
+                                UpdateMode(Mode.TakeOffHeadset);
                             }
                         }
                     }
