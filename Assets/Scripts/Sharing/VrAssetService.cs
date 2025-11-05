@@ -735,7 +735,12 @@ namespace TiltBrush
             if (App.UserConfig.Sharing.UseNewGlb || !publishLegacyGltf)
             {
                 string newGlbPath = Path.Combine(tempUploadDir, $"{uploadName}.glb");
-                Export.ExportNewGlb(tempUploadDir, uploadName, App.UserConfig.Export.ExportEnvironment);
+                int glbTriangleCount = Export.ExportNewGlb(tempUploadDir, uploadName, App.UserConfig.Export.ExportEnvironment);
+                // Use the triangle count from the new GLB export if we don't already have one from legacy export
+                if (!polyCount.HasValue)
+                {
+                    polyCount = glbTriangleCount;
+                }
                 filesToZip.Add(newGlbPath);
             }
 
