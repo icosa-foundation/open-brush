@@ -689,6 +689,7 @@ namespace TiltBrush
             // Collect files into a .zip file, including the .tilt file and thumbnail
             string zipName = Path.Combine(tempUploadDir, "archive.zip");
             var filesToZip = new List<string>();
+            int? polyCount = null;
 
             if (publishLegacyGltf)
             {
@@ -706,6 +707,7 @@ namespace TiltBrush
                     throw new VrAssetServiceException("Internal error creating upload data.");
                 }
                 filesToZip.AddRange(exportResults.exportedFiles);
+                polyCount = exportResults.numTris;
             }
 
             // Construct options to set the background color to the current environment's clear color.
@@ -739,10 +741,21 @@ namespace TiltBrush
 
             await CreateZipFileAsync(zipName, tempUploadDir, filesToZip.ToArray(), token);
 
+            // Collect remix IDs if this sketch is derived from another asset
+            var remixIds = new List<string>();
+            string sourceId = SaveLoadScript.m_Instance.TransferredSourceIdFrom(currentScene);
+            if (!string.IsNullOrEmpty(sourceId))
+            {
+                remixIds.Add(sourceId);
+            }
+
             var service = new IcosaService(App.Instance.IcosaToken);
             var progress = new Progress<double>(d => SetUploadProgress(UploadStep.UploadElements, d));
             IcosaService.CreateResponse response = await service.CreateModel(
-                zipName, progress, token, options, tempUploadDir);
+                zipName, progress, token, options, tempUploadDir,
+                objPolyCount: polyCount,
+                triangulatedObjPolyCount: polyCount,  // Open Brush exports are already triangulated
+                remixIds: remixIds.Count > 0 ? remixIds : null);
             // TODO(b/146892613): return the UID and stick it into the .tilt file?
             // Or do we not care since we aren't recording provenance and remixing
             string uri = $"{response.publishUrl}";
