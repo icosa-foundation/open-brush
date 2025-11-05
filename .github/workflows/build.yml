@@ -737,6 +737,12 @@ jobs:
           name: Android OpenXR
           path: build_android_openxr
 
+      - name: Download Build Artifacts (Android Quest)
+        uses: actions/download-artifact@v6
+        with:
+          name: Android Quest
+          path: build_android_quest
+
       - name: Download Build Artifacts (Linux)
         uses: actions/download-artifact@v6
         with:
@@ -755,6 +761,7 @@ jobs:
         run: |
           mkdir releases
           mv build_android_openxr/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Android_$VERSION.apk
+          mv build_android_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64/ releases/OpenBrush_Desktop_$VERSION/
           mv build_macos/*.dmg releases/OpenBrush_Mac_$VERSION.dmg
           mv build_linux/StandaloneLinux64/ releases/OpenBrush_Linux_$VERSION/
