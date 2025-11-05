@@ -1108,11 +1108,11 @@ jobs:
         run: |
           uv tool install abxrcli
 
-      - name: Download Build Artifacts (Android OpenXR)
+      - name: Download Build Artifacts (Android Quest)
         uses: actions/download-artifact@v6
         with:
-          name: Android OpenXR
-          path: build_android_openxr
+          name: Android Quest
+          path: build_android_quest
 
       - name: Publish Oculus Builds
         env:
@@ -1127,7 +1127,7 @@ jobs:
         run: |
           set -x
           mkdir releases
-          mv build_android_openxr/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
+          mv build_android_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
 
           cd releases
 
@@ -1162,11 +1162,11 @@ jobs:
         run: |
           uv tool install abxrcli
 
-      - name: Download Build Artifacts (Android OpenXR)
+      - name: Download Build Artifacts (Android Quest)
         uses: actions/download-artifact@v6
         with:
-          name: Android OpenXR
-          path: build_android_openxr
+          name: Android Quest
+          path: build_android_quest
       - name: Publish Oculus Builds
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
@@ -1180,7 +1180,7 @@ jobs:
         run: |
           set -x
           mkdir releases1
-          mv build_android_openxr/*/com.Icosa.OpenBrush*apk releases1/OpenBrush_Quest1_$VERSION.apk
+          mv build_android_quest/*/com.Icosa.OpenBrush*apk releases1/OpenBrush_Quest1_$VERSION.apk
 
           cd releases1
 
