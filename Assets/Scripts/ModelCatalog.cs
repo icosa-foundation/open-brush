@@ -292,7 +292,7 @@ namespace TiltBrush
             {
                 string[] aFiles = Directory.GetFiles(sPath);
                 // Models we download from Poly are called ".gltf2", but ".gltf" is more standard
-                List<string> extensions = new() { ".gltf2", ".gltf", ".glb", ".ply", ".svg", ".obj" };
+                List<string> extensions = new() { ".gltf2", ".gltf", ".glb", ".ply", ".svg", ".obj", ".vox" };
 
 #if USD_SUPPORTED
                 extensions.AddRange(new [] { ".usda", ".usdc", ".usd" });
