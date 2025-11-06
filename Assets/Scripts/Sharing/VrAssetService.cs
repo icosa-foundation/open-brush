@@ -736,11 +736,9 @@ namespace TiltBrush
             {
                 string newGlbPath = Path.Combine(tempUploadDir, $"{uploadName}.glb");
                 int glbTriangleCount = Export.ExportNewGlb(tempUploadDir, uploadName, App.UserConfig.Export.ExportEnvironment);
-                // Use the triangle count from the new GLB export if we don't already have one from legacy export
-                if (!polyCount.HasValue)
-                {
-                    polyCount = glbTriangleCount;
-                }
+                // Always use the new GLB count since it includes all content (brush strokes + models + widgets)
+                // whereas legacy export only includes brush strokes
+                polyCount = glbTriangleCount;
                 filesToZip.Add(newGlbPath);
             }
 
