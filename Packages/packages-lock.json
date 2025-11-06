@@ -331,7 +331,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.xr.openxr": {
-      "version": "1.14.0",
+      "version": "1.14.3",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -350,21 +350,14 @@
       "hash": "6554bc1dce4f363437c6a9d42719f2756f24cf49"
     },
     "com.zappar.xr.zapbox": {
-      "version": "https://github.com/zappar-xr/zapbox-xr-sdk.git#91b52bde3c0a67aa08909bdd2657f8a6672decf6",
+      "version": "https://github.com/zappar-xr/zapbox-xr-sdk.git#43697771ed65efee02d5b1743141b8179444c147",
       "depth": 0,
       "source": "git",
       "dependencies": {
         "com.unity.xr.management": "3.2.9",
         "com.unity.xr.legacyinputhelpers": "2.1.4"
       },
-      "hash": "91b52bde3c0a67aa08909bdd2657f8a6672decf6"
-    },
-    "moonsharp": {
-      "version": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "dd39e8b23a399938e91a1088a78ef63ca64f2cd8"
+      "hash": "43697771ed65efee02d5b1743141b8179444c147"
     },
     "dev.mikesky.openxrextensions": {
       "version": "https://github.com/mikeskydev/unity-openxr-extensions.git#0.4.0",
@@ -374,6 +367,13 @@
         "com.unity.xr.openxr": "1.13.0"
       },
       "hash": "c78c9ce566ce9745e8a9038569db41c818bda3dd"
+    },
+    "moonsharp": {
+      "version": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "dd39e8b23a399938e91a1088a78ef63ca64f2cd8"
     },
     "org.khronos.unitygltf": {
       "version": "https://github.com/KhronosGroup/UnityGLTF.git#dev",
