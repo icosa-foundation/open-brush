@@ -51,7 +51,8 @@ namespace TiltBrush
         OBJ,
         OBJ_NGON,
         BLOCKS,
-        PLY
+        PLY,
+        VOX
     }
 
     public class VrAssetService : MonoBehaviour
