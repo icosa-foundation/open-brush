@@ -20,6 +20,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using VoxReader;
 using VoxReader.Interfaces;
+using Vector3 = UnityEngine.Vector3;
 
 namespace TiltBrush
 {
