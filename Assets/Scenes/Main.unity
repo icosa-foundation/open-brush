@@ -11108,6 +11108,8 @@ MonoBehaviour:
     type: 2}
   m_ObjLoaderPointCloudInvisibleMaterial: {fileID: 2100000, guid: c78434c164254064e9fb50e75b4a2737,
     type: 2}
+  m_VoxLoaderStandardMaterial: {fileID: 2100000, guid: 2fba122161c95264ba1d44325f669dd5,
+    type: 2}
 --- !u!114 &652605563
 MonoBehaviour:
   m_ObjectHideFlags: 0

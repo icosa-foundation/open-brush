@@ -32,6 +32,7 @@ namespace TiltBrush
         public Material m_ObjLoaderTransparentMaterial;
         public Material m_ObjLoaderPointCloudMaterial;
         public Material m_ObjLoaderPointCloudInvisibleMaterial;
+        public Material m_VoxLoaderStandardMaterial;
         [NonSerialized] public Dictionary<string, Model> m_ModelsByRelativePath;
 
         // Transforms for missing models.

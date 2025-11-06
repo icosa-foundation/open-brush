@@ -46,7 +46,7 @@ namespace TiltBrush
             m_path = path;
             m_dir = Path.GetDirectoryName(path);
             m_collector = new ImportMaterialCollector(m_dir, m_path);
-            m_standardMaterial = ModelCatalog.m_Instance.m_ObjLoaderStandardMaterial;
+            m_standardMaterial = ModelCatalog.m_Instance.m_VoxLoaderStandardMaterial;
             m_meshMode = meshMode;
         }
 
