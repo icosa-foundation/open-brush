@@ -318,6 +318,9 @@ GameObject:
   m_Component:
   - component: {fileID: 881671355866906408}
   - component: {fileID: 5909150420526985228}
+  - component: {fileID: 4286531545491857130}
+  - component: {fileID: 3597750369848140325}
+  - component: {fileID: 5008013220465608647}
   m_Layer: 0
   m_Name: ViverseIdentity
   m_TagString: Untagged
@@ -360,6 +363,43 @@ MonoBehaviour:
   m_TokenStorePrefix: 
   m_AuthorizationServerUrl: 
   m_TokenServerUrl: 
+--- !u!114 &4286531545491857130
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6378047531404622378}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7348a38f9b4188488cef5d9d18f8891, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_ClientId: 42ab6113-acc9-419e-93ca-e0734baf9d3d
+--- !u!114 &3597750369848140325
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6378047531404622378}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73531edc591456e4fac36fc2beee17f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &5008013220465608647
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6378047531404622378}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f122539471ca0b74db207ac45288f5cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1386666230514205412
 PrefabInstance:
   m_ObjectHideFlags: 0
