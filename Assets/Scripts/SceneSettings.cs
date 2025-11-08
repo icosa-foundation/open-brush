@@ -214,7 +214,7 @@ namespace TiltBrush
         public void LoadCustomSkybox(string filename)
         {
             m_CustomSkyboxTextureName = filename;
-            Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+            Texture2D tex = null;
             var path = Path.Combine(App.BackgroundImagesLibraryPath(), filename);
             if (File.Exists(path))
             {
@@ -227,22 +227,43 @@ namespace TiltBrush
                 }
                 else
                 {
-                    tex.LoadImage(fileData);
+                    // Use ImageUtils to properly handle all formats including VR JPEG
+                    try
+                    {
+                        RawImage rawImage = ImageUtils.FromImageData(fileData, filename);
+                        tex = new Texture2D(rawImage.ColorWidth, rawImage.ColorHeight, TextureFormat.RGBA32, true);
+                        tex.SetPixels32(rawImage.ColorData);
+                        tex.Apply();
+                    }
+                    catch (ImageLoadError e)
+                    {
+                        // Fallback to Unity's LoadImage for unsupported formats
+                        Debug.LogWarning($"ImageUtils failed for {filename}, trying Unity LoadImage: {e.Message}");
+                        tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+                        if (!tex.LoadImage(fileData))
+                        {
+                            Debug.LogError($"Failed to load skybox image: {path}");
+                            return;
+                        }
+                    }
                 }
 
-                float aspectRatio = tex.width / tex.height;
-                if (aspectRatio > 1.5)
+                if (tex != null)
                 {
-                    m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomSkybox");
+                    float aspectRatio = (float)tex.width / tex.height;
+                    if (aspectRatio > 1.5)
+                    {
+                        m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomSkybox");
+                    }
+                    else
+                    {
+                        m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomStereoSkybox");
+                    }
+                    m_CustomSkyboxMaterial.mainTexture = tex;
+                    m_CustomSkyboxMaterial.SetColor("_Tint", Color.gray);
+                    RenderSettings.skybox = m_CustomSkyboxMaterial;
+                    RenderSettings.ambientMode = AmbientMode.Skybox;
                 }
-                else
-                {
-                    m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomStereoSkybox");
-                }
-                m_CustomSkyboxMaterial.mainTexture = tex;
-                m_CustomSkyboxMaterial.SetColor("_Tint", Color.gray);
-                RenderSettings.skybox = m_CustomSkyboxMaterial;
-                RenderSettings.ambientMode = AmbientMode.Skybox;
             }
             else
             {
