@@ -70,6 +70,11 @@ namespace TiltBrush
 
             if (IsJpeg(data))
             {
+                // Check if it's a VR JPEG (Google Cardboard Camera format)
+                if (VrJpegMetadata.IsVrJpeg(data))
+                {
+                    return FromVrJpeg(data, filename);
+                }
                 return FromJpeg(data, filename);
             }
             else if (IsPng(data))
@@ -168,6 +173,20 @@ namespace TiltBrush
                 }
             }
             return false;
+        }
+
+        /// Raises TiltBrush.ImageDecodeError if the data is not a valid VR JPEG
+        static public RawImage FromVrJpeg(byte[] jpegData, string filename)
+        {
+            try
+            {
+                return VrJpegUtils.LoadVrJpegFromBytes(jpegData, filename,
+                    VrJpegUtils.EyeLayout.OverUnder, fillPoles: true, maxWidth: 8192);
+            }
+            catch (Exception e)
+            {
+                throw new ImageLoadError(e, "VR JPEG decode error");
+            }
         }
 
         /// Raises TiltBrush.ImageDecodeError if the data is not a valid jpeg
