@@ -33,6 +33,17 @@ namespace TiltBrush
         }
 
         /// <summary>
+        /// Result of loading a VR JPEG, including optional audio data
+        /// </summary>
+        public class VrJpegLoadResult
+        {
+            public RawImage StereoImage { get; set; }
+            public byte[] AudioData { get; set; }
+            public string AudioMimeType { get; set; }
+            public bool HasAudio => AudioData != null && AudioData.Length > 0;
+        }
+
+        /// <summary>
         /// Loads a VR JPEG file and creates a stereo equirectangular texture
         /// </summary>
         /// <param name="filename">Path to the .vr.jpg file</param>
@@ -53,6 +64,38 @@ namespace TiltBrush
         public static RawImage LoadVrJpegFromBytes(byte[] data, string filename,
                                                    EyeLayout layout = EyeLayout.OverUnder,
                                                    bool fillPoles = true, int maxWidth = 8192)
+        {
+            var result = LoadVrJpegWithAudio(data, filename, layout, fillPoles, maxWidth);
+            return result.StereoImage;
+        }
+
+        /// <summary>
+        /// Loads a VR JPEG file with full metadata including audio
+        /// </summary>
+        /// <param name="filename">Path to the .vr.jpg file</param>
+        /// <param name="layout">How to arrange the left and right eye images</param>
+        /// <param name="fillPoles">Whether to fill in the poles using interpolation</param>
+        /// <param name="maxWidth">Maximum width of the output texture (0 = no limit)</param>
+        /// <param name="extractAudio">Whether to extract embedded audio data</param>
+        /// <returns>VrJpegLoadResult containing stereo image and optional audio</returns>
+        public static VrJpegLoadResult LoadVrJpegWithAudioFromFile(string filename,
+                                                                   EyeLayout layout = EyeLayout.OverUnder,
+                                                                   bool fillPoles = true,
+                                                                   int maxWidth = 8192,
+                                                                   bool extractAudio = true)
+        {
+            byte[] fileData = File.ReadAllBytes(filename);
+            return LoadVrJpegWithAudio(fileData, filename, layout, fillPoles, maxWidth, extractAudio);
+        }
+
+        /// <summary>
+        /// Loads a VR JPEG from byte array with full metadata including audio
+        /// </summary>
+        public static VrJpegLoadResult LoadVrJpegWithAudio(byte[] data, string filename,
+                                                           EyeLayout layout = EyeLayout.OverUnder,
+                                                           bool fillPoles = true,
+                                                           int maxWidth = 8192,
+                                                           bool extractAudio = true)
         {
             // Read metadata
             VrJpegMetadata metadata = VrJpegMetadata.ReadFromBytes(data);
@@ -75,7 +118,107 @@ namespace TiltBrush
             // Combine into stereo image
             RawImage stereo = CombineEyes(leftEquirect, rightEquirect, layout);
 
-            return stereo;
+            // Create result
+            var result = new VrJpegLoadResult
+            {
+                StereoImage = stereo
+            };
+
+            // Extract audio if requested and available
+            if (extractAudio && metadata.AudioData != null && metadata.AudioData.Length > 0)
+            {
+                result.AudioData = metadata.AudioData;
+                result.AudioMimeType = metadata.AudioMime;
+
+                Debug.Log($"VR JPEG audio extracted: {metadata.AudioData.Length} bytes, type: {metadata.AudioMime}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Extracts and saves audio from a VR JPEG file
+        /// </summary>
+        /// <param name="vrJpegPath">Path to the VR JPEG file</param>
+        /// <param name="outputPath">Path where audio should be saved (if null, uses same directory as image)</param>
+        /// <returns>Path to saved audio file, or null if no audio was found</returns>
+        public static string ExtractAndSaveAudio(string vrJpegPath, string outputPath = null)
+        {
+            try
+            {
+                byte[] data = File.ReadAllBytes(vrJpegPath);
+                VrJpegMetadata metadata = VrJpegMetadata.ReadFromBytes(data);
+
+                if (metadata.AudioData == null || metadata.AudioData.Length == 0)
+                {
+                    Debug.Log($"VR JPEG '{vrJpegPath}' does not contain audio data");
+                    return null;
+                }
+
+                // Determine output path
+                if (string.IsNullOrEmpty(outputPath))
+                {
+                    string directory = Path.GetDirectoryName(vrJpegPath);
+                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(vrJpegPath);
+
+                    // Remove .vr suffix if present
+                    if (fileNameWithoutExt.EndsWith(".vr", StringComparison.OrdinalIgnoreCase))
+                    {
+                        fileNameWithoutExt = Path.GetFileNameWithoutExtension(fileNameWithoutExt);
+                    }
+
+                    // Determine extension from MIME type
+                    string extension = GetAudioExtensionFromMime(metadata.AudioMime);
+                    outputPath = Path.Combine(directory, fileNameWithoutExt + "_audio" + extension);
+                }
+
+                // Save audio file
+                File.WriteAllBytes(outputPath, metadata.AudioData);
+                Debug.Log($"VR JPEG audio saved to: {outputPath} ({metadata.AudioData.Length} bytes)");
+
+                return outputPath;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Error extracting audio from VR JPEG: {e.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Gets appropriate file extension from MIME type
+        /// </summary>
+        private static string GetAudioExtensionFromMime(string mimeType)
+        {
+            if (string.IsNullOrEmpty(mimeType))
+            {
+                return ".mp4"; // Default for Cardboard Camera
+            }
+
+            mimeType = mimeType.ToLower();
+
+            if (mimeType.Contains("mp4") || mimeType.Contains("mpeg4"))
+            {
+                return ".mp4";
+            }
+            else if (mimeType.Contains("mpeg"))
+            {
+                return ".mp3";
+            }
+            else if (mimeType.Contains("ogg"))
+            {
+                return ".ogg";
+            }
+            else if (mimeType.Contains("wav"))
+            {
+                return ".wav";
+            }
+            else if (mimeType.Contains("aac"))
+            {
+                return ".aac";
+            }
+
+            return ".mp4"; // Default
         }
 
         /// <summary>
