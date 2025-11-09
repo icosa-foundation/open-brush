@@ -124,6 +124,7 @@ namespace TiltBrush
 
         [Header("Stencils")]
         [SerializeField] StencilMapKey[] m_StencilMap;
+        [SerializeField] ModelStencil m_ModelStencilPrefab;
         [SerializeField] private float m_StencilAttractDist = 0.5f;
         [SerializeField] private float m_StencilAttachHysteresis = 0.1f;
         [SerializeField] private string m_StencilLayerName;
@@ -338,6 +339,7 @@ namespace TiltBrush
         public TextWidget TextWidgetPrefab { get { return m_TextWidgetPrefab; } }
         public LightWidget LightWidgetPrefab { get { return m_LightWidgetPrefab; } }
         public SceneLightGizmo SceneLightGizmoPrefab { get { return m_SceneLightGizmoPrefab; } }
+        public ModelStencil ModelStencilPrefab { get { return m_ModelStencilPrefab; } }
         public CameraPathWidget CameraPathWidgetPrefab { get { return m_CameraPathWidgetPrefab; } }
         public GameObject CameraPathPositionKnotPrefab { get { return m_CameraPathPositionKnotPrefab; } }
         public GameObject CameraPathRotationKnotPrefab { get { return m_CameraPathRotationKnotPrefab; } }

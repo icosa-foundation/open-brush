@@ -1,0 +1,114 @@
+// Copyright 2025 The Open Brush Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// 3D Jump Flood Algorithm for Runtime Distance Field Generation
+// Based on: Jump Flooding in GPU with Applications to Voronoi Diagram and Distance Transform
+// Reference: https://www.comp.nus.edu.sg/~tants/jfa.html
+
+#pragma kernel JumpFlood
+#pragma kernel ClearVolume
+#pragma kernel InitializeSeeds
+
+RWTexture3D<float4> _Input;
+RWTexture3D<float4> _Output;
+int3 _Size;          // Volume dimensions (Nx, Ny, Nz)
+int _Step;           // Current jump step size
+
+// Data encoding: float4(seedX, seedY, seedZ, dist2)
+// dist2 = -1 means no seed (empty voxel)
+
+[numthreads(8,8,8)]
+void ClearVolume(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_Size.x || id.y >= (uint)_Size.y || id.z >= (uint)_Size.z)
+        return;
+
+    _Output[id] = float4(0, 0, 0, -1); // No seed marker
+}
+
+[numthreads(8,8,8)]
+void InitializeSeeds(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_Size.x || id.y >= (uint)_Size.y || id.z >= (uint)_Size.z)
+        return;
+
+    // Seeds are set externally via CPU/texture upload
+    // This kernel is optional and can be used for GPU-based initialization
+    float4 data = _Input[id];
+    _Output[id] = data;
+}
+
+float DistanceSquared(int3 a, int3 b)
+{
+    int3 diff = a - b;
+    return (float)(diff.x * diff.x + diff.y * diff.y + diff.z * diff.z);
+}
+
+[numthreads(8,8,8)]
+void JumpFlood(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_Size.x || id.y >= (uint)_Size.y || id.z >= (uint)_Size.z)
+        return;
+
+    int3 center = int3(id.x, id.y, id.z);
+    float4 bestSeed = _Input[center];
+    float bestDist2 = bestSeed.w;
+
+    // If we have a valid seed, calculate current distance
+    if (bestDist2 >= 0)
+    {
+        int3 seedPos = int3(bestSeed.x, bestSeed.y, bestSeed.z);
+        bestDist2 = DistanceSquared(center, seedPos);
+    }
+
+    // Check all 26 neighbors at current step distance
+    // In 3D, we check a 3x3x3 grid around the center (minus center itself)
+    for (int dz = -1; dz <= 1; dz++)
+    {
+        for (int dy = -1; dy <= 1; dy++)
+        {
+            for (int dx = -1; dx <= 1; dx++)
+            {
+                if (dx == 0 && dy == 0 && dz == 0)
+                    continue; // Skip center
+
+                int3 samplePos = center + int3(dx, dy, dz) * _Step;
+
+                // Clamp to volume bounds
+                if (samplePos.x < 0 || samplePos.x >= _Size.x ||
+                    samplePos.y < 0 || samplePos.y >= _Size.y ||
+                    samplePos.z < 0 || samplePos.z >= _Size.z)
+                    continue;
+
+                float4 sampleSeed = _Input[samplePos];
+
+                // Skip if no seed
+                if (sampleSeed.w < 0)
+                    continue;
+
+                int3 seedPos = int3(sampleSeed.x, sampleSeed.y, sampleSeed.z);
+                float dist2 = DistanceSquared(center, seedPos);
+
+                // Update if this seed is closer
+                if (bestDist2 < 0 || dist2 < bestDist2)
+                {
+                    bestDist2 = dist2;
+                    bestSeed = float4(seedPos.x, seedPos.y, seedPos.z, dist2);
+                }
+            }
+        }
+    }
+
+    _Output[center] = bestSeed;
+}

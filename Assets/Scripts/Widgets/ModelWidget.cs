@@ -999,5 +999,38 @@ namespace TiltBrush
             HierarchyUtils.RecursivelySetMaterialBatchID(m_ModelInstance, m_BatchId);
             WidgetManager.m_Instance.AddWidgetToBatchMap(this, m_BatchId);
         }
+
+        /// <summary>
+        /// Convert this ModelWidget to a ModelStencil for use as a guide
+        /// </summary>
+        public ModelStencil ConvertToStencil(ComputeShader jfaShader = null)
+        {
+            if (m_Model == null)
+            {
+                Debug.LogWarning("ModelWidget: Cannot convert to stencil - no model loaded");
+                return null;
+            }
+
+            // Load shader from resources if not provided
+            if (jfaShader == null)
+            {
+                jfaShader = Resources.Load<ComputeShader>("JumpFlood3D");
+            }
+
+            // Create the model stencil
+            var stencil = ModelStencil.CreateFromModel(m_Model, jfaShader);
+
+            if (stencil != null)
+            {
+                // Copy transform
+                stencil.transform.position = transform.position;
+                stencil.transform.rotation = transform.rotation;
+                stencil.SetSignedWidgetSize(GetSignedWidgetSize());
+
+                Debug.Log("ModelWidget: Converted to ModelStencil");
+            }
+
+            return stencil;
+        }
     }
 } // namespace TiltBrush
