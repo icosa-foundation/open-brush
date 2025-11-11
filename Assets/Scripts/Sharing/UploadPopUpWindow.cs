@@ -35,6 +35,7 @@ namespace TiltBrush
             Waiting,
             EmbeddedMediaWarningIcosa,
             EmbeddedMediaWarningSketchfab,
+            EmbeddedMediaWarningViverse,
             NothingToUploadWarning,
             ConnectionError,
             OutOfDate,
@@ -51,10 +52,16 @@ namespace TiltBrush
         [SerializeField] private GameObject m_IcosaLoggedOutObjects;
         [SerializeField] private GameObject m_SketchfabLoggedInObjects;
         [SerializeField] private GameObject m_SketchfabLoggedOutObjects;
+        [SerializeField] private GameObject m_ViverseLoggedInObjects;
+        [SerializeField] private GameObject m_ViverseLoggedOutObjects;
         [SerializeField] private TMPro.TextMeshPro m_IcosaUserName;
         [SerializeField] private TMPro.TextMeshPro m_SketchfabUserName;
+        [SerializeField] private TMPro.TextMeshPro m_ViverseUserName;
         [SerializeField] private Renderer m_IcosaPhoto;
         [SerializeField] private Renderer m_SketchfabPhoto;
+        [SerializeField] private Renderer m_ViversePhoto;
+        private ViverseSketchPublisher m_ViversePublisher;
+        private bool m_IsViverseUploading;
 
         // Things that should be visible when uploading.
         [SerializeField] private GameObject m_UploadObjects;
@@ -75,6 +82,7 @@ namespace TiltBrush
         // Things that should be visible when media library content is in the scene.
         [SerializeField] private GameObject m_EmbeddedMediaWarningIcosa;
         [SerializeField] private GameObject m_EmbeddedMediaWarningSketchfab;
+        [SerializeField] private GameObject m_EmbeddedMediaWarningViverse;
 
         // Things that should be visible when there's nothing to upload.
         [SerializeField] private GameObject m_NothingToUploadWarning;
@@ -98,11 +106,25 @@ namespace TiltBrush
 
             m_AssetService = VrAssetService.m_Instance;
 
+            // Find ViverseSketchPublisher
+            m_ViversePublisher = FindObjectOfType<ViverseSketchPublisher>();
+            if (m_ViversePublisher != null)
+            {
+                m_ViversePublisher.OnPublishComplete += OnViversePublishComplete;
+                m_ViversePublisher.OnExportProgress += OnViverseExportProgress;
+                m_ViversePublisher.OnUploadProgress += OnViverseUploadProgress;
+            }
+            else
+            {
+                Debug.LogWarning("[UploadPopUp] ViverseSketchPublisher not found in scene");
+            }
+            
             InitUI();
 
             OAuth2Identity.ProfileUpdated += OnProfileUpdated;
             RefreshUploadButton(Cloud.Icosa);
             RefreshUploadButton(Cloud.Sketchfab);
+            RefreshUploadButton(Cloud.Vive);
             m_OnClose += OnClose;
 
             SketchMemoryScript.m_Instance.OperationStackChanged += OnOperationStackChanged;
@@ -127,6 +149,7 @@ namespace TiltBrush
             m_EmbeddedMediaWarningIcosa.SetActive(displayMode == DisplayMode.EmbeddedMediaWarningIcosa);
             m_EmbeddedMediaWarningSketchfab.SetActive(
                 displayMode == DisplayMode.EmbeddedMediaWarningSketchfab);
+            m_EmbeddedMediaWarningViverse.SetActive(displayMode == DisplayMode.EmbeddedMediaWarningViverse);
             m_NothingToUploadWarning.SetActive(displayMode == DisplayMode.NothingToUploadWarning);
             m_ConnectionErrorObjects.SetActive(displayMode == DisplayMode.ConnectionError);
             m_OutOfDateObjects.SetActive(displayMode == DisplayMode.OutOfDate);
@@ -184,6 +207,13 @@ namespace TiltBrush
         {
             OAuth2Identity.ProfileUpdated -= OnProfileUpdated;
             SketchMemoryScript.m_Instance.OperationStackChanged -= OnOperationStackChanged;
+            
+            if (m_ViversePublisher != null)
+            {
+                m_ViversePublisher.OnPublishComplete -= OnViversePublishComplete;
+                m_ViversePublisher.OnExportProgress -= OnViverseExportProgress;
+                m_ViversePublisher.OnUploadProgress -= OnViverseUploadProgress;
+            }
         }
 
         override public void SetPopupCommandParameters(int commandParam, int commandParam2)
@@ -198,12 +228,20 @@ namespace TiltBrush
         {
             base.BaseUpdate();
 
+            if (m_IsViverseUploading)
+            {
+                // Upload UI is already active, just update progress in shader
+                // Progress will be updated via OnViverseExportProgress and OnViverseUploadProgress
+                return;
+            }
+            
             // Logged out state.
             if (m_LoginOnDesktopObjects.activeSelf)
             {
                 // Check to see if we just logged in.
                 if ((m_LoggingInType == Cloud.Icosa && App.IcosaIsLoggedIn) ||
-                    (m_LoggingInType == Cloud.Sketchfab && App.SketchfabIdentity.LoggedIn))
+                    (m_LoggingInType == Cloud.Sketchfab && App.SketchfabIdentity.LoggedIn) ||
+                    m_LoggingInType == Cloud.Vive && App.ViveIdentity.LoggedIn)
                 {
                     SetMode(DisplayMode.Loggedout);
                     // It's easy to get the logic wrong for how to re-initialize the UI, so just go through a
@@ -265,6 +303,9 @@ namespace TiltBrush
                 case Cloud.Icosa:
                     return (m_IcosaUserName, m_IcosaLoggedInObjects,
                             m_IcosaLoggedOutObjects, m_IcosaPhoto);
+                case Cloud.Vive:
+                    return (m_ViverseUserName, m_ViverseLoggedInObjects,
+                            m_ViverseLoggedOutObjects, m_ViversePhoto);
                 default: throw new InvalidOperationException($"{cloud}");
             }
         }
@@ -300,6 +341,7 @@ namespace TiltBrush
         {
             RefreshUploadButton(Cloud.Icosa);
             RefreshUploadButton(Cloud.Sketchfab);
+            RefreshUploadButton(Cloud.Vive);
         }
 
         void OnClose()
@@ -320,6 +362,11 @@ namespace TiltBrush
             }
             if (m_EmbeddedMediaWarningSketchfab.activeSelf &&
                 !WidgetManager.m_Instance.HasNonExportableContent(Cloud.Sketchfab))
+            {
+                SetMode(DisplayMode.Confirming);
+            }
+            if (m_EmbeddedMediaWarningViverse.activeSelf &&
+                !WidgetManager.m_Instance.HasNonExportableContent(Cloud.Vive))
             {
                 SetMode(DisplayMode.Confirming);
             }
@@ -350,9 +397,97 @@ namespace TiltBrush
                 SetMode(DisplayMode.EmbeddedMediaWarningSketchfab);
                 return;
             }
+            
+            // Handle VIVERSE uploads with ViverseSketchPublisher
+            if (cloud == Cloud.Vive)
+            {
+                if (m_ViversePublisher == null)
+                {
+                    m_UploadFailedMessage.text = "VIVERSE publisher not available";
+                    SetMode(DisplayMode.UploadFailed);
+                    return;
+                }
+
+                if (!m_ViversePublisher.IsAuthenticated())
+                {
+                    m_UploadFailedMessage.text = "Please login to VIVERSE first";
+                    SetMode(DisplayMode.UploadFailed);
+                    return;
+                }
+
+                StartViverseUpload();
+                return;
+            }
 
             // We haven't errored out, so we're safe to execute the action now.
             onSafeToUpload?.Invoke();
+        }
+        
+        private void StartViverseUpload()
+        {
+            SetMode(DisplayMode.Uploading);
+            m_IsViverseUploading = true;
+
+            // Generate title with timestamp
+            string timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            string title = $"OpenBrush_{timestamp}";
+            
+            // Limit to 30 characters as per VIVERSE API
+            if (title.Length > 30)
+            {
+                title = title.Substring(0, 30);
+            }
+
+            string description = $"OpenBrush sketch - {SketchMemoryScript.m_Instance.StrokeCount} strokes";
+
+            Debug.Log($"[UploadPopUp] Starting VIVERSE upload: {title}");
+            m_ViversePublisher.PublishCurrentSketch(title, description);
+        }
+        
+        // VIVERSE callbacks
+        private void OnViverseExportProgress(float progress)
+        {
+            if (m_IsViverseUploading)
+            {
+                // Map export progress to first 50% of progress bar
+                float normalizedProgress = progress * 0.5f;
+                m_Progress.material.SetFloat("_Ratio", normalizedProgress);
+                Debug.Log($"[UploadPopUp] Export progress: {progress * 100:F0}%");
+            }
+        }
+
+        private void OnViverseUploadProgress(float progress)
+        {
+            if (m_IsViverseUploading)
+            {
+                // Map upload progress to second 50% of progress bar
+                float normalizedProgress = 0.5f + (progress * 0.5f);
+                m_Progress.material.SetFloat("_Ratio", normalizedProgress);
+                Debug.Log($"[UploadPopUp] Upload progress: {progress * 100:F0}%");
+            }
+        }
+
+        private void OnViversePublishComplete(bool success, string message)
+        {
+            m_IsViverseUploading = false;
+
+            if (success)
+            {
+                Debug.Log($"[UploadPopUp] VIVERSE upload successful: {message}");
+                SetMode(DisplayMode.UploadComplete);
+                
+                string sceneSid = m_ViversePublisher.GetLastSceneSid();
+                if (!string.IsNullOrEmpty(sceneSid))
+                {
+                    Debug.Log($"[UploadPopUp] Scene SID: {sceneSid}");
+                }
+            }
+            else
+            {
+                Debug.LogError($"[UploadPopUp] VIVERSE upload failed: {message}");
+                m_UploadFailedMessage.text = message;
+                SetMode(DisplayMode.UploadFailed);
+            }
         }
     }
 
