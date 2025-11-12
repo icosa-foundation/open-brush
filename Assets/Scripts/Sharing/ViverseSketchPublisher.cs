@@ -15,8 +15,9 @@
 using System;
 using System.Collections;
 using System.IO;
-using System.IO.Compression;
 using UnityEngine;
+using UnityEngine.Networking;
+using ICSharpCode.SharpZipLib.Zip;
 
 namespace TiltBrush
 {
@@ -43,11 +44,19 @@ namespace TiltBrush
                 m_PublishManager.OnUploadProgress += HandleUploadProgress;
             }
 
+            #if UNITY_ANDROID && !UNITY_EDITOR
+            // Use external storage on Android (accessible via file browser)
+            m_TempDirectory = Path.Combine(Application.persistentDataPath, "ViverseExports");
+            #else
             m_TempDirectory = Path.Combine(Application.temporaryCachePath, "ViverseExports");
+            #endif
+            
             if (!Directory.Exists(m_TempDirectory))
             {
                 Directory.CreateDirectory(m_TempDirectory);
             }
+            
+            Debug.Log($"[ViverseSketch] Export directory: {m_TempDirectory}");
         }
 
         public void PublishCurrentSketch(string title, string description = null)
@@ -85,19 +94,18 @@ namespace TiltBrush
             string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
             string exportDir = Path.Combine(m_TempDirectory, $"sketch_{timestamp}");
 
-            // GLB and associated assets (brushes) go into the 'assets' folder
             string glbDir = Path.Combine(exportDir, "assets");
             string glbPath = Path.Combine(glbDir, "scene.glb");
-
             string htmlPath = Path.Combine(exportDir, "index.html");
             string zipPath = Path.Combine(m_TempDirectory, $"sketch_{timestamp}.zip");
 
             Directory.CreateDirectory(exportDir);
-            Directory.CreateDirectory(glbDir); // Creates the assets folder
+            Directory.CreateDirectory(glbDir);
 
             Debug.Log($"[ViverseSketch] Export directory: {exportDir}");
             OnExportProgress?.Invoke(0.15f);
             
+            // Create world and get scene SID
             string sceneSid = null;
             bool createSuccess = false;
 
@@ -121,73 +129,57 @@ namespace TiltBrush
             Debug.Log($"[ViverseSketch] World created with scene_sid: {sceneSid}");
             OnExportProgress?.Invoke(0.2f);
 
-            // Copy libs and assets FIRST (before GLB export)
+            // Copy WebViewer files
             bool copySuccess = false;
-            string copyError = null;
-
+            
+            #if UNITY_ANDROID && !UNITY_EDITOR
+            // On Android: Extract pre-packed WebViewer.zip
+            Debug.Log("[ViverseSketch] Extracting WebViewer from zip...");
+            yield return StartCoroutine(ExtractWebViewerZip(exportDir, success =>
+            {
+                copySuccess = success;
+            }));
+            #else
+            // On other platforms: Copy from StreamingAssets normally
             try
             {
-                Debug.Log("[ViverseSketch] Copying libs and assets...");
-
+                Debug.Log("[ViverseSketch] Copying WebViewer files...");
                 string streamingWebViewerPath = Path.Combine(Application.streamingAssetsPath, "WebViewer");
-
-                // Copy libs folder
-                string sourceLibsPath = Path.Combine(streamingWebViewerPath, "libs");
-                string destLibsPath = Path.Combine(exportDir, "libs");
-                if (Directory.Exists(sourceLibsPath))
+                
+                if (Directory.Exists(streamingWebViewerPath))
                 {
-                    CopyDirectory(sourceLibsPath, destLibsPath);
-                    Debug.Log($"[ViverseSketch] Libs copied");
+                    CopyDirectory(streamingWebViewerPath, exportDir);
+                    Debug.Log("[ViverseSketch] WebViewer files copied");
+                    copySuccess = true;
                 }
                 else
                 {
-                    Debug.LogWarning($"[ViverseSketch] Libs folder not found at: {sourceLibsPath}");
+                    Debug.LogError($"[ViverseSketch] WebViewer folder not found at: {streamingWebViewerPath}");
+                    copySuccess = false;
                 }
-
-                // Copy static assets (icons, fonts, etc.)
-                string sourceAssetsPath = Path.Combine(streamingWebViewerPath, "assets");
-                string destAssetsPath = Path.Combine(exportDir, "assets");
-                if (Directory.Exists(sourceAssetsPath))
-                {
-                    CopyDirectory(sourceAssetsPath, destAssetsPath);
-                    Debug.Log($"[ViverseSketch] Static assets copied");
-                }
-                else
-                {
-                    Debug.LogWarning($"[ViverseSketch] Assets folder not found at: {sourceAssetsPath}");
-                }
-
-                copySuccess = true;
-                OnExportProgress?.Invoke(0.3f);
             }
             catch (Exception ex)
             {
-                copyError = ex.Message;
-                Debug.LogError($"[ViverseSketch] Failed to copy libs/assets: {ex}");
+                Debug.LogError($"[ViverseSketch] Failed to copy WebViewer: {ex}");
+                copySuccess = false;
             }
+            #endif
 
             if (!copySuccess)
             {
-                OnPublishComplete?.Invoke(false, $"Failed to copy dependencies: {copyError}");
+                OnPublishComplete?.Invoke(false, "Failed to copy WebViewer files");
                 CleanupDirectory(exportDir);
                 yield break;
             }
-            string brushesSourcePath = Path.Combine(Application.dataPath, "..", "Support", "TiltBrush.com", "shaders", "brushes");
-            if (Directory.Exists(brushesSourcePath))
-            {
-                string brushesDestPath = Path.Combine(exportDir, "assets", "brushes");
-                CopyDirectory(brushesSourcePath, brushesDestPath);
-                Debug.Log("[ViverseSketch] Brush textures copied");
-            }
 
-            // Export GLB (after assets are copied)
+            OnExportProgress?.Invoke(0.3f);
+
+            // Export GLB
             bool exportSuccess = false;
             string exportError = null;
 
             try
             {
-                // Export GLB and its brush assets into glbDir (i.e., exportDir/assets)
-                // This will add scene.glb and brush shaders to the existing assets folder
                 exportSuccess = ExportSketchAsGLB(glbPath, out exportError);
                 OnExportProgress?.Invoke(0.5f);
             }
@@ -208,66 +200,48 @@ namespace TiltBrush
             Debug.Log($"[ViverseSketch] GLB created: {glbInfo.Length / 1024}KB");
 
             // Generate HTML
-            bool htmlSuccess = false;
-            string htmlError = null;
-
             try
             {
                 Debug.Log($"[ViverseSketch] Generating HTML viewer with app ID: {sceneSid}");
-
-                // GLB path must be relative to index.html in the root
                 const string kRelativeGlbPath = "./assets/scene.glb";
-
                 string htmlContent = ViewerHTMLGenerator.GenerateViewerHTML(kRelativeGlbPath, sceneSid);
-
                 File.WriteAllText(htmlPath, htmlContent);
                 Debug.Log($"[ViverseSketch] HTML created");
-                htmlSuccess = true;
                 OnExportProgress?.Invoke(0.6f);
             }
             catch (Exception ex)
             {
-                htmlError = ex.Message;
                 Debug.LogError($"[ViverseSketch] HTML generation failed: {ex}");
-            }
-
-            if (!htmlSuccess)
-            {
-                OnPublishComplete?.Invoke(false, $"HTML generation failed: {htmlError}");
+                OnPublishComplete?.Invoke(false, $"HTML generation failed: {ex.Message}");
                 CleanupDirectory(exportDir);
                 yield break;
             }
 
-            // Create ZIP and Upload
+            // Create ZIP using SharpZipLib
             bool zipSuccess = false;
-            string zipError = null;
 
             try
             {
-                Debug.Log("[ViverseSketch] Creating ZIP package...");
-
-                using (var zip = new ZipArchive(File.Create(zipPath), ZipArchiveMode.Create))
-                {
-                    AddDirectoryToZip(zip, exportDir, "");
-                }
-
+                Debug.Log("[ViverseSketch] Creating ZIP package using SharpZipLib...");
+                CreateZipFromDirectory(exportDir, zipPath);
                 OnExportProgress?.Invoke(0.8f);
                 CleanupDirectory(exportDir);
 
                 FileInfo zipInfo = new FileInfo(zipPath);
                 Debug.Log($"[ViverseSketch] ZIP created: {zipInfo.Length / 1024}KB");
-
                 zipSuccess = true;
             }
             catch (Exception ex)
             {
-                zipError = ex.Message;
                 Debug.LogError($"[ViverseSketch] ZIP creation failed: {ex}");
+                OnPublishComplete?.Invoke(false, $"Failed to package: {ex.Message}");
+                CleanupDirectory(exportDir);
+                yield break;
             }
 
             if (!zipSuccess)
             {
-                OnPublishComplete?.Invoke(false, $"Failed to package: {zipError}");
+                OnPublishComplete?.Invoke(false, "Failed to create package");
                 CleanupDirectory(exportDir);
                 yield break;
             }
@@ -275,21 +249,76 @@ namespace TiltBrush
             // Upload
             yield return StartCoroutine(UploadToWorld(sceneSid, zipPath));
 
-            // Cleanup ZIP file
             if (File.Exists(zipPath))
             {
+                Debug.Log($"[ViverseSketch] Export ZIP kept at: {zipPath}");
+            }
+        }
+
+        private IEnumerator ExtractWebViewerZip(string destDir, Action<bool> callback)
+        {
+            string zipPath = Path.Combine(Application.streamingAssetsPath, "WebViewer.zip");
+            
+            using (UnityWebRequest www = UnityWebRequest.Get(zipPath))
+            {
+                yield return www.SendWebRequest();
+                
+                if (www.result != UnityWebRequest.Result.Success)
+                {
+                    Debug.LogError($"[ViverseSketch] Failed to load WebViewer.zip: {www.error}");
+                    callback?.Invoke(false);
+                    yield break;
+                }
+
+                byte[] zipData = www.downloadHandler.data;
+                string tempZip = Path.Combine(Application.temporaryCachePath, "temp_webviewer.zip");
+                
                 try
                 {
-                    File.Delete(zipPath);
+                    File.WriteAllBytes(tempZip, zipData);
+
+                    // Extract using SharpZipLib
+                    using (ZipInputStream zipStream = new ZipInputStream(File.OpenRead(tempZip)))
+                    {
+                        ZipEntry entry;
+                        while ((entry = zipStream.GetNextEntry()) != null)
+                        {
+                            string entryPath = Path.Combine(destDir, entry.Name);
+                            string dirPath = Path.GetDirectoryName(entryPath);
+                            
+                            if (!string.IsNullOrEmpty(dirPath) && !Directory.Exists(dirPath))
+                            {
+                                Directory.CreateDirectory(dirPath);
+                            }
+
+                            if (!entry.IsDirectory && !string.IsNullOrEmpty(entry.Name))
+                            {
+                                using (FileStream streamWriter = File.Create(entryPath))
+                                {
+                                    byte[] buffer = new byte[4096];
+                                    int bytesRead;
+                                    while ((bytesRead = zipStream.Read(buffer, 0, buffer.Length)) > 0)
+                                    {
+                                        streamWriter.Write(buffer, 0, bytesRead);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    File.Delete(tempZip);
+                    Debug.Log("[ViverseSketch] WebViewer extracted successfully");
+                    callback?.Invoke(true);
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogWarning($"[ViverseSketch] Failed to delete ZIP: {ex.Message}");
+                    Debug.LogError($"[ViverseSketch] Failed to extract WebViewer.zip: {ex}");
+                    if (File.Exists(tempZip)) File.Delete(tempZip);
+                    callback?.Invoke(false);
                 }
             }
         }
-        
-        // Helpers
+
         private IEnumerator CreateWorldAndGetSceneSid(string title, string description, Action<bool, string, string> callback)
         {
             if (string.IsNullOrEmpty(description))
@@ -301,10 +330,6 @@ namespace TiltBrush
             bool success = false;
             string sceneSid = null;
             string error = null;
-
-            m_PublishManager.OnPublishComplete += (s, msg) =>
-            {
-            };
 
             StartCoroutine(CallCreateWorld(title, description, (s, sid, err) =>
             {
@@ -365,7 +390,7 @@ namespace TiltBrush
                     glbPath,
                     AxisConvention.kGltf2,
                     binary: true,
-                    doExtras: false,
+                    doExtras: true,
                     includeLocalMediaContent: true,
                     gltfVersion: 2,
                     selfContained: true
@@ -377,7 +402,7 @@ namespace TiltBrush
                     return false;
                 }
 
-                Debug.Log($"[ViverseSketch] GLB export successful! {result.numTris} triangles");
+                Debug.Log($"[ViverseSketch] GLB export successful: {result.numTris} triangles");
                 if (result.exportedFiles != null && result.exportedFiles.Length > 0)
                 {
                     Debug.Log($"[ViverseSketch] Exported files: {string.Join(", ", result.exportedFiles)}");
@@ -393,34 +418,64 @@ namespace TiltBrush
             }
         }
 
-        private void AddDirectoryToZip(ZipArchive zip, string sourceDir, string entryPrefix)
+        private void CreateZipFromDirectory(string sourceDir, string zipPath)
         {
-            foreach (string file in Directory.GetFiles(sourceDir))
+            using (FileStream fsOut = File.Create(zipPath))
+            using (ZipOutputStream zipStream = new ZipOutputStream(fsOut))
+            {
+                zipStream.SetLevel(9);
+                int folderOffset = sourceDir.Length + (sourceDir.EndsWith("\\") ? 0 : 1);
+                CompressFolder(sourceDir, zipStream, folderOffset);
+                zipStream.IsStreamOwner = true;
+                zipStream.Close();
+            }
+        }
+
+        private void CompressFolder(string path, ZipOutputStream zipStream, int folderOffset)
+        {
+            string[] files = Directory.GetFiles(path);
+
+            foreach (string filename in files)
             {
                 try
                 {
-                    string fileName = Path.GetFileName(file);
-                    string entryName = string.IsNullOrEmpty(entryPrefix) ? fileName : Path.Combine(entryPrefix, fileName);
-                    zip.CreateEntryFromFile(file, entryName.Replace("\\", "/"));
+                    if (!File.Exists(filename))
+                    {
+                        Debug.LogWarning($"[ViverseSketch] Skipping missing file: {filename}");
+                        continue;
+                    }
+
+                    FileInfo fi = new FileInfo(filename);
+                    string entryName = filename.Substring(folderOffset);
+                    entryName = ZipEntry.CleanName(entryName);
+
+                    ZipEntry newEntry = new ZipEntry(entryName);
+                    newEntry.DateTime = fi.LastWriteTime;
+
+                    zipStream.PutNextEntry(newEntry);
+
+                    byte[] buffer = new byte[4096];
+                    using (FileStream streamReader = File.OpenRead(filename))
+                    {
+                        int bytesRead;
+                        while ((bytesRead = streamReader.Read(buffer, 0, buffer.Length)) > 0)
+                        {
+                            zipStream.Write(buffer, 0, bytesRead);
+                        }
+                    }
+
+                    zipStream.CloseEntry();
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogWarning($"[ViverseSketch] Skipping file: {Path.GetFileName(file)} - {ex.Message}");
+                    Debug.LogWarning($"[ViverseSketch] Failed to add file to zip: {filename} - {ex.Message}");
                 }
             }
 
-            foreach (string subDir in Directory.GetDirectories(sourceDir))
+            string[] folders = Directory.GetDirectories(path);
+            foreach (string folder in folders)
             {
-                try
-                {
-                    string dirName = Path.GetFileName(subDir);
-                    string newPrefix = string.IsNullOrEmpty(entryPrefix) ? dirName : Path.Combine(entryPrefix, dirName);
-                    AddDirectoryToZip(zip, subDir, newPrefix);
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogWarning($"[ViverseSketch] Skipping directory: {Path.GetFileName(subDir)} - {ex.Message}");
-                }
+                CompressFolder(folder, zipStream, folderOffset);
             }
         }
 
@@ -492,41 +547,23 @@ namespace TiltBrush
 
             try
             {
-                var files = Directory.GetFiles(m_TempDirectory, "sketch_*.*");
+                var files = Directory.GetFiles(m_TempDirectory, "sketch_*.zip");
                 foreach (var file in files)
                 {
-                    var fileInfo = new FileInfo(file);
-                    if ((DateTime.Now - fileInfo.CreationTime).TotalHours > 1)
+                    try
                     {
                         File.Delete(file);
-                        Debug.Log($"[ViverseSketch] Cleaned up: {file}");
                     }
-                }
-
-                var dirs = Directory.GetDirectories(m_TempDirectory, "sketch_*");
-                foreach (var dir in dirs)
-                {
-                    var dirInfo = new DirectoryInfo(dir);
-                    if ((DateTime.Now - dirInfo.CreationTime).TotalHours > 1)
+                    catch (Exception ex)
                     {
-                        Directory.Delete(dir, true);
-                        Debug.Log($"[ViverseSketch] Cleaned up directory: {dir}");
+                        Debug.LogWarning($"[ViverseSketch] Failed to delete old export: {ex.Message}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[ViverseSketch] Cleanup failed: {ex.Message}");
-            }
-        }
-
-        void OnDestroy()
-        {
-            if (m_PublishManager != null)
-            {
-                m_PublishManager.OnPublishComplete -= HandlePublishComplete;
-                m_PublishManager.OnUploadProgress -= HandleUploadProgress;
+                Debug.LogWarning($"[ViverseSketch] Failed to cleanup old exports: {ex.Message}");
             }
         }
     }
-} // namespace TiltBrush
+}
