@@ -3599,6 +3599,14 @@ MonoBehaviour:
     m_Key: POPUP_ACCOUNTS_VIVEINFO_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 430213467397410816
+    m_Key: POPUP_UPLOAD_VIVERSE_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 430213857824198656
+    m_Key: POPUP_UPLOAD_VIVERSE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
