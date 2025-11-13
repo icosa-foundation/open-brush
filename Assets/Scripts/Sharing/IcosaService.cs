@@ -241,5 +241,33 @@ namespace TiltBrush
             public string assetId;
             public string publishUrl;
         }
+
+        [Serializable, UsedImplicitly]
+        public class CollectionDetail
+        {
+            public string uid;
+            public string name;
+            public string description;
+            public string slug;
+            public UserRelated user;
+            public ThumbnailsRelated thumbnails;
+            public string uri;
+            public string url;
+            public int assetCount;
+            public string createdAt;
+            public string updatedAt;
+            public bool isPublic;
+        }
+
+        [Serializable, UsedImplicitly]
+        public class CollectionsResponse : Paginated
+        {
+            public string previous; // uri
+            public string next;     // uri
+            public CollectionDetail[] results;
+
+            string Paginated.NextUri => next;
+            string Paginated.PreviousUri => previous;
+        }
     }
 } // namespace TiltBrush

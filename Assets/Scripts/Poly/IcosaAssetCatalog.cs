@@ -601,6 +601,20 @@ namespace TiltBrush
                 }
             };
 
+            m_AssetSetByType[IcosaSetType.Collections] = new AssetSet
+            {
+                QueryParams = new IcosaQueryParameters
+                {
+                    SearchText = "",
+                    TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
+                    License = LicenseChoices.ANY,
+                    OrderBy = OrderByChoices.NEWEST,
+                    Formats = new[] { FormatChoices.GLTF2, FormatChoices.OBJ },
+                    Curated = CuratedChoices.ANY,
+                    Category = CategoryChoices.ANY
+                }
+            };
+
             if (App.IcosaIsLoggedIn)
             {
                 m_AssetSetByType[IcosaSetType.Featured].m_RefreshRequested = true;

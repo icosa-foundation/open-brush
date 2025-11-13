@@ -23,7 +23,8 @@ namespace TiltBrush
     {
         User,
         Liked,
-        Featured
+        Featured,
+        Collections
     }
 
     public class IcosaPanel : ModalPanel
@@ -37,11 +38,14 @@ namespace TiltBrush
         public string PanelTextFeatured { get { return m_PanelTextFeatured.GetLocalizedStringAsync().Result; } }
         [SerializeField] private LocalizedString m_PanelTextLiked; // Liked Models
         public string PanelTextLiked { get { return m_PanelTextLiked.GetLocalizedStringAsync().Result; } }
+        [SerializeField] private LocalizedString m_PanelTextCollections; // Collections
+        public string PanelTextCollections { get { return m_PanelTextCollections.GetLocalizedStringAsync().Result; } }
         [SerializeField] private Renderer m_PolyGalleryRenderer;
         [SerializeField] private GameObject m_NoObjectsMessage;
         [SerializeField] private GameObject m_InternetError;
         [SerializeField] private GameObject m_NoAuthoredModelsMessage;
         [SerializeField] private GameObject m_NoLikesMessage;
+        [SerializeField] private GameObject m_NoCollectionsMessage;
         [SerializeField] private GameObject m_NotLoggedInMessage;
         [SerializeField] private GameObject m_OutOfDateMessage;
         [SerializeField] private GameObject m_NotSupportedMessage;
@@ -58,6 +62,7 @@ namespace TiltBrush
         public bool ShowingFeatured { get { return m_CurrentSet == IcosaSetType.Featured; } }
         public bool ShowingLikes { get { return m_CurrentSet == IcosaSetType.Liked; } }
         public bool ShowingUser { get { return m_CurrentSet == IcosaSetType.User; } }
+        public bool ShowingCollections { get { return m_CurrentSet == IcosaSetType.Collections; } }
 
         override public void OnWidgetShowAnimComplete()
         {
@@ -74,6 +79,7 @@ namespace TiltBrush
             m_InternetError.SetActive(false);
             m_NoAuthoredModelsMessage.SetActive(false);
             m_NoLikesMessage.SetActive(false);
+            m_NoCollectionsMessage.SetActive(false);
             m_NotLoggedInMessage.SetActive(false);
             m_OutOfDateMessage.SetActive(false);
             if (m_NotSupportedMessage)
@@ -136,6 +142,7 @@ namespace TiltBrush
         {
             m_NoLikesMessage.SetActive(false);
             m_NoAuthoredModelsMessage.SetActive(false);
+            m_NoCollectionsMessage.SetActive(false);
             m_NotLoggedInMessage.SetActive(false);
             m_InternetError.SetActive(false);
             if (VrAssetService.m_Instance.NoConnection)
@@ -246,6 +253,22 @@ namespace TiltBrush
                         }
                     }
                     break;
+                case IcosaSetType.Collections:
+                    if (!internetError)
+                    {
+                        if (App.IcosaIsLoggedIn)
+                        {
+                            if (numCloudModels == 0)
+                            {
+                                m_NoCollectionsMessage.SetActive(true);
+                            }
+                        }
+                        else
+                        {
+                            m_NotLoggedInMessage.SetActive(true);
+                        }
+                    }
+                    break;
             }
 
             base.RefreshPage();
@@ -268,6 +291,11 @@ namespace TiltBrush
                 case IcosaSetType.Liked:
                     m_PanelText.text = PanelTextLiked;
                     m_PanelTextSubtitle.gameObject.SetActive(true);
+                    m_PanelTextUserSubtitle.gameObject.SetActive(false);
+                    break;
+                case IcosaSetType.Collections:
+                    m_PanelText.text = PanelTextCollections;
+                    m_PanelTextSubtitle.gameObject.SetActive(false);
                     m_PanelTextUserSubtitle.gameObject.SetActive(false);
                     break;
             }

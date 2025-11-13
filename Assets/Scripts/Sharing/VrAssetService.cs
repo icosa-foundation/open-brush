@@ -63,6 +63,7 @@ namespace TiltBrush
         private const string kListAssetsUri = "/assets";
         private const string kUserAssetsUri = "/users/me/assets";
         private const string kUserLikesUri = "/users/me/likedassets";
+        private const string kUserCollectionsUri = "/users/me/collections";
 
         // Used when requesting a device code from the system browser
         private string m_CurrentDeviceCodeSecret;
@@ -929,6 +930,7 @@ namespace TiltBrush
                 IcosaSetType.Liked => $"{IcosaApiRoot}{kUserLikesUri}?",
                 IcosaSetType.User => $"{IcosaApiRoot}{kUserAssetsUri}?",
                 IcosaSetType.Featured => $"{IcosaApiRoot}{kListAssetsUri}?",
+                IcosaSetType.Collections => $"{IcosaApiRoot}{kUserCollectionsUri}?",
                 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
             };
             foreach (var format in queryParams.Formats)
