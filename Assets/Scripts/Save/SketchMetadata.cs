@@ -781,7 +781,7 @@ namespace TiltBrush
     [System.Reflection.Obfuscation(Exclude = true)]
     public class SketchMetadata
     {
-        static public int kSchemaVersion = 2;
+        static public int kSchemaVersion = 3;
 
         // Reference to environment GUID.
         public string EnvironmentPreset;
@@ -889,7 +889,7 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public CameraPathMetadata[] CameraPaths { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public AnimationPathMetadata[] AnimationPaths { get; set; }
+        public CameraPathMetadata[] AnimationPaths { get; set; }
 
         // Added for 24.0b Open-source edition
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]

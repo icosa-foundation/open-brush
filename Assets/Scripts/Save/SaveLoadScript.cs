@@ -854,6 +854,10 @@ namespace TiltBrush
                     {
                         WidgetManager.m_Instance.SetCameraPathDataFromTilt(jsonData.CameraPaths);
                     }
+                    if (jsonData.AnimationPaths != null)
+                    {
+                        WidgetManager.m_Instance.SetCameraPathDataFromTilt(jsonData.AnimationPaths);
+                    }
                     if (fileInfo is GoogleDriveSketchSet.GoogleDriveFileInfo gdInfo)
                     {
                         gdInfo.SourceId = jsonData.SourceId;
