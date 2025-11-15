@@ -2142,6 +2142,186 @@ namespace TiltBrush
             return Path.Combine(Application.persistentDataPath, "Featured Sketches");
         }
 
+        // Additional root directories for media imports
+        // These lists allow multiple root directories to be searched when importing media
+        // The default Media Library paths are always checked first for backwards compatibility
+        private static List<string> s_AdditionalMediaRoots = new List<string>();
+        private static List<string> s_AdditionalModelRoots = new List<string>();
+        private static List<string> s_AdditionalImageRoots = new List<string>();
+        private static List<string> s_AdditionalVideoRoots = new List<string>();
+        private static List<string> s_AdditionalBackgroundImageRoots = new List<string>();
+
+        /// <summary>
+        /// Adds an additional root directory to search for all media types.
+        /// Relative paths will be checked in this directory when importing media.
+        /// </summary>
+        public static void AddMediaRoot(string path)
+        {
+            if (!string.IsNullOrEmpty(path) && !s_AdditionalMediaRoots.Contains(path))
+            {
+                s_AdditionalMediaRoots.Add(path);
+            }
+        }
+
+        /// <summary>
+        /// Adds an additional root directory to search for models.
+        /// </summary>
+        public static void AddModelRoot(string path)
+        {
+            if (!string.IsNullOrEmpty(path) && !s_AdditionalModelRoots.Contains(path))
+            {
+                s_AdditionalModelRoots.Add(path);
+            }
+        }
+
+        /// <summary>
+        /// Adds an additional root directory to search for images.
+        /// </summary>
+        public static void AddImageRoot(string path)
+        {
+            if (!string.IsNullOrEmpty(path) && !s_AdditionalImageRoots.Contains(path))
+            {
+                s_AdditionalImageRoots.Add(path);
+            }
+        }
+
+        /// <summary>
+        /// Adds an additional root directory to search for videos.
+        /// </summary>
+        public static void AddVideoRoot(string path)
+        {
+            if (!string.IsNullOrEmpty(path) && !s_AdditionalVideoRoots.Contains(path))
+            {
+                s_AdditionalVideoRoots.Add(path);
+            }
+        }
+
+        /// <summary>
+        /// Adds an additional root directory to search for background images.
+        /// </summary>
+        public static void AddBackgroundImageRoot(string path)
+        {
+            if (!string.IsNullOrEmpty(path) && !s_AdditionalBackgroundImageRoots.Contains(path))
+            {
+                s_AdditionalBackgroundImageRoots.Add(path);
+            }
+        }
+
+        /// <summary>
+        /// Gets all potential root directories for models, in priority order.
+        /// The default ModelLibraryPath is always first for backwards compatibility.
+        /// </summary>
+        public static List<string> GetAllModelRoots()
+        {
+            var roots = new List<string> { ModelLibraryPath() };
+
+            // Add media-specific roots
+            foreach (var root in s_AdditionalModelRoots)
+            {
+                roots.Add(Path.Combine(root, "Models"));
+            }
+
+            // Add general media roots
+            foreach (var root in s_AdditionalMediaRoots)
+            {
+                roots.Add(Path.Combine(root, "Models"));
+            }
+
+            return roots;
+        }
+
+        /// <summary>
+        /// Gets all potential root directories for images, in priority order.
+        /// </summary>
+        public static List<string> GetAllImageRoots()
+        {
+            var roots = new List<string> { ReferenceImagePath() };
+
+            foreach (var root in s_AdditionalImageRoots)
+            {
+                roots.Add(Path.Combine(root, "Images"));
+            }
+
+            foreach (var root in s_AdditionalMediaRoots)
+            {
+                roots.Add(Path.Combine(root, "Images"));
+            }
+
+            return roots;
+        }
+
+        /// <summary>
+        /// Gets all potential root directories for videos, in priority order.
+        /// </summary>
+        public static List<string> GetAllVideoRoots()
+        {
+            var roots = new List<string> { VideoLibraryPath() };
+
+            foreach (var root in s_AdditionalVideoRoots)
+            {
+                roots.Add(Path.Combine(root, "Videos"));
+            }
+
+            foreach (var root in s_AdditionalMediaRoots)
+            {
+                roots.Add(Path.Combine(root, "Videos"));
+            }
+
+            return roots;
+        }
+
+        /// <summary>
+        /// Gets all potential root directories for background images, in priority order.
+        /// </summary>
+        public static List<string> GetAllBackgroundImageRoots()
+        {
+            var roots = new List<string> { BackgroundImagesLibraryPath() };
+
+            foreach (var root in s_AdditionalBackgroundImageRoots)
+            {
+                roots.Add(Path.Combine(root, "BackgroundImages"));
+            }
+
+            foreach (var root in s_AdditionalMediaRoots)
+            {
+                roots.Add(Path.Combine(root, "BackgroundImages"));
+            }
+
+            return roots;
+        }
+
+        /// <summary>
+        /// Resolves a media path by checking multiple potential root directories.
+        /// If the path is absolute (rooted), returns it as-is.
+        /// If the path is relative, tries each root directory in order and returns the first
+        /// path where the file exists. Falls back to the first root if file not found anywhere.
+        /// </summary>
+        /// <param name="potentialRoots">List of root directories to check, in priority order</param>
+        /// <param name="relativePath">The relative path to resolve</param>
+        /// <returns>The resolved absolute path</returns>
+        public static string ResolveMediaPath(List<string> potentialRoots, string relativePath)
+        {
+            // If the path is already absolute (rooted), use it directly
+            if (Path.IsPathRooted(relativePath))
+            {
+                return relativePath;
+            }
+
+            // Try each root directory in order and return the first where the file exists
+            foreach (var root in potentialRoots)
+            {
+                string candidatePath = Path.Combine(root, relativePath);
+                if (File.Exists(candidatePath))
+                {
+                    return candidatePath;
+                }
+            }
+
+            // If file not found in any root, return the default (first root) path
+            // This maintains backwards compatibility and allows files to be created in the default location
+            return potentialRoots.Count > 0 ? Path.Combine(potentialRoots[0], relativePath) : relativePath;
+        }
+
         public static string MediaLibraryPath()
         {
             return Path.Combine(UserPath(), "Media Library");

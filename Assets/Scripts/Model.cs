@@ -89,11 +89,8 @@ namespace TiltBrush
                     switch (type)
                     {
                         case Type.LocalFile:
-                            // If the path is already absolute (rooted), use it directly
-                            // Otherwise, combine with the model library path (backwards compatible)
-                            string resolvedPath = Path.IsPathRooted(path)
-                                ? path
-                                : Path.Combine(App.ModelLibraryPath(), path);
+                            // Check multiple potential root directories for the model
+                            string resolvedPath = App.ResolveMediaPath(App.GetAllModelRoots(), path);
                             return resolvedPath.Replace("\\", "/");
                         case Type.IcosaAssetId:
                             return path.Replace("\\", "/");

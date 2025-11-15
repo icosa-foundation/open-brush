@@ -64,6 +64,38 @@ namespace TiltBrush
             return Path.Combine(basePath, location);
         }
 
+        /// <summary>
+        /// Resolves a media path by checking multiple potential root directories.
+        /// If the path is absolute (rooted), returns it as-is.
+        /// If the path is relative, tries each root directory in order and returns the first
+        /// path where the file exists. Falls back to the first root if file not found anywhere.
+        /// </summary>
+        /// <param name="potentialRoots">List of root directories to check, in priority order</param>
+        /// <param name="location">The location string which may be absolute or relative</param>
+        /// <returns>The resolved absolute path</returns>
+        private static string _ResolveMediaPathWithMultipleRoots(List<string> potentialRoots, string location)
+        {
+            // If the path is already absolute (rooted), use it directly
+            if (Path.IsPathRooted(location))
+            {
+                return location;
+            }
+
+            // Try each root directory in order and return the first where the file exists
+            foreach (var root in potentialRoots)
+            {
+                string candidatePath = Path.Combine(root, location);
+                if (File.Exists(candidatePath))
+                {
+                    return candidatePath;
+                }
+            }
+
+            // If file not found in any root, return the default (first root) path
+            // This maintains backwards compatibility and allows files to be created in the default location
+            return potentialRoots.Count > 0 ? Path.Combine(potentialRoots[0], location) : location;
+        }
+
         private static Quaternion _CreateFromAxisAngle(Vector3 axis, float angle)
         {
             float halfAngle = angle * .5f;
