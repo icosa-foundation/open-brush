@@ -481,7 +481,7 @@ namespace TiltBrush
 
         private static ReferenceImage _LoadReferenceImage(string location)
         {
-            location = Path.Combine(App.ReferenceImagePath(), location);
+            location = _ResolveMediaPath(App.ReferenceImagePath(), location);
             var image = new ReferenceImage(location);
             image.SynchronousLoad();
             return image;
@@ -523,7 +523,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "video.import",
-            "Imports a video given a url or a filename in Media Library\\Videos",
+            "Imports a video given a url, an absolute path, or a filename in Media Library\\Videos",
             "animated-logo.mp4"
         )]
         public static VideoWidget ImportVideo(string location)
@@ -532,7 +532,7 @@ namespace TiltBrush
             {
                 location = _DownloadMediaFileFromUrl(location, "Videos");
             }
-            location = Path.Combine(App.VideoLibraryPath(), location);
+            location = _ResolveMediaPath(App.VideoLibraryPath(), location);
 
             var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.VideoWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
@@ -558,7 +558,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "skybox.import",
-            "Sets the skybox from either a url or a filename in Media Library\\BackgroundImages (Images loaded from a url are saved locally first)",
+            "Sets the skybox from a url, an absolute path, or a filename in Media Library\\BackgroundImages (Images loaded from a url are saved locally first)",
             "panorama.jpg"
         )]
         public static void ImportSkybox(string location)
@@ -572,7 +572,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "image.import",
-            "Imports an image given a url or a filename in Media Library\\Images (Images loaded from a url are saved locally first)",
+            "Imports an image given a url, an absolute path, or a filename in Media Library\\Images (Images loaded from a url are saved locally first)",
             "OpenBrushLogo.png"
         )]
         public static ImageWidget ImportImage(string location)
@@ -1021,7 +1021,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "image.base64Decode",
-            "Saves an image based on a base64 encoded string"
+            "Saves an image based on a base64 encoded string to an absolute path or filename in Media Library\\Images"
         )]
         public static string SaveBase64(string base64, string filename)
         {
@@ -1040,7 +1040,7 @@ namespace TiltBrush
                     filename += ".jpg";
                 }
             }
-            var path = Path.Combine(App.ReferenceImagePath(), filename);
+            var path = _ResolveMediaPath(App.ReferenceImagePath(), filename);
             File.WriteAllBytes(path, bytes);
             return path;
         }

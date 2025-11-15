@@ -44,6 +44,26 @@ namespace TiltBrush
             return _CreateFromAxisAngle(rotAxis, rotAngle);
         }
 
+        /// <summary>
+        /// Resolves a media path by checking if it's absolute or relative.
+        /// If the path is absolute (rooted), returns it as-is.
+        /// If the path is relative, combines it with the base path.
+        /// This allows for backwards compatibility while supporting different root directories.
+        /// </summary>
+        /// <param name="basePath">The base path to use for relative paths (e.g., App.ModelLibraryPath())</param>
+        /// <param name="location">The location string which may be absolute or relative</param>
+        /// <returns>The resolved absolute path</returns>
+        private static string _ResolveMediaPath(string basePath, string location)
+        {
+            // If the path is already absolute (rooted), use it directly
+            if (Path.IsPathRooted(location))
+            {
+                return location;
+            }
+            // Otherwise, combine with the base path (backwards compatible behavior)
+            return Path.Combine(basePath, location);
+        }
+
         private static Quaternion _CreateFromAxisAngle(Vector3 axis, float angle)
         {
             float halfAngle = angle * .5f;
@@ -242,7 +262,11 @@ namespace TiltBrush
                 filename = url.AbsolutePath.Split('/').Last();
             }
 
-            string AbsoluteDestinationPath = Path.Combine(App.MediaLibraryPath(), relativeDestinationFolder);
+            // Resolve the destination path - it may be absolute or relative to Media Library
+            string AbsoluteDestinationPath = Path.IsPathRooted(relativeDestinationFolder)
+                ? relativeDestinationFolder
+                : Path.Combine(App.MediaLibraryPath(), relativeDestinationFolder);
+
             if (!Directory.Exists(AbsoluteDestinationPath))
             {
                 Directory.CreateDirectory(AbsoluteDestinationPath);
@@ -250,7 +274,7 @@ namespace TiltBrush
 
             // Check if file already exists
             // If it does, append sequential numbers to the filename until we get a unique filename
-            string fullDestinationPath = Path.Combine(App.MediaLibraryPath(), relativeDestinationFolder, filename);
+            string fullDestinationPath = Path.Combine(AbsoluteDestinationPath, filename);
             int fileVersion = 0;
             string uniqueFilename = filename;
             while (File.Exists(fullDestinationPath))
@@ -258,7 +282,7 @@ namespace TiltBrush
                 fileVersion++;
                 string baseFilename = Path.GetFileNameWithoutExtension(filename);
                 uniqueFilename = $"{baseFilename} ({fileVersion}){Path.GetExtension(filename)}";
-                fullDestinationPath = Path.Combine(App.MediaLibraryPath(), relativeDestinationFolder, uniqueFilename);
+                fullDestinationPath = Path.Combine(AbsoluteDestinationPath, uniqueFilename);
             }
 
             // TODO - make this smarter

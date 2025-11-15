@@ -195,9 +195,20 @@ namespace TiltBrush
         public ReferenceVideo(string filePath)
         {
             NetworkVideo = filePath.EndsWith(".txt");
-            PersistentPath = filePath.Substring(App.VideoLibraryPath().Length + 1);
-            HumanName = System.IO.Path.GetFileName(PersistentPath);
             AbsolutePath = filePath;
+
+            // Extract relative path if the file is within the video library, otherwise use the filename
+            string videoLibraryPath = App.VideoLibraryPath();
+            if (filePath.StartsWith(videoLibraryPath))
+            {
+                PersistentPath = filePath.Substring(videoLibraryPath.Length + 1);
+            }
+            else
+            {
+                // For paths outside the video library, just use the filename
+                PersistentPath = System.IO.Path.GetFileName(filePath);
+            }
+            HumanName = System.IO.Path.GetFileName(PersistentPath);
         }
 
         // Dummy ReferenceVideo - this is used when a video referenced in a sketch cannot be found.
@@ -266,8 +277,8 @@ namespace TiltBrush
                 }
                 else
                 {
-                    string fullPath = System.IO.Path.Combine(App.VideoLibraryPath(), PersistentPath);
-                    m_VideoPlayer.url = $"{fullPath}";
+                    // Use the stored AbsolutePath directly (supports paths outside media library)
+                    m_VideoPlayer.url = $"{AbsolutePath}";
                 }
                 m_VideoPlayer.isLooping = true;
                 m_VideoPlayer.renderMode = VideoRenderMode.APIOnly;
