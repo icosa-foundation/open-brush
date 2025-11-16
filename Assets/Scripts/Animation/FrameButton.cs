@@ -22,7 +22,10 @@ namespace TiltBrush.FrameAnimation
         protected override void OnButtonPressed()
         {
             base.OnButtonPressed();
-            App.Scene.animationUI_manager.SelectTimelineFrame(Layer, Frame);
+            if (App.Scene.animationUI_manager != null)
+            {
+                App.Scene.animationUI_manager.SelectTimelineFrame(Layer, Frame);
+            }
         }
 
         public void SetButtonCoordinate(int updatedLayer, int updatedFrame)

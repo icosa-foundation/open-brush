@@ -86,8 +86,12 @@ namespace TiltBrush
                 .ToArray();
         }
 
-
-
+        public static CameraPathMetadata[] GetAnimationPaths()
+        {
+            return WidgetManager.m_Instance.AnimationPathWidgets
+                .Select(apw => apw.WidgetScript.AsSerializable())
+                .ToArray();
+        }
 
         public static LayerMetadata[] GetLayers()
         {

@@ -183,7 +183,10 @@ namespace TiltBrush.Layers
         {
             if (App.Scene.ActiveCanvas == App.Scene.MainCanvas) return; // Don't delete the main canvas
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new DeleteLayerCommand(App.Scene.ActiveCanvas));
-            App.Scene.animationUI_manager.ResetTimeline();
+            if (App.Scene.animationUI_manager != null)
+            {
+                App.Scene.animationUI_manager.ResetTimeline();
+            }
         }
 
         public void SquashLayer(int index)
@@ -220,7 +223,10 @@ namespace TiltBrush.Layers
         public void AddLayer()
         {
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new AddLayerCommand(true));
-            App.Scene.animationUI_manager.ResetTimeline();
+            if (App.Scene.animationUI_manager != null)
+            {
+                App.Scene.animationUI_manager.ResetTimeline();
+            }
         }
 
         public void ToggleVisibility(GameObject widget)
