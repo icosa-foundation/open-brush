@@ -5724,7 +5724,7 @@ GameObject:
   - component: {fileID: 281700270}
   - component: {fileID: 281700271}
   m_Layer: 0
-  m_Name: MovementPathCaptureRig
+  m_Name: CameraPathCaptureRig
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5756,7 +5756,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 281700269}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c95d78f294eec4945a204d159dea15d0, type: 3}
+  m_Script: {fileID: 11500000, guid: e7bd9651e82f4ee4e95ed6dc3f021faa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_Object: {fileID: 464138292}
@@ -28279,7 +28279,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1956944148}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 19aa6a824aa618f419442648a3b0d741, type: 3}
+  m_Script: {fileID: 11500000, guid: e4a2993266a565d40a10172299695ee0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_Type: 24
