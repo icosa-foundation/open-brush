@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 4272127950633064}
   - component: {fileID: 114268259032398848}
   m_Layer: 18
-  m_Name: MovementPathWidget
+  m_Name: CameraPathWidget
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

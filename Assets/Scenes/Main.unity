@@ -8070,11 +8070,13 @@ MonoBehaviour:
 
     Quality Level: ~~
 
-    # FPS High: ~~~~ (> ~~)
+    #
+    FPS High: ~~~~ (> ~~)
 
     # GPU Low: ~~~~ (< ~~.~~)
 
-    # FPS Low: ~~~~ (< ~~)
+    # FPS Low: ~~~~ (<
+    ~~)
 
     # GPU High: ~~~~ (> ~~.~~)
 
@@ -25366,7 +25368,8 @@ MonoBehaviour:
   m_QuestSideLoadingHowToURL: https://docs.openbrush.app/user-guide/using-reference-images-on-oculus-quest
   m_ContributionPromoText: 'Open Brush is a free app entirely run by volunteers.
 
-    If you enjoy the app, please consider donating in the settings menu!'
+    If
+    you enjoy the app, please consider donating in the settings menu!'
   m_ContributionURL: https://opencollective.com/icosa
   m_WorldTransformMinScale: 0.1
   m_WorldTransformMaxScale: 10
@@ -25728,11 +25731,8 @@ MonoBehaviour:
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 176644, guid: d620d9effac3e6c4eaae746d85edf13c, type: 3}
     m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeQuestExperimental: 1
     m_ModeMono: 1
     m_ModeQuest: 1
-    m_ModeGvr: 1
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 176644, guid: e4e1ee92a3873da4d8e7fcc9f2501591, type: 3}
@@ -25810,17 +25810,17 @@ MonoBehaviour:
     type: 3}
   m_SceneLightGizmoPrefab: {fileID: 1712584378369130260, guid: f28bfd6efbf3cb046be485c6573ca207,
     type: 3}
-  mCameraPathWidgetPrefab: {fileID: 114268259032398848, guid: a933b2a19614a6c4da08a0143f0ec912,
+  m_CameraPathWidgetPrefab: {fileID: 114268259032398848, guid: a933b2a19614a6c4da08a0143f0ec912,
     type: 3}
-  mCameraPathPositionKnotPrefab: {fileID: 1334758335721002, guid: 38b506951b7a81e4e9a6c65a9a20efa9,
+  m_CameraPathPositionKnotPrefab: {fileID: 1334758335721002, guid: 38b506951b7a81e4e9a6c65a9a20efa9,
     type: 3}
-  mCameraPathRotationKnotPrefab: {fileID: 1140733690629052, guid: 7f151c0a0ebce55489176683756d7114,
+  m_CameraPathRotationKnotPrefab: {fileID: 1140733690629052, guid: 7f151c0a0ebce55489176683756d7114,
     type: 3}
-  mCameraPathSpeedKnotPrefab: {fileID: 1334758335721002, guid: 0b67ae7cf6315f542a055b2d19bf134f,
+  m_CameraPathSpeedKnotPrefab: {fileID: 1334758335721002, guid: 0b67ae7cf6315f542a055b2d19bf134f,
     type: 3}
-  mCameraPathFovKnotPrefab: {fileID: 1269927219481460, guid: 52cbfcb07255b0d44be458440c4b7b59,
+  m_CameraPathFovKnotPrefab: {fileID: 1269927219481460, guid: 52cbfcb07255b0d44be458440c4b7b59,
     type: 3}
-  mCameraPathKnotSegmentPrefab: {fileID: 1134264905350750, guid: 30133aa311127674b9021c2f6baae4d3,
+  m_CameraPathKnotSegmentPrefab: {fileID: 1134264905350750, guid: 30133aa311127674b9021c2f6baae4d3,
     type: 3}
   m_Home: {fileID: 1780237822}
   m_HomeHintLinePrefab: {fileID: 164972, guid: 0ce8790842bf7424d9065461833d80e9, type: 3}
@@ -28248,7 +28248,7 @@ GameObject:
   - component: {fileID: 1956944149}
   - component: {fileID: 1956944150}
   m_Layer: 14
-  m_Name: MovementPathTool
+  m_Name: CameraPathTool
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

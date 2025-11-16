@@ -128,7 +128,7 @@ GameObject:
   - component: {fileID: 4923704927639242}
   - component: {fileID: 114322635287526164}
   m_Layer: 5
-  m_Name: MovementPathFovKnot
+  m_Name: CameraPathFovKnot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

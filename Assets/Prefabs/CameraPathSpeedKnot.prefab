@@ -209,7 +209,7 @@ GameObject:
   - component: {fileID: 4062429742710760}
   - component: {fileID: 114247147466236382}
   m_Layer: 5
-  m_Name: MovementPathSpeedKnot
+  m_Name: CameraPathSpeedKnot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 4209327487827238}
   - component: {fileID: 114079354778640618}
   m_Layer: 5
-  m_Name: MovementPathRotationKnot
+  m_Name: CameraPathRotationKnot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
