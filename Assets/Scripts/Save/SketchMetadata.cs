@@ -781,7 +781,7 @@ namespace TiltBrush
     [System.Reflection.Obfuscation(Exclude = true)]
     public class SketchMetadata
     {
-        static public int kSchemaVersion = 3;
+        static public int kSchemaVersion = 2;
 
         // Reference to environment GUID.
         public string EnvironmentPreset;
