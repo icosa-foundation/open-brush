@@ -675,6 +675,7 @@ namespace TiltBrush
                         string chunk = $"Content-Disposition: form-data; name=\"{key}\"\r\n\r\n{val}\r\n";
                         byte[] chunkBytes = Encoding.UTF8.GetBytes(chunk);
                         ms.Write(chunkBytes, 0, chunkBytes.Length);
+                        Debug.LogFormat($"Added multipart form field {key}: {val}");
                     }
                 }
                 // If file name contains difficult characters, we need to use RFC 5987 encoding.

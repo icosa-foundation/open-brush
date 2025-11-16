@@ -299,8 +299,7 @@ URL=" + kExportDocumentationUrl;
                 using (var unused = new AutoTimer("glb export"))
                 {
                     OverlayManager.m_Instance.UpdateProgress(0.7f);
-                    int triangleCount = ExportNewGlb(Path.Combine(parent, $"newglb"), basename, App.UserConfig.Export.ExportEnvironment);
-                    Debug.Log($"Exported {triangleCount} triangles to new GLB format");
+                    ExportNewGlb(Path.Combine(parent, $"newglb"), basename, App.UserConfig.Export.ExportEnvironment);
                 }
                 progress.CompleteWork("newglb");
             }
