@@ -215,6 +215,7 @@ namespace TiltBrush
         // Store the paths of meshes that have been through MeshSplitter
         public List<string> m_SplitMeshPaths;
         public List<string> m_NotSplittableMeshPaths;
+        private HashSet<string> m_AppliedMeshSplits;
 
         private Location m_Location;
 
@@ -256,6 +257,7 @@ namespace TiltBrush
         {
             m_SplitMeshPaths = new List<string>();
             m_NotSplittableMeshPaths = new List<string>();
+            m_AppliedMeshSplits = new HashSet<string>();
         }
 
         /// Only allowed if AllowExport = true
@@ -626,6 +628,11 @@ namespace TiltBrush
                 // m_Valid = true;
                 GameObject parent = new GameObject("ImportedObjParent");
                 gameObject.transform.SetParent(parent.transform, true);
+
+                // Apply unique naming during import (matching GLTF EnsureUniquePathsImport plugin behavior)
+                // This ensures OBJ files have unique node names immediately after loading
+                // Note: Apply to gameObject, not parent, since the OBJ hierarchy is under gameObject
+                GenerateUniqueNames(gameObject.transform);
                 return parent;
             }
             catch (Exception ex)
@@ -974,16 +981,23 @@ namespace TiltBrush
             }
             m_ModelParent = go.transform;
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            ProfilerMarker generateUniqueNamesPerfMarker = new ProfilerMarker("Model.GenerateUniqueNames");
-            generateUniqueNamesPerfMarker.Begin();
-#endif
-
+            // For glTF format models, we will have already done this via the import plugin
+            // It's safe to run for all formats as it checks for existing suffixes
+            // For a small performance improvement on deep hierarchies
+            // we could skip this for glTF models
             GenerateUniqueNames(m_ModelParent);
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            generateUniqueNamesPerfMarker.End();
-#endif
+            // Clear the applied splits tracker since we have a new hierarchy
+            // This ensures splits are re-applied when models are reloaded
+            if (m_AppliedMeshSplits != null)
+            {
+                m_AppliedMeshSplits.Clear();
+            }
+
+            if (m_SplitMeshPaths != null && m_SplitMeshPaths.Count > 0)
+            {
+                InitMeshSplits();
+            }
 
             // !!! Add to material dictionary here?
             m_Valid = true;
@@ -998,6 +1012,10 @@ namespace TiltBrush
         // This method is called when the model has been loaded and the node tree is available
         // This method is necessary because (1) nodes in e.g glTF files don't need to have unique names
         // and (2) there's code in at least ModelWidget that searches for specific nodes using node names
+        // 
+        // CRITICAL: This logic must match EnsureUniquePathsImportContext exactly.
+        // Both functions ensure unique node names using the same naming pattern and safety checks.
+        // If you modify this function, you MUST update EnsureUniquePathsImportContext accordingly.
         private static void GenerateUniqueNames(Transform rootNode)
         {
             void SetUniqueNameForNode(Transform node)
@@ -1005,11 +1023,18 @@ namespace TiltBrush
                 int index = 0;
                 foreach (Transform child in node)
                 {
-                    child.name += $"[ob:{index++}]";
+                    string oldName = child.name;
+
+                    // Skip renaming if already has our suffix (safety check - matches EnsureUniquePathsImportContext)
+                    if (!System.Text.RegularExpressions.Regex.IsMatch(oldName, @"\[ob:\d+\]$"))
+                    {
+                        string newName = oldName + $"[ob:{index}]";
+                        child.name = newName;
+                    }
+                    index++;
                     SetUniqueNameForNode(child);
                 }
             }
-
             SetUniqueNameForNode(rootNode);
         }
 
@@ -1034,6 +1059,7 @@ namespace TiltBrush
                 UObject.Destroy(m_ModelParent.gameObject);
                 m_ModelParent = null;
             }
+            m_AppliedMeshSplits?.Clear();
         }
 
         /// Resets this.Error and tries to load the model again.
@@ -1140,6 +1166,40 @@ namespace TiltBrush
         }
 
 
+        public void SetMeshSplitData(IEnumerable<string> splitMeshPaths, IEnumerable<string> notSplittableMeshPaths)
+        {
+            m_SplitMeshPaths = splitMeshPaths?.ToList() ?? new List<string>();
+            m_NotSplittableMeshPaths = notSplittableMeshPaths?.ToList() ?? new List<string>();
+            if (m_AppliedMeshSplits == null)
+            {
+                m_AppliedMeshSplits = new HashSet<string>();
+            }
+            m_AppliedMeshSplits.Clear();
+        }
+
+        public void RegisterMeshSplit(string splitPath)
+        {
+            splitPath ??= string.Empty;
+            if (m_SplitMeshPaths == null)
+            {
+                m_SplitMeshPaths = new List<string>();
+            }
+            if (!m_SplitMeshPaths.Contains(splitPath))
+            {
+                m_SplitMeshPaths.Add(splitPath);
+            }
+            if (m_NotSplittableMeshPaths == null)
+            {
+                m_NotSplittableMeshPaths = new List<string>();
+            }
+            m_NotSplittableMeshPaths.Remove(splitPath);
+            if (m_AppliedMeshSplits == null)
+            {
+                m_AppliedMeshSplits = new HashSet<string>();
+            }
+            m_AppliedMeshSplits.Remove(splitPath);
+        }
+
         public static List<MeshFilter> ApplySplits(MeshFilter rootMf)
         {
             var splits = MeshSplitter.DoSplit(rootMf);
@@ -1148,14 +1208,47 @@ namespace TiltBrush
 
         public void InitMeshSplits()
         {
+            if (m_ModelParent == null)
+            {
+                Debug.LogWarning($"[MeshSplit] Model {m_Location}: m_ModelParent is null, skipping");
+                return;
+            }
+            if (m_SplitMeshPaths == null || m_SplitMeshPaths.Count == 0)
+            {
+                return;
+            }
+            if (m_AppliedMeshSplits == null)
+            {
+                m_AppliedMeshSplits = new HashSet<string>();
+            }
+
+            var modelObjScript = m_ModelParent.GetComponentInChildren<ObjModelScript>();
+            if (modelObjScript == null)
+            {
+                Debug.LogError($"[MeshSplit] Model {m_Location} has no ObjModelScript to process mesh splits");
+                return;
+            }
+
             foreach (var split in m_SplitMeshPaths)
             {
-                if (m_NotSplittableMeshPaths.Contains(split)) continue;
-                var modelObjScript = m_ModelParent.GetComponentInChildren<ObjModelScript>();
+                if (m_NotSplittableMeshPaths != null && m_NotSplittableMeshPaths.Contains(split))
+                {
+                    continue;
+                }
+                if (m_AppliedMeshSplits.Contains(split))
+                {
+                    continue;
+                }
+
                 Transform destRoot;
                 if (string.IsNullOrEmpty(split))
                 {
-                    destRoot = modelObjScript.m_MeshChildren[0].transform;
+                    if (modelObjScript.m_MeshChildren == null || modelObjScript.m_MeshChildren.Length == 0)
+                    {
+                        Debug.LogError($"[MeshSplit] Model {m_Location} has no meshes to split for root path");
+                        continue;
+                    }
+                    destRoot = modelObjScript.m_MeshChildren[0]?.transform;
                 }
                 else
                 {
@@ -1166,16 +1259,39 @@ namespace TiltBrush
                     destRoot = subTreeRoot;
                 }
 
-                var modelMf = destRoot?.GetComponentInChildren<MeshFilter>();
-                if (modelMf == null)
+                if (destRoot == null)
                 {
-                    Debug.LogError($"Model {m_Location} has no mesh filter for split {split}: {destRoot}");
+                    Debug.LogError($"[MeshSplit] Model {m_Location} has no subtree for split '{split}'");
+                    // Log the hierarchy to help debug
+                    Debug.LogError($"[MeshSplit] Available hierarchy under {modelObjScript.transform.name}:");
+                    LogHierarchy(modelObjScript.transform, 0);
                     continue;
                 }
+
+                var modelMf = destRoot.GetComponent<MeshFilter>();
+                if (modelMf == null)
+                {
+                    Debug.LogWarning($"[MeshSplit] Node '{destRoot.name}' has no MeshFilter (already split or not a mesh)");
+                    // Already split or nothing to split at this node.
+                    m_AppliedMeshSplits.Add(split);
+                    continue;
+                }
+
                 ApplySplits(modelMf);
                 // Remove the meshfilter from the original game object
-                GameObject.DestroyImmediate(modelMf.GetComponent<MeshFilter>());
+                GameObject.DestroyImmediate(modelMf);
                 modelObjScript.UpdateAllMeshChildren();
+                m_AppliedMeshSplits.Add(split);
+            }
+        }
+
+        private void LogHierarchy(Transform root, int depth)
+        {
+            string indent = new string(' ', depth * 2);
+            Debug.LogError($"[MeshSplit] {indent}- {root.name} (MeshFilter: {root.GetComponent<MeshFilter>() != null})");
+            foreach (Transform child in root)
+            {
+                LogHierarchy(child, depth + 1);
             }
         }
     }

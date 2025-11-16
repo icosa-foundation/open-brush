@@ -31,6 +31,7 @@ namespace TiltBrush
         [SerializeField] private float m_MaxBloat;
 
         private Model m_Model;
+        private bool m_PreserveCustomSize;
 
 
         // What is Subtree?
@@ -54,6 +55,7 @@ namespace TiltBrush
 
         private Transform m_ModelInstance;
         private ObjModelScript m_ObjModelScript;
+        private bool m_SyncHierarchyPending;
         private float m_InitSize_CS;
         public float InitSize_CS => m_InitSize_CS;
         private float m_HideSize_CS;
@@ -90,6 +92,8 @@ namespace TiltBrush
                 {
                     m_Model.m_UsageCount++;
                 }
+
+                m_SyncHierarchyPending = m_Model != null && !string.IsNullOrEmpty(Subtree);
                 LoadModel();
             }
         }
@@ -173,6 +177,7 @@ namespace TiltBrush
             clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.transform.position = position;
             clone.transform.rotation = rotation;
+            clone.m_Subtree = m_Subtree;
             clone.Model = Model;
             // We're obviously not loading from a sketch.  This is to prevent the intro animation.
             // TODO: Change variable name to something more explicit of what this flag does.
@@ -181,8 +186,6 @@ namespace TiltBrush
             clone.AddSceneLightGizmos();
             clone.transform.parent = transform.parent;
             clone.SetSignedWidgetSize(size);
-            clone.m_Subtree = m_Subtree;
-            clone.SyncHierarchyToSubtree();
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
 
@@ -243,6 +246,34 @@ namespace TiltBrush
             return Model.GetExportName();
         }
 
+        /// Prevents automatic size recalculation when model is set
+        public void SetPreserveCustomSize(bool preserve)
+        {
+            m_PreserveCustomSize = preserve;
+        }
+
+        /// Override to check if custom size should be preserved
+        protected override bool ShouldPreserveCustomSize()
+        {
+            return m_PreserveCustomSize;
+        }
+
+        /// Public accessor for API to check preserve flag
+        public bool ShouldPreserveCustomSizePublic()
+        {
+            return m_PreserveCustomSize;
+        }
+
+        /// Override SetSignedWidgetSize to respect preserve flag
+        public new void SetSignedWidgetSize(float fScale)
+        {
+            if (m_PreserveCustomSize)
+            {
+                return;
+            }
+            base.SetSignedWidgetSize(fScale);
+        }
+
         void LoadModel()
         {
             // Clean up existing model
@@ -287,7 +318,10 @@ namespace TiltBrush
                 size = kInitialSizeMeters_RS * App.METERS_TO_UNITS / maxExtent;
             }
 
-            m_InitSize_CS = size / Coords.CanvasPose.scale;
+            if (!m_PreserveCustomSize)
+            {
+                m_InitSize_CS = size / Coords.CanvasPose.scale;
+            }
 
             // Models are created in the main canvas.  Cache model layer in case it's overridden later.
             HierarchyUtils.RecursivelySetLayer(transform, App.Scene.MainCanvas.gameObject.layer);
@@ -315,7 +349,18 @@ namespace TiltBrush
             m_NumVertsTrackedByWidgetManager = 0;
 
             m_ObjModelScript = GetComponentInChildren<ObjModelScript>();
+            if (m_ObjModelScript == null)
+            {
+                OutputWindowScript.Error("Failed to find ObjModelScript on loaded model");
+                return;
+            }
             m_ObjModelScript.UpdateAllMeshChildren();
+
+            if (m_SyncHierarchyPending && m_ObjModelScript != null)
+            {
+                SyncHierarchyToSubtree();
+                m_SyncHierarchyPending = false;
+            }
             if (m_ObjModelScript.NumMeshes == 0)
             {
                 OutputWindowScript.Error("No usable geometry in model");
@@ -419,7 +464,28 @@ namespace TiltBrush
         // starting at CarBody/Floor/Wheel1
         public void SyncHierarchyToSubtree(string previousSubtree = null)
         {
+            if (m_ObjModelScript == null)
+            {
+                m_ObjModelScript = GetComponentInChildren<ObjModelScript>(includeInactive: true);
+            }
+            if (m_ObjModelScript == null)
+            {
+                Debug.LogError("No ObjModelScript found in children");
+                // This is clunky but widgets with broken apart models weren't initialized properly when loading from sketch
+                var container = GetComponentInChildren<BoxCollider>().gameObject;
+                m_ObjModelScript = container.AddComponent<ObjModelScript>();
+                m_ObjModelScript.UpdateAllMeshChildren();
+                SyncHierarchyToSubtree();
+                return;
+            }
             var originalCost = GetTiltMeterCost();
+            if (!m_ObjModelScript)
+            {
+                Debug.LogWarning($"Can't get m_ObjModelScript...");
+                return;
+                // m_ObjModelScript = m_Model.m_ModelParent.gameObject.AddComponent<ObjModelScript>();
+            }
+
             var (node, excludeChildren) = FindSubtreeRoot(
                 m_ObjModelScript.transform,
                 Subtree,
@@ -710,6 +776,7 @@ namespace TiltBrush
         protected void SetWidgetSizeAboutCenterOfMass(float size)
         {
             if (m_Size == size) { return; }
+            if (m_PreserveCustomSize) { return; }
 
             // Use WithUnitScale because we want only the pos/rot difference
             // Find delta such that delta * new = old
@@ -730,7 +797,7 @@ namespace TiltBrush
 
         /// I believe (but am not sure) that Media Library content loads synchronously,
         /// and PAC content loads asynchronously.
-        public static async void CreateModelFromSaveData(TiltModels75 modelDatas)
+        public static async Task CreateModelFromSaveData(TiltModels75 modelDatas)
         {
             Debug.AssertFormat(modelDatas.AssetId == null || modelDatas.FilePath == null,
                 "Model Data should not have an AssetID *and* a File Path");
@@ -814,13 +881,9 @@ namespace TiltBrush
                 return false;
             }
 
-            model.m_SplitMeshPaths = splitMeshPaths?.ToList() ?? new List<string>();
-            model.m_NotSplittableMeshPaths = noSplitMeshPaths?.ToList() ?? new List<string>();
-
-            if (model.m_SplitMeshPaths != null)
-            {
-                model.InitMeshSplits();
-            }
+            // Use SetMeshSplitData to properly clear m_AppliedMeshSplits before applying splits
+            model.SetMeshSplitData(splitMeshPaths, noSplitMeshPaths);
+            model.InitMeshSplits();
 
             if (xfs != null)
             {
@@ -854,9 +917,8 @@ namespace TiltBrush
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             modelWidget.transform.localPosition = xf.translation;
             modelWidget.transform.localRotation = xf.rotation;
-            modelWidget.Model = model;
             modelWidget.m_Subtree = subtree;
-            modelWidget.SyncHierarchyToSubtree();
+            modelWidget.Model = model;
             modelWidget.m_LoadingFromSketch = true;
             modelWidget.Show(true, false);
 
@@ -909,13 +971,9 @@ namespace TiltBrush
                 App.IcosaAssetCatalog.RequestModelLoad(assetId, "widget");
             }
 
-            model.m_SplitMeshPaths = splitMeshPaths?.ToList() ?? new List<string>();
-            model.m_NotSplittableMeshPaths = noSplitMeshPaths?.ToList() ?? new List<string>();
-
-            if (model.m_SplitMeshPaths != null)
-            {
-                model.InitMeshSplits();
-            }
+            // Use SetMeshSplitData to properly clear m_AppliedMeshSplits before applying splits
+            model.SetMeshSplitData(splitMeshPaths, noSplitMeshPaths);
+            model.InitMeshSplits();
 
             // Create a widget for each transform.
             for (int i = 0; i < rawXfs.Length; ++i)

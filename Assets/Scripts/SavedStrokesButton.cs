@@ -27,8 +27,8 @@ namespace TiltBrush
 
             if (m_SavedStrokeFile != null)
             {
-                var currentLayer = App.Scene.ActiveCanvas;
                 (int currentLayerIndex, int _) = App.Scene.GetIndexOfCanvas(currentLayer);
+                var currentLayer = App.Scene.ActiveCanvas;
                 if (SaveLoadScript.m_Instance.Load(m_SavedStrokeFile.FileInfo, bAdditive: true, currentLayerIndex, out List<Stroke> strokes))
                 {
                     SelectionManager.m_Instance.ClearActiveSelection();
@@ -36,13 +36,21 @@ namespace TiltBrush
                     SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true, false, false);
                     SketchMemoryScript.m_Instance.QuickLoadDrawingMemory();
                     SketchMemoryScript.m_Instance.ContinueDrawingFromMemory();
+
+                    Vector3 buttonPosition = Coords.AsGlobal[transform].translation;
+                    Vector3 cameraPosition = Camera.main.transform.position;
+                    Vector3 midpoint = (buttonPosition + cameraPosition) * 0.5f;
+
+                    App.Scene.MoveStrokesCentroidTo(strokes, midpoint);
                     var group = App.GroupManager.NewUnusedGroup();
                     for (int i = 0; i < strokes.Count; i++)
                     {
                         strokes[i].Group = group;
                     }
-                    AudioManager.m_Instance.PlayDuplicateSound(Vector3.zero);
-                    AudioManager.m_Instance.PlayGroupedSound(Vector3.zero);
+                    SelectionManager.m_Instance.SelectStrokes(strokes);
+                    SelectionManager.m_Instance.UpdateSelectionWidget();
+                    AudioManager.m_Instance.PlayDuplicateSound(midpoint);
+                    AudioManager.m_Instance.PlayGroupedSound(midpoint);
                 }
             }
         }

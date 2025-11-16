@@ -106,24 +106,39 @@ namespace TiltBrush
             {
                 subtree = location.Substring(relativePath.Length + 1);
             }
-            var tr = _CurrentTransform().TransformBy(Coords.CanvasPose);
             var model = new Model(relativePath);
 
             AsyncHelpers.RunSync(() => model.LoadModelAsync());
             model.EnsureCollectorExists();
-            CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.ModelWidgetPrefab, tr, null, forceTransform: true
-            );
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-            ModelWidget widget = createCommand.Widget as ModelWidget;
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+            ModelWidget widget = cmd.Widget as ModelWidget;
             if (widget != null)
             {
                 widget.Model = model;
+
+                // Calculate proper size based on model bounds (same as normal model loading)
+                float maxExtent = 2 * Mathf.Max(model.m_MeshBounds.extents.x,
+                    Mathf.Max(model.m_MeshBounds.extents.y, model.m_MeshBounds.extents.z));
+                float consistentSize;
+                if (maxExtent == 0.0f)
+                {
+                    consistentSize = 1.0f;
+                }
+                else
+                {
+                    consistentSize = 0.25f * App.METERS_TO_UNITS / maxExtent;
+                }
+
+                widget.SetSignedWidgetSize(consistentSize);
+
+                // Now enable preservation to prevent async overrides
+                widget.SetPreserveCustomSize(true);
                 widget.Subtree = subtree;
                 widget.SyncHierarchyToSubtree();
                 widget.Show(true);
                 widget.AddSceneLightGizmos();
-                createCommand.SetWidgetCost(widget.GetTiltMeterCost());
+                cmd.SetWidgetCost(widget.GetTiltMeterCost());
             }
             else
             {

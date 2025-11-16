@@ -14,7 +14,7 @@ on:  # yamllint disable-line rule:truthy
     - cron: "34 19 * * sat"  # Weekly, Saturday at 19:34 UTC
 
 env:
-  UNITY_VERSION: "2022.3.34f1"
+  UNITY_VERSION: "2022.3.62f2"
   PHOTON_PAT: ${{ secrets.PHOTON_PAT }}  # This needs to be here, since you can't use a ${{ secrets }} within an if: condition
 jobs:
   configuration:
@@ -49,11 +49,18 @@ jobs:
       flavors: ${{ steps.flavors.outputs.flavors }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
-
+      - name: Check for tags and fetch from Open Brush repo if needed
+        if: github.repository != 'icosa-foundation/open-brush'
+        run: |
+          if [ $(git tag | wc -l) -eq 0 ]; then
+            echo "No tags found in current repository. Fetching tags from icosa-foundation/open-brush..."
+            git remote add openbrush https://github.com/icosa-foundation/open-brush.git
+            git fetch --tags openbrush
+          fi
       - name: Calculate version and stamp
         id: version
         run: |
@@ -219,6 +226,7 @@ jobs:
             targetPlatform: Android
             vrsdk: OpenXR
             cache: Android_Vulkan
+            packages_to_remove: com.meta.xr.sdk.core com.meta.xr.sdk.platform com.meta.xr.sdk.utilities
             extraoptions: -btb-il2cpp
             versionSuffix: 0
             extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
@@ -334,7 +342,7 @@ jobs:
           df -h /
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
 
@@ -394,7 +402,7 @@ jobs:
 
       - name: Checkout private photon repository if available
         if: ${{ env.PHOTON_PAT }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ env.PHOTON_PAT }}
           repository: icosa-mirror/photon-fusion
@@ -513,6 +521,7 @@ jobs:
       - name: Build project
         uses: Wandalen/wretry.action@v3
         env:
+          GIT_LFS_SKIP_SMUDGE: "1"
           VERSION: ${{ needs.configuration.outputs.version}}
           UNITY_EMAIL: ${{ fromJSON(format('["unitytest@mikeage.net", "{0}"]', vars.UNITY_EMAIL))[secrets.UNITY_SERIAL != null] }}
           UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
@@ -550,7 +559,7 @@ jobs:
           mv OpenBrush.tgz build/${{ matrix.vrsdk }}/
 
       - name: Upload build/
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.name }} ${{ matrix.flavors.title }}
           path: |
@@ -617,7 +626,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -625,7 +634,7 @@ jobs:
             Support/macos
 
       - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: MacOS
           path: build_macos
@@ -679,7 +688,7 @@ jobs:
 
           tar -c -v -z -f OpenBrush.tgz StandaloneOSX
       - name: Upload signed app
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: MacOS (signed)
           path: |
@@ -696,7 +705,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -704,7 +713,7 @@ jobs:
             Support/macos
 
       - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: MacOS (signed)
           path: build_macos
@@ -736,7 +745,7 @@ jobs:
           xcrun stapler staple dist/OpenBrush.dmg
 
       - name: Upload notarized dmg
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: MacOS (DMG)
           path: |
@@ -754,7 +763,7 @@ jobs:
     steps:
       - name: "Build Changelog"
         id: changelog
-        uses: mikepenz/release-changelog-builder-action@v5
+        uses: mikepenz/release-changelog-builder-action@v6
         with:
           fromTag: "${{ needs.configuration.outputs.previousrelease }}"
           toTag: "${{ needs.configuration.outputs.currentrelease }}"
@@ -795,43 +804,43 @@ jobs:
         run: echo "$CHANGELOG"
 
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Windows OpenXR
           path: build_windows_openxr
 
       - name: Download Build Artifacts (Windows Rift)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Windows Rift
           path: build_windows_rift
 
       - name: Download Build Artifacts (Android OpenXR)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Android OpenXR
           path: build_android_openxr
 
       - name: Download Build Artifacts (Oculus Quest 2+)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Oculus Quest (2+)
           path: build_oculus_quest
 
       - name: Download Build Artifacts (Pico)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Android Pico
           path: build_android_pico
 
       - name: Download Build Artifacts (Linux)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Linux
           path: build_linux
 
       - name: Download Build Artifacts (Mac)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: MacOS (DMG)
           path: build_macos
@@ -876,7 +885,7 @@ jobs:
     steps:
       - name: "Build Changelog"
         id: changelog
-        uses: mikepenz/release-changelog-builder-action@v5
+        uses: mikepenz/release-changelog-builder-action@v6
         with:
           fromTag: "${{ needs.configuration.outputs.previousfullrelease }}"
           toTag: "${{ needs.configuration.outputs.currentrelease }}"
@@ -913,7 +922,7 @@ jobs:
             }
 
       - name: Get the current contents of the docs repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: icosa-foundation/open-brush-docs
           path: open-brush-docs
@@ -951,7 +960,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           sparse-checkout: |
@@ -965,17 +974,17 @@ jobs:
           echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - | gunzip - > /home/runner/Steam/config/config.vdf
           md5sum /home/runner/Steam/config/config.vdf
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Windows OpenXR
           path: build_windows_openxr
       - name: Download Build Artifacts (MacOS Signed)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: MacOS (signed)
           path: build_macos
       - name: Download Build Artifacts (Linux)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Linux
           path: build_linux
@@ -1008,7 +1017,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.SECRET_UPDATER_PAT }}
       - name: Save logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: ${{ failure() }}
         with:
           name: steamcmd logs
@@ -1030,7 +1039,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows Pimax)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Windows Pimax
           path: build_windows_pimax
@@ -1062,7 +1071,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Windows OpenXR
           path: build_windows_openxr
@@ -1093,19 +1102,19 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Windows OpenXR
           path: build_windows_openxr
 
       - name: Download Build Artifacts (Oculus Quest 2+)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Oculus Quest (2+)
           path: build_oculus_quest
 
       - name: Download Build Artifacts (Mac)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: MacOS (DMG)
           path: build_macos
@@ -1144,7 +1153,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Oculus Quest 2+)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Oculus Quest (2+)
           path: build_oculus_quest
@@ -1167,10 +1176,10 @@ jobs:
 
           if [ "$PRERELEASE" == "false" ]
           then
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel LIVE:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --age-group MIXED_AGES
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel LIVE:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --age-group TEENS_AND_ADULTS
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group MIXED_AGES
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group TEENS_AND_ADULTS
           fi
 
   publish_oculus_quest_arborxr:
@@ -1184,7 +1193,7 @@ jobs:
 
     steps:
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           ignore-empty-workdir: true
           enable-cache: false
@@ -1194,7 +1203,7 @@ jobs:
           uv tool install abxrcli
 
       - name: Download Build Artifacts (Oculus Quest 2+)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Oculus Quest (2+)
           path: build_oculus_quest
@@ -1209,7 +1218,24 @@ jobs:
           ARBORXR_APP_ID: ${{ vars.ARBORXR_Q2_APP_ID }}
           ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_Q2_LIVE_CHANNEL }}
           ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_Q2_BETA_CHANNEL }}
-        run: "mkdir releases\nmv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk\n          #magic___^_^___line\ncd releases\n          #magic___^_^___line\nset -x\nif [ \"$PRERELEASE\" == \"false\" ]\nthen\n  CHANGELOG=\"Version $VERSION\"\n  ARBORXR_CHANNEL=\"${ARBORXR_LIVE_CHANNEL}\"\nelse\n  CHANGELOG=\"${RAW_CHANGELOG}\"\n  ARBORXR_CHANNEL=\"${ARBORXR_BETA_CHANNEL}\"\nfi\nVERSION_ID=\"$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest_$VERSION.apk --notes \"${CHANGELOG}\" --version $VERSION | jq -r '.id')\"\n# Allow some time for the version to be processed \nsleep 30\nabxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID\n          #magic___^_^___line\n"
+        run: |
+          set -x
+          mkdir releases
+          mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
+
+          cd releases
+
+          if [ "$PRERELEASE" == "false" ]
+          then
+            CHANGELOG="Version $VERSION"
+            ARBORXR_CHANNEL="${ARBORXR_LIVE_CHANNEL}"
+          else
+            CHANGELOG="${RAW_CHANGELOG}"
+            ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
+          fi
+          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait_time 600 | jq -r '.id')"
+          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID
+
   publish_oculus_quest1_arborxr:
     name: Publish Oculus Quest 1 Release ArborXR
     needs: [configuration, build]
@@ -1221,7 +1247,7 @@ jobs:
 
     steps:
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           ignore-empty-workdir: true
           enable-cache: false
@@ -1231,7 +1257,7 @@ jobs:
           uv tool install abxrcli
 
       - name: Download Build Artifacts (Oculus Quest 1)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Oculus Quest (1)
           path: build_oculus_quest1
@@ -1245,7 +1271,24 @@ jobs:
           ARBORXR_APP_ID: ${{ vars.ARBORXR_Q1_APP_ID }}
           ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_Q1_LIVE_CHANNEL }}
           ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_Q1_BETA_CHANNEL }}
-        run: "mkdir releases1\nmv build_oculus_quest1/*/com.Icosa.OpenBrush*apk releases1/OpenBrush_Quest1_$VERSION.apk\n          #magic___^_^___line\ncd releases1\n          #magic___^_^___line\nif [ \"$PRERELEASE\" == \"false\" ]\nthen\n  CHANGELOG=\"Version $VERSION\"\n  ARBORXR_CHANNEL=\"${ARBORXR_LIVE_CHANNEL}\"\nelse\n  CHANGELOG=\"${RAW_CHANGELOG}\"\n  ARBORXR_CHANNEL=\"${ARBORXR_BETA_CHANNEL}\"\nfi\nVERSION_ID=\"$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest1_$VERSION.apk --notes \"${CHANGELOG}\" --version $VERSION | jq -r '.id')\"\n# Allow some time for the version to be processed \nsleep 30\nabxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID\n          #magic___^_^___line\n"
+        run: |
+          set -x
+          mkdir releases1
+          mv build_oculus_quest1/*/com.Icosa.OpenBrush*apk releases1/OpenBrush_Quest1_$VERSION.apk
+
+          cd releases1
+
+          if [ "$PRERELEASE" == "false" ]
+          then
+            CHANGELOG="Version $VERSION"
+            ARBORXR_CHANNEL="${ARBORXR_LIVE_CHANNEL}"
+          else
+            CHANGELOG="${RAW_CHANGELOG}"
+            ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
+          fi
+          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest1_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait_time 300 | jq -r '.id')"
+          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID
+
   publish_oculus_rift:
     name: Publish Oculus Rift Release
     needs: [configuration, build]
@@ -1257,7 +1300,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows Rift)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Windows Rift
           path: build_windows_rift
@@ -1295,12 +1338,12 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Android Pico)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Android Pico
           path: build_android_pico
       - name: Download Build Artifacts (Android Pico CN)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Android Pico (CN)
           path: build_android_pico_cn
@@ -1342,7 +1385,7 @@ jobs:
 
     steps:
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           ignore-empty-workdir: true
           enable-cache: false
@@ -1352,7 +1395,7 @@ jobs:
           uv tool install abxrcli
 
       - name: Download Build Artifacts (Android Pico)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: Android Pico
           path: build_android_pico
@@ -1366,7 +1409,24 @@ jobs:
           ARBORXR_APP_ID: ${{ vars.ARBORXR_PICO_APP_ID }}
           ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_PICO_LIVE_CHANNEL }}
           ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_PICO_BETA_CHANNEL }}
-        run: "mkdir releases\nmv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk\n          #magic___^_^___line\ncd releases\n          #magic___^_^___line\nif [ \"$PRERELEASE\" == \"false\" ]\nthen\n  CHANGELOG=\"Version $VERSION\"\n  ARBORXR_CHANNEL=\"${ARBORXR_LIVE_CHANNEL}\"\nelse\n  CHANGELOG=\"${RAW_CHANGELOG}\"\n  ARBORXR_CHANNEL=\"${ARBORXR_BETA_CHANNEL}\"\nfi\nVERSION_ID=\"$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Pico_$VERSION.apk --notes \"${CHANGELOG}\" --version $VERSION | jq -r '.id')\"\n# Allow some time for the version to be processed \nsleep 30\nabxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID\n          #magic___^_^___line\n"
+        run: |
+          set -x
+          mkdir releases
+          mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
+
+          cd releases
+
+          if [ "$PRERELEASE" == "false" ]
+          then
+            CHANGELOG="Version $VERSION"
+            ARBORXR_CHANNEL="${ARBORXR_LIVE_CHANNEL}"
+          else
+            CHANGELOG="${RAW_CHANGELOG}"
+            ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
+          fi
+          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Pico_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait_time 300 | jq -r '.id')"
+          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID
+
   publish_ios_zapbox:
     name: Publish Zapbox iOS
     needs: [configuration, build]
@@ -1377,7 +1437,7 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           sparse-checkout: |
@@ -1397,10 +1457,11 @@ jobs:
       - name: Use xcode 16.2 / ios 18.2
         run: |
           sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer  # The default in macos-latest (i.e., 14) is currently 15.4.
+          xcrun simctl list > /dev/null  # Because of https://github.com/actions/runner-images/issues/12862
           xcodebuild -downloadPlatform iOS -buildVersion 18.2  # Because of https://github.com/actions/runner-images/issues/11335
 
       - name: Download iOS Artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: iOS Zapbox
           path: build
@@ -1439,7 +1500,7 @@ jobs:
           bundle exec fastlane ios ${FASTLANE_LANE}
 
       - name: Save logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: ${{ failure() }}
         with:
           name: fastlane logs

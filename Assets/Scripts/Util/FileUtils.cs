@@ -284,6 +284,34 @@ namespace TiltBrush
             return new string(sanitizedBytes);
         }
 
+        /// Returns a sanitized filename using the same rules as Django's get_valid_filename helper.
+        /// Leading and trailing spaces are removed, interior spaces are converted to underscores,
+        /// and any character that isn't alphanumeric, dash, underscore, or dot is stripped.
+        public static string GetValidFilename(string filename)
+        {
+            string trimmed = filename?.Trim();
+            if (string.IsNullOrEmpty(trimmed))
+            {
+                return "";
+            }
+
+            var builder = new System.Text.StringBuilder(trimmed.Length);
+            foreach (char c in trimmed)
+            {
+                if (c == ' ')
+                {
+                    builder.Append('_');
+                }
+                else if (char.IsLetterOrDigit(c) || c == '-' || c == '_' || c == '.')
+                {
+                    builder.Append(c);
+                }
+                // Characters outside the valid set are omitted.
+            }
+
+            return builder.ToString();
+        }
+
         /// Removes any filesystem-invalid characters from a filename. It will attempt to retain as much
         /// of the original name as possible. It will also try to preserve the uniqueness of the original
         /// filename. Ie., two different inputs should return two different sanitized outputs.

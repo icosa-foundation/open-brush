@@ -128,9 +128,12 @@ URL=" + kExportDocumentationUrl;
         public static void ExportScene()
         {
             var current = SaveLoadScript.m_Instance.SceneFile;
-            string safeHumanName = FileUtils.SanitizeFilename(current.HumanName);
-            string basename = FileUtils.SanitizeFilename(
-                (current.Valid && (safeHumanName != "")) ? safeHumanName : "Untitled");
+            string validHumanName = FileUtils.GetValidFilename(current.HumanName);
+            if (string.IsNullOrEmpty(validHumanName))
+            {
+                validHumanName = FileUtils.GetValidFilename("Untitled");
+            }
+            string basename = validHumanName;
 
             string parent = FileUtils.GenerateNonexistentFilename(App.UserExportPath(), basename, "");
             if (!FileUtils.InitializeDirectoryWithUserError(
