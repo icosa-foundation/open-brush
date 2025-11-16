@@ -27,8 +27,9 @@ namespace TiltBrush
 
             if (m_SavedStrokeFile != null)
             {
-                (int currentLayerIndex, int _) = App.Scene.GetIndexOfCanvas(currentLayer);
                 var currentLayer = App.Scene.ActiveCanvas;
+                (int currentLayerIndex, int _) = App.Scene.GetIndexOfCanvas(currentLayer);
+                
                 if (SaveLoadScript.m_Instance.Load(m_SavedStrokeFile.FileInfo, bAdditive: true, currentLayerIndex, out List<Stroke> strokes))
                 {
                     SelectionManager.m_Instance.ClearActiveSelection();
