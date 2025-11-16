@@ -4216,7 +4216,7 @@ namespace TiltBrush
             }
             PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
             var newLayer = App.Scene.AddLayerNow();
-            int newLayerIndex = App.Scene.GetIndexOfCanvas(newLayer);
+            (int newLayerIndex, int _) = App.Scene.GetIndexOfCanvas(newLayer);
             if (SaveLoadScript.m_Instance.Load(fileInfo, bAdditive: true, targetLayer: newLayerIndex, out List<Stroke> _))
             {
                 // A new layer will have been created for the merged strokes.
@@ -5210,6 +5210,7 @@ namespace TiltBrush
             PointerManager.m_Instance.ResetSymmetryToHome();
             PointerManager.m_Instance.FinalizeLine(false, true);
             App.Scene.ResetLayers(notify: true);
+            App.Scene.animationUI_manager.StartTimeline();
             ApiManager.Instance.ResetBrushTransform();
             ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.None;
             PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None);

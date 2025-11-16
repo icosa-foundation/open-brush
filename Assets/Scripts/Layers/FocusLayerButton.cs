@@ -31,7 +31,7 @@ namespace TiltBrush.Layers
         protected override void OnButtonPressed()
         {
             base.OnButtonPressed();
-            GetComponentInParent<LayerUI_Manager>().SetActiveLayer(transform.parent.gameObject);
+            GetComponentInParent<ILayerManager>().SetActiveLayer(transform.parent.gameObject);
         }
 
         public void SyncButtonStateWithWidget(GameObject activeLayerWidget)
