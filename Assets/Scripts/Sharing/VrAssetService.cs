@@ -689,7 +689,7 @@ namespace TiltBrush
             // Collect files into a .zip file, including the .tilt file and thumbnail
             string zipName = Path.Combine(tempUploadDir, "archive.zip");
             var filesToZip = new List<string>();
-            int? polyCount = null;
+            int? faceCount = null;
 
             if (publishLegacyGltf)
             {
@@ -707,7 +707,7 @@ namespace TiltBrush
                     throw new VrAssetServiceException("Internal error creating upload data.");
                 }
                 filesToZip.AddRange(exportResults.exportedFiles);
-                polyCount = exportResults.numTris;
+                faceCount = exportResults.numTris;
             }
 
             // Construct options to set the background color to the current environment's clear color.
@@ -738,7 +738,7 @@ namespace TiltBrush
                 int glbTriangleCount = Export.ExportNewGlb(tempUploadDir, uploadName, App.UserConfig.Export.ExportEnvironment);
                 // Always use the new GLB count since it includes all content (brush strokes + models + widgets)
                 // whereas legacy export only includes brush strokes
-                polyCount = glbTriangleCount;
+                faceCount = glbTriangleCount;
                 filesToZip.Add(newGlbPath);
             }
 
@@ -756,8 +756,7 @@ namespace TiltBrush
             var progress = new Progress<double>(d => SetUploadProgress(UploadStep.UploadElements, d));
             IcosaService.CreateResponse response = await service.CreateModel(
                 zipName, progress, token, options, tempUploadDir,
-                objPolyCount: polyCount,
-                triangulatedObjPolyCount: polyCount,  // Open Brush exports are already triangulated
+                objFaceCount: faceCount,
                 remixIds: remixIds.Count > 0 ? remixIds : null);
             // TODO(b/146892613): return the UID and stick it into the .tilt file?
             // Or do we not care since we aren't recording provenance and remixing

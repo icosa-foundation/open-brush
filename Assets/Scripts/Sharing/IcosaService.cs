@@ -211,14 +211,12 @@ namespace TiltBrush
         //
         /// Pass:
         ///   temporaryDirectory - if passed, caller is responsible for cleaning it up
-        ///   objPolyCount - optional polygon count for the OBJ export
-        ///   triangulatedObjPolyCount - optional polygon count for the triangulated OBJ export
+        ///   objFaceCount - optional polygon count for the OBJ export
         ///   remixIds - optional list of source asset IDs if this is a remix
         public async Task<CreateResponse> CreateModel(
             string zipPath, IProgress<double> progress, CancellationToken token,
             Options options = null, string temporaryDirectory = null,
-            int? objPolyCount = null, int? triangulatedObjPolyCount = null,
-            List<string> remixIds = null)
+            int? objFaceCount = null, List<string> remixIds = null)
         {
 
             // No compression because it's a compressed .zip already
@@ -234,14 +232,9 @@ namespace TiltBrush
             }
 
             // Add polygon count metadata if provided
-            if (objPolyCount.HasValue)
+            if (objFaceCount.HasValue)
             {
-                moreParams.Add(("objPolyCount", objPolyCount.Value.ToString()));
-            }
-
-            if (triangulatedObjPolyCount.HasValue)
-            {
-                moreParams.Add(("triangulatedObjPolyCount", triangulatedObjPolyCount.Value.ToString()));
+                moreParams.Add(("triangleCount", objFaceCount.Value.ToString()));
             }
 
             // Add remix IDs if provided (each as a separate form field)
