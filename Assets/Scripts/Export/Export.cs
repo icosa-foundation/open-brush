@@ -347,6 +347,7 @@ URL=" + kExportDocumentationUrl;
 
             foreach (var root in layerRoots)
             {
+                // Count triangles from MeshFilter components
                 var meshFilters = root.GetComponentsInChildren<MeshFilter>(includeInactive: false);
                 foreach (var meshFilter in meshFilters)
                 {
@@ -356,6 +357,19 @@ URL=" + kExportDocumentationUrl;
                     if ((layerMask & (1 << meshFilter.gameObject.layer)) != 0)
                     {
                         totalTriangles += meshFilter.sharedMesh.triangles.Length / 3;
+                    }
+                }
+
+                // Count triangles from SkinnedMeshRenderer components (common on rigged/animated models)
+                var skinnedMeshRenderers = root.GetComponentsInChildren<SkinnedMeshRenderer>(includeInactive: false);
+                foreach (var skinnedMeshRenderer in skinnedMeshRenderers)
+                {
+                    if (skinnedMeshRenderer.gameObject == null || skinnedMeshRenderer.sharedMesh == null) continue;
+
+                    // Check if this object is on one of the export layers
+                    if ((layerMask & (1 << skinnedMeshRenderer.gameObject.layer)) != 0)
+                    {
+                        totalTriangles += skinnedMeshRenderer.sharedMesh.triangles.Length / 3;
                     }
                 }
             }
