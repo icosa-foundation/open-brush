@@ -452,21 +452,6 @@ namespace TiltBrush
                     Vector3 v1 = vertices[triangles[t + 1]];
                     Vector3 v2 = vertices[triangles[t + 2]];
 
-                    // Quick AABB check to skip distant triangles
-                    Vector3 triMin = Vector3.Min(v0, Vector3.Min(v1, v2));
-                    Vector3 triMax = Vector3.Max(v0, Vector3.Max(v1, v2));
-
-                    // If voxel is further than threshold from triangle AABB, skip
-                    float dx = Mathf.Max(triMin.x - voxelCenter.x, voxelCenter.x - triMax.x, 0);
-                    float dy = Mathf.Max(triMin.y - voxelCenter.y, voxelCenter.y - triMax.y, 0);
-                    float dz = Mathf.Max(triMin.z - voxelCenter.z, voxelCenter.z - triMax.z, 0);
-                    float aabbDist = Mathf.Sqrt(dx * dx + dy * dy + dz * dz);
-
-                    if (aabbDist > threshold)
-                    {
-                        continue; // Skip this triangle
-                    }
-
                     float dist = PointToTriangleDistance(voxelCenter, v0, v1, v2);
 
                     if (dist < threshold)
