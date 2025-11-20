@@ -69,6 +69,13 @@ namespace TiltBrush
         private static readonly int s_SizeID = Shader.PropertyToID("_Size");
         private static readonly int s_StepID = Shader.PropertyToID("_Step");
 
+        // Debug timing
+        private float m_VoxelizationStartTime;
+        private float m_JfaStartTime;
+        private float m_TotalStartTime;
+        private int m_JfaIterationCount;
+        private int m_SeedCount;
+
         public Vector3Int GridSize => m_GridSize;
         public bool IsReady => m_Initialized && !m_NeedsRebuild && !m_JfaRunning;
         public RenderTexture DistanceField => m_FieldStable;
@@ -158,6 +165,9 @@ namespace TiltBrush
             m_NeedsRebuild = true;
             m_VoxelizationDone = false;
 
+            // Start overall timing
+            m_TotalStartTime = Time.realtimeSinceStartup;
+
             StartVoxelization();
         }
 
@@ -171,6 +181,11 @@ namespace TiltBrush
 
             // Allocate seed data
             int totalVoxels = m_GridSize.x * m_GridSize.y * m_GridSize.z;
+
+            // Log grid configuration
+            Debug.Log($"DistanceField3D: Starting voxelization - Grid: {m_GridSize.x}x{m_GridSize.y}x{m_GridSize.z} " +
+                      $"({totalVoxels:N0} voxels), Mesh vertices: {m_TargetMesh.vertexCount:N0}, " +
+                      $"Triangles: {m_TargetMesh.triangles.Length / 3:N0}");
             if (!m_SeedData.IsCreated || m_SeedData.Length != totalVoxels)
             {
                 if (m_SeedData.IsCreated) m_SeedData.Dispose();
@@ -197,6 +212,7 @@ namespace TiltBrush
             };
 
             // Schedule job
+            m_VoxelizationStartTime = Time.realtimeSinceStartup;
             m_VoxelJobHandle = m_VoxelJob.Schedule(totalVoxels, 64);
             m_JobScheduled = true;
         }
@@ -212,6 +228,20 @@ namespace TiltBrush
                 // Dispose temporary arrays
                 if (m_VoxelJob.vertices.IsCreated) m_VoxelJob.vertices.Dispose();
                 if (m_VoxelJob.triangles.IsCreated) m_VoxelJob.triangles.Dispose();
+
+                // Count seeds
+                m_SeedCount = 0;
+                for (int i = 0; i < m_SeedData.Length; i++)
+                {
+                    if (m_SeedData[i].w >= 0) // Has seed if w >= 0
+                    {
+                        m_SeedCount++;
+                    }
+                }
+
+                float voxelizationTime = (Time.realtimeSinceStartup - m_VoxelizationStartTime) * 1000f;
+                Debug.Log($"DistanceField3D: Voxelization complete - {m_SeedCount:N0} seed points " +
+                          $"({(m_SeedCount * 100f / m_SeedData.Length):F2}% of volume), Time: {voxelizationTime:F2}ms");
 
                 // Upload seed data to GPU
                 UploadSeedData();
@@ -260,6 +290,13 @@ namespace TiltBrush
             m_JfaSrc = m_FieldA;
             m_JfaDst = m_FieldB;
             m_JfaRunning = true;
+            m_JfaIterationCount = 0;
+            m_JfaStartTime = Time.realtimeSinceStartup;
+
+            int maxDim = Mathf.Max(m_GridSize.x, m_GridSize.y, m_GridSize.z);
+            int expectedIterations = Mathf.CeilToInt(Mathf.Log(maxDim, 2));
+            Debug.Log($"DistanceField3D: Starting JFA - Initial step: {m_CurrentStep}, " +
+                      $"Expected iterations: {expectedIterations}");
         }
 
         private void RunJFAStep()
@@ -271,10 +308,19 @@ namespace TiltBrush
                 m_JfaRunning = false;
                 m_NeedsRebuild = false;
                 m_VoxelizationDone = false;
+
+                // Log completion
+                float jfaTime = (Time.realtimeSinceStartup - m_JfaStartTime) * 1000f;
+                float totalTime = (Time.realtimeSinceStartup - m_TotalStartTime) * 1000f;
+                Debug.Log($"DistanceField3D: JFA complete - {m_JfaIterationCount} iterations, " +
+                          $"JFA time: {jfaTime:F2}ms, Total generation time: {totalTime:F2}ms " +
+                          $"(~{totalTime / Time.deltaTime / 1000f:F1} frames @ {1f / Time.deltaTime:F0} FPS)");
+
                 return;
             }
 
             // Execute one JFA iteration
+            m_JfaIterationCount++;
             m_JumpFloodShader.SetInt(s_StepID, m_CurrentStep);
             m_JumpFloodShader.SetInts(s_SizeID, m_GridSize.x, m_GridSize.y, m_GridSize.z);
             m_JumpFloodShader.SetTexture(m_KernelJumpFlood, s_InputID, m_JfaSrc);
