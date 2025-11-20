@@ -103,6 +103,12 @@ namespace TiltBrush
             m_ModelInstance.localRotation = Quaternion.identity;
             m_ModelInstance.localScale = Vector3.one;
 
+            // Try to find SDFMeshAsset if not manually assigned
+            if (m_SDFMeshAsset == null)
+            {
+                TryFindSDFMeshAsset();
+            }
+
             // Count total triangles
             m_TotalTriangleCount = CountTotalTriangles();
 
@@ -127,6 +133,50 @@ namespace TiltBrush
                 Debug.LogWarning($"ModelStencil: Mesh too complex for collider fallback ({m_TotalTriangleCount:N0} triangles > {threshold:N0} {platform} threshold). " +
                                "IsoMesh SDFMeshAsset REQUIRED for this model. Generate via Tools > Mesh to SDF");
             }
+        }
+
+        /// <summary>
+        /// Try to find an SDFMeshAsset for this model
+        /// Looks in Resources/SDFMeshAssets/ for assets matching the model name
+        /// </summary>
+        private void TryFindSDFMeshAsset()
+        {
+            if (m_Model == null)
+                return;
+
+            // Get the model's base name (without path/extension)
+            string modelName = m_Model.HumanName;
+
+            // Try to load from Resources/SDFMeshAssets/ folder
+            // IsoMesh generates assets with format "SDFMesh_{meshName}_{size}"
+            // We'll try common sizes: 128, 64, 256
+            int[] commonSizes = { 128, 64, 256, 32, 512 };
+
+            foreach (int size in commonSizes)
+            {
+                string assetName = $"SDFMesh_{modelName}_{size}";
+                SDFMeshAsset asset = Resources.Load<SDFMeshAsset>($"SDFMeshAssets/{assetName}");
+
+                if (asset != null)
+                {
+                    m_SDFMeshAsset = asset;
+                    Debug.Log($"ModelStencil: Found SDFMeshAsset '{assetName}' for model '{modelName}'");
+                    return;
+                }
+            }
+
+            // Also try without size suffix
+            string assetNameNoSize = $"SDFMesh_{modelName}";
+            SDFMeshAsset assetNoSize = Resources.Load<SDFMeshAsset>($"SDFMeshAssets/{assetNameNoSize}");
+            if (assetNoSize != null)
+            {
+                m_SDFMeshAsset = assetNoSize;
+                Debug.Log($"ModelStencil: Found SDFMeshAsset '{assetNameNoSize}' for model '{modelName}'");
+                return;
+            }
+
+            Debug.LogWarning($"ModelStencil: No SDFMeshAsset found for model '{modelName}'. " +
+                           "Generate one via Tools > Mesh to SDF and place in Resources/SDFMeshAssets/");
         }
 
         /// <summary>
