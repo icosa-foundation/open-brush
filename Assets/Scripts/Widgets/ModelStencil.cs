@@ -240,23 +240,49 @@ namespace TiltBrush
             {
                 surfacePos = m_MeshCollider.ClosestPoint(pos);
 
-                // Raycast to get normal
-                Vector3 direction = surfacePos - pos;
-                if (direction.sqrMagnitude < 0.0001f)
+                // Get normal by sampling nearby points (gradient-based approach)
+                // More robust than raycasting, especially for complex geometry
+                Vector3 toSurface = surfacePos - pos;
+                float dist = toSurface.magnitude;
+
+                if (dist < 0.0001f)
                 {
-                    // Point is very close, use outward direction
+                    // Point is on/very close to surface, use outward direction from center
                     surfaceNorm = (pos - transform.position).normalized;
                 }
                 else
                 {
-                    RaycastHit hit;
-                    if (Physics.Raycast(pos, direction, out hit, direction.magnitude * 2f))
+                    // Sample 3 nearby points to estimate the surface tangent plane
+                    Vector3 offset1 = Vector3.Cross(toSurface, Vector3.up).normalized * 0.01f;
+                    if (offset1.sqrMagnitude < 0.0001f)
                     {
-                        surfaceNorm = hit.normal;
+                        offset1 = Vector3.Cross(toSurface, Vector3.right).normalized * 0.01f;
+                    }
+                    Vector3 offset2 = Vector3.Cross(toSurface, offset1).normalized * 0.01f;
+
+                    Vector3 p1 = m_MeshCollider.ClosestPoint(surfacePos + offset1);
+                    Vector3 p2 = m_MeshCollider.ClosestPoint(surfacePos + offset2);
+
+                    // Compute tangent vectors
+                    Vector3 tangent1 = p1 - surfacePos;
+                    Vector3 tangent2 = p2 - surfacePos;
+
+                    // Normal is perpendicular to both tangents
+                    Vector3 normal = Vector3.Cross(tangent1, tangent2);
+
+                    if (normal.sqrMagnitude > 0.0001f)
+                    {
+                        surfaceNorm = normal.normalized;
+                        // Ensure normal points away from query point
+                        if (Vector3.Dot(surfaceNorm, toSurface) < 0)
+                        {
+                            surfaceNorm = -surfaceNorm;
+                        }
                     }
                     else
                     {
-                        surfaceNorm = -direction.normalized;
+                        // Fallback: use direction from surface to query point
+                        surfaceNorm = toSurface.normalized;
                     }
                 }
             }
