@@ -26,6 +26,11 @@ namespace TiltBrush
         [Header("Model Stencil Configuration")]
         [SerializeField] private Model m_Model;
 
+        // MeshCollider fallback thresholds (triangle count)
+        // Only generate collider if mesh is below these thresholds
+        private const int MESH_COLLIDER_THRESHOLD_MOBILE = 5000;   // 5K triangles for mobile
+        private const int MESH_COLLIDER_THRESHOLD_DESKTOP = 20000;  // 20K triangles for desktop
+
         // IsoMesh SDF asset - generated via Tools > Mesh to SDF
         // Requires IsoMesh package to be installed
         private object m_SDFAsset; // Will be SDFMeshAsset when IsoMesh is available
@@ -34,6 +39,7 @@ namespace TiltBrush
         private MeshFilter m_MeshFilter;
         private Transform m_ModelInstance;
         private bool m_SDFReady = false;
+        private int m_TotalTriangleCount = 0;
 
         public override Vector3 Extents
         {
@@ -100,11 +106,47 @@ namespace TiltBrush
             m_ModelInstance.localRotation = Quaternion.identity;
             m_ModelInstance.localScale = Vector3.one;
 
-            // Setup mesh collider for fallback
-            SetupMeshCollider();
+            // Count total triangles
+            m_TotalTriangleCount = CountTotalTriangles();
 
-            Debug.LogWarning("ModelStencil: IsoMesh integration required. " +
-                           "Install IsoMesh package and generate SDFMeshAsset for better performance.");
+            // Determine triangle threshold based on platform
+            int threshold;
+#if UNITY_ANDROID || UNITY_IOS || MOBILE_INPUT
+            threshold = MESH_COLLIDER_THRESHOLD_MOBILE;
+            string platform = "mobile";
+#else
+            threshold = MESH_COLLIDER_THRESHOLD_DESKTOP;
+            string platform = "desktop";
+#endif
+
+            // Only setup mesh collider if below threshold
+            if (m_TotalTriangleCount <= threshold)
+            {
+                SetupMeshCollider();
+                Debug.Log($"ModelStencil: Created MeshCollider fallback ({m_TotalTriangleCount:N0} triangles < {threshold:N0} {platform} threshold)");
+            }
+            else
+            {
+                Debug.LogWarning($"ModelStencil: Mesh too complex for collider fallback ({m_TotalTriangleCount:N0} triangles > {threshold:N0} {platform} threshold). " +
+                               "IsoMesh SDFMeshAsset REQUIRED for this model. Generate via Tools > Mesh to SDF");
+            }
+        }
+
+        /// <summary>
+        /// Count total triangles in all mesh filters
+        /// </summary>
+        private int CountTotalTriangles()
+        {
+            int total = 0;
+            var meshFilters = m_ModelInstance.GetComponentsInChildren<MeshFilter>();
+            foreach (var mf in meshFilters)
+            {
+                if (mf.sharedMesh != null)
+                {
+                    total += mf.sharedMesh.triangles.Length / 3;
+                }
+            }
+            return total;
         }
 
         private void SetupMeshCollider()
@@ -158,14 +200,37 @@ namespace TiltBrush
 
         /// <summary>
         /// Find the closest point on the stencil surface
-        /// Uses mesh collider as fallback (IsoMesh integration coming)
+        /// Uses IsoMesh SDF if available, otherwise MeshCollider (low-poly only)
         /// </summary>
         public override void FindClosestPointOnSurface(Vector3 pos,
                                                        out Vector3 surfacePos, out Vector3 surfaceNorm)
         {
-            // For now, use mesh collider
-            // TODO: Integrate with IsoMesh SDFMesh.SampleAsset() when available
-            FindClosestPointUsingCollider(pos, out surfacePos, out surfaceNorm);
+            // TODO: Check for IsoMesh SDFMesh asset first
+            // if (m_SDFAsset != null) { /* Use IsoMesh */ }
+
+            // Fallback to mesh collider (if available)
+            if (m_MeshCollider != null)
+            {
+                FindClosestPointUsingCollider(pos, out surfacePos, out surfaceNorm);
+            }
+            else
+            {
+                // No collision method available - require IsoMesh
+                Debug.LogWarning($"ModelStencil: No collision method available for {m_TotalTriangleCount:N0} triangle mesh. " +
+                               "Generate IsoMesh SDFMeshAsset via Tools > Mesh to SDF");
+
+                // Fallback to simple bounds-based position
+                if (m_ModelInstance != null)
+                {
+                    surfacePos = m_ModelInstance.position;
+                    surfaceNorm = (pos - m_ModelInstance.position).normalized;
+                }
+                else
+                {
+                    surfacePos = transform.position;
+                    surfaceNorm = (pos - transform.position).normalized;
+                }
+            }
         }
 
         private void FindClosestPointUsingCollider(Vector3 pos,
@@ -206,11 +271,32 @@ namespace TiltBrush
         public override float GetActivationScore(
             Vector3 vControllerPos, InputManager.ControllerName name)
         {
-            if (m_MeshCollider == null)
+            Bounds bounds;
+
+            // Get bounds from collider if available, otherwise from model instance
+            if (m_MeshCollider != null)
+            {
+                bounds = m_MeshCollider.bounds;
+            }
+            else if (m_ModelInstance != null)
+            {
+                // Calculate bounds from all renderers
+                var renderers = m_ModelInstance.GetComponentsInChildren<Renderer>();
+                if (renderers.Length == 0)
+                    return -1f;
+
+                bounds = renderers[0].bounds;
+                for (int i = 1; i < renderers.Length; i++)
+                {
+                    bounds.Encapsulate(renderers[i].bounds);
+                }
+            }
+            else
+            {
                 return -1f;
+            }
 
             // Simple box-based activation
-            Bounds bounds = m_MeshCollider.bounds;
             Vector3 closestPoint = bounds.ClosestPoint(vControllerPos);
             float distance = Vector3.Distance(vControllerPos, closestPoint);
 
@@ -259,27 +345,51 @@ namespace TiltBrush
 
         public override Bounds GetBounds_SelectionCanvasSpace()
         {
+            Bounds worldBounds;
+            Transform boundsTransform;
+
             if (m_MeshCollider != null)
             {
-                TrTransform colliderToCanvasXf = App.Scene.SelectionCanvas.Pose.inverse *
-                    TrTransform.FromTransform(m_MeshCollider.transform);
-                Bounds bounds = new Bounds(colliderToCanvasXf * m_MeshCollider.bounds.center, Vector3.zero);
-
-                // Add bounds corners
-                Vector3 extents = m_MeshCollider.bounds.extents;
-                for (int i = 0; i < 8; i++)
-                {
-                    Vector3 corner = m_MeshCollider.bounds.center + new Vector3(
-                        (i & 1) == 0 ? extents.x : -extents.x,
-                        (i & 2) == 0 ? extents.y : -extents.y,
-                        (i & 4) == 0 ? extents.z : -extents.z
-                    );
-                    bounds.Encapsulate(colliderToCanvasXf * corner);
-                }
-
-                return bounds;
+                worldBounds = m_MeshCollider.bounds;
+                boundsTransform = m_MeshCollider.transform;
             }
-            return base.GetBounds_SelectionCanvasSpace();
+            else if (m_ModelInstance != null)
+            {
+                // Calculate bounds from all renderers
+                var renderers = m_ModelInstance.GetComponentsInChildren<Renderer>();
+                if (renderers.Length == 0)
+                    return base.GetBounds_SelectionCanvasSpace();
+
+                worldBounds = renderers[0].bounds;
+                for (int i = 1; i < renderers.Length; i++)
+                {
+                    worldBounds.Encapsulate(renderers[i].bounds);
+                }
+                boundsTransform = m_ModelInstance;
+            }
+            else
+            {
+                return base.GetBounds_SelectionCanvasSpace();
+            }
+
+            // Transform to canvas space
+            TrTransform toCanvasXf = App.Scene.SelectionCanvas.Pose.inverse *
+                TrTransform.FromTransform(boundsTransform);
+            Bounds canvasBounds = new Bounds(toCanvasXf * worldBounds.center, Vector3.zero);
+
+            // Add bounds corners
+            Vector3 extents = worldBounds.extents;
+            for (int i = 0; i < 8; i++)
+            {
+                Vector3 corner = worldBounds.center + new Vector3(
+                    (i & 1) == 0 ? extents.x : -extents.x,
+                    (i & 2) == 0 ? extents.y : -extents.y,
+                    (i & 4) == 0 ? extents.z : -extents.z
+                );
+                canvasBounds.Encapsulate(toCanvasXf * corner);
+            }
+
+            return canvasBounds;
         }
 
         /// <summary>
