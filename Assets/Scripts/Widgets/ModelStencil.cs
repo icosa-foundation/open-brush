@@ -33,6 +33,10 @@ namespace TiltBrush
         [Tooltip("Padding around mesh bounds for SDF (default: 0.2)")]
         [SerializeField] private float m_SDFPadding = 0.2f;
 
+        [Header("Preview Mesh Settings")]
+        [Tooltip("Resolution for preview mesh generation (higher = better quality)")]
+        [SerializeField] private int m_PreviewResolution = 32;
+
         // MeshCollider fallback thresholds (triangle count)
         // Only generate collider if mesh is below these thresholds
         private const int MESH_COLLIDER_THRESHOLD_MOBILE = 5000;   // 5K triangles for mobile
@@ -42,6 +46,11 @@ namespace TiltBrush
         private MeshFilter m_MeshFilter;
         private Transform m_ModelInstance;
         private int m_TotalTriangleCount = 0;
+
+        // IsoMesh components for preview mesh generation
+        private SDFGroup m_SDFGroup;
+        private SDFMesh m_SDFMeshComponent;
+        private SDFGroupMeshGenerator m_MeshGenerator;
 
         public override Vector3 Extents
         {
@@ -83,6 +92,23 @@ namespace TiltBrush
             if (m_Model != null)
             {
                 LoadModel();
+            }
+        }
+
+        private void OnDestroy()
+        {
+            // Clean up IsoMesh components
+            if (m_MeshGenerator != null)
+            {
+                Destroy(m_MeshGenerator);
+            }
+            if (m_SDFGroup != null)
+            {
+                Destroy(m_SDFGroup);
+            }
+            if (m_SDFMeshComponent != null && m_SDFMeshComponent.gameObject != null)
+            {
+                Destroy(m_SDFMeshComponent.gameObject);
             }
         }
 
@@ -196,48 +222,62 @@ namespace TiltBrush
         }
 
         /// <summary>
-        /// Generate a preview mesh from the SDF and replace the model's visual mesh
+        /// Generate a preview mesh from the SDF using IsoMesh's mesh generator
         /// </summary>
         private void GenerateSDFPreviewMesh()
         {
-            if (m_SDFMeshAsset == null || m_ModelInstance == null)
+            if (m_SDFMeshAsset == null)
                 return;
 
-            // Determine preview mesh quality based on platform
-            int previewSubdivisions;
-#if UNITY_ANDROID || UNITY_IOS || MOBILE_INPUT
-            previewSubdivisions = 16; // Lower quality for mobile
-#else
-            previewSubdivisions = 32; // Higher quality for desktop
-#endif
+            Debug.Log($"ModelStencil: Setting up IsoMesh preview mesh generation ({m_PreviewResolution}³ resolution)...");
 
-            Debug.Log($"ModelStencil: Generating SDF preview mesh ({previewSubdivisions}³ subdivisions)...");
-
-            Mesh previewMesh = SDFMeshVisualizer.GeneratePreviewMesh(m_SDFMeshAsset, previewSubdivisions);
-
-            if (previewMesh == null)
+            // Hide the original model instance
+            if (m_ModelInstance != null)
             {
-                Debug.LogWarning("ModelStencil: Failed to generate SDF preview mesh");
-                return;
+                m_ModelInstance.gameObject.SetActive(false);
             }
 
-            // Replace all mesh filters in the model instance with the preview mesh
-            var meshFilters = m_ModelInstance.GetComponentsInChildren<MeshFilter>();
-            if (meshFilters.Length > 0)
-            {
-                // Use the first mesh filter, hide the rest
-                meshFilters[0].sharedMesh = previewMesh;
+            // Create IsoMesh component hierarchy
+            // This follows IsoMesh's architecture: SDFGroup -> SDFMesh -> SDFGroupMeshGenerator
 
-                for (int i = 1; i < meshFilters.Length; i++)
-                {
-                    if (meshFilters[i].gameObject != meshFilters[0].gameObject)
-                    {
-                        meshFilters[i].gameObject.SetActive(false);
-                    }
-                }
+            // 1. Create SDFGroup component (manages the SDF hierarchy)
+            m_SDFGroup = gameObject.AddComponent<SDFGroup>();
 
-                Debug.Log($"ModelStencil: Assigned SDF preview mesh to model instance");
-            }
+            // 2. Create a child GameObject for the SDFMesh component
+            GameObject sdfMeshObject = new GameObject("SDF Mesh");
+            sdfMeshObject.transform.SetParent(transform);
+            sdfMeshObject.transform.localPosition = Vector3.zero;
+            sdfMeshObject.transform.localRotation = Quaternion.identity;
+            sdfMeshObject.transform.localScale = Vector3.one;
+
+            m_SDFMeshComponent = sdfMeshObject.AddComponent<SDFMesh>();
+
+            // Assign the SDFMeshAsset using reflection (Asset property is read-only)
+            var assetField = typeof(SDFMesh).GetField("m_asset",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            assetField?.SetValue(m_SDFMeshComponent, m_SDFMeshAsset);
+
+            // 3. Create SDFGroupMeshGenerator component
+            m_MeshGenerator = gameObject.AddComponent<SDFGroupMeshGenerator>();
+
+            // Configure mesh generator settings
+            var voxelSettings = m_MeshGenerator.VoxelSettings;
+            voxelSettings.SamplesPerSide = m_PreviewResolution;
+            m_MeshGenerator.VoxelSettings.CopySettings(voxelSettings);
+
+            var mainSettings = m_MeshGenerator.MainSettings;
+            mainSettings.OutputMode = OutputMode.MeshFilter;
+            mainSettings.AutoUpdate = true;
+            m_MeshGenerator.MainSettings.CopySettings(mainSettings);
+
+            var algorithmSettings = m_MeshGenerator.AlgorithmSettings;
+            algorithmSettings.IsosurfaceExtractionType = IsosurfaceExtractionType.SurfaceNets;
+            m_MeshGenerator.AlgorithmSettings.CopySettings(algorithmSettings);
+
+            // Manually initialize the group and mesh (since we're doing this at runtime)
+            m_SDFGroup.Register(m_SDFMeshComponent);
+
+            Debug.Log($"ModelStencil: IsoMesh preview mesh generation configured");
         }
 
         /// <summary>
