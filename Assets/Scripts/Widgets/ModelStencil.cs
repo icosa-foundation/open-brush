@@ -189,6 +189,54 @@ namespace TiltBrush
             if (m_SDFMeshAsset != null)
             {
                 Debug.Log($"ModelStencil: Successfully generated SDF for '{m_Model.HumanName}'");
+
+                // Generate and assign preview mesh from SDF
+                GenerateSDFPreviewMesh();
+            }
+        }
+
+        /// <summary>
+        /// Generate a preview mesh from the SDF and replace the model's visual mesh
+        /// </summary>
+        private void GenerateSDFPreviewMesh()
+        {
+            if (m_SDFMeshAsset == null || m_ModelInstance == null)
+                return;
+
+            // Determine preview mesh quality based on platform
+            int previewSubdivisions;
+#if UNITY_ANDROID || UNITY_IOS || MOBILE_INPUT
+            previewSubdivisions = 16; // Lower quality for mobile
+#else
+            previewSubdivisions = 32; // Higher quality for desktop
+#endif
+
+            Debug.Log($"ModelStencil: Generating SDF preview mesh ({previewSubdivisions}³ subdivisions)...");
+
+            Mesh previewMesh = SDFMeshVisualizer.GeneratePreviewMesh(m_SDFMeshAsset, previewSubdivisions);
+
+            if (previewMesh == null)
+            {
+                Debug.LogWarning("ModelStencil: Failed to generate SDF preview mesh");
+                return;
+            }
+
+            // Replace all mesh filters in the model instance with the preview mesh
+            var meshFilters = m_ModelInstance.GetComponentsInChildren<MeshFilter>();
+            if (meshFilters.Length > 0)
+            {
+                // Use the first mesh filter, hide the rest
+                meshFilters[0].sharedMesh = previewMesh;
+
+                for (int i = 1; i < meshFilters.Length; i++)
+                {
+                    if (meshFilters[i].gameObject != meshFilters[0].gameObject)
+                    {
+                        meshFilters[i].gameObject.SetActive(false);
+                    }
+                }
+
+                Debug.Log($"ModelStencil: Assigned SDF preview mesh to model instance");
             }
         }
 
