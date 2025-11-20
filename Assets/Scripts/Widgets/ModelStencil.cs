@@ -14,10 +14,7 @@
 
 using System;
 using UnityEngine;
-
-#if HOBAGAMES_ISOMESH
 using IsoMesh;
-#endif
 
 namespace TiltBrush
 {
@@ -29,10 +26,7 @@ namespace TiltBrush
     {
         [Header("Model Stencil Configuration")]
         [SerializeField] private Model m_Model;
-
-#if HOBAGAMES_ISOMESH
         [SerializeField] private SDFMeshAsset m_SDFMeshAsset;
-#endif
 
         // MeshCollider fallback thresholds (triangle count)
         // Only generate collider if mesh is below these thresholds
@@ -208,14 +202,12 @@ namespace TiltBrush
         public override void FindClosestPointOnSurface(Vector3 pos,
                                                        out Vector3 surfacePos, out Vector3 surfaceNorm)
         {
-#if HOBAGAMES_ISOMESH
             // Use IsoMesh SDF if available
             if (m_SDFMeshAsset != null)
             {
                 FindClosestPointUsingSDF(pos, out surfacePos, out surfaceNorm);
                 return;
             }
-#endif
 
             // Fallback to mesh collider (if available)
             if (m_MeshCollider != null)
@@ -242,7 +234,6 @@ namespace TiltBrush
             }
         }
 
-#if HOBAGAMES_ISOMESH
         /// <summary>
         /// Find closest point using IsoMesh SDF
         /// Uses IsoMesh's Sample() method for trilinear interpolation
@@ -277,7 +268,6 @@ namespace TiltBrush
             surfacePos = transform.TransformPoint(localSurfacePos);
             surfaceNorm = transform.TransformDirection(localNormal).normalized;
         }
-#endif
 
         private void FindClosestPointUsingCollider(Vector3 pos,
                                                     out Vector3 surfacePos, out Vector3 surfaceNorm)
