@@ -1002,8 +1002,9 @@ namespace TiltBrush
 
         /// <summary>
         /// Convert this ModelWidget to a ModelStencil for use as a guide
+        /// Note: Install IsoMesh package for better SDF performance
         /// </summary>
-        public ModelStencil ConvertToStencil(ComputeShader jfaShader = null)
+        public ModelStencil ConvertToStencil()
         {
             if (m_Model == null)
             {
@@ -1011,14 +1012,8 @@ namespace TiltBrush
                 return null;
             }
 
-            // Load shader from resources if not provided
-            if (jfaShader == null)
-            {
-                jfaShader = Resources.Load<ComputeShader>("JumpFlood3D");
-            }
-
             // Create the model stencil
-            var stencil = ModelStencil.CreateFromModel(m_Model, jfaShader);
+            var stencil = ModelStencil.CreateFromModel(m_Model);
 
             if (stencil != null)
             {
@@ -1027,7 +1022,8 @@ namespace TiltBrush
                 stencil.transform.rotation = transform.rotation;
                 stencil.SetSignedWidgetSize(GetSignedWidgetSize());
 
-                Debug.Log("ModelWidget: Converted to ModelStencil");
+                Debug.Log("ModelWidget: Converted to ModelStencil. " +
+                         "Install IsoMesh for GPU-accelerated distance queries.");
             }
 
             return stencil;

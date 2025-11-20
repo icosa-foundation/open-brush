@@ -18,19 +18,22 @@ using UnityEngine;
 namespace TiltBrush
 {
     /// <summary>
-    /// Stencil that uses imported 3D models with distance field acceleration
+    /// Stencil that uses imported 3D models with IsoMesh SDF integration
+    /// Requires IsoMesh package: https://github.com/EmmetOT/IsoMesh
     /// </summary>
     public class ModelStencil : StencilWidget
     {
         [Header("Model Stencil Configuration")]
         [SerializeField] private Model m_Model;
-        [SerializeField] private ComputeShader m_JumpFloodShader;
 
-        private DistanceField3D m_DistanceField;
+        // IsoMesh SDF asset - generated via Tools > Mesh to SDF
+        // Requires IsoMesh package to be installed
+        private object m_SDFAsset; // Will be SDFMeshAsset when IsoMesh is available
+
         private MeshCollider m_MeshCollider;
         private MeshFilter m_MeshFilter;
         private Transform m_ModelInstance;
-        private bool m_DistanceFieldReady = false;
+        private bool m_SDFReady = false;
 
         public override Vector3 Extents
         {
@@ -63,33 +66,12 @@ namespace TiltBrush
 
         protected override void Awake()
         {
-            m_Type = StencilType.Custom; // Using Custom type for now
+            m_Type = StencilType.Custom;
             base.Awake();
-
-            // Initialize distance field component
-            m_DistanceField = gameObject.AddComponent<DistanceField3D>();
         }
 
         private void Start()
         {
-            // Load compute shader from resources
-            if (m_JumpFloodShader == null)
-            {
-                // Try to load from Resources folder or assign manually in inspector
-                m_JumpFloodShader = Resources.Load<ComputeShader>("JumpFlood3D");
-
-                if (m_JumpFloodShader == null)
-                {
-                    Debug.LogError("ModelStencil: Could not find JumpFlood3D compute shader. " +
-                        "Please assign it manually or place it in a Resources folder.");
-                }
-            }
-
-            if (m_DistanceField != null && m_JumpFloodShader != null)
-            {
-                m_DistanceField.Initialize(m_JumpFloodShader);
-            }
-
             if (m_Model != null)
             {
                 LoadModel();
@@ -118,11 +100,11 @@ namespace TiltBrush
             m_ModelInstance.localRotation = Quaternion.identity;
             m_ModelInstance.localScale = Vector3.one;
 
-            // Setup mesh collider
+            // Setup mesh collider for fallback
             SetupMeshCollider();
 
-            // Trigger distance field rebuild
-            RebuildDistanceField();
+            Debug.LogWarning("ModelStencil: IsoMesh integration required. " +
+                           "Install IsoMesh package and generate SDFMeshAsset for better performance.");
         }
 
         private void SetupMeshCollider()
@@ -175,105 +157,15 @@ namespace TiltBrush
         }
 
         /// <summary>
-        /// Rebuild the distance field for the current model
-        /// </summary>
-        public void RebuildDistanceField()
-        {
-            if (m_DistanceField == null || m_MeshCollider == null || m_MeshCollider.sharedMesh == null)
-                return;
-
-            m_DistanceFieldReady = false;
-
-            // Get bounds in local space (mesh bounds are already in local coordinate system)
-            // Since the combined mesh is in widget local space, use the mesh bounds directly
-            Bounds bounds = m_MeshCollider.sharedMesh.bounds;
-
-            // Trigger rebuild
-            // The mesh is in widget's local space, transform is the widget's transform
-            m_DistanceField.RebuildForMesh(m_MeshCollider.sharedMesh, transform, bounds);
-        }
-
-        void Update()
-        {
-            // Check if distance field is ready
-            if (!m_DistanceFieldReady && m_DistanceField != null)
-            {
-                m_DistanceFieldReady = m_DistanceField.IsReady;
-
-                if (m_DistanceFieldReady)
-                {
-                    Debug.Log("ModelStencil: Distance field generation complete!");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Find the closest point on the stencil surface using the distance field
+        /// Find the closest point on the stencil surface
+        /// Uses mesh collider as fallback (IsoMesh integration coming)
         /// </summary>
         public override void FindClosestPointOnSurface(Vector3 pos,
                                                        out Vector3 surfacePos, out Vector3 surfaceNorm)
         {
-            // Use distance field if ready, otherwise fall back to mesh collider
-            if (m_DistanceFieldReady && m_DistanceField != null)
-            {
-                FindClosestPointUsingDistanceField(pos, out surfacePos, out surfaceNorm);
-            }
-            else
-            {
-                FindClosestPointUsingCollider(pos, out surfacePos, out surfaceNorm);
-            }
-        }
-
-        private void FindClosestPointUsingDistanceField(Vector3 pos,
-                                                         out Vector3 surfacePos, out Vector3 surfaceNorm)
-        {
-            // Query distance field
-            Vector3 nearestPoint;
-            float distance = m_DistanceField.QueryDistance(pos, out nearestPoint);
-
-            if (distance >= 0)
-            {
-                surfacePos = nearestPoint;
-
-                // Estimate normal by sampling nearby points
-                // This is a simple gradient-based approach
-                float epsilon = 0.01f;
-                Vector3 px = nearestPoint + Vector3.right * epsilon;
-                Vector3 py = nearestPoint + Vector3.up * epsilon;
-                Vector3 pz = nearestPoint + Vector3.forward * epsilon;
-
-                Vector3 dummy;
-                float dx = m_DistanceField.QueryDistance(px, out dummy);
-                float dy = m_DistanceField.QueryDistance(py, out dummy);
-                float dz = m_DistanceField.QueryDistance(pz, out dummy);
-
-                if (dx >= 0 && dy >= 0 && dz >= 0)
-                {
-                    Vector3 gradient = new Vector3(
-                        dx - distance,
-                        dy - distance,
-                        dz - distance
-                    );
-
-                    if (gradient.sqrMagnitude > 0.0001f)
-                    {
-                        surfaceNorm = gradient.normalized;
-                    }
-                    else
-                    {
-                        surfaceNorm = (pos - nearestPoint).normalized;
-                    }
-                }
-                else
-                {
-                    surfaceNorm = (pos - nearestPoint).normalized;
-                }
-            }
-            else
-            {
-                // Fall back to collider method
-                FindClosestPointUsingCollider(pos, out surfacePos, out surfaceNorm);
-            }
+            // For now, use mesh collider
+            // TODO: Integrate with IsoMesh SDFMesh.SampleAsset() when available
+            FindClosestPointUsingCollider(pos, out surfacePos, out surfaceNorm);
         }
 
         private void FindClosestPointUsingCollider(Vector3 pos,
@@ -317,19 +209,17 @@ namespace TiltBrush
             if (m_MeshCollider == null)
                 return -1f;
 
-            // Simple box-based activation for now
+            // Simple box-based activation
             Bounds bounds = m_MeshCollider.bounds;
             Vector3 closestPoint = bounds.ClosestPoint(vControllerPos);
             float distance = Vector3.Distance(vControllerPos, closestPoint);
 
             if (bounds.Contains(vControllerPos))
             {
-                // Inside the bounds
                 return 1.0f;
             }
             else
             {
-                // Outside, use distance-based score
                 float maxDist = bounds.extents.magnitude;
                 float score = 1.0f - Mathf.Clamp01(distance / maxDist);
                 return score > 0 ? score : -1f;
@@ -339,12 +229,11 @@ namespace TiltBrush
         protected override Axis GetInferredManipulationAxis(
             Vector3 primaryHand, Vector3 secondaryHand, bool secondaryHandInside)
         {
-            return Axis.Invalid; // Uniform scaling only for now
+            return Axis.Invalid;
         }
 
         protected override void RegisterHighlightForSpecificAxis(Axis highlightAxis)
         {
-            // Not implemented for model stencils yet
             base.RegisterHighlight();
         }
 
@@ -396,7 +285,7 @@ namespace TiltBrush
         /// <summary>
         /// Create a model stencil from an existing model
         /// </summary>
-        public static ModelStencil CreateFromModel(Model model, ComputeShader jfaShader = null)
+        public static ModelStencil CreateFromModel(Model model)
         {
             var prefab = WidgetManager.m_Instance.ModelStencilPrefab;
             if (prefab == null)
@@ -406,7 +295,6 @@ namespace TiltBrush
             }
 
             var stencil = Instantiate(prefab);
-            stencil.m_JumpFloodShader = jfaShader;
             stencil.Model = model;
             stencil.transform.parent = App.Instance.m_CanvasTransform;
             stencil.Show(true, false);
