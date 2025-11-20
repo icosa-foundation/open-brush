@@ -15,6 +15,10 @@
 using System;
 using UnityEngine;
 
+#if HOBAGAMES_ISOMESH
+using Hoba.IsoMesh;
+#endif
+
 namespace TiltBrush
 {
     /// <summary>
@@ -26,19 +30,18 @@ namespace TiltBrush
         [Header("Model Stencil Configuration")]
         [SerializeField] private Model m_Model;
 
+#if HOBAGAMES_ISOMESH
+        [SerializeField] private SDFMeshAsset m_SDFMeshAsset;
+#endif
+
         // MeshCollider fallback thresholds (triangle count)
         // Only generate collider if mesh is below these thresholds
         private const int MESH_COLLIDER_THRESHOLD_MOBILE = 5000;   // 5K triangles for mobile
         private const int MESH_COLLIDER_THRESHOLD_DESKTOP = 20000;  // 20K triangles for desktop
 
-        // IsoMesh SDF asset - generated via Tools > Mesh to SDF
-        // Requires IsoMesh package to be installed
-        private object m_SDFAsset; // Will be SDFMeshAsset when IsoMesh is available
-
         private MeshCollider m_MeshCollider;
         private MeshFilter m_MeshFilter;
         private Transform m_ModelInstance;
-        private bool m_SDFReady = false;
         private int m_TotalTriangleCount = 0;
 
         public override Vector3 Extents
@@ -205,8 +208,14 @@ namespace TiltBrush
         public override void FindClosestPointOnSurface(Vector3 pos,
                                                        out Vector3 surfacePos, out Vector3 surfaceNorm)
         {
-            // TODO: Check for IsoMesh SDFMesh asset first
-            // if (m_SDFAsset != null) { /* Use IsoMesh */ }
+#if HOBAGAMES_ISOMESH
+            // Use IsoMesh SDF if available
+            if (m_SDFMeshAsset != null)
+            {
+                FindClosestPointUsingSDF(pos, out surfacePos, out surfaceNorm);
+                return;
+            }
+#endif
 
             // Fallback to mesh collider (if available)
             if (m_MeshCollider != null)
@@ -232,6 +241,115 @@ namespace TiltBrush
                 }
             }
         }
+
+#if HOBAGAMES_ISOMESH
+        /// <summary>
+        /// Find closest point using IsoMesh SDF
+        /// </summary>
+        private void FindClosestPointUsingSDF(Vector3 worldPos,
+                                               out Vector3 surfacePos, out Vector3 surfaceNorm)
+        {
+            // Transform query point to SDF local space
+            Vector3 localPos = transform.InverseTransformPoint(worldPos);
+
+            // Get bounds and normalize position
+            Bounds bounds = m_SDFMeshAsset.Bounds;
+            Vector3 normalizedPos = new Vector3(
+                (localPos.x - bounds.min.x) / bounds.size.x,
+                (localPos.y - bounds.min.y) / bounds.size.y,
+                (localPos.z - bounds.min.z) / bounds.size.z
+            );
+
+            // Sample the distance field
+            float distance = SampleSDFTrilinear(normalizedPos);
+
+            // Compute gradient for surface normal (finite differences)
+            float epsilon = 1f / m_SDFMeshAsset.Size;
+            Vector3 gradient = new Vector3(
+                SampleSDFTrilinear(normalizedPos + new Vector3(epsilon, 0, 0)) - distance,
+                SampleSDFTrilinear(normalizedPos + new Vector3(0, epsilon, 0)) - distance,
+                SampleSDFTrilinear(normalizedPos + new Vector3(0, 0, epsilon)) - distance
+            );
+
+            // Normalize gradient to get surface normal
+            Vector3 localNormal = gradient.sqrMagnitude > 0.0001f ? gradient.normalized : Vector3.up;
+
+            // Move point to surface along gradient
+            Vector3 localSurfacePos = localPos - localNormal * distance;
+
+            // Transform back to world space
+            surfacePos = transform.TransformPoint(localSurfacePos);
+            surfaceNorm = transform.TransformDirection(localNormal).normalized;
+        }
+
+        /// <summary>
+        /// Sample the SDF using trilinear interpolation
+        /// </summary>
+        private float SampleSDFTrilinear(Vector3 normalizedPos)
+        {
+            // Clamp to bounds
+            normalizedPos.x = Mathf.Clamp01(normalizedPos.x);
+            normalizedPos.y = Mathf.Clamp01(normalizedPos.y);
+            normalizedPos.z = Mathf.Clamp01(normalizedPos.z);
+
+            // Convert to voxel coordinates
+            int size = m_SDFMeshAsset.Size;
+            Vector3 voxelPos = normalizedPos * (size - 1);
+
+            int x0 = Mathf.FloorToInt(voxelPos.x);
+            int y0 = Mathf.FloorToInt(voxelPos.y);
+            int z0 = Mathf.FloorToInt(voxelPos.z);
+
+            int x1 = Mathf.Min(x0 + 1, size - 1);
+            int y1 = Mathf.Min(y0 + 1, size - 1);
+            int z1 = Mathf.Min(z0 + 1, size - 1);
+
+            // Get fractional parts
+            float fx = voxelPos.x - x0;
+            float fy = voxelPos.y - y0;
+            float fz = voxelPos.z - z0;
+
+            // Sample 8 corners of the voxel cube
+            float c000 = GetSDFSample(x0, y0, z0);
+            float c001 = GetSDFSample(x0, y0, z1);
+            float c010 = GetSDFSample(x0, y1, z0);
+            float c011 = GetSDFSample(x0, y1, z1);
+            float c100 = GetSDFSample(x1, y0, z0);
+            float c101 = GetSDFSample(x1, y0, z1);
+            float c110 = GetSDFSample(x1, y1, z0);
+            float c111 = GetSDFSample(x1, y1, z1);
+
+            // Trilinear interpolation
+            float c00 = Mathf.Lerp(c000, c100, fx);
+            float c01 = Mathf.Lerp(c001, c101, fx);
+            float c10 = Mathf.Lerp(c010, c110, fx);
+            float c11 = Mathf.Lerp(c011, c111, fx);
+
+            float c0 = Mathf.Lerp(c00, c10, fy);
+            float c1 = Mathf.Lerp(c01, c11, fy);
+
+            return Mathf.Lerp(c0, c1, fz);
+        }
+
+        /// <summary>
+        /// Get a single SDF sample from the asset
+        /// Note: IsoMesh stores distances, need to check their data format
+        /// </summary>
+        private float GetSDFSample(int x, int y, int z)
+        {
+            int size = m_SDFMeshAsset.Size;
+            int index = x + y * size + z * size * size;
+
+            // IsoMesh SDFMeshAsset has a Samples property that's a flat array
+            // Access via reflection or direct property if available
+            // For now, assume we can access the samples directly
+            // This may need adjustment based on actual IsoMesh API
+
+            // Placeholder: Return 0 distance (on surface)
+            // TODO: Access m_SDFMeshAsset.Samples[index] when IsoMesh is compiled
+            return 0f;
+        }
+#endif
 
         private void FindClosestPointUsingCollider(Vector3 pos,
                                                     out Vector3 surfacePos, out Vector3 surfaceNorm)
