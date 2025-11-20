@@ -277,6 +277,13 @@ namespace TiltBrush
             // Manually initialize the group and mesh (since we're doing this at runtime)
             m_SDFGroup.Register(m_SDFMeshComponent);
 
+            // Force an update to trigger mesh generation
+            // Since we're creating components after Start(), we need to manually kick off the process
+            if (m_MeshGenerator != null)
+            {
+                m_MeshGenerator.UpdateMesh();
+            }
+
             Debug.Log($"ModelStencil: IsoMesh preview mesh generation configured");
         }
 
