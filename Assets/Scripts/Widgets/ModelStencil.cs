@@ -27,6 +27,11 @@ namespace TiltBrush
         [Header("Model Stencil Configuration")]
         [SerializeField] private Model m_Model;
         [SerializeField] private SDFMeshAsset m_SDFMeshAsset;
+        [SerializeField] private ComputeShader m_SDFComputeShader;
+
+        [Header("SDF Generation Settings")]
+        [Tooltip("Padding around mesh bounds for SDF (default: 0.2)")]
+        [SerializeField] private float m_SDFPadding = 0.2f;
 
         // MeshCollider fallback thresholds (triangle count)
         // Only generate collider if mesh is below these thresholds
@@ -103,10 +108,10 @@ namespace TiltBrush
             m_ModelInstance.localRotation = Quaternion.identity;
             m_ModelInstance.localScale = Vector3.one;
 
-            // Try to find SDFMeshAsset if not manually assigned
+            // Generate SDF at runtime if not manually assigned
             if (m_SDFMeshAsset == null)
             {
-                TryFindSDFMeshAsset();
+                GenerateSDFAtRuntime();
             }
 
             // Count total triangles
@@ -136,47 +141,77 @@ namespace TiltBrush
         }
 
         /// <summary>
-        /// Try to find an SDFMeshAsset for this model
-        /// Looks in Resources/SDFMeshAssets/ for assets matching the model name
+        /// Generate SDF at runtime from the model's combined mesh
         /// </summary>
-        private void TryFindSDFMeshAsset()
+        private void GenerateSDFAtRuntime()
         {
-            if (m_Model == null)
+            if (m_Model == null || m_ModelInstance == null)
                 return;
 
-            // Get the model's base name (without path/extension)
-            string modelName = m_Model.HumanName;
-
-            // Try to load from Resources/SDFMeshAssets/ folder
-            // IsoMesh generates assets with format "SDFMesh_{meshName}_{size}"
-            // We'll try common sizes: 128, 64, 256
-            int[] commonSizes = { 128, 64, 256, 32, 512 };
-
-            foreach (int size in commonSizes)
+            if (m_SDFComputeShader == null)
             {
-                string assetName = $"SDFMesh_{modelName}_{size}";
-                SDFMeshAsset asset = Resources.Load<SDFMeshAsset>($"SDFMeshAssets/{assetName}");
-
-                if (asset != null)
-                {
-                    m_SDFMeshAsset = asset;
-                    Debug.Log($"ModelStencil: Found SDFMeshAsset '{assetName}' for model '{modelName}'");
-                    return;
-                }
-            }
-
-            // Also try without size suffix
-            string assetNameNoSize = $"SDFMesh_{modelName}";
-            SDFMeshAsset assetNoSize = Resources.Load<SDFMeshAsset>($"SDFMeshAssets/{assetNameNoSize}");
-            if (assetNoSize != null)
-            {
-                m_SDFMeshAsset = assetNoSize;
-                Debug.Log($"ModelStencil: Found SDFMeshAsset '{assetNameNoSize}' for model '{modelName}'");
+                Debug.LogWarning("ModelStencil: No SDF compute shader assigned. Cannot generate runtime SDF. " +
+                               "Assign Compute_SDFMesh shader in Inspector or fallback to MeshCollider.");
                 return;
             }
 
-            Debug.LogWarning($"ModelStencil: No SDFMeshAsset found for model '{modelName}'. " +
-                           "Generate one via Tools > Mesh to SDF and place in Resources/SDFMeshAssets/");
+            // Get all meshes from the model
+            var meshFilters = m_ModelInstance.GetComponentsInChildren<MeshFilter>();
+            if (meshFilters.Length == 0)
+            {
+                Debug.LogWarning("ModelStencil: No meshes found in model instance");
+                return;
+            }
+
+            // Combine all meshes into one for SDF generation
+            Mesh combinedMesh = CombineMeshesForSDF(meshFilters);
+
+            if (combinedMesh == null || combinedMesh.triangles.Length == 0)
+            {
+                Debug.LogWarning("ModelStencil: Failed to combine meshes for SDF generation");
+                return;
+            }
+
+            // Determine appropriate SDF size based on triangle count
+            int triangleCount = combinedMesh.triangles.Length / 3;
+            int sdfSize = RuntimeSDFGenerator.GetRecommendedSDFSize(triangleCount);
+
+            Debug.Log($"ModelStencil: Generating {sdfSize}³ SDF for model with {triangleCount:N0} triangles...");
+
+            // Generate SDF
+            m_SDFMeshAsset = RuntimeSDFGenerator.GenerateSDF(
+                combinedMesh,
+                sdfSize,
+                m_SDFPadding,
+                m_SDFComputeShader
+            );
+
+            if (m_SDFMeshAsset != null)
+            {
+                Debug.Log($"ModelStencil: Successfully generated SDF for '{m_Model.HumanName}'");
+            }
+        }
+
+        /// <summary>
+        /// Combine all meshes into a single mesh for SDF generation
+        /// </summary>
+        private Mesh CombineMeshesForSDF(MeshFilter[] meshFilters)
+        {
+            CombineInstance[] combine = new CombineInstance[meshFilters.Length];
+
+            for (int i = 0; i < meshFilters.Length; i++)
+            {
+                combine[i].mesh = meshFilters[i].sharedMesh;
+                combine[i].transform = meshFilters[i].transform.localToWorldMatrix;
+            }
+
+            Mesh combinedMesh = new Mesh();
+            combinedMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32; // Support large meshes
+            combinedMesh.CombineMeshes(combine, true, true);
+            combinedMesh.RecalculateNormals();
+            combinedMesh.RecalculateBounds();
+
+            return combinedMesh;
         }
 
         /// <summary>
