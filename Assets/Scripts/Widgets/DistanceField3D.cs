@@ -185,6 +185,7 @@ namespace TiltBrush
             var nativeTriangles = new NativeArray<int>(triangles, Allocator.TempJob);
 
             // Setup voxelization job
+            // Note: mesh vertices and bounds are both in widget local space
             m_VoxelJob = new VoxelizationJob
             {
                 vertices = nativeVertices,
@@ -192,8 +193,7 @@ namespace TiltBrush
                 gridSize = m_GridSize,
                 bounds = m_MeshBounds,
                 threshold = m_VoxelizationThreshold,
-                seeds = m_SeedData,
-                worldToLocal = m_MeshTransform.worldToLocalMatrix
+                seeds = m_SeedData
             };
 
             // Schedule job
@@ -368,6 +368,7 @@ namespace TiltBrush
 
         /// <summary>
         /// Job for voxelizing a mesh into seed points
+        /// Assumes vertices and bounds are in the same coordinate space (widget local space)
         /// </summary>
         private struct VoxelizationJob : IJobParallelFor
         {
@@ -376,7 +377,6 @@ namespace TiltBrush
             [ReadOnly] public Vector3Int gridSize;
             [ReadOnly] public Bounds bounds;
             [ReadOnly] public float threshold;
-            [ReadOnly] public Matrix4x4 worldToLocal;
 
             [WriteOnly] public NativeArray<Vector4> seeds;
 
@@ -388,7 +388,7 @@ namespace TiltBrush
                 int y = rem / gridSize.x;
                 int x = rem % gridSize.x;
 
-                // Calculate voxel center in world space
+                // Calculate voxel center in local space (widget's local coordinate system)
                 Vector3 normalizedPos = new Vector3(
                     (x + 0.5f) / gridSize.x,
                     (y + 0.5f) / gridSize.y,

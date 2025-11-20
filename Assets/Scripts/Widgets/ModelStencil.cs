@@ -152,10 +152,15 @@ namespace TiltBrush
             {
                 CombineInstance[] combine = new CombineInstance[meshFilters.Length];
 
+                // Get widget's world-to-local matrix to transform everything into widget local space
+                Matrix4x4 widgetToLocal = transform.worldToLocalMatrix;
+
                 for (int i = 0; i < meshFilters.Length; i++)
                 {
                     combine[i].mesh = meshFilters[i].sharedMesh;
-                    combine[i].transform = meshFilters[i].transform.localToWorldMatrix;
+                    // Transform from mesh's world space to widget's local space
+                    // This ensures the combined mesh is in the widget's local coordinate system
+                    combine[i].transform = widgetToLocal * meshFilters[i].transform.localToWorldMatrix;
                 }
 
                 Mesh combinedMesh = new Mesh();
@@ -179,14 +184,12 @@ namespace TiltBrush
 
             m_DistanceFieldReady = false;
 
-            // Get bounds
-            Bounds bounds = m_MeshCollider.bounds;
-
-            // Convert to local bounds
-            bounds.center = transform.InverseTransformPoint(bounds.center);
-            bounds.size = transform.InverseTransformVector(bounds.size);
+            // Get bounds in local space (mesh bounds are already in local coordinate system)
+            // Since the combined mesh is in widget local space, use the mesh bounds directly
+            Bounds bounds = m_MeshCollider.sharedMesh.bounds;
 
             // Trigger rebuild
+            // The mesh is in widget's local space, transform is the widget's transform
             m_DistanceField.RebuildForMesh(m_MeshCollider.sharedMesh, transform, bounds);
         }
 
