@@ -95,6 +95,16 @@ namespace TiltBrush
             int sampleKernel = computeShader.FindKernel("CS_SampleMeshDistances");
 
             // === Phase 1: Compute Bounds ===
+            // Initialize bounds buffer with appropriate values for InterlockedMin/Max
+            int[] initialBounds = new int[6];
+            initialBounds[0] = int.MaxValue; // min X
+            initialBounds[1] = int.MaxValue; // min Y
+            initialBounds[2] = int.MaxValue; // min Z
+            initialBounds[3] = int.MinValue; // max X
+            initialBounds[4] = int.MinValue; // max Y
+            initialBounds[5] = int.MinValue; // max Z
+            boundsBuffer.SetData(initialBounds);
+
             computeShader.SetBuffer(computeBoundsKernel, PropertyIDs.InputVertices, verticesBuffer);
             computeShader.SetBuffer(computeBoundsKernel, PropertyIDs.InputTriangles, trianglesBuffer);
             computeShader.SetBuffer(computeBoundsKernel, PropertyIDs.BoundsBuffer, boundsBuffer);
