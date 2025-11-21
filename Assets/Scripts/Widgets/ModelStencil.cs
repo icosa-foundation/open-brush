@@ -260,19 +260,30 @@ namespace TiltBrush
             // 3. Create SDFGroupMeshGenerator component
             m_MeshGenerator = gameObject.AddComponent<SDFGroupMeshGenerator>();
 
-            // Configure mesh generator settings
+            // Configure mesh generator settings using reflection (properties are read-only)
+            // VoxelSettings: Set cell count (SamplesPerSide = CellCount + 1)
             var voxelSettings = m_MeshGenerator.VoxelSettings;
-            voxelSettings.SamplesPerSide = m_PreviewResolution;
-            m_MeshGenerator.VoxelSettings.CopySettings(voxelSettings);
+            var cellCountField = typeof(VoxelSettings).GetField("m_cellCount",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            cellCountField?.SetValue(voxelSettings, m_PreviewResolution - 1);
 
+            // MainSettings: Set output mode and auto-update
             var mainSettings = m_MeshGenerator.MainSettings;
-            mainSettings.OutputMode = OutputMode.MeshFilter;
-            mainSettings.AutoUpdate = true;
-            m_MeshGenerator.MainSettings.CopySettings(mainSettings);
+            var outputModeField = typeof(MainSettings).GetField("m_outputMode",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            outputModeField?.SetValue(mainSettings, OutputMode.MeshFilter);
+            mainSettings.AutoUpdate = true; // This one has a setter
 
+            // AlgorithmSettings: Set isosurface extraction type
             var algorithmSettings = m_MeshGenerator.AlgorithmSettings;
-            algorithmSettings.IsosurfaceExtractionType = IsosurfaceExtractionType.SurfaceNets;
-            m_MeshGenerator.AlgorithmSettings.CopySettings(algorithmSettings);
+            var extractionTypeField = typeof(AlgorithmSettings).GetField("m_isosurfaceExtractionType",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            extractionTypeField?.SetValue(algorithmSettings, IsosurfaceExtractionType.SurfaceNets);
+
+            // Notify the mesh generator about setting changes
+            m_MeshGenerator.OnCellCountChanged();
+            m_MeshGenerator.OnOutputModeChanged();
+            m_MeshGenerator.OnIsosurfaceExtractionTypeChanged();
 
             // Manually initialize the group and mesh (since we're doing this at runtime)
             m_SDFGroup.Register(m_SDFMeshComponent);
