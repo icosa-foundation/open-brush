@@ -53,13 +53,13 @@ namespace TiltBrush
         {
             if (mesh == null)
             {
-                Debug.LogError("RuntimeSDFGenerator: Mesh is null");
+                Debug.LogError("ModelStencil: RuntimeSDFGenerator - Mesh is null");
                 return null;
             }
 
             if (computeShader == null)
             {
-                Debug.LogError("RuntimeSDFGenerator: Compute shader is null. Assign it in ModelStencil.");
+                Debug.LogError("ModelStencil: RuntimeSDFGenerator - Compute shader is null. Assign it in Inspector.");
                 return null;
             }
 
@@ -161,7 +161,7 @@ namespace TiltBrush
             samplesBuffer.Dispose();
 
             stopwatch.Stop();
-            Debug.Log($"RuntimeSDFGenerator: Generated {size}³ SDF in {stopwatch.ElapsedMilliseconds}ms");
+            Debug.Log($"ModelStencil: RuntimeSDFGenerator - Generated {size}³ SDF in {stopwatch.ElapsedMilliseconds}ms");
 
             // Create SDFMeshAsset in memory (not saved to disk)
             SDFMeshAsset asset = ScriptableObject.CreateInstance<SDFMeshAsset>();
