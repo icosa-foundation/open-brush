@@ -229,21 +229,14 @@ namespace TiltBrush
             if (m_SDFMeshAsset != null)
             {
                 Debug.Log($"ModelStencil: Successfully generated SDF for '{m_Model.HumanName}'");
-                Debug.Log($"ModelStencil: SDF will be used for accurate surface queries via FindClosestPointUsingSDF()");
-                Debug.Log($"ModelStencil: Keeping original model visible as preview (IsoMesh runtime mesh generation not needed)");
 
-                // NOTE: We don't need to generate a preview mesh from the SDF
-                // The SDF is used for accurate surface queries in FindClosestPointUsingSDF()
-                // The original model provides perfectly good visualization
-                // GenerateSDFPreviewMesh(); // Commented out - IsoMesh runtime API doesn't work as expected
+                // Generate and assign preview mesh from SDF
+                GenerateSDFPreviewMesh();
             }
         }
 
         /// <summary>
         /// Generate a preview mesh from the SDF using IsoMesh's mesh generator
-        /// NOTE: This method is currently not used because IsoMesh's runtime mesh generation
-        /// API (SDFGroupMeshGenerator.UpdateMesh()) does not generate meshes as expected.
-        /// The original model is kept visible instead, and the SDF is used only for surface queries.
         /// </summary>
         private void GenerateSDFPreviewMesh()
         {
