@@ -154,16 +154,10 @@ namespace TiltBrush
 #endif
 
             // Only setup mesh collider if below threshold
-            if (m_TotalTriangleCount <= threshold)
-            {
-                SetupMeshCollider();
-                Debug.Log($"ModelStencil: Created MeshCollider fallback ({m_TotalTriangleCount:N0} triangles < {threshold:N0} {platform} threshold)");
-            }
-            else
-            {
-                Debug.LogWarning($"ModelStencil: Mesh too complex for collider fallback ({m_TotalTriangleCount:N0} triangles > {threshold:N0} {platform} threshold). " +
-                               "IsoMesh SDFMeshAsset REQUIRED for this model. Generate via Tools > Mesh to SDF");
-            }
+            // if (m_TotalTriangleCount <= threshold)
+            // {
+            //     SetupMeshCollider();
+            // }
         }
 
         /// <summary>
@@ -388,40 +382,24 @@ namespace TiltBrush
 
         /// <summary>
         /// Find the closest point on the stencil surface
-        /// Uses IsoMesh SDF if available, otherwise MeshCollider (low-poly only)
         /// </summary>
         public override void FindClosestPointOnSurface(Vector3 pos,
                                                        out Vector3 surfacePos, out Vector3 surfaceNorm)
         {
-            // Use IsoMesh SDF if available
-            if (m_SDFMeshAsset != null)
-            {
-                FindClosestPointUsingSDF(pos, out surfacePos, out surfaceNorm);
-                return;
-            }
-
-            // Fallback to mesh collider (if available)
             if (m_MeshCollider != null)
             {
                 FindClosestPointUsingCollider(pos, out surfacePos, out surfaceNorm);
             }
+            else if (m_SDFMeshAsset != null)
+            {
+                FindClosestPointUsingSDF(pos, out surfacePos, out surfaceNorm);
+            }
             else
             {
-                // No collision method available - require IsoMesh
-                Debug.LogWarning($"ModelStencil: No collision method available for {m_TotalTriangleCount:N0} triangle mesh. " +
-                               "Generate IsoMesh SDFMeshAsset via Tools > Mesh to SDF");
-
-                // Fallback to simple bounds-based position
-                if (m_ModelInstance != null)
-                {
-                    surfacePos = m_ModelInstance.position;
-                    surfaceNorm = (pos - m_ModelInstance.position).normalized;
-                }
-                else
-                {
-                    surfacePos = transform.position;
-                    surfaceNorm = (pos - transform.position).normalized;
-                }
+                // Should never happen
+                Debug.LogWarning("No SDF or MeshCollider found");
+                surfacePos = transform.position;
+                surfaceNorm = (pos - transform.position).normalized;
             }
         }
 
