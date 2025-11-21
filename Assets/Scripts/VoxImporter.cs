@@ -298,6 +298,7 @@ namespace TiltBrush
 
             Vector3Int pos = Vector3Int.zero;
             bool[,] mask = new bool[dims[u], dims[v]];
+            bool[,] faceTowardsPositive = new bool[dims[u], dims[v]];
             Color32[,] colorMask = new Color32[dims[u], dims[v]];
 
             // Sweep through each slice along the axis
@@ -328,6 +329,7 @@ namespace TiltBrush
                         if (current != neighbor)
                         {
                             mask[pos[u], pos[v]] = true;
+                            faceTowardsPositive[pos[u], pos[v]] = neighbor;
                             colorMask[pos[u], pos[v]] = current
                                 ? grid.GetColor(checkPos)
                                 : grid.GetColor(neighborPos);
@@ -373,7 +375,8 @@ namespace TiltBrush
                         // Add quad to mesh
                         pos[u] = iu;
                         pos[v] = iv;
-                        AddQuad(meshData, pos, axis, width, height, currentColor);
+                        AddQuad(meshData, pos, axis, width, height, currentColor,
+                            faceTowardsPositive[iu, iv]);
 
                         // Clear mask for merged area
                         for (int ku = 0; ku < width; ku++)
@@ -393,7 +396,14 @@ namespace TiltBrush
             return a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a;
         }
 
-        private void AddQuad(MeshData meshData, Vector3Int pos, int axis, int width, int height, Color32 color)
+        private void AddQuad(
+            MeshData meshData,
+            Vector3Int pos,
+            int axis,
+            int width,
+            int height,
+            Color32 color,
+            bool normalTowardsPositive)
         {
             int baseIndex = meshData.vertices.Count;
 
@@ -408,22 +418,19 @@ namespace TiltBrush
             Vector3 dv = Vector3.zero;
             dv[v] = height;
 
-            // Determine if we need to flip the face based on axis direction
-            bool flip = pos[axis] < 0 || (pos[axis] == 0 && axis == 0);
-
             // Create quad vertices
             Vector3 v0 = origin;
             Vector3 v1 = origin + du;
             Vector3 v2 = origin + du + dv;
             Vector3 v3 = origin + dv;
 
-            if (flip)
-            {
-                meshData.vertices.Add(v0); meshData.colors.Add(color);
-                meshData.vertices.Add(v3); meshData.colors.Add(color);
-                meshData.vertices.Add(v2); meshData.colors.Add(color);
-                meshData.vertices.Add(v1); meshData.colors.Add(color);
+            meshData.vertices.Add(v0); meshData.colors.Add(color);
+            meshData.vertices.Add(v1); meshData.colors.Add(color);
+            meshData.vertices.Add(v2); meshData.colors.Add(color);
+            meshData.vertices.Add(v3); meshData.colors.Add(color);
 
+            if (normalTowardsPositive)
+            {
                 meshData.triangles.Add(baseIndex + 0);
                 meshData.triangles.Add(baseIndex + 1);
                 meshData.triangles.Add(baseIndex + 2);
@@ -434,11 +441,6 @@ namespace TiltBrush
             }
             else
             {
-                meshData.vertices.Add(v0); meshData.colors.Add(color);
-                meshData.vertices.Add(v1); meshData.colors.Add(color);
-                meshData.vertices.Add(v2); meshData.colors.Add(color);
-                meshData.vertices.Add(v3); meshData.colors.Add(color);
-
                 meshData.triangles.Add(baseIndex + 0);
                 meshData.triangles.Add(baseIndex + 2);
                 meshData.triangles.Add(baseIndex + 1);
