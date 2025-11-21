@@ -126,7 +126,16 @@ namespace TiltBrush
         public bool LoggedIn
         {
             // We don't consider us logged in until we have the UserInfo
-            get { return UserCredential?.Token?.AccessToken != null && Profile != null; }
+            get
+            {
+                if (m_Service == SecretsConfig.Service.Vive)
+                {
+                    var pub = FindObjectOfType<ViversePublishManager>();
+                    return pub != null && pub.IsAuthenticated() && Profile != null;
+                }
+
+                return UserCredential?.Token?.AccessToken != null && Profile != null;
+            }
         }
 
         public bool HasAccessToken
@@ -273,7 +282,7 @@ namespace TiltBrush
 
             try
             {
-                // Create VIVERSE-specific token (no Google dependency)
+                // Create VIVERSE-specific token
                 m_ViverseToken = ViverseTokenData.FromAuthResponse(accessToken, refreshToken, expiresIn);
 
                 // Save to PlayerPrefs as JSON
@@ -283,6 +292,16 @@ namespace TiltBrush
 
                 Debug.Log($"VIVERSE: Token saved, expires at {m_ViverseToken.ExpiresAt}");
 
+                // Add dummy profile so OAuth2Identity.LoggedIn becomes true
+                Profile = new UserInfo
+                {
+                    id = "viverse_user",
+                    name = "VIVERSE User",
+                    email = "",
+                    icon = null,
+                    isGoogle = false
+                };
+                
                 // Fetch user info
                 GetUserInfoAsync().WrapErrors();
 
@@ -303,9 +322,9 @@ namespace TiltBrush
                 ControllerConsoleScript.m_Instance?.AddNewLine("VIVERSE: Auth Manager not initialized");
                 return;
             }
-        
+
             m_ViverseAuthManager.StartAuthFlow();
-        
+
             ControllerConsoleScript.m_Instance?.AddNewLine("Opening VIVERSE login in browser...");
         }
 
@@ -385,16 +404,16 @@ namespace TiltBrush
                     m_ViverseAuthManager.OnAuthComplete -= OnViverseAuthComplete;
                     m_ViverseAuthManager.OnAuthError -= OnViverseAuthError;
                 }
-            
+
                 if (Profile != null && ControllerConsoleScript.m_Instance != null)
                 {
                     ControllerConsoleScript.m_Instance.AddNewLine(Profile.name + " logged out.");
                 }
-            
+
                 m_ViverseToken = null;
                 PlayerPrefs.DeleteKey("viverse_token");
                 PlayerPrefs.Save();
-            
+
                 Profile = null;
                 OnLogout?.Invoke();
                 return;
@@ -544,7 +563,7 @@ namespace TiltBrush
                 m_ViverseAuthManager.OnAuthError -= OnViverseAuthError;
             }
         }
-        
+
     }
 
 } // namespace TiltBrush
