@@ -238,9 +238,16 @@ namespace TiltBrush
             // Destroy the original model instance completely
             if (m_ModelInstance != null)
             {
-                Debug.Log("ModelStencil: Destroying original model instance");
-                Destroy(m_ModelInstance.gameObject);
+                Debug.Log($"ModelStencil: Destroying original model instance: {m_ModelInstance.name} (GameObject: {m_ModelInstance.gameObject.name})");
+                GameObject toDestroy = m_ModelInstance.gameObject;
+                Debug.Log($"ModelStencil: About to destroy GameObject at path: {GetGameObjectPath(toDestroy)}");
+                Destroy(toDestroy);
                 m_ModelInstance = null;
+                Debug.Log("ModelStencil: Model instance destroyed");
+            }
+            else
+            {
+                Debug.LogWarning("ModelStencil: m_ModelInstance is null, cannot destroy original model");
             }
 
             // Create IsoMesh component hierarchy
@@ -360,6 +367,15 @@ namespace TiltBrush
             {
                 m_MeshGenerator.UpdateMesh();
                 Debug.Log("ModelStencil: UpdateMesh() called");
+
+                // Check if MeshFilter was created
+                MeshFilter meshFilter = gameObject.GetComponent<MeshFilter>();
+                MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
+                Debug.Log($"ModelStencil: After UpdateMesh - MeshFilter: {meshFilter != null}, MeshRenderer: {meshRenderer != null}");
+                if (meshFilter != null)
+                {
+                    Debug.Log($"ModelStencil: MeshFilter.mesh: {meshFilter.mesh != null}, vertices: {meshFilter.mesh?.vertexCount ?? 0}");
+                }
             }
             else
             {
@@ -367,6 +383,21 @@ namespace TiltBrush
             }
 
             Debug.Log($"ModelStencil: IsoMesh preview mesh generation setup complete");
+        }
+
+        /// <summary>
+        /// Helper to get full path of a GameObject in the hierarchy
+        /// </summary>
+        private string GetGameObjectPath(GameObject obj)
+        {
+            string path = obj.name;
+            Transform current = obj.transform.parent;
+            while (current != null)
+            {
+                path = current.name + "/" + path;
+                current = current.parent;
+            }
+            return path;
         }
 
         /// <summary>
