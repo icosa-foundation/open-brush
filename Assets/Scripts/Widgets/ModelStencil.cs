@@ -221,23 +221,36 @@ namespace TiltBrush
         private void GenerateSDFPreviewMesh()
         {
             if (m_SDFMeshAsset == null)
+            {
+                Debug.LogError("ModelStencil: Cannot generate preview - SDFMeshAsset is null");
                 return;
+            }
 
             Debug.Log($"ModelStencil: Setting up IsoMesh preview mesh generation ({m_PreviewResolution}³ resolution)...");
 
-            // Hide the original model instance
+            // Destroy the original model instance completely
             if (m_ModelInstance != null)
             {
-                m_ModelInstance.gameObject.SetActive(false);
+                Debug.Log("ModelStencil: Destroying original model instance");
+                Destroy(m_ModelInstance.gameObject);
+                m_ModelInstance = null;
             }
 
             // Create IsoMesh component hierarchy
             // This follows IsoMesh's architecture: SDFGroup -> SDFMesh -> SDFGroupMeshGenerator
 
             // 1. Create SDFGroup component (manages the SDF hierarchy)
+            Debug.Log("ModelStencil: Creating SDFGroup component");
             m_SDFGroup = gameObject.AddComponent<SDFGroup>();
 
+            if (m_SDFGroup == null)
+            {
+                Debug.LogError("ModelStencil: Failed to create SDFGroup component");
+                return;
+            }
+
             // 2. Create a child GameObject for the SDFMesh component
+            Debug.Log("ModelStencil: Creating SDFMesh child object");
             GameObject sdfMeshObject = new GameObject("SDF Mesh");
             sdfMeshObject.transform.SetParent(transform);
             sdfMeshObject.transform.localPosition = Vector3.zero;
@@ -245,51 +258,108 @@ namespace TiltBrush
             sdfMeshObject.transform.localScale = Vector3.one;
 
             m_SDFMeshComponent = sdfMeshObject.AddComponent<SDFMesh>();
+            if (m_SDFMeshComponent == null)
+            {
+                Debug.LogError("ModelStencil: Failed to create SDFMesh component");
+                return;
+            }
 
             // Assign the SDFMeshAsset using reflection (Asset property is read-only)
+            Debug.Log($"ModelStencil: Assigning SDFMeshAsset (Size: {m_SDFMeshAsset.Size}, Bounds: {m_SDFMeshAsset.MinBounds} to {m_SDFMeshAsset.MaxBounds})");
             var assetField = typeof(SDFMesh).GetField("m_asset",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            assetField?.SetValue(m_SDFMeshComponent, m_SDFMeshAsset);
+
+            if (assetField == null)
+            {
+                Debug.LogError("ModelStencil: Failed to find 'm_asset' field in SDFMesh via reflection");
+                return;
+            }
+
+            assetField.SetValue(m_SDFMeshComponent, m_SDFMeshAsset);
+            Debug.Log($"ModelStencil: SDFMeshAsset assigned, Asset property = {m_SDFMeshComponent.Asset != null}");
 
             // 3. Create SDFGroupMeshGenerator component
+            Debug.Log("ModelStencil: Creating SDFGroupMeshGenerator component");
             m_MeshGenerator = gameObject.AddComponent<SDFGroupMeshGenerator>();
 
+            if (m_MeshGenerator == null)
+            {
+                Debug.LogError("ModelStencil: Failed to create SDFGroupMeshGenerator component");
+                return;
+            }
+
             // Configure mesh generator settings using reflection (properties are read-only)
+            Debug.Log("ModelStencil: Configuring IsoMesh settings via reflection");
+
             // VoxelSettings: Set cell count (SamplesPerSide = CellCount + 1)
             var voxelSettings = m_MeshGenerator.VoxelSettings;
             var cellCountField = typeof(VoxelSettings).GetField("m_cellCount",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            cellCountField?.SetValue(voxelSettings, m_PreviewResolution - 1);
+            if (cellCountField != null)
+            {
+                cellCountField.SetValue(voxelSettings, m_PreviewResolution - 1);
+                Debug.Log($"ModelStencil: Set cell count to {m_PreviewResolution - 1} (SamplesPerSide will be {m_PreviewResolution})");
+            }
+            else
+            {
+                Debug.LogError("ModelStencil: Failed to find 'm_cellCount' field in VoxelSettings");
+            }
 
             // MainSettings: Set output mode and auto-update
             var mainSettings = m_MeshGenerator.MainSettings;
             var outputModeField = typeof(MainSettings).GetField("m_outputMode",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            outputModeField?.SetValue(mainSettings, OutputMode.MeshFilter);
-            mainSettings.AutoUpdate = true; // This one has a setter
+            if (outputModeField != null)
+            {
+                outputModeField.SetValue(mainSettings, OutputMode.MeshFilter);
+                Debug.Log("ModelStencil: Set output mode to MeshFilter");
+            }
+            else
+            {
+                Debug.LogError("ModelStencil: Failed to find 'm_outputMode' field in MainSettings");
+            }
+            mainSettings.AutoUpdate = true;
+            Debug.Log("ModelStencil: Set AutoUpdate to true");
 
             // AlgorithmSettings: Set isosurface extraction type
             var algorithmSettings = m_MeshGenerator.AlgorithmSettings;
             var extractionTypeField = typeof(AlgorithmSettings).GetField("m_isosurfaceExtractionType",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            extractionTypeField?.SetValue(algorithmSettings, IsosurfaceExtractionType.SurfaceNets);
+            if (extractionTypeField != null)
+            {
+                extractionTypeField.SetValue(algorithmSettings, IsosurfaceExtractionType.SurfaceNets);
+                Debug.Log("ModelStencil: Set extraction type to SurfaceNets");
+            }
+            else
+            {
+                Debug.LogError("ModelStencil: Failed to find 'm_isosurfaceExtractionType' field in AlgorithmSettings");
+            }
 
             // Notify the mesh generator about setting changes
+            Debug.Log("ModelStencil: Notifying mesh generator of setting changes");
             m_MeshGenerator.OnCellCountChanged();
             m_MeshGenerator.OnOutputModeChanged();
             m_MeshGenerator.OnIsosurfaceExtractionTypeChanged();
 
             // Manually initialize the group and mesh (since we're doing this at runtime)
+            Debug.Log($"ModelStencil: Registering SDFMesh with SDFGroup (Group.IsReady = {m_SDFGroup.IsReady})");
             m_SDFGroup.Register(m_SDFMeshComponent);
+            Debug.Log($"ModelStencil: After registration - Group.IsReady = {m_SDFGroup.IsReady}, IsRegistered = {m_SDFGroup.IsRegistered(m_SDFMeshComponent)}");
 
             // Force an update to trigger mesh generation
             // Since we're creating components after Start(), we need to manually kick off the process
-            if (m_MeshGenerator != null)
+            Debug.Log("ModelStencil: Forcing mesh generation update");
+            if (m_MeshGenerator != null && m_SDFGroup.IsReady)
             {
                 m_MeshGenerator.UpdateMesh();
+                Debug.Log("ModelStencil: UpdateMesh() called");
+            }
+            else
+            {
+                Debug.LogWarning($"ModelStencil: Cannot update mesh - MeshGenerator null: {m_MeshGenerator == null}, Group ready: {m_SDFGroup.IsReady}");
             }
 
-            Debug.Log($"ModelStencil: IsoMesh preview mesh generation configured");
+            Debug.Log($"ModelStencil: IsoMesh preview mesh generation setup complete");
         }
 
         /// <summary>
