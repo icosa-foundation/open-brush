@@ -236,14 +236,15 @@ namespace TiltBrush
             Debug.Log($"ModelStencil: Setting up IsoMesh preview mesh generation ({m_PreviewResolution}³ resolution)...");
 
             // Destroy the original model instance completely
+            // Use DestroyImmediate since we're in runtime setup, not a Unity lifecycle method
             if (m_ModelInstance != null)
             {
                 Debug.Log($"ModelStencil: Destroying original model instance: {m_ModelInstance.name} (GameObject: {m_ModelInstance.gameObject.name})");
                 GameObject toDestroy = m_ModelInstance.gameObject;
                 Debug.Log($"ModelStencil: About to destroy GameObject at path: {GetGameObjectPath(toDestroy)}");
-                Destroy(toDestroy);
+                DestroyImmediate(toDestroy);
                 m_ModelInstance = null;
-                Debug.Log("ModelStencil: Model instance destroyed");
+                Debug.Log("ModelStencil: Model instance destroyed immediately");
             }
             else
             {
@@ -368,13 +369,30 @@ namespace TiltBrush
                 m_MeshGenerator.UpdateMesh();
                 Debug.Log("ModelStencil: UpdateMesh() called");
 
-                // Check if MeshFilter was created
+                // Check if MeshFilter was created on the main object
                 MeshFilter meshFilter = gameObject.GetComponent<MeshFilter>();
                 MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
-                Debug.Log($"ModelStencil: After UpdateMesh - MeshFilter: {meshFilter != null}, MeshRenderer: {meshRenderer != null}");
+                Debug.Log($"ModelStencil: After UpdateMesh - MeshFilter on main: {meshFilter != null}, MeshRenderer on main: {meshRenderer != null}");
                 if (meshFilter != null)
                 {
                     Debug.Log($"ModelStencil: MeshFilter.mesh: {meshFilter.mesh != null}, vertices: {meshFilter.mesh?.vertexCount ?? 0}");
+                }
+
+                // Check for generated mesh in children
+                MeshFilter[] childFilters = GetComponentsInChildren<MeshFilter>();
+                Debug.Log($"ModelStencil: Found {childFilters.Length} MeshFilters in hierarchy");
+                foreach (var filter in childFilters)
+                {
+                    if (filter.gameObject != gameObject) // Skip main object
+                    {
+                        Debug.Log($"ModelStencil: Child MeshFilter on '{filter.gameObject.name}' at path: {GetGameObjectPath(filter.gameObject)}");
+                        Debug.Log($"  - Mesh: {filter.mesh != null}, Vertices: {filter.mesh?.vertexCount ?? 0}, Active: {filter.gameObject.activeSelf}");
+                        MeshRenderer childRenderer = filter.GetComponent<MeshRenderer>();
+                        if (childRenderer != null)
+                        {
+                            Debug.Log($"  - Renderer enabled: {childRenderer.enabled}, Material: {childRenderer.sharedMaterial?.name ?? "null"}");
+                        }
+                    }
                 }
             }
             else
