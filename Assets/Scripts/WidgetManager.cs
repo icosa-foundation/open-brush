@@ -14,6 +14,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using IsoMesh;
 using UnityEngine;
 
@@ -1505,7 +1506,14 @@ namespace TiltBrush
 
                 for (int i = 0; i < m_loadingTiltModels75.Length; i++)
                 {
-                    ModelWidget.CreateModelFromSaveData(m_loadingTiltModels75[i]);
+                    Task createTask = ModelWidget.CreateModelFromSaveData(m_loadingTiltModels75[i]);
+                    using (IEnumerator<Null> createCoroutine = createTask.AsIeNull())
+                    {
+                        while (createCoroutine.MoveNext())
+                        {
+                            yield return createCoroutine.Current;
+                        }
+                    }
                     OverlayManager.m_Instance.UpdateProgress(
                         (float)(i + 1) / m_loadingTiltModels75.Length, true);
                 }

@@ -170,9 +170,27 @@ namespace TiltBrush
             m_ScriptPathsToUpdate.Add(e.FullPath);
         }
 
-        public void Init()
+        public void Init(bool immediate = false)
         {
             if (m_IsInitialized) return;
+            if (immediate)
+            {
+                _InitImpl();
+            }
+            else
+            {
+                StartCoroutine(
+                    OverlayManager.m_Instance.RunInCompositor(
+                        OverlayType.LoadGeneric,
+                        _InitImpl,
+                        0.25f
+                    )
+                );
+            }
+        }
+
+        private void _InitImpl()
+        {
             m_WebRequests = new LinkedList<LuaWebRequest>();
             m_TransformBuffers = new TransformBuffers(128);
             m_ScriptPathsToUpdate = new List<string>();
@@ -727,11 +745,11 @@ namespace TiltBrush
                 }
                 else // It's hopefully an IPathApiWrapper instance
                 {
-                    if (result.UserData.Descriptor.Type == typeof(MatrixListApiWrapper))
+                    if (result.UserData?.Descriptor?.Type == typeof(MatrixListApiWrapper))
                     {
                         wrapper = result.ToObject<MatrixListApiWrapper>();
                     }
-                    else if (result.UserData.Descriptor.Type == typeof(PathApiWrapper))
+                    else if (result.UserData?.Descriptor?.Type == typeof(PathApiWrapper))
                     {
                         wrapper = result.ToObject<PathApiWrapper>();
                     }
@@ -1249,7 +1267,53 @@ namespace TiltBrush
 
             tr_CS.rotation = SelectionManager.m_Instance.QuantizeAngle(tr_CS.rotation);
 
-            if (transforms != null) DrawStrokes.DrawNestedTrList(transforms, tr_CS, result._Colors, brushScale);
+            if (transforms != null)
+            {
+                var xfSymmetriesGS = PointerManager.m_Instance.GetSymmetriesForCurrentMode();
+                if (xfSymmetriesGS.Count == 0)
+                {
+                    DrawStrokes.DrawNestedTrList(transforms, tr_CS, result._Colors, brushScale);
+                }
+                else
+                {
+                    // Pre-calculate left transforms for canvas space.
+                    var xfSymmetriesCS = new List<TrTransform>();
+                    var xfCSfromGS = App.ActiveCanvas.Pose.inverse;
+                    var xfGSfromCS = App.ActiveCanvas.Pose;
+                    foreach (var sym in xfSymmetriesGS)
+                    {
+                        xfSymmetriesCS.Add(xfCSfromGS * sym * xfGSfromCS);
+                    }
+
+                    var newTransforms = new List<List<TrTransform>>();
+                    foreach (var trList in transforms)
+                    {
+                        foreach (var sym in xfSymmetriesCS)
+                        {
+                            var newTrList = trList.Select(x =>
+                            {
+                                // Apply full tr_CS transform to the original transform, then apply symmetry
+                                var transformedByTrCS = tr_CS * x;
+                                var symmetriedTransform = sym * transformedByTrCS;
+
+                                // Check if symmetry transform has negative scale (reflection)
+                                // If so, remove it by applying a compensating reflection
+                                if (sym.scale < 0)
+                                {
+                                    // Apply the same fix as TrFromMatrixWithFixedReflections - X-axis reflection
+                                    var kReflectX = new Plane(new Vector3(1, 0, 0), 0).ToTrTransform();
+                                    symmetriedTransform = symmetriedTransform * kReflectX;
+                                }
+
+                                return symmetriedTransform;
+                            }).ToList();
+                            newTransforms.Add(newTrList);
+                        }
+                    }
+                    DrawStrokes.DrawNestedTrList(newTransforms, TrTransform.identity, result._Colors, brushScale);
+                }
+            }
+
             if (result._Colors == null)
             {
                 // If our script doesn't generate colors
