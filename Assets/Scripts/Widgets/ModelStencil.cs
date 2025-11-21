@@ -128,20 +128,27 @@ namespace TiltBrush
 
             // Instantiate model
             m_ModelInstance = Instantiate(m_Model.m_ModelParent);
+            if (m_ModelInstance == null)
+            {
+                Debug.LogError("ModelStencil: Failed to instantiate model - m_ModelParent returned null");
+                return;
+            }
+
             m_ModelInstance.gameObject.SetActive(true);
             m_ModelInstance.parent = transform;
             m_ModelInstance.localPosition = Vector3.zero;
             m_ModelInstance.localRotation = Quaternion.identity;
             m_ModelInstance.localScale = Vector3.one;
 
+            // Count total triangles BEFORE generating SDF (which destroys the model instance)
+            m_TotalTriangleCount = CountTotalTriangles();
+            Debug.Log($"ModelStencil: Model has {m_TotalTriangleCount:N0} triangles");
+
             // Generate SDF at runtime if not manually assigned
             if (m_SDFMeshAsset == null)
             {
                 GenerateSDFAtRuntime();
             }
-
-            // Count total triangles
-            m_TotalTriangleCount = CountTotalTriangles();
 
             // Determine triangle threshold based on platform
             int threshold;
@@ -389,6 +396,12 @@ namespace TiltBrush
         /// </summary>
         private int CountTotalTriangles()
         {
+            if (m_ModelInstance == null)
+            {
+                Debug.LogError("ModelStencil: Cannot count triangles - model instance is null");
+                return 0;
+            }
+
             int total = 0;
             var meshFilters = m_ModelInstance.GetComponentsInChildren<MeshFilter>();
             foreach (var mf in meshFilters)
