@@ -46,6 +46,7 @@ namespace TiltBrush
         private MeshFilter m_MeshFilter;
         private Transform m_ModelInstance;
         private int m_TotalTriangleCount = 0;
+        private bool m_ModelLoaded = false;
 
         // IsoMesh components for preview mesh generation
         private SDFGroup m_SDFGroup;
@@ -89,7 +90,8 @@ namespace TiltBrush
 
         private void Start()
         {
-            if (m_Model != null)
+            // Only load if not already loaded (Model property setter may have already called LoadModel)
+            if (m_Model != null && !m_ModelLoaded)
             {
                 LoadModel();
             }
@@ -119,6 +121,13 @@ namespace TiltBrush
         {
             if (m_Model == null || m_Model.m_ModelParent == null)
                 return;
+
+            // Prevent double-loading (can be called from both property setter and Start())
+            if (m_ModelLoaded)
+            {
+                Debug.Log("ModelStencil: LoadModel() called but model already loaded, skipping");
+                return;
+            }
 
             // Clean up existing model instance
             if (m_ModelInstance != null)
@@ -165,6 +174,10 @@ namespace TiltBrush
             // {
             //     SetupMeshCollider();
             // }
+
+            // Mark model as loaded to prevent double-loading
+            m_ModelLoaded = true;
+            Debug.Log("ModelStencil: Model loading complete");
         }
 
         /// <summary>
@@ -419,50 +432,78 @@ namespace TiltBrush
         }
 
         /// <summary>
-        /// Coroutine to check if mesh was generated after a frame delay
-        /// (IsoMesh might generate meshes asynchronously)
+        /// Coroutine to check if mesh was generated after frame delays
+        /// (IsoMesh might generate meshes asynchronously over multiple frames)
         /// </summary>
         private System.Collections.IEnumerator CheckMeshGenerationCoroutine()
         {
-            // Wait a frame for IsoMesh to potentially generate the mesh
-            yield return null;
+            // Check after 1, 5, and 30 frames to see if IsoMesh generates the mesh
+            int[] frameChecks = { 1, 5, 30 };
 
-            Debug.Log("ModelStencil: [Frame+1] Checking if mesh was generated...");
-
-            // Check if MeshFilter was created on the main object
-            MeshFilter meshFilter = gameObject.GetComponent<MeshFilter>();
-            MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
-            Debug.Log($"ModelStencil: [Frame+1] MeshFilter on main: {meshFilter != null}, MeshRenderer on main: {meshRenderer != null}");
-            if (meshFilter != null)
+            foreach (int frameCount in frameChecks)
             {
-                Debug.Log($"ModelStencil: [Frame+1] MeshFilter.mesh: {meshFilter.mesh != null}, vertices: {meshFilter.mesh?.vertexCount ?? 0}");
-                if (meshFilter.mesh != null && meshRenderer != null)
+                // Wait the specified number of frames
+                for (int i = 0; i < frameCount; i++)
                 {
-                    Debug.Log($"ModelStencil: [Frame+1] Material: {meshRenderer.sharedMaterial?.name ?? "null"}, Enabled: {meshRenderer.enabled}");
+                    yield return null;
                 }
-            }
 
-            // Check for generated mesh in children
-            MeshFilter[] childFilters = GetComponentsInChildren<MeshFilter>();
-            Debug.Log($"ModelStencil: [Frame+1] Found {childFilters.Length} MeshFilters in hierarchy");
-            foreach (var filter in childFilters)
-            {
-                if (filter.gameObject != gameObject) // Skip main object
+                Debug.Log($"ModelStencil: [Frame+{frameCount}] Checking if mesh was generated...");
+
+                // Check if MeshFilter was created on the main object
+                MeshFilter meshFilter = gameObject.GetComponent<MeshFilter>();
+                MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
+                Debug.Log($"ModelStencil: [Frame+{frameCount}] MeshFilter on main: {meshFilter != null}, MeshRenderer on main: {meshRenderer != null}");
+                if (meshFilter != null)
                 {
-                    Debug.Log($"ModelStencil: [Frame+1] Child MeshFilter on '{filter.gameObject.name}' at path: {GetGameObjectPath(filter.gameObject)}");
-                    Debug.Log($"ModelStencil: [Frame+1]   - Mesh: {filter.mesh != null}, Vertices: {filter.mesh?.vertexCount ?? 0}, Active: {filter.gameObject.activeSelf}");
-                    MeshRenderer childRenderer = filter.GetComponent<MeshRenderer>();
-                    if (childRenderer != null)
+                    Debug.Log($"ModelStencil: [Frame+{frameCount}] MeshFilter.mesh: {meshFilter.mesh != null}, vertices: {meshFilter.mesh?.vertexCount ?? 0}");
+                    if (meshFilter.mesh != null && meshRenderer != null)
                     {
-                        Debug.Log($"ModelStencil: [Frame+1]   - Renderer enabled: {childRenderer.enabled}, Material: {childRenderer.sharedMaterial?.name ?? "null"}");
+                        Debug.Log($"ModelStencil: [Frame+{frameCount}] Material: {meshRenderer.sharedMaterial?.name ?? "null"}, Enabled: {meshRenderer.enabled}");
+                        yield break; // Success! Stop checking
                     }
                 }
-            }
 
-            // If no mesh was generated, something is wrong
-            if (meshFilter == null && childFilters.Length <= 1)
-            {
-                Debug.LogError("ModelStencil: [Frame+1] IsoMesh did not generate any mesh! Check if UpdateMesh() works at runtime.");
+                // Check for generated mesh in children
+                MeshFilter[] childFilters = GetComponentsInChildren<MeshFilter>();
+                Debug.Log($"ModelStencil: [Frame+{frameCount}] Found {childFilters.Length} MeshFilters in hierarchy");
+
+                bool foundIsoMeshGenerated = false;
+                foreach (var filter in childFilters)
+                {
+                    if (filter.gameObject != gameObject) // Skip main object
+                    {
+                        string path = GetGameObjectPath(filter.gameObject);
+                        // Check if this is the IsoMesh-generated mesh (not the base widget meshes)
+                        if (path.Contains("SDF Mesh") || filter.gameObject.name.Contains("Generated Mesh"))
+                        {
+                            Debug.Log($"ModelStencil: [Frame+{frameCount}] IsoMesh child MeshFilter on '{filter.gameObject.name}' at path: {path}");
+                            Debug.Log($"ModelStencil: [Frame+{frameCount}]   - Mesh: {filter.mesh != null}, Vertices: {filter.mesh?.vertexCount ?? 0}, Active: {filter.gameObject.activeSelf}");
+                            MeshRenderer childRenderer = filter.GetComponent<MeshRenderer>();
+                            if (childRenderer != null)
+                            {
+                                Debug.Log($"ModelStencil: [Frame+{frameCount}]   - Renderer enabled: {childRenderer.enabled}, Material: {childRenderer.sharedMaterial?.name ?? "null"}");
+                            }
+                            if (filter.mesh != null && filter.mesh.vertexCount > 0)
+                            {
+                                foundIsoMeshGenerated = true;
+                            }
+                        }
+                    }
+                }
+
+                // If we found a generated mesh, stop checking
+                if (foundIsoMeshGenerated)
+                {
+                    Debug.Log($"ModelStencil: [Frame+{frameCount}] IsoMesh successfully generated mesh!");
+                    yield break;
+                }
+
+                // If this was the last check and no mesh was generated, log an error
+                if (frameCount == frameChecks[frameChecks.Length - 1])
+                {
+                    Debug.LogError($"ModelStencil: [Frame+{frameCount}] IsoMesh did not generate any mesh after {frameCount} frames! This likely means UpdateMesh() doesn't work at runtime or requires different API.");
+                }
             }
         }
 
