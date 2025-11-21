@@ -242,9 +242,31 @@ namespace TiltBrush
                 Debug.Log($"ModelStencil: Destroying original model instance: {m_ModelInstance.name} (GameObject: {m_ModelInstance.gameObject.name})");
                 GameObject toDestroy = m_ModelInstance.gameObject;
                 Debug.Log($"ModelStencil: About to destroy GameObject at path: {GetGameObjectPath(toDestroy)}");
+                Debug.Log($"ModelStencil: GameObject has {toDestroy.transform.childCount} children");
+
+                // Destroy all children first to ensure clean destruction
+                while (toDestroy.transform.childCount > 0)
+                {
+                    Transform child = toDestroy.transform.GetChild(0);
+                    Debug.Log($"ModelStencil: Destroying child: {child.name}");
+                    DestroyImmediate(child.gameObject);
+                }
+
+                Debug.Log($"ModelStencil: All children destroyed, now destroying parent");
                 DestroyImmediate(toDestroy);
                 m_ModelInstance = null;
                 Debug.Log("ModelStencil: Model instance destroyed immediately");
+
+                // Verify destruction
+                Transform[] allChildren = transform.GetComponentsInChildren<Transform>(true);
+                Debug.Log($"ModelStencil: After destruction, StencilModel has {allChildren.Length - 1} children/descendants");
+                foreach (Transform child in allChildren)
+                {
+                    if (child != transform)
+                    {
+                        Debug.Log($"ModelStencil: Remaining child: {child.name} at path: {GetGameObjectPath(child.gameObject)}");
+                    }
+                }
             }
             else
             {
@@ -369,31 +391,9 @@ namespace TiltBrush
                 m_MeshGenerator.UpdateMesh();
                 Debug.Log("ModelStencil: UpdateMesh() called");
 
-                // Check if MeshFilter was created on the main object
-                MeshFilter meshFilter = gameObject.GetComponent<MeshFilter>();
-                MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
-                Debug.Log($"ModelStencil: After UpdateMesh - MeshFilter on main: {meshFilter != null}, MeshRenderer on main: {meshRenderer != null}");
-                if (meshFilter != null)
-                {
-                    Debug.Log($"ModelStencil: MeshFilter.mesh: {meshFilter.mesh != null}, vertices: {meshFilter.mesh?.vertexCount ?? 0}");
-                }
-
-                // Check for generated mesh in children
-                MeshFilter[] childFilters = GetComponentsInChildren<MeshFilter>();
-                Debug.Log($"ModelStencil: Found {childFilters.Length} MeshFilters in hierarchy");
-                foreach (var filter in childFilters)
-                {
-                    if (filter.gameObject != gameObject) // Skip main object
-                    {
-                        Debug.Log($"ModelStencil: Child MeshFilter on '{filter.gameObject.name}' at path: {GetGameObjectPath(filter.gameObject)}");
-                        Debug.Log($"  - Mesh: {filter.mesh != null}, Vertices: {filter.mesh?.vertexCount ?? 0}, Active: {filter.gameObject.activeSelf}");
-                        MeshRenderer childRenderer = filter.GetComponent<MeshRenderer>();
-                        if (childRenderer != null)
-                        {
-                            Debug.Log($"  - Renderer enabled: {childRenderer.enabled}, Material: {childRenderer.sharedMaterial?.name ?? "null"}");
-                        }
-                    }
-                }
+                // Start coroutine to check mesh generation after a frame
+                // (IsoMesh might generate meshes asynchronously)
+                StartCoroutine(CheckMeshGenerationCoroutine());
             }
             else
             {
@@ -416,6 +416,54 @@ namespace TiltBrush
                 current = current.parent;
             }
             return path;
+        }
+
+        /// <summary>
+        /// Coroutine to check if mesh was generated after a frame delay
+        /// (IsoMesh might generate meshes asynchronously)
+        /// </summary>
+        private System.Collections.IEnumerator CheckMeshGenerationCoroutine()
+        {
+            // Wait a frame for IsoMesh to potentially generate the mesh
+            yield return null;
+
+            Debug.Log("ModelStencil: [Frame+1] Checking if mesh was generated...");
+
+            // Check if MeshFilter was created on the main object
+            MeshFilter meshFilter = gameObject.GetComponent<MeshFilter>();
+            MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
+            Debug.Log($"ModelStencil: [Frame+1] MeshFilter on main: {meshFilter != null}, MeshRenderer on main: {meshRenderer != null}");
+            if (meshFilter != null)
+            {
+                Debug.Log($"ModelStencil: [Frame+1] MeshFilter.mesh: {meshFilter.mesh != null}, vertices: {meshFilter.mesh?.vertexCount ?? 0}");
+                if (meshFilter.mesh != null && meshRenderer != null)
+                {
+                    Debug.Log($"ModelStencil: [Frame+1] Material: {meshRenderer.sharedMaterial?.name ?? "null"}, Enabled: {meshRenderer.enabled}");
+                }
+            }
+
+            // Check for generated mesh in children
+            MeshFilter[] childFilters = GetComponentsInChildren<MeshFilter>();
+            Debug.Log($"ModelStencil: [Frame+1] Found {childFilters.Length} MeshFilters in hierarchy");
+            foreach (var filter in childFilters)
+            {
+                if (filter.gameObject != gameObject) // Skip main object
+                {
+                    Debug.Log($"ModelStencil: [Frame+1] Child MeshFilter on '{filter.gameObject.name}' at path: {GetGameObjectPath(filter.gameObject)}");
+                    Debug.Log($"ModelStencil: [Frame+1]   - Mesh: {filter.mesh != null}, Vertices: {filter.mesh?.vertexCount ?? 0}, Active: {filter.gameObject.activeSelf}");
+                    MeshRenderer childRenderer = filter.GetComponent<MeshRenderer>();
+                    if (childRenderer != null)
+                    {
+                        Debug.Log($"ModelStencil: [Frame+1]   - Renderer enabled: {childRenderer.enabled}, Material: {childRenderer.sharedMaterial?.name ?? "null"}");
+                    }
+                }
+            }
+
+            // If no mesh was generated, something is wrong
+            if (meshFilter == null && childFilters.Length <= 1)
+            {
+                Debug.LogError("ModelStencil: [Frame+1] IsoMesh did not generate any mesh! Check if UpdateMesh() works at runtime.");
+            }
         }
 
         /// <summary>
