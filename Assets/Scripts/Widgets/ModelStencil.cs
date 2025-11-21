@@ -396,22 +396,9 @@ namespace TiltBrush
             m_SDFGroup.Register(m_SDFMeshComponent);
             Debug.Log($"ModelStencil: After registration - Group.IsReady = {m_SDFGroup.IsReady}, IsRegistered = {m_SDFGroup.IsRegistered(m_SDFMeshComponent)}");
 
-            // Force an update to trigger mesh generation
-            // Since we're creating components after Start(), we need to manually kick off the process
-            Debug.Log("ModelStencil: Forcing mesh generation update");
-            if (m_MeshGenerator != null && m_SDFGroup.IsReady)
-            {
-                m_MeshGenerator.UpdateMesh();
-                Debug.Log("ModelStencil: UpdateMesh() called");
-
-                // Start coroutine to check mesh generation after a frame
-                // (IsoMesh might generate meshes asynchronously)
-                StartCoroutine(CheckMeshGenerationCoroutine());
-            }
-            else
-            {
-                Debug.LogWarning($"ModelStencil: Cannot update mesh - MeshGenerator null: {m_MeshGenerator == null}, Group ready: {m_SDFGroup.IsReady}");
-            }
+            // Start coroutine to trigger mesh generation after components are initialized
+            // IsoMesh components need to go through Unity's lifecycle (OnEnable, Start) before UpdateMesh() works
+            StartCoroutine(TriggerMeshGenerationCoroutine());
 
             Debug.Log($"ModelStencil: IsoMesh preview mesh generation setup complete");
         }
@@ -429,6 +416,34 @@ namespace TiltBrush
                 current = current.parent;
             }
             return path;
+        }
+
+        /// <summary>
+        /// Coroutine to trigger mesh generation after IsoMesh components are initialized
+        /// </summary>
+        private System.Collections.IEnumerator TriggerMeshGenerationCoroutine()
+        {
+            // Wait a few frames for IsoMesh components to complete their initialization
+            // (OnEnable, Start, etc. need to run first)
+            Debug.Log("ModelStencil: Waiting for IsoMesh components to initialize...");
+            yield return null; // Wait 1 frame
+            yield return null; // Wait another frame to be safe
+
+            Debug.Log("ModelStencil: Components initialized, calling UpdateMesh()...");
+
+            if (m_MeshGenerator != null && m_SDFGroup != null && m_SDFGroup.IsReady)
+            {
+                // Now trigger mesh generation
+                m_MeshGenerator.UpdateMesh();
+                Debug.Log("ModelStencil: UpdateMesh() called");
+
+                // Start checking coroutine to see if mesh was generated
+                StartCoroutine(CheckMeshGenerationCoroutine());
+            }
+            else
+            {
+                Debug.LogError($"ModelStencil: Cannot call UpdateMesh() - MeshGenerator: {m_MeshGenerator != null}, SDFGroup: {m_SDFGroup != null}, Group.IsReady: {m_SDFGroup?.IsReady ?? false}");
+            }
         }
 
         /// <summary>
