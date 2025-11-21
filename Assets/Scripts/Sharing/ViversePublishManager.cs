@@ -28,6 +28,7 @@ namespace TiltBrush
         private ViverseAuthManager m_AuthManager;
         private string m_AccessToken;
         private string m_LastSceneSid;
+        private WorldContentResponse m_LastResponse;
         
         public event Action<bool, string> OnPublishComplete;
         public event Action<float> OnUploadProgress;
@@ -125,7 +126,7 @@ namespace TiltBrush
             });
         }
 
-        private IEnumerator CreateWorldContent(string title, string description, Action<bool, string, string> callback)
+        public IEnumerator CreateWorldContent(string title, string description, Action<bool, string, string> callback)
         {
             string url = $"{WORLD_API_BASE}/contents";
             
@@ -163,6 +164,8 @@ namespace TiltBrush
                     
                     if (!string.IsNullOrEmpty(response.scene_sid))
                     {
+                        m_LastSceneSid = response.scene_sid;
+                        m_LastResponse = response;
                         PlayerPrefs.SetString("viverse_scene_sid", response.scene_sid);
                         PlayerPrefs.Save();
                         callback?.Invoke(true, response.scene_sid, null);
@@ -181,7 +184,7 @@ namespace TiltBrush
             request.Dispose();
         }
 
-        private IEnumerator UploadWorldContent(string sceneSid, string zipFilePath)
+        public IEnumerator UploadWorldContent(string sceneSid, string zipFilePath)
         {
             string url = $"{WORLD_API_BASE}/contents/{sceneSid}/upload";
             string fileName = Path.GetFileName(zipFilePath);
@@ -295,6 +298,11 @@ namespace TiltBrush
         public string GetLastSceneSid()
         {
             return m_LastSceneSid ?? PlayerPrefs.GetString("viverse_scene_sid", "");
+        }
+        
+        public WorldContentResponse GetLastResponse()
+        {
+            return m_LastResponse;
         }
 
         void OnDestroy()
