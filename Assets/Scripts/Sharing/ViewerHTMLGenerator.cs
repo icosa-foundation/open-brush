@@ -124,7 +124,7 @@ import { GLTFLoader }                           from 'three/addons/loaders/GLTFL
 import { OrbitControls }                        from 'three/addons/controls/OrbitControls.js'
 import { VRButton }                             from 'three/addons/webxr/VRButton.js'
 import { XRControllerModelFactory }             from ""three/addons/webxr/XRControllerModelFactory.js""
-import { GLTFGoogleTiltBrushMaterialExtension } from '/libs/three-icosa.module.js'
+import { GLTFGoogleTiltBrushMaterialExtension } from './libs/three-icosa.module.js'
 		 
 let   canvas, renderer, vr_button, scene, camera_group, camera, clock, keys = {}, beep
 let   client, token, auth, avatar, play, match, profile, room, actor, multi, update_position_interval, update_position_time = 30, actors =[], session_id
