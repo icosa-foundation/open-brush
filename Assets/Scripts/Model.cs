@@ -814,12 +814,11 @@ namespace TiltBrush
         {
             Task t = StartCreatePrefab(null);
             await t;
-
         }
+
         public void LoadModel()
         {
             StartCreatePrefab(null);
-
         }
 
         /// Either synchronously load a GameObject hierarchy and convert it to a "prefab"
