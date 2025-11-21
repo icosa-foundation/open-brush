@@ -90,7 +90,7 @@ namespace TiltBrush
         [LuaDocsDescription(@"Converts this model to a stencil/guide for painting")]
         [LuaDocsExample(@"myStencil = myModel:ConvertToStencil()")]
         [LuaDocsReturnValue(@"Returns a ModelStencil instance that can be used as a guide")]
-        public ModelStencil ConvertToStencil()
+        public ModelStencil ConvertToGuide()
         {
             if (_ModelWidget == null)
             {

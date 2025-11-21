@@ -164,5 +164,16 @@ namespace TiltBrush
             var cmd = new BreakModelApartCommand(model);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
+
+        [ApiEndpoint(
+            "model.toguide",
+            "Converts a model to a guide",
+            "0"
+        )]
+        public static void ConvertToGuide(int index)
+        {
+            var model = _GetActiveModel(index);
+            model.ConvertToStencil();
+        }
     }
 }
