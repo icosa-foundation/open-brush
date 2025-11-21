@@ -176,7 +176,7 @@ namespace TiltBrush
             RefreshIcosaUserInfoUi();
 
             // Vive.
-            OAuth2Identity.UserInfo viveInfo = App.SketchfabIdentity.Profile;
+            OAuth2Identity.UserInfo viveInfo = App.ViveIdentity.Profile;
             bool viveInfoValid = viveInfo != null;
             m_ViveSignedInElements.SetActive(viveInfoValid);
             m_ViveSignedOutElements.SetActive(!viveInfoValid);
