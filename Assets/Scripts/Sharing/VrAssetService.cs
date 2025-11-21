@@ -20,6 +20,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Google.Apis.Http;
 using Newtonsoft.Json.Linq;
 using Org.OpenAPITools.Api;
 using Org.OpenAPITools.Client;
@@ -476,6 +477,11 @@ namespace TiltBrush
                             m_UploadTask.Task = UploadCurrentSketchSketchfabAsync(m_UploadTask.Token, tempUploadDir.Value,
                                 isDemoUpload);
                             break;
+                        case Cloud.Vive:
+                            m_UploadTask.Task = UploadCurrentSketchViverseAsync(m_UploadTask.Token, tempUploadDir.Value,
+                                isDemoUpload);
+                            break;
+
                     }
                     var (url, _) = await m_UploadTask.Task;
                     m_LastUploadCompleteUrl = url;
@@ -799,6 +805,190 @@ namespace TiltBrush
             // API and find out when it's done and pop up the window then?
             string uri = $"{SketchfabService.kModelLandingPage}{response.uid}";
             return (uri, uploadLength);
+        }
+
+        private async Task<(string, long)> UploadCurrentSketchViverseAsync(
+            CancellationToken token, string tempUploadDir, bool isDemoUpload)
+        {
+            DiskSceneFileInfo fileInfo = GetWritableFile();
+            var currentScene = SaveLoadScript.m_Instance.SceneFile;
+            string uploadName = currentScene.Valid ? currentScene.HumanName : kDefaultName;
+
+            // Generate title + description
+            string timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            string title = $"{uploadName}_{timestamp}";
+            if (title.Length > 30) title = title.Substring(0, 30);
+            string description = currentScene.Valid ? currentScene.HumanName : "Uploaded from Open Brush";
+
+            SetUploadProgress(UploadStep.CreateGltf, 0);
+
+            // Directory structure
+            string exportDir = Path.Combine(tempUploadDir, "sketch_export");
+            Directory.CreateDirectory(exportDir);
+
+            string webViewerDir = Path.Combine(exportDir, "WebViewer");
+            Directory.CreateDirectory(webViewerDir);
+
+            string assetsDir = Path.Combine(webViewerDir, "assets");
+            Directory.CreateDirectory(assetsDir);
+
+            // EXPORT GLB to WebViewer/assets/scene.glb
+            string glbPath = Path.Combine(assetsDir, "scene.glb");
+
+            var exportResults = await OverlayManager.m_Instance.RunInCompositorAsync(
+                OverlayType.Export, fadeDuration: 0.5f,
+                action: () => new ExportGlTF().ExportBrushStrokes(
+                    glbPath,
+                    AxisConvention.kGltf2,
+                    binary: true,
+                    doExtras: true,
+                    includeLocalMediaContent: true,
+                    gltfVersion: 2,
+                    selfContained: true));
+
+            if (!exportResults.success)
+                throw new VrAssetServiceException("Internal error creating upload data.");
+
+            SetUploadProgress(UploadStep.CreateTilt, 0);
+            await CreateTiltForUploadAsync(fileInfo);
+            token.ThrowIfCancellationRequested();
+
+            // Copy Webviewer files
+            string streamingWebViewerPath = Path.Combine(Application.streamingAssetsPath, "WebViewer");
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+    // Android: If WebViewer.zip exists, extract it
+    string zipPathSrc = Path.Combine(Application.streamingAssetsPath, "WebViewer.zip");
+    if (File.Exists(zipPathSrc))
+    {
+        byte[] data;
+        using (UnityWebRequest www = UnityWebRequest.Get(zipPathSrc))
+        {
+            await www.SendWebRequest();
+            if (www.result != UnityWebRequest.Result.Success)
+                throw new VrAssetServiceException("[VIVERSE] Failed to read WebViewer.zip");
+            data = www.downloadHandler.data;
+        }
+
+        string tempZip = Path.Combine(Application.temporaryCachePath, "webviewer_temp.zip");
+        File.WriteAllBytes(tempZip, data);
+
+        using (var zip = System.IO.Compression.ZipFile.OpenRead(tempZip))
+        {
+            foreach (var entry in zip.Entries)
+            {
+                string fullPath = Path.Combine(webViewerDir, entry.FullName);
+
+                if (string.IsNullOrEmpty(entry.Name))
+                {
+                    Directory.CreateDirectory(fullPath);
+                    continue;
+                }
+
+                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                entry.ExtractToFile(fullPath, overwrite: true);
+            }
+        }
+
+        File.Delete(tempZip);
+    }
+    else
+    {
+        // Fallback: try direct copy if folder exists
+        if (Directory.Exists(streamingWebViewerPath))
+            CopyDirectory(streamingWebViewerPath, webViewerDir);
+        else
+            throw new VrAssetServiceException("WebViewer not found in StreamingAssets");
+    }
+#else
+            // PC/Editor: direct copy
+            if (!Directory.Exists(streamingWebViewerPath))
+                throw new VrAssetServiceException($"WebViewer not found at {streamingWebViewerPath}");
+
+            CopyDirectory(streamingWebViewerPath, webViewerDir);
+#endif
+
+            var publishManager = FindObjectOfType<ViversePublishManager>();
+            if (publishManager == null)
+                throw new VrAssetServiceException("ViversePublishManager not found");
+            
+            // Generate index.html
+            SetUploadProgress(UploadStep.ZipElements, 0);
+
+            string htmlPath = Path.Combine(webViewerDir, "index.html");
+            string sceneSid = publishManager.GetLastSceneSid();
+            string html = ViewerHTMLGenerator.GenerateViewerHTML("./assets/scene.glb", sceneSid);
+            File.WriteAllText(htmlPath, html);
+
+            token.ThrowIfCancellationRequested();
+            
+            
+            var filesToZip = new List<string>();
+
+            // Add all WebViewer files except .meta
+            foreach (var file in Directory.GetFiles(webViewerDir, "*", SearchOption.AllDirectories))
+            {
+                if (file.EndsWith(".meta"))
+                    continue;
+                filesToZip.Add(file);
+            }
+
+            // Create ZIP at exportDir/content.zip
+            string zipPath = Path.Combine(exportDir, "content.zip");
+            
+            await CreateZipFileAsync(zipPath, webViewerDir, filesToZip.ToArray(), token);
+            long uploadLength = new FileInfo(zipPath).Length;
+
+            // Viverse upload
+
+            if (!publishManager.IsAuthenticated())
+                throw new VrAssetServiceException("Not authenticated with VIVERSE");
+
+            var tcs = new TaskCompletionSource<bool>();
+
+            // progress
+            void OnProgress(float p) => SetUploadProgress(UploadStep.UploadElements, p);
+            publishManager.OnUploadProgress += OnProgress;
+
+            // completion
+            void OnComplete(bool success, string msg)
+            {
+                publishManager.OnUploadProgress -= OnProgress;
+                publishManager.OnPublishComplete -= OnComplete;
+
+                if (success) tcs.SetResult(true);
+                else tcs.SetException(new VrAssetServiceException(msg));
+            }
+            publishManager.OnPublishComplete += OnComplete;
+
+            // Start upload
+            publishManager.PublishWorld(title, description, zipPath);
+
+            // wait for completion
+            await tcs.Task;
+
+            // Resul url
+            WorldContentResponse resp = publishManager.GetLastResponse();
+            string uri = resp?.publish_url ?? $"https://viverse.com/world/{publishManager.GetLastSceneSid()}";
+
+            return (uri, uploadLength);
+        }
+
+        private void CopyDirectory(string sourceDir, string destDir)
+        {
+            Directory.CreateDirectory(destDir);
+
+            foreach (string file in Directory.GetFiles(sourceDir))
+            {
+                string destFile = Path.Combine(destDir, Path.GetFileName(file));
+                File.Copy(file, destFile, true);
+            }
+
+            foreach (string subDir in Directory.GetDirectories(sourceDir))
+            {
+                string destSubDir = Path.Combine(destDir, Path.GetFileName(subDir));
+                CopyDirectory(subDir, destSubDir);
+            }
         }
 
         /// Helper for UploadCurrentSketchXxxAsync
