@@ -346,6 +346,19 @@ namespace TiltBrush
                 return;
             }
 
+            // Set the SDFGroup reference on the mesh generator
+            var groupField = typeof(SDFGroupMeshGenerator).GetField("m_group",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (groupField != null)
+            {
+                groupField.SetValue(m_MeshGenerator, m_SDFGroup);
+                Debug.Log("ModelStencil: Set SDFGroup reference on mesh generator");
+            }
+            else
+            {
+                Debug.LogWarning("ModelStencil: Could not find 'm_group' field in SDFGroupMeshGenerator");
+            }
+
             // Configure mesh generator settings using reflection (properties are read-only)
             Debug.Log("ModelStencil: Configuring IsoMesh settings via reflection");
 
