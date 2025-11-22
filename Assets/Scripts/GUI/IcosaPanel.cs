@@ -23,8 +23,13 @@ namespace TiltBrush
     {
         User,
         Liked,
-        Featured,
-        Collections
+        Featured
+    }
+
+    public enum IcosaBrowseMode
+    {
+        Standard,   // Browse individual assets
+        Collections // Browse collections
     }
 
     public class IcosaPanel : ModalPanel
@@ -38,8 +43,10 @@ namespace TiltBrush
         public string PanelTextFeatured { get { return m_PanelTextFeatured.GetLocalizedStringAsync().Result; } }
         [SerializeField] private LocalizedString m_PanelTextLiked; // Liked Models
         public string PanelTextLiked { get { return m_PanelTextLiked.GetLocalizedStringAsync().Result; } }
-        [SerializeField] private LocalizedString m_PanelTextCollections; // Collections
-        public string PanelTextCollections { get { return m_PanelTextCollections.GetLocalizedStringAsync().Result; } }
+        [SerializeField] private LocalizedString m_PanelTextUserCollections; // User Collections
+        public string PanelTextUserCollections { get { return m_PanelTextUserCollections.GetLocalizedStringAsync().Result; } }
+        [SerializeField] private LocalizedString m_PanelTextFeaturedCollections; // Public Collections
+        public string PanelTextFeaturedCollections { get { return m_PanelTextFeaturedCollections.GetLocalizedStringAsync().Result; } }
         [SerializeField] private Renderer m_PolyGalleryRenderer;
         [SerializeField] private GameObject m_NoObjectsMessage;
         [SerializeField] private GameObject m_InternetError;
@@ -53,16 +60,22 @@ namespace TiltBrush
 
         private IcosaSetType m_CurrentSet;
         public IcosaSetType CurrentSet => m_CurrentSet;
+        private IcosaBrowseMode m_BrowseMode;
+        public IcosaBrowseMode BrowseMode => m_BrowseMode;
+        private string m_CurrentCollectionId; // When viewing assets from a specific collection
+        public string CurrentCollectionId => m_CurrentCollectionId;
         private bool m_LoggedIn;
 
         // State for automatically loading models.
         int m_LastPageIndexForLoad = -1;
         IcosaSetType m_LastSetTypeForLoad = IcosaSetType.User;
+        IcosaBrowseMode m_LastBrowseModeForLoad = IcosaBrowseMode.Standard;
 
         public bool ShowingFeatured { get { return m_CurrentSet == IcosaSetType.Featured; } }
         public bool ShowingLikes { get { return m_CurrentSet == IcosaSetType.Liked; } }
         public bool ShowingUser { get { return m_CurrentSet == IcosaSetType.User; } }
-        public bool ShowingCollections { get { return m_CurrentSet == IcosaSetType.Collections; } }
+        public bool InCollectionsMode { get { return m_BrowseMode == IcosaBrowseMode.Collections; } }
+        public bool InStandardMode { get { return m_BrowseMode == IcosaBrowseMode.Standard; } }
 
         override public void OnWidgetShowAnimComplete()
         {
@@ -244,23 +257,14 @@ namespace TiltBrush
                         {
                             if (numCloudModels == 0)
                             {
-                                m_NoLikesMessage.SetActive(true);
-                            }
-                        }
-                        else
-                        {
-                            m_NotLoggedInMessage.SetActive(true);
-                        }
-                    }
-                    break;
-                case IcosaSetType.Collections:
-                    if (!internetError)
-                    {
-                        if (App.IcosaIsLoggedIn)
-                        {
-                            if (numCloudModels == 0)
-                            {
-                                m_NoCollectionsMessage.SetActive(true);
+                                if (InCollectionsMode)
+                                {
+                                    m_NoCollectionsMessage.SetActive(true);
+                                }
+                                else
+                                {
+                                    m_NoLikesMessage.SetActive(true);
+                                }
                             }
                         }
                         else
@@ -271,33 +275,69 @@ namespace TiltBrush
                     break;
             }
 
+            // In collections mode, show no collections message if needed
+            if (InCollectionsMode && !internetError && numCloudModels == 0)
+            {
+                // User and Featured tabs can show collections even when not logged in
+                if (m_CurrentSet == IcosaSetType.User && !App.IcosaIsLoggedIn)
+                {
+                    m_NotLoggedInMessage.SetActive(true);
+                }
+                else if (m_CurrentSet != IcosaSetType.Liked) // Liked is handled above
+                {
+                    m_NoCollectionsMessage.SetActive(true);
+                }
+            }
+
             base.RefreshPage();
         }
 
         void RefreshPanelText()
         {
-            switch (m_CurrentSet)
+            if (InCollectionsMode)
             {
-                case IcosaSetType.User:
-                    m_PanelText.text = PanelTextStandard;
-                    m_PanelTextSubtitle.gameObject.SetActive(false);
-                    m_PanelTextUserSubtitle.gameObject.SetActive(true);
-                    break;
-                case IcosaSetType.Featured:
-                    m_PanelText.text = PanelTextFeatured;
-                    m_PanelTextSubtitle.gameObject.SetActive(false);
-                    m_PanelTextUserSubtitle.gameObject.SetActive(false);
-                    break;
-                case IcosaSetType.Liked:
-                    m_PanelText.text = PanelTextLiked;
-                    m_PanelTextSubtitle.gameObject.SetActive(true);
-                    m_PanelTextUserSubtitle.gameObject.SetActive(false);
-                    break;
-                case IcosaSetType.Collections:
-                    m_PanelText.text = PanelTextCollections;
-                    m_PanelTextSubtitle.gameObject.SetActive(false);
-                    m_PanelTextUserSubtitle.gameObject.SetActive(false);
-                    break;
+                // In collections mode, show different text based on which tab
+                switch (m_CurrentSet)
+                {
+                    case IcosaSetType.User:
+                        m_PanelText.text = PanelTextUserCollections;
+                        m_PanelTextSubtitle.gameObject.SetActive(false);
+                        m_PanelTextUserSubtitle.gameObject.SetActive(true);
+                        break;
+                    case IcosaSetType.Featured:
+                        m_PanelText.text = PanelTextFeaturedCollections;
+                        m_PanelTextSubtitle.gameObject.SetActive(false);
+                        m_PanelTextUserSubtitle.gameObject.SetActive(false);
+                        break;
+                    case IcosaSetType.Liked:
+                        // Liked collections not yet supported by API
+                        m_PanelText.text = PanelTextLiked;
+                        m_PanelTextSubtitle.gameObject.SetActive(true);
+                        m_PanelTextUserSubtitle.gameObject.SetActive(false);
+                        break;
+                }
+            }
+            else
+            {
+                // Standard mode
+                switch (m_CurrentSet)
+                {
+                    case IcosaSetType.User:
+                        m_PanelText.text = PanelTextStandard;
+                        m_PanelTextSubtitle.gameObject.SetActive(false);
+                        m_PanelTextUserSubtitle.gameObject.SetActive(true);
+                        break;
+                    case IcosaSetType.Featured:
+                        m_PanelText.text = PanelTextFeatured;
+                        m_PanelTextSubtitle.gameObject.SetActive(false);
+                        m_PanelTextUserSubtitle.gameObject.SetActive(false);
+                        break;
+                    case IcosaSetType.Liked:
+                        m_PanelText.text = PanelTextLiked;
+                        m_PanelTextSubtitle.gameObject.SetActive(true);
+                        m_PanelTextUserSubtitle.gameObject.SetActive(false);
+                        break;
+                }
             }
         }
 
@@ -357,5 +397,60 @@ namespace TiltBrush
 
         public IcosaAssetCatalog.IcosaQueryParameters CurrentQuery =>
             App.IcosaAssetCatalog.QueryOptionParametersForSet(m_CurrentSet);
+
+        // Toggle between Standard and Collections mode
+        public void ToggleBrowseMode()
+        {
+            m_BrowseMode = m_BrowseMode == IcosaBrowseMode.Standard
+                ? IcosaBrowseMode.Collections
+                : IcosaBrowseMode.Standard;
+            m_CurrentCollectionId = null; // Clear collection filter when toggling
+            ResetPageIndex();
+            RefreshCurrentSet(false);
+        }
+
+        // Enter collections browse mode
+        public void EnterCollectionsMode()
+        {
+            if (m_BrowseMode != IcosaBrowseMode.Collections)
+            {
+                m_BrowseMode = IcosaBrowseMode.Collections;
+                m_CurrentCollectionId = null;
+                ResetPageIndex();
+                RefreshCurrentSet(false);
+            }
+        }
+
+        // Enter standard browse mode
+        public void EnterStandardMode()
+        {
+            if (m_BrowseMode != IcosaBrowseMode.Standard)
+            {
+                m_BrowseMode = IcosaBrowseMode.Standard;
+                m_CurrentCollectionId = null;
+                ResetPageIndex();
+                RefreshCurrentSet(false);
+            }
+        }
+
+        // View assets from a specific collection
+        public void ViewCollection(string collectionId)
+        {
+            m_CurrentCollectionId = collectionId;
+            m_BrowseMode = IcosaBrowseMode.Standard;
+            ResetPageIndex();
+            RefreshCurrentSet(false);
+        }
+
+        // Clear collection filter and return to normal browse mode
+        public void ClearCollectionFilter()
+        {
+            if (m_CurrentCollectionId != null)
+            {
+                m_CurrentCollectionId = null;
+                ResetPageIndex();
+                RefreshCurrentSet(false);
+            }
+        }
     }
 } // namespace TiltBrush
