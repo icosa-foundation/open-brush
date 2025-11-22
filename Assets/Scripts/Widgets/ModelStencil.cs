@@ -100,17 +100,17 @@ namespace TiltBrush
         private void OnDestroy()
         {
             // Clean up IsoMesh components
-            if (m_MeshGenerator != null)
+            if (m_MeshGenerator != null && m_MeshGenerator.gameObject != null)
             {
-                Destroy(m_MeshGenerator);
+                Destroy(m_MeshGenerator.gameObject); // Destroy the GameObject, not just the component
             }
             if (m_SDFGroup != null)
             {
-                Destroy(m_SDFGroup);
+                Destroy(m_SDFGroup); // SDFGroup is on main GameObject, destroy component only
             }
             if (m_SDFMeshComponent != null && m_SDFMeshComponent.gameObject != null)
             {
-                Destroy(m_SDFMeshComponent.gameObject);
+                Destroy(m_SDFMeshComponent.gameObject); // Destroy the GameObject
             }
         }
 
@@ -328,9 +328,17 @@ namespace TiltBrush
             assetField.SetValue(m_SDFMeshComponent, m_SDFMeshAsset);
             Debug.Log($"ModelStencil: SDFMeshAsset assigned, Asset property = {m_SDFMeshComponent.Asset != null}");
 
-            // 3. Create SDFGroupMeshGenerator component
-            Debug.Log("ModelStencil: Creating SDFGroupMeshGenerator component");
-            m_MeshGenerator = gameObject.AddComponent<SDFGroupMeshGenerator>();
+            // 3. Create a child GameObject for SDFGroupMeshGenerator component
+            // IMPORTANT: SDFGroupMeshGenerator must be on its own GameObject (not the parent)
+            // It will auto-create a child GameObject with the generated mesh
+            Debug.Log("ModelStencil: Creating SDFGroupMeshGenerator child object");
+            GameObject meshGeneratorObject = new GameObject("SDF Mesh Generator");
+            meshGeneratorObject.transform.SetParent(transform);
+            meshGeneratorObject.transform.localPosition = Vector3.zero;
+            meshGeneratorObject.transform.localRotation = Quaternion.identity;
+            meshGeneratorObject.transform.localScale = Vector3.one;
+
+            m_MeshGenerator = meshGeneratorObject.AddComponent<SDFGroupMeshGenerator>();
 
             if (m_MeshGenerator == null)
             {
