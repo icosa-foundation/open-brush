@@ -32,6 +32,7 @@ namespace TiltBrush
         public Material m_ObjLoaderTransparentMaterial;
         public Material m_ObjLoaderPointCloudMaterial;
         public Material m_ObjLoaderPointCloudInvisibleMaterial;
+        public Material m_VoxLoaderStandardMaterial;
         [NonSerialized] public Dictionary<string, Model> m_ModelsByRelativePath;
 
         // Transforms for missing models.
@@ -292,7 +293,7 @@ namespace TiltBrush
             {
                 string[] aFiles = Directory.GetFiles(sPath);
                 // Models we download from Poly are called ".gltf2", but ".gltf" is more standard
-                List<string> extensions = new() { ".gltf2", ".gltf", ".glb", ".ply", ".svg", ".obj" };
+                List<string> extensions = new() { ".gltf2", ".gltf", ".glb", ".ply", ".svg", ".obj", ".vox" };
 
 #if USD_SUPPORTED
                 extensions.AddRange(new [] { ".usda", ".usdc", ".usd" });

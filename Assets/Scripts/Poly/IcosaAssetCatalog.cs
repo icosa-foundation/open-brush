@@ -171,13 +171,15 @@ namespace TiltBrush
             GLTF2 = "GLTF2",
             OBJ = "OBJ",
             FBX = "FBX",
+            VOX = "VOX",
             NOT_TILT = "-TILT",
             NOT_BLOCKS = "-BLOCKS",
             NOT_GLTF = "-GLTF",
             NOT_GLTF1 = "-GLTF1",
             NOT_GLTF2 = "-GLTF2",
             NOT_OBJ = "-OBJ",
-            NOT_FBX = "-FBX";
+            NOT_FBX = "-FBX",
+            NOT_VOX = "-VOX";
     }
 
     public class CuratedChoices
@@ -562,7 +564,7 @@ namespace TiltBrush
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.ANY,
                     OrderBy = OrderByChoices.NEWEST,
-                    Formats = new[] { FormatChoices.GLTF2, FormatChoices.OBJ },
+                    Formats = new[] { FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
                     Curated = CuratedChoices.ANY,
                     Category = CategoryChoices.ANY
                 }
@@ -576,7 +578,7 @@ namespace TiltBrush
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.REMIXABLE,
                     OrderBy = OrderByChoices.LIKED_TIME,
-                    Formats = new[] { FormatChoices.GLTF2, FormatChoices.OBJ },
+                    Formats = new[] { FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
                     Curated = CuratedChoices.ANY,
                     Category = CategoryChoices.ANY
                 }
@@ -595,7 +597,7 @@ namespace TiltBrush
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.REMIXABLE,
                     OrderBy = OrderByChoices.BEST,
-                    Formats = new[] { FormatChoices.GLTF2, FormatChoices.OBJ },
+                    Formats = new[] { FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
                     Curated = CuratedChoices.TRUE,
                     Category = CategoryChoices.ANY
                 }
@@ -815,6 +817,7 @@ namespace TiltBrush
                 // In order of preference
                 var formats = new[]
                 {
+                    VrAssetFormat.VOX,
                     VrAssetFormat.GLTF2,
                     VrAssetFormat.GLTF,
                     VrAssetFormat.OBJ_NGON,
