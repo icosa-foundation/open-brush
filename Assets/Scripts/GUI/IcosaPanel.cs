@@ -173,10 +173,19 @@ namespace TiltBrush
                 return;
             }
 
-            m_NumPages = ((App.IcosaAssetCatalog.NumCloudModels(m_CurrentSet) - 1) / Icons.Count) + 1;
-            int numCloudModels = App.IcosaAssetCatalog.NumCloudModels(m_CurrentSet);
+            // Determine item count based on browse mode
+            int numItems;
+            if (InCollectionsMode)
+            {
+                numItems = App.IcosaAssetCatalog.NumCollections(m_CurrentSet);
+            }
+            else
+            {
+                numItems = App.IcosaAssetCatalog.NumCloudModels(m_CurrentSet);
+            }
+            m_NumPages = ((numItems - 1) / Icons.Count) + 1;
 
-            if (m_LastPageIndexForLoad != PageIndex || m_LastSetTypeForLoad != m_CurrentSet)
+            if (m_LastPageIndexForLoad != PageIndex || m_LastSetTypeForLoad != m_CurrentSet || m_LastBrowseModeForLoad != m_BrowseMode)
             {
                 // Unload the previous page's models.
 
@@ -184,6 +193,7 @@ namespace TiltBrush
                 // otherwise the current page's models will be thrashed.
                 m_LastPageIndexForLoad = PageIndex;
                 m_LastSetTypeForLoad = m_CurrentSet;
+                m_LastBrowseModeForLoad = m_BrowseMode;
 
                 // Destroy previews so only the thumbnail is visible.
                 for (int i = 0; i < Icons.Count; i++)
@@ -200,25 +210,37 @@ namespace TiltBrush
                 // Set sketch index relative to page based index
                 int iMapIndex = m_IndexOffset + i;
 
-                // Init icon according to availability of sketch
+                // Init icon according to availability of sketch or collection
                 GameObject go = icon.gameObject;
-                if (iMapIndex < numCloudModels)
+                if (iMapIndex < numItems)
                 {
-                    IcosaAssetCatalog.AssetDetails asset =
-                        App.IcosaAssetCatalog.GetIcosaAsset(m_CurrentSet, iMapIndex);
                     go.SetActive(true);
 
-                    if (icon.Asset != null && asset.AssetId != icon.Asset.AssetId)
+                    if (InCollectionsMode)
                     {
-                        icon.DestroyModelPreview();
+                        // Display collection
+                        IcosaAssetCatalog.CollectionDetails collection =
+                            App.IcosaAssetCatalog.GetIcosaCollection(m_CurrentSet, iMapIndex);
+                        icon.SetPresetCollection(collection, iMapIndex);
                     }
-                    icon.SetPreset(asset, iMapIndex);
-
-                    // Note that App.UserConfig.Flags.IcosaModelPreload falls through to
-                    // App.PlatformConfig.EnableIcosaPreload if it isn't set in Tilt Brush.cfg.
-                    if (App.UserConfig.Flags.IcosaModelPreload)
+                    else
                     {
-                        icon.RequestModelPreload(PageIndex);
+                        // Display asset
+                        IcosaAssetCatalog.AssetDetails asset =
+                            App.IcosaAssetCatalog.GetIcosaAsset(m_CurrentSet, iMapIndex);
+
+                        if (icon.Asset != null && asset.AssetId != icon.Asset.AssetId)
+                        {
+                            icon.DestroyModelPreview();
+                        }
+                        icon.SetPreset(asset, iMapIndex);
+
+                        // Note that App.UserConfig.Flags.IcosaModelPreload falls through to
+                        // App.PlatformConfig.EnableIcosaPreload if it isn't set in Tilt Brush.cfg.
+                        if (App.UserConfig.Flags.IcosaModelPreload)
+                        {
+                            icon.RequestModelPreload(PageIndex);
+                        }
                     }
                 }
                 else
@@ -239,9 +261,16 @@ namespace TiltBrush
                     {
                         if (App.IcosaIsLoggedIn)
                         {
-                            if (numCloudModels == 0)
+                            if (numItems == 0)
                             {
-                                m_NoAuthoredModelsMessage.SetActive(true);
+                                if (InCollectionsMode)
+                                {
+                                    m_NoCollectionsMessage.SetActive(true);
+                                }
+                                else
+                                {
+                                    m_NoAuthoredModelsMessage.SetActive(true);
+                                }
                             }
                         }
                         else
@@ -255,7 +284,7 @@ namespace TiltBrush
                     {
                         if (App.IcosaIsLoggedIn)
                         {
-                            if (numCloudModels == 0)
+                            if (numItems == 0)
                             {
                                 if (InCollectionsMode)
                                 {
@@ -273,20 +302,12 @@ namespace TiltBrush
                         }
                     }
                     break;
-            }
-
-            // In collections mode, show no collections message if needed
-            if (InCollectionsMode && !internetError && numCloudModels == 0)
-            {
-                // User and Featured tabs can show collections even when not logged in
-                if (m_CurrentSet == IcosaSetType.User && !App.IcosaIsLoggedIn)
-                {
-                    m_NotLoggedInMessage.SetActive(true);
-                }
-                else if (m_CurrentSet != IcosaSetType.Liked) // Liked is handled above
-                {
-                    m_NoCollectionsMessage.SetActive(true);
-                }
+                case IcosaSetType.Featured:
+                    if (!internetError && InCollectionsMode && numItems == 0)
+                    {
+                        m_NoCollectionsMessage.SetActive(true);
+                    }
+                    break;
             }
 
             base.RefreshPage();

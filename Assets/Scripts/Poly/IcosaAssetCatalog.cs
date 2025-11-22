@@ -367,6 +367,141 @@ namespace TiltBrush
             }
         }
 
+        public class CollectionDetails
+        {
+            // Similar to AssetDetails but for collections
+            const bool kLazyLoadThumbnail = false;
+
+            private readonly IcosaAssetCatalog m_Owner;
+            private readonly Texture2D m_Thumbnail;
+            private string m_ThumbnailUrl;
+
+            public string CollectionId { get; }
+            public string Name { get; }
+            public string Description { get; }
+            public string AccountName { get; }
+            public int AssetCount { get; }
+            public string Slug { get; }
+            public bool IsPublic { get; }
+
+            public Texture2D Thumbnail
+            {
+                get
+                {
+                    if (m_ThumbnailUrl != null)
+                    {
+                        string url = m_ThumbnailUrl;
+                        m_ThumbnailUrl = null;
+                        DownloadThumbnailAsync(url);
+                    }
+                    return m_Thumbnail;
+                }
+            }
+
+            public CollectionDetails(JToken json, string thumbnailSuffix)
+            {
+                m_Owner = App.IcosaAssetCatalog;
+                Name = json["name"]?.ToString() ?? "Untitled Collection";
+                CollectionId = json["uid"]?.ToString();
+                Description = json["description"]?.ToString() ?? "";
+                AccountName = json["user"]?["displayName"]?.ToString() ?? json["user"]?["username"]?.ToString() ?? "Unknown";
+                AssetCount = json["assetCount"]?.Value<int>() ?? 0;
+                Slug = json["slug"]?.ToString() ?? "";
+                IsPublic = json["isPublic"]?.Value<bool>() ?? false;
+
+                m_Thumbnail = new Texture2D(4, 4, TextureFormat.ARGB32, false);
+                // Collections use the first image from thumbnails array
+                m_ThumbnailUrl = json?["thumbnails"]?["images"]?[0]?["url"]?.ToString();
+                if (!string.IsNullOrEmpty(thumbnailSuffix) && !string.IsNullOrEmpty(m_ThumbnailUrl))
+                {
+                    m_ThumbnailUrl = string.Format("{0}={1}", m_ThumbnailUrl, thumbnailSuffix);
+                }
+                if (!kLazyLoadThumbnail && !string.IsNullOrEmpty(m_ThumbnailUrl))
+                {
+                    _ = Thumbnail;
+                }
+            }
+
+            private static byte[] SafeReadCache(string path)
+            {
+                if (path != null && File.Exists(path))
+                {
+                    try
+                    {
+                        return File.ReadAllBytes(path);
+                    }
+                    catch (IOException e)
+                    {
+                        Debug.LogWarning($"Could not read cache {path}: {e}");
+                    }
+                }
+                return null;
+            }
+
+            private static void SafeWriteCache(string path, byte[] contents)
+            {
+                if (path == null) { return; }
+                try { File.Delete(path); }
+                catch { }
+                if (contents != null)
+                {
+                    string dir = Path.GetDirectoryName(path);
+                    if (!Directory.Exists(dir))
+                    {
+                        try { Directory.CreateDirectory(dir); }
+                        catch { }
+                    }
+                    try { File.WriteAllBytes(path, contents); }
+                    catch { }
+                }
+            }
+
+            async void DownloadThumbnailAsync(string thumbnailUrl)
+            {
+                if (string.IsNullOrEmpty(thumbnailUrl)) return;
+
+                string cachePath = Path.Combine(m_Owner.m_ThumbnailCacheDir, $"collection_{CollectionId}");
+                byte[] thumbnailBytes = SafeReadCache(cachePath);
+
+                if (thumbnailBytes == null)
+                {
+                    await m_Owner.m_thumbnailFetchLimiter.WaitAsync();
+                    WebRequest www = new WebRequest(thumbnailUrl);
+                    await www.SendAsync();
+
+                    while (m_Owner.m_thumbnailReadLimiter.IsBlocked())
+                    {
+                        await Awaiters.NextFrame;
+                    }
+                    thumbnailBytes = www.ResultBytes;
+                    SafeWriteCache(cachePath, thumbnailBytes);
+                }
+
+                if (thumbnailBytes != null)
+                {
+                    try
+                    {
+                        RawImage imageData = await new ThreadedImageReader(thumbnailBytes, thumbnailUrl);
+
+                        UnityEngine.Profiling.Profiler.BeginSample("CollectionDetails.DownloadThumbnail:LoadImage");
+                        if (imageData != null)
+                        {
+                            m_Thumbnail.Reinitialize(imageData.ColorWidth, imageData.ColorHeight,
+                                TextureFormat.ARGB32, false);
+                            m_Thumbnail.SetPixels32(imageData.ColorData);
+                            m_Thumbnail.Apply(updateMipmaps: false, makeNoLongerReadable: true);
+                        }
+                        UnityEngine.Profiling.Profiler.EndSample();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogWarning($"Failed to load collection thumbnail: {e.Message}");
+                        SafeWriteCache(cachePath, null);
+                    }
+                }
+            }
+        }
+
         public struct IcosaQueryParameters
         {
             public string SearchText;
@@ -397,6 +532,15 @@ namespace TiltBrush
         private class AssetSet
         {
             public List<AssetDetails> m_Models = new List<AssetDetails>();
+            public IEnumerator<Null> m_FetchMetadataCoroutine;
+            public bool m_RefreshRequested;
+            public float m_CooldownTimer;
+            public IcosaQueryParameters QueryParams;
+        }
+
+        private class CollectionSet
+        {
+            public List<CollectionDetails> m_Collections = new List<CollectionDetails>();
             public IEnumerator<Null> m_FetchMetadataCoroutine;
             public bool m_RefreshRequested;
             public float m_CooldownTimer;
@@ -440,6 +584,7 @@ namespace TiltBrush
         private Dictionary<string, Model> m_ModelsByAssetId;
         private Dictionary<string, JObject> m_AssetJsonByAssetId;
         private Dictionary<IcosaSetType, AssetSet> m_AssetSetByType;
+        private Dictionary<IcosaSetType, CollectionSet> m_CollectionSetByType;
         private bool m_NotifyListeners;
 
         private AwaitableRateLimiter m_thumbnailFetchLimiter =
@@ -539,6 +684,7 @@ namespace TiltBrush
             }
 
             m_AssetSetByType = new Dictionary<IcosaSetType, AssetSet>();
+            m_CollectionSetByType = new Dictionary<IcosaSetType, CollectionSet>();
             // InitCatalogQueries();
 
             App.Instance.AppExit += () =>
@@ -605,6 +751,51 @@ namespace TiltBrush
             {
                 m_AssetSetByType[IcosaSetType.Featured].m_RefreshRequested = true;
             }
+
+            // Initialize collection sets for each tab
+            m_CollectionSetByType[IcosaSetType.User] = new CollectionSet
+            {
+                QueryParams = new IcosaQueryParameters
+                {
+                    SearchText = "",
+                    TriangleCountMax = 0, // Not used for collections
+                    License = LicenseChoices.ANY,
+                    OrderBy = OrderByChoices.NEWEST,
+                    Formats = new string[] { }, // Not used for collections
+                    Curated = CuratedChoices.ANY,
+                    Category = CategoryChoices.ANY
+                }
+            };
+
+            m_CollectionSetByType[IcosaSetType.Featured] = new CollectionSet
+            {
+                m_RefreshRequested = true,
+                QueryParams = new IcosaQueryParameters
+                {
+                    SearchText = "",
+                    TriangleCountMax = 0, // Not used for collections
+                    License = LicenseChoices.ANY,
+                    OrderBy = OrderByChoices.NEWEST,
+                    Formats = new string[] { }, // Not used for collections
+                    Curated = CuratedChoices.ANY,
+                    Category = CategoryChoices.ANY
+                }
+            };
+
+            // Liked collections not supported by API yet
+            m_CollectionSetByType[IcosaSetType.Liked] = new CollectionSet
+            {
+                QueryParams = new IcosaQueryParameters
+                {
+                    SearchText = "",
+                    TriangleCountMax = 0,
+                    License = LicenseChoices.ANY,
+                    OrderBy = OrderByChoices.NEWEST,
+                    Formats = new string[] { },
+                    Curated = CuratedChoices.ANY,
+                    Category = CategoryChoices.ANY
+                }
+            };
 
             RefreshFetchCoroutines();
         }
@@ -741,6 +932,57 @@ namespace TiltBrush
                 if (set.m_CooldownTimer >= 0)
                 {
                     set.m_CooldownTimer -= Time.deltaTime;
+                }
+            }
+
+            // Also pump collection coroutines
+            foreach (var entry in m_CollectionSetByType)
+            {
+                var type = entry.Key;
+                var collectionSet = entry.Value;
+
+                if (collectionSet.m_FetchMetadataCoroutine != null)
+                {
+                    try
+                    {
+                        if (!collectionSet.m_FetchMetadataCoroutine.MoveNext())
+                        {
+                            collectionSet.m_FetchMetadataCoroutine = null;
+                        }
+                    }
+                    catch (VrAssetServiceException e)
+                    {
+                        ControllerConsoleScript.m_Instance.AddNewLine(e.Message);
+                        Debug.LogException(e);
+                        collectionSet.m_FetchMetadataCoroutine = null;
+                    }
+                    catch (NotSupportedException e)
+                    {
+                        // Liked collections not supported yet
+                        Debug.LogWarning(e.Message);
+                        collectionSet.m_FetchMetadataCoroutine = null;
+                    }
+                }
+                else if (collectionSet.m_RefreshRequested)
+                {
+                    if (collectionSet.m_CooldownTimer <= 0)
+                    {
+                        try
+                        {
+                            collectionSet.m_FetchMetadataCoroutine = RefreshCollectionSet(type);
+                            collectionSet.m_RefreshRequested = false;
+                            collectionSet.m_CooldownTimer = VrAssetService.m_Instance.m_SketchbookRefreshInterval;
+                        }
+                        catch (NotSupportedException)
+                        {
+                            // Liked collections not supported by API yet
+                            collectionSet.m_RefreshRequested = false;
+                        }
+                    }
+                }
+                if (collectionSet.m_CooldownTimer >= 0)
+                {
+                    collectionSet.m_CooldownTimer -= Time.deltaTime;
                 }
             }
         }
@@ -1199,12 +1441,77 @@ namespace TiltBrush
             }
         }
 
+        private IEnumerator<Null> RefreshCollectionSet(IcosaSetType type)
+        {
+            List<CollectionDetails> collections = new List<CollectionDetails>();
+            if (m_CollectionSetByType[type].m_Collections.Count == 0)
+            {
+                m_CollectionSetByType[type].m_Collections = collections;
+            }
+
+            AssetLister lister = VrAssetService.m_Instance.ListCollections(type, QueryOptionParametersForSet(type));
+            bool firstPass = true;
+            while (lister.HasMore || firstPass)
+            {
+                firstPass = false;
+
+                using (var cr = lister.NextPageCollections(collections, m_ThumbnailSuffix))
+                {
+                    int prevCount = collections.Count;
+                    while (true)
+                    {
+                        try
+                        {
+                            if (!cr.MoveNext())
+                            {
+                                break;
+                            }
+                        }
+                        catch (VrAssetServiceException e)
+                        {
+                            ControllerConsoleScript.m_Instance.AddNewLine(e.Message);
+                            Debug.LogException(e);
+                            yield break;
+                        }
+                        if (collections.Count - prevCount > 5)
+                        {
+                            addFoundCollections();
+                            prevCount = collections.Count;
+                        }
+                        yield return cr.Current;
+                    }
+                }
+                if (collections.Count == 0)
+                {
+                    break;
+                }
+            }
+            addFoundCollections();
+
+            void addFoundCollections()
+            {
+                var newIds = new HashSet<string>(collections.Select(c => c.CollectionId));
+                var oldIds = new HashSet<string>(m_CollectionSetByType[type].m_Collections.Select(c => c.CollectionId));
+                HashSet<string> toAdd = SetMinus(newIds, oldIds);
+                HashSet<string> toRemove = SetMinus(oldIds, newIds);
+                m_CollectionSetByType[type].m_Collections.RemoveAll(c => toRemove.Contains(c.CollectionId));
+                m_CollectionSetByType[type].m_Collections.InsertRange(0, collections.Where(c => toAdd.Contains(c.CollectionId)));
+                if (CatalogChanged != null)
+                {
+                    CatalogChanged();
+                }
+            }
+        }
+
         void RefreshFetchCoroutines()
         {
             if (App.IcosaIsLoggedIn)
             {
                 m_AssetSetByType[IcosaSetType.User].m_RefreshRequested = true;
                 m_AssetSetByType[IcosaSetType.Liked].m_RefreshRequested = true;
+                // Also request refresh for collections
+                m_CollectionSetByType[IcosaSetType.User].m_RefreshRequested = true;
+                m_CollectionSetByType[IcosaSetType.Featured].m_RefreshRequested = true;
             }
             else
             {
@@ -1222,6 +1529,16 @@ namespace TiltBrush
                     set.m_FetchMetadataCoroutine = null;
                 }
                 set.m_Models.Clear();
+
+                // Clear user collections when not logged in
+                CollectionSet collectionSet = m_CollectionSetByType[IcosaSetType.User];
+                if (collectionSet.m_FetchMetadataCoroutine != null)
+                {
+                    StopCoroutine(collectionSet.m_FetchMetadataCoroutine);
+                    collectionSet.m_FetchMetadataCoroutine = null;
+                }
+                collectionSet.m_Collections.Clear();
+
                 if (CatalogChanged != null)
                 {
                     CatalogChanged();
@@ -1248,6 +1565,17 @@ namespace TiltBrush
         public AssetDetails GetIcosaAsset(IcosaSetType type, int index)
         {
             return m_AssetSetByType[type].m_Models[index];
+        }
+
+        public int NumCollections(IcosaSetType type)
+        {
+            EnsureCatalogsExist();
+            return m_CollectionSetByType[type].m_Collections.Count;
+        }
+
+        public CollectionDetails GetIcosaCollection(IcosaSetType type, int index)
+        {
+            return m_CollectionSetByType[type].m_Collections[index];
         }
 
         // Ideally we would check against the format info from Poly that we have all the required

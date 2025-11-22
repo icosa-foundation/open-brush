@@ -23,36 +23,72 @@ namespace TiltBrush
         [SerializeField] private GameObject m_LoadingOverlay;
 
         private IcosaAssetCatalog.AssetDetails m_IcosaAsset;
+        private IcosaAssetCatalog.CollectionDetails m_IcosaCollection;
+        private bool m_IsCollection;
 
         public IcosaAssetCatalog.AssetDetails Asset
         {
             get { return m_IcosaAsset; }
         }
 
+        public IcosaAssetCatalog.CollectionDetails Collection
+        {
+            get { return m_IcosaCollection; }
+        }
+
+        public bool IsCollection
+        {
+            get { return m_IsCollection; }
+        }
+
         protected override Texture2D UnloadedTexture
         {
             get
             {
-                if (m_IcosaAsset.Thumbnail == null)
+                if (m_IsCollection)
                 {
-                    return base.UnloadedTexture;
+                    return m_IcosaCollection?.Thumbnail ?? base.UnloadedTexture;
                 }
                 else
                 {
-                    return m_IcosaAsset.Thumbnail;
+                    if (m_IcosaAsset.Thumbnail == null)
+                    {
+                        return base.UnloadedTexture;
+                    }
+                    else
+                    {
+                        return m_IcosaAsset.Thumbnail;
+                    }
                 }
             }
         }
 
         protected override string ModelName
         {
-            get { return m_IcosaAsset.HumanName; }
+            get
+            {
+                if (m_IsCollection)
+                {
+                    return m_IcosaCollection?.Name ?? "Collection";
+                }
+                else
+                {
+                    return m_IcosaAsset.HumanName;
+                }
+            }
         }
 
         public override bool IsAvailable()
         {
-            return base.IsAvailable() && m_IcosaAsset != null &&
-                (!App.IcosaAssetCatalog.IsLoading(m_IcosaAsset.AssetId));
+            if (m_IsCollection)
+            {
+                return base.IsAvailable() && m_IcosaCollection != null;
+            }
+            else
+            {
+                return base.IsAvailable() && m_IcosaAsset != null &&
+                    (!App.IcosaAssetCatalog.IsLoading(m_IcosaAsset.AssetId));
+            }
         }
 
         public void SetPreset(IcosaAssetCatalog.AssetDetails asset, int index)
@@ -61,7 +97,9 @@ namespace TiltBrush
             {
                 m_LoadingOverlay.SetActive(false);
             }
+            m_IsCollection = false;
             m_IcosaAsset = asset;
+            m_IcosaCollection = null;
             SetPreset(asset.Model, index);
 
             if (m_IcosaAsset.ModelRotation != null)
@@ -69,6 +107,20 @@ namespace TiltBrush
                 Quaternion publishedRotation = m_IcosaAsset.ModelRotation.Value;
                 m_PreviewBaseRotation = Quaternion.Euler(0, publishedRotation.eulerAngles.y, 0);
             }
+        }
+
+        public void SetPresetCollection(IcosaAssetCatalog.CollectionDetails collection, int index)
+        {
+            m_IsCollection = true;
+            m_IcosaCollection = collection;
+            m_IcosaAsset = null;
+            m_LoadingOverlay.SetActive(false);
+
+            // Set the button index and clear any loaded model
+            m_IndexInPagedList = index;
+            SetDescriptionText(collection.Name);
+            SetButtonTexture(collection.Thumbnail);
+            DestroyModelPreview();
         }
 
         override protected void RequestModelPreloadInternal(string reason)
@@ -88,11 +140,23 @@ namespace TiltBrush
 
         protected override void OnButtonPressed()
         {
-            if (m_Model != null && m_Model.Error != null)
+            if (m_IsCollection)
             {
-                return;
+                // When a collection is clicked, drill into it
+                IcosaPanel panel = m_Manager as IcosaPanel;
+                if (panel != null && m_IcosaCollection != null)
+                {
+                    panel.ViewCollection(m_IcosaCollection.CollectionId);
+                }
             }
-            StartCoroutine(SpawnModelCoroutine("button"));
+            else
+            {
+                if (m_Model != null && m_Model.Error != null)
+                {
+                    return;
+                }
+                StartCoroutine(SpawnModelCoroutine("button"));
+            }
         }
 
         // Emits user-visible error on failure
