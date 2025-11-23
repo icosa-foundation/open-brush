@@ -454,6 +454,13 @@ namespace TiltBrush
 
             if (m_MeshGenerator != null && m_SDFGroup != null && m_SDFGroup.IsReady)
             {
+                // Check if the generator is initialized (private field check via reflection)
+                var initializedField = typeof(SDFGroupMeshGenerator).GetField("m_initialized",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                bool isInitialized = initializedField != null && (bool)initializedField.GetValue(m_MeshGenerator);
+
+                Debug.Log($"ModelStencil: Generator state - Initialized: {isInitialized}, Group.IsReady: {m_SDFGroup.IsReady}, Group.IsEmpty: {m_SDFGroup.IsEmpty}");
+
                 // Now trigger mesh generation
                 m_MeshGenerator.UpdateMesh();
                 Debug.Log("ModelStencil: UpdateMesh() called");
