@@ -49,9 +49,28 @@ namespace TiltBrush
             TrTransform dupXf = SelectionManager.m_Instance.SelectionTransform;
             if (!stampMode)
             {
-                // Scoot all the strokes and widgets.
-                // TODO: Make this relative to the user's facing.
-                Vector3 offset = m_DuplicateOffset / App.Scene.Pose.scale * 0.5f;
+                // Offset the duplicated selection
+                float gridSize = SelectionManager.m_Instance.SnappingGridSize;
+
+                Vector3 offset;
+                if (gridSize > 0)
+                {
+                    // Use one grid square as offset in each enabled snap axis
+                    // Grid size is in canvas local space (room space)
+                    offset = new Vector3(
+                        SelectionManager.m_Instance.m_EnableSnapTranslationX ? gridSize : m_DuplicateOffset.x * 0.5f,
+                        SelectionManager.m_Instance.m_EnableSnapTranslationY ? gridSize : m_DuplicateOffset.y * 0.5f,
+                        SelectionManager.m_Instance.m_EnableSnapTranslationZ ? gridSize : m_DuplicateOffset.z * 0.5f
+                    );
+                }
+                else
+                {
+                    // No grid snapping, use default offset
+                    offset = m_DuplicateOffset * 0.5f;
+                }
+
+                // Convert from room space to scene-relative space
+                offset /= App.Scene.Pose.scale;
                 dupXf.translation += offset;
             }
 
