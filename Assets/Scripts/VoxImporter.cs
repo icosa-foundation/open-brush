@@ -84,6 +84,7 @@ namespace TiltBrush
                     }
 
                     GameObject modelObject = new GameObject($"Model_{i}_{model.Name}");
+                    modelObject.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
                     modelObject.transform.SetParent(parent.transform, false);
 
                     // Generate mesh based on mode
