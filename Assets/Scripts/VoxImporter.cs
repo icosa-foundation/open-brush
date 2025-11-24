@@ -104,6 +104,10 @@ namespace TiltBrush
                         collider.size = mesh.bounds.size;
                         collider.center = mesh.bounds.center;
                     }
+                    else
+                    {
+                        Debug.LogWarning($"VOX model {i} ({model.Name}): Mesh generation failed");
+                    }
                 }
 
                 return (parent, m_warnings.Distinct().ToList(), m_collector);
@@ -469,6 +473,7 @@ namespace TiltBrush
         {
             private Dictionary<Vector3Int, Voxel> m_voxels = new Dictionary<Vector3Int, Voxel>();
             private Vector3Int m_size;
+            private Vector3Int m_offset;
 
             public Vector3Int Size => m_size;
 
@@ -478,29 +483,39 @@ namespace TiltBrush
                 int minX = int.MaxValue, minY = int.MaxValue, minZ = int.MaxValue;
                 int maxX = int.MinValue, maxY = int.MinValue, maxZ = int.MinValue;
 
+                // First pass: find bounds
                 foreach (Voxel voxel in model.Voxels)
                 {
-                    Vector3Int pos = new Vector3Int(
-                        voxel.LocalPosition.X,
-                        voxel.LocalPosition.Y,
-                        voxel.LocalPosition.Z
-                    );
+                    int x = voxel.LocalPosition.X;
+                    int y = voxel.LocalPosition.Y;
+                    int z = voxel.LocalPosition.Z;
 
-                    m_voxels[pos] = voxel;
-
-                    minX = Math.Min(minX, pos.x);
-                    minY = Math.Min(minY, pos.y);
-                    minZ = Math.Min(minZ, pos.z);
-                    maxX = Math.Max(maxX, pos.x);
-                    maxY = Math.Max(maxY, pos.y);
-                    maxZ = Math.Max(maxZ, pos.z);
+                    minX = Math.Min(minX, x);
+                    minY = Math.Min(minY, y);
+                    minZ = Math.Min(minZ, z);
+                    maxX = Math.Max(maxX, x);
+                    maxY = Math.Max(maxY, y);
+                    maxZ = Math.Max(maxZ, z);
                 }
 
+                m_offset = new Vector3Int(minX, minY, minZ);
                 m_size = new Vector3Int(
                     maxX - minX + 1,
                     maxY - minY + 1,
                     maxZ - minZ + 1
                 );
+
+                // Second pass: store voxels with normalized positions (offset to 0,0,0)
+                foreach (Voxel voxel in model.Voxels)
+                {
+                    Vector3Int pos = new Vector3Int(
+                        voxel.LocalPosition.X - m_offset.x,
+                        voxel.LocalPosition.Y - m_offset.y,
+                        voxel.LocalPosition.Z - m_offset.z
+                    );
+
+                    m_voxels[pos] = voxel;
+                }
             }
 
             public bool HasVoxel(Vector3Int pos)
