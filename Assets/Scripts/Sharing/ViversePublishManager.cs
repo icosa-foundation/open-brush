@@ -125,6 +125,22 @@ namespace TiltBrush
                 }
             });
         }
+        
+        public void CreateWorldOnly(string title, string description, Action<bool, string, string> callback)
+        {
+            if (string.IsNullOrEmpty(m_AccessToken))
+            {
+                callback?.Invoke(false, null, "Not authenticated");
+                return;
+            }
+
+            if (title.Length > 30)
+            {
+                title = title.Substring(0, 30);
+            }
+
+            StartCoroutine(CreateWorldContent(title, description, callback));
+        }
 
         public IEnumerator CreateWorldContent(string title, string description, Action<bool, string, string> callback)
         {
