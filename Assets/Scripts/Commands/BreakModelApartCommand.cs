@@ -215,7 +215,7 @@ namespace TiltBrush
                 {
                     // Destroy the split as it's superfluous
                     GameObject.DestroyImmediate(splits[0].gameObject);
-                    m_InitialWidget.Model.m_SplitMeshPaths.Add(String.IsNullOrEmpty(subtree) ? prevNodePath : subtree);
+                    m_InitialWidget.Model.RegisterMeshSplit(String.IsNullOrEmpty(subtree) ? prevNodePath : subtree);
                 }
                 else
                 {
@@ -227,7 +227,7 @@ namespace TiltBrush
                     {
                         m_NodePaths.Add($"{prevNodePath}/{split.name}");
                     }
-                    m_InitialWidget.Model.m_SplitMeshPaths.Add(String.IsNullOrEmpty(subtree) ? prevNodePath : subtree);
+                    m_InitialWidget.Model.RegisterMeshSplit(String.IsNullOrEmpty(subtree) ? prevNodePath : subtree);
                 }
                 modelObjScript.UpdateAllMeshChildren();
             }

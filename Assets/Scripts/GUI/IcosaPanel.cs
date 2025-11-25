@@ -59,8 +59,6 @@ namespace TiltBrush
         public bool ShowingLikes { get { return m_CurrentSet == IcosaSetType.Liked; } }
         public bool ShowingUser { get { return m_CurrentSet == IcosaSetType.User; } }
 
-
-
         override public void OnWidgetShowAnimComplete()
         {
             SetVisiblePolySet(m_CurrentSet);
@@ -106,7 +104,6 @@ namespace TiltBrush
             // Make sure Poly gallery button starts at greyscale when panel is initialized
             m_PolyGalleryRenderer.material.SetFloat("_Grayscale", 1);
 
-            App.IcosaAssetCatalog.RequestAutoRefresh(m_CurrentSet);
             App.IcosaAssetCatalog.CatalogChanged += OnIcosaAssetCatalogChanged;
         }
 

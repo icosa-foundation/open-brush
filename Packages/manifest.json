@@ -23,12 +23,12 @@
     "com.unity.timeline": "1.7.7",
     "com.unity.ugui": "1.0.0",
     "com.unity.vectorgraphics": "https://github.com/icosa-mirror/com.unity.vectorgraphics.git#open-brush",
-    "com.unity.xr.core-utils": "2.5.2",
+    "com.unity.xr.core-utils": "2.3.0",
     "com.unity.xr.management": "4.4.1",
     "com.unity.xr.oculus": "4.2.0",
-    "com.unity.xr.openxr": "1.14.3",
+    "com.unity.xr.openxr": "1.10.0",
     "com.watertrans.glyphloader": "https://github.com/icosa-mirror/GlyphLoader-Unity.git#upm",
-    "com.zappar.xr.zapbox": "https://github.com/zappar-xr/zapbox-xr-sdk.git#74fe120c1c9a0b31a186eb551ef25efe4a316c73",
+    "com.zappar.xr.zapbox": "https://github.com/zappar-xr/zapbox-xr-sdk.git#91b52bde3c0a67aa08909bdd2657f8a6672decf6",
     "moonsharp": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",
     "org.khronos.unitygltf": "https://github.com/KhronosGroup/UnityGLTF.git#dev",
     "org.nuget.google.apis": "1.64.0",
@@ -64,20 +64,10 @@
     "com.unity.modules.unitywebrequestwww": "1.0.0",
     "com.unity.modules.vehicles": "1.0.0",
     "com.unity.modules.video": "1.0.0",
-    "com.unity.modules.wind": "1.0.0"
+    "com.unity.modules.wind": "1.0.0",
+    "com.sandrofigo.voxreader": "5.0.6"
   },
   "scopedRegistries": [
-    {
-      "name": "OpenUPM",
-      "url": "https://package.openupm.com",
-      "scopes": [
-        "com.atteneder",
-        "org.nuget.google",
-        "org.nuget.sharpziplib",
-        "org.nuget.system",
-        "com.openupm"
-      ]
-    },
     {
       "name": "Vive",
       "url": "https://npm-registry.vive.com",
@@ -90,6 +80,18 @@
       "url": "https://npm.developer.oculus.com",
       "scopes": [
         "com.meta.xr.sdk"
+      ]
+    },
+    {
+      "name": "OpenUPM",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.atteneder",
+        "com.openupm",
+        "com.sandrofigo.voxreader",
+        "org.nuget.google",
+        "org.nuget.sharpziplib",
+        "org.nuget.system"
       ]
     }
   ]
