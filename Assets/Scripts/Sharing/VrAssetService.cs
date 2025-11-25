@@ -822,17 +822,74 @@ namespace TiltBrush
 
             SetUploadProgress(UploadStep.CreateGltf, 0);
 
-            // Directory structure
+            // Create export directory
             string exportDir = Path.Combine(tempUploadDir, "sketch_export");
             Directory.CreateDirectory(exportDir);
 
-            string webViewerDir = Path.Combine(exportDir, "WebViewer");
-            Directory.CreateDirectory(webViewerDir);
+            // Copy WebViewer files FIRST directly to exportDir (not to a subdirectory)
+            // This establishes the base structure: libs/, css/, helpers/, img/, legacy/, icosa-viewer.module.js, etc.
+            string streamingWebViewerPath = Path.Combine(Application.streamingAssetsPath, "WebViewer");
 
-            string assetsDir = Path.Combine(webViewerDir, "assets");
-            Directory.CreateDirectory(assetsDir);
+#if UNITY_ANDROID && !UNITY_EDITOR
+    // Android: If WebViewer.zip exists, extract it directly to exportDir
+    string zipPathSrc = Path.Combine(Application.streamingAssetsPath, "WebViewer.zip");
+    if (File.Exists(zipPathSrc))
+    {
+        byte[] data;
+        using (UnityWebRequest www = UnityWebRequest.Get(zipPathSrc))
+        {
+            await www.SendWebRequest();
+            if (www.result != UnityWebRequest.Result.Success)
+                throw new VrAssetServiceException("[VIVERSE] Failed to read WebViewer.zip");
+            data = www.downloadHandler.data;
+        }
 
-            // EXPORT GLB to WebViewer/assets/scene.glb
+        string tempZip = Path.Combine(Application.temporaryCachePath, "webviewer_temp.zip");
+        File.WriteAllBytes(tempZip, data);
+
+        using (var zip = System.IO.Compression.ZipFile.OpenRead(tempZip))
+        {
+            foreach (var entry in zip.Entries)
+            {
+                string fullPath = Path.Combine(exportDir, entry.FullName);
+
+                if (string.IsNullOrEmpty(entry.Name))
+                {
+                    Directory.CreateDirectory(fullPath);
+                    continue;
+                }
+
+                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                entry.ExtractToFile(fullPath, overwrite: true);
+            }
+        }
+
+        File.Delete(tempZip);
+    }
+    else
+    {
+        // Fallback: try direct copy if folder exists
+        if (Directory.Exists(streamingWebViewerPath))
+            CopyDirectory(streamingWebViewerPath, exportDir);
+        else
+            throw new VrAssetServiceException("WebViewer not found in StreamingAssets");
+    }
+#else
+            // PC/Editor: direct copy to exportDir
+            if (!Directory.Exists(streamingWebViewerPath))
+                throw new VrAssetServiceException($"WebViewer not found at {streamingWebViewerPath}");
+
+            CopyDirectory(streamingWebViewerPath, exportDir);
+#endif
+
+            // Now create/ensure assets folder exists in exportDir
+            string assetsDir = Path.Combine(exportDir, "assets");
+            if (!Directory.Exists(assetsDir))
+            {
+                Directory.CreateDirectory(assetsDir);
+            }
+
+            // Export GLB to assets/scene.glb
             string glbPath = Path.Combine(assetsDir, "scene.glb");
 
             var exportResults = await OverlayManager.m_Instance.RunInCompositorAsync(
@@ -853,71 +910,33 @@ namespace TiltBrush
             await CreateTiltForUploadAsync(fileInfo);
             token.ThrowIfCancellationRequested();
 
-            // Copy Webviewer files
-            string streamingWebViewerPath = Path.Combine(Application.streamingAssetsPath, "WebViewer");
-
-#if UNITY_ANDROID && !UNITY_EDITOR
-    // Android: If WebViewer.zip exists, extract it
-    string zipPathSrc = Path.Combine(Application.streamingAssetsPath, "WebViewer.zip");
-    if (File.Exists(zipPathSrc))
-    {
-        byte[] data;
-        using (UnityWebRequest www = UnityWebRequest.Get(zipPathSrc))
-        {
-            await www.SendWebRequest();
-            if (www.result != UnityWebRequest.Result.Success)
-                throw new VrAssetServiceException("[VIVERSE] Failed to read WebViewer.zip");
-            data = www.downloadHandler.data;
-        }
-
-        string tempZip = Path.Combine(Application.temporaryCachePath, "webviewer_temp.zip");
-        File.WriteAllBytes(tempZip, data);
-
-        using (var zip = System.IO.Compression.ZipFile.OpenRead(tempZip))
-        {
-            foreach (var entry in zip.Entries)
-            {
-                string fullPath = Path.Combine(webViewerDir, entry.FullName);
-
-                if (string.IsNullOrEmpty(entry.Name))
-                {
-                    Directory.CreateDirectory(fullPath);
-                    continue;
-                }
-
-                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
-                entry.ExtractToFile(fullPath, overwrite: true);
-            }
-        }
-
-        File.Delete(tempZip);
-    }
-    else
-    {
-        // Fallback: try direct copy if folder exists
-        if (Directory.Exists(streamingWebViewerPath))
-            CopyDirectory(streamingWebViewerPath, webViewerDir);
-        else
-            throw new VrAssetServiceException("WebViewer not found in StreamingAssets");
-    }
-#else
-            // PC/Editor: direct copy
-            if (!Directory.Exists(streamingWebViewerPath))
-                throw new VrAssetServiceException($"WebViewer not found at {streamingWebViewerPath}");
-
-            CopyDirectory(streamingWebViewerPath, webViewerDir);
-#endif
-
             var publishManager = FindObjectOfType<ViversePublishManager>();
             if (publishManager == null)
                 throw new VrAssetServiceException("ViversePublishManager not found");
             
-            // Generate index.html
+            if (!publishManager.IsAuthenticated())
+                throw new VrAssetServiceException("Not authenticated with VIVERSE");
+
+            // CREATE WORLD FIRST to get new sceneSid
+            var createTcs = new TaskCompletionSource<string>();
+            
+            StartCoroutine(publishManager.CreateWorldContent(title, description, (success, sid, error) =>
+            {
+                if (success)
+                    createTcs.SetResult(sid);
+                else
+                    createTcs.SetException(new VrAssetServiceException($"Failed to create world: {error}"));
+            }));
+
+            string sceneSid = await createTcs.Task;
+            token.ThrowIfCancellationRequested();
+
+            // NOW generate HTML with NEW sceneSid
             SetUploadProgress(UploadStep.ZipElements, 0);
 
-            string htmlPath = Path.Combine(webViewerDir, "index.html");
-            string sceneSid = publishManager.GetLastSceneSid();
+            string htmlPath = Path.Combine(exportDir, "index.html");
             string html = ViewerHTMLGenerator.GenerateViewerHTML("./assets/scene.glb", sceneSid);
+            Debug.Log($"[DEBUG] sceneSid={sceneSid}");
             File.WriteAllText(htmlPath, html);
 
             token.ThrowIfCancellationRequested();
@@ -925,8 +944,8 @@ namespace TiltBrush
             
             var filesToZip = new List<string>();
 
-            // Add all WebViewer files except .meta
-            foreach (var file in Directory.GetFiles(webViewerDir, "*", SearchOption.AllDirectories))
+            // Add all files from exportDir except .meta
+            foreach (var file in Directory.GetFiles(exportDir, "*", SearchOption.AllDirectories))
             {
                 if (file.EndsWith(".meta"))
                     continue;
@@ -934,17 +953,13 @@ namespace TiltBrush
             }
 
             // Create ZIP at exportDir/content.zip
-            string zipPath = Path.Combine(exportDir, "content.zip");
+            string zipPath = Path.Combine(tempUploadDir, "content.zip");
             
-            await CreateZipFileAsync(zipPath, webViewerDir, filesToZip.ToArray(), token);
+            await CreateZipFileAsync(zipPath, exportDir, filesToZip.ToArray(), token);
             long uploadLength = new FileInfo(zipPath).Length;
 
-            // Viverse upload
-
-            if (!publishManager.IsAuthenticated())
-                throw new VrAssetServiceException("Not authenticated with VIVERSE");
-
-            var tcs = new TaskCompletionSource<bool>();
+            // Upload the content to the world we created
+            var uploadTcs = new TaskCompletionSource<bool>();
 
             // progress
             void OnProgress(float p) => SetUploadProgress(UploadStep.UploadElements, p);
@@ -956,20 +971,20 @@ namespace TiltBrush
                 publishManager.OnUploadProgress -= OnProgress;
                 publishManager.OnPublishComplete -= OnComplete;
 
-                if (success) tcs.SetResult(true);
-                else tcs.SetException(new VrAssetServiceException(msg));
+                if (success) uploadTcs.SetResult(true);
+                else uploadTcs.SetException(new VrAssetServiceException(msg));
             }
             publishManager.OnPublishComplete += OnComplete;
 
-            // Start upload
-            publishManager.PublishWorld(title, description, zipPath);
+            // Upload to existing world
+            StartCoroutine(publishManager.UploadWorldContent(sceneSid, zipPath));
 
             // wait for completion
-            await tcs.Task;
+            await uploadTcs.Task;
 
-            // Resul url
+            // Result url
             WorldContentResponse resp = publishManager.GetLastResponse();
-            string uri = resp?.publish_url ?? $"https://viverse.com/world/{publishManager.GetLastSceneSid()}";
+            string uri = resp?.publish_url ?? $"https://viverse.com/world/{sceneSid}";
 
             return (uri, uploadLength);
         }
