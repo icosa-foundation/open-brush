@@ -131,7 +131,7 @@ namespace TiltBrush
             m_UploadFailedObjects.SetActive(displayMode == DisplayMode.UploadFailed);
             m_UploadingDeniedObjects.SetActive(displayMode == DisplayMode.UploadingDenied);
             m_WaitObjects.SetActive(displayMode == DisplayMode.Waiting);
-            m_EmbeddedMediaWarningIcosa.SetActive(displayMode == DisplayMode.EmbeddedMediaWarningIcosa);
+            m_EmbeddedMediaWarningIcosa.SetActive(false); // TEMP DISABLE ICOSA (displayMode == DisplayMode.EmbeddedMediaWarningIcosa);
             m_EmbeddedMediaWarningSketchfab.SetActive(
                 displayMode == DisplayMode.EmbeddedMediaWarningSketchfab);
             m_EmbeddedMediaWarningViverse.SetActive(displayMode == DisplayMode.EmbeddedMediaWarningViverse);
@@ -287,8 +287,8 @@ namespace TiltBrush
             if (backend == Cloud.Icosa)
             {
                 bool icosaLoggedIn = App.IcosaIsLoggedIn;
-                ui.loggedInElements.SetActive(icosaLoggedIn);
-                ui.loggedOutElements.SetActive(!icosaLoggedIn);
+                ui.loggedInElements.SetActive(false);  // TEMP DISABLE ICOSA (icosaLoggedIn);
+                ui.loggedOutElements.SetActive(false); // TEMP DISABLE ICOSA (!icosaLoggedIn);
                 if (icosaLoggedIn)
                 {
                     ui.name.text = App.IcosaUserName;
