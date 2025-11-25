@@ -113,6 +113,7 @@ namespace TiltBrush
             StencilSettings = 20200,
             LayersPanel = 15000,
             TransformPanel = 12000,
+            WhatsNewPanel = 20300,
         }
 
         private enum FixedTransitionState

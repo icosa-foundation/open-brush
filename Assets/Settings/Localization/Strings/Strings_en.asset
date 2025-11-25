@@ -3758,6 +3758,14 @@ MonoBehaviour:
     m_Localized: Z
     m_Metadata:
       m_Items: []
+  - m_Id: 436433407381692416
+    m_Localized: Next
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436433674365919232
+    m_Localized: Previous
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
