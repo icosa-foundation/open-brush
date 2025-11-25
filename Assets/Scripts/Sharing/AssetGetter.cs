@@ -162,54 +162,71 @@ namespace TiltBrush
                     return bestFormat;
                 }
 
-                while (true)
-                {
-                    JToken format = null;
-                    string formatType = null;
-                    var allFormats = json["formats"].ToList();
-                    VrAssetFormat selectedType = VrAssetFormat.Unknown;
+                JToken format = null;
+                string formatType = null;
+                var formatsToken = json["formats"];
+                VrAssetFormat selectedType = VrAssetFormat.Unknown;
 
-                    if (allFormats != null)
+                if (formatsToken != null && formatsToken.HasValues)
+                {
+                    var allFormats = formatsToken.ToList();
+                    if (allFormats.Count > 0)
                     {
                         // This assumes that desiredTypes are ordered by preference (best to worst).
                         // Try the preferred formats first, then all formats.
-                        // var preferredFormats = allFormats.Where(f => f["isPreferredForDownload"].Value<bool>());
-                        // format = GetBestFormat(preferredFormats, desiredTypes) ?? GetBestFormat(allFormats, desiredTypes);
+                        var preferredFormats = allFormats.Where(f => f["isPreferredForDownload"]?.Value<bool>() == true);
+                        format = GetBestFormat(preferredFormats, desiredTypes) ?? GetBestFormat(allFormats, desiredTypes);
 
-                        // Temporary hack
-                        bool hasBlocks = GetBestFormat(allFormats, new List<string> { "BLOCKS" })?.HasValues ?? false;
-                        format = GetBestFormat(allFormats, hasBlocks ? new List<string> { "OBJ", "OBJ_NGON" } : desiredTypes);
-                        formatType = format["formatType"]?.ToString();
-                        selectedType = Enum.Parse<VrAssetFormat>(formatType);
+                        if (format != null)
+                        {
+                            formatType = format["formatType"]?.ToString();
+                            if (!string.IsNullOrEmpty(formatType))
+                            {
+                                if (!Enum.TryParse<VrAssetFormat>(formatType, out selectedType))
+                                {
+                                    Debug.LogWarning($"Unknown format type '{formatType}' for asset {m_Asset.Id}");
+                                    format = null;
+                                }
+                            }
+                            else
+                            {
+                                Debug.LogWarning($"Format has no formatType for asset {m_Asset.Id}");
+                                format = null;
+                            }
+                        }
                     }
-                    if (format != null)
+                }
+
+                if (format != null)
+                {
+                    string internalRootFilePath = format["root"]?["relativePath"].ToString();
+                    // If we successfully get a gltf2 format file, internally change the extension to
+                    // "gltf2" so that the cache knows that it is a gltf2 file.
+                    if (selectedType == VrAssetFormat.GLTF2)
                     {
-                        string internalRootFilePath = format["root"]?["relativePath"].ToString();
-                        // If we successfully get a gltf2 format file, internally change the extension to
-                        // "gltf2" so that the cache knows that it is a gltf2 file.
-                        if (selectedType == VrAssetFormat.GLTF2)
-                        {
-                            internalRootFilePath = Path.ChangeExtension(internalRootFilePath, "gltf2");
-                        }
-
-                        // Get root element info.
-                        m_Asset.SetRootElement(
-                            internalRootFilePath,
-                            format["root"]?["url"].ToString());
-
-                        // Get all resource infos.  There may be zero.
-                        foreach (var r in format["resources"])
-                        {
-                            string path = r["relativePath"].ToString();
-                            m_Asset.AddResourceElement(path, r["url"].ToString());
-
-                            // The root element should be the only gltf file.
-                            Debug.Assert(!path.EndsWith(".gltf") && !path.EndsWith(".gltf2"),
-                                string.Format("Found extra gltf resource: {0}", path));
-                        }
-                        break;
+                        internalRootFilePath = Path.ChangeExtension(internalRootFilePath, "gltf2");
                     }
-                    Debug.LogWarning($"Can't download {m_Asset.Id} in {formatType} format.");
+
+                    // Get root element info.
+                    m_Asset.SetRootElement(
+                        internalRootFilePath,
+                        format["root"]?["url"].ToString());
+
+                    // Get all resource infos.  There may be zero.
+                    foreach (var r in format["resources"])
+                    {
+                        string path = r["relativePath"].ToString();
+                        m_Asset.AddResourceElement(path, r["url"].ToString());
+
+                        // The root element should be the only gltf file.
+                        Debug.Assert(!path.EndsWith(".gltf") && !path.EndsWith(".gltf2"),
+                            string.Format("Found extra gltf resource: {0}", path));
+                    }
+                }
+                else
+                {
+                    string formatInfo = formatType != null ? $" in {formatType} format" : " - no suitable format found";
+                    Debug.LogWarning($"Can't download {m_Asset.Id}{formatInfo}.");
                     yield break;
                 }
             }
