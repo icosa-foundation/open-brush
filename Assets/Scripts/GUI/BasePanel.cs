@@ -114,6 +114,7 @@ namespace TiltBrush
             LayersPanel = 15000,
             TransformPanel = 12000,
             WhatsNewPanel = 20300,
+            BlocksPromoPanel = 20301,
         }
 
         private enum FixedTransitionState
@@ -1724,6 +1725,11 @@ namespace TiltBrush
             m_Fixed = true;
             m_TransitionState = FixedTransitionState.Fixed;
             m_WandTransitionPercent = initialTransitionAmount;
+        }
+
+        public void DismissThisPanel()
+        {
+            PanelManager.m_Instance.DismissNonCorePanel(this.m_PanelType);
         }
     }
 } // namespace TiltBrush

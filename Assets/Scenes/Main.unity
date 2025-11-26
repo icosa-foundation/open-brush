@@ -9818,6 +9818,9 @@ MonoBehaviour:
   m_Collider: {fileID: 0}
   m_Mesh: {fileID: 0}
   m_Border: {fileID: 0}
+  m_BorderIsSplit: 0
+  m_BorderTop: {fileID: 0}
+  m_BorderBottom: {fileID: 0}
   m_MeshCollider: {fileID: 0}
   m_ParticleBounds: {x: 0, y: 0, z: 0}
   m_PanelPopUpMap: []
@@ -25740,6 +25743,13 @@ MonoBehaviour:
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 1272310558547734, guid: 41e390eebf259b1479b25195bc0d6a15,
+      type: 3}
+    m_ModeVr: 1
+    m_ModeMono: 1
+    m_ModeQuest: 1
+    m_Basic: 0
+    m_Advanced: 1
+  - m_PanelPrefab: {fileID: 1272310558547734, guid: 0908944ac0a26944e8ea8977b447f8ee,
       type: 3}
     m_ModeVr: 1
     m_ModeMono: 1

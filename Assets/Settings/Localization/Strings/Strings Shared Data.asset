@@ -3607,6 +3607,10 @@ MonoBehaviour:
     m_Key: WHATSNEW_PREV
     m_Metadata:
       m_Items: []
+  - m_Id: 436974612083466240
+    m_Key: POPUP_PANELS_BUTTON_DESCRIPTION_BLOCKSPROMO
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

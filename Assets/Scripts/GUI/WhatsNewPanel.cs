@@ -130,7 +130,7 @@ namespace TiltBrush
             }
         }
 
-        public void ClosePanel()
+        public void DismissWhatsNewPanel()
         {
             // Mark the current item as viewed when closing
             m_ViewedItemIndices.Add(m_CurrentItemIndex);
