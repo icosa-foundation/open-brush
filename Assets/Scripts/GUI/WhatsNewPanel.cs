@@ -15,6 +15,7 @@ namespace TiltBrush
         private List<Transform> m_Items = new ();
         private int m_HighestItemVersion = 0;
         private HashSet<int> m_ViewedItemIndices = new HashSet<int>();
+        private bool m_HasBeenOpenedThisSession = false;
 
         public override void InitPanel()
         {
@@ -33,20 +34,27 @@ namespace TiltBrush
                 // Item at index 0 = version 1, index 1 = version 2, etc.
                 m_HighestItemVersion = m_Items.Count;
 
-                // Start at the first unread item (oldest unread)
-                int lastViewedVersion = GetLastViewedVersion();
-                if (lastViewedVersion < m_HighestItemVersion)
+                // Only calculate starting position on first open this session
+                if (!m_HasBeenOpenedThisSession)
                 {
-                    // There are unread items - start at the first unread
-                    // lastViewedVersion corresponds to the last viewed index + 1
-                    // So first unread index = lastViewedVersion
-                    m_CurrentItemIndex = lastViewedVersion;
+                    // Start at the first unread item (oldest unread)
+                    int lastViewedVersion = GetLastViewedVersion();
+                    if (lastViewedVersion < m_HighestItemVersion)
+                    {
+                        // There are unread items - start at the first unread
+                        // lastViewedVersion corresponds to the last viewed index + 1
+                        // So first unread index = lastViewedVersion
+                        m_CurrentItemIndex = lastViewedVersion;
+                    }
+                    else
+                    {
+                        // All items have been read - start at the newest (last item)
+                        m_CurrentItemIndex = m_Items.Count - 1;
+                    }
+
+                    m_HasBeenOpenedThisSession = true;
                 }
-                else
-                {
-                    // All items have been read - start at the newest (last item)
-                    m_CurrentItemIndex = m_Items.Count - 1;
-                }
+                // else: keep m_CurrentItemIndex as is (resume where we left off)
             }
 
             DisplayCurrentItem();
@@ -135,9 +143,12 @@ namespace TiltBrush
             // Mark the current item as viewed when closing
             m_ViewedItemIndices.Add(m_CurrentItemIndex);
             UpdateViewedVersion();
-
             m_ViewedItemIndices.Clear();
-            PanelManager.m_Instance.DismissNonCorePanel(PanelType.WhatsNewPanel);
+
+            // This should work
+            // DismissThisPanel();
+            // but didn't so...
+            PanelManager.m_Instance.HidePanel(m_PanelType);
         }
 
         public int GetHighestItemVersion()

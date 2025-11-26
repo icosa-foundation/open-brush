@@ -52,6 +52,9 @@ MonoBehaviour:
   m_Collider: {fileID: 65962833710381506}
   m_Mesh: {fileID: 1577576848578658}
   m_Border: {fileID: 23798923668222696}
+  m_BorderIsSplit: 0
+  m_BorderTop: {fileID: 0}
+  m_BorderBottom: {fileID: 0}
   m_MeshCollider: {fileID: 65063648299555090}
   m_ParticleBounds: {x: 0, y: 0, z: 0}
   m_PanelPopUpMap:
@@ -3569,8 +3572,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb0ac1df808a02645957f94f4bac11c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pulseSpeed: 2
-  pulseAmount: 0.1
+  pulseSpeed: 4
+  pulseAmount: 0.15
   originalColor: {r: 0.8962264, g: 0.8962264, b: 0.8962264, a: 1}
   highlightColor: {r: 0.9622642, g: 0.82307965, b: 0.24056605, a: 1}
   colorIntensity: 0.8
