@@ -28,9 +28,11 @@ namespace TiltBrush
                     fPopScalar: 0.5f
                 );
             }
-
+#if UNITY_ANDROID
             bool isQuestNative = AndroidUtils.IsPackageInstalled("com.oculus.platformsdkruntime");
-
+#else
+            bool isQuestNative = false;
+#endif
             if (isQuestNative)
             {
                 // Actually running on a Quest. Open the Quest store link.
