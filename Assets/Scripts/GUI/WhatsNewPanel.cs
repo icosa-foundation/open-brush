@@ -12,7 +12,7 @@ namespace TiltBrush
         [SerializeField] private BaseButton m_NextButton;
         [SerializeField] private BaseButton m_PreviousButton;
 
-        private List<Transform> m_Items = new ();
+        private List<Transform> m_Items = new();
         private int m_HighestItemVersion = 0;
         private HashSet<int> m_ViewedItemIndices = new HashSet<int>();
         private bool m_HasBeenOpenedThisSession = false;
