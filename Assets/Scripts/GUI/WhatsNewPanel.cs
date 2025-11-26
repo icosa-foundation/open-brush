@@ -26,19 +26,30 @@ namespace TiltBrush
                 m_Items.Clear();
                 for (int i = 0; i < m_ItemsContainer.childCount; i++)
                 {
-                    Transform child = m_ItemsContainer.GetChild(i);
-                    m_Items.Add(child);
+                    m_Items.Add(m_ItemsContainer.GetChild(i));
+                }
 
-                    // Track highest version number
-                    var identifier = child.GetComponent<WhatsNewItemIdentifier>();
-                    if (identifier != null && identifier.VersionNumber > m_HighestItemVersion)
-                    {
-                        m_HighestItemVersion = identifier.VersionNumber;
-                    }
+                // Version numbers align with display order
+                // Item at index 0 = version 1, index 1 = version 2, etc.
+                m_HighestItemVersion = m_Items.Count;
+
+                // Start at the first unread item (oldest unread)
+                int lastViewedVersion = GetLastViewedVersion();
+                if (lastViewedVersion < m_HighestItemVersion)
+                {
+                    // There are unread items - start at the first unread
+                    // lastViewedVersion corresponds to the last viewed index + 1
+                    // So first unread index = lastViewedVersion
+                    m_CurrentItemIndex = lastViewedVersion;
+                }
+                else
+                {
+                    // All items have been read - start at the newest (last item)
+                    m_CurrentItemIndex = m_Items.Count - 1;
                 }
             }
 
-            ShowCurrentItem();
+            DisplayCurrentItem();
             UpdateButtonStates();
         }
 
@@ -62,13 +73,18 @@ namespace TiltBrush
             UpdateButtonStates();
         }
 
-        private void ShowCurrentItem()
+        private void DisplayCurrentItem()
         {
             // Hide all items except the current one
             for (int i = 0; i < m_Items.Count; i++)
             {
                 m_Items[i].gameObject.SetActive(i == m_CurrentItemIndex);
             }
+        }
+
+        private void ShowCurrentItem()
+        {
+            DisplayCurrentItem();
 
             // Track that this item has been viewed
             m_ViewedItemIndices.Add(m_CurrentItemIndex);
@@ -116,6 +132,10 @@ namespace TiltBrush
 
         public void ClosePanel()
         {
+            // Mark the current item as viewed when closing
+            m_ViewedItemIndices.Add(m_CurrentItemIndex);
+            UpdateViewedVersion();
+
             m_ViewedItemIndices.Clear();
             PanelManager.m_Instance.DismissNonCorePanel(PanelType.WhatsNewPanel);
         }
@@ -137,24 +157,24 @@ namespace TiltBrush
 
         private void UpdateViewedVersion()
         {
-            // Find highest version among viewed items this session
-            int highestViewed = 0;
+            // Find highest index among viewed items this session
+            // Index maps to version: index 0 = version 1, index 1 = version 2, etc.
+            int highestViewedIndex = 0;
             foreach (int idx in m_ViewedItemIndices)
             {
-                if (idx < m_Items.Count)
+                if (idx > highestViewedIndex)
                 {
-                    var identifier = m_Items[idx].GetComponent<WhatsNewItemIdentifier>();
-                    if (identifier != null && identifier.VersionNumber > highestViewed)
-                    {
-                        highestViewed = identifier.VersionNumber;
-                    }
+                    highestViewedIndex = idx;
                 }
             }
 
+            // Convert index to version (add 1 since index 0 = version 1)
+            int highestViewedVersion = highestViewedIndex + 1;
+
             // Only update if we've viewed something newer
-            if (highestViewed > GetLastViewedVersion())
+            if (highestViewedVersion > GetLastViewedVersion())
             {
-                PlayerPrefs.SetInt(kPlayerPrefsKey, highestViewed);
+                PlayerPrefs.SetInt(kPlayerPrefsKey, highestViewedVersion);
                 PlayerPrefs.Save();
             }
         }

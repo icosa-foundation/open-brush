@@ -14,6 +14,7 @@
 
 using UnityEngine;
 using UnityEngine.Localization;
+using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
@@ -37,7 +38,6 @@ namespace TiltBrush
         [SerializeField] OptionButton m_ShareButton;
         [SerializeField] OptionButton m_ShareButton_Notify;
         [SerializeField] PanelButton m_WhatsNewButton;
-        [SerializeField] PanelButton m_WhatsNewButton_Notify;
         [SerializeField] GameObject m_AdvancedModeBorder;
         [SerializeField] GameObject m_BeginnerModeButton;
         [SerializeField] GameObject m_AdvancedModeButton;
@@ -212,22 +212,14 @@ namespace TiltBrush
 
         void SetWhatsNewButtonNotifyActive(bool active)
         {
-            m_WhatsNewButton.gameObject.SetActive(!active);
-            m_WhatsNewButton_Notify.gameObject.SetActive(active);
+            m_WhatsNewButton.gameObject.GetComponent<ButtonHighlightThrobber>().enabled = active;
         }
 
         void UpdateWhatsNewButtonState()
         {
-            if (m_WhatsNewButton == null || m_WhatsNewButton_Notify == null) return;
-
-            // Check if there are unread items
+            if (m_WhatsNewButton == null) return;
             bool hasUnread = CheckForUnreadWhatsNewItems();
             SetWhatsNewButtonNotifyActive(hasUnread);
-
-            // Keep both buttons' colors synchronized (like ShareButton)
-            Color col = GetGazeColor();
-            m_WhatsNewButton.SetColor(col);
-            m_WhatsNewButton_Notify.SetColor(col);
         }
 
         bool CheckForUnreadWhatsNewItems()
