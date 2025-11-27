@@ -111,5 +111,3 @@ Packages/com.unity.xr.picoxr
 
 # Cache files
 *.cache
-/Assets/StreamingAssets/Support
-Assets/StreamingAssets/Support.meta
