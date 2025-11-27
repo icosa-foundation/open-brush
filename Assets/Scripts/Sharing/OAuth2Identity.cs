@@ -130,8 +130,7 @@ namespace TiltBrush
             {
                 if (m_Service == SecretsConfig.Service.Vive)
                 {
-                    var pub = FindObjectOfType<ViversePublishManager>();
-                    return pub != null && pub.IsAuthenticated() && Profile != null;
+                    return m_ViverseToken != null && m_ViverseToken.IsValid && Profile != null;
                 }
 
                 return UserCredential?.Token?.AccessToken != null && Profile != null;
@@ -140,7 +139,15 @@ namespace TiltBrush
 
         public bool HasAccessToken
         {
-            get { return UserCredential?.Token?.AccessToken != null; }
+            get
+            {
+                if (m_Service == SecretsConfig.Service.Vive)
+                {
+                    return m_ViverseToken != null && m_ViverseToken.IsValid;
+                }
+
+                return UserCredential?.Token?.AccessToken != null;
+            }
         }
 
         public async Task<string> GetAccessToken()
@@ -276,7 +283,7 @@ namespace TiltBrush
             }
         }
 
-        private void OnViverseAuthComplete(string accessToken, string refreshToken, int expiresIn)
+        private void OnViverseAuthComplete(string accessToken, string refreshToken, int expiresIn, string accountId)
         {
             Debug.Log("VIVERSE: Authentication successful");
 
@@ -292,16 +299,6 @@ namespace TiltBrush
 
                 Debug.Log($"VIVERSE: Token saved, expires at {m_ViverseToken.ExpiresAt}");
 
-                // Add dummy profile so OAuth2Identity.LoggedIn becomes true
-                Profile = new UserInfo
-                {
-                    id = "viverse_user",
-                    name = "VIVERSE User",
-                    email = "",
-                    icon = null,
-                    isGoogle = false
-                };
-                
                 // Fetch user info
                 GetUserInfoAsync().WrapErrors();
 
@@ -339,17 +336,55 @@ namespace TiltBrush
 
         private async Task<UserInfo> GetUserInfoViverseAsync(bool forTesting)
         {
-            // TODO: Replace with actual VIVERSE user info endpoint when available
-            Debug.LogWarning("VIVERSE: Using placeholder user info");
-
-            return new UserInfo
+            string accessToken = m_ViverseToken?.AccessToken;
+            if (string.IsNullOrEmpty(accessToken))
             {
-                id = "viverse_user",
-                name = "VIVERSE User",
-                email = "",
-                icon = m_LoggedInTexture,
-                isGoogle = false
-            };
+                Debug.LogError("VIVERSE: No access token");
+                return null;
+            }
+
+            using (UnityWebRequest request = UnityWebRequest.Get("https://sdk-api.viverse.com/avatar/profile"))
+            {
+                request.SetRequestHeader("Authorization", $"Bearer {accessToken}");
+                await request.SendWebRequest();
+        
+                Debug.Log($"VIVERSE Profile API: {request.responseCode} - {request.downloadHandler.text}");
+        
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    Debug.LogError($"VIVERSE: Profile API failed - {request.error}");
+                    return null;
+                }
+        
+                var profile = JsonUtility.FromJson<ViverseProfileResponse>(request.downloadHandler.text);
+        
+                Texture2D profileIcon = m_LoggedInTexture;
+                if (!string.IsNullOrEmpty(profile?.activeAvatar?.headIconUrl) && !forTesting)
+                {
+                    try
+                    {
+                        profileIcon = await ImageUtils.DownloadTextureAsync(profile.activeAvatar.headIconUrl);
+                        if (profileIcon == null || (profileIcon.width == 8 && profileIcon.height == 8))
+                        {
+                            profileIcon = m_LoggedInTexture;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogWarning($"VIVERSE: Avatar download failed - {ex.Message}");
+                        profileIcon = m_LoggedInTexture;
+                    }
+                }
+        
+                return new UserInfo
+                {
+                    id = profile?.activeAvatar?.id ?? "viverse_user",
+                    name = profile?.name ?? "VIVERSE User",
+                    email = "",
+                    icon = profileIcon,
+                    isGoogle = false
+                };
+            }
         }
 
         /// Force-performs authentication - will cancel any current authentication in progress.
