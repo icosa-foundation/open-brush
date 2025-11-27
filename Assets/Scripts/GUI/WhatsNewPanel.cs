@@ -190,6 +190,20 @@ namespace TiltBrush
             }
         }
 
+        public void OpenBrowserForMoreInfo(string url)
+        {
+            // Non-mobile hardware should get an info card reminding them they need to remove their headset.
+            if (!App.Config.IsMobileHardware)
+            {
+                OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                    InputManager.ControllerName.Brush,
+                    SketchControlsScript.kRemoveHeadsetFyi,
+                    fPopScalar: 0.5f
+                );
+            }
+            App.OpenURL(url);
+        }
+
 #if UNITY_EDITOR
         [ContextMenu("Reset Viewed Version")]
         private void ResetViewedVersion()
