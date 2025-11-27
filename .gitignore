@@ -81,8 +81,8 @@
 /Assets/TextMesh\ Pro.meta
 /Assets/Samples/
 /Assets/Samples.meta
-#/Assets/StreamingAssets/
-#/Assets/StreamingAssets.meta
+/Assets/StreamingAssets/
+/Assets/StreamingAssets.meta
 
 # Google process
 .gitbugtraq
