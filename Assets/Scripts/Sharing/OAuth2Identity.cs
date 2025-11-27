@@ -283,24 +283,37 @@ namespace TiltBrush
             }
         }
 
-        private void OnViverseAuthComplete(string accessToken, string refreshToken, int expiresIn, string accountId)
+        private void OnViverseAuthComplete(string accessToken, string refreshToken, int expiresIn, string accountId, string profileName, string avatarUrl, string avatarId)
         {
             Debug.Log("VIVERSE: Authentication successful");
 
             try
             {
-                // Create VIVERSE-specific token
+                // Create VIVERSE token
                 m_ViverseToken = ViverseTokenData.FromAuthResponse(accessToken, refreshToken, expiresIn);
 
-                // Save to PlayerPrefs as JSON
+                // Save to PlayerPrefs
                 string tokenJson = JsonUtility.ToJson(m_ViverseToken);
                 PlayerPrefs.SetString("viverse_token", tokenJson);
                 PlayerPrefs.Save();
 
                 Debug.Log($"VIVERSE: Token saved, expires at {m_ViverseToken.ExpiresAt}");
 
-                // Fetch user info
-                GetUserInfoAsync().WrapErrors();
+                // Set Profile immediately with data from JavaScript
+                Profile = new UserInfo
+                {
+                    id = accountId ?? "viverse_user",
+                    name = profileName ?? "VIVERSE User",
+                    email = "",
+                    icon = m_LoggedInTexture, // Default icon first
+                    isGoogle = false
+                };
+
+                // Download avatar async if URL exists
+                if (!string.IsNullOrEmpty(avatarUrl))
+                {
+                    DownloadViverseAvatarAsync(avatarUrl).WrapErrors();
+                }
 
                 // Notify success
                 OnSuccessfulAuthorization?.Invoke();
@@ -309,6 +322,23 @@ namespace TiltBrush
             {
                 Debug.LogError($"VIVERSE: Error saving token: {ex.Message}");
                 OnViverseAuthError($"Failed to save token: {ex.Message}");
+            }
+        }
+        
+        private async Task DownloadViverseAvatarAsync(string avatarUrl)
+        {
+            try
+            {
+                Texture2D avatar = await ImageUtils.DownloadTextureAsync(avatarUrl);
+                if (avatar != null && !(avatar.width == 8 && avatar.height == 8))
+                {
+                    Profile.icon = avatar;
+                    OAuth2Identity.ProfileUpdated?.Invoke(this);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"VIVERSE: Avatar download failed - {ex.Message}");
             }
         }
 
