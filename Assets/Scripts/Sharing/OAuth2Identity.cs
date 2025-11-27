@@ -298,6 +298,11 @@ namespace TiltBrush
                 PlayerPrefs.Save();
 
                 Debug.Log($"VIVERSE: Token saved, expires at {m_ViverseToken.ExpiresAt}");
+                
+                if (VrAssetService.m_Instance != null)
+                {
+                    VrAssetService.m_Instance.ConsumeUploadResults();
+                }
 
                 // Set Profile immediately with data from JavaScript
                 Profile = new UserInfo
