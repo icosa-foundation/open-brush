@@ -31,7 +31,7 @@ namespace TiltBrush
 
         [SerializeField] private string m_ClientId = "42ab6113-acc9-419e-93ca-e0734baf9d3d";
 
-        public event Action<string, string, int> OnAuthComplete;
+        public event Action<string, string, int, string> OnAuthComplete;
         public event Action<string> OnAuthError;
 
         private HttpServer m_HttpServer;
@@ -47,6 +47,7 @@ namespace TiltBrush
         [Serializable]
         private class AuthResult
         {
+            public string account_id;
             public string access_token;
             public string refresh_token;
             public int expires_in;
@@ -171,7 +172,7 @@ namespace TiltBrush
                     var data = authResultWrapper.data;
                     EnqueueMainThread(() =>
                     {
-                        OnAuthComplete?.Invoke(data.access_token, data.refresh_token, data.expires_in);
+                        OnAuthComplete?.Invoke(data.access_token, data.refresh_token, data.expires_in, data.account_id);
                         m_OnLoginResult?.Invoke(true, "Login successful");
                         Debug.Log("[ViverseAuth] Callbacks invoked!");
                     });
@@ -385,5 +386,21 @@ namespace TiltBrush
                 m_HttpServer.RemoveHttpHandler(CALLBACK_PATH);
             }
         }
+    }
+    
+    [Serializable]
+    public class ViverseProfileResponse
+    {
+        public string name; // User's display name
+        public ActiveAvatarData activeAvatar;
+    }
+
+    [Serializable]
+    public class ActiveAvatarData
+    {
+        public string id;
+        public string headIconUrl; // Profile picture
+        public string vrmUrl;
+        public string snapshot;
     }
 } // namespace TiltBrush
