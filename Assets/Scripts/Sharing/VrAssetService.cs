@@ -491,7 +491,8 @@ namespace TiltBrush
                     AudioManager.m_Instance.PlayUploadCompleteSound(InputManager.Wand.Transform.position);
                     PanelManager.m_Instance.GetAdminPanel().ActivatePromoBorder(true);
                     // Don't auto-open the URL on mobile because it steals focus from the user.
-                    if (!isDemoUpload && !App.Config.IsMobileHardware && m_LastUploadCompleteUrl != null)
+                    if (!isDemoUpload && m_LastUploadCompleteUrl != null && 
+                        (backend == Cloud.Vive || !App.Config.IsMobileHardware))
                     {
                         // Can't pass a string param because this is also called from mobile GUI
                         SketchControlsScript.m_Instance.IssueGlobalCommand(
@@ -853,49 +854,59 @@ namespace TiltBrush
             string streamingWebViewerPath = Path.Combine(Application.streamingAssetsPath, "WebViewer");
 
 #if UNITY_ANDROID && !UNITY_EDITOR
-    // Android: If WebViewer.zip exists, extract it directly to exportDir
+    // Android: Extract WebViewer.zip
     string zipPathSrc = Path.Combine(Application.streamingAssetsPath, "WebViewer.zip");
-    if (File.Exists(zipPathSrc))
+    
+    byte[] data;
+    using (UnityWebRequest www = UnityWebRequest.Get(zipPathSrc))
     {
-        byte[] data;
-        using (UnityWebRequest www = UnityWebRequest.Get(zipPathSrc))
+        var operation = www.SendWebRequest();
+        while (!operation.isDone)
         {
-            await www.SendWebRequest();
-            if (www.result != UnityWebRequest.Result.Success)
-                throw new VrAssetServiceException("[VIVERSE] Failed to read WebViewer.zip");
-            data = www.downloadHandler.data;
+            await Awaiters.NextFrame;
+            token.ThrowIfCancellationRequested();
         }
-
-        string tempZip = Path.Combine(Application.temporaryCachePath, "webviewer_temp.zip");
-        File.WriteAllBytes(tempZip, data);
-
-        using (var zip = System.IO.Compression.ZipFile.OpenRead(tempZip))
+        
+        if (www.result != UnityWebRequest.Result.Success)
         {
-            foreach (var entry in zip.Entries)
+            Debug.LogError($"Failed to read WebViewer.zip: {www.error}");
+            throw new VrAssetServiceException("[VIVERSE] Failed to read WebViewer.zip");
+        }
+        
+        data = www.downloadHandler.data;
+    }
+
+    string tempZip = Path.Combine(Application.temporaryCachePath, "webviewer_temp.zip");
+    File.WriteAllBytes(tempZip, data);
+
+    using (var zip = System.IO.Compression.ZipFile.OpenRead(tempZip))
+    {
+        int extractedCount = 0;
+        foreach (var entry in zip.Entries)
+        {
+            string fullPath = Path.Combine(exportDir, entry.FullName);
+
+            if (string.IsNullOrEmpty(entry.Name))
             {
-                string fullPath = Path.Combine(exportDir, entry.FullName);
+                Directory.CreateDirectory(fullPath);
+                continue;
+            }
 
-                if (string.IsNullOrEmpty(entry.Name))
-                {
-                    Directory.CreateDirectory(fullPath);
-                    continue;
-                }
-
-                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
-                entry.ExtractToFile(fullPath, overwrite: true);
+            Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+            entry.ExtractToFile(fullPath, overwrite: true);
+            
+            extractedCount++;
+            
+            // Yield every 10 files to prevent freezing
+            if (extractedCount % 10 == 0)
+            {
+                await Awaiters.NextFrame;
+                token.ThrowIfCancellationRequested();
             }
         }
+    }
 
-        File.Delete(tempZip);
-    }
-    else
-    {
-        // Fallback: try direct copy if folder exists
-        if (Directory.Exists(streamingWebViewerPath))
-            CopyDirectory(streamingWebViewerPath, exportDir);
-        else
-            throw new VrAssetServiceException("WebViewer not found in StreamingAssets");
-    }
+    File.Delete(tempZip);
 #else
             // PC/Editor: direct copy to exportDir
             if (!Directory.Exists(streamingWebViewerPath))
@@ -1006,8 +1017,9 @@ namespace TiltBrush
 
             // Result url
             WorldContentResponse resp = publishManager.GetLastResponse();
-            string uri = resp?.publish_url ?? $"https://viverse.com/world/{sceneSid}";
-
+            // string uri = resp?.publish_url ?? $"https://viverse.com/world/{sceneSid}";
+            string accessToken = await App.ViveIdentity.GetAccessToken();
+            string uri = $"https://studio.viverse.com/upload?access_token={accessToken}";
             return (uri, uploadLength);
         }
 
