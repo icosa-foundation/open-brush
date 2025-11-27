@@ -46,7 +46,7 @@ namespace TiltBrush
             LoadSavedToken();
         }
 
-        private void OnAuthSuccess(string accessToken, string refreshToken, int expiresIn, string accountId)
+        private void OnAuthSuccess(string accessToken, string refreshToken, int expiresIn, string accountId, string profileName, string avatarUrl, string avatarId)
         {
             m_AccessToken = accessToken;
     
