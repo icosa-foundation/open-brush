@@ -298,7 +298,7 @@ namespace TiltBrush
                 PlayerPrefs.Save();
 
                 Debug.Log($"VIVERSE: Token saved, expires at {m_ViverseToken.ExpiresAt}");
-                
+
                 if (VrAssetService.m_Instance != null)
                 {
                     VrAssetService.m_Instance.ConsumeUploadResults();
@@ -329,7 +329,7 @@ namespace TiltBrush
                 OnViverseAuthError($"Failed to save token: {ex.Message}");
             }
         }
-        
+
         private async Task DownloadViverseAvatarAsync(string avatarUrl)
         {
             try
@@ -382,17 +382,17 @@ namespace TiltBrush
             {
                 request.SetRequestHeader("Authorization", $"Bearer {accessToken}");
                 await request.SendWebRequest();
-        
+
                 Debug.Log($"VIVERSE Profile API: {request.responseCode} - {request.downloadHandler.text}");
-        
+
                 if (request.result != UnityWebRequest.Result.Success)
                 {
                     Debug.LogError($"VIVERSE: Profile API failed - {request.error}");
                     return null;
                 }
-        
+
                 var profile = JsonUtility.FromJson<ViverseProfileResponse>(request.downloadHandler.text);
-        
+
                 Texture2D profileIcon = m_LoggedInTexture;
                 if (!string.IsNullOrEmpty(profile?.activeAvatar?.headIconUrl) && !forTesting)
                 {
@@ -410,7 +410,7 @@ namespace TiltBrush
                         profileIcon = m_LoggedInTexture;
                     }
                 }
-        
+
                 return new UserInfo
                 {
                     id = profile?.activeAvatar?.id ?? "viverse_user",

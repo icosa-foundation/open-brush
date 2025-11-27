@@ -491,7 +491,7 @@ namespace TiltBrush
                     AudioManager.m_Instance.PlayUploadCompleteSound(InputManager.Wand.Transform.position);
                     PanelManager.m_Instance.GetAdminPanel().ActivatePromoBorder(true);
                     // Don't auto-open the URL on mobile because it steals focus from the user.
-                    if (!isDemoUpload && m_LastUploadCompleteUrl != null && 
+                    if (!isDemoUpload && m_LastUploadCompleteUrl != null &&
                         (backend == Cloud.Vive || !App.Config.IsMobileHardware))
                     {
                         // Can't pass a string param because this is also called from mobile GUI
@@ -932,13 +932,13 @@ namespace TiltBrush
             var publishManager = FindObjectOfType<ViversePublishManager>();
             if (publishManager == null)
                 throw new VrAssetServiceException("ViversePublishManager not found");
-            
+
             if (!publishManager.IsAuthenticated())
                 throw new VrAssetServiceException("Not authenticated with VIVERSE");
 
             // CREATE WORLD FIRST to get new sceneSid
             var createTcs = new TaskCompletionSource<string>();
-            
+
             StartCoroutine(publishManager.CreateWorldContent(title, description, (success, sid, error) =>
             {
                 if (success)
@@ -959,8 +959,8 @@ namespace TiltBrush
             File.WriteAllText(htmlPath, html);
 
             token.ThrowIfCancellationRequested();
-            
-            
+
+
             var filesToZip = new List<string>();
 
             // Add all files from exportDir except .meta
@@ -973,7 +973,7 @@ namespace TiltBrush
 
             // Create ZIP at exportDir/content.zip
             string zipPath = Path.Combine(tempUploadDir, "content.zip");
-            
+
             await CreateZipFileAsync(zipPath, exportDir, filesToZip.ToArray(), token);
             long uploadLength = new FileInfo(zipPath).Length;
 

@@ -25,37 +25,37 @@ namespace TiltBrush
     public class ViversePublishManager : MonoBehaviour
     {
         private const string WORLD_API_BASE = "https://world-api.viverse.com/api/hubs-cms/v1/standalone";
-        
+
         private ViverseAuthManager m_AuthManager;
         private string m_AccessToken;
         private string m_LastSceneSid;
         private WorldContentResponse m_LastResponse;
-        
+
         public event Action<bool, string> OnPublishComplete;
         public event Action<float> OnUploadProgress;
 
         void Start()
         {
             m_AuthManager = FindObjectOfType<ViverseAuthManager>();
-            
+
             if (m_AuthManager != null)
             {
                 m_AuthManager.OnAuthComplete += OnAuthSuccess;
             }
-            
+
             LoadSavedToken();
         }
 
         private void OnAuthSuccess(string accessToken, string refreshToken, int expiresIn, string accountId, string profileName, string avatarUrl, string avatarId)
         {
             m_AccessToken = accessToken;
-    
+
             // Save token data to PlayerPrefs
             var tokenData = ViverseTokenData.FromAuthResponse(accessToken, refreshToken, expiresIn);
             string tokenJson = JsonUtility.ToJson(tokenData);
             PlayerPrefs.SetString("viverse_token", tokenJson);
             PlayerPrefs.Save();
-    
+
             Debug.Log($"ViversePublishManager: Token saved (expires in {expiresIn}s)");
         }
 
@@ -128,7 +128,7 @@ namespace TiltBrush
         private IEnumerator PublishWorldCoroutine(string title, string description, string zipFilePath)
         {
             Debug.Log($"[ViversePublish] Starting publish: {title}");
-            
+
             yield return CreateWorldContent(title, description, (success, sceneSid, error) =>
             {
                 if (success)
@@ -144,7 +144,7 @@ namespace TiltBrush
                 }
             });
         }
-        
+
         public void CreateWorldOnly(string title, string description, Action<bool, string, string> callback)
         {
             if (string.IsNullOrEmpty(m_AccessToken))
@@ -164,13 +164,13 @@ namespace TiltBrush
         public IEnumerator CreateWorldContent(string title, string description, Action<bool, string, string> callback)
         {
             string url = $"{WORLD_API_BASE}/contents";
-            
+
             var payload = new WorldContentPayload
             {
                 title = title,
                 description_plaintext = description
             };
-            
+
             string json = JsonUtility.ToJson(payload);
             Debug.Log($"[ViversePublish] Creating content: {json}");
 
@@ -194,9 +194,9 @@ namespace TiltBrush
                 {
                     string responseText = request.downloadHandler.text;
                     Debug.Log($"[ViversePublish] Create response: {responseText}");
-                    
+
                     var response = JsonUtility.FromJson<WorldContentResponse>(responseText);
-                    
+
                     if (!string.IsNullOrEmpty(response.scene_sid))
                     {
                         m_LastSceneSid = response.scene_sid;
@@ -223,7 +223,7 @@ namespace TiltBrush
         {
             string url = $"{WORLD_API_BASE}/contents/{sceneSid}/upload";
             string fileName = Path.GetFileName(zipFilePath);
-            
+
             Debug.Log($"[ViversePublish] Uploading to: {url}");
             Debug.Log($"[ViversePublish] File: {zipFilePath}");
             Debug.Log($"[ViversePublish] Platform: {Application.platform}");
@@ -300,7 +300,7 @@ namespace TiltBrush
             request.SetRequestHeader("AccessToken", m_AccessToken);
 
             var operation = request.SendWebRequest();
-            
+
             while (!operation.isDone)
             {
                 OnUploadProgress?.Invoke(request.uploadProgress);
@@ -318,7 +318,7 @@ namespace TiltBrush
                 Debug.Log("[ViversePublish] Upload successful!");
                 string responseText = request.downloadHandler.text;
                 Debug.Log($"[ViversePublish] Upload response: {responseText}");
-                
+
                 OnPublishComplete?.Invoke(true, "World published successfully!");
             }
 
@@ -334,7 +334,7 @@ namespace TiltBrush
             }
             return false;
         }
-        
+
         public async Task<string> GetAccessTokenAsync()
         {
             if (App.ViveIdentity != null)
@@ -348,7 +348,7 @@ namespace TiltBrush
         {
             return m_LastSceneSid ?? PlayerPrefs.GetString("viverse_scene_sid", "");
         }
-        
+
         public WorldContentResponse GetLastResponse()
         {
             return m_LastResponse;
