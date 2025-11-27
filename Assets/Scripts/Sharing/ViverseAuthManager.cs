@@ -31,7 +31,7 @@ namespace TiltBrush
 
         [SerializeField] private string m_ClientId = "42ab6113-acc9-419e-93ca-e0734baf9d3d";
 
-        public event Action<string, string, int, string> OnAuthComplete;
+        public event Action<string, string, int, string, string, string, string> OnAuthComplete;
         public event Action<string> OnAuthError;
 
         private HttpServer m_HttpServer;
@@ -52,6 +52,9 @@ namespace TiltBrush
             public string refresh_token;
             public int expires_in;
             public string token_type;
+            public string profile_name;
+            public string avatar_url;
+            public string avatar_id;
         }
 
         private static void EnqueueMainThread(Action action)
@@ -172,7 +175,7 @@ namespace TiltBrush
                     var data = authResultWrapper.data;
                     EnqueueMainThread(() =>
                     {
-                        OnAuthComplete?.Invoke(data.access_token, data.refresh_token, data.expires_in, data.account_id);
+                        OnAuthComplete?.Invoke(data.access_token, data.refresh_token, data.expires_in, data.account_id, data.profile_name, data.avatar_url, data.avatar_id);
                         m_OnLoginResult?.Invoke(true, "Login successful");
                         Debug.Log("[ViverseAuth] Callbacks invoked!");
                     });
@@ -337,40 +340,63 @@ namespace TiltBrush
             }}
         }}
 
-        window.addEventListener('load', async () => {{
-            if (window.location.search.includes('code=') && window.location.search.includes('state=')) {{
-                updateStatus('Processing login callback...');
+window.addEventListener('load', async () => {{
+    if (window.location.search.includes('code=') && window.location.search.includes('state=')) {{
+        updateStatus('Processing login callback...');
+        try {{
+            const viverseClient = await initializeViverseClient();
+            const result = await viverseClient.handleRedirectCallback();
+            showDetails(result);
+            
+            if (result && result.access_token) {{
+                // User is NOW logged in with valid access_token
                 try {{
-                    const viverseClient = await initializeViverseClient();
-                    const result = await viverseClient.handleRedirectCallback();
-                    showDetails(result);
-                    if (result && result.access_token) {{
-                        updateStatus('Sending credentials to application...');
-                        const response = await fetch(CALLBACK_ENDPOINT, {{
-                            method: 'POST',
-                            headers: {{ 'Content-Type': 'application/json' }},
-                            body: JSON.stringify({{ data: result }})
-                        }});
-                        if (response.ok) {{
-                            hideSpinner();
-                            updateStatus('✓ Login successful! You can close this window.', 'success');
-                        }} else {{
-                            hideSpinner();
-                            updateStatus('Backend error occurred', 'error');
-                        }}
-                    }} else {{
-                        throw new Error('No access token received from VIVERSE');
-                    }}
-                }} catch (error) {{
+                    updateStatus('Fetching profile...');
+                    
+                    const avatarClient = new window.viverse.avatar({{
+                        baseURL: 'https://sdk-api.viverse.com/',
+                        token: result.access_token
+                    }});
+                    
+                    const profile = await avatarClient.getProfile();
+                    
+                    result.profile_name = profile.name || '';
+                    result.avatar_url = profile.activeAvatar?.headIconUrl || '';
+                    result.avatar_id = profile.activeAvatar?.id || '';
+                    
+                    console.log('Profile fetched:', profile);
+                }} catch (profileError) {{
+                    console.error('Profile fetch failed:', profileError);
+                    // Continue anyway - send auth data even if profile fails
+                }}
+                
+                updateStatus('Sending credentials to application...');
+                const response = await fetch(CALLBACK_ENDPOINT, {{
+                    method: 'POST',
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{ data: result }})
+                }});
+                
+                if (response.ok) {{
                     hideSpinner();
-                    updateStatus('Authentication failed: ' + error.message, 'error');
-                    showDetails(error);
-                    console.error('Error during redirect callback:', error);
+                    updateStatus('✓ Login successful! You can close this window.', 'success');
+                }} else {{
+                    hideSpinner();
+                    updateStatus('Backend error occurred', 'error');
                 }}
             }} else {{
-                startLogin();
+                throw new Error('No access token received from VIVERSE');
             }}
-        }});
+        }} catch (error) {{
+            hideSpinner();
+            updateStatus('Authentication failed: ' + error.message, 'error');
+            showDetails(error);
+            console.error('Error during redirect callback:', error);
+        }}
+    }} else {{
+        startLogin();
+    }}
+}});
     </script>
 </body>
 </html>";
@@ -387,7 +413,7 @@ namespace TiltBrush
             }
         }
     }
-    
+
     [Serializable]
     public class ViverseProfileResponse
     {
