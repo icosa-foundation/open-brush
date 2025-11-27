@@ -855,58 +855,44 @@ namespace TiltBrush
 
 #if UNITY_ANDROID && !UNITY_EDITOR
     // Android: Extract WebViewer.zip
-    string zipPathSrc = Path.Combine(Application.streamingAssetsPath, "WebViewer.zip");
-    
-    byte[] data;
-    using (UnityWebRequest www = UnityWebRequest.Get(zipPathSrc))
-    {
-        var operation = www.SendWebRequest();
-        while (!operation.isDone)
-        {
-            await Awaiters.NextFrame;
-            token.ThrowIfCancellationRequested();
-        }
-        
-        if (www.result != UnityWebRequest.Result.Success)
-        {
-            Debug.LogError($"Failed to read WebViewer.zip: {www.error}");
-            throw new VrAssetServiceException("[VIVERSE] Failed to read WebViewer.zip");
-        }
-        
-        data = www.downloadHandler.data;
-    }
-
-    string tempZip = Path.Combine(Application.temporaryCachePath, "webviewer_temp.zip");
-    File.WriteAllBytes(tempZip, data);
-
-    using (var zip = System.IO.Compression.ZipFile.OpenRead(tempZip))
-    {
-        int extractedCount = 0;
-        foreach (var entry in zip.Entries)
-        {
-            string fullPath = Path.Combine(exportDir, entry.FullName);
-
-            if (string.IsNullOrEmpty(entry.Name))
+// Load WebViewer from Resources
+            TextAsset zipAsset = Resources.Load<TextAsset>("WebViewer");
+            if (zipAsset == null)
             {
-                Directory.CreateDirectory(fullPath);
-                continue;
+                throw new VrAssetServiceException("WebViewer.zip not found in Resources folder");
             }
 
-            Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
-            entry.ExtractToFile(fullPath, overwrite: true);
-            
-            extractedCount++;
-            
-            // Yield every 10 files to prevent freezing
-            if (extractedCount % 10 == 0)
-            {
-                await Awaiters.NextFrame;
-                token.ThrowIfCancellationRequested();
-            }
-        }
-    }
+            string tempZip = Path.Combine(Application.temporaryCachePath, "webviewer_temp.zip");
+            File.WriteAllBytes(tempZip, zipAsset.bytes);
 
-    File.Delete(tempZip);
+            using (var zip = System.IO.Compression.ZipFile.OpenRead(tempZip))
+            {
+                int extractedCount = 0;
+                foreach (var entry in zip.Entries)
+                {
+                    string fullPath = Path.Combine(exportDir, entry.FullName);
+
+                    if (string.IsNullOrEmpty(entry.Name))
+                    {
+                        Directory.CreateDirectory(fullPath);
+                        continue;
+                    }
+
+                    Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                    entry.ExtractToFile(fullPath, overwrite: true);
+                    
+                    extractedCount++;
+                    
+                    // Yield every 10 files to prevent freezing
+                    if (extractedCount % 10 == 0)
+                    {
+                        await Awaiters.NextFrame;
+                        token.ThrowIfCancellationRequested();
+                    }
+                }
+            }
+
+            File.Delete(tempZip);
 #else
             // PC/Editor: direct copy to exportDir
             if (!Directory.Exists(streamingWebViewerPath))
