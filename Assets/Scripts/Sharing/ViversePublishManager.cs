@@ -16,6 +16,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -45,23 +46,41 @@ namespace TiltBrush
             LoadSavedToken();
         }
 
-        private void OnAuthSuccess(string accessToken, string refreshToken, int expiresIn)
+        private void OnAuthSuccess(string accessToken, string refreshToken, int expiresIn, string accountId)
         {
             m_AccessToken = accessToken;
-            PlayerPrefs.SetString("viverse_access_token", accessToken);
-            PlayerPrefs.SetString("viverse_refresh_token", refreshToken);
+    
+            // Save token data to PlayerPrefs
+            var tokenData = ViverseTokenData.FromAuthResponse(accessToken, refreshToken, expiresIn);
+            string tokenJson = JsonUtility.ToJson(tokenData);
+            PlayerPrefs.SetString("viverse_token", tokenJson);
             PlayerPrefs.Save();
+    
+            Debug.Log($"ViversePublishManager: Token saved (expires in {expiresIn}s)");
         }
 
         private void LoadSavedToken()
         {
-            if (PlayerPrefs.HasKey("viverse_access_token"))
+            if (PlayerPrefs.HasKey("viverse_token"))
             {
-                m_AccessToken = PlayerPrefs.GetString("viverse_access_token");
-            }
-            else if (PlayerPrefs.HasKey("access_token"))
-            {
-                m_AccessToken = PlayerPrefs.GetString("access_token");
+                try
+                {
+                    string tokenJson = PlayerPrefs.GetString("viverse_token");
+                    var tokenData = JsonUtility.FromJson<ViverseTokenData>(tokenJson);
+                    if (tokenData != null && tokenData.IsValid)
+                    {
+                        m_AccessToken = tokenData.AccessToken;
+                        Debug.Log("ViversePublishManager: Token loaded successfully");
+                    }
+                    else
+                    {
+                        Debug.LogWarning("ViversePublishManager: Saved token is invalid or expired");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"ViversePublishManager: Failed to load token: {ex.Message}");
+                }
             }
         }
 
@@ -308,7 +327,21 @@ namespace TiltBrush
 
         public bool IsAuthenticated()
         {
-            return !string.IsNullOrEmpty(m_AccessToken);
+            // Get token from OAuth2Identity instead of stored copy
+            if (App.ViveIdentity != null)
+            {
+                return App.ViveIdentity.HasAccessToken;
+            }
+            return false;
+        }
+        
+        public async Task<string> GetAccessTokenAsync()
+        {
+            if (App.ViveIdentity != null)
+            {
+                return await App.ViveIdentity.GetAccessToken();
+            }
+            return null;
         }
 
         public string GetLastSceneSid()
