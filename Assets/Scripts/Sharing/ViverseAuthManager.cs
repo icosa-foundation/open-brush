@@ -289,6 +289,7 @@ namespace TiltBrush
             max-height: 200px;
             overflow-y: auto;
             word-break: break-all;
+            display: none;
         }}
         .details:empty {{ display: none; }}
         .success {{ color: #4ade80; }}
