@@ -171,13 +171,15 @@ namespace TiltBrush
             GLTF2 = "GLTF2",
             OBJ = "OBJ",
             FBX = "FBX",
+            VOX = "VOX",
             NOT_TILT = "-TILT",
             NOT_BLOCKS = "-BLOCKS",
             NOT_GLTF = "-GLTF",
             NOT_GLTF1 = "-GLTF1",
             NOT_GLTF2 = "-GLTF2",
             NOT_OBJ = "-OBJ",
-            NOT_FBX = "-FBX";
+            NOT_FBX = "-FBX",
+            NOT_VOX = "-VOX";
     }
 
     public class CuratedChoices
@@ -202,6 +204,24 @@ namespace TiltBrush
         // filename characters.
         // Change - added . % ~ to allow urlencoded urls
         static readonly Regex sm_AssetIdPattern = new Regex(@"^[a-zA-Z0-9-_%~\.]+$");
+
+        /// Returns the list of supported Icosa asset formats in order of preference.
+        /// The list is conditional based on compiler flags for optional format support.
+        static VrAssetFormat[] GetSupportedIcosaFormats()
+        {
+            // Note: FBX and USD are not included as they're only supported for local files, not Icosa assets.
+            // VOX, GLTF2, GLTF are highest priority, followed by OBJ variants and PLY.
+            // OBJ_NGON is an OBJ file with n-gon faces (faces with >3 vertices).
+            return new[]
+            {
+                VrAssetFormat.VOX,
+                VrAssetFormat.GLTF2,
+                VrAssetFormat.GLTF,
+                VrAssetFormat.OBJ_NGON,
+                VrAssetFormat.OBJ,
+                VrAssetFormat.PLY
+            };
+        }
 
         public enum AssetLoadState
         {
@@ -562,7 +582,7 @@ namespace TiltBrush
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.ANY,
                     OrderBy = OrderByChoices.NEWEST,
-                    Formats = new[] { FormatChoices.GLTF2, FormatChoices.OBJ },
+                    Formats = new[] { FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
                     Curated = CuratedChoices.ANY,
                     Category = CategoryChoices.ANY
                 }
@@ -576,7 +596,7 @@ namespace TiltBrush
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.REMIXABLE,
                     OrderBy = OrderByChoices.LIKED_TIME,
-                    Formats = new[] { FormatChoices.GLTF2, FormatChoices.OBJ },
+                    Formats = new[] { FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
                     Curated = CuratedChoices.ANY,
                     Category = CategoryChoices.ANY
                 }
@@ -595,7 +615,7 @@ namespace TiltBrush
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.REMIXABLE,
                     OrderBy = OrderByChoices.BEST,
-                    Formats = new[] { FormatChoices.GLTF2, FormatChoices.OBJ },
+                    Formats = new[] { FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
                     Curated = CuratedChoices.TRUE,
                     Category = CategoryChoices.ANY
                 }
@@ -812,19 +832,9 @@ namespace TiltBrush
                     Debug.LogError("Cannot create directory for online asset download.");
                 }
 
-                // In order of preference
-                var formats = new[]
-                {
-                    VrAssetFormat.GLTF2,
-                    VrAssetFormat.GLTF,
-                    VrAssetFormat.OBJ_NGON,
-                    VrAssetFormat.OBJ,
-                    VrAssetFormat.PLY
-                };
-
                 // Then request the asset from Poly.
                 AssetGetter request = VrAssetService.m_Instance.GetAsset(
-                    assetId, formats, reason);
+                    assetId, GetSupportedIcosaFormats(), reason);
                 StartCoroutine(request.GetAssetCoroutine());
                 m_ActiveRequests.Add(request);
                 m_IsLoadingMemo.Add(assetId);
@@ -926,17 +936,8 @@ namespace TiltBrush
                     continue;
                 }
 
-                // In order of preference
-                var formats = new[]
-                {
-                    VrAssetFormat.GLTF2,
-                    VrAssetFormat.GLTF,
-                    VrAssetFormat.OBJ,
-                    VrAssetFormat.PLY
-                };
-
                 precacheCoroutines.Add(PrecacheCoroutine(
-                    VrAssetService.m_Instance.GetAsset(id, formats, reason)));
+                    VrAssetService.m_Instance.GetAsset(id, GetSupportedIcosaFormats(), reason)));
                 yield return null;
             }
 

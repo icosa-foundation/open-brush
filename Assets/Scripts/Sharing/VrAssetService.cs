@@ -51,7 +51,8 @@ namespace TiltBrush
         OBJ,
         OBJ_NGON,
         BLOCKS,
-        PLY
+        PLY,
+        VOX
     }
 
     public class VrAssetService : MonoBehaviour
@@ -689,6 +690,7 @@ namespace TiltBrush
             // Collect files into a .zip file, including the .tilt file and thumbnail
             string zipName = Path.Combine(tempUploadDir, "archive.zip");
             var filesToZip = new List<string>();
+            int? faceCount = null;
 
             if (publishLegacyGltf)
             {
@@ -706,6 +708,7 @@ namespace TiltBrush
                     throw new VrAssetServiceException("Internal error creating upload data.");
                 }
                 filesToZip.AddRange(exportResults.exportedFiles);
+                faceCount = exportResults.numTris;
             }
 
             // Construct options to set the background color to the current environment's clear color.
@@ -733,16 +736,29 @@ namespace TiltBrush
             if (App.UserConfig.Sharing.UseNewGlb || !publishLegacyGltf)
             {
                 string newGlbPath = Path.Combine(tempUploadDir, $"{uploadName}.glb");
-                Export.ExportNewGlb(tempUploadDir, uploadName, App.UserConfig.Export.ExportEnvironment);
+                int glbTriangleCount = Export.ExportNewGlb(tempUploadDir, uploadName, App.UserConfig.Export.ExportEnvironment);
+                // Always use the new GLB count since it includes all content (brush strokes + models + widgets)
+                // whereas legacy export only includes brush strokes
+                faceCount = glbTriangleCount;
                 filesToZip.Add(newGlbPath);
             }
 
             await CreateZipFileAsync(zipName, tempUploadDir, filesToZip.ToArray(), token);
 
+            // Collect remix IDs if this sketch is derived from another asset
+            var remixIds = new List<string>();
+            string sourceId = SaveLoadScript.m_Instance.TransferredSourceIdFrom(currentScene);
+            if (!string.IsNullOrEmpty(sourceId))
+            {
+                remixIds.Add(sourceId);
+            }
+
             var service = new IcosaService(App.Instance.IcosaToken);
             var progress = new Progress<double>(d => SetUploadProgress(UploadStep.UploadElements, d));
             IcosaService.CreateResponse response = await service.CreateModel(
-                zipName, progress, token, options, tempUploadDir);
+                zipName, progress, token, options, tempUploadDir,
+                objFaceCount: faceCount,
+                remixIds: remixIds.Count > 0 ? remixIds : null);
             // TODO(b/146892613): return the UID and stick it into the .tilt file?
             // Or do we not care since we aren't recording provenance and remixing
             string uri = $"{response.publishUrl}";

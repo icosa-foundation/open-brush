@@ -592,6 +592,27 @@ namespace TiltBrush
 
         }
 
+        GameObject LoadVox(List<string> warningsOut)
+        {
+            try
+            {
+                // Default to optimized mode with face culling
+                var reader = new VoxImporter(m_Location.AbsolutePath, VoxImporter.MeshMode.Optimized);
+                var (gameObject, warnings, collector) = reader.Import();
+                warningsOut.AddRange(warnings);
+                m_ImportMaterialCollector = collector;
+                m_AllowExport = (m_ImportMaterialCollector != null);
+                return gameObject;
+            }
+            catch (Exception ex)
+            {
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+                return null;
+            }
+        }
+
         GameObject LoadSvg(List<string> warningsOut, out SVGParser.SceneInfo sceneInfo)
         {
             try
@@ -814,12 +835,11 @@ namespace TiltBrush
         {
             Task t = StartCreatePrefab(null);
             await t;
-
         }
+
         public void LoadModel()
         {
             StartCreatePrefab(null);
-
         }
 
         /// Either synchronously load a GameObject hierarchy and convert it to a "prefab"
@@ -886,6 +906,12 @@ namespace TiltBrush
                 else if (ext == ".ply")
                 {
                     go = LoadPly(warnings);
+                    CalcBoundsNonGltf(go);
+                    EndCreatePrefab(go, warnings);
+                }
+                else if (ext == ".vox")
+                {
+                    go = LoadVox(warnings);
                     CalcBoundsNonGltf(go);
                     EndCreatePrefab(go, warnings);
                 }
