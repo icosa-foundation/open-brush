@@ -853,8 +853,12 @@ namespace TiltBrush
             // This establishes the base structure: libs/, css/, helpers/, img/, legacy/, icosa-viewer.module.js, etc.
             string streamingWebViewerPath = Path.Combine(Application.streamingAssetsPath, "WebViewer");
 
-#if UNITY_ANDROID && !UNITY_EDITOR
-            // Android: Extract WebViewer.zip
+#if UNITY_EDITOR
+            // Direct copy to exportDir
+            if (!Directory.Exists(streamingWebViewerPath))
+                throw new VrAssetServiceException($"WebViewer not found at {streamingWebViewerPath}");
+            CopyDirectory(streamingWebViewerPath, exportDir);
+#else
             // Load WebViewer from Resources
             TextAsset zipAsset = Resources.Load<TextAsset>("WebViewer");
             if (zipAsset == null)
@@ -880,9 +884,9 @@ namespace TiltBrush
 
                     Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
                     entry.ExtractToFile(fullPath, overwrite: true);
-                    
+
                     extractedCount++;
-                    
+
                     // Yield every 10 files to prevent freezing
                     if (extractedCount % 10 == 0)
                     {
@@ -893,12 +897,6 @@ namespace TiltBrush
             }
 
             File.Delete(tempZip);
-#else
-            // PC/Editor: direct copy to exportDir
-            if (!Directory.Exists(streamingWebViewerPath))
-                throw new VrAssetServiceException($"WebViewer not found at {streamingWebViewerPath}");
-
-            CopyDirectory(streamingWebViewerPath, exportDir);
 #endif
 
             // Now create/ensure assets folder exists in exportDir
