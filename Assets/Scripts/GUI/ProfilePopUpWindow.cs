@@ -364,8 +364,10 @@ namespace TiltBrush
                     RefreshObjects();
                     break;
                 case SketchControlsScript.GlobalCommands.LoginToGenericCloud:
-                    // m_CommandParam 1 is Google.  m_CommandParam 2 is Sketchfab. m_CommandParam 3 is Vive.
-                    if (button.m_CommandParam == 1 || button.m_CommandParam == 2 || button.m_CommandParam == 3)
+                    // m_CommandParam 1 is Google.  m_CommandParam 2 is Sketchfab.
+                    // m_CommandParam 3 is Icosa. m_CommandPaam 4 is Vive.
+                    if (button.m_CommandParam == 1 || button.m_CommandParam == 2 ||
+                        button.m_CommandParam == 3 || button.m_CommandParam == 4)
                     {
                         if (App.Config.IsMobileHardware && m_SaveAndProceedButton != null)
                         {
@@ -378,7 +380,8 @@ namespace TiltBrush
                             {
                                 1 => App.GoogleIdentity.Profile,
                                 2 => App.SketchfabIdentity.Profile,
-                                3 => App.ViveIdentity.Profile,
+                                3 => App.IcosaIdentity.Profile,
+                                4 => App.ViveIdentity.Profile,
                                 _ => null
                             };
                             if (userInfo == null)
