@@ -26,7 +26,7 @@ namespace TiltBrush
     {
         private const int HTTP_PORT = 40074;
 
-        public const string REDIRECT_PATH = "/";
+        public const string REDIRECT_PATH = "/viverse";
         public const string CALLBACK_PATH = "/api/viverse/auth/callback";
 
         [SerializeField] private string m_ClientId = "42ab6113-acc9-419e-93ca-e0734baf9d3d";

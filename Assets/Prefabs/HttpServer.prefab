@@ -231,8 +231,8 @@ Transform:
   - {fileID: 4492044765854677289}
   - {fileID: 4492044765921076689}
   - {fileID: 5246980054839990154}
-  - {fileID: 3281745900092082848}
   - {fileID: 881671355866906408}
+  - {fileID: 3281745900092082848}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &4492044767078796462
@@ -357,9 +357,9 @@ MonoBehaviour:
   m_Service: 8
   m_OAuthScopes: []
   m_AdditionalDesktopOAuthScopes: []
-  m_CallbackPath: 
+  m_CallbackPath: /viverse
   m_LoggedInTexture: {fileID: 2800000, guid: 0d05cda193064458a9a7bb085905c5a1, type: 3}
-  m_TokenStorePrefix: 
+  m_TokenStorePrefix: ViverseOAuth2
   m_AuthorizationServerUrl: 
   m_TokenServerUrl: 
 --- !u!114 &4286531545491857130

@@ -854,8 +854,8 @@ namespace TiltBrush
             string streamingWebViewerPath = Path.Combine(Application.streamingAssetsPath, "WebViewer");
 
 #if UNITY_ANDROID && !UNITY_EDITOR
-    // Android: Extract WebViewer.zip
-// Load WebViewer from Resources
+            // Android: Extract WebViewer.zip
+            // Load WebViewer from Resources
             TextAsset zipAsset = Resources.Load<TextAsset>("WebViewer");
             if (zipAsset == null)
             {
