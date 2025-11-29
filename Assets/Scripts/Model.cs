@@ -89,6 +89,12 @@ namespace TiltBrush
                     switch (type)
                     {
                         case Type.LocalFile:
+                            string blocksPath = Path.Combine(App.BlocksModelLibraryPath(), path);
+                            if (System.IO.File.Exists(blocksPath))
+                            {
+                                return blocksPath.Replace("\\", "/");
+                            }
+
                             return Path.Combine(App.ModelLibraryPath(), path).Replace("\\", "/");
                         case Type.IcosaAssetId:
                             return path.Replace("\\", "/");

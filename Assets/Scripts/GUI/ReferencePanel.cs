@@ -234,11 +234,77 @@ namespace TiltBrush
                 ReferenceButton.Type.SavedStrokes => SavedStrokesCatalog.Instance.CurrentSavedStrokesDirectory
             };
 
-            var truncatedPath = currentDir.Substring(App.MediaLibraryPath().Length);
+            string displayPath;
+            if (m_CurrentTab.ReferenceButtonType == ReferenceButton.Type.Models)
+            {
+                // Use custom labels for root model directories
+                if (currentDir.Equals(App.ModelLibraryPath(), System.StringComparison.OrdinalIgnoreCase))
+                {
+                    displayPath = "Open Brush";
+                }
+                else if (!string.IsNullOrEmpty(App.BlocksModelLibraryPath()) &&
+                         currentDir.Equals(App.BlocksModelLibraryPath(), System.StringComparison.OrdinalIgnoreCase))
+                {
+                    displayPath = "Open Blocks";
+                }
+                else if (currentDir.StartsWith(App.MediaLibraryPath()))
+                {
+                    displayPath = currentDir.Substring(App.MediaLibraryPath().Length);
+                }
+                else
+                {
+                    displayPath = new DirectoryInfo(currentDir).Name;
+                }
+            }
+            else
+            {
+                displayPath = currentDir.Substring(App.MediaLibraryPath().Length);
+            }
+
             if (m_DirectoryChooserPopupButton != null)
             {
-                m_DirectoryChooserPopupButton.ButtonLabel = $"{truncatedPath}";
+                m_DirectoryChooserPopupButton.ButtonLabel = $"{displayPath}";
                 m_CurrentSubdirectories = Directory.GetDirectories(currentDir);
+
+                if (m_CurrentTab.ReferenceButtonType == ReferenceButton.Type.Models)
+                {
+                    var mainModelsPath = App.ModelLibraryPath();
+                    var blocksPath = App.BlocksModelLibraryPath();
+                    bool isMainRoot = currentDir.Equals(mainModelsPath, System.StringComparison.OrdinalIgnoreCase);
+                    bool isBlocksRoot = !string.IsNullOrEmpty(blocksPath) &&
+                                       currentDir.Equals(blocksPath, System.StringComparison.OrdinalIgnoreCase);
+
+                    // If viewing either root directory, show both roots plus actual subdirectories
+                    if (isMainRoot || isBlocksRoot)
+                    {
+                        var subdirList = new System.Collections.Generic.List<string>();
+
+                        // Add both root directories as options
+                        if (!string.IsNullOrEmpty(mainModelsPath))
+                        {
+                            subdirList.Add(mainModelsPath);
+                        }
+                        if (!string.IsNullOrEmpty(blocksPath) && Directory.Exists(blocksPath))
+                        {
+                            subdirList.Add(blocksPath);
+                        }
+
+                        // For main Models root, also add actual subdirectories
+                        if (isMainRoot)
+                        {
+                            foreach (var subdir in m_CurrentSubdirectories)
+                            {
+                                if (!subdirList.Contains(subdir))
+                                {
+                                    subdirList.Add(subdir);
+                                }
+                            }
+                        }
+                        // For Blocks root, don't show subdirectories (flat hierarchy)
+
+                        m_CurrentSubdirectories = subdirList.ToArray();
+                    }
+                }
             }
 
             base.RefreshPage();
@@ -358,7 +424,39 @@ namespace TiltBrush
             if (m_CurrentTab.Catalog.IsSubDirectoryOfHome() && !m_CurrentTab.Catalog.IsHomeDirectory())
             {
                 var currentDir = new DirectoryInfo(m_CurrentTab.Catalog.GetCurrentDirectory());
-                ChangeDirectoryForCurrentTab(currentDir.Parent.FullName);
+                var parentPath = currentDir.Parent?.FullName;
+
+                // Don't navigate above the root directories
+                // If parent would take us above any root, go to main home instead
+                if (m_CurrentTab.ReferenceButtonType == ReferenceButton.Type.Models && parentPath != null)
+                {
+                    var catalog = ModelCatalog.m_Instance;
+                    bool parentIsValid = false;
+                    foreach (var rootDir in new[] { App.ModelLibraryPath(), App.BlocksModelLibraryPath() })
+                    {
+                        if (!string.IsNullOrEmpty(rootDir) &&
+                            (parentPath.Equals(rootDir, System.StringComparison.OrdinalIgnoreCase) ||
+                             parentPath.StartsWith(rootDir + Path.DirectorySeparatorChar, System.StringComparison.OrdinalIgnoreCase)))
+                        {
+                            parentIsValid = true;
+                            break;
+                        }
+                    }
+
+                    if (parentIsValid)
+                    {
+                        ChangeDirectoryForCurrentTab(parentPath);
+                    }
+                    else
+                    {
+                        // Parent would take us above root dirs, go to main home instead
+                        ChangeDirectoryForCurrentTab(catalog.HomeDirectory);
+                    }
+                }
+                else if (parentPath != null)
+                {
+                    ChangeDirectoryForCurrentTab(parentPath);
+                }
             }
         }
     }

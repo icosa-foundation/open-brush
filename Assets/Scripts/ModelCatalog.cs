@@ -43,11 +43,12 @@ namespace TiltBrush
 
         private Dictionary<string, List<string>> m_OrderedModelNames;
         private bool m_FolderChanged;
-        private FileWatcher m_FileWatcher;
+        private List<FileWatcher> m_FileWatchers;
         private string m_CurrentModelsDirectory;
         public string CurrentModelsDirectory => m_CurrentModelsDirectory;
         private string m_ChangedFile;
         private bool m_RecurseDirectories = false;
+        private Dictionary<string, string> m_ModelRootsByRelativePath;
 
         public bool IsScanning
         {
@@ -95,32 +96,69 @@ namespace TiltBrush
             m_MissingNormalizedModelsByRelativePath = new Dictionary<string, TrTransform[]>();
             m_MissingModelsByRelativePath = new Dictionary<string, TrTransform[]>();
             m_OrderedModelNames = new Dictionary<string, List<string>>();
+            m_ModelRootsByRelativePath = new Dictionary<string, string>();
             ChangeDirectory(HomeDirectory);
+        }
+
+        private IEnumerable<string> GetModelDirectories()
+        {
+            return new List<string> { App.ModelLibraryPath(), App.BlocksModelLibraryPath() }
+                .Where(p => !string.IsNullOrEmpty(p))
+                .Distinct();
+        }
+
+        private string GetModelRoot(string path)
+        {
+            return GetModelDirectories()
+                .FirstOrDefault(directory => path.StartsWith(directory, StringComparison.OrdinalIgnoreCase));
         }
 
         public void ChangeDirectory(string newPath)
         {
             m_CurrentModelsDirectory = newPath;
 
-            if (Directory.Exists(m_CurrentModelsDirectory))
+            if (m_FileWatchers != null)
             {
-                m_FileWatcher = new FileWatcher(m_CurrentModelsDirectory);
-                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
-                m_FileWatcher.FileChanged += OnChanged;
-                m_FileWatcher.FileCreated += OnChanged;
-                m_FileWatcher.FileDeleted += OnChanged;
-                m_FileWatcher.EnableRaisingEvents = true;
+                foreach (var watcher in m_FileWatchers)
+                {
+                    watcher.FileChanged -= OnChanged;
+                    watcher.FileCreated -= OnChanged;
+                    watcher.FileDeleted -= OnChanged;
+                    watcher.Dispose();
+                }
+            }
+
+            m_FileWatchers = new List<FileWatcher>();
+            foreach (var directory in GetModelDirectories())
+            {
+                Directory.CreateDirectory(directory);
+                var watcher = new FileWatcher(directory)
+                {
+                    NotifyFilter = NotifyFilters.LastWrite
+                };
+                watcher.FileChanged += OnChanged;
+                watcher.FileCreated += OnChanged;
+                watcher.FileDeleted += OnChanged;
+                watcher.EnableRaisingEvents = true;
+                m_FileWatchers.Add(watcher);
             }
 
             LoadModelsForNewDirectory(m_CurrentModelsDirectory);
         }
 
         public string HomeDirectory => App.ModelLibraryPath();
-        public bool IsHomeDirectory() => m_CurrentModelsDirectory == HomeDirectory;
+
+        public bool IsHomeDirectory()
+        {
+            // Consider any root model directory as a "home" directory
+            return GetModelDirectories().Any(dir => m_CurrentModelsDirectory == dir);
+        }
 
         public bool IsSubDirectoryOfHome()
         {
-            return m_CurrentModelsDirectory.StartsWith(HomeDirectory);
+            // Check if current directory is under any of the model root directories
+            return GetModelDirectories().Any(dir =>
+                m_CurrentModelsDirectory.StartsWith(dir, StringComparison.OrdinalIgnoreCase));
         }
 
         public string GetCurrentDirectory()
@@ -134,7 +172,7 @@ namespace TiltBrush
 
             if (e.ChangeType == WatcherChangeTypes.Changed)
             {
-                m_ChangedFile = e.FullPath;
+                m_ChangedFile = WidgetManager.GetModelSubpath(e.FullPath);
             }
             else
             {
@@ -181,6 +219,7 @@ namespace TiltBrush
         public void LoadModels()
         {
             var oldModels = new Dictionary<string, Model>(m_ModelsByRelativePath);
+            m_ModelRootsByRelativePath.Clear();
 
             // If we changed a file, pretend like we don't have it.
             if (m_ChangedFile != null)
@@ -193,7 +232,12 @@ namespace TiltBrush
             }
 
             m_ModelsByRelativePath.Clear();
-            ProcessDirectory(m_CurrentModelsDirectory, oldModels);
+            foreach (var directory in GetModelDirectories())
+            {
+                // Recursively process Blocks directory to flatten its hierarchy
+                bool shouldRecurse = directory == App.BlocksModelLibraryPath();
+                ProcessDirectory(directory, oldModels, shouldRecurse);
+            }
 
             if (oldModels.Count > 0)
             {
@@ -238,12 +282,34 @@ namespace TiltBrush
 
         public void LoadModelsForNewDirectory(string path)
         {
-            var oldModels = new Dictionary<string, Model>(m_ModelsByRelativePath);
-            ProcessDirectory(path, oldModels);
+            LoadModels();
+            // Get the root directory that 'path' belongs to
+            var pathRoot = GetModelRoot(path) ?? HomeDirectory;
+            var blocksRoot = App.BlocksModelLibraryPath();
+            bool isBlocksRoot = !string.IsNullOrEmpty(blocksRoot) &&
+                               path.Equals(blocksRoot, StringComparison.OrdinalIgnoreCase);
+
             // Convert directory to a path relative to HomeDirectory
             var modelsInDirectory = m_ModelsByRelativePath.Keys.Where(m =>
             {
-                var dirPath = Path.GetDirectoryName(Path.Join(HomeDirectory, m));
+                if (!m_ModelRootsByRelativePath.TryGetValue(m, out var modelRoot))
+                {
+                    return false; // Skip models without a known root
+                }
+
+                // Only include models from the same root directory as the path we're viewing
+                if (modelRoot != pathRoot)
+                {
+                    return false;
+                }
+
+                // For Blocks root directory, show all models from that tree (flat hierarchy)
+                if (isBlocksRoot && modelRoot == blocksRoot)
+                {
+                    return true;
+                }
+
+                var dirPath = Path.GetDirectoryName(Path.Join(modelRoot, m));
                 return dirPath == path;
             }).ToList();
             modelsInDirectory.Sort();
@@ -287,11 +353,12 @@ namespace TiltBrush
             }
         }
 
-        void ProcessDirectory(string sPath, Dictionary<string, Model> oldModels)
+        void ProcessDirectory(string sPath, Dictionary<string, Model> oldModels, bool recurse = false)
         {
             if (Directory.Exists(sPath))
             {
                 string[] aFiles = Directory.GetFiles(sPath);
+                string rootDirectory = GetModelRoot(sPath);
                 // Models we download from Poly are called ".gltf2", but ".gltf" is more standard
                 List<string> extensions = new() { ".gltf2", ".gltf", ".glb", ".ply", ".svg", ".obj", ".vox" };
 
@@ -309,28 +376,32 @@ namespace TiltBrush
                     {
                         Model rNewModel;
                         string path = aFiles[i].Replace("\\", "/");
-                        try
+                        string relativePath = WidgetManager.GetModelSubpath(path);
+                        if (relativePath == null || rootDirectory == null)
                         {
-                            rNewModel = oldModels[path];
-                            oldModels.Remove(path);
+                            continue;
                         }
-                        catch (KeyNotFoundException)
+                        if (!oldModels.TryGetValue(relativePath, out rNewModel))
                         {
-                            rNewModel = new Model(WidgetManager.GetModelSubpath(path));
+                            rNewModel = new Model(relativePath);
+                        }
+                        else
+                        {
+                            oldModels.Remove(relativePath);
                         }
                         // Should we skip this loop earlier if m_ModelsByRelativePath already contains the key?
                         m_ModelsByRelativePath.TryAdd(rNewModel.RelativePath, rNewModel);
+                        m_ModelRootsByRelativePath[rNewModel.RelativePath] = rootDirectory;
                     }
                 }
 
-                // We used to recurse for models but we now have directory navigation
-                // I'm keeping this around for now
-                if (m_RecurseDirectories)
+                // Recurse into subdirectories if requested
+                if (recurse || m_RecurseDirectories)
                 {
                     string[] aSubdirectories = Directory.GetDirectories(sPath);
                     for (int i = 0; i < aSubdirectories.Length; ++i)
                     {
-                        ProcessDirectory(aSubdirectories[i], oldModels);
+                        ProcessDirectory(aSubdirectories[i], oldModels, recurse);
                     }
                 }
             }
@@ -347,10 +418,20 @@ namespace TiltBrush
             {
                 // The directory probably hasn't been processed yet
                 string relativeDirPath = Path.GetDirectoryName(relativePath);
-                LoadModelsForNewDirectory(Path.Combine(HomeDirectory, relativeDirPath));
+                string baseDirectory = GetModelRootForRelativePath(relativePath) ?? HomeDirectory;
+                LoadModelsForNewDirectory(Path.Combine(baseDirectory, relativeDirPath ?? string.Empty));
                 m_ModelsByRelativePath.TryGetValue(relativePath, out m);
             }
             return m;
+        }
+
+        private string GetModelRootForRelativePath(string relativePath)
+        {
+            if (m_ModelRootsByRelativePath.TryGetValue(relativePath, out var root))
+            {
+                return root;
+            }
+            return GetModelDirectories().FirstOrDefault();
         }
     }
 } // namespace TiltBrush
