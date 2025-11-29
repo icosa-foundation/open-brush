@@ -359,39 +359,55 @@ namespace TiltBrush
             {
                 string[] aFiles = Directory.GetFiles(sPath);
                 string rootDirectory = GetModelRoot(sPath);
-                // Models we download from Poly are called ".gltf2", but ".gltf" is more standard
-                List<string> extensions = new() { ".gltf2", ".gltf", ".glb", ".ply", ".svg", ".obj", ".vox" };
+                var blocksRoot = App.BlocksModelLibraryPath();
+                bool isBlocksTree = !string.IsNullOrEmpty(blocksRoot) && rootDirectory == blocksRoot;
+                bool isBlocksRoot = isBlocksTree && sPath.Equals(blocksRoot, StringComparison.OrdinalIgnoreCase);
+
+                // For Blocks: skip files in the root directory (only process subdirectories)
+                if (!isBlocksRoot)
+                {
+                    // Models we download from Poly are called ".gltf2", but ".gltf" is more standard
+                    List<string> extensions = new() { ".gltf2", ".gltf", ".glb", ".ply", ".svg", ".obj", ".vox" };
 
 #if USD_SUPPORTED
-                extensions.AddRange(new [] { ".usda", ".usdc", ".usd" });
+                    extensions.AddRange(new [] { ".usda", ".usdc", ".usd" });
 #endif
 #if FBX_SUPPORTED
-                extensions.Add( ".fbx" );
+                    extensions.Add( ".fbx" );
 #endif
 
-                for (int i = 0; i < aFiles.Length; ++i)
-                {
-                    string sExtension = Path.GetExtension(aFiles[i]).ToLower();
-                    if (extensions.Contains(sExtension))
+                    for (int i = 0; i < aFiles.Length; ++i)
                     {
-                        Model rNewModel;
-                        string path = aFiles[i].Replace("\\", "/");
-                        string relativePath = WidgetManager.GetModelSubpath(path);
-                        if (relativePath == null || rootDirectory == null)
+                        string filename = Path.GetFileName(aFiles[i]);
+                        string sExtension = Path.GetExtension(aFiles[i]).ToLower();
+
+                        // For Blocks tree: only process files named "model.obj"
+                        if (isBlocksTree && !filename.Equals("model.obj", StringComparison.OrdinalIgnoreCase))
                         {
                             continue;
                         }
-                        if (!oldModels.TryGetValue(relativePath, out rNewModel))
+
+                        if (extensions.Contains(sExtension))
                         {
-                            rNewModel = new Model(relativePath);
+                            Model rNewModel;
+                            string path = aFiles[i].Replace("\\", "/");
+                            string relativePath = WidgetManager.GetModelSubpath(path);
+                            if (relativePath == null || rootDirectory == null)
+                            {
+                                continue;
+                            }
+                            if (!oldModels.TryGetValue(relativePath, out rNewModel))
+                            {
+                                rNewModel = new Model(relativePath);
+                            }
+                            else
+                            {
+                                oldModels.Remove(relativePath);
+                            }
+                            // Should we skip this loop earlier if m_ModelsByRelativePath already contains the key?
+                            m_ModelsByRelativePath.TryAdd(rNewModel.RelativePath, rNewModel);
+                            m_ModelRootsByRelativePath[rNewModel.RelativePath] = rootDirectory;
                         }
-                        else
-                        {
-                            oldModels.Remove(relativePath);
-                        }
-                        // Should we skip this loop earlier if m_ModelsByRelativePath already contains the key?
-                        m_ModelsByRelativePath.TryAdd(rNewModel.RelativePath, rNewModel);
-                        m_ModelRootsByRelativePath[rNewModel.RelativePath] = rootDirectory;
                     }
                 }
 

@@ -2157,7 +2157,7 @@ namespace TiltBrush
             string userPath = UserPath();
             var userParent = Directory.GetParent(userPath);
             string blocksRoot = userParent != null ? userParent.FullName : userPath;
-            return Path.Combine(blocksRoot, "Blocks", "Models");
+            return Path.Combine(blocksRoot, "Blocks", "OfflineModels");
         }
 
         public static string ReferenceImagePath()
