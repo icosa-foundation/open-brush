@@ -2620,6 +2620,23 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 21300000, guid: b7b006d8d0e5acc40b72a9aedd6194c7,
         type: 3}
+    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_text
+      value: 'Selective snap angle axes
+
+        axis locking for guides
+
+        Slider
+        Control via thumbstick
+
+        Better obj import
+
+        obj import on
+        quest
+
+        gamepad nav'
+      objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -2678,7 +2695,7 @@ PrefabInstance:
     - target: {fileID: 8617468097628679083, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_Name
-      value: 008 Slider UI
+      value: 008 Various
       objectReference: {fileID: 0}
     - target: {fileID: 8617468097628679083, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
