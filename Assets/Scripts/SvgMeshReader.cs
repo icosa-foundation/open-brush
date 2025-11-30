@@ -53,7 +53,11 @@ namespace TiltBrush
             {
                 var importer = new RuntimeSVGImporter();
                 sceneInfo = importer.ImportAsSceneInfo(m_path);
-                mf.mesh = importer.SceneInfoToMesh(sceneInfo);
+                // Flip Y-axis and rotate 180 degrees around Y-axis to correct the orientation
+                var flipY = Matrix4x4.Scale(new Vector3(1, -1, 1));
+                var rotateY = Matrix4x4.Rotate(Quaternion.Euler(0, 180, 0));
+                var transform = rotateY * flipY;
+                mf.mesh = importer.SceneInfoToMesh(sceneInfo, transform);
             }
             catch (Exception e)
             {
