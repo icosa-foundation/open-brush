@@ -380,7 +380,10 @@ namespace TiltBrush
             // Check SVG models using different logic
             if (m_Model.GetLocation().Extension == ".svg")
             {
-                return m_ObjModelScript.SvgSceneInfo.HasSubShapes();
+                // SVG break-apart is not yet implemented, so return false
+                // TODO: When SVG break-apart is implemented, check SvgSceneInfo for sub-shapes
+                // return m_Model.SvgSceneInfo.Scene?.Root != null && m_Model.SvgSceneInfo.HasSubShapes();
+                return false;
             }
 
             // Check if we have more than one light or mesh

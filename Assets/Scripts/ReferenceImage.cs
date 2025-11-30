@@ -59,6 +59,7 @@ namespace TiltBrush
 
 
         // public bool IsComposite => _SvgSceneInfo.Scene.Root.getsh
+        public SVGParser.SceneInfo SvgSceneInfo => _SvgSceneInfo;
 
         public string FileName { get { return Path.GetFileName(m_Path); } }
         public string FileFullPath { get { return m_Path; } }
