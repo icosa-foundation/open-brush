@@ -183,11 +183,37 @@ namespace TiltBrush
             return stringBuilder.ToString();
         }
 
+        private void BreakApartSvg()
+        {
+            // TODO: Implement proper SVG break-apart functionality
+            // This requires:
+            // 1. Getting the SVG SceneInfo and extracting child nodes or individual shapes
+            // 2. For each child/shape, creating a new SceneInfo using FromChildIndex() or FromNode()
+            // 3. Tessellating each sub-SceneInfo into a mesh using RuntimeSVGImporter.SceneInfoToMesh()
+            // 4. Creating new GameObjects in the model prefab with these meshes
+            // 5. Updating m_NodePaths to reference these new child objects
+            //
+            // For now, we just log a message that SVG break-apart is not yet implemented
+
+            Debug.LogWarning("Break apart for SVG models is not yet fully implemented. " +
+                           "SVG models are currently imported as a single tessellated mesh and cannot be broken apart by vector shapes.");
+
+            // Prevent the command from proceeding by keeping m_NodePaths empty
+            m_NodePaths = new List<string>();
+        }
+
         protected override void OnRedo()
         {
             SelectionManager.m_Instance.DeselectWidgets(new List<GrabWidget> { m_InitialWidget });
 
             var widgetObjScript = m_InitialWidget.GetComponentInChildren<ObjModelScript>();
+
+            // Handle SVG models differently - break apart by scene nodes/shapes instead of mesh splitting
+            if (m_InitialWidget.Model.GetLocation().Extension == ".svg")
+            {
+                BreakApartSvg();
+                return;
+            }
 
             // If we only have one mesh filter, we next have to split the mesh based on connected regions
             if (widgetObjScript.m_MeshChildren.Length == 1)
