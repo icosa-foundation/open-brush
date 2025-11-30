@@ -2152,6 +2152,14 @@ namespace TiltBrush
             return Path.Combine(MediaLibraryPath(), "Models");
         }
 
+        public static string BlocksModelLibraryPath()
+        {
+            string userPath = UserPath();
+            var userParent = Directory.GetParent(userPath);
+            string blocksRoot = userParent != null ? userParent.FullName : userPath;
+            return Path.Combine(blocksRoot, "Blocks", "OfflineModels");
+        }
+
         public static string ReferenceImagePath()
         {
             return Path.Combine(MediaLibraryPath(), "Images");
