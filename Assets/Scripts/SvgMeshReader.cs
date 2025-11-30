@@ -53,10 +53,10 @@ namespace TiltBrush
             {
                 var importer = new RuntimeSVGImporter();
                 sceneInfo = importer.ImportAsSceneInfo(m_path);
-                // Flip Y-axis and rotate 180 degrees around Y-axis to correct the orientation
-                var flipY = Matrix4x4.Scale(new Vector3(1, -1, 1));
+                // Scale down by 1000, flip Y-axis, and rotate 180 degrees around Y-axis to correct the orientation
+                var scale = Matrix4x4.Scale(new Vector3(0.001f, -0.001f, 0.001f));
                 var rotateY = Matrix4x4.Rotate(Quaternion.Euler(0, 180, 0));
-                var transform = rotateY * flipY;
+                var transform = rotateY * scale;
                 mf.mesh = importer.SceneInfoToMesh(sceneInfo, transform);
             }
             catch (Exception e)
@@ -66,6 +66,7 @@ namespace TiltBrush
             }
             var collider = go.AddComponent<BoxCollider>();
             collider.size = mf.mesh.bounds.size;
+            collider.center = mf.mesh.bounds.center;
             return (go, warnings.Distinct().ToList(), m_collector, sceneInfo);
         }
     }
