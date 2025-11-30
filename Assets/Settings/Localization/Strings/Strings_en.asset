@@ -3743,11 +3743,10 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 401824908597354496
-    m_Localized: 'Try "Save Selected
+    m_Localized: 'Save some brush strokes using "Save Selected
 
-      Strokes" to
-
-      see them here'
+      Strokes" (on
+      the Labs Panel) and they will appear here.'
     m_Metadata:
       m_Items: []
   - m_Id: 422456507319803904
