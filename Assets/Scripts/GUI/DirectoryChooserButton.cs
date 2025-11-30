@@ -32,13 +32,9 @@ namespace TiltBrush
         {
             m_DirectoryInfo = new DirectoryInfo(directory);
 
-            // Use custom labels for root model directories
-            if (directory.Equals(App.ModelLibraryPath(), StringComparison.OrdinalIgnoreCase))
-            {
-                m_Label = "Open Brush";
-            }
-            else if (!string.IsNullOrEmpty(App.BlocksModelLibraryPath()) &&
-                     directory.Equals(App.BlocksModelLibraryPath(), StringComparison.OrdinalIgnoreCase))
+            // Use custom label for Open Blocks virtual subdirectory
+            if (!string.IsNullOrEmpty(App.BlocksModelLibraryPath()) &&
+                directory.Equals(App.BlocksModelLibraryPath(), StringComparison.OrdinalIgnoreCase))
             {
                 m_Label = "Open Blocks";
             }

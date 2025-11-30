@@ -150,15 +150,18 @@ namespace TiltBrush
 
         public bool IsHomeDirectory()
         {
-            // Consider any root model directory as a "home" directory
-            return GetModelDirectories().Any(dir => m_CurrentModelsDirectory == dir);
+            return m_CurrentModelsDirectory == HomeDirectory;
         }
 
         public bool IsSubDirectoryOfHome()
         {
-            // Check if current directory is under any of the model root directories
-            return GetModelDirectories().Any(dir =>
-                m_CurrentModelsDirectory.StartsWith(dir, StringComparison.OrdinalIgnoreCase));
+            // Check if current directory is under the main Models directory OR is the Blocks root
+            var blocksRoot = App.BlocksModelLibraryPath();
+            bool isUnderMainRoot = m_CurrentModelsDirectory.StartsWith(HomeDirectory, StringComparison.OrdinalIgnoreCase);
+            bool isBlocksRoot = !string.IsNullOrEmpty(blocksRoot) &&
+                               m_CurrentModelsDirectory.Equals(blocksRoot, StringComparison.OrdinalIgnoreCase);
+
+            return isUnderMainRoot || isBlocksRoot;
         }
 
         public string GetCurrentDirectory()
@@ -234,9 +237,10 @@ namespace TiltBrush
             m_ModelsByRelativePath.Clear();
             foreach (var directory in GetModelDirectories())
             {
-                // Recursively process Blocks directory to flatten its hierarchy
-                bool shouldRecurse = directory == App.BlocksModelLibraryPath();
-                ProcessDirectory(directory, oldModels, shouldRecurse);
+                // Always recurse to scan all subdirectories
+                // Blocks uses recursion to flatten its hierarchy
+                // Main Models directory uses recursion to populate all subdirectories
+                ProcessDirectory(directory, oldModels, recurse: true);
             }
 
             if (oldModels.Count > 0)

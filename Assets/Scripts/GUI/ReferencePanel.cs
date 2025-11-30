@@ -237,10 +237,10 @@ namespace TiltBrush
             string displayPath;
             if (m_CurrentTab.ReferenceButtonType == ReferenceButton.Type.Models)
             {
-                // Use custom labels for root model directories
+                // Show "Models" for the root directory
                 if (currentDir.Equals(App.ModelLibraryPath(), System.StringComparison.OrdinalIgnoreCase))
                 {
-                    displayPath = "Open Brush";
+                    displayPath = "Models";
                 }
                 else if (!string.IsNullOrEmpty(App.BlocksModelLibraryPath()) &&
                          currentDir.Equals(App.BlocksModelLibraryPath(), System.StringComparison.OrdinalIgnoreCase))
@@ -274,35 +274,23 @@ namespace TiltBrush
                     bool isBlocksRoot = !string.IsNullOrEmpty(blocksPath) &&
                                        currentDir.Equals(blocksPath, System.StringComparison.OrdinalIgnoreCase);
 
-                    // If viewing either root directory, show both roots plus actual subdirectories
-                    if (isMainRoot || isBlocksRoot)
+                    // At main root: show real subdirectories + Open Blocks as virtual subdirectory
+                    if (isMainRoot)
                     {
-                        var subdirList = new System.Collections.Generic.List<string>();
+                        var subdirList = new System.Collections.Generic.List<string>(m_CurrentSubdirectories);
 
-                        // Add both root directories as options
-                        if (!string.IsNullOrEmpty(mainModelsPath))
-                        {
-                            subdirList.Add(mainModelsPath);
-                        }
+                        // Add Open Blocks as a virtual subdirectory
                         if (!string.IsNullOrEmpty(blocksPath) && Directory.Exists(blocksPath))
                         {
                             subdirList.Add(blocksPath);
                         }
 
-                        // For main Models root, also add actual subdirectories
-                        if (isMainRoot)
-                        {
-                            foreach (var subdir in m_CurrentSubdirectories)
-                            {
-                                if (!subdirList.Contains(subdir))
-                                {
-                                    subdirList.Add(subdir);
-                                }
-                            }
-                        }
-                        // For Blocks root, don't show subdirectories (flat hierarchy)
-
                         m_CurrentSubdirectories = subdirList.ToArray();
+                    }
+                    // At Blocks root: hide subdirectories (flat hierarchy)
+                    else if (isBlocksRoot)
+                    {
+                        m_CurrentSubdirectories = new string[0];
                     }
                 }
             }
@@ -424,33 +412,29 @@ namespace TiltBrush
             if (m_CurrentTab.Catalog.IsSubDirectoryOfHome() && !m_CurrentTab.Catalog.IsHomeDirectory())
             {
                 var currentDir = new DirectoryInfo(m_CurrentTab.Catalog.GetCurrentDirectory());
+                var currentPath = m_CurrentTab.Catalog.GetCurrentDirectory();
                 var parentPath = currentDir.Parent?.FullName;
 
-                // Don't navigate above the root directories
-                // If parent would take us above any root, go to main home instead
                 if (m_CurrentTab.ReferenceButtonType == ReferenceButton.Type.Models && parentPath != null)
                 {
-                    var catalog = ModelCatalog.m_Instance;
-                    bool parentIsValid = false;
-                    foreach (var rootDir in new[] { App.ModelLibraryPath(), App.BlocksModelLibraryPath() })
-                    {
-                        if (!string.IsNullOrEmpty(rootDir) &&
-                            (parentPath.Equals(rootDir, System.StringComparison.OrdinalIgnoreCase) ||
-                             parentPath.StartsWith(rootDir + Path.DirectorySeparatorChar, System.StringComparison.OrdinalIgnoreCase)))
-                        {
-                            parentIsValid = true;
-                            break;
-                        }
-                    }
+                    var homeDir = m_CurrentTab.Catalog.HomeDirectory;
+                    var blocksRoot = App.BlocksModelLibraryPath();
 
-                    if (parentIsValid)
+                    // If we're at the Blocks root, go back to home
+                    if (!string.IsNullOrEmpty(blocksRoot) &&
+                        currentPath.Equals(blocksRoot, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        ChangeDirectoryForCurrentTab(homeDir);
+                    }
+                    // If parent is within home directory, navigate to it
+                    else if (parentPath.StartsWith(homeDir, System.StringComparison.OrdinalIgnoreCase))
                     {
                         ChangeDirectoryForCurrentTab(parentPath);
                     }
+                    // Otherwise go to home
                     else
                     {
-                        // Parent would take us above root dirs, go to main home instead
-                        ChangeDirectoryForCurrentTab(catalog.HomeDirectory);
+                        ChangeDirectoryForCurrentTab(homeDir);
                     }
                 }
                 else if (parentPath != null)
