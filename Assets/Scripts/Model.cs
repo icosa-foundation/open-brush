@@ -89,6 +89,12 @@ namespace TiltBrush
                     switch (type)
                     {
                         case Type.LocalFile:
+                            string blocksPath = Path.Combine(App.BlocksModelLibraryPath(), path);
+                            if (System.IO.File.Exists(blocksPath))
+                            {
+                                return blocksPath.Replace("\\", "/");
+                            }
+
                             return Path.Combine(App.ModelLibraryPath(), path).Replace("\\", "/");
                         case Type.IcosaAssetId:
                             return path.Replace("\\", "/");
@@ -244,7 +250,22 @@ namespace TiltBrush
                 {
                     return AssetId;
                 }
-                return Path.GetFileNameWithoutExtension(m_Location.RelativePath);
+
+                string relativePath = m_Location.RelativePath;
+                string filename = Path.GetFileName(relativePath);
+
+                // For Blocks models (always named "model.obj"), use the parent directory name
+                if (filename != null && filename.Equals("model.obj", StringComparison.OrdinalIgnoreCase))
+                {
+                    string parentDir = Path.GetDirectoryName(relativePath);
+                    if (!string.IsNullOrEmpty(parentDir))
+                    {
+                        // Get the last directory name in the path
+                        return Path.GetFileName(parentDir);
+                    }
+                }
+
+                return Path.GetFileNameWithoutExtension(relativePath);
             }
         }
 
