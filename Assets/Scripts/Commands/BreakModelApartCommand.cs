@@ -169,10 +169,12 @@ namespace TiltBrush
         // Constructs a path from the root to the object, including the object's name
         private static string GetHierarchyPath(Transform root, Transform obj)
         {
+            if (obj == null) return "";
+
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.Insert(0, "/" + obj.name);
 
-            while (obj.transform.parent != root)
+            while (obj.transform.parent != null && obj.transform.parent != root)
             {
                 obj = obj.transform.parent;
                 stringBuilder.Insert(0, "/" + obj.name);
@@ -207,10 +209,19 @@ namespace TiltBrush
                     destRoot = subTreeRoot;
                 }
 
+                if (destRoot == null)
+                {
+                    Debug.LogError($"BreakModelApartCommand: Unable to find destRoot for subtree '{subtree}'");
+                    return;
+                }
+
                 var modelMf = destRoot.GetComponentInChildren<MeshFilter>();
                 var splits = Model.ApplySplits(modelMf);
 
-                var prevNodePath = m_NodePaths[0];
+                // Use the subtree or mesh name as the path if m_NodePaths is empty
+                var prevNodePath = m_NodePaths.Count > 0
+                    ? m_NodePaths[0]
+                    : (string.IsNullOrEmpty(subtree) ? GetHierarchyPath(modelObjScript.transform, destRoot) : subtree);
                 if (splits.Count == 1)
                 {
                     // Destroy the split as it's superfluous

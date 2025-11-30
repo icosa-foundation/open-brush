@@ -224,6 +224,9 @@ namespace TiltBrush
 
         private ImportMaterialCollector m_ImportMaterialCollector;
 
+        // Store SVG scene info for SVG models (persists across instantiation)
+        public SVGParser.SceneInfo SvgSceneInfo { get; private set; }
+
         // Returns the path starting after Media Library/Models
         // e.g. subdirectory/example.obj
         public string RelativePath
@@ -918,9 +921,9 @@ namespace TiltBrush
                 else if (ext == ".svg")
                 {
                     go = LoadSvg(warnings, out SVGParser.SceneInfo sceneInfo);
+                    SvgSceneInfo = sceneInfo;
                     CalcBoundsNonGltf(go);
                     EndCreatePrefab(go, warnings);
-                    go.GetComponent<ObjModelScript>().SvgSceneInfo = sceneInfo;
                 }
                 else
                 {

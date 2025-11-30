@@ -380,7 +380,7 @@ namespace TiltBrush
             // Check SVG models using different logic
             if (m_Model.GetLocation().Extension == ".svg")
             {
-                return m_ObjModelScript.SvgSceneInfo.HasSubShapes();
+                return m_Model.SvgSceneInfo.HasSubShapes();
             }
 
             // Check if we have more than one light or mesh
