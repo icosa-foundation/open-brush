@@ -608,17 +608,17 @@ PrefabInstance:
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
       propertyPath: m_ButtonLabel
-      value: Get Open Blocks
+      value: Info
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
       propertyPath: m_ColorSelected.b
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
       propertyPath: m_ColorSelected.g
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
@@ -638,7 +638,7 @@ PrefabInstance:
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
       propertyPath: m_ColorDeselected.b
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
@@ -648,7 +648,7 @@ PrefabInstance:
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
       propertyPath: m_ColorDeselected.r
-      value: 1
+      value: 0.18523192
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
@@ -668,7 +668,7 @@ PrefabInstance:
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: OpenBlocksStorePage
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
@@ -688,22 +688,22 @@ PrefabInstance:
     - target: {fileID: 2633638204545500139, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
       propertyPath: m_LocalScale.x
-      value: 1.1111201
+      value: 1.2
       objectReference: {fileID: 0}
     - target: {fileID: 2633638204545500139, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
       propertyPath: m_LocalScale.y
-      value: 1.3889
+      value: 1.2
       objectReference: {fileID: 0}
     - target: {fileID: 2633638204545500139, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
       propertyPath: m_LocalScale.z
-      value: 1.3889
+      value: 1.2
       objectReference: {fileID: 0}
     - target: {fileID: 2633638204545500139, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.485
+      value: -0.45
       objectReference: {fileID: 0}
     - target: {fileID: 2633638204545500139, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
@@ -754,6 +754,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_text
       value: Find out more
+      objectReference: {fileID: 0}
+    - target: {fileID: 4506741420675531107, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
+      propertyPath: m_fontSize
+      value: 7.5
       objectReference: {fileID: 0}
     - target: {fileID: 4506741420675531107, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
@@ -842,8 +847,8 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4787677302610872560, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
+      propertyPath: m_fontColor32.rgba
+      value: 4294967295
       objectReference: {fileID: 0}
     - target: {fileID: 5319102821619056528, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}

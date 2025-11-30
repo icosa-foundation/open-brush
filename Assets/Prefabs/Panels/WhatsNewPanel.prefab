@@ -394,7 +394,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1272310558547734}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6311d8a25dba6a443be8afe87803c545, type: 3}
   m_Name: 
@@ -705,10 +705,10 @@ Transform:
   - {fileID: 4327760290305255270}
   - {fileID: 4804516416311535966}
   - {fileID: 8616895469177311108}
-  - {fileID: 2347848550224053383}
-  - {fileID: 1428768169168080006}
   - {fileID: 8014873094123675027}
+  - {fileID: 1428768169168080006}
   - {fileID: 8529216437758175391}
+  - {fileID: 2347848550224053383}
   m_Father: {fileID: 4232412870837608}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7122536431733598801
@@ -1698,7 +1698,7 @@ PrefabInstance:
     - target: {fileID: 8617468097628679083, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_Name
-      value: 011 Quest Parity
+      value: 010 Quest Parity
       objectReference: {fileID: 0}
     - target: {fileID: 8617468097628679083, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -1835,7 +1835,7 @@ PrefabInstance:
     - target: {fileID: 8617468097628679083, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_Name
-      value: 010 Render Video as Stills
+      value: 008 Render Video as Stills
       objectReference: {fileID: 0}
     - target: {fileID: 8617468097628679083, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -2695,7 +2695,7 @@ PrefabInstance:
     - target: {fileID: 8617468097628679083, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_Name
-      value: 008 Various
+      value: 011 Various
       objectReference: {fileID: 0}
     - target: {fileID: 8617468097628679083, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
