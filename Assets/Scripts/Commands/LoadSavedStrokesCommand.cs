@@ -38,6 +38,18 @@ namespace TiltBrush
 
         public override bool NeedsSave => m_LoadSucceeded;
 
+        protected override void OnDispose()
+        {
+            if (m_LoadedStrokes != null)
+            {
+                foreach (var stroke in m_LoadedStrokes)
+                {
+                    SketchMemoryScript.m_Instance.RemoveMemoryObject(stroke);
+                    stroke.DestroyStroke();
+                }
+            }
+        }
+
         public LoadSavedStrokesCommand(
             SavedStrokeFile savedStrokeFile,
             int targetLayerIndex,
