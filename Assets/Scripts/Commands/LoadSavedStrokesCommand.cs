@@ -28,7 +28,8 @@ namespace TiltBrush
         private readonly int m_TargetLayerIndex;
         private readonly Vector3 m_CommandMidpoint;
 
-        private readonly SelectCommand m_PreviousSelectionCommand;
+        private SelectCommand m_DeselectPreviousCommand;
+        private SelectCommand m_SelectLoadedStrokesCommand;
 
         private List<Stroke> m_LoadedStrokes;
         private SketchGroupTag m_Group;
@@ -61,15 +62,16 @@ namespace TiltBrush
             m_TargetLayerIndex = targetLayerIndex;
             m_CommandMidpoint = commandMidpoint;
 
+            // Create a sub-command to deselect the current selection (if any)
             var selectionManager = SelectionManager.m_Instance;
             if (selectionManager.HasSelection)
             {
-                m_PreviousSelectionCommand = new SelectCommand(
+                m_DeselectPreviousCommand = new SelectCommand(
                     selectionManager.SelectedStrokes.ToList(),
                     selectionManager.SelectedWidgets.ToList(),
                     selectionManager.SelectionTransform,
                     deselect: true,
-                    checkForClearedSelection: true);
+                    parent: this);
             }
         }
 
@@ -78,6 +80,14 @@ namespace TiltBrush
             if (!m_LoadAttempted)
             {
                 m_LoadAttempted = true;
+
+                // Deselect the previous selection first (before loading)
+                // We manually call Redo here because we need it to happen before loading
+                if (m_DeselectPreviousCommand != null)
+                {
+                    m_DeselectPreviousCommand.Redo();
+                }
+
                 m_LoadSucceeded = SaveLoadScript.m_Instance.Load(
                     m_SavedStrokeFile.FileInfo,
                     bAdditive: true,
@@ -105,32 +115,37 @@ namespace TiltBrush
                 }
 
                 m_StrokesVisible = true;
+
+                // Create a sub-command to select the newly loaded strokes
+                // Its Redo() will be called automatically by the base class
+                m_SelectLoadedStrokesCommand = new SelectCommand(
+                    m_LoadedStrokes,
+                    null,
+                    SelectionManager.m_Instance.SelectionTransform,
+                    deselect: false,
+                    parent: this);
+
+                AudioManager.m_Instance.PlayDuplicateSound(m_CommandMidpoint);
+                AudioManager.m_Instance.PlayGroupedSound(m_CommandMidpoint);
             }
             else if (!m_StrokesVisible)
             {
+                // Redo after undo
+                // Manually deselect previous before showing strokes
+                if (m_DeselectPreviousCommand != null)
+                {
+                    m_DeselectPreviousCommand.Redo();
+                }
+
                 foreach (var stroke in m_LoadedStrokes)
                 {
                     stroke.Hide(false);
                 }
 
                 m_StrokesVisible = true;
+
+                // m_SelectLoadedStrokesCommand.Redo() will be called automatically by base class
             }
-
-            if (!m_LoadSucceeded)
-            {
-                return;
-            }
-
-            if (m_PreviousSelectionCommand != null)
-            {
-                m_PreviousSelectionCommand.Redo();
-            }
-
-            SelectionManager.m_Instance.SelectStrokes(m_LoadedStrokes);
-            SelectionManager.m_Instance.UpdateSelectionWidget();
-
-            AudioManager.m_Instance.PlayDuplicateSound(m_CommandMidpoint);
-            AudioManager.m_Instance.PlayGroupedSound(m_CommandMidpoint);
         }
 
         protected override void OnUndo()
@@ -140,8 +155,7 @@ namespace TiltBrush
                 return;
             }
 
-            SelectionManager.m_Instance.DeselectStrokes(m_LoadedStrokes);
-            SelectionManager.m_Instance.UpdateSelectionWidget();
+            // Note: m_SelectLoadedStrokesCommand.Undo() will be called automatically by base class first
 
             foreach (var stroke in m_LoadedStrokes)
             {
@@ -150,13 +164,11 @@ namespace TiltBrush
 
             m_StrokesVisible = false;
 
-            if (m_PreviousSelectionCommand != null)
+            // Restore the previous selection by undoing the deselect
+            // We manually call this because we need it to happen after hiding strokes
+            if (m_DeselectPreviousCommand != null)
             {
-                m_PreviousSelectionCommand.Undo();
-            }
-            else
-            {
-                SelectionManager.m_Instance.UpdateSelectionWidget();
+                m_DeselectPreviousCommand.Undo();
             }
 
             AudioManager.m_Instance.PlayUndoSound(m_CommandMidpoint);
