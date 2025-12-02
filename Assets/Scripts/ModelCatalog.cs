@@ -257,31 +257,11 @@ namespace TiltBrush
                 Resources.UnloadUnusedAssets();
             }
 
-            m_OrderedModelNames[m_CurrentModelsDirectory] = m_ModelsByRelativePath.Keys.ToList();
-            m_OrderedModelNames[m_CurrentModelsDirectory].Sort();
-
-            foreach (string relativePath in m_OrderedModelNames[m_CurrentModelsDirectory])
-            {
-                if (m_MissingModelsByRelativePath.ContainsKey(relativePath))
-                {
-                    ModelWidget.CreateModelsFromRelativePath(
-                        relativePath, null, null, m_MissingModelsByRelativePath[relativePath], null, null, null, null, null);
-                    m_MissingModelsByRelativePath.Remove(relativePath);
-                }
-                if (m_MissingNormalizedModelsByRelativePath.ContainsKey(relativePath))
-                {
-                    ModelWidget.CreateModelsFromRelativePath(
-                        relativePath, null, m_MissingNormalizedModelsByRelativePath[relativePath], null, null, null, null, null, null);
-                    m_MissingModelsByRelativePath.Remove(relativePath);
-                }
-            }
+            // Note: Do not populate m_OrderedModelNames here - it will be populated by LoadModelsForNewDirectory
+            // to ensure proper filtering based on the current directory
+            // Note: CatalogChanged event is fired by LoadModelsForNewDirectory, not here
 
             m_FolderChanged = false;
-
-            if (CatalogChanged != null)
-            {
-                CatalogChanged();
-            }
         }
 
         public void LoadModelsForNewDirectory(string path)
@@ -317,9 +297,11 @@ namespace TiltBrush
                 return dirPath == path;
             }).ToList();
             modelsInDirectory.Sort();
-            m_OrderedModelNames[path] = modelsInDirectory;
 
-            foreach (string relativePath in m_OrderedModelNames[path])
+            // Update the entry for the current directory to ensure ItemCount uses the filtered list
+            m_OrderedModelNames[m_CurrentModelsDirectory] = modelsInDirectory;
+
+            foreach (string relativePath in modelsInDirectory)
             {
                 if (m_MissingModelsByRelativePath.ContainsKey(relativePath))
                 {
@@ -342,11 +324,7 @@ namespace TiltBrush
 
         public void ForceCatalogScan()
         {
-            LoadModels();
-            if (CatalogChanged != null)
-            {
-                CatalogChanged();
-            }
+            LoadModelsForNewDirectory(m_CurrentModelsDirectory);
         }
 
         void Update()
