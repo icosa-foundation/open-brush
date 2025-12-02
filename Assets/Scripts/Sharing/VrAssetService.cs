@@ -650,6 +650,7 @@ namespace TiltBrush
                             Debug.LogWarning($"Ignoring {path} not under {rootDir}");
                             continue;
                         }
+                        archivedName = archivedName.Replace('\\', '/');
                         ZipArchiveEntry entry = archive.CreateEntry(archivedName);
                         using (Stream writer = entry.Open())
                         {
@@ -830,7 +831,7 @@ namespace TiltBrush
             return (uri, uploadLength);
         }
 
-        private async Task<(string, long)> UploadCurrentSketchViverseAsync(
+private async Task<(string, long)> UploadCurrentSketchViverseAsync(
             CancellationToken token, string tempUploadDir, bool isDemoUpload)
         {
             DiskSceneFileInfo fileInfo = GetWritableFile();
@@ -851,30 +852,25 @@ namespace TiltBrush
 
             // Copy WebViewer files FIRST directly to exportDir (not to a subdirectory)
             // This establishes the base structure: libs/, css/, helpers/, img/, legacy/, icosa-viewer.module.js, etc.
-            string streamingWebViewerPath = Path.Combine(Application.streamingAssetsPath, "WebViewer");
-
-#if UNITY_EDITOR
-            // Direct copy to exportDir
-            if (!Directory.Exists(streamingWebViewerPath))
-                throw new VrAssetServiceException($"WebViewer not found at {streamingWebViewerPath}");
-            CopyDirectory(streamingWebViewerPath, exportDir);
-#else
-            // Load WebViewer from Resources
-            TextAsset zipAsset = Resources.Load<TextAsset>("WebViewer");
-            if (zipAsset == null)
-            {
-                throw new VrAssetServiceException("WebViewer.zip not found in Resources folder");
-            }
-
             string tempZip = Path.Combine(Application.temporaryCachePath, "webviewer_temp.zip");
-            File.WriteAllBytes(tempZip, zipAsset.bytes);
+            FileUtils.WriteBytesFromResources("WebViewer", tempZip);
+            
+            if (!File.Exists(tempZip))
+                throw new VrAssetServiceException("WebViewer.bytes not found in Resources folder");
 
             using (var zip = System.IO.Compression.ZipFile.OpenRead(tempZip))
             {
                 int extractedCount = 0;
                 foreach (var entry in zip.Entries)
                 {
-                    string fullPath = Path.Combine(exportDir, entry.FullName);
+                    string entryPath = entry.FullName;
+                    // Strip leading "WebViewer/" folder if present in ZIP
+                    if (entryPath.StartsWith("WebViewer/"))
+                        entryPath = entryPath.Substring("WebViewer/".Length);
+                    if (string.IsNullOrEmpty(entryPath))
+                        continue;
+
+                    string fullPath = Path.Combine(exportDir, entryPath);
 
                     if (string.IsNullOrEmpty(entry.Name))
                     {
@@ -887,17 +883,18 @@ namespace TiltBrush
 
                     extractedCount++;
 
-                    // Yield every 10 files to prevent freezing
+#if !UNITY_EDITOR && !UNITY_STANDALONE
+                    // Yield every 10 files to prevent freezing on mobile
                     if (extractedCount % 10 == 0)
                     {
                         await Awaiters.NextFrame;
                         token.ThrowIfCancellationRequested();
                     }
+#endif
                 }
             }
 
             File.Delete(tempZip);
-#endif
 
             // Now create/ensure assets folder exists in exportDir
             string assetsDir = Path.Combine(exportDir, "assets");
