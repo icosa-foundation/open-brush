@@ -102,9 +102,16 @@ namespace TiltBrush
 
                 SketchMemoryScript.m_Instance.SetPlaybackMode(
                     SketchMemoryScript.PlaybackMode.Distance, 54);
+
+                // Because we want QuickLoad to complete in a single frame,
+                // we need to set App.PlatformConfig.QuickLoadMaxDistancePerFrame to a very large value
+                // Without this strokes were not loaded correctly on Android devices where this value is low by default
+                float originalMaxDistance = App.PlatformConfig.QuickLoadMaxDistancePerFrame;
+                App.PlatformConfig.QuickLoadMaxDistancePerFrame = float.MaxValue;
                 SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true, false, false);
                 SketchMemoryScript.m_Instance.QuickLoadDrawingMemory();
                 SketchMemoryScript.m_Instance.ContinueDrawingFromMemory();
+                App.PlatformConfig.QuickLoadMaxDistancePerFrame = originalMaxDistance;
 
                 App.Scene.MoveStrokesCentroidTo(m_LoadedStrokes, m_CommandMidpoint);
 
