@@ -831,8 +831,8 @@ namespace TiltBrush
             return (uri, uploadLength);
         }
 
-private async Task<(string, long)> UploadCurrentSketchViverseAsync(
-            CancellationToken token, string tempUploadDir, bool isDemoUpload)
+        private async Task<(string, long)> UploadCurrentSketchViverseAsync(
+                    CancellationToken token, string tempUploadDir, bool isDemoUpload)
         {
             DiskSceneFileInfo fileInfo = GetWritableFile();
             var currentScene = SaveLoadScript.m_Instance.SceneFile;
@@ -854,7 +854,7 @@ private async Task<(string, long)> UploadCurrentSketchViverseAsync(
             // This establishes the base structure: libs/, css/, helpers/, img/, legacy/, icosa-viewer.module.js, etc.
             string tempZip = Path.Combine(Application.temporaryCachePath, "webviewer_temp.zip");
             FileUtils.WriteBytesFromResources("WebViewer", tempZip);
-            
+
             if (!File.Exists(tempZip))
                 throw new VrAssetServiceException("WebViewer.bytes not found in Resources folder");
 
