@@ -17,17 +17,16 @@ namespace TiltBrush
 {
     public class BlocksPromoPanel : BasePanel
     {
-        public void OpenBlocksStorePage()
+        public OpenBrowserButton m_OpenBrowserButton;
+
+        protected override void Awake()
         {
-            // Non-mobile hardware should get an info card reminding them they need to remove their headset.
-            if (!App.Config.IsMobileHardware)
-            {
-                OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                    InputManager.ControllerName.Brush,
-                    SketchControlsScript.kRemoveHeadsetFyi,
-                    fPopScalar: 0.5f
-                );
-            }
+            base.Awake();
+            m_OpenBrowserButton.m_Url = GetBlocksStoreUrl();
+        }
+
+        public string GetBlocksStoreUrl()
+        {
 #if UNITY_ANDROID
             bool isQuestNative = AndroidUtils.IsPackageInstalled("com.oculus.platformsdkruntime");
 #else
@@ -36,18 +35,18 @@ namespace TiltBrush
             if (isQuestNative)
             {
                 // Actually running on a Quest. Open the Quest store link.
-                App.OpenURL("https://www.meta.com/en-gb/experiences/open-blocks-low-poly-3d-modelling/8043509915705378/");
+                return "https://www.meta.com/en-gb/experiences/open-blocks-low-poly-3d-modelling/8043509915705378/";
             }
             else if (!App.Config.IsMobileHardware)
             {
                 // All PC users should use Steam for now.
-                App.OpenURL("https://store.steampowered.com/app/3077230/Open_Blocks/");
+                return "https://store.steampowered.com/app/3077230/Open_Blocks/";
             }
             else
             {
                 // At this point it should be an Android device that is not a Quest.
                 // Docs url. Good fallback and easy to update with current advice
-                App.OpenURL("https://docs.openblocks.app/getting-open-blocks");
+                return "https://docs.openblocks.app/getting-open-blocks";
             }
         }
     }
