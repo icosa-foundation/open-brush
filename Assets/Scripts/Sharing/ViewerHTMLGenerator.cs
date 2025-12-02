@@ -501,7 +501,7 @@ namespace TiltBrush
 					})
 				})
 			}
-			authorize       ()
+			authorize()
         </script>
     </body>
 </html>
