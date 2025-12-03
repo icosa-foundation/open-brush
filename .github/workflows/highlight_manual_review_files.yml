@@ -29,7 +29,7 @@ jobs:
               - 'ProjectSettings/**'
 
       - name: Find Comment
-        uses: peter-evans/find-comment@v3
+        uses: peter-evans/find-comment@v4
         id: find_comment
         with:
           token: ${{ github.token }}
@@ -41,7 +41,7 @@ jobs:
         if: |
           steps.filter.outputs.packages == 'true' ||
           steps.filter.outputs.projectsettings == 'true'
-        uses: peter-evans/create-or-update-comment@v4
+        uses: peter-evans/create-or-update-comment@v5
         with:
           token: ${{ github.token }}
           issue-number: ${{ github.event.pull_request.number }}
