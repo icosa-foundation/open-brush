@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using ObjLoader.Loader.Loaders;
 using Polyhydra.Core;
@@ -184,18 +185,19 @@ namespace TiltBrush
             {
                 subtree = location.Substring(relativePath.Length + 1);
             }
+            var tr = _CurrentBrushTransform().TransformBy(Coords.CanvasPose);
             var model = new Model(relativePath);
 
             var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
-            ModelWidget widget = cmd.Widget as ModelWidget;
-            if (widget != null)
+            ModelWidget modelWidget = cmd.Widget as ModelWidget;
+            if (modelWidget != null)
             {
                 // Start async load and setup widget when complete (fire-and-forget)
                 // Model assignment happens in SetupWidgetAfterLoadAsync after loading completes
-                _ = SetupWidgetAfterLoadAsync(model, widget, subtree, cmd);
+                _ = SetupWidgetAfterLoadAsync(model, modelWidget, subtree, cmd);
 
-                widget.Show(true);
+                modelWidget.Show(true);
             }
             else
             {
@@ -208,12 +210,12 @@ namespace TiltBrush
                 CreateWidgetCommand createCommand = new CreateWidgetCommand(
                     WidgetManager.m_Instance.EditableModelWidgetPrefab, tr);
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-                var widget = createCommand.Widget as EditableModelWidget;
-                if (widget != null)
+                var emodelWidget = createCommand.Widget as EditableModelWidget;
+                if (emodelWidget != null)
                 {
-                    widget.Model = model;
-                    widget.Show(true);
-                    createCommand.SetWidgetCost(widget.GetTiltMeterCost());
+                    emodelWidget.Model = model;
+                    emodelWidget.Show(true);
+                    createCommand.SetWidgetCost(emodelWidget.GetTiltMeterCost());
                 }
                 else
                 {
@@ -224,7 +226,7 @@ namespace TiltBrush
                 WidgetManager.m_Instance.WidgetsDormant = false;
                 SketchControlsScript.m_Instance.EatGazeObjectInput();
                 SelectionManager.m_Instance.RemoveFromSelection(false);
-                return widget;
+                return emodelWidget;
             }
             else
             {
@@ -267,7 +269,7 @@ namespace TiltBrush
         [ApiEndpoint("editablemodel.stroke.edges", "Create brush strokes for all the edges on an editable model")]
         public static void StrokeEdges(int index)
         {
-            var tr = _CurrentTransform();
+            var tr = _CurrentBrushTransform();
 
             var widget = _GetModelIdByIndex(index);
             var poly = widget.m_PolyMesh;
@@ -292,7 +294,7 @@ namespace TiltBrush
         [ApiEndpoint("editablemodel.stroke.faces", "Create brush strokes for all the Faces on an editable model")]
         public static void StrokeFaces(int index)
         {
-            var tr = _CurrentTransform();
+            var tr = _CurrentBrushTransform();
 
             var positions = new List<List<Vector3>>();
             var rotations = new List<List<Quaternion>>();
@@ -322,7 +324,7 @@ namespace TiltBrush
         {
             var stroke = SketchMemoryScript.m_Instance.GetStrokeAtIndex(index);
             var path = stroke.m_ControlPoints.Select(cp => cp.m_Pos).ToList();
-            _PolyFromPath(path, _CurrentTransform(), stroke.m_Color);
+            _PolyFromPath(path, _CurrentBrushTransform(), stroke.m_Color);
         }
 
         [ApiEndpoint("editablemodel.createfrom.strokemesh", "Creates a new editable model from a brush stroke's mesh")]
@@ -356,7 +358,7 @@ namespace TiltBrush
             };
             poly.MergeCoplanarFaces(smoothing);
             poly.InitTags(stroke.m_Color);
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, polyRecipe, _CurrentTransform());
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, polyRecipe, _CurrentBrushTransform());
         }
 
         [ApiEndpoint("editablemodel.createfrom.imagewidget", "Creates a new editable model from an image widget")]
@@ -411,7 +413,7 @@ namespace TiltBrush
                 GeneratorType = GeneratorTypes.GeometryData,
                 ColorMethod = ColorMethods.ByTags,
             };
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentTransform());
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentBrushTransform());
         }
 
         [ApiEndpoint("editablemodel.createfrom.camerapath", "Generates a filled path from a camera path")]
@@ -427,7 +429,7 @@ namespace TiltBrush
             }
 
             // var path = cameraPath.PositionKnots.Select(k => k.KnotXf.position).ToList();
-            _PolyFromPath(path, _CurrentTransform(), App.BrushColor.CurrentColor);
+            _PolyFromPath(path, _CurrentBrushTransform(), App.BrushColor.CurrentColor);
         }
 
         [ApiEndpoint("editablemodel.createfrom.camerapaths", "Generates a surface from two camera paths")]
@@ -458,17 +460,17 @@ namespace TiltBrush
                 GeneratorType = GeneratorTypes.GeometryData
             };
 
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentTransform());
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentBrushTransform());
         }
 
         [ApiEndpoint("editablemodel.create.path", "Generates a filled path")]
         public static void CreatePath(string jsonString)
         {
-            var tr = _CurrentTransform();
+            var tr = _CurrentBrushTransform();
             var path = JsonConvert.DeserializeObject<List<List<float>>>($"[{jsonString}]")
                 .Select(x => _RotatePointAroundPivot(new Vector3(x[0], x[1], x[2]), tr.translation, tr.rotation))
                 .ToList();
-            _PolyFromPath(path, _CurrentTransform(), App.BrushColor.CurrentColor);
+            _PolyFromPath(path, _CurrentBrushTransform(), App.BrushColor.CurrentColor);
         }
 
 
@@ -483,7 +485,7 @@ namespace TiltBrush
                 ShapeType = ShapeTypes.Polygon,
                 Param1Int = sides
             };
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentTransform());
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentBrushTransform());
         }
 
         [ApiEndpoint("editablemodel.create.off", "Generates a off from POST data")]
@@ -497,7 +499,7 @@ namespace TiltBrush
                 ColorMethod = ColorMethods.ByTags,
                 GeneratorType = GeneratorTypes.GeometryData
             };
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentTransform());
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentBrushTransform());
         }
 
         [ApiEndpoint("editablemodel.create.obj", "Generates a obj from POST data")]
@@ -526,7 +528,7 @@ namespace TiltBrush
                 ColorMethod = ColorMethods.ByTags,
                 GeneratorType = GeneratorTypes.GeometryData
             };
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentTransform());
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentBrushTransform());
         }
 
         [ApiEndpoint("editablemodel.create.grid", "Generates a grid")]
@@ -565,7 +567,7 @@ namespace TiltBrush
                 Param1Int = width,
                 Param2Int = depth,
             };
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentTransform());
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentBrushTransform());
         }
 
         [ApiEndpoint("editablemodel.create.box", "Generates a box")]
@@ -582,7 +584,7 @@ namespace TiltBrush
                 Param2Int = height,
                 Param3Int = depth,
             };
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentTransform());
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentBrushTransform());
         }
 
         [ApiEndpoint("editablemodel.create.sphere", "Generates a sphere")]
@@ -598,7 +600,7 @@ namespace TiltBrush
                 Param1Int = width,
                 Param2Int = height,
             };
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentTransform());
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentBrushTransform());
         }
 
         [ApiEndpoint("editablemodel.create.hemisphere", "Generates a hemisphere")]
@@ -614,7 +616,7 @@ namespace TiltBrush
                 Param1Int = width,
                 Param2Int = height,
             };
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentTransform());
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentBrushTransform());
         }
 
         [ApiEndpoint("editablemodel.create.polyhedron", "Generates a uniform polyhedron")]
@@ -629,7 +631,7 @@ namespace TiltBrush
                 // TODO More tolerant parsing of names
                 UniformPolyType = Enum.Parse<UniformTypes>(type.Replace(" ", "_").Replace("%20", "_"))
             };
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentTransform());
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentBrushTransform());
         }
 
         // TODO
@@ -641,7 +643,7 @@ namespace TiltBrush
         //     {
         //         {"type", type},
         //     };
-        //     EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Johnson, null, 0, parameters);
+        //     EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentBrushTransform(), ColorMethods.ByTags, GeneratorTypes.Johnson, null, 0, parameters);
         // }
 
         [ApiEndpoint("editablemodel.create.watermansolid", "Generates a Waterman Solid")]
@@ -655,7 +657,7 @@ namespace TiltBrush
                 Param1Int = root,
                 Param2Int = c,
             };
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentTransform());
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentBrushTransform());
         }
 
         [ApiEndpoint("editablemodel.create.rotationalsolid", "Generates a Rotational Solid (Prism, Pyramid etc")]
@@ -672,14 +674,14 @@ namespace TiltBrush
                 Param2Float = height1,
                 Param3Float = height2
             };
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentTransform());
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentBrushTransform());
         }
 
         [ApiEndpoint("guide.createfrom.editablemodel", "Creates a guide from an editable model")]
         public static void CustomGuideFromEditableModel(int index)
         {
             EditableModelWidget modelWidget = GetActiveEditableModel(index);
-            var tr = _CurrentTransform();
+            var tr = _CurrentBrushTransform();
             var stencilWidget = EditableModelManager.AddCustomGuide(modelWidget.m_PolyMesh, tr);
             stencilWidget.SetSignedWidgetSize(modelWidget.GetSignedWidgetSize());
         }
@@ -752,7 +754,7 @@ namespace TiltBrush
             EditableModelManager.m_Instance.GeneratePolyMesh(
                 poly,
                 recipe,
-                _CurrentTransform()
+                _CurrentBrushTransform()
             );
         }
 

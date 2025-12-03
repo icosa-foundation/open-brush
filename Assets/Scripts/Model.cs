@@ -674,8 +674,6 @@ namespace TiltBrush
             }
         }
 
-        }
-
         GameObject LoadVox(List<string> warningsOut)
         {
             try
@@ -695,6 +693,8 @@ namespace TiltBrush
                 Debug.LogException(ex);
                 return null;
             }
+        }
+
         // New Obj loader for editable models
         GameObject LoadObj(List<string> warningsOut, bool editable)
         {
@@ -942,7 +942,12 @@ namespace TiltBrush
 
         public void LoadModel()
         {
-            StartCreatePrefab(null);
+            StartCreatePrefab(null, false);
+        }
+
+        public void LoadEditableModel(GameObject go = null)
+        {
+            StartCreatePrefab(go, true);
         }
 
         /// Either synchronously load a GameObject hierarchy and convert it to a "prefab"
