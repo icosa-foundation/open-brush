@@ -4,7 +4,7 @@ namespace TiltBrush
 {
     public static class ViewerHTMLGenerator
     {
-        private const string DEFAULT_APP_ID = "hun7ewetvg";
+        private const string DEFAULT_APP_ID = "tpa958czj7";
 
         public static string GenerateViewerHTML(string glbPath, string appId = DEFAULT_APP_ID)
         {
@@ -21,7 +21,7 @@ namespace TiltBrush
 <meta charset=""utf-8"">
 <html>
     <head>
-        <title>viverse icosa viewer v251129-2</title>
+        <title>viverse icosa viewer v251203-3</title>
         <script type=""importmap"" class=""es6_modules_map"">
             {
                 ""imports"": {
