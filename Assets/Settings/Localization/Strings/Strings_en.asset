@@ -3769,6 +3769,18 @@ MonoBehaviour:
     m_Localized: Try Open Blocks
     m_Metadata:
       m_Items: []
+  - m_Id: 439543626534051840
+    m_Localized: Toggle X Rotation Snap
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543779617759232
+    m_Localized: Toggle Y Rotation Snap
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543840074457088
+    m_Localized: Toggle Z Rotation Snap
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

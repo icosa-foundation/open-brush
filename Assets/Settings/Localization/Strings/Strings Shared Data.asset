@@ -3611,6 +3611,18 @@ MonoBehaviour:
     m_Key: POPUP_PANELS_BUTTON_DESCRIPTION_BLOCKSPROMO
     m_Metadata:
       m_Items: []
+  - m_Id: 439543626534051840
+    m_Key: SNAP_SETTINGS_PANEL_TOGGLE_X_ROTATION_SNAP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543779617759232
+    m_Key: SNAP_SETTINGS_PANEL_TOGGLE_Y_ROTATION_SNAP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543840074457088
+    m_Key: SNAP_SETTINGS_PANEL_TOGGLE_Z_ROTATION_SNAP
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
