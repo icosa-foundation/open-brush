@@ -12,42 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using UnityEngine;
 namespace TiltBrush
 {
     public class BlocksPromoPanel : BasePanel
     {
-        public OpenBrowserButton m_OpenBrowserButton;
 
-        protected override void Awake()
-        {
-            base.Awake();
-            m_OpenBrowserButton.m_Url = GetBlocksStoreUrl();
-        }
-
-        public string GetBlocksStoreUrl()
-        {
-#if UNITY_ANDROID
-            bool isQuestNative = AndroidUtils.IsPackageInstalled("com.oculus.platformsdkruntime");
-#else
-            bool isQuestNative = false;
-#endif
-            if (isQuestNative)
-            {
-                // Actually running on a Quest. Open the Quest store link.
-                return "https://www.meta.com/en-gb/experiences/open-blocks-low-poly-3d-modelling/8043509915705378/";
-            }
-            else if (!App.Config.IsMobileHardware)
-            {
-                // All PC users should use Steam for now.
-                return "https://store.steampowered.com/app/3077230/Open_Blocks/";
-            }
-            else
-            {
-                // At this point it should be an Android device that is not a Quest.
-                // Docs url. Good fallback and easy to update with current advice
-                return "https://docs.openblocks.app/getting-open-blocks";
-            }
-        }
     }
 } // namespace TiltBrush
