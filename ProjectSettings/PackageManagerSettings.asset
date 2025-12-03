@@ -26,6 +26,18 @@ MonoBehaviour:
     m_IsDefault: 1
     m_Capabilities: 7
     m_ConfigSource: 0
+  - m_Id: scoped:project:OpenUPM
+    m_Name: OpenUPM
+    m_Url: https://package.openupm.com
+    m_Scopes:
+    - com.atteneder
+    - org.nuget.google
+    - org.nuget.sharpziplib
+    - org.nuget.system
+    - com.openupm
+    m_IsDefault: 0
+    m_Capabilities: 0
+    m_ConfigSource: 4
   - m_Id: scoped:project:Vive
     m_Name: Vive
     m_Url: https://npm-registry.vive.com
@@ -39,19 +51,6 @@ MonoBehaviour:
     m_Url: https://npm.developer.oculus.com
     m_Scopes:
     - com.meta.xr.sdk
-    m_IsDefault: 0
-    m_Capabilities: 0
-    m_ConfigSource: 4
-  - m_Id: scoped:project:OpenUPM
-    m_Name: OpenUPM
-    m_Url: https://package.openupm.com
-    m_Scopes:
-    - com.atteneder
-    - com.openupm
-    - com.sandrofigo.voxreader
-    - org.nuget.google
-    - org.nuget.sharpziplib
-    - org.nuget.system
     m_IsDefault: 0
     m_Capabilities: 0
     m_ConfigSource: 4
