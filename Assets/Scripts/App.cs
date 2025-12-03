@@ -2158,7 +2158,7 @@ namespace TiltBrush
             {
                 shouldCopy = false;
             }
-            
+
             if (shouldCopy)
             {
                 foreach (var savedStroke in defaultSavedStrokes)
