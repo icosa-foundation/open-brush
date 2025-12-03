@@ -11344,6 +11344,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd22834ba3234e3288ca0802bf460a3a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_DefaultSavedStrokes:
+  - DefaultSavedStrokes/Cell.tilt
+  - DefaultSavedStrokes/Knot.tilt
+  - DefaultSavedStrokes/Star.tilt
+  - DefaultSavedStrokes/Snowflake.tilt
 --- !u!4 &669339392 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4492044767078796625, guid: 382dabebd59956d499aefb54b02f804d,
