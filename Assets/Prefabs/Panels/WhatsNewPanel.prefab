@@ -707,7 +707,6 @@ Transform:
   - {fileID: 8014873094123675027}
   - {fileID: 8529216437758175391}
   - {fileID: 8616895469177311108}
-  - {fileID: 1428768169168080006}
   m_Father: {fileID: 4232412870837608}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7122536431733598801
@@ -1362,7 +1361,7 @@ PrefabInstance:
     - target: {fileID: 1374446702692656999, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_Url
-      value: https://docs.openbrush.app/
+      value: https://docs.openbrush.app/user-guide/monoscopic-mode
       objectReference: {fileID: 0}
     - target: {fileID: 1374446702692656999, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -1375,6 +1374,21 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 21300000, guid: 30a09a0c569c1064b881589be26de540,
         type: 3}
+    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_text
+      value: 'Not enough people realise that Open Brush runs as sketch viewer on
+        all Mac, PC, Android devices even when those devices have no VR support.
+        This release has improved the navigation controls. Touch support on phones
+        is more intuitive and standard gamepads should work as expected. Try installing
+        from Steam on Steam Deck or similar handheld devices.
+
+
+        Furthermore
+        you can now browse more sample sketches which are loaded directly from the
+        Icosa Gallery. Non-VR devices also support interacting with Open Brush via
+        the Web API or monoscopic mode.'
+      objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -1428,7 +1442,7 @@ PrefabInstance:
     - target: {fileID: 8473270265339514660, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_text
-      value: view mode improvements
+      value: View-only Mode Improvements
       objectReference: {fileID: 0}
     - target: {fileID: 8617468097628679083, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -1514,12 +1528,22 @@ PrefabInstance:
       propertyPath: m_ButtonLabel
       value: Find Out More
       objectReference: {fileID: 0}
+    - target: {fileID: 1706118685797540075, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4694786372510852128, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: 21300000, guid: 52580308450749245aedcceea7302657,
         type: 3}
+    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_text
+      value: ...
+      objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -1573,9 +1597,7 @@ PrefabInstance:
     - target: {fileID: 8473270265339514660, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_text
-      value: 'Snapping improvements
-
-'
+      value: Quest Selection Tools
       objectReference: {fileID: 0}
     - target: {fileID: 8617468097628679083, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -1654,7 +1676,7 @@ PrefabInstance:
     - target: {fileID: 1374446702692656999, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_Url
-      value: https://docs.openbrush.app/
+      value: https://docs.openbrush.app/user-guide/exporting-videos
       objectReference: {fileID: 0}
     - target: {fileID: 1374446702692656999, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -1667,6 +1689,18 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 21300000, guid: cdc09b85198ab8640b1a04270039ca7b,
         type: 3}
+    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_text
+      value: "Camera paths are a powerful way to render a standard or 360 video fly-through
+        of your creations. However we only support rendering video directly on desktop
+        (PC or Mac) and it was fiddly to copy sketches off standalone headsets such
+        as the Quest and then render videos using the generated scripts. \n\nWe've
+        now made the process easier. You can now render the video frames directly
+        on devices that don't support generating video files directly. These frames
+        can be converted into a regular video in multiple ways - uploading to a web
+        service, importing into a video editing app etc."
+      objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -1720,9 +1754,7 @@ PrefabInstance:
     - target: {fileID: 8473270265339514660, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_text
-      value: 'Snapping improvements
-
-'
+      value: Camera Path Rendering on All Devices
       objectReference: {fileID: 0}
     - target: {fileID: 8617468097628679083, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -1824,153 +1856,6 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 4365578386309168546}
   m_PrefabAsset: {fileID: 0}
---- !u!1001 &5094154558278513516
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 3799276222278143365}
-    m_Modifications:
-    - target: {fileID: 1245686934226022572, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_ButtonLabel
-      value: Find out more
-      objectReference: {fileID: 0}
-    - target: {fileID: 1245686934226022572, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_DescriptionText
-      value: Opens in your browser
-      objectReference: {fileID: 0}
-    - target: {fileID: 1245686934226022572, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_DescriptionType
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1245686934226022572, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 1245686934226022572, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value: 
-      objectReference: {fileID: 114137448250961176}
-    - target: {fileID: 1245686934226022572, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: OpenBrowserForMoreInfo
-      objectReference: {fileID: 0}
-    - target: {fileID: 1245686934226022572, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: TiltBrush.WhatsNewPanel, Assembly-CSharp
-      objectReference: {fileID: 0}
-    - target: {fileID: 1245686934226022572, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_StringArgument
-      value: https://docs.openbrush.app/
-      objectReference: {fileID: 0}
-    - target: {fileID: 1374446702692656999, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_Url
-      value: https://docs.openbrush.app/
-      objectReference: {fileID: 0}
-    - target: {fileID: 1374446702692656999, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_ButtonLabel
-      value: Find Out More
-      objectReference: {fileID: 0}
-    - target: {fileID: 4694786372510852128, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_Sprite
-      value: 
-      objectReference: {fileID: 21300000, guid: 8ce701de1a040b6468183ce6a339e1a7,
-        type: 3}
-    - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8473270265339514660, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_text
-      value: 'Snapping improvements
-
-'
-      objectReference: {fileID: 0}
-    - target: {fileID: 8617468097628679083, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_Name
-      value: 010 Snapping Improvements
-      objectReference: {fileID: 0}
-    - target: {fileID: 8617468097628679083, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9005981557318943241, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_text
-      value: Sample text 3
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa, type: 3}
---- !u!4 &1428768169168080006 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-    type: 3}
-  m_PrefabInstance: {fileID: 5094154558278513516}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5123835768984524152
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2029,12 +1914,26 @@ PrefabInstance:
       propertyPath: m_ButtonLabel
       value: Find Out More
       objectReference: {fileID: 0}
+    - target: {fileID: 1706118685797540075, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4694786372510852128, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: 21300000, guid: 7065f53bfa1e4434fa3fc7087e4edb97,
         type: 3}
+    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_text
+      value: The Magicavoxel .vox format is the standard file format for models created
+        in a wide range of voxel editing apps. You can now import them like you can
+        other 3d model formats and construct entire scenes from them. if you want
+        them to remain aligned to their original grid then set grid snap to 0.1 and
+        angle snap to 90 before importing.
+      objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -2088,7 +1987,7 @@ PrefabInstance:
     - target: {fileID: 8473270265339514660, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_text
-      value: Vox file import
+      value: VOX File Import
       objectReference: {fileID: 0}
     - target: {fileID: 8617468097628679083, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -2174,12 +2073,29 @@ PrefabInstance:
       propertyPath: m_ButtonLabel
       value: Find Out More
       objectReference: {fileID: 0}
+    - target: {fileID: 1706118685797540075, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4694786372510852128, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: 21300000, guid: d33890b9c86700d46a6b66932916aec5,
         type: 3}
+    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_text
+      value: 'Using imported 3D models to construct or enhance your sketches is incredibly
+        useful but often 3D models contain multiple elements and those elements are
+        not easily separated.
+
+
+        We''ve added the ability to break apart imported
+        models - even if the model was built as a single mesh. We check for connected
+        parts and allow you to break apart any elements that are visually separate.'
+      objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -2233,7 +2149,7 @@ PrefabInstance:
     - target: {fileID: 8473270265339514660, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_text
-      value: Break Apart 3D Models
+      value: Splitting 3D Models
       objectReference: {fileID: 0}
     - target: {fileID: 8617468097628679083, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -2485,12 +2401,29 @@ PrefabInstance:
       propertyPath: m_ButtonLabel
       value: Find Out More
       objectReference: {fileID: 0}
+    - target: {fileID: 1706118685797540075, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4694786372510852128, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: 21300000, guid: 1fb54a087151807419d589a380bfc249,
         type: 3}
+    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_text
+      value: 'You can now publish Open Brush sketches directly to Viverse with a
+        couple of clicks. Viverse is a platform that allows you to share 3D worlds
+        on anything from phones and tablets, PC and Mac and on VR headset that has
+        a web browser.
+
+
+        Worlds can be made public and social allowing you
+        to join other people in exploring immersive spaces. '
+      objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -2544,7 +2477,7 @@ PrefabInstance:
     - target: {fileID: 8473270265339514660, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_text
-      value: 'Publish to Viverse '
+      value: Publish Worlds to Viverse
       objectReference: {fileID: 0}
     - target: {fileID: 8617468097628679083, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -2644,21 +2577,10 @@ PrefabInstance:
     - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_text
-      value: 'Selective snap angle axes
-
-        axis locking for guides
-
-        Slider
-        Control via thumbstick
-
-        Better obj import
-
-        obj import on
-        quest
-
-        gamepad nav
-
-        Mirror dup'
+      value: Our sibling application Open Blocks is an incredibly intuitive low-poly
+        3d modelling app for PC and standalone VR devices. If you've installed it
+        then any models you save locally can easily be imported via the standard
+        3D model library browser.
       objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -2713,7 +2635,7 @@ PrefabInstance:
     - target: {fileID: 8473270265339514660, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_text
-      value: Better slider widgets
+      value: Import Open Blocks Models
       objectReference: {fileID: 0}
     - target: {fileID: 8617468097628679083, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -2815,6 +2737,19 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 21300000, guid: ba675719479fba248902b12fc317be81,
         type: 3}
+    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_text
+      value: 'Possibly our most powerful new feature ever and several years in the
+        making. Plugins are small lua scripts that can hook into Open Brush to modify
+        how existing painting tools work or create entirely new tools.
+
+
+        We''ve
+        shipped an extensive range of examples that expand the creative palette you
+        have available and serve as jumping off points for those of you that would
+        like to create your own plugins and share them with the community.'
+      objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -2954,12 +2889,32 @@ PrefabInstance:
       propertyPath: m_ButtonLabel
       value: Find Out More
       objectReference: {fileID: 0}
+    - target: {fileID: 3638750721288221976, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4694786372510852128, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: 21300000, guid: 84d0f1505e2b007478298cc9384e83b0,
         type: 3}
+    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_text
+      value: 'We previously had a feature that allowed you to export selected parts
+        of your sketch as 3d models. This had several drawbacks: it was PC-only,
+        brush strokes ceased to be editable or selectable and their appearance often
+        changed due to the conversion process.
+
+
+        We''ve now implemented the
+        ability to save any selected brush strokes without converting them into a
+        3d mesh. Now when they are added back to your scene they are grouped strokes
+        and can be ungrouped, re-colored, re-brushed and anything else you can do
+        with regular brush strokes.'
+      objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -3013,7 +2968,7 @@ PrefabInstance:
     - target: {fileID: 8473270265339514660, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_text
-      value: Save Selected Strokes
+      value: Saved Stroke Gallery
       objectReference: {fileID: 0}
     - target: {fileID: 8617468097628679083, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
