@@ -16,7 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
+using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using ObjLoader.Loader.Loaders;
 using Polyhydra.Core;
@@ -131,6 +131,38 @@ namespace TiltBrush
             ApiManager.Instance.LoadPolyModel(modelId);
         }
 
+        private static async Task SetupWidgetAfterLoadAsync(Model model, ModelWidget widget, string subtree, CreateWidgetCommand cmd)
+        {
+            await model.LoadModelAsync();
+            model.EnsureCollectorExists();
+
+            // Now assign the model, which triggers LoadModel() in the widget
+            // This must happen after the model is loaded (m_ModelParent is set)
+            widget.Model = model;
+
+            // Calculate proper size based on model bounds (same as normal model loading)
+            float maxExtent = 2 * Mathf.Max(model.m_MeshBounds.extents.x,
+                Mathf.Max(model.m_MeshBounds.extents.y, model.m_MeshBounds.extents.z));
+            float consistentSize;
+            if (maxExtent == 0.0f)
+            {
+                consistentSize = 1.0f;
+            }
+            else
+            {
+                consistentSize = 0.25f * App.METERS_TO_UNITS / maxExtent;
+            }
+
+            widget.SetSignedWidgetSize(consistentSize);
+
+            // Now enable preservation to prevent async overrides
+            widget.SetPreserveCustomSize(true);
+            widget.Subtree = subtree;
+            widget.SyncHierarchyToSubtree();
+            widget.AddSceneLightGizmos();
+            cmd.SetWidgetCost(widget.GetTiltMeterCost());
+        }
+
         [ApiEndpoint(
             "model.import",
             "Imports a model given a filename in Media Library\\Models (Models loaded from a url are saved locally first)",
@@ -152,9 +184,24 @@ namespace TiltBrush
             {
                 subtree = location.Substring(relativePath.Length + 1);
             }
-            var tr = _CurrentTransform().TransformBy(Coords.CanvasPose);
             var model = new Model(relativePath);
 
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+            ModelWidget widget = cmd.Widget as ModelWidget;
+            if (widget != null)
+            {
+                // Start async load and setup widget when complete (fire-and-forget)
+                // Model assignment happens in SetupWidgetAfterLoadAsync after loading completes
+                _ = SetupWidgetAfterLoadAsync(model, widget, subtree, cmd);
+
+                widget.Show(true);
+            }
+            else
+            {
+                Debug.LogWarning("Failed to create EditableModelWidget");
+                return null;
+            }
             if (editable)
             {
                 model.LoadEditableModel();

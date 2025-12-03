@@ -32,6 +32,7 @@ namespace TiltBrush
         public Material m_ObjLoaderTransparentMaterial;
         public Material m_ObjLoaderPointCloudMaterial;
         public Material m_ObjLoaderPointCloudInvisibleMaterial;
+        public Material m_VoxLoaderStandardMaterial;
         [NonSerialized] public Dictionary<string, Model> m_ModelsByRelativePath;
 
         // Transforms for missing models.
@@ -42,11 +43,12 @@ namespace TiltBrush
 
         private Dictionary<string, List<string>> m_OrderedModelNames;
         private bool m_FolderChanged;
-        private FileWatcher m_FileWatcher;
+        private List<FileWatcher> m_FileWatchers;
         private string m_CurrentModelsDirectory;
         public string CurrentModelsDirectory => m_CurrentModelsDirectory;
         private string m_ChangedFile;
         private bool m_RecurseDirectories = false;
+        private Dictionary<string, string> m_ModelRootsByRelativePath;
 
         public bool IsScanning
         {
@@ -116,32 +118,72 @@ namespace TiltBrush
             m_MissingNormalizedModelsByRelativePath = new Dictionary<string, TrTransform[]>();
             m_MissingModelsByRelativePath = new Dictionary<string, TrTransform[]>();
             m_OrderedModelNames = new Dictionary<string, List<string>>();
+            m_ModelRootsByRelativePath = new Dictionary<string, string>();
             ChangeDirectory(HomeDirectory);
+        }
+
+        private IEnumerable<string> GetModelDirectories()
+        {
+            return new List<string> { App.ModelLibraryPath(), App.BlocksModelLibraryPath() }
+                .Where(p => !string.IsNullOrEmpty(p))
+                .Distinct();
+        }
+
+        private string GetModelRoot(string path)
+        {
+            return GetModelDirectories()
+                .FirstOrDefault(directory => path.StartsWith(directory, StringComparison.OrdinalIgnoreCase));
         }
 
         public void ChangeDirectory(string newPath)
         {
             m_CurrentModelsDirectory = newPath;
 
-            if (Directory.Exists(m_CurrentModelsDirectory))
+            if (m_FileWatchers != null)
             {
-                m_FileWatcher = new FileWatcher(m_CurrentModelsDirectory);
-                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
-                m_FileWatcher.FileChanged += OnChanged;
-                m_FileWatcher.FileCreated += OnChanged;
-                m_FileWatcher.FileDeleted += OnChanged;
-                m_FileWatcher.EnableRaisingEvents = true;
+                foreach (var watcher in m_FileWatchers)
+                {
+                    watcher.FileChanged -= OnChanged;
+                    watcher.FileCreated -= OnChanged;
+                    watcher.FileDeleted -= OnChanged;
+                    watcher.Dispose();
+                }
+            }
+
+            m_FileWatchers = new List<FileWatcher>();
+            foreach (var directory in GetModelDirectories())
+            {
+                Directory.CreateDirectory(directory);
+                var watcher = new FileWatcher(directory)
+                {
+                    NotifyFilter = NotifyFilters.LastWrite
+                };
+                watcher.FileChanged += OnChanged;
+                watcher.FileCreated += OnChanged;
+                watcher.FileDeleted += OnChanged;
+                watcher.EnableRaisingEvents = true;
+                m_FileWatchers.Add(watcher);
             }
 
             LoadModelsForNewDirectory(m_CurrentModelsDirectory);
         }
 
         public string HomeDirectory => App.ModelLibraryPath();
-        public bool IsHomeDirectory() => m_CurrentModelsDirectory == HomeDirectory;
+
+        public bool IsHomeDirectory()
+        {
+            return m_CurrentModelsDirectory == HomeDirectory;
+        }
 
         public bool IsSubDirectoryOfHome()
         {
-            return m_CurrentModelsDirectory.StartsWith(HomeDirectory);
+            // Check if current directory is under the main Models directory OR is the Blocks root
+            var blocksRoot = App.BlocksModelLibraryPath();
+            bool isUnderMainRoot = m_CurrentModelsDirectory.StartsWith(HomeDirectory, StringComparison.OrdinalIgnoreCase);
+            bool isBlocksRoot = !string.IsNullOrEmpty(blocksRoot) &&
+                               m_CurrentModelsDirectory.Equals(blocksRoot, StringComparison.OrdinalIgnoreCase);
+
+            return isUnderMainRoot || isBlocksRoot;
         }
 
         public string GetCurrentDirectory()
@@ -155,7 +197,7 @@ namespace TiltBrush
 
             if (e.ChangeType == WatcherChangeTypes.Changed)
             {
-                m_ChangedFile = e.FullPath;
+                m_ChangedFile = WidgetManager.GetModelSubpath(e.FullPath);
             }
             else
             {
@@ -202,6 +244,7 @@ namespace TiltBrush
         public void LoadModels()
         {
             var oldModels = new Dictionary<string, Model>(m_ModelsByRelativePath);
+            m_ModelRootsByRelativePath.Clear();
 
             // If we changed a file, pretend like we don't have it.
             if (m_ChangedFile != null)
@@ -214,7 +257,13 @@ namespace TiltBrush
             }
 
             m_ModelsByRelativePath.Clear();
-            ProcessDirectory(m_CurrentModelsDirectory, oldModels);
+            foreach (var directory in GetModelDirectories())
+            {
+                // Always recurse to scan all subdirectories
+                // Blocks uses recursion to flatten its hierarchy
+                // Main Models directory uses recursion to populate all subdirectories
+                ProcessDirectory(directory, oldModels, recurse: true);
+            }
 
             if (oldModels.Count > 0)
             {
@@ -230,47 +279,51 @@ namespace TiltBrush
                 Resources.UnloadUnusedAssets();
             }
 
-            m_OrderedModelNames[m_CurrentModelsDirectory] = m_ModelsByRelativePath.Keys.ToList();
-            m_OrderedModelNames[m_CurrentModelsDirectory].Sort();
-
-            foreach (string relativePath in m_OrderedModelNames[m_CurrentModelsDirectory])
-            {
-                if (m_MissingModelsByRelativePath.ContainsKey(relativePath))
-                {
-                    ModelWidget.CreateModelsFromRelativePath(
-                        relativePath, null, null, m_MissingModelsByRelativePath[relativePath], null, null, null, null, null);
-                    m_MissingModelsByRelativePath.Remove(relativePath);
-                }
-                if (m_MissingNormalizedModelsByRelativePath.ContainsKey(relativePath))
-                {
-                    ModelWidget.CreateModelsFromRelativePath(
-                        relativePath, null, m_MissingNormalizedModelsByRelativePath[relativePath], null, null, null, null, null, null);
-                    m_MissingModelsByRelativePath.Remove(relativePath);
-                }
-            }
+            // Note: Do not populate m_OrderedModelNames here - it will be populated by LoadModelsForNewDirectory
+            // to ensure proper filtering based on the current directory
+            // Note: CatalogChanged event is fired by LoadModelsForNewDirectory, not here
 
             m_FolderChanged = false;
-
-            if (CatalogChanged != null)
-            {
-                CatalogChanged();
-            }
         }
 
         public void LoadModelsForNewDirectory(string path)
         {
-            var oldModels = new Dictionary<string, Model>(m_ModelsByRelativePath);
-            ProcessDirectory(path, oldModels);
+            LoadModels();
+            // Get the root directory that 'path' belongs to
+            var pathRoot = GetModelRoot(path) ?? HomeDirectory;
+            var blocksRoot = App.BlocksModelLibraryPath();
+            bool isBlocksRoot = !string.IsNullOrEmpty(blocksRoot) &&
+                               path.Equals(blocksRoot, StringComparison.OrdinalIgnoreCase);
+
             // Convert directory to a path relative to HomeDirectory
             var modelsInDirectory = m_ModelsByRelativePath.Keys.Where(m =>
             {
-                var dirPath = Path.GetDirectoryName(Path.Join(HomeDirectory, m));
+                if (!m_ModelRootsByRelativePath.TryGetValue(m, out var modelRoot))
+                {
+                    return false; // Skip models without a known root
+                }
+
+                // Only include models from the same root directory as the path we're viewing
+                if (modelRoot != pathRoot)
+                {
+                    return false;
+                }
+
+                // For Blocks root directory, show all models from that tree (flat hierarchy)
+                if (isBlocksRoot && modelRoot == blocksRoot)
+                {
+                    return true;
+                }
+
+                var dirPath = Path.GetDirectoryName(Path.Join(modelRoot, m));
                 return dirPath == path;
             }).ToList();
             modelsInDirectory.Sort();
-            m_OrderedModelNames[path] = modelsInDirectory;
 
-            foreach (string relativePath in m_OrderedModelNames[path])
+            // Update the entry for the current directory to ensure ItemCount uses the filtered list
+            m_OrderedModelNames[m_CurrentModelsDirectory] = modelsInDirectory;
+
+            foreach (string relativePath in modelsInDirectory)
             {
                 if (m_MissingModelsByRelativePath.ContainsKey(relativePath))
                 {
@@ -293,11 +346,7 @@ namespace TiltBrush
 
         public void ForceCatalogScan()
         {
-            LoadModels();
-            if (CatalogChanged != null)
-            {
-                CatalogChanged();
-            }
+            LoadModelsForNewDirectory(m_CurrentModelsDirectory);
         }
 
         void Update()
@@ -308,50 +357,71 @@ namespace TiltBrush
             }
         }
 
-        void ProcessDirectory(string sPath, Dictionary<string, Model> oldModels)
+        void ProcessDirectory(string sPath, Dictionary<string, Model> oldModels, bool recurse = false)
         {
             if (Directory.Exists(sPath))
             {
                 string[] aFiles = Directory.GetFiles(sPath);
-                // Models we download from Poly are called ".gltf2", but ".gltf" is more standard
-                List<string> extensions = new() { ".gltf2", ".gltf", ".glb", ".ply", ".svg", ".obj" };
+                string rootDirectory = GetModelRoot(sPath);
+                var blocksRoot = App.BlocksModelLibraryPath();
+                bool isBlocksTree = !string.IsNullOrEmpty(blocksRoot) && rootDirectory == blocksRoot;
+                bool isBlocksRoot = isBlocksTree && sPath.Equals(blocksRoot, StringComparison.OrdinalIgnoreCase);
+
+                // For Blocks: skip files in the root directory (only process subdirectories)
+                if (!isBlocksRoot)
+                {
+                    // Models we download from Poly are called ".gltf2", but ".gltf" is more standard
+                    List<string> extensions = new() { ".gltf2", ".gltf", ".glb", ".ply", ".svg", ".obj", ".vox" };
 
 #if USD_SUPPORTED
-                extensions.AddRange(new [] { ".usda", ".usdc", ".usd" });
+                    extensions.AddRange(new [] { ".usda", ".usdc", ".usd" });
 #endif
 #if FBX_SUPPORTED
-                extensions.Add( ".fbx" );
+                    extensions.Add( ".fbx" );
 #endif
 
-                for (int i = 0; i < aFiles.Length; ++i)
-                {
-                    string sExtension = Path.GetExtension(aFiles[i]).ToLower();
-                    if (extensions.Contains(sExtension))
+                    for (int i = 0; i < aFiles.Length; ++i)
                     {
-                        Model rNewModel;
-                        string path = aFiles[i].Replace("\\", "/");
-                        try
+                        string filename = Path.GetFileName(aFiles[i]);
+                        string sExtension = Path.GetExtension(aFiles[i]).ToLower();
+
+                        // For Blocks tree: only process files named "model.obj"
+                        if (isBlocksTree && !filename.Equals("model.obj", StringComparison.OrdinalIgnoreCase))
                         {
-                            rNewModel = oldModels[path];
-                            oldModels.Remove(path);
+                            continue;
                         }
-                        catch (KeyNotFoundException)
+
+                        if (extensions.Contains(sExtension))
                         {
-                            rNewModel = new Model(WidgetManager.GetModelSubpath(path));
+                            Model rNewModel;
+                            string path = aFiles[i].Replace("\\", "/");
+                            string relativePath = WidgetManager.GetModelSubpath(path);
+                            if (relativePath == null || rootDirectory == null)
+                            {
+                                continue;
+                            }
+                            if (!oldModels.TryGetValue(relativePath, out rNewModel))
+                            {
+                                rNewModel = new Model(relativePath);
+                            }
+                            else
+                            {
+                                oldModels.Remove(relativePath);
+                            }
+                            // Should we skip this loop earlier if m_ModelsByRelativePath already contains the key?
+                            m_ModelsByRelativePath.TryAdd(rNewModel.RelativePath, rNewModel);
+                            m_ModelRootsByRelativePath[rNewModel.RelativePath] = rootDirectory;
                         }
-                        // Should we skip this loop earlier if m_ModelsByRelativePath already contains the key?
-                        m_ModelsByRelativePath.TryAdd(rNewModel.RelativePath, rNewModel);
                     }
                 }
 
-                // We used to recurse for models but we now have directory navigation
-                // I'm keeping this around for now
-                if (m_RecurseDirectories)
+                // Recurse into subdirectories if requested
+                if (recurse || m_RecurseDirectories)
                 {
                     string[] aSubdirectories = Directory.GetDirectories(sPath);
                     for (int i = 0; i < aSubdirectories.Length; ++i)
                     {
-                        ProcessDirectory(aSubdirectories[i], oldModels);
+                        ProcessDirectory(aSubdirectories[i], oldModels, recurse);
                     }
                 }
             }
@@ -368,10 +438,20 @@ namespace TiltBrush
             {
                 // The directory probably hasn't been processed yet
                 string relativeDirPath = Path.GetDirectoryName(relativePath);
-                LoadModelsForNewDirectory(Path.Combine(HomeDirectory, relativeDirPath));
+                string baseDirectory = GetModelRootForRelativePath(relativePath) ?? HomeDirectory;
+                LoadModelsForNewDirectory(Path.Combine(baseDirectory, relativeDirPath ?? string.Empty));
                 m_ModelsByRelativePath.TryGetValue(relativePath, out m);
             }
             return m;
+        }
+
+        private string GetModelRootForRelativePath(string relativePath)
+        {
+            if (m_ModelRootsByRelativePath.TryGetValue(relativePath, out var root))
+            {
+                return root;
+            }
+            return GetModelDirectories().FirstOrDefault();
         }
     }
 } // namespace TiltBrush

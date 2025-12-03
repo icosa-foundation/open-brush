@@ -3186,7 +3186,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 128947584125108224
-    m_Localized: Snap Axes
+    m_Localized: X
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634176
@@ -3743,11 +3743,18 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 401824908597354496
-    m_Localized: 'Try "Save Selected
+    m_Localized: 'Save some brush strokes using "Save Selected
 
-      Strokes" to
-
-      see them here'
+      Strokes" (on
+      the Labs Panel) and they will appear here.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 422456507319803904
+    m_Localized: Y
+    m_Metadata:
+      m_Items: []
+  - m_Id: 422456718544953344
+    m_Localized: Z
     m_Metadata:
       m_Items: []
   references:

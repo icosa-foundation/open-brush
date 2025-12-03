@@ -66,15 +66,30 @@ namespace TiltBrush
                         });
                     }
 
+                    float tightness;
+                    if (vertexIndex == 0 || vertexIndex == path.Count - 1)
+                    {
+                        tightness = 0.0001f;
+                    }
+                    else
+                    {
+                        tightness = smoothing;
+                    }
+
                     addPoint(position);
-                    if (smoothing > 0)
+                    if (tightness > 0)
                     {
                         // smoothing controls much to pull extra vertices towards the middle
                         // 0.25 smooths corners a lot, 0.1 is tighter
-                        addPoint(position);
-                        addPoint(position + (nextPosition - position) * smoothing);
+                        addPoint(position + (nextPosition - position) * tightness);
                         addPoint(position + (nextPosition - position) * .5f);
-                        addPoint(position + (nextPosition - position) * (1 - smoothing));
+                        addPoint(position + (nextPosition - position) * (1 - tightness));
+                    }
+
+                    // Add the last point if needed
+                    if (vertexIndex == path.Count - 1)
+                    {
+                        addPoint(nextPosition);
                     }
                 }
 

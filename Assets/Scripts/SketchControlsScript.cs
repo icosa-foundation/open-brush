@@ -4170,13 +4170,26 @@ namespace TiltBrush
                 canvases.AddRange(layerCanvases);
             }
 
-            Bounds rCanvasBounds = canvases
-                .Select(canvas => canvas.GetCanvasBoundingBox())
-                .Aggregate((b1, b2) =>
-                {
-                    b1.Encapsulate(b2);
-                    return b1;
-                });
+            Bounds rCanvasBounds;
+            if (selectionOnly)
+            {
+                // For selection only, we need to transform the bounds to world space
+                Bounds selectionBounds = App.Scene.SelectionCanvas.GetCanvasBoundingBox();
+                TrTransform selectionPose = App.Scene.SelectionCanvas.Pose;
+                Vector3 worldCenter = selectionPose.MultiplyPoint(selectionBounds.center);
+                Vector3 worldSize = selectionBounds.size * selectionPose.scale;
+                rCanvasBounds = new Bounds(worldCenter, worldSize);
+            }
+            else
+            {
+                rCanvasBounds = canvases
+                    .Select(canvas => canvas.GetCanvasBoundingBox())
+                    .Aggregate((b1, b2) =>
+                    {
+                        b1.Encapsulate(b2);
+                        return b1;
+                    });
+            }
 
             //position the camera at the center of the canvas bounds
             vNewCamPos = rCanvasBounds.center;
