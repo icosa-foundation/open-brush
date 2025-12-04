@@ -345,7 +345,6 @@ namespace TiltBrush
             // and they've done so correctly, switch back to the accounts view.
             if (m_CurrentMode == Mode.TakeOffHeadset)
             {
-                Debug.Log($"OnProfileUpdated set AccountMode");
                 UpdateMode(Mode.Accounts);
             }
             RefreshObjects();

@@ -3757,6 +3757,30 @@ MonoBehaviour:
     m_Localized: Z
     m_Metadata:
       m_Items: []
+  - m_Id: 436433407381692416
+    m_Localized: Next
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436433674365919232
+    m_Localized: Previous
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436974612083466240
+    m_Localized: Try Open Blocks
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543626534051840
+    m_Localized: Toggle X Rotation Snap
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543779617759232
+    m_Localized: Toggle Y Rotation Snap
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543840074457088
+    m_Localized: Toggle Z Rotation Snap
+    m_Metadata:
+      m_Items: []
   - m_Id: 423748078849216512
     m_Localized: Share to Viverse
     m_Metadata:

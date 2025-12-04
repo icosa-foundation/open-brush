@@ -285,8 +285,6 @@ namespace TiltBrush
 
         private void OnViverseAuthComplete(string accessToken, string refreshToken, int expiresIn, string accountId, string profileName, string avatarUrl, string avatarId)
         {
-            Debug.Log("VIVERSE: Authentication successful");
-
             try
             {
                 // Create VIVERSE token
@@ -297,8 +295,6 @@ namespace TiltBrush
                 PlayerPrefs.SetString("viverse_token", tokenJson);
                 PlayerPrefs.Save();
 
-                Debug.Log($"VIVERSE: Token saved, expires at {m_ViverseToken.ExpiresAt}");
-
                 if (VrAssetService.m_Instance != null)
                 {
                     VrAssetService.m_Instance.ConsumeUploadResults();
@@ -308,7 +304,7 @@ namespace TiltBrush
                 Profile = new UserInfo
                 {
                     id = accountId ?? "viverse_user",
-                    name = profileName ?? "VIVERSE User",
+                    name = string.IsNullOrWhiteSpace(profileName) ? "Viverse User" : profileName,
                     email = "",
                     icon = m_LoggedInTexture, // Default icon first
                     isGoogle = false

@@ -69,11 +69,6 @@ namespace TiltBrush
         {
             lock (s_MainThreadActions)
             {
-                if (s_MainThreadActions.Count > 0)
-                {
-                    Debug.Log($"[ViverseAuth] UPDATE: Processing {s_MainThreadActions.Count} queued action(s)");
-                }
-
                 while (s_MainThreadActions.Count > 0)
                 {
                     var action = s_MainThreadActions.Dequeue();
@@ -94,12 +89,6 @@ namespace TiltBrush
 
             if (m_HttpServer != null)
             {
-                Debug.Log($"ViverseAuthManager found HttpServer: {m_HttpServer.GetType().FullName}");
-
-                Debug.Log($"[ViverseAuth] Checking existing handlers...");
-                Debug.Log($"[ViverseAuth] Handler exists for '{REDIRECT_PATH}': {m_HttpServer.HttpHandlerExists(REDIRECT_PATH)}");
-                Debug.Log($"[ViverseAuth] Handler exists for '{CALLBACK_PATH}': {m_HttpServer.HttpHandlerExists(CALLBACK_PATH)}");
-
                 // Register CALLBACK first (more specific path) because HttpServer uses StartsWith
                 if (!m_HttpServer.HttpHandlerExists(CALLBACK_PATH))
                 {
@@ -120,8 +109,6 @@ namespace TiltBrush
                     m_HttpServer.RemoveHttpHandler(REDIRECT_PATH);
                     m_HttpServer.AddRawHttpHandler(REDIRECT_PATH, HandleRedirectPage);
                 }
-
-                Debug.Log($"VIVERSE Auth Handlers registered on port {HTTP_PORT}");
             }
             else
             {
@@ -142,8 +129,6 @@ namespace TiltBrush
 
         private HttpListenerContext HandleRedirectPage(HttpListenerContext context)
         {
-            Debug.Log($"[ViverseAuth] HandleRedirectPage CALLED URL: {context.Request.Url}");
-
             string html = GenerateAuthHTML(m_ClientId, CALLBACK_PATH);
 
             byte[] buffer = Encoding.UTF8.GetBytes(html);
@@ -151,15 +136,11 @@ namespace TiltBrush
             context.Response.ContentType = "text/html; charset=utf-8";
             context.Response.OutputStream.Write(buffer, 0, buffer.Length);
             context.Response.OutputStream.Flush();
-
-            Debug.Log("[ViverseAuth] HandleRedirectPage complete");
             return context;
         }
 
         private HttpListenerContext HandleAuthCallback(HttpListenerContext context)
         {
-            Debug.Log("[ViverseAuth] HandleAuthCallback CALLED");
-
             try
             {
                 string body;
@@ -177,7 +158,6 @@ namespace TiltBrush
                     {
                         OnAuthComplete?.Invoke(data.access_token, data.refresh_token, data.expires_in, data.account_id, data.profile_name, data.avatar_url, data.avatar_id);
                         m_OnLoginResult?.Invoke(true, "Login successful");
-                        Debug.Log("[ViverseAuth] Callbacks invoked!");
                     });
 
                     byte[] successResponse = Encoding.UTF8.GetBytes("{\"status\":\"success\"}");
@@ -185,8 +165,6 @@ namespace TiltBrush
                     context.Response.ContentType = "application/json; charset=utf-8";
                     context.Response.ContentLength64 = successResponse.Length;
                     context.Response.OutputStream.Write(successResponse, 0, successResponse.Length);
-
-                    Debug.Log("[ViverseAuth] Response sent: 200 OK");
                 }
                 else
                 {
@@ -223,7 +201,6 @@ namespace TiltBrush
             }
 
             context.Response.OutputStream.Flush();
-            Debug.Log("[ViverseAuth] HandleAuthCallback COMPLETE");
             return context;
         }
 
