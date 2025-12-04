@@ -1122,6 +1122,59 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 3809560428177356438, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.0006469496
+      objectReference: {fileID: 0}
+    - target: {fileID: 3809560428177356438, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.0006469496
+      objectReference: {fileID: 0}
+    - target: {fileID: 3809560428177356438, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.0006469496
+      objectReference: {fileID: 0}
+    - target: {fileID: 3809560428177356438, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0.666
+      objectReference: {fileID: 0}
+    - target: {fileID: 5786396845017285468, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 1.09
+      objectReference: {fileID: 0}
+    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_text
+      value: 'If you like Open Brush or you like low-poly modelling - or if you just
+        like making cool stuff in 3D then try Open Blocks.
+
+
+        We''ve taken
+        Google''s Blocks VR app, updated it and ported it to more devices We plan
+        to continue supporting and improving it into the future. It''s the ideal
+        companion to Open Brush and it''s intuitive, easy to pick up but deceptively
+        powerful. Free and open source forever.'
+      objectReference: {fileID: 0}
+    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_fontSize
+      value: 33.85
+      objectReference: {fileID: 0}
+    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_margin.w
+      value: -15.56086
+      objectReference: {fileID: 0}
+    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_margin.y
+      value: -21.069998
+      objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -1130,7 +1183,7 @@ PrefabInstance:
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: -0.027
       objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -1172,6 +1225,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8075449761585595203, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -0.34
+      objectReference: {fileID: 0}
     - target: {fileID: 8617468097628679083, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_Name
@@ -1204,7 +1262,7 @@ PrefabInstance:
     - target: {fileID: 6642831879886026578, guid: ecd5d577121081343856dfb0789b5a51,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.925
+      value: -0.985
       objectReference: {fileID: 0}
     - target: {fileID: 6642831879886026578, guid: ecd5d577121081343856dfb0789b5a51,
         type: 3}
