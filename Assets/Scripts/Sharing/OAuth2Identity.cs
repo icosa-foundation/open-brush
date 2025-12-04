@@ -304,7 +304,7 @@ namespace TiltBrush
                 Profile = new UserInfo
                 {
                     id = accountId ?? "viverse_user",
-                    name = profileName ?? "VIVERSE User",
+                    name = string.IsNullOrWhiteSpace(profileName) ? "Viverse User" : profileName,
                     email = "",
                     icon = m_LoggedInTexture, // Default icon first
                     isGoogle = false
