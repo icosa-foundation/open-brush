@@ -714,7 +714,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 1
+  inputIsHDR: 0
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -10559,6 +10559,7 @@ MonoBehaviour:
   m_GoogleIdentity: {fileID: 1209128957}
   m_SketchfabIdentity: {fileID: 2095572865}
   m_IcosaIdentity: {fileID: 1611595292}
+  m_ViveIdentity: {fileID: 4492044766644994642}
   RamLoggingActive: 0
 --- !u!4 &652605545
 Transform:
@@ -28927,7 +28928,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 1
+  inputIsHDR: 0
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -29875,7 +29876,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 1
+  inputIsHDR: 0
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -31281,6 +31282,18 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 382dabebd59956d499aefb54b02f804d, type: 3}
+--- !u!114 &4492044766644994642 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5909150420526985228, guid: 382dabebd59956d499aefb54b02f804d,
+    type: 3}
+  m_PrefabInstance: {fileID: 4492044766644994641}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1689780c428aa14ea42c2125e391b45, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &5080288855832605660
 Transform:
   m_ObjectHideFlags: 0
@@ -31722,6 +31735,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1671124695}
     m_Modifications:
+    - target: {fileID: 1456456292580787875, guid: 473c56bc457b1004bbee7cdddff8f4cf,
+        type: 3}
+      propertyPath: m_Materials.Array.size
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3657517353374833913, guid: 473c56bc457b1004bbee7cdddff8f4cf,
         type: 3}
       propertyPath: m_Name

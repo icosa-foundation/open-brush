@@ -3781,6 +3781,17 @@ MonoBehaviour:
     m_Localized: Toggle Z Rotation Snap
     m_Metadata:
       m_Items: []
+  - m_Id: 423748078849216512
+    m_Localized: Share to Viverse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 423748375394897920
+    m_Localized: 'Sign in to a Vive account to allow
+
+      uploading to Viverse
+      Worlds.'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

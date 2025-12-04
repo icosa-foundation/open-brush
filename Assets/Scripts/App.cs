@@ -134,6 +134,7 @@ namespace TiltBrush
         public static OAuth2Identity GoogleIdentity => m_Instance.m_GoogleIdentity;
         public static OAuth2Identity SketchfabIdentity => m_Instance.m_SketchfabIdentity;
         public static OAuth2Identity IcosaIdentity => m_Instance.m_IcosaIdentity;
+        public static OAuth2Identity ViveIdentity => m_Instance.m_ViveIdentity;
 
         public string IcosaToken
         {
@@ -171,6 +172,7 @@ namespace TiltBrush
                 case Cloud.Google: return GoogleIdentity;
                 case Cloud.Sketchfab: return SketchfabIdentity;
                 case Cloud.Icosa: throw new InvalidOperationException("Icosa does not use OAuth2");
+                case Cloud.Vive: return ViveIdentity;
                 default: throw new InvalidOperationException($"No OAuth2 identity for {cloud}");
             }
         }
@@ -254,6 +256,7 @@ namespace TiltBrush
         [SerializeField] private OAuth2Identity m_GoogleIdentity;
         [SerializeField] private OAuth2Identity m_SketchfabIdentity;
         [SerializeField] private OAuth2Identity m_IcosaIdentity;
+        [SerializeField] private OAuth2Identity m_ViveIdentity;
 
         // ------------------------------------------------------------
         // Private data
