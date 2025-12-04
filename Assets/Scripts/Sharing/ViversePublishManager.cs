@@ -55,8 +55,6 @@ namespace TiltBrush
             string tokenJson = JsonUtility.ToJson(tokenData);
             PlayerPrefs.SetString("viverse_token", tokenJson);
             PlayerPrefs.Save();
-
-            Debug.Log($"ViversePublishManager: Token saved (expires in {expiresIn}s)");
         }
 
         private void LoadSavedToken()
