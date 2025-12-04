@@ -370,7 +370,7 @@ MonoBehaviour:
   m_UseGazeRotation: 1
   m_MaxGazeRotation: 20
   m_GazeActivateSpeed: 8
-  m_InitialSpawnPos: {x: 8, y: 14, z: 5.34}
+  m_InitialSpawnPos: {x: 9, y: 14, z: 3}
   m_InitialSpawnRotEulers: {x: 37.18, y: 63.12, z: 0}
   m_WandAttachAngle: 240
   m_WandAttachYOffset: -0.6
@@ -1377,22 +1377,18 @@ PrefabInstance:
     - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_text
-      value: 'Not enough people realise that Open Brush runs as sketch viewer on
+      value: "Not enough people realise that Open Brush runs as sketch viewer on
         all Mac, PC, Android devices even when those devices have no VR support.
         This release has improved the navigation controls. Touch support on phones
-        is more intuitive and standard gamepads should work as expected. Try installing
-        from Steam on Steam Deck or similar handheld devices.
-
-
-        Furthermore
+        is more intuitive and standard gamepads should work as expected. \n\nFurthermore
         you can now browse more sample sketches which are loaded directly from the
         Icosa Gallery. Non-VR devices also support interacting with Open Brush via
-        the Web API or monoscopic mode.'
+        the Web API or monoscopic mode."
       objectReference: {fileID: 0}
     - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_fontSize
-      value: 20.9
+      value: 24.7
       objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -1560,7 +1556,7 @@ PrefabInstance:
     - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_fontSize
-      value: 23.2
+      value: 27.3
       objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -1615,7 +1611,7 @@ PrefabInstance:
     - target: {fileID: 8473270265339514660, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_text
-      value: More Selection Tools for Quest/standalone VR
+      value: More Selection Tools for standalone VR
       objectReference: {fileID: 0}
     - target: {fileID: 8617468097628679083, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -1625,7 +1621,7 @@ PrefabInstance:
     - target: {fileID: 8617468097628679083, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9005981557318943241, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -1710,19 +1706,16 @@ PrefabInstance:
     - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_text
-      value: "Camera paths are a powerful way to render a standard or 360 video fly-through
+      value: 'Camera paths are a powerful way to render a standard or 360 video fly-through
         of your creations. However we only support rendering video directly on desktop
-        (PC or Mac) and it was fiddly to copy sketches off standalone headsets such
-        as the Quest and then render videos using the generated scripts. \r\n\r\nWe've
-        now made the process easier. You can now render the video frames directly
-        on devices that don't support generating video files directly. These frames
-        can be converted into a regular video in multiple ways - uploading to a web
-        service, importing into a video editing app etc."
-      objectReference: {fileID: 0}
-    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_fontSize
-      value: 19.75
+
+        
+
+        You
+        can now render the video frames directly on devices that don''t support generating
+        video files directly. These frames can be converted into a regular video
+        in multiple ways - uploading to a web service, importing into a video editing
+        app etc.'
       objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -1951,16 +1944,14 @@ PrefabInstance:
     - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_text
-      value: The Magicavoxel .vox format is the standard file format for models created
-        in a wide range of voxel editing apps. You can now import them like you can
-        other 3d model formats and construct entire scenes from them. if you want
-        them to remain aligned to their original grid then set grid snap to 0.1 and
-        angle snap to 90 before importing.
-      objectReference: {fileID: 0}
-    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_fontSize
-      value: 28.4
+      value: 'The Magicavoxel .vox format is the standard file format for models
+        created in a wide range of voxel editing apps. You can now import them like
+        you can other 3d model formats and construct entire scenes from them.
+
+
+        if
+        you want them to remain aligned to their original grid then set grid snap
+        to 0.1 and angle snap to 90 before importing.'
       objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -2125,11 +2116,6 @@ PrefabInstance:
         imported models - even if the model was built as a single mesh. We check
         for connected parts and allow you to break apart any elements that are visually
         separate.'
-      objectReference: {fileID: 0}
-    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_fontSize
-      value: 22.6
       objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -2456,11 +2442,6 @@ PrefabInstance:
         Mac and of course VR headsets. \n\nWorlds are social and multiplayer and
         can optionally be monetized to help support artists (that's you...)."
       objectReference: {fileID: 0}
-    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_fontSize
-      value: 23.2
-      objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -2614,15 +2595,13 @@ PrefabInstance:
     - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_text
-      value: Our sibling application Open Blocks is an incredibly intuitive low-poly
-        3d modelling app for PC and standalone VR devices. If you've installed it
-        then any models you save locally can easily be imported via the standard
-        3D model library browser.
-      objectReference: {fileID: 0}
-    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_fontSize
-      value: 34.85
+      value: 'Our sibling application Open Blocks is an incredibly intuitive low-poly
+        3d modelling app for PC and standalone VR devices.
+
+
+        Once you''ve
+        installed Open Blocks then any models you save locally can easily be imported
+        via the standard 3D model library browser.'
       objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -2766,7 +2745,7 @@ PrefabInstance:
     - target: {fileID: 1374446702692656999, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_Url
-      value: https://docs.openbrush.app/
+      value: https://docs.openbrush.app/user-guide/using-plugins
       objectReference: {fileID: 0}
     - target: {fileID: 1374446702692656999, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -2796,7 +2775,7 @@ PrefabInstance:
     - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_fontSize
-      value: 20.9
+      value: 25.35
       objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -2937,6 +2916,11 @@ PrefabInstance:
       propertyPath: m_ButtonLabel
       value: Find Out More
       objectReference: {fileID: 0}
+    - target: {fileID: 1706118685797540075, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3638750721288221976, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_IsActive
@@ -2963,11 +2947,6 @@ PrefabInstance:
         a 3d mesh. Now when they are added back to your scene they are grouped strokes
         and can be ungrouped, re-colored, re-brushed and anything else you can do
         with regular brush strokes.'
-      objectReference: {fileID: 0}
-    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
-        type: 3}
-      propertyPath: m_fontSize
-      value: 19.45
       objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
