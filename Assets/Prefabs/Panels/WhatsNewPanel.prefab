@@ -1389,6 +1389,11 @@ PrefabInstance:
         Icosa Gallery. Non-VR devices also support interacting with Open Brush via
         the Web API or monoscopic mode.'
       objectReference: {fileID: 0}
+    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_fontSize
+      value: 20.9
+      objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -1542,7 +1547,20 @@ PrefabInstance:
     - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_text
-      value: ...
+      value: 'Previously mobile VR devices such as the Quest had less selection tools
+        available than PC VR devices. This was due to performance issues when we
+        first launched for the Quest 1.
+
+
+        Newer devices are more powerful
+        so we''ve made the full range of tools available on all devices giving you
+        access to "Select All" and "Invert Selection". Complex scenes might stutter
+        when using these but we wanted to give you the choice.'
+      objectReference: {fileID: 0}
+    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_fontSize
+      value: 23.2
       objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -1597,7 +1615,7 @@ PrefabInstance:
     - target: {fileID: 8473270265339514660, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_text
-      value: Quest Selection Tools
+      value: More Selection Tools for Quest/standalone VR
       objectReference: {fileID: 0}
     - target: {fileID: 8617468097628679083, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -1695,11 +1713,16 @@ PrefabInstance:
       value: "Camera paths are a powerful way to render a standard or 360 video fly-through
         of your creations. However we only support rendering video directly on desktop
         (PC or Mac) and it was fiddly to copy sketches off standalone headsets such
-        as the Quest and then render videos using the generated scripts. \n\nWe've
+        as the Quest and then render videos using the generated scripts. \r\n\r\nWe've
         now made the process easier. You can now render the video frames directly
         on devices that don't support generating video files directly. These frames
         can be converted into a regular video in multiple ways - uploading to a web
         service, importing into a video editing app etc."
+      objectReference: {fileID: 0}
+    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_fontSize
+      value: 19.75
       objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -1934,6 +1957,11 @@ PrefabInstance:
         them to remain aligned to their original grid then set grid snap to 0.1 and
         angle snap to 90 before importing.
       objectReference: {fileID: 0}
+    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_fontSize
+      value: 28.4
+      objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -2092,9 +2120,16 @@ PrefabInstance:
         not easily separated.
 
 
-        We''ve added the ability to break apart imported
-        models - even if the model was built as a single mesh. We check for connected
-        parts and allow you to break apart any elements that are visually separate.'
+
+        We''ve added the ability to break apart
+        imported models - even if the model was built as a single mesh. We check
+        for connected parts and allow you to break apart any elements that are visually
+        separate.'
+      objectReference: {fileID: 0}
+    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_fontSize
+      value: 22.6
       objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -2415,14 +2450,16 @@ PrefabInstance:
     - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_text
-      value: 'You can now publish Open Brush sketches directly to Viverse with a
-        couple of clicks. Viverse is a platform that allows you to share 3D worlds
-        on anything from phones and tablets, PC and Mac and on VR headset that has
-        a web browser.
-
-
-        Worlds can be made public and social allowing you
-        to join other people in exploring immersive spaces. '
+      value: "You can now publish Open Brush sketches directly to Viverse with a
+        couple of clicks.\n\nViverse allows you to build and share 3D worlds in a
+        web browser so people can visit from nearly any device: phone, tablets, PC,
+        Mac and of course VR headsets. \n\nWorlds are social and multiplayer and
+        can optionally be monetized to help support artists (that's you...)."
+      objectReference: {fileID: 0}
+    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_fontSize
+      value: 23.2
       objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -2581,6 +2618,11 @@ PrefabInstance:
         3d modelling app for PC and standalone VR devices. If you've installed it
         then any models you save locally can easily be imported via the standard
         3D model library browser.
+      objectReference: {fileID: 0}
+    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_fontSize
+      value: 34.85
       objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -2745,10 +2787,16 @@ PrefabInstance:
         how existing painting tools work or create entirely new tools.
 
 
+
         We''ve
         shipped an extensive range of examples that expand the creative palette you
         have available and serve as jumping off points for those of you that would
-        like to create your own plugins and share them with the community.'
+        like to create your own plugins and share them with the community'
+      objectReference: {fileID: 0}
+    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_fontSize
+      value: 20.9
       objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -2892,7 +2940,7 @@ PrefabInstance:
     - target: {fileID: 3638750721288221976, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4694786372510852128, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -2909,11 +2957,17 @@ PrefabInstance:
         changed due to the conversion process.
 
 
-        We''ve now implemented the
-        ability to save any selected brush strokes without converting them into a
-        3d mesh. Now when they are added back to your scene they are grouped strokes
+
+        We''ve now implemented
+        the ability to save any selected brush strokes without converting them into
+        a 3d mesh. Now when they are added back to your scene they are grouped strokes
         and can be ungrouped, re-colored, re-brushed and anything else you can do
         with regular brush strokes.'
+      objectReference: {fileID: 0}
+    - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_fontSize
+      value: 19.45
       objectReference: {fileID: 0}
     - target: {fileID: 6153627384957812714, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
