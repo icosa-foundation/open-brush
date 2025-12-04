@@ -231,6 +231,7 @@ Transform:
   - {fileID: 4492044765854677289}
   - {fileID: 4492044765921076689}
   - {fileID: 5246980054839990154}
+  - {fileID: 881671355866906408}
   - {fileID: 3281745900092082848}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -307,6 +308,85 @@ MonoBehaviour:
   onClose:
     m_PersistentCalls:
       m_Calls: []
+--- !u!1 &6378047531404622378
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 881671355866906408}
+  - component: {fileID: 5909150420526985228}
+  - component: {fileID: 4286531545491857130}
+  - component: {fileID: 3597750369848140325}
+  m_Layer: 0
+  m_Name: ViverseIdentity
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &881671355866906408
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6378047531404622378}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4492044767078796625}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5909150420526985228
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6378047531404622378}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1689780c428aa14ea42c2125e391b45, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Service: 8
+  m_OAuthScopes: []
+  m_AdditionalDesktopOAuthScopes: []
+  m_CallbackPath: /viverse
+  m_LoggedInTexture: {fileID: 2800000, guid: 0d05cda193064458a9a7bb085905c5a1, type: 3}
+  m_TokenStorePrefix: ViverseOAuth2
+  m_AuthorizationServerUrl: 
+  m_TokenServerUrl: 
+--- !u!114 &4286531545491857130
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6378047531404622378}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7348a38f9b4188488cef5d9d18f8891, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_ClientId: 42ab6113-acc9-419e-93ca-e0734baf9d3d
+--- !u!114 &3597750369848140325
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6378047531404622378}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73531edc591456e4fac36fc2beee17f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1386666230514205412
 PrefabInstance:
   m_ObjectHideFlags: 0

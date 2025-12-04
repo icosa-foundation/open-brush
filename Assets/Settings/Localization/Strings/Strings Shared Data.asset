@@ -3599,6 +3599,22 @@ MonoBehaviour:
     m_Key: SNAP_SETTINGS_PANEL_TOGGLE_Z
     m_Metadata:
       m_Items: []
+  - m_Id: 423748078849216512
+    m_Key: POPUP_ACCOUNTS_VIVEINFO_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 423748375394897920
+    m_Key: POPUP_ACCOUNTS_VIVEINFO_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 430213467397410816
+    m_Key: POPUP_UPLOAD_VIVERSE_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 430213857824198656
+    m_Key: POPUP_UPLOAD_VIVERSE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
