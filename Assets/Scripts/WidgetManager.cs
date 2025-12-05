@@ -723,18 +723,62 @@ namespace TiltBrush
             return null;
         }
 
+        public static string GetPathRootedAtBlocks(string path)
+        {
+            if (!System.IO.Path.IsPathRooted(path))
+            {
+                throw new ArgumentException("Path is not rooted");
+            }
+            var blocks = App.BlocksModelLibraryPath();
+            if (string.IsNullOrEmpty(blocks))
+            {
+                return null;
+            }
+            if (CanonicalizeForCompare(path).StartsWith(CanonicalizeForCompare(blocks)))
+            {
+                // Derive the prefix from the actual BlocksModelLibraryPath
+                // e.g., if blocks = "C:/Users/.../Blocks/OfflineModels", prefix = "Blocks/OfflineModels"
+                var userPath = App.UserPath();
+                var userParent = System.IO.Directory.GetParent(userPath);
+                var blocksRoot = userParent != null ? userParent.FullName : userPath;
+                var relativePrefix = blocks.Substring(blocksRoot.Length).TrimStart('\\', '/').Replace('\\', '/');
+                return relativePrefix + path.Substring(blocks.Length);
+            }
+            return null;
+        }
+
         // Returns path after Media Library/Models for models only
         // Input: absolute path
         // Returns: path starting after Models/ or null if the path is not to the Models directory
         public static string GetModelSubpath(string fullPath)
         {
             string media = GetPathRootedAtMedia(fullPath);
+            string blocks = GetPathRootedAtBlocks(fullPath);
             string modelPath = "Media Library/Models/";
-            if (media == null || !media.StartsWith(modelPath))
+
+            if (media != null && media.StartsWith(modelPath))
             {
-                return null;
+                return media.Substring(modelPath.Length);
             }
-            return media.Substring(modelPath.Length);
+
+            if (blocks != null)
+            {
+                // Derive the blocks model path prefix dynamically
+                var blocksLibPath = App.BlocksModelLibraryPath();
+                if (!string.IsNullOrEmpty(blocksLibPath))
+                {
+                    var userPath = App.UserPath();
+                    var userParent = System.IO.Directory.GetParent(userPath);
+                    var blocksRoot = userParent != null ? userParent.FullName : userPath;
+                    var blocksModelPath = blocksLibPath.Substring(blocksRoot.Length).TrimStart('\\', '/').Replace('\\', '/') + "/";
+
+                    if (blocks.StartsWith(blocksModelPath))
+                    {
+                        return blocks.Substring(blocksModelPath.Length);
+                    }
+                }
+            }
+            return null;
         }
 
         // Used only at .tilt-loading time

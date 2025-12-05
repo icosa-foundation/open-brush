@@ -22,7 +22,7 @@ namespace TiltBrush
     public class SavedStrokesCatalog : MonoBehaviour, IReferenceItemCatalog
     {
         static public SavedStrokesCatalog Instance { get; private set; }
-
+        [SerializeField] private string[] m_DefaultSavedStrokes;
         private FileWatcher m_FileWatcher;
         private string m_CurrentSavedStrokesDirectory;
         public string CurrentSavedStrokesDirectory => m_CurrentSavedStrokesDirectory;
@@ -42,6 +42,7 @@ namespace TiltBrush
         private void Init()
         {
             App.InitMediaLibraryPath();
+            App.InitSavedStrokesLibraryPath(m_DefaultSavedStrokes);
             ChangeDirectory(HomeDirectory);
         }
 

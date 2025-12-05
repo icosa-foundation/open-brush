@@ -159,6 +159,7 @@ MonoBehaviour:
   m_Warning: {fileID: 1806376406434594}
   m_WarningMaterial: {fileID: 2100000, guid: 0cf7b445a25cf3c489b5861e35712c08, type: 2}
   m_ErrorMaterial: {fileID: 2100000, guid: 1ab4267339b01594aa29020a744e68ba, type: 2}
+  m_IsMergeStrokesButton: 0
   references:
     version: 2
     RefIds: []
@@ -2140,6 +2141,7 @@ MonoBehaviour:
   m_Warning: {fileID: 1353537369857522}
   m_WarningMaterial: {fileID: 2100000, guid: 0cf7b445a25cf3c489b5861e35712c08, type: 2}
   m_ErrorMaterial: {fileID: 2100000, guid: 1ab4267339b01594aa29020a744e68ba, type: 2}
+  m_IsMergeStrokesButton: 0
   references:
     version: 2
     RefIds: []
@@ -2399,6 +2401,7 @@ MonoBehaviour:
   m_Warning: {fileID: 1063686457530790}
   m_WarningMaterial: {fileID: 2100000, guid: 0cf7b445a25cf3c489b5861e35712c08, type: 2}
   m_ErrorMaterial: {fileID: 2100000, guid: 1ab4267339b01594aa29020a744e68ba, type: 2}
+  m_IsMergeStrokesButton: 0
   references:
     version: 2
     RefIds: []
@@ -2573,6 +2576,7 @@ MonoBehaviour:
   m_Warning: {fileID: 1855919676530468}
   m_WarningMaterial: {fileID: 2100000, guid: 0cf7b445a25cf3c489b5861e35712c08, type: 2}
   m_ErrorMaterial: {fileID: 2100000, guid: 1ab4267339b01594aa29020a744e68ba, type: 2}
+  m_IsMergeStrokesButton: 0
   references:
     version: 2
     RefIds: []
@@ -2607,7 +2611,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &468632
 Transform:
   m_ObjectHideFlags: 0
@@ -2989,6 +2993,7 @@ MonoBehaviour:
   m_Warning: {fileID: 1194264369200220}
   m_WarningMaterial: {fileID: 2100000, guid: 0cf7b445a25cf3c489b5861e35712c08, type: 2}
   m_ErrorMaterial: {fileID: 2100000, guid: 1ab4267339b01594aa29020a744e68ba, type: 2}
+  m_IsMergeStrokesButton: 0
   references:
     version: 2
     RefIds: []
@@ -3163,6 +3168,7 @@ MonoBehaviour:
   m_Warning: {fileID: 1023390386316022}
   m_WarningMaterial: {fileID: 2100000, guid: 0cf7b445a25cf3c489b5861e35712c08, type: 2}
   m_ErrorMaterial: {fileID: 2100000, guid: 1ab4267339b01594aa29020a744e68ba, type: 2}
+  m_IsMergeStrokesButton: 0
   references:
     version: 2
     RefIds: []
@@ -3531,6 +3537,7 @@ MonoBehaviour:
   m_Warning: {fileID: 1914095689519454}
   m_WarningMaterial: {fileID: 2100000, guid: 0cf7b445a25cf3c489b5861e35712c08, type: 2}
   m_ErrorMaterial: {fileID: 2100000, guid: 1ab4267339b01594aa29020a744e68ba, type: 2}
+  m_IsMergeStrokesButton: 0
   references:
     version: 2
     RefIds: []
@@ -4359,6 +4366,7 @@ MonoBehaviour:
   m_Warning: {fileID: 1122766985615510}
   m_WarningMaterial: {fileID: 2100000, guid: 0cf7b445a25cf3c489b5861e35712c08, type: 2}
   m_ErrorMaterial: {fileID: 2100000, guid: 1ab4267339b01594aa29020a744e68ba, type: 2}
+  m_IsMergeStrokesButton: 0
   references:
     version: 2
     RefIds: []
@@ -4533,6 +4541,7 @@ MonoBehaviour:
   m_Warning: {fileID: 1236945777315276}
   m_WarningMaterial: {fileID: 2100000, guid: 0cf7b445a25cf3c489b5861e35712c08, type: 2}
   m_ErrorMaterial: {fileID: 2100000, guid: 1ab4267339b01594aa29020a744e68ba, type: 2}
+  m_IsMergeStrokesButton: 0
   references:
     version: 2
     RefIds: []
@@ -5771,6 +5780,7 @@ MonoBehaviour:
   m_Warning: {fileID: 1037653607876102}
   m_WarningMaterial: {fileID: 2100000, guid: 0cf7b445a25cf3c489b5861e35712c08, type: 2}
   m_ErrorMaterial: {fileID: 2100000, guid: 1ab4267339b01594aa29020a744e68ba, type: 2}
+  m_IsMergeStrokesButton: 0
   references:
     version: 2
     RefIds: []
@@ -6275,7 +6285,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &4000012031974818
 Transform:
   m_ObjectHideFlags: 0
@@ -13814,7 +13824,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &4459060226476560
 Transform:
   m_ObjectHideFlags: 0
@@ -15126,7 +15136,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &3329662063255159416
 Transform:
   m_ObjectHideFlags: 0
@@ -15766,7 +15776,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &4658614428857437220
 Transform:
   m_ObjectHideFlags: 0
