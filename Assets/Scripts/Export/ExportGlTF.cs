@@ -225,9 +225,11 @@ namespace TiltBrush
             if (SaveLoadScript.m_Instance != null)
             {
                 TrTransform cameraPose = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
-                Vector3 gltfCameraTranslation = exportFromUnity.MultiplyPoint3x4(cameraPose.translation);
-                exporter.G.extras["TB_CameraTranslation"] = CommaFormattedVector3(gltfCameraTranslation);
+                exporter.G.extras["TB_CameraTranslation"] = CommaFormattedVector3(cameraPose.translation);
                 exporter.G.extras["TB_CameraRotation"] = CommaFormattedVector3(cameraPose.rotation.eulerAngles);
+                float targetDistance = 1f; // TODO Find a way to locate the center of interest properly
+                Vector3 cameraTarget = cameraPose.translation + cameraPose.forward * targetDistance;
+                exporter.G.extras["TB_CameraTarget"] = CommaFormattedVector3(cameraTarget);
             }
         }
 

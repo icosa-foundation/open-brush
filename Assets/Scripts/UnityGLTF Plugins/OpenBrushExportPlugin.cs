@@ -450,14 +450,26 @@ namespace TiltBrush
             extras["TB_ExportedFromVersion"] = App.Config.m_VersionNumber;
 
             TrTransform cameraPose = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
+
             // TODO - this seemed like a sensible alternative, but doesn't seem to work
             // TODO - We should also export a real GLTF camera object
             // TrTransform cameraPose = SketchControlsScript.m_Instance.GetSaveIconTool().LastSaveCameraRigState.GetLossyTrTransform();
 
+            float targetDistance = 1f; // TODO Find a way to locate the center of interest properly
+            Vector3 cameraTarget = cameraPose.translation + cameraPose.forward * targetDistance;
+
             Vector3 gltfCamTranslation = cameraPose.translation;
-            gltfCamTranslation.x = -gltfCamTranslation.x; // Flip X for GLTF
+            Vector3 gltfCamTarget = cameraTarget;
+
+            // Flip X for GLTF
+            // TODO - we don't do this for the legacy exporter. Maybe remove this?
+            gltfCamTranslation.x = -gltfCamTranslation.x;
+            gltfCamTarget.x = -gltfCamTarget.x;
+
             extras["TB_CameraTranslation"] = Vector3ToJString(gltfCamTranslation);
             extras["TB_CameraRotation"] = Vector3ToJString(cameraPose.rotation.eulerAngles);
+            extras["TB_CameraTarget"] = Vector3ToJString(gltfCamTarget);
+
             // Experimental
             // extras["TB_metadata"] = JObject.FromObject(metadata);
             gltfRoot.Extras = extras;
