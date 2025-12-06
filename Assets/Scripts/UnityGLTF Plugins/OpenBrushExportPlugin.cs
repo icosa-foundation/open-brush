@@ -463,8 +463,8 @@ namespace TiltBrush
 
             // Flip X for GLTF
             // TODO - we don't do this for the legacy exporter. Maybe remove this?
-            gltfCamTranslation.x = -gltfCamTranslation.x;
-            gltfCamTarget.x = -gltfCamTarget.x;
+            // gltfCamTranslation.x = -gltfCamTranslation.x;
+            // gltfCamTarget.x = -gltfCamTarget.x;
 
             extras["TB_CameraTranslation"] = Vector3ToJString(gltfCamTranslation);
             extras["TB_CameraRotation"] = Vector3ToJString(cameraPose.rotation.eulerAngles);
