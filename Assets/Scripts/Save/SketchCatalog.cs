@@ -120,7 +120,24 @@ namespace TiltBrush
 
         public void NotifyUserFileCreated(string fullpath)
         {
-            if (fullpath.StartsWith(App.SavedStrokesPath()))
+            // Normalize paths for comparison (handle / vs \ on different platforms)
+            string normalizedFullPath = fullpath.Replace('\\', '/');
+            string normalizedSavedStrokesPath = App.SavedStrokesPath().Replace('\\', '/');
+
+            // DEBUG: Log path comparison details
+            string savedStrokesPath = App.SavedStrokesPath();
+            bool wouldFailWithoutNormalization = fullpath.StartsWith(savedStrokesPath);
+            bool passesWithNormalization = normalizedFullPath.StartsWith(normalizedSavedStrokesPath);
+
+            Debug.Log($"[PATH_DEBUG] NotifyUserFileCreated:\n" +
+                      $"  fullpath: '{fullpath}'\n" +
+                      $"  SavedStrokesPath: '{savedStrokesPath}'\n" +
+                      $"  normalized full: '{normalizedFullPath}'\n" +
+                      $"  normalized saved: '{normalizedSavedStrokesPath}'\n" +
+                      $"  without normalization: {wouldFailWithoutNormalization}\n" +
+                      $"  with normalization: {passesWithNormalization}");
+
+            if (normalizedFullPath.StartsWith(normalizedSavedStrokesPath))
             {
                 m_Sets[(int)SketchSetType.SavedStrokes].NotifySketchCreated(fullpath);
                 // Also notify SavedStrokesCatalog directly for immediate UI updates
@@ -135,7 +152,11 @@ namespace TiltBrush
 
         public void NotifyUserFileChanged(string fullpath)
         {
-            if (fullpath.StartsWith(App.SavedStrokesPath()))
+            // Normalize paths for comparison (handle / vs \ on different platforms)
+            string normalizedFullPath = fullpath.Replace('\\', '/');
+            string normalizedSavedStrokesPath = App.SavedStrokesPath().Replace('\\', '/');
+
+            if (normalizedFullPath.StartsWith(normalizedSavedStrokesPath))
             {
                 m_Sets[(int)SketchSetType.SavedStrokes].NotifySketchCreated(fullpath);
                 // Also notify SavedStrokesCatalog directly for immediate UI updates
