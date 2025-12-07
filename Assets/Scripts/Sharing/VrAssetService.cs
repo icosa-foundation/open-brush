@@ -711,7 +711,7 @@ namespace TiltBrush
                         gltfFile,
                         AxisConvention.kGltf2, binary: false, doExtras: true,
                         includeLocalMediaContent: true, gltfVersion: 2,
-                        selfContained: true));
+                        selfContained: false));
                 if (!exportResults.success)
                 {
                     throw new VrAssetServiceException("Internal error creating upload data.");
@@ -915,7 +915,7 @@ namespace TiltBrush
                     doExtras: true,
                     includeLocalMediaContent: true,
                     gltfVersion: 2,
-                    selfContained: true));
+                    selfContained: false));
 
             if (!exportResults.success)
                 throw new VrAssetServiceException("Internal error creating upload data.");
