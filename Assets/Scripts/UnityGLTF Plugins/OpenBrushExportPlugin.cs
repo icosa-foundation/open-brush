@@ -432,8 +432,6 @@ namespace TiltBrush
             var extras = new JObject();
 
             var pose = metadata.SceneTransformInRoomSpace;
-
-
             extras["TB_EnvironmentGuid"] = env.m_Guid.ToString("D");
             extras["TB_Environment"] = env.Description;
             extras["TB_UseGradient"] = settings.InGradient ? "true" : "false";
