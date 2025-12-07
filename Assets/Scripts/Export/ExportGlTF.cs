@@ -195,14 +195,6 @@ namespace TiltBrush
 
             // var camPose = SketchControlsScript.m_Instance.GetSaveIconTool().LastSaveCameraRigState.GetLossyTrTransform();
             var pose = App.Scene.Pose;
-            Matrix4x4 exportFromUnity = AxisConvention.GetFromUnity(payload.axes);
-
-            Vector3 UnityRotToGltfEuler(Quaternion rotation)
-            {
-                Vector3 forward = exportFromUnity.MultiplyVector(rotation * Vector3.forward);
-                Vector3 up = exportFromUnity.MultiplyVector(rotation * Vector3.up);
-                return Quaternion.LookRotation(forward, up).eulerAngles;
-            }
 
             // Scene-level extras:
             exporter.G.extras["TB_EnvironmentGuid"] = payload.env.guid.ToString("D");
@@ -210,8 +202,9 @@ namespace TiltBrush
             exporter.G.extras["TB_UseGradient"] = payload.env.useGradient ? "true" : "false";
             exporter.G.extras["TB_SkyColorA"] = CommaFormattedFloatRGB(skyColorA);
             exporter.G.extras["TB_SkyColorB"] = CommaFormattedFloatRGB(skyColorB);
-
-            exporter.G.extras["TB_SkyGradientDirection"] = CommaFormattedVector3(exportFromUnity * skyGradientDir);
+            Matrix4x4 exportFromUnity = AxisConvention.GetFromUnity(payload.axes);
+            exporter.G.extras["TB_SkyGradientDirection"] = CommaFormattedVector3(
+                exportFromUnity * skyGradientDir);
             exporter.G.extras["TB_FogColor"] = CommaFormattedFloatRGB(payload.env.fogColor);
             exporter.G.extras["TB_FogDensity"] = payload.env.fogDensity.ToString();
 
