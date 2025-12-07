@@ -218,14 +218,13 @@ namespace TiltBrush
             exporter.G.extras["TB_AmbientLightColor"] = CommaFormattedFloatRGB(payload.lights.ambientColor);
             exporter.G.extras["TB_SceneLight0Color"] = CommaFormattedFloatRGB(payload.lights.lights[0].lightColor);
             exporter.G.extras["TB_SceneLight0Rotation"] = CommaFormattedVector3(
-                UnityRotToGltfEuler(payload.lights.lights[0].xform.rotation));
+                payload.lights.lights[0].xform.rotation.eulerAngles);
             exporter.G.extras["TB_SceneLight1Color"] = CommaFormattedFloatRGB(payload.lights.lights[1].lightColor);
             exporter.G.extras["TB_SceneLight1Rotation"] = CommaFormattedVector3(
-                UnityRotToGltfEuler(payload.lights.lights[1].xform.rotation));
+                payload.lights.lights[1].xform.rotation.eulerAngles);
 
-            exporter.G.extras["TB_PoseTranslation"] = CommaFormattedVector3(exportFromUnity * pose.translation);
-            exporter.G.extras["TB_PoseRotation"] = CommaFormattedVector3(
-                UnityRotToGltfEuler(pose.rotation));
+            exporter.G.extras["TB_PoseTranslation"] = CommaFormattedVector3(pose.translation);
+            exporter.G.extras["TB_PoseRotation"] = CommaFormattedVector3(pose.rotation.eulerAngles);
             exporter.G.extras["TB_PoseScale"] = pose.scale;
 
             exporter.G.extras["TB_ExportedFromVersion"] = App.Config.m_VersionNumber;
@@ -233,9 +232,8 @@ namespace TiltBrush
             if (SaveLoadScript.m_Instance != null)
             {
                 TrTransform cameraPose = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
-                exporter.G.extras["TB_CameraTranslation"] = CommaFormattedVector3(exportFromUnity * cameraPose.translation);
-                exporter.G.extras["TB_CameraRotation"] = CommaFormattedVector3(
-                    UnityRotToGltfEuler(cameraPose.rotation));
+                exporter.G.extras["TB_CameraTranslation"] = CommaFormattedVector3(cameraPose.translation);
+                exporter.G.extras["TB_CameraRotation"] = CommaFormattedVector3(cameraPose.rotation.eulerAngles);
             }
 
             // This is a new mode that solves the issue of finding a sane pivot for Orbit Camera Controller

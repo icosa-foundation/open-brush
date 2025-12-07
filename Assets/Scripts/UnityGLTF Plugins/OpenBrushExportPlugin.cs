@@ -450,14 +450,14 @@ namespace TiltBrush
                 exportFromUnity * (settings.GradientOrientation * Vector3.up));
             extras["TB_FogColor"] = ColorToJString(settings.FogColor);
             extras["TB_FogDensity"] = settings.FogDensity;
-            extras["TB_PoseTranslation"] = Vector3ToJString(exportFromUnity * pose.translation);
-            extras["TB_PoseRotation"] = Vector3ToJString(UnityRotToGltfEuler(pose.rotation));
+            extras["TB_PoseTranslation"] = Vector3ToJString(pose.translation);
+            extras["TB_PoseRotation"] = Vector3ToJString(pose.rotation.eulerAngles);
             extras["TB_PoseScale"] = pose.scale;
             extras["TB_ExportedFromVersion"] = App.Config.m_VersionNumber;
 
             TrTransform cameraPose = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
-            extras["TB_CameraTranslation"] = Vector3ToJString(exportFromUnity * cameraPose.translation);
-            extras["TB_CameraRotation"] = Vector3ToJString(UnityRotToGltfEuler(cameraPose.rotation));
+            extras["TB_CameraTranslation"] = Vector3ToJString(cameraPose.translation);
+            extras["TB_CameraRotation"] = Vector3ToJString(cameraPose.rotation.eulerAngles);
 
             // This is a new mode that solves the issue of finding a sane pivot for Orbit Camera Controller
             // And better suits Open Brush sketches
