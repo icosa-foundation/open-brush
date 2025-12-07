@@ -432,31 +432,32 @@ namespace TiltBrush
             var extras = new JObject();
 
             var pose = metadata.SceneTransformInRoomSpace;
+            Matrix4x4 exportFromUnity = AxisConvention.GetFromUnity(AxisConvention.kGltf2);
+
+            Vector3 UnityRotToGltfEuler(Quaternion rotation)
+            {
+                Vector3 forward = exportFromUnity.MultiplyVector(rotation * Vector3.forward);
+                Vector3 up = exportFromUnity.MultiplyVector(rotation * Vector3.up);
+                return Quaternion.LookRotation(forward, up).eulerAngles;
+            }
+
             extras["TB_EnvironmentGuid"] = env.m_Guid.ToString("D");
             extras["TB_Environment"] = env.Description;
             extras["TB_UseGradient"] = settings.InGradient ? "true" : "false";
             extras["TB_SkyColorA"] = ColorToJString(settings.SkyColorA);
             extras["TB_SkyColorB"] = ColorToJString(settings.SkyColorB);
-            Matrix4x4 exportFromUnity = AxisConvention.GetFromUnity(AxisConvention.kGltf2);
             extras["TB_SkyGradientDirection"] = Vector3ToJString(
                 exportFromUnity * (settings.GradientOrientation * Vector3.up));
             extras["TB_FogColor"] = ColorToJString(settings.FogColor);
             extras["TB_FogDensity"] = settings.FogDensity;
-            Vector3 gltfPoseTranslation = pose.translation;
-            gltfPoseTranslation.x = -gltfPoseTranslation.x; // Flip X for GLTF
-            extras["TB_PoseTranslation"] = Vector3ToJString(gltfPoseTranslation);
-            extras["TB_PoseRotation"] = Vector3ToJString(pose.rotation.eulerAngles);
+            extras["TB_PoseTranslation"] = Vector3ToJString(exportFromUnity * pose.translation);
+            extras["TB_PoseRotation"] = Vector3ToJString(UnityRotToGltfEuler(pose.rotation));
             extras["TB_PoseScale"] = pose.scale;
             extras["TB_ExportedFromVersion"] = App.Config.m_VersionNumber;
 
             TrTransform cameraPose = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
-            Vector3 gltfCamTranslation = cameraPose.translation;
-
-            // Flip X for GLTF
-            gltfCamTranslation.x = -gltfCamTranslation.x;
-
-            extras["TB_CameraTranslation"] = Vector3ToJString(gltfCamTranslation);
-            extras["TB_CameraRotation"] = Vector3ToJString(cameraPose.rotation.eulerAngles);
+            extras["TB_CameraTranslation"] = Vector3ToJString(exportFromUnity * cameraPose.translation);
+            extras["TB_CameraRotation"] = Vector3ToJString(UnityRotToGltfEuler(cameraPose.rotation));
 
             // This is a new mode that solves the issue of finding a sane pivot for Orbit Camera Controller
             // And better suits Open Brush sketches
