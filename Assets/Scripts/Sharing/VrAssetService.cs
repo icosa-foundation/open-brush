@@ -786,7 +786,7 @@ namespace TiltBrush
                 OverlayType.Export, fadeDuration: 0.5f,
                 action: () => new ExportGlTF().ExportBrushStrokes(
                     gltfFile,
-                    AxisConvention.kGltf2, binary: false, doExtras: false,
+                    AxisConvention.kGltf2, binary: false, doExtras: true,
                     includeLocalMediaContent: true, gltfVersion: 2,
                     // Sketchfab doesn't support absolute texture URIs
                     selfContained: true));
