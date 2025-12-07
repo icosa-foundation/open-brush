@@ -140,23 +140,7 @@ namespace TiltBrush
 
         public void NotifyFileCreated(string fullpath)
         {
-            // Normalize paths for comparison (handle / vs \ on different platforms)
-            string normalizedFullPath = fullpath.Replace('\\', '/');
-            string normalizedCurrentDir = m_CurrentSavedStrokesDirectory.Replace('\\', '/');
-
-            // DEBUG: Log path comparison details
-            bool wouldFailWithoutNormalization = fullpath.StartsWith(m_CurrentSavedStrokesDirectory);
-            bool passesWithNormalization = normalizedFullPath.StartsWith(normalizedCurrentDir);
-
-            Debug.Log($"[PATH_DEBUG] SavedStrokesCatalog.NotifyFileCreated:\n" +
-                      $"  fullpath: '{fullpath}'\n" +
-                      $"  CurrentDir: '{m_CurrentSavedStrokesDirectory}'\n" +
-                      $"  normalized full: '{normalizedFullPath}'\n" +
-                      $"  normalized current: '{normalizedCurrentDir}'\n" +
-                      $"  without normalization: {wouldFailWithoutNormalization}\n" +
-                      $"  with normalization: {passesWithNormalization}");
-
-            if (normalizedFullPath.StartsWith(normalizedCurrentDir))
+            if (fullpath.StartsWith(m_CurrentSavedStrokesDirectory))
             {
                 // Don't scan immediately - wait for FileSketchSet to process the file
                 if (!m_WaitingForSketchSetUpdate)
@@ -179,8 +163,6 @@ namespace TiltBrush
 
         private void OnFileSketchSetChanged()
         {
-            Debug.Log("[PATH_DEBUG] SavedStrokesCatalog.OnFileSketchSetChanged: FileSketchSet processed files, triggering scan");
-
             // FileSketchSet has processed files, now safe to scan
             m_DirectoryScanRequired = true;
 
