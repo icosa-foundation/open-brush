@@ -998,7 +998,6 @@ namespace TiltBrush
 
             // Result url
             WorldContentResponse resp = publishManager.GetLastResponse();
-            // string uri = resp?.publish_url ?? $"https://viverse.com/world/{sceneSid}";
             string accessToken = await App.ViveIdentity.GetAccessToken();
             string uri = $"{ViverseEndpoints.STUDIO_UPLOAD_REDIRECT}?access_token={accessToken}";
             return (uri, uploadLength);
