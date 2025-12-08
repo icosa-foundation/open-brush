@@ -88,6 +88,11 @@ namespace TiltBrush
         private Mode m_CurrentMode;
         private bool m_DriveSyncing = false;
 
+        private void OnEnable()
+        {
+            RefreshObjects();
+        }
+        
         private void Start()
         {
             App.DriveSync.SyncEnabledChanged += RefreshObjects;
@@ -176,15 +181,20 @@ namespace TiltBrush
             RefreshIcosaUserInfoUi();
 
             // Vive.
-            OAuth2Identity.UserInfo viveInfo = App.ViveIdentity.Profile;
+            // Safety check in case App.ViveIdentity hasn't initialized correctly
+            var viveIdentity = App.ViveIdentity;
+            OAuth2Identity.UserInfo viveInfo = viveIdentity != null ? viveIdentity.Profile : null;
             bool viveInfoValid = viveInfo != null;
+
             m_ViveSignedInElements.SetActive(viveInfoValid);
             m_ViveSignedOutElements.SetActive(!viveInfoValid);
             m_ViveConfirmSignOutElements.SetActive(false);
+
             if (viveInfoValid)
             {
                 m_ViveNameText.text = viveInfo.name;
-                m_VivePhoto.material.mainTexture = viveInfo.icon;
+                // Use generic photo if icon is null (e.g. still downloading)
+                m_VivePhoto.material.mainTexture = viveInfo.icon != null ? viveInfo.icon : m_GenericPhoto;
             }
 
             m_DriveFullElements.SetActive(driveFull && driveSyncEnabled);
@@ -341,9 +351,10 @@ namespace TiltBrush
 
         void OnProfileUpdated(OAuth2Identity _)
         {
-            // If we're currently telling the user to take of the headset to signin,
-            // and they've done so correctly, switch back to the accounts view.
-            if (m_CurrentMode == Mode.TakeOffHeadset)
+            // If we're currently telling the user to take off the headset (PC)
+            // OR if we are showing the Confirm Login screen (Quest/Mobile),
+            // and the login completes, switch back to the accounts view automatically.
+            if (m_CurrentMode == Mode.TakeOffHeadset || m_CurrentMode == Mode.ConfirmLogin)
             {
                 UpdateMode(Mode.Accounts);
             }
