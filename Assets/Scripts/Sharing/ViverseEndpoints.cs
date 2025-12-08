@@ -3,7 +3,7 @@ namespace TiltBrush
     public static class ViverseEndpoints
     {
         // --- Identity & Auth ---
-        public const string CLIENT_ID = "42ab6113-acc9-419e-93ca-e0734baf9d3d";
+        public static string CLIENT_ID => Config.m_SingletonState?.ViveSecrets?.ClientId;
         public const string AUTH_BASE_URL = "https://account.htcvive.com";
         public const string AUTH_LOGOUT_URL = AUTH_BASE_URL + "/logout";
         public const string REDIRECT_URL = "https://www.viverse.com/";
