@@ -26,7 +26,7 @@ namespace TiltBrush
         public int ExpiresIn;
         public long issuedAt;
 
-        public DateTime ExpiresAt 
+        public DateTime ExpiresAt
         {
             get
             {

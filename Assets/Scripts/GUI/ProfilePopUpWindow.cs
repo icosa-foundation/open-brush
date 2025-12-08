@@ -92,7 +92,7 @@ namespace TiltBrush
         {
             RefreshObjects();
         }
-        
+
         private void Start()
         {
             App.DriveSync.SyncEnabledChanged += RefreshObjects;

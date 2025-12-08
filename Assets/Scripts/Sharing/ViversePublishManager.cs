@@ -27,11 +27,13 @@ namespace TiltBrush
 
         [Header("Default World Configuration")]
         [Tooltip("These permissions will be applied to every uploaded world.")]
-        [SerializeField] [TextArea(3, 5)]
+        [SerializeField]
+        [TextArea(3, 5)]
         private string m_DefaultSandboxPermissions = "allow-forms allow-modals allow-popups allow-top-navigation allow-pointer-lock allow-presentation allow-downloads allow-orientation-lock allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation";
 
         [Tooltip("Permissions for hardware/feature access. 'xr-spatial-tracking' is required for VR.")]
-        [SerializeField] [TextArea(3, 5)]
+        [SerializeField]
+        [TextArea(3, 5)]
         private string m_DefaultAllowPermissions = "accelerometer; camera; gyroscope; magnetometer; microphone; midi; window-management; xr-spatial-tracking";
 
         private ViverseAuthManager m_AuthManager;
@@ -295,7 +297,7 @@ namespace TiltBrush
             }
 
             Debug.Log($"[ViversePublish] File size: {fileData.Length} bytes ({fileData.Length / 1024.0f / 1024.0f:F2} MB)");
-            
+
             var metaPayload = new MetaDataPayload
             {
                 source = "studio",
