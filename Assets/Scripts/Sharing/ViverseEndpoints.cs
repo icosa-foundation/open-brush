@@ -1,0 +1,25 @@
+namespace TiltBrush
+{
+    public static class ViverseEndpoints
+    {
+        // --- Identity & Auth ---
+        public const string CLIENT_ID = "42ab6113-acc9-419e-93ca-e0734baf9d3d";
+        public const string AUTH_BASE_URL = "https://account.htcvive.com";
+        public const string AUTH_LOGOUT_URL = AUTH_BASE_URL + "/logout";
+        public const string REDIRECT_URL = "https://www.viverse.com/";
+
+        // --- SDK & Profile ---
+        public const string SDK_API_BASE = "https://sdk-api.viverse.com";
+        // Note: SDK usually expects base without trailing slash, but UnityWebRequest needs full paths
+        public const string PROFILE_INFO = SDK_API_BASE + "/api/meetingareaselector/v2/newgenavatar/sdk/me";
+        public const string AVATAR_LIST = SDK_API_BASE + "/api/meetingareaselector/v1/newgenavatar/getavatarlist";
+
+        // --- World Publishing (CMS) ---
+        public const string WORLD_API_BASE = "https://world-api.viverse.com/api/hubs-cms/v1/standalone";
+        public const string WORLD_CREATE = WORLD_API_BASE + "/contents";
+        public const string WORLD_UPLOAD_FORMAT = WORLD_API_BASE + "/contents/{0}/upload";
+
+        // --- Studio (User Facing) ---
+        public const string STUDIO_UPLOAD_REDIRECT = "https://studio.viverse.com/upload";
+    }
+}
