@@ -711,7 +711,7 @@ namespace TiltBrush
                         gltfFile,
                         AxisConvention.kGltf2, binary: false, doExtras: true,
                         includeLocalMediaContent: true, gltfVersion: 2,
-                        selfContained: true));
+                        selfContained: false));
                 if (!exportResults.success)
                 {
                     throw new VrAssetServiceException("Internal error creating upload data.");
@@ -786,7 +786,7 @@ namespace TiltBrush
                 OverlayType.Export, fadeDuration: 0.5f,
                 action: () => new ExportGlTF().ExportBrushStrokes(
                     gltfFile,
-                    AxisConvention.kGltf2, binary: false, doExtras: false,
+                    AxisConvention.kGltf2, binary: false, doExtras: true,
                     includeLocalMediaContent: true, gltfVersion: 2,
                     // Sketchfab doesn't support absolute texture URIs
                     selfContained: true));
@@ -915,7 +915,7 @@ namespace TiltBrush
                     doExtras: true,
                     includeLocalMediaContent: true,
                     gltfVersion: 2,
-                    selfContained: true));
+                    selfContained: false));
 
             if (!exportResults.success)
                 throw new VrAssetServiceException("Internal error creating upload data.");
@@ -998,9 +998,8 @@ namespace TiltBrush
 
             // Result url
             WorldContentResponse resp = publishManager.GetLastResponse();
-            // string uri = resp?.publish_url ?? $"https://viverse.com/world/{sceneSid}";
             string accessToken = await App.ViveIdentity.GetAccessToken();
-            string uri = $"https://studio.viverse.com/upload?access_token={accessToken}";
+            string uri = $"{ViverseEndpoints.STUDIO_UPLOAD_REDIRECT}?access_token={accessToken}";
             return (uri, uploadLength);
         }
 

@@ -17,49 +17,31 @@ using Newtonsoft.Json;
 
 namespace TiltBrush
 {
-    /// <summary>
-    /// Token data for VIVERSE authentication
-    /// </summary>
     [Serializable]
     public class ViverseTokenData
     {
-        [JsonProperty("access_token")]
-        public string AccessToken { get; set; }
+        public string AccessToken;
+        public string RefreshToken;
+        public string TokenType;
+        public int ExpiresIn;
+        public long issuedAt;
 
-        [JsonProperty("refresh_token")]
-        public string RefreshToken { get; set; }
+        public DateTime ExpiresAt
+        {
+            get
+            {
+                DateTime issued = DateTimeOffset.FromUnixTimeSeconds(issuedAt).UtcDateTime;
+                return issued.AddSeconds(ExpiresIn);
+            }
+        }
 
-        [JsonProperty("token_type")]
-        public string TokenType { get; set; }
-
-        [JsonProperty("expires_in")]
-        public int ExpiresIn { get; set; }
-
-        [JsonProperty("issued_at")]
-        public DateTime IssuedAt { get; set; }
-
-        /// <summary>
-        /// Calculate when this token expires
-        /// </summary>
-        public DateTime ExpiresAt => IssuedAt.AddSeconds(ExpiresIn);
-
-        /// <summary>
-        /// Check if token is expired (with safety buffer)
-        /// </summary>
-        /// <param name="bufferMinutes">Minutes before expiry to consider expired</param>
         public bool IsExpired(int bufferMinutes = 5)
         {
             return DateTime.UtcNow >= ExpiresAt.AddMinutes(-bufferMinutes);
         }
 
-        /// <summary>
-        /// Check if token is valid (exists and not expired)
-        /// </summary>
         public bool IsValid => !string.IsNullOrEmpty(AccessToken) && !IsExpired();
 
-        /// <summary>
-        /// Create token data from authentication response
-        /// </summary>
         public static ViverseTokenData FromAuthResponse(string accessToken, string refreshToken, int expiresIn)
         {
             return new ViverseTokenData
@@ -67,8 +49,8 @@ namespace TiltBrush
                 AccessToken = accessToken,
                 RefreshToken = refreshToken,
                 TokenType = "Bearer",
-                ExpiresIn = expiresIn > 0 ? expiresIn : 3600, // Default 1 hour
-                IssuedAt = DateTime.UtcNow
+                ExpiresIn = expiresIn > 0 ? expiresIn : 3600,
+                issuedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
             };
         }
     }

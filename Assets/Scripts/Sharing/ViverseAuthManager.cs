@@ -29,7 +29,7 @@ namespace TiltBrush
         public const string REDIRECT_PATH = "/viverse";
         public const string CALLBACK_PATH = "/api/viverse/auth/callback";
 
-        [SerializeField] private string m_ClientId = "42ab6113-acc9-419e-93ca-e0734baf9d3d";
+        [SerializeField] private string m_ClientId = ViverseEndpoints.CLIENT_ID;
 
         public event Action<string, string, int, string, string, string, string> OnAuthComplete;
         public event Action<string> OnAuthError;
@@ -332,7 +332,7 @@ window.addEventListener('load', async () => {{
                     updateStatus('Fetching profile...');
                     
                     const avatarClient = new window.viverse.avatar({{
-                        baseURL: 'https://sdk-api.viverse.com/',
+                        baseURL: '{2}/',
                         token: result.access_token
                     }});
                     
@@ -379,7 +379,7 @@ window.addEventListener('load', async () => {{
 </body>
 </html>";
 
-            return string.Format(htmlTemplate, clientId, callbackPath);
+            return string.Format(htmlTemplate, clientId, callbackPath, ViverseEndpoints.SDK_API_BASE);
         }
 
         private void OnDestroy()
