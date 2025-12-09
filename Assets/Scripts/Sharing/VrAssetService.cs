@@ -992,7 +992,7 @@ namespace TiltBrush
 
             var lastResponse = publishManager.GetLastResponse();
             string hubSid = lastResponse != null ? lastResponse.hub_sid : "";
-            
+
             // Upload to existing world
             StartCoroutine(publishManager.UploadWorldContent(sceneSid, hubSid, zipPath));
 

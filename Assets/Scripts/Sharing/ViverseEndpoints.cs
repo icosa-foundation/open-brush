@@ -22,7 +22,7 @@ namespace TiltBrush
 
         // --- Studio (User Facing) ---
         public const string STUDIO_UPLOAD_REDIRECT = "https://studio.viverse.com/upload";
-        
+
         // NEW: URL format to open the published world directly. 
         // Usage: string.Format(ViverseEndpoints.WORLD_VIEW_FORMAT, hubSid);
         public const string WORLD_VIEW_FORMAT = "https://worlds.viverse.com/{0}";
