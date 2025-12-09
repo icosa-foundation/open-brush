@@ -176,7 +176,9 @@ namespace TiltBrush
             var payload = new WorldContentPayload
             {
                 title = title,
-                description_plaintext = description
+                description_plaintext = description,
+                preferred_devices = new[] { "hmd", "desktop", "android", "ios" },
+                tags = "Open Brush",
             };
 
             string json = JsonUtility.ToJson(payload);
@@ -404,6 +406,8 @@ namespace TiltBrush
     {
         public string title;
         public string description_plaintext;
+        public string[] preferred_devices;
+        public string tags;
     }
 
     [Serializable]
