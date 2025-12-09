@@ -143,7 +143,10 @@ namespace TiltBrush
                 {
                     m_LastSceneSid = sceneSid;
                     Debug.Log($"[ViversePublish] Content created with scene_sid: {sceneSid}");
-                    StartCoroutine(UploadWorldContent(sceneSid, zipFilePath));
+
+                    // CHANGED: Passing m_LastResponse.hub_sid to the upload coroutine
+                    string hubSid = m_LastResponse != null ? m_LastResponse.hub_sid : "";
+                    StartCoroutine(UploadWorldContent(sceneSid, hubSid, zipFilePath));
                 }
                 else
                 {
@@ -229,7 +232,8 @@ namespace TiltBrush
             request.Dispose();
         }
 
-        public IEnumerator UploadWorldContent(string sceneSid, string zipFilePath)
+        // CHANGED: Added hubSid parameter
+        public IEnumerator UploadWorldContent(string sceneSid, string hubSid, string zipFilePath)
         {
             string url = string.Format(ViverseEndpoints.WORLD_UPLOAD_FORMAT, sceneSid);
             string fileName = Path.GetFileName(zipFilePath);
@@ -342,7 +346,6 @@ namespace TiltBrush
                 Debug.Log("[ViversePublish] Upload successful!");
                 string responseText = request.downloadHandler.text;
                 Debug.Log($"[ViversePublish] Upload response: {responseText}");
-
                 OnPublishComplete?.Invoke(true, "World published successfully!");
             }
 
