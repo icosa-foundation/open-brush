@@ -177,7 +177,7 @@ namespace TiltBrush
             {
                 title = title,
                 description_plaintext = description,
-                preferred_devices = new [] { "hmd", "desktop", "android", "ios" },
+                preferred_devices = new[] { "hmd", "desktop", "android", "ios" },
                 tags = "Open Brush",
             };
 
