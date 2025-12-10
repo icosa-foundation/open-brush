@@ -64,7 +64,7 @@ namespace TiltBrush
             {
                 m_subfolder += '/';
             }
-            ;
+
             using (var zipFile = new ZipLibrary.ZipFile(m_RootPath))
             {
                 foreach (ZipLibrary.ZipEntry entry in zipFile)
