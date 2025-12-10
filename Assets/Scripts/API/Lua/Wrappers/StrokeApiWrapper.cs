@@ -78,7 +78,7 @@ namespace TiltBrush
         [LuaDocsDescription("The stroke's Color")]
         public ColorApiWrapper brushColor
         {
-            get => new ColorApiWrapper(_Stroke.m_Color);
+            get => new(_Stroke.m_Color);
             set
             {
                 _Stroke.m_Color = value._Color;
@@ -123,13 +123,13 @@ namespace TiltBrush
         [LuaDocsDescription("Gets or sets a control point by index")]
         public TrTransform this[int index]
         {
-            get => path._Path[index];
-            set
+            get => Utils.WrappedIndexerGet(() => path._Path[index]);
+            set => Utils.WrappedIndexerSet(() =>
             {
                 var newPath = path._Path.ToList();
                 newPath[index] = value;
                 path = new PathApiWrapper(newPath);
-            }
+            });
         }
 
         [LuaDocsDescription("The number of control points in this stroke")]
@@ -165,16 +165,16 @@ namespace TiltBrush
         [LuaDocsExample("newStroke = Stroke:Join(0, 10)")]
         [LuaDocsParameter("from", "Start stroke index (0 is the first stroke that was drawn")]
         [LuaDocsParameter("to", "End stroke index")]
-        public StrokeApiWrapper JoinRange(int from, int to) => new StrokeApiWrapper(ApiMethods.JoinStrokes(from, to));
+        public StrokeApiWrapper JoinRange(int from, int to) => new(ApiMethods.JoinStrokes(from, to));
 
         [LuaDocsDescription("Joins a stroke with the previous stroke")]
         [LuaDocsExample("newStroke = myStroke:JoinPrevious()")]
-        public StrokeApiWrapper JoinToPrevious() => new StrokeApiWrapper(ApiMethods.JoinStroke());
+        public StrokeApiWrapper JoinToPrevious() => new(ApiMethods.JoinStroke());
 
         [LuaDocsDescription("Joins a stroke with the previous stroke")]
         [LuaDocsExample("newStroke = myStroke:JoinPrevious()")]
         [LuaDocsParameter("stroke2", "The stroke to join to this one")]
-        public StrokeApiWrapper Join(StrokeApiWrapper stroke2) => new StrokeApiWrapper(ApiMethods.JoinStrokes(_Stroke, stroke2._Stroke));
+        public StrokeApiWrapper Join(StrokeApiWrapper stroke2) => new(ApiMethods.JoinStrokes(_Stroke, stroke2._Stroke));
 
         [LuaDocsDescription("Imports the file with the specified name from the user's Sketches folder and merges it's strokes into the current sketch")]
         [LuaDocsExample("Stroke:MergeFrom(string name)")]

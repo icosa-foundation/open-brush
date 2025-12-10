@@ -3012,7 +3012,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 128947584125108224
-    m_Key: SNAP_SETTINGS_PANEL_SNAP_AXES
+    m_Key: SNAP_SETTINGS_PANEL_TOGGLE_X
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634176
@@ -3339,6 +3339,18 @@ MonoBehaviour:
     m_Key: DirectoryChooserPopupButton
     m_Metadata:
       m_Items: []
+  - m_Id: 234808679492837376
+    m_Key: PANEL_REFERENCE_SAVED_STROKE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235160207315525632
+    m_Key: LABS_PANEL_EXPORT_STROKES_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235163428054458368
+    m_Key: PANEL_SAVED_STROKES_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   - m_Id: 241026419819896832
     m_Key: ADVANCEDTOOLS_PANEL_BUTTON_TEXTURE_PAINT
     m_Metadata:
@@ -3575,8 +3587,74 @@ MonoBehaviour:
     m_Key: POPUP_ICOSA_LOGIN_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 381885131211235328
+    m_Key: VIEW_MODE_LOADING_SKETCHES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175499957428224
+    m_Key: POPUP_SPLIT_MESH
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175792879230976
+    m_Key: POPUP_SPLIT_MESH_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 397532058527293440
+    m_Key: NOT_SIGNED_IN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 401824908597354496
+    m_Key: POPUP_REFERENCEPANEL_NOSAVEDSTROKES_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 422456507319803904
+    m_Key: SNAP_SETTINGS_PANEL_TOGGLE_Y
+    m_Metadata:
+      m_Items: []
+  - m_Id: 422456718544953344
+    m_Key: SNAP_SETTINGS_PANEL_TOGGLE_Z
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436433407381692416
+    m_Key: WHATSNEW_NEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436433674365919232
+    m_Key: WHATSNEW_PREV
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436974612083466240
+    m_Key: POPUP_PANELS_BUTTON_DESCRIPTION_BLOCKSPROMO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543626534051840
+    m_Key: SNAP_SETTINGS_PANEL_TOGGLE_X_ROTATION_SNAP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543779617759232
+    m_Key: SNAP_SETTINGS_PANEL_TOGGLE_Y_ROTATION_SNAP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543840074457088
+    m_Key: SNAP_SETTINGS_PANEL_TOGGLE_Z_ROTATION_SNAP
   m_Metadata:
     m_Items: []
+  - m_Id: 423748078849216512
+    m_Key: POPUP_ACCOUNTS_VIVEINFO_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 423748375394897920
+    m_Key: POPUP_ACCOUNTS_VIVEINFO_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 430213467397410816
+    m_Key: POPUP_UPLOAD_VIVERSE_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 430213857824198656
+    m_Key: POPUP_UPLOAD_VIVERSE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_KeyGenerator:
     rid: 6394126504544960513
   references:

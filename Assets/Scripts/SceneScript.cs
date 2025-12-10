@@ -186,22 +186,6 @@ namespace TiltBrush
             }
         }
 
-        public CanvasScript GetLayerByIndex(int index)
-        {
-            if (index == 0) return MainCanvas;
-            if (m_LayerCanvases != null)
-            {
-                int count = 1;
-                for (int i = 0; i < m_LayerCanvases.Count; ++i)
-                {
-                    if (m_DeletedLayers.Contains(i)) continue;
-                    if (count == index) return m_LayerCanvases[i];
-                    count++;
-                }
-            }
-            return null;
-        }
-
         public void ResetLayers(bool notify = false)
         {
             if (m_LayerCanvases != null)
@@ -371,6 +355,74 @@ namespace TiltBrush
             if (layer == MainCanvas) return;
             layer.gameObject.name = newName;
             App.Scene.LayerCanvasesUpdate?.Invoke();
+        }
+
+        /// <summary>
+        /// Translates the provided strokes so that the center of their
+        /// bounding box is positioned at the given world space location.
+        /// </summary>
+        /// <param name="strokes">Collection of strokes to move.</param>
+        /// <param name="worldPosition">Target world-space position for the centroid.</param>
+        public void MoveStrokesCentroidTo(IEnumerable<Stroke> strokes, Vector3 worldPosition)
+        {
+            if (strokes == null) { throw new ArgumentNullException(nameof(strokes)); }
+
+            var strokeList = strokes as IList<Stroke> ?? strokes.ToList();
+            if (strokeList.Count == 0) { return; }
+
+            CanvasScript canvas = strokeList[0].Canvas;
+            Bounds bounds = new Bounds();
+            bool initialized = false;
+
+            foreach (var stroke in strokeList)
+            {
+                Bounds strokeBounds;
+
+                if (stroke.m_BatchSubset != null)
+                {
+                    // Convert canvas-local bounds to world space
+                    Bounds localBounds = stroke.m_BatchSubset.m_Bounds;
+                    Vector3 worldMin = canvas.transform.TransformPoint(localBounds.min);
+                    Vector3 worldMax = canvas.transform.TransformPoint(localBounds.max);
+                    strokeBounds = new Bounds((worldMin + worldMax) * 0.5f, worldMax - worldMin);
+                }
+                else if (stroke.m_Object != null)
+                {
+                    var renderer = stroke.m_Object.GetComponent<Renderer>();
+                    if (renderer == null) { continue; }
+                    strokeBounds = renderer.bounds; // Already in world space
+                }
+                else
+                {
+                    continue;
+                }
+
+                if (!initialized)
+                {
+                    bounds = strokeBounds;
+                    initialized = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(strokeBounds);
+                }
+            }
+
+            if (!initialized) { return; }
+
+            Vector3 currentCenter = bounds.center; // Already in world space
+            Vector3 worldOffset = worldPosition - currentCenter;
+
+            if (worldOffset == Vector3.zero) { return; }
+
+            // Convert world-space offset to canvas-local space for Recreate
+            Vector3 localOffset = canvas.transform.InverseTransformVector(worldOffset);
+
+            // Apply translation by recreating strokes with local-space offset transform
+            foreach (var stroke in strokeList)
+            {
+                stroke.Recreate(TrTransform.T(localOffset));
+            }
         }
 
         public void MarkLayerAsNotDeleted(CanvasScript layer)

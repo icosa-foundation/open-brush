@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using UnityEngine;
 using UnityEngine.Serialization;
 
 namespace TiltBrush
@@ -171,13 +172,12 @@ namespace TiltBrush
             }
 
             private bool? m_IcosaModelPreload;
-            public bool PolyModelPreloadValid => m_IcosaModelPreload.HasValue;
             public bool IcosaModelPreload
             {
                 get
                 {
                     // TODO Should we avoid preload if we are running offline rendering?
-                    return m_IcosaModelPreload ?? App.PlatformConfig.EnablePolyPreload;
+                    return m_IcosaModelPreload ?? App.PlatformConfig.EnableIcosaPreload;
                 }
                 set { m_IcosaModelPreload = value; }
             }
@@ -252,6 +252,7 @@ namespace TiltBrush
         [Serializable]
         public struct ImportConfig
         {
+            public bool UseLegacyObjForIcosa;
         }
 
         [Serializable]
@@ -423,6 +424,26 @@ namespace TiltBrush
                             string.Format("FOV must be between {0} and {1}.\nFOV set to {2}.",
                                 CameraConfig.kFovMin, CameraConfig.kFovMax, m_Fov));
                     }
+                }
+            }
+
+            bool? m_UsePngForFrameSequence;
+            public bool UsePngForFrameSequence
+            {
+                get { return m_UsePngForFrameSequence ?? false; }
+                set
+                {
+                    m_UsePngForFrameSequence = value;
+                }
+            }
+
+            bool? m_ForceFrameSequenceRender;
+            public bool ForceFrameSequenceRender
+            {
+                get { return m_ForceFrameSequenceRender ?? false; }
+                set
+                {
+                    m_ForceFrameSequenceRender = value;
                 }
             }
 

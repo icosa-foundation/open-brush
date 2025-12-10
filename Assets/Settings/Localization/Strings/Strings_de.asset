@@ -723,7 +723,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7930206087782400
-    m_Localized: Poly-Bibliothek
+    m_Localized: Icosa-Bibliothek
     m_Metadata:
       m_Items: []
   - m_Id: 7930412489482240
@@ -743,7 +743,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7931780608532480
-    m_Localized: "Poly durchbl\xE4ttern"
+    m_Localized: "Icosa durchbl\xE4ttern"
     m_Metadata:
       m_Items: []
   - m_Id: 7931977472385024
@@ -759,7 +759,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7932559960547328
-    m_Localized: 'Mit Poly teilen,
+    m_Localized: 'Mit Icosa teilen,
 
       um hier Modelle und
 
@@ -780,7 +780,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7933149889404928
-    m_Localized: 'Gib Modellen auf Poly
+    m_Localized: 'Gib Modellen auf Icosa
 
       ein Like       , um
 
@@ -795,7 +795,7 @@ MonoBehaviour:
   - m_Id: 7933450197377024
     m_Localized: 'Melde dich beim Desktop an,
 
-      um Poly-Modelle
+      um Icosa-Modelle
 
       zu laden'
     m_Metadata:
@@ -805,7 +805,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7933827554713600
-    m_Localized: 'Mit Poly teilen,
+    m_Localized: 'Mit Icosa teilen,
 
       um deine Modelle
 
@@ -832,7 +832,7 @@ MonoBehaviour:
   - m_Id: 7934199497203712
     m_Localized: 'Fehler bei der Verbindung
 
-      mit Poly'
+      mit Icosa'
     m_Metadata:
       m_Items: []
   - m_Id: 7939526611410944
@@ -1010,7 +1010,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10133179773722624
-    m_Localized: 'Gib Skizzen auf Poly
+    m_Localized: 'Gib Skizzen auf Icosa
 
       ein Like       , um
 
@@ -1038,7 +1038,7 @@ MonoBehaviour:
   - m_Id: 10134539248312320
     m_Localized: 'Melde dich an, um auf
 
-      Poly-Skizzen zuzugreifen'
+      Icosa-Skizzen zuzugreifen'
     m_Metadata:
       m_Items: []
   - m_Id: 10134688972382208
@@ -1063,7 +1063,7 @@ MonoBehaviour:
   - m_Id: 10134947404423168
     m_Localized: 'Fehler bei der Verbindung
 
-      mit Poly'
+      mit Icosa'
     m_Metadata:
       m_Items: []
   - m_Id: 10137717402476544
@@ -1324,7 +1324,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76069893405466624
-    m_Localized: "Nicht abmischbare Skizzen k\xF6nnen\nnicht auf Poly hochgeladen
+    m_Localized: "Nicht abmischbare Skizzen k\xF6nnen\nnicht auf Icosa hochgeladen
       werden"
     m_Metadata:
       m_Items: []
@@ -1333,7 +1333,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76070420314906624
-    m_Localized: "Bei der Verbindung zum Server von Poly ist ein\nFehler aufgetreten.
+    m_Localized: "Bei der Verbindung zum Server von Icosa ist ein\nFehler aufgetreten.
       Versuche es sp\xE4ter noch einmal."
     m_Metadata:
       m_Items: []
@@ -1394,7 +1394,7 @@ MonoBehaviour:
   - m_Id: 76072667581046784
     m_Localized: 'Aktualisiere Tilt Brush, um Skizzen
 
-      auf Poly und Sketchfab
+      auf Icosa und Sketchfab
       zu teilen'
     m_Metadata:
       m_Items: []

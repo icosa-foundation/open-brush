@@ -91,7 +91,7 @@ namespace TiltBrush
                 m_InfoLines[i] = new InfoLine();
 
                 GameObject rLine = (GameObject)Instantiate(m_InfoLinePrefab);
-                rLine.transform.parent = m_RenderablesParent;
+                rLine.transform.SetParent(m_RenderablesParent, false);
                 m_InfoLines[i].m_Line = rLine;
                 m_InfoLines[i].m_TextMesh = rLine.GetComponent<TextMeshPro>();
                 m_InfoLines[i].m_Renderer = rLine.GetComponent<Renderer>();
