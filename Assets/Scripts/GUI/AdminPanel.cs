@@ -14,6 +14,7 @@
 
 using UnityEngine;
 using UnityEngine.Localization;
+using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
@@ -36,6 +37,7 @@ namespace TiltBrush
         [SerializeField] GameObject m_MoreButton;
         [SerializeField] OptionButton m_ShareButton;
         [SerializeField] OptionButton m_ShareButton_Notify;
+        [SerializeField] PanelButton m_WhatsNewButton;
         [SerializeField] GameObject m_AdvancedModeBorder;
         [SerializeField] GameObject m_BeginnerModeButton;
         [SerializeField] GameObject m_AdvancedModeButton;
@@ -100,6 +102,7 @@ namespace TiltBrush
             SetShareButtonNotifyActive(false);
 
             UpdateShareButtonText();
+            UpdateWhatsNewButtonState();
 
             m_MemoryWarningBaseScale = m_MemoryWarning.transform.localScale;
             App.Switchboard.MemoryExceededChanged += OnMemoryExceededChanged;
@@ -157,6 +160,7 @@ namespace TiltBrush
         {
             base.OnUpdatePanel(vToPanel, vHitPoint);
             UpdateShareButtonText();
+            UpdateWhatsNewButtonState();
 
             float uploadProgress = VrAssetService.m_Instance.UploadProgress;
 
@@ -204,6 +208,30 @@ namespace TiltBrush
         {
             m_ShareButton.gameObject.SetActive(!active);
             m_ShareButton_Notify.gameObject.SetActive(active);
+        }
+
+        void SetWhatsNewButtonNotifyActive(bool active)
+        {
+            m_WhatsNewButton.gameObject.GetComponent<ButtonHighlightThrobber>().enabled = active;
+        }
+
+        void UpdateWhatsNewButtonState()
+        {
+            if (m_WhatsNewButton == null) return;
+            bool hasUnread = CheckForUnreadWhatsNewItems();
+            SetWhatsNewButtonNotifyActive(hasUnread);
+        }
+
+        bool CheckForUnreadWhatsNewItems()
+        {
+            // Find WhatsNewPanel instance
+            BasePanel whatsNewPanel = PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.WhatsNewPanel);
+            if (whatsNewPanel != null && whatsNewPanel is WhatsNewPanel)
+            {
+                WhatsNewPanel panel = (WhatsNewPanel)whatsNewPanel;
+                return WhatsNewPanel.HasUnreadItems(panel.GetHighestItemVersion());
+            }
+            return false;
         }
 
         void OnMemoryExceededChanged()

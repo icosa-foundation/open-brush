@@ -22,7 +22,7 @@ namespace TiltBrush
     public class SavedStrokesCatalog : MonoBehaviour, IReferenceItemCatalog
     {
         static public SavedStrokesCatalog Instance { get; private set; }
-
+        [SerializeField] private string[] m_DefaultSavedStrokes;
         private FileWatcher m_FileWatcher;
         private string m_CurrentSavedStrokesDirectory;
         public string CurrentSavedStrokesDirectory => m_CurrentSavedStrokesDirectory;
@@ -30,6 +30,7 @@ namespace TiltBrush
         private bool m_ScanningDirectory;
         private bool m_DirectoryScanRequired;
         private HashSet<string> m_ChangedFiles;
+        private bool m_WaitingForSketchSetUpdate;
 
         public bool IsScanning => m_ScanningDirectory;
 
@@ -42,6 +43,7 @@ namespace TiltBrush
         private void Init()
         {
             App.InitMediaLibraryPath();
+            App.InitSavedStrokesLibraryPath(m_DefaultSavedStrokes);
             ChangeDirectory(HomeDirectory);
         }
 
@@ -86,6 +88,16 @@ namespace TiltBrush
         private void OnDestroy()
         {
             m_FileWatcher.EnableRaisingEvents = false;
+
+            // Clean up event subscription if still active
+            if (m_WaitingForSketchSetUpdate)
+            {
+                var sketchSet = SketchCatalog.m_Instance?.GetSet(SketchSetType.SavedStrokes);
+                if (sketchSet != null)
+                {
+                    sketchSet.OnChanged -= OnFileSketchSetChanged;
+                }
+            }
         }
 
         public SavedStrokeFile GetSavedStrokeFileAtIndex(int index)
@@ -130,16 +142,37 @@ namespace TiltBrush
         {
             if (fullpath.StartsWith(m_CurrentSavedStrokesDirectory))
             {
-                m_DirectoryScanRequired = true;
+                // Don't scan immediately - wait for FileSketchSet to process the file
+                if (!m_WaitingForSketchSetUpdate)
+                {
+                    var sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.SavedStrokes);
+                    if (sketchSet != null)
+                    {
+                        sketchSet.OnChanged += OnFileSketchSetChanged;
+                        m_WaitingForSketchSetUpdate = true;
+                    }
+                }
             }
         }
 
         public void NotifyFileChanged(string fullpath)
         {
-            if (fullpath.StartsWith(m_CurrentSavedStrokesDirectory))
+            // Same logic as NotifyFileCreated
+            NotifyFileCreated(fullpath);
+        }
+
+        private void OnFileSketchSetChanged()
+        {
+            // FileSketchSet has processed files, now safe to scan
+            m_DirectoryScanRequired = true;
+
+            // Unsubscribe - we only need this once per notification
+            var sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.SavedStrokes);
+            if (sketchSet != null)
             {
-                m_DirectoryScanRequired = true;
+                sketchSet.OnChanged -= OnFileSketchSetChanged;
             }
+            m_WaitingForSketchSetUpdate = false;
         }
 
         private IEnumerator<object> ScanReferenceDirectory()
