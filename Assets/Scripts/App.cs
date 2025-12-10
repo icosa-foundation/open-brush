@@ -1074,6 +1074,7 @@ namespace TiltBrush
                         }
                         if (!bContinueDrawing)
                         {
+                            SketchMemoryScript.m_Instance.RestoreAllSculptedGeometry();
                             FinishLoading();
                             InputManager.m_Instance.TriggerHapticsPulse(
                                 InputManager.ControllerName.Brush, 4, 0.15f, 0.1f);
@@ -1092,6 +1093,7 @@ namespace TiltBrush
                             bool bContinueDrawing = SketchMemoryScript.m_Instance.ContinueDrawingFromMemory();
                             if (!bContinueDrawing)
                             {
+                                SketchMemoryScript.m_Instance.RestoreAllSculptedGeometry();
                                 FinishLoading();
                             }
                         }
