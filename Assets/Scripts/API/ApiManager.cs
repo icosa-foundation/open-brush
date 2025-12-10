@@ -152,7 +152,15 @@ namespace TiltBrush
             {
                 VrAssetService.m_Instance.IcosaDeviceLogin(deviceCodeIfValid);
             }
-            return "You can now return to Open Brush";
+            var successPageUrl = $"{VrAssetService.m_Instance.IcosaHomePage}/device-login-success";
+            var redirectHtml = $@"<!doctype html><html lang='en'><head><meta charset='UTF-8'>
+<meta http-equiv='refresh' content='0; url={successPageUrl}' />
+<title>Login Successful</title>
+</head>
+<body>
+Success. If you are not automatically redirected, please visit <a href='{successPageUrl}'>{successPageUrl}</a>
+</body></html>";
+            return redirectHtml;
         }
 
         void Start()
