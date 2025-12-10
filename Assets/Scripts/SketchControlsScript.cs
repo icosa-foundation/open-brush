@@ -4159,7 +4159,7 @@ namespace TiltBrush
             Bounds rCanvasBounds;
             if (saveSelectedStrokes)
             {
-                // For selection only, we need to transform the bounds to world space
+                // When saving selected strokes, we need to transform the bounds to world space
                 Bounds selectionBounds = App.Scene.SelectionCanvas.GetCanvasBoundingBox();
                 TrTransform selectionPose = App.Scene.SelectionCanvas.Pose;
                 Vector3 worldCenter = selectionPose.MultiplyPoint(selectionBounds.center);
