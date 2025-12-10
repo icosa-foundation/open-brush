@@ -63,7 +63,8 @@ namespace TiltBrush
             if (!string.IsNullOrEmpty(m_subfolder) && !m_subfolder.EndsWith("/"))
             {
                 m_subfolder += '/';
-            };
+            }
+            ;
             using (var zipFile = new ZipLibrary.ZipFile(m_RootPath))
             {
                 foreach (ZipLibrary.ZipEntry entry in zipFile)
