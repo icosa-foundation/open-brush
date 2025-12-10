@@ -106,7 +106,7 @@ namespace TiltBrush
         public static void MoveUserTo(Vector3 position)
         {
             TrTransform pose = App.Scene.Pose;
-            pose.translation = position;
+            pose.translation = -position;
             float BoundsRadius = SceneSettings.m_Instance.HardBoundsRadiusMeters_SS;
             pose = SketchControlsScript.MakeValidScenePose(pose, BoundsRadius);
             App.Scene.Pose = pose;
@@ -211,7 +211,7 @@ namespace TiltBrush
         public static void ChangeUserBearing(float angle, Vector3 axis)
         {
             TrTransform lookPose = App.Scene.Pose;
-            lookPose.rotation *= Quaternion.AngleAxis(angle, axis);
+            lookPose.rotation *= Quaternion.AngleAxis(-angle, axis);
             App.Scene.Pose = lookPose;
         }
 
@@ -502,15 +502,7 @@ namespace TiltBrush
         )]
         public static void AddText(string text)
         {
-            var tr = TrTransform.TR(
-                ApiManager.Instance.BrushPosition,
-                ApiManager.Instance.BrushRotation
-            );
-
-            var cmd = new CreateWidgetCommand(
-                WidgetManager.m_Instance.TextWidgetPrefab, tr, null, true
-            );
-
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.TextWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
 
             var textWidget = cmd.Widget as TextWidget;
@@ -550,15 +542,18 @@ namespace TiltBrush
             }
             location = Path.Combine(App.VideoLibraryPath(), location);
 
-            // TODO don't use "turtle" coordinates
-            var tr = new TrTransform();
-            tr.translation = ApiManager.Instance.BrushPosition;
-            tr.rotation = ApiManager.Instance.BrushRotation;
-            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.VideoWidgetPrefab, tr);
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.VideoWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
             var videoWidget = cmd.Widget as VideoWidget;
             if (videoWidget != null)
             {
+                // Set consistent size regardless of scene scale, then enable preservation
+                float consistentSize = 2.0f;
+                videoWidget.SetSignedWidgetSize(consistentSize);
+
+                // Now enable preservation to prevent async overrides
+                videoWidget.SetPreserveCustomSize(true);
+
                 var video = new ReferenceVideo(location);
                 videoWidget.SetVideo(video);
                 videoWidget.Show(true);
@@ -596,19 +591,17 @@ namespace TiltBrush
             }
 
             ReferenceImage image = _LoadReferenceImage(location);
-
-            // TODO don't use "turtle" coordinates
-            var tr = new TrTransform();
-            tr.translation = ApiManager.Instance.BrushPosition;
-            tr.rotation = ApiManager.Instance.BrushRotation;
-            var cmd = new CreateWidgetCommand(
-                WidgetManager.m_Instance.ImageWidgetPrefab, tr, null, true
-            );
-
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ImageWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
             var imageWidget = cmd.Widget as ImageWidget;
             if (imageWidget != null)
             {
+                // Set consistent size regardless of scene scale
+                float consistentSize = 2.0f;
+                imageWidget.SetSignedWidgetSize(consistentSize);
+                // Now enable preservation to prevent async overrides
+                imageWidget.SetPreserveCustomSize(true);
+
                 imageWidget.ReferenceImage = image;
                 imageWidget.Show(true);
                 cmd.SetWidgetCost(imageWidget.GetTiltMeterCost());
@@ -833,7 +826,7 @@ namespace TiltBrush
         }
 
         [ApiEndpoint(
-            "model.set.position",
+            "model.position",
             "Move a 3d model to the given coordinates",
             "2,6,8"
         )]
@@ -849,13 +842,13 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("model.scale", "Set a model's scale to the amount")]
-        public static void RotateModel(int index, float scale)
+        public static void ScaleModel(int index, float scale)
         {
             _SetWidgetScale(_GetActiveModel(index), scale);
         }
 
         [ApiEndpoint(
-            "symmetry.set.position",
+            "symmetry.position",
             "Move the symmetry widget to the given coordinates",
             "2,6,8"
         )]
@@ -1005,9 +998,9 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("image.scale", "Set a images scale to the amount")]
-        public static void RotateImage(int index, float scale)
+        public static void ScaleImage(int index, float scale)
         {
-            _SetWidgetScale(_GetActiveModel(index), scale);
+            _SetWidgetScale(_GetActiveImage(index), scale);
         }
 
         [ApiEndpoint("light.position", "Move a light to the given coordinates")]
@@ -1197,10 +1190,8 @@ namespace TiltBrush
                     break;
             }
 
-            var tr = _CurrentTransform();
-            CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.GetStencilPrefab(stencilType), tr, null, true);
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.GetStencilPrefab(stencilType), _CurrentBrushTransform(), forceTransform: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
 
         [ApiEndpoint(

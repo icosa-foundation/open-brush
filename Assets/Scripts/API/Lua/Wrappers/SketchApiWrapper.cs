@@ -37,22 +37,22 @@ namespace TiltBrush
         // public static void exportSelected() => ApiMethods.SaveModel();
 
         [LuaDocsDescription(@"Returns a list of active camera paths in the sketch")]
-        public static CameraPathListApiWrapper cameraPaths => new CameraPathListApiWrapper(
+        public static CameraPathListApiWrapper cameraPaths => new(
             WidgetManager.m_Instance.ActiveCameraPathWidgets.Select(w => w.WidgetScript).ToList()
         );
 
         [LuaDocsDescription(@"Returns a list of all active strokes in the sketch")]
-        public static StrokeListApiWrapper strokes => new StrokeListApiWrapper(
+        public static StrokeListApiWrapper strokes => new(
             SketchMemoryScript.m_Instance.GetAllActiveStrokes()
         );
 
         [LuaDocsDescription(@"Returns a list of all layers in the sketch")]
-        public static LayerListApiWrapper layers => new LayerListApiWrapper(
+        public static LayerListApiWrapper layers => new(
             App.Scene.LayerCanvases.ToList()
         );
 
         [LuaDocsDescription(@"Returns a list of all layers in the sketch")]
-        public static LayerApiWrapper mainLayer => new LayerApiWrapper(App.Scene.MainCanvas);
+        public static LayerApiWrapper mainLayer => new(App.Scene.MainCanvas);
 
         [LuaDocsDescription("All the groups in this sketch")]
         public static GroupListApiWrapper groups
@@ -72,27 +72,27 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription(@"Returns a list of active image widgets in the sketch")]
-        public static ImageListApiWrapper images => new ImageListApiWrapper(
+        public static ImageListApiWrapper images => new(
             WidgetManager.m_Instance.ActiveImageWidgets.Select(w => w.WidgetScript).ToList()
         );
 
         [LuaDocsDescription(@"Returns a list of active video widgets in the sketch")]
-        public static VideoListApiWrapper videos => new VideoListApiWrapper(
+        public static VideoListApiWrapper videos => new(
             WidgetManager.m_Instance.ActiveVideoWidgets.Select(w => w.WidgetScript).ToList()
         );
 
         [LuaDocsDescription(@"Returns a list of active model widgets in the sketch")]
-        public static ModelListApiWrapper models => new ModelListApiWrapper(
+        public static ModelListApiWrapper models => new(
             WidgetManager.m_Instance.ActiveModelWidgets.Select(w => w.WidgetScript).ToList()
         );
 
         [LuaDocsDescription(@"Returns a list of active stencil widgets in the sketch")]
-        public static GuideListApiWrapper guides => new GuideListApiWrapper(
+        public static GuideListApiWrapper guides => new(
             WidgetManager.m_Instance.ActiveStencilWidgets.Select(w => w.WidgetScript).ToList()
         );
 
         [LuaDocsDescription(@"Returns a list of all the available environments")]
-        public static EnvironmentListApiWrapper environments => new EnvironmentListApiWrapper(
+        public static EnvironmentListApiWrapper environments => new(
             EnvironmentCatalog.m_Instance.AllEnvironments.ToList()
         );
 

@@ -37,6 +37,13 @@
       },
       "url": "https://npm.developer.oculus.com"
     },
+    "com.sandrofigo.voxreader": {
+      "version": "5.0.6",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://package.openupm.com"
+    },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
       "depth": 0,
@@ -53,7 +60,7 @@
       }
     },
     "com.unity.addressables": {
-      "version": "1.22.2",
+      "version": "1.22.3",
       "depth": 1,
       "source": "registry",
       "dependencies": {
@@ -61,13 +68,13 @@
         "com.unity.modules.jsonserialize": "1.0.0",
         "com.unity.modules.imageconversion": "1.0.0",
         "com.unity.modules.unitywebrequest": "1.0.0",
-        "com.unity.scriptablebuildpipeline": "1.21.24",
+        "com.unity.scriptablebuildpipeline": "1.21.25",
         "com.unity.modules.unitywebrequestassetbundle": "1.0.0"
       },
       "url": "https://packages.unity.com"
     },
     "com.unity.burst": {
-      "version": "1.8.15",
+      "version": "1.8.21",
       "depth": 1,
       "source": "registry",
       "dependencies": {
@@ -119,7 +126,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.rider": {
-      "version": "3.0.36",
+      "version": "3.0.38",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -210,7 +217,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.render-pipelines.core": {
-      "version": "14.0.11",
+      "version": "14.0.12",
       "depth": 2,
       "source": "builtin",
       "dependencies": {
@@ -221,7 +228,7 @@
       }
     },
     "com.unity.scriptablebuildpipeline": {
-      "version": "1.21.24",
+      "version": "1.21.25",
       "depth": 2,
       "source": "registry",
       "dependencies": {},
@@ -235,11 +242,11 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.shadergraph": {
-      "version": "14.0.11",
+      "version": "14.0.12",
       "depth": 1,
       "source": "builtin",
       "dependencies": {
-        "com.unity.render-pipelines.core": "14.0.11",
+        "com.unity.render-pipelines.core": "14.0.12",
         "com.unity.searcher": "4.9.2"
       }
     },
@@ -313,7 +320,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.xr.legacyinputhelpers": {
-      "version": "2.1.10",
+      "version": "2.1.12",
       "depth": 1,
       "source": "registry",
       "dependencies": {
@@ -363,14 +370,14 @@
       "hash": "6554bc1dce4f363437c6a9d42719f2756f24cf49"
     },
     "com.zappar.xr.zapbox": {
-      "version": "https://github.com/zappar-xr/zapbox-xr-sdk.git#74fe120c1c9a0b31a186eb551ef25efe4a316c73",
+      "version": "https://github.com/zappar-xr/zapbox-xr-sdk.git#91b52bde3c0a67aa08909bdd2657f8a6672decf6",
       "depth": 0,
       "source": "git",
       "dependencies": {
         "com.unity.xr.management": "3.2.9",
         "com.unity.xr.legacyinputhelpers": "2.1.4"
       },
-      "hash": "74fe120c1c9a0b31a186eb551ef25efe4a316c73"
+      "hash": "91b52bde3c0a67aa08909bdd2657f8a6672decf6"
     },
     "moonsharp": {
       "version": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",
@@ -380,7 +387,7 @@
       "hash": "dd39e8b23a399938e91a1088a78ef63ca64f2cd8"
     },
     "org.khronos.unitygltf": {
-      "version": "https://github.com/KhronosGroup/UnityGLTF.git",
+      "version": "https://github.com/KhronosGroup/UnityGLTF.git#dev",
       "depth": 0,
       "source": "git",
       "dependencies": {
@@ -389,7 +396,7 @@
         "com.unity.shadergraph": "10.0.0",
         "com.unity.mathematics": "1.0.0"
       },
-      "hash": "1d3d93121c61ce9ba8e76189ec0ddf34ba374118"
+      "hash": "b0185be3587079d2bb3479298ecacb14f1278b58"
     },
     "org.nuget.google.apis": {
       "version": "1.64.0",

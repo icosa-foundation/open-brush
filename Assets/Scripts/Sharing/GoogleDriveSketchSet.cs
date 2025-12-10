@@ -266,6 +266,7 @@ namespace TiltBrush
 
         public void PrecacheSketchModels(int i)
         {
+            if (string.IsNullOrEmpty(App.Config.GoogleSecrets?.ApiKey)) return;
             if (i >= 0 && i < NumSketches)
             {
                 // TODO: this currently causes the models to also be loaded into memory
