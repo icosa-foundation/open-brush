@@ -20,6 +20,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Google.Apis.Http;
 using Newtonsoft.Json.Linq;
 using Org.OpenAPITools.Api;
 using Org.OpenAPITools.Client;
@@ -39,6 +40,7 @@ namespace TiltBrush
         Google = 1,
         Sketchfab = 2,
         Icosa = 3,
+        Vive = 4
     }
 
     [Serializable]
@@ -51,7 +53,8 @@ namespace TiltBrush
         OBJ,
         OBJ_NGON,
         BLOCKS,
-        PLY
+        PLY,
+        VOX
     }
 
     public class VrAssetService : MonoBehaviour
@@ -476,6 +479,11 @@ namespace TiltBrush
                             m_UploadTask.Task = UploadCurrentSketchSketchfabAsync(m_UploadTask.Token, tempUploadDir.Value,
                                 isDemoUpload);
                             break;
+                        case Cloud.Vive:
+                            m_UploadTask.Task = UploadCurrentSketchViverseAsync(m_UploadTask.Token, tempUploadDir.Value,
+                                isDemoUpload);
+                            break;
+
                     }
                     var (url, _) = await m_UploadTask.Task;
                     m_LastUploadCompleteUrl = url;
@@ -483,7 +491,8 @@ namespace TiltBrush
                     AudioManager.m_Instance.PlayUploadCompleteSound(InputManager.Wand.Transform.position);
                     PanelManager.m_Instance.GetAdminPanel().ActivatePromoBorder(true);
                     // Don't auto-open the URL on mobile because it steals focus from the user.
-                    if (!isDemoUpload && !App.Config.IsMobileHardware && m_LastUploadCompleteUrl != null)
+                    if (!isDemoUpload && m_LastUploadCompleteUrl != null &&
+                        (backend == Cloud.Vive || !App.Config.IsMobileHardware))
                     {
                         // Can't pass a string param because this is also called from mobile GUI
                         SketchControlsScript.m_Instance.IssueGlobalCommand(
@@ -641,6 +650,7 @@ namespace TiltBrush
                             Debug.LogWarning($"Ignoring {path} not under {rootDir}");
                             continue;
                         }
+                        archivedName = archivedName.Replace('\\', '/');
                         ZipArchiveEntry entry = archive.CreateEntry(archivedName);
                         using (Stream writer = entry.Open())
                         {
@@ -701,7 +711,7 @@ namespace TiltBrush
                         gltfFile,
                         AxisConvention.kGltf2, binary: false, doExtras: true,
                         includeLocalMediaContent: true, gltfVersion: 2,
-                        selfContained: true));
+                        selfContained: false));
                 if (!exportResults.success)
                 {
                     throw new VrAssetServiceException("Internal error creating upload data.");
@@ -776,7 +786,7 @@ namespace TiltBrush
                 OverlayType.Export, fadeDuration: 0.5f,
                 action: () => new ExportGlTF().ExportBrushStrokes(
                     gltfFile,
-                    AxisConvention.kGltf2, binary: false, doExtras: false,
+                    AxisConvention.kGltf2, binary: false, doExtras: true,
                     includeLocalMediaContent: true, gltfVersion: 2,
                     // Sketchfab doesn't support absolute texture URIs
                     selfContained: true));
@@ -819,6 +829,202 @@ namespace TiltBrush
             // API and find out when it's done and pop up the window then?
             string uri = $"{SketchfabService.kModelLandingPage}{response.uid}";
             return (uri, uploadLength);
+        }
+
+        private async Task<(string, long)> UploadCurrentSketchViverseAsync(
+                    CancellationToken token, string tempUploadDir, bool isDemoUpload)
+        {
+            DiskSceneFileInfo fileInfo = GetWritableFile();
+            var currentScene = SaveLoadScript.m_Instance.SceneFile;
+            string uploadName = currentScene.Valid ? currentScene.HumanName : kDefaultName;
+
+            // Generate title + description
+            string timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            string title = $"{uploadName}_{timestamp}";
+            if (title.Length > 30) title = title.Substring(0, 30);
+            string description = currentScene.Valid ? currentScene.HumanName : "Uploaded from Open Brush";
+
+            SetUploadProgress(UploadStep.CreateGltf, 0);
+
+            // Create export directory
+            string exportDir = Path.Combine(tempUploadDir, "sketch_export");
+            Directory.CreateDirectory(exportDir);
+
+            // Copy WebViewer files FIRST directly to exportDir (not to a subdirectory)
+            // This establishes the base structure: libs/, css/, helpers/, img/, legacy/, icosa-viewer.module.js, etc.
+            string tempZip = Path.Combine(Application.temporaryCachePath, "webviewer_temp.zip");
+            FileUtils.WriteBytesFromResources("WebViewer", tempZip);
+
+            if (!File.Exists(tempZip))
+                throw new VrAssetServiceException("WebViewer.bytes not found in Resources folder");
+
+            using (var zip = System.IO.Compression.ZipFile.OpenRead(tempZip))
+            {
+                int extractedCount = 0;
+                foreach (var entry in zip.Entries)
+                {
+                    string entryPath = entry.FullName;
+                    // Strip leading "WebViewer/" folder if present in ZIP
+                    if (entryPath.StartsWith("WebViewer/"))
+                        entryPath = entryPath.Substring("WebViewer/".Length);
+                    if (string.IsNullOrEmpty(entryPath))
+                        continue;
+
+                    string fullPath = Path.Combine(exportDir, entryPath);
+
+                    if (string.IsNullOrEmpty(entry.Name))
+                    {
+                        Directory.CreateDirectory(fullPath);
+                        continue;
+                    }
+
+                    Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                    entry.ExtractToFile(fullPath, overwrite: true);
+
+                    extractedCount++;
+
+#if !UNITY_EDITOR && !UNITY_STANDALONE
+                    // Yield every 10 files to prevent freezing on mobile
+                    if (extractedCount % 10 == 0)
+                    {
+                        await Awaiters.NextFrame;
+                        token.ThrowIfCancellationRequested();
+                    }
+#endif
+                }
+            }
+
+            File.Delete(tempZip);
+
+            // Now create/ensure assets folder exists in exportDir
+            string assetsDir = Path.Combine(exportDir, "assets");
+            if (!Directory.Exists(assetsDir))
+            {
+                Directory.CreateDirectory(assetsDir);
+            }
+
+            // Export GLB to assets/scene.glb
+            string glbPath = Path.Combine(assetsDir, "scene.glb");
+
+            var exportResults = await OverlayManager.m_Instance.RunInCompositorAsync(
+                OverlayType.Export, fadeDuration: 0.5f,
+                action: () => new ExportGlTF().ExportBrushStrokes(
+                    glbPath,
+                    AxisConvention.kGltf2,
+                    binary: true,
+                    doExtras: true,
+                    includeLocalMediaContent: true,
+                    gltfVersion: 2,
+                    selfContained: false));
+
+            if (!exportResults.success)
+                throw new VrAssetServiceException("Internal error creating upload data.");
+
+            SetUploadProgress(UploadStep.CreateTilt, 0);
+            await CreateTiltForUploadAsync(fileInfo);
+            token.ThrowIfCancellationRequested();
+
+            var publishManager = FindObjectOfType<ViversePublishManager>();
+            if (publishManager == null)
+                throw new VrAssetServiceException("ViversePublishManager not found");
+
+            if (!publishManager.IsAuthenticated())
+                throw new VrAssetServiceException("Not authenticated with VIVERSE");
+
+            // CREATE WORLD FIRST to get new sceneSid
+            var createTcs = new TaskCompletionSource<string>();
+
+            StartCoroutine(publishManager.CreateWorldContent(title, description, (success, sid, error) =>
+            {
+                if (success)
+                    createTcs.SetResult(sid);
+                else
+                    createTcs.SetException(new VrAssetServiceException($"Failed to create world: {error}"));
+            }));
+
+            string sceneSid = await createTcs.Task;
+            token.ThrowIfCancellationRequested();
+
+            // NOW generate HTML with NEW sceneSid
+            SetUploadProgress(UploadStep.ZipElements, 0);
+
+            string htmlPath = Path.Combine(exportDir, "index.html");
+            string html = ViewerHTMLGenerator.GenerateViewerHTML("./assets/scene.glb", sceneSid);
+            Debug.Log($"[DEBUG] sceneSid={sceneSid}");
+            File.WriteAllText(htmlPath, html);
+
+            token.ThrowIfCancellationRequested();
+
+
+            var filesToZip = new List<string>();
+
+            // Add all files from exportDir except .meta
+            foreach (var file in Directory.GetFiles(exportDir, "*", SearchOption.AllDirectories))
+            {
+                if (file.EndsWith(".meta"))
+                    continue;
+                filesToZip.Add(file);
+            }
+
+            // Create ZIP at exportDir/content.zip
+            string zipPath = Path.Combine(tempUploadDir, "content.zip");
+
+            await CreateZipFileAsync(zipPath, exportDir, filesToZip.ToArray(), token);
+            long uploadLength = new FileInfo(zipPath).Length;
+
+            // Upload the content to the world we created
+            var uploadTcs = new TaskCompletionSource<bool>();
+
+            // progress
+            void OnProgress(float p) => SetUploadProgress(UploadStep.UploadElements, p);
+            publishManager.OnUploadProgress += OnProgress;
+
+            // completion
+            void OnComplete(bool success, string msg)
+            {
+                publishManager.OnUploadProgress -= OnProgress;
+                publishManager.OnPublishComplete -= OnComplete;
+
+                if (success) uploadTcs.SetResult(true);
+                else uploadTcs.SetException(new VrAssetServiceException(msg));
+            }
+            publishManager.OnPublishComplete += OnComplete;
+
+            var lastResponse = publishManager.GetLastResponse();
+            string hubSid = lastResponse != null ? lastResponse.hub_sid : "";
+
+            // Upload to existing world
+            StartCoroutine(publishManager.UploadWorldContent(sceneSid, hubSid, zipPath));
+
+            // wait for completion
+            await uploadTcs.Task;
+
+            // Result url
+            WorldContentResponse resp = publishManager.GetLastResponse();
+            string accessToken = await App.ViveIdentity.GetAccessToken();
+            string uri = "";
+            if (resp != null && !string.IsNullOrEmpty(resp.hub_sid))
+            {
+                uri = string.Format(ViverseEndpoints.WORLD_VIEW_FORMAT, resp.hub_sid);
+            }
+            return (uri, uploadLength);
+        }
+
+        private void CopyDirectory(string sourceDir, string destDir)
+        {
+            Directory.CreateDirectory(destDir);
+
+            foreach (string file in Directory.GetFiles(sourceDir))
+            {
+                string destFile = Path.Combine(destDir, Path.GetFileName(file));
+                File.Copy(file, destFile, true);
+            }
+
+            foreach (string subDir in Directory.GetDirectories(sourceDir))
+            {
+                string destSubDir = Path.Combine(destDir, Path.GetFileName(subDir));
+                CopyDirectory(subDir, destSubDir);
+            }
         }
 
         /// Helper for UploadCurrentSketchXxxAsync
