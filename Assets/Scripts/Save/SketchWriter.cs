@@ -461,7 +461,7 @@ namespace TiltBrush
             oldGroupToNewGroup = new Dictionary<int, int>();
             Queue<SculptedGeometryData> geometryData = new Queue<SculptedGeometryData>();
             // When loading additively we want all strokes on a single new layer;
-            strokes = GetStrokes(bufferedStream, brushList, allowFastPath, bAdditive, targetLayer: targetLayer, timestampOffset, geometryData);
+            strokes = GetStrokes(bufferedStream, brushList, allowFastPath, targetLayer: targetLayer, timestampOffset, geometryData);
             if (strokes == null) { return false; }
             if (geometryData.Count > 0)
             { // if any sculpting modifications have been made
