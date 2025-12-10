@@ -155,6 +155,7 @@ namespace TiltBrush
 
             Debug.Assert(rParent != null, "Why is the popup's parent null?");
             m_ParentPanel = rParent.GetComponent<BasePanel>();
+            PanelManager.m_Instance.LastPanelInteractedWith = m_ParentPanel;
 
             m_UIComponentManager = GetComponent<UIComponentManager>();
             m_UIComponentManager.SetColor(Color.white);
