@@ -69,11 +69,11 @@ namespace TiltBrush
                 {
                     case TextWidgetMode.TextMeshPro:
                         m_TextMeshPro.enabled = true;
-                        m_MeshRenderer.enabled = false;
+                        if (m_MeshRenderer) m_MeshRenderer.enabled = false;
                         break;
-                    case TextWidgetMode.Geometry:
+                    case TextWidgetMode.Geometry: // Not currently working as extrusion support isn't finished
                         m_TextMeshPro.enabled = false;
-                        m_MeshRenderer.enabled = true;
+                        if (m_MeshRenderer) m_MeshRenderer.enabled = true;
                         break;
                 }
             }

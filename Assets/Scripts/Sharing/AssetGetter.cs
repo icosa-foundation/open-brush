@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System.Collections.Generic;
@@ -25,7 +26,7 @@ using UnityEngine.Networking;
 namespace TiltBrush
 {
 
-    /// Class that assists in getting a PolyRawAsset from Poly.
+    /// Class that assists in getting an IcosaRawAsset from an Icosa Gallery instance.
     public class AssetGetter
     {
         private bool m_Ready;
@@ -80,11 +81,11 @@ namespace TiltBrush
 
         public string Reason { get; }
 
-        public AssetGetter(string uri, string assetId, VrAssetFormat assetType,
+        public AssetGetter(string uri, string assetId, VrAssetFormat[] assetTypes,
                            string reason)
         {
             m_URI = uri;
-            m_Asset = new IcosaRawAsset(assetId, assetType);
+            m_Asset = new IcosaRawAsset(assetId, assetTypes);
             m_JsonSerializer = new JsonSerializer();
             m_JsonSerializer.ContractResolver = new SnakeToCamelPropertyNameContractResolver();
             Reason = reason;
@@ -93,7 +94,6 @@ namespace TiltBrush
         // Initiates the contact with Icosa
         public IEnumerator<Null> GetAssetCoroutine()
         {
-
             if (!m_URI.StartsWith(VrAssetService.m_Instance.IcosaApiRoot))
             {
                 m_Asset.SetRootElement(UnityWebRequest.EscapeURL(m_URI), m_URI);
@@ -104,7 +104,8 @@ namespace TiltBrush
                 JObject json = App.IcosaAssetCatalog.GetJsonForAsset(m_Asset.Id);
                 if (json == null)
                 {
-                    // In theory this should never happen
+                    // Usually implies we are loading a model not via a list query
+                    // i.e. from a reference in a saved sketch file
                     Debug.LogWarning($"AssetGetter: No JSON found for {m_Asset.Id}. Making additional request.");
 
                     WebRequest initialRequest = new WebRequest(m_URI);
@@ -134,106 +135,153 @@ namespace TiltBrush
                 if (json.Count == 0)
                 {
                     Debug.LogErrorFormat("Failed to deserialize response for {0}", m_URI);
+                    IsCanceled = true;
                     yield break;
                 }
 
                 // Find the asset by looking through the format list for the specified type.
-                VrAssetFormat requestedType = m_Asset.DesiredType;
+                List<string> desiredTypes = m_Asset.DesiredTypes.Select(x => x.ToString()).ToList();
 
-                while (true)
+                JToken GetBestFormat(IEnumerable<JToken> formats, List<string> types)
                 {
-                    var format = json["formats"]?.FirstOrDefault(x =>
-                        x["formatType"]?.ToString() == requestedType.ToString());
-                    if (format != null)
+                    bool found = false;
+                    JToken bestFormat = null;
+                    foreach (var typeByPreference in types)
                     {
-                        string internalRootFilePath = format["root"]?["relativePath"].ToString();
-                        // If we successfully get a gltf2 format file, internally change the extension to
-                        // "gltf2" so that the cache knows that it is a gltf2 file.
-                        if (requestedType == VrAssetFormat.GLTF2)
+                        foreach (var x in formats)
                         {
-                            internalRootFilePath = Path.ChangeExtension(internalRootFilePath, "gltf2");
+                            var formatType = x["formatType"]?.ToString();
+                            if (formatType == typeByPreference)
+                            {
+                                bestFormat = x;
+                                found = true;
+                                break;
+                            }
                         }
-
-                        // Get root element info.
-                        m_Asset.SetRootElement(
-                            internalRootFilePath,
-                            format["root"]?["url"].ToString());
-
-                        // Get all resource infos.  There may be zero.
-                        foreach (var r in format["resources"])
-                        {
-                            string path = r["relativePath"].ToString();
-                            m_Asset.AddResourceElement(path, r["url"].ToString());
-
-                            // The root element should be the only gltf file.
-                            Debug.Assert(!path.EndsWith(".gltf") && !path.EndsWith(".gltf2"),
-                                string.Format("Found extra gltf resource: {0}", path));
-                        }
-                        break;
+                        if (found) break;
                     }
-                    else
+                    return bestFormat;
+                }
+
+                JToken format = null;
+                string formatType = null;
+                var formatsToken = json["formats"];
+                VrAssetFormat selectedType = VrAssetFormat.Unknown;
+
+                if (formatsToken != null && formatsToken.HasValues)
+                {
+                    var allFormats = formatsToken.ToList();
+                    if (allFormats.Count > 0)
                     {
-                        // We asked for an asset in a format that it doesn't have.
-                        // In some cases, we should look for a different format as backup.
-                        if (requestedType == VrAssetFormat.GLTF2)
+                        // This assumes that desiredTypes are ordered by preference (best to worst).
+                        // Try the preferred formats first, then all formats.
+                        var preferredFormats = allFormats.Where(f => f["isPreferredForDownload"]?.Value<bool>() == true);
+                        format = GetBestFormat(preferredFormats, desiredTypes) ?? GetBestFormat(allFormats, desiredTypes);
+
+                        if (format != null)
                         {
-                            Debug.LogWarning($"No GLTF2 format found for {m_Asset.Id}. Trying GLTF1.");
-                            requestedType = VrAssetFormat.GLTF;
-                        }
-                        else
-                        {
-                            // In other cases, we should fail and get out.
-                            Debug.LogWarning($"Can't download {m_Asset.Id} in {m_Asset.DesiredType} format.");
-                            yield break;
+                            formatType = format["formatType"]?.ToString();
+                            if (!string.IsNullOrEmpty(formatType))
+                            {
+                                if (!Enum.TryParse<VrAssetFormat>(formatType, out selectedType))
+                                {
+                                    Debug.LogWarning($"Unknown format type '{formatType}' for asset {m_Asset.Id}");
+                                    format = null;
+                                }
+                            }
+                            else
+                            {
+                                Debug.LogWarning($"Format has no formatType for asset {m_Asset.Id}");
+                                format = null;
+                            }
                         }
                     }
                 }
-            }
 
-            // Download root asset.
-            var request = new WebRequest(m_Asset.RootDataURL);
-            using (var cr = request.SendAsync().AsIeNull())
-            {
-                while (!request.Done)
+                if (format != null)
                 {
-                    try
+                    string internalRootFilePath = format["root"]?["relativePath"].ToString();
+                    // If we successfully get a gltf2 format file, internally change the extension to
+                    // "gltf2" so that the cache knows that it is a gltf2 file.
+                    if (selectedType == VrAssetFormat.GLTF2)
                     {
-                        cr.MoveNext();
+                        internalRootFilePath = Path.ChangeExtension(internalRootFilePath, "gltf2");
                     }
-                    catch (VrAssetServiceException e)
+
+                    // Get root element info.
+                    m_Asset.SetRootElement(
+                        internalRootFilePath,
+                        format["root"]?["url"].ToString());
+
+                    // Get all resource infos.  There may be zero.
+                    foreach (var r in format["resources"])
                     {
-                        Debug.LogErrorFormat("Error downloading {0} at {1}\n{2}",
-                            m_Asset.Id, m_Asset.RootDataURL, e);
-                        yield break;
+                        string path = r["relativePath"].ToString();
+                        m_Asset.AddResourceElement(path, r["url"].ToString());
+
+                        // The root element should be the only gltf file.
+                        Debug.Assert(!path.EndsWith(".gltf") && !path.EndsWith(".gltf2"),
+                            string.Format("Found extra gltf resource: {0}", path));
                     }
-                    yield return cr.Current;
+                }
+                else
+                {
+                    string formatInfo = formatType != null ? $" in {formatType} format" : " - no suitable format found";
+                    Debug.LogWarning($"Can't download {m_Asset.Id}{formatInfo}.");
+                    IsCanceled = true;
+                    yield break;
                 }
             }
-            m_Asset.CopyBytesToRootElement(request.ResultBytes);
 
-            // Download all resource assets.
+            // Download root asset and all resources in parallel.
+            var rootRequest = new WebRequest(m_Asset.RootDataURL);
+            var resourceRequests = new List<(IcosaRawAsset.ElementInfo element, WebRequest request)>();
+
+            // Start root download
+            var rootEnumerator = rootRequest.SendAsync().AsIeNull();
+
+            // Start all resource downloads
             foreach (var e in m_Asset.ResourceElements)
             {
-                request = new WebRequest(e.dataURL);
-                using (var cr = request.SendAsync().AsIeNull())
+                var resourceRequest = new WebRequest(e.dataURL);
+                resourceRequests.Add((e, resourceRequest));
+            }
+
+            var resourceEnumerators = resourceRequests.Select(r => r.request.SendAsync().AsIeNull()).ToList();
+
+            // Wait for all downloads to complete
+            while (!rootRequest.Done || resourceRequests.Any(r => !r.request.Done))
+            {
+                try
                 {
-                    while (!request.Done)
+                    if (!rootRequest.Done)
                     {
-                        try
+                        rootEnumerator.MoveNext();
+                    }
+
+                    for (int i = 0; i < resourceEnumerators.Count; i++)
+                    {
+                        if (!resourceRequests[i].request.Done)
                         {
-                            cr.MoveNext();
+                            resourceEnumerators[i].MoveNext();
                         }
-                        catch (VrAssetServiceException ex)
-                        {
-                            Debug.LogErrorFormat("Error downloading {0} at {1}\n{2}",
-                                m_Asset.Id, m_Asset.RootDataURL, ex);
-                            e.assetBytes = null;
-                            yield break;
-                        }
-                        yield return cr.Current;
                     }
                 }
-                e.assetBytes = request.ResultBytes;
+                catch (VrAssetServiceException e)
+                {
+                    Debug.LogErrorFormat("Error downloading {0}\n{1}", m_Asset.Id, e);
+                    IsCanceled = true;
+                    yield break;
+                }
+                yield return null;
+            }
+
+            // All downloads complete - copy bytes
+            m_Asset.CopyBytesToRootElement(rootRequest.ResultBytes);
+
+            foreach (var (element, request) in resourceRequests)
+            {
+                element.assetBytes = request.ResultBytes;
             }
 
             m_Ready = true;

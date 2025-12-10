@@ -723,7 +723,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7930206087782400
-    m_Localized: Poly Library
+    m_Localized: Icosa Library
     m_Metadata:
       m_Items: []
   - m_Id: 7930412489482240
@@ -743,7 +743,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7931780608532480
-    m_Localized: Browse Icosa Gallery
+    m_Localized: Gallery Website
     m_Metadata:
       m_Items: []
   - m_Id: 7931977472385024
@@ -788,9 +788,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7933450197377024
-    m_Localized: 'Sign in to load
-
-      Icosa Gallery models'
+    m_Localized: "Sign in to\nIcosa Gallery\nto view your likes \nand uploads."
     m_Metadata:
       m_Items: []
   - m_Id: 7933561489039360
@@ -973,7 +971,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8053396663410688
-    m_Localized: Browse Icosa Gallery
+    m_Localized: Gallery Website
     m_Metadata:
       m_Items: []
   - m_Id: 8053860821868544
@@ -1284,11 +1282,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76044213523374080
-    m_Localized: Take Off Headset
+    m_Localized: Switch to Web Browser
     m_Metadata:
       m_Items: []
   - m_Id: 76044393131859968
-    m_Localized: Sign in on desktop
+    m_Localized: Sign in in your browser
     m_Metadata:
       m_Items: []
   - m_Id: 76044674418663424
@@ -1308,7 +1306,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76069201752154112
-    m_Localized: Finish publishing on desktop
+    m_Localized: Finish publishing in browser
     m_Metadata:
       m_Items: []
   - m_Id: 76069352969396224
@@ -1326,7 +1324,7 @@ MonoBehaviour:
   - m_Id: 76069893405466624
     m_Localized: 'Non-remixable sketches can''t
 
-      be uploaded to Poly'
+      be uploaded to Icosa'
     m_Metadata:
       m_Items: []
   - m_Id: 76070234092003328
@@ -1336,7 +1334,7 @@ MonoBehaviour:
   - m_Id: 76070420314906624
     m_Localized: 'There was an error connecting
 
-      to the Poly server. Try again
+      to the Icosa server. Try again
       later.'
     m_Metadata:
       m_Items: []
@@ -1393,9 +1391,9 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76072667581046784
-    m_Localized: 'Update Tilt Brush to share
+    m_Localized: 'Update Open Brush to share
 
-      sketches to Poly and Sketchfab'
+      sketches to Icosa and Sketchfab'
     m_Metadata:
       m_Items: []
   - m_Id: 76080842438926336
@@ -2078,7 +2076,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 81208142008475648
-    m_Localized: Tapered Marker
+    m_Localized: Tapered Marker Flat
     m_Metadata:
       m_Items: []
   - m_Id: 81208255854469120
@@ -3188,7 +3186,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 128947584125108224
-    m_Localized: Snap Axes
+    m_Localized: X
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634176
@@ -3525,6 +3523,18 @@ MonoBehaviour:
     m_Localized: Switch off passthrough environment mode to use Multiplayer
     m_Metadata:
       m_Items: []
+  - m_Id: 234808679492837376
+    m_Localized: Saved Strokes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235160207315525632
+    m_Localized: Save selected strokes to media library
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235163428054458368
+    m_Localized: Saved Strokes
+    m_Metadata:
+      m_Items: []
   - m_Id: 238556149774557184
     m_Localized: Image too large to load
     m_Metadata:
@@ -3712,8 +3722,74 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 380760416547594240
-    m_Localized: 'Take off your headset or switch to the browser to continue logging
-      in '
+    m_Localized: Take off your headset or switch to your web browser to continue
+      logging in.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 381885131211235328
+    m_Localized: Loading Sketches. Please wait...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175499957428224
+    m_Localized: Split Mesh?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175792879230976
+    m_Localized: Splitting complex meshes might be slow. Save your sketch regularly.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 397532058527293440
+    m_Localized: Not signed In
+    m_Metadata:
+      m_Items: []
+  - m_Id: 401824908597354496
+    m_Localized: 'Save some brush strokes using "Save Selected
+
+      Strokes" (on
+      the Labs Panel) and they will appear here.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 422456507319803904
+    m_Localized: Y
+    m_Metadata:
+      m_Items: []
+  - m_Id: 422456718544953344
+    m_Localized: Z
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436433407381692416
+    m_Localized: Next
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436433674365919232
+    m_Localized: Previous
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436974612083466240
+    m_Localized: Try Open Blocks
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543626534051840
+    m_Localized: Toggle X Rotation Snap
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543779617759232
+    m_Localized: Toggle Y Rotation Snap
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543840074457088
+    m_Localized: Toggle Z Rotation Snap
+    m_Metadata:
+      m_Items: []
+  - m_Id: 423748078849216512
+    m_Localized: Share to Viverse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 423748375394897920
+    m_Localized: 'Sign in to a Vive account to allow
+
+      uploading to Viverse
+      Worlds.'
     m_Metadata:
       m_Items: []
   references:

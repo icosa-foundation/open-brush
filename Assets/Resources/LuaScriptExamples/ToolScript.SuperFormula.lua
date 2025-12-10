@@ -25,6 +25,7 @@ function Main()
             rotation = Rotation:New(0, 0, angle * 180)
             points:Insert(Transform:New(position, rotation))
         end
+        points:Insert(points[0]) -- Close the loop
         return points
     end
 end
