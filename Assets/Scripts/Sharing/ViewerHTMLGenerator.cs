@@ -21,7 +21,7 @@ namespace TiltBrush
 <meta charset=""utf-8"">
 <html>
     <head>
-        <title>viverse icosa viewer v251207</title>
+        <title>viverse icosa viewer v251209</title>
         <script type=""importmap"" class=""es6_modules_map"">
             {
                 ""imports"": {
@@ -391,6 +391,9 @@ namespace TiltBrush
 				if( ! avatar ) return
 				
 				profile = await avatar.getProfile()
+
+                const play         = new viverse.Play()
+                if( ! play ) return
 				
 				const match = await play.newMatchmakingClient( app, true )
 				if( ! match ) return

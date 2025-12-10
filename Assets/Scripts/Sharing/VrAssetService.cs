@@ -990,8 +990,11 @@ namespace TiltBrush
             }
             publishManager.OnPublishComplete += OnComplete;
 
+            var lastResponse = publishManager.GetLastResponse();
+            string hubSid = lastResponse != null ? lastResponse.hub_sid : "";
+
             // Upload to existing world
-            StartCoroutine(publishManager.UploadWorldContent(sceneSid, zipPath));
+            StartCoroutine(publishManager.UploadWorldContent(sceneSid, hubSid, zipPath));
 
             // wait for completion
             await uploadTcs.Task;
@@ -999,7 +1002,11 @@ namespace TiltBrush
             // Result url
             WorldContentResponse resp = publishManager.GetLastResponse();
             string accessToken = await App.ViveIdentity.GetAccessToken();
-            string uri = $"{ViverseEndpoints.STUDIO_UPLOAD_REDIRECT}?access_token={accessToken}";
+            string uri = "";
+            if (resp != null && !string.IsNullOrEmpty(resp.hub_sid))
+            {
+                uri = string.Format(ViverseEndpoints.WORLD_VIEW_FORMAT, resp.hub_sid);
+            }
             return (uri, uploadLength);
         }
 
