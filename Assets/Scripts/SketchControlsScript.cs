@@ -4135,14 +4135,14 @@ namespace TiltBrush
         }
 
 
-        public void GenerateBoundingBoxSaveIcon(bool selectionOnly = false)
+        public void GenerateBoundingBoxSaveIcon(bool saveSelectedStrokes = false)
         {
             Vector3 vNewCamPos;
             List<CanvasScript> canvases = new List<CanvasScript> { App.Scene.SelectionCanvas };
             List<bool> canvasVisibility = new List<bool>();
 
             var layerCanvases = App.Scene.LayerCanvases;
-            if (selectionOnly)
+            if (saveSelectedStrokes)
             {
                 // Hide the other canvases and store their visibility
                 foreach (var canvas in layerCanvases)
@@ -4157,7 +4157,7 @@ namespace TiltBrush
             }
 
             Bounds rCanvasBounds;
-            if (selectionOnly)
+            if (saveSelectedStrokes)
             {
                 // For selection only, we need to transform the bounds to world space
                 Bounds selectionBounds = App.Scene.SelectionCanvas.GetCanvasBoundingBox();
@@ -4177,28 +4177,57 @@ namespace TiltBrush
                     });
             }
 
-            //position the camera at the center of the canvas bounds
-            vNewCamPos = rCanvasBounds.center;
+            Quaternion vNewCamRot;
 
-            //back the camera up, along -z until we can see the extent of the bounds
-            float fCanvasWidth = rCanvasBounds.max.x - rCanvasBounds.min.x;
-            float fCanvasHeight = rCanvasBounds.max.y - rCanvasBounds.min.y;
-            float fLargerExtent = Mathf.Max(fCanvasHeight, fCanvasWidth);
+            if (saveSelectedStrokes)
+            {
+                // For saved strokes, use direction from user's eye to selection, but position to frame properly
+                Vector3 eyePosition = ViewpointScript.Head.position;
+                Vector3 lookDirection = (rCanvasBounds.center - eyePosition).normalized;
 
-            //half fov for camera
-            float fHalfFOV = m_SaveIconTool.ScreenshotManager.LeftEye.fieldOfView * 0.5f;
+                // Calculate the distance needed to frame the bounding box properly using same formula as original
+                float fCanvasWidth = rCanvasBounds.max.x - rCanvasBounds.min.x;
+                float fCanvasHeight = rCanvasBounds.max.y - rCanvasBounds.min.y;
+                float fLargerExtent = Mathf.Max(fCanvasHeight, fCanvasWidth);
+                float fHalfFOV = m_SaveIconTool.ScreenshotManager.LeftEye.fieldOfView * 0.5f;
+                float fMagicNumber = 1.375f;
 
-            //TODO: find the real reason this isn't working as it should
-            float fMagicNumber = 1.375f;
+                // Use same distance formula as original code (multiply by tan, not divide)
+                float fBackupDistance = (fLargerExtent * 0.5f) * Mathf.Tan(Mathf.Deg2Rad * fHalfFOV) * fMagicNumber;
 
-            //set new cam position and zero out orientation
-            float fBackupDistance = (fLargerExtent * 0.5f)
-                * Mathf.Tan(Mathf.Deg2Rad * fHalfFOV) * fMagicNumber;
-            vNewCamPos.z = rCanvasBounds.min.z - fBackupDistance;
+                // Add proportional padding so selection doesn't fill entire frame
+                float fPaddingMultiplier = 1.3f;
+                fBackupDistance *= fPaddingMultiplier;
 
-            m_SaveIconTool.ProgrammaticCaptureSaveIcon(vNewCamPos, Quaternion.identity);
+                // Position camera at backup distance from bounding box center, along the look direction
+                vNewCamPos = rCanvasBounds.center - lookDirection * fBackupDistance;
+                vNewCamRot = Quaternion.LookRotation(lookDirection);
+            }
+            else
+            {
+                // Position the camera at the center of the canvas bounds
+                vNewCamPos = rCanvasBounds.center;
 
-            if (selectionOnly)
+                // Back the camera up, along -z until we can see the extent of the bounds
+                float fCanvasWidth = rCanvasBounds.max.x - rCanvasBounds.min.x;
+                float fCanvasHeight = rCanvasBounds.max.y - rCanvasBounds.min.y;
+                float fLargerExtent = Mathf.Max(fCanvasHeight, fCanvasWidth);
+
+                // Half fov for camera
+                float fHalfFOV = m_SaveIconTool.ScreenshotManager.LeftEye.fieldOfView * 0.5f;
+
+                // TODO: find the real reason this isn't working as it should
+                float fMagicNumber = 1.375f;
+
+                // Set new cam position and zero out orientation
+                float fBackupDistance = (fLargerExtent * 0.5f) * Mathf.Tan(Mathf.Deg2Rad * fHalfFOV) * fMagicNumber;
+                vNewCamPos.z = rCanvasBounds.min.z - fBackupDistance;
+                vNewCamRot = Quaternion.identity;
+            }
+
+            m_SaveIconTool.ProgrammaticCaptureSaveIcon(vNewCamPos, vNewCamRot);
+
+            if (saveSelectedStrokes)
             {
                 int i = 0;
                 foreach (var canvas in layerCanvases)
@@ -4341,7 +4370,7 @@ namespace TiltBrush
                         {
                             return;
                         }
-                        GenerateBoundingBoxSaveIcon(selectionOnly: true);
+                        GenerateBoundingBoxSaveIcon(saveSelectedStrokes: true);
                         StartCoroutine(SaveLoadScript.m_Instance.SaveSelected());
                         EatGazeObjectInput();
                         break;
