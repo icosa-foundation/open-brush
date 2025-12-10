@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
@@ -64,7 +65,8 @@ namespace TiltBrush
 
         [Header("Poly")]
         [Tooltip("Preload Poly models while browsing, without requiring the user to click")]
-        public bool EnablePolyPreload;
+        [FormerlySerializedAs("EnablePolyPreload")]
+        public bool EnableIcosaPreload;
         [Tooltip("Workaround for b/150868218, but the workaround requires lots of memory")]
         public bool AvoidUploadHandlerFile;
 
