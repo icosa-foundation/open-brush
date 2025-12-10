@@ -24,7 +24,17 @@ namespace TiltBrush
 {
     public class ViversePublishManager : MonoBehaviour
     {
-        private const string WORLD_API_BASE = "https://world-api.viverse.com/api/hubs-cms/v1/standalone";
+
+        [Header("Default World Configuration")]
+        [Tooltip("These permissions will be applied to every uploaded world.")]
+        [SerializeField]
+        [TextArea(3, 5)]
+        private string m_DefaultSandboxPermissions = "allow-forms allow-modals allow-popups allow-top-navigation allow-pointer-lock allow-presentation allow-downloads allow-orientation-lock allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation";
+
+        [Tooltip("Permissions for hardware/feature access. 'xr-spatial-tracking' is required for VR.")]
+        [SerializeField]
+        [TextArea(3, 5)]
+        private string m_DefaultAllowPermissions = "accelerometer; camera; gyroscope; magnetometer; microphone; midi; window-management; xr-spatial-tracking";
 
         private ViverseAuthManager m_AuthManager;
         private string m_AccessToken;
@@ -133,7 +143,10 @@ namespace TiltBrush
                 {
                     m_LastSceneSid = sceneSid;
                     Debug.Log($"[ViversePublish] Content created with scene_sid: {sceneSid}");
-                    StartCoroutine(UploadWorldContent(sceneSid, zipFilePath));
+
+                    // CHANGED: Passing m_LastResponse.hub_sid to the upload coroutine
+                    string hubSid = m_LastResponse != null ? m_LastResponse.hub_sid : "";
+                    StartCoroutine(UploadWorldContent(sceneSid, hubSid, zipFilePath));
                 }
                 else
                 {
@@ -161,12 +174,14 @@ namespace TiltBrush
 
         public IEnumerator CreateWorldContent(string title, string description, Action<bool, string, string> callback)
         {
-            string url = $"{WORLD_API_BASE}/contents";
+            string url = ViverseEndpoints.WORLD_CREATE;
 
             var payload = new WorldContentPayload
             {
                 title = title,
-                description_plaintext = description
+                description_plaintext = description,
+                preferred_devices = new[] { "hmd", "desktop", "android", "ios" },
+                tags = "Open Brush",
             };
 
             string json = JsonUtility.ToJson(payload);
@@ -217,9 +232,10 @@ namespace TiltBrush
             request.Dispose();
         }
 
-        public IEnumerator UploadWorldContent(string sceneSid, string zipFilePath)
+        // CHANGED: Added hubSid parameter
+        public IEnumerator UploadWorldContent(string sceneSid, string hubSid, string zipFilePath)
         {
-            string url = $"{WORLD_API_BASE}/contents/{sceneSid}/upload";
+            string url = string.Format(ViverseEndpoints.WORLD_UPLOAD_FORMAT, sceneSid);
             string fileName = Path.GetFileName(zipFilePath);
 
             Debug.Log($"[ViversePublish] Uploading to: {url}");
@@ -288,14 +304,28 @@ namespace TiltBrush
 
             Debug.Log($"[ViversePublish] File size: {fileData.Length} bytes ({fileData.Length / 1024.0f / 1024.0f:F2} MB)");
 
+            var metaPayload = new MetaDataPayload
+            {
+                source = "studio",
+                iframe_settings = new IframeSettings
+                {
+                    sandbox = m_DefaultSandboxPermissions, // Uses the Inspector value
+                    allow = m_DefaultAllowPermissions      // Uses the Inspector value (includes xr-spatial-tracking)
+                }
+            };
+
+            string metaJson = JsonUtility.ToJson(metaPayload);
+
             List<IMultipartFormSection> formData = new List<IMultipartFormSection>
             {
                 new MultipartFormFileSection("file", fileData, fileName, "application/zip"),
-                new MultipartFormDataSection("meta", "{\"source\": \"studio\"}")
+                new MultipartFormDataSection("meta", metaJson)
             };
 
             UnityWebRequest request = UnityWebRequest.Post(url, formData);
             request.SetRequestHeader("AccessToken", m_AccessToken);
+            request.SetRequestHeader("X-Htc-Auth-Client", ViverseEndpoints.CLIENT_ID);
+
 
             var operation = request.SendWebRequest();
 
@@ -316,7 +346,6 @@ namespace TiltBrush
                 Debug.Log("[ViversePublish] Upload successful!");
                 string responseText = request.downloadHandler.text;
                 Debug.Log($"[ViversePublish] Upload response: {responseText}");
-
                 OnPublishComplete?.Invoke(true, "World published successfully!");
             }
 
@@ -362,10 +391,26 @@ namespace TiltBrush
     }
 
     [Serializable]
+    public class MetaDataPayload
+    {
+        public string source;
+        public IframeSettings iframe_settings;
+    }
+
+    [Serializable]
+    public class IframeSettings
+    {
+        public string sandbox;
+        public string allow;
+    }
+
+    [Serializable]
     public class WorldContentPayload
     {
         public string title;
         public string description_plaintext;
+        public string[] preferred_devices;
+        public string tags;
     }
 
     [Serializable]

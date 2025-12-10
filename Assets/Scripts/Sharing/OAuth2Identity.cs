@@ -283,7 +283,7 @@ namespace TiltBrush
             }
         }
 
-        private void OnViverseAuthComplete(string accessToken, string refreshToken, int expiresIn, string accountId, string profileName, string avatarUrl, string avatarId)
+        private async void OnViverseAuthComplete(string accessToken, string refreshToken, int expiresIn, string accountId, string profileName, string avatarUrl, string avatarId)
         {
             try
             {
@@ -300,21 +300,8 @@ namespace TiltBrush
                     VrAssetService.m_Instance.ConsumeUploadResults();
                 }
 
-                // Set Profile immediately with data from JavaScript
-                Profile = new UserInfo
-                {
-                    id = accountId ?? "viverse_user",
-                    name = string.IsNullOrWhiteSpace(profileName) ? "Viverse User" : profileName,
-                    email = "",
-                    icon = m_LoggedInTexture, // Default icon first
-                    isGoogle = false
-                };
-
-                // Download avatar async if URL exists
-                if (!string.IsNullOrEmpty(avatarUrl))
-                {
-                    DownloadViverseAvatarAsync(avatarUrl).WrapErrors();
-                }
+                // FORCE DATA REFRESH
+                await GetUserInfoAsync(onStartup: false);
 
                 // Notify success
                 OnSuccessfulAuthorization?.Invoke();
@@ -365,6 +352,7 @@ namespace TiltBrush
             }
         }
 
+        // Replace your existing GetUserInfoViverseAsync with this robust version
         private async Task<UserInfo> GetUserInfoViverseAsync(bool forTesting)
         {
             string accessToken = m_ViverseToken?.AccessToken;
@@ -374,48 +362,84 @@ namespace TiltBrush
                 return null;
             }
 
-            using (UnityWebRequest request = UnityWebRequest.Get("https://sdk-api.viverse.com/avatar/profile"))
+            // Retry loop for robustness on fast re-logins
+            int maxRetries = 3;
+            for (int i = 0; i < maxRetries; i++)
             {
-                request.SetRequestHeader("Authorization", $"Bearer {accessToken}");
-                await request.SendWebRequest();
-
-                Debug.Log($"VIVERSE Profile API: {request.responseCode} - {request.downloadHandler.text}");
-
-                if (request.result != UnityWebRequest.Result.Success)
+                using (UnityWebRequest request = UnityWebRequest.Get(ViverseEndpoints.PROFILE_INFO))
                 {
-                    Debug.LogError($"VIVERSE: Profile API failed - {request.error}");
-                    return null;
-                }
+                    request.SetRequestHeader("AccessToken", accessToken);
 
-                var profile = JsonUtility.FromJson<ViverseProfileResponse>(request.downloadHandler.text);
+                    // Prevent Caching
+                    request.SetRequestHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+                    request.SetRequestHeader("Pragma", "no-cache");
+                    request.SetRequestHeader("Expires", "0");
 
-                Texture2D profileIcon = m_LoggedInTexture;
-                if (!string.IsNullOrEmpty(profile?.activeAvatar?.headIconUrl) && !forTesting)
-                {
-                    try
+                    await request.SendWebRequest();
+
+                    Debug.Log($"VIVERSE Profile API: {request.responseCode} - {request.downloadHandler.text}");
+
+                    if (request.result != UnityWebRequest.Result.Success)
                     {
-                        profileIcon = await ImageUtils.DownloadTextureAsync(profile.activeAvatar.headIconUrl);
-                        if (profileIcon == null || (profileIcon.width == 8 && profileIcon.height == 8))
+                        Debug.LogWarning($"VIVERSE: Profile API failed (Attempt {i + 1}/{maxRetries}) - {request.error}");
+                        if (request.responseCode == 401 || request.responseCode == 403) break;
+                    }
+                    else
+                    {
+                        var response = JsonUtility.FromJson<ViverseProfileResponse>(request.downloadHandler.text);
+                        string userName = response?.data?.Name; // The response structure is: { "data": { "Name": "...", ... } }
+
+                        // If we got a valid name, we are good to go!
+                        if (!string.IsNullOrEmpty(userName) && userName != "Viverse User")
                         {
-                            profileIcon = m_LoggedInTexture;
+                            // Get avatar info
+                            var activeAvatar = await GetActiveAvatarAsync();
+
+                            Texture2D profileIcon = m_LoggedInTexture;
+                            if (activeAvatar != null && !string.IsNullOrEmpty(activeAvatar.headIconUrl) && !forTesting)
+                            {
+                                try
+                                {
+                                    profileIcon = await ImageUtils.DownloadTextureAsync(activeAvatar.headIconUrl);
+                                    if (profileIcon == null || (profileIcon.width == 8 && profileIcon.height == 8))
+                                    {
+                                        profileIcon = m_LoggedInTexture;
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Debug.LogWarning($"VIVERSE: Avatar icon download failed - {ex.Message}");
+                                    profileIcon = m_LoggedInTexture;
+                                }
+                            }
+
+                            return new UserInfo
+                            {
+                                id = activeAvatar?.id ?? "viverse_user",
+                                name = userName,
+                                email = "",
+                                icon = profileIcon,
+                                isGoogle = false
+                            };
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogWarning($"VIVERSE: Avatar download failed - {ex.Message}");
-                        profileIcon = m_LoggedInTexture;
+
+                        Debug.LogWarning($"VIVERSE: Got empty profile name on attempt {i + 1}. Retrying...");
                     }
                 }
 
-                return new UserInfo
-                {
-                    id = profile?.activeAvatar?.id ?? "viverse_user",
-                    name = profile?.name ?? "VIVERSE User",
-                    email = "",
-                    icon = profileIcon,
-                    isGoogle = false
-                };
+                // Wait 1 second before retrying to let the backend catch up
+                if (i < maxRetries - 1) await Task.Delay(1000);
             }
+
+            // Fallback if all retries fail
+            return new UserInfo
+            {
+                id = "viverse_user",
+                name = "Viverse User",
+                email = "",
+                icon = m_LoggedInTexture,
+                isGoogle = false
+            };
         }
 
         /// Force-performs authentication - will cancel any current authentication in progress.
@@ -478,9 +502,18 @@ namespace TiltBrush
 
                 m_ViverseToken = null;
                 PlayerPrefs.DeleteKey("viverse_token");
+                PlayerPrefs.DeleteKey("viverse_scene_sid");
                 PlayerPrefs.Save();
 
                 Profile = null;
+
+                // FORCE BROWSER LOGOUT
+                // This opens the browser, clears the Viverse session cookies, 
+                // and redirects the user to the Viverse homepage.
+                string logoutUrl = $"{ViverseEndpoints.AUTH_LOGOUT_URL}?client_id={ViverseEndpoints.CLIENT_ID}&redirect_url={ViverseEndpoints.REDIRECT_URL}";
+
+                App.OpenURL(logoutUrl);
+
                 OnLogout?.Invoke();
                 return;
             }
@@ -619,6 +652,83 @@ namespace TiltBrush
                 user.icon = m_LoggedInTexture;
             }
             return user;
+        }
+
+        private async Task<ViverseAvatarData> GetActiveAvatarAsync()
+        {
+            string accessToken = m_ViverseToken?.AccessToken;
+            if (string.IsNullOrEmpty(accessToken))
+            {
+                return null;
+            }
+
+            using (UnityWebRequest request = UnityWebRequest.Get(ViverseEndpoints.AVATAR_LIST))
+            {
+                request.SetRequestHeader("AccessToken", accessToken);
+                await request.SendWebRequest();
+
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    Debug.LogWarning($"VIVERSE: Avatar list API failed - {request.error}");
+                    return null;
+                }
+
+                var response = JsonUtility.FromJson<ViverseAvatarListResponse>(request.downloadHandler.text);
+
+                if (response?.data?.CurrentAvatarId == null || response?.data?.Avatars == null)
+                {
+                    return null;
+                }
+
+                // Find the current active avatar
+                foreach (var avatar in response.data.Avatars)
+                {
+                    if (avatar.id == response.data.CurrentAvatarId)
+                    {
+                        return avatar;
+                    }
+                }
+
+                return null;
+            }
+        }
+
+        // VIVERSE API Response Classes
+        [Serializable]
+        public class ViverseProfileResponse
+        {
+            public ViverseUserData data;
+        }
+
+        [Serializable]
+        public class ViverseUserData
+        {
+            public string Name;
+        }
+
+        [Serializable]
+        public class ViverseAvatarListResponse
+        {
+            public ViverseAvatarListData data;
+        }
+
+        [Serializable]
+        public class ViverseAvatarListData
+        {
+            public string CurrentAvatarId;
+            public ViverseAvatarData[] Avatars;
+        }
+
+        [Serializable]
+        public class ViverseAvatarData
+        {
+            public string id;
+            public string VrmBinaryDataUrl;
+            public string HeadIconDataUrl;
+            public string SnapshotDataUrl;
+
+            // Convenience property for easier access
+            public string headIconUrl => HeadIconDataUrl;
         }
 
         private void OnDestroy()

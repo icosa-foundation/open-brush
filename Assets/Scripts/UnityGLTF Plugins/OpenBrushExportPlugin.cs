@@ -442,22 +442,19 @@ namespace TiltBrush
                 exportFromUnity * (settings.GradientOrientation * Vector3.up));
             extras["TB_FogColor"] = ColorToJString(settings.FogColor);
             extras["TB_FogDensity"] = settings.FogDensity;
-            Vector3 gltfPoseTranslation = pose.translation;
-            gltfPoseTranslation.x = -gltfPoseTranslation.x; // Flip X for GLTF
-            extras["TB_PoseTranslation"] = Vector3ToJString(gltfPoseTranslation);
+            extras["TB_PoseTranslation"] = Vector3ToJString(pose.translation);
             extras["TB_PoseRotation"] = Vector3ToJString(pose.rotation.eulerAngles);
             extras["TB_PoseScale"] = pose.scale;
             extras["TB_ExportedFromVersion"] = App.Config.m_VersionNumber;
 
             TrTransform cameraPose = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
-            // TODO - this seemed like a sensible alternative, but doesn't seem to work
-            // TODO - We should also export a real GLTF camera object
-            // TrTransform cameraPose = SketchControlsScript.m_Instance.GetSaveIconTool().LastSaveCameraRigState.GetLossyTrTransform();
-
-            Vector3 gltfCamTranslation = cameraPose.translation;
-            gltfCamTranslation.x = -gltfCamTranslation.x; // Flip X for GLTF
-            extras["TB_CameraTranslation"] = Vector3ToJString(gltfCamTranslation);
+            extras["TB_CameraTranslation"] = Vector3ToJString(cameraPose.translation);
             extras["TB_CameraRotation"] = Vector3ToJString(cameraPose.rotation.eulerAngles);
+
+            // This is a new mode that solves the issue of finding a sane pivot for Orbit Camera Controller
+            // And better suits Open Brush sketches
+            extras["TB_FlyMode"] = "true";
+
             // Experimental
             // extras["TB_metadata"] = JObject.FromObject(metadata);
             gltfRoot.Extras = extras;

@@ -711,7 +711,7 @@ namespace TiltBrush
                         gltfFile,
                         AxisConvention.kGltf2, binary: false, doExtras: true,
                         includeLocalMediaContent: true, gltfVersion: 2,
-                        selfContained: true));
+                        selfContained: false));
                 if (!exportResults.success)
                 {
                     throw new VrAssetServiceException("Internal error creating upload data.");
@@ -786,7 +786,7 @@ namespace TiltBrush
                 OverlayType.Export, fadeDuration: 0.5f,
                 action: () => new ExportGlTF().ExportBrushStrokes(
                     gltfFile,
-                    AxisConvention.kGltf2, binary: false, doExtras: false,
+                    AxisConvention.kGltf2, binary: false, doExtras: true,
                     includeLocalMediaContent: true, gltfVersion: 2,
                     // Sketchfab doesn't support absolute texture URIs
                     selfContained: true));
@@ -915,7 +915,7 @@ namespace TiltBrush
                     doExtras: true,
                     includeLocalMediaContent: true,
                     gltfVersion: 2,
-                    selfContained: true));
+                    selfContained: false));
 
             if (!exportResults.success)
                 throw new VrAssetServiceException("Internal error creating upload data.");
@@ -990,17 +990,23 @@ namespace TiltBrush
             }
             publishManager.OnPublishComplete += OnComplete;
 
+            var lastResponse = publishManager.GetLastResponse();
+            string hubSid = lastResponse != null ? lastResponse.hub_sid : "";
+
             // Upload to existing world
-            StartCoroutine(publishManager.UploadWorldContent(sceneSid, zipPath));
+            StartCoroutine(publishManager.UploadWorldContent(sceneSid, hubSid, zipPath));
 
             // wait for completion
             await uploadTcs.Task;
 
             // Result url
             WorldContentResponse resp = publishManager.GetLastResponse();
-            // string uri = resp?.publish_url ?? $"https://viverse.com/world/{sceneSid}";
             string accessToken = await App.ViveIdentity.GetAccessToken();
-            string uri = $"https://studio.viverse.com/upload?access_token={accessToken}";
+            string uri = "";
+            if (resp != null && !string.IsNullOrEmpty(resp.hub_sid))
+            {
+                uri = string.Format(ViverseEndpoints.WORLD_VIEW_FORMAT, resp.hub_sid);
+            }
             return (uri, uploadLength);
         }
 
