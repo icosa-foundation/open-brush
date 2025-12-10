@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.IO;
 using UnityEngine;
 
@@ -21,7 +22,7 @@ namespace TiltBrush
     // monitoring.  On platforms that support system level file watching, events are piped
     // to an internal file watcher, and for platforms that do not, events are handled
     // manually.
-    public class FileWatcher
+    public class FileWatcher : IDisposable
     {
         private System.IO.FileSystemWatcher m_InternalFileWatcher;
 
@@ -156,6 +157,16 @@ namespace TiltBrush
                 var args = new FileSystemEventArgs(WatcherChangeTypes.Changed,
                     System.IO.Path.GetDirectoryName(fullpath), System.IO.Path.GetFileName(fullpath));
                 FileChanged(this, args);
+            }
+        }
+
+        public void Dispose()
+        {
+            if (m_InternalFileWatcher != null)
+            {
+                m_InternalFileWatcher.EnableRaisingEvents = false;
+                m_InternalFileWatcher.Dispose();
+                m_InternalFileWatcher = null;
             }
         }
     }

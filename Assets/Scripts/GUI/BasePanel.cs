@@ -114,6 +114,8 @@ namespace TiltBrush
             StencilSettings = 20200,
             LayersPanel = 15000,
             TransformPanel = 12000,
+            WhatsNewPanel = 20300,
+            BlocksPromoPanel = 20301,
         }
 
         private enum FixedTransitionState
@@ -130,6 +132,9 @@ namespace TiltBrush
         [SerializeField] protected Collider m_Collider;
         [SerializeField] public GameObject m_Mesh;
         [SerializeField] protected Renderer m_Border;
+        [SerializeField] protected bool m_BorderIsSplit = false;
+        [SerializeField] protected Renderer m_BorderTop;
+        [SerializeField] protected Renderer m_BorderBottom;
         [SerializeField] protected Collider m_MeshCollider;
         [SerializeField] protected Vector3 m_ParticleBounds;
 
@@ -551,6 +556,11 @@ namespace TiltBrush
 
             PanelManager pm = PanelManager.m_Instance;
             m_Border.material.SetColor("_Color", pm.PanelHighlightInactiveColor);
+            if (m_BorderIsSplit)
+            {
+                m_BorderTop.material.SetColor("_Color", pm.PanelHighlightInactiveColor);
+                m_BorderBottom.material.SetColor("_Color", pm.PanelHighlightInactiveColor);
+            }
 
             m_DecorRenderers = new List<Renderer>();
             m_DecorTextMeshes = new List<TextMeshPro>();
@@ -644,9 +654,18 @@ namespace TiltBrush
             Color outlineCol = !m_AdvancedModePanel ? pm.PanelBorderMeshBaseColor : pm.PanelBorderMeshOutlineColor;
             BakedMeshOutline[] bakeries = GetComponentsInChildren<BakedMeshOutline>(true);
             BakedMeshOutline borderBakery = m_Border.GetComponent<BakedMeshOutline>();
+            BakedMeshOutline borderTopBakery = null;
+            BakedMeshOutline borderBottomBakery = null;
+            if (m_BorderTop != null)
+            {
+                borderTopBakery = m_BorderTop.GetComponent<BakedMeshOutline>();
+                borderBottomBakery = m_BorderBottom.GetComponent<BakedMeshOutline>();
+            }
             for (int i = 0; i < bakeries.Length; ++i)
             {
-                if (bakeries[i] == borderBakery)
+                if (bakeries[i] == borderBakery ||
+                    bakeries[i] == borderTopBakery ||
+                    bakeries[i] == borderBottomBakery)
                 {
                     // The border is the only bakery that gets custom treatment.
                     bakeries[i].Bake(baseCol, outlineCol, width);
@@ -1080,6 +1099,11 @@ namespace TiltBrush
                     if (m_Border.material == m_BorderMaterial)
                     {
                         m_Border.material.SetColor("_Color", rPanelColor);
+                        if (m_BorderIsSplit)
+                        {
+                            m_BorderTop.material.SetColor("_Color", rPanelColor);
+                            m_BorderBottom.material.SetColor("_Color", rPanelColor);
+                        }
                     }
 
                     if (fPrevPercent < 1.0f)
@@ -1702,6 +1726,11 @@ namespace TiltBrush
             m_Fixed = true;
             m_TransitionState = FixedTransitionState.Fixed;
             m_WandTransitionPercent = initialTransitionAmount;
+        }
+
+        public void DismissThisPanel()
+        {
+            PanelManager.m_Instance.DismissNonCorePanel(this.m_PanelType);
         }
     }
 } // namespace TiltBrush
