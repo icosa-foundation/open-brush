@@ -59,6 +59,12 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 1);
         }
 
+        [ApiEndpoint("save.selected", "Saves the current selected strokes in a new slot")]
+        public static void SaveSelected()
+        {
+            var rEnum = SketchControlsScript.GlobalCommands.SaveSelected;
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 1);
+        }
 
 #if UNITY_EDITOR
         // Editor only for now to help with testing/debugging

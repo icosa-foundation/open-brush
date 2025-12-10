@@ -170,7 +170,16 @@ namespace TiltBrush
             GLTF1 = "GLTF1",
             GLTF2 = "GLTF2",
             OBJ = "OBJ",
-            FBX = "FBX";
+            FBX = "FBX",
+            VOX = "VOX",
+            NOT_TILT = "-TILT",
+            NOT_BLOCKS = "-BLOCKS",
+            NOT_GLTF = "-GLTF",
+            NOT_GLTF1 = "-GLTF1",
+            NOT_GLTF2 = "-GLTF2",
+            NOT_OBJ = "-OBJ",
+            NOT_FBX = "-FBX",
+            NOT_VOX = "-VOX";
     }
 
     public class CuratedChoices
@@ -184,16 +193,35 @@ namespace TiltBrush
     /// Used as an accessor for files downloaded from Poly and cached on local storage.
     public partial class IcosaAssetCatalog : MonoBehaviour
     {
+        // TODO limit for non-desktop builds?
         const int kAssetDiskCacheSize = 1000;
         const float kThumbnailFetchRate = 15;
         const int kThumbnailFetchMaxCount = 30;
         const int kThumbnailReadRate = 4;
-        private const int DEFAULT_MODEL_TRIANGLE_COUNT_MAX = 20000;
+        private const int DEFAULT_MODEL_TRIANGLE_COUNT_MAX = 80000;
 
         // This may be a bit broader than an asset id, but it's a safe set of
         // filename characters.
         // Change - added . % ~ to allow urlencoded urls
         static readonly Regex sm_AssetIdPattern = new Regex(@"^[a-zA-Z0-9-_%~\.]+$");
+
+        /// Returns the list of supported Icosa asset formats in order of preference.
+        /// The list is conditional based on compiler flags for optional format support.
+        static VrAssetFormat[] GetSupportedIcosaFormats()
+        {
+            // Note: FBX and USD are not included as they're only supported for local files, not Icosa assets.
+            // VOX, GLTF2, GLTF are highest priority, followed by OBJ variants and PLY.
+            // OBJ_NGON is an OBJ file with n-gon faces (faces with >3 vertices).
+            return new[]
+            {
+                VrAssetFormat.VOX,
+                VrAssetFormat.GLTF2,
+                VrAssetFormat.GLTF,
+                VrAssetFormat.OBJ_NGON,
+                VrAssetFormat.OBJ,
+                VrAssetFormat.PLY
+            };
+        }
 
         public enum AssetLoadState
         {
@@ -341,7 +369,7 @@ namespace TiltBrush
                         UnityEngine.Profiling.Profiler.BeginSample("AssetDetails.DownloadThumbnail:LoadImage");
                         if (imageData != null)
                         {
-                            m_Thumbnail.Resize(imageData.ColorWidth, imageData.ColorHeight,
+                            m_Thumbnail.Reinitialize(imageData.ColorWidth, imageData.ColorHeight,
                                 TextureFormat.ARGB32, false);
                             m_Thumbnail.SetPixels32(imageData.ColorData);
                             m_Thumbnail.Apply(updateMipmaps: false, makeNoLongerReadable: true);
@@ -365,7 +393,7 @@ namespace TiltBrush
             public int TriangleCountMax;
             public string License;
             public string OrderBy;
-            public string Format;
+            public string[] Formats;
             public string Curated;
             public string Category;
         }
@@ -453,8 +481,17 @@ namespace TiltBrush
             return m_IsLoadingMemo.Contains(assetId);
         }
 
+        private void EnsureCatalogsExist()
+        {
+            if (m_AssetSetByType == null || m_AssetSetByType.Count == 0)
+            {
+                InitCatalogQueries();
+            }
+        }
+
         public void RequestAutoRefresh(IcosaSetType type)
         {
+            EnsureCatalogsExist();
             // We don't update featured except on startup
             if (type != IcosaSetType.Featured && App.IcosaIsLoggedIn)
             {
@@ -464,6 +501,7 @@ namespace TiltBrush
 
         public void RequestForcedRefresh(IcosaSetType type)
         {
+            EnsureCatalogsExist();
             var set = m_AssetSetByType[type];
             if (set.m_FetchMetadataCoroutine != null)
             {
@@ -479,7 +517,7 @@ namespace TiltBrush
         {
             string cacheDir = Path.Combine(Application.persistentDataPath, "assetCache");
             m_CacheDir = cacheDir.Replace("\\", "/");
-            // Use a different directory from m_CacheDir to avoid having to make ValidGltfCache()
+            // Use a different directory from m_CacheDir to avoid having to make ValidModelCache()
             // smart enough to allow directories with only a thumbnail and no asset data.
             m_ThumbnailCacheDir = Path.Combine(Application.persistentDataPath, "assetThumbnail")
                 .Replace("\\", "/");
@@ -489,18 +527,19 @@ namespace TiltBrush
 
             FileUtils.InitializeDirectoryWithUserError(m_CacheDir, "Failed to create asset cache");
 
-            // Create and populate model map.
             m_ModelsByAssetId = new Dictionary<string, Model>();
+            // InitCatalogQueries();
+
             try
             {
                 foreach (string folderPath in EnumerateCacheDirectories())
                 {
                     string assetId = Path.GetFileName(folderPath);
-                    string gltfFile = ValidGltfCache(folderPath, assetId);
-                    if (gltfFile != null)
+                    string modelFile = ValidModelCache(folderPath);
+                    if (modelFile != null)
                     {
                         string path = Path.Combine(folderPath, assetId);
-                        path = Path.Combine(path, gltfFile);
+                        path = Path.Combine(path, modelFile);
                         m_ModelsByAssetId[assetId] = new Model(assetId, path);
                     }
                     else
@@ -519,62 +558,8 @@ namespace TiltBrush
                 Debug.LogException(e);
             }
 
-            m_AssetSetByType = new Dictionary<IcosaSetType, AssetSet>
-            {
-                {
-                    IcosaSetType.User,
-                    new AssetSet
-                    {
-                        QueryParams = new IcosaQueryParameters
-                        {
-                            SearchText = "",
-                            TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
-                            License = LicenseChoices.ANY,
-                            OrderBy = OrderByChoices.NEWEST,
-                            Format = FormatChoices.GLTF2,
-                            Curated = CuratedChoices.ANY,
-                            Category = CategoryChoices.ANY
-                        }
-                    }
-                },
-                {
-                    IcosaSetType.Liked,
-                    new AssetSet
-                    {
-                        QueryParams = new IcosaQueryParameters
-                        {
-                            SearchText = "",
-                            TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
-                            License = LicenseChoices.REMIXABLE,
-                            OrderBy = OrderByChoices.LIKED_TIME,
-                            Format = FormatChoices.GLTF2,
-                            Curated = CuratedChoices.ANY,
-                            Category = CategoryChoices.ANY
-                        }
-                    }
-                },
-                // Old way - newest curated
-                // "?curated=true&orderBy=NEWEST"
-                // For now try just sorting by "best"
-                // Something like orderBy=TRENDING would be good - BEST but weighted by recency
-                {
-                    IcosaSetType.Featured,
-                    new AssetSet
-                    {
-                        m_RefreshRequested = true,
-                        QueryParams = new IcosaQueryParameters
-                        {
-                            SearchText = "",
-                            TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
-                            License = LicenseChoices.REMIXABLE,
-                            OrderBy = OrderByChoices.BEST,
-                            Format = FormatChoices.GLTF2,
-                            Curated = CuratedChoices.TRUE,
-                            Category = CategoryChoices.ANY
-                        }
-                    }
-                }
-            };
+            m_AssetSetByType = new Dictionary<IcosaSetType, AssetSet>();
+            // InitCatalogQueries();
 
             App.Instance.AppExit += () =>
             {
@@ -585,6 +570,63 @@ namespace TiltBrush
                     Directory.Delete(models[excess - 1], true);
                 }
             };
+        }
+
+        public void InitCatalogQueries()
+        {
+            m_AssetSetByType[IcosaSetType.User] = new AssetSet
+            {
+                QueryParams = new IcosaQueryParameters
+                {
+                    SearchText = "",
+                    TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
+                    License = LicenseChoices.ANY,
+                    OrderBy = OrderByChoices.NEWEST,
+                    Formats = new[] { FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Curated = CuratedChoices.ANY,
+                    Category = CategoryChoices.ANY
+                }
+            };
+
+            m_AssetSetByType[IcosaSetType.Liked] = new AssetSet
+            {
+                QueryParams = new IcosaQueryParameters
+                {
+                    SearchText = "",
+                    TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
+                    License = LicenseChoices.REMIXABLE,
+                    OrderBy = OrderByChoices.LIKED_TIME,
+                    Formats = new[] { FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Curated = CuratedChoices.ANY,
+                    Category = CategoryChoices.ANY
+                }
+            };
+
+            // Old way - newest curated
+            // "?curated=true&orderBy=NEWEST"
+            // For now try just sorting by "best"
+            // Something like orderBy=TRENDING would be good - BEST but weighted by recency
+            m_AssetSetByType[IcosaSetType.Featured] = new AssetSet
+            {
+                m_RefreshRequested = true,
+                QueryParams = new IcosaQueryParameters
+                {
+                    SearchText = "",
+                    TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
+                    License = LicenseChoices.REMIXABLE,
+                    OrderBy = OrderByChoices.BEST,
+                    Formats = new[] { FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Curated = CuratedChoices.TRUE,
+                    Category = CategoryChoices.ANY
+                }
+            };
+
+            if (App.IcosaIsLoggedIn)
+            {
+                m_AssetSetByType[IcosaSetType.Featured].m_RefreshRequested = true;
+            }
+
+            RefreshFetchCoroutines();
         }
 
         public AssetLoadState GetAssetLoadState(string assetId)
@@ -660,7 +702,6 @@ namespace TiltBrush
         void Start()
         {
             OAuth2Identity.ProfileUpdated += OnProfileUpdated;
-            RefreshFetchCoroutines();
         }
 
         public Model GetModel(string assetId)
@@ -727,6 +768,7 @@ namespace TiltBrush
         /// Pass the reason the Model is being pulled into memory, for logging purposes.
         public void RequestModelLoad(Model model, string reason)
         {
+            Debug.Log($"Requesting model load {model} for {reason}");
             // Verify assumption that byAssetId[model.asset] == model; otherwise, caller may wait
             // indefinitely for model's loaded state to change and that bug will be hard to track down.
             string assetId = model.GetLocation().AssetId;
@@ -753,14 +795,17 @@ namespace TiltBrush
         /// If you aren't trying to do a hot-reload, you should check Model.m_Valid first.
         public void RequestModelLoad(string assetId, string reason)
         {
+            Debug.Log($"RequestModelLoad {assetId} for {reason}");
             // Don't attempt to load models which are already loading.
             if (IsLoading(assetId))
             {
+                Debug.LogWarning($"RequestModelLoad {assetId} IsLoading");
                 return;
             }
 
             if (m_ModelsByAssetId.ContainsKey(assetId))
             {
+                Debug.Log($"Already in memory: {assetId}");
                 // Already downloaded.
                 // It may be in memory already, but it's safe to ask for it to be brought in again.
                 // That way we get the behavior of "ignore a failed load-into-memory"
@@ -769,6 +814,7 @@ namespace TiltBrush
             }
             else
             {
+                Debug.Log($"Not already in memory: {assetId}");
                 // Not downloaded yet.
                 // Kick off a download; when done the load will  and arrange for the download-complete to kick off the
                 // load-into-memory work.
@@ -788,7 +834,7 @@ namespace TiltBrush
 
                 // Then request the asset from Poly.
                 AssetGetter request = VrAssetService.m_Instance.GetAsset(
-                    assetId, VrAssetFormat.GLTF2, reason);
+                    assetId, GetSupportedIcosaFormats(), reason);
                 StartCoroutine(request.GetAssetCoroutine());
                 m_ActiveRequests.Add(request);
                 m_IsLoadingMemo.Add(assetId);
@@ -852,11 +898,8 @@ namespace TiltBrush
         /// into model loads?
         public void PrecacheModels(SceneFileInfo sceneFileInfo, string reason)
         {
-            if (string.IsNullOrEmpty(App.Config.GoogleSecrets?.ApiKey))
-            {
-                return;
-            }
-            StartCoroutine(PrecacheModelsCoroutine(sceneFileInfo, reason));
+            // TODO precaching can end up getting us rate limited on archive.org
+            //StartCoroutine(PrecacheModelsCoroutine(sceneFileInfo, reason));
         }
 
         /// Waits for the json data to be read on a background thread, and then executes a precache
@@ -892,8 +935,9 @@ namespace TiltBrush
                 {
                     continue;
                 }
+
                 precacheCoroutines.Add(PrecacheCoroutine(
-                    VrAssetService.m_Instance.GetAsset(id, VrAssetFormat.GLTF2, reason)));
+                    VrAssetService.m_Instance.GetAsset(id, GetSupportedIcosaFormats(), reason)));
                 yield return null;
             }
 
@@ -1103,6 +1147,7 @@ namespace TiltBrush
                 // So for now, just don't show them.
                 // bool includePrivate = type == IcosaSetType.User;
                 bool includePrivate = false;
+
                 using (var cr = lister.NextPage(models, m_ThumbnailSuffix, includePrivate))
                 {
                     int prevCount = models.Count;
@@ -1185,9 +1230,12 @@ namespace TiltBrush
             }
         }
 
-        void OnProfileUpdated(OAuth2Identity _)
+        void OnProfileUpdated(OAuth2Identity identity)
         {
-            RefreshFetchCoroutines();
+            if (identity.IsIcosa)
+            {
+                RefreshFetchCoroutines();
+            }
         }
 
         void OnDestroy()
@@ -1197,10 +1245,11 @@ namespace TiltBrush
 
         public int NumCloudModels(IcosaSetType type)
         {
+            EnsureCatalogsExist();
             return m_AssetSetByType[type].m_Models.Count();
         }
 
-        public AssetDetails GetPolyAsset(IcosaSetType type, int index)
+        public AssetDetails GetIcosaAsset(IcosaSetType type, int index)
         {
             return m_AssetSetByType[type].m_Models[index];
         }
@@ -1208,7 +1257,7 @@ namespace TiltBrush
         // Ideally we would check against the format info from Poly that we have all the required
         // elements but for now we know that there should be exactly one .gltf/.gltf2 and a .bin
         // Returns the filename of the .gltf/.gltf2 file, or null if not valid.
-        private static string ValidGltfCache(string dir, string assetId)
+        private static string ValidModelCache(string dir)
         {
             // We now don't require a .bin file, as some assets are glbs
             // if (Directory.GetFiles(dir, "*.bin").Length == 0)
@@ -1218,18 +1267,23 @@ namespace TiltBrush
 
             var filesGltf1 = Directory.GetFiles(dir, "*.gltf");
             var filesGltf2 = Directory.GetFiles(dir, "*.gltf2");
-            if (filesGltf1.Length + filesGltf2.Length != 1)
+            var filesObj = Directory.GetFiles(dir, "*.obj");
+
+            if (filesGltf1.Length + filesGltf2.Length + filesObj.Length != 1)
             {
                 return null;
             }
-            else if (filesGltf1.Length == 1)
-            {
-                return filesGltf1[0];
-            }
-            else
+
+            // We used to prefer gltf1 for some reason. Stop doing that.
+            if (filesGltf2.Length == 1)
             {
                 return filesGltf2[0];
             }
+            if (filesGltf1.Length == 1)
+            {
+                return filesGltf1[0];
+            }
+            return filesObj[0];
         }
 
         public void ClearLoadingQueue()
@@ -1309,7 +1363,7 @@ namespace TiltBrush
             var queryParams = QueryOptionParametersForSet(set);
             if (ChoicesHelper.IsValidChoice<FormatChoices>(format))
             {
-                queryParams.Format = format;
+                queryParams.Formats = new[] { format };
                 m_AssetSetByType[set].QueryParams = queryParams;
                 if (requestRefresh) RefreshPanel();
             }

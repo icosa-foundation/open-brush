@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -153,7 +154,6 @@ namespace TiltBrush
                 }
             }
 
-
             return resultPaths;
         }
 
@@ -162,16 +162,19 @@ namespace TiltBrush
             m_InitialWidget = initialWidget;
             m_NewModelWidgets = new List<ModelWidget>();
             m_NewLightWidgets = new List<LightWidget>();
-            var root = initialWidget.GetComponentInChildren<ObjModelScript>().transform;
-            m_NodePaths = ExtractPaths(root);
+            var widgetObjScript = initialWidget.GetComponentInChildren<ObjModelScript>();
+            m_NodePaths = ExtractPaths(widgetObjScript.transform);
         }
 
+        // Constructs a path from the root to the object, including the object's name
         private static string GetHierarchyPath(Transform root, Transform obj)
         {
+            if (obj == null) return "";
+
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.Insert(0, "/" + obj.name);
 
-            while (obj.transform.parent != root)
+            while (obj.transform.parent != null && obj.transform.parent != root)
             {
                 obj = obj.transform.parent;
                 stringBuilder.Insert(0, "/" + obj.name);
@@ -180,9 +183,93 @@ namespace TiltBrush
             return stringBuilder.ToString();
         }
 
+        private void BreakApartSvg()
+        {
+            // TODO: Implement proper SVG break-apart functionality
+            // This requires:
+            // 1. Getting the SVG SceneInfo and extracting child nodes or individual shapes
+            // 2. For each child/shape, creating a new SceneInfo using FromChildIndex() or FromNode()
+            // 3. Tessellating each sub-SceneInfo into a mesh using RuntimeSVGImporter.SceneInfoToMesh()
+            // 4. Creating new GameObjects in the model prefab with these meshes
+            // 5. Updating m_NodePaths to reference these new child objects
+            //
+            // For now, we just log a message that SVG break-apart is not yet implemented
+
+            Debug.LogWarning("Break apart for SVG models is not yet fully implemented. " +
+                           "SVG models are currently imported as a single tessellated mesh and cannot be broken apart by vector shapes.");
+
+            // Prevent the command from proceeding by keeping m_NodePaths empty
+            m_NodePaths = new List<string>();
+        }
+
         protected override void OnRedo()
         {
             SelectionManager.m_Instance.DeselectWidgets(new List<GrabWidget> { m_InitialWidget });
+
+            var widgetObjScript = m_InitialWidget.GetComponentInChildren<ObjModelScript>();
+
+            // Handle SVG models differently - break apart by scene nodes/shapes instead of mesh splitting
+            if (m_InitialWidget.Model.GetLocation().Extension == ".svg")
+            {
+                BreakApartSvg();
+                return;
+            }
+
+            // If we only have one mesh filter, we next have to split the mesh based on connected regions
+            if (widgetObjScript.m_MeshChildren.Length == 1)
+            {
+                var modelObjScript = m_InitialWidget.Model.m_ModelParent.GetComponent<ObjModelScript>();
+                string subtree = m_InitialWidget.Subtree;
+
+                Transform destRoot;
+                if (string.IsNullOrEmpty(subtree))
+                {
+                    destRoot = modelObjScript.m_MeshChildren[0].transform;
+                }
+                else
+                {
+                    var (subTreeRoot, _) = ModelWidget.FindSubtreeRoot(
+                        modelObjScript.transform,
+                        subtree
+                    );
+                    destRoot = subTreeRoot;
+                }
+
+                if (destRoot == null)
+                {
+                    Debug.LogError($"BreakModelApartCommand: Unable to find destRoot for subtree '{subtree}'");
+                    return;
+                }
+
+                var modelMf = destRoot.GetComponentInChildren<MeshFilter>();
+                var splits = Model.ApplySplits(modelMf);
+
+                // Use the subtree or mesh name as the path if m_NodePaths is empty
+                var prevNodePath = m_NodePaths.Count > 0
+                    ? m_NodePaths[0]
+                    : (string.IsNullOrEmpty(subtree) ? GetHierarchyPath(modelObjScript.transform, destRoot) : subtree);
+                if (splits.Count == 1)
+                {
+                    // Destroy the split as it's superfluous
+                    GameObject.DestroyImmediate(splits[0].gameObject);
+                    m_InitialWidget.Model.RegisterMeshSplit(String.IsNullOrEmpty(subtree) ? prevNodePath : subtree);
+                }
+                else
+                {
+                    // Remove the meshfilter from the original game object
+                    GameObject.DestroyImmediate(modelMf.GetComponent<MeshFilter>());
+
+                    m_NodePaths = new List<string>();
+                    foreach (var split in splits)
+                    {
+                        m_NodePaths.Add($"{prevNodePath}/{split.name}");
+                    }
+                    m_InitialWidget.Model.RegisterMeshSplit(String.IsNullOrEmpty(subtree) ? prevNodePath : subtree);
+                }
+                modelObjScript.UpdateAllMeshChildren();
+            }
+
+            // Create new widgets for each path
             foreach (var path in m_NodePaths)
             {
                 var newWidget = m_InitialWidget.Clone() as ModelWidget;
@@ -228,13 +315,13 @@ namespace TiltBrush
             foreach (var widget in m_NewModelWidgets)
             {
                 WidgetManager.m_Instance.UnregisterGrabWidget(widget.gameObject);
-                Object.Destroy(widget.gameObject);
+                GameObject.Destroy(widget.gameObject);
             }
             SelectionManager.m_Instance.DeselectWidgets(m_NewLightWidgets);
             foreach (var widget in m_NewLightWidgets)
             {
                 WidgetManager.m_Instance.UnregisterGrabWidget(widget.gameObject);
-                Object.Destroy(widget.gameObject);
+                GameObject.Destroy(widget.gameObject);
             }
             m_InitialWidget.gameObject.SetActive(true);
             SelectionManager.m_Instance.SelectWidget(m_InitialWidget);
