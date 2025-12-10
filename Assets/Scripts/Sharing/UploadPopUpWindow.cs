@@ -35,6 +35,7 @@ namespace TiltBrush
             Waiting,
             EmbeddedMediaWarningIcosa,
             EmbeddedMediaWarningSketchfab,
+            EmbeddedMediaWarningViverse,
             NothingToUploadWarning,
             ConnectionError,
             OutOfDate,
@@ -51,10 +52,14 @@ namespace TiltBrush
         [SerializeField] private GameObject m_IcosaLoggedOutObjects;
         [SerializeField] private GameObject m_SketchfabLoggedInObjects;
         [SerializeField] private GameObject m_SketchfabLoggedOutObjects;
+        [SerializeField] private GameObject m_ViverseLoggedInObjects;
+        [SerializeField] private GameObject m_ViverseLoggedOutObjects;
         [SerializeField] private TMPro.TextMeshPro m_IcosaUserName;
         [SerializeField] private TMPro.TextMeshPro m_SketchfabUserName;
+        [SerializeField] private TMPro.TextMeshPro m_ViverseUserName;
         [SerializeField] private Renderer m_IcosaPhoto;
         [SerializeField] private Renderer m_SketchfabPhoto;
+        [SerializeField] private Renderer m_ViversePhoto;
 
         // Things that should be visible when uploading.
         [SerializeField] private GameObject m_UploadObjects;
@@ -75,6 +80,7 @@ namespace TiltBrush
         // Things that should be visible when media library content is in the scene.
         [SerializeField] private GameObject m_EmbeddedMediaWarningIcosa;
         [SerializeField] private GameObject m_EmbeddedMediaWarningSketchfab;
+        [SerializeField] private GameObject m_EmbeddedMediaWarningViverse;
 
         // Things that should be visible when there's nothing to upload.
         [SerializeField] private GameObject m_NothingToUploadWarning;
@@ -103,6 +109,7 @@ namespace TiltBrush
             OAuth2Identity.ProfileUpdated += OnProfileUpdated;
             RefreshUploadButton(Cloud.Icosa);
             RefreshUploadButton(Cloud.Sketchfab);
+            RefreshUploadButton(Cloud.Vive);
             m_OnClose += OnClose;
 
             SketchMemoryScript.m_Instance.OperationStackChanged += OnOperationStackChanged;
@@ -124,9 +131,10 @@ namespace TiltBrush
             m_UploadFailedObjects.SetActive(displayMode == DisplayMode.UploadFailed);
             m_UploadingDeniedObjects.SetActive(displayMode == DisplayMode.UploadingDenied);
             m_WaitObjects.SetActive(displayMode == DisplayMode.Waiting);
-            m_EmbeddedMediaWarningIcosa.SetActive(displayMode == DisplayMode.EmbeddedMediaWarningIcosa);
+            m_EmbeddedMediaWarningIcosa.SetActive(false); // TEMP DISABLE ICOSA (displayMode == DisplayMode.EmbeddedMediaWarningIcosa);
             m_EmbeddedMediaWarningSketchfab.SetActive(
                 displayMode == DisplayMode.EmbeddedMediaWarningSketchfab);
+            m_EmbeddedMediaWarningViverse.SetActive(displayMode == DisplayMode.EmbeddedMediaWarningViverse);
             m_NothingToUploadWarning.SetActive(displayMode == DisplayMode.NothingToUploadWarning);
             m_ConnectionErrorObjects.SetActive(displayMode == DisplayMode.ConnectionError);
             m_OutOfDateObjects.SetActive(displayMode == DisplayMode.OutOfDate);
@@ -203,7 +211,8 @@ namespace TiltBrush
             {
                 // Check to see if we just logged in.
                 if ((m_LoggingInType == Cloud.Icosa && App.IcosaIsLoggedIn) ||
-                    (m_LoggingInType == Cloud.Sketchfab && App.SketchfabIdentity.LoggedIn))
+                    (m_LoggingInType == Cloud.Sketchfab && App.SketchfabIdentity.LoggedIn) ||
+                    m_LoggingInType == Cloud.Vive && App.ViveIdentity.LoggedIn)
                 {
                     SetMode(DisplayMode.Loggedout);
                     // It's easy to get the logic wrong for how to re-initialize the UI, so just go through a
@@ -222,7 +231,7 @@ namespace TiltBrush
                     // If upload has not started and sketch is undone until upload is no longer available,
                     // close the popup.
                     if (!SketchControlsScript.m_Instance.IsCommandAvailable(
-                        GlobalCommands.UploadToGenericCloud))
+                            GlobalCommands.UploadToGenericCloud))
                     {
                         RequestClose(bForceClose: true);
                     }
@@ -265,6 +274,9 @@ namespace TiltBrush
                 case Cloud.Icosa:
                     return (m_IcosaUserName, m_IcosaLoggedInObjects,
                             m_IcosaLoggedOutObjects, m_IcosaPhoto);
+                case Cloud.Vive:
+                    return (m_ViverseUserName, m_ViverseLoggedInObjects,
+                            m_ViverseLoggedOutObjects, m_ViversePhoto);
                 default: throw new InvalidOperationException($"{cloud}");
             }
         }
@@ -275,8 +287,8 @@ namespace TiltBrush
             if (backend == Cloud.Icosa)
             {
                 bool icosaLoggedIn = App.IcosaIsLoggedIn;
-                ui.loggedInElements.SetActive(icosaLoggedIn);
-                ui.loggedOutElements.SetActive(!icosaLoggedIn);
+                ui.loggedInElements.SetActive(false);  // TEMP DISABLE ICOSA (icosaLoggedIn);
+                ui.loggedOutElements.SetActive(false); // TEMP DISABLE ICOSA (!icosaLoggedIn);
                 if (icosaLoggedIn)
                 {
                     ui.name.text = App.IcosaUserName;
@@ -300,6 +312,7 @@ namespace TiltBrush
         {
             RefreshUploadButton(Cloud.Icosa);
             RefreshUploadButton(Cloud.Sketchfab);
+            RefreshUploadButton(Cloud.Vive);
         }
 
         void OnClose()
@@ -320,6 +333,11 @@ namespace TiltBrush
             }
             if (m_EmbeddedMediaWarningSketchfab.activeSelf &&
                 !WidgetManager.m_Instance.HasNonExportableContent(Cloud.Sketchfab))
+            {
+                SetMode(DisplayMode.Confirming);
+            }
+            if (m_EmbeddedMediaWarningViverse.activeSelf &&
+                !WidgetManager.m_Instance.HasNonExportableContent(Cloud.Vive))
             {
                 SetMode(DisplayMode.Confirming);
             }

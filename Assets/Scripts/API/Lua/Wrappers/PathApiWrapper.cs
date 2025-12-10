@@ -25,7 +25,7 @@ namespace TiltBrush
         public List<TrTransform> AsSingleTrList() => _Path;
 
         [MoonSharpHidden]
-        public List<List<TrTransform>> AsMultiTrList() => new List<List<TrTransform>> { _Path };
+        public List<List<TrTransform>> AsMultiTrList() => new() { _Path };
 
         public enum Axis { X, Y, Z }
 
@@ -64,17 +64,17 @@ namespace TiltBrush
 
         [LuaDocsDescription("Creates a new empty Path")]
         [LuaDocsExample("myPath = Path:New()")]
-        public static PathApiWrapper New() => new PathApiWrapper();
+        public static PathApiWrapper New() => new();
 
         [LuaDocsDescription("Creates a path from a list of Transforms")]
         [LuaDocsExample("myPath = Path:New({transform1, transform2, transform3})")]
         [LuaDocsParameter("transformList", "The list of transforms")]
-        public static PathApiWrapper New(List<TrTransform> transformList) => new PathApiWrapper(transformList);
+        public static PathApiWrapper New(List<TrTransform> transformList) => new(transformList);
 
         [LuaDocsDescription("Creates a path from a list of Vector3 positions")]
         [LuaDocsExample("myPath = Path:New({position1, position2, position3})")]
         [LuaDocsParameter("positionList", "The list of positions")]
-        public static PathApiWrapper New(List<Vector3> positionList) => new PathApiWrapper(positionList);
+        public static PathApiWrapper New(List<Vector3> positionList) => new(positionList);
 
         public override string ToString()
         {
@@ -149,12 +149,12 @@ namespace TiltBrush
         [LuaDocsDescription("Returns the point at the specified index")]
         public TransformApiWrapper this[int index]
         {
-            get => new(_Path[index]);
-            set => _Path[index] = value._TrTransform;
+            get => new(Utils.WrappedIndexerGet(() => _Path[index]));
+            set => Utils.WrappedIndexerSet(() => _Path[index] = value._TrTransform);
         }
 
         [LuaDocsDescription("Returns the last point in this path")]
-        public TransformApiWrapper last => new TransformApiWrapper(_Path[^1]);
+        public TransformApiWrapper last => new(_Path[^1]);
 
         [LuaDocsDescription("Inserts a new point at the end of the path")]
         [LuaDocsExample("myPath:Insert(myTransform")]
