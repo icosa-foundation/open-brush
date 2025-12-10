@@ -222,6 +222,19 @@ namespace TiltBrush
             exporter.G.extras["TB_PoseTranslation"] = CommaFormattedVector3(pose.translation);
             exporter.G.extras["TB_PoseRotation"] = CommaFormattedVector3(pose.rotation.eulerAngles);
             exporter.G.extras["TB_PoseScale"] = pose.scale;
+
+            exporter.G.extras["TB_ExportedFromVersion"] = App.Config.m_VersionNumber;
+
+            if (SaveLoadScript.m_Instance != null)
+            {
+                TrTransform cameraPose = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
+                exporter.G.extras["TB_CameraTranslation"] = CommaFormattedVector3(cameraPose.translation);
+                exporter.G.extras["TB_CameraRotation"] = CommaFormattedVector3(cameraPose.rotation.eulerAngles);
+            }
+
+            // This is a new mode that solves the issue of finding a sane pivot for Orbit Camera Controller
+            // And better suits Open Brush sketches
+            exporter.G.extras["TB_FlyMode"] = "true";
         }
 
         // Returns a GlTF_Node; null means "there is no node for this group".

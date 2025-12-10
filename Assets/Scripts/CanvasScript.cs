@@ -157,9 +157,12 @@ namespace TiltBrush
         {
 #if UNITY_EDITOR
             // All changes must go through .Pose accessor
+            // TODO there's one case that hits this every time on startup
+            // It's harmless but confusing to see an error in the console.
+            // I'm downgrading this to a warning for now.
             if (transform.hasChanged)
             {
-                Debug.LogError("Detected unsanctioned change to transform");
+                Debug.LogWarning("Detected unsanctioned change to transform");
                 transform.hasChanged = false;
             }
 #endif
