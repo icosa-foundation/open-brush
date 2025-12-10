@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using TiltBrushToolkit;
 using UnityEngine;
@@ -90,6 +91,15 @@ namespace TiltBrush
                 gltf.IsMultithreaded = false;
                 AsyncHelpers.RunSync(() => gltf.LoadSceneAsync());
                 GameObject go = gltf.CreatedObject;
+
+                var clips = gltf.CreatedAnimationClips;
+                if (clips != null && clips.Length > 0)
+                {
+                    var player = go.AddComponent<PlayGltfAnimationClip>();
+                    // TODO - allow users to control autoplay
+                    player.PlayAnimation(clips);
+                }
+
                 model.CalcBoundsGltf(go);
                 model.EndCreatePrefab(go, warnings);
                 var materialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: localPath);
