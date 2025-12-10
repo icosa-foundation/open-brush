@@ -89,6 +89,12 @@ namespace TiltBrush
                     switch (type)
                     {
                         case Type.LocalFile:
+                            string blocksPath = Path.Combine(App.BlocksModelLibraryPath(), path);
+                            if (System.IO.File.Exists(blocksPath))
+                            {
+                                return blocksPath.Replace("\\", "/");
+                            }
+
                             return Path.Combine(App.ModelLibraryPath(), path).Replace("\\", "/");
                         case Type.IcosaAssetId:
                             return path.Replace("\\", "/");
@@ -224,6 +230,9 @@ namespace TiltBrush
 
         private ImportMaterialCollector m_ImportMaterialCollector;
 
+        // Store SVG scene info for SVG models (persists across instantiation)
+        public SVGParser.SceneInfo SvgSceneInfo { get; private set; }
+
         // Returns the path starting after Media Library/Models
         // e.g. subdirectory/example.obj
         public string RelativePath
@@ -244,7 +253,22 @@ namespace TiltBrush
                 {
                     return AssetId;
                 }
-                return Path.GetFileNameWithoutExtension(m_Location.RelativePath);
+
+                string relativePath = m_Location.RelativePath;
+                string filename = Path.GetFileName(relativePath);
+
+                // For Blocks models (always named "model.obj"), use the parent directory name
+                if (filename != null && filename.Equals("model.obj", StringComparison.OrdinalIgnoreCase))
+                {
+                    string parentDir = Path.GetDirectoryName(relativePath);
+                    if (!string.IsNullOrEmpty(parentDir))
+                    {
+                        // Get the last directory name in the path
+                        return Path.GetFileName(parentDir);
+                    }
+                }
+
+                return Path.GetFileNameWithoutExtension(relativePath);
             }
         }
 
@@ -592,6 +616,27 @@ namespace TiltBrush
 
         }
 
+        GameObject LoadVox(List<string> warningsOut)
+        {
+            try
+            {
+                // Default to optimized mode with face culling
+                var reader = new VoxImporter(m_Location.AbsolutePath, VoxImporter.MeshMode.Optimized);
+                var (gameObject, warnings, collector) = reader.Import();
+                warningsOut.AddRange(warnings);
+                m_ImportMaterialCollector = collector;
+                m_AllowExport = (m_ImportMaterialCollector != null);
+                return gameObject;
+            }
+            catch (Exception ex)
+            {
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+                return null;
+            }
+        }
+
         GameObject LoadSvg(List<string> warningsOut, out SVGParser.SceneInfo sceneInfo)
         {
             try
@@ -628,6 +673,11 @@ namespace TiltBrush
                 // m_Valid = true;
                 GameObject parent = new GameObject("ImportedObjParent");
                 gameObject.transform.SetParent(parent.transform, true);
+
+                // Apply unique naming during import (matching GLTF EnsureUniquePathsImport plugin behavior)
+                // This ensures OBJ files have unique node names immediately after loading
+                // Note: Apply to gameObject, not parent, since the OBJ hierarchy is under gameObject
+                GenerateUniqueNames(gameObject.transform);
                 return parent;
             }
             catch (Exception ex)
@@ -809,12 +859,11 @@ namespace TiltBrush
         {
             Task t = StartCreatePrefab(null);
             await t;
-
         }
+
         public void LoadModel()
         {
             StartCreatePrefab(null);
-
         }
 
         /// Either synchronously load a GameObject hierarchy and convert it to a "prefab"
@@ -884,12 +933,18 @@ namespace TiltBrush
                     CalcBoundsNonGltf(go);
                     EndCreatePrefab(go, warnings);
                 }
+                else if (ext == ".vox")
+                {
+                    go = LoadVox(warnings);
+                    CalcBoundsNonGltf(go);
+                    EndCreatePrefab(go, warnings);
+                }
                 else if (ext == ".svg")
                 {
                     go = LoadSvg(warnings, out SVGParser.SceneInfo sceneInfo);
+                    SvgSceneInfo = sceneInfo;
                     CalcBoundsNonGltf(go);
                     EndCreatePrefab(go, warnings);
-                    go.GetComponent<ObjModelScript>().SvgSceneInfo = sceneInfo;
                 }
                 else
                 {
@@ -981,6 +1036,13 @@ namespace TiltBrush
             // For a small performance improvement on deep hierarchies
             // we could skip this for glTF models
             GenerateUniqueNames(m_ModelParent);
+
+            // Clear the applied splits tracker since we have a new hierarchy
+            // This ensures splits are re-applied when models are reloaded
+            if (m_AppliedMeshSplits != null)
+            {
+                m_AppliedMeshSplits.Clear();
+            }
 
             if (m_SplitMeshPaths != null && m_SplitMeshPaths.Count > 0)
             {
@@ -1198,6 +1260,7 @@ namespace TiltBrush
         {
             if (m_ModelParent == null)
             {
+                Debug.LogWarning($"[MeshSplit] Model {m_Location}: m_ModelParent is null, skipping");
                 return;
             }
             if (m_SplitMeshPaths == null || m_SplitMeshPaths.Count == 0)
@@ -1212,7 +1275,7 @@ namespace TiltBrush
             var modelObjScript = m_ModelParent.GetComponentInChildren<ObjModelScript>();
             if (modelObjScript == null)
             {
-                Debug.LogError($"Model {m_Location} has no ObjModelScript to process mesh splits");
+                Debug.LogError($"[MeshSplit] Model {m_Location} has no ObjModelScript to process mesh splits");
                 return;
             }
 
@@ -1232,7 +1295,7 @@ namespace TiltBrush
                 {
                     if (modelObjScript.m_MeshChildren == null || modelObjScript.m_MeshChildren.Length == 0)
                     {
-                        Debug.LogError($"Model {m_Location} has no meshes to split for root path");
+                        Debug.LogError($"[MeshSplit] Model {m_Location} has no meshes to split for root path");
                         continue;
                     }
                     destRoot = modelObjScript.m_MeshChildren[0]?.transform;
@@ -1248,13 +1311,17 @@ namespace TiltBrush
 
                 if (destRoot == null)
                 {
-                    Debug.LogError($"Model {m_Location} has no subtree for split {split}");
+                    Debug.LogError($"[MeshSplit] Model {m_Location} has no subtree for split '{split}'");
+                    // Log the hierarchy to help debug
+                    Debug.LogError($"[MeshSplit] Available hierarchy under {modelObjScript.transform.name}:");
+                    LogHierarchy(modelObjScript.transform, 0);
                     continue;
                 }
 
                 var modelMf = destRoot.GetComponent<MeshFilter>();
                 if (modelMf == null)
                 {
+                    Debug.LogWarning($"[MeshSplit] Node '{destRoot.name}' has no MeshFilter (already split or not a mesh)");
                     // Already split or nothing to split at this node.
                     m_AppliedMeshSplits.Add(split);
                     continue;
@@ -1265,6 +1332,16 @@ namespace TiltBrush
                 GameObject.DestroyImmediate(modelMf);
                 modelObjScript.UpdateAllMeshChildren();
                 m_AppliedMeshSplits.Add(split);
+            }
+        }
+
+        private void LogHierarchy(Transform root, int depth)
+        {
+            string indent = new string(' ', depth * 2);
+            Debug.LogError($"[MeshSplit] {indent}- {root.name} (MeshFilter: {root.GetComponent<MeshFilter>() != null})");
+            foreach (Transform child in root)
+            {
+                LogHierarchy(child, depth + 1);
             }
         }
     }
