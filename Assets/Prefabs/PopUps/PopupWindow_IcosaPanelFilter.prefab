@@ -6872,7 +6872,7 @@ MonoBehaviour:
       m_Calls: []
   m_SliderMaxCutoff: 0.95
   m_TriangleCountMin: 10
-  m_TriangleCountMax: 50000
+  m_TriangleCountMax: 150000
   references:
     version: 2
     RefIds: []

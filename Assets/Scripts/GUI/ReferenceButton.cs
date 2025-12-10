@@ -24,6 +24,7 @@ namespace TiltBrush
             AddAssets,
             Videos,
             BackgroundImages,
+            SavedStrokes,
             SoundClips
         }
 

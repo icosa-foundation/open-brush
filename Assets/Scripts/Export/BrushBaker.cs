@@ -17,6 +17,10 @@ public class BrushBaker : MonoBehaviour
         public Shader shader;
         public string brushGuid;
         public ComputeShader computeShader;
+        public bool ModifyColor;
+        public bool ModifyNormal;
+        public bool ModifyUv0;
+        public bool ModifyUv1;
     }
 
     void Start()
@@ -26,10 +30,12 @@ public class BrushBaker : MonoBehaviour
 
     public Mesh ProcessMesh(Mesh mesh, string brushGuid)
     {
+        ComputeShaderMapping mapping;
         ComputeShader computeShader;
         try
         {
-            computeShader = computeShaders.First(x => x.brushGuid == brushGuid).computeShader;
+            mapping = computeShaders.First(x => x.brushGuid == brushGuid);
+            computeShader = mapping.computeShader;
         }
         catch (InvalidOperationException e)
         {
@@ -64,21 +70,22 @@ public class BrushBaker : MonoBehaviour
         ComputeBuffer uvBuffer = new ComputeBuffer(uvs.Count, sizeof(float) * 3);
         uvBuffer.SetData(uvs);
 
-        // if we need texcoord1
-        if (mesh.uv2.Length > 0)
-        {
-            List<Vector4> uv1s = new List<Vector4>();
-            mesh.GetUVs(1, uv1s);
-            ComputeBuffer uv1Buffer = new ComputeBuffer(uv1s.Count, sizeof(float) * 4);
-            uv1Buffer.SetData(uv1s);
-            computeShader.SetBuffer(0, "uv1Buffer", uv1Buffer);
-        }
-
         computeShader.SetBuffer(0, "vertexBuffer", vertexBuffer);
         computeShader.SetBuffer(0, "normalBuffer", normalBuffer);
         computeShader.SetBuffer(0, "colorBuffer", colorBuffer);
         computeShader.SetBuffer(0, "uvBuffer", uvBuffer);
         computeShader.SetFloat("_SqueezeAmount", squeezeAmount);
+
+        ComputeBuffer uv1Buffer = null;
+        // if we need texcoord1
+        if (mesh.uv2.Length > 0)
+        {
+            List<Vector4> uv1s = new List<Vector4>();
+            mesh.GetUVs(1, uv1s);
+            uv1Buffer = new ComputeBuffer(uv1s.Count, sizeof(float) * 4);
+            uv1Buffer.SetData(uv1s);
+            computeShader.SetBuffer(0, "uv1Buffer", uv1Buffer);
+        }
 
         int threadGroups = Mathf.CeilToInt(mesh.vertices.Length / 8f);
         computeShader.Dispatch(0, threadGroups, 1, 1);
@@ -87,10 +94,41 @@ public class BrushBaker : MonoBehaviour
         vertexBuffer.GetData(newVerts);
         mesh.vertices = newVerts;
 
+        if (mapping.ModifyColor)
+        {
+            var newColors = new Color[mesh.vertexCount];
+            colorBuffer.GetData(newColors);
+            mesh.colors = newColors;
+        }
+
+        if (mapping.ModifyNormal)
+        {
+            var newNormals = new Vector3[mesh.vertexCount];
+            normalBuffer.GetData(newNormals);
+            mesh.normals = newNormals;
+        }
+
+        if (mapping.ModifyUv0)
+        {
+            var newUvs = new Vector3[mesh.vertexCount];
+            uvBuffer.GetData(newUvs);
+            mesh.SetUVs(0, newUvs);
+        }
+
+        if (mapping.ModifyUv1)
+        {
+            var newUv1s = new Vector4[mesh.vertexCount];
+            uv1Buffer.GetData(newUv1s);
+            mesh.SetUVs(1, newUv1s);
+        }
+
         vertexBuffer.Release();
         normalBuffer.Release();
         uvBuffer.Release();
-
+        if (mesh.uv2.Length > 0)
+        {
+            uv1Buffer.Release();
+        }
         vertices.Dispose();
         normals.Dispose();
 

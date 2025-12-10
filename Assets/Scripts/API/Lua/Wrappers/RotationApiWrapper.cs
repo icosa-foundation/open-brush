@@ -38,13 +38,13 @@ namespace TiltBrush
         [LuaDocsDescription(@"The amount of rotation in degrees around a single axis (0=x, 1=y, 2=z)")]
         public float this[int index]
         {
-            get => _Quaternion.eulerAngles[index];
-            set
+            get => Utils.WrappedIndexerGet(() => _Quaternion.eulerAngles[index]);
+            set => Utils.WrappedIndexerSet(() =>
             {
                 var euler = _Quaternion.eulerAngles;
                 euler[index] = value;
                 _Quaternion = Quaternion.Euler(euler);
-            }
+            });
         }
 
         [LuaDocsDescription(@"The amount of rotation around the x axis in degrees")]
