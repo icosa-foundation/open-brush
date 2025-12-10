@@ -119,24 +119,6 @@ namespace TiltBrush
                     {
                         continue;
                     }
-
-                    // We don't want to return liked Tilt Brush sketches
-                    // so in this section we filter out anything with a Tilt file in it.
-                    // TODO We should record the generating app and allow filtering by that
-                    bool skipObject = false;
-                    foreach (var format in asset["formats"])
-                    {
-                        var formatType = format["formatType"].ToString();
-                        if (formatType == "TILT")
-                        {
-                            skipObject = true;
-                            break;
-                        }
-                    }
-                    if (skipObject)
-                    {
-                        continue;
-                    }
                     lastAsset = asset;
                     string accountName = asset["authorName"]?.ToString() ?? "Unknown";
                     files.Add(new IcosaAssetCatalog.AssetDetails(asset, accountName, thumbnailSuffix));
@@ -144,8 +126,7 @@ namespace TiltBrush
                 }
                 catch (NullReferenceException)
                 {
-                    UnityEngine.Debug.LogErrorFormat("Failed to load asset: {0}",
-                        lastAsset == null ? "NULL" : lastAsset.ToString());
+                    Debug.LogError($"Failed to load asset: {lastAsset ?? lastAsset.ToString() ?? "\"NULL\""}");
                 }
                 yield return null;
             }

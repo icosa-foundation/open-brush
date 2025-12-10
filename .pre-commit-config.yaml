@@ -1,7 +1,7 @@
 ---
 repos:
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.37.0
+    rev: v1.37.1
     hooks:
       - id: yamllint
   - repo: https://github.com/psf/black
@@ -11,12 +11,12 @@ repos:
         files: ^Support/
         language_version: python3
   - repo: https://github.com/pycqa/flake8
-    rev: 7.2.0
+    rev: 7.3.0
     hooks:
       - id: flake8
         files: ^Support/
   - repo: https://github.com/PyCQA/pylint.git
-    rev: v3.3.6
+    rev: v3.3.7
     hooks:
       - id: pylint
         name: pylint
@@ -28,7 +28,7 @@ repos:
           - --load-plugins=pylint.extensions.redefined_variable_type,pylint.extensions.bad_builtin
           - --disable=import-error
   - repo: https://github.com/google/yamlfmt
-    rev: v0.16.0
+    rev: v0.17.2
     hooks:
       - id: yamlfmt
         args:
@@ -46,3 +46,7 @@ repos:
         args:
           - --folder
           - --include
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.27.2
+    hooks:
+      - id: gitleaks

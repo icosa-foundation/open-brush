@@ -175,9 +175,9 @@ namespace TiltBrush
 
             Action refresh = () =>
             {
-                if (m_ContactingServerMessage.activeSelf ||
-                    m_NoShowcaseMessage.activeSelf ||
-                    m_LoadingGallery.activeSelf)
+                if ((m_ContactingServerMessage && m_ContactingServerMessage.activeSelf) ||
+                    (m_NoShowcaseMessage && m_NoShowcaseMessage.activeSelf) ||
+                    (m_LoadingGallery && m_LoadingGallery.activeSelf))
                 {
                     // Update the overlays more frequently when these overlays are shown to reflect whether
                     // we are actively trying to get sketches from Poly.
