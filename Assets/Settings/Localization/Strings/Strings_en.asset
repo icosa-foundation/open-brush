@@ -2076,7 +2076,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 81208142008475648
-    m_Localized: Tapered Marker
+    m_Localized: Tapered Marker Flat
     m_Metadata:
       m_Items: []
   - m_Id: 81208255854469120
@@ -3186,7 +3186,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 128947584125108224
-    m_Localized: Snap Axes
+    m_Localized: X
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634176
@@ -3743,11 +3743,53 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 401824908597354496
-    m_Localized: 'Try "Save Selected
+    m_Localized: 'Save some brush strokes using "Save Selected
 
-      Strokes" to
+      Strokes" (on
+      the Labs Panel) and they will appear here.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 422456507319803904
+    m_Localized: Y
+    m_Metadata:
+      m_Items: []
+  - m_Id: 422456718544953344
+    m_Localized: Z
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436433407381692416
+    m_Localized: Next
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436433674365919232
+    m_Localized: Previous
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436974612083466240
+    m_Localized: Try Open Blocks
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543626534051840
+    m_Localized: Toggle X Rotation Snap
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543779617759232
+    m_Localized: Toggle Y Rotation Snap
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543840074457088
+    m_Localized: Toggle Z Rotation Snap
+    m_Metadata:
+      m_Items: []
+  - m_Id: 423748078849216512
+    m_Localized: Share to Viverse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 423748375394897920
+    m_Localized: 'Sign in to a Vive account to allow
 
-      see them here'
+      uploading to Viverse
+      Worlds.'
     m_Metadata:
       m_Items: []
   - m_Id: 415628836388560896

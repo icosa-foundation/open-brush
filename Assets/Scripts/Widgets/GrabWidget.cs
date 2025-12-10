@@ -1304,9 +1304,19 @@ namespace TiltBrush
                     }
                 }
 
-                // Apply the resulting change in rotation to the original transform
-                var rotationDelta = m_PrevSnapRotation * Quaternion.Inverse(rot_CS);
-                outXf_GS.rotation = rotationDelta * outXf_GS.rotation;
+                // Since QuantizeAngle may only have quantized some axes, we need to ensure
+                // that non-quantized axes use the current rotation, not the sticky rotation
+                Vector3 currentEuler_CS = rot_CS.eulerAngles;
+                Vector3 stickyEuler_CS = m_PrevSnapRotation.eulerAngles;
+                Vector3 finalEuler_CS = new Vector3(
+                    SelectionManager.m_Instance.m_EnableSnapRotationX ? stickyEuler_CS.x : currentEuler_CS.x,
+                    SelectionManager.m_Instance.m_EnableSnapRotationY ? stickyEuler_CS.y : currentEuler_CS.y,
+                    SelectionManager.m_Instance.m_EnableSnapRotationZ ? stickyEuler_CS.z : currentEuler_CS.z
+                );
+                Quaternion finalRotation_CS = Quaternion.Euler(finalEuler_CS);
+
+                // Convert the scene-space snapped rotation back to global space
+                outXf_GS.rotation = App.Scene.Pose.rotation * finalRotation_CS;
 
                 Quaternion qDelta = outXf_GS.rotation * Quaternion.Inverse(xf_GS.rotation);
                 Vector3 grabSpot = InputManager.m_Instance.GetControllerPosition(m_InteractingController);
