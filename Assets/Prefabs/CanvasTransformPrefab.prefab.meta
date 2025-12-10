@@ -1,6 +1,11 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/Polyhydra/Resources/Default Shape Recipes/Alien Eggs.json.meta
+guid: cb4810de53df2a544aa68ed751e86860
+TextScriptImporter:
+========
 guid: 546467450645e1140902522a7f7baf56
 PrefabImporter:
+>>>>>>>> origin/main:Assets/Prefabs/CanvasTransformPrefab.prefab.meta
   externalObjects: {}
   userData: 
   assetBundleName: 
