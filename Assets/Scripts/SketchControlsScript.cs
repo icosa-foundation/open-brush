@@ -4225,20 +4225,13 @@ namespace TiltBrush
                 vNewCamRot = Quaternion.identity;
             }
 
-            // Save the current camera state before SaveSelected so it doesn't affect main sketch metadata
-            SaveIconTool.CameraRigState savedCameraState = default;
+            // Save the current camera state before SaveSelected - will be restored after snapshot creation
             if (saveSelectedStrokes)
             {
-                savedCameraState = m_SaveIconTool.LastSaveCameraRigState;
+                SaveLoadScript.m_Instance.SavedThumbnailStateForRestore = m_SaveIconTool.LastSaveCameraRigState;
             }
 
             m_SaveIconTool.ProgrammaticCaptureSaveIcon(vNewCamPos, vNewCamRot);
-
-            // Restore the camera state for the main sketch
-            if (saveSelectedStrokes)
-            {
-                m_SaveIconTool.LastSaveCameraRigState = savedCameraState;
-            }
 
             if (saveSelectedStrokes)
             {
