@@ -12,12 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using UnityEngine;
 using TMPro;
 
-using TMPro;
-using UnityEngine;
 namespace TiltBrush
 {
     public class TextActionButton : ActionButton
