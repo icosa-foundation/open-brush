@@ -70,7 +70,7 @@ namespace TiltBrush
         public const string kPlayerPrefSeededDefaultBackgroundImages = "SeededDefaultBackgroundImages";
         public const string kPlayerPrefSeededDefaultReferenceImages = "SeededDefaultReferenceImages";
         public const string kPlayerPrefSeededDefaultVideos = "SeededDefaultVideos";
-
+        public const string kPlayerPrefSeededDefaultSavedStrokes = "SeededDefaultSavedStrokes";
 
         private const string kDefaultConfigPath = "DefaultConfig";
 
@@ -135,6 +135,7 @@ namespace TiltBrush
         public static OAuth2Identity GoogleIdentity => m_Instance.m_GoogleIdentity;
         public static OAuth2Identity SketchfabIdentity => m_Instance.m_SketchfabIdentity;
         public static OAuth2Identity IcosaIdentity => m_Instance.m_IcosaIdentity;
+        public static OAuth2Identity ViveIdentity => m_Instance.m_ViveIdentity;
 
         public string IcosaToken
         {
@@ -172,6 +173,7 @@ namespace TiltBrush
                 case Cloud.Google: return GoogleIdentity;
                 case Cloud.Sketchfab: return SketchfabIdentity;
                 case Cloud.Icosa: throw new InvalidOperationException("Icosa does not use OAuth2");
+                case Cloud.Vive: return ViveIdentity;
                 default: throw new InvalidOperationException($"No OAuth2 identity for {cloud}");
             }
         }
@@ -255,6 +257,7 @@ namespace TiltBrush
         [SerializeField] private OAuth2Identity m_GoogleIdentity;
         [SerializeField] private OAuth2Identity m_SketchfabIdentity;
         [SerializeField] private OAuth2Identity m_IcosaIdentity;
+        [SerializeField] private OAuth2Identity m_ViveIdentity;
 
         // ------------------------------------------------------------
         // Private data
@@ -562,6 +565,7 @@ namespace TiltBrush
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultBackgroundImages);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultReferenceImages);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultVideos);
+                PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultSavedStrokes);
                 PlayerPrefs.DeleteKey(PanelManager.kPlayerPrefAdvancedMode);
                 AdvancedPanelLayouts.ClearPlayerPrefs();
                 PointerManager.ClearPlayerPrefs();
@@ -2138,6 +2142,39 @@ namespace TiltBrush
             }
         }
 
+        public static void InitSavedStrokesLibraryPath(string[] defaultSavedStrokes)
+        {
+            string savedStrokesDirectory = SavedStrokesPath();
+
+            if (!Directory.Exists(savedStrokesDirectory))
+            {
+                if (!InitDirectoryAtPath(savedStrokesDirectory))
+                {
+                    return;
+                }
+            }
+
+            // Copy if the directory is empty
+            bool shouldCopy = Directory.GetFileSystemEntries(savedStrokesDirectory).Length == 0;
+
+            // But only once per clean install
+            if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultSavedStrokes, 0) != 0)
+            {
+                shouldCopy = false;
+            }
+
+            if (shouldCopy)
+            {
+                foreach (var savedStroke in defaultSavedStrokes)
+                {
+                    string destFilename = Path.GetFileName(savedStroke);
+                    FileUtils.WriteBytesFromResources(savedStroke, Path.Combine(savedStrokesDirectory, destFilename));
+                }
+            }
+        }
+
+
+
         public static string FeaturedSketchesPath()
         {
             return Path.Combine(Application.persistentDataPath, "Featured Sketches");
@@ -2151,6 +2188,14 @@ namespace TiltBrush
         public static string ModelLibraryPath()
         {
             return Path.Combine(MediaLibraryPath(), "Models");
+        }
+
+        public static string BlocksModelLibraryPath()
+        {
+            string userPath = UserPath();
+            var userParent = Directory.GetParent(userPath);
+            string blocksRoot = userParent != null ? userParent.FullName : userPath;
+            return Path.Combine(blocksRoot, "Blocks", "OfflineModels");
         }
 
         public static string ReferenceImagePath()
