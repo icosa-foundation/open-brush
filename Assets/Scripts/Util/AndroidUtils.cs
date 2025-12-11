@@ -15,114 +15,81 @@
 using UnityEngine;
 
 #if UNITY_ANDROID
-static class AndroidUtils
-{
-    public static AndroidJavaObject GetContext()
-    {
-        if (Application.platform != RuntimePlatform.Android)
-        {
-            return null;
-        }
-
-        // Unity doesn't document UnityPlayer.currentActivity (or UnityPlayer at all), but it
-        // does mention it in passing on these two pages:
-        //   https://docs.unity3d.com/2017.3/Documentation/ScriptReference/AndroidJavaRunnable.html
-        //   https://docs.unity3d.com/2017.3/Documentation/ScriptReference/AndroidJavaProxy.html
-        AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-        AndroidJavaObject context = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
-        return context;
+static class AndroidUtils {
+  public static AndroidJavaObject GetContext() {
+    if (Application.platform != RuntimePlatform.Android) {
+      return null;
     }
 
-    /// Returns versionCode from AndroidManifest.xml.
-    public static int GetVersionCode()
-    {
-        if (Application.platform != RuntimePlatform.Android)
-        {
-            return 29;  // just some placeholder
-        }
+    // Unity doesn't document UnityPlayer.currentActivity (or UnityPlayer at all), but it
+    // does mention it in passing on these two pages:
+    //   https://docs.unity3d.com/2017.3/Documentation/ScriptReference/AndroidJavaRunnable.html
+    //   https://docs.unity3d.com/2017.3/Documentation/ScriptReference/AndroidJavaProxy.html
+    AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+    AndroidJavaObject context = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+    return context;
+  }
 
-        var context = GetContext();
-        string packageName = context.Call<string>("getPackageName");
-        var packageMgr = context.Call<AndroidJavaObject>("getPackageManager");
-        var packageInfo = packageMgr.Call<AndroidJavaObject>("getPackageInfo", packageName, 0);
-        return packageInfo.Get<int>("versionCode");
+  /// Returns versionCode from AndroidManifest.xml.
+  public static int GetVersionCode() {
+    if (Application.platform != RuntimePlatform.Android) {
+      return 13;  // just some placeholder
     }
+
+    var context = GetContext();
+    string packageName = context.Call<string>("getPackageName");
+    var packageMgr = context.Call<AndroidJavaObject>("getPackageManager");
+    var packageInfo = packageMgr.Call<AndroidJavaObject>("getPackageInfo", packageName, 0);
+    return packageInfo.Get<int>("versionCode");
+  }
   
-    /// Returns versionName from AndroidManifest.xml.
-    ///
-    /// Unity fills in Manifest.versionName from PlayerSettings.bundleVersion.
-    /// BuildTiltBrush fills in PlayerSettings.bundleVersion from Config.m_VersionNumber
-    /// and m_BuildStamp.
-    /// This should therefore have the same info as you'd find in Config.
-    /// Sample return values: "19.0b-(menuitem)", "18.3-d8239842"
-    public static string GetVersionName()
-    {
-        if (Application.platform != RuntimePlatform.Android)
-        {
-            return "versionNamePlaceholder";
-        }
-
-        var context = GetContext();
-        string packageName = context.Call<string>("getPackageName");
-        var packageMgr = context.Call<AndroidJavaObject>("getPackageManager");
-        var packageInfo = packageMgr.Call<AndroidJavaObject>("getPackageInfo", packageName, 0);
-        return packageInfo.Get<string>("versionName");
+  /// Returns versionName from AndroidManifest.xml.
+  ///
+  /// Unity fills in Manifest.versionName from PlayerSettings.bundleVersion.
+  /// BuildTiltBrush fills in PlayerSettings.bundleVersion from Config.m_VersionNumber
+  /// and m_BuildStamp.
+  /// This should therefore have the same info as you'd find in Config.
+  /// Sample return values: "19.0b-(menuitem)", "18.3-d8239842"
+  public static string GetVersionName() {
+    if (Application.platform != RuntimePlatform.Android) {
+      return "versionNamePlaceholder";
     }
 
-    /// Returns package name.
-    public static string GetPackageName()
-    {
-        if (Application.platform != RuntimePlatform.Android)
-        {
-            return "com.placeholder.packagename";
-        }
+    var context = GetContext();
+    string packageName = context.Call<string>("getPackageName");
+    var packageMgr = context.Call<AndroidJavaObject>("getPackageManager");
+    var packageInfo = packageMgr.Call<AndroidJavaObject>("getPackageInfo", packageName, 0);
+    return packageInfo.Get<string>("versionName");
+  }
 
-        var context = GetContext();
-        return context.Call<string>("getPackageName");
+  /// Returns package name.
+  public static string GetPackageName() {
+    if (Application.platform != RuntimePlatform.Android) {
+      return "com.placeholder.packagename";
     }
 
-    public static bool IsPackageInstalled(string packageName)
-    {
-        if (Application.platform != RuntimePlatform.Android)
-        {
-            return false;
-        }
+    var context = GetContext();
+    return context.Call<string>("getPackageName");
+  }
 
-        var context = GetContext();
-        var packageMgr = context.Call<AndroidJavaObject>("getPackageManager");
+  public static bool IsPackageInstalled(string packageName)
+  {
+      if (Application.platform != RuntimePlatform.Android)
+      {
+          return false;
+      }
 
-        try
-        {
-            packageMgr.Call<AndroidJavaObject>("getPackageInfo", packageName, 0);
-            return true;
-        } catch (AndroidJavaException)
-        {
-            return false;
-        }
-    }
+      var context = GetContext();
+      var packageMgr = context.Call<AndroidJavaObject>("getPackageManager");
 
-    public static string GetProp(string propName)
-    {
-        var obj = new AndroidJavaClass("android.os.SystemProperties");
-        return obj.CallStatic<string>("get", propName);
-    }
-
-    public static bool IsPicoDevice()
-    {
-        return GetProp("ro.product.brand").Trim().ToLower().Equals("pico");
-    }
-
-    public static bool IsGreatFirewalled()
-    {
-        if (IsPicoDevice())
-        {
-            // https://developer.picoxr.com/document/unreal/check-pico-rom-version/
-            var overseasFlagPresent = GetProp("ro.pvr.product.global").Trim().ToLower().Equals("overseas");
-            return !overseasFlagPresent;
-        }
-
-        return false;
-        
-    }
+      try
+      {
+          packageMgr.Call<AndroidJavaObject>("getPackageInfo", packageName, 0);
+          return true;
+      } catch (AndroidJavaException)
+      {
+          return false;
+      }
+  }
 }
-#endif // UNITY_ANDROID
+#endif

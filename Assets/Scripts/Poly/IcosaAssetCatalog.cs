@@ -1230,9 +1230,12 @@ namespace TiltBrush
             }
         }
 
-        void OnProfileUpdated(OAuth2Identity _)
+        void OnProfileUpdated(OAuth2Identity identity)
         {
-            RefreshFetchCoroutines();
+            if (identity.IsIcosa)
+            {
+                RefreshFetchCoroutines();
+            }
         }
 
         void OnDestroy()
