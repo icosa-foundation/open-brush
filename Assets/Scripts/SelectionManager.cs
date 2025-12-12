@@ -94,6 +94,9 @@ namespace TiltBrush
         [NonSerialized] public bool m_EnableSnapTranslationX = true;
         [NonSerialized] public bool m_EnableSnapTranslationY = true;
         [NonSerialized] public bool m_EnableSnapTranslationZ = true;
+        [NonSerialized] public bool m_EnableSnapRotationX = true;
+        [NonSerialized] public bool m_EnableSnapRotationY = true;
+        [NonSerialized] public bool m_EnableSnapRotationZ = true;
 
         /// Returns true when SelectedStrokes is not empty.
         public bool HasSelection
@@ -165,6 +168,11 @@ namespace TiltBrush
                 GrabWidget widget = m_SelectedWidgets.First();
                 if (widget is ModelWidget modelWidget)
                 {
+                    string ext = Path.GetExtension(modelWidget.Model.RelativePath).ToLower();
+                    if (ext == ".svg")
+                    {
+                        return false;
+                    }
                     return modelWidget.MeshSplitPossible();
                 }
 
@@ -1209,7 +1217,11 @@ namespace TiltBrush
             float round(float val) { return Mathf.Round(val / snapAngle) * snapAngle; }
 
             Vector3 euler = rotation.eulerAngles;
-            euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
+            euler = new Vector3(
+                m_EnableSnapRotationX ? round(euler.x) : euler.x,
+                m_EnableSnapRotationY ? round(euler.y) : euler.y,
+                m_EnableSnapRotationZ ? round(euler.z) : euler.z
+            );
             return Quaternion.Euler(euler);
         }
 
