@@ -169,7 +169,7 @@ namespace TiltBrush
                 {
                     var sprite = Sprite.Create(icon, new Rect(0, 0,
                         icon.width, icon.height), new Vector2(0.5f, 0.5f));
-                    m_Dropdown.options.Add(new TMP_Dropdown.OptionData(sketchName, sprite));
+                    m_Dropdown.options.Add(new TMP_Dropdown.OptionData(sketchName, sprite, Color.white));
                 }
                 else
                 {

@@ -542,7 +542,8 @@ namespace TiltBrush
             Physics.simulationMode = SimulationMode.Script;
 
 #if UNITY_ANDROID
-            AccountLoginsDisabled = AndroidUtils.IsGreatFirewalled();
+            // TODO
+            // AccountLoginsDisabled = AndroidUtils.IsGreatFirewalled();
 #endif // UNITY_ANDROID
 
             // See if this is the first time
