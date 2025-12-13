@@ -24,17 +24,31 @@ namespace TiltBrush
 {
     public class ViversePublishManager : MonoBehaviour
     {
+        private static readonly string[] DefaultSandboxPermissions = new[]
+        {
+            "allow-forms",
+            "allow-modals",
+            "allow-popups",
+            "allow-top-navigation",
+            "allow-pointer-lock",
+            "allow-presentation",
+            "allow-downloads",
+            "allow-orientation-lock",
+            "allow-popups-to-escape-sandbox",
+            "allow-top-navigation-by-user-activation"
+        };
 
-        [Header("Default World Configuration")]
-        [Tooltip("These permissions will be applied to every uploaded world.")]
-        [SerializeField]
-        [TextArea(3, 5)]
-        private string m_DefaultSandboxPermissions = "allow-forms allow-modals allow-popups allow-top-navigation allow-pointer-lock allow-presentation allow-downloads allow-orientation-lock allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation";
-
-        [Tooltip("Permissions for hardware/feature access. 'xr-spatial-tracking' is required for VR.")]
-        [SerializeField]
-        [TextArea(3, 5)]
-        private string m_DefaultAllowPermissions = "accelerometer; camera; gyroscope; magnetometer; microphone; midi; window-management; xr-spatial-tracking";
+        private static readonly string[] DefaultAllowPermissions = new[]
+        {
+            "accelerometer",
+            "camera",
+            "gyroscope",
+            "magnetometer",
+            "microphone",
+            "midi",
+            "window-management",
+            "xr-spatial-tracking"
+        };
 
         private ViverseAuthManager m_AuthManager;
         private string m_AccessToken;
@@ -309,8 +323,8 @@ namespace TiltBrush
                 source = "studio",
                 iframe_settings = new IframeSettings
                 {
-                    sandbox = m_DefaultSandboxPermissions, // Uses the Inspector value
-                    allow = m_DefaultAllowPermissions      // Uses the Inspector value (includes xr-spatial-tracking)
+                    sandbox = DefaultSandboxPermissions,
+                    allow = DefaultAllowPermissions
                 }
             };
 
@@ -400,8 +414,8 @@ namespace TiltBrush
     [Serializable]
     public class IframeSettings
     {
-        public string sandbox;
-        public string allow;
+        public string[] sandbox;
+        public string[] allow;
     }
 
     [Serializable]

@@ -27,7 +27,7 @@ namespace TiltBrush
             {
                 int currentLayerIndex = App.Scene.GetIndexOfCanvas(App.Scene.ActiveCanvas);
                 Vector3 buttonPosition = Coords.AsGlobal[transform].translation;
-                Vector3 cameraPosition = Camera.main.transform.position;
+                Vector3 cameraPosition = ViewpointScript.Head.position;
                 Vector3 midpoint = (buttonPosition + cameraPosition) * 0.5f;
 
                 var command = new LoadSavedStrokesCommand(m_SavedStrokeFile, currentLayerIndex, midpoint);
