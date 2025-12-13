@@ -3503,22 +3503,6 @@ MonoBehaviour:
     m_Localized: More info on using Open Brush without VR
     m_Metadata:
       m_Items: []
-  - m_Id: 206971550222082048
-    m_Localized: Info
-    m_Metadata:
-      m_Items: []
-  - m_Id: 206971762546139136
-    m_Localized: "Transform"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 206971911959830528
-    m_Localized: Appearance
-    m_Metadata:
-      m_Items: []
-  - m_Id: 207037701752971264
-    m_Localized: Inspector
-    m_Metadata:
-      m_Items: []
   - m_Id: 176764812224364544
     m_Localized: Passthrough Hull
     m_Metadata:
@@ -3806,6 +3790,22 @@ MonoBehaviour:
 
       uploading to Viverse
       Worlds.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 206971550222082048
+    m_Localized: Info
+    m_Metadata:
+      m_Items: []
+  - m_Id: 206971762546139136
+    m_Localized: Transform
+    m_Metadata:
+      m_Items: []
+  - m_Id: 206971911959830528
+    m_Localized: Appearance
+    m_Metadata:
+      m_Items: []
+  - m_Id: 207037701752971264
+    m_Localized: Inspector
     m_Metadata:
       m_Items: []
   references:

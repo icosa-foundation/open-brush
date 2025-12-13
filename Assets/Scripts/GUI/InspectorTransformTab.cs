@@ -39,7 +39,11 @@ public class InspectorTransformTab : InspectorBaseTab
 
     public override void OnSelectionPoseChanged()
     {
-        var tr = m_InspectorPanel.CurrentSelection;
+        if (m_InspectorPanel == null || m_InspectorPanel.CurrentSelectionType == SelectionType.Nothing)
+        {
+            return;
+        }
+        TrTransform tr = m_InspectorPanel.CurrentSelection;
         var translation = tr.MultiplyPoint(SelectionBounds.center);
         var rotation = tr.rotation.eulerAngles;
         var scale = tr.scale;
