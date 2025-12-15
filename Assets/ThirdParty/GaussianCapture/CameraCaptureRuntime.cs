@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using TiltBrush;
 using Debug = UnityEngine.Debug;
 
 [DisallowMultipleComponent]
@@ -42,16 +43,18 @@ public class CameraCaptureRuntime : MonoBehaviour
     public int viewsPerRing = 20;
     public float radius = 5f;
     public float heightOffset = 1.5f;
+    private SphereStencil m_SphereWidget;
 
     [Header("Volume Capture")]
     public Vector3 volumeCenter = Vector3.zero;
     public Vector3 volumeSize = new Vector3(5, 5, 5);
     public int subdivX = 2, subdivY = 2, subdivZ = 2;
+    private CubeStencil m_CubeWidget;
 
     [Header("Transparents/Particles depth")]
     public bool includeTransparentsAndParticles = true;
     [Range(0f, 1f)] public float alphaThreshold = 0.05f;
-    [Tooltip("Replacement shader qui écrit la profondeur en R, avec alpha-clip.")]
+    [Tooltip("Replacement shader qui ï¿½crit la profondeur en R, avec alpha-clip.")]
     public Shader depthReplacementShader;
 
     public Action<float, string> OnProgress;
@@ -67,6 +70,8 @@ public class CameraCaptureRuntime : MonoBehaviour
     public void StartDomeCapture()
     {
         if (!ValidateCommon(domeMode: true)) return;
+        this.radius = m_SphereWidget.Extents.x;
+        this.heightOffset = 0;
         if (runtimeSequence)
             StartCoroutine(RuntimeSequenceCoroutine(isDome: true));
         else
@@ -77,6 +82,9 @@ public class CameraCaptureRuntime : MonoBehaviour
     public void StartVolumeCapture()
     {
         if (!ValidateCommon(domeMode: false)) return;
+        this.volumeCenter = m_CubeWidget.transform.position;
+        this.volumeSize = m_CubeWidget.Extents;
+
         if (runtimeSequence)
             StartCoroutine(RuntimeSequenceCoroutine(isDome: false));
         else
