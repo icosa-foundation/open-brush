@@ -36,11 +36,16 @@ namespace TiltBrush
         public SelectionType CurrentSelectionType => m_CurrentSelectionType;
         private SelectionType m_CurrentSelectionType;
 
-        public TrTransform CurrentSelection => m_CurrentSelection;
-        private TrTransform m_CurrentSelection;
+        public TrTransform  CurrentSelectionTr => m_CurrentSelectionTr;
+        private TrTransform m_CurrentSelectionTr;
 
         public int CurrentSelectionCount => m_CurrentSelectionCount;
         private int m_CurrentSelectionCount;
+
+        public List<ImageWidget> SelectedImages { get; private set; }
+        public List<VideoWidget> SelectedVideos { get; private set; }
+        public List<ModelWidget> SelectedModels { get; private set; }
+        public List<StencilWidget> SelectedGuides { get; private set; }
 
         private InspectorBaseTab[] m_Tabs;
         private InspectorTabButton[] m_TabButtons;
@@ -95,7 +100,7 @@ namespace TiltBrush
             }
             else
             {
-                m_CurrentSelection = SelectionManager.m_Instance.SelectionTransform;
+                m_CurrentSelectionTr = SelectionManager.m_Instance.SelectionTransform;
                 var selectedWidgets = SelectionManager.m_Instance.GetValidSelectedWidgets();
 
                 bool hasWidgets = selectedWidgets.Count > 0;
@@ -113,40 +118,40 @@ namespace TiltBrush
                 }
                 else if (hasWidgets)
                 {
-                    var selectedImages = selectedWidgets.Where(w => w is ImageWidget).ToList();
-                    var selectedVideos = selectedWidgets.Where(w => w is VideoWidget).ToList();
-                    var selectedModels = selectedWidgets.Where(w => w is ModelWidget).ToList();
-                    var selectedGuides = selectedWidgets.Where(w => w is StencilWidget).ToList();
+                    SelectedImages = selectedWidgets.OfType<ImageWidget>().ToList();
+                    SelectedVideos = selectedWidgets.OfType<VideoWidget>().ToList();
+                    SelectedModels = selectedWidgets.OfType<ModelWidget>().ToList();
+                    SelectedGuides = selectedWidgets.OfType<StencilWidget>().ToList();
 
-                    bool multipleTypes = (selectedImages.Count > 0 ? 1 : 0) +
-                        (selectedVideos.Count > 0 ? 1 : 0) +
-                        (selectedModels.Count > 0 ? 1 : 0) +
-                        (selectedGuides.Count > 0 ? 1 : 0) > 1;
+                    bool multipleTypes = (SelectedImages.Count > 0 ? 1 : 0) +
+                        (SelectedVideos.Count > 0 ? 1 : 0) +
+                        (SelectedModels.Count > 0 ? 1 : 0) +
+                        (SelectedGuides.Count > 0 ? 1 : 0) > 1;
 
                     if (multipleTypes)
                     {
                         m_CurrentSelectionType = SelectionType.Mixed;
                         m_CurrentSelectionCount = selectedWidgets.Count;
                     }
-                    else if (selectedImages.Count > 0)
+                    else if (SelectedImages.Count > 0)
                     {
                         m_CurrentSelectionType = SelectionType.Image;
-                        m_CurrentSelectionCount = selectedImages.Count;
+                        m_CurrentSelectionCount = SelectedImages.Count;
                     }
-                    else if (selectedVideos.Count > 0)
+                    else if (SelectedVideos.Count > 0)
                     {
                         m_CurrentSelectionType = SelectionType.Video;
-                        m_CurrentSelectionCount = selectedVideos.Count;
+                        m_CurrentSelectionCount = SelectedVideos.Count;
                     }
-                    else if (selectedModels.Count > 0)
+                    else if (SelectedModels.Count > 0)
                     {
                         m_CurrentSelectionType = SelectionType.Model;
-                        m_CurrentSelectionCount = selectedModels.Count;
+                        m_CurrentSelectionCount = SelectedModels.Count;
                     }
-                    else if (selectedGuides.Count > 0)
+                    else if (SelectedGuides.Count > 0)
                     {
                         m_CurrentSelectionType = SelectionType.Guide;
-                        m_CurrentSelectionCount = selectedGuides.Count;
+                        m_CurrentSelectionCount = SelectedGuides.Count;
                     }
                 }
                 else

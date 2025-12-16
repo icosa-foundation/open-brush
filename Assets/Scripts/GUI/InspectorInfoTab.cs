@@ -19,9 +19,8 @@ using TMPro;
 
 public class InspectorInfoTab : InspectorBaseTab
 {
-    public TextMeshPro m_SummaryText;
-
     private InspectorPanel m_InspectorPanel;
+    public TextMeshPro m_SummaryText;
 
     void Start()
     {

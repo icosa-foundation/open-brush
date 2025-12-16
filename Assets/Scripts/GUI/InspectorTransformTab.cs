@@ -43,7 +43,7 @@ public class InspectorTransformTab : InspectorBaseTab
         {
             return;
         }
-        TrTransform tr = m_InspectorPanel.CurrentSelection;
+        TrTransform tr = m_InspectorPanel.CurrentSelectionTr;
         var translation = tr.MultiplyPoint(SelectionBounds.center);
         var rotation = tr.rotation.eulerAngles;
         var scale = tr.scale;
