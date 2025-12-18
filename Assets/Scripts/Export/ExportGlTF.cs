@@ -195,6 +195,14 @@ namespace TiltBrush
 
             // var camPose = SketchControlsScript.m_Instance.GetSaveIconTool().LastSaveCameraRigState.GetLossyTrTransform();
             var pose = App.Scene.Pose;
+            Matrix4x4 exportFromUnity = AxisConvention.GetFromUnity(payload.axes);
+
+            Vector3 UnityRotToGltfEuler(Quaternion rotation)
+            {
+                Vector3 forward = exportFromUnity.MultiplyVector(rotation * Vector3.forward);
+                Vector3 up = exportFromUnity.MultiplyVector(rotation * Vector3.up);
+                return Quaternion.LookRotation(forward, up).eulerAngles;
+            }
 
             // Scene-level extras:
             exporter.G.extras["TB_EnvironmentGuid"] = payload.env.guid.ToString("D");
@@ -202,7 +210,6 @@ namespace TiltBrush
             exporter.G.extras["TB_UseGradient"] = payload.env.useGradient ? "true" : "false";
             exporter.G.extras["TB_SkyColorA"] = CommaFormattedFloatRGB(skyColorA);
             exporter.G.extras["TB_SkyColorB"] = CommaFormattedFloatRGB(skyColorB);
-            Matrix4x4 exportFromUnity = AxisConvention.GetFromUnity(payload.axes);
             exporter.G.extras["TB_SkyGradientDirection"] = CommaFormattedVector3(
                 exportFromUnity * skyGradientDir);
             exporter.G.extras["TB_FogColor"] = CommaFormattedFloatRGB(payload.env.fogColor);
@@ -211,22 +218,26 @@ namespace TiltBrush
             exporter.G.extras["TB_AmbientLightColor"] = CommaFormattedFloatRGB(payload.lights.ambientColor);
             exporter.G.extras["TB_SceneLight0Color"] = CommaFormattedFloatRGB(payload.lights.lights[0].lightColor);
             exporter.G.extras["TB_SceneLight0Rotation"] = CommaFormattedVector3(
-                payload.lights.lights[0].xform.rotation.eulerAngles);
+                UnityRotToGltfEuler(payload.lights.lights[0].xform.rotation));
             exporter.G.extras["TB_SceneLight1Color"] = CommaFormattedFloatRGB(payload.lights.lights[1].lightColor);
             exporter.G.extras["TB_SceneLight1Rotation"] = CommaFormattedVector3(
-                payload.lights.lights[1].xform.rotation.eulerAngles);
+                UnityRotToGltfEuler(payload.lights.lights[1].xform.rotation));
 
-            exporter.G.extras["TB_PoseTranslation"] = CommaFormattedVector3(pose.translation);
-            exporter.G.extras["TB_PoseRotation"] = CommaFormattedVector3(pose.rotation.eulerAngles);
+            exporter.G.extras["TB_PoseTranslation"] = CommaFormattedVector3(exportFromUnity * pose.translation);
+            exporter.G.extras["TB_PoseRotation"] = CommaFormattedVector3(UnityRotToGltfEuler(pose.rotation));
             exporter.G.extras["TB_PoseScale"] = pose.scale;
 
             exporter.G.extras["TB_ExportedFromVersion"] = App.Config.m_VersionNumber;
 
             if (SaveLoadScript.m_Instance != null)
             {
-                TrTransform cameraPose = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
-                exporter.G.extras["TB_CameraTranslation"] = CommaFormattedVector3(cameraPose.translation);
-                exporter.G.extras["TB_CameraRotation"] = CommaFormattedVector3(cameraPose.rotation.eulerAngles);
+                TrTransform cameraPose_SS = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
+                Matrix4x4 unityFromExport = AxisConvention.GetToUnity(payload.axes);
+                TrTransform cameraPose_Export_Scene = ChangeBasis(cameraPose_SS, exportFromUnity, unityFromExport);
+                TrTransform scenePose_Export = ChangeBasis(App.Scene.Pose, exportFromUnity, unityFromExport);
+                TrTransform cameraPose_Export = scenePose_Export * cameraPose_Export_Scene;
+                exporter.G.extras["TB_CameraTranslation"] = CommaFormattedVector3(cameraPose_Export.translation);
+                exporter.G.extras["TB_CameraRotation"] = CommaFormattedVector3(cameraPose_Export.rotation.eulerAngles);
             }
 
             // This is a new mode that solves the issue of finding a sane pivot for Orbit Camera Controller
