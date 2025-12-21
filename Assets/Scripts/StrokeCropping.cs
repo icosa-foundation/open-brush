@@ -19,12 +19,15 @@ namespace TiltBrush
 {
     public class StrokeCropping
     {
-        public static void CropStrokesToSphere(Vector3 center, float radius)
+        public static void CropStrokesToSphere(Vector3 center_ws, float radius_ws)
         {
-            if (radius <= 0)
+            if (radius_ws <= 0)
             {
                 return;
             }
+
+            Vector3 center = App.Scene.Pose.inverse * center_ws;
+            float radius = App.Scene.Pose.inverse.scale * radius_ws;
 
             var strokesInsideSphere = new HashSet<Stroke>();
             int boundsTestsPassed = 0;

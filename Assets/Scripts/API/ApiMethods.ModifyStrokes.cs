@@ -252,7 +252,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "strokes.crop.sphere",
-            "Crops all strokes to the spherical volume defined by center (world space) and radius (meters)",
+            "Crops all strokes to the spherical volume defined by center and radius",
             "0,0,0,5"
         )]
         public static void CropStrokesToSphere(Vector3 center, float radius)
