@@ -834,6 +834,7 @@ namespace TiltBrush
         private async Task<(string, long)> UploadCurrentSketchViverseAsync(
                     CancellationToken token, string tempUploadDir, bool isDemoUpload)
         {
+            bool publishLegacyGltf = false;
             DiskSceneFileInfo fileInfo = GetWritableFile();
             var currentScene = SaveLoadScript.m_Instance.SceneFile;
             string uploadName = currentScene.Valid ? currentScene.HumanName : kDefaultName;
@@ -904,21 +905,30 @@ namespace TiltBrush
             }
 
             // Export GLB to assets/scene.glb
-            string glbPath = Path.Combine(assetsDir, "scene.glb");
+            if (publishLegacyGltf) // The old way
+            {
+                string glbPath = Path.Combine(assetsDir, "scene.glb");
+                var exportResults = await OverlayManager.m_Instance.RunInCompositorAsync(
+                    OverlayType.Export, fadeDuration: 0.5f,
+                    action: () => new ExportGlTF().ExportBrushStrokes(
+                        glbPath,
+                        AxisConvention.kGltf2,
+                        binary: true,
+                        doExtras: true,
+                        includeLocalMediaContent: true,
+                        gltfVersion: 2,
+                        selfContained: false));
 
-            var exportResults = await OverlayManager.m_Instance.RunInCompositorAsync(
-                OverlayType.Export, fadeDuration: 0.5f,
-                action: () => new ExportGlTF().ExportBrushStrokes(
-                    glbPath,
-                    AxisConvention.kGltf2,
-                    binary: true,
-                    doExtras: true,
-                    includeLocalMediaContent: true,
-                    gltfVersion: 2,
-                    selfContained: false));
-
-            if (!exportResults.success)
-                throw new VrAssetServiceException("Internal error creating upload data.");
+                if (!exportResults.success)
+                    throw new VrAssetServiceException("Internal error creating upload data.");
+            }
+            else
+            {
+                // NewGLB format
+                await OverlayManager.m_Instance.RunInCompositorAsync(
+                    OverlayType.Export, fadeDuration: 0.5f,
+                    action: () => Export.ExportNewGlb(assetsDir, "scene.glb", App.UserConfig.Export.ExportEnvironment));
+            }
 
             SetUploadProgress(UploadStep.CreateTilt, 0);
             await CreateTiltForUploadAsync(fileInfo);
