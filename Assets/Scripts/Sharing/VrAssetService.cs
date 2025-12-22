@@ -960,7 +960,6 @@ namespace TiltBrush
 
             string htmlPath = Path.Combine(exportDir, "index.html");
             string html = ViewerHTMLGenerator.GenerateViewerHTML("./assets/scene.glb", sceneSid);
-            Debug.Log($"[DEBUG] sceneSid={sceneSid}");
             File.WriteAllText(htmlPath, html);
 
             token.ThrowIfCancellationRequested();
