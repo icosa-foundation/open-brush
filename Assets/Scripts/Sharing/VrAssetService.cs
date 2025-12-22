@@ -840,7 +840,7 @@ namespace TiltBrush
             string uploadName = currentScene.Valid ? currentScene.HumanName : kDefaultName;
 
             // Generate title + description
-            string timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             string title = $"{uploadName}_{timestamp}";
             if (title.Length > 30) title = title.Substring(0, 30);
             string description = currentScene.Valid ? currentScene.HumanName : "Uploaded from Open Brush";
@@ -859,7 +859,7 @@ namespace TiltBrush
             if (!File.Exists(tempZip))
                 throw new VrAssetServiceException("WebViewer.bytes not found in Resources folder");
 
-            using (var zip = System.IO.Compression.ZipFile.OpenRead(tempZip))
+            using (var zip = ZipFile.OpenRead(tempZip))
             {
                 int extractedCount = 0;
                 foreach (var entry in zip.Entries)
