@@ -927,7 +927,7 @@ namespace TiltBrush
                 // NewGLB format
                 await OverlayManager.m_Instance.RunInCompositorAsync(
                     OverlayType.Export, fadeDuration: 0.5f,
-                    action: () => Export.ExportNewGlb(assetsDir, "scene.glb", App.UserConfig.Export.ExportEnvironment));
+                    action: () => Export.ExportNewGlb(assetsDir, "scene", App.UserConfig.Export.ExportEnvironment));
             }
 
             SetUploadProgress(UploadStep.CreateTilt, 0);
