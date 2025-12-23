@@ -681,7 +681,8 @@ namespace TiltBrush
             bool hasModels = WidgetManager.m_Instance.ActiveModelWidgets.Count > 0;
             bool hasImages = WidgetManager.m_Instance.ActiveImageWidgets.Count > 0;
             bool hasTexts = WidgetManager.m_Instance.ActiveTextWidgets.Count > 0;
-            bool publishLegacyGltf = !(hasModels || hasImages || hasTexts);
+            //bool publishLegacyGltf = !(hasModels || hasImages || hasTexts);
+            bool publishLegacyGltf = false;
 
             DiskSceneFileInfo fileInfo = GetWritableFile();
 
@@ -742,6 +743,8 @@ namespace TiltBrush
 
             // Always use new glb if we're not publishing legacy glTF.
             // Otherwise it's based on user config.
+            //
+            // Forcing this to false for now as the Legacy GLTF has issues with environment positioning
             if (App.UserConfig.Sharing.UseNewGlb || !publishLegacyGltf)
             {
                 string newGlbPath = Path.Combine(tempUploadDir, $"{uploadName}.glb");
