@@ -417,7 +417,15 @@ namespace TiltBrush
         {
             if (!Application.isPlaying) return;
 
-            ExportCameraPaths(exporter);
+            try
+            {
+                ExportCameraPaths(exporter);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Error exporting camera paths: {e.Message}");
+            }
+
             if (App.UserConfig.Export.ExportCustomSkybox)
             {
                 GltfExportStandinManager.m_Instance.DestroySkyStandin();
