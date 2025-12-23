@@ -433,7 +433,8 @@ namespace TiltBrush
 
             gltfRoot.Asset.Generator = $"Open Brush UnityGLTF Exporter {App.Config.m_VersionNumber}.{App.Config.m_BuildStamp})";
 
-            JToken ColorToJString(Color c) => $"{c.r}, {c.g}, {c.b}, {c.a}";
+            JToken ColorToJString(Color c, bool includeAlpha = false) =>
+                $"{c.r}, {c.g}, {c.b}" + (includeAlpha ? ", {c.a}" : "");
             JToken Vector3ToJString(Vector3 c) => $"{c.x}, {c.y}, {c.z}";
 
             var metadata = new SketchSnapshot().GetSketchMetadata();
@@ -452,10 +453,10 @@ namespace TiltBrush
             extras["TB_SkyGradientDirection"] = Vector3ToJString(
                 exportFromUnity * (settings.GradientOrientation * Vector3.up));
             extras["TB_FogColor"] = ColorToJString(settings.FogColor);
-            extras["TB_FogDensity"] = settings.FogDensity;
+            extras["TB_FogDensity"] = $"{settings.FogDensity}";
             extras["TB_PoseTranslation"] = Vector3ToJString(pose.translation);
             extras["TB_PoseRotation"] = Vector3ToJString(pose.rotation.eulerAngles);
-            extras["TB_PoseScale"] = pose.scale;
+            extras["TB_PoseScale"] = $"{pose.scale}";
             extras["TB_ExportedFromVersion"] = App.Config.m_VersionNumber;
 
             TrTransform cameraPose = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
