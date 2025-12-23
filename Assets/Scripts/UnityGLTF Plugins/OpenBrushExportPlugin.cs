@@ -467,6 +467,7 @@ namespace TiltBrush
                 extras[$"TB_SceneLight{i}Color"] = ColorToJString(lightColor);
                 Vector3 rot = transform.localEulerAngles;
                 rot.y = 360 - rot.y; // Backwards compatibility
+                rot.z = 0; // Roll is irrelevant for directional lights
                 extras[$"TB_SceneLight{i}Rotation"] = Vector3ToJString(rot);
             }
             extras["TB_PoseTranslation"] = Vector3ToJString(pose.translation);
