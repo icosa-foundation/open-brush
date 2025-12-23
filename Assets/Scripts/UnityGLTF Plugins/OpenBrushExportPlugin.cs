@@ -26,6 +26,7 @@ namespace TiltBrush
     {
         private Dictionary<int, Batch> _meshesToBatches;
         private List<Camera> m_CameraPathsCameras;
+        private GameObject m_ThumbnailCamera;
 
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
@@ -36,6 +37,8 @@ namespace TiltBrush
             SelectionManager.m_Instance?.ClearActiveSelection();
             _meshesToBatches = new Dictionary<int, Batch>();
             GenerateCameraPathsCameras();
+            m_ThumbnailCamera = App.Instance.InstantiateThumbnailCamera();
+            m_ThumbnailCamera.transform.SetParent(App.Scene.MainCanvas.transform, worldPositionStays: true);
         }
 
         private void GenerateCameraPathsCameras()
@@ -458,6 +461,8 @@ namespace TiltBrush
             // Experimental
             // extras["TB_metadata"] = JObject.FromObject(metadata);
             gltfRoot.Extras = extras;
+
+            Object.Destroy(m_ThumbnailCamera);
         }
 
         private static void SafeDestroy(Object o)

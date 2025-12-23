@@ -28,29 +28,7 @@ namespace TiltBrush
                 return;
             }
 
-            if (SaveLoadScript.m_Instance == null)
-            {
-                Debug.LogError("SaveLoadScript.m_Instance is null. Cannot get camera state.");
-                return;
-            }
-
-            // ReasonableThumbnail_SS returns the saved camera transform in Scene Space
-            // This is the camera position from the loaded sketch file
-            TrTransform cameraTr_Scene = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
-
-            // Create a new GameObject with a Camera component
-            GameObject cameraObj = new GameObject("SaveCamera_Preview");
-            Camera cam = cameraObj.AddComponent<Camera>();
-
-            // Set camera properties to match typical GLTF export
-            cam.fieldOfView = 60.0f;
-            cam.nearClipPlane = 0.1f;
-            cam.farClipPlane = 1000.0f;
-
-            // Convert from Scene space to World space using App.Scene.AsScene
-            // This properly accounts for the scene's transform
-            App.Scene.AsScene[cameraObj.transform] = cameraTr_Scene;
-
+            var cameraObj = App.Instance.InstantiateThumbnailCamera();
             // Add a visual indicator so it's easy to see in the scene
             // Create a simple mesh to show camera frustum
             GameObject frustumHelper = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -75,8 +53,6 @@ namespace TiltBrush
 
             // Select the new camera object
             Selection.activeGameObject = cameraObj;
-
-            Debug.Log($"Created SaveCamera in Scene space at position {cameraTr_Scene.translation}, rotation {cameraTr_Scene.rotation.eulerAngles}");
         }
 
         [MenuItem("Open Brush/Debug/Instantiate Save Camera", true)]
