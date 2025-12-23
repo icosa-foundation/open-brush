@@ -454,6 +454,7 @@ namespace TiltBrush
                 exportFromUnity * (settings.GradientOrientation * Vector3.up));
             extras["TB_FogColor"] = ColorToJString(settings.FogColor);
             extras["TB_FogDensity"] = $"{settings.FogDensity}";
+            extras["TB_AmbientLightColor"] = ColorToJString(RenderSettings.ambientLight);
             extras["TB_PoseTranslation"] = Vector3ToJString(pose.translation);
             extras["TB_PoseRotation"] = Vector3ToJString(pose.rotation.eulerAngles);
             extras["TB_PoseScale"] = $"{pose.scale}";
