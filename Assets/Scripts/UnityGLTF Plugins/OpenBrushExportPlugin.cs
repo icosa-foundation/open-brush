@@ -444,6 +444,7 @@ namespace TiltBrush
             Environment env = settings.GetDesiredPreset();
             var extras = new JObject();
 
+
             var pose = metadata.SceneTransformInRoomSpace;
             extras["TB_EnvironmentGuid"] = env.m_Guid.ToString("D");
             extras["TB_Environment"] = env.Description;
@@ -456,6 +457,18 @@ namespace TiltBrush
             extras["TB_FogColor"] = ColorToJString(settings.FogColor);
             extras["TB_FogDensity"] = $"{settings.FogDensity}";
             extras["TB_AmbientLightColor"] = ColorToJString(RenderSettings.ambientLight);
+            for (int i = 0; i < App.Scene.GetNumLights(); i++)
+            {
+                var transform = App.Scene.GetLight(i).transform;
+                Light unityLight = transform.GetComponent<Light>();
+                Debug.Assert(unityLight != null);
+                Color lightColor = unityLight.color * unityLight.intensity;
+                lightColor.a = 1.0f;
+                extras[$"TB_SceneLight{i}Color"] = ColorToJString(lightColor);
+                Vector3 rot = transform.localEulerAngles;
+                rot.y = 360 - rot.y; // Backwards compatibility
+                extras[$"TB_SceneLight{i}Rotation"] = Vector3ToJString(rot);
+            }
             extras["TB_PoseTranslation"] = Vector3ToJString(pose.translation);
             extras["TB_PoseRotation"] = Vector3ToJString(pose.rotation.eulerAngles);
             extras["TB_PoseScale"] = $"{pose.scale}";
