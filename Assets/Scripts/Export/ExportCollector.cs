@@ -57,7 +57,8 @@ namespace TiltBrush
                 bool IsModelExportable(ModelWidget w)
                 {
                     if (!w.Model.AllowExport) { return false; }
-                    if (w.Model.GetLocation().GetLocationType() == Model.Location.Type.LocalFile)
+                    var locationType = w.Model.GetLocation().GetLocationType();
+                    if (locationType == Model.Location.Type.LocalFile)
                     {
                         return includeLocalMediaContent && App.Config.m_EnableReferenceModelExport;
                     }
@@ -71,6 +72,13 @@ namespace TiltBrush
                 var (exportable, notExportable) = WidgetManager.m_Instance.ModelWidgets
                     .Where(w => w.Model != null && w.isActiveAndEnabled)
                     .Partition(IsModelExportable);
+                var (exportableEditable, notExportableEditable) = WidgetManager.m_Instance.EditableModelWidgets
+                    .Where(w => w.Model != null && w.isActiveAndEnabled)
+                    .Select(m => m as ModelWidget)
+                    .Partition(IsModelExportable);
+                exportable.AddRange(exportableEditable);
+                notExportable.AddRange(notExportableEditable);
+
                 BuildModelsAsModelMeshes(payload, exportable);
                 BuildEmptyXforms(payload, notExportable);
                 UnityEngine.Profiling.Profiler.EndSample();
