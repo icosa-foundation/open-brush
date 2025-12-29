@@ -76,8 +76,6 @@ namespace TiltBrush
                 if (!UserHasManageExternalStoragePermission())
                 {
                     m_Overlay.MessageStatus = m_RequestAndroidFolderPermissions.GetLocalizedStringAsync().Result;
-                    yield return new WaitForSeconds(5f);
-
                     m_WaitingForPermission = true;
                     AskForManageStoragePermission();
                     while (!UserHasManageExternalStoragePermission())
