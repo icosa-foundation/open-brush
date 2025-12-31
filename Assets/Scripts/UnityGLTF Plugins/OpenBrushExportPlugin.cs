@@ -27,6 +27,7 @@ namespace TiltBrush
         private Dictionary<int, Batch> _meshesToBatches;
         private List<Camera> m_CameraPathsCameras;
         private GameObject m_ThumbnailCamera;
+        private bool m_WasUsingBatchedBrushes;
 
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
@@ -148,6 +149,7 @@ namespace TiltBrush
 
             if (App.UserConfig.Export.KeepStrokes)
             {
+                m_WasUsingBatchedBrushes = App.Config.m_UseBatchedBrushes;
                 App.Config.m_UseBatchedBrushes = false;
                 foreach (var batch in canvas.BatchManager.AllBatches())
                 {
@@ -175,6 +177,25 @@ namespace TiltBrush
                     batch.tag = "EditorOnly";
                 }
                 canvas.BatchManager.FlushMeshUpdates();
+            }
+            else
+            {
+                foreach (var batch in canvas.BatchManager.AllBatches())
+                {
+                    var brush = batch.Brush;
+                    var mf = batch.gameObject.GetComponent<MeshFilter>();
+                    Mesh mesh = new Mesh();
+                    batch.Geometry.CopyToMesh(mesh);
+                    if (mesh == null)
+                    {
+                        Debug.LogError($"No mesh found for brush {brush.name}");
+                        continue;
+                    }
+                    batch.m_EditorDebugMesh = mf.sharedMesh;
+                    mesh = BrushBaker.m_Instance.ProcessMesh(mesh, brush.m_Guid.ToString());
+                    mf.sharedMesh = mesh;
+                    mf.mesh = mesh;
+                }
             }
         }
 
@@ -215,9 +236,9 @@ namespace TiltBrush
         public void AfterLayerExport(Transform transform)
         {
             var canvas = transform.GetComponent<CanvasScript>();
-            App.Config.m_UseBatchedBrushes = true;
             if (App.UserConfig.Export.KeepStrokes)
             {
+                App.Config.m_UseBatchedBrushes = m_WasUsingBatchedBrushes;
                 foreach (var brushScript in canvas.transform.GetComponentsInChildren<BaseBrushScript>())
                 {
                     var stroke = brushScript.Stroke;
@@ -243,6 +264,15 @@ namespace TiltBrush
                             SafeDestroy(child.gameObject);
                         }
                     }
+                }
+            }
+            else
+            {
+                foreach (var batch in canvas.BatchManager.AllBatches())
+                {
+                    var mf = batch.gameObject.GetComponent<MeshFilter>();
+                    mf.sharedMesh = batch.m_EditorDebugMesh;
+                    batch.m_EditorDebugMesh = null;
                 }
             }
         }
