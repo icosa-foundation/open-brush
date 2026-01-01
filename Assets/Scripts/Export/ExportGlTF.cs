@@ -247,6 +247,53 @@ namespace TiltBrush
             return GlTF_Node.GetOrCreate(G, name, Matrix4x4.identity, null, out _);
         }
 
+        private void ExportSaveCamera(GlTF_ScriptableExporter exporter, SceneStatePayload payload)
+        {
+            // Get the saved camera position from the loaded sketch
+            if (SaveLoadScript.m_Instance == null)
+            {
+                return;
+            }
+
+            // ReasonableThumbnail_SS returns the camera transform in Scene Space
+            // But exported geometry has Scene.Pose baked in, so we need to apply it to the camera too
+            TrTransform cameraTr_Scene = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
+
+            // Convert both the camera and Scene.Pose to export coordinate system first
+            // This ensures the pose is applied correctly in the export coordinate space
+            Matrix4x4 exportFromUnity = AxisConvention.GetFromUnity(payload.axes);
+            Matrix4x4 unityFromExport = AxisConvention.GetToUnity(payload.axes);
+
+            TrTransform cameraTr_Export_Scene = ExportUtils.ChangeBasis(cameraTr_Scene, exportFromUnity, unityFromExport);
+            TrTransform scenePose_Export = ExportUtils.ChangeBasis(App.Scene.Pose, exportFromUnity, unityFromExport);
+
+            // Apply Scene.Pose in export coordinate space
+            TrTransform cameraTr_Export = scenePose_Export * cameraTr_Export_Scene;
+
+            // Apply scale conversion
+            cameraTr_Export = cameraTr_Export.TransformBy(TrTransform.S(payload.exportUnitsFromAppUnits));
+
+            // Create a perspective camera with reasonable defaults
+            var camera = new GlTF_Perspective(exporter.G);
+            camera.name = "SaveCamera";
+            camera.aspect_ratio = 16.0f / 9.0f;  // Standard aspect ratio
+            camera.yfov = 60.0f * Mathf.Deg2Rad;  // 60 degree FOV in radians
+            camera.znear = 0.1f * payload.exportUnitsFromAppUnits;
+            camera.zfar = 1000.0f * payload.exportUnitsFromAppUnits;
+
+            exporter.G.cameras.Add(camera);
+
+            // Create a node for the camera
+            Matrix4x4 cameraMatrix = Matrix4x4.TRS(
+                cameraTr_Export.translation,
+                cameraTr_Export.rotation,
+                Vector3.one  // Cameras don't have scale
+            );
+
+            var cameraNode = GlTF_Node.Create(exporter.G, "SaveCameraNode", cameraMatrix, null);
+            cameraNode.cameraName = camera.name;
+        }
+
         private void WriteObjectsAndConnections(GlTF_ScriptableExporter exporter,
                                                 SceneStatePayload payload)
         {
@@ -311,6 +358,9 @@ namespace TiltBrush
                 var node = GlTF_Node.Create(exporter.G, uniqueName, xformPayload.xform, null);
                 node.PresentationNameOverride = $"empty_{xformPayload.name}";
             }
+
+            // Export camera from LastSaveCameraRigState
+            ExportSaveCamera(exporter, payload);
         }
     }
 
