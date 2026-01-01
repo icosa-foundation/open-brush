@@ -312,6 +312,19 @@ namespace TiltBrush
                     ExportUtils.ConvertUnitsAndChangeBasis(geometry, payload);
                     UnityEngine.Profiling.Profiler.EndSample();
 
+                    // Convert Canvas.Pose to export coordinate system to match the geometry
+                    // The geometry vertices have been transformed to export coords (X-axis flipped for GLTF)
+                    // so the Canvas.Pose transform needs the same conversion
+                    Matrix4x4 exportFromUnity = AxisConvention.GetFromUnity(payload.axes);
+                    Matrix4x4 unityFromExport = AxisConvention.GetToUnity(payload.axes);
+                    TrTransform xformTr = ExportUtils.ChangeBasis(
+                        TrTransform.FromMatrix4x4(assumedXform),
+                        exportFromUnity,
+                        unityFromExport);
+                    // Apply unit scaling (scales translation and any scale component, preserves rotation)
+                    xformTr = xformTr.TransformBy(TrTransform.S(payload.exportUnitsFromAppUnits));
+                    Matrix4x4 xformInExportCoords = xformTr.ToMatrix4x4();
+
                     if (payload.reverseWinding)
                     {
                         // Note: this triangle flip intentionally un-does the Unity FBX import flip.
@@ -332,7 +345,7 @@ namespace TiltBrush
                         legacyUniqueName = legacyUniqueName,
                         // This is the only instance of the mesh, so the node doesn't need an extra instance id
                         nodeName = friendlyGeometryName,
-                        xform = assumedXform,
+                        xform = xformInExportCoords,
                         geometry = geometry,
                         geometryName = friendlyGeometryName,
                         exportableMaterial = brush.m_desc,
