@@ -39,6 +39,7 @@ public class BrushBaker : MonoBehaviour
         }
         catch (InvalidOperationException e)
         {
+            Debug.LogWarning($"No mapping found for brushGuid {brushGuid}: {e.Message}");
             return mesh;
         }
         if (computeShader == null) return mesh;
