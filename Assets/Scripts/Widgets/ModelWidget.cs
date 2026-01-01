@@ -296,7 +296,13 @@ namespace TiltBrush
             float maxExtent = 2 * Mathf.Max(m_Model.m_MeshBounds.extents.x,
                 Mathf.Max(m_Model.m_MeshBounds.extents.y, m_Model.m_MeshBounds.extents.z));
             float size;
-            if (maxExtent == 0.0f)
+            if (IsVoxModel())
+            {
+                // Keep VOX models at their authored voxel scale instead of normalizing to the
+                // generic initial size.
+                size = 0.1f * App.Scene.Pose.scale;
+            }
+            else if (maxExtent == 0.0f)
             {
                 // If we created a widget with a model that doesn't have geo, we won't have calculated a
                 // bounds worth much.  In that case, give us a default size.
@@ -374,7 +380,10 @@ namespace TiltBrush
             // Check SVG models using different logic
             if (m_Model.GetLocation().Extension == ".svg")
             {
-                return m_ObjModelScript.SvgSceneInfo.HasSubShapes();
+                // SVG break-apart is not yet implemented, so return false
+                // TODO: When SVG break-apart is implemented, check SvgSceneInfo for sub-shapes
+                // return m_Model.SvgSceneInfo.Scene?.Root != null && m_Model.SvgSceneInfo.HasSubShapes();
+                return false;
             }
 
             // Check if we have more than one light or mesh
@@ -974,6 +983,12 @@ namespace TiltBrush
         override public bool CanSnapToHome()
         {
             return m_Model.m_MeshBounds.center == Vector3.zero;
+        }
+
+        private bool IsVoxModel()
+        {
+            string extension = m_Model?.GetLocation().Extension;
+            return string.Equals(extension, ".vox", StringComparison.OrdinalIgnoreCase);
         }
 
         public void AddSceneLightGizmos()
