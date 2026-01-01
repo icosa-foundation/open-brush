@@ -24,7 +24,7 @@ namespace TiltBrush
     public static partial class ApiMethods
     {
         [ApiEndpoint("load.quill", "Loads a Quill sketch from the given path")]
-        public static void LoadQuill(string path)
+        public static void LoadQuill(string path, int maxStrokes = 0, bool loadAnimations = false)
         {
             if (!Directory.Exists(path))
             {
@@ -39,101 +39,202 @@ namespace TiltBrush
                 return;
             }
 
-            // Recurse layers
-            TraverseQuillLayers(sequence.RootLayer);
+            // Recurse layers and collect all strokes and created layers
+            int strokeCount = 0;
+            List<Stroke> allCollectedStrokes = new List<Stroke>();
+            List<CanvasScript> createdLayers = new List<CanvasScript>();
+            
+            // Iterate only over top-level layers of the root group
+            foreach (var topLevelLayer in sequence.RootLayer.Children)
+            {
+                // Create a new OB layer for each top-level Quill layer
+                CanvasScript obLayer = App.Scene.AddLayerNow();
+                App.Scene.RenameLayer(obLayer, topLevelLayer.Name);
+                
+                // Set the top-level layer's transform
+                TrTransform topLevelXf = ConvertSQTransform(topLevelLayer.Transform);
+                obLayer.LocalPose = topLevelXf;
+                createdLayers.Add(obLayer);
+
+                // Recurse into children and flatten them into this obLayer
+                TraverseAndFlattenQuillLayers(topLevelLayer, topLevelXf, obLayer, ref strokeCount, maxStrokes, loadAnimations, allCollectedStrokes);
+                
+                if (maxStrokes > 0 && strokeCount >= maxStrokes) break;
+            }
+            
+            if (allCollectedStrokes.Count > 0)
+            {
+                // Optimized batch rendering
+                SketchMemoryScript.m_Instance.RenderStrokesDirectly(allCollectedStrokes);
+                
+                // Single undo step for all strokes and layers
+                var cmd = new LoadQuillCommand(allCollectedStrokes, createdLayers);
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+
+                if (maxStrokes > 0 && strokeCount >= maxStrokes)
+                {
+                    Debug.LogWarning($"Reached maxStrokes limit ({maxStrokes}). Partial load complete.");
+                }
+            }
         }
 
-        private static void TraverseQuillLayers(SQ.Layer layer)
+        private static void TraverseAndFlattenQuillLayers(SQ.Layer layer, TrTransform worldXf, CanvasScript targetLayer, ref int strokeCount, int maxStrokes, bool loadAnimations, List<Stroke> collectedStrokes)
         {
+            if (maxStrokes > 0 && strokeCount >= maxStrokes) return;
+
+            // Note: worldXf is the accumulated transform of this layer in Quill global space.
+            // targetLayer.LocalPose is the transform of the top-level layer.
+            
             if (layer is SQ.LayerGroup group)
             {
                 foreach (var child in group.Children)
                 {
-                    TraverseQuillLayers(child);
+                    TrTransform childLocalXf = ConvertSQTransform(child.Transform);
+                    TrTransform childWorldXf = worldXf * childLocalXf;
+                    TraverseAndFlattenQuillLayers(child, childWorldXf, targetLayer, ref strokeCount, maxStrokes, loadAnimations, collectedStrokes);
+                    if (maxStrokes > 0 && strokeCount >= maxStrokes) return;
                 }
             }
             else if (layer is SQ.LayerPaint paint)
             {
-                foreach (var drawing in paint.Drawings)
+                // Determine which drawings (frames) to load
+                IEnumerable<SQ.Drawing> drawingsToLoad;
+                if (loadAnimations)
                 {
-                    foreach (var stroke in drawing.Data.Strokes)
+                    drawingsToLoad = paint.Drawings;
+                }
+                else
+                {
+                    if (paint.Frames.Count > 0)
                     {
-                        ConvertAndDrawQuillStroke(stroke);
+                        int drawingIndex = paint.Frames[0];
+                        if (drawingIndex >= 0 && drawingIndex < paint.Drawings.Count)
+                        {
+                            drawingsToLoad = new[] { paint.Drawings[drawingIndex] };
+                        }
+                        else
+                        {
+                            drawingsToLoad = paint.Drawings.Take(1);
+                        }
+                    }
+                    else
+                    {
+                        drawingsToLoad = paint.Drawings.Take(1);
+                    }
+                }
+
+                foreach (var drawing in drawingsToLoad)
+                {
+                    foreach (var sqStroke in drawing.Data.Strokes)
+                    {
+                        // To flatten, we need to convert stroke vertices from world space 
+                        // back into the targetLayer's local space.
+                        // Stroke vertex in Quill world space = worldXf * sqPos
+                        // Stroke vertex in OB layer space = targetLayer.LocalPose.inverse * (worldXf * sqPos)
+                        
+                        TrTransform toLayerSpace = targetLayer.LocalPose.inverse * worldXf;
+
+                        var tbStroke = ConvertQuillStroke(sqStroke, targetLayer, toLayerSpace);
+                        if (tbStroke != null)
+                        {
+                            collectedStrokes.Add(tbStroke);
+                            strokeCount++;
+                        }
+                        if (maxStrokes > 0 && strokeCount >= maxStrokes) return;
                     }
                 }
             }
         }
 
-        private static void ConvertAndDrawQuillStroke(SQ.Stroke sqStroke)
+        private static TrTransform ConvertSQTransform(SQ.Transform sqXf)
         {
-            if (sqStroke.Vertices.Count < 2) return;
+            Vector3 pos = new Vector3(sqXf.Translation.X, sqXf.Translation.Y, sqXf.Translation.Z);
+            Quaternion rot = new Quaternion(sqXf.Rotation.X, sqXf.Rotation.Y, sqXf.Rotation.Z, sqXf.Rotation.W);
+            float scale = sqXf.Scale;
+            return TrTransform.TRS(pos, rot, scale);
+        }
 
-            // Determine Brush
-            // Quill: Cylinder, Ribbon, Ellipse, Cube
-            string brushName = "ink"; // Default
-            if (sqStroke.BrushType == SQ.BrushType.Ribbon) brushName = "paper";
-            
-            // Map other types if needed.
-            // Cylinder is default in Quill, behaves like Ink/Marker.
-            // Ellipse is flat?
-            // Cube is thick?
+        private static Stroke ConvertQuillStroke(SQ.Stroke sqStroke, CanvasScript targetLayer, TrTransform toLayerSpace)
+        {
+            if (sqStroke.Vertices.Count < 2) return null;
 
-            var brush = LookupBrushDescriptor(brushName);
-            if (brush == null)
-            {
-                // Fallback
-                 brush = LookupBrushDescriptor("lightwire");
-            }
-            if (brush == null) return;
-
-            // Calculate average color and max width
-            Vector3 avgColorAcc = Vector3.zero;
+            // Calculate max width for thresholding
             float maxWidth = 0f;
             foreach (var v in sqStroke.Vertices)
             {
-                avgColorAcc += new Vector3(v.Color.R, v.Color.G, v.Color.B);
                 if (v.Width > maxWidth) maxWidth = v.Width;
+            }
+
+            // Determine Brush GUID
+            // Default to Wire
+            string brushGuid = "ad1ad437-76e2-450d-a23a-e17f8310b960"; 
+            
+            // Tapering Detection (Threshold is 10% of max width)
+            float taperThreshold = maxWidth * 0.1f;
+            bool startTapered = sqStroke.Vertices[0].Width < taperThreshold;
+            bool endTapered = sqStroke.Vertices.Last().Width < taperThreshold;
+
+            if (sqStroke.BrushType == SQ.BrushType.Cylinder)
+            {
+                brushGuid = (startTapered || endTapered) 
+                    ? "9568870f-8594-60f4-1b20-dfbc8a5eac0e"  // Tapered Wire
+                    : "ad1ad437-76e2-450d-a23a-e17f8310b960"; // Wire
+            }
+            else if (sqStroke.BrushType == SQ.BrushType.Ribbon || sqStroke.BrushType == SQ.BrushType.Ellipse)
+            {
+                if (startTapered && endTapered) brushGuid = "0d3889f3-3ede-470c-8af4-de4813306126"; // Double Tapered Marker
+                else if (startTapered || endTapered) brushGuid = "d90c6ad8-af0f-4b54-b422-e0f92abe1b3c"; // Tapered Marker
+                else brushGuid = "429ed64a-4e97-4466-84d3-145a861ef684"; // Marker
+            }
+            else if (sqStroke.BrushType == SQ.BrushType.Cube)
+            {
+                brushGuid = "d381e0f5-3def-4a0d-8853-31e9200bcbda"; // Lofted
+            }
+            
+            var brush = BrushCatalog.m_Instance.GetBrush(new Guid(brushGuid));
+            if (brush == null)
+            {
+                 // Fallback to Wire
+                 brush = BrushCatalog.m_Instance.GetBrush(new Guid("ad1ad437-76e2-450d-a23a-e17f8310b960"));
+            }
+            if (brush == null) return null;
+
+            // Calculate average color
+            Vector3 avgColorAcc = Vector3.zero;
+            foreach (var v in sqStroke.Vertices)
+            {
+                avgColorAcc += new Vector3(v.Color.R, v.Color.G, v.Color.B);
             }
             Vector3 avgColorVec = avgColorAcc / sqStroke.Vertices.Count;
             Color unityColor = new Color(avgColorVec.x, avgColorVec.y, avgColorVec.z);
 
             // Create Control Points
             var controlPoints = new List<PointerManager.ControlPoint>(sqStroke.Vertices.Count);
-            uint time = 0; // Fake timestamp
+            uint time = 0;
 
             foreach (var v in sqStroke.Vertices)
             {
-                 Vector3 pos = new Vector3(v.Position.X, v.Position.Y, v.Position.Z);
-                 // Quill coordinate system might need adjustment.
-                 // Trying direct mapping first.
+                 // Keep positions local to the layer
+                 Vector3 localPos = new Vector3(v.Position.X, v.Position.Y, v.Position.Z);
+                 Vector3 localForward = new Vector3(v.Tangent.X, v.Tangent.Y, v.Tangent.Z);
+                 Vector3 localUp = new Vector3(v.Normal.X, v.Normal.Y, v.Normal.Z);
                  
-                 Vector3 forward = new Vector3(v.Tangent.X, v.Tangent.Y, v.Tangent.Z);
-                 Vector3 up = new Vector3(v.Normal.X, v.Normal.Y, v.Normal.Z);
+                 // Apply relative transform to keep coordinates local to the top-level OB layer
+                 Vector3 obPos = toLayerSpace * localPos;
+                 Vector3 obForward = toLayerSpace.rotation * localForward;
+                 Vector3 obUp = toLayerSpace.rotation * localUp;
+                 
                  Quaternion orient = Quaternion.identity;
-                 
-                 if (forward.sqrMagnitude > 0.001f && up.sqrMagnitude > 0.001f)
+                 if (obForward.sqrMagnitude > 0.001f && obUp.sqrMagnitude > 0.001f)
                  {
-                     // Quill Tangent is likely the direction of the stroke.
-                     // Open Brush control point orientation: forward is tangent?
-                     // Need to verify. PointerManager.ControlPoint m_Orient.
-                     // Usually for ribbons, the orientation defines the width direction.
-                     
-                     // In Open Brush, for a ribbon:
-                     // Right vector of orientation is the width direction? Or Up?
-                     // "Paper" brush (Ribbon):
-                     // "Orientation" is the rotation of the brush controller.
-                     // Standard brush orientation: Forward is along the brush handle (Z+). Up is top of brush (Y+).
-                     // For ribbon, the flat side is usually XZ plane?
-                     
-                     // Let's assume LookRotation(forward, up) works where forward is stroke direction.
-                     orient = Quaternion.LookRotation(forward, up);
+                     orient = Quaternion.LookRotation(obForward, obUp);
                  }
                  
                  float pressure = maxWidth > 0 ? v.Width / maxWidth : 1f;
 
                  controlPoints.Add(new PointerManager.ControlPoint
                  {
-                     m_Pos = pos,
+                     m_Pos = obPos,
                      m_Orient = orient,
                      m_Pressure = pressure,
                      m_TimestampMs = time++
@@ -144,10 +245,10 @@ namespace TiltBrush
              var stroke = new Stroke
                 {
                     m_Type = Stroke.Type.NotCreated,
-                    m_IntendedCanvas = App.Scene.ActiveCanvas,
+                    m_IntendedCanvas = targetLayer,
                     m_BrushGuid = brush.m_Guid,
-                    m_BrushScale = 1f, 
-                    m_BrushSize = maxWidth, 
+                    m_BrushScale = toLayerSpace.scale, 
+                    m_BrushSize = maxWidth * toLayerSpace.scale, 
                     m_Color = unityColor,
                     m_Seed = 0,
                     m_ControlPoints = controlPoints.ToArray(),
@@ -156,25 +257,7 @@ namespace TiltBrush
              stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
              stroke.Group = SketchGroupTag.None;
              
-             // Create command
-             // TODO: Grouping for Undo?
-             // Since this is loading a whole sketch, maybe we don't need undo for individual strokes.
-             // But we need to execute it.
-             
-             // Recreate initializes the game object
-             stroke.Recreate(TrTransform.identity, App.Scene.ActiveCanvas);
-             SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
-             
-             // We use PerformAndRecordCommand to ensure it's properly registered in the system (undo/redo, batches etc)
-             // But if we have 100k strokes, this will be slow and memory intensive if we create 100k commands.
-             
-             // Optimized approach: 
-             // Just add to memory and BatchManager?
-             // BaseBrushScript.CreateBatch(...)
-             
-             // For safety and correctness using existing API:
-             var cmd = new BrushStrokeCommand(stroke, WidgetManager.m_Instance.ActiveStencil, 123, null);
-             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+             return stroke;
         }
     }
 }
