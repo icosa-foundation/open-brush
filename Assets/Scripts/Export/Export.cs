@@ -113,7 +113,7 @@ URL=" + kExportDocumentationUrl;
                 {
                     { "fbx", true },
                     { "glb", true },
-                    { "newglb", false },
+                    { "newglb", true },
                     { "json", false },
                     { "latk", false },
                     { "obj", true },
