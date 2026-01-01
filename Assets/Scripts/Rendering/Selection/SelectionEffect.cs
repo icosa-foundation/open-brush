@@ -30,7 +30,17 @@ namespace TiltBrush
     public class SelectionEffect : MonoBehaviour
     {
         // Static flag to disable selection effects during save icon capture
-        public static bool DisableSelectionEffects { get; set; } = false;
+        private static bool s_DisableSelectionEffects = false;
+        public static bool DisableSelectionEffects
+        {
+            get { return s_DisableSelectionEffects; }
+            set
+            {
+                s_DisableSelectionEffects = value;
+                // Set shader global so mobile shaders can also check this flag
+                Shader.SetGlobalFloat("_DisableSelectionEffect", value ? 1.0f : 0.0f);
+            }
+        }
 
 #if FEATURE_CUSTOM_MESH_RENDER
         private enum SelectionEffectPass
