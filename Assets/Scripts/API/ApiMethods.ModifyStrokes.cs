@@ -249,5 +249,15 @@ namespace TiltBrush
             stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
             stroke.Recreate(null, stroke.Canvas);
         }
+
+        [ApiEndpoint(
+            "strokes.crop.sphere",
+            "Crops all strokes to the spherical volume defined by center and radius",
+            "0,0,0,5"
+        )]
+        public static void CropStrokesToSphere(Vector3 center, float radius)
+        {
+            StrokeCropping.CropStrokesToSphere(center, radius);
+        }
     }
 }
