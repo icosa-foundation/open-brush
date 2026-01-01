@@ -681,7 +681,8 @@ namespace TiltBrush
             bool hasModels = WidgetManager.m_Instance.ActiveModelWidgets.Count > 0;
             bool hasImages = WidgetManager.m_Instance.ActiveImageWidgets.Count > 0;
             bool hasTexts = WidgetManager.m_Instance.ActiveTextWidgets.Count > 0;
-            bool publishLegacyGltf = !(hasModels || hasImages || hasTexts);
+            //bool publishLegacyGltf = !(hasModels || hasImages || hasTexts);
+            bool publishLegacyGltf = false;
 
             DiskSceneFileInfo fileInfo = GetWritableFile();
 
@@ -742,6 +743,8 @@ namespace TiltBrush
 
             // Always use new glb if we're not publishing legacy glTF.
             // Otherwise it's based on user config.
+            //
+            // Forcing this to false for now as the Legacy GLTF has issues with environment positioning
             if (App.UserConfig.Sharing.UseNewGlb || !publishLegacyGltf)
             {
                 string newGlbPath = Path.Combine(tempUploadDir, $"{uploadName}.glb");
@@ -834,12 +837,13 @@ namespace TiltBrush
         private async Task<(string, long)> UploadCurrentSketchViverseAsync(
                     CancellationToken token, string tempUploadDir, bool isDemoUpload)
         {
+            bool publishLegacyGltf = false;
             DiskSceneFileInfo fileInfo = GetWritableFile();
             var currentScene = SaveLoadScript.m_Instance.SceneFile;
             string uploadName = currentScene.Valid ? currentScene.HumanName : kDefaultName;
 
             // Generate title + description
-            string timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             string title = $"{uploadName}_{timestamp}";
             if (title.Length > 30) title = title.Substring(0, 30);
             string description = currentScene.Valid ? currentScene.HumanName : "Uploaded from Open Brush";
@@ -858,7 +862,7 @@ namespace TiltBrush
             if (!File.Exists(tempZip))
                 throw new VrAssetServiceException("WebViewer.bytes not found in Resources folder");
 
-            using (var zip = System.IO.Compression.ZipFile.OpenRead(tempZip))
+            using (var zip = ZipFile.OpenRead(tempZip))
             {
                 int extractedCount = 0;
                 foreach (var entry in zip.Entries)
@@ -904,21 +908,30 @@ namespace TiltBrush
             }
 
             // Export GLB to assets/scene.glb
-            string glbPath = Path.Combine(assetsDir, "scene.glb");
+            if (publishLegacyGltf) // The old way
+            {
+                string glbPath = Path.Combine(assetsDir, "scene.glb");
+                var exportResults = await OverlayManager.m_Instance.RunInCompositorAsync(
+                    OverlayType.Export, fadeDuration: 0.5f,
+                    action: () => new ExportGlTF().ExportBrushStrokes(
+                        glbPath,
+                        AxisConvention.kGltf2,
+                        binary: true,
+                        doExtras: true,
+                        includeLocalMediaContent: true,
+                        gltfVersion: 2,
+                        selfContained: false));
 
-            var exportResults = await OverlayManager.m_Instance.RunInCompositorAsync(
-                OverlayType.Export, fadeDuration: 0.5f,
-                action: () => new ExportGlTF().ExportBrushStrokes(
-                    glbPath,
-                    AxisConvention.kGltf2,
-                    binary: true,
-                    doExtras: true,
-                    includeLocalMediaContent: true,
-                    gltfVersion: 2,
-                    selfContained: false));
-
-            if (!exportResults.success)
-                throw new VrAssetServiceException("Internal error creating upload data.");
+                if (!exportResults.success)
+                    throw new VrAssetServiceException("Internal error creating upload data.");
+            }
+            else
+            {
+                // NewGLB format
+                await OverlayManager.m_Instance.RunInCompositorAsync(
+                    OverlayType.Export, fadeDuration: 0.5f,
+                    action: () => Export.ExportNewGlb(assetsDir, "scene", App.UserConfig.Export.ExportEnvironment));
+            }
 
             SetUploadProgress(UploadStep.CreateTilt, 0);
             await CreateTiltForUploadAsync(fileInfo);
@@ -950,7 +963,6 @@ namespace TiltBrush
 
             string htmlPath = Path.Combine(exportDir, "index.html");
             string html = ViewerHTMLGenerator.GenerateViewerHTML("./assets/scene.glb", sceneSid);
-            Debug.Log($"[DEBUG] sceneSid={sceneSid}");
             File.WriteAllText(htmlPath, html);
 
             token.ThrowIfCancellationRequested();
