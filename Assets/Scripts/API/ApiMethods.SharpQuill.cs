@@ -43,11 +43,11 @@ namespace TiltBrush
             int strokeCount = 0;
             List<Stroke> allCollectedStrokes = new List<Stroke>();
             List<CanvasScript> createdLayers = new List<CanvasScript>();
-            
+
             // Iterate only over top-level layers of the root group
             foreach (var topLevelLayer in sequence.RootLayer.Children)
             {
-                // Create a new OB layer for each top-level Quill layer
+                // Create exactly one OB layer for each top-level Quill layer
                 CanvasScript obLayer = App.Scene.AddLayerNow();
                 App.Scene.RenameLayer(obLayer, topLevelLayer.Name);
                 
@@ -56,7 +56,8 @@ namespace TiltBrush
                 obLayer.LocalPose = topLevelXf;
                 createdLayers.Add(obLayer);
 
-                // Recurse into children and flatten them into this obLayer
+                // Recurse into children and flatten ALL descendant strokes into this obLayer
+                // Start with the topLevelLayer's world transform
                 TraverseAndFlattenQuillLayers(topLevelLayer, topLevelXf, obLayer, ref strokeCount, maxStrokes, loadAnimations, allCollectedStrokes);
                 
                 if (maxStrokes > 0 && strokeCount >= maxStrokes) break;
@@ -64,9 +65,21 @@ namespace TiltBrush
             
             if (allCollectedStrokes.Count > 0)
             {
-                // Optimized batch rendering
+                // Register strokes in memory list first (native loading style)
+                foreach (var stroke in allCollectedStrokes)
+                {
+                    SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
+                }
+
+                // Optimized batch rendering - all strokes are now on the same obLayer
                 SketchMemoryScript.m_Instance.RenderStrokesDirectly(allCollectedStrokes);
                 
+                // Finalize batches for all created layers
+                foreach (var layer in createdLayers)
+                {
+                    layer.BatchManager.FlushMeshUpdates();
+                }
+
                 // Single undo step for all strokes and layers
                 var cmd = new LoadQuillCommand(allCollectedStrokes, createdLayers);
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
@@ -85,17 +98,8 @@ namespace TiltBrush
             // Note: worldXf is the accumulated transform of this layer in Quill global space.
             // targetLayer.LocalPose is the transform of the top-level layer.
             
-            if (layer is SQ.LayerGroup group)
-            {
-                foreach (var child in group.Children)
-                {
-                    TrTransform childLocalXf = ConvertSQTransform(child.Transform);
-                    TrTransform childWorldXf = worldXf * childLocalXf;
-                    TraverseAndFlattenQuillLayers(child, childWorldXf, targetLayer, ref strokeCount, maxStrokes, loadAnimations, collectedStrokes);
-                    if (maxStrokes > 0 && strokeCount >= maxStrokes) return;
-                }
-            }
-            else if (layer is SQ.LayerPaint paint)
+            // 1. Process strokes in this layer if it's a Paint layer
+            if (layer is SQ.LayerPaint paint)
             {
                 // Determine which drawings (frames) to load
                 IEnumerable<SQ.Drawing> drawingsToLoad;
@@ -127,11 +131,7 @@ namespace TiltBrush
                 {
                     foreach (var sqStroke in drawing.Data.Strokes)
                     {
-                        // To flatten, we need to convert stroke vertices from world space 
-                        // back into the targetLayer's local space.
-                        // Stroke vertex in Quill world space = worldXf * sqPos
-                        // Stroke vertex in OB layer space = targetLayer.LocalPose.inverse * (worldXf * sqPos)
-                        
+                        // Calculate transform from Quill world space to the OB targetLayer's local space
                         TrTransform toLayerSpace = targetLayer.LocalPose.inverse * worldXf;
 
                         var tbStroke = ConvertQuillStroke(sqStroke, targetLayer, toLayerSpace);
@@ -142,6 +142,18 @@ namespace TiltBrush
                         }
                         if (maxStrokes > 0 && strokeCount >= maxStrokes) return;
                     }
+                }
+            }
+
+            // 2. Recurse into children if it's a Group layer
+            if (layer is SQ.LayerGroup group)
+            {
+                foreach (var child in group.Children)
+                {
+                    TrTransform childLocalXf = ConvertSQTransform(child.Transform);
+                    TrTransform childWorldXf = worldXf * childLocalXf;
+                    TraverseAndFlattenQuillLayers(child, childWorldXf, targetLayer, ref strokeCount, maxStrokes, loadAnimations, collectedStrokes);
+                    if (maxStrokes > 0 && strokeCount >= maxStrokes) return;
                 }
             }
         }
