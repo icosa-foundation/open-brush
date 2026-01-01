@@ -30,16 +30,24 @@ public class InspectorTransformTab : InspectorBaseTab
 
     public EditableLabel m_LabelForScale;
 
-    private InspectorPanel m_InspectorPanel;
-
-    void Start()
+    private InspectorPanel m_ParentPanel;
+    private InspectorPanel ParentPanel
     {
-        m_InspectorPanel = GetComponentInParent<InspectorPanel>();
+        get
+        {
+            if (m_ParentPanel == null)
+            {
+                m_ParentPanel = GetComponentInParent<InspectorPanel>();
+            }
+            return m_ParentPanel;
+        }
     }
+
 
     public override void OnSelectionPoseChanged()
     {
-        var tr = m_InspectorPanel.CurrentSelection;
+        TrTransform tr = ParentPanel.CurrentSelection;
+        if (tr == null) return;
         var translation = tr.MultiplyPoint(SelectionBounds.center);
         var rotation = tr.rotation.eulerAngles;
         var scale = tr.scale;
