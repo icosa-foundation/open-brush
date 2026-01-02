@@ -67,6 +67,7 @@ namespace TiltBrush
             Comet,
             Taper,
             Petal,
+            Ellipse
         };
 
         public TubeBrush() : this(true) { }
@@ -731,6 +732,16 @@ namespace TiltBrush
                             float displacement = Mathf.Pow(t, m_PetalDisplacementExp);
                             offset = m_geometry.m_Normals[vert] * displacement * petalAmtCacheValue *
                                 cur.smoothedPressure;
+                            break;
+                        case ShapeModifier.Ellipse:
+                            // Calculate offset to create an elliptical cross-section
+                            curve = 1.0f;
+                            // Minor/major ratio; tweak later if needed.
+                            const float minorScale = 0.25f;
+                            const float majorScale = 1.0f;
+                            float rtAmt = Vector3.Dot(dir, cur.nRight);
+                            float upAmt = Vector3.Dot(dir, cur.nSurface);
+                            dir = cur.nRight * (rtAmt * minorScale) + cur.nSurface * (upAmt * majorScale);
                             break;
                     }
                     m_geometry.m_Vertices[vert] = offset + cur.smoothedPos + radius * dir * curve;
