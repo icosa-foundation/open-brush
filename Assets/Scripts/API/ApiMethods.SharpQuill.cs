@@ -23,6 +23,13 @@ namespace TiltBrush
 {
     public static partial class ApiMethods
     {
+        public const string BRUSH_RAINBOW = "ad1ad437-76e2-450d-a23a-e17f8310b960";
+        public const string BRUSH_LOFTED = "d381e0f5-3def-4a0d-8853-31e9200bcbda";
+        public const string BRUSH_TAPERED_WIRE = "9568870f-8594-60f4-1b20-dfbc8a5eac0e";
+        public const string BRUSH_MARKER = "429ed64a-4e97-4466-84d3-145a861ef684";
+        public const string BRUSH_TAPERED_MARKER = "d90c6ad8-af0f-4b54-b422-e0f92abe1b3c";
+        public const string BRUSH_DOUBLE_TAPERED_MARKER = "0d3889f3-3ede-470c-8af4-de4813306126";
+
         [ApiEndpoint("load.quill", "Loads a Quill sketch from the given path")]
         public static void LoadQuill(string path, int maxStrokes = 0, bool loadAnimations = false)
         {
@@ -39,10 +46,16 @@ namespace TiltBrush
                 return;
             }
 
-            // Recurse layers and collect all strokes and created layers
+            // Recurse layers and collect all strokes
             int strokeCount = 0;
             List<Stroke> allCollectedStrokes = new List<Stroke>();
             List<CanvasScript> createdLayers = new List<CanvasScript>();
+            
+            // Apply 10x global scale (Meters to Centimeters/Unity units normalization)
+            TrTransform globalCorrection = TrTransform.S(10f);
+            
+            // The RootLayer itself can have a transform
+            TrTransform rootWorldXf = globalCorrection * ConvertSQTransform(sequence.RootLayer.Transform);
 
             // Iterate only over top-level layers of the root group
             foreach (var topLevelLayer in sequence.RootLayer.Children)
@@ -51,30 +64,29 @@ namespace TiltBrush
                 CanvasScript obLayer = App.Scene.AddLayerNow();
                 App.Scene.RenameLayer(obLayer, topLevelLayer.Name);
                 
-                // Set the top-level layer's transform
-                TrTransform topLevelXf = ConvertSQTransform(topLevelLayer.Transform);
-                obLayer.LocalPose = topLevelXf;
+                // Calculate world transform for this top-level layer
+                TrTransform topLevelWorldXf = rootWorldXf * ConvertSQTransform(topLevelLayer.Transform);
+                obLayer.LocalPose = topLevelWorldXf;
                 createdLayers.Add(obLayer);
 
                 // Recurse into children and flatten ALL descendant strokes into this obLayer
-                // Start with the topLevelLayer's world transform
-                TraverseAndFlattenQuillLayers(topLevelLayer, topLevelXf, obLayer, ref strokeCount, maxStrokes, loadAnimations, allCollectedStrokes);
+                TraverseAndFlattenQuillLayers(topLevelLayer, topLevelWorldXf, obLayer, ref strokeCount, maxStrokes, loadAnimations, allCollectedStrokes);
                 
                 if (maxStrokes > 0 && strokeCount >= maxStrokes) break;
             }
             
             if (allCollectedStrokes.Count > 0)
             {
-                // Register strokes in memory list first (native loading style)
+                // Register strokes in memory list first
                 foreach (var stroke in allCollectedStrokes)
                 {
                     SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
                 }
 
-                // Optimized batch rendering - all strokes are now on the same obLayer
+                // Optimized batch rendering
                 SketchMemoryScript.m_Instance.RenderStrokesDirectly(allCollectedStrokes);
                 
-                // Finalize batches for all created layers
+                // Finalize batches
                 foreach (var layer in createdLayers)
                 {
                     layer.BatchManager.FlushMeshUpdates();
@@ -95,13 +107,9 @@ namespace TiltBrush
         {
             if (maxStrokes > 0 && strokeCount >= maxStrokes) return;
 
-            // Note: worldXf is the accumulated transform of this layer in Quill global space.
-            // targetLayer.LocalPose is the transform of the top-level layer.
-            
             // 1. Process strokes in this layer if it's a Paint layer
             if (layer is SQ.LayerPaint paint)
             {
-                // Determine which drawings (frames) to load
                 IEnumerable<SQ.Drawing> drawingsToLoad;
                 if (loadAnimations)
                 {
@@ -160,8 +168,14 @@ namespace TiltBrush
 
         private static TrTransform ConvertSQTransform(SQ.Transform sqXf)
         {
-            Vector3 pos = new Vector3(sqXf.Translation.X, sqXf.Translation.Y, sqXf.Translation.Z);
-            Quaternion rot = new Quaternion(sqXf.Rotation.X, sqXf.Rotation.Y, sqXf.Rotation.Z, sqXf.Rotation.W);
+            // Quill is Right-Handed Y-up. Unity is Left-Handed Y-up.
+            // Flip Z for position and rotation.
+            Vector3 pos = new Vector3(sqXf.Translation.X, sqXf.Translation.Y, -sqXf.Translation.Z);
+            
+            // To flip a quaternion across the XY plane (flipping Z):
+            // The X and Y components are negated, while Z and W remain the same.
+            Quaternion rot = new Quaternion(-sqXf.Rotation.X, -sqXf.Rotation.Y, sqXf.Rotation.Z, sqXf.Rotation.W);
+            
             float scale = sqXf.Scale;
             return TrTransform.TRS(pos, rot, scale);
         }
@@ -178,40 +192,37 @@ namespace TiltBrush
             }
 
             // Determine Brush GUID
-            // Default to Wire
-            string brushGuid = "ad1ad437-76e2-450d-a23a-e17f8310b960"; 
+            string brushGuid = BRUSH_RAINBOW;
             
-            // Tapering Detection (Threshold is 10% of max width)
             float taperThreshold = maxWidth * 0.1f;
             bool startTapered = sqStroke.Vertices[0].Width < taperThreshold;
             bool endTapered = sqStroke.Vertices.Last().Width < taperThreshold;
 
-            if (sqStroke.BrushType == SQ.BrushType.Cylinder)
+            // TODO distinguish ellipse vs cylinder
+            if (sqStroke.BrushType == SQ.BrushType.Cylinder || sqStroke.BrushType == SQ.BrushType.Ellipse)
             {
-                brushGuid = (startTapered || endTapered) 
-                    ? "9568870f-8594-60f4-1b20-dfbc8a5eac0e"  // Tapered Wire
-                    : "ad1ad437-76e2-450d-a23a-e17f8310b960"; // Wire
+                if (startTapered && endTapered) brushGuid = BRUSH_TAPERED_WIRE;
+                else if (startTapered || endTapered) brushGuid = BRUSH_TAPERED_WIRE;
+                else brushGuid = BRUSH_MARKER;
             }
-            else if (sqStroke.BrushType == SQ.BrushType.Ribbon || sqStroke.BrushType == SQ.BrushType.Ellipse)
+            else if (sqStroke.BrushType == SQ.BrushType.Ribbon)
             {
-                if (startTapered && endTapered) brushGuid = "0d3889f3-3ede-470c-8af4-de4813306126"; // Double Tapered Marker
-                else if (startTapered || endTapered) brushGuid = "d90c6ad8-af0f-4b54-b422-e0f92abe1b3c"; // Tapered Marker
-                else brushGuid = "429ed64a-4e97-4466-84d3-145a861ef684"; // Marker
+                if (startTapered && endTapered) brushGuid = BRUSH_DOUBLE_TAPERED_MARKER;
+                else if (startTapered || endTapered) brushGuid = BRUSH_TAPERED_MARKER;
+                else brushGuid = BRUSH_MARKER;
             }
             else if (sqStroke.BrushType == SQ.BrushType.Cube)
             {
-                brushGuid = "d381e0f5-3def-4a0d-8853-31e9200bcbda"; // Lofted
+                brushGuid = BRUSH_LOFTED;
             }
             
             var brush = BrushCatalog.m_Instance.GetBrush(new Guid(brushGuid));
             if (brush == null)
             {
-                 // Fallback to Wire
-                 brush = BrushCatalog.m_Instance.GetBrush(new Guid("ad1ad437-76e2-450d-a23a-e17f8310b960"));
+                 brush = BrushCatalog.m_Instance.GetBrush(new Guid(BRUSH_RAINBOW));
             }
             if (brush == null) return null;
 
-            // Calculate average color
             Vector3 avgColorAcc = Vector3.zero;
             foreach (var v in sqStroke.Vertices)
             {
@@ -220,16 +231,15 @@ namespace TiltBrush
             Vector3 avgColorVec = avgColorAcc / sqStroke.Vertices.Count;
             Color unityColor = new Color(avgColorVec.x, avgColorVec.y, avgColorVec.z);
 
-            // Create Control Points
             var controlPoints = new List<PointerManager.ControlPoint>(sqStroke.Vertices.Count);
             uint time = 0;
 
             foreach (var v in sqStroke.Vertices)
             {
-                 // Keep positions local to the layer
-                 Vector3 localPos = new Vector3(v.Position.X, v.Position.Y, v.Position.Z);
-                 Vector3 localForward = new Vector3(v.Tangent.X, v.Tangent.Y, v.Tangent.Z);
-                 Vector3 localUp = new Vector3(v.Normal.X, v.Normal.Y, v.Normal.Z);
+                 // Convert Quill vertex data (Right-Handed) to Unity (Left-Handed) by flipping Z
+                 Vector3 localPos = new Vector3(v.Position.X, v.Position.Y, -v.Position.Z);
+                 Vector3 localForward = new Vector3(v.Tangent.X, v.Tangent.Y, -v.Tangent.Z);
+                 Vector3 localUp = new Vector3(v.Normal.X, v.Normal.Y, -v.Normal.Z);
                  
                  // Apply relative transform to keep coordinates local to the top-level OB layer
                  Vector3 obPos = toLayerSpace * localPos;
@@ -253,13 +263,12 @@ namespace TiltBrush
                  });
             }
 
-            // Create Stroke
-             var stroke = new Stroke
+            var stroke = new Stroke
                 {
                     m_Type = Stroke.Type.NotCreated,
                     m_IntendedCanvas = targetLayer,
                     m_BrushGuid = brush.m_Guid,
-                    m_BrushScale = toLayerSpace.scale, 
+                    m_BrushScale = 1f, 
                     m_BrushSize = maxWidth * toLayerSpace.scale, 
                     m_Color = unityColor,
                     m_Seed = 0,
