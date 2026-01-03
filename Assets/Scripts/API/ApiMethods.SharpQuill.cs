@@ -50,10 +50,10 @@ namespace TiltBrush
             int strokeCount = 0;
             List<Stroke> allCollectedStrokes = new List<Stroke>();
             List<CanvasScript> createdLayers = new List<CanvasScript>();
-            
+
             // Apply 10x global scale (Meters to Centimeters/Unity units normalization)
             TrTransform globalCorrection = TrTransform.S(10f);
-            
+
             // The RootLayer itself can have a transform
             TrTransform rootWorldXf = globalCorrection * ConvertSQTransform(sequence.RootLayer.Transform);
 
@@ -63,7 +63,7 @@ namespace TiltBrush
                 // Create exactly one OB layer for each top-level Quill layer
                 CanvasScript obLayer = App.Scene.AddLayerNow();
                 App.Scene.RenameLayer(obLayer, topLevelLayer.Name);
-                
+
                 // Calculate world transform for this top-level layer
                 TrTransform topLevelWorldXf = rootWorldXf * ConvertSQTransform(topLevelLayer.Transform);
                 obLayer.LocalPose = topLevelWorldXf;
@@ -71,10 +71,10 @@ namespace TiltBrush
 
                 // Recurse into children and flatten ALL descendant strokes into this obLayer
                 TraverseAndFlattenQuillLayers(topLevelLayer, topLevelWorldXf, obLayer, ref strokeCount, maxStrokes, loadAnimations, allCollectedStrokes);
-                
+
                 if (maxStrokes > 0 && strokeCount >= maxStrokes) break;
             }
-            
+
             if (allCollectedStrokes.Count > 0)
             {
                 // Register strokes in memory list first
@@ -85,7 +85,7 @@ namespace TiltBrush
 
                 // Optimized batch rendering
                 SketchMemoryScript.m_Instance.RenderStrokesDirectly(allCollectedStrokes);
-                
+
                 // Finalize batches
                 foreach (var layer in createdLayers)
                 {
@@ -171,11 +171,11 @@ namespace TiltBrush
             // Quill is Right-Handed Y-up. Unity is Left-Handed Y-up.
             // Flip Z for position and rotation.
             Vector3 pos = new Vector3(sqXf.Translation.X, sqXf.Translation.Y, -sqXf.Translation.Z);
-            
+
             // To flip a quaternion across the XY plane (flipping Z):
             // The X and Y components are negated, while Z and W remain the same.
             Quaternion rot = new Quaternion(-sqXf.Rotation.X, -sqXf.Rotation.Y, sqXf.Rotation.Z, sqXf.Rotation.W);
-            
+
             float scale = sqXf.Scale;
             return TrTransform.TRS(pos, rot, scale);
         }
@@ -193,7 +193,7 @@ namespace TiltBrush
 
             // Determine Brush GUID
             string brushGuid = BRUSH_RAINBOW;
-            
+
             float taperThreshold = maxWidth * 0.1f;
             bool startTapered = sqStroke.Vertices[0].Width < taperThreshold;
             bool endTapered = sqStroke.Vertices.Last().Width < taperThreshold;
@@ -215,11 +215,11 @@ namespace TiltBrush
             {
                 brushGuid = BRUSH_LOFTED;
             }
-            
+
             var brush = BrushCatalog.m_Instance.GetBrush(new Guid(brushGuid));
             if (brush == null)
             {
-                 brush = BrushCatalog.m_Instance.GetBrush(new Guid(BRUSH_RAINBOW));
+                brush = BrushCatalog.m_Instance.GetBrush(new Guid(BRUSH_RAINBOW));
             }
             if (brush == null) return null;
 
@@ -236,49 +236,49 @@ namespace TiltBrush
 
             foreach (var v in sqStroke.Vertices)
             {
-                 // Convert Quill vertex data (Right-Handed) to Unity (Left-Handed) by flipping Z
-                 Vector3 localPos = new Vector3(v.Position.X, v.Position.Y, -v.Position.Z);
-                 Vector3 localForward = new Vector3(v.Tangent.X, v.Tangent.Y, -v.Tangent.Z);
-                 Vector3 localUp = new Vector3(v.Normal.X, v.Normal.Y, -v.Normal.Z);
-                 
-                 // Apply relative transform to keep coordinates local to the top-level OB layer
-                 Vector3 obPos = toLayerSpace * localPos;
-                 Vector3 obForward = toLayerSpace.rotation * localForward;
-                 Vector3 obUp = toLayerSpace.rotation * localUp;
-                 
-                 Quaternion orient = Quaternion.identity;
-                 if (obForward.sqrMagnitude > 0.001f && obUp.sqrMagnitude > 0.001f)
-                 {
-                     orient = Quaternion.LookRotation(obForward, obUp);
-                 }
-                 
-                 float pressure = maxWidth > 0 ? v.Width / maxWidth : 1f;
+                // Convert Quill vertex data (Right-Handed) to Unity (Left-Handed) by flipping Z
+                Vector3 localPos = new Vector3(v.Position.X, v.Position.Y, -v.Position.Z);
+                Vector3 localForward = new Vector3(v.Tangent.X, v.Tangent.Y, -v.Tangent.Z);
+                Vector3 localUp = new Vector3(v.Normal.X, v.Normal.Y, -v.Normal.Z);
 
-                 controlPoints.Add(new PointerManager.ControlPoint
-                 {
-                     m_Pos = obPos,
-                     m_Orient = orient,
-                     m_Pressure = pressure,
-                     m_TimestampMs = time++
-                 });
+                // Apply relative transform to keep coordinates local to the top-level OB layer
+                Vector3 obPos = toLayerSpace * localPos;
+                Vector3 obForward = toLayerSpace.rotation * localForward;
+                Vector3 obUp = toLayerSpace.rotation * localUp;
+
+                Quaternion orient = Quaternion.identity;
+                if (obForward.sqrMagnitude > 0.001f && obUp.sqrMagnitude > 0.001f)
+                {
+                    orient = Quaternion.LookRotation(obForward, obUp);
+                }
+
+                float pressure = maxWidth > 0 ? v.Width / maxWidth : 1f;
+
+                controlPoints.Add(new PointerManager.ControlPoint
+                {
+                    m_Pos = obPos,
+                    m_Orient = orient,
+                    m_Pressure = pressure,
+                    m_TimestampMs = time++
+                });
             }
 
             var stroke = new Stroke
-                {
-                    m_Type = Stroke.Type.NotCreated,
-                    m_IntendedCanvas = targetLayer,
-                    m_BrushGuid = brush.m_Guid,
-                    m_BrushScale = 1f, 
-                    m_BrushSize = maxWidth * toLayerSpace.scale, 
-                    m_Color = unityColor,
-                    m_Seed = 0,
-                    m_ControlPoints = controlPoints.ToArray(),
-                };
-            
-             stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
-             stroke.Group = SketchGroupTag.None;
-             
-             return stroke;
+            {
+                m_Type = Stroke.Type.NotCreated,
+                m_IntendedCanvas = targetLayer,
+                m_BrushGuid = brush.m_Guid,
+                m_BrushScale = 1f,
+                m_BrushSize = maxWidth * toLayerSpace.scale,
+                m_Color = unityColor,
+                m_Seed = 0,
+                m_ControlPoints = controlPoints.ToArray(),
+            };
+
+            stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
+            stroke.Group = SketchGroupTag.None;
+
+            return stroke;
         }
     }
 }
