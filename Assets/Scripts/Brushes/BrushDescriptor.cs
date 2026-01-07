@@ -27,6 +27,15 @@ namespace TiltBrush
         const string EXPORT_TEXTURE_DIR = "Support/ExportTextures";
         const string EXPORT_TEXTURE_EXTENSION = ".png";
 
+        public void OnEnable()
+        {
+            m_BrushScript = m_BrushPrefab.GetComponent<BaseBrushScript>();
+            if (m_BrushScript == null)
+            {
+                throw new ApplicationException("BaseBrushScript not found for brush prefab");
+            }
+        }
+
         /// Use this attribute on fields that are stored as a string guid, but
         /// which want user-friendly UI that looks like a BrushDescriptor.
         /// One reason to use a string rather than a direct reference is
@@ -198,6 +207,7 @@ namespace TiltBrush
         public int m_TailMinPoints = 1;
         public int m_TailPointStep = 1;
         public int m_MiddlePointStep = 0;
+        private BaseBrushScript m_BrushScript;
 
         // ===============================================================================================
         // BEGIN IExportableMaterial interface
@@ -215,12 +225,11 @@ namespace TiltBrush
         {
             get
             {
-                BaseBrushScript brush = m_BrushPrefab.GetComponent<BaseBrushScript>();
-                if (brush == null)
+                if (m_BrushScript == null)
                 {
                     throw new ApplicationException("BaseBrushScript not found for brush prefab");
                 }
-                return brush.GetVertexLayout(this);
+                return m_BrushScript.GetVertexLayout(this);
             }
         }
 
