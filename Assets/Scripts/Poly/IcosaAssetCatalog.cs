@@ -844,7 +844,6 @@ namespace TiltBrush
                     return;
                 }
 
-                Debug.Log($"[ICOSA_LOAD_DEBUG] Queuing for load: {assetId}");
                 // It may be in memory already, but it's safe to ask for it to be brought in again.
                 // That way we get the behavior of "ignore a failed load-into-memory"
                 m_RequestLoadQueue.Add(new ModelLoadRequest(model, reason));
