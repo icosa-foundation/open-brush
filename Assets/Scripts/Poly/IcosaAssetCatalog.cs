@@ -832,7 +832,7 @@ namespace TiltBrush
                     Debug.LogError("Cannot create directory for online asset download.");
                 }
 
-                // Then request the asset from Poly.
+                // Then request the asset from Icosa.
                 AssetGetter request = VrAssetService.m_Instance.GetAsset(
                     assetId, GetSupportedIcosaFormats(), reason);
                 StartCoroutine(request.GetAssetCoroutine());
