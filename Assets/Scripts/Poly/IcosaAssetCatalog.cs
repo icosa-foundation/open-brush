@@ -455,6 +455,9 @@ namespace TiltBrush
         /// Set this to null to invalidate it; or (if you are very confident) mutate it.
         /// Invariant: either null, or the union of m_ActiveRequests, m_RequestLoadQueue, m_LoadQueue.
         private HashSet<string> m_IsLoadingMemo = null;
+        /// Models that have been started loading (LoadModel called) but aren't valid yet.
+        /// This prevents re-queuing models that are being loaded asynchronously.
+        private HashSet<string> m_ModelsBeingLoaded = new HashSet<string>();
         private string m_CacheDir;
         private string m_ThumbnailCacheDir;
         private Dictionary<string, Model> m_ModelsByAssetId;
@@ -470,6 +473,12 @@ namespace TiltBrush
         /// Returns true if the assetId is in any of our download or load queues
         public bool IsLoading(string assetId)
         {
+            // Check if currently being loaded asynchronously
+            if (m_ModelsBeingLoaded.Contains(assetId))
+            {
+                return true;
+            }
+
             // This needs caching because it's hammered every frame by the model buttons :-/
             if (m_IsLoadingMemo == null)
             {
@@ -721,6 +730,24 @@ namespace TiltBrush
         void Update()
         {
             m_thumbnailFetchLimiter.Tick(Time.deltaTime);
+
+            // Check for models that have finished loading asynchronously
+            var finishedModels = new List<string>();
+            foreach (var assetId in m_ModelsBeingLoaded)
+            {
+                if (m_ModelsByAssetId.TryGetValue(assetId, out Model model))
+                {
+                    if (model.m_Valid || model.Error != null)
+                    {
+                        finishedModels.Add(assetId);
+                    }
+                }
+            }
+            foreach (var assetId in finishedModels)
+            {
+                m_ModelsBeingLoaded.Remove(assetId);
+            }
+
             if (!VrAssetService.m_Instance.Available)
             {
                 return;
@@ -795,26 +822,36 @@ namespace TiltBrush
         /// If you aren't trying to do a hot-reload, you should check Model.m_Valid first.
         public void RequestModelLoad(string assetId, string reason)
         {
-            Debug.Log($"RequestModelLoad {assetId} for {reason}");
             // Don't attempt to load models which are already loading.
             if (IsLoading(assetId))
             {
-                Debug.LogWarning($"RequestModelLoad {assetId} IsLoading");
                 return;
             }
 
             if (m_ModelsByAssetId.ContainsKey(assetId))
             {
-                Debug.Log($"Already in memory: {assetId}");
                 // Already downloaded.
+                // Only add to queue if the model isn't valid yet, to avoid duplicate requests
+                // when RefreshPage() is called multiple times by CatalogChanged events
+                Model model = m_ModelsByAssetId[assetId];
+
+                if (model.m_Valid)
+                {
+                    return;
+                }
+                if (model.Error != null)
+                {
+                    return;
+                }
+
+                Debug.Log($"[ICOSA_LOAD_DEBUG] Queuing for load: {assetId}");
                 // It may be in memory already, but it's safe to ask for it to be brought in again.
                 // That way we get the behavior of "ignore a failed load-into-memory"
-                m_RequestLoadQueue.Add(new ModelLoadRequest(m_ModelsByAssetId[assetId], reason));
-                m_IsLoadingMemo.Add(assetId);
+                m_RequestLoadQueue.Add(new ModelLoadRequest(model, reason));
+                m_IsLoadingMemo?.Add(assetId);
             }
             else
             {
-                Debug.Log($"Not already in memory: {assetId}");
                 // Not downloaded yet.
                 // Kick off a download; when done the load will arrange for the download-complete to kick off the
                 // load-into-memory work.
@@ -1093,12 +1130,15 @@ namespace TiltBrush
             for (int i = m_LoadQueue.Count - 1; i >= 0; --i)
             {
                 Model model = m_LoadQueue[i].Model;
+                string assetId = model.GetLocation().AssetId;
+                m_ModelsBeingLoaded.Add(assetId);
                 model.LoadModel();
                 // TODO Back to async loading
                 // AsyncHelpers.RunSync(model.LoadModelAsync);
                 m_LoadQueue.RemoveAt(i);
                 m_IsLoadingMemo = null;
-                m_NotifyListeners = true;
+                // Don't notify listeners when starting load - only when it actually completes
+                // m_NotifyListeners = true;
                 // if (!model.IsLoading())
                 // {
                 //     // If the overlay is up, hitching is okay; so avoid the slow threaded image load.
