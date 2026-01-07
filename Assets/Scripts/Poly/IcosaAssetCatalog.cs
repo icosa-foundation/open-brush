@@ -816,7 +816,7 @@ namespace TiltBrush
             {
                 Debug.Log($"Not already in memory: {assetId}");
                 // Not downloaded yet.
-                // Kick off a download; when done the load will  and arrange for the download-complete to kick off the
+                // Kick off a download; when done the load will arrange for the download-complete to kick off the
                 // load-into-memory work.
                 string assetDir = GetCacheDirectoryForAsset(assetId);
                 try
