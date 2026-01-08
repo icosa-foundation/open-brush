@@ -16,6 +16,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
@@ -437,7 +438,14 @@ namespace TiltBrush
         }
 
         public IEnumerable<TypedWidgetData<CameraPathWidget>> CameraPathWidgets =>
-            m_CameraPathWidgets.Where(x => x.m_WidgetObject.activeSelf);
+            m_CameraPathWidgets.Where(x => x.m_WidgetObject.activeSelf && !x.WidgetScript.Path.belongsToAnimation);
+
+        public IEnumerable<TypedWidgetData<CameraPathWidget>> AnimationPathWidgets =>
+            m_CameraPathWidgets.Where(x => x.m_WidgetObject.activeSelf && x.WidgetScript.Path.belongsToAnimation);
+
+        public IEnumerable<TypedWidgetData<CameraPathWidget>> AllPathWidgets =>
+            m_CameraPathWidgets.Where(x => x.m_WidgetObject.activeSelf || x.WidgetScript.Path.belongsToAnimation);
+
 
         public TypedWidgetData<CameraPathWidget> GetCurrentCameraPath() => m_CurrentCameraPath;
 
@@ -511,10 +519,12 @@ namespace TiltBrush
         // have holes.  Use caution when using these methods.
         // The reason we need these methods is because our UI buttons work with SketchControls
         // global commands, which can be modified with generic integer parameters.  In those
-        // cases, we can't pass a CameraPathWidget object.
+        // cases, we can't pass a MovementPathWidget object.
+
+
         public CameraPathWidget GetNthActiveCameraPath(int nth)
         {
-            var activeCameraPathWidgets = m_CameraPathWidgets.Where(x => x.m_WidgetObject.activeSelf);
+            var activeCameraPathWidgets = m_CameraPathWidgets.Where(x => x.m_WidgetObject.activeSelf && !x.WidgetScript.Path.belongsToAnimation);
             foreach (var cpw in activeCameraPathWidgets)
             {
                 if (nth == 0)
@@ -537,7 +547,7 @@ namespace TiltBrush
         public CameraPathWidget CreatePathWidget()
         {
             CreateWidgetCommand command =
-                new CreateWidgetCommand(m_CameraPathWidgetPrefab, TrTransform.identity);
+                new CreateWidgetCommand(CameraPathWidgetPrefab, TrTransform.identity);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
             return m_CameraPathWidgets.Last().WidgetScript;
         }
@@ -545,6 +555,19 @@ namespace TiltBrush
         public bool AnyActivePathHasAKnot()
         {
             var datas = CameraPathWidgets;
+            foreach (TypedWidgetData<CameraPathWidget> data in datas)
+            {
+                if (data.WidgetScript.Path.NumPositionKnots > 0)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public bool AnyActiveAnimationPathHasAKnot()
+        {
+            var datas = AnimationPathWidgets;
             foreach (TypedWidgetData<CameraPathWidget> data in datas)
             {
                 if (data.WidgetScript.Path.NumPositionKnots > 0)
