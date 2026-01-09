@@ -296,17 +296,13 @@ namespace TiltBrush
                 yield break;
             }
 
-            var metaPayload = new MetaDataPayload
-            {
-                source = "studio",
-                iframe_settings = new IframeSettings
-                {
-                    sandbox = DefaultSandboxPermissions,
-                    allow = DefaultAllowPermissions
-                }
-            };
-
-            string metaJson = JsonUtility.ToJson(metaPayload);
+            // Build meta JSON manually to ensure proper structure
+            var sandboxArray = string.Join(",", System.Array.ConvertAll(DefaultSandboxPermissions, s => $"\"{s}\""));
+            var allowArray = string.Join(",", System.Array.ConvertAll(DefaultAllowPermissions, s => $"\"{s}\""));
+            
+            string metaJson = $"{{\"source\":\"openBrush\",\"iframe_settings\":{{\"sandbox\":[{sandboxArray}],\"allow\":[{allowArray}]}}}}";
+            
+            Debug.Log($"[ViversePublish] Meta JSON: {metaJson}");
 
             List<IMultipartFormSection> formData = new List<IMultipartFormSection>
             {
@@ -330,11 +326,13 @@ namespace TiltBrush
             if (request.result != UnityWebRequest.Result.Success)
             {
                 string error = $"{request.error} - {request.downloadHandler.text}";
+                Debug.LogError($"[ViversePublish] Upload error: {error}");
                 OnPublishComplete?.Invoke(false, $"Upload failed: {error}");
             }
             else
             {
                 string responseText = request.downloadHandler.text;
+                Debug.Log($"[ViversePublish] Upload success: {responseText}");
                 OnPublishComplete?.Invoke(true, "World published successfully!");
             }
 
