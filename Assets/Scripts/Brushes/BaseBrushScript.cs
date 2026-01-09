@@ -109,6 +109,10 @@ namespace TiltBrush
         protected Vector3 m_LastSpawnPos { get { return m_LastSpawnXf.translation; } }
         protected float m_BaseSize_PS;
         protected StatelessRng m_rng;
+        // Reference to stroke data for accessing per-point colors during geometry generation
+        protected StrokeData m_StrokeData;
+        // Current control point index being processed (for per-point color lookup)
+        protected int m_CurrentControlPointIndex;
 
         protected BaseBrushScript(bool bCanBatch)
         {
@@ -189,6 +193,36 @@ namespace TiltBrush
 
         /// This should only be used during initialization.
         public void SetPreviewMode() { m_PreviewMode = true; }
+
+        /// Set stroke data reference for per-point color access during geometry generation
+        public void SetStrokeData(StrokeData strokeData)
+        {
+            m_StrokeData = strokeData;
+            if (strokeData != null && strokeData.m_ControlPointColors != null)
+            {
+                Debug.Log($"[PPCOLOR] SetStrokeData: m_ControlPointColors.Length={strokeData.m_ControlPointColors.Length}, m_ColorMode={strokeData.m_ColorMode}");
+            }
+        }
+
+        /// Set current control point index for per-point color lookup
+        public void SetCurrentControlPointIndex(int index)
+        {
+            if (index != 0)
+            {
+                Debug.Log($"[PPCOLOR] SetCurrentControlPointIndex: {index}");
+            }
+            m_CurrentControlPointIndex = index;
+        }
+
+        /// Get the color for the current control point, considering per-point colors if available
+        protected Color32 GetCurrentColor()
+        {
+            if (m_StrokeData != null)
+            {
+                return m_StrokeData.GetColor(m_CurrentControlPointIndex);
+            }
+            return m_Color;
+        }
 
         /// Returns an object that implements the Undo animation
         public GameObject CloneAsUndoObject()

@@ -31,6 +31,9 @@ namespace TiltBrush
             /// Constant, associated with this knot
             public float smoothedPressure;
 
+            /// Index of the control point this knot was created from (for per-point color lookup)
+            public int controlPointIndex;
+
             /// Distance from previous knot to this knot, or 0 (if first).
             /// Mutated during geometry generation.
             public float length;
@@ -441,6 +444,11 @@ namespace TiltBrush
             updated.point.m_Pressure = pressure;
             updated.point.m_TimestampMs = (uint)(App.Instance.CurrentSketchTime * 1000);
             updated.smoothedPos = pos;
+            updated.controlPointIndex = m_CurrentControlPointIndex;
+            if (m_CurrentControlPointIndex != 0)
+            {
+                Debug.Log($"[PPCOLOR] GeometryBrush.UpdatePositionImpl: setting knot controlPointIndex to {m_CurrentControlPointIndex}");
+            }
             if (iUpdate < 2)
             {
                 // Retroactively update the 0th knot with better pressure data.
@@ -497,6 +505,20 @@ namespace TiltBrush
         //
         // Geometry-creation helpers
         //
+
+        /// Get the color for a knot, considering per-point colors if available
+        protected Color32 GetKnotColor(Knot knot)
+        {
+            if (m_StrokeData != null)
+            {
+                if (knot.controlPointIndex != 0)
+                {
+                    Debug.Log($"[PPCOLOR] GetKnotColor: calling GetColor with knot.controlPointIndex={knot.controlPointIndex}");
+                }
+                return m_StrokeData.GetColor(knot.controlPointIndex);
+            }
+            return m_Color;
+        }
 
         /// Set triangle and bottomside triangle.
         ///  iTri, iVert      pass knot.iTri, knot.iVert
