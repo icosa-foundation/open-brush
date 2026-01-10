@@ -132,9 +132,9 @@ namespace TiltBrush
         }
 
         override protected bool UpdatePositionImpl(
-            Vector3 pos, Quaternion ori, float pressure)
+            Vector3 pos, Quaternion ori, float pressure, Color32? color = null)
         {
-            bool keep = base.UpdatePositionImpl(pos, ori, pressure);
+            bool keep = base.UpdatePositionImpl(pos, ori, pressure, color);
             if (keep && m_PreviewMode)
             {
                 m_DecayTimers.Add(0);

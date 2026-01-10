@@ -148,6 +148,12 @@ namespace TiltBrush
             set { m_BaseSize_PS = value; }
         }
 
+        /// Provides access to the stroke data including per-point colors
+        public StrokeData StrokeData
+        {
+            get { return m_StrokeData; }
+        }
+
         /// The size of the brush, in the parent-local (Canvas) coordinate system
         public float BaseSize_LS
         {
@@ -198,19 +204,12 @@ namespace TiltBrush
         public void SetStrokeData(StrokeData strokeData)
         {
             m_StrokeData = strokeData;
-            if (strokeData != null && strokeData.m_ControlPointColors != null)
-            {
-                Debug.Log($"[PPCOLOR] SetStrokeData: m_ControlPointColors.Length={strokeData.m_ControlPointColors.Length}, m_ColorMode={strokeData.m_ColorMode}");
-            }
         }
 
         /// Set current control point index for per-point color lookup
         public void SetCurrentControlPointIndex(int index)
         {
             if (index != 0)
-            {
-                Debug.Log($"[PPCOLOR] SetCurrentControlPointIndex: {index}");
-            }
             m_CurrentControlPointIndex = index;
         }
 
@@ -239,11 +238,11 @@ namespace TiltBrush
 
         /// Returns true if permanent geometry was generated.
         /// Transform should be in the local coordinates of the stroke
-        public bool UpdatePosition_LS(TrTransform xf, float fPressure)
+        public bool UpdatePosition_LS(TrTransform xf, float fPressure, Color32? color = null)
         {
             if (IsOutOfVerts()) { return false; }
 
-            bool ret = UpdatePositionImpl(xf.translation, xf.rotation, fPressure);
+            bool ret = UpdatePositionImpl(xf.translation, xf.rotation, fPressure, color);
             if (ret)
             {
                 m_LastSpawnXf = xf;
@@ -350,7 +349,7 @@ namespace TiltBrush
         // Return true if a new solid was created.
         protected abstract bool UpdatePositionImpl(
             Vector3 vPos, Quaternion ori,
-            float fPressure);
+            float fPressure, Color32? color = null);
 
         // This function is a sanity check for making sure we don't overrun our allocated vertex buffers
         //  when creating new geometry.  It is used at low levels as a safeguard.

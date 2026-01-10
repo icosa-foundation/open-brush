@@ -719,7 +719,7 @@ namespace TiltBrush
         }
 
         override protected bool UpdatePositionImpl(
-            Vector3 vPos, Quaternion ori, float fPressure)
+            Vector3 vPos, Quaternion ori, float fPressure, Color32? color = null)
         {
             UnityEngine.Profiling.Profiler.BeginSample("QuadStripBrush.UpdatePositionImpl");
             var rMasterBrush = m_Geometry;

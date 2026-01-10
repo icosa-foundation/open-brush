@@ -94,10 +94,6 @@ namespace TiltBrush
         /// Returns m_Color if per-point colors are not used, or blends according to m_ColorMode.
         public Color32 GetColor(int index)
         {
-            if (index != 0)
-            {
-                Debug.Log($"GetColor nonzero for index {index}" );
-            }
             // If no per-point colors or mode is None, use base color
             if (m_ControlPointColors == null || m_ColorMode == ColorControlMode.None)
             {
@@ -107,7 +103,6 @@ namespace TiltBrush
             // Bounds check
             if (index < 0 || index >= m_ControlPointColors.Length)
             {
-                Debug.Log($"GetColor: index {index} out of bounds for m_ControlPointColors length {m_ControlPointColors.Length}, returning base color.");
                 return m_Color;
             }
 
@@ -151,26 +146,6 @@ namespace TiltBrush
                         (byte)Mathf.RoundToInt(m_Color.a * 255f)
                     );
                     break;
-            }
-            string info = $"GetColor {index}: m_Color={m_Color} pointColor={controlpointColor} calculatedColor={calculatedColor} m_ColorMode={m_ColorMode}";
-            bool CompareColorToColor32(Color color, Color32 color32)
-            {
-                return Mathf.RoundToInt(color.r * 255f) == color32.r &&
-                    Mathf.RoundToInt(color.g * 255f) == color32.g &&
-                    Mathf.RoundToInt(color.b * 255f) == color32.b &&
-                    Mathf.RoundToInt(color.a * 255f) == color32.a;
-            }
-            if (CompareColorToColor32(m_Color, calculatedColor))
-            {
-                Debug.Log($"GetColor: m_Color... {info}");
-            }
-            else if (calculatedColor.Equals(controlpointColor))
-            {
-                Debug.Log($"GetColor: controlpointColor... {info}");
-            }
-            else
-            {
-                Debug.Log($"GetColor: neither... {info}");
             }
             return calculatedColor;
         }

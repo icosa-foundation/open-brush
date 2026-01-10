@@ -266,7 +266,6 @@ namespace TiltBrush
                     (byte)(v.Color.B * 255f),
                     255 // Quill colors don't have alpha, assume fully opaque
                 );
-                Debug.Log($"Vertex {vertexIndex}: Color {perPointColors[vertexIndex]}");
                 vertexIndex++;
             }
 

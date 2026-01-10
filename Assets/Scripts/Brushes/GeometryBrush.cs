@@ -31,8 +31,8 @@ namespace TiltBrush
             /// Constant, associated with this knot
             public float smoothedPressure;
 
-            /// Index of the control point this knot was created from (for per-point color lookup)
-            public int controlPointIndex;
+            /// Color for this knot (from per-point colors or base color)
+            public Color32 color;
 
             /// Distance from previous knot to this knot, or 0 (if first).
             /// Mutated during geometry generation.
@@ -305,7 +305,8 @@ namespace TiltBrush
                     m_Pressure = 1
                 },
                 length = 0,
-                smoothedPos = pos
+                smoothedPos = pos,
+                color = m_Color
             };
             m_knots.Add(knot);
             m_knots.Add(knot);
@@ -350,7 +351,8 @@ namespace TiltBrush
                     m_Pressure = 1
                 },
                 length = 0,
-                smoothedPos = pos
+                smoothedPos = pos,
+                color = m_Color
             };
             m_knots.Add(knot);
             m_knots.Add(knot);
@@ -432,7 +434,7 @@ namespace TiltBrush
             rMeshScript.Init();
         }
 
-        override protected bool UpdatePositionImpl(Vector3 pos, Quaternion ori, float pressure)
+        override protected bool UpdatePositionImpl(Vector3 pos, Quaternion ori, float pressure, Color32? color = null)
         {
             Debug.Assert(m_knots.Count >= 2);
 
@@ -444,10 +446,16 @@ namespace TiltBrush
             updated.point.m_Pressure = pressure;
             updated.point.m_TimestampMs = (uint)(App.Instance.CurrentSketchTime * 1000);
             updated.smoothedPos = pos;
-            updated.controlPointIndex = m_CurrentControlPointIndex;
-            if (m_CurrentControlPointIndex != 0)
+
+            // Use passed color if available, otherwise fall back to stroke data or base color
+            if (color.HasValue)
             {
-                Debug.Log($"[PPCOLOR] GeometryBrush.UpdatePositionImpl: setting knot controlPointIndex to {m_CurrentControlPointIndex}");
+                updated.color = color.Value;
+            }
+            else
+            {
+                // Set color from stroke data if available, otherwise use base color
+                int indexToUse = m_CurrentControlPointIndex;
             }
             if (iUpdate < 2)
             {
@@ -507,17 +515,10 @@ namespace TiltBrush
         //
 
         /// Get the color for a knot, considering per-point colors if available
+        /// Get the color for a knot
         protected Color32 GetKnotColor(Knot knot)
         {
-            if (m_StrokeData != null)
-            {
-                if (knot.controlPointIndex != 0)
-                {
-                    Debug.Log($"[PPCOLOR] GetKnotColor: calling GetColor with knot.controlPointIndex={knot.controlPointIndex}");
-                }
-                return m_StrokeData.GetColor(knot.controlPointIndex);
-            }
-            return m_Color;
+            return knot.color;
         }
 
         /// Set triangle and bottomside triangle.

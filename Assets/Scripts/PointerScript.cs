@@ -631,11 +631,11 @@ namespace TiltBrush
         /// - Do _not_ apply any normal adjustment; it's baked into the control point
         /// - Do not update the mesh
         /// TODO: replace with a bulk-ControlPoint API
-        public void UpdateLineFromControlPoint(PointerManager.ControlPoint cp)
+        public void UpdateLineFromControlPoint(PointerManager.ControlPoint cp, Color32 color)
         {
             float scale = m_CurrentLine.StrokeScale;
             m_CurrentLine.UpdatePosition_LS(
-                TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure);
+                TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure, color);
         }
 
         /// Bulk control point addition
@@ -1082,7 +1082,9 @@ namespace TiltBrush
                         m_CurrentBrushSize,
                         m_CurrentLine.StrokeScale,
                         m_ControlPoints, strokeFlags,
-                        WidgetManager.m_Instance.ActiveStencil, m_LineLength_CS);
+                        WidgetManager.m_Instance.ActiveStencil, m_LineLength_CS,
+                        m_CurrentLine.StrokeData?.m_ControlPointColors,
+                        m_CurrentLine.StrokeData?.m_ColorMode ?? StrokeData.ColorControlMode.None);
                 }
                 else
                 {

@@ -112,7 +112,8 @@ namespace TiltBrush
 
                 if (!m_stroke.m_ControlPointsToDrop[m_nextControlPoint])
                 {
-                    rPointerScript.UpdateLineFromControlPoint(cp);
+                    UnityEngine.Color32 color = m_stroke.GetColor(m_nextControlPoint);
+                    rPointerScript.UpdateLineFromControlPoint(cp, color);
                     needMeshUpdate = true;
                     lastCp = cp;
                     needPointerUpdate = true;
