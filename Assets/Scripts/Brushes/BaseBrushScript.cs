@@ -209,7 +209,6 @@ namespace TiltBrush
         /// Set current control point index for per-point color lookup
         public void SetCurrentControlPointIndex(int index)
         {
-            if (index != 0)
             m_CurrentControlPointIndex = index;
         }
 

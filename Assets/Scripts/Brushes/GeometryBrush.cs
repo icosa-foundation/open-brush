@@ -456,6 +456,7 @@ namespace TiltBrush
             {
                 // Set color from stroke data if available, otherwise use base color
                 int indexToUse = m_CurrentControlPointIndex;
+                updated.color = (m_StrokeData != null) ? m_StrokeData.GetColor(indexToUse) : m_Color;
             }
             if (iUpdate < 2)
             {
@@ -514,7 +515,6 @@ namespace TiltBrush
         // Geometry-creation helpers
         //
 
-        /// Get the color for a knot, considering per-point colors if available
         /// Get the color for a knot
         protected Color32 GetKnotColor(Knot knot)
         {

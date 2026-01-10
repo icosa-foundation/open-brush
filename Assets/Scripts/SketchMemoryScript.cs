@@ -1567,7 +1567,6 @@ namespace TiltBrush
                 {
                     if (!stroke.m_ControlPointsToDrop[i])
                     {
-                        pointer.UpdateLineFromControlPoint(stroke.m_ControlPoints[i]);
                         Color32 color = stroke.GetColor(i);
                         pointer.UpdateLineFromControlPoint(stroke.m_ControlPoints[i], color);
                     }

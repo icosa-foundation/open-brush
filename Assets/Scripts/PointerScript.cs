@@ -1043,7 +1043,9 @@ namespace TiltBrush
                         WidgetManager.m_Instance.ActiveStencil,
                         m_LineLength_CS,
                         m_CurrentLine.RandomSeed,
-                        isFinalStroke
+                        isFinalStroke,
+                        m_CurrentLine.StrokeData?.m_ControlPointColors,
+                        m_CurrentLine.StrokeData?.m_ColorMode ?? StrokeData.ColorControlMode.None
                         );
                 }
                 else
