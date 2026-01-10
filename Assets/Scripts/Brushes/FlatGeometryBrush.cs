@@ -288,9 +288,8 @@ namespace TiltBrush
                         float size = PressuredSize(prev.smoothedPressure);
                         float alpha = PressuredOpacity(prev.smoothedPressure);
                         Vector3 halfRight = cur.nRight * (size / 2);
-                        Color32 prevColor = GetKnotColor(prev);
-                        SetVert(cur.iVert, BR, prev.point.m_Pos + halfRight, cur.nSurface, prevColor, alpha);
-                        SetVert(cur.iVert, BL, prev.point.m_Pos - halfRight, cur.nSurface, prevColor, alpha);
+                        SetVert(cur.iVert, BR, prev.point.m_Pos + halfRight, cur.nSurface, prev.color, alpha);
+                        SetVert(cur.iVert, BL, prev.point.m_Pos - halfRight, cur.nSurface, prev.color, alpha);
                         if (m_bOffsetInTexcoord1)
                         {
                             SetUv1(cur.iVert, BR, halfRight);
@@ -304,9 +303,8 @@ namespace TiltBrush
                         float size = PressuredSize(cur.smoothedPressure);
                         float alpha = PressuredOpacity(cur.smoothedPressure);
                         Vector3 halfRight = cur.nRight * (size / 2);
-                        Color32 curColor = GetKnotColor(cur);
-                        SetVert(cur.iVert, FR, cur.point.m_Pos + halfRight, cur.nSurface, curColor, alpha);
-                        SetVert(cur.iVert, FL, cur.point.m_Pos - halfRight, cur.nSurface, curColor, alpha);
+                        SetVert(cur.iVert, FR, cur.point.m_Pos + halfRight, cur.nSurface, cur.color, alpha);
+                        SetVert(cur.iVert, FL, cur.point.m_Pos - halfRight, cur.nSurface, cur.color, alpha);
                         if (m_bOffsetInTexcoord1)
                         {
                             SetUv1(cur.iVert, FR, halfRight);
@@ -388,9 +386,8 @@ namespace TiltBrush
                         {
                             halfRight = halfRightCur;
                         }
-                        Color32 curColor = GetKnotColor(cur);
-                        SetVert(cur.iVert, FL, knotPoint - halfRight, surface, curColor, alpha);
-                        SetVert(cur.iVert, FR, knotPoint + halfRight, surface, curColor, alpha);
+                        SetVert(cur.iVert, FL, knotPoint - halfRight, surface, cur.color, alpha);
+                        SetVert(cur.iVert, FR, knotPoint + halfRight, surface, cur.color, alpha);
                         if (m_bOffsetInTexcoord1)
                         {
                             SetUv1(cur.iVert, FR, halfRightCur);

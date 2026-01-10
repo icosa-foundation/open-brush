@@ -111,8 +111,6 @@ namespace TiltBrush
         protected StatelessRng m_rng;
         // Reference to stroke data for accessing per-point colors during geometry generation
         protected StrokeData m_StrokeData;
-        // Current control point index being processed (for per-point color lookup)
-        protected int m_CurrentControlPointIndex;
 
         protected BaseBrushScript(bool bCanBatch)
         {
@@ -204,22 +202,6 @@ namespace TiltBrush
         public void SetStrokeData(StrokeData strokeData)
         {
             m_StrokeData = strokeData;
-        }
-
-        /// Set current control point index for per-point color lookup
-        public void SetCurrentControlPointIndex(int index)
-        {
-            m_CurrentControlPointIndex = index;
-        }
-
-        /// Get the color for the current control point, considering per-point colors if available
-        protected Color32 GetCurrentColor()
-        {
-            if (m_StrokeData != null)
-            {
-                return m_StrokeData.GetColor(m_CurrentControlPointIndex);
-            }
-            return m_Color;
         }
 
         /// Returns an object that implements the Undo animation

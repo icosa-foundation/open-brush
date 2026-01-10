@@ -784,8 +784,7 @@ namespace TiltBrush
                 // Additionally, be aware that here "radius" is packed into a vertex channel but
                 // does not actually have anything to do with the radius of the created geometry.
                 //
-                Color32 knotColor = GetKnotColor(k);
-                AppendVert(ref k, tip, normal.normalized, knotColor, tan, uv, /*radius*/ 0);
+                AppendVert(ref k, tip, normal.normalized, k.color, tan, uv, /*radius*/ 0);
                 AppendDisplacement(ref k, fwdNormal);
             }
         }
@@ -816,7 +815,6 @@ namespace TiltBrush
             // When facing down the tangent, circle verts should go clockwise
             // We'd like the seam to be on the bottom
             int numVerts = numPoints + 1;
-            Color32 knotColor = GetKnotColor(k);
             for (int i = 0; i < numVerts; ++i)
             {
                 float t = (float)i / (numVerts - 1);
@@ -825,7 +823,7 @@ namespace TiltBrush
                 Vector2 uv = new Vector2(u, Mathf.Lerp(v0, v1, t));
                 Vector3 off = -Mathf.Cos(theta) * up + -Mathf.Sin(theta) * rt;
 
-                AppendVert(ref k, center + radius * off, off, knotColor, fwd, uv, radius);
+                AppendVert(ref k, center + radius * off, off, k.color, fwd, uv, radius);
                 AppendDisplacement(ref k, off.normalized);
             }
         }
@@ -840,7 +838,6 @@ namespace TiltBrush
             // When facing down the tangent, circle verts should go clockwise
             // We'd like the seam to be on the bottom
             float? lastTheta = null;
-            Color32 knotColor = GetKnotColor(k);
 
             for (int i = 0; i < numPoints; ++i)
             {
@@ -867,14 +864,14 @@ namespace TiltBrush
                 float v = Mathf.Lerp(v0, v1, (float)prevFace / (float)(numPoints) + (1.0f / numPoints));
                 Vector2 uv = new Vector2(u, v);
 
-                AppendVert(ref k, center + radius * off1, nPrev, knotColor, tan, uv, radius);
+                AppendVert(ref k, center + radius * off1, nPrev, k.color, tan, uv, radius);
                 AppendDisplacement(ref k, off1);
 
                 int currentFace = i;
                 v = Mathf.Lerp(v0, v1, (float)currentFace / (float)(numPoints));
                 uv = new Vector2(u, v);
 
-                AppendVert(ref k, center + radius * off1, nCur, knotColor, tan, uv, radius);
+                AppendVert(ref k, center + radius * off1, nCur, k.color, tan, uv, radius);
                 AppendDisplacement(ref k, off1);
             }
         }

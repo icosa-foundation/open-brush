@@ -261,15 +261,14 @@ namespace TiltBrush
                         float size = PressuredSize(prev.smoothedPressure);
                         float alpha = PressuredOpacity(prev.smoothedPressure);
                         Vector3 r = cur.nRight * (size / 2);
-                        Color32 prevColor = GetKnotColor(prev);
-                        SetVert(cur.iVert, BRT, prev.point.m_Pos + r, nUp, prevColor, alpha);
-                        SetVert(cur.iVert, BRB, prev.point.m_Pos + r, -nUp, prevColor, alpha);
+                        SetVert(cur.iVert, BRT, prev.point.m_Pos + r, nUp, prev.color, alpha);
+                        SetVert(cur.iVert, BRB, prev.point.m_Pos + r, -nUp, prev.color, alpha);
 
-                        SetVert(cur.iVert, BMT, prev.point.m_Pos, nUp, prevColor, alpha);
-                        SetVert(cur.iVert, BMB, prev.point.m_Pos, -nUp, prevColor, alpha);
+                        SetVert(cur.iVert, BMT, prev.point.m_Pos, nUp, prev.color, alpha);
+                        SetVert(cur.iVert, BMB, prev.point.m_Pos, -nUp, prev.color, alpha);
 
-                        SetVert(cur.iVert, BLT, prev.point.m_Pos - r, nUp, prevColor, alpha);
-                        SetVert(cur.iVert, BLB, prev.point.m_Pos - r, -nUp, prevColor, alpha);
+                        SetVert(cur.iVert, BLT, prev.point.m_Pos - r, nUp, prev.color, alpha);
+                        SetVert(cur.iVert, BLB, prev.point.m_Pos - r, -nUp, prev.color, alpha);
                     }
 
                     {
@@ -291,15 +290,14 @@ namespace TiltBrush
                             sinRt = sinTheta * cur.nRight;
                         }
 
-                        Color32 curColor = GetKnotColor(cur);
-                        SetVert(cur.iVert, FRT, cur.point.m_Pos + r, cosUp + sinRt, curColor, alpha);
-                        SetVert(cur.iVert, FRB, cur.point.m_Pos + r, -cosUp + sinRt, curColor, alpha);
+                        SetVert(cur.iVert, FRT, cur.point.m_Pos + r, cosUp + sinRt, cur.color, alpha);
+                        SetVert(cur.iVert, FRB, cur.point.m_Pos + r, -cosUp + sinRt, cur.color, alpha);
 
-                        SetVert(cur.iVert, FMT, cur.point.m_Pos + u, nUp, curColor, alpha);
-                        SetVert(cur.iVert, FMB, cur.point.m_Pos - u, -nUp, curColor, alpha);
+                        SetVert(cur.iVert, FMT, cur.point.m_Pos + u, nUp, cur.color, alpha);
+                        SetVert(cur.iVert, FMB, cur.point.m_Pos - u, -nUp, cur.color, alpha);
 
-                        SetVert(cur.iVert, FLT, cur.point.m_Pos - r, cosUp - sinRt, curColor, alpha);
-                        SetVert(cur.iVert, FLB, cur.point.m_Pos - r, -cosUp - sinRt, curColor, alpha);
+                        SetVert(cur.iVert, FLT, cur.point.m_Pos - r, cosUp - sinRt, cur.color, alpha);
+                        SetVert(cur.iVert, FLB, cur.point.m_Pos - r, -cosUp - sinRt, cur.color, alpha);
                     }
                 }
 
