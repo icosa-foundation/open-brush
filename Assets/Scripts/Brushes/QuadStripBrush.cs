@@ -477,7 +477,7 @@ namespace TiltBrush
 
             earliestChangedQuad = m_LeadingQuadIndex;
 
-            Color32 cColor = m_Color;
+            Color32 cColor = GetCurrentColor();
             cColor.a = (byte)(opacity01 * 255.0f);
             Color32 cLastColor = (iVertIndex - stride >= 0) ? aColors[iVertIndex - stride + 4] : cColor;
 
@@ -504,9 +504,11 @@ namespace TiltBrush
                 }
                 else
                 {
-                    HSLColor hsl = (HSLColor)(Color)m_Color;
+                    Color32 currentColor = GetCurrentColor();
+                    HSLColor hsl = (HSLColor)(Color)currentColor;
                     hsl.HueDegrees += m_Desc.m_BackfaceHueShift;
                     backColor = (Color32)(Color)hsl;
+                    backColor.a = (byte)(opacity01 * 255.0f);
                     lastBackColor = (iCurrVertIndex - stride >= 0)
                         ? aColors[iCurrVertIndex - stride + 4]
                         : backColor;
@@ -717,7 +719,7 @@ namespace TiltBrush
         }
 
         override protected bool UpdatePositionImpl(
-            Vector3 vPos, Quaternion ori, float fPressure)
+            Vector3 vPos, Quaternion ori, float fPressure, Color32? color = null)
         {
             UnityEngine.Profiling.Profiler.BeginSample("QuadStripBrush.UpdatePositionImpl");
             var rMasterBrush = m_Geometry;

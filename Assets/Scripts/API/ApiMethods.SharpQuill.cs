@@ -223,16 +223,13 @@ namespace TiltBrush
             }
             if (brush == null) return null;
 
-            Vector3 avgColorAcc = Vector3.zero;
-            foreach (var v in sqStroke.Vertices)
-            {
-                avgColorAcc += new Vector3(v.Color.R, v.Color.G, v.Color.B);
-            }
-            Vector3 avgColorVec = avgColorAcc / sqStroke.Vertices.Count;
-            Color unityColor = new Color(avgColorVec.x, avgColorVec.y, avgColorVec.z);
+            var color = sqStroke.Vertices[0].Color;
+            var unityColor = new Color(color.R, color.G, color.B);
 
             var controlPoints = new List<PointerManager.ControlPoint>(sqStroke.Vertices.Count);
+            var perPointColors = new Color32[sqStroke.Vertices.Count];
             uint time = 0;
+            int vertexIndex = 0;
 
             foreach (var v in sqStroke.Vertices)
             {
@@ -261,6 +258,15 @@ namespace TiltBrush
                     m_Pressure = pressure,
                     m_TimestampMs = time++
                 });
+
+                // Capture per-point color from Quill vertex
+                perPointColors[vertexIndex] = new Color32(
+                    (byte)(v.Color.R * 255f),
+                    (byte)(v.Color.G * 255f),
+                    (byte)(v.Color.B * 255f),
+                    255 // Quill colors don't have alpha, assume fully opaque
+                );
+                vertexIndex++;
             }
 
             var stroke = new Stroke
@@ -273,6 +279,8 @@ namespace TiltBrush
                 m_Color = unityColor,
                 m_Seed = 0,
                 m_ControlPoints = controlPoints.ToArray(),
+                m_ControlPointColors = perPointColors,
+                m_ColorMode = StrokeData.ColorControlMode.Replace
             };
 
             stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();

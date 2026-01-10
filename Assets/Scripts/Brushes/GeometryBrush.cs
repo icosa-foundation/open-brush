@@ -31,6 +31,9 @@ namespace TiltBrush
             /// Constant, associated with this knot
             public float smoothedPressure;
 
+            /// Color for this knot (from per-point colors or base color)
+            public Color32 color;
+
             /// Distance from previous knot to this knot, or 0 (if first).
             /// Mutated during geometry generation.
             public float length;
@@ -302,7 +305,8 @@ namespace TiltBrush
                     m_Pressure = 1
                 },
                 length = 0,
-                smoothedPos = pos
+                smoothedPos = pos,
+                color = m_Color
             };
             m_knots.Add(knot);
             m_knots.Add(knot);
@@ -347,7 +351,8 @@ namespace TiltBrush
                     m_Pressure = 1
                 },
                 length = 0,
-                smoothedPos = pos
+                smoothedPos = pos,
+                color = m_Color
             };
             m_knots.Add(knot);
             m_knots.Add(knot);
@@ -429,7 +434,7 @@ namespace TiltBrush
             rMeshScript.Init();
         }
 
-        override protected bool UpdatePositionImpl(Vector3 pos, Quaternion ori, float pressure)
+        override protected bool UpdatePositionImpl(Vector3 pos, Quaternion ori, float pressure, Color32? color = null)
         {
             Debug.Assert(m_knots.Count >= 2);
 
@@ -441,6 +446,18 @@ namespace TiltBrush
             updated.point.m_Pressure = pressure;
             updated.point.m_TimestampMs = (uint)(App.Instance.CurrentSketchTime * 1000);
             updated.smoothedPos = pos;
+
+            // Use passed color if available, otherwise fall back to stroke data or base color
+            if (color.HasValue)
+            {
+                updated.color = color.Value;
+            }
+            else
+            {
+                // Set color from stroke data if available, otherwise use base color
+                int indexToUse = m_CurrentControlPointIndex;
+                updated.color = (m_StrokeData != null) ? m_StrokeData.GetColor(indexToUse) : m_Color;
+            }
             if (iUpdate < 2)
             {
                 // Retroactively update the 0th knot with better pressure data.
@@ -497,6 +514,12 @@ namespace TiltBrush
         //
         // Geometry-creation helpers
         //
+
+        /// Get the color for a knot
+        protected Color32 GetKnotColor(Knot knot)
+        {
+            return knot.color;
+        }
 
         /// Set triangle and bottomside triangle.
         ///  iTri, iVert      pass knot.iTri, knot.iVert

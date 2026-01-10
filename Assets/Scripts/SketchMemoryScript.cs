@@ -558,7 +558,9 @@ namespace TiltBrush
             float fBrushSize, float brushScale,
             List<PointerManager.ControlPoint> rControlPoints, StrokeFlags strokeFlags,
             StencilWidget stencil, float lineLength, int seed,
-            bool isFinalStroke)
+            bool isFinalStroke,
+            Color32[] controlPointColors = null,
+            StrokeData.ColorControlMode colorMode = StrokeData.ColorControlMode.None)
         {
             // NOTE: PointerScript calls ClearRedo() in batch case
 
@@ -573,6 +575,8 @@ namespace TiltBrush
             rNewStroke.m_BrushScale = brushScale;
             rNewStroke.m_Flags = strokeFlags;
             rNewStroke.m_Seed = seed;
+            rNewStroke.m_ControlPointColors = controlPointColors;
+            rNewStroke.m_ColorMode = colorMode;
             subset.m_Stroke = rNewStroke;
 
             PerformAndRecordCommand(
@@ -600,7 +604,9 @@ namespace TiltBrush
             float fBrushSize, float brushScale,
             List<PointerManager.ControlPoint> rControlPoints,
             StrokeFlags strokeFlags,
-            StencilWidget stencil, float lineLength)
+            StencilWidget stencil, float lineLength,
+            Color32[] controlPointColors = null,
+            StrokeData.ColorControlMode colorMode = StrokeData.ColorControlMode.None)
         {
             ClearRedo();
 
@@ -614,6 +620,8 @@ namespace TiltBrush
             rNewStroke.m_BrushSize = fBrushSize;
             rNewStroke.m_BrushScale = brushScale;
             rNewStroke.m_Flags = strokeFlags;
+            rNewStroke.m_ControlPointColors = controlPointColors;
+            rNewStroke.m_ColorMode = colorMode;
             brushScript.Stroke = rNewStroke;
 
             SketchMemoryScript.m_Instance.RecordCommand(
@@ -1559,7 +1567,8 @@ namespace TiltBrush
                 {
                     if (!stroke.m_ControlPointsToDrop[i])
                     {
-                        pointer.UpdateLineFromControlPoint(stroke.m_ControlPoints[i]);
+                        Color32 color = stroke.GetColor(i);
+                        pointer.UpdateLineFromControlPoint(stroke.m_ControlPoints[i], color);
                     }
                 }
 

@@ -75,6 +75,7 @@ namespace TiltBrush
             // we don't save out the group.
             Seed = 1 << 3, // int32; if not found then you get a random int.
             Layer = 1 << 4, // uint32;
+            ControlPointColors = 1 << 5, // Color32[] + ColorControlMode; per-point colors
         }
 
         [Flags]
@@ -231,6 +232,7 @@ namespace TiltBrush
                 if (stroke.m_BrushScale != 1) { strokeExtensionMask |= StrokeExtension.Scale; }
                 if (stroke.Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
                 strokeExtensionMask |= StrokeExtension.Layer;
+                if (stroke.m_ControlPointColors != null) { strokeExtensionMask |= StrokeExtension.ControlPointColors; }
 
                 writer.UInt32((uint)strokeExtensionMask);
                 uint controlPointExtensionMask =
@@ -254,6 +256,19 @@ namespace TiltBrush
                 if ((uint)(strokeExtensionMask & StrokeExtension.Layer) != 0)
                 {
                     writer.UInt32(copy.layerIndex);
+                }
+                if ((uint)(strokeExtensionMask & StrokeExtension.ControlPointColors) != 0)
+                {
+                    // Write ColorControlMode, then Color32 array (packed as UInt32)
+                    writer.UInt32((uint)stroke.m_ColorMode);
+                    writer.Int32(stroke.m_ControlPointColors.Length);
+                    for (int cpIdx = 0; cpIdx < stroke.m_ControlPointColors.Length; cpIdx++)
+                    {
+                        Color32 c = stroke.m_ControlPointColors[cpIdx];
+                        // Pack RGBA bytes into a single UInt32
+                        uint packed = (uint)(c.r | (c.g << 8) | (c.b << 16) | (c.a << 24));
+                        writer.UInt32(packed);
+                    }
                 }
 
                 // Control points
@@ -315,6 +330,7 @@ namespace TiltBrush
                 if (stroke.m_BrushScale != 1) { strokeExtensionMask |= StrokeExtension.Scale; }
                 if (stroke.Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
                 strokeExtensionMask |= StrokeExtension.Layer;
+                if (stroke.m_ControlPointColors != null) { strokeExtensionMask |= StrokeExtension.ControlPointColors; }
 
                 writer.UInt32((uint)strokeExtensionMask);
                 uint controlPointExtensionMask =
@@ -338,6 +354,19 @@ namespace TiltBrush
                 if ((uint)(strokeExtensionMask & StrokeExtension.Layer) != 0)
                 {
                     writer.UInt32(copy.layerIndex);
+                }
+                if ((uint)(strokeExtensionMask & StrokeExtension.ControlPointColors) != 0)
+                {
+                    // Write ColorControlMode, then Color32 array (packed as UInt32)
+                    writer.UInt32((uint)stroke.m_ColorMode);
+                    writer.Int32(stroke.m_ControlPointColors.Length);
+                    for (int cpIdx = 0; cpIdx < stroke.m_ControlPointColors.Length; cpIdx++)
+                    {
+                        Color32 c = stroke.m_ControlPointColors[cpIdx];
+                        // Pack RGBA bytes into a single UInt32
+                        uint packed = (uint)(c.r | (c.g << 8) | (c.b << 16) | (c.a << 24));
+                        writer.UInt32(packed);
+                    }
                 }
 
                 // Control points
@@ -544,6 +573,24 @@ namespace TiltBrush
                             var canvas = App.Scene.GetOrCreateLayer((int)layerIndex);
                             stroke.m_IntendedCanvas = canvas;
                             break;
+                        case StrokeExtension.ControlPointColors:
+                            {
+                                stroke.m_ColorMode = (StrokeData.ColorControlMode)reader.UInt32();
+                                int colorCount = reader.Int32();
+                                stroke.m_ControlPointColors = new Color32[colorCount];
+                                for (int cpIdx = 0; cpIdx < colorCount; cpIdx++)
+                                {
+                                    // Unpack UInt32 into RGBA bytes
+                                    uint packed = reader.UInt32();
+                                    stroke.m_ControlPointColors[cpIdx] = new Color32(
+                                        (byte)(packed & 0xFF),
+                                        (byte)((packed >> 8) & 0xFF),
+                                        (byte)((packed >> 16) & 0xFF),
+                                        (byte)((packed >> 24) & 0xFF)
+                                    );
+                                }
+                                break;
+                            }
                         case StrokeExtension.Seed:
                             stroke.m_Seed = reader.Int32();
                             break;
@@ -717,6 +764,24 @@ namespace TiltBrush
                             var canvas = App.Scene.GetOrCreateLayer((int)layerIndex);
                             stroke.m_IntendedCanvas = canvas;
                             break;
+                        case StrokeExtension.ControlPointColors:
+                            {
+                                stroke.m_ColorMode = (StrokeData.ColorControlMode)reader.UInt32();
+                                int colorCount = reader.Int32();
+                                stroke.m_ControlPointColors = new Color32[colorCount];
+                                for (int cpIdx = 0; cpIdx < colorCount; cpIdx++)
+                                {
+                                    // Unpack UInt32 into RGBA bytes
+                                    uint packed = reader.UInt32();
+                                    stroke.m_ControlPointColors[cpIdx] = new Color32(
+                                        (byte)(packed & 0xFF),
+                                        (byte)((packed >> 8) & 0xFF),
+                                        (byte)((packed >> 16) & 0xFF),
+                                        (byte)((packed >> 24) & 0xFF)
+                                    );
+                                }
+                                break;
+                            }
                         case StrokeExtension.Seed:
                             stroke.m_Seed = reader.Int32();
                             break;

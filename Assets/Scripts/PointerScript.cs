@@ -631,11 +631,11 @@ namespace TiltBrush
         /// - Do _not_ apply any normal adjustment; it's baked into the control point
         /// - Do not update the mesh
         /// TODO: replace with a bulk-ControlPoint API
-        public void UpdateLineFromControlPoint(PointerManager.ControlPoint cp)
+        public void UpdateLineFromControlPoint(PointerManager.ControlPoint cp, Color32 color)
         {
             float scale = m_CurrentLine.StrokeScale;
             m_CurrentLine.UpdatePosition_LS(
-                TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure);
+                TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure, color);
         }
 
         /// Bulk control point addition
@@ -649,8 +649,11 @@ namespace TiltBrush
                 simplifier.CalculatePointsToDrop(stroke, CurrentBrushScript);
             }
             float scale = m_CurrentLine.StrokeScale;
-            foreach (var cp in stroke.m_ControlPoints.Where((x, i) => !stroke.m_ControlPointsToDrop[i]))
+            for (int i = 0; i < stroke.m_ControlPoints.Length; i++)
             {
+                if (stroke.m_ControlPointsToDrop[i]) continue;
+                m_CurrentLine.SetCurrentControlPointIndex(i);
+                var cp = stroke.m_ControlPoints[i];
                 m_CurrentLine.UpdatePosition_LS(TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure);
             }
         }
@@ -1040,7 +1043,9 @@ namespace TiltBrush
                         WidgetManager.m_Instance.ActiveStencil,
                         m_LineLength_CS,
                         m_CurrentLine.RandomSeed,
-                        isFinalStroke
+                        isFinalStroke,
+                        m_CurrentLine.StrokeData?.m_ControlPointColors,
+                        m_CurrentLine.StrokeData?.m_ColorMode ?? StrokeData.ColorControlMode.None
                         );
                 }
                 else
@@ -1079,7 +1084,9 @@ namespace TiltBrush
                         m_CurrentBrushSize,
                         m_CurrentLine.StrokeScale,
                         m_ControlPoints, strokeFlags,
-                        WidgetManager.m_Instance.ActiveStencil, m_LineLength_CS);
+                        WidgetManager.m_Instance.ActiveStencil, m_LineLength_CS,
+                        m_CurrentLine.StrokeData?.m_ControlPointColors,
+                        m_CurrentLine.StrokeData?.m_ColorMode ?? StrokeData.ColorControlMode.None);
                 }
                 else
                 {
@@ -1153,6 +1160,7 @@ namespace TiltBrush
             CreateNewLine(canvas, xf_CS, null);
             m_CurrentLine.SetIsLoading();
             m_CurrentLine.RandomSeed = stroke.m_Seed;
+            m_CurrentLine.SetStrokeData(stroke);
 
             return m_CurrentLine.gameObject;
         }
