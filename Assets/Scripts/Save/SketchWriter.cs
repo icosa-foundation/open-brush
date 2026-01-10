@@ -75,7 +75,7 @@ namespace TiltBrush
             // we don't save out the group.
             Seed = 1 << 3, // int32; if not found then you get a random int.
             Layer = 1 << 4, // uint32;
-            ControlPointColors = 1 << 5, // Color32[] + ColorControlMode; per-point colors
+            ControlPointColors = 1 << 16, // Variable-length: Color32[] + ColorControlMode; per-point colors
         }
 
         [Flags]
@@ -259,7 +259,11 @@ namespace TiltBrush
                 }
                 if ((uint)(strokeExtensionMask & StrokeExtension.ControlPointColors) != 0)
                 {
-                    // Write ColorControlMode, then Color32 array (packed as UInt32)
+                    // Write length prefix for variable-length extension, then data
+                    // Data: ColorControlMode (UInt32) + array length (Int32) + Color32 array (length * UInt32)
+                    uint dataSize = (uint)(4 + 4 + (stroke.m_ControlPointColors.Length * 4));
+                    writer.UInt32(dataSize);
+
                     writer.UInt32((uint)stroke.m_ColorMode);
                     writer.Int32(stroke.m_ControlPointColors.Length);
                     for (int cpIdx = 0; cpIdx < stroke.m_ControlPointColors.Length; cpIdx++)
@@ -357,7 +361,11 @@ namespace TiltBrush
                 }
                 if ((uint)(strokeExtensionMask & StrokeExtension.ControlPointColors) != 0)
                 {
-                    // Write ColorControlMode, then Color32 array (packed as UInt32)
+                    // Write length prefix for variable-length extension, then data
+                    // Data: ColorControlMode (UInt32) + array length (Int32) + Color32 array (length * UInt32)
+                    uint dataSize = (uint)(4 + 4 + (stroke.m_ControlPointColors.Length * 4));
+                    writer.UInt32(dataSize);
+
                     writer.UInt32((uint)stroke.m_ColorMode);
                     writer.Int32(stroke.m_ControlPointColors.Length);
                     for (int cpIdx = 0; cpIdx < stroke.m_ControlPointColors.Length; cpIdx++)
