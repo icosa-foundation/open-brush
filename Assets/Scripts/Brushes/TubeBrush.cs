@@ -67,6 +67,7 @@ namespace TiltBrush
             Comet,
             Taper,
             Petal,
+            Ellipse
         };
 
         public TubeBrush() : this(true) { }
@@ -732,6 +733,16 @@ namespace TiltBrush
                             offset = m_geometry.m_Normals[vert] * displacement * petalAmtCacheValue *
                                 cur.smoothedPressure;
                             break;
+                        case ShapeModifier.Ellipse:
+                            // Calculate offset to create an elliptical cross-section
+                            curve = 1.0f;
+                            // Minor/major ratio; tweak later if needed.
+                            const float minorScale = 0.25f;
+                            const float majorScale = 1.0f;
+                            float rtAmt = Vector3.Dot(dir, cur.nRight);
+                            float upAmt = Vector3.Dot(dir, cur.nSurface);
+                            dir = cur.nRight * (rtAmt * minorScale) + cur.nSurface * (upAmt * majorScale);
+                            break;
                     }
                     m_geometry.m_Vertices[vert] = offset + cur.smoothedPos + radius * dir * curve;
                 }
@@ -773,7 +784,7 @@ namespace TiltBrush
                 // Additionally, be aware that here "radius" is packed into a vertex channel but
                 // does not actually have anything to do with the radius of the created geometry.
                 //
-                AppendVert(ref k, tip, normal.normalized, m_Color, tan, uv, /*radius*/ 0);
+                AppendVert(ref k, tip, normal.normalized, k.color, tan, uv, /*radius*/ 0);
                 AppendDisplacement(ref k, fwdNormal);
             }
         }
@@ -812,7 +823,7 @@ namespace TiltBrush
                 Vector2 uv = new Vector2(u, Mathf.Lerp(v0, v1, t));
                 Vector3 off = -Mathf.Cos(theta) * up + -Mathf.Sin(theta) * rt;
 
-                AppendVert(ref k, center + radius * off, off, m_Color, fwd, uv, radius);
+                AppendVert(ref k, center + radius * off, off, k.color, fwd, uv, radius);
                 AppendDisplacement(ref k, off.normalized);
             }
         }
@@ -853,14 +864,14 @@ namespace TiltBrush
                 float v = Mathf.Lerp(v0, v1, (float)prevFace / (float)(numPoints) + (1.0f / numPoints));
                 Vector2 uv = new Vector2(u, v);
 
-                AppendVert(ref k, center + radius * off1, nPrev, m_Color, tan, uv, radius);
+                AppendVert(ref k, center + radius * off1, nPrev, k.color, tan, uv, radius);
                 AppendDisplacement(ref k, off1);
 
                 int currentFace = i;
                 v = Mathf.Lerp(v0, v1, (float)currentFace / (float)(numPoints));
                 uv = new Vector2(u, v);
 
-                AppendVert(ref k, center + radius * off1, nCur, m_Color, tan, uv, radius);
+                AppendVert(ref k, center + radius * off1, nCur, k.color, tan, uv, radius);
                 AppendDisplacement(ref k, off1);
             }
         }

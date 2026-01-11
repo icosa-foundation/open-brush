@@ -75,6 +75,7 @@ namespace TiltBrush
             // we don't save out the group.
             Seed = 1 << 3, // int32; if not found then you get a random int.
             Layer = 1 << 4, // uint32;
+            ControlPointColors = 1 << 16, // Variable-length: Color32[] + ColorControlMode; per-point colors
         }
 
         [Flags]
@@ -231,6 +232,7 @@ namespace TiltBrush
                 if (stroke.m_BrushScale != 1) { strokeExtensionMask |= StrokeExtension.Scale; }
                 if (stroke.Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
                 strokeExtensionMask |= StrokeExtension.Layer;
+                if (stroke.m_ControlPointColors != null) { strokeExtensionMask |= StrokeExtension.ControlPointColors; }
 
                 writer.UInt32((uint)strokeExtensionMask);
                 uint controlPointExtensionMask =
@@ -254,6 +256,23 @@ namespace TiltBrush
                 if ((uint)(strokeExtensionMask & StrokeExtension.Layer) != 0)
                 {
                     writer.UInt32(copy.layerIndex);
+                }
+                if ((uint)(strokeExtensionMask & StrokeExtension.ControlPointColors) != 0)
+                {
+                    // Write length prefix for variable-length extension, then data
+                    // Data: ColorControlMode (UInt32) + array length (Int32) + Color32 array (length * UInt32)
+                    uint dataSize = (uint)(4 + 4 + (stroke.m_ControlPointColors.Count * 4));
+                    writer.UInt32(dataSize);
+
+                    writer.UInt32((uint)stroke.m_ColorMode);
+                    writer.Int32(stroke.m_ControlPointColors.Count);
+                    for (int cpIdx = 0; cpIdx < stroke.m_ControlPointColors.Count; cpIdx++)
+                    {
+                        Color32 c = stroke.m_ControlPointColors[cpIdx];
+                        // Pack RGBA bytes into a single UInt32
+                        uint packed = (uint)(c.r | (c.g << 8) | (c.b << 16) | (c.a << 24));
+                        writer.UInt32(packed);
+                    }
                 }
 
                 // Control points
@@ -315,6 +334,7 @@ namespace TiltBrush
                 if (stroke.m_BrushScale != 1) { strokeExtensionMask |= StrokeExtension.Scale; }
                 if (stroke.Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
                 strokeExtensionMask |= StrokeExtension.Layer;
+                if (stroke.m_ControlPointColors != null) { strokeExtensionMask |= StrokeExtension.ControlPointColors; }
 
                 writer.UInt32((uint)strokeExtensionMask);
                 uint controlPointExtensionMask =
@@ -338,6 +358,23 @@ namespace TiltBrush
                 if ((uint)(strokeExtensionMask & StrokeExtension.Layer) != 0)
                 {
                     writer.UInt32(copy.layerIndex);
+                }
+                if ((uint)(strokeExtensionMask & StrokeExtension.ControlPointColors) != 0)
+                {
+                    // Write length prefix for variable-length extension, then data
+                    // Data: ColorControlMode (UInt32) + array length (Int32) + Color32 array (length * UInt32)
+                    uint dataSize = (uint)(4 + 4 + (stroke.m_ControlPointColors.Count * 4));
+                    writer.UInt32(dataSize);
+
+                    writer.UInt32((uint)stroke.m_ColorMode);
+                    writer.Int32(stroke.m_ControlPointColors.Count);
+                    for (int cpIdx = 0; cpIdx < stroke.m_ControlPointColors.Count; cpIdx++)
+                    {
+                        Color32 c = stroke.m_ControlPointColors[cpIdx];
+                        // Pack RGBA bytes into a single UInt32
+                        uint packed = (uint)(c.r | (c.g << 8) | (c.b << 16) | (c.a << 24));
+                        writer.UInt32(packed);
+                    }
                 }
 
                 // Control points
@@ -544,6 +581,25 @@ namespace TiltBrush
                             var canvas = App.Scene.GetOrCreateLayer((int)layerIndex);
                             stroke.m_IntendedCanvas = canvas;
                             break;
+                        case StrokeExtension.ControlPointColors:
+                            {
+                                uint dataSize = reader.UInt32(); // Read length prefix for variable-length extension
+                                stroke.m_ColorMode = (StrokeData.ColorControlMode)reader.UInt32();
+                                int colorCount = reader.Int32();
+                                stroke.m_ControlPointColors = new List<Color32>();
+                                for (int cpIdx = 0; cpIdx < colorCount; cpIdx++)
+                                {
+                                    // Unpack UInt32 into RGBA bytes
+                                    uint packed = reader.UInt32();
+                                    stroke.m_ControlPointColors.Add(new Color32(
+                                        (byte)(packed & 0xFF),
+                                        (byte)((packed >> 8) & 0xFF),
+                                        (byte)((packed >> 16) & 0xFF),
+                                        (byte)((packed >> 24) & 0xFF)
+                                    ));
+                                }
+                                break;
+                            }
                         case StrokeExtension.Seed:
                             stroke.m_Seed = reader.Int32();
                             break;
@@ -566,10 +622,10 @@ namespace TiltBrush
 
                 // control points
                 int nControlPoints = reader.Int32();
-                stroke.m_ControlPoints = new PointerManager.ControlPoint[nControlPoints];
+                stroke.m_ControlPoints = new ControlPoint[nControlPoints];
                 stroke.m_ControlPointsToDrop = new bool[nControlPoints];
 
-                if (allowFastPath && controlPointExtensionMask == PointerManager.ControlPoint.EXTENSIONS)
+                if (allowFastPath && controlPointExtensionMask == ControlPoint.EXTENSIONS)
                 {
                     // Fast path: read (semi-)directly into the ControlPoint[]
                     unsafe
@@ -717,6 +773,25 @@ namespace TiltBrush
                             var canvas = App.Scene.GetOrCreateLayer((int)layerIndex);
                             stroke.m_IntendedCanvas = canvas;
                             break;
+                        case StrokeExtension.ControlPointColors:
+                            {
+                                uint dataSize = reader.UInt32(); // Read length prefix for variable-length extension
+                                stroke.m_ColorMode = (StrokeData.ColorControlMode)reader.UInt32();
+                                int colorCount = reader.Int32();
+                                stroke.m_ControlPointColors = new List<Color32>();
+                                for (int cpIdx = 0; cpIdx < colorCount; cpIdx++)
+                                {
+                                    // Unpack UInt32 into RGBA bytes
+                                    uint packed = reader.UInt32();
+                                    stroke.m_ControlPointColors.Add(new Color32(
+                                        (byte)(packed & 0xFF),
+                                        (byte)((packed >> 8) & 0xFF),
+                                        (byte)((packed >> 16) & 0xFF),
+                                        (byte)((packed >> 24) & 0xFF)
+                                    ));
+                                }
+                                break;
+                            }
                         case StrokeExtension.Seed:
                             stroke.m_Seed = reader.Int32();
                             break;
@@ -739,15 +814,15 @@ namespace TiltBrush
 
                 // Process control points...
                 int nControlPoints = reader.Int32();
-                stroke.m_ControlPoints = new PointerManager.ControlPoint[nControlPoints];
+                stroke.m_ControlPoints = new ControlPoint[nControlPoints];
                 stroke.m_ControlPointsToDrop = new bool[nControlPoints];
 
-                if (allowFastPath && controlPointExtensionMask == PointerManager.ControlPoint.EXTENSIONS)
+                if (allowFastPath && controlPointExtensionMask == ControlPoint.EXTENSIONS)
                 {
                     unsafe
                     {
-                        int size = sizeof(PointerManager.ControlPoint) * stroke.m_ControlPoints.Length;
-                        fixed (PointerManager.ControlPoint* aPoints = stroke.m_ControlPoints)
+                        int size = sizeof(ControlPoint) * stroke.m_ControlPoints.Length;
+                        fixed (ControlPoint* aPoints = stroke.m_ControlPoints)
                         {
                             if (!reader.ReadInto((IntPtr)aPoints, size))
                             {

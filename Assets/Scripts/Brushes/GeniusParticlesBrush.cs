@@ -170,9 +170,9 @@ namespace TiltBrush
         /// Bit naughty, but I'm back to overriding UpdatePositionImpl. I think in this case it's
         /// acceptable as it is simply wrapping the call so that we can trap the cursor position to
         /// work out how far the pointer has traveled.
-        protected override bool UpdatePositionImpl(Vector3 pos, Quaternion ori, float pressure)
+        protected override bool UpdatePositionImpl(Vector3 pos, Quaternion ori, float pressure, Color32? color = null)
         {
-            bool result = base.UpdatePositionImpl(pos, ori, pressure);
+            bool result = base.UpdatePositionImpl(pos, ori, pressure, color);
             if (m_DistancePointerTravelled < 0f)
             {
                 m_DistancePointerTravelled = 0f;
