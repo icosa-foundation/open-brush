@@ -590,7 +590,7 @@ namespace TiltBrush
                 return;
             }
 
-            Color32? colorOverride = CurrentColorOverrideMode == StrokeData.ColorControlMode.Replace ? null : CurrentColorOverride;
+            Color32? colorOverride = CurrentColorOverrideMode == StrokeData.ColorControlMode.None ? null : CurrentColorOverride;
             bool bQuadCreated = m_CurrentLine.UpdatePosition_LS(xf_LS, m_CurrentPressure, colorOverride);
 
             // TODO: let brush take care of storing control points, not us
