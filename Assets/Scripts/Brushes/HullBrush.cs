@@ -570,7 +570,7 @@ namespace TiltBrush
             Vector3 uv = new Vector3(0, 0, m_BaseSize_PS);
             m_geometry.m_Vertices.Add(v);
             m_geometry.m_Normals.Add(n);
-            m_geometry.m_Colors.Add(m_Color);
+            m_geometry.m_Colors.Add(k.color);
             m_geometry.m_Texcoord0.v3.Add(uv);
             k.nVert += 1;
             if (m_bDoubleSided)
@@ -579,7 +579,7 @@ namespace TiltBrush
                 m_geometry.m_Normals.Add(-n);
                 // TODO: backface is a different color for visualization reasons
                 // Probably better to use a non-culling shader instead of doubling the geo.
-                m_geometry.m_Colors.Add(m_Color);
+                m_geometry.m_Colors.Add(k.color);
                 m_geometry.m_Texcoord0.v3.Add(uv);
                 k.nVert += 1;
             }

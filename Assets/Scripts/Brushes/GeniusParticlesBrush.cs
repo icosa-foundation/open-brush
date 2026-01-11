@@ -405,10 +405,11 @@ namespace TiltBrush
             SetTri(triIndex, vertIndex, 0, kBr, kBl, kFl);
             SetTri(triIndex, vertIndex, 1, kBr, kFl, kFr);
 
-            SetVert(vertIndex, kBr, center - upOffset + rightOffset, center, m_Color, alpha);
-            SetVert(vertIndex, kBl, center - upOffset - rightOffset, center, m_Color, alpha);
-            SetVert(vertIndex, kFr, center + upOffset + rightOffset, center, m_Color, alpha);
-            SetVert(vertIndex, kFl, center + upOffset - rightOffset, center, m_Color, alpha);
+            Color32 color = cur.color;
+            SetVert(vertIndex, kBr, center - upOffset + rightOffset, center, color, alpha);
+            SetVert(vertIndex, kBl, center - upOffset - rightOffset, center, color, alpha);
+            SetVert(vertIndex, kFr, center + upOffset + rightOffset, center, color, alpha);
+            SetVert(vertIndex, kFl, center + upOffset - rightOffset, center, color, alpha);
 
             // When a stroke is loaded from a .tilt, m_TimestampMs is _not_ initialized from the
             // timestamp in the Stroke. Therefore we don't have to worry about it being in the future
