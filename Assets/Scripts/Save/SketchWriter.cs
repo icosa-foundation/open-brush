@@ -583,6 +583,7 @@ namespace TiltBrush
                             break;
                         case StrokeExtension.ControlPointColors:
                             {
+                                uint dataSize = reader.UInt32(); // Read length prefix for variable-length extension
                                 stroke.m_ColorMode = (StrokeData.ColorControlMode)reader.UInt32();
                                 int colorCount = reader.Int32();
                                 stroke.m_ControlPointColors = new List<Color32>();
@@ -590,12 +591,12 @@ namespace TiltBrush
                                 {
                                     // Unpack UInt32 into RGBA bytes
                                     uint packed = reader.UInt32();
-                                    stroke.m_ControlPointColors[cpIdx] = new Color32(
+                                    stroke.m_ControlPointColors.Add(new Color32(
                                         (byte)(packed & 0xFF),
                                         (byte)((packed >> 8) & 0xFF),
                                         (byte)((packed >> 16) & 0xFF),
                                         (byte)((packed >> 24) & 0xFF)
-                                    );
+                                    ));
                                 }
                                 break;
                             }
@@ -621,10 +622,10 @@ namespace TiltBrush
 
                 // control points
                 int nControlPoints = reader.Int32();
-                stroke.m_ControlPoints = new PointerManager.ControlPoint[nControlPoints];
+                stroke.m_ControlPoints = new ControlPoint[nControlPoints];
                 stroke.m_ControlPointsToDrop = new bool[nControlPoints];
 
-                if (allowFastPath && controlPointExtensionMask == PointerManager.ControlPoint.EXTENSIONS)
+                if (allowFastPath && controlPointExtensionMask == ControlPoint.EXTENSIONS)
                 {
                     // Fast path: read (semi-)directly into the ControlPoint[]
                     unsafe
@@ -774,6 +775,7 @@ namespace TiltBrush
                             break;
                         case StrokeExtension.ControlPointColors:
                             {
+                                uint dataSize = reader.UInt32(); // Read length prefix for variable-length extension
                                 stroke.m_ColorMode = (StrokeData.ColorControlMode)reader.UInt32();
                                 int colorCount = reader.Int32();
                                 stroke.m_ControlPointColors = new List<Color32>();
@@ -781,12 +783,12 @@ namespace TiltBrush
                                 {
                                     // Unpack UInt32 into RGBA bytes
                                     uint packed = reader.UInt32();
-                                    stroke.m_ControlPointColors[cpIdx] = new Color32(
+                                    stroke.m_ControlPointColors.Add(new Color32(
                                         (byte)(packed & 0xFF),
                                         (byte)((packed >> 8) & 0xFF),
                                         (byte)((packed >> 16) & 0xFF),
                                         (byte)((packed >> 24) & 0xFF)
-                                    );
+                                    ));
                                 }
                                 break;
                             }

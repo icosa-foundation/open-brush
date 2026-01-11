@@ -229,7 +229,6 @@ namespace TiltBrush
             var controlPoints = new List<PointerManager.ControlPoint>(sqStroke.Vertices.Count);
             List<Color32> perPointColors = new List<Color32>();
             uint time = 0;
-            int vertexIndex = 0;
 
             foreach (var v in sqStroke.Vertices)
             {
@@ -260,13 +259,12 @@ namespace TiltBrush
                 });
 
                 // Capture per-point color from Quill vertex
-                perPointColors[vertexIndex] = new Color32(
+                perPointColors.Add(new Color32(
                     (byte)(v.Color.R * 255f),
                     (byte)(v.Color.G * 255f),
                     (byte)(v.Color.B * 255f),
                     255 // Quill colors don't have alpha, assume fully opaque
-                );
-                vertexIndex++;
+                ));
             }
 
             var stroke = new Stroke
