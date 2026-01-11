@@ -879,7 +879,7 @@ namespace TiltBrush
 
             if (!m_CurrentLine) return;
             if (CurrentColorOverrideMode == StrokeData.ColorControlMode.None) return;
-            m_ControlPointColors ??= Enumerable.Repeat(new Color32(0,0,0,0), m_ControlPoints.Count).ToList();
+            m_ControlPointColors ??= Enumerable.Repeat(new Color32(0, 0, 0, 0), m_ControlPoints.Count).ToList();
             m_ControlPointColors.Add(CurrentColorOverride);
         }
 
