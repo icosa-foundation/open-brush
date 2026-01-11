@@ -66,13 +66,6 @@ namespace TiltBrush
                     OnDroppedFrames();
                 }
             }
-
-            // Oculus only computes cumulative frames dropped, so we reset the perf stats
-            // each frame after recording.
-#if OCULUS_SUPPORTED
-                // TODO: Currently not supported on Oculus OpenXR backend.
-                // OVRPlugin.ResetAppPerfStats();
-#endif // OCULUS_SUPPORTED
         }
 
         public event Action OnDroppedFrames = delegate { };
