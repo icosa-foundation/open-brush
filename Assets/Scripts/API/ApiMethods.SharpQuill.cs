@@ -227,7 +227,7 @@ namespace TiltBrush
             var unityColor = new Color(color.R, color.G, color.B);
 
             var controlPoints = new List<PointerManager.ControlPoint>(sqStroke.Vertices.Count);
-            var perPointColors = new Color32[sqStroke.Vertices.Count];
+            List<Color32> perPointColors = new List<Color32>();
             uint time = 0;
             int vertexIndex = 0;
 

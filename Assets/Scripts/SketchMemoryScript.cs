@@ -559,7 +559,7 @@ namespace TiltBrush
             List<PointerManager.ControlPoint> rControlPoints, StrokeFlags strokeFlags,
             StencilWidget stencil, float lineLength, int seed,
             bool isFinalStroke,
-            Color32[] controlPointColors = null,
+            List<Color32> controlPointColors = null,
             StrokeData.ColorControlMode colorMode = StrokeData.ColorControlMode.None)
         {
             // NOTE: PointerScript calls ClearRedo() in batch case
@@ -605,7 +605,7 @@ namespace TiltBrush
             List<PointerManager.ControlPoint> rControlPoints,
             StrokeFlags strokeFlags,
             StencilWidget stencil, float lineLength,
-            Color32[] controlPointColors = null,
+            List<Color32> controlPointColors = null,
             StrokeData.ColorControlMode colorMode = StrokeData.ColorControlMode.None)
         {
             ClearRedo();

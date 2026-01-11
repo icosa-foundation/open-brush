@@ -261,12 +261,12 @@ namespace TiltBrush
                 {
                     // Write length prefix for variable-length extension, then data
                     // Data: ColorControlMode (UInt32) + array length (Int32) + Color32 array (length * UInt32)
-                    uint dataSize = (uint)(4 + 4 + (stroke.m_ControlPointColors.Length * 4));
+                    uint dataSize = (uint)(4 + 4 + (stroke.m_ControlPointColors.Count * 4));
                     writer.UInt32(dataSize);
 
                     writer.UInt32((uint)stroke.m_ColorMode);
-                    writer.Int32(stroke.m_ControlPointColors.Length);
-                    for (int cpIdx = 0; cpIdx < stroke.m_ControlPointColors.Length; cpIdx++)
+                    writer.Int32(stroke.m_ControlPointColors.Count);
+                    for (int cpIdx = 0; cpIdx < stroke.m_ControlPointColors.Count; cpIdx++)
                     {
                         Color32 c = stroke.m_ControlPointColors[cpIdx];
                         // Pack RGBA bytes into a single UInt32
@@ -363,12 +363,12 @@ namespace TiltBrush
                 {
                     // Write length prefix for variable-length extension, then data
                     // Data: ColorControlMode (UInt32) + array length (Int32) + Color32 array (length * UInt32)
-                    uint dataSize = (uint)(4 + 4 + (stroke.m_ControlPointColors.Length * 4));
+                    uint dataSize = (uint)(4 + 4 + (stroke.m_ControlPointColors.Count * 4));
                     writer.UInt32(dataSize);
 
                     writer.UInt32((uint)stroke.m_ColorMode);
-                    writer.Int32(stroke.m_ControlPointColors.Length);
-                    for (int cpIdx = 0; cpIdx < stroke.m_ControlPointColors.Length; cpIdx++)
+                    writer.Int32(stroke.m_ControlPointColors.Count);
+                    for (int cpIdx = 0; cpIdx < stroke.m_ControlPointColors.Count; cpIdx++)
                     {
                         Color32 c = stroke.m_ControlPointColors[cpIdx];
                         // Pack RGBA bytes into a single UInt32
@@ -585,7 +585,7 @@ namespace TiltBrush
                             {
                                 stroke.m_ColorMode = (StrokeData.ColorControlMode)reader.UInt32();
                                 int colorCount = reader.Int32();
-                                stroke.m_ControlPointColors = new Color32[colorCount];
+                                stroke.m_ControlPointColors = new List<Color32>();
                                 for (int cpIdx = 0; cpIdx < colorCount; cpIdx++)
                                 {
                                     // Unpack UInt32 into RGBA bytes
@@ -776,7 +776,7 @@ namespace TiltBrush
                             {
                                 stroke.m_ColorMode = (StrokeData.ColorControlMode)reader.UInt32();
                                 int colorCount = reader.Int32();
-                                stroke.m_ControlPointColors = new Color32[colorCount];
+                                stroke.m_ControlPointColors = new List<Color32>();
                                 for (int cpIdx = 0; cpIdx < colorCount; cpIdx++)
                                 {
                                     // Unpack UInt32 into RGBA bytes
@@ -812,15 +812,15 @@ namespace TiltBrush
 
                 // Process control points...
                 int nControlPoints = reader.Int32();
-                stroke.m_ControlPoints = new PointerManager.ControlPoint[nControlPoints];
+                stroke.m_ControlPoints = new ControlPoint[nControlPoints];
                 stroke.m_ControlPointsToDrop = new bool[nControlPoints];
 
-                if (allowFastPath && controlPointExtensionMask == PointerManager.ControlPoint.EXTENSIONS)
+                if (allowFastPath && controlPointExtensionMask == ControlPoint.EXTENSIONS)
                 {
                     unsafe
                     {
-                        int size = sizeof(PointerManager.ControlPoint) * stroke.m_ControlPoints.Length;
-                        fixed (PointerManager.ControlPoint* aPoints = stroke.m_ControlPoints)
+                        int size = sizeof(ControlPoint) * stroke.m_ControlPoints.Length;
+                        fixed (ControlPoint* aPoints = stroke.m_ControlPoints)
                         {
                             if (!reader.ReadInto((IntPtr)aPoints, size))
                             {

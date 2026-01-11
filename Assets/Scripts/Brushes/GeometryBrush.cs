@@ -500,6 +500,7 @@ namespace TiltBrush
                 dupe.nVert = 0;
                 dupe.iTri = updated.iTri + updated.nTri;
                 dupe.nTri = 0;
+                dupe.color = color ?? m_Color;
                 m_knots.Add(dupe);
             }
             return keep;

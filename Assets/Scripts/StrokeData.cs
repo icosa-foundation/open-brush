@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -46,7 +48,7 @@ namespace TiltBrush
         public Guid m_Guid;
 
         // Optional per-control-point color data (null by default for 0 memory overhead)
-        public Color32[] m_ControlPointColors;
+        public List<Color32> m_ControlPointColors;
         public ColorControlMode m_ColorMode = ColorControlMode.None;
 
         // Reference the BrushStrokeCommand that created this stroke with a WeakReference.
@@ -84,8 +86,7 @@ namespace TiltBrush
                 this.m_ColorMode = existing.m_ColorMode;
                 if (existing.m_ControlPointColors != null)
                 {
-                    this.m_ControlPointColors = new Color32[existing.m_ControlPointColors.Length];
-                    Array.Copy(existing.m_ControlPointColors, this.m_ControlPointColors, this.m_ControlPointColors.Length);
+                    m_ControlPointColors = existing.m_ControlPointColors.ToList();
                 }
             }
         }
@@ -101,7 +102,7 @@ namespace TiltBrush
             }
 
             // Bounds check
-            if (index < 0 || index >= m_ControlPointColors.Length)
+            if (index < 0 || index >= m_ControlPointColors.Count)
             {
                 return m_Color;
             }
