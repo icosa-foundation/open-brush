@@ -52,6 +52,7 @@ namespace TiltBrush
             /// Temporary storage; only used during geometry creation
             public int TempIndex { get; set; }
             public Vector3 TempNormal { get; set; }
+            public Color32 TempColor { get; set; }
 
             public Vertex()
             {
@@ -248,6 +249,7 @@ namespace TiltBrush
                     for (int iKnot = iKnot0; iKnot < m_knots.Count; ++iKnot)
                     {
                         m_AllVertices[iKnot].SetData(m_knots[iKnot].point.m_Pos);
+                        m_AllVertices[iKnot].TempColor = m_knots[iKnot].color;
                     }
                     break;
 
@@ -264,10 +266,15 @@ namespace TiltBrush
                         {
                             Vector3 p = m_knots[iKnot].point.m_Pos;
                             int iv0 = iKnot * verticesPerKnot;
+                            Color32 knotColor = m_knots[iKnot].color;
                             m_AllVertices[iv0 + 0].SetData(p + new Vector3(-hw, -hw, -hw));
+                            m_AllVertices[iv0 + 0].TempColor = knotColor;
                             m_AllVertices[iv0 + 1].SetData(p + new Vector3(+hw, +hw, -hw));
+                            m_AllVertices[iv0 + 1].TempColor = knotColor;
                             m_AllVertices[iv0 + 2].SetData(p + new Vector3(+hw, -hw, +hw));
+                            m_AllVertices[iv0 + 2].TempColor = knotColor;
                             m_AllVertices[iv0 + 3].SetData(p + new Vector3(-hw, +hw, +hw));
+                            m_AllVertices[iv0 + 3].TempColor = knotColor;
                         }
                         break;
                     }
@@ -291,12 +298,14 @@ namespace TiltBrush
                         for (int iKnot = iKnot0; iKnot < m_knots.Count; ++iKnot)
                         {
                             Vector3 center = m_knots[iKnot].point.m_Pos;
+                            Color32 knotColor = m_knots[iKnot].color;
                             if (iKnot == 0)
                             {
                                 // For indexing simplicity, put 'em all in the same place
                                 for (int i = 0; i < verticesPerKnot; ++i)
                                 {
                                     m_AllVertices[i].SetData(center);
+                                    m_AllVertices[i].TempColor = knotColor;
                                 }
                             }
                             else
@@ -311,6 +320,7 @@ namespace TiltBrush
 
                                 // One point at the tip
                                 m_AllVertices[iv0 + 0].SetData(center + p);
+                                m_AllVertices[iv0 + 0].TempColor = knotColor;
 
                                 // And rings of points around that tip.
                                 // phi is the angle with dir; theta is the angle around the ring.
@@ -324,6 +334,7 @@ namespace TiltBrush
                                     for (int i = 0; i < kDirectedSphereRingPoints; ++i)
                                     {
                                         m_AllVertices[iv0 + 1 + iRing * kDirectedSphereRingPoints + i].SetData(center + p);
+                                        m_AllVertices[iv0 + 1 + iRing * kDirectedSphereRingPoints + i].TempColor = knotColor;
                                         p = qTheta * p;
                                     }
                                 }
@@ -499,7 +510,7 @@ namespace TiltBrush
                 Vector3 normal = AsVector3(face.Normal);
                 foreach (var vertex in face.Vertices)
                 {
-                    AppendVert(ref knot, AsVector3(vertex.Position), normal);
+                    AppendVert(ref knot, AsVector3(vertex.Position), normal, vertex.TempColor);
                 }
 
                 // Tesselate the polygon into a fan
@@ -548,7 +559,7 @@ namespace TiltBrush
 
             foreach (var vertex in hull.Points)
             {
-                AppendVert(ref knot, AsVector3(vertex.Position), vertex.TempNormal.normalized);
+                AppendVert(ref knot, AsVector3(vertex.Position), vertex.TempNormal.normalized, vertex.TempColor);
             }
         }
 
@@ -564,13 +575,13 @@ namespace TiltBrush
             };
         }
 
-        void AppendVert(ref Knot k, Vector3 v, Vector3 n)
+        void AppendVert(ref Knot k, Vector3 v, Vector3 n, Color32 color)
         {
             Debug.Assert(k.iVert + k.nVert == m_geometry.m_Vertices.Count);
             Vector3 uv = new Vector3(0, 0, m_BaseSize_PS);
             m_geometry.m_Vertices.Add(v);
             m_geometry.m_Normals.Add(n);
-            m_geometry.m_Colors.Add(k.color);
+            m_geometry.m_Colors.Add(color);
             m_geometry.m_Texcoord0.v3.Add(uv);
             k.nVert += 1;
             if (m_bDoubleSided)
@@ -579,7 +590,7 @@ namespace TiltBrush
                 m_geometry.m_Normals.Add(-n);
                 // TODO: backface is a different color for visualization reasons
                 // Probably better to use a non-culling shader instead of doubling the geo.
-                m_geometry.m_Colors.Add(k.color);
+                m_geometry.m_Colors.Add(color);
                 m_geometry.m_Texcoord0.v3.Add(uv);
                 k.nVert += 1;
             }
