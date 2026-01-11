@@ -2224,5 +2224,21 @@ namespace TiltBrush
             }
             return xfSymmetriesGS;
         }
+
+        public void SetAllPointerColorOverrides(Color color)
+        {
+            for (int i = 0; i < m_NumActivePointers; ++i)
+            {
+                m_Pointers[i].m_Script.CurrentColorOverride = color;
+            }
+        }
+
+        public void SetAllPointerColorOverrideModes(StrokeData.ColorControlMode mode)
+        {
+            for (int i = 0; i < m_NumActivePointers; ++i)
+            {
+                m_Pointers[i].m_Script.CurrentColorOverrideMode = mode;
+            }
+        }
     }
 } // namespace TiltBrush
