@@ -27,7 +27,7 @@ namespace TiltBrush
             IEnumerable<IEnumerable<TrTransform>> pathEnumerable,
             TrTransform tr,
             List<Color> colors = null,
-            List<List<Color32>> controlPointColors = null,
+            List<List<Color32?>> controlPointColors = null,
             float brushScale = 1f,
             float smoothing = 0,
             uint group = GroupManager.kIdSketchGroupTagNone)
@@ -104,7 +104,7 @@ namespace TiltBrush
                     m_Color = color,
                     m_Seed = 0,
                     m_ControlPoints = controlPoints.ToArray(),
-                    m_ControlPointColors = controlPointColors[pathIndex].ToList()
+                    m_OverrideColors = controlPointColors[pathIndex].ToList()
                 };
                 stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
                 stroke.Group = new SketchGroupTag(group);

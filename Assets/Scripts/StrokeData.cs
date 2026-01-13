@@ -22,13 +22,6 @@ namespace TiltBrush
     [System.Serializable]
     public class StrokeData
     {
-        public enum ColorControlMode
-        {
-            None,      // Use m_Color for entire stroke
-            Replace,   // Replace with per-point colors
-            Multiply,  // Multiply m_Color with per-point colors
-            Add        // Add per-point colors to m_Color
-        }
 
         public Color m_Color;
         public Guid m_BrushGuid;
@@ -48,8 +41,8 @@ namespace TiltBrush
         public Guid m_Guid;
 
         // Optional per-control-point color data (null by default for 0 memory overhead)
-        public List<Color32> m_ControlPointColors;
-        public ColorControlMode m_ColorMode = ColorControlMode.None;
+        public List<Color32?> m_OverrideColors;
+        public ColorOverrideMode m_ColorOverrideMode = ColorOverrideMode.None;
 
         // Reference the BrushStrokeCommand that created this stroke with a WeakReference.
         // This allows the garbage collector to collect the BrushStrokeCommand if it's no
@@ -83,10 +76,10 @@ namespace TiltBrush
                 Array.Copy(existing.m_ControlPoints, this.m_ControlPoints, this.m_ControlPoints.Length);
 
                 // Copy per-point color data if present
-                this.m_ColorMode = existing.m_ColorMode;
-                if (existing.m_ControlPointColors != null)
+                this.m_ColorOverrideMode = existing.m_ColorOverrideMode;
+                if (existing.m_OverrideColors != null)
                 {
-                    m_ControlPointColors = existing.m_ControlPointColors.ToList();
+                    m_OverrideColors = existing.m_OverrideColors.ToList();
                 }
             }
         }
@@ -96,30 +89,34 @@ namespace TiltBrush
         public Color32 GetColor(int index)
         {
             // If no per-point colors or mode is None, use base color
-            if (m_ControlPointColors == null || m_ColorMode == ColorControlMode.None)
+            if (m_OverrideColors == null || m_ColorOverrideMode == ColorOverrideMode.None)
             {
                 return m_Color;
             }
 
             // Bounds check
-            if (index < 0 || index >= m_ControlPointColors.Count)
+            if (index < 0 || index >= m_OverrideColors.Count)
             {
                 return m_Color;
             }
 
-            Color32 controlpointColor = m_ControlPointColors[index];
+            Color32? controlpointColor = m_OverrideColors[index];
+            if (controlpointColor == null)
+            {
+                return m_Color;
+            }
             Color32 calculatedColor;
 
-            switch (m_ColorMode)
+            switch (m_ColorOverrideMode)
             {
-                case ColorControlMode.Replace:
-                    calculatedColor = controlpointColor;
+                case ColorOverrideMode.Replace:
+                    calculatedColor = controlpointColor.Value;
                     break;
 
-                case ColorControlMode.Multiply:
+                case ColorOverrideMode.Multiply:
                     // Convert to Color for accurate multiplication, then back to Color32
                     Color baseColor = m_Color;
-                    Color point = controlpointColor;
+                    Color point = controlpointColor.Value;
                     Color result = new Color(
                         baseColor.r * point.r,
                         baseColor.g * point.g,
@@ -129,13 +126,13 @@ namespace TiltBrush
                     calculatedColor = result;
                     break;
 
-                case ColorControlMode.Add:
+                case ColorOverrideMode.Add:
                     // Additive blending with clamping
                     calculatedColor = new Color32(
-                        (byte)Mathf.Min(255, m_Color.r + controlpointColor.r),
-                        (byte)Mathf.Min(255, m_Color.g + controlpointColor.g),
-                        (byte)Mathf.Min(255, m_Color.b + controlpointColor.b),
-                        (byte)Mathf.Min(255, m_Color.a + controlpointColor.a)
+                        (byte)Mathf.Min(255, m_Color.r + controlpointColor.Value.r),
+                        (byte)Mathf.Min(255, m_Color.g + controlpointColor.Value.g),
+                        (byte)Mathf.Min(255, m_Color.b + controlpointColor.Value.b),
+                        (byte)Mathf.Min(255, m_Color.a + controlpointColor.Value.a)
                     );
                     break;
 
@@ -150,5 +147,13 @@ namespace TiltBrush
             }
             return calculatedColor;
         }
+    }
+
+    public enum ColorOverrideMode
+    {
+        None,     // Use m_Color for entire stroke
+        Replace,  // Replace with per-point colors
+        Multiply, // Multiply m_Color with per-point colors
+        Add       // Add per-point colors to m_Color
     }
 } // namespace TiltBrush

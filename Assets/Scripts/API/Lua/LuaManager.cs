@@ -481,7 +481,7 @@ namespace TiltBrush
         public static void LogLuaError(string errorMsg, Exception e)
         {
             ControllerConsoleScript.m_Instance.AddNewLine(errorMsg, true, true);
-            Debug.LogError($"{errorMsg}\n\n{e.StackTrace}\n\n");
+g             Debug.LogError($"{errorMsg}\n\n{e.StackTrace}\n\n");
         }
 
         public static void LogLuaError(Exception e)

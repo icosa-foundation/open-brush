@@ -232,7 +232,7 @@ namespace TiltBrush
                 if (stroke.m_BrushScale != 1) { strokeExtensionMask |= StrokeExtension.Scale; }
                 if (stroke.Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
                 strokeExtensionMask |= StrokeExtension.Layer;
-                if (stroke.m_ControlPointColors != null) { strokeExtensionMask |= StrokeExtension.ControlPointColors; }
+                if (stroke.m_OverrideColors != null) { strokeExtensionMask |= StrokeExtension.ControlPointColors; }
 
                 writer.UInt32((uint)strokeExtensionMask);
                 uint controlPointExtensionMask =
@@ -260,18 +260,46 @@ namespace TiltBrush
                 if ((uint)(strokeExtensionMask & StrokeExtension.ControlPointColors) != 0)
                 {
                     // Write length prefix for variable-length extension, then data
-                    // Data: ColorControlMode (UInt32) + array length (Int32) + Color32 array (length * UInt32)
-                    uint dataSize = (uint)(4 + 4 + (stroke.m_ControlPointColors.Count * 4));
+                    // Data: ColorControlMode (UInt32) + array length (Int32) + bitmask (bytes) + non-null Color32 array (UInt32 each)
+
+                    int count = stroke.m_OverrideColors.Count;
+                    int bitmaskBytes = (count + 7) / 8; // Round up to nearest byte
+
+                    // Count non-null entries
+                    int nonNullCount = 0;
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (stroke.m_OverrideColors[i].HasValue) nonNullCount++;
+                    }
+
+                    uint dataSize = (uint)(4 + 4 + bitmaskBytes + (nonNullCount * 4));
                     writer.UInt32(dataSize);
 
-                    writer.UInt32((uint)stroke.m_ColorMode);
-                    writer.Int32(stroke.m_ControlPointColors.Count);
-                    for (int cpIdx = 0; cpIdx < stroke.m_ControlPointColors.Count; cpIdx++)
+                    writer.UInt32((uint)stroke.m_ColorOverrideMode);
+                    writer.Int32(count);
+
+                    // Write bitmask (1 bit per entry, 1=non-null, 0=null)
+                    byte[] bitmask = new byte[bitmaskBytes];
+                    for (int i = 0; i < count; i++)
                     {
-                        Color32 c = stroke.m_ControlPointColors[cpIdx];
-                        // Pack RGBA bytes into a single UInt32
-                        uint packed = (uint)(c.r | (c.g << 8) | (c.b << 16) | (c.a << 24));
-                        writer.UInt32(packed);
+                        if (stroke.m_OverrideColors[i].HasValue)
+                        {
+                            int byteIndex = i / 8;
+                            int bitIndex = i % 8;
+                            bitmask[byteIndex] |= (byte)(1 << bitIndex);
+                        }
+                    }
+                    writer.BaseStream.Write(bitmask, 0, bitmaskBytes);
+
+                    // Write only non-null colors
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (stroke.m_OverrideColors[i].HasValue)
+                        {
+                            Color32 c = stroke.m_OverrideColors[i].Value;
+                            uint packed = (uint)(c.r | (c.g << 8) | (c.b << 16) | (c.a << 24));
+                            writer.UInt32(packed);
+                        }
                     }
                 }
 
@@ -334,7 +362,7 @@ namespace TiltBrush
                 if (stroke.m_BrushScale != 1) { strokeExtensionMask |= StrokeExtension.Scale; }
                 if (stroke.Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
                 strokeExtensionMask |= StrokeExtension.Layer;
-                if (stroke.m_ControlPointColors != null) { strokeExtensionMask |= StrokeExtension.ControlPointColors; }
+                if (stroke.m_OverrideColors != null) { strokeExtensionMask |= StrokeExtension.ControlPointColors; }
 
                 writer.UInt32((uint)strokeExtensionMask);
                 uint controlPointExtensionMask =
@@ -362,18 +390,46 @@ namespace TiltBrush
                 if ((uint)(strokeExtensionMask & StrokeExtension.ControlPointColors) != 0)
                 {
                     // Write length prefix for variable-length extension, then data
-                    // Data: ColorControlMode (UInt32) + array length (Int32) + Color32 array (length * UInt32)
-                    uint dataSize = (uint)(4 + 4 + (stroke.m_ControlPointColors.Count * 4));
+                    // Data: ColorControlMode (UInt32) + array length (Int32) + bitmask (bytes) + non-null Color32 array (UInt32 each)
+
+                    int count = stroke.m_OverrideColors.Count;
+                    int bitmaskBytes = (count + 7) / 8; // Round up to nearest byte
+
+                    // Count non-null entries
+                    int nonNullCount = 0;
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (stroke.m_OverrideColors[i].HasValue) nonNullCount++;
+                    }
+
+                    uint dataSize = (uint)(4 + 4 + bitmaskBytes + (nonNullCount * 4));
                     writer.UInt32(dataSize);
 
-                    writer.UInt32((uint)stroke.m_ColorMode);
-                    writer.Int32(stroke.m_ControlPointColors.Count);
-                    for (int cpIdx = 0; cpIdx < stroke.m_ControlPointColors.Count; cpIdx++)
+                    writer.UInt32((uint)stroke.m_ColorOverrideMode);
+                    writer.Int32(count);
+
+                    // Write bitmask (1 bit per entry, 1=non-null, 0=null)
+                    byte[] bitmask = new byte[bitmaskBytes];
+                    for (int i = 0; i < count; i++)
                     {
-                        Color32 c = stroke.m_ControlPointColors[cpIdx];
-                        // Pack RGBA bytes into a single UInt32
-                        uint packed = (uint)(c.r | (c.g << 8) | (c.b << 16) | (c.a << 24));
-                        writer.UInt32(packed);
+                        if (stroke.m_OverrideColors[i].HasValue)
+                        {
+                            int byteIndex = i / 8;
+                            int bitIndex = i % 8;
+                            bitmask[byteIndex] |= (byte)(1 << bitIndex);
+                        }
+                    }
+                    writer.BaseStream.Write(bitmask, 0, bitmaskBytes);
+
+                    // Write only non-null colors
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (stroke.m_OverrideColors[i].HasValue)
+                        {
+                            Color32 c = stroke.m_OverrideColors[i].Value;
+                            uint packed = (uint)(c.r | (c.g << 8) | (c.b << 16) | (c.a << 24));
+                            writer.UInt32(packed);
+                        }
                     }
                 }
 
@@ -584,19 +640,36 @@ namespace TiltBrush
                         case StrokeExtension.ControlPointColors:
                             {
                                 uint dataSize = reader.UInt32(); // Read length prefix for variable-length extension
-                                stroke.m_ColorMode = (StrokeData.ColorControlMode)reader.UInt32();
+                                stroke.m_ColorOverrideMode = (ColorOverrideMode)reader.UInt32();
                                 int colorCount = reader.Int32();
-                                stroke.m_ControlPointColors = new List<Color32>();
+
+                                // Read bitmask
+                                int bitmaskBytes = (colorCount + 7) / 8;
+                                byte[] bitmask = new byte[bitmaskBytes];
+                                int bytesRead = reader.BaseStream.Read(bitmask, 0, bitmaskBytes);
+                                if (bytesRead != bitmaskBytes) { return null; }
+
+                                // Create list with nulls
+                                stroke.m_OverrideColors = new List<Color32?>(new Color32?[colorCount]);
+
+                                // Read non-null colors and place them according to bitmask
                                 for (int cpIdx = 0; cpIdx < colorCount; cpIdx++)
                                 {
-                                    // Unpack UInt32 into RGBA bytes
-                                    uint packed = reader.UInt32();
-                                    stroke.m_ControlPointColors.Add(new Color32(
-                                        (byte)(packed & 0xFF),
-                                        (byte)((packed >> 8) & 0xFF),
-                                        (byte)((packed >> 16) & 0xFF),
-                                        (byte)((packed >> 24) & 0xFF)
-                                    ));
+                                    int byteIndex = cpIdx / 8;
+                                    int bitIndex = cpIdx % 8;
+                                    bool isNonNull = (bitmask[byteIndex] & (1 << bitIndex)) != 0;
+
+                                    if (isNonNull)
+                                    {
+                                        // Unpack UInt32 into RGBA bytes
+                                        uint packed = reader.UInt32();
+                                        stroke.m_OverrideColors[cpIdx] = new Color32(
+                                            (byte)(packed & 0xFF),
+                                            (byte)((packed >> 8) & 0xFF),
+                                            (byte)((packed >> 16) & 0xFF),
+                                            (byte)((packed >> 24) & 0xFF)
+                                        );
+                                    }
                                 }
                                 break;
                             }
@@ -776,19 +849,36 @@ namespace TiltBrush
                         case StrokeExtension.ControlPointColors:
                             {
                                 uint dataSize = reader.UInt32(); // Read length prefix for variable-length extension
-                                stroke.m_ColorMode = (StrokeData.ColorControlMode)reader.UInt32();
+                                stroke.m_ColorOverrideMode = (ColorOverrideMode)reader.UInt32();
                                 int colorCount = reader.Int32();
-                                stroke.m_ControlPointColors = new List<Color32>();
+
+                                // Read bitmask
+                                int bitmaskBytes = (colorCount + 7) / 8;
+                                byte[] bitmask = new byte[bitmaskBytes];
+                                int bytesRead = reader.BaseStream.Read(bitmask, 0, bitmaskBytes);
+                                if (bytesRead != bitmaskBytes) { return null; }
+
+                                // Create list with nulls
+                                stroke.m_OverrideColors = new List<Color32?>(new Color32?[colorCount]);
+
+                                // Read non-null colors and place them according to bitmask
                                 for (int cpIdx = 0; cpIdx < colorCount; cpIdx++)
                                 {
-                                    // Unpack UInt32 into RGBA bytes
-                                    uint packed = reader.UInt32();
-                                    stroke.m_ControlPointColors.Add(new Color32(
-                                        (byte)(packed & 0xFF),
-                                        (byte)((packed >> 8) & 0xFF),
-                                        (byte)((packed >> 16) & 0xFF),
-                                        (byte)((packed >> 24) & 0xFF)
-                                    ));
+                                    int byteIndex = cpIdx / 8;
+                                    int bitIndex = cpIdx % 8;
+                                    bool isNonNull = (bitmask[byteIndex] & (1 << bitIndex)) != 0;
+
+                                    if (isNonNull)
+                                    {
+                                        // Unpack UInt32 into RGBA bytes
+                                        uint packed = reader.UInt32();
+                                        stroke.m_OverrideColors[cpIdx] = new Color32(
+                                            (byte)(packed & 0xFF),
+                                            (byte)((packed >> 8) & 0xFF),
+                                            (byte)((packed >> 16) & 0xFF),
+                                            (byte)((packed >> 24) & 0xFF)
+                                        );
+                                    }
                                 }
                                 break;
                             }

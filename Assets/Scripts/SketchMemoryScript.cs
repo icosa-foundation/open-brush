@@ -559,8 +559,8 @@ namespace TiltBrush
             List<PointerManager.ControlPoint> rControlPoints, StrokeFlags strokeFlags,
             StencilWidget stencil, float lineLength, int seed,
             bool isFinalStroke,
-            List<Color32> controlPointColors = null,
-            StrokeData.ColorControlMode colorMode = StrokeData.ColorControlMode.None)
+            List<Color32?> controlPointColors = null,
+            ColorOverrideMode colorMode = ColorOverrideMode.None)
         {
             // NOTE: PointerScript calls ClearRedo() in batch case
 
@@ -575,8 +575,8 @@ namespace TiltBrush
             rNewStroke.m_BrushScale = brushScale;
             rNewStroke.m_Flags = strokeFlags;
             rNewStroke.m_Seed = seed;
-            rNewStroke.m_ControlPointColors = controlPointColors;
-            rNewStroke.m_ColorMode = colorMode;
+            rNewStroke.m_OverrideColors = controlPointColors;
+            rNewStroke.m_ColorOverrideMode = colorMode;
             subset.m_Stroke = rNewStroke;
 
             PerformAndRecordCommand(
@@ -605,8 +605,8 @@ namespace TiltBrush
             List<PointerManager.ControlPoint> rControlPoints,
             StrokeFlags strokeFlags,
             StencilWidget stencil, float lineLength,
-            List<Color32> controlPointColors = null,
-            StrokeData.ColorControlMode colorMode = StrokeData.ColorControlMode.None)
+            List<Color32?> controlPointColors = null,
+            ColorOverrideMode colorMode = ColorOverrideMode.None)
         {
             ClearRedo();
 
@@ -620,8 +620,8 @@ namespace TiltBrush
             rNewStroke.m_BrushSize = fBrushSize;
             rNewStroke.m_BrushScale = brushScale;
             rNewStroke.m_Flags = strokeFlags;
-            rNewStroke.m_ControlPointColors = controlPointColors;
-            rNewStroke.m_ColorMode = colorMode;
+            rNewStroke.m_OverrideColors = controlPointColors;
+            rNewStroke.m_ColorOverrideMode = colorMode;
             brushScript.Stroke = rNewStroke;
 
             SketchMemoryScript.m_Instance.RecordCommand(

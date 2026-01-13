@@ -227,7 +227,7 @@ namespace TiltBrush
             var unityColor = new Color(color.R, color.G, color.B);
 
             var controlPoints = new List<PointerManager.ControlPoint>(sqStroke.Vertices.Count);
-            List<Color32> perPointColors = new List<Color32>();
+            List<Color32?> perPointColors = new List<Color32?>();
             uint time = 0;
 
             foreach (var v in sqStroke.Vertices)
@@ -277,8 +277,8 @@ namespace TiltBrush
                 m_Color = unityColor,
                 m_Seed = 0,
                 m_ControlPoints = controlPoints.ToArray(),
-                m_ControlPointColors = perPointColors,
-                m_ColorMode = StrokeData.ColorControlMode.Replace
+                m_OverrideColors = perPointColors,
+                m_ColorOverrideMode = ColorOverrideMode.Replace
             };
 
             stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();

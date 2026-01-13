@@ -137,28 +137,12 @@ namespace TiltBrush
             PointerManager.m_Instance.MainPointer.CurrentColorOverride = color;
         }
 
-        [LuaDocsDescription("Sets the brush override color for all symmetry strokes")]
-        [LuaDocsParameter("color", "The color to set")]
-        [LuaDocsExample("Brush:SetAllColorOverride(Color.red)")]
-        public static void SetAllColorOverrides(Color color)
-        {
-            PointerManager.m_Instance.SetAllPointerColorOverrides(color);
-        }
-
         [LuaDocsDescription("Sets the brush override color mode")]
         [LuaDocsParameter("mode", "The mode to set")]
         [LuaDocsExample("Brush:SetColorOverrideMode(ColorOverrideMode.Blend)")]
-        public static void SetColorOverrideMode(StrokeData.ColorControlMode mode)
+        public static void SetColorOverrideMode(ColorOverrideMode mode)
         {
             PointerManager.m_Instance.MainPointer.CurrentColorOverrideMode = mode;
-        }
-
-        [LuaDocsDescription("Sets the brush override color mode for all symmetry strokes")]
-        [LuaDocsParameter("mode", "The mode to set")]
-        [LuaDocsExample("Brush:SetAllColorOverrideModes(ColorOverrideMode.Blend)")]
-        public static void SetAllColorOverrideModes(StrokeData.ColorControlMode mode)
-        {
-            PointerManager.m_Instance.SetAllPointerColorOverrideModes(mode);
         }
 
         [LuaDocsDescription("The last color picked by the brush.")]

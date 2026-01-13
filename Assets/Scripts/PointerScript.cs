@@ -72,8 +72,8 @@ namespace TiltBrush
         private float m_CurrentBrushSize; // In pointer aka room space
         private Vector2 m_BrushSizeRange;
         private float m_CurrentPressure; // TODO: remove and query line instead?
-        public Color32 CurrentColorOverride { get; set; }
-        public StrokeData.ColorControlMode CurrentColorOverrideMode { get; set; }
+        public Color32? CurrentColorOverride { get; set; }
+        public ColorOverrideMode CurrentColorOverrideMode { get; set; }
         private BaseBrushScript m_CurrentLine;
         private ParametricStrokeCreator m_CurrentCreator;
         private float m_ParametricCreatorBackupStrokeSize; // In pointer aka room space
@@ -94,7 +94,7 @@ namespace TiltBrush
 
         private List<PreviewControlPoint> m_PreviewControlPoints; // FIFO queue
         private List<PointerManager.ControlPoint> m_ControlPoints;
-        private List<Color32> m_ControlPointColors;
+        private List<Color32?> m_ControlPointColors;
 
         // Used by the API
         public List<TrTransform> CurrentPath
@@ -590,7 +590,7 @@ namespace TiltBrush
                 return;
             }
 
-            Color32? colorOverride = CurrentColorOverrideMode == StrokeData.ColorControlMode.None ? null : CurrentColorOverride;
+            Color32? colorOverride = CurrentColorOverrideMode == ColorOverrideMode.None ? null : CurrentColorOverride;
             bool bQuadCreated = m_CurrentLine.UpdatePosition_LS(xf_LS, m_CurrentPressure, colorOverride);
 
             // TODO: let brush take care of storing control points, not us
@@ -878,8 +878,8 @@ namespace TiltBrush
             m_LastControlPointIsKeeper = isKeeper;
 
             if (!m_CurrentLine) return;
-            if (CurrentColorOverrideMode == StrokeData.ColorControlMode.None) return;
-            m_ControlPointColors ??= Enumerable.Repeat(new Color32(0, 0, 0, 0), m_ControlPoints.Count).ToList();
+            if (CurrentColorOverrideMode == ColorOverrideMode.None) return;
+            m_ControlPointColors ??= Enumerable.Repeat((Color32?)null, m_ControlPoints.Count).ToList();
             m_ControlPointColors.Add(CurrentColorOverride);
         }
 
@@ -1089,8 +1089,8 @@ namespace TiltBrush
                         m_CurrentLine.StrokeScale,
                         m_ControlPoints, strokeFlags,
                         WidgetManager.m_Instance.ActiveStencil, m_LineLength_CS,
-                        m_CurrentLine.StrokeData?.m_ControlPointColors,
-                        m_CurrentLine.StrokeData?.m_ColorMode ?? StrokeData.ColorControlMode.None
+                        m_CurrentLine.StrokeData?.m_OverrideColors,
+                        m_CurrentLine.StrokeData?.m_ColorOverrideMode ?? ColorOverrideMode.None
                     );
                 }
                 else
