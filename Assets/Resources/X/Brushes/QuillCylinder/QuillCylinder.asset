@@ -11,13 +11,14 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c71b2ac88638c5c41a0a0681f70d2512, type: 3}
   m_Name: QuillCylinder
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_Guid:
     m_storage: f1c4e3e7-2a9f-4b5d-8c3e-7d9a1f8e6b4c
   m_DurableName: QuillCylinder
   m_CreationVersion: 16.0
   m_ShaderVersion: 10.0
-  m_BrushPrefab: {fileID: 0}
+  m_BrushPrefab: {fileID: 1000012766643648, guid: 6c5293cd417bd87499d9c4bac547947c,
+    type: 3}
   m_Tags:
   - experimental
   - quill
@@ -30,11 +31,11 @@ MonoBehaviour:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key:
+      m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionExtra:
+  m_DescriptionExtra: 
   m_BrushAudioLayers: []
   m_BrushAudioBasePitch: 1
   m_BrushAudioMaxPitchShift: 0

@@ -11,13 +11,14 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c71b2ac88638c5c41a0a0681f70d2512, type: 3}
   m_Name: QuillEllipse
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_Guid:
     m_storage: a2d5f6b8-9c1e-4f3a-7b8d-2e6c9f4a1d5b
   m_DurableName: QuillEllipse
   m_CreationVersion: 16.0
   m_ShaderVersion: 10.0
-  m_BrushPrefab: {fileID: 0}
+  m_BrushPrefab: {fileID: 1000012766643649, guid: da6d22047e3337b4b85c57a0f2891ce7,
+    type: 3}
   m_Tags:
   - experimental
   - quill
@@ -30,11 +31,11 @@ MonoBehaviour:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key:
+      m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionExtra:
+  m_DescriptionExtra: 
   m_BrushAudioLayers: []
   m_BrushAudioBasePitch: 1
   m_BrushAudioMaxPitchShift: 0

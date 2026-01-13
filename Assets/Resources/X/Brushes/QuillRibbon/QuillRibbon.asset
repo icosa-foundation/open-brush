@@ -11,13 +11,14 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c71b2ac88638c5c41a0a0681f70d2512, type: 3}
   m_Name: QuillRibbon
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_Guid:
     m_storage: c4f8b3e2-9d1a-5e7f-4c3b-8a6d2f9e1c7b
   m_DurableName: QuillRibbon
   m_CreationVersion: 16.0
   m_ShaderVersion: 10.0
-  m_BrushPrefab: {fileID: 0}
+  m_BrushPrefab: {fileID: 1000012766643651, guid: ce3834e0b85a3994e91b381ba401eec6,
+    type: 3}
   m_Tags:
   - experimental
   - quill
@@ -30,11 +31,11 @@ MonoBehaviour:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key:
+      m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionExtra:
+  m_DescriptionExtra: 
   m_BrushAudioLayers: []
   m_BrushAudioBasePitch: 1
   m_BrushAudioMaxPitchShift: 0
