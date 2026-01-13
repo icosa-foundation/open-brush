@@ -105,7 +105,7 @@ MonoBehaviour:
   m_ControllerGeometryPrefab: {fileID: 114000012796927648, guid: de3f5b2b0d9487942af000f3125db17b,
     type: 3}
   m_GeometryOffset: {x: -0.03, y: -0.182, z: 0.379}
-  m_GeometryRotation: {x: 0.57357645, y: 0, z: 0, w: 0.81915206}
+  m_GeometryRotation: {x: 0.5, y: 0, z: 0, w: 0.8660254}
 --- !u!114 &114000013512061632
 MonoBehaviour:
   m_ObjectHideFlags: 0
