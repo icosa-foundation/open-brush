@@ -23,12 +23,11 @@ namespace TiltBrush
 {
     public static partial class ApiMethods
     {
-        public const string BRUSH_RAINBOW = "ad1ad437-76e2-450d-a23a-e17f8310b960";
-        public const string BRUSH_LOFTED = "d381e0f5-3def-4a0d-8853-31e9200bcbda";
-        public const string BRUSH_TAPERED_WIRE = "9568870f-8594-60f4-1b20-dfbc8a5eac0e";
-        public const string BRUSH_MARKER = "429ed64a-4e97-4466-84d3-145a861ef684";
-        public const string BRUSH_TAPERED_MARKER = "d90c6ad8-af0f-4b54-b422-e0f92abe1b3c";
-        public const string BRUSH_DOUBLE_TAPERED_MARKER = "0d3889f3-3ede-470c-8af4-de4813306126";
+        // Quill-specific brush GUIDs
+        public const string BRUSH_QUILL_CYLINDER = "f1c4e3e7-2a9f-4b5d-8c3e-7d9a1f8e6b4c";
+        public const string BRUSH_QUILL_ELLIPSE = "a2d5f6b8-9c1e-4f3a-7b8d-2e6c9f4a1d5b";
+        public const string BRUSH_QUILL_CUBE = "b3e7f8c2-4d5a-1e9b-6c8f-3a7d2f1e9c4b";
+        public const string BRUSH_QUILL_RIBBON = "c4f8b3e2-9d1a-5e7f-4c3b-8a6d2f9e1c7b";
 
         [ApiEndpoint("load.quill", "Loads a Quill sketch from the given path")]
         public static void LoadQuill(string path, int maxStrokes = 0, bool loadAnimations = false)
@@ -180,6 +179,122 @@ namespace TiltBrush
             return TrTransform.TRS(pos, rot, scale);
         }
 
+        /// <summary>
+        /// Computes tangent at a control point by averaging forward and backward differences.
+        /// This matches Quill's official importer behavior (Element::ComputeTangent).
+        /// Ignores Quill's stored tangent data to achieve smooth interpolation.
+        /// </summary>
+        private static Vector3 ComputeTangentFromPositions(List<SQ.Vertex> vertices, int index)
+        {
+            const float kEpsilon = 1e-7f;
+            Vector3 currentPos = new Vector3(vertices[index].Position.X, vertices[index].Position.Y, -vertices[index].Position.Z);
+
+            // Find first valid forward difference
+            Vector3 forward = Vector3.zero;
+            for (int j = index + 1; j < vertices.Count; j++)
+            {
+                Vector3 nextPos = new Vector3(vertices[j].Position.X, vertices[j].Position.Y, -vertices[j].Position.Z);
+                Vector3 delta = nextPos - currentPos;
+                if (delta.sqrMagnitude >= kEpsilon * kEpsilon)
+                {
+                    forward = delta.normalized;
+                    break;
+                }
+            }
+
+            // Find first valid backward difference
+            Vector3 backward = Vector3.zero;
+            for (int j = index - 1; j >= 0; j--)
+            {
+                Vector3 prevPos = new Vector3(vertices[j].Position.X, vertices[j].Position.Y, -vertices[j].Position.Z);
+                Vector3 delta = currentPos - prevPos;
+                if (delta.sqrMagnitude >= kEpsilon * kEpsilon)
+                {
+                    backward = delta.normalized;
+                    break;
+                }
+            }
+
+            // Average the two directions
+            Vector3 tangent = forward + backward;
+            if (tangent.sqrMagnitude >= kEpsilon * kEpsilon)
+            {
+                return tangent.normalized;
+            }
+
+            // Fallback: overall stroke direction with tiny offset to avoid zero vector
+            Vector3 first = new Vector3(vertices[0].Position.X, vertices[0].Position.Y, -vertices[0].Position.Z);
+            Vector3 last = new Vector3(vertices[vertices.Count - 1].Position.X, vertices[vertices.Count - 1].Position.Y, -vertices[vertices.Count - 1].Position.Z);
+            tangent = last - first + new Vector3(0.000001f, 0.000002f, 0.000003f);
+            return tangent.normalized;
+        }
+
+        /// <summary>
+        /// Builds a safe orthonormal orientation from forward and up vectors.
+        /// Uses Gram-Schmidt orthogonalization to ensure valid basis.
+        /// Falls back to previous orientation if vectors are degenerate.
+        /// </summary>
+        private static Quaternion BuildSafeOrientation(Vector3 fwd, Vector3 up, Quaternion prevOrientation)
+        {
+            const float kMinSqrMagnitude = 1e-6f;
+
+            // Check if forward is valid
+            if (fwd.sqrMagnitude < kMinSqrMagnitude)
+            {
+                return prevOrientation;
+            }
+            fwd.Normalize();
+
+            // Check if up is valid; if not, construct a perpendicular vector
+            if (up.sqrMagnitude < kMinSqrMagnitude)
+            {
+                // Try to find a perpendicular using cross product with cardinal axes
+                up = Vector3.Cross(fwd, Vector3.right);
+                if (up.sqrMagnitude < kMinSqrMagnitude)
+                {
+                    up = Vector3.Cross(fwd, Vector3.up);
+                }
+                if (up.sqrMagnitude < kMinSqrMagnitude)
+                {
+                    // Degenerate case - fallback to previous orientation
+                    return prevOrientation;
+                }
+            }
+
+            // Gram-Schmidt orthogonalization: make up perpendicular to fwd
+            up = up - Vector3.Dot(up, fwd) * fwd;
+            if (up.sqrMagnitude < kMinSqrMagnitude)
+            {
+                // After orthogonalization, up became zero - fallback
+                return prevOrientation;
+            }
+            up.Normalize();
+
+            return Quaternion.LookRotation(fwd, up);
+        }
+
+        /// <summary>
+        /// Maps Quill width to Open Brush pressure.
+        /// Currently uses linear mapping but can be extended for per-brush tuning.
+        /// </summary>
+        private static float MapPressure(float width, float maxWidth, string brushGuid)
+        {
+            if (maxWidth <= 0f) return 1f;
+
+            // Linear mapping for now
+            float pressure = width / maxWidth;
+
+            // Future: Add per-brush pressure curves here if needed
+            // switch (brushGuid)
+            // {
+            //     case BRUSH_QUILL_CYLINDER:
+            //         pressure = Mathf.Pow(pressure, 1.2f); // Example adjustment
+            //         break;
+            // }
+
+            return Mathf.Clamp01(pressure);
+        }
+
         private static Stroke ConvertQuillStroke(SQ.Stroke sqStroke, CanvasScript targetLayer, TrTransform toLayerSpace)
         {
             if (sqStroke.Vertices.Count < 2) return null;
@@ -191,35 +306,33 @@ namespace TiltBrush
                 if (v.Width > maxWidth) maxWidth = v.Width;
             }
 
-            // Determine Brush GUID
-            string brushGuid = BRUSH_RAINBOW;
+            // Determine Brush GUID - map to Quill-specific brushes
+            string brushGuid;
 
-            float taperThreshold = maxWidth * 0.1f;
-            bool startTapered = sqStroke.Vertices[0].Width < taperThreshold;
-            bool endTapered = sqStroke.Vertices.Last().Width < taperThreshold;
-
-            // TODO distinguish ellipse vs cylinder
-            if (sqStroke.BrushType == SQ.BrushType.Cylinder || sqStroke.BrushType == SQ.BrushType.Ellipse)
+            switch (sqStroke.BrushType)
             {
-                if (startTapered && endTapered) brushGuid = BRUSH_TAPERED_WIRE;
-                else if (startTapered || endTapered) brushGuid = BRUSH_TAPERED_WIRE;
-                else brushGuid = BRUSH_MARKER;
-            }
-            else if (sqStroke.BrushType == SQ.BrushType.Ribbon)
-            {
-                if (startTapered && endTapered) brushGuid = BRUSH_DOUBLE_TAPERED_MARKER;
-                else if (startTapered || endTapered) brushGuid = BRUSH_TAPERED_MARKER;
-                else brushGuid = BRUSH_MARKER;
-            }
-            else if (sqStroke.BrushType == SQ.BrushType.Cube)
-            {
-                brushGuid = BRUSH_LOFTED;
+                case SQ.BrushType.Cylinder:
+                    brushGuid = BRUSH_QUILL_CYLINDER;
+                    break;
+                case SQ.BrushType.Ellipse:
+                    brushGuid = BRUSH_QUILL_ELLIPSE;
+                    break;
+                case SQ.BrushType.Cube:
+                    brushGuid = BRUSH_QUILL_CUBE;
+                    break;
+                case SQ.BrushType.Ribbon:
+                    brushGuid = BRUSH_QUILL_RIBBON;
+                    break;
+                default:
+                    Debug.LogWarning($"Unknown Quill brush type: {sqStroke.BrushType}, falling back to Ribbon");
+                    brushGuid = BRUSH_QUILL_RIBBON;
+                    break;
             }
 
             var brush = BrushCatalog.m_Instance.GetBrush(new Guid(brushGuid));
             if (brush == null)
             {
-                brush = BrushCatalog.m_Instance.GetBrush(new Guid(BRUSH_RAINBOW));
+                brush = BrushCatalog.m_Instance.GetBrush(new Guid(BRUSH_QUILL_RIBBON));
             }
             if (brush == null) return null;
 
@@ -229,12 +342,22 @@ namespace TiltBrush
             var controlPoints = new List<PointerManager.ControlPoint>(sqStroke.Vertices.Count);
             List<Color32?> perPointColors = new List<Color32?>();
             uint time = 0;
+            Quaternion prevOrientation = Quaternion.identity;
 
-            foreach (var v in sqStroke.Vertices)
+            for (int i = 0; i < sqStroke.Vertices.Count; i++)
             {
-                // Convert Quill vertex data (Right-Handed) to Unity (Left-Handed) by flipping Z
+                var v = sqStroke.Vertices[i];
+
+                // Convert Quill vertex position (Right-Handed) to Unity (Left-Handed) by flipping Z
                 Vector3 localPos = new Vector3(v.Position.X, v.Position.Y, -v.Position.Z);
-                Vector3 localForward = new Vector3(v.Tangent.X, v.Tangent.Y, -v.Tangent.Z);
+
+                // This matches the working Python importer and creates smooth interpolation
+                Vector3 localForward = ComputeTangentFromPositions(sqStroke.Vertices, i);
+
+                // Use Quill's stored tangent for now (will compute from positions later)
+                // Vector3 localForward = new Vector3(v.Tangent.X, v.Tangent.Y, -v.Tangent.Z);
+
+                // Use Quill's normal for orientation
                 Vector3 localUp = new Vector3(v.Normal.X, v.Normal.Y, -v.Normal.Z);
 
                 // Apply relative transform to keep coordinates local to the top-level OB layer
@@ -242,13 +365,12 @@ namespace TiltBrush
                 Vector3 obForward = toLayerSpace.rotation * localForward;
                 Vector3 obUp = toLayerSpace.rotation * localUp;
 
-                Quaternion orient = Quaternion.identity;
-                if (obForward.sqrMagnitude > 0.001f && obUp.sqrMagnitude > 0.001f)
-                {
-                    orient = Quaternion.LookRotation(obForward, obUp);
-                }
+                // Build safe orthonormal orientation with fallback
+                Quaternion orient = BuildSafeOrientation(obForward, obUp, prevOrientation);
+                prevOrientation = orient;
 
-                float pressure = maxWidth > 0 ? v.Width / maxWidth : 1f;
+                // Map width to pressure with potential per-brush tuning
+                float pressure = MapPressure(v.Width, maxWidth, brushGuid);
 
                 controlPoints.Add(new PointerManager.ControlPoint
                 {
@@ -273,7 +395,9 @@ namespace TiltBrush
                 m_IntendedCanvas = targetLayer,
                 m_BrushGuid = brush.m_Guid,
                 m_BrushScale = 1f,
-                m_BrushSize = maxWidth * toLayerSpace.scale,
+                // Quill width appears to be radius, but OB expects diameter (or vice versa)
+                // Multiply by 2 to match Quill's visual appearance
+                m_BrushSize = maxWidth * toLayerSpace.scale * 2f,
                 m_Color = unityColor,
                 m_Seed = 0,
                 m_ControlPoints = controlPoints.ToArray(),

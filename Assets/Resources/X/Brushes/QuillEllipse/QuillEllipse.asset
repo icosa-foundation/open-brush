@@ -49,7 +49,7 @@ MonoBehaviour:
   m_TextureAtlasV: 1
   m_TileRate: 1
   m_UseBloomSwatchOnColorPicker: 0
-  m_BrushSizeRange: {x: 0.02, y: 0.5}
+  m_BrushSizeRange: {x: 0.001, y: 5.0}
   m_PressureSizeRange: {x: 0, y: 1}
   m_SizeVariance: 0
   m_PreviewPressureSizeMin: 0.001
@@ -66,7 +66,7 @@ MonoBehaviour:
   m_PositionVariance: 0
   m_SizeRatio: {x: 1, y: 1}
   m_M11Compatibility: 0
-  m_SolidMinLengthMeters_PS: 0.002
+  m_SolidMinLengthMeters_PS: 0.0005
   m_TubeStoreRadiusInTexcoord0Z: 1
   m_RenderBackfaces: 0
   m_BackIsInvisible: 0
@@ -76,7 +76,7 @@ MonoBehaviour:
   m_BlendMode: 0
   m_EmissiveFactor: 0
   m_AllowExport: 1
-  m_SupportsSimplification: 1
+  m_SupportsSimplification: 0
   m_HeadMinPoints: 6
   m_HeadPointStep: 1
   m_TailMinPoints: 6
