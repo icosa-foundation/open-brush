@@ -384,7 +384,7 @@ namespace TiltBrush
                     (byte)(v.Color.R * 255f),
                     (byte)(v.Color.G * 255f),
                     (byte)(v.Color.B * 255f),
-                    255 // Quill colors don't have alpha, assume fully opaque
+                    (byte)(v.Opacity * 255f)
                 ));
             }
 
