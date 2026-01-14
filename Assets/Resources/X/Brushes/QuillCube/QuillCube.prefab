@@ -43,7 +43,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1000012766643650}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 14daa339d03c7c241b1dd7249ca94f6d, type: 3}
+  m_Script: {fileID: 11500000, guid: 87cab018d8184d009d8f212cb1506bc7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_CapAspect: 0.8
@@ -56,6 +56,7 @@ MonoBehaviour:
   m_PetalDisplacementAmt: 0.5
   m_PetalDisplacementExp: 3
   m_BreakAngleMultiplier: 2
+  m_ForceAllKnots: 1
 --- !u!23 &23000012424641130
 MeshRenderer:
   m_ObjectHideFlags: 0
