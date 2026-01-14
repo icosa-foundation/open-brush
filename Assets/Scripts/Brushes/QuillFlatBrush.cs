@@ -62,5 +62,10 @@ namespace TiltBrush
             nRight = xaxis;
             nSurface = zaxis;
         }
+
+        protected override float GetVertexAlpha(Knot knot)
+        {
+            return knot.color.a / 255.0f;
+        }
     }
 }

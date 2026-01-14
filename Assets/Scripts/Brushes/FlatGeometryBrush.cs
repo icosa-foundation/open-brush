@@ -65,6 +65,11 @@ namespace TiltBrush
                 preferredRight, nTangent, brushOrientation, out nRight, out nSurface);
         }
 
+        protected virtual float GetVertexAlpha(Knot knot)
+        {
+            return PressuredOpacity(knot.smoothedPressure);
+        }
+
         public FlatGeometryBrush()
             : base(bCanBatch: true,
                 upperBoundVertsPerKnot: kVertsInSolid,
@@ -334,7 +339,7 @@ namespace TiltBrush
                     {
                         // Can't use prev.nRight, prev.nSurface; they're invalid if no geometry
                         float size = PressuredSize(prev.smoothedPressure);
-                        float alpha = PressuredOpacity(prev.smoothedPressure);
+                        float alpha = GetVertexAlpha(prev);
                         Vector3 halfRight = cur.nRight * (size / 2);
                         SetVert(cur.iVert, BR, prev.point.m_Pos + halfRight, cur.nSurface, prev.color, alpha);
                         SetVert(cur.iVert, BL, prev.point.m_Pos - halfRight, cur.nSurface, prev.color, alpha);
@@ -349,7 +354,7 @@ namespace TiltBrush
                     if (m_bM11Compatibility || m_DisableWidthSmoothing)
                     {
                         float size = PressuredSize(cur.smoothedPressure);
-                        float alpha = PressuredOpacity(cur.smoothedPressure);
+                        float alpha = GetVertexAlpha(cur);
                         Vector3 halfRight = cur.nRight * (size / 2);
                         SetVert(cur.iVert, FR, cur.point.m_Pos + halfRight, cur.nSurface, cur.color, alpha);
                         SetVert(cur.iVert, FL, cur.point.m_Pos - halfRight, cur.nSurface, cur.color, alpha);
@@ -422,9 +427,9 @@ namespace TiltBrush
                     Vector3 halfRightNext = m_knots[iNext].nRight * m_sizes[iNext] / 2;
                     Vector3 knotPointNext = m_knots[iNext].point.m_Pos;
 
-                    if (cur.HasGeometry)
+                        if (cur.HasGeometry)
                     {
-                        float alpha = PressuredOpacity(cur.smoothedPressure);
+                        float alpha = GetVertexAlpha(cur);
                         Vector3 surface = cur.nSurface;
                         Vector3 knotPoint = 0.3f * knotPointPrev + 0.4f * knotPointCur + 0.3f * knotPointNext;
                         Vector3 halfRight = 0.3f * halfRightPrev + 0.4f * halfRightCur + 0.3f * halfRightNext;
