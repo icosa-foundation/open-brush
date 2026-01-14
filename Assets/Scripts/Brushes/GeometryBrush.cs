@@ -20,6 +20,10 @@ namespace TiltBrush
 
     public abstract class GeometryBrush : BaseBrushScript
     {
+        protected virtual bool ForceAllKnots
+        {
+            get { return false; }
+        }
         // TODO: change to class?
         public struct Knot
         {
@@ -111,6 +115,10 @@ namespace TiltBrush
         protected bool m_bDoubleSided;
 
         protected readonly bool m_bSmoothPositions;
+        protected virtual bool SmoothPositions
+        {
+            get { return m_bSmoothPositions; }
+        }
 
         protected bool m_bM11Compatibility;
 
@@ -461,7 +469,7 @@ namespace TiltBrush
                 initialKnot.smoothedPressure = initialPressure;
                 m_knots[0] = initialKnot;
             }
-            else if (m_bSmoothPositions)
+            else if (SmoothPositions)
             {
                 Knot middle = m_knots[iUpdate - 1];
                 Vector3 v0 = m_knots[iUpdate - 2].point.m_Pos;
@@ -470,7 +478,7 @@ namespace TiltBrush
                 middle.smoothedPos = (v0 + 2 * v1 + v2) / 4;
                 m_knots[iUpdate - 1] = middle;
             }
-            if (m_bSmoothPositions)
+            if (SmoothPositions)
             {
                 ApplySmoothing(m_knots[iUpdate - 1], ref updated);
             }
@@ -490,7 +498,7 @@ namespace TiltBrush
             }
 
             float lastLength = DistanceFromKnot(iUpdate - 1, updated.point.m_Pos);
-            bool keep = (lastLength > GetSpawnInterval(updated.smoothedPressure));
+            bool keep = ForceAllKnots || (lastLength > GetSpawnInterval(updated.smoothedPressure));
 
             // TODO: change this to the way PointerScript keeps control points
             if (keep)
