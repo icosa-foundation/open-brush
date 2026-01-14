@@ -48,6 +48,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_uvStyle: 0
   m_bOffsetInTexcoord1: 0
+  m_DisableWidthSmoothing: 1
 --- !u!23 &23000012424641131
 MeshRenderer:
   m_ObjectHideFlags: 0

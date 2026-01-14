@@ -39,7 +39,6 @@ namespace TiltBrush
 
         protected List<float> m_sizes;
 
-        const float kSolidMinLengthMeters_PS = 0.002f;
         const float kMinMoveLengthMeters_PS = 5e-4f;
         const float kBreakAngleScalar = 2.0f;
         const float kSolidAspectRatio = 0.2f;
@@ -47,6 +46,7 @@ namespace TiltBrush
 
         [SerializeField] protected UVStyle m_uvStyle = UVStyle.Distance;
         [SerializeField] protected bool m_bOffsetInTexcoord1;
+        [SerializeField] protected bool m_DisableWidthSmoothing;
 
         public FlatGeometryBrush()
             : base(bCanBatch: true,
@@ -86,7 +86,7 @@ namespace TiltBrush
 
         override public float GetSpawnInterval(float pressure01)
         {
-            return kSolidMinLengthMeters_PS * POINTER_TO_LOCAL * App.METERS_TO_UNITS +
+            return m_Desc.m_SolidMinLengthMeters_PS * POINTER_TO_LOCAL * App.METERS_TO_UNITS +
                 (PressuredSize(pressure01) * kSolidAspectRatio);
         }
 
@@ -298,7 +298,7 @@ namespace TiltBrush
                         sizePrev = m_sizes[iKnot - 1] = size;
                     }
 
-                    if (m_bM11Compatibility)
+                    if (m_bM11Compatibility || m_DisableWidthSmoothing)
                     {
                         float size = PressuredSize(cur.smoothedPressure);
                         float alpha = PressuredOpacity(cur.smoothedPressure);
@@ -352,7 +352,7 @@ namespace TiltBrush
                 prev = cur;
             }
 
-            if (!m_bM11Compatibility)
+            if (!m_bM11Compatibility && !m_DisableWidthSmoothing)
             {
                 // Run through the knots again to set the vertices based on the original knots and the
                 // resulting size array.
