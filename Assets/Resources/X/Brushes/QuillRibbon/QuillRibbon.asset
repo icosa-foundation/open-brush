@@ -45,11 +45,11 @@ MonoBehaviour:
   m_VolumeVelocityRangeMultiplier: 2
   m_AudioReactive: 0
   m_ButtonAudio: {fileID: 0}
-  m_Material: {fileID: 2100000, guid: aacfdf40f1bcb264a8b67bbe213b5021, type: 2}
+  m_Material: {fileID: 2100000, guid: 632c30292a1e6c7469362c8f225a9020, type: 2}
   m_TextureAtlasV: 1
   m_TileRate: 1
   m_UseBloomSwatchOnColorPicker: 0
-  m_BrushSizeRange: {x: 0.001, y: 5.0}
+  m_BrushSizeRange: {x: 0.001, y: 5}
   m_PressureSizeRange: {x: 0, y: 1}
   m_SizeVariance: 0
   m_PreviewPressureSizeMin: 0.001
