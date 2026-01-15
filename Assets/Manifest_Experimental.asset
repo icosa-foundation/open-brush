@@ -68,10 +68,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b9280b7e789abdd49bd5d85c5554afd3, type: 2}
   - {fileID: 11400000, guid: 69fc4ed00cead5b47b3dd3fb4d6096c9, type: 2}
   - {fileID: 11400000, guid: d25091db0e878ba458b54227b23cad57, type: 2}
-  - {fileID: 11400000, guid: 126a9037e3ef7324ba28fafe3fb2175a, type: 2}
-  - {fileID: 11400000, guid: 665b886e3e4aaa448bf2ff0647172507, type: 2}
-  - {fileID: 11400000, guid: d0b9e3ef5d1db1842b037df6f7afb6b8, type: 2}
-  - {fileID: 11400000, guid: 2d1dd4d7dd0c1b1479e257a2e58d20d3, type: 2}
   Environments:
   - {fileID: 11400000, guid: c4b465a813a79c044874468d6e60f26c, type: 2}
   Locales: []
