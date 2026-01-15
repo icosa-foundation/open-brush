@@ -239,5 +239,26 @@ namespace TiltBrush
         {
             return _GetParamsDict()[ShaderPropertyType.Vector];
         }
+
+        [LuaDocsDescription("Gets the current geometry offset of the brush controller")]
+        public static Vector3 controllerOffset
+        {
+            get => InputManager.Brush.Behavior.EffectiveGeometryOffset;
+            set => InputManager.Brush.Behavior.SetRuntimeGeometryOffset(value);
+        }
+
+        [LuaDocsDescription("Gets the current geometry rotation of the brush controller as euler angles")]
+        public static Vector3 controllerRotation
+        {
+            get => InputManager.Brush.Behavior.EffectiveGeometryRotation.eulerAngles;
+            set => InputManager.Brush.Behavior.SetRuntimeGeometryRotation(value);
+        }
+
+        [LuaDocsDescription("Resets the brush controller geometry to its default prefab values")]
+        [LuaDocsExample("Brush:ResetControllerGeometry()")]
+        public static void ResetControllerGeometry()
+        {
+            InputManager.Brush.Behavior.ClearRuntimeGeometryOverrides();
+        }
     }
 }
