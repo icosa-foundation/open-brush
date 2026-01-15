@@ -427,7 +427,7 @@ namespace TiltBrush
                     Vector3 halfRightNext = m_knots[iNext].nRight * m_sizes[iNext] / 2;
                     Vector3 knotPointNext = m_knots[iNext].point.m_Pos;
 
-                        if (cur.HasGeometry)
+                    if (cur.HasGeometry)
                     {
                         float alpha = GetVertexAlpha(cur);
                         Vector3 surface = cur.nSurface;
