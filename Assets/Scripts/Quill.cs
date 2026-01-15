@@ -50,10 +50,11 @@ namespace TiltBrush
             List<CanvasScript> createdLayers = new List<CanvasScript>();
 
             // Apply 10x global scale (Meters to Centimeters/Unity units normalization)
-            TrTransform globalCorrection = TrTransform.S(10f);
+            Matrix4x4 globalCorrection = Matrix4x4.Scale(Vector3.one * 10f);
 
             // The RootLayer itself can have a transform
-            TrTransform rootWorldXf = globalCorrection * ConvertSQTransform(sequence.RootLayer.Transform);
+            Matrix4x4 rootWorldNoFlip = globalCorrection * ConvertSQTransformMatrix(sequence.RootLayer.Transform, includeFlip: false);
+            Matrix4x4 rootWorldWithFlip = globalCorrection * ConvertSQTransformMatrix(sequence.RootLayer.Transform, includeFlip: true);
 
             // Iterate only over top-level layers of the root group
             foreach (var topLevelLayer in sequence.RootLayer.Children)
@@ -63,12 +64,13 @@ namespace TiltBrush
                 App.Scene.RenameLayer(obLayer, topLevelLayer.Name);
 
                 // Calculate world transform for this top-level layer
-                TrTransform topLevelWorldXf = rootWorldXf * ConvertSQTransform(topLevelLayer.Transform);
-                obLayer.LocalPose = topLevelWorldXf;
+                Matrix4x4 topLevelWorldNoFlip = rootWorldNoFlip * ConvertSQTransformMatrix(topLevelLayer.Transform, includeFlip: false);
+                Matrix4x4 topLevelWorldWithFlip = rootWorldWithFlip * ConvertSQTransformMatrix(topLevelLayer.Transform, includeFlip: true);
+                obLayer.Pose = TrTransform.FromMatrix4x4(topLevelWorldNoFlip);
                 createdLayers.Add(obLayer);
 
                 // Recurse into children and flatten ALL descendant strokes into this obLayer
-                TraverseAndFlattenLayers(topLevelLayer, topLevelWorldXf, obLayer, ref strokeCount, maxStrokes, loadAnimations, allCollectedStrokes);
+                TraverseAndFlattenLayers(topLevelLayer, topLevelWorldWithFlip, obLayer, ref strokeCount, maxStrokes, loadAnimations, allCollectedStrokes);
 
                 if (maxStrokes > 0 && strokeCount >= maxStrokes) break;
             }
@@ -101,7 +103,7 @@ namespace TiltBrush
             }
         }
 
-        private static void TraverseAndFlattenLayers(SQ.Layer layer, TrTransform worldXf, CanvasScript targetLayer, ref int strokeCount, int maxStrokes, bool loadAnimations, List<Stroke> collectedStrokes)
+        private static void TraverseAndFlattenLayers(SQ.Layer layer, Matrix4x4 worldXf, CanvasScript targetLayer, ref int strokeCount, int maxStrokes, bool loadAnimations, List<Stroke> collectedStrokes)
         {
             if (maxStrokes > 0 && strokeCount >= maxStrokes) return;
 
@@ -138,7 +140,7 @@ namespace TiltBrush
                     foreach (var sqStroke in drawing.Data.Strokes)
                     {
                         // Calculate transform from Quill world space to the OB targetLayer's local space
-                        TrTransform toLayerSpace = targetLayer.LocalPose.inverse * worldXf;
+                        Matrix4x4 toLayerSpace = targetLayer.Pose.ToMatrix4x4().inverse * worldXf;
 
                         var tbStroke = ConvertStroke(sqStroke, targetLayer, toLayerSpace);
                         if (tbStroke != null)
@@ -156,26 +158,43 @@ namespace TiltBrush
             {
                 foreach (var child in group.Children)
                 {
-                    TrTransform childLocalXf = ConvertSQTransform(child.Transform);
-                    TrTransform childWorldXf = worldXf * childLocalXf;
+                    Matrix4x4 childLocalXf = ConvertSQTransformMatrix(child.Transform, includeFlip: true);
+                    Matrix4x4 childWorldXf = worldXf * childLocalXf;
                     TraverseAndFlattenLayers(child, childWorldXf, targetLayer, ref strokeCount, maxStrokes, loadAnimations, collectedStrokes);
                     if (maxStrokes > 0 && strokeCount >= maxStrokes) return;
                 }
             }
         }
 
-        private static TrTransform ConvertSQTransform(SQ.Transform sqXf)
+        private static Matrix4x4 ConvertSQTransformMatrix(SQ.Transform sqXf, bool includeFlip)
         {
-            // Quill is Right-Handed Y-up. Unity is Left-Handed Y-up.
-            // Flip Z for position and rotation.
-            Vector3 pos = new Vector3(sqXf.Translation.X, sqXf.Translation.Y, -sqXf.Translation.Z);
+            // Build the right-handed matrix first.
+            Vector3 pos = new Vector3(sqXf.Translation.X, sqXf.Translation.Y, sqXf.Translation.Z);
+            Quaternion rot = new Quaternion(sqXf.Rotation.X, sqXf.Rotation.Y, sqXf.Rotation.Z, sqXf.Rotation.W);
+            Vector3 scale = Vector3.one * sqXf.Scale;
+            Matrix4x4 rh = Matrix4x4.TRS(pos, rot, scale);
 
-            // To flip a quaternion across the XY plane (flipping Z):
-            // The X and Y components are negated, while Z and W remain the same.
-            Quaternion rot = new Quaternion(-sqXf.Rotation.X, -sqXf.Rotation.Y, sqXf.Rotation.Z, sqXf.Rotation.W);
+            if (includeFlip && !string.IsNullOrEmpty(sqXf.Flip) && sqXf.Flip != "N")
+            {
+                Vector3 flipAxis = Vector3.one;
+                switch (sqXf.Flip)
+                {
+                    case "X":
+                        flipAxis = new Vector3(-1, 1, 1);
+                        break;
+                    case "Y":
+                        flipAxis = new Vector3(1, -1, 1);
+                        break;
+                    case "Z":
+                        flipAxis = new Vector3(1, 1, -1);
+                        break;
+                }
+                rh = rh * Matrix4x4.Scale(flipAxis);
+            }
 
-            float scale = sqXf.Scale;
-            return TrTransform.TRS(pos, rot, scale);
+            // Convert to left-handed by flipping Z in both input and output spaces.
+            Matrix4x4 mirror = Matrix4x4.Scale(new Vector3(1, 1, -1));
+            return mirror * rh * mirror;
         }
 
         /// <summary>
@@ -294,7 +313,7 @@ namespace TiltBrush
             return Mathf.Clamp01(pressure);
         }
 
-        private static Stroke ConvertStroke(SQ.Stroke sqStroke, CanvasScript targetLayer, TrTransform toLayerSpace)
+        private static Stroke ConvertStroke(SQ.Stroke sqStroke, CanvasScript targetLayer, Matrix4x4 toLayerSpace)
         {
             if (sqStroke.Vertices.Count < 2) return null;
 
@@ -360,9 +379,9 @@ namespace TiltBrush
                 Vector3 localUp = new Vector3(v.Normal.X, v.Normal.Y, -v.Normal.Z);
 
                 // Apply relative transform to keep coordinates local to the top-level OB layer
-                Vector3 obPos = toLayerSpace * localPos;
-                Vector3 obForward = toLayerSpace.rotation * localForward;
-                Vector3 obUp = toLayerSpace.rotation * localUp;
+                Vector3 obPos = toLayerSpace.MultiplyPoint(localPos);
+                Vector3 obForward = toLayerSpace.MultiplyVector(localForward);
+                Vector3 obUp = toLayerSpace.MultiplyVector(localUp);
 
                 // Build safe orthonormal orientation with fallback
                 Quaternion orient = BuildSafeOrientation(obForward, obUp, prevOrientation);
@@ -388,6 +407,7 @@ namespace TiltBrush
                 ));
             }
 
+            float layerScale = GetUniformScale(toLayerSpace);
             var stroke = new Stroke
             {
                 m_Type = Stroke.Type.NotCreated,
@@ -396,7 +416,7 @@ namespace TiltBrush
                 m_BrushScale = 1f,
                 // Quill width appears to be radius, but OB expects diameter (or vice versa)
                 // Multiply by 2 to match Quill's visual appearance
-                m_BrushSize = maxWidth * toLayerSpace.scale * 2f,
+                m_BrushSize = maxWidth * layerScale * 2f,
                 m_Color = unityColor,
                 m_Seed = 0,
                 m_ControlPoints = controlPoints.ToArray(),
@@ -408,6 +428,24 @@ namespace TiltBrush
             stroke.Group = SketchGroupTag.None;
 
             return stroke;
+        }
+
+        private static float GetUniformScale(Matrix4x4 m)
+        {
+            Vector3 x = new Vector3(m.m00, m.m10, m.m20);
+            float scale = x.magnitude;
+            if (scale > 0)
+            {
+                return scale;
+            }
+            Vector3 y = new Vector3(m.m01, m.m11, m.m21);
+            scale = y.magnitude;
+            if (scale > 0)
+            {
+                return scale;
+            }
+            Vector3 z = new Vector3(m.m02, m.m12, m.m22);
+            return z.magnitude;
         }
     }
 }
