@@ -120,6 +120,8 @@ static class AndroidUtils
             var overseasFlagPresent = GetProp("ro.pvr.product.global").Trim().ToLower().Equals("overseas");
             return !overseasFlagPresent;
         }
+        // TEMP - this isn't working on my device so override for now
+        return true;
 
         return false;
         
