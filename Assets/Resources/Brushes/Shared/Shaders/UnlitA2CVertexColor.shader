@@ -5,6 +5,8 @@ Shader "Custom/UnlitA2CVertexColor"
         _Color ("Main Color", Color) = (1,1,1,1)
         _DitherStrength ("Dither Strength", Range(0,0.5)) = 0.125
         _OrderedDither ("Ordered Dither (0/1)", Float) = 0
+        _AlphaBias ("Alpha Bias", Range(-1,1)) = 0
+        _AlphaPower ("Alpha Power", Range(0.1,4)) = 1
     }
     SubShader
     {
@@ -26,6 +28,8 @@ Shader "Custom/UnlitA2CVertexColor"
             fixed4 _Color;
             float _DitherStrength;
             float _OrderedDither;
+            float _AlphaBias;
+            float _AlphaPower;
 
             struct appdata
             {
@@ -92,7 +96,7 @@ Shader "Custom/UnlitA2CVertexColor"
             fixed4 frag (v2f i) : SV_Target
             {
                 fixed4 c = i.color;
-                float alpha = c.a;
+                float alpha = saturate(pow(saturate(c.a + _AlphaBias), _AlphaPower));
 
                 float2 pixelPos = (i.screenPos.xy / i.screenPos.w) * _ScreenParams.xy;
                 float seed = ObjectSeed();

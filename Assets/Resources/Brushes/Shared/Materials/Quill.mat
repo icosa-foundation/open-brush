@@ -64,6 +64,8 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _AlphaBias: 0
+    - _AlphaPower: 1
     - _BumpScale: 1
     - _ClipEnd: -1
     - _ClipStart: 0
