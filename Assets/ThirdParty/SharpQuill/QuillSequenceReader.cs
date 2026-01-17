@@ -125,6 +125,19 @@ namespace SharpQuill
       return (v != null && v.Type != JTokenType.Null) ? v.ToObject<bool>() : def;
     }
 
+    private static long ParseHexLong(JToken v, long def = 0)
+    {
+      if (v == null || v.Type == JTokenType.Null)
+        return def;
+
+      string value = v.Type == JTokenType.String ? v.ToObject<string>() : v.ToString();
+      if (string.IsNullOrEmpty(value))
+        return def;
+
+      long parsed;
+      return long.TryParse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out parsed) ? parsed : def;
+    }
+
     private static Color ParseColor(JArray jValue, Color def = new Color())
     {
       if (jValue == null)
@@ -277,6 +290,33 @@ namespace SharpQuill
       Enum.TryParse((string)v.ToObject(typeof(string)), out T result);
       return result;
     }
+
+    private static PictureType ParsePictureType(JToken v)
+    {
+      if (v == null || v.Type == JTokenType.Null)
+        return PictureType.Unknown;
+
+      string value = v.ToObject<string>();
+      if (string.IsNullOrEmpty(value))
+        return PictureType.Unknown;
+
+      if (Enum.TryParse(value, ignoreCase: true, out PictureType result))
+        return result;
+
+      switch (value.Trim())
+      {
+        case "2D":
+          return PictureType.TwoD;
+        case "2DDepth":
+          return PictureType.TwoDDepth;
+        case "360 Equirectangular Mono":
+          return PictureType.ThreeSixty_Equirect_Mono;
+        case "360 Equirectangular Stereo":
+          return PictureType.ThreeSixty_Equirect_Stereo;
+        default:
+          return PictureType.Unknown;
+      }
+    }
     
     /// <summary>
     /// Parse all the keyframe channels data.
@@ -420,8 +460,21 @@ namespace SharpQuill
             lc.FOV = l["Implementation"]["FOV"].ToObject<float>();
             break;
           }
-        case LayerType.Model:
         case LayerType.Picture:
+          {
+            layer = new LayerPicture();
+            LayerPicture lp = layer as LayerPicture;
+            var impl = l["Implementation"];
+            if (impl != null)
+            {
+              lp.PictureType = ParsePictureType(impl["Type"]);
+              lp.ViewerLocked = ParseBool(impl["ViewerLocked"], lp.ViewerLocked);
+              lp.ImportFilePath = impl["ImportFilePath"]?.ToObject<string>();
+              lp.DataFileOffset = ParseHexLong(impl["DataFileOffset"], lp.DataFileOffset);
+            }
+            break;
+          }
+        case LayerType.Model:
         case LayerType.Sound:
         case LayerType.Unknown:
         default:
@@ -469,6 +522,15 @@ namespace SharpQuill
         {
           qbinReader.BaseStream.Seek(drawing.DataFileOffset, SeekOrigin.Begin);
           drawing.Data = qbinReader.ReadDrawingData();
+        }
+      }
+      else if (layer.Type == LayerType.Picture)
+      {
+        LayerPicture picture = layer as LayerPicture;
+        if (picture != null && picture.DataFileOffset > 0)
+        {
+          qbinReader.BaseStream.Seek(picture.DataFileOffset, SeekOrigin.Begin);
+          picture.Data = qbinReader.ReadPictureData();
         }
       }
     }

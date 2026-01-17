@@ -17,6 +17,7 @@ namespace SharpQuill
     public bool ViewerLocked { get; set; }
     public long DataFileOffset { get; set; }
     public string ImportFilePath { get; set; }
+    public PictureData Data { get; set; }
 
     /// <summary>
     /// Constructs a new picture layer.

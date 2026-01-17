@@ -31,6 +31,40 @@ namespace SharpQuill
       
       return pl;
     }
+
+    public PictureData ReadPictureData()
+    {
+      PictureData data = new PictureData();
+
+      // Unknown header.
+      ReadBytes(5);
+
+      byte format = ReadByte();
+      data.HasAlpha = format == 0x07;
+
+      // Unknown.
+      ReadBytes(2);
+
+      uint width = ReadUInt32();
+      uint height = ReadUInt32();
+
+      // Unknown.
+      ReadUInt32();
+
+      if (width == 0 || height == 0 || width > int.MaxValue || height > int.MaxValue)
+        return data;
+
+      int channels = data.HasAlpha ? 4 : 3;
+      long byteCount = (long)width * height * channels;
+      if (byteCount > int.MaxValue)
+        return data;
+
+      data.Width = (int)width;
+      data.Height = (int)height;
+      data.Pixels = ReadBytes((int)byteCount);
+
+      return data;
+    }
     
     private Stroke ReadStroke()
     {

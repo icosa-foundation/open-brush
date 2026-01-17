@@ -17,9 +17,9 @@ namespace TiltBrush
     public static partial class ApiMethods
     {
         [ApiEndpoint("load.quill", "Loads a Quill sketch from the given path")]
-        public static void LoadQuill(string path, int maxStrokes = 0, bool loadAnimations = false)
+        public static void LoadQuill(string path, int maxStrokes = 0, bool loadAnimations = false, string layerName = null)
         {
-            Quill.Load(path, maxStrokes, loadAnimations);
+            Quill.Load(path, maxStrokes, loadAnimations, layerName);
         }
     }
 }

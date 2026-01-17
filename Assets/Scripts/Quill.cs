@@ -29,7 +29,7 @@ namespace TiltBrush
         private const string BRUSH_QUILL_CUBE = "b3e7f8c2-4d5a-1e9b-6c8f-3a7d2f1e9c4b";
         private const string BRUSH_QUILL_RIBBON = "c4f8b3e2-9d1a-5e7f-4c3b-8a6d2f9e1c7b";
 
-        public static void Load(string path, int maxStrokes = 0, bool loadAnimations = false)
+        public static void Load(string path, int maxStrokes = 0, bool loadAnimations = false, string layerName = null)
         {
             if (!Directory.Exists(path))
             {
@@ -48,6 +48,9 @@ namespace TiltBrush
             int strokeCount = 0;
             List<Stroke> allCollectedStrokes = new List<Stroke>();
             List<CanvasScript> createdLayers = new List<CanvasScript>();
+            List<GrabWidget> createdWidgets = new List<GrabWidget>();
+            Dictionary<string, ReferenceImage> imageCache = new Dictionary<string, ReferenceImage>(StringComparer.OrdinalIgnoreCase);
+            string quillImageDirectory = GetQuillImageDirectory(path);
 
             // Apply 10x global scale (Meters to Centimeters/Unity units normalization)
             Matrix4x4 globalCorrection = Matrix4x4.Scale(Vector3.one * 10f);
@@ -59,6 +62,11 @@ namespace TiltBrush
             // Iterate only over top-level layers of the root group
             foreach (var topLevelLayer in sequence.RootLayer.Children)
             {
+                if (!string.IsNullOrEmpty(layerName) && !LayerContainsName(topLevelLayer, layerName))
+                {
+                    continue;
+                }
+
                 // Create exactly one OB layer for each top-level Quill layer
                 CanvasScript obLayer = App.Scene.AddLayerNow();
                 App.Scene.RenameLayer(obLayer, topLevelLayer.Name);
@@ -70,7 +78,20 @@ namespace TiltBrush
                 createdLayers.Add(obLayer);
 
                 // Recurse into children and flatten ALL descendant strokes into this obLayer
-                TraverseAndFlattenLayers(topLevelLayer, topLevelWorldWithFlip, obLayer, ref strokeCount, maxStrokes, loadAnimations, allCollectedStrokes);
+                TraverseAndFlattenLayers(
+                    topLevelLayer,
+                    topLevelWorldWithFlip,
+                    obLayer,
+                    ref strokeCount,
+                    maxStrokes,
+                    loadAnimations,
+                    allCollectedStrokes,
+                    createdWidgets,
+                    imageCache,
+                    path,
+                    quillImageDirectory,
+                    layerName,
+                    includeAllDescendants: false);
 
                 if (maxStrokes > 0 && strokeCount >= maxStrokes) break;
             }
@@ -92,8 +113,12 @@ namespace TiltBrush
                     layer.BatchManager.FlushMeshUpdates();
                 }
 
-                // Single undo step for all strokes and layers
-                var cmd = new LoadQuillCommand(allCollectedStrokes, createdLayers);
+            }
+
+            if (allCollectedStrokes.Count > 0 || createdWidgets.Count > 0)
+            {
+                // Single undo step for all strokes, layers, and widgets
+                var cmd = new LoadQuillCommand(allCollectedStrokes, createdLayers, createdWidgets);
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
 
                 if (maxStrokes > 0 && strokeCount >= maxStrokes)
@@ -103,12 +128,34 @@ namespace TiltBrush
             }
         }
 
-        private static void TraverseAndFlattenLayers(SQ.Layer layer, Matrix4x4 worldXf, CanvasScript targetLayer, ref int strokeCount, int maxStrokes, bool loadAnimations, List<Stroke> collectedStrokes)
+        private static void TraverseAndFlattenLayers(
+            SQ.Layer layer,
+            Matrix4x4 worldXf,
+            CanvasScript targetLayer,
+            ref int strokeCount,
+            int maxStrokes,
+            bool loadAnimations,
+            List<Stroke> collectedStrokes,
+            List<GrabWidget> createdWidgets,
+            Dictionary<string, ReferenceImage> imageCache,
+            string quillProjectPath,
+            string quillImageDirectory,
+            string layerName,
+            bool includeAllDescendants)
         {
             if (maxStrokes > 0 && strokeCount >= maxStrokes) return;
 
+            bool hasFilter = !string.IsNullOrEmpty(layerName);
+            bool isMatch = hasFilter && string.Equals(layer.Name, layerName, StringComparison.OrdinalIgnoreCase);
+            bool allowAll = includeAllDescendants || isMatch;
+
+            if (hasFilter && !allowAll && !LayerContainsName(layer, layerName))
+            {
+                return;
+            }
+
             // 1. Process strokes in this layer if it's a Paint layer
-            if (layer is SQ.LayerPaint paint)
+            if ((!hasFilter || allowAll) && layer is SQ.LayerPaint paint)
             {
                 IEnumerable<SQ.Drawing> drawingsToLoad;
                 if (loadAnimations)
@@ -153,17 +200,406 @@ namespace TiltBrush
                 }
             }
 
-            // 2. Recurse into children if it's a Group layer
+            // 2. Process image layers
+            if ((!hasFilter || allowAll) && layer is SQ.LayerPicture picture)
+            {
+                var widget = CreateImageWidgetFromQuillLayer(
+                    picture,
+                    worldXf,
+                    targetLayer,
+                    imageCache,
+                    quillProjectPath,
+                    quillImageDirectory);
+                if (widget != null)
+                {
+                    createdWidgets.Add(widget);
+                }
+            }
+
+            // 3. Recurse into children if it's a Group layer
             if (layer is SQ.LayerGroup group)
             {
                 foreach (var child in group.Children)
                 {
                     Matrix4x4 childLocalXf = ConvertSQTransformMatrix(child.Transform, includeFlip: true);
                     Matrix4x4 childWorldXf = worldXf * childLocalXf;
-                    TraverseAndFlattenLayers(child, childWorldXf, targetLayer, ref strokeCount, maxStrokes, loadAnimations, collectedStrokes);
+                    TraverseAndFlattenLayers(
+                        child,
+                        childWorldXf,
+                        targetLayer,
+                        ref strokeCount,
+                        maxStrokes,
+                        loadAnimations,
+                        collectedStrokes,
+                        createdWidgets,
+                        imageCache,
+                        quillProjectPath,
+                        quillImageDirectory,
+                        layerName,
+                        includeAllDescendants: allowAll);
                     if (maxStrokes > 0 && strokeCount >= maxStrokes) return;
                 }
             }
+        }
+
+        private static bool LayerContainsName(SQ.Layer layer, string layerName)
+        {
+            if (layer == null || string.IsNullOrEmpty(layerName))
+            {
+                return false;
+            }
+
+            if (string.Equals(layer.Name, layerName, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (layer is SQ.LayerGroup group)
+            {
+                foreach (var child in group.Children)
+                {
+                    if (LayerContainsName(child, layerName))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static ImageWidget CreateImageWidgetFromQuillLayer(
+            SQ.LayerPicture picture,
+            Matrix4x4 worldXf,
+            CanvasScript targetLayer,
+            Dictionary<string, ReferenceImage> imageCache,
+            string quillProjectPath,
+            string quillImageDirectory)
+        {
+            if (picture == null)
+            {
+                return null;
+            }
+
+            if (picture.PictureType == SQ.PictureType.ThreeSixty_Equirect_Mono ||
+                picture.PictureType == SQ.PictureType.ThreeSixty_Equirect_Stereo)
+            {
+                // TODO: Map 360 picture layers to Open Brush background images or a dedicated panoramic widget.
+                // This should respect Quill's equirectangular mono/stereo type and use the layer transform.
+                Debug.LogWarning($"Quill 360 picture layers are not yet supported: {picture.Name}");
+                return null;
+            }
+
+            string sourcePath = ResolveQuillImagePath(picture.ImportFilePath, quillProjectPath);
+            ReferenceImage refImage = null;
+            if (!string.IsNullOrEmpty(sourcePath))
+            {
+                refImage = GetOrCreateReferenceImage(sourcePath, imageCache, quillImageDirectory);
+            }
+
+            if (refImage == null && picture.Data != null)
+            {
+                // Quill stores per-layer qbin offsets even when multiple layers share the same ImportFilePath.
+                // We treat that as a Quill bug and dedupe by source path when available.
+                string importKey = string.IsNullOrEmpty(picture.ImportFilePath)
+                    ? null
+                    : picture.ImportFilePath.Replace('\\', '/').ToLowerInvariant();
+                refImage = GetOrCreateReferenceImageFromPictureData(picture, imageCache, quillImageDirectory, importKey);
+            }
+            else if (refImage == null && string.IsNullOrEmpty(sourcePath))
+            {
+                Debug.LogWarning($"Quill picture file not found and no qbin data: {picture.Name}");
+            }
+
+            if (refImage == null)
+            {
+                return null;
+            }
+
+            string importLocation = GetImportLocation(refImage);
+            if (string.IsNullOrEmpty(importLocation))
+            {
+                return null;
+            }
+
+            TrTransform worldXfTr = TrTransform.FromMatrix4x4(worldXf);
+            // Quill maps pictures to a 2x2 quad, with height driving aspect.
+            worldXfTr.scale = Mathf.Abs(worldXfTr.scale) * 2.0f;
+
+            ImageWidget image = ApiMethods._ImportImage(importLocation, worldXfTr, targetLayer);
+            if (image == null)
+            {
+                return null;
+            }
+
+            image.TwoSided = true;
+
+            return image;
+        }
+
+        private static string ResolveQuillImagePath(string importPath, string quillProjectPath)
+        {
+            if (string.IsNullOrEmpty(importPath))
+            {
+                return null;
+            }
+
+            try
+            {
+                string resolvedPath = importPath.Replace('/', Path.DirectorySeparatorChar);
+                if (!Path.IsPathRooted(resolvedPath) && !string.IsNullOrEmpty(quillProjectPath))
+                {
+                    resolvedPath = Path.Combine(quillProjectPath, resolvedPath);
+                }
+
+                resolvedPath = NormalizePath(resolvedPath);
+                if (File.Exists(resolvedPath))
+                {
+                    return resolvedPath;
+                }
+
+                return null;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"Failed to resolve Quill picture path '{importPath}': {e.Message}");
+                return null;
+            }
+        }
+
+        private static ReferenceImage GetOrCreateReferenceImage(
+            string sourcePath,
+            Dictionary<string, ReferenceImage> imageCache,
+            string quillImageDirectory)
+        {
+            string cacheKey = NormalizePath(sourcePath);
+            if (imageCache.TryGetValue(cacheKey, out var cached))
+            {
+                return cached;
+            }
+
+            string homeDir = ReferenceImageCatalog.m_Instance.HomeDirectory;
+            string targetDir = string.IsNullOrEmpty(quillImageDirectory) ? homeDir : quillImageDirectory;
+            string finalPath = cacheKey;
+
+            if (!sourcePath.StartsWith(targetDir, StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    string fileName = Path.GetFileName(cacheKey);
+                    string destPath = Path.Combine(targetDir, fileName);
+                    destPath = EnsureUniqueImagePath(destPath);
+                    Directory.CreateDirectory(targetDir);
+                    File.Copy(cacheKey, destPath, overwrite: false);
+                    finalPath = destPath;
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"Failed to copy Quill picture into media library: {e.Message}");
+                    return null;
+                }
+            }
+
+            string relativePath = Path.GetRelativePath(homeDir, finalPath);
+            ReferenceImage refImage = ReferenceImageCatalog.m_Instance.RelativePathToImage(relativePath);
+            imageCache[cacheKey] = refImage;
+            return refImage;
+        }
+
+        private static ReferenceImage GetOrCreateReferenceImageFromPictureData(
+            SQ.LayerPicture picture,
+            Dictionary<string, ReferenceImage> imageCache,
+            string quillImageDirectory,
+            string importKey)
+        {
+            string cacheKey = !string.IsNullOrEmpty(importKey)
+                ? $"path:{importKey}"
+                : $"qbin:{picture.DataFileOffset}";
+            if (imageCache.TryGetValue(cacheKey, out var cached))
+            {
+                return cached;
+            }
+
+            var data = picture.Data;
+            if (data.Width <= 0 || data.Height <= 0 || data.Pixels == null)
+            {
+                Debug.LogWarning($"Quill picture layer has no pixel data: {picture.Name}");
+                return null;
+            }
+
+            int channels = data.HasAlpha ? 4 : 3;
+            long expectedSize = (long)data.Width * data.Height * channels;
+            if (expectedSize > int.MaxValue)
+            {
+                Debug.LogWarning($"Quill picture layer too large: {picture.Name}");
+                return null;
+            }
+
+            byte[] pixelBytes;
+            if (data.Pixels.Length == expectedSize)
+            {
+                pixelBytes = data.Pixels;
+            }
+            else if (data.Pixels.Length > expectedSize)
+            {
+                pixelBytes = new byte[expectedSize];
+                Buffer.BlockCopy(data.Pixels, 0, pixelBytes, 0, (int)expectedSize);
+            }
+            else
+            {
+                Debug.LogWarning($"Quill picture layer pixel data truncated: {picture.Name}");
+                return null;
+            }
+
+            string homeDir = ReferenceImageCatalog.m_Instance.HomeDirectory;
+            string targetDir = string.IsNullOrEmpty(quillImageDirectory) ? homeDir : quillImageDirectory;
+            string fileName = !string.IsNullOrEmpty(picture.ImportFilePath)
+                ? SanitizeFileName(Path.GetFileName(picture.ImportFilePath.Replace('\\', '/')))
+                : SanitizeFileName(string.IsNullOrEmpty(picture.Name) ? "quill-image" : picture.Name);
+            string destPath = Path.Combine(targetDir, $"{fileName}.png");
+            destPath = EnsureUniqueImagePath(destPath);
+
+            try
+            {
+                var tex = new Texture2D(data.Width, data.Height, TextureFormat.RGBA32, false);
+                var colors = new Color32[data.Width * data.Height];
+                int srcIndex = 0;
+                if (data.HasAlpha)
+                {
+                    for (int i = 0; i < colors.Length; i++)
+                    {
+                        colors[i] = new Color32(
+                            pixelBytes[srcIndex],
+                            pixelBytes[srcIndex + 1],
+                            pixelBytes[srcIndex + 2],
+                            pixelBytes[srcIndex + 3]);
+                        srcIndex += 4;
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < colors.Length; i++)
+                    {
+                        colors[i] = new Color32(
+                            pixelBytes[srcIndex],
+                            pixelBytes[srcIndex + 1],
+                            pixelBytes[srcIndex + 2],
+                            255);
+                        srcIndex += 3;
+                    }
+                }
+                tex.SetPixels32(colors);
+                tex.Apply();
+
+                byte[] png = tex.EncodeToPNG();
+                UnityEngine.Object.Destroy(tex);
+
+                Directory.CreateDirectory(targetDir);
+                File.WriteAllBytes(destPath, png);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"Failed to write Quill picture data: {e.Message}");
+                return null;
+            }
+
+            string relativePath = Path.GetRelativePath(homeDir, destPath);
+            ReferenceImage refImage = ReferenceImageCatalog.m_Instance.RelativePathToImage(relativePath);
+            imageCache[cacheKey] = refImage;
+            return refImage;
+        }
+
+        private static string GetQuillImageDirectory(string quillProjectPath)
+        {
+            if (string.IsNullOrEmpty(quillProjectPath))
+            {
+                return null;
+            }
+
+            string projectName = Path.GetFileName(quillProjectPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            projectName = SanitizeFileName(projectName);
+            if (string.IsNullOrEmpty(projectName))
+            {
+                return null;
+            }
+
+            string homeDir = ReferenceImageCatalog.m_Instance.HomeDirectory;
+            string baseDir = Path.Combine(homeDir, "Quill", projectName);
+            if (!Directory.Exists(baseDir))
+            {
+                return baseDir;
+            }
+
+            for (int i = 1; i < 1000; i++)
+            {
+                string candidate = $"{baseDir}-{i}";
+                if (!Directory.Exists(candidate))
+                {
+                    return candidate;
+                }
+            }
+
+            return $"{baseDir}-{Guid.NewGuid()}";
+        }
+        private static string SanitizeFileName(string name)
+        {
+            foreach (char c in Path.GetInvalidFileNameChars())
+            {
+                name = name.Replace(c, '_');
+            }
+            return string.IsNullOrEmpty(name) ? "quill-image" : name;
+        }
+
+        private static string NormalizePath(string path)
+        {
+            return Path.GetFullPath(path.Replace('/', Path.DirectorySeparatorChar));
+        }
+
+        private static string GetImportLocation(ReferenceImage referenceImage)
+        {
+            if (referenceImage == null)
+            {
+                return null;
+            }
+
+            string homeDir = App.ReferenceImagePath();
+            string fullPath = referenceImage.FileFullPath;
+            if (!fullPath.StartsWith(homeDir, StringComparison.OrdinalIgnoreCase))
+            {
+                Debug.LogWarning($"Quill image not under reference image path: {fullPath}");
+                return null;
+            }
+
+            string relativePath = Path.GetRelativePath(homeDir, fullPath).Replace('\\', '/');
+            if (relativePath.StartsWith("./", StringComparison.Ordinal) || relativePath.StartsWith(".\\", StringComparison.Ordinal))
+            {
+                relativePath = relativePath.Substring(2);
+            }
+
+            return relativePath;
+        }
+
+        private static string EnsureUniqueImagePath(string destPath)
+        {
+            if (!File.Exists(destPath))
+            {
+                return destPath;
+            }
+
+            string directory = Path.GetDirectoryName(destPath);
+            string fileName = Path.GetFileNameWithoutExtension(destPath);
+            string extension = Path.GetExtension(destPath);
+
+            for (int i = 1; i < 1000; i++)
+            {
+                string candidate = Path.Combine(directory, $"{fileName}-{i}{extension}");
+                if (!File.Exists(candidate))
+                {
+                    return candidate;
+                }
+            }
+
+            return Path.Combine(directory, $"{fileName}-{Guid.NewGuid()}{extension}");
         }
 
         private static Matrix4x4 ConvertSQTransformMatrix(SQ.Transform sqXf, bool includeFlip)

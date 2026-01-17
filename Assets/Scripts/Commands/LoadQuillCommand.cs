@@ -21,14 +21,17 @@ namespace TiltBrush
     {
         private List<Stroke> m_Strokes;
         private List<CanvasScript> m_Layers;
+        private List<GrabWidget> m_Widgets;
         private bool m_Active;
 
         public override bool NeedsSave => true;
 
-        public LoadQuillCommand(List<Stroke> strokes, List<CanvasScript> layers, BaseCommand parent = null) : base(parent)
+        public LoadQuillCommand(List<Stroke> strokes, List<CanvasScript> layers, List<GrabWidget> widgets, BaseCommand parent = null)
+            : base(parent)
         {
             m_Strokes = strokes;
             m_Layers = layers;
+            m_Widgets = widgets;
             m_Active = true;
         }
 
@@ -37,6 +40,15 @@ namespace TiltBrush
             foreach (var layer in m_Layers)
             {
                 layer.gameObject.SetActive(true);
+            }
+            if (m_Widgets != null)
+            {
+                foreach (var widget in m_Widgets)
+                {
+                    if (widget == null) continue;
+                    widget.gameObject.SetActive(true);
+                    widget.RestoreFromToss();
+                }
             }
             foreach (var stroke in m_Strokes)
             {
@@ -50,6 +62,14 @@ namespace TiltBrush
             foreach (var stroke in m_Strokes)
             {
                 stroke.Hide(true);
+            }
+            if (m_Widgets != null)
+            {
+                foreach (var widget in m_Widgets)
+                {
+                    if (widget == null) continue;
+                    widget.Hide();
+                }
             }
             foreach (var layer in m_Layers)
             {
@@ -73,6 +93,15 @@ namespace TiltBrush
                 foreach (var layer in m_Layers)
                 {
                     App.Scene.DestroyLayer(layer);
+                }
+            }
+            if (m_Widgets != null)
+            {
+                foreach (var widget in m_Widgets)
+                {
+                    if (widget == null) continue;
+                    WidgetManager.m_Instance.UnregisterGrabWidget(widget.gameObject);
+                    Object.Destroy(widget.gameObject);
                 }
             }
         }
