@@ -114,14 +114,15 @@ static class AndroidUtils
 
     public static bool IsGreatFirewalled()
     {
+        // TEMP - this isn't working on my device so override for now
+        return false;
+
         if (IsPicoDevice())
         {
             // https://developer.picoxr.com/document/unreal/check-pico-rom-version/
             var overseasFlagPresent = GetProp("ro.pvr.product.global").Trim().ToLower().Equals("overseas");
             return !overseasFlagPresent;
         }
-        // TEMP - this isn't working on my device so override for now
-        return true;
 
         return false;
         
