@@ -1,12 +1,12 @@
 ---
 repos:
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.37.1
+    rev: v1.38.0
     hooks:
       - id: yamllint
         priority: 10
   - repo: https://github.com/psf/black
-    rev: 25.1.0
+    rev: 26.1.0
     hooks:
       - id: black
         files: ^Support/
@@ -19,7 +19,7 @@ repos:
         files: ^Support/
         priority: 10
   - repo: https://github.com/PyCQA/pylint.git
-    rev: v3.3.7
+    rev: v4.0.4
     hooks:
       - id: pylint
         name: pylint
@@ -32,7 +32,7 @@ repos:
           - --disable=import-error
         priority: 10
   - repo: https://github.com/google/yamlfmt
-    rev: v0.17.2
+    rev: v0.21.0
     hooks:
       - id: yamlfmt
         args:
@@ -53,7 +53,7 @@ repos:
           - --include
         priority: 10
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.27.2
+    rev: v8.30.0
     hooks:
       - id: gitleaks
         priority: 10
