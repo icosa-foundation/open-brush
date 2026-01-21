@@ -37,7 +37,6 @@ import stat
 import shutil
 from subprocess import Popen, PIPE
 
-
 # Fill this out to help copy shaders from previous versions of brushes
 UPDATED_GUIDS_BY_NAME = {
     # 'OilPaint': ('c515dad7-4393-4681-81ad-162ef052241b', 'f72ec0e7-a844-4e38-82e3-140c44772699'),
