@@ -46,10 +46,10 @@ namespace TiltBrush
             TextAsset[] examplePlugins = Resources.LoadAll<TextAsset>("LuaScriptExamples");
 
             string skillPath = Path.Join(LuaManager.Instance.UserPluginsPath(), "LuaSkill");
-            string luaDocsDestinationPath = Path.Join(skillPath, "LuaDocs");
-            string mainDocsDestinationPath = Path.Join(skillPath, "MainDocs");
-            string modulesDestinationPath = Path.Join(skillPath, "LuaModules");
-            string examplesDestinationPath = Path.Join(skillPath, "Examples");
+            string luaDocsDestinationPath = Path.Join(skillPath, "api-docs");
+            string mainDocsDestinationPath = Path.Join(skillPath, "guides");
+            string modulesDestinationPath = Path.Join(skillPath, "lua-modules");
+            string examplesDestinationPath = Path.Join(skillPath, "examples");
 
             Directory.CreateDirectory(skillPath);
             Directory.CreateDirectory(luaDocsDestinationPath);
