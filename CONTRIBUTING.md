@@ -12,7 +12,7 @@ The best place to look currently would be either:
 ## Coding Style
 While the original Tilt Brush used a Google code style, Open Brush follows standard C# and Python conventions for formatting, indentation, etc. To reduce the work required by contributors, we use the [prek](https://prek.j178.dev/) tool and git hook to automatically run some syntax checking and formatting prior to commits. Similarly, all Pull Requests use prek to check that these rules are followed. To have your code automatically checked, please do the following (note that the first step has multiple installation options for prek, but all are identical as far as this document is concerned):
 ```bash
-uv tool install prek # Or follow the instructions at https://prek.j178.dev/installation/ if you prefer a different installation method)
+uv tool install prek # Or follow the instructions at https://prek.j178.dev/installation/ (if you prefer a different installation method)
 prek install # This installs the hook in your repo / clone.
 dotnet tool install -g dotnet-format # This needs to be installed manually; all other checks will be downloaded automatically.
 git commit ...
