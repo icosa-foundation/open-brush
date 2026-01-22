@@ -25,7 +25,7 @@ namespace TiltBrush
     public class LuaDocsGenerator : Editor
     {
         [MenuItem("Open Brush/API/Generate Lua Docs")]
-        static void GenerateDocs()
+        public static void GenerateDocs()
         {
             if (!Application.isPlaying)
             {
