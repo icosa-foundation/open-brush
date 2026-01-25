@@ -31,9 +31,9 @@ namespace TiltBrush
         const float kSolidAspectRatio = 0.2f;
 
         [SerializeField] float m_CapAspect = .8f;
-        [SerializeField] ushort m_PointsInClosedCircle = 8;
-        [SerializeField] bool m_EndCaps = true;
-        [SerializeField] bool m_HardEdges = false;
+        [SerializeField] protected ushort m_PointsInClosedCircle = 8;
+        [SerializeField] protected bool m_EndCaps = true;
+        [SerializeField] protected bool m_HardEdges = false;
         [SerializeField] protected UVStyle m_uvStyle = UVStyle.Distance;
         [SerializeField] protected ShapeModifier m_ShapeModifier = ShapeModifier.None;
         /// Specific to Taper shape modifier.
@@ -46,6 +46,35 @@ namespace TiltBrush
         ///
         /// Positive multiplier; 1.0 is standard, higher is more sensitive.
         [SerializeField] float m_BreakAngleMultiplier = 2;
+        [SerializeField] bool m_ForceAllKnots;
+
+        protected override bool ForceAllKnots
+        {
+            get { return m_ForceAllKnots; }
+        }
+
+        protected virtual Quaternion ComputeFrame(
+            Vector3 nTangent,
+            Quaternion? prevFrame,
+            Quaternion brushOrientation)
+        {
+            return MathUtils.ComputeMinimalRotationFrame(nTangent, prevFrame, brushOrientation);
+        }
+
+        protected virtual float GetRadiusMultiplier()
+        {
+            return 1.0f;
+        }
+
+        protected virtual float GetEllipseMinorScale()
+        {
+            return 0.25f;
+        }
+
+        protected virtual float GetCrossSectionAngleOffset()
+        {
+            return 0.0f;
+        }
 
         int m_VertsInClosedCircle;
         int m_VertsInCap;
@@ -67,6 +96,7 @@ namespace TiltBrush
             Comet,
             Taper,
             Petal,
+            Ellipse
         };
 
         public TubeBrush() : this(true) { }
@@ -174,24 +204,27 @@ namespace TiltBrush
                 Knot cur = m_knots[iKnot];
 
                 bool shouldBreak = false;
+                bool forceAllKnots = ForceAllKnots;
 
                 Vector3 vMove = cur.smoothedPos - prev.smoothedPos;
                 cur.length = vMove.magnitude;
 
                 if (cur.length < kMinimumMoveMeters_PS * App.METERS_TO_UNITS * POINTER_TO_LOCAL)
                 {
-                    shouldBreak = true;
+                    if (!forceAllKnots)
+                    {
+                        shouldBreak = true;
+                    }
                 }
                 else
                 {
                     Vector3 nTangent = vMove / cur.length;
-                    cur.qFrame = MathUtils.ComputeMinimalRotationFrame(
-                        nTangent, prev.Frame, cur.point.m_Orient);
+                    cur.qFrame = ComputeFrame(nTangent, prev.Frame, cur.point.m_Orient);
 
                     // More break checking; replicates previous logic
                     // TODO: decompose into twist and swing; use different constraints
                     // http://www.euclideanspace.com/maths/geometry/rotations/for/decomposition/
-                    if (prev.HasGeometry && !m_PreviewMode)
+                    if (prev.HasGeometry && !m_PreviewMode && !forceAllKnots)
                     {
                         float fWidthHeightRatio = cur.length / PressuredSize(cur.smoothedPressure);
                         float fBreakAngle = Mathf.Atan(fWidthHeightRatio) * Mathf.Rad2Deg
@@ -202,6 +235,21 @@ namespace TiltBrush
                             shouldBreak = true;
                         }
                     }
+                }
+
+                if (forceAllKnots &&
+                    !shouldBreak &&
+                    cur.length < kMinimumMoveMeters_PS * App.METERS_TO_UNITS * POINTER_TO_LOCAL)
+                {
+                    // Keep a stable frame even for tiny moves.
+                    Vector3 fallback = prev.HasGeometry ? (prev.qFrame * Vector3.forward)
+                        : (cur.point.m_Orient * Vector3.forward);
+                    if (fallback.sqrMagnitude < 1e-8f)
+                    {
+                        fallback = Vector3.forward;
+                    }
+                    cur.qFrame = MathUtils.ComputeMinimalRotationFrame(
+                        fallback.normalized, prev.Frame, cur.point.m_Orient);
                 }
 
                 if (shouldBreak)
@@ -327,7 +375,7 @@ namespace TiltBrush
                     // Verts, front half
                     {
                         float size = PressuredSize(cur.smoothedPressure);
-                        float radius = size / 2;
+                        float radius = size * 0.5f * GetRadiusMultiplier();
                         float circumference = TWOPI * radius;
                         float uRate = m_Desc.m_TileRate / circumference;
 
@@ -685,7 +733,7 @@ namespace TiltBrush
                 for (int i = 0; i < numVerts; i++)
                 {
                     int vert = (cur.iVert + i);
-                    float radius = PressuredSize(cur.smoothedPressure) / 2.0f;
+                    float radius = PressuredSize(cur.smoothedPressure) * 0.5f * GetRadiusMultiplier();
                     Vector3 dir = m_Displacements[vert];
 
                     // skip start/end cap verts
@@ -732,6 +780,16 @@ namespace TiltBrush
                             offset = m_geometry.m_Normals[vert] * displacement * petalAmtCacheValue *
                                 cur.smoothedPressure;
                             break;
+                        case ShapeModifier.Ellipse:
+                            // Calculate offset to create an elliptical cross-section
+                            curve = 1.0f;
+                            // Minor/major ratio; tweak later if needed.
+                            float minorScale = GetEllipseMinorScale();
+                            const float majorScale = 1.0f;
+                            float rtAmt = Vector3.Dot(dir, cur.nRight);
+                            float upAmt = Vector3.Dot(dir, cur.nSurface);
+                            dir = cur.nRight * (rtAmt * minorScale) + cur.nSurface * (upAmt * majorScale);
+                            break;
                     }
                     m_geometry.m_Vertices[vert] = offset + cur.smoothedPos + radius * dir * curve;
                 }
@@ -773,7 +831,7 @@ namespace TiltBrush
                 // Additionally, be aware that here "radius" is packed into a vertex channel but
                 // does not actually have anything to do with the radius of the created geometry.
                 //
-                AppendVert(ref k, tip, normal.normalized, m_Color, tan, uv, /*radius*/ 0);
+                AppendVert(ref k, tip, normal.normalized, k.color, tan, uv, /*radius*/ 0);
                 AppendDisplacement(ref k, fwdNormal);
             }
         }
@@ -808,11 +866,12 @@ namespace TiltBrush
             {
                 float t = (float)i / (numVerts - 1);
                 // Ensure that the first and last verts are exactly coincident
-                float theta = (t == 1) ? 0 : TWOPI * t;
+                float offset = GetCrossSectionAngleOffset();
+                float theta = (t == 1) ? offset : TWOPI * t + offset;
                 Vector2 uv = new Vector2(u, Mathf.Lerp(v0, v1, t));
                 Vector3 off = -Mathf.Cos(theta) * up + -Mathf.Sin(theta) * rt;
 
-                AppendVert(ref k, center + radius * off, off, m_Color, fwd, uv, radius);
+                AppendVert(ref k, center + radius * off, off, k.color, fwd, uv, radius);
                 AppendDisplacement(ref k, off.normalized);
             }
         }
@@ -827,13 +886,14 @@ namespace TiltBrush
             // When facing down the tangent, circle verts should go clockwise
             // We'd like the seam to be on the bottom
             float? lastTheta = null;
+            float offset = GetCrossSectionAngleOffset();
 
             for (int i = 0; i < numPoints; ++i)
             {
                 float t = (float)i / (numPoints);
 
                 // Ensure that the first and last verts are exactly coincident
-                float theta = (t == 0) ? 0 : TWOPI * t;
+                float theta = (t == 0) ? offset : TWOPI * t + offset;
                 if (!lastTheta.HasValue)
                 {
                     lastTheta = theta - (TWOPI / numPoints);
@@ -853,14 +913,14 @@ namespace TiltBrush
                 float v = Mathf.Lerp(v0, v1, (float)prevFace / (float)(numPoints) + (1.0f / numPoints));
                 Vector2 uv = new Vector2(u, v);
 
-                AppendVert(ref k, center + radius * off1, nPrev, m_Color, tan, uv, radius);
+                AppendVert(ref k, center + radius * off1, nPrev, k.color, tan, uv, radius);
                 AppendDisplacement(ref k, off1);
 
                 int currentFace = i;
                 v = Mathf.Lerp(v0, v1, (float)currentFace / (float)(numPoints));
                 uv = new Vector2(u, v);
 
-                AppendVert(ref k, center + radius * off1, nCur, m_Color, tan, uv, radius);
+                AppendVert(ref k, center + radius * off1, nCur, k.color, tan, uv, radius);
                 AppendDisplacement(ref k, off1);
             }
         }
