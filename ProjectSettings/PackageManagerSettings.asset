@@ -47,8 +47,11 @@ MonoBehaviour:
     m_Url: https://package.openupm.com
     m_Scopes:
     - com.atteneder
+    - com.ixxy.polyhydra.core
     - com.openupm
+    - com.nition.unity-octree
     - com.sandrofigo.voxreader
+    - com.syomus.proceduraltoolkit
     - org.nuget.google
     - org.nuget.sharpziplib
     - org.nuget.system
