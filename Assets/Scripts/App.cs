@@ -316,6 +316,8 @@ namespace TiltBrush
         private DriveSync m_DriveSync;
         private GoogleUserSettings m_GoogleUserSettings;
 
+        public bool AccountLoginsDisabled { get; private set; }
+
         // ------------------------------------------------------------
         // Properties
         // ------------------------------------------------------------
@@ -537,7 +539,11 @@ namespace TiltBrush
             Log($"SdkMode: {App.Config.m_SdkMode}.");
 
             // Begone, physics! You were using 0.3 - 1.3ms per frame on Quest!
-            Physics.autoSimulation = false;
+            Physics.simulationMode = SimulationMode.Script;
+
+#if UNITY_ANDROID
+            AccountLoginsDisabled = AndroidUtils.IsGreatFirewalled();
+#endif // UNITY_ANDROID
 
             // See if this is the first time
             HasPlayedBefore = PlayerPrefs.GetInt(kPlayerPrefHasPlayedBefore, 0) == 1;
