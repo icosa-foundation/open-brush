@@ -238,8 +238,7 @@ namespace TiltBrush
                     {
                         fallback = Vector3.forward;
                     }
-                    cur.qFrame = MathUtils.ComputeMinimalRotationFrame(
-                        fallback.normalized, prev.Frame, cur.point.m_Orient);
+                    cur.qFrame = ComputeFrame(fallback.normalized, prev.Frame, cur.point.m_Orient);
                 }
 
                 if (shouldBreak)
