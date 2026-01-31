@@ -18,10 +18,6 @@ namespace TiltBrush
 {
     class QuillTubeBrush : TubeBrush
     {
-        const float kQuillEllipseMinorScale = 0.3f;
-        const float kQuillCubeRadiusMultiplier = 1.4142135f; // sqrt(2)
-        const float kQuillCubeAngleOffset = -0.75f * Mathf.PI;
-
         protected override bool SmoothPositions
         {
             get { return false; }
@@ -62,29 +58,6 @@ namespace TiltBrush
 
             zaxis = Vector3.Cross(yaxis, xaxis).normalized;
             return Quaternion.LookRotation(yaxis, zaxis);
-        }
-
-        protected override float GetRadiusMultiplier()
-        {
-            if (m_PointsInClosedCircle == 4 && m_HardEdges)
-            {
-                return kQuillCubeRadiusMultiplier;
-            }
-            return 1.0f;
-        }
-
-        protected override float GetEllipseMinorScale()
-        {
-            return kQuillEllipseMinorScale;
-        }
-
-        protected override float GetCrossSectionAngleOffset()
-        {
-            if (m_PointsInClosedCircle == 4 && m_HardEdges)
-            {
-                return kQuillCubeAngleOffset;
-            }
-            return 0.0f;
         }
     }
 }
