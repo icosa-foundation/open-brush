@@ -887,7 +887,7 @@ namespace TiltBrush
             if (brush == null) return null;
 
             var color = sqStroke.Vertices[0].Color;
-            var unityColor = new Color(color.R, color.G, color.B);
+            var unityColor = new Color(color.R, color.G, color.B).gamma;
 
             var controlPoints = new List<PointerManager.ControlPoint>(sqStroke.Vertices.Count);
             List<Color32?> perPointColors = new List<Color32?>();
@@ -933,9 +933,9 @@ namespace TiltBrush
                 // Capture per-point color from Quill vertex
                 float pointAlpha = Mathf.Clamp01(v.Opacity * opacityScale);
                 perPointColors.Add(new Color32(
-                    (byte)(v.Color.R * 255f),
-                    (byte)(v.Color.G * 255f),
-                    (byte)(v.Color.B * 255f),
+                    (byte)(Mathf.LinearToGammaSpace(v.Color.R) * 255f),
+                    (byte)(Mathf.LinearToGammaSpace(v.Color.G) * 255f),
+                    (byte)(Mathf.LinearToGammaSpace(v.Color.B) * 255f),
                     (byte)(pointAlpha * 255f)
                 ));
             }
