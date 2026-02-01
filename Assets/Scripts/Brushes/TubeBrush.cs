@@ -745,7 +745,7 @@ namespace TiltBrush
                         }
                     }
 
-                    float curve = 0;
+                    float curve = 1.0f;
                     Vector3 offset = Vector3.zero;
 
                     switch (m_ShapeModifier)
@@ -775,7 +775,6 @@ namespace TiltBrush
                             break;
                         case ShapeModifier.Ellipse:
                             // Calculate offset to create an elliptical cross-section
-                            curve = 1.0f;
                             // Minor/major ratio.
                             float minorScale = m_EllipseMinorScale == 0 ? 1.0f : m_EllipseMinorScale;
                             float horzScale = minorScale > 1.0f ? 1.0f / minorScale : 1.0f;
@@ -862,10 +861,11 @@ namespace TiltBrush
                 // Ensure that the first and last verts are exactly coincident
                 float theta = (t == 1) ? m_CrossSectionAngleOffset : TWOPI * t + m_CrossSectionAngleOffset;
                 Vector2 uv = new Vector2(u, Mathf.Lerp(v0, v1, t));
-                Vector3 off = -Mathf.Cos(theta) * up + -Mathf.Sin(theta) * rt;
+                Vector3 dir = -Mathf.Cos(theta) * up + -Mathf.Sin(theta) * rt;
+                dir.Normalize();
 
-                AppendVert(ref k, center + radius * off, off, k.color, fwd, uv, radius);
-                AppendDisplacement(ref k, off.normalized);
+                AppendVert(ref k, center + radius * dir, dir, k.color, fwd, uv, radius);
+                AppendDisplacement(ref k, dir);
             }
         }
 
