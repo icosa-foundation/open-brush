@@ -718,8 +718,12 @@ namespace TiltBrush
                 distance += cur.length;
                 float t = distance / totalLength;
 
+                // Because the vertices are shared between knots we only handle half of them.
+                // In the m_Displacements array only the second half of the chunk of vertices 
+                // controlled by a given knot are relative to that knot, the first half is relative
+                // to the previous one, so we start the loop at m_VertsInClosedCircle.
                 int numVerts = cur.nVert;
-                for (int i = 0; i < numVerts; i++)
+                for (int i = m_VertsInClosedCircle; i < numVerts; i++)
                 {
                     int vert = (cur.iVert + i);
                     float radius = PressuredSize(cur.smoothedPressure) * 0.5f * m_RadiusMultiplier;
