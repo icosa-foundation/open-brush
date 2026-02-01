@@ -781,47 +781,34 @@ namespace TiltBrush
 
         /// <summary>
         /// Builds a safe orthonormal orientation from forward and up vectors.
-        /// Uses Gram-Schmidt orthogonalization to ensure valid basis.
-        /// Falls back to previous orientation if vectors are degenerate.
+        /// This matches Quill's official importer behavior (Element::ComputeBasis).
         /// </summary>
-        private static Quaternion BuildSafeOrientation(Vector3 fwd, Vector3 up, Quaternion prevOrientation)
+        private static Quaternion BuildSafeOrientation(Vector3 fwd, Vector3 up)
         {
-            const float kMinSqrMagnitude = 1e-6f;
+            const float epsilon = 1e-7f;
+            Vector3 right = Vector3.Cross(up, fwd);
 
-            // Check if forward is valid
-            if (fwd.sqrMagnitude < kMinSqrMagnitude)
+            if (right.sqrMagnitude >= epsilon * epsilon)
             {
-                return prevOrientation;
+                right.Normalize();
             }
-            fwd.Normalize();
-
-            // Check if up is valid; if not, construct a perpendicular vector
-            if (up.sqrMagnitude < kMinSqrMagnitude)
+            else if (Mathf.Abs(fwd.x) < 0.9f)
             {
-                // Try to find a perpendicular using cross product with cardinal axes
-                up = Vector3.Cross(fwd, Vector3.right);
-                if (up.sqrMagnitude < kMinSqrMagnitude)
-                {
-                    up = Vector3.Cross(fwd, Vector3.up);
-                }
-                if (up.sqrMagnitude < kMinSqrMagnitude)
-                {
-                    // Degenerate case - fallback to previous orientation
-                    return prevOrientation;
-                }
+                right = new Vector3(0, fwd.z, fwd.y).normalized;
+            }
+            else if (Mathf.Abs(fwd.y) < 0.9f)
+            {
+                right = new Vector3(-fwd.z, 0, fwd.x).normalized;
+            }
+            else
+            {
+                right = new Vector3(fwd.y, -fwd.x, 0).normalized;
             }
 
-            // Gram-Schmidt orthogonalization: make up perpendicular to fwd
-            up = up - Vector3.Dot(up, fwd) * fwd;
-            if (up.sqrMagnitude < kMinSqrMagnitude)
-            {
-                // After orthogonalization, up became zero - fallback
-                return prevOrientation;
-            }
-            up.Normalize();
-
+            up = Vector3.Cross(fwd, right).normalized;
             return Quaternion.LookRotation(fwd, up);
         }
+
 
         /// <summary>
         /// Maps Quill width to Open Brush pressure.
@@ -904,9 +891,6 @@ namespace TiltBrush
                 // This matches the working Python importer and creates smooth interpolation
                 Vector3 localForward = ComputeTangentFromPositions(sqStroke.Vertices, i);
 
-                // Use Quill's stored tangent for now (will compute from positions later)
-                // Vector3 localForward = new Vector3(v.Tangent.X, v.Tangent.Y, -v.Tangent.Z);
-
                 // Use Quill's normal for orientation
                 Vector3 localUp = new Vector3(v.Normal.X, v.Normal.Y, -v.Normal.Z);
 
@@ -916,7 +900,7 @@ namespace TiltBrush
                 Vector3 obUp = toLayerSpace.MultiplyVector(localUp);
 
                 // Build safe orthonormal orientation with fallback
-                Quaternion orient = BuildSafeOrientation(obForward, obUp, prevOrientation);
+                Quaternion orient = BuildSafeOrientation(obForward, obUp);
                 prevOrientation = orient;
 
                 // Map width to pressure with potential per-brush tuning

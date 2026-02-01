@@ -28,36 +28,7 @@ namespace TiltBrush
             Quaternion? prevFrame,
             Quaternion brushOrientation)
         {
-            const float epsilon = 1e-7f;
-            Vector3 yaxis = nTangent;
-            if (yaxis.sqrMagnitude < epsilon * epsilon)
-            {
-                yaxis = brushOrientation * Vector3.forward;
-            }
-            yaxis.Normalize();
-
-            Vector3 zaxis = brushOrientation * Vector3.up;
-            Vector3 xaxis = Vector3.Cross(zaxis, yaxis);
-
-            if (xaxis.sqrMagnitude >= epsilon * epsilon)
-            {
-                xaxis.Normalize();
-            }
-            else if (Mathf.Abs(yaxis.x) < 0.9f)
-            {
-                xaxis = new Vector3(0, yaxis.z, yaxis.y).normalized;
-            }
-            else if (Mathf.Abs(yaxis.y) < 0.9f)
-            {
-                xaxis = new Vector3(-yaxis.z, 0, yaxis.x).normalized;
-            }
-            else
-            {
-                xaxis = new Vector3(yaxis.y, -yaxis.x, 0).normalized;
-            }
-
-            zaxis = Vector3.Cross(yaxis, xaxis).normalized;
-            return Quaternion.LookRotation(yaxis, zaxis);
+            return brushOrientation;
         }
     }
 }
