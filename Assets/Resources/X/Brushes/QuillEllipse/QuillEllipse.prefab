@@ -56,7 +56,7 @@ MonoBehaviour:
   m_TaperScalar: 1
   m_PetalDisplacementAmt: 0.5
   m_PetalDisplacementExp: 3
-  m_EllipseMinorScale: 0.25
+  m_EllipseMinorScale: 0.3
   m_BreakAngleMultiplier: 2
   m_ForceAllKnots: 1
 --- !u!23 &23000012424641129
