@@ -18,6 +18,7 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 using SQ = SharpQuill;
+using ImmSQ = ImmStrokeReader.SharpQuill;
 
 namespace TiltBrush
 {
@@ -30,14 +31,29 @@ namespace TiltBrush
         private const string BRUSH_QUILL_RIBBON = "c4f8b3e2-9d1a-5e7f-4c3b-8a6d2f9e1c7b";
 
         public static void Load(string path, int maxStrokes = 0, bool loadAnimations = false, string layerName = null)
-        {
-            if (!Directory.Exists(path))
+        {            string kind;
+            SQ.Sequence sequence = null;
+            if (Directory.Exists(path))
             {
-                Debug.LogError($"Quill project path not found: {path}");
+                kind = "quill";
+                sequence = SQ.QuillSequenceReader.Read(path);
+            }
+            else if (File.Exists(path))
+            {
+                kind = "imm";
+                ImmSQ.Sequence imm = ImmSQ.QuillSequenceReader.ReadImm(path);
+                sequence = ImmSharpQuillAdapter.ToSharpQuillSequence(imm);
+            }
+            else
+            {
+                Debug.LogError($"Quill load path not found: {path}");
                 return;
             }
 
-            var sequence = SQ.QuillSequenceReader.Read(path);
+            var recorder = new QuillStatsRecorder();
+            s_QuillStatsRecorder = recorder;
+            try
+            {
             if (sequence == null)
             {
                 Debug.LogError("Failed to read Quill sequence");
@@ -71,11 +87,20 @@ namespace TiltBrush
                 CanvasScript obLayer = App.Scene.AddLayerNow();
                 App.Scene.RenameLayer(obLayer, topLevelLayer.Name);
 
+                Matrix4x4 localNoFlip = ConvertSQTransformMatrix(topLevelLayer.Transform, includeFlip: false);
+                Matrix4x4 localWithFlip = ConvertSQTransformMatrix(topLevelLayer.Transform, includeFlip: true);
+
                 // Calculate world transform for this top-level layer
-                Matrix4x4 topLevelWorldNoFlip = rootWorldNoFlip * ConvertSQTransformMatrix(topLevelLayer.Transform, includeFlip: false);
-                Matrix4x4 topLevelWorldWithFlip = rootWorldWithFlip * ConvertSQTransformMatrix(topLevelLayer.Transform, includeFlip: true);
+                Matrix4x4 topLevelWorldNoFlip = rootWorldNoFlip * localNoFlip;
+                Matrix4x4 topLevelWorldWithFlip = rootWorldWithFlip * localWithFlip;
                 obLayer.Pose = TrTransform.FromMatrix4x4(topLevelWorldNoFlip);
                 createdLayers.Add(obLayer);
+
+                if (recorder != null)
+                {
+                    Matrix4x4 pivotMatrix = ConvertSQTransformMatrix(topLevelLayer.Pivot, includeFlip: true);
+                    recorder.RecordLayer(topLevelLayer.Name, topLevelWorldNoFlip, topLevelWorldWithFlip, localNoFlip, localWithFlip, pivotMatrix);
+                }
 
                 // Recurse into children and flatten ALL descendant strokes into this obLayer
                 TraverseAndFlattenLayers(
@@ -126,7 +151,14 @@ namespace TiltBrush
                     Debug.LogWarning($"Reached maxStrokes limit ({maxStrokes}). Partial load complete.");
                 }
             }
-        }
+            }
+            finally
+            {
+                QuillDiagnostics.LastLoad = recorder.ToStats(path, kind);
+                s_QuillStatsRecorder = null;
+            }
+
+}
 
         private static void TraverseAndFlattenLayers(
             SQ.Layer layer,
@@ -860,13 +892,20 @@ namespace TiltBrush
                 m_ColorOverrideMode = ColorOverrideMode.Replace
             };
 
+            float brushSize = maxWidth * layerScale * 2f;
+            if (s_QuillStatsRecorder != null)
+            {
+                s_QuillStatsRecorder.RecordStroke(maxWidth, brushSize, layerScale, sqStroke, brushGuid);
+            }
+
+
             stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
             stroke.Group = SketchGroupTag.None;
 
             return stroke;
         }
 
-        private static float GetUniformScale(Matrix4x4 m)
+                private static float GetUniformScale(Matrix4x4 m)
         {
             Vector3 x = new Vector3(m.m00, m.m10, m.m20);
             float scale = x.magnitude;
@@ -883,5 +922,479 @@ namespace TiltBrush
             Vector3 z = new Vector3(m.m02, m.m12, m.m22);
             return z.magnitude;
         }
-    }
+
+        private static float[] MatrixToArray(Matrix4x4 m)
+        {
+            return new float[]
+            {
+                m.m00, m.m01, m.m02, m.m03,
+                m.m10, m.m11, m.m12, m.m13,
+                m.m20, m.m21, m.m22, m.m23,
+                m.m30, m.m31, m.m32, m.m33
+            };
+        }
+
+        public class QuillLoadStats
+        {
+            public string Path;
+            public string Kind;
+            public string TimestampUtc;
+            public int StrokeCount;
+            public int VertexCount;
+            public FloatStats VertexWidth;
+            public FloatStats StrokeMaxWidth;
+            public FloatStats StrokeBrushSize;
+            public FloatStats StrokeLayerScale;
+            public BoundingBoxStats StrokeBoundingBox;
+            public ColorChannelStats VertexColor;
+            public List<LayerTransformStats> Layers;
+            public Dictionary<string, BrushStats> Brushes;
+        }
+
+        public class LayerTransformStats
+        {
+            public string Name;
+            public float[] WorldNoFlip;
+            public float[] WorldWithFlip;
+            public float[] LocalNoFlip;
+            public float[] LocalWithFlip;
+            public float[] Pivot;
+        }
+
+        public class BoundingBoxStats
+        {
+            public FloatStats SizeX;
+            public FloatStats SizeY;
+            public FloatStats SizeZ;
+            public FloatStats Diagonal;
+        }
+
+        public class ColorChannelStats
+        {
+            public FloatStats R;
+            public FloatStats G;
+            public FloatStats B;
+            public FloatStats Opacity;
+        }
+
+        public class BrushStats
+        {
+            public string BrushGuid;
+            public int BrushType;
+            public int StrokeCount;
+            public int VertexCount;
+            public FloatStats VertexWidth;
+            public FloatStats StrokeMaxWidth;
+            public FloatStats StrokeBrushSize;
+        }
+
+        public struct FloatStats
+        {
+            public int Count;
+            public float Min;
+            public float P50;
+            public float P90;
+            public float Max;
+            public float Mean;
+        }
+
+        public static class QuillDiagnostics
+        {
+            public static QuillLoadStats LastLoad;
+        }
+
+        private sealed class QuillStatsRecorder
+        {
+            private const int MaxSamples = 200000;
+
+            private readonly List<float> _vertexWidths = new List<float>();
+            private readonly List<float> _strokeMaxWidths = new List<float>();
+            private readonly List<float> _strokeBrushSizes = new List<float>();
+            private readonly List<float> _strokeLayerScales = new List<float>();
+            private readonly List<float> _bboxSizeX = new List<float>();
+            private readonly List<float> _bboxSizeY = new List<float>();
+            private readonly List<float> _bboxSizeZ = new List<float>();
+            private readonly List<float> _bboxDiagonal = new List<float>();
+            private readonly List<float> _colorR = new List<float>();
+            private readonly List<float> _colorG = new List<float>();
+            private readonly List<float> _colorB = new List<float>();
+            private readonly List<float> _opacity = new List<float>();
+            private readonly Dictionary<string, BrushAccumulator> _brushes = new Dictionary<string, BrushAccumulator>(StringComparer.OrdinalIgnoreCase);
+            private readonly List<LayerTransformStats> _layers = new List<LayerTransformStats>();
+            private int _vertexCount;
+
+            public void RecordLayer(string name, Matrix4x4 worldNoFlip, Matrix4x4 worldWithFlip, Matrix4x4 localNoFlip, Matrix4x4 localWithFlip, Matrix4x4 pivot)
+            {
+                _layers.Add(new LayerTransformStats
+                {
+                    Name = name,
+                    WorldNoFlip = MatrixToArray(worldNoFlip),
+                    WorldWithFlip = MatrixToArray(worldWithFlip),
+                    LocalNoFlip = MatrixToArray(localNoFlip),
+                    LocalWithFlip = MatrixToArray(localWithFlip),
+                    Pivot = MatrixToArray(pivot)
+                });
+            }
+
+            public void RecordStroke(float strokeMaxWidth, float brushSize, float layerScale, SQ.Stroke stroke, string brushGuid)
+            {
+                AddSample(_strokeMaxWidths, strokeMaxWidth);
+                AddSample(_strokeBrushSizes, brushSize);
+                AddSample(_strokeLayerScales, layerScale);
+
+                if (stroke != null)
+                {
+                    SQ.BoundingBox bbox = stroke.BoundingBox;
+                    float sizeX = Mathf.Abs(bbox.MaxX - bbox.MinX);
+                    float sizeY = Mathf.Abs(bbox.MaxY - bbox.MinY);
+                    float sizeZ = Mathf.Abs(bbox.MaxZ - bbox.MinZ);
+                    float diag = Mathf.Sqrt(sizeX * sizeX + sizeY * sizeY + sizeZ * sizeZ);
+                    AddSample(_bboxSizeX, sizeX);
+                    AddSample(_bboxSizeY, sizeY);
+                    AddSample(_bboxSizeZ, sizeZ);
+                    AddSample(_bboxDiagonal, diag);
+
+                    if (stroke.Vertices != null)
+                    {
+                        _vertexCount += stroke.Vertices.Count;
+                        foreach (var v in stroke.Vertices)
+                        {
+                            AddSample(_vertexWidths, v.Width);
+                            AddSample(_colorR, v.Color.R);
+                            AddSample(_colorG, v.Color.G);
+                            AddSample(_colorB, v.Color.B);
+                            AddSample(_opacity, v.Opacity);
+                        }
+                    }
+
+                    if (!string.IsNullOrEmpty(brushGuid))
+                    {
+                        if (!_brushes.TryGetValue(brushGuid, out var acc))
+                        {
+                            acc = new BrushAccumulator(brushGuid, stroke.BrushType);
+                            _brushes[brushGuid] = acc;
+                        }
+                        acc.RecordStroke(stroke, strokeMaxWidth, brushSize);
+                    }
+                }
+            }
+
+            public QuillLoadStats ToStats(string path, string kind)
+            {
+                var stats = new QuillLoadStats();
+                stats.Path = path;
+                stats.Kind = kind;
+                stats.TimestampUtc = DateTime.UtcNow.ToString("o");
+                stats.StrokeCount = _strokeMaxWidths.Count;
+                stats.VertexCount = _vertexCount;
+                stats.VertexWidth = Summarize(_vertexWidths);
+                stats.StrokeMaxWidth = Summarize(_strokeMaxWidths);
+                stats.StrokeBrushSize = Summarize(_strokeBrushSizes);
+                stats.StrokeLayerScale = Summarize(_strokeLayerScales);
+                stats.StrokeBoundingBox = new BoundingBoxStats
+                {
+                    SizeX = Summarize(_bboxSizeX),
+                    SizeY = Summarize(_bboxSizeY),
+                    SizeZ = Summarize(_bboxSizeZ),
+                    Diagonal = Summarize(_bboxDiagonal)
+                };
+                stats.VertexColor = new ColorChannelStats
+                {
+                    R = Summarize(_colorR),
+                    G = Summarize(_colorG),
+                    B = Summarize(_colorB),
+                    Opacity = Summarize(_opacity)
+                };
+                stats.Layers = new List<LayerTransformStats>(_layers);
+                var brushStats = new Dictionary<string, BrushStats>(_brushes.Count, StringComparer.OrdinalIgnoreCase);
+                foreach (var kvp in _brushes)
+                {
+                    brushStats[kvp.Key] = kvp.Value.ToStats();
+                }
+                stats.Brushes = brushStats;
+                return stats;
+            }
+
+            private static void AddSample(List<float> values, float sample)
+            {
+                if (values.Count < MaxSamples)
+                {
+                    values.Add(sample);
+                }
+            }
+
+            private static FloatStats Summarize(List<float> values)
+            {
+                var s = new FloatStats();
+                if (values == null || values.Count == 0)
+                {
+                    s.Count = 0;
+                    return s;
+                }
+
+                values.Sort();
+                s.Count = values.Count;
+                s.Min = values[0];
+                s.Max = values[values.Count - 1];
+                s.P50 = values[(int)(0.5f * (values.Count - 1))];
+                s.P90 = values[(int)(0.9f * (values.Count - 1))];
+
+                double sum = 0.0;
+                for (int i = 0; i < values.Count; i++)
+                {
+                    sum += values[i];
+                }
+                s.Mean = (float)(sum / values.Count);
+                return s;
+            }
+
+            private sealed class BrushAccumulator
+            {
+                private readonly List<float> _vertexWidths = new List<float>();
+                private readonly List<float> _strokeMaxWidths = new List<float>();
+                private readonly List<float> _strokeBrushSizes = new List<float>();
+                public string BrushGuid { get; }
+                public SQ.BrushType BrushType { get; }
+                public int StrokeCount { get; private set; }
+                public int VertexCount { get; private set; }
+
+                public BrushAccumulator(string guid, SQ.BrushType brushType)
+                {
+                    BrushGuid = guid;
+                    BrushType = brushType;
+                }
+
+                public void RecordStroke(SQ.Stroke stroke, float strokeMaxWidth, float brushSize)
+                {
+                    StrokeCount++;
+                    AddSample(_strokeMaxWidths, strokeMaxWidth);
+                    AddSample(_strokeBrushSizes, brushSize);
+
+                    if (stroke?.Vertices != null)
+                    {
+                        VertexCount += stroke.Vertices.Count;
+                        foreach (var v in stroke.Vertices)
+                        {
+                            AddSample(_vertexWidths, v.Width);
+                        }
+                    }
+                }
+
+            public BrushStats ToStats()
+            {
+                    return new BrushStats
+                    {
+                        BrushGuid = BrushGuid,
+                        BrushType = (int)BrushType,
+                        StrokeCount = StrokeCount,
+                        VertexCount = VertexCount,
+                        VertexWidth = Summarize(_vertexWidths),
+                        StrokeMaxWidth = Summarize(_strokeMaxWidths),
+                        StrokeBrushSize = Summarize(_strokeBrushSizes)
+                    };
+                }
+            }
+        }
+
+        private static QuillStatsRecorder s_QuillStatsRecorder;
+private static class ImmSharpQuillAdapter
+        {
+            public static SQ.Sequence ToSharpQuillSequence(ImmSQ.Sequence imm)
+            {
+                if (imm == null || imm.RootLayer == null)
+                {
+                    return null;
+                }
+
+                var seq = new SQ.Sequence();
+                seq.RootLayer = ConvertLayerGroup(imm.RootLayer, isRoot: true) ?? SQ.LayerGroup.CreateDefault();
+                if (string.IsNullOrEmpty(seq.RootLayer.Name))
+                {
+                    seq.RootLayer.Name = "Root";
+                }
+                return seq;
+            }
+
+            private static SQ.LayerGroup ConvertLayerGroup(ImmSQ.LayerGroup src, bool isRoot)
+            {
+                if (src == null)
+                {
+                    return null;
+                }
+
+                var dst = new SQ.LayerGroup(src.Name ?? string.Empty, isAnimated: isRoot);
+                CopyLayerCommon(dst, src);
+                if (isRoot && string.IsNullOrEmpty(dst.Name))
+                {
+                    dst.Name = "Root";
+                }
+
+                if (src.Children != null)
+                {
+                    foreach (var child in src.Children)
+                    {
+                        var converted = ConvertLayer(child);
+                        if (converted != null)
+                        {
+                            dst.Children.Add(converted);
+                        }
+                    }
+                }
+
+                return dst;
+            }
+
+            private static SQ.Layer ConvertLayer(ImmSQ.Layer src)
+            {
+                if (src == null)
+                {
+                    return null;
+                }
+
+                if (src is ImmSQ.LayerGroup group)
+                {
+                    return ConvertLayerGroup(group, isRoot: false);
+                }
+
+                if (src is ImmSQ.LayerPaint paint)
+                {
+                    return ConvertLayerPaint(paint);
+                }
+
+                return null;
+            }
+
+            private static SQ.LayerPaint ConvertLayerPaint(ImmSQ.LayerPaint src)
+            {
+                var dst = new SQ.LayerPaint(src.Name ?? string.Empty, addDrawing: false);
+                CopyLayerCommon(dst, src);
+
+                dst.Framerate = src.Framerate;
+                dst.MaxRepeatCount = src.MaxRepeatCount;
+
+                if (src.Drawings != null)
+                {
+                    foreach (var drawing in src.Drawings)
+                    {
+                        dst.Drawings.Add(ConvertDrawing(drawing));
+                    }
+                }
+
+                if (src.Frames != null)
+                {
+                    dst.Frames = new List<int>(src.Frames);
+                }
+
+                if (dst.Frames.Count == 0 && dst.Drawings.Count > 0)
+                {
+                    dst.Frames.Add(0);
+                }
+
+                return dst;
+            }
+
+            private static SQ.Drawing ConvertDrawing(ImmSQ.Drawing src)
+            {
+                var dst = new SQ.Drawing();
+                if (src != null)
+                {
+                    dst.DataFileOffset = src.DataFileOffset;
+
+                    if (src.Data != null && src.Data.Strokes != null)
+                    {
+                        foreach (var stroke in src.Data.Strokes)
+                        {
+                            dst.Data.Strokes.Add(ConvertStroke(stroke));
+                        }
+                    }
+                }
+
+                dst.UpdateBoundingBox(updateStrokes: true);
+                return dst;
+            }
+
+            private static SQ.Stroke ConvertStroke(ImmSQ.Stroke src)
+            {
+                var dst = new SQ.Stroke();
+                if (src == null)
+                {
+                    return dst;
+                }
+
+                dst.Id = src.Id;
+                dst.u2 = src.u2;
+                dst.BrushType = (SQ.BrushType)src.BrushType;
+                dst.DisableRotationalOpacity = src.DisableRotationalOpacity;
+                dst.u3 = src.u3;
+                dst.BoundingBox = ConvertBoundingBox(src.BoundingBox);
+
+                if (src.Vertices != null)
+                {
+                    foreach (var v in src.Vertices)
+                    {
+                        dst.Vertices.Add(ConvertVertex(v));
+                    }
+                }
+
+                if (dst.Vertices.Count > 0)
+                {
+                    dst.UpdateBoundingBox();
+                }
+
+                return dst;
+            }
+
+            private static SQ.Vertex ConvertVertex(ImmSQ.Vertex src)
+            {
+                return new SQ.Vertex(
+                    ConvertVector3(src.Position),
+                    ConvertVector3(src.Normal),
+                    ConvertVector3(src.Tangent),
+                    ConvertColor(src.Color),
+                    src.Opacity,
+                    src.Width);
+            }
+
+            private static SQ.Vector3 ConvertVector3(ImmSQ.Vector3 v)
+            {
+                return new SQ.Vector3(v.X, v.Y, v.Z);
+            }
+
+            private static SQ.Quaternion ConvertQuaternion(ImmSQ.Quaternion q)
+            {
+                return new SQ.Quaternion(q.X, q.Y, q.Z, q.W);
+            }
+
+            private static SQ.Transform ConvertTransform(ImmSQ.Transform xf)
+            {
+                string flip = string.IsNullOrEmpty(xf.Flip) ? "N" : xf.Flip;
+                return new SQ.Transform(ConvertQuaternion(xf.Rotation), xf.Scale, flip, ConvertVector3(xf.Translation));
+            }
+
+            private static SQ.Color ConvertColor(ImmSQ.Color c)
+            {
+                return new SQ.Color(c.R, c.G, c.B);
+            }
+
+            private static SQ.BoundingBox ConvertBoundingBox(ImmSQ.BoundingBox b)
+            {
+                return new SQ.BoundingBox(
+                    b.Min.X, b.Max.X,
+                    b.Min.Y, b.Max.Y,
+                    b.Min.Z, b.Max.Z);
+            }
+
+            private static void CopyLayerCommon(SQ.Layer dst, ImmSQ.Layer src)
+            {
+                dst.Name = src.Name ?? string.Empty;
+                dst.Visible = src.Visible;
+                dst.Locked = src.Locked;
+                dst.Collapsed = src.Collapsed;
+                dst.BBoxVisible = src.BBoxVisible;
+                dst.Opacity = src.Opacity;
+                dst.Transform = ConvertTransform(src.Transform);
+                dst.Pivot = ConvertTransform(src.Pivot);
+            }
+        }
+}
 }

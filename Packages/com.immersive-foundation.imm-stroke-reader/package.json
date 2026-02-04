@@ -1,0 +1,17 @@
+{
+  "name": "com.immersive-foundation.imm-stroke-reader",
+  "version": "0.1.0",
+  "displayName": "IMM Stroke Reader",
+  "description": "IMM stroke reader runtime and samples.",
+  "unity": "2021.3",
+  "author": {
+    "name": "Immersive Foundation"
+  },
+  "samples": [
+    {
+      "displayName": "Stroke Reader Samples",
+      "description": "Example scripts for IMM stroke reader.",
+      "path": "Samples~/Examples"
+    }
+  ]
+}
