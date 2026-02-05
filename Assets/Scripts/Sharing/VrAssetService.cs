@@ -1313,7 +1313,7 @@ namespace TiltBrush
         private static void GenerateViverseViewerBytes()
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string sourceDir = Path.Combine(projectRoot, "ViverseViewer");
+            string sourceDir = Path.Combine(projectRoot, "Support", "ViverseViewer");
             string outputFile = Path.Combine(Application.dataPath, "Resources", "ViverseViewer.bytes");
 
             // Validate source directory exists

@@ -33,7 +33,7 @@ def generate_viverseviewer_bytes(project_root):
         Exception: If zip creation fails
     """
     project_root = Path(project_root).resolve()
-    viewer_src = project_root / "ViverseViewer"
+    viewer_src = project_root / "Support" / "ViverseViewer"
     viewer_dest = project_root / "Assets" / "Resources" / "ViverseViewer.bytes"
     
     # Validate source exists
