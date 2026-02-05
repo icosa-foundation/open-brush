@@ -55,124 +55,124 @@ namespace TiltBrush
             s_QuillStatsRecorder = recorder;
             try
             {
-            if (sequence == null)
-            {
-                Debug.LogError("Failed to read Quill sequence");
-                return;
-            }
-
-            if (!flattenHierarchy)
-            {
-                Debug.LogWarning("Quill hierarchy import not implemented yet; using flattening path.");
-            }
-
-            // Recurse layers and collect all strokes
-            int strokeCount = 0;
-            List<Stroke> allCollectedStrokes = new List<Stroke>();
-            List<CanvasScript> createdLayers = new List<CanvasScript>();
-            List<GrabWidget> createdWidgets = new List<GrabWidget>();
-            Dictionary<string, ReferenceImage> imageCache = new Dictionary<string, ReferenceImage>(StringComparer.OrdinalIgnoreCase);
-            string quillImageDirectory = GetQuillImageDirectory(path);
-
-            // Apply 10x global scale (Meters to Centimeters/Unity units normalization)
-            Matrix4x4 globalCorrection = Matrix4x4.Scale(Vector3.one * 10f);
-
-            // The RootLayer itself can have a transform
-            Matrix4x4 rootWorldNoFlip = globalCorrection * ConvertSQTransformMatrix(sequence.RootLayer.Transform, includeFlip: false);
-            Matrix4x4 rootWorldWithFlip = globalCorrection * ConvertSQTransformMatrix(sequence.RootLayer.Transform, includeFlip: true);
-
-            bool rootVisible = sequence.RootLayer == null || sequence.RootLayer.Visible;
-            float rootOpacity = sequence.RootLayer == null ? 1f : sequence.RootLayer.Opacity;
-            if (!rootVisible || rootOpacity <= 0f)
-            {
-                return;
-            }
-
-            // Iterate only over top-level layers of the root group
-            foreach (var topLevelLayer in sequence.RootLayer.Children)
-            {
-                // NOTE: IMM imports flatten hierarchy in the adapter, so name filtering
-                // only matches top-level layer names in that path.
-                if (!string.IsNullOrEmpty(layerName) && !LayerContainsName(topLevelLayer, layerName))
+                if (sequence == null)
                 {
-                    continue;
+                    Debug.LogError("Failed to read Quill sequence");
+                    return;
                 }
 
-                if (!IsLayerRenderable(topLevelLayer, rootVisible, rootOpacity, out _, out _))
+                if (!flattenHierarchy)
                 {
-                    continue;
+                    Debug.LogWarning("Quill hierarchy import not implemented yet; using flattening path.");
                 }
 
-                // Create exactly one OB layer for each top-level Quill layer
-                CanvasScript obLayer = App.Scene.AddLayerNow();
-                App.Scene.RenameLayer(obLayer, topLevelLayer.Name);
+                // Recurse layers and collect all strokes
+                int strokeCount = 0;
+                List<Stroke> allCollectedStrokes = new List<Stroke>();
+                List<CanvasScript> createdLayers = new List<CanvasScript>();
+                List<GrabWidget> createdWidgets = new List<GrabWidget>();
+                Dictionary<string, ReferenceImage> imageCache = new Dictionary<string, ReferenceImage>(StringComparer.OrdinalIgnoreCase);
+                string quillImageDirectory = GetQuillImageDirectory(path);
 
-                Matrix4x4 localNoFlip = ConvertSQTransformMatrix(topLevelLayer.Transform, includeFlip: false);
-                Matrix4x4 localWithFlip = ConvertSQTransformMatrix(topLevelLayer.Transform, includeFlip: true);
+                // Apply 10x global scale (Meters to Centimeters/Unity units normalization)
+                Matrix4x4 globalCorrection = Matrix4x4.Scale(Vector3.one * 10f);
 
-                // Calculate world transform for this top-level layer
-                Matrix4x4 topLevelWorldNoFlip = rootWorldNoFlip * localNoFlip;
-                Matrix4x4 topLevelWorldWithFlip = rootWorldWithFlip * localWithFlip;
-                obLayer.Pose = TrTransform.FromMatrix4x4(topLevelWorldNoFlip);
-                createdLayers.Add(obLayer);
+                // The RootLayer itself can have a transform
+                Matrix4x4 rootWorldNoFlip = globalCorrection * ConvertSQTransformMatrix(sequence.RootLayer.Transform, includeFlip: false);
+                Matrix4x4 rootWorldWithFlip = globalCorrection * ConvertSQTransformMatrix(sequence.RootLayer.Transform, includeFlip: true);
 
-                if (recorder != null)
+                bool rootVisible = sequence.RootLayer == null || sequence.RootLayer.Visible;
+                float rootOpacity = sequence.RootLayer == null ? 1f : sequence.RootLayer.Opacity;
+                if (!rootVisible || rootOpacity <= 0f)
                 {
-                    Matrix4x4 pivotMatrix = ConvertSQTransformMatrix(topLevelLayer.Pivot, includeFlip: true);
-                    recorder.RecordLayer(topLevelLayer.Name, topLevelWorldNoFlip, topLevelWorldWithFlip, localNoFlip, localWithFlip, pivotMatrix);
+                    return;
                 }
 
-                // Recurse into children and flatten ALL descendant strokes into this obLayer
-                TraverseAndFlattenLayers(
-                    topLevelLayer,
-                    topLevelWorldWithFlip,
-                    obLayer,
-                    ref strokeCount,
-                    maxStrokes,
-                    loadAnimations,
-                    allCollectedStrokes,
-                    createdWidgets,
-                    imageCache,
-                    path,
-                    quillImageDirectory,
-                    layerName,
-                    includeAllDescendants: false,
-                    parentVisible: rootVisible,
-                    parentOpacity: rootOpacity);
-
-                if (maxStrokes > 0 && strokeCount >= maxStrokes) break;
-            }
-
-            if (allCollectedStrokes.Count > 0)
-            {
-                // Register strokes in memory list first
-                foreach (var stroke in allCollectedStrokes)
+                // Iterate only over top-level layers of the root group
+                foreach (var topLevelLayer in sequence.RootLayer.Children)
                 {
-                    SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
+                    // NOTE: IMM imports flatten hierarchy in the adapter, so name filtering
+                    // only matches top-level layer names in that path.
+                    if (!string.IsNullOrEmpty(layerName) && !LayerContainsName(topLevelLayer, layerName))
+                    {
+                        continue;
+                    }
+
+                    if (!IsLayerRenderable(topLevelLayer, rootVisible, rootOpacity, out _, out _))
+                    {
+                        continue;
+                    }
+
+                    // Create exactly one OB layer for each top-level Quill layer
+                    CanvasScript obLayer = App.Scene.AddLayerNow();
+                    App.Scene.RenameLayer(obLayer, topLevelLayer.Name);
+
+                    Matrix4x4 localNoFlip = ConvertSQTransformMatrix(topLevelLayer.Transform, includeFlip: false);
+                    Matrix4x4 localWithFlip = ConvertSQTransformMatrix(topLevelLayer.Transform, includeFlip: true);
+
+                    // Calculate world transform for this top-level layer
+                    Matrix4x4 topLevelWorldNoFlip = rootWorldNoFlip * localNoFlip;
+                    Matrix4x4 topLevelWorldWithFlip = rootWorldWithFlip * localWithFlip;
+                    obLayer.Pose = TrTransform.FromMatrix4x4(topLevelWorldNoFlip);
+                    createdLayers.Add(obLayer);
+
+                    if (recorder != null)
+                    {
+                        Matrix4x4 pivotMatrix = ConvertSQTransformMatrix(topLevelLayer.Pivot, includeFlip: true);
+                        recorder.RecordLayer(topLevelLayer.Name, topLevelWorldNoFlip, topLevelWorldWithFlip, localNoFlip, localWithFlip, pivotMatrix);
+                    }
+
+                    // Recurse into children and flatten ALL descendant strokes into this obLayer
+                    TraverseAndFlattenLayers(
+                        topLevelLayer,
+                        topLevelWorldWithFlip,
+                        obLayer,
+                        ref strokeCount,
+                        maxStrokes,
+                        loadAnimations,
+                        allCollectedStrokes,
+                        createdWidgets,
+                        imageCache,
+                        path,
+                        quillImageDirectory,
+                        layerName,
+                        includeAllDescendants: false,
+                        parentVisible: rootVisible,
+                        parentOpacity: rootOpacity);
+
+                    if (maxStrokes > 0 && strokeCount >= maxStrokes) break;
                 }
 
-                // Optimized batch rendering
-                SketchMemoryScript.m_Instance.RenderStrokesDirectly(allCollectedStrokes);
-
-                // Finalize batches
-                foreach (var layer in createdLayers)
+                if (allCollectedStrokes.Count > 0)
                 {
-                    layer.BatchManager.FlushMeshUpdates();
+                    // Register strokes in memory list first
+                    foreach (var stroke in allCollectedStrokes)
+                    {
+                        SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
+                    }
+
+                    // Optimized batch rendering
+                    SketchMemoryScript.m_Instance.RenderStrokesDirectly(allCollectedStrokes);
+
+                    // Finalize batches
+                    foreach (var layer in createdLayers)
+                    {
+                        layer.BatchManager.FlushMeshUpdates();
+                    }
+
                 }
 
-            }
-
-            if (allCollectedStrokes.Count > 0 || createdWidgets.Count > 0)
-            {
-                // Single undo step for all strokes, layers, and widgets
-                var cmd = new LoadQuillCommand(allCollectedStrokes, createdLayers, createdWidgets);
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
-
-                if (maxStrokes > 0 && strokeCount >= maxStrokes)
+                if (allCollectedStrokes.Count > 0 || createdWidgets.Count > 0)
                 {
-                    Debug.LogWarning($"Reached maxStrokes limit ({maxStrokes}). Partial load complete.");
+                    // Single undo step for all strokes, layers, and widgets
+                    var cmd = new LoadQuillCommand(allCollectedStrokes, createdLayers, createdWidgets);
+                    SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+
+                    if (maxStrokes > 0 && strokeCount >= maxStrokes)
+                    {
+                        Debug.LogWarning($"Reached maxStrokes limit ({maxStrokes}). Partial load complete.");
+                    }
                 }
-            }
             }
             finally
             {
@@ -180,7 +180,7 @@ namespace TiltBrush
                 s_QuillStatsRecorder = null;
             }
 
-}
+        }
 
         private static void TraverseAndFlattenLayers(
             SQ.Layer layer,
@@ -887,7 +887,7 @@ namespace TiltBrush
             if (brush == null) return null;
 
             var color = sqStroke.Vertices[0].Color;
-                var unityColor = new Color(color.R, color.G, color.B);
+            var unityColor = new Color(color.R, color.G, color.B);
 
             var controlPoints = new List<PointerManager.ControlPoint>(sqStroke.Vertices.Count);
             List<Color32?> perPointColors = new List<Color32?>();
@@ -970,7 +970,7 @@ namespace TiltBrush
             return stroke;
         }
 
-                private static float GetUniformScale(Matrix4x4 m)
+        private static float GetUniformScale(Matrix4x4 m)
         {
             Vector3 x = new Vector3(m.m00, m.m10, m.m20);
             float scale = x.magnitude;
@@ -1245,8 +1245,8 @@ namespace TiltBrush
                     }
                 }
 
-            public BrushStats ToStats()
-            {
+                public BrushStats ToStats()
+                {
                     return new BrushStats
                     {
                         BrushGuid = BrushGuid,
@@ -1262,7 +1262,7 @@ namespace TiltBrush
         }
 
         private static QuillStatsRecorder s_QuillStatsRecorder;
-private static class ImmSharpQuillAdapter
+        private static class ImmSharpQuillAdapter
         {
             public static SQ.Sequence ToSharpQuillSequence(ImmSQ.Sequence imm)
             {
@@ -1461,5 +1461,5 @@ private static class ImmSharpQuillAdapter
                 dst.Pivot = ConvertTransform(src.Pivot);
             }
         }
-}
+    }
 }
