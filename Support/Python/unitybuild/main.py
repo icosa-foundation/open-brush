@@ -952,6 +952,7 @@ def main(
 
         # Generate ViverseViewer.bytes from source directory before building
         from unitybuild.viverseviewer import generate_viverseviewer_bytes
+
         generate_viverseviewer_bytes(project_dir)
 
         for platform, vrsdk, config in iter_builds(args):

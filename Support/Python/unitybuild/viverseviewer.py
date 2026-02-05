@@ -16,7 +16,6 @@
 Utility to generate ViverseViewer.bytes from ViverseViewer source directory
 """
 
-import os
 import zipfile
 from pathlib import Path
 
@@ -24,10 +23,10 @@ from pathlib import Path
 def generate_viverseviewer_bytes(project_root):
     """
     Zip ViverseViewer/ directory to Assets/Resources/ViverseViewer.bytes
-    
+
     Args:
         project_root: Path to project root directory
-        
+
     Raises:
         FileNotFoundError: If ViverseViewer source directory doesn't exist
         Exception: If zip creation fails
@@ -35,36 +34,36 @@ def generate_viverseviewer_bytes(project_root):
     project_root = Path(project_root).resolve()
     viewer_src = project_root / "Support" / "ViverseViewer"
     viewer_dest = project_root / "Assets" / "Resources" / "ViverseViewer.bytes"
-    
+
     # Validate source exists
     if not viewer_src.exists():
         raise FileNotFoundError(
             f"ViverseViewer source directory not found: {viewer_src}\n"
             "This directory must exist and contain the ViverseViewer files."
         )
-    
+
     if not viewer_src.is_dir():
         raise ValueError(f"ViverseViewer path is not a directory: {viewer_src}")
-    
+
     # Ensure Resources directory exists
     viewer_dest.parent.mkdir(parents=True, exist_ok=True)
-    
+
     # Create zip
     print(f"Generating {viewer_dest} from {viewer_src}")
-    
+
     try:
-        with zipfile.ZipFile(viewer_dest, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            for file_path in viewer_src.rglob('*'):
+        with zipfile.ZipFile(viewer_dest, "w", zipfile.ZIP_DEFLATED) as zipf:
+            for file_path in viewer_src.rglob("*"):
                 if file_path.is_file():
                     # Get path relative to ViverseViewer/ directory
                     arcname = file_path.relative_to(viewer_src)
                     # Normalize to forward slashes for cross-platform compatibility
-                    arcname = str(arcname).replace('\\', '/')
+                    arcname = str(arcname).replace("\\", "/")
                     zipf.write(file_path, arcname)
-                    
+
         file_size_mb = viewer_dest.stat().st_size / (1024 * 1024)
         print(f"Successfully generated ViverseViewer.bytes ({file_size_mb:.2f} MB)")
-        
+
     except Exception as e:
         # Clean up partial file if creation failed
         if viewer_dest.exists():
@@ -75,5 +74,6 @@ def generate_viverseviewer_bytes(project_root):
 if __name__ == "__main__":
     # Allow running directly for testing
     import sys
-    project_root = sys.argv[1] if len(sys.argv) > 1 else "."
-    generate_viverseviewer_bytes(project_root)
+
+    root = sys.argv[1] if len(sys.argv) > 1 else "."
+    generate_viverseviewer_bytes(root)
