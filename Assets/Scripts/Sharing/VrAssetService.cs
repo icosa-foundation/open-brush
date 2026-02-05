@@ -857,12 +857,12 @@ namespace TiltBrush
             // Copy ViverseViewer files FIRST directly to exportDir (not to a subdirectory)
             // This establishes the base structure: libs/, css/, helpers/, img/, legacy/, icosa-viewer.module.js, etc.
             string tempZip = Path.Combine(Application.temporaryCachePath, "viverseviewer_temp.zip");
-            
+
 #if UNITY_EDITOR
             // In editor, always regenerate ViverseViewer.bytes from source before publishing
             GenerateViverseViewerBytes();
 #endif
-            
+
             FileUtils.WriteBytesFromResources("ViverseViewer", tempZip);
 
             if (!File.Exists(tempZip))
