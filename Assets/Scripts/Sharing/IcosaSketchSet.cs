@@ -1062,5 +1062,11 @@ namespace TiltBrush
 
         // Not part of the interface
         public int GltfTriangleCount => m_GltfTriangleCount;
+
+        public IEnumerable<string> GetContentsAt(string path)
+        {
+            // This is only required for accessing custom brushes, which aren't supported by Poly.
+            return new string[] { };
+        }
     }
-} // namespace TiltBrush
+}  // namespace TiltBrush
