@@ -15,6 +15,7 @@
 using UnityEngine;
 using UnityEngine.Localization;
 using TMPro;
+using System.Collections.Generic;
 
 namespace TiltBrush
 {
@@ -54,6 +55,10 @@ namespace TiltBrush
         // State for automatically loading models.
         int m_LastPageIndexForLoad = -1;
         IcosaSetType m_LastSetTypeForLoad = IcosaSetType.User;
+
+        // Flag to defer RefreshPage to once per frame
+        private bool m_RefreshRequested = false;
+        private Dictionary<IcosaSetType, float> m_CooldownByType = new Dictionary<IcosaSetType, float>();
 
         public bool ShowingFeatured { get { return m_CurrentSet == IcosaSetType.Featured; } }
         public bool ShowingLikes { get { return m_CurrentSet == IcosaSetType.Liked; } }
@@ -129,8 +134,19 @@ namespace TiltBrush
 
         void OnIcosaAssetCatalogChanged()
         {
-            RefreshPage();
+            // Rate-limit RefreshPage calls to prevent cascade from rapid CatalogChanged events
+            if (!m_CooldownByType.ContainsKey(m_CurrentSet))
+            {
+                m_CooldownByType[m_CurrentSet] = 0f;
+            }
+
+            if (m_CooldownByType[m_CurrentSet] <= 0f)
+            {
+                RefreshPage();
+                m_CooldownByType[m_CurrentSet] = MIN_REFRESH_INTERVAL;
+            }
         }
+        private const float MIN_REFRESH_INTERVAL = 0.5f; // 500ms between refreshes per set
 
         protected override void RefreshPage()
         {
@@ -276,6 +292,16 @@ namespace TiltBrush
         void Update()
         {
             BaseUpdate();
+
+            // Decrement all cooldowns
+            var keys = new List<IcosaSetType>(m_CooldownByType.Keys);
+            foreach (var key in keys)
+            {
+                if (m_CooldownByType[key] > 0f)
+                {
+                    m_CooldownByType[key] -= UnityEngine.Time.deltaTime;
+                }
+            }
 
             // Update share button's text.
             bool loggedIn = App.IcosaIsLoggedIn;
