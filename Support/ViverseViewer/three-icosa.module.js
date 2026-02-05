@@ -1006,6 +1006,9 @@ const $4fdc68aa1ebb2033$var$tiltBrushMaterialParams = {
             u_Cutoff: {
                 value: 0.25
             },
+            u_A2CEnabled: {
+                value: 1.0
+            },
             u_fogColor: {
                 value: new $fugmd$Vector3(0.0196, 0.0196, 0.0196)
             },
@@ -9881,33 +9884,39 @@ class $e02d07ddc3ccd105$export$2b011a5b12963d65 {
         // if (!this.isTiltGltf(json)) {
         //     return null;
         // }
+        // Detect exporter type and store on scenes
+        const generator = json.asset?.generator;
+        const isNewTiltExporter = generator && generator.includes("Open Brush UnityGLTF Exporter");
         const shaderResolves = [];
-        for (const scene of glTF.scenes)scene.traverse(async (object)=>{
-            const association = parser.associations.get(object);
-            if (association === undefined || association.meshes === undefined) return;
-            const mesh = json.meshes[association.meshes];
-            mesh.primitives.forEach((prim)=>{
-                if (prim.material === null || prim.material === undefined) return;
-                const material = json.materials[prim.material];
-                const extensionsDef = material.extensions;
-                let brushName;
-                if (material.name?.startsWith("ob-")) // New glb naming convention
-                brushName = material.name.replace("ob-", "");
-                else if (material.name?.startsWith("material_")) // Some legacy poly files
-                // TODO - risk of name collision with non-tilt materials
-                // Maybe we should pass in a flag when a tilt gltf is detected?
-                // Do names in this format use guids or english names?
-                brushName = material.name.replace("material_", "");
-                else if (extensionsDef) {
-                    let exDef = extensionsDef[this.name];
-                    if (exDef !== undefined) brushName = exDef.guid;
-                }
-                let newName = this.tryReplaceBlocksName(material.name);
-                if (newName !== undefined) brushName = newName;
-                if (brushName !== undefined) shaderResolves.push(this.replaceMaterial(object, brushName));
-                else console.warn("No brush name found for material", material.name, brushName);
+        for (const scene of glTF.scenes){
+            scene.userData.isNewTiltExporter = isNewTiltExporter;
+            scene.traverse(async (object)=>{
+                const association = parser.associations.get(object);
+                if (association === undefined || association.meshes === undefined) return;
+                const mesh = json.meshes[association.meshes];
+                mesh.primitives.forEach((prim)=>{
+                    if (prim.material === null || prim.material === undefined) return;
+                    const material = json.materials[prim.material];
+                    const extensionsDef = material.extensions;
+                    let brushName;
+                    if (material.name?.startsWith("ob-")) // New glb naming convention
+                    brushName = material.name.replace("ob-", "");
+                    else if (material.name?.startsWith("material_")) // Some legacy poly files
+                    // TODO - risk of name collision with non-tilt materials
+                    // Maybe we should pass in a flag when a tilt gltf is detected?
+                    // Do names in this format use guids or english names?
+                    brushName = material.name.replace("material_", "");
+                    else if (extensionsDef) {
+                        let exDef = extensionsDef[this.name];
+                        if (exDef !== undefined) brushName = exDef.guid;
+                    }
+                    let newName = this.tryReplaceBlocksName(material.name);
+                    if (newName !== undefined) brushName = newName;
+                    if (brushName !== undefined) shaderResolves.push(this.replaceMaterial(object, brushName, isNewTiltExporter));
+                    else console.warn("No brush name found for material", material.name, brushName);
+                });
             });
-        });
+        }
         return Promise.all(shaderResolves);
     }
     tryReplaceBlocksName(originalName) {
@@ -9927,7 +9936,7 @@ class $e02d07ddc3ccd105$export$2b011a5b12963d65 {
         isTiltGltf ||= "extensions" in json && this.altName in json["extensions"];
         return isTiltGltf;
     }
-    async replaceMaterial(mesh, guidOrName) {
+    async replaceMaterial(mesh, guidOrName, isNewTiltExporter = false) {
         let renameAttribute = (mesh, oldName, newName)=>{
             const attr = mesh.geometry.getAttribute(oldName);
             if (attr) {
@@ -11639,6 +11648,10 @@ class $e02d07ddc3ccd105$export$2b011a5b12963d65 {
             default:
                 console.warn(`Could not find brush with guid ${guidOrName}!`);
         }
+        // Set the exporter type flag on the shader
+        if (mesh.material?.uniforms) mesh.material.uniforms.u_isNewTiltExporter = {
+            value: isNewTiltExporter
+        };
         mesh.onBeforeRender = (renderer, scene, camera, geometry, material, group)=>{
             if (material?.uniforms?.u_time) {
                 const elapsedTime = this.clock.getElapsedTime();
