@@ -30,8 +30,9 @@ namespace TiltBrush
         private const string BRUSH_QUILL_CUBE = "b3e7f8c2-4d5a-1e9b-6c8f-3a7d2f1e9c4b";
         private const string BRUSH_QUILL_RIBBON = "c4f8b3e2-9d1a-5e7f-4c3b-8a6d2f9e1c7b";
 
-        public static void Load(string path, int maxStrokes = 0, bool loadAnimations = false, string layerName = null)
-        {            string kind;
+        public static void Load(string path, int maxStrokes = 0, bool loadAnimations = false, string layerName = null, bool flattenHierarchy = true)
+        {
+            string kind;
             SQ.Sequence sequence = null;
             if (Directory.Exists(path))
             {
@@ -60,6 +61,11 @@ namespace TiltBrush
                 return;
             }
 
+            if (!flattenHierarchy)
+            {
+                Debug.LogWarning("Quill hierarchy import not implemented yet; using flattening path.");
+            }
+
             // Recurse layers and collect all strokes
             int strokeCount = 0;
             List<Stroke> allCollectedStrokes = new List<Stroke>();
@@ -75,10 +81,24 @@ namespace TiltBrush
             Matrix4x4 rootWorldNoFlip = globalCorrection * ConvertSQTransformMatrix(sequence.RootLayer.Transform, includeFlip: false);
             Matrix4x4 rootWorldWithFlip = globalCorrection * ConvertSQTransformMatrix(sequence.RootLayer.Transform, includeFlip: true);
 
+            bool rootVisible = sequence.RootLayer == null || sequence.RootLayer.Visible;
+            float rootOpacity = sequence.RootLayer == null ? 1f : sequence.RootLayer.Opacity;
+            if (!rootVisible || rootOpacity <= 0f)
+            {
+                return;
+            }
+
             // Iterate only over top-level layers of the root group
             foreach (var topLevelLayer in sequence.RootLayer.Children)
             {
+                // NOTE: IMM imports flatten hierarchy in the adapter, so name filtering
+                // only matches top-level layer names in that path.
                 if (!string.IsNullOrEmpty(layerName) && !LayerContainsName(topLevelLayer, layerName))
+                {
+                    continue;
+                }
+
+                if (!IsLayerRenderable(topLevelLayer, rootVisible, rootOpacity, out _, out _))
                 {
                     continue;
                 }
@@ -116,7 +136,9 @@ namespace TiltBrush
                     path,
                     quillImageDirectory,
                     layerName,
-                    includeAllDescendants: false);
+                    includeAllDescendants: false,
+                    parentVisible: rootVisible,
+                    parentOpacity: rootOpacity);
 
                 if (maxStrokes > 0 && strokeCount >= maxStrokes) break;
             }
@@ -173,9 +195,16 @@ namespace TiltBrush
             string quillProjectPath,
             string quillImageDirectory,
             string layerName,
-            bool includeAllDescendants)
+            bool includeAllDescendants,
+            bool parentVisible,
+            float parentOpacity)
         {
             if (maxStrokes > 0 && strokeCount >= maxStrokes) return;
+
+            if (!IsLayerRenderable(layer, parentVisible, parentOpacity, out bool layerVisible, out float layerOpacity))
+            {
+                return;
+            }
 
             bool hasFilter = !string.IsNullOrEmpty(layerName);
             bool isMatch = hasFilter && string.Equals(layer.Name, layerName, StringComparison.OrdinalIgnoreCase);
@@ -189,6 +218,8 @@ namespace TiltBrush
             // 1. Process strokes in this layer if it's a Paint layer
             if ((!hasFilter || allowAll) && layer is SQ.LayerPaint paint)
             {
+                // NOTE: For now we always call Quill.Load with loadAnimations=false,
+                // so only the first frame (or first drawing) is imported.
                 IEnumerable<SQ.Drawing> drawingsToLoad;
                 if (loadAnimations)
                 {
@@ -221,7 +252,7 @@ namespace TiltBrush
                         // Calculate transform from Quill world space to the OB targetLayer's local space
                         Matrix4x4 toLayerSpace = targetLayer.Pose.ToMatrix4x4().inverse * worldXf;
 
-                        var tbStroke = ConvertStroke(sqStroke, targetLayer, toLayerSpace);
+                        var tbStroke = ConvertStroke(sqStroke, targetLayer, toLayerSpace, layerOpacity);
                         if (tbStroke != null)
                         {
                             collectedStrokes.Add(tbStroke);
@@ -241,7 +272,8 @@ namespace TiltBrush
                     targetLayer,
                     imageCache,
                     quillProjectPath,
-                    quillImageDirectory);
+                    quillImageDirectory,
+                    layerOpacity);
                 if (widget != null)
                 {
                     createdWidgets.Add(widget);
@@ -268,10 +300,20 @@ namespace TiltBrush
                         quillProjectPath,
                         quillImageDirectory,
                         layerName,
-                        includeAllDescendants: allowAll);
+                        includeAllDescendants: allowAll,
+                        parentVisible: layerVisible,
+                        parentOpacity: layerOpacity);
                     if (maxStrokes > 0 && strokeCount >= maxStrokes) return;
                 }
             }
+        }
+
+        private static bool IsLayerRenderable(SQ.Layer layer, bool parentVisible, float parentOpacity, out bool visible, out float opacity)
+        {
+            visible = parentVisible && (layer == null || layer.Visible);
+            float layerOpacity = layer == null ? 1f : layer.Opacity;
+            opacity = parentOpacity * layerOpacity;
+            return visible && opacity > 0f;
         }
 
         private static bool LayerContainsName(SQ.Layer layer, string layerName)
@@ -306,7 +348,8 @@ namespace TiltBrush
             CanvasScript targetLayer,
             Dictionary<string, ReferenceImage> imageCache,
             string quillProjectPath,
-            string quillImageDirectory)
+            string quillImageDirectory,
+            float opacity)
         {
             if (picture == null)
             {
@@ -366,7 +409,28 @@ namespace TiltBrush
 
             image.TwoSided = true;
 
+            ApplyImageOpacity(image, opacity);
+
             return image;
+        }
+
+        private static void ApplyImageOpacity(ImageWidget image, float opacity)
+        {
+            if (image == null || image.m_ImageQuad == null)
+            {
+                return;
+            }
+
+            float alpha = Mathf.Clamp01(opacity);
+            var mat = image.m_ImageQuad.material;
+            if (mat == null)
+            {
+                return;
+            }
+
+            Color color = mat.color;
+            color.a *= alpha;
+            mat.color = color;
         }
 
         private static string ResolveQuillImagePath(string importPath, string quillProjectPath)
@@ -781,7 +845,7 @@ namespace TiltBrush
             return Mathf.Clamp01(pressure);
         }
 
-        private static Stroke ConvertStroke(SQ.Stroke sqStroke, CanvasScript targetLayer, Matrix4x4 toLayerSpace)
+        private static Stroke ConvertStroke(SQ.Stroke sqStroke, CanvasScript targetLayer, Matrix4x4 toLayerSpace, float opacityScale)
         {
             if (sqStroke.Vertices.Count < 2) return null;
 
@@ -823,7 +887,7 @@ namespace TiltBrush
             if (brush == null) return null;
 
             var color = sqStroke.Vertices[0].Color;
-            var unityColor = new Color(color.R, color.G, color.B);
+                var unityColor = new Color(color.R, color.G, color.B);
 
             var controlPoints = new List<PointerManager.ControlPoint>(sqStroke.Vertices.Count);
             List<Color32?> perPointColors = new List<Color32?>();
@@ -867,11 +931,12 @@ namespace TiltBrush
                 });
 
                 // Capture per-point color from Quill vertex
+                float pointAlpha = Mathf.Clamp01(v.Opacity * opacityScale);
                 perPointColors.Add(new Color32(
                     (byte)(v.Color.R * 255f),
                     (byte)(v.Color.G * 255f),
                     (byte)(v.Color.B * 255f),
-                    (byte)(v.Opacity * 255f)
+                    (byte)(pointAlpha * 255f)
                 ));
             }
 
