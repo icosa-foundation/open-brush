@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
   m_Name: Strings Shared Data
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   m_TableCollectionName: Strings
   m_TableCollectionNameGuidString: c84355079ab3f3e4f8f3812258805f86
   m_Entries:
@@ -3267,6 +3267,10 @@ MonoBehaviour:
     m_Key: SETTINGS_PANEL_LOCALE_BUTTON_POPUP
     m_Metadata:
       m_Items: []
+  - m_Id: 140585981667180544
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_TEXT
+    m_Metadata:
+      m_Items: []
   - m_Id: 151489918612377600
     m_Key: POPUP_RECORD_UNSUPPORTED_TITLE
     m_Metadata:
@@ -3309,6 +3313,33 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 189087250755706880
     m_Key: POPUP_UPLOAD_COMPLETE_MOBILE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151470525216034816
+    m_Key: KEYBOARD_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  m_EditorClassIdentifier:
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791089062830080
+    m_Key: ENVIRONMENT_PANEL_RESET_CANVAS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791266398003200
+    m_Key: ENVIRONMENT_PANEL_LOCK_CANVAS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188792931159203840
+    m_Key: ENVIRONMENT_PANEL_UNLOCK_CANVAS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 189087250755706880
+    m_Key: POPUP_UPLOAD_COMPLETE_MOBILE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151470525216034816
+    m_Key: KEYBOARD_PANEL_DESCRIPTION
     m_Metadata:
       m_Items: []
   - m_Id: 156198200358006784
