@@ -518,6 +518,15 @@ jobs:
             echo -e "\n-define:$DEFINE" | tee -a Assets/csc.rsp
           done
 
+      - name: Generate ViverseViewer.bytes from source
+        run: |
+          python -c "
+          import sys
+          sys.path.append('Support/Python')
+          from unitybuild.viverseviewer import generate_viverseviewer_bytes
+          generate_viverseviewer_bytes('.')
+          "
+
       - name: Build project
         uses: Wandalen/wretry.action@v3
         env:
