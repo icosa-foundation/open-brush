@@ -18,10 +18,6 @@ namespace TiltBrush
 {
     class QuillTubeBrush : TubeBrush
     {
-        const float kQuillEllipseMinorScale = 0.3f;
-        const float kQuillCubeRadiusMultiplier = 1.4142135f; // sqrt(2)
-        const float kQuillCubeAngleOffset = -0.75f * Mathf.PI;
-
         protected override bool SmoothPositions
         {
             get { return false; }
@@ -32,59 +28,7 @@ namespace TiltBrush
             Quaternion? prevFrame,
             Quaternion brushOrientation)
         {
-            const float epsilon = 1e-7f;
-            Vector3 yaxis = nTangent;
-            if (yaxis.sqrMagnitude < epsilon * epsilon)
-            {
-                yaxis = brushOrientation * Vector3.forward;
-            }
-            yaxis.Normalize();
-
-            Vector3 zaxis = brushOrientation * Vector3.up;
-            Vector3 xaxis = Vector3.Cross(zaxis, yaxis);
-
-            if (xaxis.sqrMagnitude >= epsilon * epsilon)
-            {
-                xaxis.Normalize();
-            }
-            else if (Mathf.Abs(yaxis.x) < 0.9f)
-            {
-                xaxis = new Vector3(0, yaxis.z, yaxis.y).normalized;
-            }
-            else if (Mathf.Abs(yaxis.y) < 0.9f)
-            {
-                xaxis = new Vector3(-yaxis.z, 0, yaxis.x).normalized;
-            }
-            else
-            {
-                xaxis = new Vector3(yaxis.y, -yaxis.x, 0).normalized;
-            }
-
-            zaxis = Vector3.Cross(yaxis, xaxis).normalized;
-            return Quaternion.LookRotation(yaxis, zaxis);
-        }
-
-        protected override float GetRadiusMultiplier()
-        {
-            if (m_PointsInClosedCircle == 4 && m_HardEdges)
-            {
-                return kQuillCubeRadiusMultiplier;
-            }
-            return 1.0f;
-        }
-
-        protected override float GetEllipseMinorScale()
-        {
-            return kQuillEllipseMinorScale;
-        }
-
-        protected override float GetCrossSectionAngleOffset()
-        {
-            if (m_PointsInClosedCircle == 4 && m_HardEdges)
-            {
-                return kQuillCubeAngleOffset;
-            }
-            return 0.0f;
+            return brushOrientation;
         }
     }
 }

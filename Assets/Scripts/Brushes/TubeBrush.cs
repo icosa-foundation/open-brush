@@ -35,12 +35,17 @@ namespace TiltBrush
         [SerializeField] protected bool m_EndCaps = true;
         [SerializeField] protected bool m_HardEdges = false;
         [SerializeField] protected UVStyle m_uvStyle = UVStyle.Distance;
+        [SerializeField] protected float m_RadiusMultiplier = 1.0f;
+        /// Angle of the first vertex of the cross section, in radians.
+        [SerializeField] protected float m_CrossSectionAngleOffset = 0.0f;
         [SerializeField] protected ShapeModifier m_ShapeModifier = ShapeModifier.None;
         /// Specific to Taper shape modifier.
         [SerializeField] float m_TaperScalar = 1.0f;
         /// Specific to Petal shape modifier.
         [SerializeField] float m_PetalDisplacementAmt = 0.5f;
         [SerializeField] float m_PetalDisplacementExp = 3.0f;
+        /// Specific to Ellipse shape modifier.
+        [SerializeField] float m_EllipseMinorScale = 0.25f;
         /// XXX - in my experience a higher multiplier actually makes
         /// the break LESS sensitive. Not more.
         ///
@@ -59,21 +64,6 @@ namespace TiltBrush
             Quaternion brushOrientation)
         {
             return MathUtils.ComputeMinimalRotationFrame(nTangent, prevFrame, brushOrientation);
-        }
-
-        protected virtual float GetRadiusMultiplier()
-        {
-            return 1.0f;
-        }
-
-        protected virtual float GetEllipseMinorScale()
-        {
-            return 0.25f;
-        }
-
-        protected virtual float GetCrossSectionAngleOffset()
-        {
-            return 0.0f;
         }
 
         int m_VertsInClosedCircle;
@@ -248,8 +238,7 @@ namespace TiltBrush
                     {
                         fallback = Vector3.forward;
                     }
-                    cur.qFrame = MathUtils.ComputeMinimalRotationFrame(
-                        fallback.normalized, prev.Frame, cur.point.m_Orient);
+                    cur.qFrame = ComputeFrame(fallback.normalized, prev.Frame, cur.point.m_Orient);
                 }
 
                 if (shouldBreak)
@@ -375,7 +364,7 @@ namespace TiltBrush
                     // Verts, front half
                     {
                         float size = PressuredSize(cur.smoothedPressure);
-                        float radius = size * 0.5f * GetRadiusMultiplier();
+                        float radius = size * 0.5f * m_RadiusMultiplier;
                         float circumference = TWOPI * radius;
                         float uRate = m_Desc.m_TileRate / circumference;
 
@@ -729,11 +718,15 @@ namespace TiltBrush
                 distance += cur.length;
                 float t = distance / totalLength;
 
+                // Because the vertices are shared between knots we only handle half of them.
+                // In the m_Displacements array only the second half of the chunk of vertices 
+                // controlled by a given knot are relative to that knot, the first half is relative
+                // to the previous one, so we start the loop at m_VertsInClosedCircle.
                 int numVerts = cur.nVert;
-                for (int i = 0; i < numVerts; i++)
+                for (int i = m_VertsInClosedCircle; i < numVerts; i++)
                 {
                     int vert = (cur.iVert + i);
-                    float radius = PressuredSize(cur.smoothedPressure) * 0.5f * GetRadiusMultiplier();
+                    float radius = PressuredSize(cur.smoothedPressure) * 0.5f * m_RadiusMultiplier;
                     Vector3 dir = m_Displacements[vert];
 
                     // skip start/end cap verts
@@ -752,7 +745,7 @@ namespace TiltBrush
                         }
                     }
 
-                    float curve = 0;
+                    float curve = 1.0f;
                     Vector3 offset = Vector3.zero;
 
                     switch (m_ShapeModifier)
@@ -782,13 +775,13 @@ namespace TiltBrush
                             break;
                         case ShapeModifier.Ellipse:
                             // Calculate offset to create an elliptical cross-section
-                            curve = 1.0f;
-                            // Minor/major ratio; tweak later if needed.
-                            float minorScale = GetEllipseMinorScale();
-                            const float majorScale = 1.0f;
+                            // Minor/major ratio.
+                            float minorScale = m_EllipseMinorScale == 0 ? 1.0f : m_EllipseMinorScale;
+                            float horzScale = minorScale > 1.0f ? 1.0f / minorScale : 1.0f;
+                            float vertScale = minorScale > 1.0f ? 1.0f : minorScale;
                             float rtAmt = Vector3.Dot(dir, cur.nRight);
                             float upAmt = Vector3.Dot(dir, cur.nSurface);
-                            dir = cur.nRight * (rtAmt * minorScale) + cur.nSurface * (upAmt * majorScale);
+                            dir = cur.nRight * (rtAmt * horzScale) + cur.nSurface * (upAmt * vertScale);
                             break;
                     }
                     m_geometry.m_Vertices[vert] = offset + cur.smoothedPos + radius * dir * curve;
@@ -866,13 +859,13 @@ namespace TiltBrush
             {
                 float t = (float)i / (numVerts - 1);
                 // Ensure that the first and last verts are exactly coincident
-                float offset = GetCrossSectionAngleOffset();
-                float theta = (t == 1) ? offset : TWOPI * t + offset;
+                float theta = (t == 1) ? m_CrossSectionAngleOffset : TWOPI * t + m_CrossSectionAngleOffset;
                 Vector2 uv = new Vector2(u, Mathf.Lerp(v0, v1, t));
-                Vector3 off = -Mathf.Cos(theta) * up + -Mathf.Sin(theta) * rt;
+                Vector3 dir = -Mathf.Cos(theta) * up + -Mathf.Sin(theta) * rt;
+                dir.Normalize();
 
-                AppendVert(ref k, center + radius * off, off, k.color, fwd, uv, radius);
-                AppendDisplacement(ref k, off.normalized);
+                AppendVert(ref k, center + radius * dir, dir, k.color, fwd, uv, radius);
+                AppendDisplacement(ref k, dir);
             }
         }
 
@@ -886,14 +879,13 @@ namespace TiltBrush
             // When facing down the tangent, circle verts should go clockwise
             // We'd like the seam to be on the bottom
             float? lastTheta = null;
-            float offset = GetCrossSectionAngleOffset();
 
             for (int i = 0; i < numPoints; ++i)
             {
                 float t = (float)i / (numPoints);
 
                 // Ensure that the first and last verts are exactly coincident
-                float theta = (t == 0) ? offset : TWOPI * t + offset;
+                float theta = TWOPI * t + m_CrossSectionAngleOffset;
                 if (!lastTheta.HasValue)
                 {
                     lastTheta = theta - (TWOPI / numPoints);

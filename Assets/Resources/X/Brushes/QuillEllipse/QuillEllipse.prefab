@@ -50,10 +50,13 @@ MonoBehaviour:
   m_EndCaps: 0
   m_HardEdges: 0
   m_uvStyle: 0
+  m_RadiusMultiplier: 1
+  m_CrossSectionAngleOffset: 1.570796
   m_ShapeModifier: 6
   m_TaperScalar: 1
   m_PetalDisplacementAmt: 0.5
   m_PetalDisplacementExp: 3
+  m_EllipseMinorScale: 0.3
   m_BreakAngleMultiplier: 2
   m_ForceAllKnots: 1
 --- !u!23 &23000012424641129
