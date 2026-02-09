@@ -520,12 +520,7 @@ jobs:
 
       - name: Generate ViverseViewer.bytes from source
         run: |
-          python -c "
-          import sys
-          sys.path.append('Support/Python')
-          from unitybuild.viverseviewer import generate_viverseviewer_bytes
-          generate_viverseviewer_bytes('.')
-          "
+          python Support/Python/unitybuild/viverseviewer.py .
 
       - name: Build project
         uses: Wandalen/wretry.action@v3
