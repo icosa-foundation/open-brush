@@ -16,8 +16,8 @@
 Utility to generate ViverseViewer.bytes from ViverseViewer source directory
 """
 
+import os
 import zipfile
-from pathlib import Path
 
 
 def generate_viverseviewer_bytes(project_root):
@@ -31,43 +31,46 @@ def generate_viverseviewer_bytes(project_root):
         FileNotFoundError: If ViverseViewer source directory doesn't exist
         Exception: If zip creation fails
     """
-    project_root = Path(project_root).resolve()
-    viewer_src = project_root / "Support" / "ViverseViewer"
-    viewer_dest = project_root / "Assets" / "Resources" / "ViverseViewer.bytes"
+    project_root = os.path.abspath(project_root)
+    viewer_src = os.path.join(project_root, "Support", "ViverseViewer")
+    viewer_dest = os.path.join(
+        project_root, "Assets", "Resources", "ViverseViewer.bytes"
+    )
 
     # Validate source exists
-    if not viewer_src.exists():
+    if not os.path.exists(viewer_src):
         raise FileNotFoundError(
             f"ViverseViewer source directory not found: {viewer_src}\n"
             "This directory must exist and contain the ViverseViewer files."
         )
 
-    if not viewer_src.is_dir():
+    if not os.path.isdir(viewer_src):
         raise ValueError(f"ViverseViewer path is not a directory: {viewer_src}")
 
     # Ensure Resources directory exists
-    viewer_dest.parent.mkdir(parents=True, exist_ok=True)
+    os.makedirs(os.path.dirname(viewer_dest), exist_ok=True)
 
     # Create zip
     print(f"Generating {viewer_dest} from {viewer_src}")
 
     try:
         with zipfile.ZipFile(viewer_dest, "w", zipfile.ZIP_DEFLATED) as zipf:
-            for file_path in viewer_src.rglob("*"):
-                if file_path.is_file():
+            for dirpath, _, files in os.walk(viewer_src):
+                for file_name in files:
+                    file_path = os.path.join(dirpath, file_name)
                     # Get path relative to ViverseViewer/ directory
-                    arcname = file_path.relative_to(viewer_src)
+                    arcname = os.path.relpath(file_path, viewer_src)
                     # Normalize to forward slashes for cross-platform compatibility
-                    arcname = str(arcname).replace("\\", "/")
+                    arcname = arcname.replace("\\", "/")
                     zipf.write(file_path, arcname)
 
-        file_size_mb = viewer_dest.stat().st_size / (1024 * 1024)
+        file_size_mb = os.path.getsize(viewer_dest) / (1024 * 1024)
         print(f"Successfully generated ViverseViewer.bytes ({file_size_mb:.2f} MB)")
 
     except Exception as e:
         # Clean up partial file if creation failed
-        if viewer_dest.exists():
-            viewer_dest.unlink()
+        if os.path.exists(viewer_dest):
+            os.unlink(viewer_dest)
         raise Exception(f"Failed to generate ViverseViewer.bytes: {e}") from e
 
 
@@ -75,5 +78,5 @@ if __name__ == "__main__":
     # Allow running directly for testing
     import sys
 
-    root = sys.argv[1] if len(sys.argv) > 1 else "."
-    generate_viverseviewer_bytes(root)
+    project_root_arg = sys.argv[1] if len(sys.argv) > 1 else "."
+    generate_viverseviewer_bytes(project_root_arg)
