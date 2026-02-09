@@ -2244,12 +2244,8 @@ namespace TiltBrush
 
         static public string QuillLibraryPath()
         {
-            string documentsPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
-            if (string.IsNullOrEmpty(documentsPath))
-            {
-                documentsPath = UserPath();
-            }
-            return Path.Combine(documentsPath, "Quill");
+            return Path.Combine(System.Environment.GetFolderPath(
+                System.Environment.SpecialFolder.Personal), "Quill");
         }
 
         static public string QuillImmPath()
