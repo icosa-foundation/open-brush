@@ -2512,5 +2512,33 @@ namespace TiltBrush
             }
             return driver;
         }
+
+        public GameObject InstantiateThumbnailCamera()
+        {
+            if (SaveLoadScript.m_Instance == null)
+            {
+                Debug.LogError("SaveLoadScript.m_Instance is null. Cannot get camera state.");
+                return null;
+            }
+
+            // ReasonableThumbnail_SS returns the saved camera transform in Scene Space
+            // This is the camera position from the loaded sketch file
+            TrTransform cameraTr_Scene = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
+
+            // Create a new GameObject with a Camera component
+            GameObject cameraObj = new GameObject("TB_ThumbnailSaveCamera");
+            Camera cam = cameraObj.AddComponent<Camera>();
+
+            // Set camera properties to match typical GLTF export
+            cam.fieldOfView = 60.0f;
+            cam.nearClipPlane = 0.1f;
+            cam.farClipPlane = 1000.0f;
+
+            // Convert from Scene space to World space using App.Scene.AsScene
+            // This properly accounts for the scene's transform
+            App.Scene.AsScene[cameraObj.transform] = cameraTr_Scene;
+
+            return cameraObj;
+        }
     } // class App
 }     // namespace TiltBrush

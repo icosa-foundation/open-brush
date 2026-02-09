@@ -42,6 +42,7 @@ namespace TiltBrush
         private float m_CurrentLoadingPosition;
 #if UNITY_ANDROID
         private bool m_FolderPermissionOverride = false;
+        private bool m_WaitingForPermission = false;
 #endif
 
         private IEnumerator Start()
@@ -75,12 +76,14 @@ namespace TiltBrush
                 if (!UserHasManageExternalStoragePermission())
                 {
                     m_Overlay.MessageStatus = m_RequestAndroidFolderPermissions.GetLocalizedStringAsync().Result;
+                    m_WaitingForPermission = true;
                     AskForManageStoragePermission();
                     while (!UserHasManageExternalStoragePermission())
                     {
                         yield return new WaitForEndOfFrame();
                     }
 
+                    m_WaitingForPermission = false;
                     m_Overlay.MessageStatus = m_LoadingText.GetLocalizedStringAsync().Result;
                 }
             }
@@ -156,6 +159,15 @@ namespace TiltBrush
                 m_FolderPermissionOverride = true;
                 Debug.LogError("Java Exception caught and ignored: " + e.Message);
                 Debug.LogError("Assuming this means we don't need android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION (e.g., Android SDK < 30)");
+            }
+        }
+
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (hasFocus && m_WaitingForPermission && !UserHasManageExternalStoragePermission())
+            {
+                // User returned to app without granting permission - show dialog again
+                AskForManageStoragePermission();
             }
         }
 #endif
