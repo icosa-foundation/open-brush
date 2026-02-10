@@ -1204,7 +1204,7 @@ jobs:
 
       - name: Install ArborXR CLI
         run: |
-          uv tool install abxrcli
+          uv tool install abxrcli --with 'setuptools<82.0.0'
 
       - name: Download Build Artifacts (Oculus Quest 2+)
         uses: actions/download-artifact@v7
@@ -1258,7 +1258,7 @@ jobs:
 
       - name: Install ArborXR CLI
         run: |
-          uv tool install abxrcli
+          uv tool install abxrcli --with 'setuptools<82.0.0'
 
       - name: Download Build Artifacts (Oculus Quest 1)
         uses: actions/download-artifact@v7
@@ -1396,7 +1396,7 @@ jobs:
 
       - name: Install ArborXR CLI
         run: |
-          uv tool install abxrcli
+          uv tool install abxrcli --with 'setuptools<82.0.0'
 
       - name: Download Build Artifacts (Android Pico)
         uses: actions/download-artifact@v7
