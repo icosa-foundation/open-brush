@@ -118,7 +118,8 @@ Category {
         disp += float3(0,0,1) * curlZ(worldMidpointPos.xyz * freq + time, d);
 
         worldMidpointPos.xyz += release * disp * 10;
-        worldPos.xyz = worldMidpointPos.xyz + perVertOffset;
+        float3 perVertOffsetWS = mul(unity_ObjectToWorld, float4(perVertOffset, 0)).xyz;
+        worldPos.xyz = worldMidpointPos.xyz + perVertOffsetWS;
 
         o.vertex = mul(UNITY_MATRIX_VP, worldPos);
         o.color = v.color;
