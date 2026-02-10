@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using GLTF.Schema;
 using Newtonsoft.Json.Linq;
@@ -26,6 +27,8 @@ namespace TiltBrush
     {
         private Dictionary<int, Batch> _meshesToBatches;
         private List<Camera> m_CameraPathsCameras;
+        private GameObject m_ThumbnailCamera;
+        private bool m_WasUsingBatchedBrushes;
 
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
@@ -36,6 +39,8 @@ namespace TiltBrush
             SelectionManager.m_Instance?.ClearActiveSelection();
             _meshesToBatches = new Dictionary<int, Batch>();
             GenerateCameraPathsCameras();
+            m_ThumbnailCamera = App.Instance.InstantiateThumbnailCamera();
+            m_ThumbnailCamera.transform.SetParent(App.Scene.MainCanvas.transform, worldPositionStays: true);
         }
 
         private void GenerateCameraPathsCameras()
@@ -51,6 +56,7 @@ namespace TiltBrush
                 go.name = $"CameraPath_{i}_{widget.m_WidgetScript.name}";
                 var cam = go.AddComponent<Camera>();
                 m_CameraPathsCameras.Add(cam);
+                cam.enabled = false;
             }
         }
 
@@ -144,6 +150,7 @@ namespace TiltBrush
 
             if (App.UserConfig.Export.KeepStrokes)
             {
+                m_WasUsingBatchedBrushes = App.Config.m_UseBatchedBrushes;
                 App.Config.m_UseBatchedBrushes = false;
                 foreach (var batch in canvas.BatchManager.AllBatches())
                 {
@@ -171,6 +178,25 @@ namespace TiltBrush
                     batch.tag = "EditorOnly";
                 }
                 canvas.BatchManager.FlushMeshUpdates();
+            }
+            else
+            {
+                foreach (var batch in canvas.BatchManager.AllBatches())
+                {
+                    var brush = batch.Brush;
+                    var mf = batch.gameObject.GetComponent<MeshFilter>();
+                    Mesh mesh = new Mesh();
+                    batch.Geometry.CopyToMesh(mesh);
+                    if (mesh == null)
+                    {
+                        Debug.LogError($"No mesh found for brush {brush.name}");
+                        continue;
+                    }
+                    batch.m_EditorDebugMesh = mf.sharedMesh;
+                    mesh = BrushBaker.m_Instance.ProcessMesh(mesh, brush.m_Guid.ToString());
+                    mf.sharedMesh = mesh;
+                    mf.mesh = mesh;
+                }
             }
         }
 
@@ -211,9 +237,9 @@ namespace TiltBrush
         public void AfterLayerExport(Transform transform)
         {
             var canvas = transform.GetComponent<CanvasScript>();
-            App.Config.m_UseBatchedBrushes = true;
             if (App.UserConfig.Export.KeepStrokes)
             {
+                App.Config.m_UseBatchedBrushes = m_WasUsingBatchedBrushes;
                 foreach (var brushScript in canvas.transform.GetComponentsInChildren<BaseBrushScript>())
                 {
                     var stroke = brushScript.Stroke;
@@ -239,6 +265,15 @@ namespace TiltBrush
                             SafeDestroy(child.gameObject);
                         }
                     }
+                }
+            }
+            else
+            {
+                foreach (var batch in canvas.BatchManager.AllBatches())
+                {
+                    var mf = batch.gameObject.GetComponent<MeshFilter>();
+                    mf.sharedMesh = batch.m_EditorDebugMesh;
+                    batch.m_EditorDebugMesh = null;
                 }
             }
         }
@@ -414,7 +449,15 @@ namespace TiltBrush
         {
             if (!Application.isPlaying) return;
 
-            ExportCameraPaths(exporter);
+            try
+            {
+                ExportCameraPaths(exporter);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Error exporting camera paths: {e.Message}");
+            }
+
             if (App.UserConfig.Export.ExportCustomSkybox)
             {
                 GltfExportStandinManager.m_Instance.DestroySkyStandin();
@@ -422,14 +465,16 @@ namespace TiltBrush
 
             gltfRoot.Asset.Generator = $"Open Brush UnityGLTF Exporter {App.Config.m_VersionNumber}.{App.Config.m_BuildStamp})";
 
-            JToken ColorToJString(Color c) => $"{c.r}, {c.g}, {c.b}, {c.a}";
-            JToken Vector3ToJString(Vector3 c) => $"{c.x}, {c.y}, {c.z}";
+            JToken ColorToJString(Color c, bool includeAlpha = false) =>
+                string.Format(CultureInfo.InvariantCulture, "{0}, {1}, {2}" + (includeAlpha ? ", {3}" : ""), c.r, c.g, c.b, c.a);
+            JToken Vector3ToJString(Vector3 c) => string.Format(CultureInfo.InvariantCulture, "{0}, {1}, {2}", c.x, c.y, c.z);
 
             var metadata = new SketchSnapshot().GetSketchMetadata();
 
             var settings = SceneSettings.m_Instance;
             Environment env = settings.GetDesiredPreset();
             var extras = new JObject();
+
 
             var pose = metadata.SceneTransformInRoomSpace;
             extras["TB_EnvironmentGuid"] = env.m_Guid.ToString("D");
@@ -441,10 +486,24 @@ namespace TiltBrush
             extras["TB_SkyGradientDirection"] = Vector3ToJString(
                 exportFromUnity * (settings.GradientOrientation * Vector3.up));
             extras["TB_FogColor"] = ColorToJString(settings.FogColor);
-            extras["TB_FogDensity"] = settings.FogDensity;
+            extras["TB_FogDensity"] = string.Format(CultureInfo.InvariantCulture, "{0}", settings.FogDensity);
+            extras["TB_AmbientLightColor"] = ColorToJString(RenderSettings.ambientLight);
+            for (int i = 0; i < App.Scene.GetNumLights(); i++)
+            {
+                var transform = App.Scene.GetLight(i).transform;
+                Light unityLight = transform.GetComponent<Light>();
+                Debug.Assert(unityLight != null);
+                Color lightColor = unityLight.color * unityLight.intensity;
+                lightColor.a = 1.0f;
+                extras[$"TB_SceneLight{i}Color"] = ColorToJString(lightColor);
+                Vector3 rot = transform.localEulerAngles;
+                rot.y = 360 - rot.y; // Backwards compatibility
+                rot.z = 0; // Roll is irrelevant for directional lights
+                extras[$"TB_SceneLight{i}Rotation"] = Vector3ToJString(rot);
+            }
             extras["TB_PoseTranslation"] = Vector3ToJString(pose.translation);
             extras["TB_PoseRotation"] = Vector3ToJString(pose.rotation.eulerAngles);
-            extras["TB_PoseScale"] = pose.scale;
+            extras["TB_PoseScale"] = string.Format(CultureInfo.InvariantCulture, "{0}", pose.scale);
             extras["TB_ExportedFromVersion"] = App.Config.m_VersionNumber;
 
             TrTransform cameraPose = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
@@ -458,6 +517,8 @@ namespace TiltBrush
             // Experimental
             // extras["TB_metadata"] = JObject.FromObject(metadata);
             gltfRoot.Extras = extras;
+
+            Object.Destroy(m_ThumbnailCamera);
         }
 
         private static void SafeDestroy(Object o)

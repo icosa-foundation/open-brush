@@ -1109,18 +1109,27 @@ namespace TiltBrush
         /// timeline edit mode: if forEdit is true, play audio countdown and keep user pointers enabled
         public void BeginDrawingFromMemory(bool bDrawFromStart, bool forEdit = false, bool playAudio = true)
         {
+            BeginDrawingFromMemory(m_MemoryList, bDrawFromStart, forEdit, playAudio);
+        }
+
+        /// <summary>
+        /// Overload that allows specifying exactly which strokes to render during playback.
+        /// Use this for additive loading to avoid re-rendering existing strokes.
+        /// </summary>
+        public void BeginDrawingFromMemory(IEnumerable<Stroke> strokesToRender, bool bDrawFromStart, bool forEdit = false, bool playAudio = true)
+        {
             if (bDrawFromStart)
             {
                 switch (m_PlaybackMode)
                 {
                     case PlaybackMode.Distance:
                     default:
-                        m_ScenePlayback = new ScenePlaybackByStrokeDistance(m_MemoryList);
+                        m_ScenePlayback = new ScenePlaybackByStrokeDistance(strokesToRender);
                         if (playAudio) PointerManager.m_Instance.SetPointersAudioForPlayback();
                         break;
                     case PlaybackMode.Timestamps:
                         App.Instance.CurrentSketchTime = GetEarliestTimestamp();
-                        m_ScenePlayback = new ScenePlaybackByTimeLayered(m_MemoryList);
+                        m_ScenePlayback = new ScenePlaybackByTimeLayered(strokesToRender);
                         break;
                 }
                 m_IsInitialPlay = true;
@@ -1568,6 +1577,64 @@ namespace TiltBrush
             {
                 if (c.NetworkTimestamp == null)
                     c.NetworkTimestamp = c.Timestamp - m_NetworkOffsetTimestamp;
+            }
+        }
+
+        /// <summary>
+        /// Directly renders a list of strokes without using the playback system.
+        /// This is much more efficient for additive loading since it only renders the new strokes
+        /// and doesn't destroy/recreate existing ones.
+        /// </summary>
+        public void RenderStrokesDirectly(List<Stroke> strokes)
+        {
+            if (strokes == null || strokes.Count == 0)
+            {
+                return;
+            }
+
+            var pointer = PointerManager.m_Instance.GetPointer(InputManager.ControllerName.Brush);
+            var simplifier = QualityControls.m_Instance.StrokeSimplifier;
+
+            foreach (var stroke in strokes)
+            {
+                // Skip strokes that are already rendered or belong to inactive subsets
+                if (stroke.m_Type != Stroke.Type.NotCreated)
+                {
+                    continue;
+                }
+                if (stroke.m_BatchSubset != null && !stroke.m_BatchSubset.m_Active)
+                {
+                    continue;
+                }
+
+                var canvas = stroke.m_IntendedCanvas ?? App.ActiveCanvas;
+
+                // Begin the stroke
+                stroke.m_Object = pointer.BeginLineFromMemory(stroke, canvas);
+                if (stroke.m_Object == null)
+                {
+                    continue; // Brush not found
+                }
+                stroke.m_Type = Stroke.Type.BrushStroke;
+
+                // Calculate simplification if needed
+                if (simplifier.Level > 0.0f)
+                {
+                    simplifier.CalculatePointsToDrop(stroke, pointer.CurrentBrushScript);
+                }
+
+                // Add all control points
+                for (int i = 0; i < stroke.m_ControlPoints.Length; i++)
+                {
+                    if (!stroke.m_ControlPointsToDrop[i])
+                    {
+                        pointer.UpdateLineFromControlPoint(stroke.m_ControlPoints[i]);
+                    }
+                }
+
+                // Finalize the stroke
+                pointer.UpdateLineVisuals();
+                pointer.EndLineFromMemory(stroke);
             }
         }
     }

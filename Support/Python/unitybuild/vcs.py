@@ -46,7 +46,7 @@ def git(cmd, cwd=None):
     except OSError as e:
         raise subprocess.CalledProcessError(1, cmd, str(e))
 
-    (stdout, stderr) = proc.communicate()
+    stdout, stderr = proc.communicate()
     if proc.wait() != 0:
         raise subprocess.CalledProcessError(
             proc.wait(), cmd, "In %s:\nstderr: %s\nstdout: %s" % (cwd, stderr, stdout)
