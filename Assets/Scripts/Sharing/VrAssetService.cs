@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -681,7 +681,8 @@ namespace TiltBrush
             bool hasModels = WidgetManager.m_Instance.ActiveModelWidgets.Count > 0;
             bool hasImages = WidgetManager.m_Instance.ActiveImageWidgets.Count > 0;
             bool hasTexts = WidgetManager.m_Instance.ActiveTextWidgets.Count > 0;
-            bool publishLegacyGltf = !(hasModels || hasImages || hasTexts);
+            //bool publishLegacyGltf = !(hasModels || hasImages || hasTexts);
+            bool publishLegacyGltf = false;
 
             DiskSceneFileInfo fileInfo = GetWritableFile();
 
@@ -742,6 +743,8 @@ namespace TiltBrush
 
             // Always use new glb if we're not publishing legacy glTF.
             // Otherwise it's based on user config.
+            //
+            // Forcing this to false for now as the Legacy GLTF has issues with environment positioning
             if (App.UserConfig.Sharing.UseNewGlb || !publishLegacyGltf)
             {
                 string newGlbPath = Path.Combine(tempUploadDir, $"{uploadName}.glb");
@@ -834,12 +837,13 @@ namespace TiltBrush
         private async Task<(string, long)> UploadCurrentSketchViverseAsync(
                     CancellationToken token, string tempUploadDir, bool isDemoUpload)
         {
+            bool publishLegacyGltf = false;
             DiskSceneFileInfo fileInfo = GetWritableFile();
             var currentScene = SaveLoadScript.m_Instance.SceneFile;
             string uploadName = currentScene.Valid ? currentScene.HumanName : kDefaultName;
 
             // Generate title + description
-            string timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             string title = $"{uploadName}_{timestamp}";
             if (title.Length > 30) title = title.Substring(0, 30);
             string description = currentScene.Valid ? currentScene.HumanName : "Uploaded from Open Brush";
@@ -850,23 +854,29 @@ namespace TiltBrush
             string exportDir = Path.Combine(tempUploadDir, "sketch_export");
             Directory.CreateDirectory(exportDir);
 
-            // Copy WebViewer files FIRST directly to exportDir (not to a subdirectory)
+            // Copy ViverseViewer files FIRST directly to exportDir (not to a subdirectory)
             // This establishes the base structure: libs/, css/, helpers/, img/, legacy/, icosa-viewer.module.js, etc.
-            string tempZip = Path.Combine(Application.temporaryCachePath, "webviewer_temp.zip");
-            FileUtils.WriteBytesFromResources("WebViewer", tempZip);
+            string tempZip = Path.Combine(Application.temporaryCachePath, "viverseviewer_temp.zip");
+
+#if UNITY_EDITOR
+            // In editor, always regenerate ViverseViewer.bytes from source before publishing
+            GenerateViverseViewerBytes();
+#endif
+
+            FileUtils.WriteBytesFromResources("ViverseViewer", tempZip);
 
             if (!File.Exists(tempZip))
-                throw new VrAssetServiceException("WebViewer.bytes not found in Resources folder");
+                throw new VrAssetServiceException("ViverseViewer.bytes not found in Resources folder");
 
-            using (var zip = System.IO.Compression.ZipFile.OpenRead(tempZip))
+            using (var zip = ZipFile.OpenRead(tempZip))
             {
                 int extractedCount = 0;
                 foreach (var entry in zip.Entries)
                 {
                     string entryPath = entry.FullName;
-                    // Strip leading "WebViewer/" folder if present in ZIP
-                    if (entryPath.StartsWith("WebViewer/"))
-                        entryPath = entryPath.Substring("WebViewer/".Length);
+                    // Strip leading "ViverseViewer/" folder if present in ZIP
+                    if (entryPath.StartsWith("ViverseViewer/"))
+                        entryPath = entryPath.Substring("ViverseViewer/".Length);
                     if (string.IsNullOrEmpty(entryPath))
                         continue;
 
@@ -904,21 +914,30 @@ namespace TiltBrush
             }
 
             // Export GLB to assets/scene.glb
-            string glbPath = Path.Combine(assetsDir, "scene.glb");
+            if (publishLegacyGltf) // The old way
+            {
+                string glbPath = Path.Combine(assetsDir, "scene.glb");
+                var exportResults = await OverlayManager.m_Instance.RunInCompositorAsync(
+                    OverlayType.Export, fadeDuration: 0.5f,
+                    action: () => new ExportGlTF().ExportBrushStrokes(
+                        glbPath,
+                        AxisConvention.kGltf2,
+                        binary: true,
+                        doExtras: true,
+                        includeLocalMediaContent: true,
+                        gltfVersion: 2,
+                        selfContained: false));
 
-            var exportResults = await OverlayManager.m_Instance.RunInCompositorAsync(
-                OverlayType.Export, fadeDuration: 0.5f,
-                action: () => new ExportGlTF().ExportBrushStrokes(
-                    glbPath,
-                    AxisConvention.kGltf2,
-                    binary: true,
-                    doExtras: true,
-                    includeLocalMediaContent: true,
-                    gltfVersion: 2,
-                    selfContained: false));
-
-            if (!exportResults.success)
-                throw new VrAssetServiceException("Internal error creating upload data.");
+                if (!exportResults.success)
+                    throw new VrAssetServiceException("Internal error creating upload data.");
+            }
+            else
+            {
+                // NewGLB format
+                await OverlayManager.m_Instance.RunInCompositorAsync(
+                    OverlayType.Export, fadeDuration: 0.5f,
+                    action: () => Export.ExportNewGlb(assetsDir, "scene", App.UserConfig.Export.ExportEnvironment));
+            }
 
             SetUploadProgress(UploadStep.CreateTilt, 0);
             await CreateTiltForUploadAsync(fileInfo);
@@ -950,7 +969,6 @@ namespace TiltBrush
 
             string htmlPath = Path.Combine(exportDir, "index.html");
             string html = ViewerHTMLGenerator.GenerateViewerHTML("./assets/scene.glb", sceneSid);
-            Debug.Log($"[DEBUG] sceneSid={sceneSid}");
             File.WriteAllText(htmlPath, html);
 
             token.ThrowIfCancellationRequested();
@@ -1286,6 +1304,74 @@ namespace TiltBrush
             m_CurrentDeviceCodeSecret = Guid.NewGuid().ToString();
             return m_CurrentDeviceCodeSecret;
         }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Generates Assets/Resources/ViverseViewer.bytes from ViverseViewer/ source directory
+        /// Called automatically in editor before ViveVerse publishing
+        /// </summary>
+        private static void GenerateViverseViewerBytes()
+        {
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string sourceDir = Path.Combine(projectRoot, "Support", "ViverseViewer");
+            string outputFile = Path.Combine(Application.dataPath, "Resources", "ViverseViewer.bytes");
+
+            // Validate source directory exists
+            if (!Directory.Exists(sourceDir))
+            {
+                throw new VrAssetServiceException(
+                    $"ViverseViewer source directory not found: {sourceDir}\n" +
+                    "This directory must exist and contain the ViverseViewer files."
+                );
+            }
+
+            // Ensure Resources directory exists
+            string resourcesDir = Path.GetDirectoryName(outputFile);
+            if (!Directory.Exists(resourcesDir))
+            {
+                Directory.CreateDirectory(resourcesDir);
+            }
+
+            // Create zip file
+            try
+            {
+                // Delete existing file if present
+                if (File.Exists(outputFile))
+                {
+                    File.Delete(outputFile);
+                }
+
+                using (var zip = ZipFile.Open(outputFile, ZipArchiveMode.Create))
+                {
+                    AddDirectoryToZip(zip, sourceDir, "");
+                }
+            }
+            catch (Exception e)
+            {
+                throw new VrAssetServiceException(
+                    $"Failed to generate ViverseViewer.bytes: {e.Message}"
+                );
+            }
+        }
+
+        private static void AddDirectoryToZip(ZipArchive zip, string sourceDir, string entryPrefix)
+        {
+            foreach (string file in Directory.GetFiles(sourceDir))
+            {
+                string relativePath = Path.Combine(entryPrefix, Path.GetFileName(file));
+                // Normalize path separators to forward slashes for zip
+                relativePath = relativePath.Replace('\\', '/');
+                zip.CreateEntryFromFile(file, relativePath, System.IO.Compression.CompressionLevel.Optimal);
+            }
+
+            foreach (string dir in Directory.GetDirectories(sourceDir))
+            {
+                string dirName = Path.GetFileName(dir);
+                string newPrefix = Path.Combine(entryPrefix, dirName);
+                AddDirectoryToZip(zip, dir, newPrefix);
+            }
+        }
+#endif
     }
 
 } // namespace TiltBrush

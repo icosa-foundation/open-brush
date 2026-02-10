@@ -24,17 +24,31 @@ namespace TiltBrush
 {
     public class ViversePublishManager : MonoBehaviour
     {
+        private static readonly string[] DefaultSandboxPermissions = new[]
+        {
+            "allow-forms",
+            "allow-modals",
+            "allow-popups",
+            "allow-top-navigation",
+            "allow-pointer-lock",
+            "allow-presentation",
+            "allow-downloads",
+            "allow-orientation-lock",
+            "allow-popups-to-escape-sandbox",
+            "allow-top-navigation-by-user-activation"
+        };
 
-        [Header("Default World Configuration")]
-        [Tooltip("These permissions will be applied to every uploaded world.")]
-        [SerializeField]
-        [TextArea(3, 5)]
-        private string m_DefaultSandboxPermissions = "allow-forms allow-modals allow-popups allow-top-navigation allow-pointer-lock allow-presentation allow-downloads allow-orientation-lock allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation";
-
-        [Tooltip("Permissions for hardware/feature access. 'xr-spatial-tracking' is required for VR.")]
-        [SerializeField]
-        [TextArea(3, 5)]
-        private string m_DefaultAllowPermissions = "accelerometer; camera; gyroscope; magnetometer; microphone; midi; window-management; xr-spatial-tracking";
+        private static readonly string[] DefaultAllowPermissions = new[]
+        {
+            "accelerometer",
+            "camera",
+            "gyroscope",
+            "magnetometer",
+            "microphone",
+            "midi",
+            "window-management",
+            "xr-spatial-tracking"
+        };
 
         private ViverseAuthManager m_AuthManager;
         private string m_AccessToken;
@@ -78,7 +92,6 @@ namespace TiltBrush
                     if (tokenData != null && tokenData.IsValid)
                     {
                         m_AccessToken = tokenData.AccessToken;
-                        Debug.Log("ViversePublishManager: Token loaded successfully");
                     }
                     else
                     {
@@ -135,14 +148,11 @@ namespace TiltBrush
 
         private IEnumerator PublishWorldCoroutine(string title, string description, string zipFilePath)
         {
-            Debug.Log($"[ViversePublish] Starting publish: {title}");
-
             yield return CreateWorldContent(title, description, (success, sceneSid, error) =>
             {
                 if (success)
                 {
                     m_LastSceneSid = sceneSid;
-                    Debug.Log($"[ViversePublish] Content created with scene_sid: {sceneSid}");
 
                     // CHANGED: Passing m_LastResponse.hub_sid to the upload coroutine
                     string hubSid = m_LastResponse != null ? m_LastResponse.hub_sid : "";
@@ -185,7 +195,6 @@ namespace TiltBrush
             };
 
             string json = JsonUtility.ToJson(payload);
-            Debug.Log($"[ViversePublish] Creating content: {json}");
 
             UnityWebRequest request = new UnityWebRequest(url, "POST");
             byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
@@ -206,7 +215,6 @@ namespace TiltBrush
                 try
                 {
                     string responseText = request.downloadHandler.text;
-                    Debug.Log($"[ViversePublish] Create response: {responseText}");
 
                     var response = JsonUtility.FromJson<WorldContentResponse>(responseText);
 
@@ -238,37 +246,24 @@ namespace TiltBrush
             string url = string.Format(ViverseEndpoints.WORLD_UPLOAD_FORMAT, sceneSid);
             string fileName = Path.GetFileName(zipFilePath);
 
-            Debug.Log($"[ViversePublish] Uploading to: {url}");
-            Debug.Log($"[ViversePublish] File: {zipFilePath}");
-            Debug.Log($"[ViversePublish] Platform: {Application.platform}");
-
             byte[] fileData = null;
 
 #if UNITY_ANDROID && !UNITY_EDITOR
-            Debug.Log("[ViversePublish] Using UnityWebRequest for Android");
-            
             string requestPath = zipFilePath;
             if (!requestPath.Contains("://"))
             {
                 requestPath = "file://" + zipFilePath;
             }
             
-            Debug.Log($"[ViversePublish] Request path: {requestPath}");
-            
             UnityWebRequest fileRequest = UnityWebRequest.Get(requestPath);
             yield return fileRequest.SendWebRequest();
-            
-            Debug.Log($"[ViversePublish] Request result: {fileRequest.result}");
-            Debug.Log($"[ViversePublish] Request error: {fileRequest.error}");
             
             if (fileRequest.result != UnityWebRequest.Result.Success)
             {
                 Debug.LogError($"[ViversePublish] Failed to read file: {fileRequest.error}");
                 
-                Debug.Log("[ViversePublish] Trying alternative path...");
                 requestPath = Application.streamingAssetsPath + "/content.zip";
-                Debug.Log($"[ViversePublish] Alternative path: {requestPath}");
-                
+
                 fileRequest.Dispose();
                 fileRequest = UnityWebRequest.Get(requestPath);
                 yield return fileRequest.SendWebRequest();
@@ -285,7 +280,6 @@ namespace TiltBrush
             fileData = fileRequest.downloadHandler.data;
             fileRequest.Dispose();
 #else
-            Debug.Log("[ViversePublish] Using File.ReadAllBytes");
             if (!File.Exists(zipFilePath))
             {
                 Debug.LogError($"[ViversePublish] File not found: {zipFilePath}");
@@ -302,15 +296,13 @@ namespace TiltBrush
                 yield break;
             }
 
-            Debug.Log($"[ViversePublish] File size: {fileData.Length} bytes ({fileData.Length / 1024.0f / 1024.0f:F2} MB)");
-
             var metaPayload = new MetaDataPayload
             {
-                source = "studio",
+                source = "openBrush",
                 iframe_settings = new IframeSettings
                 {
-                    sandbox = m_DefaultSandboxPermissions, // Uses the Inspector value
-                    allow = m_DefaultAllowPermissions      // Uses the Inspector value (includes xr-spatial-tracking)
+                    sandbox = DefaultSandboxPermissions,
+                    allow = DefaultAllowPermissions
                 }
             };
 
@@ -338,14 +330,11 @@ namespace TiltBrush
             if (request.result != UnityWebRequest.Result.Success)
             {
                 string error = $"{request.error} - {request.downloadHandler.text}";
-                Debug.LogError($"[ViversePublish] Upload failed: {error}");
                 OnPublishComplete?.Invoke(false, $"Upload failed: {error}");
             }
             else
             {
-                Debug.Log("[ViversePublish] Upload successful!");
                 string responseText = request.downloadHandler.text;
-                Debug.Log($"[ViversePublish] Upload response: {responseText}");
                 OnPublishComplete?.Invoke(true, "World published successfully!");
             }
 
@@ -400,8 +389,8 @@ namespace TiltBrush
     [Serializable]
     public class IframeSettings
     {
-        public string sandbox;
-        public string allow;
+        public string[] sandbox;
+        public string[] allow;
     }
 
     [Serializable]
