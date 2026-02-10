@@ -50,7 +50,8 @@ namespace TiltBrush
             FlyTool,
             ScriptedTool = 6001,
             SnipTool = 11000,
-            JoinTool = 11001
+            JoinTool = 11001,
+            SculptTool = 11100,
         }
         public ToolType m_Type;
 
