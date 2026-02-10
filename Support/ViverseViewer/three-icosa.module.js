@@ -756,6 +756,18 @@ const $4fdc68aa1ebb2033$var$tiltBrushMaterialParams = {
     },
     "Bubbles": {
         uniforms: {
+            u_time: {
+                value: new $fugmd$Vector4()
+            },
+            u_ScrollRate: {
+                value: 0.5
+            },
+            u_ScrollJitterIntensity: {
+                value: 0.02
+            },
+            u_ScrollJitterFrequency: {
+                value: 0.2
+            },
             u_SceneLight_0_matrix: {
                 value: [
                     1,
@@ -7027,6 +7039,15 @@ const $4fdc68aa1ebb2033$var$tiltBrushMaterialParams = {
             u_fogDensity: {
                 value: 0
             },
+            u_MainTex: {
+                value: "WaveformParticles-6a1cf9f9-032c-45ec-9b6e-a6680bee30f7/WaveformParticles-6a1cf9f9-032c-45ec-9b6e-a6680bee30f7-v10.0-MainTex.png"
+            },
+            u_TintColor: {
+                value: new $fugmd$Vector4(0.5, 0.5, 0.5, 0.5)
+            },
+            u_Opacity: {
+                value: 1.0
+            },
             u_time: {
                 value: new $fugmd$Vector4()
             }
@@ -7226,9 +7247,17 @@ const $4fdc68aa1ebb2033$var$tiltBrushMaterialParams = {
         vertexShader: "DanceFloor-6a1cf9f9-032c-45ec-311e-a6680bee32e9/DanceFloor-6a1cf9f9-032c-45ec-311e-a6680bee32e9-v10.0-vertex.glsl",
         fragmentShader: "DanceFloor-6a1cf9f9-032c-45ec-311e-a6680bee32e9/DanceFloor-6a1cf9f9-032c-45ec-311e-a6680bee32e9-v10.0-fragment.glsl",
         side: 2,
-        transparent: false,
+        transparent: true,
+        depthFunc: 2,
         depthWrite: true,
-        depthTest: true
+        depthTest: true,
+        blending: 5,
+        blendDstAlpha: 201,
+        blendDst: 201,
+        blendEquationAlpha: 103,
+        blendEquation: 100,
+        blendSrcAlpha: 201,
+        blendSrc: 201
     },
     "WaveformTube": {
         uniforms: {
@@ -9067,6 +9096,9 @@ const $4fdc68aa1ebb2033$var$tiltBrushMaterialParams = {
             u_fogDensity: {
                 value: 0
             },
+            u_EmissionGain: {
+                value: 0.5
+            },
             u_time: {
                 value: new $fugmd$Vector4()
             }
@@ -9079,7 +9111,13 @@ const $4fdc68aa1ebb2033$var$tiltBrushMaterialParams = {
         depthFunc: 2,
         depthWrite: false,
         depthTest: true,
-        blending: 2
+        blending: 5,
+        blendDstAlpha: 201,
+        blendDst: 201,
+        blendEquationAlpha: 103,
+        blendEquation: 100,
+        blendSrcAlpha: 201,
+        blendSrc: 201
     },
     "SmoothHull": {
         uniforms: {
@@ -9568,10 +9606,10 @@ const $4fdc68aa1ebb2033$var$tiltBrushMaterialParams = {
                 value: 0.414
             },
             u_MainTex: {
-                value: "Bubbles-89d104cd-d012-426b-b5b3-bbaee63ac43c/Bubbles-89d104cd-d012-426b-b5b3-bbaee63ac43c-v10.0-MainTex.png"
+                value: null
             },
             u_Cutoff: {
-                value: 0.2
+                value: 0.5
             },
             u_fogColor: {
                 value: new $fugmd$Vector3(0.0196, 0.0196, 0.0196)
@@ -9580,7 +9618,7 @@ const $4fdc68aa1ebb2033$var$tiltBrushMaterialParams = {
                 value: 0
             },
             u_BumpMap: {
-                value: "Charcoal-fde6e778-0f7a-e584-38d6-89d44cee59f6/Charcoal-fde6e778-0f7a-e584-38d6-89d44cee59f6-v10.0-BumpMap.png"
+                value: null
             },
             u_BumpMap_TexelSize: {
                 value: new $fugmd$Vector4(0.0010, 0.0078, 1024, 128)
@@ -9590,7 +9628,7 @@ const $4fdc68aa1ebb2033$var$tiltBrushMaterialParams = {
         glslVersion: $fugmd$GLSL3,
         vertexShader: "ConcaveHull-7ae1f880-a517-44a0-99f9-1cab654498c6/ConcaveHull-7ae1f880-a517-44a0-99f9-1cab654498c6-v10.0-vertex.glsl",
         fragmentShader: "ConcaveHull-7ae1f880-a517-44a0-99f9-1cab654498c6/ConcaveHull-7ae1f880-a517-44a0-99f9-1cab654498c6-v10.0-fragment.glsl",
-        side: 0,
+        side: 2,
         transparent: false,
         depthFunc: 2,
         depthWrite: true,
@@ -10143,6 +10181,18 @@ class $e02d07ddc3ccd105$export$2b011a5b12963d65 {
                 renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
                 renameAttribute(mesh, "texcoord_0", "a_texcoord0");
                 setAttributeIfExists(mesh, "uv", "a_texcoord0");
+                renameAttribute(mesh, "_tb_unity_texcoord_1", "a_texcoord1");
+                renameAttribute(mesh, "texcoord_1", "a_texcoord1");
+                setAttributeIfExists(mesh, "uv1", "a_texcoord1");
+                setAttributeIfExists(mesh, "uv2", "a_texcoord1");
+                setAttributeIfExists(mesh, "uv3", "a_texcoord1");
+                if (isNewTiltExporter) {
+                    const uv0 = mesh.geometry.getAttribute("a_texcoord0");
+                    const uv1 = mesh.geometry.getAttribute("a_texcoord1");
+                    const uv0HasRadius = uv0 && uv0.itemSize >= 3;
+                    const uv1HasBakedRadius = uv1 && uv1.itemSize >= 1;
+                    if (!uv0HasRadius && !uv1HasBakedRadius) console.warn("Disco brush is missing radius data (need texcoord0.z or baked texcoord1.x). New exporter GLB likely lacks UV bake output.", mesh.name);
+                }
                 shader = await this.tiltShaderLoader.loadAsync("Disco");
                 shader.lights = true;
                 shader.fog = true;
@@ -11025,6 +11075,7 @@ class $e02d07ddc3ccd105$export$2b011a5b12963d65 {
                 copyFixColorAttribute(mesh);
                 renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
                 renameAttribute(mesh, "texcoord_0", "a_texcoord0");
+                setAttributeIfExists(mesh, "uv", "a_texcoord0");
                 renameAttribute(mesh, "_tb_unity_texcoord_1", "a_texcoord1");
                 renameAttribute(mesh, "texcoord_1", "a_texcoord1");
                 shader = await this.tiltShaderLoader.loadAsync("Rain");
@@ -11252,12 +11303,16 @@ class $e02d07ddc3ccd105$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_WaveformParticles";
                 setAttributeIfExists(mesh, "position", "a_position");
                 setAttributeIfExists(mesh, "normal", "a_normal");
+                setAttributeIfExists(mesh, "tangent", "a_tangent");
                 copyFixColorAttribute(mesh);
                 renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
                 renameAttribute(mesh, "texcoord_0", "a_texcoord0");
                 setAttributeIfExists(mesh, "uv", "a_texcoord0");
                 renameAttribute(mesh, "_tb_unity_texcoord_1", "a_texcoord1");
                 renameAttribute(mesh, "texcoord_1", "a_texcoord1");
+                setAttributeIfExists(mesh, "uv1", "a_texcoord1");
+                setAttributeIfExists(mesh, "uv2", "a_texcoord1");
+                setAttributeIfExists(mesh, "uv3", "a_texcoord1");
                 shader = await this.tiltShaderLoader.loadAsync("WaveformParticles");
                 mesh.material = shader;
                 mesh.material.name = "material_WaveformParticles";
@@ -11274,6 +11329,9 @@ class $e02d07ddc3ccd105$export$2b011a5b12963d65 {
                 setAttributeIfExists(mesh, "uv", "a_texcoord0");
                 renameAttribute(mesh, "_tb_unity_texcoord_1", "a_texcoord1");
                 renameAttribute(mesh, "texcoord_1", "a_texcoord1");
+                setAttributeIfExists(mesh, "uv1", "a_texcoord1");
+                setAttributeIfExists(mesh, "uv2", "a_texcoord1");
+                setAttributeIfExists(mesh, "uv3", "a_texcoord1");
                 shader = await this.tiltShaderLoader.loadAsync("BubbleWand");
                 mesh.material = shader;
                 mesh.material.name = "material_BubbleWand";
@@ -11553,6 +11611,9 @@ class $e02d07ddc3ccd105$export$2b011a5b12963d65 {
                 setAttributeIfExists(mesh, "position", "a_position");
                 setAttributeIfExists(mesh, "normal", "a_normal");
                 copyFixColorAttribute(mesh);
+                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
+                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
+                setAttributeIfExists(mesh, "uv", "a_texcoord0");
                 shader = await this.tiltShaderLoader.loadAsync("Space");
                 mesh.material = shader;
                 mesh.material.name = "material_Space";
@@ -11612,6 +11673,7 @@ class $e02d07ddc3ccd105$export$2b011a5b12963d65 {
                 copyFixColorAttribute(mesh);
                 renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
                 renameAttribute(mesh, "texcoord_0", "a_texcoord0");
+                setAttributeIfExists(mesh, "uv", "a_texcoord0");
                 renameAttribute(mesh, "_tb_unity_texcoord_1", "a_texcoord1");
                 renameAttribute(mesh, "texcoord_1", "a_texcoord1");
                 shader = await this.tiltShaderLoader.loadAsync("ConcaveHull");
