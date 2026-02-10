@@ -1131,17 +1131,17 @@ jobs:
           mv build_macos/*.dmg releases/OpenBrush_Mac_$VERSION.dmg
 
       - name: Publish Windows
-        uses: josephbmanley/butler-publish-itchio-action@master
+        uses: yeslayla/butler-publish-itchio-action@fb0a6f13954b75e8fbcfb703dbdb8626452efaba
         env:
           CHANNEL: windows-${{ env.ITCH_SUBCHANNEL_NAME }}
           PACKAGE: releases/OpenBrush_Desktop_${{ needs.configuration.outputs.version }}
       - name: Publish Quest
-        uses: josephbmanley/butler-publish-itchio-action@master
+        uses: yeslayla/butler-publish-itchio-action@fb0a6f13954b75e8fbcfb703dbdb8626452efaba
         env:
           CHANNEL: android-quest-${{ env.ITCH_SUBCHANNEL_NAME }}
           PACKAGE: releases/OpenBrush_Quest_${{ needs.configuration.outputs.version }}.apk
       - name: Publish Mac
-        uses: josephbmanley/butler-publish-itchio-action@master
+        uses: yeslayla/butler-publish-itchio-action@fb0a6f13954b75e8fbcfb703dbdb8626452efaba
         env:
           CHANNEL: mac-${{ env.ITCH_SUBCHANNEL_NAME }}
           PACKAGE: releases/OpenBrush_Mac_${{ needs.configuration.outputs.version }}.dmg
@@ -1204,7 +1204,7 @@ jobs:
 
       - name: Install ArborXR CLI
         run: |
-          uv tool install abxrcli
+          uv tool install abxrcli --with 'setuptools<82.0.0'
 
       - name: Download Build Artifacts (Oculus Quest 2+)
         uses: actions/download-artifact@v7
@@ -1258,7 +1258,7 @@ jobs:
 
       - name: Install ArborXR CLI
         run: |
-          uv tool install abxrcli
+          uv tool install abxrcli --with 'setuptools<82.0.0'
 
       - name: Download Build Artifacts (Oculus Quest 1)
         uses: actions/download-artifact@v7
@@ -1396,7 +1396,7 @@ jobs:
 
       - name: Install ArborXR CLI
         run: |
-          uv tool install abxrcli
+          uv tool install abxrcli --with 'setuptools<82.0.0'
 
       - name: Download Build Artifacts (Android Pico)
         uses: actions/download-artifact@v7
