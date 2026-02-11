@@ -780,11 +780,6 @@ namespace TiltBrush
 
         public Vector2 GetMouseMoveDelta()
         {
-            if (App.Config.IsMobileHardware)
-            {
-                return Vector2.zero;
-            }
-
             Vector2 mv = Mouse.current.delta.ReadValue() * 0.125f;
             return new Vector2(Mathf.Abs(mv.x) > m_InputThreshold ? mv.x : 0f,
                 Mathf.Abs(mv.y) > m_InputThreshold ? mv.y : 0f);
@@ -792,19 +787,14 @@ namespace TiltBrush
 
         public float GetMouseWheel()
         {
-            if (App.Config.IsMobileHardware)
-            {
-                return 0.0f;
-            }
-
-            return Mouse.current.scroll.x.ReadValue();
+            return Mouse.current != null ? Mouse.current.scroll.x.ReadValue() : 0f;
         }
 
         /// Mouse input is ignored on mobile platform because the Oculus Quest seems to emulate mouse
         /// presses when you fiddle with the joystick.
         public bool GetMouseButton(int button)
         {
-            if (App.Config.IsMobileHardware)
+            if (Mouse.current == null)
             {
                 return false;
             }
@@ -824,7 +814,7 @@ namespace TiltBrush
         /// presses when you fiddle with the joystick.
         public bool GetMouseButtonDown(int button)
         {
-            if (App.Config.IsMobileHardware)
+            if (Mouse.current == null)
             {
                 return false;
             }
@@ -848,7 +838,7 @@ namespace TiltBrush
         public float GetBrushScrollAmount()
         {
             // Check mouse first.
-            if (!App.Config.IsMobileHardware)
+            if (Mouse.current != null)
             {
                 float fMouse = Mouse.current.delta.x.ReadValue();
                 if (Mathf.Abs(fMouse) > m_InputThreshold)

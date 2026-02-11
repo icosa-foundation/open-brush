@@ -204,7 +204,7 @@ namespace TiltBrush
             // ReturnImageFullSize is called during load.
             m_FullSizeReferences++;
             var reader = new ThreadedImageReader(path, -1,
-                App.PlatformConfig.ReferenceImagesMaxDimension);
+                UserConfig.PerformanceOverrides.ReferenceImagesMaxDimension);
             while (!reader.Finished)
             {
                 if (!runForeground) { yield return null; }
@@ -216,7 +216,7 @@ namespace TiltBrush
                 result = reader.Result;
                 if (result != null && dest != null)
                 {
-                    int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
+                    int resizeLimit = UserConfig.PerformanceOverrides.ReferenceImagesResizeDimension;
                     if (result.ColorWidth > resizeLimit || result.ColorHeight > resizeLimit)
                     {
                         // Resize the image to the resize limit before saving it to the dest texture.
@@ -356,7 +356,7 @@ namespace TiltBrush
 
                 ImageCache.SaveImageCache(tex, FilePath);
                 m_ImageAspect = (float)tex.width / tex.height;
-                int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
+                int resizeLimit = UserConfig.PerformanceOverrides.ReferenceImagesResizeDimension;
                 if (tex.width > resizeLimit || tex.height > resizeLimit)
                 {
                     Texture2D resizedTex = new Texture2D(2, 2, TextureFormat.RGBA32, true);
@@ -390,7 +390,7 @@ namespace TiltBrush
 
                 ImageCache.SaveImageCache(tex, FilePath);
                 m_ImageAspect = (float)tex.width / tex.height;
-                int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
+                int resizeLimit = UserConfig.PerformanceOverrides.ReferenceImagesResizeDimension;
                 if (tex.width > resizeLimit || tex.height > resizeLimit)
                 {
                     Texture2D resizedTex = new Texture2D(2, 2, TextureFormat.RGBA32, true);
@@ -528,7 +528,7 @@ namespace TiltBrush
                     yield return null;
 
                     // Create the full size image cache as well.
-                    int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
+                    int resizeLimit = UserConfig.PerformanceOverrides.ReferenceImagesResizeDimension;
                     if (inTex.width > resizeLimit || inTex.height > resizeLimit)
                     {
                         Texture2D resizedTex = new Texture2D(2, 2, TextureFormat.RGBA32, true);
@@ -557,7 +557,7 @@ namespace TiltBrush
         {
             var reader = new ThreadedImageReader(m_Path,
                 ReferenceImageCatalog.MAX_ICON_TEX_DIMENSION,
-                App.PlatformConfig.ReferenceImagesMaxDimension);
+                UserConfig.PerformanceOverrides.ReferenceImagesMaxDimension);
             while (!reader.Finished)
             {
                 yield return null;
