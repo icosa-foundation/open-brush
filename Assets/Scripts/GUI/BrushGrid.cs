@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -527,6 +529,15 @@ namespace TiltBrush
         public void GotoPage(int page)
         {
             m_RequestedPageIndex = Mathf.Clamp(page, 0, m_NumPages - 1);
+        }
+
+        public void GotoPageForBrush(BrushDescriptor brush)
+        {
+            int brushIndex = Array.FindIndex(m_TagFilteredBrushes, b => b.m_Guid == brush.m_Guid);
+            int page = Mathf.FloorToInt(brushIndex / m_BrushButtons.Length);
+            m_PageIndex = Mathf.Clamp(0, page, m_NumPages - 1);
+            m_RequestedPageIndex = m_PageIndex;
+            RefreshButtonPositions();
         }
 
         // Called when NavButtons are pressed to flip brush pages.

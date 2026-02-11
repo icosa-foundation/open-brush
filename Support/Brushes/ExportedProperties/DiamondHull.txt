@@ -1,0 +1,78 @@
+{
+  "VariantOf": "",
+  "GUID": "c8313697-2563-47fc-832e-290f4c04b901",
+  "Author": "Open Brush",
+  "Name": "DiamondHull",
+  "Description": "Diamond",
+  "ExtraDescription": "",
+  "CopyRestrictions": "EmbedAndShare",
+  "ButtonIcon": "blank.png",
+  "Audio": {
+    "MaxPitchShift": 0.0,
+    "MaxVolume": 0.95,
+    "VolumeUpSpeed": 1.4,
+    "VolumeDownSpeed": 1.2,
+    "VolumeVelocityRangeMultiplier": 2.0,
+    "IsAudioReactive": false
+  },
+  "Material": {
+    "Shader": "Brush/Special/DiamondHull",
+    "FloatProperties": {},
+    "ColorProperties": {},
+    "VectorProperties": {},
+    "TextureProperties": {
+      "_MainTex": ""
+    },
+    "TextureAtlasV": 1,
+    "TileRate": 0.01,
+    "UseBloomSwatchOnColorPicker": false
+  },
+  "Size": {
+    "BrushSizeRange": [ 0.005, 1.0 ],
+    "PressureSizeRange": [ 0.1, 1.0 ],
+    "SizeVariance": 0.0,
+    "PreviewPressureSizeMin": 0.001
+  },
+  "Color": {
+    "Opacity": 1.0,
+    "PressureOpacityRange": [ 1.0, 1.0 ],
+    "LuminanceMin": 0.0,
+    "SaturationMax": 1.0
+  },
+  "Particle": {
+    "Speed": 0.0,
+    "Rate": 1.0,
+    "InitialRotationRange": 0.0,
+    "RandomizeAlpha": false
+  },
+  "QuadBatch": {
+    "SprayRateMultiplier": 1.0,
+    "RotationVariance": 360.0,
+    "PositionVariance": 0.0,
+    "SizeRatio": [ 1.0, 1.0 ]
+  },
+  "Tube": {
+    "MinLength": 0.002,
+    "StoreRadiusInTexCoord": false
+  },
+  "Misc": {
+    "RenderBackFaces": false,
+    "BackIsInvisible": false,
+    "BackfaceHueShift": 0.0,
+    "BoundsPadding": 0.0,
+    "PlaybackAtStrokeGranularity": true
+  },
+  "Export": {
+    "EmissiveFactor": 0.0,
+    "AllowExport": true
+  },
+  "Simplification": {
+    "SupportsSimplification": false,
+    "HeadMinPoints": 1,
+    "HeadPointStep": 1,
+    "TailMinPoints": 1,
+    "TailPointStep": 1,
+    "MiddlePointStep": 0
+  },
+  "BrushDescriptionVersion": 1
+}

@@ -1,0 +1,87 @@
+{
+  "VariantOf": "",
+  "GUID": "d902ed8b-d0d1-476c-a8de-878a79e3a34c",
+  "Author": "Open Brush",
+  "Name": "Snow",
+  "Description": "Snow",
+  "ExtraDescription": "",
+  "CopyRestrictions": "EmbedAndShare",
+  "ButtonIcon": "blank.png",
+  "Audio": {
+    "MaxPitchShift": 0.0,
+    "MaxVolume": 0.9,
+    "VolumeUpSpeed": 0.7,
+    "VolumeDownSpeed": 1.0,
+    "VolumeVelocityRangeMultiplier": 2.0,
+    "IsAudioReactive": true
+  },
+  "Material": {
+    "Shader": "Brush/Particle/Snow",
+    "FloatProperties": {
+      "_ScrollRate": 0.2,
+      "_ScrollJitterIntensity": 0.1,
+      "_ScrollJitterFrequency": 12.0,
+      "_SpreadRate": 1.539
+    },
+    "ColorProperties": {
+      "_TintColor": [ 1.0, 1.0, 1.0, 1.0 ]
+    },
+    "VectorProperties": {
+      "_ScrollDistance": [ 0.0, -3.0, 0.0, 1.0 ]
+    },
+    "TextureProperties": {
+      "_MainTex": ""
+    },
+    "TextureAtlasV": 1,
+    "TileRate": 1.0,
+    "UseBloomSwatchOnColorPicker": false
+  },
+  "Size": {
+    "BrushSizeRange": [ 0.025, 0.15 ],
+    "PressureSizeRange": [ 0.0, 1.0 ],
+    "SizeVariance": 0.0,
+    "PreviewPressureSizeMin": 0.001
+  },
+  "Color": {
+    "Opacity": 1.0,
+    "PressureOpacityRange": [ 1.0, 1.0 ],
+    "LuminanceMin": 0.04,
+    "SaturationMax": 1.0
+  },
+  "Particle": {
+    "Speed": 1.0,
+    "Rate": 0.35,
+    "InitialRotationRange": 0.0,
+    "RandomizeAlpha": true
+  },
+  "QuadBatch": {
+    "SprayRateMultiplier": 1.0,
+    "RotationVariance": 360.0,
+    "PositionVariance": 0.0,
+    "SizeRatio": [ 1.0, 1.0 ]
+  },
+  "Tube": {
+    "MinLength": 0.002,
+    "StoreRadiusInTexCoord": false
+  },
+  "Misc": {
+    "RenderBackFaces": false,
+    "BackIsInvisible": false,
+    "BackfaceHueShift": 0.0,
+    "BoundsPadding": 0.31,
+    "PlaybackAtStrokeGranularity": false
+  },
+  "Export": {
+    "EmissiveFactor": 0.0,
+    "AllowExport": true
+  },
+  "Simplification": {
+    "SupportsSimplification": false,
+    "HeadMinPoints": 1,
+    "HeadPointStep": 1,
+    "TailMinPoints": 1,
+    "TailPointStep": 1,
+    "MiddlePointStep": 1
+  },
+  "BrushDescriptionVersion": 1
+}
