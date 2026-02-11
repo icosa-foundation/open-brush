@@ -2368,8 +2368,9 @@ namespace TiltBrush
                 data.m_Widget.gameObject.activeSelf && data.m_Widget.IsAvailable();
         }
 
-        public void OpenPanel(BasePanel.PanelType type, TrTransform trSpawnXf, bool forced = false)
+        public BasePanel OpenPanel(BasePanel.PanelType type, TrTransform trSpawnXf, bool forced = false)
         {
+            var openedPanels = new List<BasePanel>();
             if ((type != BasePanel.PanelType.SketchSurface
                 && type != BasePanel.PanelType.Color
                 && type != BasePanel.PanelType.Brush) || forced)
@@ -2398,10 +2399,14 @@ namespace TiltBrush
                             }
 
                             PrimeCollisionSimForWidgets(m_AllPanels[i].m_Widget);
+                            openedPanels.Add(m_AllPanels[i].m_Panel);
                         }
                     }
                 }
             }
+            // Would we ever open multiple panels of the same type?
+            // I am assuming not at this stage
+            return openedPanels.FirstOrDefault();
         }
 
         // Used by API
