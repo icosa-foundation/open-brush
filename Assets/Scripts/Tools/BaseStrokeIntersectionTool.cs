@@ -43,7 +43,7 @@ namespace TiltBrush
             new List<GpuIntersector.BatchResult>();
 
         // The results of a previous GpuFutureResult run, processed over several frames.
-        private List<GpuIntersector.BatchResult> m_GpuOldResultList =
+        protected List<GpuIntersector.BatchResult> m_GpuOldResultList =
             new List<GpuIntersector.BatchResult>();
         // Indicates the range of m_GpuOldResultList values that have yet to be processed.
         private int m_GpuConsumedResults;
@@ -249,7 +249,7 @@ namespace TiltBrush
                     else
                     {
                         BatchSubset subset = m_GpuOldResultList[i].subset;
-                        if (subset.m_ParentBatch == null)
+                        if (subset == null || subset.m_ParentBatch == null)
                         {
                             // The stroke was deleted between creating the result and processing the result. This
                             // could happen due to the inherent latency in GPU intersection, although in practice,

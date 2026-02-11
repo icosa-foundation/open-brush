@@ -1453,7 +1453,7 @@ namespace TiltBrush
             return outXf_GS;
         }
 
-        private TrTransform ApplyAxisLocks(TrTransform xf_GS)
+        protected virtual TrTransform ApplyAxisLocks(TrTransform xf_GS)
         {
             if (this is StencilWidget || this is MediaWidget || this is SelectionWidget)
             {

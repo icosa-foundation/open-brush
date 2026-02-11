@@ -70,6 +70,7 @@ namespace TiltBrush
         public const string kPlayerPrefSeededDefaultReferenceImages = "SeededDefaultReferenceImages";
         public const string kPlayerPrefSeededDefaultVideos = "SeededDefaultVideos";
         public const string kPlayerPrefSeededDefaultSavedStrokes = "SeededDefaultSavedStrokes";
+        public const string kPlayerPrefSeededDefaultShapeRecipes = "SeededShapeRecipes";
 
         private const string kDefaultConfigPath = "DefaultConfig";
 
@@ -2174,6 +2175,42 @@ namespace TiltBrush
 
 
 
+        public static void InitShapeRecipesPath()
+        {
+            string recipesDirectory = $"{ShapeRecipesPath()}/Examples";
+
+            if (!Directory.Exists(recipesDirectory))
+            {
+                if (!FileUtils.InitializeDirectoryWithUserError(recipesDirectory))
+                {
+                    return;
+                }
+            }
+
+            // Copy if the directory is empty
+            bool shouldCopy = Directory.GetFileSystemEntries(recipesDirectory).Length == 0;
+
+            // But only once per clean install
+            if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultShapeRecipes, 0) != 0)
+            {
+                shouldCopy = false;
+            }
+
+            if (shouldCopy)
+            {
+                string defaultRecipePath = "Default Shape Recipes";
+                TextAsset[] defaultRecipes = Resources.LoadAll<TextAsset>(defaultRecipePath);
+                foreach (TextAsset recipe in defaultRecipes)
+                {
+                    Texture2D thumbnail = Resources.Load<Texture2D>(Path.Combine(defaultRecipePath, recipe.name));
+                    string thumbResourcePath = $"{defaultRecipePath}/{thumbnail.name}.png";
+                    string recipeResourcePath = $"{defaultRecipePath}/{recipe.name}";
+                    FileUtils.WriteTextureFromResources(thumbResourcePath, Path.Combine(recipesDirectory, $"{Path.GetFileName(thumbnail.name)}.png"));
+                    FileUtils.WriteTextFromResources(recipeResourcePath, Path.Combine(recipesDirectory, $"{Path.GetFileName(recipe.name)}.json"));
+                }
+            }
+        }
+
         public static string FeaturedSketchesPath()
         {
             return Path.Combine(Application.persistentDataPath, "Featured Sketches");
@@ -2200,6 +2237,12 @@ namespace TiltBrush
         public static string ReferenceImagePath()
         {
             return Path.Combine(MediaLibraryPath(), "Images");
+        }
+
+        public static string ShapeRecipesPath()
+        {
+            return Path.Combine(MediaLibraryPath(), "Shape Recipes");
+
         }
 
         public static string VideoLibraryPath()

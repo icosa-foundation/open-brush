@@ -175,6 +175,20 @@ namespace TiltBrush
             MultiplayerSetRoomViewOnly = 1020,
             MultiplayerSetRoomSilent = 1021,
 
+            CustomSymmetryCommand = 5000,
+            PolyhydraOpenMainCategoryPopup = 5001,
+            PolyhydraOpenUniformsPopup = 5002,
+            PolyhydraGridTypesPopup = 5003,
+            PolyhydraGridShapesPopup = 5004,
+            PolyhydraRadialTypesPopup = 5005,
+            PolyhydraOtherTypesPopup = 5006,
+            PolyhydraOperatorTypesPopup = 5007,
+            PolyhydraOperatorFaceSelPopup = 5008,
+            PolyhydraColorPickerPopup = 5009,
+            PolyhydraLoadPresetPopup = 5010,
+            PolyhydraShapeGalleryPopup = 5011,
+            PolyhydraColorMethodsPopup = 5012,
+            PolyhydraLoadColorPalettePopup = 5013,
             RenameSketch = 5200,
             OpenLayerOptionsPopup = 5201,
             RenameLayer = 5202,
@@ -4510,6 +4524,17 @@ namespace TiltBrush
                     }
                     InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
                     break;
+                case GlobalCommands.CustomSymmetryCommand:
+                    if (PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.CustomSymmetryMode)
+                    {
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.CustomSymmetryMode);
+                    }
+                    else
+                    {
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None);
+                    }
+                    InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
+                    break;
                 case GlobalCommands.StraightEdge:
                     PointerManager.m_Instance.StraightEdgeModeEnabled = !PointerManager.m_Instance.StraightEdgeModeEnabled;
                     if (PointerManager.m_Instance.StraightEdgeModeEnabled)
@@ -4834,7 +4859,9 @@ namespace TiltBrush
                         int selectedVerts = SelectionManager.m_Instance.NumVertsInSelection;
 
                         // TODO - this code has never taken imported models etc into account
-                        if (PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.MultiMirror)
+                        if (PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.MultiMirror
+                            || PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.CustomSymmetryMode
+                            || PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.ScriptedSymmetryMode)
                         {
                             selectedVerts *= PointerManager.m_Instance.CustomMirrorMatrices.Count;
                         }
@@ -5077,6 +5104,18 @@ namespace TiltBrush
                     CameraPathCaptureRig.RecordPath();
                     EatGazeObjectInput();
                     break;
+                case GlobalCommands.PolyhydraOpenMainCategoryPopup:
+                case GlobalCommands.PolyhydraOpenUniformsPopup:
+                case GlobalCommands.PolyhydraGridTypesPopup:
+                case GlobalCommands.PolyhydraGridShapesPopup:
+                case GlobalCommands.PolyhydraRadialTypesPopup:
+                case GlobalCommands.PolyhydraOtherTypesPopup:
+                case GlobalCommands.PolyhydraOperatorTypesPopup:
+                    // TODO we don't really need to use commands at all here
+                    // As we can take action in the popup script
+                    // But is it better to use commands?
+                    // Debug.Log($"{rEnum}: iParam1={iParam1} iParam2={iParam2}");
+                    break;
                 case GlobalCommands.OpenScriptsCommandsList:
                     OpenURLAndInformUser($"http://localhost:{HttpServer.HTTP_PORT}/help/commands");
                     break;
@@ -5195,6 +5234,7 @@ namespace TiltBrush
                 case GlobalCommands.MultiMirror: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.MultiMirror;
                 case GlobalCommands.SymmetryTwoHanded: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.TwoHanded;
                 case GlobalCommands.ScriptedSymmetryCommand: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.ScriptedSymmetryMode;
+                case GlobalCommands.CustomSymmetryCommand: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.CustomSymmetryMode;
                 case GlobalCommands.AutoOrient: return m_AutoOrientAfterRotation;
                 case GlobalCommands.AudioVisualization: return VisualizerManager.m_Instance.VisualsRequested;
                 case GlobalCommands.AdvancedPanelsToggle: return m_PanelManager.AdvancedModeActive();
@@ -5423,6 +5463,7 @@ namespace TiltBrush
                 SceneSettings.m_Instance.EnvironmentChanged ||
                 LightsControlScript.m_Instance.LightsChanged ||
                 m_WidgetManager.ModelWidgets.Any(w => w.gameObject.activeSelf) ||
+                m_WidgetManager.EditableModelWidgets.Any(w => w.gameObject.activeSelf) ||
                 m_WidgetManager.LightWidgets.Any(w => w.gameObject.activeSelf) ||
                 m_WidgetManager.StencilWidgets.Any(w => w.gameObject.activeSelf) ||
                 m_WidgetManager.ImageWidgets.Any(w => w.gameObject.activeSelf) ||

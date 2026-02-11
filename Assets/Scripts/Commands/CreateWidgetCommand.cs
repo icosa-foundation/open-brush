@@ -105,10 +105,6 @@ namespace TiltBrush
                         m_Widget.transform.parent = m_Canvas.transform;
                         m_Widget.Show(true);
                         break;
-                    case ModelWidget:
-                        // ModelWidget.Show(true) is not called here because the model must be assigned
-                        // before it can be turned on.
-                        break;
                     case CameraPathWidget:
                         m_Widget.transform.parent = m_Canvas.transform;
                         m_Widget.transform.localPosition = Vector3.zero;
@@ -116,6 +112,16 @@ namespace TiltBrush
                         m_Widget.Show(true);
                         App.Switchboard.TriggerCameraPathCreated();
                         WidgetManager.m_Instance.CameraPathsVisible = true;
+                        break;
+                    case EditableModelWidget:
+                        var em = (EditableModelWidget)m_Widget;
+                        em.LoadingFromSketch = true;
+                        m_Widget.transform.parent = m_Canvas.transform;
+                        m_Widget.LocalTransform = m_EndXf;
+                        break;
+                    case ModelWidget:
+                        // ModelWidget.Show(true) is not called here because the model must be assigned
+                        // before it can be turned on.
                         break;
                 }
 
