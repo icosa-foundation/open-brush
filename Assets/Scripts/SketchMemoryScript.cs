@@ -64,6 +64,9 @@ namespace TiltBrush
             /// This is distinct from Stroke.Group, which is a collection of strokes (of possibly differing
             /// timestamps) that are selected together.
             IsGroupContinue = 1 << 1,
+            /// This stroke was created with the straight edge tool in Line mode.
+            /// Used to identify which strokes should have their endpoints used for snapping.
+            CreatedWithStraightEdge = 1 << 2,
         }
 
         // NOTE: making this generic is way more trouble than it's worth
@@ -575,6 +578,15 @@ namespace TiltBrush
             rNewStroke.m_Seed = seed;
             subset.m_Stroke = rNewStroke;
 
+            // Mark stroke if created with straight edge tool
+            // Note: Stroke will be added to snap hash via Stroke.Hide(false) when appropriate
+            if (PointerManager.m_Instance.StraightEdgeModeEnabled &&
+                StraightEdgeGuideScript.m_Instance.CurrentShape == StraightEdgeGuideScript.Shape.Line &&
+                rNewStroke.m_ControlPoints != null && rNewStroke.m_ControlPoints.Length >= 2)
+            {
+                rNewStroke.m_Flags |= StrokeFlags.CreatedWithStraightEdge;
+            }
+
             PerformAndRecordCommand(
                 new BrushStrokeCommand(
                     rNewStroke,
@@ -615,6 +627,15 @@ namespace TiltBrush
             rNewStroke.m_BrushScale = brushScale;
             rNewStroke.m_Flags = strokeFlags;
             brushScript.Stroke = rNewStroke;
+
+            // Mark stroke if created with straight edge tool
+            // Note: Stroke will be added to snap hash via Stroke.Hide(false) when appropriate
+            if (PointerManager.m_Instance.StraightEdgeModeEnabled &&
+                StraightEdgeGuideScript.m_Instance.CurrentShape == StraightEdgeGuideScript.Shape.Line &&
+                rNewStroke.m_ControlPoints != null && rNewStroke.m_ControlPoints.Length >= 2)
+            {
+                rNewStroke.m_Flags |= StrokeFlags.CreatedWithStraightEdge;
+            }
 
             SketchMemoryScript.m_Instance.RecordCommand(
                 new BrushStrokeCommand(rNewStroke, stencil, lineLength, ApiManager.Instance.ActiveUndo));
