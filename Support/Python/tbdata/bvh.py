@@ -255,7 +255,7 @@ class RTreeNode:
     def __init__(self, node_id, inf_or_data):
         self.node_id = node_id
         reader = BinaryReader(inf_or_data)
-        (self.nodeType, self.level, nChildren) = reader.read("III")
+        self.nodeType, self.level, nChildren = reader.read("III")
         self.children = [RTreeChild(reader) for i in range(nChildren)]
         self.bounds = reader.read_bounds()
 

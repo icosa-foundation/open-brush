@@ -140,7 +140,7 @@ MonoBehaviour:
     ModifyColor: 0
     ModifyNormal: 0
     ModifyUv0: 0
-    ModifyUv1: 0
+    ModifyUv1: 1
   - name: Electricity
     shader: {fileID: 4800000, guid: 698f6f8dc012a8b4e9d6f36db04f0dd3, type: 3}
     brushGuid: f6e85de3-6dcc-4e7f-87fd-cee8c3d25d51
@@ -172,7 +172,7 @@ MonoBehaviour:
     ModifyColor: 0
     ModifyNormal: 0
     ModifyUv0: 0
-    ModifyUv1: 0
+    ModifyUv1: 1
   - name: DanceFloor
     shader: {fileID: 4800000, guid: 14968e66fc8cfe441b31a7c23a07897c, type: 3}
     brushGuid: 6a1cf9f9-032c-45ec-311e-a6680bee32e9
