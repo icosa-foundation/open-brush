@@ -721,6 +721,16 @@ namespace TiltBrush
     }
 
     [Serializable]
+    public class RuntimeVoxState
+    {
+        // Subfile path inside the .tilt container, eg "vox/0.vox".
+        public string FilePath { get; set; }
+        public TrTransform Transform { get; set; }
+        public bool Optimized { get; set; }
+        public bool GenerateCollider { get; set; }
+    }
+
+    [Serializable]
     // Serializable protects data members obfuscator, but we need to also protect
     // method names like ShouldSerializeXxx(...) that are used by Json.NET
     [System.Reflection.Obfuscation(Exclude = true)]
@@ -838,5 +848,8 @@ namespace TiltBrush
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TiltText[] TextWidgets { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public RuntimeVoxState[] RuntimeVoxIndex { get; set; }
     }
 } // namespace TiltBrush

@@ -5234,6 +5234,7 @@ namespace TiltBrush
 
         public void NewSketch(bool fade)
         {
+            ApiMethods.VoxResetRuntimeState();
             LightsControlScript.m_Instance.DiscoMode = false;
             m_WidgetManager.FollowingPath = false;
             SketchMemoryScript.m_Instance.ClearMemory();

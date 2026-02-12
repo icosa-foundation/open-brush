@@ -1,0 +1,222 @@
+<html>
+<head>
+    <meta charset='UTF-8'>
+    <style>
+        body { font-family: sans-serif; margin: 12px; line-height: 1.4; }
+        h3 { margin: 10px 0 6px; }
+        .row { margin: 6px 0; }
+        label { display: inline-block; margin-right: 10px; }
+        input, select, button { margin: 2px; }
+        input[type='number'] { width: 70px; }
+        #log { width: 98%; height: 140px; }
+    </style>
+</head>
+<body>
+<h2>VOX Runtime API Playground</h2>
+
+<div class='row'>
+    <label>Doc Size X <input id='docX' type='number' value='24'></label>
+    <label>Y <input id='docY' type='number' value='24'></label>
+    <label>Z <input id='docZ' type='number' value='24'></label>
+    <button onclick='newDocument()'>New Document</button>
+    <button onclick='clearSpawned()'>Clear Spawned</button>
+</div>
+
+<div class='row'>
+    <label>Model Name <input id='modelName' value='detail'></label>
+    <label>Model Size X <input id='modelX' type='number' value='24'></label>
+    <label>Y <input id='modelY' type='number' value='24'></label>
+    <label>Z <input id='modelZ' type='number' value='24'></label>
+    <button onclick='addModel()'>Add Model</button>
+    <label>Active Model <input id='activeModel' type='number' value='0'></label>
+    <button onclick='selectModel()'>Select Model</button>
+</div>
+
+<div class='row'>
+    <label>Palette Index <input id='paletteIndex' type='number' value='5'></label>
+    <label>Color <input id='paletteColor' type='color' value='#ff6040'></label>
+    <button onclick='setPaletteFromColor()'>Set Palette Color</button>
+</div>
+
+<div class='row'>
+    <label>X <input id='vx' type='number' value='1'></label>
+    <label>Y <input id='vy' type='number' value='0'></label>
+    <label>Z <input id='vz' type='number' value='1'></label>
+    <label>Palette <input id='vPalette' type='number' value='5'></label>
+    <button onclick='setVoxel()'>Set Voxel</button>
+    <button onclick='removeVoxel()'>Remove Voxel</button>
+</div>
+
+<div class='row'>
+    <label>From X <input id='mx1' type='number' value='2'></label>
+    <label>Y <input id='my1' type='number' value='0'></label>
+    <label>Z <input id='mz1' type='number' value='1'></label>
+    <label>To X <input id='mx2' type='number' value='2'></label>
+    <label>Y <input id='my2' type='number' value='1'></label>
+    <label>Z <input id='mz2' type='number' value='1'></label>
+    <button onclick='moveVoxel()'>Move Voxel</button>
+</div>
+
+<div class='row'>
+    <label>Pattern <select id='pattern'>
+        <option value='stairs'>Stairs</option>
+        <option value='wave'>Wave Wall</option>
+        <option value='tower'>Tower</option>
+    </select></label>
+    <label>Size <input id='patternSize' type='number' value='8'></label>
+    <label>Palette A <input id='paletteA' type='number' value='5'></label>
+    <label>Palette B <input id='paletteB' type='number' value='6'></label>
+    <button onclick='buildPattern()'>Build Pattern</button>
+</div>
+
+<div class='row'>
+    <label>Auto Visuals <select id='autoVisuals'>
+        <option value='true' selected>true</option>
+        <option value='false'>false</option>
+    </select></label>
+    <button onclick='setAutoVisuals()'>Set Auto Visuals</button>
+    <button onclick='spawnNow()'>Spawn/Refresh Now</button>
+    <button onclick='meshStats()'>Mesh Stats</button>
+    <button onclick='exportBase64()'>Export Base64</button>
+</div>
+
+<textarea id='log' readonly></textarea>
+
+<script>
+    function sendCommands(commands) {
+        var xmlHttp = new XMLHttpRequest();
+        var url = '/api/v1?' + commands.join('&');
+        xmlHttp.open('GET', url, false);
+        xmlHttp.send(null);
+        log('> ' + commands.join(' & '));
+    }
+
+    function sendCommand(command) {
+        sendCommands([command]);
+    }
+
+    function log(message) {
+        var box = document.getElementById('log');
+        box.value += message + '\n';
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function val(id) { return document.getElementById(id).value; }
+    function n(id) { return parseInt(val(id), 10); }
+
+    function colorToRgba(hex) {
+        var clean = hex.replace('#', '');
+        return [
+            parseInt(clean.substring(0, 2), 16),
+            parseInt(clean.substring(2, 4), 16),
+            parseInt(clean.substring(4, 6), 16),
+            255
+        ];
+    }
+
+    function newDocument() {
+        sendCommands([
+            'vox.new=' + n('docX') + ',' + n('docY') + ',' + n('docZ'),
+            'vox.model.select=0'
+        ]);
+        log('Created new document and selected model 0.');
+    }
+
+    function clearSpawned() {
+        sendCommand('vox.spawn.clear');
+        log('Cleared spawned VOX scene objects.');
+    }
+
+    function addModel() {
+        sendCommand(
+            'vox.model.add=' + n('modelX') + ',' + n('modelY') + ',' + n('modelZ') + ',' + encodeURIComponent(val('modelName'))
+        );
+        log('Added model: ' + val('modelName'));
+    }
+
+    function selectModel() {
+        sendCommand('vox.model.select=' + n('activeModel'));
+        log('Selected model index ' + n('activeModel'));
+    }
+
+    function setPaletteFromColor() {
+        var rgba = colorToRgba(val('paletteColor'));
+        sendCommand('vox.palette.set=' + n('paletteIndex') + ',' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ',' + rgba[3]);
+        log('Updated palette index ' + n('paletteIndex'));
+    }
+
+    function setVoxel() {
+        sendCommand('vox.set=' + n('vx') + ',' + n('vy') + ',' + n('vz') + ',' + n('vPalette'));
+    }
+
+    function removeVoxel() {
+        sendCommand('vox.remove=' + n('vx') + ',' + n('vy') + ',' + n('vz'));
+    }
+
+    function moveVoxel() {
+        sendCommand(
+            'vox.move=' + n('mx1') + ',' + n('my1') + ',' + n('mz1') + ',' + n('mx2') + ',' + n('my2') + ',' + n('mz2') + ',true'
+        );
+    }
+
+    function buildPattern() {
+        var size = Math.max(1, n('patternSize'));
+        var pA = n('paletteA');
+        var pB = n('paletteB');
+        var pattern = val('pattern');
+
+        var commands = [];
+        if (pattern === 'stairs') {
+            for (var i = 0; i < size; i++) {
+                commands.push('vox.set=' + i + ',' + i + ',0,' + (i % 2 === 0 ? pA : pB));
+            }
+        } else if (pattern === 'wave') {
+            for (var x = 0; x < size; x++) {
+                var y = Math.floor((Math.sin(x * 0.7) + 1.0) * (size / 4));
+                for (var z = 0; z < Math.max(1, Math.floor(size / 3)); z++) {
+                    commands.push('vox.set=' + x + ',' + y + ',' + z + ',' + (x % 2 === 0 ? pA : pB));
+                }
+            }
+        } else {
+            var center = Math.floor(size / 2);
+            for (var h = 0; h < size; h++) {
+                commands.push('vox.set=' + center + ',' + h + ',' + center + ',' + pA);
+                if (h % 2 === 0) {
+                    commands.push('vox.set=' + (center + 1) + ',' + h + ',' + center + ',' + pB);
+                    commands.push('vox.set=' + (center - 1) + ',' + h + ',' + center + ',' + pB);
+                }
+            }
+        }
+
+        sendCommands(commands);
+        log('Built pattern: ' + pattern + ' size=' + size);
+    }
+
+    function setAutoVisuals() {
+        sendCommand('vox.autovisuals=' + val('autoVisuals'));
+        log('Auto visuals set to ' + val('autoVisuals'));
+    }
+
+    function spawnNow() {
+        sendCommand('vox.spawn=optimized,true');
+        log('Triggered explicit spawn/refresh.');
+    }
+
+    function meshStats() {
+        sendCommand('vox.mesh.stats=' + n('activeModel') + ',optimized');
+    }
+
+    function exportBase64() {
+        sendCommand('vox.export.base64');
+        log('Requested base64 export from active document.');
+    }
+
+    // Startup demo so users immediately see something.
+    clearSpawned();
+    setAutoVisuals();
+    newDocument();
+    setPaletteFromColor();
+    buildPattern();
+</script>
+</body>
+</html>
