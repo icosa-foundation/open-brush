@@ -71,6 +71,7 @@ namespace TiltBrush
                 List<GrabWidget> createdWidgets = new List<GrabWidget>();
                 Dictionary<string, ReferenceImage> imageCache = new Dictionary<string, ReferenceImage>(StringComparer.OrdinalIgnoreCase);
                 string quillImageDirectory = GetQuillImageDirectory(path);
+                string quillSoundDirectory = GetQuillSoundDirectory(path);
 
                 // Apply 10x global scale (Meters to Centimeters/Unity units normalization)
                 Matrix4x4 globalCorrection = Matrix4x4.Scale(Vector3.one * 10f);
@@ -133,6 +134,7 @@ namespace TiltBrush
                         imageCache,
                         path,
                         quillImageDirectory,
+                        quillSoundDirectory,
                         layerName,
                         includeAllDescendants: false,
                         parentVisible: rootVisible,
@@ -192,6 +194,7 @@ namespace TiltBrush
             Dictionary<string, ReferenceImage> imageCache,
             string quillProjectPath,
             string quillImageDirectory,
+            string quillSoundDirectory,
             string layerName,
             bool includeAllDescendants,
             bool parentVisible,
@@ -278,6 +281,21 @@ namespace TiltBrush
                 }
             }
 
+            // 2b. Process sound layers
+            if ((!hasFilter || allowAll) && layer is SQ.LayerSound sound)
+            {
+                var widget = CreateSoundWidgetFromQuillLayer(
+                    sound,
+                    worldXf,
+                    targetLayer,
+                    quillProjectPath,
+                    quillSoundDirectory);
+                if (widget != null)
+                {
+                    createdWidgets.Add(widget);
+                }
+            }
+
             // 3. Recurse into children if it's a Group layer
             if (layer is SQ.LayerGroup group)
             {
@@ -297,6 +315,7 @@ namespace TiltBrush
                         imageCache,
                         quillProjectPath,
                         quillImageDirectory,
+                        quillSoundDirectory,
                         layerName,
                         includeAllDescendants: allowAll,
                         parentVisible: layerVisible,
@@ -694,6 +713,280 @@ namespace TiltBrush
             }
 
             return Path.Combine(directory, $"{fileName}-{Guid.NewGuid()}{extension}");
+        }
+
+        private static SoundClipWidget CreateSoundWidgetFromQuillLayer(
+            SQ.LayerSound sound,
+            Matrix4x4 worldXf,
+            CanvasScript targetLayer,
+            string quillProjectPath,
+            string quillSoundDirectory)
+        {
+            if (sound == null)
+            {
+                return null;
+            }
+
+            string sourcePath = null;
+            SoundClip soundClip = null;
+
+            // First try external file
+            if (!string.IsNullOrEmpty(sound.ImportFilePath))
+            {
+                sourcePath = ResolveQuillSoundPath(sound.ImportFilePath, quillProjectPath);
+                if (!string.IsNullOrEmpty(sourcePath))
+                {
+                    soundClip = GetOrCreateSoundClip(sourcePath, quillSoundDirectory);
+                }
+            }
+
+            // If no external file, try embedded data
+            if (soundClip == null && sound.Data != null && sound.Data.AudioBytes != null && sound.Data.AudioBytes.Length > 0)
+            {
+                sourcePath = ExtractEmbeddedAudio(sound, quillSoundDirectory);
+                if (!string.IsNullOrEmpty(sourcePath))
+                {
+                    soundClip = GetOrCreateSoundClip(sourcePath, quillSoundDirectory);
+                }
+            }
+
+            if (soundClip == null)
+            {
+                Debug.LogWarning($"Quill sound file not found: {sound.Name}");
+                return null;
+            }
+
+            TrTransform worldXfTr = TrTransform.FromMatrix4x4(worldXf);
+            // Use a default size of 2 for sound widgets (similar to images)
+            worldXfTr.scale = Mathf.Abs(worldXfTr.scale) * 2.0f;
+
+            // Create the widget using the same pattern as image widgets
+            var previousCanvas = App.Scene.ActiveCanvas;
+            try
+            {
+                App.Scene.ActiveCanvas = targetLayer;
+                SoundClipWidget soundWidget = UnityEngine.Object.Instantiate(WidgetManager.m_Instance.SoundClipWidgetPrefab);
+                soundWidget.transform.parent = targetLayer.transform;
+                soundWidget.transform.localScale = Vector3.one;
+                soundWidget.SetSoundClip(soundClip);
+                soundWidget.SetSignedWidgetSize(worldXfTr.scale);
+                soundWidget.Show(bShow: true, bPlayAudio: false);
+                soundWidget.transform.position = worldXfTr.translation;
+                soundWidget.transform.rotation = worldXfTr.rotation;
+
+                // Apply Quill sound properties
+                if (soundWidget.SoundClipController != null)
+                {
+                    soundWidget.SoundClipController.Volume = sound.Gain;
+                    // Note: Loop property will be applied when the controller initializes
+                }
+
+                return soundWidget;
+            }
+            finally
+            {
+                App.Scene.ActiveCanvas = previousCanvas;
+            }
+        }
+
+        private static string ResolveQuillSoundPath(string importPath, string quillProjectPath)
+        {
+            if (string.IsNullOrEmpty(importPath))
+            {
+                return null;
+            }
+
+            try
+            {
+                string resolvedPath = importPath.Replace('/', Path.DirectorySeparatorChar);
+                if (!Path.IsPathRooted(resolvedPath) && !string.IsNullOrEmpty(quillProjectPath))
+                {
+                    resolvedPath = Path.Combine(quillProjectPath, resolvedPath);
+                }
+
+                resolvedPath = NormalizePath(resolvedPath);
+                if (File.Exists(resolvedPath))
+                {
+                    return resolvedPath;
+                }
+
+                return null;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"Failed to resolve Quill sound path '{importPath}': {e.Message}");
+                return null;
+            }
+        }
+
+        private static SoundClip GetOrCreateSoundClip(string sourcePath, string quillSoundDirectory)
+        {
+            if (string.IsNullOrEmpty(sourcePath) || !File.Exists(sourcePath))
+            {
+                return null;
+            }
+
+            string homeDir = App.SoundClipLibraryPath();
+            string targetDir = string.IsNullOrEmpty(quillSoundDirectory) ? homeDir : quillSoundDirectory;
+            string finalPath = sourcePath;
+
+            // If the source file is not already in the sound library, copy it to the Quill subfolder
+            if (!sourcePath.StartsWith(homeDir, StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    string fileName = Path.GetFileName(sourcePath);
+                    string destPath = Path.Combine(targetDir, fileName);
+                    destPath = EnsureUniqueImagePath(destPath); // Reuse the unique path logic
+                    Directory.CreateDirectory(targetDir);
+                    File.Copy(sourcePath, destPath, overwrite: false);
+                    finalPath = destPath;
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"Failed to copy Quill sound into library: {e.Message}");
+                    return null;
+                }
+            }
+
+            // Check if it's already in the catalog
+            string relativePath = Path.GetRelativePath(homeDir, finalPath);
+            SoundClip soundClip = SoundClipCatalog.Instance.GetSoundClipByPersistentPath(relativePath);
+
+            // If not in catalog yet, create a new SoundClip directly
+            if (soundClip == null)
+            {
+                try
+                {
+                    soundClip = new SoundClip(finalPath);
+                    // Trigger catalog rescan in background so it shows up in UI later
+                    SoundClipCatalog.Instance.ForceCatalogScan();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"Failed to create SoundClip: {e.Message}");
+                    return null;
+                }
+            }
+
+            return soundClip;
+        }
+
+        private static string GetQuillSoundDirectory(string quillProjectPath)
+        {
+            if (string.IsNullOrEmpty(quillProjectPath))
+            {
+                return null;
+            }
+
+            string projectName = Path.GetFileName(quillProjectPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            projectName = SanitizeFileName(projectName);
+            if (string.IsNullOrEmpty(projectName))
+            {
+                return null;
+            }
+
+            string homeDir = App.SoundClipLibraryPath();
+            string baseDir = Path.Combine(homeDir, "Quill", projectName);
+            if (!Directory.Exists(baseDir))
+            {
+                return baseDir;
+            }
+
+            for (int i = 1; i < 1000; i++)
+            {
+                string candidate = $"{baseDir}-{i}";
+                if (!Directory.Exists(candidate))
+                {
+                    return candidate;
+                }
+            }
+
+            return $"{baseDir}-{Guid.NewGuid()}";
+        }
+
+        private static string ExtractEmbeddedAudio(SQ.LayerSound sound, string quillSoundDirectory)
+        {
+            if (sound.Data == null || sound.Data.AudioBytes == null || sound.Data.AudioBytes.Length == 0)
+            {
+                return null;
+            }
+
+            try
+            {
+                // Detect audio format from magic bytes
+                string extension = DetectAudioFormat(sound.Data.AudioBytes);
+
+                // Create filename
+                string baseName = !string.IsNullOrEmpty(sound.Name) ? SanitizeFileName(sound.Name) : "embedded_audio";
+                string fileName = $"{baseName}{extension}";
+
+                // Ensure directory exists
+                Directory.CreateDirectory(quillSoundDirectory);
+
+                // Write audio file
+                string destPath = Path.Combine(quillSoundDirectory, fileName);
+                destPath = EnsureUniqueImagePath(destPath); // Reuse unique path logic
+                File.WriteAllBytes(destPath, sound.Data.AudioBytes);
+
+                return destPath;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"Failed to extract embedded audio for '{sound.Name}': {e.Message}");
+                return null;
+            }
+        }
+
+        private static string DetectAudioFormat(byte[] audioBytes)
+        {
+            if (audioBytes == null || audioBytes.Length < 12)
+            {
+                return ".bin"; // Unknown format
+            }
+
+            // Check for common audio format magic bytes
+            // Quill stores audio as WAV in qbin, so check that first
+
+            // WAV/RIFF: "RIFF" ... "WAVE"
+            if (audioBytes.Length >= 12 &&
+                audioBytes[0] == 'R' && audioBytes[1] == 'I' &&
+                audioBytes[2] == 'F' && audioBytes[3] == 'F' &&
+                audioBytes[8] == 'W' && audioBytes[9] == 'A' &&
+                audioBytes[10] == 'V' && audioBytes[11] == 'E')
+            {
+                return ".wav";
+            }
+
+            // OGG: "OggS"
+            if (audioBytes.Length >= 4 &&
+                audioBytes[0] == 'O' && audioBytes[1] == 'g' &&
+                audioBytes[2] == 'g' && audioBytes[3] == 'S')
+            {
+                return ".ogg";
+            }
+
+            // MP3: FF FB or FF F3 or FF F2 or ID3
+            if (audioBytes[0] == 0xFF && (audioBytes[1] & 0xE0) == 0xE0)
+            {
+                return ".mp3";
+            }
+            if (audioBytes.Length >= 3 && audioBytes[0] == 'I' && audioBytes[1] == 'D' && audioBytes[2] == '3')
+            {
+                return ".mp3";
+            }
+
+            // FLAC: "fLaC"
+            if (audioBytes.Length >= 4 &&
+                audioBytes[0] == 'f' && audioBytes[1] == 'L' &&
+                audioBytes[2] == 'a' && audioBytes[3] == 'C')
+            {
+                return ".flac";
+            }
+
+            // Default to WAV since that's what Quill uses in qbin
+            Debug.LogWarning("Could not detect audio format, defaulting to .wav");
+            return ".wav";
         }
 
         private static Matrix4x4 ConvertSQTransformMatrix(SQ.Transform sqXf, bool includeFlip)
