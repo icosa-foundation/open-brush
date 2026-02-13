@@ -10520,6 +10520,7 @@ GameObject:
   - component: {fileID: 652605564}
   - component: {fileID: 652605570}
   - component: {fileID: 652605574}
+  - component: {fileID: 652605575}
   m_Layer: 0
   m_Name: App
   m_TagString: Untagged
@@ -11357,6 +11358,18 @@ MonoBehaviour:
   - DefaultSavedStrokes/Knot.tilt
   - DefaultSavedStrokes/Star.tilt
   - DefaultSavedStrokes/Snowflake.tilt
+--- !u!114 &652605575
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 652605543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15156cc6acae14f44863628350e2508d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &669339392 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4492044767078796625, guid: 382dabebd59956d499aefb54b02f804d,
@@ -25732,6 +25745,12 @@ MonoBehaviour:
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 199434, guid: de22d465caf3f20419b98ce5290a7e57, type: 3}
+    m_ModeVr: 1
+    m_ModeMono: 1
+    m_ModeQuest: 1
+    m_Basic: 0
+    m_Advanced: 1
+  - m_PanelPrefab: {fileID: 109932, guid: 25ef2a4f5d9580940a252d69638f77ce, type: 3}
     m_ModeVr: 1
     m_ModeMono: 1
     m_ModeQuest: 1

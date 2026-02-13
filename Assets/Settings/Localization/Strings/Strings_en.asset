@@ -3792,6 +3792,22 @@ MonoBehaviour:
       Worlds.'
     m_Metadata:
       m_Items: []
+  - m_Id: 455073616801390592
+    m_Localized: Quill Cube
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073689002139648
+    m_Localized: Quill Cylinder
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073748024385536
+    m_Localized: Quill Ellipse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073795705233408
+    m_Localized: Quill Ribbon
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
