@@ -21,7 +21,6 @@ Not intended for production use.
 This was written to help scope out the work required to convert
 Tilt Brush gltf1 to gltf2."""
 
-
 import argparse
 import collections
 import json
