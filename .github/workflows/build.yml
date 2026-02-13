@@ -1458,11 +1458,11 @@ jobs:
           echo "Disk space after cleanup of \$AGENT_TOOLSDIRECTORY"
           df -h
 
-      - name: Use xcode 16.2 / ios 18.2
+      - name: Use xcode 26.2 / ios 26.2
         run: |
-          sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer  # The default in macos-latest (i.e., 14) is currently 15.4.
+          sudo xcode-select -s /Applications/Xcode_26.2.app/Contents/Developer  # The default in macos-latest (i.e., 15) is currently 16.4.
           xcrun simctl list > /dev/null  # Because of https://github.com/actions/runner-images/issues/12862
-          xcodebuild -downloadPlatform iOS -buildVersion 18.2  # Because of https://github.com/actions/runner-images/issues/11335
+          xcodebuild -downloadPlatform iOS # -buildVersion 26.2 ## Removed because it says 26.2 is not available to download, but if you run with no version specified you get.... 26.2
 
       - name: Download iOS Artifact
         uses: actions/download-artifact@v7
