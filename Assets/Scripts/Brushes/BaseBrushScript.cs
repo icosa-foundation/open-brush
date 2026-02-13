@@ -109,6 +109,8 @@ namespace TiltBrush
         protected Vector3 m_LastSpawnPos { get { return m_LastSpawnXf.translation; } }
         protected float m_BaseSize_PS;
         protected StatelessRng m_rng;
+        // Reference to stroke data for accessing per-point colors during geometry generation
+        protected StrokeData m_StrokeData;
 
         protected BaseBrushScript(bool bCanBatch)
         {
@@ -142,6 +144,12 @@ namespace TiltBrush
         {
             get { return m_BaseSize_PS; }
             set { m_BaseSize_PS = value; }
+        }
+
+        /// Provides access to the stroke data including per-point colors
+        public StrokeData StrokeData
+        {
+            get { return m_StrokeData; }
         }
 
         /// The size of the brush, in the parent-local (Canvas) coordinate system
@@ -190,6 +198,12 @@ namespace TiltBrush
         /// This should only be used during initialization.
         public void SetPreviewMode() { m_PreviewMode = true; }
 
+        /// Set stroke data reference for per-point color access during geometry generation
+        public void SetStrokeData(StrokeData strokeData)
+        {
+            m_StrokeData = strokeData;
+        }
+
         /// Returns an object that implements the Undo animation
         public GameObject CloneAsUndoObject()
         {
@@ -205,11 +219,11 @@ namespace TiltBrush
 
         /// Returns true if permanent geometry was generated.
         /// Transform should be in the local coordinates of the stroke
-        public bool UpdatePosition_LS(TrTransform xf, float fPressure)
+        public bool UpdatePosition_LS(TrTransform xf, float fPressure, Color32? color = null)
         {
             if (IsOutOfVerts()) { return false; }
 
-            bool ret = UpdatePositionImpl(xf.translation, xf.rotation, fPressure);
+            bool ret = UpdatePositionImpl(xf.translation, xf.rotation, fPressure, color);
             if (ret)
             {
                 m_LastSpawnXf = xf;
@@ -316,7 +330,7 @@ namespace TiltBrush
         // Return true if a new solid was created.
         protected abstract bool UpdatePositionImpl(
             Vector3 vPos, Quaternion ori,
-            float fPressure);
+            float fPressure, Color32? color = null);
 
         // This function is a sanity check for making sure we don't overrun our allocated vertex buffers
         //  when creating new geometry.  It is used at low levels as a safeguard.
