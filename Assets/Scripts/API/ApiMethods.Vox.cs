@@ -36,8 +36,21 @@ namespace TiltBrush
             public bool GenerateCollider = true;
         }
 
+        private sealed class VoxDocumentSourceState
+        {
+            public string SourceKind = VoxSourceKindGenerated;
+            public string SourcePath = string.Empty;
+            public bool Dirty = true;
+        }
+
+        private const string VoxSourceKindGenerated = "Generated";
+        private const string VoxSourceKindMediaLibraryFile = "MediaLibraryFile";
+        private const string VoxSourceKindEmbeddedSubfile = "EmbeddedSubfile";
+        private const string VoxSourceKindImportedBase64 = "ImportedBase64";
+
         private static readonly List<RuntimeVoxDocument> s_voxDocuments = new List<RuntimeVoxDocument>();
         private static readonly Dictionary<RuntimeVoxDocument, VoxSceneState> s_voxSceneByDocument = new Dictionary<RuntimeVoxDocument, VoxSceneState>();
+        private static readonly Dictionary<RuntimeVoxDocument, VoxDocumentSourceState> s_voxSourceByDocument = new Dictionary<RuntimeVoxDocument, VoxDocumentSourceState>();
         private static readonly List<GameObject> s_spawnedVoxRoots = new List<GameObject>();
         private static int s_activeVoxDocumentIndex = -1;
         private static int s_activeVoxModelIndex = 0;
@@ -53,6 +66,12 @@ namespace TiltBrush
             var document = new RuntimeVoxDocument();
             document.CreateModel("model_0", new Vector3Int(sizeX, sizeY, sizeZ));
             s_voxDocuments.Add(document);
+            s_voxSourceByDocument[document] = new VoxDocumentSourceState
+            {
+                SourceKind = VoxSourceKindGenerated,
+                SourcePath = string.Empty,
+                Dirty = true,
+            };
             s_activeVoxDocumentIndex = s_voxDocuments.Count - 1;
             s_activeVoxModelIndex = 0;
             RefreshActiveDocumentVisual(spawnNearBrush: true);
@@ -91,6 +110,7 @@ namespace TiltBrush
 
             RuntimeVoxDocument removed = s_voxDocuments[index];
             DestroyDocumentScene(removed);
+            s_voxSourceByDocument.Remove(removed);
             s_voxDocuments.RemoveAt(index);
             if (s_voxDocuments.Count == 0)
             {
@@ -124,6 +144,7 @@ namespace TiltBrush
             }
 
             RuntimeVoxDocument document = s_voxDocuments[resolvedIndex];
+            VoxDocumentSourceState source = GetSourceState(document);
             var info = new
             {
                 active = s_activeVoxDocumentIndex,
@@ -132,6 +153,10 @@ namespace TiltBrush
                 index = resolvedIndex,
                 count = s_voxDocuments.Count,
                 modelCount = document.Models.Count,
+                sourceKind = source.SourceKind,
+                sourcePath = source.SourcePath,
+                dirty = source.Dirty,
+                embedOnSave = ShouldEmbedOnSave(source),
                 models = BuildModelSummaries(document),
             };
             return JsonConvert.SerializeObject(info);
@@ -166,6 +191,7 @@ namespace TiltBrush
             string modelName = string.IsNullOrWhiteSpace(name) ? $"model_{document.Models.Count}" : name;
             document.CreateModel(modelName, new Vector3Int(sizeX, sizeY, sizeZ));
             s_activeVoxModelIndex = document.Models.Count - 1;
+            MarkDocumentDirty(document);
             RefreshActiveDocumentVisual();
         }
 
@@ -204,6 +230,7 @@ namespace TiltBrush
 
             if (model.AddOrUpdateVoxel(new Vector3Int(x, y, z), (byte)Mathf.Clamp(paletteIndex, 0, 255)))
             {
+                MarkActiveDocumentDirty();
                 RefreshActiveDocumentVisual();
             }
         }
@@ -222,6 +249,7 @@ namespace TiltBrush
 
             if (model.RemoveVoxel(new Vector3Int(x, y, z)))
             {
+                MarkActiveDocumentDirty();
                 RefreshActiveDocumentVisual();
             }
         }
@@ -246,11 +274,14 @@ namespace TiltBrush
                 return;
             }
 
-            model.MoveVoxel(
+            if (model.MoveVoxel(
                 new Vector3Int(fromX, fromY, fromZ),
                 new Vector3Int(toX, toY, toZ),
-                overwrite);
-            RefreshActiveDocumentVisual();
+                overwrite))
+            {
+                MarkActiveDocumentDirty();
+                RefreshActiveDocumentVisual();
+            }
         }
 
         [ApiEndpoint(
@@ -309,6 +340,7 @@ namespace TiltBrush
                 (byte)Mathf.Clamp(a, 0, 255));
             if (document.ReplacePaletteEntry(paletteIndex, color))
             {
+                MarkDocumentDirty(document);
                 RefreshActiveDocumentVisual();
             }
         }
@@ -408,6 +440,7 @@ namespace TiltBrush
         {
             VoxSpawnClear();
             s_voxDocuments.Clear();
+            s_voxSourceByDocument.Clear();
             s_activeVoxDocumentIndex = -1;
             s_activeVoxModelIndex = 0;
             s_autoVisuals = true;
@@ -425,6 +458,8 @@ namespace TiltBrush
             {
                 RuntimeVoxDocument document = s_voxDocuments[i];
                 s_voxSceneByDocument.TryGetValue(document, out VoxSceneState sceneState);
+                VoxDocumentSourceState source = GetSourceState(document);
+                bool embed = ShouldEmbedOnSave(source);
 
                 TrTransform transform = TrTransform.identity;
                 if (sceneState?.Root != null)
@@ -438,13 +473,16 @@ namespace TiltBrush
                 payloads[i] = new RuntimeVoxSavePayload
                 {
                     Document = document,
-                    VoxBytes = document.ToVoxBytes(),
+                    VoxBytes = embed ? document.ToVoxBytes() : null,
                     State = new RuntimeVoxState
                     {
-                        FilePath = $"vox/{i}.vox",
+                        FilePath = embed ? $"vox/{i}.vox" : null,
                         Transform = transform,
                         Optimized = sceneState?.Optimized ?? true,
                         GenerateCollider = sceneState?.GenerateCollider ?? true,
+                        SourceKind = source.SourceKind,
+                        SourcePath = source.SourcePath,
+                        Dirty = source.Dirty,
                     },
                 };
             }
@@ -462,21 +500,29 @@ namespace TiltBrush
 
             foreach (RuntimeVoxState item in runtimeVoxIndex)
             {
-                if (item == null || string.IsNullOrEmpty(item.FilePath))
+                if (item == null)
                 {
                     continue;
                 }
 
                 try
                 {
-                    byte[] bytes;
-                    using (Stream stream = fileInfo.GetReadStream(item.FilePath))
+                    byte[] bytes = LoadRuntimeVoxBytes(fileInfo, item);
+                    if (bytes == null || bytes.Length == 0)
                     {
-                        bytes = ReadAllBytes(stream);
+                        continue;
                     }
 
                     RuntimeVoxDocument document = RuntimeVoxDocument.FromBytes(bytes);
                     s_voxDocuments.Add(document);
+                    s_voxSourceByDocument[document] = new VoxDocumentSourceState
+                    {
+                        SourceKind = string.IsNullOrEmpty(item.SourceKind)
+                            ? (string.IsNullOrEmpty(item.FilePath) ? VoxSourceKindGenerated : VoxSourceKindEmbeddedSubfile)
+                            : item.SourceKind,
+                        SourcePath = item.SourcePath ?? string.Empty,
+                        Dirty = item.Dirty,
+                    };
                     RebuildSceneForDocument(
                         document,
                         spawnNearBrush: false,
@@ -494,7 +540,7 @@ namespace TiltBrush
                 }
                 catch (Exception e)
                 {
-                    Debug.LogWarning($"Failed to restore runtime VOX subfile '{item.FilePath}': {e.Message}");
+                    Debug.LogWarning($"Failed to restore runtime VOX item '{item.FilePath ?? item.SourcePath}': {e.Message}");
                 }
             }
 
@@ -531,9 +577,81 @@ namespace TiltBrush
             byte[] bytes = Convert.FromBase64String(base64);
             RuntimeVoxDocument document = RuntimeVoxDocument.FromBytes(bytes);
             s_voxDocuments.Add(document);
+            s_voxSourceByDocument[document] = new VoxDocumentSourceState
+            {
+                SourceKind = VoxSourceKindImportedBase64,
+                SourcePath = string.Empty,
+                Dirty = true,
+            };
             s_activeVoxDocumentIndex = s_voxDocuments.Count - 1;
             s_activeVoxModelIndex = 0;
             RefreshActiveDocumentVisual(spawnNearBrush: true);
+        }
+
+        [ApiEndpoint(
+            "vox.open.file",
+            "Opens a VOX file from Media Library/Models (relative path) as an editable document",
+            "vox/house.vox"
+        )]
+        public static void VoxOpenFile(string relativePath)
+        {
+            string normalized = NormalizeRelativeVoxPath(relativePath);
+            if (string.IsNullOrEmpty(normalized))
+            {
+                return;
+            }
+
+            var model = new Model(normalized);
+            string absolutePath = model.GetLocation().AbsolutePath;
+            if (string.IsNullOrEmpty(absolutePath) || !File.Exists(absolutePath))
+            {
+                return;
+            }
+
+            byte[] bytes = File.ReadAllBytes(absolutePath);
+            RuntimeVoxDocument document = RuntimeVoxDocument.FromBytes(bytes);
+            s_voxDocuments.Add(document);
+            s_voxSourceByDocument[document] = new VoxDocumentSourceState
+            {
+                SourceKind = VoxSourceKindMediaLibraryFile,
+                SourcePath = normalized,
+                Dirty = false,
+            };
+            s_activeVoxDocumentIndex = s_voxDocuments.Count - 1;
+            s_activeVoxModelIndex = 0;
+            RefreshActiveDocumentVisual(spawnNearBrush: true);
+        }
+
+        [ApiEndpoint(
+            "vox.doc.source",
+            "Returns source/dirty metadata JSON for a VOX document (default active)",
+            "0"
+        )]
+        public static string VoxDocSource(int index = -1)
+        {
+            int resolvedIndex = ResolveDocIndex(index);
+            if (resolvedIndex < 0)
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    index = -1,
+                    sourceKind = string.Empty,
+                    sourcePath = string.Empty,
+                    dirty = false,
+                    embedOnSave = false,
+                });
+            }
+
+            RuntimeVoxDocument document = s_voxDocuments[resolvedIndex];
+            VoxDocumentSourceState source = GetSourceState(document);
+            return JsonConvert.SerializeObject(new
+            {
+                index = resolvedIndex,
+                sourceKind = source.SourceKind,
+                sourcePath = source.SourcePath,
+                dirty = source.Dirty,
+                embedOnSave = ShouldEmbedOnSave(source),
+            });
         }
 
         private static bool TryGetActiveDoc(out RuntimeVoxDocument document)
@@ -705,6 +823,117 @@ namespace TiltBrush
             }
 
             s_voxSceneByDocument.Remove(document);
+        }
+
+        private static void MarkActiveDocumentDirty()
+        {
+            if (TryGetActiveDoc(out RuntimeVoxDocument document))
+            {
+                MarkDocumentDirty(document);
+            }
+        }
+
+        private static void MarkDocumentDirty(RuntimeVoxDocument document)
+        {
+            VoxDocumentSourceState source = GetSourceState(document);
+            source.Dirty = true;
+            if (source.SourceKind == VoxSourceKindMediaLibraryFile && string.IsNullOrEmpty(source.SourcePath))
+            {
+                source.SourceKind = VoxSourceKindGenerated;
+            }
+        }
+
+        private static VoxDocumentSourceState GetSourceState(RuntimeVoxDocument document)
+        {
+            if (document == null)
+            {
+                return new VoxDocumentSourceState();
+            }
+
+            if (!s_voxSourceByDocument.TryGetValue(document, out VoxDocumentSourceState source) || source == null)
+            {
+                source = new VoxDocumentSourceState();
+                s_voxSourceByDocument[document] = source;
+            }
+
+            source.SourceKind = source.SourceKind ?? VoxSourceKindGenerated;
+            source.SourcePath = source.SourcePath ?? string.Empty;
+            return source;
+        }
+
+        private static bool ShouldEmbedOnSave(VoxDocumentSourceState source)
+        {
+            if (source == null)
+            {
+                return true;
+            }
+
+            if (string.Equals(source.SourceKind, VoxSourceKindMediaLibraryFile, StringComparison.OrdinalIgnoreCase) &&
+                !source.Dirty)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private static byte[] LoadRuntimeVoxBytes(SceneFileInfo fileInfo, RuntimeVoxState item)
+        {
+            if (!string.IsNullOrEmpty(item.FilePath))
+            {
+                using (Stream stream = fileInfo.GetReadStream(item.FilePath))
+                {
+                    return ReadAllBytes(stream);
+                }
+            }
+
+            if (string.Equals(item.SourceKind, VoxSourceKindMediaLibraryFile, StringComparison.OrdinalIgnoreCase))
+            {
+                string normalized = NormalizeRelativeVoxPath(item.SourcePath);
+                if (!string.IsNullOrEmpty(normalized))
+                {
+                    var model = new Model(normalized);
+                    string absolutePath = model.GetLocation().AbsolutePath;
+                    if (!string.IsNullOrEmpty(absolutePath) && File.Exists(absolutePath))
+                    {
+                        return File.ReadAllBytes(absolutePath);
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private static string NormalizeRelativeVoxPath(string relativePath)
+        {
+            if (string.IsNullOrWhiteSpace(relativePath))
+            {
+                return null;
+            }
+
+            string normalized = relativePath.Trim().Replace("\\", "/");
+            if (normalized.StartsWith("/"))
+            {
+                normalized = normalized.Substring(1);
+            }
+
+            if (Path.IsPathRooted(normalized))
+            {
+                return null;
+            }
+
+            if (normalized.IndexOf("../", StringComparison.Ordinal) >= 0 ||
+                normalized.IndexOf("..\\", StringComparison.Ordinal) >= 0)
+            {
+                return null;
+            }
+
+            if (!normalized.EndsWith(".vox", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            return normalized;
         }
 
         private static byte[] ReadAllBytes(Stream stream)

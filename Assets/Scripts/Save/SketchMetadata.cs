@@ -728,6 +728,10 @@ namespace TiltBrush
         public TrTransform Transform { get; set; }
         public bool Optimized { get; set; }
         public bool GenerateCollider { get; set; }
+        // Optional source metadata for fluid external/runtime workflows.
+        public string SourceKind { get; set; }
+        public string SourcePath { get; set; }
+        public bool Dirty { get; set; }
     }
 
     [Serializable]
