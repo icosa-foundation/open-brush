@@ -10514,7 +10514,7 @@ GameObject:
   - component: {fileID: 652605570}
   - component: {fileID: 652605575}
   - component: {fileID: 652605574}
-  - component: {fileID: 652605575}
+  - component: {fileID: 652605576}
   m_Layer: 0
   m_Name: App
   m_TagString: Untagged
@@ -11371,7 +11371,7 @@ MonoBehaviour:
   - DefaultSavedStrokes/Knot.tilt
   - DefaultSavedStrokes/Star.tilt
   - DefaultSavedStrokes/Snowflake.tilt
---- !u!114 &652605575
+--- !u!114 &652605576
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
