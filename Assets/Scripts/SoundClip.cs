@@ -332,7 +332,7 @@ namespace TiltBrush
 
         public void Dispose()
         {
-            if (m_Controller.m_SoundClipAudioSource != null)
+            if (m_Controller?.m_SoundClipAudioSource != null)
             {
                 Debug.Assert(m_Controller != null,
                     "There should be a controller if the SoundClipAudioSource is not null.");
