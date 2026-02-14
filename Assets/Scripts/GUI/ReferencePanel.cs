@@ -231,7 +231,8 @@ namespace TiltBrush
                 ReferenceButton.Type.BackgroundImages => BackgroundImageCatalog.m_Instance.CurrentBackgroundImagesDirectory,
                 ReferenceButton.Type.Models => ModelCatalog.m_Instance.CurrentModelsDirectory,
                 ReferenceButton.Type.Videos => VideoCatalog.Instance.CurrentVideoDirectory,
-                ReferenceButton.Type.SavedStrokes => SavedStrokesCatalog.Instance.CurrentSavedStrokesDirectory
+                ReferenceButton.Type.SavedStrokes => SavedStrokesCatalog.Instance.CurrentSavedStrokesDirectory,
+                ReferenceButton.Type.SoundClips => SoundClipCatalog.Instance.CurrentSoundClipDirectory
             };
 
             string displayPath;

@@ -3421,6 +3421,14 @@ MonoBehaviour:
     m_Localized: Depth
     m_Metadata:
       m_Items: []
+  - m_Id: 144201565051027456
+    m_Localized: Audio Clip
+    m_Metadata:
+      m_Items: []
+  - m_Id: 144204798700027904
+    m_Localized: Audio Clips
+    m_Metadata:
+      m_Items: []
   - m_Id: 137988464450723840
     m_Localized: Move Selection to Current Layer
     m_Metadata:
@@ -3790,6 +3798,22 @@ MonoBehaviour:
 
       uploading to Viverse
       Worlds.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073616801390592
+    m_Localized: Quill Cube
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073689002139648
+    m_Localized: Quill Cylinder
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073748024385536
+    m_Localized: Quill Ellipse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073795705233408
+    m_Localized: Quill Ribbon
     m_Metadata:
       m_Items: []
   references:

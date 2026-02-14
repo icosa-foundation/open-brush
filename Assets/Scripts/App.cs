@@ -2172,7 +2172,47 @@ namespace TiltBrush
             }
         }
 
+        public static void InitQuillLibraryPath()
+        {
+            string quillLibraryDirectory = QuillLibraryPath();
 
+            if (!Directory.Exists(quillLibraryDirectory))
+            {
+                InitDirectoryAtPath(quillLibraryDirectory);
+            }
+        }
+
+        public static void InitQuillImmPath()
+        {
+            string quillImmDirectory = QuillImmPath();
+
+            if (!Directory.Exists(quillImmDirectory))
+            {
+                InitDirectoryAtPath(quillImmDirectory);
+            }
+        }
+
+
+
+        public static bool InitSoundClipLibraryPath(string[] defaultSoundClips)
+        {
+            string soundClipsDirectory = SoundClipLibraryPath();
+            if (Directory.Exists(soundClipsDirectory))
+            {
+                return true;
+            }
+            if (!InitDirectoryAtPath(soundClipsDirectory))
+            {
+                return false;
+            }
+            foreach (var soundClip in defaultSoundClips)
+            {
+                string destFilename = Path.GetFileName(soundClip);
+                FileUtils.WriteBytesFromResources(soundClip, Path.Combine(soundClipsDirectory, destFilename));
+            }
+
+            return true;
+        }
 
         public static string FeaturedSketchesPath()
         {
@@ -2207,6 +2247,11 @@ namespace TiltBrush
             return Path.Combine(MediaLibraryPath(), "Videos");
         }
 
+        public static string SoundClipLibraryPath()
+        {
+            return Path.Combine(MediaLibraryPath(), "Sound Clips");
+        }
+
         public static string BackgroundImagesLibraryPath()
         {
             return Path.Combine(MediaLibraryPath(), "BackgroundImages");
@@ -2220,6 +2265,17 @@ namespace TiltBrush
         static public string SavedStrokesPath()
         {
             return Path.Combine(MediaLibraryPath(), "Saved Strokes");
+        }
+
+        static public string QuillLibraryPath()
+        {
+            return Path.Combine(System.Environment.GetFolderPath(
+                System.Environment.SpecialFolder.Personal), "Quill");
+        }
+
+        static public string QuillImmPath()
+        {
+            return Path.Combine(MediaLibraryPath(), "Imm");
         }
 
         static public string AutosavePath()
