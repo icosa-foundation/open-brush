@@ -326,7 +326,7 @@ namespace TiltBrush
             {
                 yield return null;
             }
-            Thumbnail = GetWaveform(50, Color.white);
+            Thumbnail = GetWaveform(0.8f, Color.white);
             IsInitialized = true;
         }
 
@@ -351,36 +351,57 @@ namespace TiltBrush
 
         public Texture2D GetWaveform(float saturation, Color col)
         {
-            Thumbnail = new Texture2D(1, 1);
-            var width = Thumbnail.width;
-            var height = Thumbnail.height;
+            int width = (int)Width;
+            int height = (int)Height;
             var audio = m_Controller.m_SoundClipAudioSource.clip;
             Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
-            float[] samples = new float[audio.samples];
-            float[] waveform = new float[width];
+            float[] samples = new float[audio.samples * audio.channels];
             audio.GetData(samples, 0);
-            int packSize = (audio.samples / width) + 1;
-            int s = 0;
-            for (int i = 0; i < audio.samples; i += packSize)
-            {
-                waveform[s] = Mathf.Abs(samples[i]);
-                s++;
-            }
 
+            // Find peak amplitude per column using max abs value in each range
+            float[] waveform = new float[width];
+            int packSize = Mathf.Max(samples.Length / width, 1);
             for (int x = 0; x < width; x++)
             {
-                for (int y = 0; y < height; y++)
+                float peak = 0f;
+                int start = x * packSize;
+                int end = Mathf.Min(start + packSize, samples.Length);
+                for (int i = start; i < end; i++)
                 {
-                    tex.SetPixel(x, y, Color.clear);
+                    float abs = Mathf.Abs(samples[i]);
+                    if (abs > peak) peak = abs;
+                }
+                waveform[x] = peak;
+            }
+
+            // Normalize so the loudest peak fills the available height
+            float maxPeak = 0f;
+            for (int x = 0; x < width; x++)
+            {
+                if (waveform[x] > maxPeak) maxPeak = waveform[x];
+            }
+            if (maxPeak > 0f)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    waveform[x] /= maxPeak;
                 }
             }
 
-            for (int x = 0; x < waveform.Length; x++)
+            // Clear to transparent
+            Color[] clear = new Color[width * height];
+            tex.SetPixels(clear);
+
+            // Draw centered waveform bars
+            int halfHeight = height / 2;
+            float scale = halfHeight * saturation;
+            for (int x = 0; x < width; x++)
             {
-                for (int y = 0; y <= waveform[x] * ((float)height * saturation); y++)
+                int barHeight = Mathf.Clamp(Mathf.RoundToInt(waveform[x] * scale), 0, halfHeight - 1);
+                for (int y = 0; y <= barHeight; y++)
                 {
-                    tex.SetPixel(x, (height / 2) + y, col);
-                    tex.SetPixel(x, (height / 2) - y, col);
+                    tex.SetPixel(x, halfHeight + y, col);
+                    tex.SetPixel(x, halfHeight - y, col);
                 }
             }
             tex.Apply();

@@ -2020,11 +2020,6 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3891058746504678318, guid: bc59f933f07268642a3319d424409949,
         type: 3}
-      propertyPath: m_RootOrder
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 3891058746504678318, guid: bc59f933f07268642a3319d424409949,
-        type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
@@ -2338,6 +2333,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: ReferencePanelTabVideo
+      objectReference: {fileID: 0}
+    - target: {fileID: 5495763216787016347, guid: 078850db44b50294dbeba3807cf25418,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2838,7 +2838,7 @@ PrefabInstance:
     - target: {fileID: 3936506208097564779, guid: e5780f95f442f3a4da78f2223e188565,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: -1.014
+      value: -0.86245
       objectReference: {fileID: 0}
     - target: {fileID: 3936506208097564779, guid: e5780f95f442f3a4da78f2223e188565,
         type: 3}
