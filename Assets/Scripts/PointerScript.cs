@@ -651,9 +651,13 @@ namespace TiltBrush
                 simplifier.CalculatePointsToDrop(stroke, CurrentBrushScript);
             }
             float scale = m_CurrentLine.StrokeScale;
-            foreach (var cp in stroke.m_ControlPoints.Where((x, i) => !stroke.m_ControlPointsToDrop[i]))
+            for (int i = 0; i < stroke.m_ControlPoints.Length; i++)
             {
-                m_CurrentLine.UpdatePosition_LS(TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure);
+                if (stroke.m_ControlPointsToDrop[i]) continue;
+                var cp = stroke.m_ControlPoints[i];
+                Color32 color = stroke.GetColor(i);
+                m_CurrentLine.UpdatePosition_LS(
+                    TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure, color);
             }
         }
 

@@ -13,7 +13,6 @@ namespace TiltBrush
 
         private List<BaseSculptSubTool> m_SubTools;
 
-        [FormerlySerializedAs("m_SculptTool")]
         [SerializeField]
         private PushPullTool m_PushPullTool;
 

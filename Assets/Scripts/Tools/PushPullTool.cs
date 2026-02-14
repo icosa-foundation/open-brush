@@ -33,7 +33,7 @@ namespace TiltBrush
         [SerializeField]
         public BaseSculptSubTool m_ActiveSubTool;
 
-        override public void EnableTool(bool bEnable)
+        public override void EnableTool(bool bEnable)
         {
             // Call this after setting up our tool's state.
             base.EnableTool(bEnable);
@@ -41,13 +41,13 @@ namespace TiltBrush
             HideTool(!bEnable);
         }
 
-        override public void HideTool(bool bHide)
+        public override void HideTool(bool bHide)
         {
             m_ActiveSubTool.gameObject.SetActive(!bHide);
             base.HideTool(bHide);
         }
 
-        override protected bool IsOn()
+        protected override bool IsOn()
         {
             return m_bIsPushing;
         }
@@ -64,8 +64,7 @@ namespace TiltBrush
             m_AtLeastOneModificationMade = false;
         }
 
-
-        override public void OnUpdateDetection()
+        public override void OnUpdateDetection()
         {
             if (!m_CurrentlyHot && m_ToolWasHot)
             {
@@ -85,13 +84,13 @@ namespace TiltBrush
             }
         }
 
-        override protected void OnAnimationSwitch()
+        protected override void OnAnimationSwitch()
         {
             // AudioManager.m_Instance.PlayToggleSelect(m_ToolTransform.position, true);
             InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, m_HapticsToggleOn);
         }
 
-        override protected bool HandleIntersectionWithBatchedStroke(BatchSubset rGroup)
+        protected override bool HandleIntersectionWithBatchedStroke(BatchSubset rGroup)
         {
             // Metadata of target stroke
             var stroke = rGroup.m_Stroke;
@@ -123,17 +122,16 @@ namespace TiltBrush
                 );
                 m_AtLeastOneModificationMade = true;
             }
+
             return true;
         }
 
-        override public void AssignControllerMaterials(InputManager.ControllerName controller)
+        public override void AssignControllerMaterials(InputManager.ControllerName controller)
         {
             if (m_ActiveSubTool.m_SubToolIdentifier != SculptSubToolManager.SubTool.Flatten)
             {
                 InputManager.Brush.Geometry.ShowSculptToggle(m_bIsPushing);
             }
         }
-
     }
-
 } // namespace TiltBrush
