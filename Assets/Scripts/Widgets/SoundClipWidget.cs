@@ -28,6 +28,8 @@ namespace TiltBrush
             public float? Time;
         }
 
+        [SerializeField] private float m_ConstantWorldSize = 0.5f;
+
         private SoundClip m_SoundClip;
         private SoundClipState m_InitialState;
 
@@ -53,22 +55,12 @@ namespace TiltBrush
         public void SetSoundClip(SoundClip soundClip)
         {
             m_SoundClip = soundClip;
-
-            var size = GetWidgetSizeRange();
-            if (m_SoundClip.Aspect > 1)
-            {
-                m_Size = Mathf.Clamp(2 / m_SoundClip.Aspect / Coords.CanvasPose.scale, size.x, size.y);
-            }
-            else
-            {
-                m_Size = Mathf.Clamp(2 * m_SoundClip.Aspect / Coords.CanvasPose.scale, size.x, size.y);
-            }
+            m_Size = m_ConstantWorldSize;
 
             // Create in the main canvas.
             HierarchyUtils.RecursivelySetLayer(transform, App.Scene.MainCanvas.gameObject.layer);
             HierarchyUtils.RecursivelySetMaterialBatchID(transform, m_BatchId);
 
-            // InitSnapGhost(m_ImageQuad.transform, transform);
             Play();
         }
 
@@ -185,6 +177,7 @@ namespace TiltBrush
         {
             return Clone(transform.position, transform.rotation, m_Size);
         }
+
         override public GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
         {
             SoundClipWidget clone = Instantiate(WidgetManager.m_Instance.SoundClipWidgetPrefab) as SoundClipWidget;
@@ -214,7 +207,60 @@ namespace TiltBrush
 
         protected override void UpdateScale()
         {
-            transform.localScale = Vector3.one * m_Size;
+            // Maintain constant world-space size regardless of canvas/scene scale.
+            float parentScale = transform.parent != null ? transform.parent.lossyScale.x : 1f;
+            transform.localScale = Vector3.one * m_ConstantWorldSize / Mathf.Max(parentScale, 0.001f);
+        }
+
+        public override Vector2 GetWidgetSizeRange()
+        {
+            // Return identical min/max to prevent manual scaling.
+            float absSize = Mathf.Max(Mathf.Abs(m_Size), 0.001f);
+            return new Vector2(absSize, absSize);
+        }
+
+        protected override void SetWidgetSizeInternal(float fScale)
+        {
+            // Skip Media2dWidget's version which resets transform.localScale to Vector3.one.
+            // Only store m_Size for save/load; visual size is controlled by m_ConstantWorldSize.
+            var sizeRange = GetWidgetSizeRange();
+            m_Size = Mathf.Sign(fScale) * Mathf.Clamp(Mathf.Abs(fScale), sizeRange.x, sizeRange.y);
+            UpdateScale();
+        }
+
+        public override float GetActivationScore(
+            Vector3 vControllerPos, InputManager.ControllerName name)
+        {
+            // Media2dWidget's version applies a size-based penalty that always returns 0
+            // for fixed-size widgets (size == max). Replicate GrabWidget's distance-based
+            // scoring directly, plus the ungrabbable-from-inside check.
+            if (m_BoxCollider == null) return -1f;
+
+            if (m_UngrabbableFromInside)
+            {
+                if (PointInCollider(ViewpointScript.Head.position) &&
+                    PointInCollider(InputManager.m_Instance.GetBrushControllerAttachPoint().position) &&
+                    PointInCollider(InputManager.m_Instance.GetWandControllerAttachPoint().position))
+                {
+                    return -1f;
+                }
+            }
+
+            Vector3 vInvTransformedPos = transform.InverseTransformPoint(vControllerPos);
+            Vector3 vSize = m_BoxCollider.size * 0.5f;
+            vSize.x *= m_BoxCollider.transform.localScale.x;
+            vSize.y *= m_BoxCollider.transform.localScale.y;
+            vSize.z *= m_BoxCollider.transform.localScale.z;
+            float xDiff = vSize.x - Mathf.Abs(vInvTransformedPos.x);
+            float yDiff = vSize.y - Mathf.Abs(vInvTransformedPos.y);
+            float zDiff = vSize.z - Mathf.Abs(vInvTransformedPos.z);
+            if (xDiff > 0.0f && yDiff > 0.0f && zDiff > 0.0f)
+            {
+                return ((xDiff / vSize.x) * 0.333f) +
+                    ((yDiff / vSize.y) * 0.333f) +
+                    ((zDiff / vSize.z) * 0.333f);
+            }
+            return -1.0f;
         }
 
         public override string GetExportName()
