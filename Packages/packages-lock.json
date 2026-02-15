@@ -13,7 +13,7 @@
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "3.2.1"
       },
-      "hash": "471b2ab381f42f6581b8d7f5bf22885d1427c05b"
+      "hash": "5eceaeea64528651b2086d597a6aa0b40aa3ab6a"
     },
     "com.ixxy.unitysymmetry": {
       "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
