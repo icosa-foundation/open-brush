@@ -415,6 +415,10 @@ MonoBehaviour:
   m_MaxSpinSpeed: 700
   m_SpinSpeedAcceleration: 40000
   m_SpinSpeedDecay: 2500
+  m_IconReplace: {fileID: 2800000, guid: 6a0f5802d408e984bbd72168015e36cd, type: 3}
+  m_IconMultiply: {fileID: 2800000, guid: a89618c20322f9a4ea2d3bd94af1b43a, type: 3}
+  m_IconAdd: {fileID: 2800000, guid: 4ca620df5430af448aaf4f3ff20ad5c4, type: 3}
+  m_IconClear: {fileID: 2800000, guid: 5d6f688a24e3dec4cb816f3722c9556e, type: 3}
 --- !u!1 &3491021130875935221
 GameObject:
   m_ObjectHideFlags: 0

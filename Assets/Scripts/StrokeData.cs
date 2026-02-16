@@ -107,6 +107,10 @@ namespace TiltBrush
             }
             Color32 calculatedColor;
 
+            // Preserve original alpha — some brushes (e.g. QuillFlatBrush) store
+            // per-vertex opacity in color.a. Override modes only affect RGB.
+            byte originalAlpha = (byte)(m_Color.a * 255);
+
             switch (m_ColorOverrideMode)
             {
                 case ColorOverrideMode.Replace:
@@ -114,37 +118,31 @@ namespace TiltBrush
                     break;
 
                 case ColorOverrideMode.Multiply:
-                    // Convert to Color for accurate multiplication, then back to Color32
                     Color baseColor = m_Color;
                     Color point = controlpointColor.Value;
-                    Color result = new Color(
+                    calculatedColor = new Color(
                         baseColor.r * point.r,
                         baseColor.g * point.g,
                         baseColor.b * point.b,
-                        baseColor.a * point.a
+                        baseColor.a
                     );
-                    calculatedColor = result;
                     break;
 
                 case ColorOverrideMode.Add:
-                    // Additive blending with clamping
                     calculatedColor = new Color32(
                         (byte)Mathf.Min(255, m_Color.r + controlpointColor.Value.r),
                         (byte)Mathf.Min(255, m_Color.g + controlpointColor.Value.g),
                         (byte)Mathf.Min(255, m_Color.b + controlpointColor.Value.b),
-                        (byte)Mathf.Min(255, m_Color.a + controlpointColor.Value.a)
+                        originalAlpha
                     );
                     break;
 
                 default:
-                    calculatedColor = new Color(
-                        (byte)Mathf.RoundToInt(m_Color.r * 255f),
-                        (byte)Mathf.RoundToInt(m_Color.g * 255f),
-                        (byte)Mathf.RoundToInt(m_Color.b * 255f),
-                        (byte)Mathf.RoundToInt(m_Color.a * 255f)
-                    );
+                    Debug.LogWarning($"Unexpected ColorOverrideMode: {m_ColorOverrideMode}");
+                    calculatedColor = m_Color;
                     break;
             }
+
             return calculatedColor;
         }
     }

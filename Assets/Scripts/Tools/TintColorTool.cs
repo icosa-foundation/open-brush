@@ -19,15 +19,30 @@ using UnityEngine;
 namespace TiltBrush
 {
     /// Paints per-control-point color overrides inside the tool radius.
-    /// Toggle mode uses the same interaction as PushPull:
-    /// On = apply tint (Replace mode), Off = clear tint.
+    /// Thumbstick press cycles through modes: Replace → Multiply → Add → Clear.
     public class TintColorTool : ToggleStrokeModificationTool
     {
-        private bool m_IsApplyingTint = true;
+        private enum TintMode
+        {
+            Replace,
+            Multiply,
+            Add,
+            Clear
+        }
+
+        private static readonly TintMode[] k_ModeOrder =
+            { TintMode.Replace, TintMode.Multiply, TintMode.Add, TintMode.Clear };
+
+        [SerializeField] private Texture2D m_IconReplace;
+        [SerializeField] private Texture2D m_IconMultiply;
+        [SerializeField] private Texture2D m_IconAdd;
+        [SerializeField] private Texture2D m_IconClear;
+
+        private TintMode m_CurrentMode = TintMode.Replace;
 
         protected override bool IsOn()
         {
-            return m_IsApplyingTint;
+            return m_CurrentMode != TintMode.Clear;
         }
 
         public override void OnUpdateDetection()
@@ -40,7 +55,8 @@ namespace TiltBrush
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.TogglePushPull))
             {
-                m_IsApplyingTint = !m_IsApplyingTint;
+                int idx = System.Array.IndexOf(k_ModeOrder, m_CurrentMode);
+                m_CurrentMode = k_ModeOrder[(idx + 1) % k_ModeOrder.Length];
                 StartToggleAnimation();
             }
         }
@@ -63,9 +79,11 @@ namespace TiltBrush
                                                stroke.m_OverrideColors.Count == controlPointCount
                 ? stroke.m_OverrideColors.ToList()
                 : new List<Color32?>(new Color32?[controlPointCount]);
-            bool applyingTint = m_IsApplyingTint;
+            bool applyingTint = m_CurrentMode != TintMode.Clear;
             bool strokeIsModified = false;
-            Color32 tintColor = PointerManager.m_Instance.PointerColor;
+            Color tintColor = PointerManager.m_Instance.PointerColor;
+            Color baseColor = stroke.m_Color;
+            float pressure = InputManager.Brush.GetTriggerRatio();
             float maxDistance = GetSize() / m_CurrentCanvas.Pose.scale;
             Vector3 toolPos = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
 
@@ -79,9 +97,21 @@ namespace TiltBrush
 
                 if (applyingTint)
                 {
-                    if (!newOverrideColors[i].HasValue || !newOverrideColors[i].Value.Equals(tintColor))
+                    // Identity depends on mode: Replace=baseColor, Multiply=white, Add=black
+                    Color identity = m_CurrentMode == TintMode.Multiply ? Color.white
+                        : m_CurrentMode == TintMode.Add ? Color.black
+                        : baseColor;
+                    Color existing = newOverrideColors[i].HasValue
+                        ? (Color)newOverrideColors[i].Value
+                        : identity;
+                    // Lerp RGB only — preserve alpha (used by QuillFlatBrush for per-vertex opacity)
+                    Color32 blended = Color.Lerp(existing, tintColor, pressure);
+                    blended.a = newOverrideColors[i].HasValue
+                        ? newOverrideColors[i].Value.a
+                        : (byte)255;
+                    if (!newOverrideColors[i].HasValue || !newOverrideColors[i].Value.Equals(blended))
                     {
-                        newOverrideColors[i] = tintColor;
+                        newOverrideColors[i] = blended;
                         strokeIsModified = true;
                     }
                 }
@@ -95,9 +125,10 @@ namespace TiltBrush
             ColorOverrideMode targetMode = stroke.m_ColorOverrideMode;
             if (applyingTint)
             {
-                if (targetMode != ColorOverrideMode.Replace)
+                ColorOverrideMode desiredMode = ModeToColorOverrideMode(m_CurrentMode);
+                if (targetMode != desiredMode)
                 {
-                    targetMode = ColorOverrideMode.Replace;
+                    targetMode = desiredMode;
                     strokeIsModified = true;
                 }
             }
@@ -127,7 +158,31 @@ namespace TiltBrush
         {
             if (controller == InputManager.ControllerName.Brush)
             {
-                InputManager.Brush.Geometry.ShowSculptToggle(m_IsApplyingTint);
+                InputManager.Brush.Geometry.ShowTintMode(
+                    m_CurrentMode != TintMode.Clear, GetIconForMode(m_CurrentMode));
+            }
+        }
+
+        private Texture2D GetIconForMode(TintMode mode)
+        {
+            switch (mode)
+            {
+                case TintMode.Replace:  return m_IconReplace;
+                case TintMode.Multiply: return m_IconMultiply;
+                case TintMode.Add:      return m_IconAdd;
+                case TintMode.Clear:    return m_IconClear;
+                default:                return null;
+            }
+        }
+
+        private static ColorOverrideMode ModeToColorOverrideMode(TintMode mode)
+        {
+            switch (mode)
+            {
+                case TintMode.Replace: return ColorOverrideMode.Replace;
+                case TintMode.Multiply: return ColorOverrideMode.Multiply;
+                case TintMode.Add: return ColorOverrideMode.Add;
+                default: return ColorOverrideMode.None;
             }
         }
     }
