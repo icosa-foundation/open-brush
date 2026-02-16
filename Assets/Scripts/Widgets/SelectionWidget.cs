@@ -300,13 +300,6 @@ namespace TiltBrush
             // DIAG v2: verify SelectionTransform is identity after UpdateBoxCollider
             var readback = App.Scene.AsScene[transform];
             var selXf = SelectionTransform;
-            Debug.Log($"[SWD2] UpdateBoxCollider complete:" +
-                $"\n  localPos={transform.localPosition} localRot={transform.localRotation.eulerAngles} localScale={transform.localScale}" +
-                $"\n  m_xfOriginal_SS: t={m_xfOriginal_SS.translation} r={m_xfOriginal_SS.rotation.eulerAngles} s={m_xfOriginal_SS.scale}" +
-                $"\n  AsScene readback: t={readback.translation} r={readback.rotation.eulerAngles} s={readback.scale}" +
-                $"\n  DIFF t={readback.translation - m_xfOriginal_SS.translation} s_ratio={readback.scale / m_xfOriginal_SS.scale}" +
-                $"\n  SelectionTransform: t={selXf.translation} r={selXf.rotation.eulerAngles} s={selXf.scale}" +
-                $"\n  UserTransformations_SS: t={UserTransformations_SS.translation} s={UserTransformations_SS.scale}");
         }
 
         public void PreventSelectionFromMoving(bool preventMoving)
@@ -319,11 +312,6 @@ namespace TiltBrush
         {
             var readback = App.Scene.AsScene[transform];
             var selXf = SelectionTransform;
-            Debug.Log($"[SWD2] OnUserBeginInteracting (grab start):" +
-                $"\n  m_xfOriginal_SS: t={m_xfOriginal_SS.translation} s={m_xfOriginal_SS.scale}" +
-                $"\n  AsScene readback: t={readback.translation} s={readback.scale}" +
-                $"\n  SelectionTransform: t={selXf.translation} r={selXf.rotation.eulerAngles} s={selXf.scale}" +
-                $"\n  localPos={transform.localPosition} localScale={transform.localScale}");
             base.OnUserBeginInteracting();
 
             // Use pin visuals for preventing movement.
