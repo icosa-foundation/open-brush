@@ -387,7 +387,7 @@ MonoBehaviour:
   m_charWidthMaxAdj: 0
   m_enableWordWrapping: 1
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 0
+  m_overflowMode: 1
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
@@ -405,7 +405,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0.07729813, y: 0.13504475, z: 0.2069425, w: 0.16289777}
+  m_margin: {x: 0.07729813, y: 0.13504475, z: 3.4388986, w: 0.16289777}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   _SortingLayer: 0
@@ -425,7 +425,7 @@ PrefabInstance:
     - target: {fileID: 39057282034985054, guid: 274bb5f0c30dba14f8390b2848326116,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1.496
+      value: 1.085
       objectReference: {fileID: 0}
     - target: {fileID: 120092170274840608, guid: 274bb5f0c30dba14f8390b2848326116,
         type: 3}
@@ -440,12 +440,12 @@ PrefabInstance:
     - target: {fileID: 3707727813358560176, guid: 274bb5f0c30dba14f8390b2848326116,
         type: 3}
       propertyPath: m_LocalScale.z
-      value: 113.025604
+      value: 94.53306
       objectReference: {fileID: 0}
     - target: {fileID: 3707727813358560176, guid: 274bb5f0c30dba14f8390b2848326116,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.451
+      value: 0.24775
       objectReference: {fileID: 0}
     - target: {fileID: 3707727813358560176, guid: 274bb5f0c30dba14f8390b2848326116,
         type: 3}
