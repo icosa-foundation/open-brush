@@ -35,6 +35,9 @@ namespace TiltBrush
             private Action m_OnSoundClipInitialized;
             private SoundClip m_SoundClip;
             private bool m_SoundClipInitialized;
+            private float m_MinDistance = 1f;
+            private float m_MaxDistance = 500f;
+            private float m_DistanceScale = 1f;
 
             public AudioSource m_SoundClipAudioSource;
 
@@ -124,6 +127,53 @@ namespace TiltBrush
             }
 
             public float Length => m_SoundClipInitialized ? (float)m_SoundClipAudioSource.clip.length : 0f;
+
+            public bool Loop
+            {
+                get => m_SoundClipInitialized && m_SoundClipAudioSource.loop;
+                set { if (m_SoundClipInitialized) m_SoundClipAudioSource.loop = value; }
+            }
+
+            /// 0 = 2D (flat), 1 = fully 3D spatial
+            public float SpatialBlend
+            {
+                get => m_SoundClipInitialized ? m_SoundClipAudioSource.spatialBlend : 0f;
+                set { if (m_SoundClipInitialized) m_SoundClipAudioSource.spatialBlend = value; }
+            }
+
+            /// Authored min distance in scene/canvas space.
+            public float MinDistance
+            {
+                get => m_MinDistance;
+                set
+                {
+                    m_MinDistance = value;
+                    ApplyDistanceScale(m_DistanceScale);
+                }
+            }
+
+            /// Authored max distance in scene/canvas space.
+            public float MaxDistance
+            {
+                get => m_MaxDistance;
+                set
+                {
+                    m_MaxDistance = value;
+                    ApplyDistanceScale(m_DistanceScale);
+                }
+            }
+
+            /// Update the scene/canvas scale factor used to convert authored distances
+            /// to world-space AudioSource distances.
+            public void ApplyDistanceScale(float scale)
+            {
+                m_DistanceScale = scale;
+                if (m_SoundClipInitialized)
+                {
+                    m_SoundClipAudioSource.minDistance = m_MinDistance * scale;
+                    m_SoundClipAudioSource.maxDistance = m_MaxDistance * scale;
+                }
+            }
 
             public SoundClipController(SoundClip soundClip, SoundClipWidget widget)
             {
@@ -309,24 +359,22 @@ namespace TiltBrush
 
         public IEnumerator<Null> Initialize()
         {
-            int width, height;
-            if (Aspect > 1)
-            {
-                width = 128;
-                height = Mathf.RoundToInt(width / Aspect);
-            }
-            else
-            {
-                height = 128;
-                width = Mathf.RoundToInt(height * Aspect);
-            }
-            // A frame does not always seem to be immediately available, so wait until we've hit at least
-            // the second frame before continuing.
-            while (m_Controller == null || m_Controller.m_SoundClipAudioSource.time < 0.1)
+            Width = 128;
+            Height = 128;
+            Aspect = 1;
+
+            var audioClipTask = LoadClip(AbsolutePath);
+            while (!audioClipTask.IsCompleted)
             {
                 yield return null;
             }
-            Thumbnail = GetWaveform(0.8f, Color.white);
+
+            var clip = audioClipTask.Result;
+            if (clip != null)
+            {
+                Thumbnail = GetWaveform(0.8f, Color.white, clip);
+                UnityEngine.Object.Destroy(clip);
+            }
             IsInitialized = true;
         }
 
@@ -349,11 +397,12 @@ namespace TiltBrush
             return $"{HumanName}: {Width}x{Height} {Aspect}";
         }
 
-        public Texture2D GetWaveform(float saturation, Color col)
+        public Texture2D GetWaveform(float saturation, Color col, AudioClip audio = null, float aspect = 0)
         {
-            int width = (int)Width;
             int height = (int)Height;
-            var audio = m_Controller.m_SoundClipAudioSource.clip;
+            int width = aspect > 0 ? Mathf.RoundToInt(height * aspect) : (int)Width;
+            audio ??= m_Controller?.m_SoundClipAudioSource?.clip;
+            if (audio == null) return null;
             Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
             float[] samples = new float[audio.samples * audio.channels];
             audio.GetData(samples, 0);

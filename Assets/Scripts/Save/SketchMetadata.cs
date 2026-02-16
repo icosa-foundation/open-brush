@@ -730,6 +730,10 @@ namespace TiltBrush
         public bool Paused { get; set; }
         public float Time { get; set; }
         public float Volume { get; set; }
+        public bool Loop { get; set; } = true;
+        public float SpatialBlend { get; set; }
+        public float MinDistance { get; set; } = 1f;
+        public float MaxDistance { get; set; } = 500f;
         // Group ID for widget. 0 for ungrouped items.
         public uint GroupId { get; set; }
         public int LayerId { get; set; }

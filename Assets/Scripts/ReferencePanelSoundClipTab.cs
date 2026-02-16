@@ -70,12 +70,9 @@ namespace TiltBrush
         [System.Reflection.Obfuscation(Exclude = true)]
         public bool SelectedSoundClipIsPlaying
         {
-            get
-            {
-                return (SelectedSoundClip != null)
-                    ? SelectedSoundClip.Playing
-                    : false;
-            }
+            get => (SelectedSoundClip != null)
+                ? SelectedSoundClip.Playing
+                : false;
             set
             {
                 if (SelectedSoundClip != null)
@@ -88,12 +85,7 @@ namespace TiltBrush
         [System.Reflection.Obfuscation(Exclude = true)]
         public float SelectedSoundClipVolume
         {
-            get
-            {
-                return (SelectedSoundClip != null)
-                    ? SelectedSoundClip.Volume
-                    : 0f;
-            }
+            get => SelectedSoundClip?.Volume ?? 0f;
             set
             {
                 if (SelectedSoundClip != null)
@@ -103,30 +95,45 @@ namespace TiltBrush
             }
         }
 
-        public override IReferenceItemCatalog Catalog
+        public void HandleLoopToggle(ActionToggleButton btn)
         {
-            get { return SoundClipCatalog.Instance; }
-        }
-        public override ReferenceButton.Type ReferenceButtonType
-        {
-            get { return ReferenceButton.Type.SoundClips; }
-        }
-        protected override Type ButtonType
-        {
-            get { return typeof(SoundClipButton); }
-        }
-        protected override Type IconType
-        {
-            get { return typeof(AudioIcon); }
+            SelectedSoundClip.Loop = btn.ToggleState;
         }
 
-        protected SoundClip.SoundClipController SelectedSoundClip
+        public void HandleSpatialBlendToggle(ActionToggleButton btn)
         {
-            get
+            SelectedSoundClip.SpatialBlend = btn.ToggleState ? 1f : 0f;
+        }
+
+        public float SelectedSoundClipMinDistance
+        {
+            get => SelectedSoundClip?.MinDistance ?? 1f;
+            set
             {
-                return m_SelectedSoundClipWidget != null ? m_SelectedSoundClipWidget.SoundClipController : null;
+                if (SelectedSoundClip != null)
+                {
+                    SelectedSoundClip.MinDistance = value;
+                }
             }
         }
+
+        public float SelectedSoundClipMaxDistance
+        {
+            get => SelectedSoundClip?.MaxDistance ?? 500f;
+            set
+            {
+                if (SelectedSoundClip != null)
+                {
+                    SelectedSoundClip.MaxDistance = value;
+                }
+            }
+        }
+
+        public override IReferenceItemCatalog Catalog => SoundClipCatalog.Instance;
+        public override ReferenceButton.Type ReferenceButtonType => ReferenceButton.Type.SoundClips;
+        protected override Type ButtonType => typeof(SoundClipButton);
+        protected override Type IconType => typeof(AudioIcon);
+        protected SoundClip.SoundClipController SelectedSoundClip => m_SelectedSoundClipWidget != null ? m_SelectedSoundClipWidget.SoundClipController : null;
 
         void RefreshSoundClipControlsVisibility()
         {
@@ -166,7 +173,7 @@ namespace TiltBrush
             base.InitTab();
             foreach (var icon in m_Icons)
             {
-                (icon as AudioIcon).Parent = GetComponentInParent<ReferencePanel>();
+                ((AudioIcon)icon).Parent = GetComponentInParent<ReferencePanel>();
             }
             OnTabDisable();
             App.Switchboard.SoundClipWidgetActivated += OnSoundClipWidgetActivated;
@@ -179,9 +186,10 @@ namespace TiltBrush
             m_SelectedSoundClipWidget = widget;
             if (widget.SoundClipController != null)
             {
-                m_PreviewMaterial.mainTexture = widget.SoundClip.Thumbnail;
+                float previewAspect = m_Preview.transform.localScale.x / m_Preview.transform.localScale.y;
+                var previewTex = widget.SoundClip.GetWaveform(0.8f, Color.white, aspect: previewAspect);
+                m_PreviewMaterial.mainTexture = previewTex != null ? previewTex : widget.SoundClip.Thumbnail;
             }
-            m_Preview.transform.localScale = new Vector3(widget.SoundClip.Aspect, 1f, 1f);
             m_Scrubber.SoundClipWidget = widget;
             RefreshSoundClipControlsVisibility();
         }
@@ -193,11 +201,11 @@ namespace TiltBrush
             {
                 m_AllIconTexturesAssigned = true;
 
-                //poll sketch catalog until icons have loaded
+                // Poll catalog until icons have loaded
                 for (int i = 0; i < m_Icons.Length; ++i)
                 {
-                    var imageIcon = m_Icons[i] as AudioIcon;
-                    if (!imageIcon.TextureAssigned && imageIcon.Button.gameObject.activeSelf)
+                    var audioIcon = m_Icons[i] as AudioIcon;
+                    if (audioIcon is { TextureAssigned: false } && audioIcon.Button.gameObject.activeSelf)
                     {
                         int catalogIndex = m_IndexOffset + i;
 
@@ -206,22 +214,22 @@ namespace TiltBrush
                         {
                             if (!string.IsNullOrEmpty(soundClip.Error))
                             {
-                                imageIcon.Button.SetButtonTexture(m_ErrorTexture,
+                                audioIcon.Button.SetButtonTexture(m_ErrorTexture,
                                     m_ErrorTexture.width / m_ErrorTexture.height);
-                                imageIcon.TextureAssigned = true;
-                                imageIcon.SoundClipButton.SetDescriptionText(soundClip.HumanName, "Could not load sound clip.");
-                                imageIcon.SoundClipButton.SetButtonAvailable(false);
+                                audioIcon.TextureAssigned = true;
+                                audioIcon.SoundClipButton.SetDescriptionText(soundClip.HumanName, "Could not load sound clip.");
+                                audioIcon.SoundClipButton.SetButtonAvailable(false);
                             }
                             else if (soundClip.IsInitialized)
                             {
-                                imageIcon.Button.SetButtonTexture(soundClip.Thumbnail, soundClip.Aspect);
-                                imageIcon.TextureAssigned = true;
+                                audioIcon.Button.SetButtonTexture(soundClip.Thumbnail, soundClip.Aspect);
+                                audioIcon.TextureAssigned = true;
                             }
                             else
                             {
-                                imageIcon.Button.SetButtonTexture(m_LoadingTexture,
+                                audioIcon.Button.SetButtonTexture(m_LoadingTexture,
                                     m_LoadingTexture.width / m_LoadingTexture.height);
-                                imageIcon.TextureAssigned = true;
+                                audioIcon.TextureAssigned = true;
                             }
                         }
                         else

@@ -774,12 +774,12 @@ namespace TiltBrush
                 soundWidget.transform.position = worldXfTr.translation;
                 soundWidget.transform.rotation = worldXfTr.rotation;
 
-                // Apply Quill sound properties
-                if (soundWidget.SoundClipController != null)
-                {
-                    soundWidget.SoundClipController.Volume = sound.Gain;
-                    // Note: Loop property will be applied when the controller initializes
-                }
+                // Apply Quill sound properties (queued until controller initializes)
+                float spatialBlend = sound.SoundType == SharpQuill.SoundType.Flat ? 0f : 1f;
+                float minDist = sound.Attenuation?.Minimum ?? 1f;
+                float maxDist = sound.Attenuation?.Maximum ?? 500f;
+                soundWidget.SetAudioProperties(
+                    sound.Gain, sound.Loop, spatialBlend, minDist, maxDist);
 
                 return soundWidget;
             }

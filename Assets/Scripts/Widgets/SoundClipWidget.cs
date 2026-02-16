@@ -26,12 +26,20 @@ namespace TiltBrush
             public bool Paused;
             public float Volume;
             public float? Time;
+            public bool Loop = true;
+            public float SpatialBlend;
+            public float MinDistance = 1f;
+            public float MaxDistance = 500f;
         }
 
         [SerializeField] private float m_ConstantWorldSize = 0.5f;
+        [SerializeField] private Color m_MinDistanceColor = new Color(0f, 1f, 0.8f, 0.08f);
+        [SerializeField] private Color m_MaxDistanceColor = new Color(1f, 0.6f, 0f, 0.05f);
 
         private SoundClip m_SoundClip;
         private SoundClipState m_InitialState;
+        private GameObject m_MinDistanceSphere;
+        private GameObject m_MaxDistanceSphere;
 
         public SoundClip SoundClip
         {
@@ -51,6 +59,21 @@ namespace TiltBrush
         }
 
         public SoundClip.SoundClipController SoundClipController { get; private set; }
+
+        /// Set audio properties that will be applied once the controller is initialized.
+        /// Call after SetSoundClip.
+        public void SetAudioProperties(float volume, bool loop = true,
+            float spatialBlend = 0f, float minDistance = 1f, float maxDistance = 500f)
+        {
+            m_InitialState = new SoundClipState
+            {
+                Volume = volume,
+                Loop = loop,
+                SpatialBlend = spatialBlend,
+                MinDistance = minDistance,
+                MaxDistance = maxDistance,
+            };
+        }
 
         public void SetSoundClip(SoundClip soundClip)
         {
@@ -87,6 +110,10 @@ namespace TiltBrush
                     Paused = !SoundClipController.Playing,
                     Time = SoundClipController.Time,
                     Volume = SoundClipController.Volume,
+                    Loop = SoundClipController.Loop,
+                    SpatialBlend = SoundClipController.SpatialBlend,
+                    MinDistance = SoundClipController.MinDistance,
+                    MaxDistance = SoundClipController.MaxDistance,
                 };
                 SoundClipController.Dispose();
                 SoundClipController = null;
@@ -98,6 +125,8 @@ namespace TiltBrush
             base.OnDestroy();
             SoundClipController?.Dispose();
             SoundClipController = null;
+            if (m_MinDistanceSphere != null) Destroy(m_MinDistanceSphere);
+            if (m_MaxDistanceSphere != null) Destroy(m_MaxDistanceSphere);
         }
 
         private void Play()
@@ -123,6 +152,10 @@ namespace TiltBrush
             if (m_InitialState != null)
             {
                 SoundClipController.Volume = m_InitialState.Volume;
+                SoundClipController.Loop = m_InitialState.Loop;
+                SoundClipController.SpatialBlend = m_InitialState.SpatialBlend;
+                SoundClipController.MinDistance = m_InitialState.MinDistance;
+                SoundClipController.MaxDistance = m_InitialState.MaxDistance;
                 if (m_InitialState.Time.HasValue)
                 {
                     SoundClipController.Time = m_InitialState.Time.Value;
@@ -133,6 +166,7 @@ namespace TiltBrush
                 }
                 m_InitialState = null;
             }
+            UpdateDistanceVisualization();
         }
 
         public static void FromTiltSoundClip(TiltSoundClip tiltSoundClip)
@@ -154,6 +188,10 @@ namespace TiltBrush
             {
                 Volume = tiltSoundClip.Volume,
                 Paused = tiltSoundClip.Paused,
+                Loop = tiltSoundClip.Loop,
+                SpatialBlend = tiltSoundClip.SpatialBlend,
+                MinDistance = tiltSoundClip.MinDistance,
+                MaxDistance = tiltSoundClip.MaxDistance,
             };
             if (tiltSoundClip.Paused)
             {
@@ -202,7 +240,85 @@ namespace TiltBrush
             if (bActive)
             {
                 App.Switchboard.TriggerSoundClipWidgetActivated(this);
+                UpdateDistanceVisualization();
             }
+            else
+            {
+                SetDistanceSpheresVisible(false);
+            }
+        }
+
+        private GameObject CreateDistanceSphere(Color color, string name)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            go.name = name;
+            go.transform.SetParent(transform, false);
+            go.transform.localPosition = Vector3.zero;
+
+            // Remove the collider — this is visualization only
+            var col = go.GetComponent<Collider>();
+            if (col != null) Object.Destroy(col);
+
+            var renderer = go.GetComponent<Renderer>();
+            var mat = new Material(Shader.Find("Unlit/Color"));
+            mat.color = color;
+
+            // Set up transparency
+            mat.SetFloat("_Mode", 3); // transparent
+            mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            mat.SetInt("_ZWrite", 0);
+            mat.renderQueue = 3000;
+            mat.EnableKeyword("_ALPHABLEND_ON");
+            renderer.material = mat;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+
+            go.SetActive(false);
+            return go;
+        }
+
+        private void EnsureDistanceSpheres()
+        {
+            if (m_MinDistanceSphere == null)
+            {
+                m_MinDistanceSphere = CreateDistanceSphere(m_MinDistanceColor, "MinDistanceSphere");
+            }
+            if (m_MaxDistanceSphere == null)
+            {
+                m_MaxDistanceSphere = CreateDistanceSphere(m_MaxDistanceColor, "MaxDistanceSphere");
+            }
+        }
+
+        private void SetDistanceSpheresVisible(bool visible)
+        {
+            if (m_MinDistanceSphere != null) m_MinDistanceSphere.SetActive(visible);
+            if (m_MaxDistanceSphere != null) m_MaxDistanceSphere.SetActive(visible);
+        }
+
+        public void UpdateDistanceVisualization()
+        {
+            if (SoundClipController == null || SoundClipController.SpatialBlend <= 0f)
+            {
+                SetDistanceSpheresVisible(false);
+                return;
+            }
+
+            EnsureDistanceSpheres();
+
+            // Distances are authored in scene/canvas space.
+            // The sphere primitive has diameter 1, so local scale = 2 * distance.
+            // Divide by the widget's local scale so that the parent (canvas) transform
+            // provides the scene-space-to-world-space conversion naturally.
+            float widgetLocalScale = Mathf.Max(transform.localScale.x, 0.001f);
+            float minDiameter = 2f * SoundClipController.MinDistance / widgetLocalScale;
+            float maxDiameter = 2f * SoundClipController.MaxDistance / widgetLocalScale;
+
+            m_MinDistanceSphere.transform.localScale = Vector3.one * minDiameter;
+            m_MaxDistanceSphere.transform.localScale = Vector3.one * maxDiameter;
+
+            m_MinDistanceSphere.SetActive(true);
+            m_MaxDistanceSphere.SetActive(true);
         }
 
         protected override void UpdateScale()
@@ -210,6 +326,12 @@ namespace TiltBrush
             // Maintain constant world-space size regardless of canvas/scene scale.
             float parentScale = transform.parent != null ? transform.parent.lossyScale.x : 1f;
             transform.localScale = Vector3.one * m_ConstantWorldSize / Mathf.Max(parentScale, 0.001f);
+
+            // Update AudioSource distances: authored values * scene scale = world distances
+            if (SoundClipController != null)
+            {
+                SoundClipController.ApplyDistanceScale(parentScale);
+            }
         }
 
         public override Vector2 GetWidgetSizeRange()

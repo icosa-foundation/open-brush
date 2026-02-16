@@ -48,21 +48,7 @@ namespace TiltBrush
         {
             App.InitMediaLibraryPath();
             App.InitSoundClipLibraryPath(m_DefaultSoundClips);
-
-            m_SoundClips = new List<SoundClip>();
-            m_ChangedFiles = new HashSet<string>();
-
-            StartCoroutine(ScanReferenceDirectory());
-
-            if (Directory.Exists(App.SoundClipLibraryPath()))
-            {
-                m_FileWatcher = new FileWatcher(App.SoundClipLibraryPath());
-                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
-                m_FileWatcher.FileChanged += OnDirectoryChanged;
-                m_FileWatcher.FileCreated += OnDirectoryChanged;
-                m_FileWatcher.FileDeleted += OnDirectoryChanged;
-                m_FileWatcher.EnableRaisingEvents = true;
-            }
+            ChangeDirectory(HomeDirectory);
         }
 
         public event Action CatalogChanged;
@@ -139,7 +125,7 @@ namespace TiltBrush
 
             var existing = new HashSet<string>(m_SoundClips.Select(x => x.AbsolutePath));
             var detected = new HashSet<string>(
-                Directory.GetFiles(App.SoundClipLibraryPath(), "*.*", SearchOption.AllDirectories).Where(x => m_supportedSoundClipExtensions.Contains(Path.GetExtension(x))));
+                Directory.GetFiles(m_CurrentSoundClipDirectory, "*.*", SearchOption.TopDirectoryOnly).Where(x => m_supportedSoundClipExtensions.Contains(Path.GetExtension(x))));
             var toDelete = existing.Except(detected).Concat(changedSet).ToArray();
             var toScan = detected.Except(existing).Concat(changedSet).ToArray();
 
@@ -210,7 +196,7 @@ namespace TiltBrush
             }
         }
 
-        public string HomeDirectory => App.VideoLibraryPath();
+        public string HomeDirectory => App.SoundClipLibraryPath();
         public bool IsHomeDirectory() => m_CurrentSoundClipDirectory == HomeDirectory;
 
         public bool IsSubDirectoryOfHome()

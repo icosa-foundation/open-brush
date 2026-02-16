@@ -191,7 +191,11 @@ namespace TiltBrush
                     LayerId = App.Scene.GetIndexOfCanvas(widget.Canvas),
                     Paused = !widget.SoundClipController.Playing,
                     Time = widget.SoundClipController.Time,
-                    Volume = widget.SoundClipController.Volume
+                    Volume = widget.SoundClipController.Volume,
+                    Loop = widget.SoundClipController.Loop,
+                    SpatialBlend = widget.SoundClipController.SpatialBlend,
+                    MinDistance = widget.SoundClipController.MinDistance,
+                    MaxDistance = widget.SoundClipController.MaxDistance
                 };
                 return soundClip;
             }

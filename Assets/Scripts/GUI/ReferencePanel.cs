@@ -259,7 +259,7 @@ namespace TiltBrush
             }
             else
             {
-                displayPath = currentDir.Substring(App.MediaLibraryPath().Length);
+                displayPath = currentDir?.Substring(App.MediaLibraryPath().Length);
             }
 
             if (m_DirectoryChooserPopupButton != null)
