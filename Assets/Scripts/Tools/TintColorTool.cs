@@ -31,7 +31,12 @@ namespace TiltBrush
         }
 
         private static readonly TintMode[] k_ModeOrder =
-            { TintMode.Replace, TintMode.Multiply, TintMode.Add, TintMode.Clear };
+        {
+            TintMode.Replace,
+            // TintMode.Multiply,
+            // TintMode.Add,
+            TintMode.Clear
+        };
 
         [SerializeField] private Texture2D m_IconReplace;
         [SerializeField] private Texture2D m_IconMultiply;

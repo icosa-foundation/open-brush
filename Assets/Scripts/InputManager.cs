@@ -87,6 +87,7 @@ namespace TiltBrush
             Share,
             Fly,
             TogglePushPull = 5100,
+            ToggleTintColor = 5101,
             ScriptedTool = 6000,
         }
 
@@ -719,6 +720,8 @@ namespace TiltBrush
                 case SketchCommands.ToggleDefaultTool:
                 case SketchCommands.MenuContextClick:
                 case SketchCommands.ToggleSelection:
+                case SketchCommands.TogglePushPull:
+                case SketchCommands.ToggleTintColor:
                     return Brush.GetCommandDown(rCommand);
 
                 // Misc
