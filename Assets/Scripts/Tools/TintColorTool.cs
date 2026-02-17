@@ -167,11 +167,11 @@ namespace TiltBrush
         {
             switch (mode)
             {
-                case TintMode.Replace:  return m_IconReplace;
+                case TintMode.Replace: return m_IconReplace;
                 case TintMode.Multiply: return m_IconMultiply;
-                case TintMode.Add:      return m_IconAdd;
-                case TintMode.Clear:    return m_IconClear;
-                default:                return null;
+                case TintMode.Add: return m_IconAdd;
+                case TintMode.Clear: return m_IconClear;
+                default: return null;
             }
         }
 
