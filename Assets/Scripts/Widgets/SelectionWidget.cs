@@ -260,14 +260,28 @@ namespace TiltBrush
             Vector3 inflatedExtents_CS = m_SelectionBounds_CS.Value.extents;
             inflatedExtents_CS += Vector3.one * (m_CollisionRadius / m_SelectionCanvas.Pose.scale);
 
-            // Position our widget within global space as if it's in canvas space
-            // so that we can correctly set non-uniform scale. Even though we
-            // override the non-uniform scale at the very end, we also do it here
-            // because, even though TrTransform only considers uniform scale, it
-            // gets its uniform scale from the longest extent on any non-uniform scale.
-            transform.localPosition = m_SelectionBounds_CS.Value.center;
+            // Compute the bounds center in scene space using the same TrTransform
+            // math that AsScene uses, avoiding any mismatch between Unity's global
+            // transform path and TrTransform's local-chain path.
+            TrTransform canvasPose_SS = App.Scene.AsScene[m_SelectionCanvas.transform];
+            Vector3 boundsCenter_SS =
+                (canvasPose_SS * TrTransform.T(m_SelectionBounds_CS.Value.center)).translation;
+
+            // Use the AsScene setter to position the widget at the bounds center.
+            // This guarantees the read path (AsScene getter) will return exactly
+            // what we set, unlike mixing InverseTransformPoint with AsScene.
+            App.Scene.AsScene[transform] = TrTransform.TRS(
+                boundsCenter_SS, Quaternion.identity, inflatedExtents_CS.x);
+
+            // Override localScale with the non-uniform extents. The .x component
+            // stays the same as what the setter wrote, preserving consistency.
             transform.localScale = inflatedExtents_CS;
-            transform.localRotation = Quaternion.identity;
+
+            // Scale the box collider to compensate for the canvas-to-parent scale
+            // difference so the collider covers the actual world-space bounds.
+            float canvasToParentScale = m_SelectionCanvas.transform.GetUniformScale()
+                / transform.parent.GetUniformScale();
+            m_BoxCollider.size = Vector3.one * canvasToParentScale;
 
             // Capture the scene-space transformation for the selected bounds
             // without considering how the user transformed the selection since
@@ -282,6 +296,10 @@ namespace TiltBrush
             // Since TrTransform doesn't account for non-uniform scale, correct the
             // scale for the non-uniform bounds.
             transform.localScale = inflatedExtents_CS * UserTransformations_SS.scale;
+
+            // DIAG v2: verify SelectionTransform is identity after UpdateBoxCollider
+            var readback = App.Scene.AsScene[transform];
+            var selXf = SelectionTransform;
         }
 
         public void PreventSelectionFromMoving(bool preventMoving)
@@ -292,6 +310,8 @@ namespace TiltBrush
 
         override protected void OnUserBeginInteracting()
         {
+            var readback = App.Scene.AsScene[transform];
+            var selXf = SelectionTransform;
             base.OnUserBeginInteracting();
 
             // Use pin visuals for preventing movement.
