@@ -233,8 +233,6 @@ namespace TiltBrush
 
         public bool IsInitialized { get; private set; }
 
-        public bool HasInstances => m_Controller != null;
-
         public string Error { get; private set; }
 
         public SoundClip(string filePath)
@@ -263,12 +261,8 @@ namespace TiltBrush
         public SoundClipController CreateController(SoundClipWidget widget)
         {
             SoundClipController soundClipController = new SoundClipController(this, widget);
-            bool alreadyPrepared = HasInstances;
             m_Controller = soundClipController;
-            if (!alreadyPrepared)
-            {
-                SoundClipCatalog.Instance.StartCoroutine(PrepareAudioPlayer(InitializeControllers));
-            }
+            SoundClipCatalog.Instance.StartCoroutine(PrepareAudioPlayer(InitializeControllers));
             return soundClipController;
         }
 
@@ -279,7 +273,7 @@ namespace TiltBrush
 
         private void OnControllerDisposed(SoundClipController soundClipController)
         {
-            if (!HasInstances && m_Controller.m_SoundClipAudioSource != null)
+            if (m_Controller != null && m_Controller.m_SoundClipAudioSource != null)
             {
                 m_Controller.m_SoundClipAudioSource.Stop();
                 UnityEngine.Object.Destroy(m_Controller.m_SoundClipAudioSource.gameObject);
