@@ -216,7 +216,7 @@ namespace TiltBrush
             return Clone(transform.position, transform.rotation, m_Size);
         }
 
-        override public GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
+        public override GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
         {
             SoundClipWidget clone = Instantiate(WidgetManager.m_Instance.SoundClipWidgetPrefab) as SoundClipWidget;
             clone.m_PreviousCanvas = m_PreviousCanvas;
