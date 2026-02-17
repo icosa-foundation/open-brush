@@ -29,7 +29,10 @@ namespace TiltBrush
         private const string BRUSH_QUILL_CUBE = "b3e7f8c2-4d5a-1e9b-6c8f-3a7d2f1e9c4b";
         private const string BRUSH_QUILL_RIBBON = "c4f8b3e2-9d1a-5e7f-4c3b-8a6d2f9e1c7b";
 
-        public static void Load(string path, int maxStrokes = 0, bool loadAnimations = false, string layerName = null, bool flattenHierarchy = true)
+        public static void Load(
+            string path, int maxStrokes = 0,
+            bool loadAnimations = false, string layerName = null,
+            bool flattenHierarchy = true, bool layersCanTransform = false)
         {
             string kind;
             SQ.Sequence sequence = null;
@@ -112,7 +115,14 @@ namespace TiltBrush
                     // Calculate world transform for this top-level layer
                     Matrix4x4 topLevelWorldNoFlip = rootWorldNoFlip * localNoFlip;
                     Matrix4x4 topLevelWorldWithFlip = rootWorldWithFlip * localWithFlip;
-                    obLayer.Pose = TrTransform.FromMatrix4x4(topLevelWorldNoFlip);
+
+                    // layersCanTransform is currently always false
+                    // because layers with non-uniform transforms are buggy
+                    // but will be important for later animation functionality
+                    if (layersCanTransform)
+                    {
+                        obLayer.Pose = TrTransform.FromMatrix4x4(topLevelWorldNoFlip);
+                    }
                     createdLayers.Add(obLayer);
 
                     if (recorder != null)
