@@ -751,14 +751,6 @@ namespace TiltBrush
 
         public void SelectStrokes(IEnumerable<Stroke> strokes, bool preserveTool = false)
         {
-            // Align SelectionCanvas with the current ActiveCanvas before the first selection.
-            // Without this, if the user switched layers since the last selection was cleared,
-            // the SelectionCanvas pose is stale and geometry copied to it appears at the wrong position.
-            if (!HasSelection)
-            {
-                SelectionTransform = TrTransform.identity;
-            }
-
             foreach (var stroke in strokes)
             {
                 if (IsStrokeSelected(stroke))
@@ -823,12 +815,6 @@ namespace TiltBrush
 
         public void SelectWidgets(IEnumerable<GrabWidget> widgets)
         {
-            // Align SelectionCanvas with the current ActiveCanvas before the first selection.
-            if (!HasSelection)
-            {
-                SelectionTransform = TrTransform.identity;
-            }
-
             foreach (var widget in widgets)
             {
                 SelectWidget(widget);
