@@ -173,15 +173,18 @@ namespace TiltBrush
             {
                 int transformNodeId = modelTransformNodeStart + i;
                 int shapeNodeId = modelShapeNodeStart + i;
-                string modelName = models[i].Name;
+                RuntimeVoxDocument.RuntimeModel model = models[i];
 
                 yield return BuildTransformNodeChunk(
                     transformNodeId,
                     attributes: new Dictionary<string, string>(),
                     childNodeId: shapeNodeId,
                     layerId: -1,
-                    translation: new Vector3Int(0, 0, 0),
-                    name: modelName);
+                    translation: new Vector3Int(
+                        (int)model.TransformOffset.x,
+                        (int)model.TransformOffset.y,
+                        (int)model.TransformOffset.z),
+                    name: model.Name);
 
                 yield return BuildShapeNodeChunk(shapeNodeId, i);
             }

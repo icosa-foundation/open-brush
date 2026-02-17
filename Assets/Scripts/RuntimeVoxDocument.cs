@@ -28,6 +28,7 @@ namespace TiltBrush
 
             public string Name { get; }
             public Vector3Int Size { get; }
+            public Vector3 TransformOffset { get; set; }
             public IReadOnlyDictionary<Vector3Int, byte> Voxels => m_voxels;
 
             public RuntimeModel(string name, Vector3Int size)
@@ -185,6 +186,10 @@ namespace TiltBrush
                     sourceModel.LocalSize.Z);
 
                 RuntimeModel runtimeModel = document.CreateModel(sourceModel.Name, modelSize);
+                runtimeModel.TransformOffset = new Vector3(
+                    sourceModel.GlobalPosition.X,
+                    sourceModel.GlobalPosition.Y,
+                    sourceModel.GlobalPosition.Z);
 
                 foreach (VoxReader.Voxel voxel in sourceModel.Voxels)
                 {

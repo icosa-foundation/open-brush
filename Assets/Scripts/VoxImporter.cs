@@ -23,6 +23,7 @@ using System.Linq;
 using UnityEngine;
 using VoxReader;
 using VoxReader.Interfaces;
+using Vector3 = UnityEngine.Vector3;
 
 namespace TiltBrush
 {
@@ -133,6 +134,10 @@ namespace TiltBrush
                     }
 
                     GameObject modelObject = new GameObject($"Model_{i}_{model.Name}");
+                    modelObject.transform.localPosition = new Vector3(
+                        model.GlobalPosition.X,
+                        model.GlobalPosition.Y,
+                        model.GlobalPosition.Z);
                     modelObject.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
                     modelObject.transform.SetParent(parent.transform, false);
 

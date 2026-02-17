@@ -4,7 +4,7 @@
     <style>
         body { font-family: sans-serif; margin: 12px; line-height: 1.4; }
         h3 { margin: 10px 0 6px; }
-        .row { margin: 6px 0; }
+        .row { margin: 32px 0; }
         label { display: inline-block; margin-right: 10px; }
         input, select, button { margin: 2px; }
         input[type='number'] { width: 70px; }
@@ -18,16 +18,23 @@
     <label>Doc Size X <input id='docX' type='number' value='24'></label>
     <label>Y <input id='docY' type='number' value='24'></label>
     <label>Z <input id='docZ' type='number' value='24'></label>
+    <br>
     <button onclick='newDocument()'>New Document</button>
     <button onclick='clearSpawned()'>Clear Spawned</button>
 </div>
 
 <div class='row'>
+    <h3>Add a new model</h3>
     <label>Model Name <input id='modelName' value='detail'></label>
+    <br>
     <label>Model Size X <input id='modelX' type='number' value='24'></label>
     <label>Y <input id='modelY' type='number' value='24'></label>
     <label>Z <input id='modelZ' type='number' value='24'></label>
+    <br>
     <button onclick='addModel()'>Add Model</button>
+</div>
+
+<div class='row'>
     <label>Active Model <input id='activeModel' type='number' value='0'></label>
     <button onclick='selectModel()'>Select Model</button>
 </div>
@@ -75,7 +82,9 @@
         <option value='false'>false</option>
     </select></label>
     <button onclick='setAutoVisuals()'>Set Auto Visuals</button>
+    <br>
     <button onclick='spawnNow()'>Spawn/Refresh Now</button>
+    <br>
     <button onclick='meshStats()'>Mesh Stats</button>
     <button onclick='exportBase64()'>Export Base64</button>
 </div>

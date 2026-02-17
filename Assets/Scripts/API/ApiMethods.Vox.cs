@@ -775,6 +775,7 @@ namespace TiltBrush
 
                 var modelObject = new GameObject($"Model_{i}_{model.Name}");
                 modelObject.transform.SetParent(root.transform, false);
+                modelObject.transform.localPosition = model.TransformOffset;
                 modelObject.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
 
                 Mesh mesh = state.Optimized

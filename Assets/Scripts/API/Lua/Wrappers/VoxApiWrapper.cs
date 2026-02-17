@@ -193,6 +193,7 @@ namespace TiltBrush
         [MoonSharpHidden] private bool m_AutoVisuals;
         [MoonSharpHidden] private bool m_LastSpawnOptimized = true;
         [MoonSharpHidden] private bool m_LastSpawnCollider = true;
+        [MoonSharpHidden] private Vector3 m_SpawnPosition = Vector3.zero;
 
         public VoxDocumentApiWrapper(RuntimeVoxDocument document)
         {
@@ -259,6 +260,17 @@ namespace TiltBrush
             RebuildSceneChildren();
         }
 
+        [LuaDocsDescription("Spawns this document at a specific world position")]
+        [LuaDocsExample("doc:SpawnAt(0, 0, 0, true, true)")]
+        public void SpawnAt(float x, float y, float z, bool optimized = true, bool generateCollider = true)
+        {
+            m_LastSpawnOptimized = optimized;
+            m_LastSpawnCollider = generateCollider;
+            m_SpawnPosition = new Vector3(x, y, z);
+            EnsureSceneRoot();
+            RebuildSceneChildren();
+        }
+
         [LuaDocsDescription("Enables or disables automatic visual rebuild after edits")]
         [LuaDocsExample("doc:SetAutoVisuals(true, true, true)")]
         public void SetAutoVisuals(bool enabled = true, bool optimized = true, bool generateCollider = true)
@@ -300,7 +312,7 @@ namespace TiltBrush
 
             m_SceneRoot = new GameObject("VoxRuntime_Lua");
             m_SceneRoot.transform.SetParent(App.Scene.ActiveCanvas.transform, false);
-            m_SceneRoot.transform.localPosition = Vector3.zero;
+            m_SceneRoot.transform.localPosition = m_SpawnPosition;
             m_SceneRoot.transform.localRotation = Quaternion.identity;
             m_SceneRoot.transform.localScale = Vector3.one;
             ApiMethods.VoxRegisterSpawnedRoot(m_SceneRoot);
@@ -332,6 +344,7 @@ namespace TiltBrush
 
                 var modelObject = new GameObject($"Model_{i}_{model.Name}");
                 modelObject.transform.SetParent(m_SceneRoot.transform, false);
+                modelObject.transform.localPosition = model.TransformOffset;
                 modelObject.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
 
                 Mesh mesh = m_LastSpawnOptimized
