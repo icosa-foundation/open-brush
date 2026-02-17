@@ -135,15 +135,18 @@ namespace TiltBrush
             {
                 return;
             }
-            // If instances of the sound clip already exist, don't override with new state.
-            if (m_SoundClip.HasInstances)
+            if (SoundClipController == null)
             {
+                SoundClipController = m_SoundClip.CreateController(this);
+
+                //SoundClipController.m_SoundClipAudioSource.Play();
+                SoundClipController.OnSoundClipInitialized += OnSoundClipInitialized;
+            }
+            else
+            {
+                // If instances of the sound clip already exist, don't override with new state.
                 m_InitialState = null;
             }
-            SoundClipController = m_SoundClip.CreateController(this);
-
-            //SoundClipController.m_SoundClipAudioSource.Play();
-            SoundClipController.OnSoundClipInitialized += OnSoundClipInitialized;
         }
 
         private void OnSoundClipInitialized()

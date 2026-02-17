@@ -58,6 +58,8 @@ namespace TiltBrush
         [SerializeField] private BoxCollider m_SoundClipControlsCollider;
         [SerializeField] private GameObject m_Preview;
         [SerializeField] private SoundClipPositionSlider m_Scrubber;
+        [SerializeField] private ActionToggleButton m_LoopToggle;
+        [SerializeField] private ActionToggleButton m_SpatialBlendToggle;
         [SerializeField] private float m_SoundClipSkipTime = 10f;
         [SerializeField] private Texture2D m_ErrorTexture;
         [SerializeField] private Texture2D m_LoadingTexture;
@@ -191,6 +193,9 @@ namespace TiltBrush
                 m_PreviewMaterial.mainTexture = previewTex != null ? previewTex : widget.SoundClip.Thumbnail;
             }
             m_Scrubber.SoundClipWidget = widget;
+            m_LoopToggle.ToggleState = widget.SoundClipController is { Loop: true };
+            m_SpatialBlendToggle.ToggleState = widget.SoundClipController is { SpatialBlend: > 0f };
+
             RefreshSoundClipControlsVisibility();
         }
 
