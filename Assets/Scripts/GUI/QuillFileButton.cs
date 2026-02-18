@@ -22,6 +22,7 @@ namespace TiltBrush
     {
         [SerializeField] private TextMeshPro m_LabelText;
         [SerializeField] private TextMeshPro m_DetailText;
+        [SerializeField] private bool m_MergeMode;
 
         private QuillFileInfo m_QuillFile;
 
@@ -44,13 +45,24 @@ namespace TiltBrush
                 return;
             }
 
-            try
+            if (m_MergeMode)
             {
-                Quill.Load(m_QuillFile.FullPath);
+                // Merge: add Quill strokes to the current scene without clearing
+                try
+                {
+                    Quill.Load(m_QuillFile.FullPath);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Failed to import '{m_QuillFile.FullPath}': {ex}");
+                }
             }
-            catch (Exception ex)
+            else
             {
-                UnityEngine.Debug.LogError($"Failed to import '{m_QuillFile.FullPath}': {ex}");
+                // Load: confirm unsaved changes, clear scene, then load
+                Quill.PendingLoadPath = m_QuillFile.FullPath;
+                SketchControlsScript.m_Instance.IssueGlobalCommand(
+                    SketchControlsScript.GlobalCommands.LoadQuillConfirmUnsaved, 0, 0);
             }
         }
 

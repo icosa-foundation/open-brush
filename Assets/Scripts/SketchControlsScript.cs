@@ -200,7 +200,9 @@ namespace TiltBrush
             OpenTexturePicker = 9001,
             MergeBrushStrokes = 10000,
             RepaintOptions = 11500,
-            OpenNumericInputPopup = 12000
+            OpenNumericInputPopup = 12000,
+            LoadQuillConfirmUnsaved = 13000,
+            LoadQuillFile = 13001,
         }
 
         public enum ControlsType
@@ -4039,6 +4041,21 @@ namespace TiltBrush
                 }, 0.25f, false, true);
         }
 
+        IEnumerator LoadQuillCoroutine(string path)
+        {
+            using (var coroutine = OverlayManager.m_Instance.RunInCompositor(
+                OverlayType.LoadSketch, () =>
+                {
+                    Quill.Load(path);
+                }, 0.25f, false, false))
+            {
+                while (coroutine.MoveNext())
+                {
+                    yield return coroutine.Current;
+                }
+            }
+        }
+
         private void SaveModel()
         {
 #if USD_SUPPORTED
@@ -4991,6 +5008,34 @@ namespace TiltBrush
                         else
                         {
                             IssueGlobalCommand(GlobalCommands.LoadWaitOnDownload, iParam1, iParam2, null);
+                        }
+                    }
+                    break;
+                case GlobalCommands.LoadQuillConfirmUnsaved:
+                    {
+                        if (SketchMemoryScript.m_Instance.IsMemoryDirty())
+                        {
+                            var quillPanel = m_PanelManager.GetActivePanelByType(
+                                BasePanel.PanelType.QuillLibrary) as QuillLibraryPanel;
+                            if (quillPanel != null)
+                            {
+                                quillPanel.ShowConfirmLoadPopUp();
+                            }
+                        }
+                        else
+                        {
+                            IssueGlobalCommand(GlobalCommands.LoadQuillFile, 0, 0);
+                        }
+                    }
+                    break;
+                case GlobalCommands.LoadQuillFile:
+                    {
+                        string path = Quill.PendingLoadPath;
+                        Quill.PendingLoadPath = null;
+                        if (!string.IsNullOrEmpty(path))
+                        {
+                            NewSketch(fade: false);
+                            StartCoroutine(LoadQuillCoroutine(path));
                         }
                     }
                     break;

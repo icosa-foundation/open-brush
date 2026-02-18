@@ -23,6 +23,12 @@ namespace TiltBrush
 {
     public static class Quill
     {
+        /// <summary>
+        /// Path to load when the LoadQuillFile global command fires.
+        /// Set before issuing LoadQuillConfirmUnsaved or LoadQuillFile.
+        /// </summary>
+        public static string PendingLoadPath { get; set; }
+
         // Quill-specific brush GUIDs
         private const string BRUSH_QUILL_CYLINDER = "f1c4e3e7-2a9f-4b5d-8c3e-7d9a1f8e6b4c";
         private const string BRUSH_QUILL_ELLIPSE = "a2d5f6b8-9c1e-4f3a-7b8d-2e6c9f4a1d5b";

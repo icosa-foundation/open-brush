@@ -399,6 +399,8 @@ MonoBehaviour:
   m_NoQuillData: {fileID: 7091369650102597356}
   m_NoImmData: {fileID: 2531254965335807396}
   m_RefreshingSpinner: {fileID: 1644973727690454}
+  m_ConfirmLoadPopUpPrefab: {fileID: 1559017956401146, guid: 8ced6eb9a7ede9742b9b286df62170e0,
+    type: 3}
   references:
     version: 2
     RefIds: []

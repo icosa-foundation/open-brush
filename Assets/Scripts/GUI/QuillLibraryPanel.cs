@@ -27,6 +27,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_NoQuillData;
         [SerializeField] private GameObject m_NoImmData;
         [SerializeField] private GameObject m_RefreshingSpinner;
+        [SerializeField] private GameObject m_ConfirmLoadPopUpPrefab;
         private QuillFileCatalog m_Catalog;
 
         private List<BaseButton> m_IconButtons;
@@ -69,6 +70,24 @@ namespace TiltBrush
             ResetPageIndex();
             RefreshPage();
             button.UpdateVisuals();
+        }
+
+        /// <summary>
+        /// Shows a confirmation popup before loading a Quill file that will clear the scene.
+        /// Requires m_ConfirmLoadPopUpPrefab to be set in the inspector.
+        /// </summary>
+        public void ShowConfirmLoadPopUp()
+        {
+            if (m_ConfirmLoadPopUpPrefab == null)
+            {
+                Debug.LogError("QuillLibraryPanel: m_ConfirmLoadPopUpPrefab is not set.");
+                return;
+            }
+
+            CreatePopUp(
+                m_ConfirmLoadPopUpPrefab, Vector3.zero,
+                false, false, 0, 0,
+                SketchControlsScript.GlobalCommands.LoadQuillFile);
         }
 
         protected override void Awake()
