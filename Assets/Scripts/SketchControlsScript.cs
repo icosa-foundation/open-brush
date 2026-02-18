@@ -4043,6 +4043,14 @@ namespace TiltBrush
 
         IEnumerator LoadQuillCoroutine(string path)
         {
+            var blackEnv = EnvironmentCatalog.m_Instance.AllEnvironments
+                .FirstOrDefault(x => x.name.Equals("Black", StringComparison.OrdinalIgnoreCase));
+            if (blackEnv != null)
+            {
+                SceneSettings.m_Instance.SetDesiredPreset(blackEnv, keepSceneTransform: true,
+                    forceTransition: false, hasCustomLights: false, skipFade: true);
+            }
+
             using (var coroutine = OverlayManager.m_Instance.RunInCompositor(
                 OverlayType.LoadSketch, () =>
                 {
