@@ -44,6 +44,7 @@ namespace TiltBrush
         [SerializeField] private Texture2D m_IconClear;
 
         private TintMode m_CurrentMode = TintMode.Replace;
+        private bool m_OwnsUndoGroup;
         public float EffectAmount { get; set; } = 1f;
 
         protected override bool IsOn()
@@ -59,12 +60,44 @@ namespace TiltBrush
                 ClearGpuFutureLists();
             }
 
+            if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
+            {
+                if (ApiManager.Instance.ActiveUndo == null)
+                {
+                    ApiManager.Instance.StartUndo();
+                    m_OwnsUndoGroup = true;
+                }
+            }
+            else if (m_OwnsUndoGroup && !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+            {
+                ApiManager.Instance.EndUndo();
+                m_OwnsUndoGroup = false;
+            }
+
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.TogglePushPull))
             {
                 int idx = System.Array.IndexOf(k_ModeOrder, m_CurrentMode);
                 m_CurrentMode = k_ModeOrder[(idx + 1) % k_ModeOrder.Length];
                 StartToggleAnimation();
             }
+        }
+
+        public override void EnableTool(bool bEnable)
+        {
+            if (!bEnable)
+            {
+                EndOwnedUndoGroup();
+            }
+            base.EnableTool(bEnable);
+        }
+
+        public override void HideTool(bool bHide)
+        {
+            if (bHide)
+            {
+                EndOwnedUndoGroup();
+            }
+            base.HideTool(bHide);
         }
 
         protected override void OnAnimationSwitch()
@@ -152,9 +185,17 @@ namespace TiltBrush
             if (strokeIsModified)
             {
                 PlayModifyStrokeSound();
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                    new ModifyStrokePointColorsCommand(stroke, newOverrideColors, targetMode)
-                );
+                var undoParent = ApiManager.Instance.ActiveUndo;
+                var cmd = new ModifyStrokePointColorsCommand(stroke, newOverrideColors, targetMode, undoParent);
+                if (undoParent == null)
+                {
+                    SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+                }
+                else
+                {
+                    // Apply changes immediately while keeping this command inside the active undo group.
+                    cmd.Redo();
+                }
                 InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, m_HapticsToggleOn);
             }
 
@@ -191,6 +232,16 @@ namespace TiltBrush
                 case TintMode.Add: return ColorOverrideMode.Add;
                 default: return ColorOverrideMode.None;
             }
+        }
+
+        private void EndOwnedUndoGroup()
+        {
+            if (!m_OwnsUndoGroup)
+            {
+                return;
+            }
+            ApiManager.Instance.EndUndo();
+            m_OwnsUndoGroup = false;
         }
     }
 } // namespace TiltBrush
