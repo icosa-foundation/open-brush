@@ -125,9 +125,9 @@ namespace TiltBrush
 
         void OnToolChanged()
         {
-            bool isSculptTool = SketchSurfacePanel.m_Instance.GetCurrentToolType() ==
+            bool isPushPullTool = SketchSurfacePanel.m_Instance.GetCurrentToolType() ==
                                    BaseTool.ToolType.PushPullTool;
-            if (isSculptTool != m_AnimateIn)
+            if (isPushPullTool != m_AnimateIn)
             {
                 if (m_AnimationCoroutine != null)
                 {
