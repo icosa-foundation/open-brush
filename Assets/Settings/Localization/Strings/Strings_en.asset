@@ -3816,6 +3816,14 @@ MonoBehaviour:
     m_Localized: Quill Ribbon
     m_Metadata:
       m_Items: []
+  - m_Id: 467449183412510720
+    m_Localized: Quill Sketch Library
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467452096813817856
+    m_Localized: Quill Library
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

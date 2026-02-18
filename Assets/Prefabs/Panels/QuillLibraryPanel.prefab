@@ -298,7 +298,7 @@ MonoBehaviour:
   m_BorderTop: {fileID: 0}
   m_BorderBottom: {fileID: 0}
   m_MeshCollider: {fileID: 6509770}
-  m_ParticleBounds: {x: 0, y: 0, z: 0}
+  m_ParticleBounds: {x: 1.2, y: 1.2, z: 0}
   m_PanelPopUpMap:
   - m_PopUpPrefab: {fileID: 1559017956401146, guid: 8ced6eb9a7ede9742b9b286df62170e0,
       type: 3}
@@ -338,12 +338,12 @@ MonoBehaviour:
   - m_PopUpPrefab: {fileID: 1386358278955912, guid: 1aabadb277d16b648bf005f3616a1f03,
       type: 3}
     m_Command: 5605
-  m_PanelDescription: 
+  m_PanelDescription: QUILL_PANEL_DESCRIPTION
   m_LocalizedPanelDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 467452096813817856
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -381,14 +381,14 @@ MonoBehaviour:
   m_UseGazeRotation: 1
   m_MaxGazeRotation: 20
   m_GazeActivateSpeed: 8
-  m_InitialSpawnPos: {x: 0, y: 16, z: 5.34}
+  m_InitialSpawnPos: {x: 2, y: 13, z: 2}
   m_InitialSpawnRotEulers: {x: 0, y: 0, z: 0}
   m_WandAttachAngle: 0
   m_WandAttachYOffset: 0
-  m_WandAttachHalfHeight: 0
-  m_BeginFixed: 1
+  m_WandAttachHalfHeight: 1.1
+  m_BeginFixed: 0
   m_CanBeFixedToWand: 1
-  m_CanBeDetachedFromWand: 0
+  m_CanBeDetachedFromWand: 1
   m_PopUpGazeDuration: 0.2
   m_PromoBorders: []
   m_PrevButton: {fileID: 102468}
@@ -4993,7 +4993,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Quill Sketches
+  m_text: 'Browsing:'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
   m_sharedMaterial: {fileID: 2133298, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}

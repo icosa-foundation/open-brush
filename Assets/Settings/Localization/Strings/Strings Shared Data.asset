@@ -3647,6 +3647,14 @@ MonoBehaviour:
     m_Key: BRUSH_QUILLRIBBON
     m_Metadata:
       m_Items: []
+  - m_Id: 467449183412510720
+    m_Key: LABS_PANEL_QUILL_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467452096813817856
+    m_Key: QUILL_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
