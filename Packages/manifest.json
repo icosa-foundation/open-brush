@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.immersive-foundation.imm-stroke-reader": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#upm",
     "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
     "com.meta.xr.sdk.core": "https://github.com/icosa-mirror/com.meta.xr.sdk.core.git#68.0.2-openbrush-hotfix",
     "com.meta.xr.sdk.platform": "60.0.0",
@@ -28,9 +29,9 @@
     "com.unity.xr.management": "4.4.1",
     "com.unity.xr.oculus": "4.2.0",
     "com.unity.xr.openxr": "1.10.0",
+    "com.valvesoftware.steamaudio": "https://github.com/icosa-mirror/com.valvesoftware.steamaudio.git",
     "com.watertrans.glyphloader": "https://github.com/icosa-mirror/GlyphLoader-Unity.git#upm",
     "com.zappar.xr.zapbox": "https://github.com/zappar-xr/zapbox-xr-sdk.git#91b52bde3c0a67aa08909bdd2657f8a6672decf6",
-    "com.immersive-foundation.imm-stroke-reader": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#upm",
     "moonsharp": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",
     "org.khronos.unitygltf": "https://github.com/KhronosGroup/UnityGLTF.git#dev",
     "org.nuget.google.apis": "1.64.0",

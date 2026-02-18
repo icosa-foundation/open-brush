@@ -364,6 +364,13 @@
       },
       "url": "https://packages.unity.com"
     },
+    "com.valvesoftware.steamaudio": {
+      "version": "https://github.com/icosa-mirror/com.valvesoftware.steamaudio.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "7ae596f571e5a3141f7e6d0be0e7dcb7312722c0"
+    },
     "com.watertrans.glyphloader": {
       "version": "https://github.com/icosa-mirror/GlyphLoader-Unity.git#upm",
       "depth": 0,
