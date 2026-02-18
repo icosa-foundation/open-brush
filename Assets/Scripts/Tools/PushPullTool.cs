@@ -23,6 +23,7 @@ namespace TiltBrush
     {
         /// Keeps track of the first sculpting change made while the trigger is held.
         private bool m_AtLeastOneModificationMade = false;
+        private bool m_OwnsUndoGroup;
         /// Determines whether the tool is in push mode or pull mode.
         /// Corresponds to the On/Off state
         private bool m_bIsPushing = true;
@@ -35,6 +36,10 @@ namespace TiltBrush
 
         public override void EnableTool(bool bEnable)
         {
+            if (!bEnable)
+            {
+                EndOwnedUndoGroup();
+            }
             // Call this after setting up our tool's state.
             base.EnableTool(bEnable);
             // CTODO: change the material of all strokes to some wireframe shader.
@@ -43,6 +48,10 @@ namespace TiltBrush
 
         public override void HideTool(bool bHide)
         {
+            if (bHide)
+            {
+                EndOwnedUndoGroup();
+            }
             m_ActiveSubTool.gameObject.SetActive(!bHide);
             base.HideTool(bHide);
         }
@@ -71,6 +80,20 @@ namespace TiltBrush
                 FinalizeSculptingBatch();
                 ResetToolRotation();
                 ClearGpuFutureLists();
+            }
+
+            if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
+            {
+                if (ApiManager.Instance.ActiveUndo == null)
+                {
+                    ApiManager.Instance.StartUndo();
+                    m_OwnsUndoGroup = true;
+                }
+            }
+            else if (m_OwnsUndoGroup && !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+            {
+                ApiManager.Instance.EndUndo();
+                m_OwnsUndoGroup = false;
             }
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.TogglePushPull))
@@ -117,9 +140,17 @@ namespace TiltBrush
             if (strokeIsModified)
             {
                 PlayModifyStrokeSound();
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                    new ModifyStrokePointsCommand(stroke, newControlPoints)
-                );
+                var undoParent = ApiManager.Instance.ActiveUndo;
+                var cmd = new ModifyStrokePointsCommand(stroke, newControlPoints, undoParent);
+                if (undoParent == null)
+                {
+                    SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+                }
+                else
+                {
+                    // Apply immediately while keeping this command in the active undo group.
+                    cmd.Redo();
+                }
                 m_AtLeastOneModificationMade = true;
             }
 
@@ -132,6 +163,16 @@ namespace TiltBrush
             {
                 InputManager.Brush.Geometry.ShowSculptToggle(m_bIsPushing);
             }
+        }
+
+        private void EndOwnedUndoGroup()
+        {
+            if (!m_OwnsUndoGroup)
+            {
+                return;
+            }
+            ApiManager.Instance.EndUndo();
+            m_OwnsUndoGroup = false;
         }
     }
 } // namespace TiltBrush
