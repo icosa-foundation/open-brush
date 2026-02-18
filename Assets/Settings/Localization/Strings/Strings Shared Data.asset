@@ -3655,6 +3655,14 @@ MonoBehaviour:
     m_Key: QUILL_PANEL_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 467464424217206784
+    m_Key: QUILL_PANEL_NO_QUILL_FILES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467464562255945728
+    m_Key: QUILL_PANEL_NO_IMM_FILES
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

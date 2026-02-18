@@ -3824,6 +3824,14 @@ MonoBehaviour:
     m_Localized: Quill Library
     m_Metadata:
       m_Items: []
+  - m_Id: 467464424217206784
+    m_Localized: No Quill Sketches found in your Quill folder
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467464562255945728
+    m_Localized: No .imm files found in your Media Library
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
