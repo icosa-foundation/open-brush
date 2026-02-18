@@ -6045,6 +6045,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: PushPullTool
       objectReference: {fileID: 0}
+    - target: {fileID: 3491021130848758591, guid: 9515dfdefc9ac3045ab77450def48e00,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -27814,6 +27819,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: TintColorTool
+      objectReference: {fileID: 0}
+    - target: {fileID: 3491021130848758591, guid: 83973cf2914084bd3838780fa88138dc,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
