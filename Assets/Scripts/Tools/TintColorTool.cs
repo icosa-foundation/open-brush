@@ -44,6 +44,7 @@ namespace TiltBrush
         [SerializeField] private Texture2D m_IconClear;
 
         private TintMode m_CurrentMode = TintMode.Replace;
+        public float EffectAmount { get; set; } = 1f;
 
         protected override bool IsOn()
         {
@@ -89,6 +90,7 @@ namespace TiltBrush
             Color tintColor = PointerManager.m_Instance.PointerColor;
             Color baseColor = stroke.m_Color;
             float pressure = InputManager.Brush.GetTriggerRatio();
+            float amount = pressure * EffectAmount;
             float maxDistance = GetSize() / m_CurrentCanvas.Pose.scale;
             Vector3 toolPos = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
 
@@ -110,7 +112,7 @@ namespace TiltBrush
                         ? (Color)newOverrideColors[i].Value
                         : identity;
                     // Lerp RGB only — preserve alpha (used by QuillFlatBrush for per-vertex opacity)
-                    Color32 blended = Color.Lerp(existing, tintColor, pressure);
+                    Color32 blended = Color.Lerp(existing, tintColor, amount);
                     blended.a = newOverrideColors[i].HasValue
                         ? newOverrideColors[i].Value.a
                         : (byte)255;
