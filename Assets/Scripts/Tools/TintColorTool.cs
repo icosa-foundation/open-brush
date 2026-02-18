@@ -123,7 +123,7 @@ namespace TiltBrush
             Color tintColor = PointerManager.m_Instance.PointerColor;
             Color baseColor = stroke.m_Color;
             float pressure = InputManager.Brush.GetTriggerRatio();
-            float amount = pressure * EffectAmount;
+            float amount = pressure * EffectAmount * 0.5f;
             float maxDistance = GetSize() / m_CurrentCanvas.Pose.scale;
             Vector3 toolPos = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
 

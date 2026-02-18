@@ -82,8 +82,10 @@ namespace TiltBrush
                 string quillImageDirectory = GetQuillImageDirectory(path);
                 string quillSoundDirectory = GetQuillSoundDirectory(path);
 
-                // Apply 10x global scale (Meters to Centimeters/Unity units normalization)
-                Matrix4x4 globalCorrection = Matrix4x4.Scale(Vector3.one * 10f);
+                // The "correct" 10x global scale correction for Open Brush units creates issues
+                // where the scene is hard to see even at max zoom.
+                // 1x is a bit too small - so I went with an arbitrary 2x scale
+                Matrix4x4 globalCorrection = Matrix4x4.Scale(Vector3.one * 2f);
 
                 // The RootLayer itself can have a transform
                 Matrix4x4 rootWorldNoFlip = globalCorrection * ConvertSQTransformMatrix(sequence.RootLayer.Transform, includeFlip: false);
