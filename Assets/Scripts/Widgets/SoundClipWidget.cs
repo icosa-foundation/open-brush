@@ -392,5 +392,24 @@ namespace TiltBrush
         {
             return Path.GetFileNameWithoutExtension(m_SoundClip.AbsolutePath);
         }
+
+        /// Returns audio settings for GLTF export, reading from the controller when initialized
+        /// and falling back to m_InitialState or defaults otherwise.
+        public (float volume, bool loop, float spatialBlend, float minDistance, float maxDistance) GetAudioExportSettings()
+        {
+            if (SoundClipController != null && SoundClipController.Initialized)
+            {
+                return (SoundClipController.Volume, SoundClipController.Loop,
+                    SoundClipController.SpatialBlend, SoundClipController.MinDistance,
+                    SoundClipController.MaxDistance);
+            }
+            if (m_InitialState != null)
+            {
+                return (m_InitialState.Volume, m_InitialState.Loop,
+                    m_InitialState.SpatialBlend, m_InitialState.MinDistance,
+                    m_InitialState.MaxDistance);
+            }
+            return (1f, true, 0f, 1f, 500f);
+        }
     }
 } // namespace TiltBrush
