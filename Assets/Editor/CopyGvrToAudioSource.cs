@@ -17,8 +17,8 @@ public class CopyGvrToAudioSource : Editor
         // Save current scene state before iterating
         EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
 
-        // Iterate through all scenes in project
-        string[] sceneGUIDs = AssetDatabase.FindAssets("t:Scene");
+        // Iterate through scenes in the project Assets only (not package scenes)
+        string[] sceneGUIDs = AssetDatabase.FindAssets("t:Scene", new[] { "Assets" });
         foreach (string sceneGuid in sceneGUIDs)
         {
             string scenePath = AssetDatabase.GUIDToAssetPath(sceneGuid);
