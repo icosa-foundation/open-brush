@@ -29,6 +29,12 @@ namespace TiltBrush
         /// </summary>
         public static string PendingLoadPath { get; set; }
 
+        /// <summary>
+        /// The background color from the most recently loaded Quill sequence, in gamma space.
+        /// Null if no Quill file has been loaded yet.
+        /// </summary>
+        public static Color? LastLoadedBackgroundColor { get; private set; }
+
         // Quill-specific brush GUIDs
         private const string BRUSH_QUILL_CYLINDER = "f1c4e3e7-2a9f-4b5d-8c3e-7d9a1f8e6b4c";
         private const string BRUSH_QUILL_ELLIPSE = "a2d5f6b8-9c1e-4f3a-7b8d-2e6c9f4a1d5b";
@@ -67,6 +73,10 @@ namespace TiltBrush
                     Debug.LogError("Failed to read Quill sequence");
                     return;
                 }
+
+                // Store background color (Quill colors are linear; convert to gamma for Unity)
+                var sqBg = sequence.BackgroundColor;
+                LastLoadedBackgroundColor = new Color(sqBg.R, sqBg.G, sqBg.B).gamma;
 
                 if (!flattenHierarchy)
                 {

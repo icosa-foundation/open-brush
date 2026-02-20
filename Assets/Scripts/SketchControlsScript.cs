@@ -4062,6 +4062,13 @@ namespace TiltBrush
                     yield return coroutine.Current;
                 }
             }
+
+            if (Quill.LastLoadedBackgroundColor.HasValue)
+            {
+                var bgColor = Quill.LastLoadedBackgroundColor.Value;
+                SceneSettings.m_Instance.SkyColorA = bgColor;
+                SceneSettings.m_Instance.SkyColorB = bgColor;
+            }
         }
 
         private void SaveModel()
