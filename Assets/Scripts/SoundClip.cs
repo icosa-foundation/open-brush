@@ -104,7 +104,7 @@ namespace TiltBrush
 
             public float Position
             {
-                get => m_SoundClipInitialized ? (float)(m_SoundClipAudioSource.time / m_SoundClipAudioSource.clip.length) : 0f;
+                get => (m_SoundClipInitialized && m_SoundClipAudioSource.clip != null) ? (float)(m_SoundClipAudioSource.time / m_SoundClipAudioSource.clip.length) : 0f;
                 set
                 {
                     if (m_SoundClipInitialized)
@@ -324,8 +324,7 @@ namespace TiltBrush
         {
             Error = null;
             m_Controller.m_SoundClipAudioSource.playOnAwake = false;
-            string fullPath = System.IO.Path.Combine(App.SoundClipLibraryPath(), PersistentPath);
-            var audioClipTask = LoadClip(fullPath);
+            var audioClipTask = LoadClip(AbsolutePath);
             while (!audioClipTask.IsCompleted)
             {
                 yield return null;
