@@ -18,7 +18,6 @@ import json
 import os
 import struct
 
-
 SIZES = {
     # accessor.type
     "SCALAR": 1,

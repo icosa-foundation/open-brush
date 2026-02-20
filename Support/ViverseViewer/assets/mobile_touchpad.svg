@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" baseProfile="tiny" version="1.2" viewBox="0 0 63.99 63.99">
+  <!-- Generator: Adobe Illustrator 29.8.2, SVG Export Plug-In . SVG Version: 2.1.1 Build 3)  -->
+  <g>
+    <polygon points="28.34 7.54 32 3.88 35.66 7.54 28.34 7.54" fill="#f7f7f7"/>
+    <polygon points="35.66 56.45 32 60.11 28.34 56.45 35.66 56.45" fill="#f7f7f7"/>
+    <polygon points="7.54 35.66 3.88 32 7.54 28.34 7.54 35.66" fill="#f7f7f7"/>
+    <polygon points="56.45 28.34 60.11 32 56.45 35.66 56.45 28.34" fill="#f7f7f7"/>
+  </g>
+  <circle cx="32" cy="32" r="31.52" fill="none" stroke="#f7f7f7" stroke-miterlimit="10" stroke-width=".94"/>
+  <circle cx="32" cy="32" r="8.22" fill="#f7f7f7"/>
+</svg>
