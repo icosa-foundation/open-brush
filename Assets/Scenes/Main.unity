@@ -10550,6 +10550,8 @@ MonoBehaviour:
   m_ErrorDialog: {fileID: 115488, guid: f9847b7c9e1363e4c9f3b9cf2ccb4305, type: 3}
   m_OdsPrefab: {fileID: 1000011420475376, guid: ce507370586b20c4299d57d2d38ed641,
     type: 3}
+  m_GaussianCapturePrefab: {fileID: 1782612775646965092, guid: fb59bd93f52188148b1a1d7d96b4814b,
+    type: 3}
   m_IntroSketchFadeInDuration: 5
   m_IntroSketchFadeOutDuration: 1.5
   m_IntroSketchMobileFadeInDuration: 3
@@ -32379,6 +32381,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: GltfExportStandinManager
+      objectReference: {fileID: 0}
+    - target: {fileID: 6935990006228781837, guid: fd97be770c9e84eb1b5fcc5c06bd0adf,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
