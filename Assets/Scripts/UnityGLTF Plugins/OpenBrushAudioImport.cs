@@ -22,13 +22,14 @@ using UnityEngine;
 namespace UnityGLTF.Plugins
 {
     /// <summary>
-    /// Imports KHR_audio_emitter nodes from GLTF as Open Brush SoundClipWidgets.
-    /// Audio data embedded in the GLB buffer is extracted to the sound clip library.
+    /// Imports KHR_audio_emitter nodes from GLTF by adding GltfAudioSource components
+    /// to the relevant nodes in the model hierarchy. Audio plays when the model is active.
+    /// SoundClipWidgets are only created when the model is broken apart.
     /// </summary>
     public class OpenBrushAudioImport : GLTFImportPlugin
     {
         public override string DisplayName => "Open Brush Audio Import";
-        public override string Description => "Creates SoundClipWidgets from KHR_audio_emitter nodes.";
+        public override string Description => "Adds GltfAudioSource components from KHR_audio_emitter nodes.";
 
         public override GLTFImportPluginContext CreateInstance(GLTFImportContext context)
         {
@@ -49,8 +50,11 @@ namespace UnityGLTF.Plugins
 
         private readonly List<PendingAudioNode> _pendingNodes = new();
 
-        // audio array index → absolute file path in the sound library
+        // audio array index → absolute file path of extracted audio
         private readonly Dictionary<int, string> _audioFilePaths = new();
+
+        /// Set by the import call site so sidecar URI audio can be resolved.
+        public string GltfDirectory { get; set; }
 
         public OpenBrushAudioImportContext(GLTFImportContext context)
         {
@@ -83,16 +87,16 @@ namespace UnityGLTF.Plugins
         public override void OnAfterImportScene(GLTFScene scene, int sceneIndex, GameObject sceneObject)
         {
             if (_audioExtension == null || _pendingNodes.Count == 0) return;
-
             ExtractAudioFiles();
-            CreateSoundClipWidgets();
+            SetupAudioComponents();
         }
 
         private void ExtractAudioFiles()
         {
             if (_audioExtension.audio == null) return;
 
-            string importDir = Path.Combine(App.SoundClipLibraryPath(), "GltfImport");
+            // Store outside the sound clip library so the catalog doesn't pick these up.
+            string importDir = Path.Combine(Application.persistentDataPath, "GltfAudio");
             Directory.CreateDirectory(importDir);
 
             for (int i = 0; i < _audioExtension.audio.Count; i++)
@@ -101,6 +105,14 @@ namespace UnityGLTF.Plugins
 
                 if (audio.bufferView != null)
                 {
+                    var bvId = audio.bufferView.Id;
+                    var bvCount = audio.bufferView.Root?.BufferViews?.Count ?? 0;
+                    if (bvId < 0 || bvId >= bvCount)
+                    {
+                        Debug.LogWarning($"[OBAudio] audio[{i}].bufferView.Id={bvId} is out of range (bufferViews.Count={bvCount}), skipping");
+                        continue;
+                    }
+
                     var buffer = _context.SceneImporter.GetBufferViewData(audio.bufferView.Value);
                     if (!buffer.IsCreated) continue;
 
@@ -117,30 +129,34 @@ namespace UnityGLTF.Plugins
                 }
                 else if (!string.IsNullOrEmpty(audio.uri))
                 {
-                    Debug.LogWarning($"[OBAudio] URI-based audio not supported for runtime import (audio[{i}]: {audio.uri}), skipping");
+                    if (string.IsNullOrEmpty(GltfDirectory))
+                    {
+                        Debug.LogWarning($"[OBAudio] Cannot resolve sidecar URI '{audio.uri}': GltfDirectory not set.");
+                        continue;
+                    }
+
+                    string srcPath = Path.GetFullPath(Path.Combine(GltfDirectory, audio.uri));
+                    if (!File.Exists(srcPath))
+                    {
+                        Debug.LogWarning($"[OBAudio] Audio sidecar file not found: {srcPath}");
+                        continue;
+                    }
+
+                    string ext = Path.GetExtension(srcPath);
+                    string destPath = GetUniquePath(importDir, $"audio_{i:D3}{ext}");
+                    File.Copy(srcPath, destPath);
+                    _audioFilePaths[i] = destPath;
                 }
             }
         }
 
-        private void CreateSoundClipWidgets()
+        private void SetupAudioComponents()
         {
-            var previousCanvas = App.Scene.ActiveCanvas;
-            try
-            {
-                App.Scene.ActiveCanvas = App.Scene.MainCanvas;
-                foreach (var pending in _pendingNodes)
-                {
-                    CreateWidgetFromPending(pending);
-                }
-            }
-            finally
-            {
-                App.Scene.ActiveCanvas = previousCanvas;
-                SoundClipCatalog.Instance.ForceCatalogScan();
-            }
+            foreach (var pending in _pendingNodes)
+                SetupAudioOnNode(pending);
         }
 
-        private void CreateWidgetFromPending(PendingAudioNode pending)
+        private void SetupAudioOnNode(PendingAudioNode pending)
         {
             var emitter = pending.Emitter;
             if (emitter.sources == null || emitter.sources.Count == 0)
@@ -149,11 +165,10 @@ namespace UnityGLTF.Plugins
                 return;
             }
 
-            // Use the first source only (Open Brush SoundClipWidget supports one clip per widget)
             var source = emitter.sources[0].Value;
             if (source.audio == null)
             {
-                Debug.LogWarning($"[OBAudio] Source '{source.Name}' has no audio reference, skipping");
+                Debug.LogWarning($"[OBAudio] Source has no audio reference, skipping");
                 return;
             }
 
@@ -164,33 +179,25 @@ namespace UnityGLTF.Plugins
                 return;
             }
 
-            var soundClip = new SoundClip(filePath);
-
+            bool isSpatial = emitter.type == "positional";
             float gain = (emitter.gain > 0 ? emitter.gain : 1f) * (source.gain ?? 1f);
             bool loop = source.loop ?? true;
-            bool isSpatial = emitter.type == "positional";
-            float spatialBlend = isSpatial ? 1f : 0f;
-            float minDist = emitter.positional?.refDistance ?? 1f;
-            float maxDist = emitter.positional?.maxDistance ?? 500f;
+            bool autoPlay = source.autoPlay ?? true;
 
-            // Capture world transform before the placeholder node is destroyed
-            Vector3 position = pending.NodeObject.transform.position;
-            Quaternion rotation = pending.NodeObject.transform.rotation;
+            var audioSource = pending.NodeObject.AddComponent<AudioSource>();
+            audioSource.playOnAwake = false; // GltfAudioSource handles playback
+            audioSource.spatialBlend = isSpatial ? 1f : 0f;
+            audioSource.minDistance = emitter.positional?.refDistance ?? 1f;
+            audioSource.maxDistance = emitter.positional?.maxDistance ?? 500f;
 
-            var widget = UnityEngine.Object.Instantiate(WidgetManager.m_Instance.SoundClipWidgetPrefab);
-            widget.m_LoadingFromSketch = true; // suppress intro animation
-            widget.transform.parent = App.Instance.m_CanvasTransform;
-            widget.transform.localScale = Vector3.one;
-            widget.SetSoundClip(soundClip);
-            widget.SetAudioProperties(gain, loop, spatialBlend, minDist, maxDist);
-            widget.Show(bShow: true, bPlayAudio: false);
-            widget.transform.position = position;
-            widget.transform.rotation = rotation;
-            widget.SetCanvas(App.Scene.MainCanvas);
-            TiltMeterScript.m_Instance.AdjustMeterWithWidget(widget.GetTiltMeterCost(), up: true);
-
-            // Remove the empty placeholder node that the GLTF importer created for this entry
-            UnityEngine.Object.Destroy(pending.NodeObject);
+            var gltfAudio = pending.NodeObject.AddComponent<GltfAudioSource>();
+            gltfAudio.AbsoluteFilePath = filePath;
+            gltfAudio.Gain = gain;
+            gltfAudio.Loop = loop;
+            gltfAudio.SpatialBlend = isSpatial ? 1f : 0f;
+            gltfAudio.MinDistance = emitter.positional?.refDistance ?? 1f;
+            gltfAudio.MaxDistance = emitter.positional?.maxDistance ?? 500f;
+            gltfAudio.AutoPlay = autoPlay;
         }
 
         private static string MimeTypeToExtension(string mimeType)

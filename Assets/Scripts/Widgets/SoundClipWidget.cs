@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using UnityEngine;
+using System.Collections.Generic;
 using System.IO;
+using UnityEngine;
 
 namespace TiltBrush
 {
@@ -170,6 +171,40 @@ namespace TiltBrush
                 m_InitialState = null;
             }
             UpdateDistanceVisualization();
+        }
+
+        public static List<SoundClipWidget> FromModelWidget(ModelWidget modelWidget)
+        {
+            var go = modelWidget.gameObject;
+            string baseName = go.name.Replace("ModelWidget", "SoundClipWidget");
+            var soundClipWidgets = new List<SoundClipWidget>();
+            var layer = go.layer;
+
+            foreach (var gltfAudio in go.GetComponentsInChildren<GltfAudioSource>())
+            {
+                var soundClip = new SoundClip(gltfAudio.AbsoluteFilePath);
+                var widget = Object.Instantiate(WidgetManager.m_Instance.SoundClipWidgetPrefab);
+                widget.LoadingFromSketch = true;
+                widget.transform.parent = App.Instance.m_CanvasTransform;
+                widget.transform.localScale = Vector3.one;
+                widget.SetAudioProperties(gltfAudio.Gain, gltfAudio.Loop, gltfAudio.SpatialBlend,
+                    gltfAudio.MinDistance, gltfAudio.MaxDistance);
+                widget.SetSoundClip(soundClip);
+                widget.Show(bShow: true, bPlayAudio: false);
+                widget.transform.position = gltfAudio.transform.position;
+                widget.transform.rotation = gltfAudio.transform.rotation;
+                widget.SetCanvas(App.Scene.MainCanvas);
+                TiltMeterScript.m_Instance.AdjustMeterWithWidget(widget.GetTiltMeterCost(), up: true);
+                HierarchyUtils.RecursivelySetLayer(widget.transform, layer);
+                widget.name = baseName;
+                WidgetManager.m_Instance.RegisterGrabWidget(widget.gameObject);
+                soundClipWidgets.Add(widget);
+            }
+
+            modelWidget.Hide();
+            WidgetManager.m_Instance.UnregisterGrabWidget(modelWidget.gameObject);
+            Destroy(modelWidget.gameObject);
+            return soundClipWidgets;
         }
 
         public static void FromTiltSoundClip(TiltSoundClip tiltSoundClip)
