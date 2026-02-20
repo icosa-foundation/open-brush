@@ -32610,6 +32610,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: GltfExportStandinManager
       objectReference: {fileID: 0}
+    - target: {fileID: 5512400623774099615, guid: fd97be770c9e84eb1b5fcc5c06bd0adf,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
