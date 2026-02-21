@@ -24,10 +24,40 @@ namespace TiltBrush
     public static class Quill
     {
         /// <summary>
-        /// Path to load when the LoadQuillFile global command fires.
+        /// Options passed when the LoadQuillFile global command fires.
         /// Set before issuing LoadQuillConfirmUnsaved or LoadQuillFile.
         /// </summary>
-        public static string PendingLoadPath { get; set; }
+        public class QuillLoadOptions
+        {
+            public string Path { get; set; }
+            /// <summary>Chapter index to load. -1 = default (first/only chapter).</summary>
+            public int ChapterIndex { get; set; } = -1;
+        }
+
+        public static QuillLoadOptions PendingLoadOptions { get; set; }
+
+        /// <summary>
+        /// Backward-compatible shim. Reads/writes PendingLoadOptions.Path with ChapterIndex=-1.
+        /// </summary>
+        public static string PendingLoadPath
+        {
+            get => PendingLoadOptions?.Path;
+            set
+            {
+                if (value == null)
+                {
+                    PendingLoadOptions = null;
+                }
+                else if (PendingLoadOptions == null)
+                {
+                    PendingLoadOptions = new QuillLoadOptions { Path = value };
+                }
+                else
+                {
+                    PendingLoadOptions.Path = value;
+                }
+            }
+        }
 
         /// <summary>
         /// The background color from the most recently loaded Quill sequence, in gamma space.
@@ -51,7 +81,8 @@ namespace TiltBrush
         public static void Load(
             string path, int maxStrokes = 0,
             bool loadAnimations = false, string layerName = null,
-            bool flattenHierarchy = true, bool layersCanTransform = false)
+            bool flattenHierarchy = true, bool layersCanTransform = false,
+            int chapterIndex = -1)
         {
             string kind;
             SQ.Sequence sequence = null;
@@ -59,11 +90,19 @@ namespace TiltBrush
             {
                 kind = "quill";
                 sequence = SQ.QuillSequenceReader.Read(path);
+                if (chapterIndex >= 0 && sequence != null)
+                {
+                    ApplyQuillChapterFilter(sequence, chapterIndex, path);
+                }
             }
             else if (File.Exists(path))
             {
                 kind = "imm";
-                sequence = ImmStrokeReader.SharpQuillCompat.ReadImmAsSequence(path, includePictures: true);
+                if (chapterIndex >= 0)
+                {
+                    Debug.Log($"[QUILL-CHAPTER] Loading IMM chapter {chapterIndex} from '{path}'");
+                }
+                sequence = ImmStrokeReader.SharpQuillCompat.ReadImmAsSequence(path, includePictures: true, chapterIndex: chapterIndex);
             }
             else
             {
@@ -1359,6 +1398,88 @@ namespace TiltBrush
             stroke.Group = SketchGroupTag.None;
 
             return stroke;
+        }
+
+        /// <summary>
+        /// Returns the number of chapters in a Quill project directory.
+        /// A chapter is defined as a top-level LayerGroup with Animation.Timeline == true.
+        /// Returns 1 if no animated groups are found (the whole project is a single chapter).
+        /// Reads only Quill.json — does NOT load the qbin binary stroke data.
+        /// </summary>
+        public static int GetQuillChapterCount(string projectPath)
+        {
+            if (string.IsNullOrEmpty(projectPath) || !Directory.Exists(projectPath))
+            {
+                return 0;
+            }
+
+            string quillJson = Path.Combine(projectPath, "Quill.json");
+            if (!File.Exists(quillJson))
+            {
+                return 0;
+            }
+
+            try
+            {
+                string json = File.ReadAllText(quillJson);
+                var doc = Newtonsoft.Json.Linq.JToken.Parse(json);
+                var rootChildren = doc["Sequence"]?["RootLayer"]?["Implementation"]?["Children"]
+                    as Newtonsoft.Json.Linq.JArray;
+                if (rootChildren == null)
+                {
+                    return 1;
+                }
+
+                int animatedGroupCount = 0;
+                foreach (var child in rootChildren)
+                {
+                    string type = child["Type"]?.ToObject<string>();
+                    bool isTimeline = child["Animation"]?["Timeline"]?.ToObject<bool>() ?? false;
+                    if (string.Equals(type, "Group", StringComparison.OrdinalIgnoreCase) && isTimeline)
+                    {
+                        animatedGroupCount++;
+                    }
+                }
+
+                return animatedGroupCount > 0 ? animatedGroupCount : 1;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[QUILL-CHAPTER] Failed to read chapter count from '{projectPath}': {e.Message}");
+                return 1;
+            }
+        }
+
+        /// <summary>
+        /// Filters sequence.RootLayer.Children to expose only the requested chapter.
+        /// A chapter is a top-level LayerGroup with Animation.Timeline == true.
+        /// If no animated groups exist, the filter is a no-op (single-chapter project).
+        /// </summary>
+        private static void ApplyQuillChapterFilter(SQ.Sequence sequence, int chapterIndex, string path)
+        {
+            var animatedGroups = sequence.RootLayer.Children
+                .OfType<SQ.LayerGroup>()
+                .Where(g => g.Animation.Timeline)
+                .ToList();
+
+            if (animatedGroups.Count == 0)
+            {
+                // No chapters structure — treat whole project as chapter 0
+                Debug.LogWarning($"[QUILL-CHAPTER] No animated sequence groups found in '{path}'; loading all layers as chapter 0.");
+                return;
+            }
+
+            if (chapterIndex >= animatedGroups.Count)
+            {
+                Debug.LogWarning($"[QUILL-CHAPTER] Requested chapter {chapterIndex} out of range (count={animatedGroups.Count}), loading chapter 0");
+                chapterIndex = 0;
+            }
+
+            var selected = animatedGroups[chapterIndex];
+            Debug.Log($"[QUILL-CHAPTER] Loading chapter {chapterIndex} ('{selected.Name}') of {animatedGroups.Count} in '{path}'");
+
+            sequence.RootLayer.Children.Clear();
+            sequence.RootLayer.Children.Add(selected);
         }
 
         private static float GetUniformScale(Matrix4x4 m)

@@ -4041,7 +4041,7 @@ namespace TiltBrush
                 }, 0.25f, false, true);
         }
 
-        IEnumerator LoadQuillCoroutine(string path)
+        IEnumerator LoadQuillCoroutine(string path, int chapterIndex = -1)
         {
             var blackEnv = EnvironmentCatalog.m_Instance.AllEnvironments
                 .FirstOrDefault(x => x.name.Equals("Black", StringComparison.OrdinalIgnoreCase));
@@ -4054,7 +4054,7 @@ namespace TiltBrush
             using (var coroutine = OverlayManager.m_Instance.RunInCompositor(
                 OverlayType.LoadSketch, () =>
                 {
-                    Quill.Load(path);
+                    Quill.Load(path, chapterIndex: chapterIndex);
                 }, 0.25f, false, false))
             {
                 while (coroutine.MoveNext())
@@ -5050,12 +5050,12 @@ namespace TiltBrush
                     break;
                 case GlobalCommands.LoadQuillFile:
                     {
-                        string path = Quill.PendingLoadPath;
-                        Quill.PendingLoadPath = null;
-                        if (!string.IsNullOrEmpty(path))
+                        var options = Quill.PendingLoadOptions;
+                        Quill.PendingLoadOptions = null;
+                        if (options != null && !string.IsNullOrEmpty(options.Path))
                         {
                             NewSketch(fade: false);
-                            StartCoroutine(LoadQuillCoroutine(path));
+                            StartCoroutine(LoadQuillCoroutine(options.Path, options.ChapterIndex));
                         }
                     }
                     break;

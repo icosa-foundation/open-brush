@@ -31,6 +31,15 @@ namespace TiltBrush
         public DateTime LastWriteTimeUtc { get; }
         public QuillSourceType SourceType { get; }
 
+        /// <summary>
+        /// Chapter index to use when loading this file. -1 = default (first/only chapter).
+        /// Set by the UI chapter picker for IMM files.
+        /// </summary>
+        public int SelectedChapterIndex { get; set; } = -1;
+
+        // Cached chapter count: null = not yet queried, 0 = query failed / not IMM.
+        private int? m_ChapterCountCache;
+
         public QuillFileInfo(string fullPath, string displayName, long fileSizeBytes,
             DateTime lastWriteTimeUtc, QuillSourceType sourceType)
         {
@@ -40,6 +49,27 @@ namespace TiltBrush
             LastWriteTimeUtc = lastWriteTimeUtc;
             SourceType = sourceType;
         }
+
+        /// <summary>
+        /// Number of chapters in this file. Queried lazily on first access.
+        /// For IMM: loads/unloads the document via the native IMM reader.
+        /// For Quill: reads only Quill.json (fast — no qbin loading).
+        /// </summary>
+        public int ChapterCount
+        {
+            get
+            {
+                if (!m_ChapterCountCache.HasValue)
+                {
+                    m_ChapterCountCache = SourceType == QuillSourceType.Imm
+                        ? ImmStrokeReader.SharpQuillCompat.GetImmChapterCount(FullPath)
+                        : Quill.GetQuillChapterCount(FullPath);
+                }
+                return m_ChapterCountCache.Value;
+            }
+        }
+
+        public bool HasMultipleChapters => ChapterCount > 1;
 
         public string SourceLabel => SourceType == QuillSourceType.Imm ? "IMM" : "Quill";
 
