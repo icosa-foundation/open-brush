@@ -4069,6 +4069,11 @@ namespace TiltBrush
                 SceneSettings.m_Instance.SkyColorA = bgColor;
                 SceneSettings.m_Instance.SkyColorB = bgColor;
             }
+
+            if (Quill.LastLoaded360SkyboxName != null)
+            {
+                SceneSettings.m_Instance.LoadCustomSkybox(Quill.LastLoaded360SkyboxName);
+            }
         }
 
         private void SaveModel()

@@ -35,6 +35,13 @@ namespace TiltBrush
         /// </summary>
         public static Color? LastLoadedBackgroundColor { get; private set; }
 
+        /// <summary>
+        /// Filename (relative to App.BackgroundImagesLibraryPath) of a 360 equirectangular image
+        /// found in the most recently loaded Quill sequence. Null if none was found.
+        /// Only set during a full load, not during merge imports.
+        /// </summary>
+        public static string LastLoaded360SkyboxName { get; private set; }
+
         // Quill-specific brush GUIDs
         private const string BRUSH_QUILL_CYLINDER = "f1c4e3e7-2a9f-4b5d-8c3e-7d9a1f8e6b4c";
         private const string BRUSH_QUILL_ELLIPSE = "a2d5f6b8-9c1e-4f3a-7b8d-2e6c9f4a1d5b";
@@ -56,7 +63,7 @@ namespace TiltBrush
             else if (File.Exists(path))
             {
                 kind = "imm";
-                sequence = ImmStrokeReader.SharpQuillCompat.ReadImmAsSequence(path);
+                sequence = ImmStrokeReader.SharpQuillCompat.ReadImmAsSequence(path, includePictures: true);
             }
             else
             {
@@ -77,6 +84,7 @@ namespace TiltBrush
                 // Store background color (Quill colors are linear; convert to gamma for Unity)
                 var sqBg = sequence.BackgroundColor;
                 LastLoadedBackgroundColor = new Color(sqBg.R, sqBg.G, sqBg.B).gamma;
+                LastLoaded360SkyboxName = null;
 
                 if (!flattenHierarchy)
                 {
@@ -401,12 +409,32 @@ namespace TiltBrush
                 return null;
             }
 
+            int picW = picture.Data?.Width ?? 0;
+            int picH = picture.Data?.Height ?? 0;
+            int picChannels = picture.Data?.HasAlpha == true ? 4 : 3;
+            int actualBytes = picture.Data?.Pixels?.Length ?? 0;
+            int expectedRawBytes = picW * picH * picChannels;
+            Debug.Log($"[QUILL360] Picture layer: name='{picture.Name}' type={picture.PictureType} importPath='{picture.ImportFilePath}' size={picW}x{picH} hasAlpha={picture.Data?.HasAlpha} pixelBytes={actualBytes} expectedRaw={expectedRawBytes}");
+
             if (picture.PictureType == SQ.PictureType.ThreeSixty_Equirect_Mono ||
                 picture.PictureType == SQ.PictureType.ThreeSixty_Equirect_Stereo)
             {
-                // TODO: Map 360 picture layers to Open Brush background images or a dedicated panoramic widget.
-                // This should respect Quill's equirectangular mono/stereo type and use the layer transform.
-                Debug.LogWarning($"Quill 360 picture layers are not yet supported: {picture.Name}");
+                if (LastLoaded360SkyboxName == null)
+                {
+                    string skyboxFile = ExtractSkybox360Image(picture, quillProjectPath);
+                    if (skyboxFile != null)
+                    {
+                        LastLoaded360SkyboxName = skyboxFile;
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Quill 360 layer could not be extracted: {picture.Name}");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"Multiple Quill 360 layers found; only the first will be used as background. Skipping: {picture.Name}");
+                }
                 return null;
             }
 
@@ -476,6 +504,94 @@ namespace TiltBrush
             Color color = mat.color;
             color.a *= alpha;
             mat.color = color;
+        }
+
+        /// <summary>
+        /// Extracts a 360-degree picture layer's image into App.BackgroundImagesLibraryPath and
+        /// returns the filename (not full path). Returns null on failure.
+        /// Handles both file-referenced and embedded (qbin) picture data.
+        /// </summary>
+        private static string GetQuillBackgroundImageDirectory(string quillProjectPath)
+        {
+            string projectName = string.IsNullOrEmpty(quillProjectPath)
+                ? null
+                : SanitizeFileName(Path.GetFileName(quillProjectPath.TrimEnd(
+                    Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)));
+
+            return string.IsNullOrEmpty(projectName)
+                ? App.BackgroundImagesLibraryPath()
+                : Path.Combine(App.BackgroundImagesLibraryPath(), "Quill", projectName);
+        }
+
+        private static string ExtractSkybox360Image(SQ.LayerPicture picture, string quillProjectPath)
+        {
+            string bgRoot = App.BackgroundImagesLibraryPath();
+            string bgDir = GetQuillBackgroundImageDirectory(quillProjectPath);
+            Directory.CreateDirectory(bgDir);
+
+            // Try file path first (same approach as 2D image handling)
+            string sourcePath = ResolveQuillImagePath(picture.ImportFilePath, quillProjectPath);
+            if (!string.IsNullOrEmpty(sourcePath))
+            {
+                string fileName = Path.GetFileName(sourcePath);
+                string destPath = EnsureUniqueImagePath(Path.Combine(bgDir, fileName));
+                try
+                {
+                    File.Copy(sourcePath, destPath, overwrite: false);
+                    return Path.GetRelativePath(bgRoot, destPath);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"Failed to copy Quill 360 image '{sourcePath}': {e.Message}");
+                }
+            }
+
+            // Fall back to embedded pixel data (same approach as GetOrCreateReferenceImageFromPictureData)
+            if (picture.Data != null)
+            {
+                var data = picture.Data;
+                if (data.Width <= 0 || data.Height <= 0 || data.Pixels == null)
+                {
+                    Debug.LogWarning($"Quill 360 layer has no usable pixel data: {picture.Name}");
+                    return null;
+                }
+
+                string rawName = !string.IsNullOrEmpty(picture.ImportFilePath)
+                    ? Path.GetFileName(picture.ImportFilePath.Replace('\\', '/'))
+                    : (string.IsNullOrEmpty(picture.Name) ? "quill-360" : picture.Name);
+                string baseName = SanitizeFileName(Path.GetFileNameWithoutExtension(rawName));
+                string destPath = EnsureUniqueImagePath(Path.Combine(bgDir, $"{baseName}.png"));
+
+                try
+                {
+                    int pixelCount = data.Width * data.Height;
+                    int channels = data.Pixels.Length / pixelCount;
+                    bool hasAlpha = channels >= 4;
+                    var tex = new Texture2D(data.Width, data.Height, TextureFormat.RGBA32, false);
+                    var colors = new Color32[pixelCount];
+                    int src = 0;
+                    for (int i = 0; i < colors.Length; i++)
+                    {
+                        colors[i] = new Color32(
+                            data.Pixels[src],
+                            data.Pixels[src + 1],
+                            data.Pixels[src + 2],
+                            hasAlpha ? data.Pixels[src + 3] : (byte)255);
+                        src += channels;
+                    }
+                    tex.SetPixels32(colors);
+                    tex.Apply();
+                    File.WriteAllBytes(destPath, tex.EncodeToPNG());
+                    UnityEngine.Object.Destroy(tex);
+                    return Path.GetRelativePath(bgRoot, destPath);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"Failed to write Quill 360 pixel data for '{picture.Name}': {e.Message}");
+                }
+            }
+
+            return null;
         }
 
         private static string ResolveQuillImagePath(string importPath, string quillProjectPath)
@@ -568,35 +684,22 @@ namespace TiltBrush
                 return null;
             }
 
-            int channels = data.HasAlpha ? 4 : 3;
-            long expectedSize = (long)data.Width * data.Height * channels;
-            if (expectedSize > int.MaxValue)
+            long pixelCount = (long)data.Width * data.Height;
+            if (pixelCount > int.MaxValue)
             {
                 Debug.LogWarning($"Quill picture layer too large: {picture.Name}");
                 return null;
             }
-
-            byte[] pixelBytes;
-            if (data.Pixels.Length == expectedSize)
-            {
-                pixelBytes = data.Pixels;
-            }
-            else if (data.Pixels.Length > expectedSize)
-            {
-                pixelBytes = new byte[expectedSize];
-                Buffer.BlockCopy(data.Pixels, 0, pixelBytes, 0, (int)expectedSize);
-            }
-            else
-            {
-                Debug.LogWarning($"Quill picture layer pixel data truncated: {picture.Name}");
-                return null;
-            }
+            int channels = (int)(data.Pixels.Length / pixelCount);
+            bool hasAlpha = channels >= 4;
+            byte[] pixelBytes = data.Pixels;
 
             string homeDir = ReferenceImageCatalog.m_Instance.HomeDirectory;
             string targetDir = string.IsNullOrEmpty(quillImageDirectory) ? homeDir : quillImageDirectory;
-            string fileName = !string.IsNullOrEmpty(picture.ImportFilePath)
-                ? SanitizeFileName(Path.GetFileName(picture.ImportFilePath.Replace('\\', '/')))
-                : SanitizeFileName(string.IsNullOrEmpty(picture.Name) ? "quill-image" : picture.Name);
+            string rawFileName = !string.IsNullOrEmpty(picture.ImportFilePath)
+                ? Path.GetFileName(picture.ImportFilePath.Replace('\\', '/'))
+                : (string.IsNullOrEmpty(picture.Name) ? "quill-image" : picture.Name);
+            string fileName = SanitizeFileName(Path.GetFileNameWithoutExtension(rawFileName));
             string destPath = Path.Combine(targetDir, $"{fileName}.png");
             destPath = EnsureUniqueImagePath(destPath);
 
@@ -605,29 +708,14 @@ namespace TiltBrush
                 var tex = new Texture2D(data.Width, data.Height, TextureFormat.RGBA32, false);
                 var colors = new Color32[data.Width * data.Height];
                 int srcIndex = 0;
-                if (data.HasAlpha)
+                for (int i = 0; i < colors.Length; i++)
                 {
-                    for (int i = 0; i < colors.Length; i++)
-                    {
-                        colors[i] = new Color32(
-                            pixelBytes[srcIndex],
-                            pixelBytes[srcIndex + 1],
-                            pixelBytes[srcIndex + 2],
-                            pixelBytes[srcIndex + 3]);
-                        srcIndex += 4;
-                    }
-                }
-                else
-                {
-                    for (int i = 0; i < colors.Length; i++)
-                    {
-                        colors[i] = new Color32(
-                            pixelBytes[srcIndex],
-                            pixelBytes[srcIndex + 1],
-                            pixelBytes[srcIndex + 2],
-                            255);
-                        srcIndex += 3;
-                    }
+                    colors[i] = new Color32(
+                        pixelBytes[srcIndex],
+                        pixelBytes[srcIndex + 1],
+                        pixelBytes[srcIndex + 2],
+                        hasAlpha ? pixelBytes[srcIndex + 3] : (byte)255);
+                    srcIndex += channels;
                 }
                 tex.SetPixels32(colors);
                 tex.Apply();
