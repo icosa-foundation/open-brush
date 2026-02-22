@@ -24,13 +24,14 @@ namespace TiltBrush
         [SerializeField] private TextMeshPro m_DetailText;
         [SerializeField] private bool m_MergeMode;
 
-        [Header("Chapter Controls (optional)")]
-        [SerializeField] private GameObject m_ChapterControls;   // container; hidden for single-chapter files
-        [SerializeField] private TextMeshPro m_ChapterLabel;      // e.g. "Ch 2 / 4"
-        [SerializeField] private BaseButton m_PrevChapterButton;
-        [SerializeField] private BaseButton m_NextChapterButton;
+        [Header("Selection Visual State")]
+        [SerializeField] private GameObject m_SelectionBorder;
+        [SerializeField] private Renderer m_BackgroundRenderer;
+        [SerializeField] private Material m_DefaultMaterial;
+        [SerializeField] private Material m_SelectedMaterial;
 
         private QuillFileInfo m_QuillFile;
+        private bool m_IsSelected;
 
         public QuillFileInfo QuillFile
         {
@@ -39,44 +40,32 @@ namespace TiltBrush
             {
                 m_QuillFile = value;
                 RefreshDescription();
-                RefreshChapterControls();
             }
         }
 
-        // Called by the prev-chapter button's OnButtonPressed via the inspector
-        public void OnPrevChapter()
+        public bool IsSelected
         {
-            if (m_QuillFile == null) return;
-            int count = m_QuillFile.ChapterCount;
-            if (count <= 1) return;
-            int cur = m_QuillFile.SelectedChapterIndex < 0 ? 0 : m_QuillFile.SelectedChapterIndex;
-            m_QuillFile.SelectedChapterIndex = (cur - 1 + count) % count;
-            RefreshChapterControls();
+            get => m_IsSelected;
+            set
+            {
+                if (m_IsSelected == value) return;
+                m_IsSelected = value;
+                UpdateSelectionVisuals();
+            }
         }
 
-        // Called by the next-chapter button's OnButtonPressed via the inspector
-        public void OnNextChapter()
+        private void UpdateSelectionVisuals()
         {
-            if (m_QuillFile == null) return;
-            int count = m_QuillFile.ChapterCount;
-            if (count <= 1) return;
-            int cur = m_QuillFile.SelectedChapterIndex < 0 ? 0 : m_QuillFile.SelectedChapterIndex;
-            m_QuillFile.SelectedChapterIndex = (cur + 1) % count;
-            RefreshChapterControls();
-        }
+            if (m_SelectionBorder != null)
+                m_SelectionBorder.SetActive(m_IsSelected);
 
-        private void RefreshChapterControls()
-        {
-            if (m_ChapterControls == null) return;
+            if (m_BackgroundRenderer != null && m_DefaultMaterial != null && m_SelectedMaterial != null)
+            {
+                m_BackgroundRenderer.material = m_IsSelected ? m_SelectedMaterial : m_DefaultMaterial;
+            }
 
-            int count = m_QuillFile != null ? m_QuillFile.ChapterCount : 0;
-            bool show = count > 1;
-            m_ChapterControls.SetActive(show);
-
-            if (!show || m_ChapterLabel == null) return;
-
-            int cur = m_QuillFile.SelectedChapterIndex < 0 ? 0 : m_QuillFile.SelectedChapterIndex;
-            m_ChapterLabel.text = $"Ch {cur + 1} / {count}";
+            // Subtle scale effect for selection
+            transform.localScale = m_IsSelected ? Vector3.one * 1.02f : Vector3.one;
         }
 
         protected override void OnButtonPressed()
@@ -88,28 +77,15 @@ namespace TiltBrush
                 return;
             }
 
-            if (m_MergeMode)
+            // New behavior: Select the file instead of loading it directly
+            var libraryPanel = GetComponentInParent<QuillLibraryPanel>();
+            if (libraryPanel != null)
             {
-                // Merge: add Quill strokes to the current scene without clearing
-                try
-                {
-                    Quill.Load(m_QuillFile.FullPath, chapterIndex: m_QuillFile.SelectedChapterIndex);
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogError($"Failed to import '{m_QuillFile.FullPath}': {ex}");
-                }
+                libraryPanel.SelectFile(m_QuillFile);
             }
             else
             {
-                // Load: confirm unsaved changes, clear scene, then load
-                Quill.PendingLoadOptions = new Quill.QuillLoadOptions
-                {
-                    Path = m_QuillFile.FullPath,
-                    ChapterIndex = m_QuillFile.SelectedChapterIndex,
-                };
-                SketchControlsScript.m_Instance.IssueGlobalCommand(
-                    SketchControlsScript.GlobalCommands.LoadQuillConfirmUnsaved, 0, 0);
+                Debug.LogWarning("QuillFileButton could not find parent QuillLibraryPanel for selection");
             }
         }
 

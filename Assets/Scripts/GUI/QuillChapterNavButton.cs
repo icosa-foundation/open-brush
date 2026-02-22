@@ -16,7 +16,8 @@ namespace TiltBrush
 {
     /// <summary>
     /// Prev/next chapter navigation button for the Quill file browser.
-    /// Finds its target QuillFileButton via GetComponentInParent at runtime.
+    /// Now finds the QuillLibraryPanel instead of individual file buttons
+    /// since chapter controls are centralized in the action area.
     /// </summary>
     public class QuillChapterNavButton : BaseButton
     {
@@ -25,9 +26,9 @@ namespace TiltBrush
         protected override void OnButtonPressed()
         {
             base.OnButtonPressed();
-            var target = GetComponentInParent<QuillFileButton>();
-            if (m_IsNext) target?.OnNextChapter();
-            else target?.OnPrevChapter();
+            var panel = GetComponentInParent<QuillLibraryPanel>();
+            if (m_IsNext) panel?.OnNextChapterPressed();
+            else panel?.OnPrevChapterPressed();
         }
     }
 }

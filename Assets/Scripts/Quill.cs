@@ -1402,8 +1402,9 @@ namespace TiltBrush
 
         /// <summary>
         /// Returns the number of chapters in a Quill project directory.
-        /// A chapter is defined as a top-level LayerGroup with Animation.Timeline == true.
-        /// Returns 1 if no animated groups are found (the whole project is a single chapter).
+        /// A chapter is defined by Action animation keys on the root layer (Stop/Play markers).
+        /// Follows the same logic as IMM: Play markers take priority, then Stop markers.
+        /// Returns 1 if no action markers are found (the whole project is a single chapter).
         /// Reads only Quill.json — does NOT load the qbin binary stroke data.
         /// </summary>
         public static int GetQuillChapterCount(string projectPath)
@@ -1423,25 +1424,54 @@ namespace TiltBrush
             {
                 string json = File.ReadAllText(quillJson);
                 var doc = Newtonsoft.Json.Linq.JToken.Parse(json);
-                var rootChildren = doc["Sequence"]?["RootLayer"]?["Implementation"]?["Children"]
+                var actionKeys = doc["Sequence"]?["RootLayer"]?["Animation"]?["Keys"]?["Action"]
                     as Newtonsoft.Json.Linq.JArray;
-                if (rootChildren == null)
+                
+                if (actionKeys == null || actionKeys.Count == 0)
                 {
-                    return 1;
+                    return 1; // No action markers = single chapter
                 }
 
-                int animatedGroupCount = 0;
-                foreach (var child in rootChildren)
+                var playTimes = new List<float>();
+                var stopTimes = new List<float>();
+                
+                foreach (var actionKey in actionKeys)
                 {
-                    string type = child["Type"]?.ToObject<string>();
-                    bool isTimeline = child["Animation"]?["Timeline"]?.ToObject<bool>() ?? false;
-                    if (string.Equals(type, "Group", StringComparison.OrdinalIgnoreCase) && isTimeline)
+                    float? markerTime = actionKey["Time"]?.ToObject<float?>();
+                    if (!markerTime.HasValue || markerTime.Value < 0f)
                     {
-                        animatedGroupCount++;
+                        continue;
+                    }
+
+                    string actionValue = actionKey["Value"]?.ToObject<string>()?.Trim();
+                    if (string.Equals(actionValue, "Play", StringComparison.OrdinalIgnoreCase))
+                    {
+                        playTimes.Add(markerTime.Value);
+                    }
+                    else if (string.Equals(actionValue, "Stop", StringComparison.OrdinalIgnoreCase))
+                    {
+                        stopTimes.Add(markerTime.Value);
                     }
                 }
 
-                return animatedGroupCount > 0 ? animatedGroupCount : 1;
+                var chapterStarts = new HashSet<float> { 0f };
+
+                if (playTimes.Count > 0)
+                {
+                    foreach (var playTime in playTimes)
+                    {
+                        chapterStarts.Add(playTime);
+                    }
+                }
+                else if (stopTimes.Count > 0)
+                {
+                    foreach (var stopTime in stopTimes)
+                    {
+                        chapterStarts.Add(stopTime + 1f);
+                    }
+                }
+
+                return chapterStarts.Count;
             }
             catch (Exception e)
             {
@@ -1451,35 +1481,160 @@ namespace TiltBrush
         }
 
         /// <summary>
-        /// Filters sequence.RootLayer.Children to expose only the requested chapter.
-        /// A chapter is a top-level LayerGroup with Animation.Timeline == true.
-        /// If no animated groups exist, the filter is a no-op (single-chapter project).
+        /// Applies chapter selection using root Action keys (IMM-compatible logic), then samples the
+        /// full sequence to the selected chapter start time for static display.
         /// </summary>
         private static void ApplyQuillChapterFilter(SQ.Sequence sequence, int chapterIndex, string path)
         {
-            var animatedGroups = sequence.RootLayer.Children
-                .OfType<SQ.LayerGroup>()
-                .Where(g => g.Animation.Timeline)
-                .ToList();
-
-            if (animatedGroups.Count == 0)
+            var actionKeys = sequence?.RootLayer?.Animation?.Keys?.Action;
+            int actionKeyCount = actionKeys?.Count ?? 0;
+            if (actionKeyCount == 0)
             {
-                // No chapters structure — treat whole project as chapter 0
-                Debug.LogWarning($"[QUILL-CHAPTER] No animated sequence groups found in '{path}'; loading all layers as chapter 0.");
+                Debug.Log($"[QUILL-CHAPTER] No Action keys in '{path}'; using full timeline (chapter 0 fallback).");
                 return;
             }
 
-            if (chapterIndex >= animatedGroups.Count)
+            bool hasPlayMarkers = false;
+            bool hasStopMarkers = false;
+            foreach (var actionKey in actionKeys)
             {
-                Debug.LogWarning($"[QUILL-CHAPTER] Requested chapter {chapterIndex} out of range (count={animatedGroups.Count}), loading chapter 0");
+                if (actionKey.Time < 0f)
+                {
+                    continue;
+                }
+
+                string action = actionKey.Value?.Trim();
+                if (string.Equals(action, "Play", StringComparison.OrdinalIgnoreCase))
+                {
+                    hasPlayMarkers = true;
+                }
+                else if (string.Equals(action, "Stop", StringComparison.OrdinalIgnoreCase))
+                {
+                    hasStopMarkers = true;
+                }
+            }
+
+            string markerType = hasPlayMarkers ? "Play" : hasStopMarkers ? "Stop" : "none";
+            List<float> chapterStarts = CalculateChapterStartTimes(actionKeys);
+            int chapterCount = chapterStarts.Count;
+
+            if (chapterIndex < 0 || chapterIndex >= chapterCount)
+            {
+                Debug.LogWarning($"[QUILL-CHAPTER] Requested chapter {chapterIndex} out of range (count={chapterCount}), loading chapter 0.");
                 chapterIndex = 0;
             }
 
-            var selected = animatedGroups[chapterIndex];
-            Debug.Log($"[QUILL-CHAPTER] Loading chapter {chapterIndex} ('{selected.Name}') of {animatedGroups.Count} in '{path}'");
+            float chapterStart = chapterStarts[chapterIndex];
+            float chapterEnd = chapterIndex + 1 < chapterCount
+                ? chapterStarts[chapterIndex + 1]
+                : float.PositiveInfinity;
 
-            sequence.RootLayer.Children.Clear();
-            sequence.RootLayer.Children.Add(selected);
+            Debug.Log($"[QUILL-CHAPTER] Action keys={actionKeyCount}, marker={markerType}, starts=[{string.Join(", ", chapterStarts)}]");
+            Debug.Log($"[QUILL-CHAPTER] Selected chapter {chapterIndex}/{chapterCount - 1}, window=[{chapterStart}, {(float.IsPositiveInfinity(chapterEnd) ? "inf" : chapterEnd.ToString())}), sampleTime={chapterStart} in '{path}'");
+
+            SetSequenceToChapterTime(sequence, chapterStart);
+        }
+
+        private static List<float> CalculateChapterStartTimes(List<SQ.Keyframe<string>> actionKeys)
+        {
+            var chapterStarts = new List<float> { 0f };
+            if (actionKeys == null || actionKeys.Count == 0)
+            {
+                return chapterStarts;
+            }
+
+            var playTimes = new List<float>();
+            var stopTimes = new List<float>();
+
+            foreach (var actionKey in actionKeys.OrderBy(k => k.Time))
+            {
+                float time = actionKey.Time;
+                if (time < 0f)
+                {
+                    continue;
+                }
+
+                string action = actionKey.Value?.Trim();
+                if (string.Equals(action, "Play", StringComparison.OrdinalIgnoreCase))
+                {
+                    playTimes.Add(time);
+                }
+                else if (string.Equals(action, "Stop", StringComparison.OrdinalIgnoreCase))
+                {
+                    stopTimes.Add(time);
+                }
+            }
+
+            if (playTimes.Count > 0)
+            {
+                chapterStarts.AddRange(playTimes);
+            }
+            else if (stopTimes.Count > 0)
+            {
+                chapterStarts.AddRange(stopTimes.Select(t => t + 1f));
+            }
+
+            return chapterStarts
+                .Distinct()
+                .OrderBy(t => t)
+                .ToList();
+        }
+
+        private static void SetSequenceToChapterTime(SQ.Sequence sequence, float chapterTime)
+        {
+            if (sequence?.RootLayer == null)
+            {
+                return;
+            }
+
+            SetLayerToTime(sequence.RootLayer, chapterTime);
+        }
+
+        private static void SetLayerToTime(SQ.Layer layer, float time)
+        {
+            if (layer == null)
+            {
+                return;
+            }
+
+            var keys = layer.Animation?.Keys;
+            if (keys != null)
+            {
+                layer.Visible = SampleKeyframes(keys.Visibility, time, layer.Visible);
+                layer.Opacity = SampleKeyframes(keys.Opacity, time, layer.Opacity);
+                layer.Transform = SampleKeyframes(keys.Transform, time, layer.Transform);
+            }
+
+            if (layer is SQ.LayerGroup group)
+            {
+                foreach (var child in group.Children)
+                {
+                    SetLayerToTime(child, time);
+                }
+            }
+        }
+
+        private static T SampleKeyframes<T>(List<SQ.Keyframe<T>> keyframes, float time, T defaultValue)
+        {
+            if (keyframes == null || keyframes.Count == 0)
+            {
+                return defaultValue;
+            }
+
+            T sampledValue = defaultValue;
+            bool foundAny = false;
+            foreach (var keyframe in keyframes.OrderBy(k => k.Time))
+            {
+                if (keyframe.Time > time)
+                {
+                    break;
+                }
+
+                sampledValue = keyframe.Value;
+                foundAny = true;
+            }
+
+            return foundAny ? sampledValue : defaultValue;
         }
 
         private static float GetUniformScale(Matrix4x4 m)

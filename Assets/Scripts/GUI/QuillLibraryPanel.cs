@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -28,7 +29,21 @@ namespace TiltBrush
         [SerializeField] private GameObject m_NoImmData;
         [SerializeField] private GameObject m_RefreshingSpinner;
         [SerializeField] private GameObject m_ConfirmLoadPopUpPrefab;
+
+        [Header("Selection & Action Controls")]
+        [SerializeField] private GameObject m_ActionControlsContainer;
+        [SerializeField] private TextMeshPro m_SelectedFileLabel;
+        [SerializeField] private ActionButton m_LoadButton;
+        [SerializeField] private ActionButton m_MergeButton;
+        [SerializeField] private GameObject m_ChapterControls;
+        [SerializeField] private TextMeshPro m_ChapterLabel;
+        [SerializeField] private QuillChapterNavButton m_PrevChapterButton;
+        [SerializeField] private QuillChapterNavButton m_NextChapterButton;
+        [SerializeField] private GameObject m_ChapterLoadingSpinner;
+
         private QuillFileCatalog m_Catalog;
+        private QuillFileInfo m_SelectedFile;
+        private bool m_IsDetectingChapters;
 
         private List<BaseButton> m_IconButtons;
         private QuillFileButton[] m_FileButtons;
@@ -67,6 +82,8 @@ namespace TiltBrush
                     break;
             }
 
+            // Clear selection when switching directories
+            m_SelectedFile = null;
             ResetPageIndex();
             RefreshPage();
             button.UpdateVisuals();
@@ -88,6 +105,215 @@ namespace TiltBrush
                 m_ConfirmLoadPopUpPrefab, Vector3.zero,
                 false, false, 0, 0,
                 SketchControlsScript.GlobalCommands.LoadQuillFile);
+        }
+
+        /// <summary>
+        /// Selects a file for action. Called by QuillFileButton when clicked.
+        /// </summary>
+        public void SelectFile(QuillFileInfo file)
+        {
+            if (m_SelectedFile == file) return;
+
+            // Clear previous selection visual state
+            if (m_SelectedFile != null)
+            {
+                UpdateFileButtonSelection(m_SelectedFile, false);
+            }
+
+            m_SelectedFile = file;
+            Debug.Log($"[QUILL-SELECTION] Selected file: {file?.DisplayName ?? "null"}");
+
+            // Set new selection visual state
+            if (m_SelectedFile != null)
+            {
+                UpdateFileButtonSelection(m_SelectedFile, true);
+                StartCoroutine(DetectChaptersForSelectedFile());
+            }
+
+            RefreshActionControls();
+        }
+
+        private void UpdateFileButtonSelection(QuillFileInfo fileInfo, bool selected)
+        {
+            if (m_FileButtons == null) return;
+
+            foreach (var button in m_FileButtons)
+            {
+                if (button.QuillFile != null && 
+                    button.QuillFile.FullPath == fileInfo.FullPath)
+                {
+                    button.IsSelected = selected;
+                    break;
+                }
+            }
+        }
+
+        private IEnumerator DetectChaptersForSelectedFile()
+        {
+            if (m_SelectedFile == null) yield break;
+
+            m_IsDetectingChapters = true;
+            if (m_ChapterLoadingSpinner != null)
+                m_ChapterLoadingSpinner.SetActive(true);
+            RefreshActionControls();
+
+            Debug.Log($"[QUILL-CHAPTER] Starting chapter detection for {m_SelectedFile.DisplayName} ({m_SelectedFile.SourceType})");
+
+            // For IMM files, add a longer delay to allow UI to update first
+            if (m_SelectedFile.SourceType == QuillSourceType.Imm)
+            {
+                yield return new WaitForSeconds(0.1f); // Let UI show spinner
+                Debug.Log($"[QUILL-CHAPTER] IMM chapter detection starting - this may take several seconds...");
+            }
+            else
+            {
+                yield return null; // Just yield one frame for Quill files
+            }
+
+            var startTime = System.DateTime.Now;
+            
+            try
+            {
+                // This triggers lazy chapter detection
+                int chapterCount = m_SelectedFile.ChapterCount;
+                var elapsed = (System.DateTime.Now - startTime).TotalMilliseconds;
+                Debug.Log($"[QUILL-CHAPTER] Detected {chapterCount} chapters for {m_SelectedFile.DisplayName} in {elapsed:F0}ms");
+                
+                // Set default chapter if not already set
+                if (m_SelectedFile.SelectedChapterIndex < 0)
+                {
+                    m_SelectedFile.SelectedChapterIndex = 0;
+                }
+            }
+            catch (System.Exception ex)
+            {
+                var elapsed = (System.DateTime.Now - startTime).TotalMilliseconds;
+                Debug.LogError($"Failed to detect chapters for {m_SelectedFile.DisplayName} after {elapsed:F0}ms: {ex}");
+            }
+
+            m_IsDetectingChapters = false;
+            if (m_ChapterLoadingSpinner != null)
+                m_ChapterLoadingSpinner.SetActive(false);
+            RefreshActionControls();
+        }
+
+        private void RefreshActionControls()
+        {
+            bool hasSelection = m_SelectedFile != null;
+            bool isDetecting = m_IsDetectingChapters;
+
+            // Show/hide action controls container
+            if (m_ActionControlsContainer != null)
+                m_ActionControlsContainer.SetActive(hasSelection);
+
+            if (!hasSelection) return;
+
+            // Update selected file label
+            if (m_SelectedFileLabel != null)
+                m_SelectedFileLabel.text = m_SelectedFile.DisplayName;
+
+            // Enable/disable action buttons
+            if (m_LoadButton != null)
+                m_LoadButton.SetButtonAvailable(!isDetecting);
+            if (m_MergeButton != null)
+                m_MergeButton.SetButtonAvailable(!isDetecting);
+
+            // Show/hide chapter controls - use optimistic check first for better performance
+            bool hasMultipleChapters = false;
+            if (!isDetecting)
+            {
+                if (m_SelectedFile.SourceType == QuillSourceType.Quill)
+                {
+                    // Quill detection is fast
+                    hasMultipleChapters = m_SelectedFile.HasMultipleChapters;
+                }
+                else
+                {
+                    // IMM detection is slow - use optimistic approach during detection
+                    hasMultipleChapters = m_SelectedFile.HasMultipleChaptersOptimistic;
+                }
+            }
+            
+            if (m_ChapterControls != null)
+                m_ChapterControls.SetActive(hasMultipleChapters);
+
+            if (hasMultipleChapters)
+            {
+                RefreshChapterControls();
+            }
+        }
+
+        private void RefreshChapterControls()
+        {
+            if (m_SelectedFile == null || !m_SelectedFile.HasMultipleChapters) return;
+
+            int count = m_SelectedFile.ChapterCount;
+            int current = m_SelectedFile.SelectedChapterIndex < 0 ? 0 : m_SelectedFile.SelectedChapterIndex;
+
+            if (m_ChapterLabel != null)
+                m_ChapterLabel.text = $"Ch {current + 1} / {count}";
+
+            // Enable/disable navigation buttons
+            if (m_PrevChapterButton != null)
+                m_PrevChapterButton.SetButtonAvailable(count > 1);
+            if (m_NextChapterButton != null)
+                m_NextChapterButton.SetButtonAvailable(count > 1);
+        }
+
+        // Action button handlers - called by UI buttons via inspector
+        public void OnLoadButtonPressed()
+        {
+            if (m_SelectedFile == null) return;
+
+            Debug.Log($"[QUILL-ACTION] Loading file: {m_SelectedFile.DisplayName}, Chapter: {m_SelectedFile.SelectedChapterIndex}");
+
+            Quill.PendingLoadOptions = new Quill.QuillLoadOptions
+            {
+                Path = m_SelectedFile.FullPath,
+                ChapterIndex = m_SelectedFile.SelectedChapterIndex,
+            };
+            SketchControlsScript.m_Instance.IssueGlobalCommand(
+                SketchControlsScript.GlobalCommands.LoadQuillConfirmUnsaved, 0, 0);
+        }
+
+        public void OnMergeButtonPressed()
+        {
+            if (m_SelectedFile == null) return;
+
+            Debug.Log($"[QUILL-ACTION] Merging file: {m_SelectedFile.DisplayName}, Chapter: {m_SelectedFile.SelectedChapterIndex}");
+
+            try
+            {
+                Quill.Load(m_SelectedFile.FullPath, chapterIndex: m_SelectedFile.SelectedChapterIndex);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"Failed to merge '{m_SelectedFile.FullPath}': {ex}");
+            }
+        }
+
+        public void OnPrevChapterPressed()
+        {
+            if (m_SelectedFile?.HasMultipleChapters != true) return;
+
+            int count = m_SelectedFile.ChapterCount;
+            int current = m_SelectedFile.SelectedChapterIndex < 0 ? 0 : m_SelectedFile.SelectedChapterIndex;
+            m_SelectedFile.SelectedChapterIndex = (current - 1 + count) % count;
+
+            Debug.Log($"[QUILL-CHAPTER] Previous chapter: {m_SelectedFile.SelectedChapterIndex + 1}/{count}");
+            RefreshChapterControls();
+        }
+
+        public void OnNextChapterPressed()
+        {
+            if (m_SelectedFile?.HasMultipleChapters != true) return;
+
+            int count = m_SelectedFile.ChapterCount;
+            int current = m_SelectedFile.SelectedChapterIndex < 0 ? 0 : m_SelectedFile.SelectedChapterIndex;
+            m_SelectedFile.SelectedChapterIndex = (current + 1) % count;
+
+            Debug.Log($"[QUILL-CHAPTER] Next chapter: {m_SelectedFile.SelectedChapterIndex + 1}/{count}");
+            RefreshChapterControls();
         }
 
         protected override void Awake()
@@ -122,6 +348,9 @@ namespace TiltBrush
                 m_IconButtons.Add(button);
                 button.gameObject.SetActive(false);
             }
+
+            // Initialize action controls state
+            RefreshActionControls();
 
             ResetPageIndex();
             RefreshPage();
@@ -180,8 +409,13 @@ namespace TiltBrush
                 var button = m_FileButtons[i];
                 if (visible)
                 {
-                    button.QuillFile = m_Catalog.GetFileAtIndex(catalogIndex);
+                    var fileInfo = m_Catalog.GetFileAtIndex(catalogIndex);
+                    button.QuillFile = fileInfo;
                     button.SetButtonAvailable(true);
+                    
+                    // Update selection visual state
+                    button.IsSelected = (m_SelectedFile != null && 
+                        m_SelectedFile.FullPath == fileInfo.FullPath);
                 }
                 button.gameObject.SetActive(visible);
             }
@@ -193,6 +427,7 @@ namespace TiltBrush
                 m_InfoText.text = $"{m_Catalog.ItemCount} Files";
             }
 
+            RefreshActionControls();
             base.RefreshPage();
         }
 
@@ -231,6 +466,29 @@ namespace TiltBrush
 
         private void OnCatalogChanged()
         {
+            // Verify selection is still valid after catalog refresh
+            if (m_SelectedFile != null && m_Catalog != null)
+            {
+                bool fileStillExists = false;
+                for (int i = 0; i < m_Catalog.ItemCount; i++)
+                {
+                    var file = m_Catalog.GetFileAtIndex(i);
+                    if (file.FullPath == m_SelectedFile.FullPath)
+                    {
+                        fileStillExists = true;
+                        // Update reference to refreshed file info
+                        m_SelectedFile = file;
+                        break;
+                    }
+                }
+
+                if (!fileStillExists)
+                {
+                    Debug.Log("[QUILL-SELECTION] Selected file no longer exists, clearing selection");
+                    m_SelectedFile = null;
+                }
+            }
+
             if (PageIndex > GetPageCount() - 1)
             {
                 GotoPage(0);

@@ -39,6 +39,7 @@ namespace TiltBrush
 
         // Cached chapter count: null = not yet queried, 0 = query failed / not IMM.
         private int? m_ChapterCountCache;
+        private DateTime? m_ChapterCountCacheTime;
 
         public QuillFileInfo(string fullPath, string displayName, long fileSizeBytes,
             DateTime lastWriteTimeUtc, QuillSourceType sourceType)
@@ -59,17 +60,78 @@ namespace TiltBrush
         {
             get
             {
-                if (!m_ChapterCountCache.HasValue)
+                // Check if cache is still valid (file hasn't changed)
+                bool cacheValid = m_ChapterCountCache.HasValue && 
+                                  m_ChapterCountCacheTime.HasValue && 
+                                  m_ChapterCountCacheTime.Value >= LastWriteTimeUtc;
+
+                if (!cacheValid)
                 {
-                    m_ChapterCountCache = SourceType == QuillSourceType.Imm
-                        ? ImmStrokeReader.SharpQuillCompat.GetImmChapterCount(FullPath)
-                        : Quill.GetQuillChapterCount(FullPath);
+                    UnityEngine.Debug.Log($"[QUILL-CHAPTER] Detecting chapters for '{DisplayName}' ({SourceType})...");
+                    
+                    if (SourceType == QuillSourceType.Imm)
+                    {
+                        // IMM chapter detection is slow - show user what's happening
+                        UnityEngine.Debug.Log($"[QUILL-CHAPTER] IMM chapter detection may be slow for '{DisplayName}'");
+                        m_ChapterCountCache = ImmStrokeReader.SharpQuillCompat.GetImmChapterCount(FullPath);
+                    }
+                    else
+                    {
+                        // Quill chapter detection is fast (just reads JSON)
+                        m_ChapterCountCache = Quill.GetQuillChapterCount(FullPath);
+                    }
+                    
+                    m_ChapterCountCacheTime = System.DateTime.UtcNow;
+                    UnityEngine.Debug.Log($"[QUILL-CHAPTER] File '{DisplayName}' has {m_ChapterCountCache.Value} chapters (detection took {(System.DateTime.UtcNow - m_ChapterCountCacheTime.Value).TotalMilliseconds:F0}ms)");
                 }
+                
                 return m_ChapterCountCache.Value;
             }
         }
 
+        /// <summary>
+        /// Clears the cached chapter count, forcing re-detection on next access.
+        /// Used when file system changes are detected.
+        /// </summary>
+        public void ClearChapterCountCache()
+        {
+            m_ChapterCountCache = null;
+            m_ChapterCountCacheTime = null;
+            UnityEngine.Debug.Log($"[QUILL-CHAPTER] Cleared chapter count cache for '{DisplayName}'");
+        }
+
         public bool HasMultipleChapters => ChapterCount > 1;
+
+        /// <summary>
+        /// Quick optimistic check for multiple chapters without expensive detection.
+        /// For IMM files, assumes 1 chapter until proven otherwise.
+        /// For Quill files, does full detection (since it's fast).
+        /// </summary>
+        public bool HasMultipleChaptersOptimistic
+        {
+            get
+            {
+                if (SourceType == QuillSourceType.Quill)
+                {
+                    // Quill detection is fast, so do it immediately
+                    return ChapterCount > 1;
+                }
+                else
+                {
+                    // For IMM, be optimistic - assume single chapter if not cached
+                    if (m_ChapterCountCache.HasValue)
+                    {
+                        return m_ChapterCountCache.Value > 1;
+                    }
+                    else
+                    {
+                        // Optimistically assume single chapter for IMM files
+                        UnityEngine.Debug.Log($"[QUILL-CHAPTER] Optimistically assuming '{DisplayName}' (IMM) has 1 chapter");
+                        return false;
+                    }
+                }
+            }
+        }
 
         public string SourceLabel => SourceType == QuillSourceType.Imm ? "IMM" : "Quill";
 
