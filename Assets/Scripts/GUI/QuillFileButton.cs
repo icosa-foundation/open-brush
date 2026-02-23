@@ -21,17 +21,22 @@ namespace TiltBrush
     public class QuillFileButton : BaseButton
     {
         [SerializeField] private TextMeshPro m_LabelText;
-        [SerializeField] private TextMeshPro m_DetailText;
         [SerializeField] private bool m_MergeMode;
 
         [Header("Selection Visual State")]
         [SerializeField] private GameObject m_SelectionBorder;
         [SerializeField] private Renderer m_BackgroundRenderer;
-        [SerializeField] private Material m_DefaultMaterial;
         [SerializeField] private Material m_SelectedMaterial;
 
         private QuillFileInfo m_QuillFile;
         private bool m_IsSelected;
+        private Material m_DefaultMaterial;
+
+        protected override void Awake()
+        {
+            base.Awake();
+            m_DefaultMaterial = m_BackgroundRenderer?.material;
+        }
 
         public QuillFileInfo QuillFile
         {
@@ -59,7 +64,7 @@ namespace TiltBrush
             if (m_SelectionBorder != null)
                 m_SelectionBorder.SetActive(m_IsSelected);
 
-            if (m_BackgroundRenderer != null && m_DefaultMaterial != null && m_SelectedMaterial != null)
+            if (m_DefaultMaterial != null && m_SelectedMaterial != null)
             {
                 m_BackgroundRenderer.material = m_IsSelected ? m_SelectedMaterial : m_DefaultMaterial;
             }
@@ -94,16 +99,14 @@ namespace TiltBrush
             if (m_QuillFile == null)
             {
                 SetLabelText(string.Empty);
-                SetDetailText(string.Empty);
                 SetDescriptionText(string.Empty);
                 SetExtraDescriptionText(string.Empty);
                 return;
             }
 
             SetLabelText(m_QuillFile.DisplayName);
-            SetDetailText($"{m_QuillFile.DescriptionLabel}  {m_QuillFile.DetailLabel}");
             SetDescriptionText($"{m_QuillFile.DisplayName}");
-            SetExtraDescriptionText($"{m_QuillFile.DescriptionLabel}\n{m_QuillFile.DetailLabel}");
+            SetExtraDescriptionText($"{m_QuillFile.DescriptionLabel}");
         }
 
         private void SetLabelText(string value)
@@ -116,14 +119,6 @@ namespace TiltBrush
             if (m_LabelText != null)
             {
                 m_LabelText.text = value;
-            }
-        }
-
-        private void SetDetailText(string value)
-        {
-            if (m_DetailText != null)
-            {
-                m_DetailText.text = value;
             }
         }
     }

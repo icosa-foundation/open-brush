@@ -98,10 +98,6 @@ namespace TiltBrush
             else if (File.Exists(path))
             {
                 kind = "imm";
-                if (chapterIndex >= 0)
-                {
-                    Debug.Log($"[QUILL-CHAPTER] Loading IMM chapter {chapterIndex} from '{path}'");
-                }
                 sequence = ImmStrokeReader.SharpQuillCompat.ReadImmAsSequence(path, includePictures: true, chapterIndex: chapterIndex);
             }
             else
@@ -453,7 +449,6 @@ namespace TiltBrush
             int picChannels = picture.Data?.HasAlpha == true ? 4 : 3;
             int actualBytes = picture.Data?.Pixels?.Length ?? 0;
             int expectedRawBytes = picW * picH * picChannels;
-            Debug.Log($"[QUILL360] Picture layer: name='{picture.Name}' type={picture.PictureType} importPath='{picture.ImportFilePath}' size={picW}x{picH} hasAlpha={picture.Data?.HasAlpha} pixelBytes={actualBytes} expectedRaw={expectedRawBytes}");
 
             if (picture.PictureType == SQ.PictureType.ThreeSixty_Equirect_Mono ||
                 picture.PictureType == SQ.PictureType.ThreeSixty_Equirect_Stereo)
@@ -1490,7 +1485,6 @@ namespace TiltBrush
             int actionKeyCount = actionKeys?.Count ?? 0;
             if (actionKeyCount == 0)
             {
-                Debug.Log($"[QUILL-CHAPTER] No Action keys in '{path}'; using full timeline (chapter 0 fallback).");
                 return;
             }
 
@@ -1528,9 +1522,6 @@ namespace TiltBrush
             float chapterEnd = chapterIndex + 1 < chapterCount
                 ? chapterStarts[chapterIndex + 1]
                 : float.PositiveInfinity;
-
-            Debug.Log($"[QUILL-CHAPTER] Action keys={actionKeyCount}, marker={markerType}, starts=[{string.Join(", ", chapterStarts)}]");
-            Debug.Log($"[QUILL-CHAPTER] Selected chapter {chapterIndex}/{chapterCount - 1}, window=[{chapterStart}, {(float.IsPositiveInfinity(chapterEnd) ? "inf" : chapterEnd.ToString())}), sampleTime={chapterStart} in '{path}'");
 
             SetSequenceToChapterTime(sequence, chapterStart);
         }

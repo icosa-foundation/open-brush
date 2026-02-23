@@ -32,7 +32,6 @@ namespace TiltBrush
 
         [Header("Selection & Action Controls")]
         [SerializeField] private GameObject m_ActionControlsContainer;
-        [SerializeField] private TextMeshPro m_SelectedFileLabel;
         [SerializeField] private ActionButton m_LoadButton;
         [SerializeField] private ActionButton m_MergeButton;
         [SerializeField] private GameObject m_ChapterControls;
@@ -121,7 +120,6 @@ namespace TiltBrush
             }
 
             m_SelectedFile = file;
-            Debug.Log($"[QUILL-SELECTION] Selected file: {file?.DisplayName ?? "null"}");
 
             // Set new selection visual state
             if (m_SelectedFile != null)
@@ -157,13 +155,10 @@ namespace TiltBrush
                 m_ChapterLoadingSpinner.SetActive(true);
             RefreshActionControls();
 
-            Debug.Log($"[QUILL-CHAPTER] Starting chapter detection for {m_SelectedFile.DisplayName} ({m_SelectedFile.SourceType})");
-
             // For IMM files, add a longer delay to allow UI to update first
             if (m_SelectedFile.SourceType == QuillSourceType.Imm)
             {
                 yield return new WaitForSeconds(0.1f); // Let UI show spinner
-                Debug.Log($"[QUILL-CHAPTER] IMM chapter detection starting - this may take several seconds...");
             }
             else
             {
@@ -177,7 +172,6 @@ namespace TiltBrush
                 // This triggers lazy chapter detection
                 int chapterCount = m_SelectedFile.ChapterCount;
                 var elapsed = (System.DateTime.Now - startTime).TotalMilliseconds;
-                Debug.Log($"[QUILL-CHAPTER] Detected {chapterCount} chapters for {m_SelectedFile.DisplayName} in {elapsed:F0}ms");
                 
                 // Set default chapter if not already set
                 if (m_SelectedFile.SelectedChapterIndex < 0)
@@ -207,10 +201,6 @@ namespace TiltBrush
                 m_ActionControlsContainer.SetActive(hasSelection);
 
             if (!hasSelection) return;
-
-            // Update selected file label
-            if (m_SelectedFileLabel != null)
-                m_SelectedFileLabel.text = m_SelectedFile.DisplayName;
 
             // Enable/disable action buttons
             if (m_LoadButton != null)
@@ -251,7 +241,7 @@ namespace TiltBrush
             int current = m_SelectedFile.SelectedChapterIndex < 0 ? 0 : m_SelectedFile.SelectedChapterIndex;
 
             if (m_ChapterLabel != null)
-                m_ChapterLabel.text = $"Ch {current + 1} / {count}";
+                m_ChapterLabel.text = $"Chapter {current + 1} / {count}";
 
             // Enable/disable navigation buttons
             if (m_PrevChapterButton != null)
@@ -265,8 +255,6 @@ namespace TiltBrush
         {
             if (m_SelectedFile == null) return;
 
-            Debug.Log($"[QUILL-ACTION] Loading file: {m_SelectedFile.DisplayName}, Chapter: {m_SelectedFile.SelectedChapterIndex}");
-
             Quill.PendingLoadOptions = new Quill.QuillLoadOptions
             {
                 Path = m_SelectedFile.FullPath,
@@ -279,8 +267,6 @@ namespace TiltBrush
         public void OnMergeButtonPressed()
         {
             if (m_SelectedFile == null) return;
-
-            Debug.Log($"[QUILL-ACTION] Merging file: {m_SelectedFile.DisplayName}, Chapter: {m_SelectedFile.SelectedChapterIndex}");
 
             try
             {
@@ -299,8 +285,6 @@ namespace TiltBrush
             int count = m_SelectedFile.ChapterCount;
             int current = m_SelectedFile.SelectedChapterIndex < 0 ? 0 : m_SelectedFile.SelectedChapterIndex;
             m_SelectedFile.SelectedChapterIndex = (current - 1 + count) % count;
-
-            Debug.Log($"[QUILL-CHAPTER] Previous chapter: {m_SelectedFile.SelectedChapterIndex + 1}/{count}");
             RefreshChapterControls();
         }
 
@@ -311,8 +295,6 @@ namespace TiltBrush
             int count = m_SelectedFile.ChapterCount;
             int current = m_SelectedFile.SelectedChapterIndex < 0 ? 0 : m_SelectedFile.SelectedChapterIndex;
             m_SelectedFile.SelectedChapterIndex = (current + 1) % count;
-
-            Debug.Log($"[QUILL-CHAPTER] Next chapter: {m_SelectedFile.SelectedChapterIndex + 1}/{count}");
             RefreshChapterControls();
         }
 
@@ -484,7 +466,6 @@ namespace TiltBrush
 
                 if (!fileStillExists)
                 {
-                    Debug.Log("[QUILL-SELECTION] Selected file no longer exists, clearing selection");
                     m_SelectedFile = null;
                 }
             }

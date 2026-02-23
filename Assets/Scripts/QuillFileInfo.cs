@@ -137,8 +137,6 @@ namespace TiltBrush
 
         public string DescriptionLabel => $"{SourceLabel}  {FormatFileSize(FileSizeBytes)}";
 
-        public string DetailLabel => $"Modified {LastWriteTimeUtc.ToLocalTime():yyyy-MM-dd HH:mm}";
-
         private static string FormatFileSize(long bytes)
         {
             if (bytes < 1024)
