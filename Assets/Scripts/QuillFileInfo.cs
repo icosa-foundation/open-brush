@@ -67,12 +67,8 @@ namespace TiltBrush
 
                 if (!cacheValid)
                 {
-                    UnityEngine.Debug.Log($"[QUILL-CHAPTER] Detecting chapters for '{DisplayName}' ({SourceType})...");
-                    
                     if (SourceType == QuillSourceType.Imm)
                     {
-                        // IMM chapter detection is slow - show user what's happening
-                        UnityEngine.Debug.Log($"[QUILL-CHAPTER] IMM chapter detection may be slow for '{DisplayName}'");
                         m_ChapterCountCache = ImmStrokeReader.SharpQuillCompat.GetImmChapterCount(FullPath);
                     }
                     else
@@ -82,7 +78,6 @@ namespace TiltBrush
                     }
                     
                     m_ChapterCountCacheTime = System.DateTime.UtcNow;
-                    UnityEngine.Debug.Log($"[QUILL-CHAPTER] File '{DisplayName}' has {m_ChapterCountCache.Value} chapters (detection took {(System.DateTime.UtcNow - m_ChapterCountCacheTime.Value).TotalMilliseconds:F0}ms)");
                 }
                 
                 return m_ChapterCountCache.Value;

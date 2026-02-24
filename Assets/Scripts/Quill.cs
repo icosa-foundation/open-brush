@@ -1445,7 +1445,7 @@ namespace TiltBrush
                     }
                     else if (string.Equals(actionValue, "Stop", StringComparison.OrdinalIgnoreCase))
                     {
-                        stopTimes.Add(markerTime.Value);
+                        if (markerTime.Value > 0f) stopTimes.Add(markerTime.Value);
                     }
                 }
 
@@ -1519,11 +1519,13 @@ namespace TiltBrush
             }
 
             float chapterStart = chapterStarts[chapterIndex];
-            float chapterEnd = chapterIndex + 1 < chapterCount
-                ? chapterStarts[chapterIndex + 1]
+            // Chapter end is the stop time (one tick before the next chapter starts).
+            // This is the pause state — the frame the drawing is frozen at.
+            float chapterPauseTime = chapterIndex + 1 < chapterCount
+                ? chapterStarts[chapterIndex + 1] - 1f
                 : float.PositiveInfinity;
 
-            SetSequenceToChapterTime(sequence, chapterStart);
+            SetSequenceToChapterTime(sequence, chapterStart, chapterPauseTime);
         }
 
         private static List<float> CalculateChapterStartTimes(List<SQ.Keyframe<string>> actionKeys)
@@ -1552,7 +1554,7 @@ namespace TiltBrush
                 }
                 else if (string.Equals(action, "Stop", StringComparison.OrdinalIgnoreCase))
                 {
-                    stopTimes.Add(time);
+                    if (time > 0f) stopTimes.Add(time);
                 }
             }
 
@@ -1571,17 +1573,17 @@ namespace TiltBrush
                 .ToList();
         }
 
-        private static void SetSequenceToChapterTime(SQ.Sequence sequence, float chapterTime)
+        private static void SetSequenceToChapterTime(SQ.Sequence sequence, float startTime, float pauseTime)
         {
             if (sequence?.RootLayer == null)
             {
                 return;
             }
 
-            SetLayerToTime(sequence.RootLayer, chapterTime);
+            SetLayerToTime(sequence.RootLayer, startTime, pauseTime);
         }
 
-        private static void SetLayerToTime(SQ.Layer layer, float time)
+        private static void SetLayerToTime(SQ.Layer layer, float startTime, float pauseTime)
         {
             if (layer == null)
             {
@@ -1591,16 +1593,27 @@ namespace TiltBrush
             var keys = layer.Animation?.Keys;
             if (keys != null)
             {
-                layer.Visible = SampleKeyframes(keys.Visibility, time, layer.Visible);
-                layer.Opacity = SampleKeyframes(keys.Opacity, time, layer.Opacity);
-                layer.Transform = SampleKeyframes(keys.Transform, time, layer.Transform);
+                layer.Visible = SampleKeyframes(keys.Visibility, startTime, layer.Visible);
+                layer.Opacity = SampleKeyframes(keys.Opacity, startTime, layer.Opacity);
+                layer.Transform = SampleKeyframes(keys.Transform, startTime, layer.Transform);
             }
 
-            if (layer is SQ.LayerGroup group)
+            if (layer is SQ.LayerPaint paint && paint.Frames.Count > 0)
+            {
+                // Convert the chapter's pause time (in Quill ticks at 12600/sec) to a frame index.
+                const float kTicksPerSecond = 12600f;
+                int frameIndex = float.IsPositiveInfinity(pauseTime)
+                    ? paint.Frames.Count - 1
+                    : Mathf.Clamp((int)(pauseTime * paint.Framerate / kTicksPerSecond), 0, paint.Frames.Count - 1);
+                int drawingIndex = paint.Frames[frameIndex];
+                paint.Frames.Clear();
+                paint.Frames.Add(drawingIndex);
+            }
+            else if (layer is SQ.LayerGroup group)
             {
                 foreach (var child in group.Children)
                 {
-                    SetLayerToTime(child, time);
+                    SetLayerToTime(child, startTime, pauseTime);
                 }
             }
         }
