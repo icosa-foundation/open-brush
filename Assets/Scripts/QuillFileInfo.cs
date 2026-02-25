@@ -61,8 +61,8 @@ namespace TiltBrush
             get
             {
                 // Check if cache is still valid (file hasn't changed)
-                bool cacheValid = m_ChapterCountCache.HasValue && 
-                                  m_ChapterCountCacheTime.HasValue && 
+                bool cacheValid = m_ChapterCountCache.HasValue &&
+                                  m_ChapterCountCacheTime.HasValue &&
                                   m_ChapterCountCacheTime.Value >= LastWriteTimeUtc;
 
                 if (!cacheValid)
@@ -76,10 +76,10 @@ namespace TiltBrush
                         // Quill chapter detection is fast (just reads JSON)
                         m_ChapterCountCache = Quill.GetQuillChapterCount(FullPath);
                     }
-                    
+
                     m_ChapterCountCacheTime = System.DateTime.UtcNow;
                 }
-                
+
                 return m_ChapterCountCache.Value;
             }
         }

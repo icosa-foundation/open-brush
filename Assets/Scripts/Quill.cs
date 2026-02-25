@@ -1421,7 +1421,7 @@ namespace TiltBrush
                 var doc = Newtonsoft.Json.Linq.JToken.Parse(json);
                 var actionKeys = doc["Sequence"]?["RootLayer"]?["Animation"]?["Keys"]?["Action"]
                     as Newtonsoft.Json.Linq.JArray;
-                
+
                 if (actionKeys == null || actionKeys.Count == 0)
                 {
                     return 1; // No action markers = single chapter
@@ -1429,7 +1429,7 @@ namespace TiltBrush
 
                 var playTimes = new List<float>();
                 var stopTimes = new List<float>();
-                
+
                 foreach (var actionKey in actionKeys)
                 {
                     float? markerTime = actionKey["Time"]?.ToObject<float?>();

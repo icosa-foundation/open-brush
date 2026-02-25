@@ -137,7 +137,7 @@ namespace TiltBrush
 
             foreach (var button in m_FileButtons)
             {
-                if (button.QuillFile != null && 
+                if (button.QuillFile != null &&
                     button.QuillFile.FullPath == fileInfo.FullPath)
                 {
                     button.IsSelected = selected;
@@ -166,13 +166,13 @@ namespace TiltBrush
             }
 
             var startTime = System.DateTime.Now;
-            
+
             try
             {
                 // This triggers lazy chapter detection
                 int chapterCount = m_SelectedFile.ChapterCount;
                 var elapsed = (System.DateTime.Now - startTime).TotalMilliseconds;
-                
+
                 // Set default chapter if not already set
                 if (m_SelectedFile.SelectedChapterIndex < 0)
                 {
@@ -223,7 +223,7 @@ namespace TiltBrush
                     hasMultipleChapters = m_SelectedFile.HasMultipleChaptersOptimistic;
                 }
             }
-            
+
             if (m_ChapterControls != null)
                 m_ChapterControls.SetActive(hasMultipleChapters);
 
@@ -394,9 +394,9 @@ namespace TiltBrush
                     var fileInfo = m_Catalog.GetFileAtIndex(catalogIndex);
                     button.QuillFile = fileInfo;
                     button.SetButtonAvailable(true);
-                    
+
                     // Update selection visual state
-                    button.IsSelected = (m_SelectedFile != null && 
+                    button.IsSelected = (m_SelectedFile != null &&
                         m_SelectedFile.FullPath == fileInfo.FullPath);
                 }
                 button.gameObject.SetActive(visible);
