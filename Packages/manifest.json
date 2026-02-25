@@ -1,15 +1,17 @@
 {
   "dependencies": {
+    "com.immersive-foundation.imm-stroke-reader": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#upm",
     "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
     "com.meta.xr.sdk.core": "https://github.com/icosa-mirror/com.meta.xr.sdk.core.git#68.0.2-openbrush-hotfix",
     "com.meta.xr.sdk.platform": "60.0.0",
+    "com.sandrofigo.voxreader": "5.0.6",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
     "com.unity.cloud.draco": "5.1.3",
     "com.unity.cloud.ktx": "3.4.5",
     "com.unity.editorcoroutines": "1.0.0",
     "com.unity.formats.usd": "1.0.3-preview.2",
-    "com.unity.ide.rider": "3.0.38",
+    "com.unity.ide.rider": "3.0.39",
     "com.unity.ide.visualstudio": "2.0.23",
     "com.unity.inputsystem": "https://github.com/icosa-mirror/com.unity.inputsystem.git#1.8.2-openbrush",
     "com.unity.localization": "1.5.4",
@@ -27,6 +29,7 @@
     "com.unity.xr.management": "4.4.1",
     "com.unity.xr.oculus": "4.2.0",
     "com.unity.xr.openxr": "1.10.0",
+    "com.valvesoftware.steamaudio": "https://github.com/icosa-mirror/com.valvesoftware.steamaudio.git",
     "com.watertrans.glyphloader": "https://github.com/icosa-mirror/GlyphLoader-Unity.git#upm",
     "com.zappar.xr.zapbox": "https://github.com/zappar-xr/zapbox-xr-sdk.git#91b52bde3c0a67aa08909bdd2657f8a6672decf6",
     "moonsharp": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",
@@ -64,8 +67,7 @@
     "com.unity.modules.unitywebrequestwww": "1.0.0",
     "com.unity.modules.vehicles": "1.0.0",
     "com.unity.modules.video": "1.0.0",
-    "com.unity.modules.wind": "1.0.0",
-    "com.sandrofigo.voxreader": "5.0.6"
+    "com.unity.modules.wind": "1.0.0"
   },
   "scopedRegistries": [
     {

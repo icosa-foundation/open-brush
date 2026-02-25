@@ -110,9 +110,11 @@ namespace TiltBrush
             WebcamPanel = 5200,
             Scripts = 6000,
             SnapSettings = 8000,
-            StencilSettings = 20200,
-            LayersPanel = 15000,
+            QuillLibrary = 11600,
             TransformPanel = 12000,
+            AnimationPanel = 18000,
+            LayersPanel = 15000,
+            StencilSettings = 20200,
             WhatsNewPanel = 20300,
             BlocksPromoPanel = 20301,
         }

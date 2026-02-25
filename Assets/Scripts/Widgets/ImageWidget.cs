@@ -297,6 +297,7 @@ namespace TiltBrush
                 ReferenceImageCatalog.m_Instance.RelativePathToImage(tiltImage.FilePath);
             var groupIds = tiltImage.GroupIds;
             var layerIds = tiltImage.LayerIds;
+            var frameIds = tiltImage.FrameIds;
             var twoSidedFlags = tiltImage.TwoSidedFlags;
             var extrusionDepths = tiltImage.ExtrusionDepths;
             var extrusionColors = tiltImage.ExtrusionColors;
@@ -337,8 +338,9 @@ namespace TiltBrush
                 uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
                 image.Group = App.GroupManager.GetGroupFromId(groupId);
                 int layerId = (layerIds == null || i >= layerIds.Length) ? 0 : layerIds[i];
+                int frameId = (frameIds == null || i >= frameIds.Length) ? 0 : frameIds[i];
                 image.TwoSided = twoSidedFlags != null && i < twoSidedFlags.Length && twoSidedFlags[i];
-                image.SetCanvas(App.Scene.GetOrCreateLayer(layerId));
+                image.SetCanvas(App.Scene.GetOrCreateLayer(layerId, frameId));
                 TiltMeterScript.m_Instance.AdjustMeterWithWidget(image.GetTiltMeterCost(), up: true);
             }
         }

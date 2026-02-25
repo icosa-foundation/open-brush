@@ -756,6 +756,8 @@ namespace TiltBrush
                 }
             }
 
+
+
             RegisterWithWidgetManager();
         }
 

@@ -725,6 +725,10 @@ namespace TiltBrush
                         jsonData.SceneTransformInRoomSpace);
                     App.Scene.Pose = jsonData.SceneTransformInRoomSpace;
                     App.Scene.ResetLayers(true);
+                    App.Scene.animationUI_manager.StartTimeline();
+                    // This was a conflict between the animation branch and the plugin branch
+                    // Is it needed?
+                    //Coords.CanvasLocalPose = TrTransform.identity;
                     LastThumbnail_SS = App.Scene.Pose.inverse *
                         jsonData.ThumbnailCameraTransformInRoomSpace;
 
@@ -738,6 +742,8 @@ namespace TiltBrush
                     // Create Layers
                     if (jsonData.Layers != null)
                     {
+                        App.Scene.animationUI_manager.StartTimeline();
+
                         for (var i = 0; i < jsonData.Layers.Length; i++)
                         {
                             var layer = jsonData.Layers[i];
@@ -759,6 +765,28 @@ namespace TiltBrush
                             canvas.LocalPose = layer.Transform;
                         }
                     }
+
+                    if (jsonData.AnimationTracks != null)
+                    {
+
+                        var timeline = App.Scene.animationUI_manager.Timeline;
+                        for (int i = 0; i < jsonData.AnimationTracks.Tracks.Length; i++) // Skip the main canvas
+                        {
+                            for (int f = 0; f < jsonData.AnimationTracks.Tracks[i].frameLengths.Count; f++)
+                            {
+                                if (f > 0)
+                                {
+                                    App.Scene.animationUI_manager.AddKeyFrame(i);
+                                }
+
+                                for (int l = 0; l < jsonData.AnimationTracks.Tracks[i].frameLengths[f] - 1; l++)
+                                {
+                                    App.Scene.animationUI_manager.ExtendKeyFrame(i);
+                                }
+                            }
+                        }
+                        App.Scene.animationUI_manager.Timeline = timeline;
+                    }
                 }
 
                 var oldGroupToNewGroup = new Dictionary<int, int>();
@@ -779,7 +807,6 @@ namespace TiltBrush
                         return false;
                     }
                 }
-
 
                 // It's proving to be rather complex to merge widgets/models etc.
                 // For now skip all that when loading additively with the if (!bAdditive) below
@@ -834,6 +861,10 @@ namespace TiltBrush
                         {
                             WidgetManager.m_Instance.SetTextDataFromTilt(jsonData.TextWidgets);
                         }
+                        if (SoundClipCatalog.Instance != null && jsonData.SoundClips != null)
+                        {
+                            WidgetManager.m_Instance.SetSoundDataFromTilt(jsonData.SoundClips);
+                        }
                     }
                     if (jsonData.Mirror != null)
                     {
@@ -842,6 +873,10 @@ namespace TiltBrush
                     if (jsonData.CameraPaths != null)
                     {
                         WidgetManager.m_Instance.SetCameraPathDataFromTilt(jsonData.CameraPaths);
+                    }
+                    if (jsonData.AnimationPaths != null)
+                    {
+                        WidgetManager.m_Instance.SetCameraPathDataFromTilt(jsonData.AnimationPaths);
                     }
                     if (fileInfo is GoogleDriveSketchSet.GoogleDriveFileInfo gdInfo)
                     {
@@ -854,6 +889,11 @@ namespace TiltBrush
                                 OverlayType.LoadMedia,
                                 WidgetManager.m_Instance.CreateMediaWidgetsFromLoadDataCoroutine(),
                                 0.5f));
+                    }
+                    if (App.Scene.animationUI_manager != null)
+                    {
+                        App.Scene.animationUI_manager.ResetTimeline();
+                        App.Scene.animationUI_manager.SelectTimelineFrame(0, 0);
                     }
                     m_LastSceneFile = fileInfo;
                 }
@@ -874,7 +914,7 @@ namespace TiltBrush
         }
 
         private void HandleDeserializationError(object sender,
-                                                Newtonsoft.Json.Serialization.ErrorEventArgs errorArgs)
+            Newtonsoft.Json.Serialization.ErrorEventArgs errorArgs)
         {
             var currentError = errorArgs.ErrorContext.Error.Message;
             Debug.LogWarning(currentError);

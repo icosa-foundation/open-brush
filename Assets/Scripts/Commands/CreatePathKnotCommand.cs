@@ -14,6 +14,7 @@
 
 using UnityEngine;
 
+
 namespace TiltBrush
 {
     public class CreatePathKnotCommand : BaseCommand

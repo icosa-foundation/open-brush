@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -20,13 +19,13 @@ using UnityEngine.Localization;
 
 namespace TiltBrush.Layers
 {
-    public class LayerUI_Manager : MonoBehaviour
+    public class LayerUI_Manager : MonoBehaviour, ILayerManager
     {
         public delegate void OnActiveSceneChanged(GameObject widget);
         public static event OnActiveSceneChanged onActiveSceneChanged;
 
-        [SerializeField] private LocalizedString m_MainLayerName;
-        [SerializeField] private LocalizedString m_AdditionalLayerName;
+        [SerializeField] protected LocalizedString m_MainLayerName;
+        [SerializeField] protected LocalizedString m_AdditionalLayerName;
         [SerializeField] private NavButton m_PreviousPageButton;
         [SerializeField] private NavButton m_NextPageButton;
         [SerializeField] private List<GameObject> m_Widgets;
@@ -36,8 +35,8 @@ namespace TiltBrush.Layers
         private bool m_RefreshNavButtons;
 
         private int WidgetsPerPage => m_Widgets.Count;
-        private int LastPageIndex => (m_Canvases.Count + WidgetsPerPage - 1) / WidgetsPerPage - 1;
-        private int CurrentPageIndex => m_StartingCanvasIndex / WidgetsPerPage;
+        private int LastPageIndex => (m_Canvases.Count + WidgetsPerPage - 1) / (WidgetsPerPage > 1 ? WidgetsPerPage - 1 : 1);
+        private int CurrentPageIndex => m_StartingCanvasIndex / (WidgetsPerPage > 0 ? WidgetsPerPage : 1);
 
         private void Start()
         {
@@ -88,8 +87,8 @@ namespace TiltBrush.Layers
             if (m_RefreshNavButtons)
             {
                 // Can't do this in RefreshUI because the it doesn't take effect if the button is being interacted with
-                m_PreviousPageButton.SetButtonAvailable(CurrentPageIndex > 0);
-                m_NextPageButton.SetButtonAvailable(CurrentPageIndex < LastPageIndex);
+                m_PreviousPageButton?.SetButtonAvailable(CurrentPageIndex > 0);
+                m_NextPageButton?.SetButtonAvailable(CurrentPageIndex < LastPageIndex);
                 m_RefreshNavButtons = false;
             }
         }
@@ -201,4 +200,5 @@ namespace TiltBrush.Layers
             GotoPage(CurrentPageIndex + iAmount);
         }
     }
+
 }
