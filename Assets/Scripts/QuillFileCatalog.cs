@@ -37,11 +37,24 @@ namespace TiltBrush
         private string m_CurrentDirectory;
         private bool m_DirectoryScanRequired;
         private bool m_IsScanningDirectory;
+        private string m_SearchText = "";
 
         public int ItemCount => m_Files.Count;
         public bool IsScanning => m_IsScanningDirectory;
         public string HomeDirectory => GetDirectoryForSource(m_SourceDirectory);
         public SourceDirectory CurrentSourceDirectory => m_SourceDirectory;
+        public string SearchText
+        {
+            get
+            {
+                return m_SearchText;
+            }
+            set
+            {
+                m_SearchText = value;
+                m_DirectoryScanRequired = true;
+            }
+        }
 
         public event Action CatalogChanged;
 
@@ -203,6 +216,9 @@ namespace TiltBrush
                 {
                     foreach (string path in Directory.GetFiles(m_CurrentDirectory, "*.imm", SearchOption.TopDirectoryOnly))
                     {
+                        if (!string.IsNullOrEmpty(m_SearchText) &&
+                            Path.GetFileNameWithoutExtension(path).IndexOf(m_SearchText, StringComparison.OrdinalIgnoreCase) < 0)
+                            continue;
                         try
                         {
                             files.Add(QuillFileInfo.FromImmFile(new FileInfo(path)));
@@ -218,6 +234,9 @@ namespace TiltBrush
                 {
                     foreach (string path in Directory.GetDirectories(m_CurrentDirectory, "*", SearchOption.TopDirectoryOnly))
                     {
+                        if (!string.IsNullOrEmpty(m_SearchText) &&
+                            Path.GetFileName(path).IndexOf(m_SearchText, StringComparison.OrdinalIgnoreCase) < 0)
+                            continue;
                         try
                         {
                             if (IsQuillProject(path))

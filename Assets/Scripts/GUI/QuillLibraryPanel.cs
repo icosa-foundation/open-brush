@@ -482,5 +482,10 @@ namespace TiltBrush
         {
             m_Catalog = QuillFileCatalog.Instance;
         }
+
+        public void SetInitialSearchText(KeyboardPopupButton btn)
+        {
+            KeyboardPopUpWindow.m_InitialText = QuillFileCatalog.Instance.SearchText;
+        }
     }
 }

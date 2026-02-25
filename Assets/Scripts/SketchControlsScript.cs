@@ -203,6 +203,7 @@ namespace TiltBrush
             OpenNumericInputPopup = 12000,
             LoadQuillConfirmUnsaved = 13000,
             LoadQuillFile = 13001,
+            OpenQuillPanelSearchPopup = 13002,
         }
 
         public enum ControlsType
@@ -5170,6 +5171,12 @@ namespace TiltBrush
                     {
                         SketchSetType currentSet = (SketchSetType)iParam1;
                         SketchCatalog.m_Instance.UpdateSearchText(currentSet, KeyboardPopUpWindow.m_LastInput, forceRefresh: true);
+                        DismissPopupOnCurrentGazeObject(false);
+                        break;
+                    }
+                case GlobalCommands.OpenQuillPanelSearchPopup:
+                    {
+                        QuillFileCatalog.Instance.SearchText = KeyboardPopUpWindow.m_LastInput;
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }
