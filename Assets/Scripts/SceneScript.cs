@@ -310,7 +310,6 @@ namespace TiltBrush
             foreach (CanvasScript layer in LayerCanvases)
             {
                 if (layer.Equals(canvas)) { break; }
-                ;
                 index++;
             }
             return index;
@@ -324,9 +323,7 @@ namespace TiltBrush
                 if (num == index)
                 {
                     return layer;
-                    ;
                 }
-                ;
                 index++;
             }
             return null;
