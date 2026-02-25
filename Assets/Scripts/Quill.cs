@@ -1144,6 +1144,7 @@ namespace TiltBrush
             // Build the right-handed matrix first.
             Vector3 pos = new Vector3(sqXf.Translation.X, sqXf.Translation.Y, sqXf.Translation.Z);
             Quaternion rot = new Quaternion(sqXf.Rotation.X, sqXf.Rotation.Y, sqXf.Rotation.Z, sqXf.Rotation.W);
+            rot = Quaternion.Normalize(rot);
             Vector3 scale = Vector3.one * sqXf.Scale;
             Matrix4x4 rh = Matrix4x4.TRS(pos, rot, scale);
 

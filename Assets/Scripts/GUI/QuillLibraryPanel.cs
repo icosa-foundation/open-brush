@@ -254,14 +254,18 @@ namespace TiltBrush
         public void OnLoadButtonPressed()
         {
             if (m_SelectedFile == null) return;
+            _LoadFile(m_SelectedFile.FullPath, m_SelectedFile.SelectedChapterIndex);
+        }
 
+        private void _LoadFile(string filePath, int chapterIndex)
+        {
             Quill.PendingLoadOptions = new Quill.QuillLoadOptions
             {
-                Path = m_SelectedFile.FullPath,
-                ChapterIndex = m_SelectedFile.SelectedChapterIndex,
+                Path = filePath,
+                ChapterIndex = chapterIndex,
             };
             SketchControlsScript.m_Instance.IssueGlobalCommand(
-                SketchControlsScript.GlobalCommands.LoadQuillConfirmUnsaved, 0, 0);
+                SketchControlsScript.GlobalCommands.LoadQuillFile, 0, 0);
         }
 
         public void OnMergeButtonPressed()
@@ -486,6 +490,13 @@ namespace TiltBrush
         public void SetInitialSearchText(KeyboardPopupButton btn)
         {
             KeyboardPopUpWindow.m_InitialText = QuillFileCatalog.Instance.SearchText;
+        }
+
+        public void HandleRandomFileButton()
+        {
+            var path = m_Catalog.GetRandomFile();
+            Debug.Log($"Loading: {path}");
+            _LoadFile(path, 0);
         }
     }
 }

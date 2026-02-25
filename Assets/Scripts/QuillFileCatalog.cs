@@ -273,5 +273,16 @@ namespace TiltBrush
                 ? App.QuillImmPath()
                 : App.QuillLibraryPath();
         }
+
+        public string GetRandomFile()
+        {
+            if (m_Files.Count == 0)
+            {
+                return null;
+            }
+
+            var randomFile = m_Files[UnityEngine.Random.Range(0, m_Files.Count)];
+            return randomFile.FullPath;
+        }
     }
 }
