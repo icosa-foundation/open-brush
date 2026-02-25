@@ -87,7 +87,7 @@ namespace TiltBrush
 			color            : white;
 		}		
 	</style>
-    <body style = 'margin : 0;'>
+    <body style = 'margin : 0; background-color: black'>
 	
         <div             id = ""icosa-viewer""           style = ""width: 100%; height: 100%;""></div>
 		<div             id = 'tool_div'               style = 'pointer-events: none; position : absolute; left : 1%; bottom : 1%; width : 98%; background : transparent;'>

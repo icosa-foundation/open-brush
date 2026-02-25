@@ -6,6 +6,7 @@ RWStructuredBuffer<float3> vertexBuffer;
 StructuredBuffer<float3> normalBuffer;
 StructuredBuffer<float4> colorBuffer;
 StructuredBuffer<float3> uvBuffer;
+RWStructuredBuffer<float4> uv1Buffer;
 
 float _SqueezeAmount;
 
@@ -14,6 +15,7 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
     float3 vertex = vertexBuffer[id.x];
     float3 normal = normalBuffer[id.x];
     float3 uv0 = uvBuffer[id.x];
+    float4 uv1 = uv1Buffer[id.x];
 
     // the movement is based on Unity Built-in shader variables
     // _Time.y (t) and _Time.z (t * 2)
@@ -34,4 +36,8 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
                     * radius;
 
     vertexBuffer[id.x] = vertex;
+
+    // Preserve tube radius in uv1.x for exporters that truncate TEXCOORD_0 to vec2.
+    uv1.x = uv0.z;
+    uv1Buffer[id.x] = uv1;
 }

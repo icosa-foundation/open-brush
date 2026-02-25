@@ -14,6 +14,7 @@
 
 using System.Collections.Generic;
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using UnityEngine;
@@ -178,11 +179,11 @@ namespace TiltBrush
 
         static string CommaFormattedFloatRGB(Color c)
         {
-            return string.Format("{0}, {1}, {2}", c.r, c.g, c.b);
+            return string.Format(CultureInfo.InvariantCulture, "{0}, {1}, {2}", c.r, c.g, c.b);
         }
         static string CommaFormattedVector3(Vector3 v)
         {
-            return string.Format("{0}, {1}, {2}", v.x, v.y, v.z);
+            return string.Format(CultureInfo.InvariantCulture, "{0}, {1}, {2}", v.x, v.y, v.z);
         }
 
         // Populates glTF metadata and scene extras fields.
@@ -198,7 +199,7 @@ namespace TiltBrush
 
             // Scene-level extras:
             exporter.G.extras["TB_EnvironmentGuid"] = payload.env.guid.ToString("D");
-            exporter.G.extras["TB_Environment"] = payload.env.description;
+            exporter.G.extras["TB_Environment"] = payload.env.description; // This is localized so should be just for display
             exporter.G.extras["TB_UseGradient"] = payload.env.useGradient ? "true" : "false";
             exporter.G.extras["TB_SkyColorA"] = CommaFormattedFloatRGB(skyColorA);
             exporter.G.extras["TB_SkyColorB"] = CommaFormattedFloatRGB(skyColorB);
@@ -206,7 +207,7 @@ namespace TiltBrush
             exporter.G.extras["TB_SkyGradientDirection"] = CommaFormattedVector3(
                 exportFromUnity * skyGradientDir);
             exporter.G.extras["TB_FogColor"] = CommaFormattedFloatRGB(payload.env.fogColor);
-            exporter.G.extras["TB_FogDensity"] = payload.env.fogDensity.ToString();
+            exporter.G.extras["TB_FogDensity"] = payload.env.fogDensity.ToString(CultureInfo.InvariantCulture);
 
             exporter.G.extras["TB_AmbientLightColor"] = CommaFormattedFloatRGB(payload.lights.ambientColor);
             exporter.G.extras["TB_SceneLight0Color"] = CommaFormattedFloatRGB(payload.lights.lights[0].lightColor);
@@ -218,7 +219,7 @@ namespace TiltBrush
 
             exporter.G.extras["TB_PoseTranslation"] = CommaFormattedVector3(pose.translation);
             exporter.G.extras["TB_PoseRotation"] = CommaFormattedVector3(pose.rotation.eulerAngles);
-            exporter.G.extras["TB_PoseScale"] = pose.scale;
+            exporter.G.extras["TB_PoseScale"] = pose.scale.ToString(CultureInfo.InvariantCulture);
 
             exporter.G.extras["TB_ExportedFromVersion"] = App.Config.m_VersionNumber;
 
@@ -245,6 +246,53 @@ namespace TiltBrush
             }
             ObjectName name = new ObjectName($"group_{groupId}");
             return GlTF_Node.GetOrCreate(G, name, Matrix4x4.identity, null, out _);
+        }
+
+        private void ExportSaveCamera(GlTF_ScriptableExporter exporter, SceneStatePayload payload)
+        {
+            // Get the saved camera position from the loaded sketch
+            if (SaveLoadScript.m_Instance == null)
+            {
+                return;
+            }
+
+            // ReasonableThumbnail_SS returns the camera transform in Scene Space
+            // But exported geometry has Scene.Pose baked in, so we need to apply it to the camera too
+            TrTransform cameraTr_Scene = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
+
+            // Convert both the camera and Scene.Pose to export coordinate system first
+            // This ensures the pose is applied correctly in the export coordinate space
+            Matrix4x4 exportFromUnity = AxisConvention.GetFromUnity(payload.axes);
+            Matrix4x4 unityFromExport = AxisConvention.GetToUnity(payload.axes);
+
+            TrTransform cameraTr_Export_Scene = ExportUtils.ChangeBasis(cameraTr_Scene, exportFromUnity, unityFromExport);
+            TrTransform scenePose_Export = ExportUtils.ChangeBasis(App.Scene.Pose, exportFromUnity, unityFromExport);
+
+            // Apply Scene.Pose in export coordinate space
+            TrTransform cameraTr_Export = scenePose_Export * cameraTr_Export_Scene;
+
+            // Apply scale conversion
+            cameraTr_Export = cameraTr_Export.TransformBy(TrTransform.S(payload.exportUnitsFromAppUnits));
+
+            // Create a perspective camera with reasonable defaults
+            var camera = new GlTF_Perspective(exporter.G);
+            camera.name = "SaveCamera";
+            camera.aspect_ratio = 16.0f / 9.0f;  // Standard aspect ratio
+            camera.yfov = 60.0f * Mathf.Deg2Rad;  // 60 degree FOV in radians
+            camera.znear = 0.1f * payload.exportUnitsFromAppUnits;
+            camera.zfar = 1000.0f * payload.exportUnitsFromAppUnits;
+
+            exporter.G.cameras.Add(camera);
+
+            // Create a node for the camera
+            Matrix4x4 cameraMatrix = Matrix4x4.TRS(
+                cameraTr_Export.translation,
+                cameraTr_Export.rotation,
+                Vector3.one  // Cameras don't have scale
+            );
+
+            var cameraNode = GlTF_Node.Create(exporter.G, "SaveCameraNode", cameraMatrix, null);
+            cameraNode.cameraName = camera.name;
         }
 
         private void WriteObjectsAndConnections(GlTF_ScriptableExporter exporter,
@@ -311,6 +359,9 @@ namespace TiltBrush
                 var node = GlTF_Node.Create(exporter.G, uniqueName, xformPayload.xform, null);
                 node.PresentationNameOverride = $"empty_{xformPayload.name}";
             }
+
+            // Export camera from LastSaveCameraRigState
+            ExportSaveCamera(exporter, payload);
         }
     }
 
