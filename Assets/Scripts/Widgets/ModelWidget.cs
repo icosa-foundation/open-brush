@@ -290,8 +290,8 @@ namespace TiltBrush
             }
             this.gameObject.transform.SetParent(App.Scene.ActiveCanvas.transform);
             m_ModelInstance = Instantiate(m_Model.m_ModelParent);
-            m_ModelInstance.gameObject.SetActive(true);
             m_ModelInstance.parent = this.transform;
+            m_ModelInstance.gameObject.SetActive(true);
 
 
 

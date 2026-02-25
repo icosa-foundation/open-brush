@@ -76,6 +76,7 @@ namespace TiltBrush
             Seed = 1 << 3, // int32; if not found then you get a random int.
             Track = 1 << 4, // uint32 - previously known as Layer;
             Frame = 1 << 5, // uint32;
+            ControlPointColors = 1 << 16, // Variable-length: Color32[] + ColorControlMode; per-point colors
         }
 
         [Flags]
@@ -245,6 +246,7 @@ namespace TiltBrush
                 if (stroke.Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
                 strokeExtensionMask |= StrokeExtension.Track;
                 strokeExtensionMask |= StrokeExtension.Frame;
+                if (stroke.m_OverrideColors != null) { strokeExtensionMask |= StrokeExtension.ControlPointColors; }
 
                 writer.UInt32((uint)strokeExtensionMask);
                 uint controlPointExtensionMask =
@@ -272,6 +274,51 @@ namespace TiltBrush
                 if ((uint)(strokeExtensionMask & StrokeExtension.Frame) != 0)
                 {
                     writer.UInt32(copy.frameIndex);
+                }
+                if ((uint)(strokeExtensionMask & StrokeExtension.ControlPointColors) != 0)
+                {
+                    // Write length prefix for variable-length extension, then data
+                    // Data: ColorControlMode (UInt32) + array length (Int32) + bitmask (bytes) + non-null Color32 array (UInt32 each)
+
+                    int count = stroke.m_OverrideColors.Count;
+                    int bitmaskBytes = (count + 7) / 8; // Round up to nearest byte
+
+                    // Count non-null entries
+                    int nonNullCount = 0;
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (stroke.m_OverrideColors[i].HasValue) nonNullCount++;
+                    }
+
+                    uint dataSize = (uint)(4 + 4 + bitmaskBytes + (nonNullCount * 4));
+                    writer.UInt32(dataSize);
+
+                    writer.UInt32((uint)stroke.m_ColorOverrideMode);
+                    writer.Int32(count);
+
+                    // Write bitmask (1 bit per entry, 1=non-null, 0=null)
+                    byte[] bitmask = new byte[bitmaskBytes];
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (stroke.m_OverrideColors[i].HasValue)
+                        {
+                            int byteIndex = i / 8;
+                            int bitIndex = i % 8;
+                            bitmask[byteIndex] |= (byte)(1 << bitIndex);
+                        }
+                    }
+                    writer.BaseStream.Write(bitmask, 0, bitmaskBytes);
+
+                    // Write only non-null colors
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (stroke.m_OverrideColors[i].HasValue)
+                        {
+                            Color32 c = stroke.m_OverrideColors[i].Value;
+                            uint packed = (uint)(c.r | (c.g << 8) | (c.b << 16) | (c.a << 24));
+                            writer.UInt32(packed);
+                        }
+                    }
                 }
 
                 // Control points
@@ -334,6 +381,7 @@ namespace TiltBrush
                 if (stroke.Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
                 strokeExtensionMask |= StrokeExtension.Track;
                 strokeExtensionMask |= StrokeExtension.Frame;
+                if (stroke.m_OverrideColors != null) { strokeExtensionMask |= StrokeExtension.ControlPointColors; }
 
                 writer.UInt32((uint)strokeExtensionMask);
                 uint controlPointExtensionMask =
@@ -361,6 +409,51 @@ namespace TiltBrush
                 if ((uint)(strokeExtensionMask & StrokeExtension.Frame) != 0)
                 {
                     writer.UInt32(copy.frameIndex);
+                }
+                if ((uint)(strokeExtensionMask & StrokeExtension.ControlPointColors) != 0)
+                {
+                    // Write length prefix for variable-length extension, then data
+                    // Data: ColorControlMode (UInt32) + array length (Int32) + bitmask (bytes) + non-null Color32 array (UInt32 each)
+
+                    int count = stroke.m_OverrideColors.Count;
+                    int bitmaskBytes = (count + 7) / 8; // Round up to nearest byte
+
+                    // Count non-null entries
+                    int nonNullCount = 0;
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (stroke.m_OverrideColors[i].HasValue) nonNullCount++;
+                    }
+
+                    uint dataSize = (uint)(4 + 4 + bitmaskBytes + (nonNullCount * 4));
+                    writer.UInt32(dataSize);
+
+                    writer.UInt32((uint)stroke.m_ColorOverrideMode);
+                    writer.Int32(count);
+
+                    // Write bitmask (1 bit per entry, 1=non-null, 0=null)
+                    byte[] bitmask = new byte[bitmaskBytes];
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (stroke.m_OverrideColors[i].HasValue)
+                        {
+                            int byteIndex = i / 8;
+                            int bitIndex = i % 8;
+                            bitmask[byteIndex] |= (byte)(1 << bitIndex);
+                        }
+                    }
+                    writer.BaseStream.Write(bitmask, 0, bitmaskBytes);
+
+                    // Write only non-null colors
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (stroke.m_OverrideColors[i].HasValue)
+                        {
+                            Color32 c = stroke.m_OverrideColors[i].Value;
+                            uint packed = (uint)(c.r | (c.g << 8) | (c.b << 16) | (c.a << 24));
+                            writer.UInt32(packed);
+                        }
+                    }
                 }
 
                 // Control points
@@ -576,6 +669,42 @@ namespace TiltBrush
                             var canvas = App.Scene.animationUI_manager.GetTimelineCanvas((int)thisTrack, (int)frameIndex);
                             stroke.m_IntendedCanvas = canvas;
                             break;
+                        case StrokeExtension.ControlPointColors:
+                            {
+                                uint dataSize = reader.UInt32(); // Read length prefix for variable-length extension
+                                stroke.m_ColorOverrideMode = (ColorOverrideMode)reader.UInt32();
+                                int colorCount = reader.Int32();
+
+                                // Read bitmask
+                                int bitmaskBytes = (colorCount + 7) / 8;
+                                byte[] bitmask = new byte[bitmaskBytes];
+                                int bytesRead = reader.BaseStream.Read(bitmask, 0, bitmaskBytes);
+                                if (bytesRead != bitmaskBytes) { return null; }
+
+                                // Create list with nulls
+                                stroke.m_OverrideColors = new List<Color32?>(new Color32?[colorCount]);
+
+                                // Read non-null colors and place them according to bitmask
+                                for (int cpIdx = 0; cpIdx < colorCount; cpIdx++)
+                                {
+                                    int byteIndex = cpIdx / 8;
+                                    int bitIndex = cpIdx % 8;
+                                    bool isNonNull = (bitmask[byteIndex] & (1 << bitIndex)) != 0;
+
+                                    if (isNonNull)
+                                    {
+                                        // Unpack UInt32 into RGBA bytes
+                                        uint packed = reader.UInt32();
+                                        stroke.m_OverrideColors[cpIdx] = new Color32(
+                                            (byte)(packed & 0xFF),
+                                            (byte)((packed >> 8) & 0xFF),
+                                            (byte)((packed >> 16) & 0xFF),
+                                            (byte)((packed >> 24) & 0xFF)
+                                        );
+                                    }
+                                }
+                                break;
+                            }
                         case StrokeExtension.Seed:
                             stroke.m_Seed = reader.Int32();
                             break;
@@ -598,10 +727,10 @@ namespace TiltBrush
 
                 // control points
                 int nControlPoints = reader.Int32();
-                stroke.m_ControlPoints = new PointerManager.ControlPoint[nControlPoints];
+                stroke.m_ControlPoints = new ControlPoint[nControlPoints];
                 stroke.m_ControlPointsToDrop = new bool[nControlPoints];
 
-                if (allowFastPath && controlPointExtensionMask == PointerManager.ControlPoint.EXTENSIONS)
+                if (allowFastPath && controlPointExtensionMask == ControlPoint.EXTENSIONS)
                 {
                     // Fast path: read (semi-)directly into the ControlPoint[]
                     unsafe
@@ -756,6 +885,42 @@ namespace TiltBrush
                                 frameIndex = 0;
                             }
                             break;
+                        case StrokeExtension.ControlPointColors:
+                            {
+                                uint dataSize = reader.UInt32(); // Read length prefix for variable-length extension
+                                stroke.m_ColorOverrideMode = (ColorOverrideMode)reader.UInt32();
+                                int colorCount = reader.Int32();
+
+                                // Read bitmask
+                                int bitmaskBytes = (colorCount + 7) / 8;
+                                byte[] bitmask = new byte[bitmaskBytes];
+                                int bytesRead = reader.BaseStream.Read(bitmask, 0, bitmaskBytes);
+                                if (bytesRead != bitmaskBytes) { return null; }
+
+                                // Create list with nulls
+                                stroke.m_OverrideColors = new List<Color32?>(new Color32?[colorCount]);
+
+                                // Read non-null colors and place them according to bitmask
+                                for (int cpIdx = 0; cpIdx < colorCount; cpIdx++)
+                                {
+                                    int byteIndex = cpIdx / 8;
+                                    int bitIndex = cpIdx % 8;
+                                    bool isNonNull = (bitmask[byteIndex] & (1 << bitIndex)) != 0;
+
+                                    if (isNonNull)
+                                    {
+                                        // Unpack UInt32 into RGBA bytes
+                                        uint packed = reader.UInt32();
+                                        stroke.m_OverrideColors[cpIdx] = new Color32(
+                                            (byte)(packed & 0xFF),
+                                            (byte)((packed >> 8) & 0xFF),
+                                            (byte)((packed >> 16) & 0xFF),
+                                            (byte)((packed >> 24) & 0xFF)
+                                        );
+                                    }
+                                }
+                                break;
+                            }
                         case StrokeExtension.Seed:
                             stroke.m_Seed = reader.Int32();
                             break;
@@ -780,15 +945,15 @@ namespace TiltBrush
 
                 // Process control points...
                 int nControlPoints = reader.Int32();
-                stroke.m_ControlPoints = new PointerManager.ControlPoint[nControlPoints];
+                stroke.m_ControlPoints = new ControlPoint[nControlPoints];
                 stroke.m_ControlPointsToDrop = new bool[nControlPoints];
 
-                if (allowFastPath && controlPointExtensionMask == PointerManager.ControlPoint.EXTENSIONS)
+                if (allowFastPath && controlPointExtensionMask == ControlPoint.EXTENSIONS)
                 {
                     unsafe
                     {
-                        int size = sizeof(PointerManager.ControlPoint) * stroke.m_ControlPoints.Length;
-                        fixed (PointerManager.ControlPoint* aPoints = stroke.m_ControlPoints)
+                        int size = sizeof(ControlPoint) * stroke.m_ControlPoints.Length;
+                        fixed (ControlPoint* aPoints = stroke.m_ControlPoints)
                         {
                             if (!reader.ReadInto((IntPtr)aPoints, size))
                             {

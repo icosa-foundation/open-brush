@@ -15,9 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 namespace TiltBrush
 {
@@ -74,6 +72,8 @@ namespace TiltBrush
         private float m_CurrentBrushSize; // In pointer aka room space
         private Vector2 m_BrushSizeRange;
         private float m_CurrentPressure; // TODO: remove and query line instead?
+        public Color32? CurrentColorOverride { get; set; }
+        public ColorOverrideMode CurrentColorOverrideMode { get; set; }
         private BaseBrushScript m_CurrentLine;
         private ParametricStrokeCreator m_CurrentCreator;
         private float m_ParametricCreatorBackupStrokeSize; // In pointer aka room space
@@ -94,6 +94,7 @@ namespace TiltBrush
 
         private List<PreviewControlPoint> m_PreviewControlPoints; // FIFO queue
         private List<PointerManager.ControlPoint> m_ControlPoints;
+        private List<Color32?> m_ControlPointColors;
 
         // Used by the API
         public List<TrTransform> CurrentPath
@@ -589,7 +590,8 @@ namespace TiltBrush
                 return;
             }
 
-            bool bQuadCreated = m_CurrentLine.UpdatePosition_LS(xf_LS, m_CurrentPressure);
+            Color32? colorOverride = CurrentColorOverrideMode == ColorOverrideMode.None ? null : CurrentColorOverride;
+            bool bQuadCreated = m_CurrentLine.UpdatePosition_LS(xf_LS, m_CurrentPressure, colorOverride);
 
             // TODO: let brush take care of storing control points, not us
             SetControlPoint(xf_LS, isKeeper: bQuadCreated);
@@ -631,11 +633,11 @@ namespace TiltBrush
         /// - Do _not_ apply any normal adjustment; it's baked into the control point
         /// - Do not update the mesh
         /// TODO: replace with a bulk-ControlPoint API
-        public void UpdateLineFromControlPoint(PointerManager.ControlPoint cp)
+        public void UpdateLineFromControlPoint(PointerManager.ControlPoint cp, Color32 color)
         {
             float scale = m_CurrentLine.StrokeScale;
             m_CurrentLine.UpdatePosition_LS(
-                TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure);
+                TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure, color);
         }
 
         /// Bulk control point addition
@@ -649,9 +651,13 @@ namespace TiltBrush
                 simplifier.CalculatePointsToDrop(stroke, CurrentBrushScript);
             }
             float scale = m_CurrentLine.StrokeScale;
-            foreach (var cp in stroke.m_ControlPoints.Where((x, i) => !stroke.m_ControlPointsToDrop[i]))
+            for (int i = 0; i < stroke.m_ControlPoints.Length; i++)
             {
-                m_CurrentLine.UpdatePosition_LS(TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure);
+                if (stroke.m_ControlPointsToDrop[i]) continue;
+                var cp = stroke.m_ControlPoints[i];
+                Color32 color = stroke.GetColor(i);
+                m_CurrentLine.UpdatePosition_LS(
+                    TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure, color);
             }
         }
 
@@ -874,6 +880,11 @@ namespace TiltBrush
             }
 
             m_LastControlPointIsKeeper = isKeeper;
+
+            if (!m_CurrentLine) return;
+            if (CurrentColorOverrideMode == ColorOverrideMode.None) return;
+            m_ControlPointColors ??= Enumerable.Repeat((Color32?)null, m_ControlPoints.Count).ToList();
+            m_ControlPointColors.Add(CurrentColorOverride);
         }
 
         /// Pass a Canvas parent, and a transform in that canvas's space.
@@ -1040,8 +1051,10 @@ namespace TiltBrush
                         WidgetManager.m_Instance.ActiveStencil,
                         m_LineLength_CS,
                         m_CurrentLine.RandomSeed,
-                        isFinalStroke
-                        );
+                        isFinalStroke,
+                        m_ControlPointColors,
+                        CurrentColorOverrideMode
+                    );
                 }
                 else
                 {
@@ -1079,7 +1092,10 @@ namespace TiltBrush
                         m_CurrentBrushSize,
                         m_CurrentLine.StrokeScale,
                         m_ControlPoints, strokeFlags,
-                        WidgetManager.m_Instance.ActiveStencil, m_LineLength_CS);
+                        WidgetManager.m_Instance.ActiveStencil, m_LineLength_CS,
+                        m_CurrentLine.StrokeData?.m_OverrideColors,
+                        m_CurrentLine.StrokeData?.m_ColorOverrideMode ?? ColorOverrideMode.None
+                    );
                 }
                 else
                 {
@@ -1153,6 +1169,7 @@ namespace TiltBrush
             CreateNewLine(canvas, xf_CS, null);
             m_CurrentLine.SetIsLoading();
             m_CurrentLine.RandomSeed = stroke.m_Seed;
+            m_CurrentLine.SetStrokeData(stroke);
 
             return m_CurrentLine.gameObject;
         }

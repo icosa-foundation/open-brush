@@ -861,6 +861,10 @@ namespace TiltBrush
                         {
                             WidgetManager.m_Instance.SetTextDataFromTilt(jsonData.TextWidgets);
                         }
+                        if (SoundClipCatalog.Instance != null && jsonData.SoundClips != null)
+                        {
+                            WidgetManager.m_Instance.SetSoundDataFromTilt(jsonData.SoundClips);
+                        }
                     }
                     if (jsonData.Mirror != null)
                     {

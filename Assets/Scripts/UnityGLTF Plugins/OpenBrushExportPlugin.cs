@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using GLTF.Schema;
 using Newtonsoft.Json.Linq;
@@ -29,6 +30,7 @@ namespace TiltBrush
         private List<Camera> m_CameraPathsCameras;
         private GameObject m_ThumbnailCamera;
         private bool m_WasUsingBatchedBrushes;
+        private List<(Node node, SoundClipWidget widget)> m_SoundClipNodes;
 
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
@@ -38,6 +40,7 @@ namespace TiltBrush
             }
             SelectionManager.m_Instance?.ClearActiveSelection();
             _meshesToBatches = new Dictionary<int, Batch>();
+            m_SoundClipNodes = new List<(Node node, SoundClipWidget widget)>();
             GenerateCameraPathsCameras();
             m_ThumbnailCamera = App.Instance.InstantiateThumbnailCamera();
             m_ThumbnailCamera.transform.SetParent(App.Scene.MainCanvas.transform, worldPositionStays: true);
@@ -210,6 +213,15 @@ namespace TiltBrush
             };
             bool hasExcludedComponent = excludedTypes.Any(t => transform.GetComponent(t) != null);
             bool excludedName = false; // TODO
+
+            // Exclude children of SoundClipWidget (distance visualisation spheres etc.)
+            // but keep the widget node itself so we can attach the audio emitter to it.
+            if (transform.GetComponent<SoundClipWidget>() == null &&
+                transform.GetComponentInParent<SoundClipWidget>() != null)
+            {
+                return false;
+            }
+
             return !hasExcludedComponent && !excludedName;
         }
 
@@ -286,6 +298,15 @@ namespace TiltBrush
             }
 
             if (!Application.isPlaying) return;
+
+            var soundClipWidget = transform.GetComponent<SoundClipWidget>();
+            if (soundClipWidget != null &&
+                soundClipWidget.SoundClip != null &&
+                !string.IsNullOrEmpty(soundClipWidget.SoundClip.AbsolutePath))
+            {
+                m_SoundClipNodes.Add((node, soundClipWidget));
+            }
+
             if (App.UserConfig.Export.KeepStrokes && App.UserConfig.Export.ExportStrokeMetadata)
             {
                 var brush = transform.GetComponent<BaseBrushScript>();
@@ -445,9 +466,108 @@ namespace TiltBrush
             }
         }
 
+        private static string AudioMimeType(string filePath)
+        {
+            return Path.GetExtension(filePath).ToLowerInvariant() switch
+            {
+                ".mp3" => "audio/mpeg",
+                ".wav" => "audio/wav",
+                ".ogg" => "audio/ogg",
+                _ => "audio/mpeg"
+            };
+        }
+
+        private void ExportSoundClips(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
+        {
+            if (m_SoundClipNodes == null || m_SoundClipNodes.Count == 0) return;
+
+            var rootExt = new GLTF.Schema.KHR_audio_emitter();
+
+            foreach (var (node, widget) in m_SoundClipNodes)
+            {
+                var soundClip = widget.SoundClip;
+                var (volume, loop, spatialBlend, minDistance, maxDistance) = widget.GetAudioExportSettings();
+
+                if (!File.Exists(soundClip.AbsolutePath))
+                {
+                    Debug.LogWarning($"KHR_audio_emitter: audio file not found, skipping: {soundClip.AbsolutePath}");
+                    continue;
+                }
+
+                // Export the audio file — bufferView for GLB, sidecar file for GLTF
+                var fileStream = new FileStream(soundClip.AbsolutePath, FileMode.Open, FileAccess.Read);
+                var result = exporter.ExportFile(
+                    Path.GetFileName(soundClip.AbsolutePath),
+                    AudioMimeType(soundClip.AbsolutePath),
+                    fileStream);
+
+                int audioIndex = rootExt.audio.Count;
+                var audioData = new KHR_AudioData();
+                if (string.IsNullOrEmpty(result.uri))
+                {
+                    audioData.mimeType = result.mimeType;
+                    audioData.bufferView = result.bufferView;
+                }
+                else
+                {
+                    audioData.uri = result.uri;
+                }
+                rootExt.audio.Add(audioData);
+
+                int sourceIndex = rootExt.sources.Count;
+                rootExt.sources.Add(new KHR_AudioSource
+                {
+                    audio = new AudioDataId { Id = audioIndex, Root = gltfRoot },
+                    gain = volume,
+                    loop = loop,
+                    autoPlay = true,
+                    Name = soundClip.HumanName,
+                });
+
+                bool isSpatial = spatialBlend > 0.5f;
+                int emitterIndex = rootExt.emitters.Count;
+                rootExt.emitters.Add(new KHR_AudioEmitter
+                {
+                    type = isSpatial ? "positional" : "global",
+                    gain = 1.0f,
+                    sources = new List<AudioSourceId>
+                    {
+                        new AudioSourceId { Id = sourceIndex, Root = gltfRoot }
+                    },
+                    positional = isSpatial ? new PositionalEmitterData
+                    {
+                        distanceModel = PositionalAudioDistanceModel.inverse,
+                        refDistance = minDistance,
+                        maxDistance = maxDistance,
+                        rolloffFactor = 1.0f
+                    } : null
+                });
+
+                node.AddExtension(GLTF.Schema.KHR_audio_emitter.ExtensionName,
+                    new KHR_NodeAudioEmitterRef
+                    {
+                        emitter = new AudioEmitterId { Id = emitterIndex, Root = gltfRoot }
+                    });
+            }
+
+            if (rootExt.audio.Count == 0) return;
+
+            gltfRoot.AddExtension(GLTF.Schema.KHR_audio_emitter.ExtensionName, rootExt);
+            exporter.DeclareExtensionUsage(GLTF.Schema.KHR_audio_emitter.ExtensionName);
+        }
+
         public override void AfterSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
             if (!Application.isPlaying) return;
+
+            try
+            {
+                ExportSoundClips(exporter, gltfRoot);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Error exporting sound clips: {e.Message}");
+            }
 
             try
             {
