@@ -196,6 +196,7 @@ namespace TiltBrush
 
             TiltSoundClip ConvertSoundClipWidgetToTiltSoundClip(SoundClipWidget widget)
             {
+                (int layerId, int frameId) = App.Scene.GetIndexOfCanvas(widget.Canvas);
                 TiltSoundClip soundClip = new TiltSoundClip
                 {
                     FilePath = widget.SoundClip.PersistentPath,
@@ -203,7 +204,8 @@ namespace TiltBrush
                     Pinned = widget.Pinned,
                     Transform = widget.LocalTransform,
                     GroupId = groupIdMapping.GetId(widget.Group),
-                    LayerId = App.Scene.GetIndexOfCanvas(widget.Canvas),
+                    LayerId = layerId,
+                    FrameId = frameId,
                     Paused = !widget.SoundClipController.Playing,
                     Time = widget.SoundClipController.Time,
                     Volume = widget.SoundClipController.Volume,
