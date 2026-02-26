@@ -1,5 +1,3 @@
-/// icosa-viewer.module.js v251218
-
 import * as $hBQxr$three from "three";
 import {DRACOLoader as $hBQxr$DRACOLoader} from "three/examples/jsm/loaders/DRACOLoader.js";
 import {GLTFLoader as $hBQxr$GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -1831,8 +1829,6 @@ class $e1f901905a002d12$export$2e2bcd8739ae039 extends $e1f901905a002d12$export$
      * @returns updated
      * @category Methods
      */ update(delta) {
-		if( ! this._enabled ) return ///	
-		
         const deltaTheta = this._sphericalEnd.theta - this._spherical.theta;
         const deltaPhi = this._sphericalEnd.phi - this._spherical.phi;
         const deltaRadius = this._sphericalEnd.radius - this._spherical.radius;
@@ -2281,34 +2277,34 @@ class $e1f901905a002d12$export$2e2bcd8739ae039 extends $e1f901905a002d12$export$
 
 
 class $a681b8b24de9c7d6$export$d1c1e163c7960c6 {
-    static createButton(renderer, sessionInit = {}) {
-        const button = document.createElement('button');
-        function showStartXR(mode) {
+    static createButton(renderer, sessionInit = {}, allowAR = true) {
+        const container = document.createElement('div');
+        container.style.position = 'absolute';
+        container.style.bottom = '20px';
+        container.style.left = '50%';
+        container.style.transform = 'translateX(-50%)';
+        container.style.display = 'flex';
+        container.style.gap = '10px';
+        container.style.zIndex = '999';
+        function createXRButton(mode, label) {
+            const button = document.createElement('button');
             let currentSession = null;
             async function onSessionStarted(session) {
                 session.addEventListener('end', onSessionEnded);
                 await renderer.xr.setSession(session);
-                button.textContent = 'STOP XR';
+                button.textContent = `STOP ${label}`;
                 currentSession = session;
             }
             function onSessionEnded() {
                 currentSession.removeEventListener('end', onSessionEnded);
-                button.textContent = 'START XR';
+                button.textContent = `START ${label}`;
                 currentSession = null;
             }
-            //
-            button.style.display = '';
             button.style.cursor = 'pointer';
-            button.style.left = 'calc(50% - 50px)';
             button.style.width = '100px';
-            button.textContent = 'START XR';
+            button.textContent = `START ${label}`;
             const sessionOptions = {
-                ...sessionInit,
-                optionalFeatures: [
-                    'local-floor',
-                    'bounded-floor',
-                    ...sessionInit.optionalFeatures || []
-                ]
+                ...sessionInit
             };
             button.onmouseenter = function() {
                 button.style.opacity = '1.0';
@@ -2328,29 +2324,10 @@ class $a681b8b24de9c7d6$export$d1c1e163c7960c6 {
             if (navigator.xr.offerSession !== undefined) navigator.xr.offerSession(mode, sessionOptions).then(onSessionStarted).catch((err)=>{
                 console.warn(err);
             });
-        }
-        function disableButton() {
-            button.style.display = '';
-            button.style.cursor = 'auto';
-            button.style.left = 'calc(50% - 75px)';
-            button.style.width = '150px';
-            button.onmouseenter = null;
-            button.onmouseleave = null;
-            button.onclick = null;
-        }
-        function showXRNotSupported() {
-            disableButton();
-            button.textContent = 'No headset found';
-            button.style.display = 'none';
-        }
-        function showXRNotAllowed(exception) {
-            disableButton();
-            console.warn('Exception when trying to call xr.isSessionSupported', exception);
-            button.textContent = 'XR NOT ALLOWED';
+            stylizeElement(button);
+            return button;
         }
         function stylizeElement(element) {
-            element.style.position = 'absolute';
-            element.style.bottom = '20px';
             element.style.padding = '12px 6px';
             element.style.border = '1px solid #fff';
             element.style.borderRadius = '4px';
@@ -2360,34 +2337,59 @@ class $a681b8b24de9c7d6$export$d1c1e163c7960c6 {
             element.style.textAlign = 'center';
             element.style.opacity = '0.5';
             element.style.outline = 'none';
-            element.style.zIndex = '999';
         }
         if ('xr' in navigator) {
-            button.id = 'XRButton';
-            button.style.display = 'none';
-            stylizeElement(button);
-            navigator.xr.isSessionSupported('immersive-ar').then(function(supported) {
-                // Disable AR
-                if (false) showStartXR('immersive-ar'); // was: if (supported)
-                else navigator.xr.isSessionSupported('immersive-vr').then(function(supported) {
-                    if (supported) showStartXR('immersive-vr');
-                    else showXRNotSupported();
-                }).catch(showXRNotAllowed);
-            }).catch(showXRNotAllowed);
-            return button;
+            const promises = [];
+            if (allowAR) promises.push(navigator.xr.isSessionSupported('immersive-ar').then((supported)=>({
+                    mode: 'immersive-ar',
+                    supported: supported,
+                    label: 'AR'
+                })).catch(()=>({
+                    mode: 'immersive-ar',
+                    supported: false,
+                    label: 'AR'
+                })));
+            promises.push(navigator.xr.isSessionSupported('immersive-vr').then((supported)=>({
+                    mode: 'immersive-vr',
+                    supported: supported,
+                    label: 'VR'
+                })).catch(()=>({
+                    mode: 'immersive-vr',
+                    supported: false,
+                    label: 'VR'
+                })));
+            Promise.all(promises).then((results)=>{
+                let supportedModes = results.filter((r)=>r.supported);
+                // For debugging
+                // if (supportedModes.length === 0 || true) {
+                //     supportedModes.push({mode: 'immersive-vr', supported: true, label: 'VR'});
+                //     supportedModes.push({mode: 'immersive-ar', supported: true, label: 'AR'});
+                // }
+                if (supportedModes.length === 0) {
+                    const message = document.createElement('div');
+                    message.textContent = 'No headset found';
+                    message.style.cursor = 'auto';
+                    message.style.width = '150px';
+                    message.style.display = 'none';
+                    stylizeElement(message);
+                    container.appendChild(message);
+                } else supportedModes.forEach(({ mode: mode, label: label })=>{
+                    const button = createXRButton(mode, label);
+                    container.appendChild(button);
+                });
+            });
+            return container;
         } else {
             const message = document.createElement('a');
             if (window.isSecureContext === false) {
                 message.href = document.location.href.replace(/^http:/, 'https:');
-                message.innerHTML = 'WEBXR NEEDS HTTPS'; // TODO Improve message
-            } else // message.href = 'https://immersiveweb.dev/';
-            // message.innerHTML = 'WEBXR NOT AVAILABLE';
-            message.style = 'display: none';
-            message.style.left = 'calc(50% - 90px)';
+                message.innerHTML = 'WEBXR NEEDS HTTPS';
+            } else message.style.display = 'none';
             message.style.width = '180px';
             message.style.textDecoration = 'none';
             stylizeElement(message);
-            return message;
+            container.appendChild(message);
+            return container;
         }
     }
 }
@@ -3776,6 +3778,233 @@ class $81e80e8b2d2d5e9f$var$GLTFParser {
 }
 
 
+class $707bd002539ed0ea$export$1b293339dff011f9 {
+    constructor(parser, listener, threeNamespace){
+        this.name = 'KHR_audio_emitter';
+        this.parser = parser;
+        this.listener = listener;
+        this.three = threeNamespace;
+        this.sourceBufferCache = new Map();
+    }
+    createNodeAttachment(nodeIndex) {
+        const nodeDef = this.parser?.json?.nodes?.[nodeIndex];
+        const nodeExt = nodeDef?.extensions?.[this.name];
+        const emitterIndex = nodeExt?.emitter;
+        if (typeof emitterIndex !== 'number') return null;
+        return this.createAudioForEmitter(emitterIndex, true).then((audio)=>{
+            if (audio) return audio;
+            console.warn(`[KHR_audio_emitter] node ${nodeIndex} emitter ${emitterIndex} produced no audio attachment`);
+            return this.createEmptyAttachment();
+        }).catch((err)=>{
+            console.error(`[KHR_audio_emitter] node ${nodeIndex} emitter ${emitterIndex} attachment failed`, err);
+            return this.createEmptyAttachment();
+        });
+    }
+    async afterRoot(result) {
+        const scenes = result?.scenes || [];
+        const processedSceneIndices = new Set();
+        const pending = [];
+        for (const scene of scenes){
+            const sceneIndex = this.parser?.associations?.get(scene)?.scenes;
+            if (typeof sceneIndex !== 'number' || processedSceneIndices.has(sceneIndex)) continue;
+            processedSceneIndices.add(sceneIndex);
+            const sceneDef = this.parser?.json?.scenes?.[sceneIndex];
+            const sceneExt = sceneDef?.extensions?.[this.name];
+            const emitterIndices = this.toIndexList(sceneExt?.emitters);
+            for (const emitterIndex of emitterIndices)pending.push(this.createAudioForEmitter(emitterIndex, false).then((audio)=>{
+                if (audio) scene.add(audio);
+            }).catch(()=>{}));
+        }
+        await Promise.all(pending);
+    }
+    getExtensionRoot() {
+        const rootExt = this.parser?.json?.extensions?.[this.name];
+        return rootExt && typeof rootExt === 'object' ? rootExt : null;
+    }
+    getSource(sourceIndex) {
+        const ext = this.getExtensionRoot();
+        const sources = ext?.sources;
+        return Array.isArray(sources) ? sources[sourceIndex] ?? null : null;
+    }
+    getEmitter(emitterIndex) {
+        const ext = this.getExtensionRoot();
+        const emitters = ext?.emitters;
+        return Array.isArray(emitters) ? emitters[emitterIndex] ?? null : null;
+    }
+    getAudio(audioIndex) {
+        const ext = this.getExtensionRoot();
+        const audioDefs = ext?.audio;
+        return Array.isArray(audioDefs) ? audioDefs[audioIndex] ?? null : null;
+    }
+    async createAudioForEmitter(emitterIndex, positionalPreferred) {
+        try {
+            const emitter = this.getEmitter(emitterIndex);
+            if (!emitter) {
+                console.warn(`[KHR_audio_emitter] missing emitter ${emitterIndex}`);
+                return null;
+            }
+            const sourceIndices = this.toIndexList(emitter.sources);
+            if (sourceIndices.length === 0) {
+                console.warn(`[KHR_audio_emitter] emitter ${emitterIndex} has no sources`);
+                return null;
+            }
+            const audioNodes = [];
+            for (const sourceIndex of sourceIndices){
+                const audioNode = await this.createAudioForSource(emitter, sourceIndex, positionalPreferred);
+                if (audioNode) audioNodes.push(audioNode);
+            }
+            if (audioNodes.length === 0) return null;
+            if (audioNodes.length === 1) return audioNodes[0];
+            const root = audioNodes[0];
+            for(let i = 1; i < audioNodes.length; i++)root.add(audioNodes[i]);
+            return root;
+        } catch (_err) {
+            return null;
+        }
+    }
+    createEmptyAttachment() {
+        const Object3DCtor = this.getThreeCtor([
+            79,
+            98,
+            106,
+            101,
+            99,
+            116,
+            51,
+            68
+        ]); // Object3D
+        return new Object3DCtor();
+    }
+    async createAudioForSource(emitter, sourceIndex, positionalPreferred) {
+        const source = this.getSource(sourceIndex);
+        if (!source) {
+            console.warn(`[KHR_audio_emitter] missing source ${sourceIndex}`);
+            return null;
+        }
+        const emitterType = emitter.type;
+        const isPositional = positionalPreferred && emitterType !== 'global';
+        const ctorNameCodes = isPositional ? [
+            80,
+            111,
+            115,
+            105,
+            116,
+            105,
+            111,
+            110,
+            97,
+            108,
+            65,
+            117,
+            100,
+            105,
+            111
+        ] // PositionalAudio
+         : [
+            65,
+            117,
+            100,
+            105,
+            111
+        ]; // Audio
+        const AudioCtor = this.getThreeCtor(ctorNameCodes);
+        const audio = new AudioCtor(this.listener);
+        const buffer = await this.loadSourceBuffer(sourceIndex);
+        if (!buffer) {
+            console.warn(`[KHR_audio_emitter] source ${sourceIndex} buffer load failed`);
+            return null;
+        }
+        audio.setBuffer(buffer);
+        const sourceGain = typeof source.gain === 'number' ? source.gain : 1.0;
+        const emitterGain = typeof emitter.gain === 'number' ? emitter.gain : 1.0;
+        audio.setVolume(sourceGain * emitterGain);
+        audio.setLoop(Boolean(source.loop));
+        audio.userData = audio.userData || {};
+        audio.userData.__khrAudioAutoPlay = Boolean(source.autoPlay);
+        if (isPositional) this.applyPositionalSettings(audio, emitter);
+        if (source.autoPlay) try {
+            audio.play();
+        } catch (_err) {
+            // Browsers can block autoplay until user interaction.
+            console.warn(`[KHR_audio_emitter] source ${sourceIndex} autoplay blocked (waiting for unlock)`);
+        }
+        return audio;
+    }
+    applyPositionalSettings(audio, emitter) {
+        const positional = emitter?.positional && typeof emitter.positional === 'object' ? emitter.positional : null;
+        if (!positional) return;
+        if (typeof positional.distanceModel === 'string') audio.setDistanceModel(positional.distanceModel);
+        if (typeof positional.maxDistance === 'number') audio.setMaxDistance(positional.maxDistance);
+        if (typeof positional.refDistance === 'number') audio.setRefDistance(positional.refDistance);
+        if (typeof positional.rolloffFactor === 'number') audio.setRolloffFactor(positional.rolloffFactor);
+        const shapeType = positional.shapeType;
+        if (shapeType === 'cone') {
+            const innerAngleRad = positional.coneInnerAngle ?? Math.PI * 2;
+            const outerAngleRad = positional.coneOuterAngle ?? Math.PI * 2;
+            const outerGain = positional.coneOuterGain ?? 0;
+            audio.setDirectionalCone(this.three.MathUtils.radToDeg(innerAngleRad), this.three.MathUtils.radToDeg(outerAngleRad), outerGain);
+        }
+    }
+    loadSourceBuffer(sourceIndex) {
+        const cached = this.sourceBufferCache.get(sourceIndex);
+        if (cached) return cached;
+        const source = this.getSource(sourceIndex);
+        if (!source || typeof source.audio !== 'number') {
+            const missing = Promise.resolve(null);
+            this.sourceBufferCache.set(sourceIndex, missing);
+            return missing;
+        }
+        const promise = this.loadAudioBuffer(source.audio);
+        this.sourceBufferCache.set(sourceIndex, promise);
+        return promise;
+    }
+    toIndexList(value) {
+        if (!Array.isArray(value)) return [];
+        const out = [];
+        for (const item of value)if (typeof item === 'number') out.push(item);
+        return out;
+    }
+    async loadAudioBuffer(audioIndex) {
+        const audioDef = this.getAudio(audioIndex);
+        if (!audioDef) {
+            console.warn(`[KHR_audio_emitter] missing audio entry ${audioIndex}`);
+            return null;
+        }
+        let arrayBuffer = null;
+        if (typeof audioDef.uri === 'string') arrayBuffer = await this.loadArrayBufferFromUri(audioDef.uri);
+        else if (typeof audioDef.bufferView === 'number') arrayBuffer = await this.parser.getDependency('bufferView', audioDef.bufferView);
+        if (!arrayBuffer) {
+            console.warn(`[KHR_audio_emitter] audio ${audioIndex} has no uri/bufferView data`);
+            return null;
+        }
+        const clonedBuffer = arrayBuffer.slice(0);
+        try {
+            const decoded = await this.listener.context.decodeAudioData(clonedBuffer);
+            return decoded;
+        } catch (err) {
+            console.error(`[KHR_audio_emitter] audio ${audioIndex} decode failed`, err);
+            return null;
+        }
+    }
+    loadArrayBufferFromUri(uri) {
+        return new Promise((resolve, reject)=>{
+            const path = this.parser?.options?.path || '';
+            const resolvedUri = this.three.LoaderUtils.resolveURL(uri, path);
+            const loader = new this.three.FileLoader(this.parser?.options?.manager);
+            loader.setResponseType('arraybuffer');
+            loader.setWithCredentials(this.parser?.options?.withCredentials === true);
+            loader.load(resolvedUri, (data)=>resolve(data), undefined, reject);
+        });
+    }
+    getThreeCtor(charCodes) {
+        const key = String.fromCharCode(...charCodes);
+        const ctor = this.three[key];
+        if (typeof ctor !== 'function') throw new Error(`[KHR_audio_emitter] THREE.${key} constructor unavailable`);
+        return ctor;
+    }
+}
+
+
 
 class $677737c8a5cbea2f$var$SketchMetadata {
     constructor(scene, userData){
@@ -3863,9 +4092,15 @@ class $677737c8a5cbea2f$var$EnvironmentPreset {
     }
 }
 class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
-    constructor(assetBaseUrl, pre_render, frame){///
-		this.pre_render  = pre_render ///
-				
+    constructor(assetBaseUrl, pre_render = (_)=>{
+        return {
+            speed: 0.05,
+            flight_speed: 0,
+            update_controls: true
+        };
+    }, frame){
+        this.pre_render = pre_render ///
+        ;
         this.loadingError = false;
         this.icosa_frame = frame;
         // Attempt to find viewer frame if not assigned
@@ -3875,19 +4110,19 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             this.icosa_frame = document.createElement('div');
             this.icosa_frame.id = 'icosa-viewer';
         }
-		/* ///
-        initCustomUi(this.icosa_frame);
+        /* initCustomUi(this.icosa_frame); ///
+
         const controlPanel = document.createElement('div');
         controlPanel.classList.add('control-panel');
+
         const fullscreenButton = document.createElement('button');
         fullscreenButton.classList.add('panel-button', 'fullscreen-button');
-        fullscreenButton.onclick = ()=>{
-            this.toggleFullscreen(fullscreenButton);
-        };
+        fullscreenButton.onclick = () => { this.toggleFullscreen(fullscreenButton); }
+
         controlPanel.appendChild(fullscreenButton);
+
         this.icosa_frame.appendChild(controlPanel);
-		/// */
-		
+        */ ///
         //loadscreen
         const loadscreen = document.createElement('div');
         loadscreen.id = 'loadscreen';
@@ -3932,8 +4167,10 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         this.voxLoader = new (0, $hBQxr$VOXLoader)(manager);
         this.gltfLegacyLoader = new (0, $81e80e8b2d2d5e9f$export$9559c3115faeb0b0)(manager, assetBaseUrl);
         this.gltfLoader = new (0, $hBQxr$GLTFLoader)(manager);
+        this.audioListener = new $hBQxr$three.AudioListener();
         // this.gltfLoader.register(parser => new GLTFGoogleTiltBrushTechniquesExtension(parser, this.brushPath.toString()));
         this.gltfLoader.register((parser)=>new (0, $hBQxr$GLTFGoogleTiltBrushMaterialExtension)(parser, this.brushPath.toString()));
+        this.gltfLoader.register((parser)=>new (0, $707bd002539ed0ea$export$1b293339dff011f9)(parser, this.audioListener, $hBQxr$three));
         const dracoLoader = new (0, $hBQxr$DRACOLoader)();
         dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
         this.gltfLoader.setDRACOLoader(dracoLoader);
@@ -3946,6 +4183,16 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         this.canvas.onmouseup = ()=>{
             this.canvas.classList.remove('grabbed');
         };
+        const unlockAudio = ()=>{
+            if (this.audioListener.context.state !== 'running') this.audioListener.context.resume().catch(()=>{});
+            this.tryStartAutoplayAudio(this.scene);
+        };
+        window.addEventListener('pointerdown', unlockAudio, {
+            passive: true
+        });
+        window.addEventListener('touchstart', unlockAudio, {
+            passive: true
+        });
         this.renderer = new $hBQxr$three.WebGLRenderer({
             canvas: this.canvas,
             antialias: true
@@ -3953,6 +4200,8 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.outputColorSpace = $hBQxr$three.SRGBColorSpace;
         this.renderer.xr.enabled = true;
+        // Use 'local' reference space for full 6DOF tracking without floor offset
+        this.renderer.xr.setReferenceSpaceType('local');
         function handleController(inputSource) {
             const gamepad = inputSource.gamepad;
             if (gamepad) return {
@@ -3969,32 +4218,29 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         let controllerGrip0;
         let controllerGrip1;
         let previousLeftThumbstickX = 0;
-		
-		viewer1.flying_value = 0 ///		
-		
-		try { ///
-			controller0 = this.renderer.xr.getController(0);
-			controller0.addEventListener( 'selectstart', _=>{ viewer1.flying_value = 1 })///
-			controller0.addEventListener( 'selectend',   _=>{ viewer1.flying_value = 0 })///
-			this.scene.add(controller0);
-			controller1 = this.renderer.xr.getController(1);
-			controller1.addEventListener( 'selectstart', _=>{ viewer1.flying_value = 1 })///
-			controller1.addEventListener( 'selectend',   _=>{ viewer1.flying_value = 0 })///
-			this.scene.add(controller1);
-			const controllerModelFactory = new (0, $hBQxr$XRControllerModelFactory)();
-			controllerGrip0 = this.renderer.xr.getControllerGrip(0);
-			controllerGrip0.add(controllerModelFactory.createControllerModel(controllerGrip0));
-			this.scene.add(controllerGrip0);
-			controllerGrip1 = this.renderer.xr.getControllerGrip(1);
-			controllerGrip1.add(controllerModelFactory.createControllerModel(controllerGrip1));
-			this.scene.add(controllerGrip1);
-		} catch( error ){} ///
-		
-        let xrButton = (0, $a681b8b24de9c7d6$export$d1c1e163c7960c6).createButton(this.renderer);
-        this.xrButton = xrButton ///
-		
-		/* ///this.icosa_frame.appendChild(xrButton);
-        function initCustomUi(viewerContainer) {
+        try {
+            controller0 = this.renderer.xr.getController(0);
+            this.scene.add(controller0);
+            controller1 = this.renderer.xr.getController(1);
+            this.scene.add(controller1);
+            const controllerModelFactory = new (0, $hBQxr$XRControllerModelFactory)();
+            controllerGrip0 = this.renderer.xr.getControllerGrip(0);
+            controllerGrip0.add(controllerModelFactory.createControllerModel(controllerGrip0));
+            this.scene.add(controllerGrip0);
+            controllerGrip1 = this.renderer.xr.getControllerGrip(1);
+            controllerGrip1.add(controllerModelFactory.createControllerModel(controllerGrip1));
+            this.scene.add(controllerGrip1);
+        } catch (error) {} ///
+        let xrButton = (0, $a681b8b24de9c7d6$export$d1c1e163c7960c6).createButton(this.renderer, {
+            requiredFeatures: [
+                'hand-tracking'
+            ]
+        }, true); ///
+        this.xrButton_container = xrButton;
+        /* ///this.icosa_frame.appendChild(xrButton);
+
+        function initCustomUi(viewerContainer : HTMLElement) {
+
             const button = document.createElement('button');
             button.innerHTML = `<?xml version="1.0" encoding="utf-8"?>
 <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -4012,42 +4258,52 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             button.title = 'Fit Scene to View';
             viewerContainer.appendChild(button);
             const svgPath = button.querySelector('path');
-            button.addEventListener('click', ()=>{
-                viewer1.frameScene();
+            button.addEventListener('click', () => {
+                viewer.frameScene();
             });
-            button.addEventListener('mouseover', ()=>{
+
+            button.addEventListener('mouseover', () => {
                 svgPath.setAttribute('stroke', 'rgba(255, 255, 255, 0.7)');
             });
-            button.addEventListener('mouseout', ()=>{
+            button.addEventListener('mouseout', () => {
                 svgPath.setAttribute('stroke', 'white');
             });
-        }*/
-		
+
+
+        } */ ///
         const animate = ()=>{
             this.renderer.setAnimationLoop(render);
         // requestAnimationFrame( animate );
         // composer.render();
         };
         const render = ()=>{
-			
-			this.pre_render() ///
-			
+            const { speed: moveSpeed, flight_speed: flight_speed, update_controls: update_controls } = this.pre_render() ///
+            ;
             const delta = clock.getDelta();
             if (this.renderer.xr.isPresenting) {
                 let session = this.renderer.xr.getSession();
                 viewer1.activeCamera = viewer1?.xrCamera;
                 const inputSources = Array.from(session.inputSources);
-                const moveSpeed = 0.05;
-                const snapAngle = 45; ///
+                //const moveSpeed = 0.05; ///
+                const snapAngle = 45; /// 15;
                 inputSources.forEach((inputSource)=>{
                     const controllerData = handleController(inputSource);
                     if (controllerData) {
-                        const axes = controllerData.axes;
+                        //const axes = controllerData.axes; ///
+                        let axes = controllerData.axes ///
+                        ;
+                        if (axes.length < 4) axes = [
+                            0,
+                            0,
+                            0,
+                            0
+                        ] ///                       
+                        ;
                         if (inputSource.handedness === 'left') // Movement (left thumbstick)
                         {
-                            if (Math.abs(axes[2]) > 0.1 || Math.abs(axes[3]) > 0.1 || viewer1.flying_value ) {///
+                            if (Math.abs(axes[2]) > 0.1 || Math.abs(axes[3]) > 0.1 || flight_speed) {
                                 const moveX = axes[2] * moveSpeed;
-                                const moveZ = -axes[3] * moveSpeed + viewer1.flying_value * 0.09;///
+                                const moveZ = -axes[3] * moveSpeed + flight_speed * 0.09; ///
                                 // Get the camera's forward and right vectors
                                 const forward = new $hBQxr$three.Vector3();
                                 viewer1.activeCamera.getWorldDirection(forward);
@@ -4066,12 +4322,14 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                         if (inputSource.handedness === 'right') {
                             // Rotation (right thumbstick x)
                             if (Math.abs(axes[2]) > 0.8 && Math.abs(previousLeftThumbstickX) <= 0.8) {
-								if (axes[2] > 0) viewer1.cameraRig.rotateOnWorldAxis( viewer1.activeCamera.up,  $hBQxr$three.MathUtils.degToRad(snapAngle)) /// viewer1.cameraRig.rotation.y -= $hBQxr$three.MathUtils.degToRad(snapAngle);
-								else             viewer1.cameraRig.rotateOnWorldAxis( viewer1.activeCamera.up, -$hBQxr$three.MathUtils.degToRad(snapAngle)) /// viewer1.cameraRig.rotation.y += $hBQxr$three.MathUtils.degToRad(snapAngle);
+                                if (axes[2] > 0) viewer1.cameraRig.rotateOnWorldAxis(viewer1.activeCamera.up, $hBQxr$three.MathUtils.degToRad(snapAngle)) ///
+                                ;
+                                else viewer1.cameraRig.rotateOnWorldAxis(viewer1.activeCamera.up, -$hBQxr$three.MathUtils.degToRad(snapAngle)) ///
+                                ;
                             }
                             previousLeftThumbstickX = axes[2];
                             // Up/down position right thumbstick y)
-                            if (Math.abs(axes[3]) > 0.5) viewer1.cameraRig.position.y -= axes[3] * moveSpeed; ///
+                            if (Math.abs(axes[3]) > 0.5) viewer1.cameraRig.position.y += axes[3] * moveSpeed;
                         }
                     }
                 });
@@ -4083,9 +4341,13 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                     viewer1.flatCamera.aspect = viewer1.canvas.clientWidth / viewer1.canvas.clientHeight;
                     viewer1.flatCamera.updateProjectionMatrix();
                 }
-                if (viewer1?.cameraControls) viewer1.cameraControls.update(delta);
-                if (viewer1?.trackballControls) viewer1.trackballControls.update();
+                if (update_controls) {
+                    if (viewer1?.cameraControls) viewer1.cameraControls.update(delta);
+                    if (viewer1?.trackballControls) viewer1.trackballControls.update();
+                }
             }
+            if (viewer1?.activeCamera) this.attachAudioListener(viewer1.activeCamera);
+            this.tryStartAutoplayAudio(viewer1.scene);
             // SparkRenderer stochastic setup is now handled by GUI toggle
             if (viewer1?.activeCamera) this.renderer.render(viewer1.scene, viewer1.activeCamera);
         };
@@ -4198,6 +4460,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         if (!defaultBackgroundColor) defaultBackgroundColor = "#000000";
         this.defaultBackgroundColor = new $hBQxr$three.Color(defaultBackgroundColor);
         if (!this.loadedModel) return;
+        this.stopAllAudio(this.scene);
         this.scene.clear();
         this.initSceneBackground();
         this.initFog();
@@ -4216,6 +4479,42 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             if (this.isNewTiltExporter(this.sceneGltf)) this.scene.scale.set(0.1, 0.1, 0.1);
             this.scene.add(this.loadedModel);
         }
+    }
+    attachAudioListener(camera) {
+        if (!camera) return;
+        if (this.audioListener.parent !== camera) {
+            this.audioListener.removeFromParent();
+            camera.add(this.audioListener);
+        }
+    }
+    stopAllAudio(root) {
+        if (!root) return;
+        root.traverse((node)=>{
+            if (node?.isAudio) {
+                const audio = node;
+                if (audio.isPlaying) audio.stop();
+                audio.disconnect();
+            }
+        });
+    }
+    tryStartAutoplayAudio(root) {
+        if (!root || this.audioListener.context.state !== 'running') return;
+        root.traverse((node)=>{
+            if (!node?.isAudio) return;
+            const audio = node;
+            const wantsAutoPlay = Boolean(audio.userData?.__khrAudioAutoPlay);
+            if (!wantsAutoPlay || audio.isPlaying || !audio.buffer) return;
+            try {
+                audio.play();
+                if (!audio.userData?.__khrAudioAutoplayLoggedStart) audio.userData.__khrAudioAutoplayLoggedStart = true;
+            } catch (_err) {
+                // Keep trying in later frames while unlocked.
+                if (!audio.userData?.__khrAudioAutoplayLoggedBlocked) {
+                    console.warn(`[KHR_audio_emitter] autoplay retry failed; will keep trying`);
+                    audio.userData.__khrAudioAutoplayLoggedBlocked = true;
+                }
+            }
+        });
     }
     toggleTreeView(root) {
         if (root.childElementCount == 0) {
@@ -5944,8 +6243,8 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         canvas.height = 256;
         const context = canvas.getContext('2d');
         const gradient = context.createLinearGradient(0, 0, 0, 256);
-        gradient.addColorStop(0, colorB.convertSRGBToLinear().getStyle());
-        gradient.addColorStop(1, colorA.convertSRGBToLinear().getStyle());
+        gradient.addColorStop(0, colorB.clone().convertSRGBToLinear().getStyle());
+        gradient.addColorStop(1, colorA.clone().convertSRGBToLinear().getStyle());
         context.fillStyle = gradient;
         context.fillRect(0, 0, 1, 256);
         const texture = new $hBQxr$three.CanvasTexture(canvas);
@@ -6164,8 +6463,8 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             this.loadedModel.add(light);
             return;
         }
-        let l0 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight0Color, 1.0);
-        let l1 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight1Color, 1.0);
+        let l0 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight0Color.clone().convertSRGBToLinear(), 1.0);
+        let l1 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight1Color.clone().convertSRGBToLinear(), 1.0);
         let light0Euler = convertTBEuler(this.sketchMetadata.SceneLight0Rotation);
         let light1Euler = convertTBEuler(this.sketchMetadata.SceneLight1Rotation);
         // Same rotation adjustment we apply to scene and environment
@@ -6182,12 +6481,12 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         this.loadedModel?.add(l0);
         this.loadedModel?.add(l1);
         const ambientLight = new $hBQxr$three.AmbientLight();
-        ambientLight.color = this.sketchMetadata.AmbientLightColor;
+        ambientLight.color = this.sketchMetadata.AmbientLightColor.clone().convertSRGBToLinear();
         this.scene.add(ambientLight);
     }
     initFog() {
         if (this.sketchMetadata == undefined || this.sketchMetadata == null) return;
-        this.scene.fog = new $hBQxr$three.FogExp2(this.sketchMetadata.FogColor, this.sketchMetadata.FogDensity);
+        this.scene.fog = new $hBQxr$three.FogExp2(this.sketchMetadata.FogColor.clone().convertSRGBToLinear(), this.sketchMetadata.FogDensity);
     }
     initSceneBackground() {
         // OBJ and FBX models don't have metadata
