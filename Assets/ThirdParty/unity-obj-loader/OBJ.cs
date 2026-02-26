@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using TiltBrush;
 using UnityEngine.Networking;
 using static TiltBrush.OverlayManager;
+using Null = TiltBrush.Null;
 
 public class OBJ : MonoBehaviour
 {
@@ -64,7 +65,10 @@ public class OBJ : MonoBehaviour
     public void BeginLoad(string path)
     {
         buffer = new GeometryBuffer();
-        StartCoroutine(_Load(path));
+        StartCoroutine(OverlayManager.m_Instance.RunInCompositor(
+            OverlayType.LoadModel,
+            _Load(path),
+            0.25f));
     }
 
     public Task BeginLoadAsync(string path)
@@ -77,11 +81,14 @@ public class OBJ : MonoBehaviour
 
     private IEnumerator LoadAsyncWrapper(string path, TaskCompletionSource<bool> tcs)
     {
-        yield return _Load(path);
+        yield return OverlayManager.m_Instance.RunInCompositor(
+            OverlayType.LoadModel,
+            _Load(path),
+            0.25f);
         tcs.SetResult(true);
     }
 
-    private IEnumerator _Load(string path)
+    private IEnumerator<Null> _Load(string path)
     {
         if (finished) yield break;
         basepath = Path.GetDirectoryName(path);
@@ -93,7 +100,11 @@ public class OBJ : MonoBehaviour
         path = FixLocalPaths(path);
 
         var geomRequest = UnityWebRequest.Get(path);
-        yield return geomRequest.SendWebRequest();
+        var geomOp = geomRequest.SendWebRequest();
+        while (!geomOp.isDone)
+        {
+            yield return null;
+        }
         if (geomRequest.error != null)
         {
             Debug.LogError(geomRequest.error);
@@ -101,10 +112,7 @@ public class OBJ : MonoBehaviour
         else
         {
             string geomData = geomRequest.downloadHandler.text;
-            yield return OverlayManager.m_Instance.RunInCompositor(
-                OverlayType.LoadModel,
-                () => SetGeometryData(geomData),
-                0.25f);
+            SetGeometryData(geomData);
         }
 
         if (hasMaterials)
@@ -112,7 +120,11 @@ public class OBJ : MonoBehaviour
             string mtlPath = basepath + mtllib;
             mtlPath = FixLocalPaths(mtlPath);
             var mtlRequest = UnityWebRequest.Get(mtlPath);
-            yield return mtlRequest.SendWebRequest();
+            var mtlOp = mtlRequest.SendWebRequest();
+            while (!mtlOp.isDone)
+            {
+                yield return null;
+            }
 
             if (mtlRequest.error != null)
             {
@@ -132,7 +144,7 @@ public class OBJ : MonoBehaviour
             {
                 if (m.diffuseTexPath != null)
                 {
-                    yield return StartCoroutine(GetTextureLoader(m.diffuseTexPath, tex =>
+                    var loader = GetTextureLoader(m.diffuseTexPath, tex =>
                     {
                         if (tex == null)
                         {
@@ -142,11 +154,15 @@ public class OBJ : MonoBehaviour
                         {
                             m.diffuseTex = tex;
                         }
-                    }));
+                    });
+                    while (loader.MoveNext())
+                    {
+                        yield return null;
+                    }
                 }
                 if (m.bumpTexPath != null)
                 {
-                    yield return StartCoroutine(GetTextureLoader(m.bumpTexPath, tex =>
+                    var loader = GetTextureLoader(m.bumpTexPath, tex =>
                     {
                         if (tex == null)
                         {
@@ -156,14 +172,15 @@ public class OBJ : MonoBehaviour
                         {
                             m.bumpTex = tex;
                         }
-                    }));
+                    });
+                    while (loader.MoveNext())
+                    {
+                        yield return null;
+                    }
                 }
             }
         }
-        yield return OverlayManager.m_Instance.RunInCompositor(
-            OverlayType.LoadModel,
-            () => Build(),
-            0.25f);
+        Build();
         finished = true;
     }
 
@@ -181,7 +198,11 @@ public class OBJ : MonoBehaviour
         texpath = FixLocalPaths(Path.Combine(basepath, texpath));
         using (UnityWebRequest texRequest = UnityWebRequestTexture.GetTexture(texpath))
         {
-            yield return texRequest.SendWebRequest();
+            var texOp = texRequest.SendWebRequest();
+            while (!texOp.isDone)
+            {
+                yield return null;
+            }
             if (texRequest.result != UnityWebRequest.Result.Success)
             {
                 Debug.LogError(texRequest.error);
