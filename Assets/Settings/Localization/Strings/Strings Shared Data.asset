@@ -3267,6 +3267,10 @@ MonoBehaviour:
     m_Key: SETTINGS_PANEL_LOCALE_BUTTON_POPUP
     m_Metadata:
       m_Items: []
+  - m_Id: 150014201369985024
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_SCULPT
+    m_Metadata:
+      m_Items: []
   - m_Id: 151489918612377600
     m_Key: POPUP_RECORD_UNSUPPORTED_TITLE
     m_Metadata:
