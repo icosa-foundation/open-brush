@@ -193,7 +193,9 @@ namespace TiltBrush
             // Supports non-uniform scaling
             for (var i = 0; i < _Path.Count; i++)
             {
-                _Path[i].translation.Scale(scale);
+                var t = _Path[i];
+                t.translation = Vector3.Scale(t.translation, scale);
+                _Path[i] = t;
             }
         }
 
