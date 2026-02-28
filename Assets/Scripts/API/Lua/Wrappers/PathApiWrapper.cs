@@ -298,6 +298,7 @@ namespace TiltBrush
         [MoonSharpHidden]
         public static (Vector3 center, float scale) _CalculateCenterAndScale(List<TrTransform> path)
         {
+            if (path == null || path.Count == 0) return (Vector3.zero, 1);
             // Find the min and max values for each axis
             float minX = path.Min(v => v.translation.x);
             float minY = path.Min(v => v.translation.y);
