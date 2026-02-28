@@ -9,6 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 03bc68f14d65e7747a59d5ff74bd199b, type: 3}
-  m_Name: Oculus Loader
+  m_Script: {fileID: 11500000, guid: c66150246d824833a8257ecb5aaa1d11, type: 3}
+  m_Name: CompositionLayersPreferences
   m_EditorClassIdentifier: 
+  m_DisplayAnglesAs: 0
+  m_EmulationInScene: 1
+  m_EmulationInPlayMode: 1

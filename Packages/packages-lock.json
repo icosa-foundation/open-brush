@@ -13,19 +13,11 @@
       "dependencies": {},
       "hash": "4f87195d54ccefe076678cb83a296b3f0428fc53"
     },
-    "com.meta.xr.sdk.core": {
-      "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.core.git#68.0.2-openbrush-hotfix",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "cc9462850915e74dbb5cd6094f77464c5e606da1"
-    },
     "com.meta.xr.sdk.platform": {
-      "version": "60.0.0",
+      "version": "69.0.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.meta.xr.sdk.core": "60.0.0",
         "com.unity.ugui": "1.0.0"
       },
       "url": "https://npm.developer.oculus.com"
@@ -303,6 +295,17 @@
       },
       "hash": "a933fb8541371ff8ab171ab8e6af50a36f1f113e"
     },
+    "com.unity.xr.compositionlayers": {
+      "version": "1.0.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.inputsystem": "1.6.3",
+        "com.unity.xr.core-utils": "2.2.2",
+        "com.unity.xr.management": "4.0.1"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.xr.core-utils": {
       "version": "2.3.0",
       "depth": 0,
@@ -323,7 +326,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.xr.management": {
-      "version": "4.4.1",
+      "version": "4.5.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -334,22 +337,13 @@
       },
       "url": "https://packages.unity.com"
     },
-    "com.unity.xr.oculus": {
-      "version": "4.2.0",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {
-        "com.unity.xr.management": "4.4.0"
-      },
-      "url": "https://packages.unity.com"
-    },
     "com.unity.xr.openxr": {
-      "version": "1.10.0",
+      "version": "1.14.3",
       "depth": 0,
       "source": "registry",
       "dependencies": {
         "com.unity.inputsystem": "1.6.3",
-        "com.unity.xr.core-utils": "2.1.1",
+        "com.unity.xr.core-utils": "2.3.0",
         "com.unity.xr.management": "4.4.0",
         "com.unity.xr.legacyinputhelpers": "2.1.2"
       },
@@ -363,14 +357,23 @@
       "hash": "6554bc1dce4f363437c6a9d42719f2756f24cf49"
     },
     "com.zappar.xr.zapbox": {
-      "version": "https://github.com/zappar-xr/zapbox-xr-sdk.git#91b52bde3c0a67aa08909bdd2657f8a6672decf6",
+      "version": "https://github.com/zappar-xr/zapbox-xr-sdk.git#43697771ed65efee02d5b1743141b8179444c147",
       "depth": 0,
       "source": "git",
       "dependencies": {
         "com.unity.xr.management": "3.2.9",
         "com.unity.xr.legacyinputhelpers": "2.1.4"
       },
-      "hash": "91b52bde3c0a67aa08909bdd2657f8a6672decf6"
+      "hash": "43697771ed65efee02d5b1743141b8179444c147"
+    },
+    "dev.mikesky.openxrextensions": {
+      "version": "https://github.com/mikeskydev/unity-openxr-extensions.git#0.4.3",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.xr.openxr": "1.13.0"
+      },
+      "hash": "0a1875b2af27780543833f0abf23e2da32015c11"
     },
     "moonsharp": {
       "version": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",

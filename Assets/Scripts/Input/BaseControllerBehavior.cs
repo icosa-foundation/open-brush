@@ -40,6 +40,10 @@ namespace TiltBrush
         [SerializeField]
         private Quaternion m_GeometryRotation = Quaternion.identity;
 
+        // Runtime overrides for geometry transform (used for calibration via HTTP API)
+        private Vector3? m_RuntimeGeometryOffset;
+        private Quaternion? m_RuntimeGeometryRotation;
+
         // -------------------------------------------------------------------------------------------- //
         // Private Fields
         // -------------------------------------------------------------------------------------------- //
@@ -54,6 +58,69 @@ namespace TiltBrush
         // Public Properties
         // -------------------------------------------------------------------------------------------- //
         public InputManager.ControllerName ControllerName => m_ControllerName;
+
+        /// <summary>
+        /// Gets the effective geometry offset (runtime override if set, otherwise serialized value)
+        /// </summary>
+        public Vector3 EffectiveGeometryOffset => m_RuntimeGeometryOffset ?? m_GeometryOffset;
+
+        /// <summary>
+        /// Gets the effective geometry rotation (runtime override if set, otherwise serialized value)
+        /// </summary>
+        public Quaternion EffectiveGeometryRotation
+        {
+            get
+            {
+                if (m_RuntimeGeometryRotation.HasValue)
+                {
+                    return m_RuntimeGeometryRotation.Value;
+                }
+                return m_GeometryRotation.IsInitialized() ? m_GeometryRotation : Quaternion.identity;
+            }
+        }
+
+        /// <summary>
+        /// Sets the runtime geometry offset override and re-applies the transform
+        /// </summary>
+        public void SetRuntimeGeometryOffset(Vector3 offset)
+        {
+            m_RuntimeGeometryOffset = offset;
+            ApplyGeometryTransform();
+        }
+
+        /// <summary>
+        /// Sets the runtime geometry rotation override (euler angles) and re-applies the transform
+        /// </summary>
+        public void SetRuntimeGeometryRotation(Vector3 eulerAngles)
+        {
+            m_RuntimeGeometryRotation = Quaternion.Euler(eulerAngles);
+            ApplyGeometryTransform();
+        }
+
+        /// <summary>
+        /// Clears runtime overrides and reverts to serialized values
+        /// </summary>
+        public void ClearRuntimeGeometryOverrides()
+        {
+            m_RuntimeGeometryOffset = null;
+            m_RuntimeGeometryRotation = null;
+            ApplyGeometryTransform();
+        }
+
+        /// <summary>
+        /// Re-applies the geometry transform using current effective values
+        /// </summary>
+        public void ApplyGeometryTransform()
+        {
+            if (m_ControllerGeometry != null)
+            {
+                Coords.AsLocal[m_ControllerGeometry.transform] = TrTransform.TRS(
+                    EffectiveGeometryOffset,
+                    EffectiveGeometryRotation,
+                    1
+                );
+            }
+        }
 
         private GameObject TransformVisuals => ControllerGeometry.TransformVisualsRenderer.gameObject;
 
@@ -274,8 +341,7 @@ namespace TiltBrush
             // The back-pointers is implicit; it's geometry.transform.parent.
             // worldPositionStays: false because we're about to overwrite it anyway
             m_ControllerGeometry.transform.SetParent(this.transform, worldPositionStays: false);
-            Quaternion rot = m_GeometryRotation.IsInitialized() ? m_GeometryRotation : Quaternion.identity;
-            Coords.AsLocal[m_ControllerGeometry.transform] = TrTransform.TRS(m_GeometryOffset, rot, 1);
+            ApplyGeometryTransform();
             m_ControllerGeometry.OnBehaviorChanged();
         }
 

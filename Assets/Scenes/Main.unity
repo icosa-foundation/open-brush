@@ -3574,7 +3574,6 @@ MonoBehaviour:
   m_AutoProfileWaitTime: 10
   Secrets: {fileID: 11400000, guid: b7879e54dd39e0d4b8e5c93f6ecab5f3, type: 2}
   m_SketchFiles: []
-  DisableAccountLogins: 0
   m_OdsNumFrames: 0
   m_OdsFps: 30
   m_OdsOutputPath: 
@@ -20107,13 +20106,11 @@ MonoBehaviour:
     type: 3}
   m_UnityXRCosmosControlsPrefab: {fileID: 1268974758188984, guid: 85fc13e5ae2f36048a146dc67041a295,
     type: 3}
-  m_UnityXRNeo3ControlsPrefab: {fileID: 0}
-  m_UnityXRPhoenixControlsPrefab: {fileID: 0}
+  m_UnityXRNeo3ControlsPrefab: {fileID: 1000010438099326, guid: c43e2e934a9409148ad8bfdfeeb98e40,
+    type: 3}
+  m_UnityXRPhoenixControlsPrefab: {fileID: 1000010438099326, guid: 6ec600b382b3e3a4380fae76343440be,
+    type: 3}
   m_UnityXRZapboxControlsPrefab: {fileID: 1000010438099326, guid: 97b4cb6f2999a4844b837b3883d42ced,
-    type: 3}
-  m_OculusRiftControlsPrefab: {fileID: 2302704768686387309, guid: 6fb051841cd1bcb4dbc6c246b98d97c8,
-    type: 3}
-  m_OculusQuestControlsPrefab: {fileID: 2302704768686387309, guid: 6fb051841cd1bcb4dbc6c246b98d97c8,
     type: 3}
   m_GvrPointerControlsPrefab: {fileID: 1118433077968626, guid: 5afb9e0174eb44346ad642958130e294,
     type: 3}

@@ -15,9 +15,12 @@
 using UnityEngine;
 
 #if UNITY_ANDROID
-static class AndroidUtils {
-  public static AndroidJavaObject GetContext() {
-    if (Application.platform != RuntimePlatform.Android) {
+static class AndroidUtils
+{
+  public static AndroidJavaObject GetContext()
+  {
+    if (Application.platform != RuntimePlatform.Android)
+    {
       return null;
     }
 
@@ -31,9 +34,11 @@ static class AndroidUtils {
   }
 
   /// Returns versionCode from AndroidManifest.xml.
-  public static int GetVersionCode() {
-    if (Application.platform != RuntimePlatform.Android) {
-      return 13;  // just some placeholder
+  public static int GetVersionCode()
+  {
+    if (Application.platform != RuntimePlatform.Android)
+    {
+            return 29;  // just some placeholder
     }
 
     var context = GetContext();
@@ -50,8 +55,10 @@ static class AndroidUtils {
   /// and m_BuildStamp.
   /// This should therefore have the same info as you'd find in Config.
   /// Sample return values: "19.0b-(menuitem)", "18.3-d8239842"
-  public static string GetVersionName() {
-    if (Application.platform != RuntimePlatform.Android) {
+  public static string GetVersionName()
+  {
+    if (Application.platform != RuntimePlatform.Android)
+    {
       return "versionNamePlaceholder";
     }
 
@@ -63,8 +70,10 @@ static class AndroidUtils {
   }
 
   /// Returns package name.
-  public static string GetPackageName() {
-    if (Application.platform != RuntimePlatform.Android) {
+  public static string GetPackageName()
+  {
+    if (Application.platform != RuntimePlatform.Android)
+    {
       return "com.placeholder.packagename";
     }
 
@@ -91,5 +100,32 @@ static class AndroidUtils {
           return false;
       }
   }
+
+    public static string GetProp(string propName)
+    {
+        var obj = new AndroidJavaClass("android.os.SystemProperties");
+        return obj.CallStatic<string>("get", propName);
+    }
+
+    public static bool IsPicoDevice()
+    {
+        return GetProp("ro.product.brand").Trim().ToLower().Equals("pico");
+    }
+
+    public static bool IsGreatFirewalled()
+    {
+        // TEMP - this isn't working on my device so override for now
+        return false;
+
+        if (IsPicoDevice())
+        {
+            // https://developer.picoxr.com/document/unreal/check-pico-rom-version/
+            var overseasFlagPresent = GetProp("ro.pvr.product.global").Trim().ToLower().Equals("overseas");
+            return !overseasFlagPresent;
+        }
+
+        return false;
+        
+    }
 }
-#endif
+#endif // UNITY_ANDROID

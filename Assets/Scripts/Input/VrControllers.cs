@@ -34,6 +34,7 @@ namespace TiltBrush
         [Header("Input Zones")]
         [SerializeField] private Vector2 m_TouchpadActivationRange = new Vector2(-.8f, .8f);
         [SerializeField] private float m_WandRotateJoystickPercent = 0.7f;
+        [SerializeField] private float m_GripPressThreshold = 0.5f;
 
         // VR headsets (e.g., Rift, Vive, Wmr) use different hardware for their controllers,
         // they require a scaled duration for the haptics to be felt in users hand.
@@ -88,6 +89,11 @@ namespace TiltBrush
         public float WandRotateJoystickPercent
         {
             get => m_WandRotateJoystickPercent;
+        }
+
+        public float GripPressThreshold
+        {
+            get => m_GripPressThreshold;
         }
 
         public ControllerBehaviorWand Wand
