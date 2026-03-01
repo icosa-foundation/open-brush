@@ -393,7 +393,7 @@
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "97654e53e1af13e317beba99b3a9cc16e9a6c5ba"
+      "hash": "13e7544ef6f48c26ce692a346b328467e01bfe69"
     },
     "org.khronos.unitygltf": {
       "version": "https://github.com/KhronosGroup/UnityGLTF.git#dev",
