@@ -453,13 +453,13 @@ namespace TiltBrush
 
         public void LogGenericLuaError(Script script, string fnName, Exception e)
         {
-            if (e is ScriptRuntimeException)
+            if (e is ScriptRuntimeException runtimeException)
             {
-                LogLuaInterpreterError(script, fnName, e as ScriptRuntimeException);
+                LogLuaInterpreterError(script, fnName, runtimeException);
             }
-            else if (e is InvalidCastException)
+            else if (e is InvalidCastException castException)
             {
-                LogLuaCastError(script, fnName, e as InvalidCastException);
+                LogLuaCastError(script, fnName, castException);
             }
         }
 
