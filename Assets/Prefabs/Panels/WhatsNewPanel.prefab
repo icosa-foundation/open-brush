@@ -1319,6 +1319,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3799276222278143365}
     m_Modifications:
+    - target: {fileID: 983508416998242227, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
+        type: 3}
+      propertyPath: m_text
+      value: Get Started
+      objectReference: {fileID: 0}
     - target: {fileID: 1245686934226022572, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_ButtonLabel
@@ -1378,10 +1383,14 @@ PrefabInstance:
     - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_text
-      value: "VIVERSE has just opened a competition for Open Brush users with cash
-        prizes of up to $2,500. Create your artwork in Open Brush, publish it to
-        VIVERSE as an interactive experience, and show your creativity to the world!\r\n\r\n
-        \nTo get started, visit"
+      value: 'Viverse has just opened a competition for Open Brush users with  prizes
+        of up to $2,500. Create your artwork in Open Brush, publish it to Viverse
+        as an interactive experience, and show your creativity to the world!
+
+        
+
+        To
+        get started, visit https://link.viverse.com/openbrush or click below:'
       objectReference: {fileID: 0}
     - target: {fileID: 5911168340895529424, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -1441,7 +1450,7 @@ PrefabInstance:
     - target: {fileID: 8473270265339514660, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
       propertyPath: m_text
-      value: Publish Your Art to VIVERSE for Cash Prizes
+      value: Publish Your Art to Viverse and Win Prizes
       objectReference: {fileID: 0}
     - target: {fileID: 8617468097628679083, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
