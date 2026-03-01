@@ -26,6 +26,7 @@ namespace TiltBrush
         private ModelWidget m_InitialWidget;
         private List<ModelWidget> m_NewModelWidgets;
         private List<LightWidget> m_NewLightWidgets;
+        private List<SoundClipWidget> m_NewSoundClipWidgets;
         private List<string> m_NodePaths;
 
         override public bool NeedsSave
@@ -51,7 +52,8 @@ namespace TiltBrush
                 if (!node.gameObject.activeSelf) return false;
                 // Skip nodes with no valid children
                 if (node.GetComponent<MeshFilter>() == null &&
-                    node.GetComponent<Light>() == null) return false;
+                    node.GetComponent<Light>() == null &&
+                    node.GetComponent<GltfAudioSource>() == null) return false;
                 return true;
             }
 
@@ -62,7 +64,8 @@ namespace TiltBrush
                 if (!node.gameObject.activeSelf) return false;
                 // Skip nodes with no valid children
                 if (node.GetComponentInChildren<MeshFilter>() == null &&
-                    node.GetComponentInChildren<Light>() == null) return false;
+                    node.GetComponentInChildren<Light>() == null &&
+                    node.GetComponentInChildren<GltfAudioSource>() == null) return false;
                 return true;
             }
 
@@ -162,6 +165,7 @@ namespace TiltBrush
             m_InitialWidget = initialWidget;
             m_NewModelWidgets = new List<ModelWidget>();
             m_NewLightWidgets = new List<LightWidget>();
+            m_NewSoundClipWidgets = new List<SoundClipWidget>();
             var widgetObjScript = initialWidget.GetComponentInChildren<ObjModelScript>();
             m_NodePaths = ExtractPaths(widgetObjScript.transform);
         }
@@ -293,12 +297,19 @@ namespace TiltBrush
                 newWidget.RegisterHighlight();
                 newWidget.UpdateBatchInfo();
 
-                // If a ModelWidget contains no more meshes
-                // then try and convert it to multiple LightWidgets
+                // If a ModelWidget contains no more meshes, convert to widget(s) of the
+                // appropriate type based on what components the subtree contains.
                 var objModel = newWidget.GetComponentInChildren<ObjModelScript>();
                 if (objModel != null && objModel.NumMeshes == 0)
                 {
-                    m_NewLightWidgets.AddRange(LightWidget.FromModelWidget(newWidget));
+                    if (newWidget.GetComponentInChildren<GltfAudioSource>() != null)
+                    {
+                        m_NewSoundClipWidgets.AddRange(SoundClipWidget.FromModelWidget(newWidget));
+                    }
+                    else
+                    {
+                        m_NewLightWidgets.AddRange(LightWidget.FromModelWidget(newWidget));
+                    }
                 }
                 else
                 {
@@ -319,6 +330,12 @@ namespace TiltBrush
             }
             SelectionManager.m_Instance.DeselectWidgets(m_NewLightWidgets);
             foreach (var widget in m_NewLightWidgets)
+            {
+                WidgetManager.m_Instance.UnregisterGrabWidget(widget.gameObject);
+                GameObject.Destroy(widget.gameObject);
+            }
+            SelectionManager.m_Instance.DeselectWidgets(m_NewSoundClipWidgets);
+            foreach (var widget in m_NewSoundClipWidgets)
             {
                 WidgetManager.m_Instance.UnregisterGrabWidget(widget.gameObject);
                 GameObject.Destroy(widget.gameObject);

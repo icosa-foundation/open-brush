@@ -1099,7 +1099,12 @@ namespace TiltBrush
 
         private void OnSelectionTransformed(TrTransform xf_SS)
         {
-            SelectionTransform = xf_SS;
+            // The widget's SelectionTransform is in scene space, but
+            // SelectionManager.SelectionTransform applies the delta relative
+            // to the ActiveCanvas. Conjugate by the canvas's scene-space pose
+            // to convert between the two frames.
+            TrTransform canvasPose_SS = App.Scene.AsScene[App.ActiveCanvas.transform];
+            SelectionTransform = canvasPose_SS.inverse * xf_SS * canvasPose_SS;
         }
 
         Bounds GetBoundsOfSelectedWidgets_SelectionCanvasSpace()
