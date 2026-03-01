@@ -159,6 +159,7 @@ namespace TiltBrush
                 {
                     var tr = path[j];
                     tr.translation *= scale;
+                    path[j] = tr;
                 }
             }
         }
