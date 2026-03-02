@@ -167,6 +167,7 @@ Transform:
   m_Children:
   - {fileID: 3799276222278143365}
   - {fileID: 4159606566656768}
+  - {fileID: 5730165505088929028}
   - {fileID: 4185635191587989075}
   - {fileID: 9025177200274572925}
   - {fileID: 6314980780482932909}
@@ -707,7 +708,6 @@ Transform:
   - {fileID: 8014873094123675027}
   - {fileID: 8529216437758175391}
   - {fileID: 8616895469177311108}
-  - {fileID: 5730165505088929028}
   m_Father: {fileID: 4232412870837608}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7122536431733598801
@@ -1317,7 +1317,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 3799276222278143365}
+    m_TransformParent: {fileID: 4232412870837608}
     m_Modifications:
     - target: {fileID: 983508416998242227, guid: 7a5cb3e1c7c3f05409e2da6071db0cfa,
         type: 3}
@@ -1387,7 +1387,7 @@ PrefabInstance:
         of up to $2,500. Create your artwork in Open Brush, publish it to Viverse
         as an interactive experience, and show your creativity to the world!
 
-        
+
 
         To
         get started, visit https://link.viverse.com/openbrush or click below:'
