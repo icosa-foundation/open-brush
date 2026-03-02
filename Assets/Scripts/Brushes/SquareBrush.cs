@@ -251,28 +251,28 @@ namespace TiltBrush
                         float size = PressuredSize(prev.smoothedPressure);
                         Vector3 halfR = cur.nRight * (size / 2);
                         Vector3 halfU = cur.nSurface * ((size / 2) * kCrossSectionAspectRatio);
-                        MySetVert(cur.iVert, BBR_B, prev.point.m_Pos - halfU + halfR, -cur.nSurface);
-                        MySetVert(cur.iVert, BBR_R, prev.point.m_Pos - halfU + halfR, cur.nRight);
-                        MySetVert(cur.iVert, BTL_T, prev.point.m_Pos + halfU - halfR, cur.nSurface);
-                        MySetVert(cur.iVert, BTL_L, prev.point.m_Pos + halfU - halfR, -cur.nRight);
-                        MySetVert(cur.iVert, BTR_T, prev.point.m_Pos + halfU + halfR, cur.nSurface);
-                        MySetVert(cur.iVert, BTR_R, prev.point.m_Pos + halfU + halfR, cur.nRight);
-                        MySetVert(cur.iVert, BBL_B, prev.point.m_Pos - halfU - halfR, -cur.nSurface);
-                        MySetVert(cur.iVert, BBL_L, prev.point.m_Pos - halfU - halfR, -cur.nRight);
+                        MySetVert(cur.iVert, BBR_B, prev.point.m_Pos - halfU + halfR, -cur.nSurface, cur.color);
+                        MySetVert(cur.iVert, BBR_R, prev.point.m_Pos - halfU + halfR, cur.nRight, cur.color);
+                        MySetVert(cur.iVert, BTL_T, prev.point.m_Pos + halfU - halfR, cur.nSurface, cur.color);
+                        MySetVert(cur.iVert, BTL_L, prev.point.m_Pos + halfU - halfR, -cur.nRight, cur.color);
+                        MySetVert(cur.iVert, BTR_T, prev.point.m_Pos + halfU + halfR, cur.nSurface, cur.color);
+                        MySetVert(cur.iVert, BTR_R, prev.point.m_Pos + halfU + halfR, cur.nRight, cur.color);
+                        MySetVert(cur.iVert, BBL_B, prev.point.m_Pos - halfU - halfR, -cur.nSurface, cur.color);
+                        MySetVert(cur.iVert, BBL_L, prev.point.m_Pos - halfU - halfR, -cur.nRight, cur.color);
                     }
 
                     {
                         float size = PressuredSize(cur.smoothedPressure);
                         Vector3 halfR = cur.nRight * (size / 2);
                         Vector3 halfU = cur.nSurface * ((size / 2) * kCrossSectionAspectRatio);
-                        MySetVert(cur.iVert, FBR_B, cur.point.m_Pos - halfU + halfR, -cur.nSurface);
-                        MySetVert(cur.iVert, FBR_R, cur.point.m_Pos - halfU + halfR, cur.nRight);
-                        MySetVert(cur.iVert, FTL_T, cur.point.m_Pos + halfU - halfR, cur.nSurface);
-                        MySetVert(cur.iVert, FTL_L, cur.point.m_Pos + halfU - halfR, -cur.nRight);
-                        MySetVert(cur.iVert, FTR_T, cur.point.m_Pos + halfU + halfR, cur.nSurface);
-                        MySetVert(cur.iVert, FTR_R, cur.point.m_Pos + halfU + halfR, cur.nRight);
-                        MySetVert(cur.iVert, FBL_B, cur.point.m_Pos - halfU - halfR, -cur.nSurface);
-                        MySetVert(cur.iVert, FBL_L, cur.point.m_Pos - halfU - halfR, -cur.nRight);
+                        MySetVert(cur.iVert, FBR_B, cur.point.m_Pos - halfU + halfR, -cur.nSurface, cur.color);
+                        MySetVert(cur.iVert, FBR_R, cur.point.m_Pos - halfU + halfR, cur.nRight, cur.color);
+                        MySetVert(cur.iVert, FTL_T, cur.point.m_Pos + halfU - halfR, cur.nSurface, cur.color);
+                        MySetVert(cur.iVert, FTL_L, cur.point.m_Pos + halfU - halfR, -cur.nRight, cur.color);
+                        MySetVert(cur.iVert, FTR_T, cur.point.m_Pos + halfU + halfR, cur.nSurface, cur.color);
+                        MySetVert(cur.iVert, FTR_R, cur.point.m_Pos + halfU + halfR, cur.nRight, cur.color);
+                        MySetVert(cur.iVert, FBL_B, cur.point.m_Pos - halfU - halfR, -cur.nSurface, cur.color);
+                        MySetVert(cur.iVert, FBL_L, cur.point.m_Pos - halfU - halfR, -cur.nRight, cur.color);
                     }
                 }
 
@@ -280,12 +280,12 @@ namespace TiltBrush
             }
         }
 
-        void MySetVert(int iVert, int vp, Vector3 v, Vector3 n)
+        void MySetVert(int iVert, int vp, Vector3 v, Vector3 n, Color32 color)
         {
             int i = iVert + vp * NS;
             m_geometry.m_Vertices[i] = v;
             m_geometry.m_Normals[i] = n;
-            Color32 c = m_Color;
+            Color32 c = color;
             c.a = 255;
             m_geometry.m_Colors[i] = c;
             m_geometry.m_Texcoord0.v2[i] = new Vector2(.5f, .5f);

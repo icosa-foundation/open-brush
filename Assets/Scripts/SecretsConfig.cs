@@ -45,6 +45,6 @@ public class SecretsConfig : ScriptableObject
 
     public ServiceAuthData this[Service service]
     {
-        get => Secrets.FirstOrDefault(x => x.Service == service);
+        get => Secrets?.FirstOrDefault(x => x.Service == service);
     }
 }
