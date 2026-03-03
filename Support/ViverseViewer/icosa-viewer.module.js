@@ -4285,7 +4285,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                 viewer1.activeCamera = viewer1?.xrCamera;
                 const inputSources = Array.from(session.inputSources);
                 //const moveSpeed = 0.05; ///
-                const snapAngle = 45; /// 15;
+                const snapAngle = -45; /// 15;
                 inputSources.forEach((inputSource)=>{
                     const controllerData = handleController(inputSource);
                     if (controllerData) {
@@ -4303,7 +4303,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                         {
                             if (Math.abs(axes[2]) > 0.1 || Math.abs(axes[3]) > 0.1 || flight_speed) {
                                 const moveX = axes[2] * moveSpeed;
-                                const moveZ = -axes[3] * moveSpeed + flight_speed * 0.09; ///
+                                const moveZ = -axes[3] * moveSpeed + flight_speed; ///
                                 // Get the camera's forward and right vectors
                                 const forward = new $hBQxr$three.Vector3();
                                 viewer1.activeCamera.getWorldDirection(forward);
