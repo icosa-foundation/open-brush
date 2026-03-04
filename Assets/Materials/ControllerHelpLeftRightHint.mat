@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: ControllerHelpLeftRightHint
-  m_Shader: {fileID: 4800000, guid: 93d897b9b6be22b4ca39d36a93786845, type: 3}
+  m_Shader: {fileID: 4800000, guid: ac0e5b4748ece5e4aa2659196ee0007a, type: 3}
   m_ShaderKeywords: _ALPHATEST_ON _EMISSION
   m_LightmapFlags: 1
   m_EnableInstancingVariants: 0
@@ -81,3 +81,4 @@ Material:
     - _EmissionColor: {r: 1.2817758, g: 1, b: 57.058823, a: 1}
     - _SpecColor: {r: 0.125, g: 0.125, b: 0.125, a: 1}
     - _TintColor: {r: 0.14827591, g: 0.14712648, b: 0.29310352, a: 0.5}
+
