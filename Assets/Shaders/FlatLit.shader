@@ -33,157 +33,194 @@ SubShader {
     Tags { "LightMode" = "UniversalForward" }
     Blend SrcAlpha OneMinusSrcAlpha
     Cull Back
-    CGPROGRAM
+    HLSLPROGRAM
 
     #pragma vertex vert
     #pragma geometry geom
     #pragma fragment frag
-    #pragma multi_compile _ SHADOWS_SCREEN
-    #pragma target 4.0
+    #pragma target 4.5
+    #pragma multi_compile __ SHADER_SCRIPTING_ON
+    #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
+    #pragma multi_compile_fragment _ _SHADOWS_SOFT
 
-    #include "Assets/Shaders/Include/Brush.cginc"
-    #include "AutoLight.cginc"
-    #include "UnityPBSLighting.cginc"
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
+    TEXTURE2D(_MainTex);
+    SAMPLER(sampler_MainTex);
+
+    CBUFFER_START(UnityPerMaterial)
+    float4 _MainTex_ST;
     float _Smoothness;
     float _Metallic;
-    sampler2D _MainTex;
-    float4 _MainTex_ST;
+    half _ClipStart;
+    half _ClipEnd;
+    half _Dissolve;
+    CBUFFER_END
 
-    uniform half _ClipStart;
-    uniform half _ClipEnd;
-    uniform half _Dissolve;
-
-    struct appdata {
-      float4 vertex : POSITION;
+    struct Attributes {
+      float4 positionOS : POSITION;
       float2 uv : TEXCOORD0;
-      float4 color : Color;
+      float4 color : COLOR;
       uint id : SV_VertexID;
-
-      UNITY_VERTEX_INPUT_INSTANCE_ID
     };
 
-    struct v2f {
-      float4 pos : SV_POSITION;
+    struct VaryingsToGeom {
+      float4 positionCS : SV_POSITION;
       float2 uv : TEXCOORD0;
-      float3 normal : TEXCOORD1;
-      float3 worldPos : TEXCOORD2;
-      float4 color : TEXCOORD3;
-      float2 id : TEXCOORD4;
-      SHADOW_COORDS(5)
-
-      UNITY_VERTEX_OUTPUT_STEREO
+      float3 positionWS : TEXCOORD1;
+      float4 color : TEXCOORD2;
+      float id : TEXCOORD3;
     };
 
-    v2f vert(appdata v) {
-      v2f o;
+    struct Varyings {
+      float4 positionCS : SV_POSITION;
+      float2 uv : TEXCOORD0;
+      float3 normalWS : TEXCOORD1;
+      float3 positionWS : TEXCOORD2;
+      float4 color : TEXCOORD3;
+      float id : TEXCOORD4;
+    };
 
-      UNITY_SETUP_INSTANCE_ID(v);
-      UNITY_INITIALIZE_OUTPUT(v2f, o);
-      UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+    float Dither8x8(float2 position) {
+      const float DitherSize = 8.0;
+      float2 ditherPosition = position % DitherSize;
+      int x = int(ditherPosition.x);
+      int y = int(ditherPosition.y);
 
-      o.uv = v.uv  * _MainTex_ST.xy + _MainTex_ST.zw;
-      o.pos = UnityObjectToClipPos(v.vertex);
-      o.worldPos = mul(unity_ObjectToWorld, v.vertex);
+      const float dither8x8[64] = {
+        0,32,8,40,2,34,10,42,
+        48,16,56,24,50,18,58,26,
+        12,44,4,36,14,46,6,38,
+        60,28,52,20,62,30,54,22,
+        3,35,11,43,1,33,9,41,
+        51,19,59,27,49,17,57,25,
+        15,47,7,39,13,45,5,37,
+        63,31,55,23,61,29,53,21
+      };
+
+      return dither8x8[y * 8 + x] / 64.0;
+    }
+
+    VaryingsToGeom vert(Attributes v) {
+      VaryingsToGeom o;
+      VertexPositionInputs posInput = GetVertexPositionInputs(v.positionOS.xyz);
+      o.positionCS = posInput.positionCS;
+      o.positionWS = posInput.positionWS;
+      o.uv = TRANSFORM_TEX(v.uv, _MainTex);
       o.color = v.color;
-      TRANSFER_SHADOW(o);
-
-      // normal is set in geom method
-
-      o.id = (float2)v.id;
+      o.id = (float)v.id;
       return o;
     }
 
-    // Called once per triangle primitive, values outputted to triangle's
-    // pixels' frag methods.
+    // Called once per triangle primitive, values outputted to triangle's pixels.
     [maxvertexcount(3)]
-    void geom(triangle v2f i[3], inout TriangleStream<v2f> stream) {
-      float3 p0 = i[0].worldPos.xyz;
-      float3 p1 = i[1].worldPos.xyz;
-      float3 p2 = i[2].worldPos.xyz;
+    void geom(triangle VaryingsToGeom i[3], inout TriangleStream<Varyings> stream) {
+      float3 p0 = i[0].positionWS;
+      float3 p1 = i[1].positionWS;
+      float3 p2 = i[2].positionWS;
 
-      float3 v0 = p1 - p0;
-      float3 v1 = p2 - p0;
+      float3 triangleNormal = normalize(cross(p1 - p0, p2 - p0));
 
-      float3 triangleNormal = normalize(cross(v0, v1));
+      Varyings o;
+      o.normalWS = triangleNormal;
 
-      i[0].normal = triangleNormal;
-      i[1].normal = triangleNormal;
-      i[2].normal = triangleNormal;
+      o.positionCS = i[0].positionCS;
+      o.uv = i[0].uv;
+      o.positionWS = i[0].positionWS;
+      o.color = i[0].color;
+      o.id = i[0].id;
+      stream.Append(o);
 
-      stream.Append(i[0]);
-      stream.Append(i[1]);
-      stream.Append(i[2]);
+      o.positionCS = i[1].positionCS;
+      o.uv = i[1].uv;
+      o.positionWS = i[1].positionWS;
+      o.color = i[1].color;
+      o.id = i[1].id;
+      stream.Append(o);
+
+      o.positionCS = i[2].positionCS;
+      o.uv = i[2].uv;
+      o.positionWS = i[2].positionWS;
+      o.color = i[2].color;
+      o.id = i[2].id;
+      stream.Append(o);
     }
 
-    float4 frag(v2f i) : SV_TARGET {
-
+    half4 frag(Varyings i) : SV_TARGET {
       #ifdef SHADER_SCRIPTING_ON
-      if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-      if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+      if (_ClipEnd > 0 && !(i.id > _ClipStart && i.id < _ClipEnd)) discard;
+      if (_Dissolve < 1 && Dither8x8(i.positionCS.xy) >= _Dissolve) discard;
       #endif
 
-      // Apply shadows
-      UNITY_LIGHT_ATTENUATION(attenuation, i, i.worldPos);
-      float3 lightColor = _LightColor0.rgb * attenuation;
+      half3 normalWS = normalize(i.normalWS);
+      Light mainLight = GetMainLight(TransformWorldToShadowCoord(i.positionWS));
+      half3 lightColor = mainLight.color * mainLight.shadowAttenuation;
 
-      // Add main directional light's effect.
+      half3 viewDir = normalize(_WorldSpaceCameraPos.xyz - i.positionWS);
+      half3 halfDir = normalize(mainLight.direction + viewDir);
+      half nDotL = saturate(dot(normalWS, mainLight.direction));
 
-      // Calculate vectors to be used in lighting model.
-      float3 normal = i.normal;
-      float3 lightDir = _WorldSpaceLightPos0.xyz;
-      float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
-      float3 halfDir = normalize(lightDir + viewDir);
-      float nDotl = DotClamped(normal, normalize(lightDir));
+      half3 albedo = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv).rgb * (1 - _Metallic);
+      half3 specularTint = albedo * _Metallic;
 
-      float3 albedo = tex2D(_MainTex, i.uv).rgb * (1 - _Metallic);
-      // This is an oversimplification, even pure dielectrics can have some specular
-      // reflection, but its good enough for this purpose (and can be toggled in inspector).
-      float3 specularTint = albedo * (_Metallic);
+      half3 diffuse = albedo * lightColor * nDotL;
+      half3 specular = specularTint * lightColor * pow(saturate(dot(halfDir, normalWS)), _Smoothness * 100);
+      half3 lighting = diffuse + specular;
+      lighting += SampleSH(normalWS) * 0.5;
 
-      // Blinn-Phong model
-      float3 diffuse = albedo * lightColor * nDotl;
-      float3 specular = specularTint * lightColor *
-                        pow(DotClamped(halfDir, i.normal), _Smoothness * 100);
-      float3 lighting = diffuse + specular;
-
-      // Add all other lights in scene.
-
-      // Reduce this component to minimize double counting of main directional light.
-      lighting += float3(ShadeSH9(half4(normal, 1.0))) * 0.5;
-
-      return float4(lighting * i.color.rgb, i.color.a);
+      return half4(lighting * i.color.rgb, i.color.a);
     }
 
-    ENDCG
+    ENDHLSL
   }
 
   // Cast shadows
   Pass {
     Tags { "LightMode" = "ShadowCaster"}
 
-    CGPROGRAM
-
-    #pragma target 4.0
+    HLSLPROGRAM
+    #pragma target 4.5
     #pragma vertex vert
     #pragma fragment frag
+    #pragma geometry geom
 
-    #include "UnityCG.cginc"
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-    struct appdata {
-      float4 position : POSITION;
+    struct Attributes {
+      float4 positionOS : POSITION;
     };
 
-    float4 vert(appdata v) : SV_POSITION {
-      float4 position = UnityObjectToClipPos(v.position);
-      return UnityApplyLinearShadowBias(position);
+    struct VaryingsToGeom {
+      float4 positionCS : SV_POSITION;
+    };
+
+    struct Varyings {
+      float4 positionCS : SV_POSITION;
+    };
+
+    VaryingsToGeom vert(Attributes v) {
+      VaryingsToGeom o;
+      o.positionCS = TransformObjectToHClip(v.positionOS.xyz);
+      return o;
+    }
+
+    [maxvertexcount(3)]
+    void geom(triangle VaryingsToGeom i[3], inout TriangleStream<Varyings> stream) {
+      Varyings o;
+      o.positionCS = i[0].positionCS;
+      stream.Append(o);
+      o.positionCS = i[1].positionCS;
+      stream.Append(o);
+      o.positionCS = i[2].positionCS;
+      stream.Append(o);
     }
 
     half4 frag() : SV_TARGET {
       return 0;
     }
 
-    ENDCG
+    ENDHLSL
   }
 }
 }
