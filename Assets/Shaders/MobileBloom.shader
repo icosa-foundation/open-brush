@@ -98,6 +98,7 @@ Shader "Hidden/Mobile Bloom"
         Cull Off ZWrite Off ZTest Always
 
         Pass { // 0 Inital Pass - Multiplies through only by pixels with HDR components
+            Tags { "LightMode"="SRPDefaultUnlit" }
             CGPROGRAM
             fixed3 frag (v2f i) : SV_Target
             {
@@ -110,6 +111,7 @@ Shader "Hidden/Mobile Bloom"
         }
 
         Pass { // 1 Normal reduction pass
+            Tags { "LightMode"="SRPDefaultUnlit" }
             Blend One Zero
             CGPROGRAM
             fixed3 frag (v2f i) : SV_Target
@@ -121,6 +123,7 @@ Shader "Hidden/Mobile Bloom"
         }
 
         Pass { // 2 Normal enlargement pass
+            Tags { "LightMode"="SRPDefaultUnlit" }
             Blend One One
             CGPROGRAM
             fixed3 frag (v2f i) : SV_Target
@@ -132,6 +135,7 @@ Shader "Hidden/Mobile Bloom"
         }
 
         Pass { // 3 Final pass
+            Tags { "LightMode"="SRPDefaultUnlit" }
             Blend One One
             CGPROGRAM
             fixed3 frag (v2f i) : SV_Target

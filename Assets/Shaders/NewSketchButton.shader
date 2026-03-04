@@ -185,6 +185,7 @@ Shader "Custom/NewSketchButton" {
     Zwrite On
     Ztest LEqual
     Pass{
+      Tags { "LightMode"="SRPDefaultUnlit" }
       CGPROGRAM
       #pragma vertex vertLayer0
       #pragma fragment frag0
@@ -194,6 +195,7 @@ Shader "Custom/NewSketchButton" {
     Zwrite On
     Ztest LEqual
     Pass{
+      Tags { "LightMode"="SRPDefaultUnlit" }
       CGPROGRAM
       #pragma vertex vertLayer1
       #pragma fragment frag1
@@ -203,6 +205,7 @@ Shader "Custom/NewSketchButton" {
     Zwrite On
     Ztest LEqual
     Pass{
+      Tags { "LightMode"="SRPDefaultUnlit" }
       CGPROGRAM
       #pragma vertex vertLayer2
       #pragma fragment frag2
@@ -212,6 +215,7 @@ Shader "Custom/NewSketchButton" {
     Zwrite On
     Ztest LEqual
     Pass{
+      Tags { "LightMode"="SRPDefaultUnlit" }
       CGPROGRAM
       #pragma vertex vertLayer2
       #pragma fragment frag3

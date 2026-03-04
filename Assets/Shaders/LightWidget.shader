@@ -27,6 +27,7 @@ Shader "Custom/LightWidget" {
         Tags {"RenderType"="Opaque"}
 
         Pass {
+            Tags { "LightMode"="SRPDefaultUnlit" }
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
@@ -85,6 +86,7 @@ Shader "Custom/LightWidget" {
 
     //Make a white outline!
         Pass{
+            Tags { "LightMode"="SRPDefaultUnlit" }
 
             Cull Front
 
@@ -124,6 +126,7 @@ Shader "Custom/LightWidget" {
         // Make a black outline!
 
         Pass{
+            Tags { "LightMode"="SRPDefaultUnlit" }
 
             Cull Front
             CGPROGRAM

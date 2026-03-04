@@ -178,6 +178,7 @@ Shader "Custom/FogDensity" {
     Zwrite On
     Ztest LEqual
     Pass{
+      Tags { "LightMode"="SRPDefaultUnlit" }
       CGPROGRAM
       #pragma vertex vertLayer0
       #pragma fragment fragFog0
@@ -187,6 +188,7 @@ Shader "Custom/FogDensity" {
     Zwrite On
     Ztest LEqual
     Pass{
+      Tags { "LightMode"="SRPDefaultUnlit" }
       CGPROGRAM
       #pragma vertex vertLayer1
       #pragma fragment fragFog1
@@ -196,6 +198,7 @@ Shader "Custom/FogDensity" {
     Zwrite On
     Ztest LEqual
     Pass{
+      Tags { "LightMode"="SRPDefaultUnlit" }
       CGPROGRAM
       #pragma vertex vertLayer2
       #pragma fragment fragFog2
@@ -205,6 +208,7 @@ Shader "Custom/FogDensity" {
     Zwrite On
     Ztest LEqual
     Pass{
+      Tags { "LightMode"="SRPDefaultUnlit" }
       CGPROGRAM
       #pragma vertex vertLayer3
       #pragma fragment fragFog3
@@ -214,6 +218,7 @@ Shader "Custom/FogDensity" {
     Zwrite On
     Ztest LEqual
     Pass{
+      Tags { "LightMode"="SRPDefaultUnlit" }
       CGPROGRAM
       #pragma vertex vertLayer4
       #pragma fragment fragFog4

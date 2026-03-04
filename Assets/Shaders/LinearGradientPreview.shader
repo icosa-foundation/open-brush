@@ -29,6 +29,7 @@ Shader "Custom/LinearGradientPreview" {
     Tags { "RenderPipeline"="UniversalPipeline" }
         Pass
         {
+            Tags { "LightMode"="SRPDefaultUnlit" }
             Blend SrcAlpha OneMinusSrcAlpha
       Cull Front
             CGPROGRAM
@@ -82,6 +83,7 @@ Shader "Custom/LinearGradientPreview" {
 
         //Make a white outline!
         Pass{
+            Tags { "LightMode"="SRPDefaultUnlit" }
 
             Cull Front
 
@@ -115,6 +117,7 @@ Shader "Custom/LinearGradientPreview" {
         }
   //Make a 2nd black outline!
   Pass{
+      Tags { "LightMode"="SRPDefaultUnlit" }
 
       Cull Front
 
