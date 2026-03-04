@@ -23,6 +23,7 @@ Shader "Unlit/Snapshot Camera Flash"
     }
     SubShader
     {
+    Tags { "RenderPipeline"="UniversalPipeline" }
         Tags { "Queue"="Transparent" "RenderType"="Transparent" }
         Blend SrcAlpha OneMinusSrcAlpha
         LOD 100
@@ -89,3 +90,4 @@ Shader "Unlit/Snapshot Camera Flash"
         }
     }
 }
+

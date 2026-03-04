@@ -20,6 +20,7 @@ Shader "TiltBrush/MobileDiffuse" {
   }
 
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags { "RenderType"="Opaque" "LightMode"="ForwardBase"}
     LOD 100
 
@@ -110,3 +111,4 @@ Shader "TiltBrush/MobileDiffuse" {
 
 Fallback "Mobile/VertexLit"
 }
+

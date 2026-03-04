@@ -19,6 +19,7 @@ Shader "Custom/ModelGhost" {
 
   Category {
     SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
 
       Tags{ "Queue" = "Overlay" "IgnoreProjector" = "True" "RenderType" = "Transparent" }
 
@@ -82,3 +83,4 @@ Shader "Custom/ModelGhost" {
 
   Fallback "Unlit/Diffuse"
 }
+

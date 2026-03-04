@@ -18,6 +18,7 @@ Shader "Custom/PanelButton" {
     _MainTex ("Texture", 2D) = "white" {}
   }
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags {"Queue"="AlphaTest+20"}
 
     Pass {
@@ -94,4 +95,5 @@ Shader "Custom/PanelButton" {
   FallBack "Diffuse"
 
 }
+
 

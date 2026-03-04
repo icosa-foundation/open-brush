@@ -18,6 +18,7 @@ Shader "Custom/AmbientLit" {
     _MainTex ("Base (RGB)", 2D) = "white" {}
   }
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     LOD 100
 
     CGPROGRAM
@@ -51,3 +52,4 @@ Shader "Custom/AmbientLit" {
   }
   FallBack "Diffuse"
 }
+

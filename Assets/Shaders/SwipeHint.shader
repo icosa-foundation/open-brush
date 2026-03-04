@@ -24,6 +24,7 @@ Shader "Custom/SwipeHint" {
 
   }
     SubShader{
+    Tags { "RenderPipeline"="UniversalPipeline" }
       Tags { "RenderType" = "Opaque" }
       LOD 100
 
@@ -62,4 +63,5 @@ Shader "Custom/SwipeHint" {
   }
 Fallback "Unlit/Diffuse"
 }
+
 

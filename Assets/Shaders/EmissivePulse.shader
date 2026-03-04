@@ -23,6 +23,7 @@ Shader "Custom/EmissivePulse" {
   // DESKTOP VERSION
   // -------------------------------------------------------------------------------------------- //
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags { "Queue"="Geometry" "RenderType"="Geometry" }
     LOD 201
 
@@ -54,6 +55,7 @@ Shader "Custom/EmissivePulse" {
   // MOBILE VERSION
   // -------------------------------------------------------------------------------------------- //
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags { "Queue"="Geometry" "RenderType"="Geometry" }
     LOD 150
 
@@ -82,3 +84,4 @@ Shader "Custom/EmissivePulse" {
   }
   FallBack "Diffuse"
 }
+

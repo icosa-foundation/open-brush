@@ -22,6 +22,7 @@ Shader "Custom/StandardWithOutlineFlatten" {
 
   }
     SubShader{
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags{ "RenderType" = "Opaque" }
     LOD 100
 
@@ -96,3 +97,4 @@ Shader "Custom/StandardWithOutlineFlatten" {
 
     FallBack "Diffuse"
 }
+

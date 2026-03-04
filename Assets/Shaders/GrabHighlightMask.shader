@@ -23,6 +23,7 @@ Properties {
 //
 Category {
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
   Pass {
     ZTest Always
     ZWrite Off
@@ -75,3 +76,4 @@ Category {
     }
   }
 }
+

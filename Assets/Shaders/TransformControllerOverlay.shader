@@ -22,6 +22,7 @@ Properties {
 
 Category {
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
    Tags {"Queue"="AlphaTest+20"}
 
   Pass {
@@ -125,3 +126,4 @@ Category {
   }
 }
 }
+

@@ -93,6 +93,7 @@ Shader "Hidden/Mobile Bloom"
 
     SubShader
     {
+    Tags { "RenderPipeline"="UniversalPipeline" }
         // No culling or depth
         Cull Off ZWrite Off ZTest Always
 
@@ -150,3 +151,4 @@ Shader "Hidden/Mobile Bloom"
         }
     }
 }
+

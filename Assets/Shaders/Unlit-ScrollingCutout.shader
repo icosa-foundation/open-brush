@@ -20,6 +20,7 @@ Properties {
 }
 
 SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
   Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
   CGPROGRAM
   #pragma surface surf Lambert vertex:vert alphatest:_Cutoff addshadow
@@ -49,3 +50,4 @@ SubShader {
 
 Fallback "Unlit/Diffuse"
 }
+

@@ -22,6 +22,7 @@ Properties {
 }
 
 SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
   Tags { "RenderType"="Opaque" }
   LOD 100
 
@@ -127,4 +128,5 @@ SubShader {
 }
 
 }
+
 

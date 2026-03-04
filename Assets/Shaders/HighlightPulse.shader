@@ -20,7 +20,7 @@ Shader "Custom/HighlightPulse" {
     _PulseSpeed ("PulseSpeed", FLOAT) = 1
   }
   SubShader {
-    Tags { "RenderType"="Opaque" }
+    Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Opaque" }
     LOD 100
 
     Pass {

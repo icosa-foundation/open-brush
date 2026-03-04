@@ -22,6 +22,7 @@ Shader "Custom/LightWidget" {
         _FlattenAmount ("Flatten Amount", Range(0,1)) = 0
     }
     SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
 
         Tags {"RenderType"="Opaque"}
 
@@ -159,3 +160,4 @@ Shader "Custom/LightWidget" {
     }
     FallBack "Diffuse"
 }
+

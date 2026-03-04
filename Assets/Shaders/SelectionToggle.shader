@@ -21,6 +21,7 @@ Shader "Custom/SelectionToggle" {
 
   }
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags { "RenderType"="Opaque" }
 
     CGPROGRAM
@@ -70,3 +71,4 @@ Shader "Custom/SelectionToggle" {
   }
   FallBack "Diffuse"
 }
+

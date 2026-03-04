@@ -22,6 +22,7 @@ Shader "Custom/ChangeSliderValue" {
     _Ratio ("Size Ratio", Float) = 1
   }
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags { "RenderType"="Opaque" }
     LOD 100
 
@@ -58,4 +59,5 @@ Shader "Custom/ChangeSliderValue" {
   }
   FallBack "Diffuse"
 }
+
 

@@ -10,6 +10,7 @@ Shader "Point Cloud/Disk"
     }
     SubShader
     {
+    Tags { "RenderPipeline"="UniversalPipeline" }
         Tags { "RenderType"="Opaque" }
         Cull Off
         Pass
@@ -40,3 +41,4 @@ Shader "Point Cloud/Disk"
     }
     CustomEditor "Pcx.DiskMaterialInspector"
 }
+

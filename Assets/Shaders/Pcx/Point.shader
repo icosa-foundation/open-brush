@@ -11,6 +11,7 @@ Shader "Point Cloud/Point"
     }
     SubShader
     {
+    Tags { "RenderPipeline"="UniversalPipeline" }
         Tags { "RenderType"="Opaque" }
         Pass
         {
@@ -100,3 +101,4 @@ Shader "Point Cloud/Point"
     }
     CustomEditor "Pcx.PointMaterialInspector"
 }
+

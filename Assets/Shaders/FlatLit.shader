@@ -28,6 +28,7 @@ Properties {
 }
 
 SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
   Pass {
     Tags { "LightMode" = "ForwardBase" }
     Blend SrcAlpha OneMinusSrcAlpha
@@ -186,3 +187,4 @@ SubShader {
   }
 }
 }
+

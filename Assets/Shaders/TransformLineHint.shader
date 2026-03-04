@@ -22,6 +22,7 @@ Properties {
 
 Category {
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
   Pass {
 
       Cull Back
@@ -73,3 +74,4 @@ Category {
   }
 }
 }
+

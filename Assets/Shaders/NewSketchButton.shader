@@ -178,6 +178,7 @@ Shader "Custom/NewSketchButton" {
   ENDCG
 
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
   Tags{ "Queue" = "AlphaTest" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
     AlphaTest Greater .01
 
@@ -219,3 +220,4 @@ Shader "Custom/NewSketchButton" {
   }
   FallBack "Diffuse"
 }
+

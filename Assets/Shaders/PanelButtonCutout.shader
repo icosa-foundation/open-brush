@@ -20,6 +20,7 @@ Shader "Custom/PanelButtonCutout" {
     _Grayscale("Grayscale", Float) = 0
   }
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags {"Queue"="AlphaTest+20" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
 
     Pass {
@@ -103,4 +104,5 @@ Shader "Custom/PanelButtonCutout" {
   }
   FallBack "Transparent/Cutout/VertexLit"
 }
+
 

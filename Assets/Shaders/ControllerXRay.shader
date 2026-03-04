@@ -19,6 +19,7 @@ Properties {
 
 Category {
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
   Pass {
 
     //
@@ -83,3 +84,4 @@ Fallback "Unlit/Diffuse"
 
 
 }
+

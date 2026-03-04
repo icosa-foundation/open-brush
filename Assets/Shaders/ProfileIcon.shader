@@ -21,6 +21,7 @@ Shader "Custom/ProfileIcon" {
  _Grayscale ("Grayscale", Float) = 0
   }
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Pass {
       Tags{ "Queue" = "AlphaTest" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
       Lighting Off
@@ -85,3 +86,4 @@ Shader "Custom/ProfileIcon" {
     }
   }
 }
+

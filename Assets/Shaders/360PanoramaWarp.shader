@@ -11,6 +11,7 @@ Shader "Custom/360PanoramaWarp"
     }
     SubShader
     {
+    Tags { "RenderPipeline"="UniversalPipeline" }
         Tags
         {
             "RenderType"="Opaque"

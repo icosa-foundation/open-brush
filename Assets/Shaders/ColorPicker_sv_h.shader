@@ -43,6 +43,7 @@ CGINCLUDE
 ENDCG
 
 SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags {
         "Queue"="AlphaTest+20"
         "IgnoreProjector"="True"
@@ -114,3 +115,4 @@ SubShader {
 }
 
 }
+

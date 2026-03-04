@@ -20,6 +20,7 @@ Properties {
 }
 
 SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
 Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
 Cull Off
 
@@ -56,3 +57,4 @@ ENDCG
 
 Fallback "Unlit/Diffuse"
 }
+

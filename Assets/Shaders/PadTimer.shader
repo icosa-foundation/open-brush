@@ -22,6 +22,7 @@ Shader "Custom/PadTimer" {
     _Ratio ("Scroll Ratio", Float) = 1
   }
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags{ "RenderType" = "Opaque" }
     LOD 100
 
@@ -59,4 +60,5 @@ Shader "Custom/PadTimer" {
   }
   FallBack "Diffuse"
 }
+
 

@@ -1,4 +1,4 @@
-﻿// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
+// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
 // MIT License
 //
 // Copyright (c) 2020 fuqunaga
@@ -42,6 +42,7 @@ Shader "Custom/Grid3D"
 
     SubShader
     {
+    Tags { "RenderPipeline"="UniversalPipeline" }
         Tags { "Queue" = "Transparent" }
         Blend One One
         Cull Off Lighting Off ZWrite Off
@@ -200,3 +201,4 @@ Shader "Custom/Grid3D"
         }
     }
 }
+

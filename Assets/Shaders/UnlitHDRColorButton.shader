@@ -20,6 +20,7 @@ Shader "Custom/UnlitHDRColorButton" {
         _EdgeWidth ("Edge Width", Float) = 1.5
     }
     SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
 
         Tags {"RenderType"="Opaque"}
         LOD 100

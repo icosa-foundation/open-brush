@@ -20,6 +20,7 @@ Shader "Custom/Standard_AudioReactive" {
     _Metallic ("Metallic", Range(0,1)) = 0.0
   }
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags { "Queue"="AlphaTest+20" }
 
     CGPROGRAM
@@ -61,3 +62,4 @@ Shader "Custom/Standard_AudioReactive" {
   }
   FallBack "Diffuse"
 }
+

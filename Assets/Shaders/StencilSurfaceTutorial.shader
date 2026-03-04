@@ -153,6 +153,7 @@ CGINCLUDE
 ENDCG
 
 SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
 Tags {"Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
 
 LOD 100
@@ -200,3 +201,4 @@ Pass {
 } // end subshader
 Fallback "Unlit/Diffuse"
 }
+

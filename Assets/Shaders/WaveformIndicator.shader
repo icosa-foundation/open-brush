@@ -19,6 +19,7 @@ Shader "Custom/WaveformIndicator" {
     _BGColor("BG Color", Color) = (0, 0, 0, 1)
   }
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Pass {
       Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
       Lighting Off

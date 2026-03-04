@@ -19,6 +19,7 @@ Shader "Custom/PanelButton_AtlasActive" {
     _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
   }
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags {"Queue"="AlphaTest+20" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
 
     Pass {
@@ -104,4 +105,5 @@ Shader "Custom/PanelButton_AtlasActive" {
   }
   FallBack "Diffuse"
 }
+
 

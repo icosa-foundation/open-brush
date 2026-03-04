@@ -19,6 +19,7 @@ Shader "Custom/BrowserButton" {
     _Grayscale ("Grayscale", Float) = 0
   }
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags {"Queue"="AlphaTest+20"}
 
     Pass {
@@ -93,4 +94,5 @@ Shader "Custom/BrowserButton" {
   FallBack "Diffuse"
 
 }
+
 

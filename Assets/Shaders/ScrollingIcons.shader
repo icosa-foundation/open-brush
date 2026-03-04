@@ -24,6 +24,7 @@ Shader "Custom/ScrollingIcons" {
     _UsedIconCount ("Used Icon Count", Float) = 1
   }
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags{ "RenderType" = "Opaque" }
     LOD 100
 
@@ -65,4 +66,5 @@ Shader "Custom/ScrollingIcons" {
   }
   FallBack "Diffuse"
 }
+
 

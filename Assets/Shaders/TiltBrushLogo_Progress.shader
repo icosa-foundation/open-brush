@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ Shader "Custom/TiltBrushLogo_Progress" {
     _MainTex ("Texture", 2D) = "white" {}
   }
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags { "RenderType"="Transparent" }
     Blend SrcAlpha OneMinusSrcAlpha
     LOD 100
@@ -145,3 +146,4 @@ Shader "Custom/TiltBrushLogo_Progress" {
   }
   FallBack "Diffuse"
 }
+

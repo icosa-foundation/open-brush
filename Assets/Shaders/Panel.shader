@@ -19,6 +19,7 @@ Properties {
 }
 
 SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
   Tags { "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent" }
   Lighting Off Cull Off ZWrite Off Fog { Mode Off }
   Blend SrcAlpha OneMinusSrcAlpha
@@ -76,3 +77,4 @@ SubShader {
 }
 
 }
+

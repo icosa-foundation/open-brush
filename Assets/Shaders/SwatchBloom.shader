@@ -28,6 +28,7 @@ Category {
   Cull Off Lighting Off ZWrite Off Fog { Color (0,0,0,0) }
 
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
 	LOD 201
     Pass {
       CGPROGRAM
@@ -85,6 +86,7 @@ Category {
 
   // MOBILE VERSION
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
 	LOD 100
     Pass {
       CGPROGRAM
@@ -133,3 +135,4 @@ Category {
   }
 }
 }
+

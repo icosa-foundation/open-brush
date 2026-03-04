@@ -23,6 +23,7 @@ Shader "Custom/TwoTexAnimation"
   }
   SubShader
   {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags{ "Queue" = "AlphaTest" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
     LOD 100
 
@@ -95,3 +96,4 @@ Shader "Custom/TwoTexAnimation"
     }
   }
 }
+

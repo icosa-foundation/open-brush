@@ -22,6 +22,7 @@ Shader "Custom/VisualizerStage" {
     _EmissionGain("Emission Gain", Range(0, 1)) = 0.5
   }
     SubShader{
+    Tags { "RenderPipeline"="UniversalPipeline" }
     CGPROGRAM
     #pragma target 3.0
     #pragma surface surf StandardSpecular

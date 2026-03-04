@@ -21,6 +21,7 @@ Shader "Custom/Standard_NoFog" {
     _Metallic ("Metallic", Range(0,1)) = 0.0
   }
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags { "Queue"="AlphaTest+20" }
     CGPROGRAM
     #pragma surface surf Standard fullforwardshadows nofog
@@ -54,3 +55,4 @@ Shader "Custom/Standard_NoFog" {
   }
   FallBack "Diffuse"
 }
+

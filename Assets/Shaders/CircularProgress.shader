@@ -26,6 +26,7 @@ Shader "Unlit/CircularProgress"
   }
   SubShader
   {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags { "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent" }
     LOD 100
 
@@ -98,3 +99,4 @@ Shader "Unlit/CircularProgress"
     }
   }
 }
+

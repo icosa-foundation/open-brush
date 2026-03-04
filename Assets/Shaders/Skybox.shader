@@ -21,6 +21,7 @@ Properties {
 }
 
 SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
   Tags { "Queue"="Background" "RenderType"="Background" "PreviewType"="Skybox" }
   Cull Off ZWrite Off
 
@@ -91,3 +92,4 @@ SubShader {
 Fallback Off
 
 }
+

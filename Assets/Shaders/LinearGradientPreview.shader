@@ -26,6 +26,7 @@ Shader "Custom/LinearGradientPreview" {
 
     SubShader
     {
+    Tags { "RenderPipeline"="UniversalPipeline" }
         Pass
         {
             Blend SrcAlpha OneMinusSrcAlpha
@@ -147,3 +148,4 @@ Shader "Custom/LinearGradientPreview" {
 
     }
 }
+

@@ -23,6 +23,7 @@ Properties {
 
 }
     SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags {"IgnoreProjector"="True"}
     LOD 200
 
@@ -63,3 +64,4 @@ Properties {
 
   FallBack "Diffuse"
 }
+

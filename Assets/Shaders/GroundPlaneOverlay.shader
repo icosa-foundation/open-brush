@@ -24,7 +24,7 @@ Shader "Unlit/GroundPlaneOverlay"
   SubShader
   {
 	LOD 201
-    Tags { "Queue"="Overlay" "RenderType"="Transparent" }
+    Tags { "RenderPipeline"="UniversalPipeline" "Queue"="Overlay" "RenderType"="Transparent" }
     Blend SrcAlpha OneMinusSrcAlpha, Zero One
     ZTest Always
     ZWrite Off
@@ -114,7 +114,7 @@ Shader "Unlit/GroundPlaneOverlay"
   // MOBILE VERSION
   SubShader {
 	LOD 100
-    Tags { "Queue"="Overlay" "RenderType"="Transparent" }
+    Tags { "RenderPipeline"="UniversalPipeline" "Queue"="Overlay" "RenderType"="Transparent" }
     Blend SrcAlpha OneMinusSrcAlpha, Zero One
     ZTest Always
     ZWrite Off

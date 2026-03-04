@@ -171,6 +171,7 @@ Shader "Custom/FogDensity" {
   ENDCG
 
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
   Tags{ "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
     AlphaTest Greater .01
 
@@ -221,3 +222,4 @@ Shader "Custom/FogDensity" {
   }
   FallBack "Diffuse"
 }
+

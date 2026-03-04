@@ -26,6 +26,7 @@ Category {
   Cull Off Lighting Off ZWrite Off Fog { Color (0,0,0,0) }
 
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Pass {
 
       CGPROGRAM
@@ -80,3 +81,4 @@ Category {
   }
 }
 }
+

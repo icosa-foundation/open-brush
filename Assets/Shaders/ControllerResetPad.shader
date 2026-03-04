@@ -21,6 +21,7 @@ Shader "Custom/ControllerResetPad" {
 
   }
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags { "RenderType"="Opaque" }
 
     CGPROGRAM
@@ -92,3 +93,4 @@ Shader "Custom/ControllerResetPad" {
   }
   FallBack "Diffuse"
 }
+
