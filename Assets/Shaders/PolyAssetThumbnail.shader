@@ -23,8 +23,6 @@ Shader "Custom/PolyAssetThumbnail" {
     Tags { "RenderPipeline"="UniversalPipeline" }
         Tags{ "Queue" = "AlphaTest+20" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
         Pass {
-            Lighting Off
-
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag

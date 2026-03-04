@@ -158,7 +158,7 @@ Tags {"Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="TransparentCu
 
 LOD 100
 ColorMask RGB
-Lighting Off Fog { Color (0,0,0,0) }
+
 ZWrite Off
 
 // back faces

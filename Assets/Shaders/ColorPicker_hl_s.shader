@@ -50,9 +50,6 @@ SubShader {
         "RenderType"="TransparentCutout"
         "PreviewType"="Plane"
     }
-
-    Lighting Off
-    Fog { Mode Off }
     LOD 100
 
     Pass {

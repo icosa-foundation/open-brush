@@ -21,7 +21,6 @@ Properties {
 SubShader {
     Tags { "RenderPipeline"="UniversalPipeline" }
     Pass {
-        Lighting Off
         Cull Front
 
         CGPROGRAM

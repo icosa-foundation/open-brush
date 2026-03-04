@@ -22,7 +22,6 @@ SubShader {
   LOD 100
 
   Pass {
-    Lighting Off
     Cull Off
 
     CGPROGRAM

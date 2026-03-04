@@ -49,9 +49,6 @@ SubShader {
         "IgnoreProjector"="True"
         "RenderType"="TransparentCutout"
     }
-
-    Lighting Off
-    Fog { Mode Off }
     LOD 100
 
     Pass {

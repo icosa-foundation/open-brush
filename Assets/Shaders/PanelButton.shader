@@ -22,8 +22,6 @@ Shader "Custom/PanelButton" {
     Tags {"Queue"="AlphaTest+20"}
 
     Pass {
-      Lighting Off
-
       CGPROGRAM
       #pragma vertex vert
       #pragma fragment frag
