@@ -25,6 +25,7 @@ Category {
   SubShader {
     Tags { "RenderPipeline"="UniversalPipeline" }
   Pass {
+    Tags { "LightMode"="SRPDefaultUnlit" }
     ZTest Always
     ZWrite Off
     ColorMask 0

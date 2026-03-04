@@ -30,7 +30,7 @@ Properties {
 SubShader {
     Tags { "RenderPipeline"="UniversalPipeline" }
   Pass {
-    Tags { "LightMode" = "ForwardBase" }
+    Tags { "LightMode" = "UniversalForward" }
     Blend SrcAlpha OneMinusSrcAlpha
     Cull Back
     CGPROGRAM

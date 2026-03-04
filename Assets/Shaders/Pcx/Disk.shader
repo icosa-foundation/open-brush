@@ -15,7 +15,7 @@ Shader "Point Cloud/Disk"
         Cull Off
         Pass
         {
-            Tags { "LightMode"="ForwardBase" }
+            Tags { "LightMode"="UniversalForward" }
             CGPROGRAM
             #pragma vertex Vertex
             #pragma geometry Geometry

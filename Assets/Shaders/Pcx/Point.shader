@@ -15,6 +15,7 @@ Shader "Point Cloud/Point"
         Tags { "RenderType"="Opaque" }
         Pass
         {
+            Tags { "LightMode"="UniversalForward" }
             CGPROGRAM
 
             #pragma vertex Vertex

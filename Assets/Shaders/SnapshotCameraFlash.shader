@@ -30,6 +30,7 @@ Shader "Unlit/Snapshot Camera Flash"
 
         Pass
         {
+            Tags { "LightMode"="UniversalForward" }
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
