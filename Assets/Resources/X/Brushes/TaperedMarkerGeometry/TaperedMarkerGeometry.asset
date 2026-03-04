@@ -23,7 +23,6 @@ MonoBehaviour:
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
   m_ButtonTexture: {fileID: 2800000, guid: 2874bc75bee3f4846a2ed9a07dd9c468, type: 3}
-  m_Description: BRUSH_TAPEREDMARKERGEO
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
@@ -43,7 +42,7 @@ MonoBehaviour:
   m_VolumeVelocityRangeMultiplier: 1
   m_AudioReactive: 0
   m_ButtonAudio: {fileID: 0}
-  m_Material: {fileID: 2100000, guid: 848eecf12724db540b371b0528c9de33, type: 2}
+  m_Material: {fileID: 2100000, guid: 10eae5304118cb3468b104f4e0e64196, type: 2}
   m_TextureAtlasV: 1
   m_TileRate: 0.15
   m_UseBloomSwatchOnColorPicker: 0

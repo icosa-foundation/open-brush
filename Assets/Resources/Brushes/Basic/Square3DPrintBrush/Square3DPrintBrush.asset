@@ -24,7 +24,6 @@ MonoBehaviour:
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
   m_ButtonTexture: {fileID: 2800000, guid: 116a614da008237419f10b7272c715f0, type: 3}
-  m_Description: BRUSH_3DPRINTING
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
@@ -46,7 +45,7 @@ MonoBehaviour:
   m_VolumeVelocityRangeMultiplier: 2
   m_AudioReactive: 0
   m_ButtonAudio: {fileID: 0}
-  m_Material: {fileID: 2100000, guid: c26b5a6e52da87a46a042ca0f6869f20, type: 2}
+  m_Material: {fileID: 2100000, guid: 2e03b1bf3ebd46099d7ef4cafadc4dfa, type: 2}
   m_TextureAtlasV: 1
   m_TileRate: 0.15
   m_UseBloomSwatchOnColorPicker: 0

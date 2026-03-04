@@ -48,7 +48,8 @@ MonoBehaviour:
   m_VolumeVelocityRangeMultiplier: 2
   m_AudioReactive: 0
   m_ButtonAudio: {fileID: 0}
-  m_Material: {fileID: 2100000, guid: 4e725746b44456641a06885575f9dd35, type: 2}
+  m_Material: {fileID: -876546973899608171, guid: 9d25c95d3b8f5c04f98a619d3abd3ffd,
+    type: 3}
   m_TextureAtlasV: 1
   m_TileRate: 1
   m_UseBloomSwatchOnColorPicker: 0
