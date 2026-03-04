@@ -28,7 +28,7 @@ Category {
     Tags { "RenderPipeline"="UniversalPipeline" }
     Pass {
 
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
       #pragma multi_compile __ AUDIO_REACTIVE
@@ -83,8 +83,9 @@ Category {
         // RGB output only, no HDR support.
         return i.color * c;
       }
-      ENDCG
+      ENDHLSL
     }
   }
 }
 }
+

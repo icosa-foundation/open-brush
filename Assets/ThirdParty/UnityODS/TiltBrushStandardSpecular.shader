@@ -194,13 +194,16 @@ Shader "TiltBrush/Standard (Specular setup)"
 	    #endif
       )
       {
+        VertexOutput output;
         PrepForOds(v.vertex);
-        vertShadowCaster(v
+        vertShadowCaster(
+            v
+            , output
     #ifdef UNITY_STANDARD_USE_SHADOW_OUTPUT_STRUCT
-                                        ,o
+            , o
     #endif
     #ifdef UNITY_STANDARD_USE_STEREO_SHADOW_OUTPUT_STRUCT
-                                        ,os
+            , os
     #endif
         );
       }
@@ -434,13 +437,16 @@ Shader "TiltBrush/Standard (Specular setup)"
 	    #endif
       )
       {
+        VertexOutput output;
         PrepForOds(v.vertex);
-        vertShadowCaster(v
+        vertShadowCaster(
+            v
+            , output
     #ifdef UNITY_STANDARD_USE_SHADOW_OUTPUT_STRUCT
-                                        ,o
+            , o
     #endif
     #ifdef UNITY_STANDARD_USE_STEREO_SHADOW_OUTPUT_STRUCT
-                                        ,os
+            , os
     #endif
         );
       }

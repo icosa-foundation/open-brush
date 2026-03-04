@@ -53,7 +53,7 @@ Shader "Custom/Grid3D"
             Cull Off
             ZTest [_ZTest]
 
-            CGPROGRAM
+            HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
 
@@ -197,8 +197,9 @@ Shader "Custom/Grid3D"
                 return saturate(i.pos) * _Color;
                 // return i.pos * _Color;
             }
-            ENDCG
+            ENDHLSL
         }
     }
 }
+
 

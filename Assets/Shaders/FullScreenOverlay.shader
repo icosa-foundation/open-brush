@@ -29,7 +29,7 @@ Shader "Unlit/FullScreenOverlay"
     Blend SrcAlpha OneMinusSrcAlpha, Zero One
 
     Pass {
-      CGPROGRAM
+      HLSLPROGRAM
         #pragma vertex vert
         #pragma fragment frag
 
@@ -65,7 +65,8 @@ Shader "Unlit/FullScreenOverlay"
         {
           return _Color;
         }
-      ENDCG
+      ENDHLSL
     }
   }
 }
+

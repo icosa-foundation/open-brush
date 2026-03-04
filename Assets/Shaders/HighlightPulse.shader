@@ -24,56 +24,49 @@ Shader "Custom/HighlightPulse" {
     LOD 100
 
     Pass {
-      CGPROGRAM
-        #pragma vertex vert
-        #pragma fragment frag
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+        #pragma vertex Vert
+        #pragma fragment Frag
 
-        #include "UnityCG.cginc"
+        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Assets/Shaders/Include/Hdr.cginc"
 
-        struct appdata_t {
-          float4 vertex : POSITION;
-          float2 texcoord : TEXCOORD0;
+        TEXTURE2D(_MainTex);
+        SAMPLER(sampler_MainTex);
 
-          UNITY_VERTEX_INPUT_INSTANCE_ID
-        };
-
-        struct v2f {
-          float4 vertex : SV_POSITION;
-          float2 texcoord : TEXCOORD0;
-
-          UNITY_VERTEX_OUTPUT_STEREO
-        };
-
-        sampler2D _MainTex;
+        CBUFFER_START(UnityPerMaterial)
         float4 _MainTex_ST;
-        uniform float4 _Color;
-        uniform float4 _PulseColor;
-        uniform float _PulseSpeed;
+        half4 _Color;
+        half4 _PulseColor;
+        float _PulseSpeed;
+        CBUFFER_END
 
-        v2f vert (appdata_t v)
-        {
-          v2f o;
+        struct Attributes {
+          float4 positionOS : POSITION;
+          float2 uv : TEXCOORD0;
+        };
 
-          UNITY_SETUP_INSTANCE_ID(v);
-          UNITY_INITIALIZE_OUTPUT(v2f, o);
-          UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+        struct Varyings {
+          float4 positionHCS : SV_POSITION;
+          float2 uv : TEXCOORD0;
+        };
 
-          o.vertex = UnityObjectToClipPos(v.vertex);
-          o.texcoord = TRANSFORM_TEX(v.texcoord, _MainTex);
-
-          return o;
+        Varyings Vert(Attributes IN) {
+          Varyings OUT;
+          OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+          OUT.uv = IN.uv * _MainTex_ST.xy + _MainTex_ST.zw;
+          return OUT;
         }
 
-        fixed4 frag (v2f i) : SV_Target
-        {
+        half4 Frag(Varyings IN) : SV_Target {
           float t = (sin(_Time.y * 8.0 * _PulseSpeed) * 0.5) + 0.5;
-          float4 lerpedColor = lerp(_PulseColor, _Color, t);
-          return encodeHdr(tex2D (_MainTex, i.texcoord.xy) * lerpedColor);
+          half4 lerpedColor = lerp(_PulseColor, _Color, (half)t);
+          half4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv);
+          return encodeHdr(tex.rgb * lerpedColor.rgb);
         }
-      ENDCG
+      ENDHLSL
     }
   }
-  FallBack "Diffuse"
+  FallBack Off
 }
-

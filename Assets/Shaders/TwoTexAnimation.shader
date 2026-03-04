@@ -29,7 +29,7 @@ Shader "Custom/TwoTexAnimation"
 
     Pass
     {
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
 
@@ -92,8 +92,9 @@ Shader "Custom/TwoTexAnimation"
         }
 
       }
-      ENDCG
+      ENDHLSL
     }
   }
 }
+
 

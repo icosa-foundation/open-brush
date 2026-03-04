@@ -24,7 +24,7 @@ Shader "Custom/TiltBrushLogo_Progress" {
     Blend SrcAlpha OneMinusSrcAlpha
     LOD 100
     Pass {
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
       
@@ -141,9 +141,10 @@ Shader "Custom/TiltBrushLogo_Progress" {
   
         return c;
       }
-      ENDCG
+      ENDHLSL
     }
   }
   FallBack "Diffuse"
 }
+
 

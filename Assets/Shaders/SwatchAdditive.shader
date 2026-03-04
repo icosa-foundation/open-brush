@@ -29,7 +29,7 @@ Category {
     Tags { "RenderPipeline"="UniversalPipeline" }
     Pass {
 
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
       #pragma multi_compile_particles
@@ -76,9 +76,10 @@ Category {
         // Note that the _Color parameter is being gamma corrected
         return pow(_Color, 2.2) * tex2D(_MainTex, i.texcoord);
       }
-      ENDCG
+      ENDHLSL
     }
   }
 }
 }
+
 

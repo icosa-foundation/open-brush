@@ -35,7 +35,7 @@ Shader "Unlit/CircularProgress"
 
     Pass
     {
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
 
@@ -95,8 +95,9 @@ Shader "Unlit/CircularProgress"
 
         return col;
       }
-      ENDCG
+      ENDHLSL
     }
   }
 }
+
 

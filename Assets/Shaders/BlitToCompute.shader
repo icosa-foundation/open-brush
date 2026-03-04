@@ -26,7 +26,7 @@ Shader "Hidden/BlitToCompute"
 
     Pass
     {
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
 
@@ -96,7 +96,8 @@ Shader "Hidden/BlitToCompute"
 
         return cOut;
       }
-      ENDCG
+      ENDHLSL
     }
   }
 }
+

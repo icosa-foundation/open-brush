@@ -30,7 +30,7 @@ Shader "Custom/VisualizerRing" {
     Tags { "RenderPipeline"="UniversalPipeline" }
     Pass{
 
-    CGPROGRAM
+    HLSLPROGRAM
     #pragma vertex vert
     #pragma fragment frag
     #pragma multi_compile_particles
@@ -83,8 +83,9 @@ Shader "Custom/VisualizerRing" {
   c.w = 1;
   return i.color * c * _Color;
   }
-    ENDCG
+    ENDHLSL
   }
   }
   }
 }
+

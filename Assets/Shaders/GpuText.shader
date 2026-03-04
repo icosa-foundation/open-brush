@@ -28,7 +28,7 @@ Shader "Unlit/GpuText"
 
         Pass
         {
-            CGPROGRAM
+            HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
 
@@ -102,7 +102,8 @@ Shader "Unlit/GpuText"
 
                 return col;
             }
-            ENDCG
+            ENDHLSL
         }
     }
 }
+

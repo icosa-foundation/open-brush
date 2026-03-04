@@ -25,7 +25,7 @@ ZTest Always Cull Off ZWrite Off Fog { Mode Off } //Rendering settings
 Blend SrcAlpha OneMinusSrcAlpha // Alpha blending
 
  Pass{
-  CGPROGRAM
+  HLSLPROGRAM
   #pragma vertex vert
   #pragma fragment frag
   #include "UnityCG.cginc"
@@ -59,8 +59,9 @@ Blend SrcAlpha OneMinusSrcAlpha // Alpha blending
   fixed4 tex = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_MainTex, i.uv); //Get the orginal rendered color
      return tex;
   }
-  ENDCG
+  ENDHLSL
  }
 }
  FallBack "Diffuse"
 }
+

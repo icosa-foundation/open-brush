@@ -27,7 +27,7 @@ Shader "Hidden/BlitDownsample"
 
     Pass
     {
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
 
@@ -72,7 +72,8 @@ Shader "Hidden/BlitDownsample"
 
         return UNITY_SAMPLE_SCREENSPACE_TEXTURE(_MainTex, i.uv);
       }
-      ENDCG
+      ENDHLSL
     }
   }
 }
+

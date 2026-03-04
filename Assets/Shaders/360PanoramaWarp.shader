@@ -20,7 +20,7 @@ Shader "Custom/360PanoramaWarp"
 
         Pass
         {
-            CGPROGRAM
+            HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
 
@@ -125,7 +125,8 @@ Shader "Custom/360PanoramaWarp"
 
                 return float4(color + specular, 1.0);
             }
-            ENDCG
+            ENDHLSL
         }
     }
 }
+

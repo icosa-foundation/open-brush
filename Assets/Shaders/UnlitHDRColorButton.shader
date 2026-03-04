@@ -26,7 +26,7 @@ Shader "Custom/UnlitHDRColorButton" {
         LOD 100
 
         Pass {
-            CGPROGRAM
+            HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
             #include "UnityCG.cginc"
@@ -67,8 +67,9 @@ Shader "Custom/UnlitHDRColorButton" {
                 float vignette = pow( abs(i.uv - .5) * _EdgeWidth, _EdgeFalloff);
                 return lerp(_Color, _SecondaryColor, saturate(vignette));
             }
-            ENDCG
+            ENDHLSL
         }
     }
     FallBack "Diffuse"
 }
+

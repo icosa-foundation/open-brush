@@ -29,7 +29,7 @@ Shader "Unlit/GroundPlaneOverlay"
     ZTest Always
     ZWrite Off
     Pass {
-      CGPROGRAM
+      HLSLPROGRAM
         #pragma vertex vert
         #pragma fragment frag
         #pragma exclude_renderers d3d9 d3d11_9x
@@ -107,7 +107,7 @@ Shader "Unlit/GroundPlaneOverlay"
           _Color.w = .1 * t;
           return grid * _Color;
         }
-      ENDCG
+      ENDHLSL
     }
   }
 
@@ -119,7 +119,7 @@ Shader "Unlit/GroundPlaneOverlay"
     ZTest Always
     ZWrite Off
     Pass {
-      CGPROGRAM
+      HLSLPROGRAM
         #pragma vertex vert
         #pragma fragment frag
         #pragma exclude_renderers d3d9 d3d11_9x
@@ -187,7 +187,8 @@ Shader "Unlit/GroundPlaneOverlay"
           _Color.w = .1;
           return grid * _Color;
         }
-      ENDCG
+      ENDHLSL
     }
   }
 }
+

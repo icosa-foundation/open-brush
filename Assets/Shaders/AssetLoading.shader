@@ -26,7 +26,7 @@ SubShader {
   LOD 100
 
   Pass {
-    CGPROGRAM
+    HLSLPROGRAM
     #pragma vertex vert
     #pragma fragment frag
     #include "UnityCG.cginc"
@@ -88,9 +88,10 @@ SubShader {
 
     return encodeHdr(c.rgb * c.a);
   }
-    ENDCG
+    ENDHLSL
   }
 }
 
 }
+
 

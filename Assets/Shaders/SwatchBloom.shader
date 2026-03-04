@@ -31,7 +31,7 @@ Category {
     Tags { "RenderPipeline"="UniversalPipeline" }
 	LOD 201
     Pass {
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
       #pragma multi_compile_particles
@@ -80,7 +80,7 @@ Category {
         float4 color = i.color * tex2D(_MainTex, i.texcoord);
         return encodeHdr(color.rgb * color.a);
       }
-      ENDCG
+      ENDHLSL
     }
   }
 
@@ -89,7 +89,7 @@ Category {
     Tags { "RenderPipeline"="UniversalPipeline" }
 	LOD 100
     Pass {
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
       #pragma multi_compile_particles
@@ -130,9 +130,10 @@ Category {
 		float3 clampedColor = saturate(color.rgb * color.a);
         return encodeHdr(clampedColor);
       }
-      ENDCG
+      ENDHLSL
     }
   }
 }
 }
+
 

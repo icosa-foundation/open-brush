@@ -30,7 +30,7 @@ Shader "Custom/BlitLdrPmaOverlay" {
     Blend Off
 
     Pass{
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
       #include "UnityCG.cginc"
@@ -75,7 +75,8 @@ Shader "Custom/BlitLdrPmaOverlay" {
         // Composite the result.
         return (1.0f - overlayTex.a) * saturate(mainTex) + overlayTex;
       }
-      ENDCG
+      ENDHLSL
     }
   }
 }
+

@@ -21,48 +21,40 @@ Shader "Custom/GripPulse" {
     LOD 100
 
     Pass {
+      Tags { "LightMode"="UniversalForward" }
       Cull Off
-      CGPROGRAM
-        #pragma vertex vert
-        #pragma fragment frag
+      HLSLPROGRAM
+        #pragma vertex Vert
+        #pragma fragment Frag
 
-        #include "UnityCG.cginc"
+        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-        struct appdata_t {
-          float4 vertex : POSITION;
+        CBUFFER_START(UnityPerMaterial)
+        half4 _Color;
+        CBUFFER_END
 
-          UNITY_VERTEX_INPUT_INSTANCE_ID
+        struct Attributes {
+          float4 positionOS : POSITION;
         };
 
-        struct v2f {
-          float4 vertex : SV_POSITION;
-
-          UNITY_VERTEX_OUTPUT_STEREO
+        struct Varyings {
+          float4 positionHCS : SV_POSITION;
         };
 
-        uniform float4 _Color;
-
-        v2f vert (appdata_t v)
-        {
-          v2f o;
-
-          UNITY_SETUP_INSTANCE_ID(v);
-          UNITY_INITIALIZE_OUTPUT(v2f, o);
-          UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-
-          o.vertex = UnityObjectToClipPos(v.vertex);
-          return o;
+        Varyings Vert(Attributes IN) {
+          Varyings OUT;
+          OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+          return OUT;
         }
 
-        fixed4 frag (v2f i) : SV_Target
-        {
-          _Color -= .4 - .4 * abs(sin(_Time.w*2));
-          _Color += .2;
-          return _Color;
+        half4 Frag(Varyings IN) : SV_Target {
+          half4 color = _Color;
+          color -= (0.4h - 0.4h * abs(sin(_Time.w * 2.0h)));
+          color += 0.2h;
+          return color;
         }
-      ENDCG
+      ENDHLSL
     }
   }
-  FallBack "Diffuse"
+  FallBack Off
 }
-
