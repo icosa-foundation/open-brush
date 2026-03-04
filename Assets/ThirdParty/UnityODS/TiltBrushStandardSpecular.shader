@@ -1,4 +1,5 @@
-// Unity built-in shader source. Copyright (c) 2016 Unity Technologies. MIT license (see license.txt)
+// WIP URP port scaffold for TiltBrush Standard Specular.
+// Original shader retained at TiltBrushStandardSpecular.shader during migration.
 
 Shader "TiltBrush/Standard (Specular setup)"
 {
@@ -31,453 +32,401 @@ Shader "TiltBrush/Standard (Specular setup)"
     _EmissionMap("Emission", 2D) = "white" {}
 
     _DetailMask("Detail Mask", 2D) = "white" {}
-
     _DetailAlbedoMap("Detail Albedo x2", 2D) = "grey" {}
     _DetailNormalMapScale("Scale", Float) = 1.0
     _DetailNormalMap("Normal Map", 2D) = "bump" {}
 
     [Enum(UV0,0,UV1,1)] _UVSec ("UV Set for secondary textures", Float) = 0
 
-
-    // Blending state
     [HideInInspector] _Mode ("__mode", Float) = 0.0
     [HideInInspector] _SrcBlend ("__src", Float) = 1.0
     [HideInInspector] _DstBlend ("__dst", Float) = 0.0
     [HideInInspector] _ZWrite ("__zw", Float) = 1.0
   }
 
-  CGINCLUDE
-    #define UNITY_SETUP_BRDF_INPUT SpecularSetup
-    #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
-    #include "Assets/Shaders/Include/Brush.cginc"
-
-#if UNITY_NO_FULL_STANDARD_SHADER
-#define TB_VERT_BASE VertexOutputBaseSimple
-#define TB_VERT_ADD VertexOutputForwardAddSimple
-#else
-#define TB_VERT_BASE VertexOutputForwardBase
-#define TB_VERT_ADD VertexOutputForwardAdd
-#endif
-
-// Has a non-empty shadow caster output struct (it's an error to have empty structs on some platforms...)
-#if !defined(V2F_SHADOW_CASTER_NOPOS_IS_EMPTY) || defined(UNITY_STANDARD_USE_SHADOW_UVS)
-#define UNITY_STANDARD_USE_SHADOW_OUTPUT_STRUCT 1
-#endif
-
-#ifdef UNITY_STEREO_INSTANCING_ENABLED
-#define UNITY_STANDARD_USE_STEREO_SHADOW_OUTPUT_STRUCT 1
-#endif
-
-  ENDCG
-
   SubShader
   {
-    Tags { "RenderType"="Opaque" "PerformanceChecks"="False" }
+    Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Opaque" "PerformanceChecks"="False" }
     LOD 300
 
-
-    // ------------------------------------------------------------------
-    //  Base forward pass (directional light, emission, lightmaps, ...)
     Pass
     {
-      Name "FORWARD"
-      Tags { "LightMode" = "ForwardBase" }
-
+      Name "Forward"
+      Tags { "LightMode"="UniversalForward" }
       Blend [_SrcBlend] [_DstBlend]
       ZWrite [_ZWrite]
 
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma target 3.0
-
-      // -------------------------------------
+      #pragma vertex Vert
+      #pragma fragment Frag
+      #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
+      #pragma multi_compile __ SELECTION_ON HIGHLIGHT_ON
+      #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
+      #pragma multi_compile_fragment _ _SHADOWS_SOFT
+      #pragma multi_compile_fog
 
       #pragma shader_feature _NORMALMAP
-      #pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON _ALPHAPREMULTIPLY_ON
       #pragma shader_feature _EMISSION
       #pragma shader_feature _SPECGLOSSMAP
       #pragma shader_feature ___ _DETAIL_MULX2
-      #pragma shader_feature _ _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
-      #pragma shader_feature _ _SPECULARHIGHLIGHTS_OFF
-      #pragma shader_feature _ _GLOSSYREFLECTIONS_OFF
-      #pragma shader_feature _PARALLAXMAP
+      #pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON _ALPHAPREMULTIPLY_ON
 
-      #pragma multi_compile_fwdbase
-      #pragma multi_compile_fog
-      #pragma multi_compile_instancing
-            // Uncomment the following line to enable dithering LOD crossfade. Note: there are more in the file to uncomment for other passes.
-            //#pragma multi_compile _ LOD_FADE_CROSSFADE
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
-      #pragma vertex vertBaseTB
-      #pragma fragment fragBase
-      #include "UnityStandardCoreForward.cginc"
-      TB_VERT_BASE vertBaseTB(VertexInput v)
+      float4 ODS_EyeOffset;
+      float4 ODS_CameraPos;
+      float ODS_PoleCollapseAmount;
+
+      float OdsCollapseIpd(float3 camOffset)
       {
-        PrepForOds(v.vertex);
-        return vertBase(v);
+        float3 vcam = float3(camOffset.x, 0.0, camOffset.z);
+        float vcamLen = max(length(vcam), 1e-5);
+        float camLen = max(length(camOffset), 1e-5);
+        float d = dot(camOffset / camLen, vcam / vcamLen);
+        float ang = acos(clamp(d, -1.0, 1.0));
+        float t = saturate(ang / (1.57079632679 * 0.8));
+        return sin(t / 6.28318530718) * ODS_PoleCollapseAmount;
       }
 
-      ENDCG
+      void PrepForOds(inout float4 vertex)
+      {
+      #if defined(ODS_RENDER_CM) || defined(ODS_RENDER)
+        float4 worldPos4 = mul(unity_ObjectToWorld, vertex);
+        float3 worldPos = worldPos4.xyz;
+        float3 camOffset = worldPos - _WorldSpaceCameraPos.xyz;
+      #endif
+
+      #if defined(ODS_RENDER_CM)
+        if (dot(camOffset.xz, camOffset.xz) > 1e-6)
+        {
+          float3 worldUp = float3(0.0, 1.0, 0.0);
+          float3 D = normalize(camOffset);
+          float3 T = normalize(cross(D, worldUp));
+          float collapse = OdsCollapseIpd(camOffset);
+          float ipd = lerp(ODS_EyeOffset.x, 0.0, collapse);
+          float d2 = max(dot(camOffset, camOffset), 1e-6);
+          float a = ipd * ipd / d2;
+          float b = ipd / d2 * sqrt(max(d2 * d2 - ipd * ipd, 0.0));
+          float3 offset = -a * D + b * T;
+          worldPos += offset;
+        }
+      #elif defined(ODS_RENDER)
+        if (dot(camOffset.xz, camOffset.xz) > 1e-6)
+        {
+          float collapse = OdsCollapseIpd(camOffset);
+          worldPos += lerp(float3(0.0, 0.0, 0.0), ODS_EyeOffset.xyz, collapse);
+        }
+      #endif
+
+      #if defined(ODS_RENDER_CM) || defined(ODS_RENDER)
+        vertex = mul(unity_WorldToObject, float4(worldPos, 1.0));
+      #endif
+      }
+
+      TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
+      TEXTURE2D(_SpecGlossMap); SAMPLER(sampler_SpecGlossMap);
+      TEXTURE2D(_BumpMap); SAMPLER(sampler_BumpMap);
+      TEXTURE2D(_OcclusionMap); SAMPLER(sampler_OcclusionMap);
+      TEXTURE2D(_EmissionMap); SAMPLER(sampler_EmissionMap);
+      TEXTURE2D(_DetailAlbedoMap); SAMPLER(sampler_DetailAlbedoMap);
+
+      CBUFFER_START(UnityPerMaterial)
+      half4 _Color;
+      half4 _SpecColor;
+      half4 _EmissionColor;
+      half _Glossiness;
+      half _GlossMapScale;
+      half _Cutoff;
+      half _BumpScale;
+      half _OcclusionStrength;
+      float4 _MainTex_ST;
+      float4 _DetailAlbedoMap_ST;
+      CBUFFER_END
+
+      struct Attributes {
+        float4 positionOS : POSITION;
+        float3 normalOS : NORMAL;
+        float4 tangentOS : TANGENT;
+        float2 uv0 : TEXCOORD0;
+        float2 uv1 : TEXCOORD1;
+      };
+
+      struct Varyings {
+        float4 positionCS : SV_POSITION;
+        float2 uv : TEXCOORD0;
+        float2 uvDetail : TEXCOORD1;
+        float3 positionWS : TEXCOORD2;
+        float3 normalWS : TEXCOORD3;
+        float4 tangentWS : TEXCOORD4;
+        half fogFactor : TEXCOORD5;
+      };
+
+      Varyings Vert(Attributes IN)
+      {
+        Varyings OUT;
+        float4 posOS = IN.positionOS;
+        PrepForOds(posOS);
+
+        VertexPositionInputs pos = GetVertexPositionInputs(posOS.xyz);
+        VertexNormalInputs nrm = GetVertexNormalInputs(IN.normalOS, IN.tangentOS);
+
+        OUT.positionCS = pos.positionCS;
+        OUT.positionWS = pos.positionWS;
+        OUT.uv = TRANSFORM_TEX(IN.uv0, _MainTex);
+        OUT.uvDetail = TRANSFORM_TEX(IN.uv0, _DetailAlbedoMap);
+        OUT.normalWS = nrm.normalWS;
+        OUT.tangentWS = float4(nrm.tangentWS.xyz, IN.tangentOS.w);
+        OUT.fogFactor = ComputeFogFactor(pos.positionCS.z);
+        return OUT;
+      }
+
+      half4 Frag(Varyings IN) : SV_Target
+      {
+        half4 albedoTex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv);
+        half alpha = albedoTex.a;
+
+        #if defined(_ALPHATEST_ON)
+        clip(alpha - _Cutoff);
+        #endif
+
+        half3 normalWS = normalize(IN.normalWS);
+        #if defined(_NORMALMAP)
+        half4 n = SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, IN.uv);
+        half3 nTS = UnpackNormalScale(n, _BumpScale);
+        half3 bitangent = cross(normalWS, normalize(IN.tangentWS.xyz)) * IN.tangentWS.w;
+        half3x3 tbn = half3x3(normalize(IN.tangentWS.xyz), normalize(bitangent), normalWS);
+        normalWS = normalize(mul(nTS, tbn));
+        #endif
+
+        Light mainLight = GetMainLight(TransformWorldToShadowCoord(IN.positionWS));
+        half3 viewDir = normalize(_WorldSpaceCameraPos.xyz - IN.positionWS);
+        half3 lightDir = normalize(mainLight.direction);
+
+        half ndotl = saturate(dot(normalWS, lightDir));
+        half3 diffuse = albedoTex.rgb * _Color.rgb * mainLight.color * mainLight.shadowAttenuation * ndotl;
+
+        half smoothness = _Glossiness;
+        half3 specularColor = _SpecColor.rgb;
+        #if defined(_SPECGLOSSMAP)
+        half4 sg = SAMPLE_TEXTURE2D(_SpecGlossMap, sampler_SpecGlossMap, IN.uv);
+        specularColor *= sg.rgb;
+        smoothness *= sg.a * _GlossMapScale;
+        #endif
+
+        half3 h = normalize(lightDir + viewDir);
+        half specPow = exp2(10.0h * smoothness + 1.0h);
+        half specTerm = pow(saturate(dot(normalWS, h)), specPow);
+        half3 spec = specularColor * specTerm * mainLight.color * mainLight.shadowAttenuation;
+
+        half occlusion = 1.0h;
+        if (_OcclusionStrength > 0.001h) {
+          occlusion = lerp(1.0h, SAMPLE_TEXTURE2D(_OcclusionMap, sampler_OcclusionMap, IN.uv).g, _OcclusionStrength);
+        }
+
+        half3 emission = 0;
+        #if defined(_EMISSION)
+        emission = SAMPLE_TEXTURE2D(_EmissionMap, sampler_EmissionMap, IN.uv).rgb * _EmissionColor.rgb;
+        #endif
+
+        #if defined(_DETAIL_MULX2)
+        half3 detail = SAMPLE_TEXTURE2D(_DetailAlbedoMap, sampler_DetailAlbedoMap, IN.uvDetail).rgb;
+        diffuse *= (detail * 2.0h);
+        #endif
+
+        half3 color = (diffuse + spec) * occlusion + emission;
+        color = MixFog(color, IN.fogFactor);
+
+        return half4(color, alpha);
+      }
+      ENDHLSL
     }
-    // ------------------------------------------------------------------
-    //  Additive forward pass (one light per pass)
+
     Pass
     {
-      Name "FORWARD_DELTA"
-      Tags { "LightMode" = "ForwardAdd" }
-      Blend [_SrcBlend] One
-      Fog { Color (0,0,0,0) } // in additive pass fog should be black
-      ZWrite Off
+      Name "ShadowCaster"
+      Tags { "LightMode"="ShadowCaster" }
+      ZWrite On
       ZTest LEqual
 
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma target 3.0
+      #pragma vertex VertShadow
+      #pragma fragment FragShadow
+      #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
+      #pragma shader_feature _ _ALPHATEST_ON
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-      // -------------------------------------
+      float4 ODS_EyeOffset;
+      float4 ODS_CameraPos;
+      float ODS_PoleCollapseAmount;
 
-      #pragma shader_feature _NORMALMAP
-      #pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON _ALPHAPREMULTIPLY_ON
-      #pragma shader_feature _SPECGLOSSMAP
-      #pragma shader_feature _ _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
-      #pragma shader_feature _ _SPECULARHIGHLIGHTS_OFF
-      #pragma shader_feature ___ _DETAIL_MULX2
-      #pragma shader_feature _PARALLAXMAP
-
-      #pragma multi_compile_fwdadd_fullshadows
-      #pragma multi_compile_fog
-
-      #pragma vertex vertAddTB
-      #pragma fragment fragAdd
-      #include "UnityStandardCoreForward.cginc"
-
-      TB_VERT_ADD vertAddTB(VertexInput v)
+      float OdsCollapseIpd(float3 camOffset)
       {
-        PrepForOds(v.vertex);
-        return vertAdd(v);
+        float3 vcam = float3(camOffset.x, 0.0, camOffset.z);
+        float vcamLen = max(length(vcam), 1e-5);
+        float camLen = max(length(camOffset), 1e-5);
+        float d = dot(camOffset / camLen, vcam / vcamLen);
+        float ang = acos(clamp(d, -1.0, 1.0));
+        float t = saturate(ang / (1.57079632679 * 0.8));
+        return sin(t / 6.28318530718) * ODS_PoleCollapseAmount;
       }
 
-      ENDCG
-    }
-    // ------------------------------------------------------------------
-    //  Shadow rendering pass
-    Pass {
-      Name "ShadowCaster"
-      Tags { "LightMode" = "ShadowCaster" }
-
-      ZWrite On ZTest LEqual
-
-      CGPROGRAM
-      #pragma target 3.0
-
-      // -------------------------------------
-
-
-      #pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON _ALPHAPREMULTIPLY_ON
-      #pragma shader_feature _SPECGLOSSMAP
-      #pragma shader_feature _PARALLAXMAP
-      #pragma multi_compile_shadowcaster
-      #pragma multi_compile_instancing
-            // Uncomment the following line to enable dithering LOD crossfade. Note: there are more in the file to uncomment for other passes.
-            //#pragma multi_compile _ LOD_FADE_CROSSFADE
-
-      #pragma vertex vertShadowCasterTB
-      #pragma fragment fragShadowCaster
-
-      #include "UnityStandardShadow.cginc"
-
-      void vertShadowCasterTB(VertexInput v
-
-	    #ifdef UNITY_STANDARD_USE_SHADOW_OUTPUT_STRUCT
-	    , out VertexOutputShadowCaster o
-	    #endif
-	    #ifdef UNITY_STANDARD_USE_STEREO_SHADOW_OUTPUT_STRUCT
-	    , out VertexOutputStereoShadowCaster os
-	    #endif
-      )
+      void PrepForOds(inout float4 vertex)
       {
-        VertexOutput output;
-        PrepForOds(v.vertex);
-        vertShadowCaster(
-            v
-            , output
-    #ifdef UNITY_STANDARD_USE_SHADOW_OUTPUT_STRUCT
-            , o
-    #endif
-    #ifdef UNITY_STANDARD_USE_STEREO_SHADOW_OUTPUT_STRUCT
-            , os
-    #endif
-        );
+      #if defined(ODS_RENDER_CM) || defined(ODS_RENDER)
+        float4 worldPos4 = mul(unity_ObjectToWorld, vertex);
+        float3 worldPos = worldPos4.xyz;
+        float3 camOffset = worldPos - _WorldSpaceCameraPos.xyz;
+      #endif
+
+      #if defined(ODS_RENDER_CM)
+        if (dot(camOffset.xz, camOffset.xz) > 1e-6)
+        {
+          float3 worldUp = float3(0.0, 1.0, 0.0);
+          float3 D = normalize(camOffset);
+          float3 T = normalize(cross(D, worldUp));
+          float collapse = OdsCollapseIpd(camOffset);
+          float ipd = lerp(ODS_EyeOffset.x, 0.0, collapse);
+          float d2 = max(dot(camOffset, camOffset), 1e-6);
+          float a = ipd * ipd / d2;
+          float b = ipd / d2 * sqrt(max(d2 * d2 - ipd * ipd, 0.0));
+          float3 offset = -a * D + b * T;
+          worldPos += offset;
+        }
+      #elif defined(ODS_RENDER)
+        if (dot(camOffset.xz, camOffset.xz) > 1e-6)
+        {
+          float collapse = OdsCollapseIpd(camOffset);
+          worldPos += lerp(float3(0.0, 0.0, 0.0), ODS_EyeOffset.xyz, collapse);
+        }
+      #endif
+
+      #if defined(ODS_RENDER_CM) || defined(ODS_RENDER)
+        vertex = mul(unity_WorldToObject, float4(worldPos, 1.0));
+      #endif
       }
 
-      ENDCG
+      TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
+      CBUFFER_START(UnityPerMaterial)
+      half _Cutoff;
+      float4 _MainTex_ST;
+      CBUFFER_END
+
+      struct Attributes { float4 positionOS:POSITION; float2 uv0:TEXCOORD0; };
+      struct Varyings { float4 positionCS:SV_POSITION; float2 uv:TEXCOORD0; };
+
+      Varyings VertShadow(Attributes IN)
+      {
+        Varyings OUT;
+        float4 posOS = IN.positionOS;
+        PrepForOds(posOS);
+        OUT.positionCS = TransformObjectToHClip(posOS.xyz);
+        OUT.uv = TRANSFORM_TEX(IN.uv0, _MainTex);
+        return OUT;
+      }
+
+      half4 FragShadow(Varyings IN) : SV_Target
+      {
+        #if defined(_ALPHATEST_ON)
+        half a = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv).a;
+        clip(a - _Cutoff);
+        #endif
+        return 0;
+      }
+      ENDHLSL
     }
-    // ------------------------------------------------------------------
-    //  Deferred pass
+
     Pass
     {
-      Name "DEFERRED"
-      Tags { "LightMode" = "Deferred" }
+      Name "Selection"
+      Tags { "LightMode"="SRPDefaultUnlit" }
+      Blend OneMinusDstColor One
+      ZWrite Off
 
-      CGPROGRAM
-      #pragma target 3.0
-      #pragma exclude_renderers nomrt
+      HLSLPROGRAM
+      #pragma vertex vert
+      #pragma fragment frag
+      #pragma multi_compile __ SELECTION_ON HIGHLIGHT_ON
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
+      float4 ODS_EyeOffset;
+      float4 ODS_CameraPos;
+      float ODS_PoleCollapseAmount;
 
-      // -------------------------------------
-
-      #pragma shader_feature _NORMALMAP
-      #pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON _ALPHAPREMULTIPLY_ON
-      #pragma shader_feature _EMISSION
-      #pragma shader_feature _SPECGLOSSMAP
-      #pragma shader_feature _ _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
-      #pragma shader_feature _ _SPECULARHIGHLIGHTS_OFF
-      #pragma shader_feature ___ _DETAIL_MULX2
-      #pragma shader_feature _PARALLAXMAP
-
-      #pragma multi_compile_prepassfinal
-      #pragma multi_compile_instancing
-            // Uncomment the following line to enable dithering LOD crossfade. Note: there are more in the file to uncomment for other passes.
-            //#pragma multi_compile _ LOD_FADE_CROSSFADE
-
-      #pragma vertex vertDeferredTB
-      #pragma fragment fragDeferred
-
-      #include "UnityStandardCore.cginc"
-
-      VertexOutputDeferred vertDeferredTB(VertexInput v)
+      float OdsCollapseIpd(float3 camOffset)
       {
-        PrepForOds(v.vertex);
-        return vertDeferred(v);
+        float3 vcam = float3(camOffset.x, 0.0, camOffset.z);
+        float vcamLen = max(length(vcam), 1e-5);
+        float camLen = max(length(camOffset), 1e-5);
+        float d = dot(camOffset / camLen, vcam / vcamLen);
+        float ang = acos(clamp(d, -1.0, 1.0));
+        float t = saturate(ang / (1.57079632679 * 0.8));
+        return sin(t / 6.28318530718) * ODS_PoleCollapseAmount;
       }
 
-      ENDCG
-    }
+      void PrepForOds(inout float4 vertex)
+      {
+      #if defined(ODS_RENDER_CM) || defined(ODS_RENDER)
+        float4 worldPos4 = mul(unity_ObjectToWorld, vertex);
+        float3 worldPos = worldPos4.xyz;
+        float3 camOffset = worldPos - _WorldSpaceCameraPos.xyz;
+      #endif
 
-    // ------------------------------------------------------------------
-    // Extracts information for lightmapping, GI (emission, albedo, ...)
-    // This pass it not used during regular rendering.
-    Pass
-    {
-      Name "META"
-      Tags { "LightMode"="Meta" }
+      #if defined(ODS_RENDER_CM)
+        if (dot(camOffset.xz, camOffset.xz) > 1e-6)
+        {
+          float3 worldUp = float3(0.0, 1.0, 0.0);
+          float3 D = normalize(camOffset);
+          float3 T = normalize(cross(D, worldUp));
+          float collapse = OdsCollapseIpd(camOffset);
+          float ipd = lerp(ODS_EyeOffset.x, 0.0, collapse);
+          float d2 = max(dot(camOffset, camOffset), 1e-6);
+          float a = ipd * ipd / d2;
+          float b = ipd / d2 * sqrt(max(d2 * d2 - ipd * ipd, 0.0));
+          float3 offset = -a * D + b * T;
+          worldPos += offset;
+        }
+      #elif defined(ODS_RENDER)
+        if (dot(camOffset.xz, camOffset.xz) > 1e-6)
+        {
+          float collapse = OdsCollapseIpd(camOffset);
+          worldPos += lerp(float3(0.0, 0.0, 0.0), ODS_EyeOffset.xyz, collapse);
+        }
+      #endif
 
-      Cull Off
+      #if defined(ODS_RENDER_CM) || defined(ODS_RENDER)
+        vertex = mul(unity_WorldToObject, float4(worldPos, 1.0));
+      #endif
+      }
+      #include "Assets/Shaders/Include/MobileSelection.cginc"
 
-      CGPROGRAM
-      #pragma vertex vert_meta
-      #pragma fragment frag_meta
+      struct appdata_t { float4 vertex : POSITION; };
+      struct v2f { float4 pos : SV_POSITION; };
 
-      #pragma shader_feature _EMISSION
-      #pragma shader_feature _SPECGLOSSMAP
-      #pragma shader_feature _ _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
-      #pragma shader_feature ___ _DETAIL_MULX2
-      #pragma shader_feature EDITOR_VISUALIZATION
+      v2f vert(appdata_t v)
+      {
+        v2f o;
+      #if SELECTION_ON
+        PrepForOds(v.vertex);
+        o.pos = TransformObjectToHClip(v.vertex.xyz);
+      #else
+        o.pos = 0;
+      #endif
+        return o;
+      }
 
-      #include "UnityStandardMeta.cginc"
-      ENDCG
+      half4 frag(v2f i) : SV_Target
+      {
+        float4 c = float4(0,0,0,1);
+        FRAG_MOBILESELECT(c)
+        return c;
+      }
+      ENDHLSL
     }
   }
 
-  SubShader
-  {
-    Tags { "RenderType"="Opaque" "PerformanceChecks"="False" }
-    LOD 150
-
-    // ------------------------------------------------------------------
-    //  Base forward pass (directional light, emission, lightmaps, ...)
-    Pass
-    {
-      Name "FORWARD"
-      Tags { "LightMode" = "ForwardBase" }
-
-      Blend [_SrcBlend] [_DstBlend]
-      ZWrite [_ZWrite]
-
-      CGPROGRAM
-      #pragma target 2.0
-
-      #pragma shader_feature _NORMALMAP
-      #pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON _ALPHAPREMULTIPLY_ON
-      #pragma shader_feature _EMISSION
-      #pragma shader_feature _SPECGLOSSMAP
-      #pragma shader_feature _ _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
-      #pragma shader_feature _ _SPECULARHIGHLIGHTS_OFF
-      #pragma shader_feature _ _GLOSSYREFLECTIONS_OFF
-      #pragma shader_feature ___ _DETAIL_MULX2
-      // SM2.0: NOT SUPPORTED shader_feature _PARALLAXMAP
-
-      #pragma skip_variants SHADOWS_SOFT DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED
-
-      #pragma multi_compile_fwdbase
-      #pragma multi_compile_fog
-
-      #pragma vertex vertBaseTB
-      #pragma fragment fragBase
-      #include "UnityStandardCoreForward.cginc"
-      TB_VERT_BASE vertBaseTB(VertexInput v)
-      {
-        PrepForOds(v.vertex);
-        return vertBase(v);
-      }
-
-      ENDCG
-    }
-    // This pass is for mobile selection.
-    //
-    Pass
-    {
-        Name "Selection"
-        Tags { "LightMode" = "ForwardBase" }
-
-        Blend OneMinusDstColor One
-        ZWrite Off
-        CGPROGRAM
-        #pragma vertex vert
-        #pragma fragment frag
-        #pragma multi_compile __ SELECTION_ON HIGHLIGHT_ON
-        //#include "Assets/Shaders/Include/Brush.cginc"
-        #include "UnityCG.cginc"
-        #include "Assets/Shaders/Include/MobileSelection.cginc"
-
-        struct appdata_t {
-            float4 vertex : POSITION;
-        };
-
-        struct v2f {
-            float4 pos : POSITION;
-        };
-
-        v2f vert (appdata_t v)
-        {
-            v2f o;
-#if SELECTION_ON
-            PrepForOds(v.vertex);
-            o.pos = UnityObjectToClipPos(v.vertex);
-#else
-            // If selection is turned off, early out by changing the vertex 0,0,0,0.
-            // This creates a degenerate triangle that will not be rendered.
-            o.pos = 0;
-#endif
-            return o;
-        }
-
-        fixed4 frag (v2f i) : COLOR
-        {
-            float4 c = float4(0,0,0,1);
-            FRAG_MOBILESELECT(c)
-            return c;
-        }
-
-        ENDCG
-    }
-
-    // ------------------------------------------------------------------
-    //  Additive forward pass (one light per pass)
-    Pass
-    {
-      Name "FORWARD_DELTA"
-      Tags { "LightMode" = "ForwardAdd" }
-      Blend [_SrcBlend] One
-      Fog { Color (0,0,0,0) } // in additive pass fog should be black
-      ZWrite Off
-      ZTest LEqual
-
-      CGPROGRAM
-      #pragma target 2.0
-
-      #pragma shader_feature _NORMALMAP
-      #pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON _ALPHAPREMULTIPLY_ON
-      #pragma shader_feature _SPECGLOSSMAP
-      #pragma shader_feature _ _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
-      #pragma shader_feature _ _SPECULARHIGHLIGHTS_OFF
-      #pragma shader_feature ___ _DETAIL_MULX2
-      // SM2.0: NOT SUPPORTED shader_feature _PARALLAXMAP
-      #pragma skip_variants SHADOWS_SOFT
-
-      #pragma multi_compile_fwdadd_fullshadows
-      #pragma multi_compile_fog
-
-      #pragma vertex vertAddTB
-      #pragma fragment fragAdd
-      #include "UnityStandardCoreForward.cginc"
-
-      TB_VERT_ADD vertAddTB(VertexInput v)
-      {
-        PrepForOds(v.vertex);
-        return vertAdd(v);
-      }
-
-      ENDCG
-    }
-    // ------------------------------------------------------------------
-    //  Shadow rendering pass
-    Pass {
-      Name "ShadowCaster"
-      Tags { "LightMode" = "ShadowCaster" }
-
-      ZWrite On ZTest LEqual
-
-      CGPROGRAM
-      #pragma target 2.0
-
-      #pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON _ALPHAPREMULTIPLY_ON
-      #pragma shader_feature _SPECGLOSSMAP
-      #pragma skip_variants SHADOWS_SOFT
-      #pragma multi_compile_shadowcaster
-
-      #pragma vertex vertShadowCasterTB
-      #pragma fragment fragShadowCaster
-
-      #include "UnityStandardShadow.cginc"
-      void vertShadowCasterTB(VertexInput v
-	    #ifdef UNITY_STANDARD_USE_SHADOW_OUTPUT_STRUCT
-	    , out VertexOutputShadowCaster o
-	    #endif
-	    #ifdef UNITY_STANDARD_USE_STEREO_SHADOW_OUTPUT_STRUCT
-	    , out VertexOutputStereoShadowCaster os
-	    #endif
-      )
-      {
-        VertexOutput output;
-        PrepForOds(v.vertex);
-        vertShadowCaster(
-            v
-            , output
-    #ifdef UNITY_STANDARD_USE_SHADOW_OUTPUT_STRUCT
-            , o
-    #endif
-    #ifdef UNITY_STANDARD_USE_STEREO_SHADOW_OUTPUT_STRUCT
-            , os
-    #endif
-        );
-      }
-
-      ENDCG
-    }
-    // ------------------------------------------------------------------
-    // Extracts information for lightmapping, GI (emission, albedo, ...)
-    // This pass it not used during regular rendering.
-    Pass
-    {
-      Name "META"
-      Tags { "LightMode"="Meta" }
-
-      Cull Off
-
-      CGPROGRAM
-      #pragma vertex vert_meta
-      #pragma fragment frag_meta
-
-      #pragma shader_feature _EMISSION
-      #pragma shader_feature _SPECGLOSSMAP
-      #pragma shader_feature _ _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
-      #pragma shader_feature ___ _DETAIL_MULX2
-      #pragma shader_feature EDITOR_VISUALIZATION
-
-      #include "UnityStandardMeta.cginc"
-      ENDCG
-    }
-  }
-
-  FallBack "VertexLit"
-  CustomEditor "StandardShaderGUI"
+  FallBack Off
 }
+
