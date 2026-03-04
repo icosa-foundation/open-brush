@@ -20,6 +20,7 @@ Shader "Unlit/FullScreenOverlay"
   }
   SubShader
   {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags { "Queue"="Overlay-1" "RenderType"="Transparent" }
     ZTest Always
     ZWrite Off

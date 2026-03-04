@@ -30,6 +30,7 @@ Category {
 
 
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Pass {
 
       CGPROGRAM

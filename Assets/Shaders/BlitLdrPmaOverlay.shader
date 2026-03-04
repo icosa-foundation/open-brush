@@ -23,7 +23,9 @@ Shader "Custom/BlitLdrPmaOverlay" {
     _OverlayUvRange  ("Overlay UV Range", Vector) = (0, 0, 1, 1)
   }
 
-  SubShader {
+  SubShader
+  {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     ZTest Off Cull Off ZWrite Off Fog { Mode Off }
     Blend Off
 

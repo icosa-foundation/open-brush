@@ -17,7 +17,9 @@ Properties {
  _MainTex ("", 2D) = "white" {}
 }
 
-SubShader {
+SubShader
+  {
+    Tags { "RenderPipeline"="UniversalPipeline" }
 
 ZTest Always Cull Off ZWrite Off Fog { Mode Off } //Rendering settings
 Blend SrcAlpha OneMinusSrcAlpha // Alpha blending
