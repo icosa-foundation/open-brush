@@ -21,72 +21,89 @@ Shader "Custom/UnlitOutlineFlatten" {
 
   }
     SubShader{
-    Tags{ "Queue" = "AlphaTest+20" "RenderType" = "Geometry" }
+    Tags{ "RenderPipeline"="UniversalPipeline" "Queue" = "AlphaTest+20" "RenderType" = "Geometry" }
 
-    CGPROGRAM
-    #pragma surface surf Lambert vertex:vert nofog
+    Pass {
+      Name "MainFlatten"
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+      #pragma vertex VertMain
+      #pragma fragment FragMain
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-    uniform float4 _Color;
-    sampler2D _MainTex;
-    float _FlattenAmount;
+      CBUFFER_START(UnityPerMaterial)
+      half4 _Color;
+      float _FlattenAmount;
+      CBUFFER_END
 
-  struct Input {
-    float2 uv_MainTex;
-  };
+      struct Attributes {
+        float4 positionOS : POSITION;
+      };
 
-  void vert(inout appdata_full v) {
-    // Smash along the z axis based on 0-1 ratio
-    v.vertex.z = v.vertex.z - v.vertex.z * _FlattenAmount;
+      struct Varyings {
+        float4 positionHCS : SV_POSITION;
+      };
+
+      Varyings VertMain(Attributes IN) {
+        Varyings OUT;
+        float3 pos = IN.positionOS.xyz;
+        pos.z = pos.z - pos.z * _FlattenAmount;
+        OUT.positionHCS = TransformObjectToHClip(pos);
+        return OUT;
+      }
+
+      half4 FragMain(Varyings IN) : SV_Target {
+        return half4(_Color.rgb, 1.0h);
+      }
+      ENDHLSL
+    }
+
+    Pass {
+      Name "OutlineFlatten"
+      Tags { "LightMode"="UniversalForward" }
+      Cull Front
+      HLSLPROGRAM
+      #pragma vertex VertOutline
+      #pragma fragment FragOutline
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+      #include "Assets/Shaders/Include/Math.cginc"
+
+      CBUFFER_START(UnityPerMaterial)
+      float _OutlineWidth;
+      float _FlattenAmount;
+      CBUFFER_END
+
+      struct Attributes {
+        float4 positionOS : POSITION;
+        float3 normalOS : NORMAL;
+      };
+
+      struct Varyings {
+        float4 positionHCS : SV_POSITION;
+      };
+
+      Varyings VertOutline(Attributes IN) {
+        Varyings OUT;
+        float4 objectPos = IN.positionOS;
+        objectPos.z = objectPos.z - objectPos.z * _FlattenAmount;
+
+        float4 worldPos = mul(unity_ObjectToWorld, objectPos);
+        float3x3 unscaledObject2World;
+        float3 unusedScale;
+        factorRotationAndLocalScale((float3x3)unity_ObjectToWorld, unscaledObject2World, unusedScale);
+        float3 worldNormal = normalize(mul(unscaledObject2World, IN.normalOS));
+        worldPos.xyz += worldNormal * _OutlineWidth;
+
+        float4 resultObjectPos = mul(unity_WorldToObject, worldPos);
+        OUT.positionHCS = TransformObjectToHClip(resultObjectPos.xyz);
+        return OUT;
+      }
+
+      half4 FragOutline(Varyings IN) : SV_Target {
+        return half4(0.0h, 0.0h, 0.0h, 1.0h);
+      }
+      ENDHLSL
+    }
   }
-
-  void surf(Input IN, inout SurfaceOutput o) {
-    o.Emission = _Color.rgb;
-  }
-  ENDCG
-
-    Cull Front
-    CGPROGRAM
-    #pragma surface surf Lambert vertex:vert nofog
-    #include "Assets/Shaders/Include/Math.cginc"
-
-    struct Input {
-    float2 uv_MainTex;
-  };
-
-    uniform float4 _Color;
-    sampler2D _MainTex;
-    uniform float _OutlineWidth;
-    float _FlattenAmount;
-
-  void vert(inout appdata_full v) {
-
-    // Smash along the z axis based on 0-1 ratio
-    v.vertex.z = v.vertex.z - v.vertex.z * _FlattenAmount;
-
-    // Transform into worldspace
-    float4 world_space_vertex = mul(unity_ObjectToWorld, v.vertex);
-
-    // Create outline.
-
-    // Push the outline out in the direction of the unscaled normal.
-    float3x3 unscaledObject2World;
-    float3 unusedScale;
-    factorRotationAndLocalScale((float3x3)unity_ObjectToWorld, unscaledObject2World, unusedScale);
-
-    // Push the outline out in the direction of the new unscaled normal.
-    float3 world_normal = normalize(mul(unscaledObject2World, v.normal));
-    world_space_vertex.xyz += world_normal * _OutlineWidth;
-
-    // Transform back into local space
-    v.vertex = mul(unity_WorldToObject, world_space_vertex);
-  }
-
-  void surf(Input IN, inout SurfaceOutput o) {
-    o.Albedo = 0;
-    o.Emission = 0.0f;
-    o.Alpha = 1.0;
-  }
-  ENDCG
-  }
-    FallBack "Diffuse"
+    FallBack Off
 }

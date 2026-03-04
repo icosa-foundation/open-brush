@@ -21,32 +21,46 @@ Shader "Custom/LaserPointerLine" {
     _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
   }
   SubShader {
-    Tags { "Queue"="Transparent" "RenderType"="Transparent" }
+    Tags { "RenderPipeline"="UniversalPipeline" "Queue"="Transparent" "RenderType"="Transparent" }
     Blend One OneMinusSrcAlpha
 
-    CGPROGRAM
-    #pragma surface surf Lambert keepalpha
+    Pass {
+      Name "ForwardUnlit"
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+      #pragma vertex Vert
+      #pragma fragment Frag
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-    struct Input {
-      float2 uv_MainTex;
-    };
+      CBUFFER_START(UnityPerMaterial)
+      half _ScrollSpeed;
+      half4 _EmissionColor;
+      CBUFFER_END
 
-    uniform float4 _Color;
-    uniform half _ScrollSpeed;
-    uniform half4 _EmissionColor;
+      struct Attributes {
+        float4 positionOS : POSITION;
+        float2 uv : TEXCOORD0;
+      };
 
-    void surf (Input IN, inout SurfaceOutput o) {
-      
-      o.Albedo = 0;
+      struct Varyings {
+        float4 positionHCS : SV_POSITION;
+        float2 uv : TEXCOORD0;
+      };
 
-      // Compute animated alpha
-      float alpha = (sin(IN.uv_MainTex.x + _Time.x * _ScrollSpeed) + 1.0f) * 0.5f;
-      
-      // Multiply the emission by alpha to output premultiplied color.
-      o.Emission = _EmissionColor.xyz * 0.1f * alpha;
-      o.Alpha = alpha;
+      Varyings Vert(Attributes IN) {
+        Varyings OUT;
+        OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+        OUT.uv = IN.uv;
+        return OUT;
+      }
+
+      half4 Frag(Varyings IN) : SV_Target {
+        half alpha = (sin(IN.uv.x + _Time.x * _ScrollSpeed) + 1.0h) * 0.5h;
+        half3 emission = _EmissionColor.xyz * 0.1h * alpha;
+        return half4(emission, alpha);
+      }
+      ENDHLSL
     }
-    ENDCG
   }
-  FallBack "Diffuse"
+  FallBack Off
 }

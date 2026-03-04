@@ -21,43 +21,57 @@ Shader "Custom/ControllerSwapEffect" {
 
   }
   SubShader {
-    Tags {"Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent"}
+    Tags {"RenderPipeline"="UniversalPipeline" "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent"}
 
     Blend One One
     ZWrite Off
 
-    CGPROGRAM
-    #pragma surface surf Lambert vertex:vert
+    Pass {
+      Name "ForwardUnlit"
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+      #pragma vertex Vert
+      #pragma fragment Frag
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-    struct Input {
-      float2 uv_MainTex;
-    };
+      TEXTURE2D(_MainTex);
+      SAMPLER(sampler_MainTex);
 
-    uniform float4 _Color;
-    sampler2D _MainTex;
-    uniform float _OutlineWidth;
-    float _Intensity;
+      CBUFFER_START(UnityPerMaterial)
+      half4 _Color;
+      float _OutlineWidth;
+      float _Intensity;
+      CBUFFER_END
 
-    void vert (inout appdata_full v) {
-          // Transform into worldspace
-          float4 world_space_vertex = mul( unity_ObjectToWorld, v.vertex );
+      struct Attributes {
+        float4 positionOS : POSITION;
+        float3 normalOS : NORMAL;
+        float2 uv : TEXCOORD0;
+      };
 
-          // Create outline
-        world_space_vertex.xyz += normalize(mul( unity_ObjectToWorld, float4(v.normal,1) ).xyz ) * _OutlineWidth;
+      struct Varyings {
+        float4 positionHCS : SV_POSITION;
+        float2 uv : TEXCOORD0;
+      };
 
-          // Transform back into local space
-          v.vertex = mul( unity_WorldToObject, world_space_vertex );
+      Varyings Vert(Attributes IN) {
+        Varyings OUT;
+        float4 worldPos = mul(unity_ObjectToWorld, IN.positionOS);
+        float3 worldNormal = normalize(mul(unity_ObjectToWorld, float4(IN.normalOS, 1.0)).xyz);
+        worldPos.xyz += worldNormal * _OutlineWidth;
+        float4 objectPos = mul(unity_WorldToObject, worldPos);
+        OUT.positionHCS = TransformObjectToHClip(objectPos.xyz);
+        OUT.uv = IN.uv;
+        return OUT;
+      }
 
-        }
-
-    void surf (Input IN, inout SurfaceOutput o) {
-
-      o.Albedo = 0;
-      float3 col = tex2D(_MainTex, IN.uv_MainTex.xy - _Time.z).xyz;
-      o.Emission = 10.0f * _Intensity * _Color.xyz * col;
-      o.Alpha = 1;
+      half4 Frag(Varyings IN) : SV_Target {
+        half3 col = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv - _Time.z).xyz;
+        half3 emission = 10.0h * (half)_Intensity * _Color.xyz * col;
+        return half4(emission, 1.0h);
+      }
+      ENDHLSL
     }
-    ENDCG
   }
-  FallBack "Diffuse"
+  FallBack Off
 }
