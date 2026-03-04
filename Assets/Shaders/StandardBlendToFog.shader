@@ -1,17 +1,4 @@
 // Copyright 2020 The Tilt Brush Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 Shader "Custom/StandardBlendToFog" {
 Properties {
   _Color ("Main Color", Color) = (1,1,1,1)
@@ -20,48 +7,38 @@ Properties {
   _MainTex ("Base (RGB) TransGloss (A)", 2D) = "white" {}
   _BumpMap ("Normalmap", 2D) = "bump" {}
   _WorldSpaceFogRange("Fog Range", Vector) = (75.0, 100.0, 0)
-
 }
-    SubShader {
-    Tags { "RenderPipeline"="UniversalPipeline" }
-    Tags {"IgnoreProjector"="True"}
-    LOD 200
+SubShader {
+  Tags { "RenderPipeline"="UniversalPipeline" "IgnoreProjector"="True" "RenderType"="Opaque" }
+  LOD 200
+  Pass {
+    Tags { "LightMode"="UniversalForward" }
+    HLSLPROGRAM
+    #pragma vertex Vert
+    #pragma fragment Frag
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-    CGPROGRAM
-    #pragma target 3.0
-    #pragma surface surf StandardSpecular
+    TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
+    CBUFFER_START(UnityPerMaterial)
+    half4 _Color; half4 _SpecColor; half _Shininess; half2 _WorldSpaceFogRange; float4 _MainTex_ST;
+    CBUFFER_END
 
-    struct Input {
-      float2 uv_MainTex;
-      float2 uv_BumpMap;
-      float3 worldPos;
-    };
+    struct A { float4 positionOS:POSITION; float2 uv:TEXCOORD0; };
+    struct V { float4 positionHCS:SV_POSITION; float2 uv:TEXCOORD0; float3 worldPos:TEXCOORD1; };
 
-    sampler2D _MainTex;
-    sampler2D _BumpMap;
-    fixed4 _Color;
-    half _Shininess;
-    half2 _WorldSpaceFogRange;
+    V Vert(A i){V o; o.positionHCS=TransformObjectToHClip(i.positionOS.xyz); o.worldPos=TransformObjectToWorld(i.positionOS.xyz); o.uv=TRANSFORM_TEX(i.uv,_MainTex); return o;}
 
-    void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
-      fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);
-      o.Albedo = tex.rgb * _Color.rgb;
-      o.Smoothness = _Shininess;
-      o.Specular = _SpecColor;
-      o.Normal = UnpackNormal(tex2D(_BumpMap, IN.uv_BumpMap));
-
-      //World space fog falloff
-      float dist = length(IN.worldPos);
-      float falloff = smoothstep(_WorldSpaceFogRange.x, _WorldSpaceFogRange.y, dist);
-
-      o.Emission = lerp(0, unity_FogColor, falloff);
-      o.Albedo = lerp(o.Albedo, 0, falloff);
-      o.Specular = lerp(o.Specular, 0, falloff);
-      o.Smoothness = lerp(o.Smoothness, 0, falloff);
+    half4 Frag(V i):SV_Target {
+      half4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv);
+      half3 albedo = tex.rgb * _Color.rgb;
+      half dist = length(i.worldPos);
+      half falloff = smoothstep(_WorldSpaceFogRange.x, _WorldSpaceFogRange.y, dist);
+      half3 fogColor = MixFog(half3(0,0,0), 1.0h);
+      half3 col = lerp(albedo + _SpecColor.rgb * _Shininess, fogColor, falloff);
+      return half4(col, 1);
     }
-      ENDCG
-    }
-
-  FallBack "Diffuse"
+    ENDHLSL
+  }
 }
-
+FallBack Off
+}

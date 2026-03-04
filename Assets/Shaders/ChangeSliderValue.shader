@@ -1,17 +1,4 @@
 // Copyright 2020 The Tilt Brush Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 Shader "Custom/ChangeSliderValue" {
   Properties {
     _Color ("Main Color", Color) = (1,1,1,1)
@@ -22,42 +9,31 @@ Shader "Custom/ChangeSliderValue" {
     _Ratio ("Size Ratio", Float) = 1
   }
   SubShader {
-    Tags { "RenderPipeline"="UniversalPipeline" }
-    Tags { "RenderType"="Opaque" }
+    Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Opaque" }
     LOD 100
-
-    CGPROGRAM
-    #pragma surface surf Standard nofog
-
-    sampler2D _MainTex;
-    half _Shininess;
-    fixed4 _Color;
-    fixed4 _BaseDiffuseColor;
-    fixed4 _EmissionColor;
-    float _Ratio;
-    struct Input {
-      float2 uv_MainTex;
-      float3 worldPos;
-    };
-
-    void surf (Input IN, inout SurfaceOutputStandard o) {
-      fixed4 c = tex2D(_MainTex, IN.uv_MainTex);
-      o.Smoothness = _Shininess;
-
-      // Add slider bar
-      if (lerp(.075, .925, IN.uv_MainTex.x) <= _Ratio)
-      {
-        c.rgb += c.a;
+    Pass {
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+      #pragma vertex Vert
+      #pragma fragment Frag
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+      TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
+      CBUFFER_START(UnityPerMaterial)
+      half4 _Color; half4 _BaseDiffuseColor; half4 _EmissionColor; half _Ratio; float4 _MainTex_ST;
+      CBUFFER_END
+      struct A{float4 positionOS:POSITION; float2 uv:TEXCOORD0;};
+      struct V{float4 positionHCS:SV_POSITION; float2 uv:TEXCOORD0;};
+      V Vert(A i){V o; o.positionHCS=TransformObjectToHClip(i.positionOS.xyz); o.uv=TRANSFORM_TEX(i.uv,_MainTex); return o;}
+      half4 Frag(V i):SV_Target {
+        half4 c = SAMPLE_TEXTURE2D(_MainTex,sampler_MainTex,i.uv);
+        if (lerp(0.075h,0.925h,i.uv.x) <= _Ratio) { c.rgb += c.a; }
+        c *= _Color;
+        half3 albedo = c.rgb + _BaseDiffuseColor.rgb;
+        half3 emissive = c.rgb * normalize(_EmissionColor.rgb + 1e-5h);
+        return half4(albedo + emissive, 1.0h);
       }
-
-      c *= _Color;
-      o.Albedo = c + _BaseDiffuseColor;
-      o.Emission = c * normalize(_EmissionColor);
-      o.Alpha = 1;
+      ENDHLSL
     }
-    ENDCG
   }
-  FallBack "Diffuse"
+  FallBack Off
 }
-
-

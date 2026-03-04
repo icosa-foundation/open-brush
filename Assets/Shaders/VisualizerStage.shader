@@ -1,17 +1,4 @@
 // Copyright 2020 The Tilt Brush Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 Shader "Custom/VisualizerStage" {
   Properties{
     _Color("Main Color", Color) = (1,1,1,1)
@@ -21,50 +8,58 @@ Shader "Custom/VisualizerStage" {
     _BumpMap("Normalmap", 2D) = "bump" {}
     _EmissionGain("Emission Gain", Range(0, 1)) = 0.5
   }
-    SubShader{
-    Tags { "RenderPipeline"="UniversalPipeline" }
-    CGPROGRAM
-    #pragma target 3.0
-    #pragma surface surf StandardSpecular
-    #include "Assets/Shaders/Include/Brush.cginc"
+  SubShader{
+    Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Opaque" }
+    Pass {
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+      #pragma vertex Vert
+      #pragma fragment Frag
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-  struct Input {
-    float2 uv_MainTex;
-    float2 uv_BumpMap;
-    float4 color : Color;
-  };
+      TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
+      TEXTURE2D(_WaveFormTex); SAMPLER(sampler_WaveFormTex);
 
-  sampler2D _MainTex;
-  sampler2D _BumpMap;
-  fixed4 _Color;
-  half _Shininess;
-  float _EmissionGain;
+      CBUFFER_START(UnityPerMaterial)
+      half4 _Color; half4 _SpecColor; half _Shininess; half _EmissionGain; float4 _MainTex_ST;
+      CBUFFER_END
 
-  void surf(Input IN, inout SurfaceOutputStandardSpecular o) {
-    int quant = 20;
-    float index = floor((IN.uv_MainTex.x)*quant) / quant;
-    float4 wav = tex2D(_WaveFormTex, float2(index, 0)) - .5;
-    float4 mask = tex2D(_MainTex, IN.uv_MainTex);
-    wav = floor(wav * quant) / quant;
+      float4 _BeatOutput;
+      float4 _PeakBandLevels;
 
-    float4 c = .0;
-    float3 tintcolor = _PeakBandLevels.x * float3(.7,0,.3) + _PeakBandLevels.z * float3(.3,0,.7) + _PeakBandLevels.w * 2 * float3(0,1,0);
-    tintcolor = normalize(tintcolor);
-    c = abs(IN.uv_MainTex.y - .5) < wav.g ? float4(tintcolor,1) : 0;
-    c.rgb *= mask.rgb;
-    c.rgb = c.rgb * .5 + c.rgb * _BeatOutput.y;
+      float4 bloomColor(float4 color, float gain) {
+        float cmin = length(color.rgb) * 0.05;
+        color.rgb = max(color.rgb, float3(cmin, cmin, cmin));
+        color = pow(color, 2.2);
+        color.rgb *= 2 * exp(gain * 10);
+        return color;
+      }
 
-    c.w = 1;
-    o.Emission = bloomColor(c, _EmissionGain);
+      struct A { float4 positionOS:POSITION; float2 uv:TEXCOORD0; float4 color:COLOR; };
+      struct V { float4 positionHCS:SV_POSITION; float2 uv:TEXCOORD0; };
+      V Vert(A i){V o; o.positionHCS=TransformObjectToHClip(i.positionOS.xyz); o.uv=TRANSFORM_TEX(i.uv,_MainTex); return o;}
 
-    o.Albedo = _Color.rgb * mask.rgb;
-    o.Smoothness = _Shininess;
-    o.Specular = _SpecColor * mask.a;
-    o.Normal = UnpackNormal(tex2D(_BumpMap, IN.uv_BumpMap));
-    o.Alpha = 1;
+      half4 Frag(V i):SV_Target {
+        int quant = 20;
+        float index = floor(i.uv.x * quant) / quant;
+        float4 wav = SAMPLE_TEXTURE2D(_WaveFormTex, sampler_WaveFormTex, float2(index, 0)) - 0.5;
+        float4 mask = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv);
+        wav = floor(wav * quant) / quant;
+
+        float3 tint = _PeakBandLevels.x * float3(0.7,0,0.3) + _PeakBandLevels.z * float3(0.3,0,0.7) + _PeakBandLevels.w * 2 * float3(0,1,0);
+        tint = normalize(tint + 1e-5);
+
+        float4 c = abs(i.uv.y - 0.5) < wav.g ? float4(tint, 1) : 0;
+        c.rgb *= mask.rgb;
+        c.rgb = c.rgb * 0.5 + c.rgb * _BeatOutput.y;
+        c.a = 1;
+
+        float3 emission = bloomColor(c, _EmissionGain).rgb;
+        float3 albedo = _Color.rgb * mask.rgb;
+        return half4(albedo + emission + (_SpecColor.rgb * _Shininess * mask.a), 1);
+      }
+      ENDHLSL
+    }
   }
-  ENDCG
-  }
-
-  FallBack "Diffuse"
+  FallBack Off
 }

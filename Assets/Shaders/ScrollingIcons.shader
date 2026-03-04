@@ -1,17 +1,4 @@
 // Copyright 2020 The Tilt Brush Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 Shader "Custom/ScrollingIcons" {
   Properties {
     _Color ("Main Color", Color) = (1,1,1,1)
@@ -24,47 +11,36 @@ Shader "Custom/ScrollingIcons" {
     _UsedIconCount ("Used Icon Count", Float) = 1
   }
   SubShader {
-    Tags { "RenderPipeline"="UniversalPipeline" }
-    Tags{ "RenderType" = "Opaque" }
+    Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Opaque" }
     LOD 100
-
-    CGPROGRAM
-    #pragma target 3.0
-    #pragma surface surf Standard nofog
-
-    sampler2D _MainTex;
-    sampler2D _IconsTex;
-    fixed4 _Color;
-    fixed4 _BaseDiffuseColor;
-    fixed4 _EmissionColor;
-    float _Ratio;
-    float _IconCount;
-    float _UsedIconCount;
-
-    struct Input {
-      float2 uv_MainTex;
-      float2 uv_IconsTex;
-    };
-
-    void surf (Input IN, inout SurfaceOutputStandard o) {
-      fixed4 c = tex2D(_MainTex, IN.uv_MainTex);
-
-      float2 scrolledUVs = IN.uv_IconsTex;
-      scrolledUVs.x /= _IconCount;
-      scrolledUVs.x += _Ratio * (_UsedIconCount / _IconCount);
-      fixed4 icon = tex2D(_IconsTex, scrolledUVs);
-
-      float4 finalColor = lerp(icon, c, c.w);
-      c = finalColor;
-
-      c *= _Color + _EmissionColor;
-      o.Albedo = c + _BaseDiffuseColor;
-      o.Emission = c * normalize(_EmissionColor);
-      o.Alpha = 1;
+    Pass {
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+      #pragma vertex Vert
+      #pragma fragment Frag
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+      TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
+      TEXTURE2D(_IconsTex); SAMPLER(sampler_IconsTex);
+      CBUFFER_START(UnityPerMaterial)
+      half4 _Color; half4 _BaseDiffuseColor; half4 _EmissionColor; half _Ratio; half _IconCount; half _UsedIconCount; float4 _MainTex_ST;
+      CBUFFER_END
+      struct A{float4 positionOS:POSITION; float2 uv:TEXCOORD0;};
+      struct V{float4 positionHCS:SV_POSITION; float2 uv:TEXCOORD0;};
+      V Vert(A i){V o; o.positionHCS=TransformObjectToHClip(i.positionOS.xyz); o.uv=TRANSFORM_TEX(i.uv,_MainTex); return o;}
+      half4 Frag(V i):SV_Target {
+        half4 c = SAMPLE_TEXTURE2D(_MainTex,sampler_MainTex,i.uv);
+        float2 scrolledUVs = i.uv;
+        scrolledUVs.x /= max(_IconCount, 1e-4h);
+        scrolledUVs.x += _Ratio * (_UsedIconCount / max(_IconCount,1e-4h));
+        half4 icon = SAMPLE_TEXTURE2D(_IconsTex,sampler_IconsTex,scrolledUVs);
+        half4 f = lerp(icon, c, c.a);
+        f *= _Color + _EmissionColor;
+        half3 albedo = f.rgb + _BaseDiffuseColor.rgb;
+        half3 emissive = f.rgb * normalize(_EmissionColor.rgb + 1e-5h);
+        return half4(albedo + emissive,1);
+      }
+      ENDHLSL
     }
-    ENDCG
   }
-  FallBack "Diffuse"
+  FallBack Off
 }
-
-
