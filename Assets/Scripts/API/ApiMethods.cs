@@ -581,11 +581,7 @@ namespace TiltBrush
             {
                 location = _DownloadMediaFileFromUrl(location, "Images");
             }
-
-            ReferenceImage image = _LoadReferenceImage(location);
-            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ImageWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
-            var imageWidget = cmd.Widget as ImageWidget;
+            var imageWidget = _ImportImage(location, _CurrentBrushTransform());
             if (imageWidget != null)
             {
                 // Set consistent size regardless of scene scale
@@ -594,15 +590,45 @@ namespace TiltBrush
                 // Now enable preservation to prevent async overrides
                 imageWidget.SetPreserveCustomSize(true);
 
-                imageWidget.ReferenceImage = image;
-                imageWidget.Show(true);
-                cmd.SetWidgetCost(imageWidget.GetTiltMeterCost());
             }
-
             WidgetManager.m_Instance.WidgetsDormant = false;
             SketchControlsScript.m_Instance.EatGazeObjectInput();
             SelectionManager.m_Instance.RemoveFromSelection(false);
             return imageWidget;
+        }
+
+        public static ImageWidget _ImportImage(string location, TrTransform xf)
+        {
+            ReferenceImage image = _LoadReferenceImage(location);
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ImageWidgetPrefab, xf, forceTransform: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+            var imageWidget = cmd.Widget as ImageWidget;
+            if (imageWidget != null)
+            {
+                imageWidget.ReferenceImage = image;
+                imageWidget.Show(true);
+                cmd.SetWidgetCost(imageWidget.GetTiltMeterCost());
+            }
+            return imageWidget;
+        }
+
+        public static ImageWidget _ImportImage(string location, TrTransform xf, CanvasScript targetCanvas)
+        {
+            if (targetCanvas == null)
+            {
+                return _ImportImage(location, xf);
+            }
+
+            var previousCanvas = App.Scene.ActiveCanvas;
+            try
+            {
+                App.Scene.ActiveCanvas = targetCanvas;
+                return _ImportImage(location, xf);
+            }
+            finally
+            {
+                App.Scene.ActiveCanvas = previousCanvas;
+            }
         }
 
         // TODO - currently the polygon collider isn't using the imported SVG sprite
