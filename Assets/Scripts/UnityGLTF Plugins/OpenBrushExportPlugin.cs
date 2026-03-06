@@ -404,8 +404,9 @@ namespace TiltBrush
             if (shaderName.StartsWith("Brush/"))
             {
 
-                // TODO - This assumes that every brush has a unique material with a unique name
-                // Currently, this is true, but it may not always be the case
+                // TODO - This assumes that every brush material has a unique name
+                // (or at least if two brush materials have the same name then they are interchangeable)
+                // Currently, the former is true, but this may not always be the case
                 var brushes = BrushCatalog.m_Instance.AllBrushes
                     .Where(b => b.Material.name == material.name.Replace("(Instance)", "").TrimEnd())
                     .ToList();
