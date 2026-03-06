@@ -1,4 +1,4 @@
-Shader "Custom/UnlitA2CVertexColor"
+Shader "Brush/UnlitA2CVertexColor"
 {
     Properties
     {

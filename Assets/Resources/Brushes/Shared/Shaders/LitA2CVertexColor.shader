@@ -1,4 +1,4 @@
-Shader "Custom/LitA2CVertexColor"
+Shader "Brush/LitA2CVertexColor"
 {
     Properties
     {
