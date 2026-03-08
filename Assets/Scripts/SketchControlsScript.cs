@@ -5056,6 +5056,7 @@ namespace TiltBrush
                         if (options != null && !string.IsNullOrEmpty(options.Path))
                         {
                             NewSketch(fade: false);
+                            SaveLoadScript.m_Instance.SetPreferredNewSketchFilenameFromPath(options.Path);
                             StartCoroutine(LoadQuillCoroutine(options.Path, options.ChapterIndex));
                         }
                     }
