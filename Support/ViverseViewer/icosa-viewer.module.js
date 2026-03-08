@@ -6301,7 +6301,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         }
         const fov = cameraOverrides?.perspective?.yfov / (Math.PI / 180) || 75;
         const aspect = 2;
-        const near = cameraOverrides?.perspective?.znear || 0.1;
+        const near = cameraOverrides?.perspective?.znear || 0.01;
         const far = 6000;
         this.flatCamera = new $hBQxr$three.PerspectiveCamera(fov, aspect, near, far);
         let cameraPos = [];
@@ -6463,8 +6463,8 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             this.loadedModel.add(light);
             return;
         }
-        let l0 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight0Color.clone().convertSRGBToLinear(), 1.0);
-        let l1 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight1Color.clone().convertSRGBToLinear(), 1.0);
+        let l0 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight0Color, 1.0);
+        let l1 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight1Color, 1.0);
         let light0Euler = convertTBEuler(this.sketchMetadata.SceneLight0Rotation);
         let light1Euler = convertTBEuler(this.sketchMetadata.SceneLight1Rotation);
         // Same rotation adjustment we apply to scene and environment
@@ -6481,12 +6481,12 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         this.loadedModel?.add(l0);
         this.loadedModel?.add(l1);
         const ambientLight = new $hBQxr$three.AmbientLight();
-        ambientLight.color = this.sketchMetadata.AmbientLightColor.clone().convertSRGBToLinear();
+        ambientLight.color = this.sketchMetadata.AmbientLightColor;
         this.scene.add(ambientLight);
     }
     initFog() {
         if (this.sketchMetadata == undefined || this.sketchMetadata == null) return;
-        this.scene.fog = new $hBQxr$three.FogExp2(this.sketchMetadata.FogColor.clone().convertSRGBToLinear(), this.sketchMetadata.FogDensity);
+        this.scene.fog = new $hBQxr$three.FogExp2(this.sketchMetadata.FogColor, this.sketchMetadata.FogDensity);
     }
     initSceneBackground() {
         // OBJ and FBX models don't have metadata
