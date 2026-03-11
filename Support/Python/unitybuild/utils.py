@@ -88,7 +88,7 @@ def msys_control_c_workaround():
         ENABLE_PROCESSED_INPUT = DWORD(1)
 
         stdin = kernel32.GetStdHandle(STD_INPUT_HANDLE)
-        mode = DWORD()
+        mode = DWORD()  # pylint: disable=no-value-for-parameter
         kernel32.GetConsoleMode(stdin, ctypes.byref(mode))
         mode.value = mode.value & ~(ENABLE_PROCESSED_INPUT.value)
         kernel32.SetConsoleMode(stdin, mode)
