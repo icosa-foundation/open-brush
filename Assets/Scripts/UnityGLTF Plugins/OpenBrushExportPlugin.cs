@@ -30,8 +30,19 @@ namespace TiltBrush
         private GameObject m_ThumbnailCamera;
         private bool m_WasUsingBatchedBrushes;
 
+        // Per-export state for additive brush emissive color modulation
+        private GLTFRoot _gltfRoot;
+        // Template material → gain (emissive intensity multiplier)
+        private Dictionary<GLTFMaterial, float> _additiveBrushGains;
+        // (template material, stroke Color32) → index of colour-modulated clone in gltfRoot.Materials
+        private Dictionary<(GLTFMaterial, Color32), int> _colorModulatedMaterials;
+
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
+            _gltfRoot = gltfRoot;
+            _additiveBrushGains = new Dictionary<GLTFMaterial, float>();
+            _colorModulatedMaterials = new Dictionary<(GLTFMaterial, Color32), int>();
+
             if (Application.isPlaying && App.UserConfig.Export.ExportCustomSkybox)
             {
                 GltfExportStandinManager.m_Instance.CreateSkyStandin();
@@ -335,8 +346,7 @@ namespace TiltBrush
 
         public override void AfterPrimitiveExport(GLTFSceneExporter exporter, Mesh mesh, MeshPrimitive primitive, int index)
         {
-            if (!Application.isPlaying) return;
-            if (App.UserConfig.Export.ExportStrokeMetadata)
+            if (Application.isPlaying && App.UserConfig.Export.ExportStrokeMetadata)
             {
                 if (App.UserConfig.Export.KeepStrokes)
                 {
@@ -365,26 +375,116 @@ namespace TiltBrush
                     }
                 }
             }
+
+            // Additive brush emissive: when KeepStrokes=true each primitive is one stroke
+            // with uniform vertex colour, so we can set EmissiveFactor = that colour.
+            // Without KeepStrokes, strokes of different colours share one primitive so we
+            // can't do this correctly — leave emissive unset in that case.
+            if (Application.isPlaying && App.UserConfig.Export.KeepStrokes
+                && primitive.Material != null && _gltfRoot != null)
+            {
+                var mat = _gltfRoot.Materials[primitive.Material.Id];
+                if (_additiveBrushGains.TryGetValue(mat, out float gain))
+                {
+                    var colors = mesh.colors32;
+                    var strokeColor = colors.Length > 0 ? colors[0] : new Color32(255, 255, 255, 255);
+                    int coloredIdx = GetOrCreateColoredAdditiveMaterial(mat, strokeColor, gain, exporter);
+                    primitive.Material = new MaterialId { Id = coloredIdx, Root = _gltfRoot };
+                }
+            }
         }
 
-        void AddExtension(GLTFMaterial materialNode, IExtension blend)
+        private int GetOrCreateColoredAdditiveMaterial(GLTFMaterial source, Color32 strokeColor, float gain, GLTFSceneExporter exporter)
+        {
+            var key = (source, strokeColor);
+            if (_colorModulatedMaterials.TryGetValue(key, out int existingIdx))
+                return existingIdx;
+
+            var clone = new GLTFMaterial
+            {
+                Name = source.Name,
+                PbrMetallicRoughness = source.PbrMetallicRoughness,
+                NormalTexture = source.NormalTexture,
+                OcclusionTexture = source.OcclusionTexture,
+                EmissiveTexture = source.EmissiveTexture,
+                AlphaMode = source.AlphaMode,
+                AlphaCutoff = source.AlphaCutoff,
+                DoubleSided = source.DoubleSided,
+                Extras = source.Extras,
+                Extensions = source.Extensions != null
+                    ? new Dictionary<string, IExtension>(source.Extensions)
+                    : new Dictionary<string, IExtension>()
+            };
+
+            float r = strokeColor.r / 255f;
+            float g = strokeColor.g / 255f;
+            float b = strokeColor.b / 255f;
+            clone.EmissiveFactor = new GLTF.Math.Color(r, g, b, 1f);
+
+            if (gain > 1f)
+            {
+                exporter.DeclareExtensionUsage(KHR_materials_emissive_strength_Factory.EXTENSION_NAME, false);
+                clone.Extensions[KHR_materials_emissive_strength_Factory.EXTENSION_NAME] =
+                    new KHR_materials_emissive_strength { emissiveStrength = gain };
+            }
+
+            _gltfRoot.Materials.Add(clone);
+            int newIdx = _gltfRoot.Materials.Count - 1;
+            _colorModulatedMaterials[key] = newIdx;
+            return newIdx;
+        }
+
+        void AddExtension(GLTFMaterial materialNode, IExtension ext, string name = null)
         {
             if (materialNode.Extensions == null)
                 materialNode.Extensions = new Dictionary<string, IExtension>();
-            materialNode.Extensions.Add(EXT_blend_operations.EXTENSION_NAME, blend);
+            string key = name ?? EXT_blend_operations.EXTENSION_NAME;
+            materialNode.Extensions[key] = ext;
+        }
+
+        // Builds PbrMetallicRoughness from standard Brush material properties,
+        // exporting textures and mapping scalar/color params to PBR equivalents.
+        private PbrMetallicRoughness BuildBrushPbr(GLTFSceneExporter exporter, Material material)
+        {
+            var pbr = new PbrMetallicRoughness { MetallicFactor = 0f };
+
+            // Base color factor — prefer _Color, fall back to _TintColor (particle shaders)
+            if (material.HasProperty("_Color"))
+            {
+                var c = material.GetColor("_Color");
+                pbr.BaseColorFactor = new GLTF.Math.Color(c.r, c.g, c.b, c.a);
+            }
+            else if (material.HasProperty("_TintColor"))
+            {
+                var c = material.GetColor("_TintColor");
+                pbr.BaseColorFactor = new GLTF.Math.Color(c.r, c.g, c.b, c.a);
+            }
+
+            // Base color texture
+            if (material.HasProperty("_MainTex"))
+            {
+                var tex = material.GetTexture("_MainTex");
+                if (tex != null)
+                    pbr.BaseColorTexture = exporter.ExportTextureInfo(
+                        tex, GLTFSceneExporter.TextureMapType.BaseColor);
+            }
+
+            // _Shininess is Unity smoothness (0=rough, 1=smooth); roughness = 1 - smoothness
+            pbr.RoughnessFactor = material.HasProperty("_Shininess")
+                ? 1f - material.GetFloat("_Shininess")
+                : 1f;
+
+            return pbr;
         }
 
         public override void AfterMaterialExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Material material, GLTFMaterial materialNode)
         {
             // Only process Open Brush or Open Blocks materials
-            // Use shaderName to determine if this is the case
             string shaderName = material.shader.name;
 
             if (shaderName.StartsWith("Brush/"))
             {
-
                 // TODO - This assumes that every brush has a unique material with a unique name
-                // Currently, this is true, but it may not always be the case
                 var brushes = BrushCatalog.m_Instance.AllBrushes
                     .Where(b => b.Material.name == material.name.Replace("(Instance)", "").TrimEnd())
                     .ToList();
@@ -403,9 +503,24 @@ namespace TiltBrush
                 var manifest = BrushCatalog.m_Instance.GetBrush(brush.m_Guid);
 
                 materialNode.Name = $"ob-{manifest.DurableName}";
-                // Do we need to override the regular UnityGLTF logic here?
                 materialNode.DoubleSided = manifest.m_RenderBackfaces;
 
+                // Store brush GUID in extras for round-trip identification
+                materialNode.Extras = new JObject { ["TB_BrushGuid"] = manifest.m_Guid.ToString("D") };
+
+                // Build PBR from material properties
+                materialNode.PbrMetallicRoughness = BuildBrushPbr(exporter, material);
+
+                // Normal map
+                if (material.HasProperty("_BumpMap"))
+                {
+                    var bumpTex = material.GetTexture("_BumpMap");
+                    if (bumpTex != null)
+                        materialNode.NormalTexture = exporter.ExportNormalTextureInfo(
+                            bumpTex, GLTFSceneExporter.TextureMapType.Normal, material);
+                }
+
+                // Blend mode
                 switch (manifest.m_BlendMode)
                 {
                     case ExportableMaterialBlendMode.AdditiveBlend:
@@ -414,10 +529,60 @@ namespace TiltBrush
                         break;
                     case ExportableMaterialBlendMode.AlphaMask:
                         materialNode.AlphaMode = AlphaMode.MASK;
+                        if (material.HasProperty("_Cutoff"))
+                            materialNode.AlphaCutoff = material.GetFloat("_Cutoff");
                         break;
                     case ExportableMaterialBlendMode.AlphaBlend:
                         materialNode.AlphaMode = AlphaMode.BLEND;
                         break;
+                }
+
+                // Emission
+                if (manifest.m_BlendMode == ExportableMaterialBlendMode.AdditiveBlend)
+                {
+                    // Additive brushes: emissive colour comes from vertex colour (sampled per-primitive
+                    // in AfterPrimitiveExport). Store the gain on this template material; EmissiveFactor
+                    // will be set on per-colour clones. EmissiveTexture is set here so clones inherit it.
+                    float gain = manifest.m_EmissiveFactor;
+                    if (gain <= 0f && material.HasProperty("_EmissionGain"))
+                        gain = material.GetFloat("_EmissionGain");
+                    if (gain <= 0f) gain = 1f;
+                    _additiveBrushGains[materialNode] = gain;
+
+                    if (material.HasProperty("_MainTex"))
+                    {
+                        var emTex = material.GetTexture("_MainTex");
+                        if (emTex != null)
+                            materialNode.EmissiveTexture = exporter.ExportTextureInfo(
+                                emTex, GLTFSceneExporter.TextureMapType.Emissive);
+                    }
+                }
+                else
+                {
+                    // Non-additive brushes: use m_EmissiveFactor or _EmissionGain directly.
+                    float emissiveFactor = manifest.m_EmissiveFactor;
+                    if (emissiveFactor <= 0f && material.HasProperty("_EmissionGain"))
+                        emissiveFactor = material.GetFloat("_EmissionGain");
+                    if (emissiveFactor > 0f)
+                    {
+                        float clamped = Mathf.Min(emissiveFactor, 1f);
+                        materialNode.EmissiveFactor = new GLTF.Math.Color(clamped, clamped, clamped, 1f);
+                        if (emissiveFactor > 1f)
+                        {
+                            exporter.DeclareExtensionUsage(KHR_materials_emissive_strength_Factory.EXTENSION_NAME, false);
+                            AddExtension(materialNode,
+                                new KHR_materials_emissive_strength { emissiveStrength = emissiveFactor },
+                                KHR_materials_emissive_strength_Factory.EXTENSION_NAME);
+                        }
+                    }
+                }
+
+                // Unlit shaders
+                if (shaderName == "Brush/Special/Unlit")
+                {
+                    exporter.DeclareExtensionUsage(KHR_MaterialsUnlitExtensionFactory.EXTENSION_NAME, false);
+                    AddExtension(materialNode, new KHR_MaterialsUnlitExtension(),
+                        KHR_MaterialsUnlitExtensionFactory.EXTENSION_NAME);
                 }
             }
             else if (shaderName.StartsWith("Blocks/"))
@@ -430,8 +595,19 @@ namespace TiltBrush
                 {
                     BaseColorFactor = new GLTF.Math.Color(r, g, b, a),
                     MetallicFactor = 0.0f,
-                    RoughnessFactor = Mathf.Sqrt(2f / (material.GetFloat("_Shininess") + 2f))
+                    RoughnessFactor = material.HasProperty("_Shininess")
+                        ? Mathf.Sqrt(2f / (material.GetFloat("_Shininess") + 2f))
+                        : 1f
                 };
+
+                if (material.HasProperty("_MainTex"))
+                {
+                    var tex = material.GetTexture("_MainTex");
+                    if (tex != null)
+                        pbr.BaseColorTexture = exporter.ExportTextureInfo(
+                            tex, GLTFSceneExporter.TextureMapType.BaseColor);
+                }
+
                 if (shaderName == "Blocks/BlocksGlass")
                 {
                     materialNode.AlphaMode = AlphaMode.BLEND;

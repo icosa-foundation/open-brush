@@ -1,5 +1,18 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &9123456789012345678
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: OpenBrushMaterialImportPlugin
+  m_EditorClassIdentifier: Assembly-CSharp:TiltBrush:OpenBrushMaterialImportPlugin
+  enabled: 1
 --- !u!114 &-8874749437110775378
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -311,6 +324,7 @@ MonoBehaviour:
   - {fileID: -4070862177138860178}
   - {fileID: 637454249380963975}
   - {fileID: -7011229683044967540}
+  - {fileID: 9123456789012345678}
   ExportPlugins:
   - {fileID: 242952683485160214}
   - {fileID: -5728475199642485532}
