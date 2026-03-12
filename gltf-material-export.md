@@ -97,3 +97,37 @@
 2. **Comet/_AlphaMask** — worth baking, or skip?
 3. **WigglyGraphite single-sided** — worth special-casing given double-sided is more common?
 4. **Smoke/Snow blend modes** — verify their `m_BlendMode` descriptor values match actual shader blend equations?
+
+---
+
+## Texture baking candidates
+
+Brushes that need a baked texture to approximate their procedural appearance in GLTF viewers.
+
+### No `_MainTex` + procedural pattern (exports as completely flat/invisible without baking)
+
+| Brush | What needs baking |
+|---|---|
+| `ChromaticWave` (RainbowTube) | Entire appearance — RGB waveform lines are 100% procedural from UV |
+| `NeonPulse` (WaveformPulse) | Neon glow falloff: `pow(10 * saturate(0.2 - uv.x), 5)` — exports flat without this |
+| `Wireframe` | UV-threshold grid lines — exports as invisible (additive with no texture = nothing) |
+
+### Has `_MainTex` but color is fully procedural (texture exports but colour is wrong)
+
+| Brush | What needs baking |
+|---|---|
+| `Rainbow` | Procedural rainbow bands generated from UV; `_MainTex` is only a shape mask — colour bands are lost |
+
+### Does NOT need baking (already handled correctly)
+
+- `DiffuseNoTextureDoubleSided` — pure vertex-color Lambert; vertex colors carry the appearance
+- `DoubleTaperedMarker` — pure vertex-color unlit; same
+- `DiffuseOpaqueSingleSided/DoubleSided` — same
+- `Petal` — has `_MainTex`; vertex color + AO is acceptable approximation
+- All brushes with `_MainTex` where the texture represents the actual stroke appearance (even if animation is lost)
+
+### Proposed baking approach
+
+Render the brush shader onto a `RenderTexture` using an orthographic camera + a flat quad with UVs spanning [0,1]×[0,1] and white vertex colors. Set `_Time = Vector4.zero` and zero all audio uniforms (`_BeatOutput`, `_WaveFormTex`, etc.) for a frozen-time snapshot. Read back with `Texture2D.ReadPixels`. Inject result as `baseColorTexture` (opaque) or `emissiveTexture` (additive) in `AfterMaterialExport`.
+
+This reuses the existing shader code with no rewriting. The bake would run at export time, once per brush type used in the sketch.
