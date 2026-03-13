@@ -460,12 +460,16 @@ namespace TiltBrush
                 GLTFAccessorAttributeType.VEC2, GLTFComponentType.Float,
                 new List<double> { minX, minY }, new List<double> { maxX, maxY });
 
-            // Inject as TEXCOORD_7 on this primitive
-            primitive.Attributes["TEXCOORD_7"] = accessorId;
+            // Find the next sequential TEXCOORD index after whatever the mesh already has
+            int texCoordIndex = 0;
+            while (primitive.Attributes.ContainsKey($"TEXCOORD_{texCoordIndex}"))
+                texCoordIndex++;
 
-            // Export atlas texture and build emissiveTexture pointing at TEXCOORD_7
+            primitive.Attributes[$"TEXCOORD_{texCoordIndex}"] = accessorId;
+
+            // Export atlas texture and build emissiveTexture pointing at that channel
             var atlasTexInfo = exporter.ExportTextureInfo(atlas, GLTFSceneExporter.TextureMapType.Emissive);
-            atlasTexInfo.TexCoord = 7;
+            atlasTexInfo.TexCoord = texCoordIndex;
 
             var clone = CloneGltfMaterial(source);
             clone.EmissiveFactor = new GLTF.Math.Color(1f, 1f, 1f, 1f);
