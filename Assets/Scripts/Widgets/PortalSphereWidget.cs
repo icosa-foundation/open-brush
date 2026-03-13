@@ -21,15 +21,16 @@ namespace TiltBrush
     public class PortalSphereWidget : SphereStencil
     {
         private const string kLogPrefix = "[PortalDbg_20260313]";
+        private const string kLoadCompareLogPrefix = "[PortalLoadCmp_20260313]";
 
-        [SerializeField] private string m_Destination;
-        [SerializeField] private bool m_TriggerWithBrushInside = true;
-        [SerializeField] private bool m_AllowRepeatWhileInside;
-        [SerializeField] private SketchControlsScript.GlobalCommands m_Command =
-            SketchControlsScript.GlobalCommands.Null;
-        [SerializeField] private int m_CommandParam1 = -1;
-        [SerializeField] private int m_CommandParam2 = -1;
-        [SerializeField] private string m_CommandStringParam;
+        private string m_Destination;
+        private bool m_TriggerWithBrushInside = true;
+        private bool m_AllowRepeatWhileInside;
+        private Color m_LoadingColor = new Color(0.1f, 0.85f, 1.0f, 1.0f);
+        private float m_LoadingFillDuration = 0.2f;
+        private float m_LoadingMinFill = 0.6f;
+        private float m_LoadingPulseAmplitude = 0.15f;
+        private float m_LoadingPulseFrequency = 2.0f;
 
         private bool m_CommandTriggeredWhileInside;
         private Texture m_DefaultThumbnail;
@@ -39,6 +40,11 @@ namespace TiltBrush
         private Texture m_LastLoggedThumbnail;
         private bool m_HasLoggedThumbnailState;
         private Texture2D m_OwnedThumbnail;
+        private Color m_DefaultColor = Color.white;
+        private Color m_DefaultEmissionColor = Color.black;
+        private bool m_IsShowingLoadingVisual;
+        private float m_LoadingVisualStartTime;
+        private float? m_LoadingProgress;
 
         public string Destination
         {
@@ -58,7 +64,17 @@ namespace TiltBrush
             Renderer thumbnailRenderer = GetThumbnailRenderer();
             if (thumbnailRenderer != null)
             {
-                m_DefaultThumbnail = thumbnailRenderer.material.mainTexture;
+                Material material = thumbnailRenderer.material;
+                m_DefaultThumbnail = material.mainTexture;
+                if (material.HasProperty("_Color"))
+                {
+                    m_DefaultColor = material.color;
+                }
+                if (material.HasProperty("_EmissionColor"))
+                {
+                    m_DefaultEmissionColor = material.GetColor("_EmissionColor");
+                }
+                thumbnailRenderer.enabled = true;
             }
         }
 
@@ -71,6 +87,7 @@ namespace TiltBrush
         {
             UnsubscribeFromSketchSets();
             StopThumbnailFetch();
+            StopLoadingVisuals();
             ReleaseOwnedThumbnail();
             base.OnDestroy();
         }
@@ -78,6 +95,7 @@ namespace TiltBrush
         protected override void OnUpdate()
         {
             base.OnUpdate();
+            UpdateLoadingVisuals();
             LogThumbnailStateIfChanged();
 
             if (!m_TriggerWithBrushInside)
@@ -343,6 +361,33 @@ namespace TiltBrush
             }
         }
 
+        private void ApplyLoadingVisualToMaterials(Material[] materials, float fill)
+        {
+            if (materials == null)
+            {
+                return;
+            }
+
+            Color color = Color.Lerp(m_DefaultColor, m_LoadingColor, fill);
+            Color emission = Color.Lerp(m_DefaultEmissionColor, m_LoadingColor * 0.35f, fill);
+            foreach (Material material in materials)
+            {
+                if (material == null)
+                {
+                    continue;
+                }
+
+                if (material.HasProperty("_Color"))
+                {
+                    material.color = color;
+                }
+                if (material.HasProperty("_EmissionColor"))
+                {
+                    material.SetColor("_EmissionColor", emission);
+                }
+            }
+        }
+
         private void SyncTrackedMaterialCopies(Renderer thumbnailRenderer, Texture texture)
         {
             if (m_InitialMaterials == null || m_NewMaterials == null || thumbnailRenderer == null)
@@ -359,6 +404,26 @@ namespace TiltBrush
             if (m_NewMaterials.TryGetValue(thumbnailRenderer, out var newMaterials))
             {
                 ApplyThumbnailToMaterials(newMaterials, texture);
+                m_NewMaterials[thumbnailRenderer] = newMaterials;
+            }
+        }
+
+        private void SyncTrackedLoadingVisualCopies(Renderer thumbnailRenderer, float fill)
+        {
+            if (m_InitialMaterials == null || m_NewMaterials == null || thumbnailRenderer == null)
+            {
+                return;
+            }
+
+            if (m_InitialMaterials.TryGetValue(thumbnailRenderer, out var initialMaterials))
+            {
+                ApplyLoadingVisualToMaterials(initialMaterials, fill);
+                m_InitialMaterials[thumbnailRenderer] = initialMaterials;
+            }
+
+            if (m_NewMaterials.TryGetValue(thumbnailRenderer, out var newMaterials))
+            {
+                ApplyLoadingVisualToMaterials(newMaterials, fill);
                 m_NewMaterials[thumbnailRenderer] = newMaterials;
             }
         }
@@ -399,6 +464,81 @@ namespace TiltBrush
 
             Object.Destroy(m_OwnedThumbnail);
             m_OwnedThumbnail = null;
+        }
+
+        private void StartLoadingVisuals()
+        {
+            m_IsShowingLoadingVisual = true;
+            m_LoadingVisualStartTime = Time.realtimeSinceStartup;
+            m_LoadingProgress = 0.0f;
+            ApplyLoadingVisual(m_LoadingMinFill);
+        }
+
+        private void StopLoadingVisuals()
+        {
+            if (!m_IsShowingLoadingVisual)
+            {
+                return;
+            }
+
+            m_IsShowingLoadingVisual = false;
+            m_LoadingProgress = null;
+            ApplyLoadingVisual(0.0f, restoreDefaults: true);
+        }
+
+        private void UpdateLoadingVisuals()
+        {
+            if (!m_IsShowingLoadingVisual)
+            {
+                return;
+            }
+
+            float elapsed = Time.realtimeSinceStartup - m_LoadingVisualStartTime;
+            float fill;
+            if (m_LoadingProgress is float progress)
+            {
+                fill = Mathf.Lerp(m_LoadingMinFill, 1.0f, Mathf.Clamp01(progress));
+            }
+            else if (elapsed < m_LoadingFillDuration)
+            {
+                fill = Mathf.Lerp(
+                    m_LoadingMinFill,
+                    m_LoadingMinFill,
+                    elapsed / Mathf.Max(m_LoadingFillDuration, 0.0001f));
+            }
+            else
+            {
+                float pulse = 0.5f + 0.5f * Mathf.Sin(
+                    (elapsed - m_LoadingFillDuration) * m_LoadingPulseFrequency * Mathf.PI * 2.0f);
+                fill = m_LoadingMinFill + pulse * m_LoadingPulseAmplitude;
+            }
+
+            ApplyLoadingVisual(fill);
+        }
+
+        private void UpdateLoadingProgress(float progress)
+        {
+            if (!m_IsShowingLoadingVisual)
+            {
+                StartLoadingVisuals();
+            }
+
+            m_LoadingProgress = Mathf.Clamp01(progress);
+            ApplyLoadingVisual(Mathf.Lerp(m_LoadingMinFill, 1.0f, m_LoadingProgress.Value));
+        }
+
+        private void ApplyLoadingVisual(float fill, bool restoreDefaults = false)
+        {
+            Renderer thumbnailRenderer = GetThumbnailRenderer();
+            if (thumbnailRenderer == null)
+            {
+                return;
+            }
+
+            Material[] materials = thumbnailRenderer.materials;
+            ApplyLoadingVisualToMaterials(materials, restoreDefaults ? 0.0f : fill);
+            thumbnailRenderer.materials = materials;
+            SyncTrackedLoadingVisualCopies(thumbnailRenderer, restoreDefaults ? 0.0f : fill);
         }
 
         private void LogThumbnailStateIfChanged()
@@ -448,24 +588,12 @@ namespace TiltBrush
 
         private bool ExecutePortalCommand()
         {
-            if (TryLoadDestinationSketch())
+            if (AudioManager.m_Instance != null)
             {
-                return true;
+                AudioManager.m_Instance.PlayPopUpSound(transform.position);
             }
-
-            if (m_Command == SketchControlsScript.GlobalCommands.Null)
-            {
-                Debug.LogWarning($"{kLogPrefix} No destination load path or fallback command for '{m_Destination}' on {name}");
-                return false;
-            }
-
-            Debug.Log($"{kLogPrefix} Executing fallback command {m_Command} for '{m_Destination}' on {name}");
-            SketchControlsScript.m_Instance.IssueGlobalCommand(
-                m_Command,
-                m_CommandParam1,
-                m_CommandParam2,
-                string.IsNullOrWhiteSpace(m_CommandStringParam) ? null : m_CommandStringParam);
-            return true;
+            StartLoadingVisuals();
+            return TryLoadDestinationSketch();
         }
 
         private bool TryLoadDestinationSketch()
@@ -501,12 +629,25 @@ namespace TiltBrush
                     return false;
                 }
 
+                Debug.Log(
+                    $"{kLoadCompareLogPrefix} Portal resolved destination. destination='{m_Destination}' " +
+                    $"set={setType} index={sketchIndex} assetId='{sceneFileInfo.AssetId}' " +
+                    $"available={sceneFileInfo.Available} name='{sceneFileInfo.HumanName}' portal={name}");
+
                 if (!sceneFileInfo.Available)
                 {
-                    StartCoroutine(VrAssetService.m_Instance.LoadTiltFile(m_Destination));
+                    StartLoadingVisuals();
+                    Debug.Log(
+                        $"{kLoadCompareLogPrefix} Portal taking direct Icosa fetch branch. " +
+                        $"destination='{m_Destination}' set={setType} index={sketchIndex} portal={name}");
+                    StartCoroutine(VrAssetService.m_Instance.LoadTiltFile(m_Destination, UpdateLoadingProgress));
                     return true;
                 }
 
+                StartLoadingVisuals();
+                Debug.Log(
+                    $"{kLoadCompareLogPrefix} Portal issuing LoadConfirmUnsaved. " +
+                    $"destination='{m_Destination}' set={setType} index={sketchIndex} portal={name}");
                 SketchControlsScript.m_Instance.IssueGlobalCommand(
                     SketchControlsScript.GlobalCommands.LoadConfirmUnsaved,
                     sketchIndex,
@@ -514,8 +655,12 @@ namespace TiltBrush
                 return true;
             }
 
+            Debug.LogWarning(
+                $"{kLoadCompareLogPrefix} Portal destination not found in loaded sketch sets. " +
+                $"destination='{m_Destination}' portal={name}");
             Debug.LogWarning($"{kLogPrefix} Destination '{m_Destination}' not found in Curated/Liked/User sketch sets. Using direct Icosa fetch on {name}");
-            StartCoroutine(VrAssetService.m_Instance.LoadTiltFile(m_Destination));
+            StartLoadingVisuals();
+            StartCoroutine(VrAssetService.m_Instance.LoadTiltFile(m_Destination, UpdateLoadingProgress));
             return true;
         }
     }

@@ -1192,17 +1192,24 @@ namespace TiltBrush
         }
 
         // Download a tilt file to a temporary file and load it
-        public IEnumerator LoadTiltFile(string id)
+        public IEnumerator LoadTiltFile(string id, Action<float> onProgress = null)
         {
             BeginLoadSketchOverlap();
+            onProgress?.Invoke(0.05f);
 
             string path = Path.GetTempFileName();
             string uri = String.Format("{0}{1}/{2}", IcosaApiRoot, kListAssetsUri, id);
             WebRequest request = new WebRequest(uri, App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
+            double requestStartTime = Time.realtimeSinceStartupAsDouble;
             using (var cr = request.SendAsync().AsIeNull())
             {
                 while (!request.Done)
                 {
+                    const float kMetadataProportion = 0.2f;
+                    const float kMetadataTime = 0.75f;
+                    float requestElapsed = (float)(Time.realtimeSinceStartupAsDouble - requestStartTime);
+                    float metadataProgress = Mathf.Clamp01(requestElapsed / kMetadataTime);
+                    onProgress?.Invoke(kMetadataProportion * metadataProgress);
                     try
                     {
                         cr.MoveNext();
@@ -1218,8 +1225,13 @@ namespace TiltBrush
             var info = new IcosaSceneFileInfo(json);
             using (UnityWebRequest www = UnityWebRequest.Get(info.TiltFileUrl))
             {
-                yield return www.SendWebRequest();
-                while (!www.downloadHandler.isDone) { yield return null; }
+                var op = www.SendWebRequest();
+                while (!op.isDone)
+                {
+                    onProgress?.Invoke(0.2f + 0.8f * www.downloadProgress);
+                    yield return null;
+                }
+                onProgress?.Invoke(1.0f);
                 FileStream stream = File.Create(path);
                 byte[] data = www.downloadHandler.data;
                 stream.Write(data, 0, data.Length);

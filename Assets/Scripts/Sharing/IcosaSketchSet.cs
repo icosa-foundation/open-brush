@@ -316,6 +316,14 @@ namespace TiltBrush
             return true;
         }
 
+        private void RestoreLocalCacheState(IcosaSceneFileInfo info)
+        {
+            info.TiltPath = Path.Combine(m_CacheDir, string.Format("{0}.tilt", info.AssetId));
+            info.IconPath = Path.Combine(m_CacheDir, string.Format("{0}.png", info.AssetId));
+            info.TiltDownloaded = File.Exists(info.TiltPath);
+            info.IconDownloaded = File.Exists(info.IconPath);
+        }
+
         public SceneFileInfo GetSketchSceneFileInfo(int i)
         {
             return i < m_Sketches.Count ? m_Sketches[i].SceneFileInfo : null;
@@ -542,15 +550,13 @@ namespace TiltBrush
                     IcosaSketch sketch;
                     if (m_AssetIds.TryGetValue(info.AssetId, out sketch))
                     {
-                        // We already have this sketch
+                        RestoreLocalCacheState(sketch.IcosaSceneFileInfo);
                     }
                     else
                     {
                         sketch = new IcosaSketch(info);
                         sketch.m_DownloadIndex = loadSketchCount++;
-                        // Set local paths
-                        info.TiltPath = Path.Combine(m_CacheDir, String.Format("{0}.tilt", info.AssetId));
-                        info.IconPath = Path.Combine(m_CacheDir, String.Format("{0}.png", info.AssetId));
+                        RestoreLocalCacheState(info);
                         changed = true;
                     }
                     if (assetIds.ContainsKey(info.AssetId))
