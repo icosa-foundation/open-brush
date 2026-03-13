@@ -629,11 +629,6 @@ namespace TiltBrush
                     return false;
                 }
 
-                Debug.Log(
-                    $"{kLoadCompareLogPrefix} Portal resolved destination. destination='{m_Destination}' " +
-                    $"set={setType} index={sketchIndex} assetId='{sceneFileInfo.AssetId}' " +
-                    $"available={sceneFileInfo.Available} name='{sceneFileInfo.HumanName}' portal={name}");
-
                 if (!sceneFileInfo.Available)
                 {
                     StartLoadingVisuals();
