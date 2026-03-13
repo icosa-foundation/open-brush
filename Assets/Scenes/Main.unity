@@ -25823,6 +25823,8 @@ MonoBehaviour:
   m_TextWidgetPrefab: {fileID: 11466202, guid: c28bc4e3ed71248b889df2a70d873d0b, type: 3}
   m_LightWidgetPrefab: {fileID: 11466202, guid: e061cff5394e32940bb00495b287bb38,
     type: 3}
+  m_PortalWidgetPrefab: {fileID: 114000010150538192, guid: 398b75fd1b25af34983084e1554fef3f,
+    type: 3}
   m_SceneLightGizmoPrefab: {fileID: 1712584378369130260, guid: f28bfd6efbf3cb046be485c6573ca207,
     type: 3}
   m_CameraPathWidgetPrefab: {fileID: 114268259032398848, guid: a933b2a19614a6c4da08a0143f0ec912,

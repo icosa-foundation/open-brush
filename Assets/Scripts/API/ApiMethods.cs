@@ -1187,6 +1187,21 @@ namespace TiltBrush
         }
 
         [ApiEndpoint(
+            "portal.add",
+            "Adds a portal to the scene",
+            "dLHpzNdygsg"
+        )]
+        public static void AddPortal(string destination)
+        {
+            var portalPrefab = WidgetManager.m_Instance.PortalWidgetPrefab;
+            var cmd = new CreateWidgetCommand(portalPrefab, _CurrentBrushTransform(), forceTransform: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+            var widget = cmd.Widget as PortalSphereWidget;
+            widget.Destination = destination;
+        }
+
+
+        [ApiEndpoint(
             "guide.select",
             "Selects a guide by index.",
             "2"
