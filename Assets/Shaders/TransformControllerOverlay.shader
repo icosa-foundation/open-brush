@@ -22,13 +22,14 @@ Properties {
 
 Category {
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
    Tags {"Queue"="AlphaTest+20"}
 
   Pass {
       Cull Front
       ZWrite On
 
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
       #pragma target 3.0
@@ -68,14 +69,14 @@ Category {
       fixed4 frag (v2f i) : COLOR {
         return float4(0,0,0,1);
       }
-      ENDCG
+      ENDHLSL
     }
 
   Pass {
       Cull Front
     ZWrite On
 
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
       #pragma target 3.0
@@ -120,8 +121,10 @@ Category {
         _Color = GetAnimatedSelectionColor(_Color);
         return float4(_Color.xyz,1);
       }
-      ENDCG
+      ENDHLSL
     }
   }
 }
 }
+
+

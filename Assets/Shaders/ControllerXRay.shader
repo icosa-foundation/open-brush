@@ -19,6 +19,7 @@ Properties {
 
 Category {
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
   Pass {
 
     //
@@ -35,7 +36,7 @@ Category {
     ZWrite Off
     Fog { Mode Off }
 
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
       #pragma target 3.0
@@ -74,7 +75,7 @@ Category {
       fixed4 frag (v2f i) : COLOR {
      return _Color;
     }
-      ENDCG
+      ENDHLSL
     }
   }
 }
@@ -83,3 +84,5 @@ Fallback "Unlit/Diffuse"
 
 
 }
+
+

@@ -1,17 +1,4 @@
 // Copyright 2020 The Tilt Brush Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 Shader "Custom/Standard_NoFog" {
   Properties {
     _Color ("Color", Color) = (0,0,0,1)
@@ -21,36 +8,23 @@ Shader "Custom/Standard_NoFog" {
     _Metallic ("Metallic", Range(0,1)) = 0.0
   }
   SubShader {
-    Tags { "Queue"="AlphaTest+20" }
-    CGPROGRAM
-    #pragma surface surf Standard fullforwardshadows nofog
-    #pragma target 3.0
-
-    sampler2D _MainTex;
-
-    struct Input {
-      float2 uv_MainTex;
-    };
-
-    half _Glossiness;
-    half _Metallic;
-    fixed4 _Color;
-    fixed4 _EmissionColor;
-    float4 _AudioReactiveColor;
-
-    void surf (Input IN, inout SurfaceOutputStandard o) {
-
-      float index = IN.uv_MainTex.y;
-      float4 tex = tex2D(_MainTex, IN.uv_MainTex);
-      float4 c = tex * _EmissionColor;
-      o.Smoothness = _Glossiness;
-      o.Emission = c.rgb;
-      o.Albedo = tex * _Color;
-      // Metallic and smoothness come from slider variables
-      o.Metallic = _Metallic;
-      o.Alpha = c.a;
+    Tags { "RenderPipeline"="UniversalPipeline" "Queue"="AlphaTest+20" "RenderType"="Opaque" }
+    Pass {
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+      #pragma vertex Vert
+      #pragma fragment Frag
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+      TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
+      CBUFFER_START(UnityPerMaterial)
+      half4 _Color; half4 _EmissionColor; float4 _MainTex_ST;
+      CBUFFER_END
+      struct A{float4 positionOS:POSITION; float2 uv:TEXCOORD0;};
+      struct V{float4 positionHCS:SV_POSITION; float2 uv:TEXCOORD0;};
+      V Vert(A i){V o; o.positionHCS=TransformObjectToHClip(i.positionOS.xyz); o.uv=TRANSFORM_TEX(i.uv,_MainTex); return o;}
+      half4 Frag(V i):SV_Target { half4 tex=SAMPLE_TEXTURE2D(_MainTex,sampler_MainTex,i.uv); return half4(tex.rgb*_Color.rgb + tex.rgb*_EmissionColor.rgb, tex.a); }
+      ENDHLSL
     }
-    ENDCG
   }
-  FallBack "Diffuse"
+  FallBack Off
 }

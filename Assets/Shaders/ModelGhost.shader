@@ -19,6 +19,7 @@ Shader "Custom/ModelGhost" {
 
   Category {
     SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
 
       Tags{ "Queue" = "Overlay" "IgnoreProjector" = "True" "RenderType" = "Transparent" }
 
@@ -26,9 +27,7 @@ Shader "Custom/ModelGhost" {
 
         //Blend SrcAlpha OneMinusSrcAlpha, Zero One
         Blend One One
-        Lighting Off Cull Back ZTest Always ZWrite Off Fog { Mode Off }
-
-
+        Cull Back ZTest Always ZWrite Off
         CGPROGRAM
         #pragma vertex vert
         #pragma fragment frag
@@ -82,3 +81,4 @@ Shader "Custom/ModelGhost" {
 
   Fallback "Unlit/Diffuse"
 }
+

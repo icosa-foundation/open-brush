@@ -6,6 +6,12 @@
       "source": "embedded",
       "dependencies": {}
     },
+    "com.icosa.open-brush-unity-tools": {
+      "version": "file:I:/Unity Projects/open-brush-unity-tools/Packages/open-brush-unity-tools",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
     "com.ixxy.unitysymmetry": {
       "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
       "depth": 0,
@@ -211,13 +217,33 @@
     },
     "com.unity.render-pipelines.core": {
       "version": "14.0.12",
-      "depth": 2,
+      "depth": 1,
       "source": "builtin",
       "dependencies": {
         "com.unity.ugui": "1.0.0",
         "com.unity.modules.physics": "1.0.0",
         "com.unity.modules.terrain": "1.0.0",
         "com.unity.modules.jsonserialize": "1.0.0"
+      }
+    },
+    "com.unity.render-pipelines.universal": {
+      "version": "14.0.12",
+      "depth": 0,
+      "source": "builtin",
+      "dependencies": {
+        "com.unity.mathematics": "1.2.1",
+        "com.unity.burst": "1.8.9",
+        "com.unity.render-pipelines.core": "14.0.12",
+        "com.unity.shadergraph": "14.0.12",
+        "com.unity.render-pipelines.universal-config": "14.0.9"
+      }
+    },
+    "com.unity.render-pipelines.universal-config": {
+      "version": "14.0.10",
+      "depth": 1,
+      "source": "builtin",
+      "dependencies": {
+        "com.unity.render-pipelines.core": "14.0.10"
       }
     },
     "com.unity.scriptablebuildpipeline": {

@@ -18,34 +18,49 @@ Shader "Custom/TextureNoFogTransparent" {
     _MainTex ("Texture", 2D) = "white" {}
   }
   SubShader {
-    Tags {"Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent"}
+    Tags {"RenderPipeline"="UniversalPipeline" "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent"}
     LOD 100
-    CGPROGRAM
-    #pragma surface surf Unlit nofog alpha
+    Blend SrcAlpha OneMinusSrcAlpha
+    ZWrite Off
+    Pass {
+      Name "ForwardUnlit"
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+      #pragma vertex Vert
+      #pragma fragment Frag
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-                half4 LightingUnlit(SurfaceOutput s, half3 lightDir, half atten) {
-                        half4 c;
-                        c.rgb = s.Albedo;
-                        c.a = s.Alpha;
-                        return c;
-          }
+      TEXTURE2D(_MainTex);
+      SAMPLER(sampler_MainTex);
 
-    sampler2D _MainTex;
-    fixed4 _Color;
+      CBUFFER_START(UnityPerMaterial)
+      half4 _Color;
+      CBUFFER_END
 
-    struct Input {
-      float2 uv_MainTex;
-    };
+      struct Attributes {
+        float4 positionOS : POSITION;
+        float2 uv : TEXCOORD0;
+      };
 
-    void surf (Input IN, inout SurfaceOutput o) {
-      fixed4 c = tex2D(_MainTex, IN.uv_MainTex);
-      c *= _Color;
-      o.Emission = c.rgb;
-      o.Alpha = c.a;
+      struct Varyings {
+        float4 positionHCS : SV_POSITION;
+        float2 uv : TEXCOORD0;
+      };
+
+      Varyings Vert(Attributes IN) {
+        Varyings OUT;
+        OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+        OUT.uv = IN.uv;
+        return OUT;
+      }
+
+      half4 Frag(Varyings IN) : SV_Target {
+        half4 c = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv) * _Color;
+        return c;
+      }
+      ENDHLSL
     }
-    ENDCG
   }
-  FallBack "Diffuse"
+  FallBack Off
 }
-
 

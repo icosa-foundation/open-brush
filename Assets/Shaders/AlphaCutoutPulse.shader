@@ -14,41 +14,87 @@
 
 Shader "Custom/AlphaCutoutPulse" {
   Properties {
-	_Color("Main Color", Color) = (1,1,1,1)
-	_PulseColor("Pulse Color", Color) = (1,1,1,1)
-	_PulseSpeed ("Pulse Speed", Float) = 0
+    _Color("Main Color", Color) = (1,1,1,1)
+    _PulseColor("Pulse Color", Color) = (1,1,1,1)
+    _PulseSpeed ("Pulse Speed", Float) = 0
     _MainTex ("Texture", 2D) = "white" {}
     _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
   }
   SubShader {
-    Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
+    Tags { "RenderPipeline"="UniversalPipeline" "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout" }
     LOD 100
     Cull Off
-    CGPROGRAM
-    #pragma surface surf Lambert nofog
 
-	fixed4 _Color;
-	fixed4 _PulseColor;
-    float _PulseSpeed;
-	sampler2D _MainTex;
-	fixed _Cutoff;
+    Pass {
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+      #pragma vertex Vert
+      #pragma fragment Frag
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-    struct Input {
-      float2 uv_MainTex;
-    };
+      TEXTURE2D(_MainTex);
+      SAMPLER(sampler_MainTex);
 
-    void surf (Input IN, inout SurfaceOutput o) {
-      float t = abs(sin(_Time.y * _PulseSpeed));
-      fixed4 c = tex2D(_MainTex, IN.uv_MainTex);
-      c *= lerp(1.0f, _PulseColor, t) * _Color;
-	  o.Albedo = c.rgb;
-      o.Emission = c.rgb;
-      if (c.a < _Cutoff) {
-        discard;
+      CBUFFER_START(UnityPerMaterial)
+      half4 _Color;
+      half4 _PulseColor;
+      half _PulseSpeed;
+      half _Cutoff;
+      float4 _MainTex_ST;
+      CBUFFER_END
+
+      struct Attributes { float4 positionOS : POSITION; float2 uv : TEXCOORD0; };
+      struct Varyings { float4 positionHCS : SV_POSITION; float2 uv : TEXCOORD0; };
+
+      Varyings Vert(Attributes IN) {
+        Varyings OUT;
+        OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+        OUT.uv = TRANSFORM_TEX(IN.uv, _MainTex);
+        return OUT;
       }
-      o.Alpha = 1;
+
+      half4 Frag(Varyings IN) : SV_Target {
+        half t = abs(sin(_Time.y * _PulseSpeed));
+        half4 c = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv);
+        c *= lerp(half4(1,1,1,1), _PulseColor, t) * _Color;
+        clip(c.a - _Cutoff);
+        return half4(c.rgb, 1.0h);
+      }
+      ENDHLSL
     }
-    ENDCG
+
+    Pass {
+      Tags { "LightMode"="ShadowCaster" }
+      HLSLPROGRAM
+      #pragma vertex Vert
+      #pragma fragment FragShadow
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+      TEXTURE2D(_MainTex);
+      SAMPLER(sampler_MainTex);
+
+      CBUFFER_START(UnityPerMaterial)
+      half _Cutoff;
+      float4 _MainTex_ST;
+      CBUFFER_END
+
+      struct Attributes { float4 positionOS : POSITION; float2 uv : TEXCOORD0; };
+      struct Varyings { float4 positionCS : SV_POSITION; float2 uv : TEXCOORD0; };
+
+      Varyings Vert(Attributes IN) {
+        Varyings OUT;
+        OUT.positionCS = TransformObjectToHClip(IN.positionOS.xyz);
+        OUT.uv = TRANSFORM_TEX(IN.uv, _MainTex);
+        return OUT;
+      }
+
+      half4 FragShadow(Varyings IN) : SV_Target {
+        half a = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv).a;
+        clip(a - _Cutoff);
+        return 0;
+      }
+      ENDHLSL
+    }
   }
-  FallBack "Transparent/Cutout/VertexLit"
+  FallBack Off
 }

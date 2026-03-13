@@ -28,9 +28,10 @@ Category {
 
 
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Pass {
 
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
       #pragma multi_compile_particles
@@ -92,8 +93,10 @@ Category {
         outColor.rgb *= 2.0;
         return outColor;
       }
-      ENDCG
+      ENDHLSL
     }
   }
 }
 }
+
+

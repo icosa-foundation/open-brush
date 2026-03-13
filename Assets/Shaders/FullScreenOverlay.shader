@@ -20,6 +20,7 @@ Shader "Unlit/FullScreenOverlay"
   }
   SubShader
   {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags { "Queue"="Overlay-1" "RenderType"="Transparent" }
     ZTest Always
     ZWrite Off
@@ -28,7 +29,7 @@ Shader "Unlit/FullScreenOverlay"
     Blend SrcAlpha OneMinusSrcAlpha, Zero One
 
     Pass {
-      CGPROGRAM
+      HLSLPROGRAM
         #pragma vertex vert
         #pragma fragment frag
 
@@ -64,7 +65,8 @@ Shader "Unlit/FullScreenOverlay"
         {
           return _Color;
         }
-      ENDCG
+      ENDHLSL
     }
   }
 }
+

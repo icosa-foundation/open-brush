@@ -29,7 +29,7 @@ Shader "Custom/FixDistortionAndReveal" {
   }
 
   SubShader {
-      Lighting Off
+    Tags { "RenderPipeline"="UniversalPipeline" }
       Cull Off
       Zwrite Off
       Blend One One
@@ -142,3 +142,4 @@ Shader "Custom/FixDistortionAndReveal" {
     }
   }
 }
+

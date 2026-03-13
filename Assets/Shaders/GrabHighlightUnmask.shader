@@ -23,8 +23,10 @@ Properties {
 //
 Category {
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
   Tags {"Queue"="AlphaTest+30"}
   Pass {
+    Tags { "LightMode"="SRPDefaultUnlit" }
     ZTest Always
     ZWrite Off
     ColorMask 0
@@ -76,3 +78,4 @@ Category {
     }
   }
 }
+
