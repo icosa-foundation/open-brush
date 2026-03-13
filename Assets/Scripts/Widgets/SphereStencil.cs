@@ -21,20 +21,10 @@ namespace TiltBrush
     {
         public override Vector3 Extents
         {
-            get
-            {
-                return m_Size * Vector3.one;
-            }
+            get { return SphereShape.GetExtents(m_Size); }
             set
             {
-                if (value.x == value.y && value.x == value.z)
-                {
-                    SetSignedWidgetSize(value.x);
-                }
-                else
-                {
-                    throw new ArgumentException("SphereStencil does not support non-uniform extents");
-                }
+                SetSignedWidgetSize(SphereShape.GetSizeFromExtents(value));
             }
         }
 
@@ -47,20 +37,14 @@ namespace TiltBrush
         public override void FindClosestPointOnSurface(Vector3 pos,
                                                        out Vector3 surfacePos, out Vector3 surfaceNorm)
         {
-            Vector3 vCenterToPos = pos - transform.position;
-            float fRadius = Mathf.Abs(GetSignedWidgetSize()) * 0.5f * Coords.CanvasPose.scale;
-            surfacePos = transform.position + vCenterToPos.normalized * fRadius;
-            surfaceNorm = vCenterToPos;
+            SphereShape.FindClosestPointOnSurface(
+                transform, GetSignedWidgetSize(), pos, out surfacePos, out surfaceNorm);
         }
 
         override public float GetActivationScore(
             Vector3 vControllerPos, InputManager.ControllerName name)
         {
-            float fRadius = Mathf.Abs(GetSignedWidgetSize()) * 0.5f * Coords.CanvasPose.scale;
-            float baseScore = (1.0f - (transform.position - vControllerPos).magnitude / fRadius);
-            // don't try to scale if invalid; scaling by zero will make it look valid
-            if (baseScore < 0) { return baseScore; }
-            return baseScore * Mathf.Pow(1 - m_Size / m_MaxSize_CS, 2);
+            return SphereShape.GetActivationScore(transform, GetSignedWidgetSize(), m_MaxSize_CS, vControllerPos);
         }
 
         protected override Axis GetInferredManipulationAxis(
@@ -98,22 +82,9 @@ namespace TiltBrush
 
         public override Bounds GetBounds_SelectionCanvasSpace()
         {
-            if (m_Collider != null)
-            {
-                SphereCollider sphere = m_Collider as SphereCollider;
-                TrTransform colliderToCanvasXf = App.Scene.SelectionCanvas.Pose.inverse *
-                    TrTransform.FromTransform(m_Collider.transform);
-                Bounds bounds = new Bounds(colliderToCanvasXf * sphere.center, Vector3.zero);
-
-                // Spheres are invariant with rotation, so take out the rotation from the transform and just
-                // add the two opposing corners.
-                colliderToCanvasXf.rotation = Quaternion.identity;
-                bounds.Encapsulate(colliderToCanvasXf * (sphere.center + sphere.radius * Vector3.one));
-                bounds.Encapsulate(colliderToCanvasXf * (sphere.center - sphere.radius * Vector3.one));
-
-                return bounds;
-            }
-            return base.GetBounds_SelectionCanvasSpace();
+            return m_Collider != null
+                ? SphereShape.GetSelectionCanvasBounds(m_Collider)
+                : base.GetBounds_SelectionCanvasSpace();
         }
     }
 } // namespace TiltBrush

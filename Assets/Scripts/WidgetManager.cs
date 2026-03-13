@@ -147,6 +147,7 @@ namespace TiltBrush
         private List<GrabWidgetData> m_GrabWidgets;
         private List<TypedWidgetData<ModelWidget>> m_ModelWidgets;
         private List<TypedWidgetData<LightWidget>> m_LightWidgets;
+        private List<TypedWidgetData<PortalSphereWidget>> m_PortalWidgets;
         private List<TypedWidgetData<StencilWidget>> m_StencilWidgets;
         private List<TypedWidgetData<ImageWidget>> m_ImageWidgets;
         private List<TypedWidgetData<TextWidget>> m_TextWidgets;
@@ -306,6 +307,7 @@ namespace TiltBrush
             m_GrabWidgets = new List<GrabWidgetData>();
             m_ModelWidgets = new List<TypedWidgetData<ModelWidget>>();
             m_LightWidgets = new List<TypedWidgetData<LightWidget>>();
+            m_PortalWidgets = new List<TypedWidgetData<PortalSphereWidget>>();
             m_StencilWidgets = new List<TypedWidgetData<StencilWidget>>();
             m_ImageWidgets = new List<TypedWidgetData<ImageWidget>>();
             m_TextWidgets = new List<TypedWidgetData<TextWidget>>();
@@ -398,6 +400,13 @@ namespace TiltBrush
                 if (m_LightWidgets[i].m_WidgetObject.activeSelf)
                 {
                     yield return m_LightWidgets[i];
+                }
+            }
+            for (int i = 0; i < m_PortalWidgets.Count; ++i)
+            {
+                if (m_PortalWidgets[i].m_WidgetObject.activeSelf)
+                {
+                    yield return m_PortalWidgets[i];
                 }
             }
             for (int i = 0; i < m_StencilWidgets.Count; ++i)
@@ -1147,6 +1156,7 @@ namespace TiltBrush
             if (canvas == null) return widgets; // Return empty list
             GetUnselectedActiveWidgetsInList(m_ModelWidgets);
             GetUnselectedActiveWidgetsInList(m_LightWidgets);
+            GetUnselectedActiveWidgetsInList(m_PortalWidgets);
             GetUnselectedActiveWidgetsInList(m_ImageWidgets);
             GetUnselectedActiveWidgetsInList(m_TextWidgets);
             GetUnselectedActiveWidgetsInList(m_VideoWidgets);
@@ -1179,6 +1189,7 @@ namespace TiltBrush
 
                 RefreshPinUnpinWidgetList(m_ModelWidgets);
                 RefreshPinUnpinWidgetList(m_LightWidgets);
+                RefreshPinUnpinWidgetList(m_PortalWidgets);
                 RefreshPinUnpinWidgetList(m_ImageWidgets);
                 RefreshPinUnpinWidgetList(m_TextWidgets);
                 RefreshPinUnpinWidgetList(m_VideoWidgets);
@@ -1251,6 +1262,10 @@ namespace TiltBrush
             {
                 m_LightWidgets.Add(new TypedWidgetData<LightWidget>(light));
             }
+            else if (generic is PortalSphereWidget portal)
+            {
+                m_PortalWidgets.Add(new TypedWidgetData<PortalSphereWidget>(portal));
+            }
             else if (generic is StencilWidget stencil)
             {
                 m_StencilWidgets.Add(new TypedWidgetData<StencilWidget>(stencil));
@@ -1315,6 +1330,7 @@ namespace TiltBrush
 
             if (RemoveFrom(m_ModelWidgets, rWidget)) { return; }
             if (RemoveFrom(m_LightWidgets, rWidget)) { return; }
+            if (RemoveFrom(m_PortalWidgets, rWidget)) { return; }
             if (RemoveFrom(m_StencilWidgets, rWidget)) { return; }
             if (RemoveFrom(m_ImageWidgets, rWidget)) { return; }
             if (RemoveFrom(m_TextWidgets, rWidget)) { return; }
@@ -1492,6 +1508,7 @@ namespace TiltBrush
         {
             DestroyWidgetList(m_ModelWidgets);
             DestroyWidgetList(m_LightWidgets);
+            DestroyWidgetList(m_PortalWidgets);
             DestroyWidgetList(m_ImageWidgets);
             DestroyWidgetList(m_TextWidgets);
             DestroyWidgetList(m_VideoWidgets);

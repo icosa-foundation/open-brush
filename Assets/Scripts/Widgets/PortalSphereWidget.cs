@@ -18,7 +18,7 @@ using UnityEngine.Networking;
 
 namespace TiltBrush
 {
-    public class PortalSphereWidget : SphereStencil
+    public class PortalSphereWidget : ShapeWidget
     {
         private const string kLogPrefix = "[PortalDbg_20260313]";
         private const string kLoadCompareLogPrefix = "[PortalLoadCmp_20260313]";
@@ -56,7 +56,39 @@ namespace TiltBrush
             }
         }
 
-        public override bool ParticipatesInMagnetization => false;
+        public override GrabWidget Clone()
+        {
+            return Clone(transform.position, transform.rotation, GetSignedWidgetSize());
+        }
+
+        public override GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
+        {
+            PortalSphereWidget clone = Instantiate(WidgetManager.m_Instance.PortalWidgetPrefab);
+            clone.m_PreviousCanvas = m_PreviousCanvas;
+            clone.transform.position = position;
+            clone.transform.rotation = rotation;
+            clone.m_SkipIntroAnim = true;
+            clone.m_ShowTimer = clone.m_ShowDuration;
+            clone.transform.parent = transform.parent;
+            clone.Show(true, false);
+            clone.SetSignedWidgetSize(size);
+            clone.CloneInitialMaterials(this);
+            clone.Destination = m_Destination;
+            HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
+            return clone;
+        }
+
+        public override float GetActivationScore(Vector3 controllerPos, InputManager.ControllerName name)
+        {
+            return SphereShape.GetActivationScore(transform, GetSignedWidgetSize(), m_MaxSize_CS, controllerPos);
+        }
+
+        public override Bounds GetBounds_SelectionCanvasSpace()
+        {
+            return m_Collider != null
+                ? SphereShape.GetSelectionCanvasBounds(m_Collider)
+                : base.GetBounds_SelectionCanvasSpace();
+        }
 
         protected override void Awake()
         {
