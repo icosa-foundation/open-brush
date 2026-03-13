@@ -36,12 +36,18 @@ namespace TiltBrush
         private Dictionary<GLTFMaterial, float> _additiveBrushGains;
         // (template material, stroke Color32) → index of per-colour clone in gltfRoot.Materials
         private Dictionary<(GLTFMaterial, Color32), int> _colorModulatedMaterials;
+        // colorKey → cached atlas texture (colorKey = comma-separated sorted RRGGBB hex)
+        private Dictionary<string, Texture2D> _atlasTextureCache;
+        // (template material, colorKey) → index of atlas material clone in gltfRoot.Materials
+        private Dictionary<(GLTFMaterial, string), int> _atlasMaterialCache;
 
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
             _gltfRoot = gltfRoot;
             _additiveBrushGains = new Dictionary<GLTFMaterial, float>();
             _colorModulatedMaterials = new Dictionary<(GLTFMaterial, Color32), int>();
+            _atlasTextureCache = new Dictionary<string, Texture2D>();
+            _atlasMaterialCache = new Dictionary<(GLTFMaterial, string), int>();
             _meshesToBatches = new Dictionary<int, Batch>();
 
             if (Application.isPlaying && App.UserConfig.Export.ExportCustomSkybox)
@@ -415,20 +421,34 @@ namespace TiltBrush
             return idx;
         }
 
-        // KeepStrokes=false: one clone per batch, with TEXCOORD_7 colour atlas injected
+        private static string ColorKey(List<Color32> colors)
+        {
+            return string.Join(",", colors.Select(c => $"{c.r:X2}{c.g:X2}{c.b:X2}"));
+        }
+
+        // KeepStrokes=false: one clone per (source material, color set), with TEXCOORD_n colour atlas injected
         private int GetOrCreateAtlasMaterial(GLTFMaterial source, Batch batch, Mesh mesh, MeshPrimitive primitive, float gain, GLTFSceneExporter exporter)
         {
             // Build colour atlas and per-vertex UV data
             var subsets = batch.m_Groups;
             var uniqueColors = subsets.Select(s => (Color32)s.m_Stroke.m_Color).Distinct().ToList();
             int N = uniqueColors.Count;
+            string colorKey = ColorKey(uniqueColors);
 
-            // Atlas: 1×N pixels (one texel per unique colour)
-            var atlas = new Texture2D(N, 1, TextureFormat.RGBA32, mipChain: false, linear: false);
-            atlas.filterMode = FilterMode.Point;
-            atlas.wrapMode = TextureWrapMode.Clamp;
-            for (int i = 0; i < N; i++) atlas.SetPixel(i, 0, uniqueColors[i]);
-            atlas.Apply();
+            // Reuse cached material clone if this (source, colorSet) was seen before —
+            // but we still need to inject the per-primitive TEXCOORD accessor below.
+            bool materialCached = _atlasMaterialCache.TryGetValue((source, colorKey), out int cachedIdx);
+
+            // Get or create the atlas texture
+            if (!_atlasTextureCache.TryGetValue(colorKey, out Texture2D atlas))
+            {
+                atlas = new Texture2D(N, 1, TextureFormat.RGBA32, mipChain: false, linear: false);
+                atlas.filterMode = FilterMode.Point;
+                atlas.wrapMode = TextureWrapMode.Clamp;
+                for (int i = 0; i < N; i++) atlas.SetPixel(i, 0, uniqueColors[i]);
+                atlas.Apply();
+                _atlasTextureCache[colorKey] = atlas;
+            }
 
             // Per-vertex UV: U = texel centre for this stroke's colour, V = 0.5
             int vertCount = mesh.vertexCount;
@@ -471,13 +491,23 @@ namespace TiltBrush
             var atlasTexInfo = exporter.ExportTextureInfo(atlas, GLTFSceneExporter.TextureMapType.Emissive);
             atlasTexInfo.TexCoord = texCoordIndex;
 
-            var clone = CloneGltfMaterial(source);
-            clone.EmissiveFactor = new GLTF.Math.Color(1f, 1f, 1f, 1f);
-            clone.EmissiveTexture = atlasTexInfo;
-            if (gain > 1f) ApplyEmissiveStrength(clone, gain, exporter);
+            int materialIdx;
+            if (materialCached)
+            {
+                materialIdx = cachedIdx;
+            }
+            else
+            {
+                var clone = CloneGltfMaterial(source);
+                clone.EmissiveFactor = new GLTF.Math.Color(1f, 1f, 1f, 1f);
+                clone.EmissiveTexture = atlasTexInfo;
+                if (gain > 1f) ApplyEmissiveStrength(clone, gain, exporter);
+                _gltfRoot.Materials.Add(clone);
+                materialIdx = _gltfRoot.Materials.Count - 1;
+                _atlasMaterialCache[(source, colorKey)] = materialIdx;
+            }
 
-            _gltfRoot.Materials.Add(clone);
-            return _gltfRoot.Materials.Count - 1;
+            return materialIdx;
         }
 
         private static GLTFMaterial CloneGltfMaterial(GLTFMaterial src) => new GLTFMaterial
