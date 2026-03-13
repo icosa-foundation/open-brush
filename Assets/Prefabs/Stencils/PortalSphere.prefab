@@ -64,7 +64,7 @@ MonoBehaviour:
   m_SpawnPlacementOffset: {x: 0, y: 0, z: 0}
   m_IntroAnimSpinAmount: 360
   m_BoxCollider: {fileID: 0}
-  m_Mesh: {fileID: 0}
+  m_Mesh: {fileID: 4000013021276218}
   m_HighlightMeshXfs: []
   m_ValidSnapRotationStickyAngle: 65
   m_SnapGhostMaterial: {fileID: 2100000, guid: 43172d360a2f0f44798d94e9c440e24b, type: 2}
@@ -73,6 +73,13 @@ MonoBehaviour:
   m_TintColor: {r: 1, g: 1, b: 1, a: 1}
   m_StencilGrabDistance: 1
   m_PointerLiftSlope: 0.0002
+  m_Destination: 
+  m_TriggerWithBrushInside: 1
+  m_AllowRepeatWhileInside: 0
+  m_Command: 0
+  m_CommandParam1: -1
+  m_CommandParam2: -1
+  m_CommandStringParam: 
 --- !u!114 &120208921833142187
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -253,6 +253,69 @@ namespace TiltBrush
             return icon != null;
         }
 
+        public bool TryGetIconForAssetId(string assetId, out Texture2D icon)
+        {
+            icon = null;
+            if (!TryGetSketchForAssetId(assetId, out var sketch, out _))
+            {
+                return false;
+            }
+
+            if (TryGetLoadedIcon(sketch, out icon))
+            {
+                return true;
+            }
+
+            return TryMaterializeCachedIcon(sketch, out icon);
+        }
+
+        public bool TryGetSketchIndexForAssetId(string assetId, out int index)
+        {
+            return TryGetSketchForAssetId(assetId, out _, out index);
+        }
+
+        private bool TryGetSketchForAssetId(string assetId, out IcosaSketch sketch, out int index)
+        {
+            sketch = null;
+            index = -1;
+            if (string.IsNullOrWhiteSpace(assetId))
+            {
+                return false;
+            }
+
+            if (!m_AssetIds.TryGetValue(assetId, out sketch))
+            {
+                return false;
+            }
+
+            index = m_Sketches.IndexOf(sketch);
+            return index >= 0;
+        }
+
+        private static bool TryGetLoadedIcon(IcosaSketch sketch, out Texture2D icon)
+        {
+            icon = sketch.Icon;
+            return icon != null;
+        }
+
+        private static bool TryMaterializeCachedIcon(IcosaSketch sketch, out Texture2D icon)
+        {
+            icon = null;
+            var sceneFileInfo = sketch.IcosaSceneFileInfo;
+            if (!sceneFileInfo.IconDownloaded || string.IsNullOrWhiteSpace(sceneFileInfo.IconPath) ||
+                !File.Exists(sceneFileInfo.IconPath))
+            {
+                return false;
+            }
+
+            byte[] data = File.ReadAllBytes(sceneFileInfo.IconPath);
+            var texture = new Texture2D(2, 2);
+            texture.LoadImage(data);
+            sketch.Icon = texture;
+            icon = texture;
+            return true;
+        }
+
         public SceneFileInfo GetSketchSceneFileInfo(int i)
         {
             return i < m_Sketches.Count ? m_Sketches[i].SceneFileInfo : null;
@@ -832,14 +895,7 @@ namespace TiltBrush
                 foreach (int i in m_RequestedIcons)
                 {
                     IcosaSketch sketch = m_Sketches[i];
-                    string path = sketch.IcosaSceneFileInfo.IconPath;
-                    if (sketch.IcosaSceneFileInfo.IconDownloaded)
-                    {
-                        byte[] data = File.ReadAllBytes(path);
-                        Texture2D t = new Texture2D(2, 2);
-                        t.LoadImage(data);
-                        sketch.Icon = t;
-                    }
+                    TryMaterializeCachedIcon(sketch, out _);
                     yield return null;
                 }
                 m_RequestedIcons.RemoveAll(i => m_Sketches[i].Icon != null);

@@ -347,6 +347,18 @@ namespace TiltBrush
         public GameObject CameraPathFovKnotPrefab { get { return m_CameraPathFovKnotPrefab; } }
         public GameObject CameraPathKnotSegmentPrefab { get { return m_CameraPathKnotSegmentPrefab; } }
 
+        public PortalSphereWidget CreatePortalWidget(TrTransform spawnXf, string destination)
+        {
+            var createCommand = new CreateWidgetCommand(m_PortalWidgetPrefab, spawnXf, forceTransform: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
+            var portalWidget = createCommand.Widget as PortalSphereWidget;
+            if (portalWidget != null)
+            {
+                portalWidget.Destination = destination;
+            }
+            return portalWidget;
+        }
+
         public IEnumerable<GrabWidgetData> ActiveGrabWidgets
         {
             get
@@ -916,8 +928,9 @@ namespace TiltBrush
             if (PointerManager.m_Instance.IsLineEnabled())
             {
                 // If we don't have an active stencil, we're done here.
-                if (m_ActiveStencil == null)
+                if (m_ActiveStencil == null || !m_ActiveStencil.ParticipatesInMagnetization)
                 {
+                    m_ActiveStencil = null;
                     return false;
                 }
 
@@ -942,7 +955,9 @@ namespace TiltBrush
                 float fBestScore = 0;
                 int sIndex = 0;
 
-                IEnumerable<StencilWidget> widgetsToCheck = m_StencilWidgets.Select(w => w.WidgetScript);
+                IEnumerable<StencilWidget> widgetsToCheck = m_StencilWidgets
+                    .Select(w => w.WidgetScript)
+                    .Where(w => w.ParticipatesInMagnetization);
                 if (stencilsToIgnore != null) widgetsToCheck = widgetsToCheck.Except(stencilsToIgnore);
                 foreach (var sw in widgetsToCheck)
                 {

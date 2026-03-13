@@ -62,6 +62,8 @@ namespace TiltBrush
             set { }
         }
 
+        public virtual bool ParticipatesInMagnetization => true;
+
         /// Data that is saved to the .tilt file.
         /// Be very careful when changing this, because it affects the save file format.
         /// This does not really need to be virtual, except to implement the temporary

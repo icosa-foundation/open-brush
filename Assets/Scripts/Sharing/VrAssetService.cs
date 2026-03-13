@@ -1131,9 +1131,10 @@ namespace TiltBrush
             return new AssetLister(uri, errorMessage);
         }
 
-        // Get a specific sketch and insert it into the listed sketches at the specified index.
-        public IEnumerator<object> InsertSketchInfo(
-            string assetId, int index, List<IcosaSceneFileInfo> infos)
+        public IEnumerator GetSketchInfo(
+            string assetId,
+            Action<IcosaSceneFileInfo> onSuccess,
+            Action onFailure = null)
         {
             string uri = String.Format("{0}{1}/{2}", IcosaApiRoot, kListAssetsUri, assetId);
             WebRequest request = new WebRequest(uri, App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
@@ -1149,6 +1150,7 @@ namespace TiltBrush
                     {
                         Debug.LogException(e);
                         Debug.LogError("Failed to fetch sketch " + assetId);
+                        onFailure?.Invoke();
                         yield break;
                     }
                     yield return cr.Current;
@@ -1157,8 +1159,12 @@ namespace TiltBrush
 
             Future<JObject> f = new Future<JObject>(() => JObject.Parse(request.Result));
             JObject json;
-            while (!f.TryGetResult(out json)) { yield return null; }
-            infos.Insert(index, new IcosaSceneFileInfo(json.Root));
+            while (!f.TryGetResult(out json))
+            {
+                yield return null;
+            }
+
+            onSuccess?.Invoke(new IcosaSceneFileInfo(json.Root));
         }
 
         public AssetLister ListAssets(IcosaSetType type, IcosaAssetCatalog.IcosaQueryParameters queryParams)
@@ -1218,9 +1224,17 @@ namespace TiltBrush
                 stream.Close();
             }
 
-            SketchControlsScript.m_Instance.IssueGlobalCommand(
-                SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: path);
-            File.Delete(path);
+            var fileInfo = new DiskSceneFileInfo(path);
+            SketchControlsScript.m_Instance.LoadSketch(fileInfo);
+
+            try
+            {
+                File.Delete(path);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"Could not delete temporary Icosa tilt '{path}': {e}");
+            }
         }
 
         public bool IsValidDeviceCodeSecret(string secret)

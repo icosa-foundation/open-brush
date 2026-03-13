@@ -1193,11 +1193,7 @@ namespace TiltBrush
         )]
         public static void AddPortal(string destination)
         {
-            var portalPrefab = WidgetManager.m_Instance.PortalWidgetPrefab;
-            var cmd = new CreateWidgetCommand(portalPrefab, _CurrentBrushTransform(), forceTransform: true);
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
-            var widget = cmd.Widget as PortalSphereWidget;
-            widget.Destination = destination;
+            WidgetManager.m_Instance.CreatePortalWidget(_CurrentBrushTransform(), destination);
         }
 
 
