@@ -5424,6 +5424,7 @@ namespace TiltBrush
                 LightsControlScript.m_Instance.LightsChanged ||
                 m_WidgetManager.ModelWidgets.Any(w => w.gameObject.activeSelf) ||
                 m_WidgetManager.LightWidgets.Any(w => w.gameObject.activeSelf) ||
+                m_WidgetManager.ActivePortalWidgets.Any() ||
                 m_WidgetManager.StencilWidgets.Any(w => w.gameObject.activeSelf) ||
                 m_WidgetManager.ImageWidgets.Any(w => w.gameObject.activeSelf) ||
                 m_WidgetManager.VideoWidgets.Any(w => w.gameObject.activeSelf) ||
