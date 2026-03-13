@@ -220,6 +220,10 @@ namespace TiltBrush
                         mesh.tangents = null;
                     mf.sharedMesh = mesh;
                     mf.mesh = mesh;
+                    // Swap the per-batch material instance back to the canonical brush material
+                    // so UnityGLTF sees the same Material object reference across all batches
+                    // of the same brush and can deduplicate correctly.
+                    batch.gameObject.GetComponent<Renderer>().sharedMaterial = brush.Material;
                 }
             }
         }
@@ -294,6 +298,8 @@ namespace TiltBrush
                     var mf = batch.gameObject.GetComponent<MeshFilter>();
                     mf.sharedMesh = batch.m_EditorDebugMesh;
                     batch.m_EditorDebugMesh = null;
+                    // Restore the per-batch material instance that runtime code depends on.
+                    batch.gameObject.GetComponent<Renderer>().sharedMaterial = batch.InstantiatedMaterial;
                 }
             }
         }
