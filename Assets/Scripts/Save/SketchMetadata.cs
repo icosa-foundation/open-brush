@@ -721,12 +721,23 @@ namespace TiltBrush
     }
 
     [Serializable]
+    public class TiltPortal
+    {
+        public StencilType ShapeType { get; set; }
+        public TrTransform Transform { get; set; }
+        public string Destination { get; set; }
+        public bool Pinned { get; set; }
+        public uint GroupId { get; set; }
+        public int LayerId { get; set; }
+    }
+
+    [Serializable]
     // Serializable protects data members obfuscator, but we need to also protect
     // method names like ShouldSerializeXxx(...) that are used by Json.NET
     [System.Reflection.Obfuscation(Exclude = true)]
     public class SketchMetadata
     {
-        static public int kSchemaVersion = 2;
+        static public int kSchemaVersion = 3;
 
         // Reference to environment GUID.
         public string EnvironmentPreset;
@@ -838,5 +849,7 @@ namespace TiltBrush
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TiltText[] TextWidgets { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TiltPortal[] Portals { get; set; }
     }
 } // namespace TiltBrush

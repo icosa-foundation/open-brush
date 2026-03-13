@@ -815,6 +815,14 @@ namespace TiltBrush
             }
         }
 
+        public void SetPortalDataFromTilt(TiltPortal[] tiltPortals)
+        {
+            for (int i = 0; i < tiltPortals.Length; ++i)
+            {
+                PortalSphereWidget.FromTiltPortal(tiltPortals[i]);
+            }
+        }
+
 
         public void SetVideoDataFromTilt(TiltVideo[] value)
         {

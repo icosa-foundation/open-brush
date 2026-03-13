@@ -83,6 +83,40 @@ namespace TiltBrush
             return SphereShape.GetActivationScore(transform, GetSignedWidgetSize(), m_MaxSize_CS, controllerPos);
         }
 
+        public TrTransform GetSaveTransform()
+        {
+            var xf = TrTransform.FromLocalTransform(transform);
+            xf.scale = GetSignedWidgetSize();
+            return xf;
+        }
+
+        public static void FromTiltPortal(TiltPortal tiltPortal)
+        {
+            if (tiltPortal.ShapeType != StencilType.Sphere)
+            {
+                Debug.LogWarning($"{kLogPrefix} Unsupported portal shape '{tiltPortal.ShapeType}' while loading portal destination '{tiltPortal.Destination}'");
+                return;
+            }
+
+            PortalSphereWidget portalWidget = Instantiate(WidgetManager.m_Instance.PortalWidgetPrefab);
+            portalWidget.m_SkipIntroAnim = true;
+            portalWidget.transform.parent = App.Instance.m_CanvasTransform;
+            portalWidget.transform.localScale = Vector3.one;
+
+            portalWidget.SetSignedWidgetSize(tiltPortal.Transform.scale);
+            portalWidget.Show(bShow: true, bPlayAudio: false);
+            portalWidget.transform.localPosition = tiltPortal.Transform.translation;
+            portalWidget.transform.localRotation = tiltPortal.Transform.rotation;
+            portalWidget.Destination = tiltPortal.Destination;
+            if (tiltPortal.Pinned)
+            {
+                portalWidget.PinFromSave();
+            }
+            portalWidget.Group = App.GroupManager.GetGroupFromId(tiltPortal.GroupId);
+            portalWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltPortal.LayerId));
+            portalWidget.UpdateScale();
+        }
+
         public override Bounds GetBounds_SelectionCanvasSpace()
         {
             return m_Collider != null
