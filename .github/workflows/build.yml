@@ -1131,17 +1131,17 @@ jobs:
           mv build_macos/*.dmg releases/OpenBrush_Mac_$VERSION.dmg
 
       - name: Publish Windows
-        uses: yeslayla/butler-publish-itchio-action@483157ebeeeb440e2fdc9f162f3fcfc27028c0ef
+        uses: yeslayla/butler-publish-itchio-action@master
         env:
           CHANNEL: windows-${{ env.ITCH_SUBCHANNEL_NAME }}
           PACKAGE: releases/OpenBrush_Desktop_${{ needs.configuration.outputs.version }}
       - name: Publish Quest
-        uses: yeslayla/butler-publish-itchio-action@483157ebeeeb440e2fdc9f162f3fcfc27028c0ef
+        uses: yeslayla/butler-publish-itchio-action@master
         env:
           CHANNEL: android-quest-${{ env.ITCH_SUBCHANNEL_NAME }}
           PACKAGE: releases/OpenBrush_Quest_${{ needs.configuration.outputs.version }}.apk
       - name: Publish Mac
-        uses: yeslayla/butler-publish-itchio-action@483157ebeeeb440e2fdc9f162f3fcfc27028c0ef
+        uses: yeslayla/butler-publish-itchio-action@master
         env:
           CHANNEL: mac-${{ env.ITCH_SUBCHANNEL_NAME }}
           PACKAGE: releases/OpenBrush_Mac_${{ needs.configuration.outputs.version }}.dmg
