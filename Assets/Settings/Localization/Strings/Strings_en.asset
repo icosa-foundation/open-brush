@@ -3792,6 +3792,10 @@ MonoBehaviour:
       Worlds.'
     m_Metadata:
       m_Items: []
+  - m_Id: 475814063085543424
+    m_Localized: Drop Portal
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

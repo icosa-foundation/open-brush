@@ -175,6 +175,31 @@ namespace TiltBrush
             }
         }
 
+        public static TiltPortal[] GetTiltPortals(GroupIdMapping groupIdMapping)
+        {
+            var portals = WidgetManager.m_Instance.ActivePortalWidgets
+                .Select(x => x.WidgetScript)
+                .Where(x => x.gameObject.activeSelf)
+                .ToArray();
+            if (portals.Length == 0)
+            {
+                return null;
+            }
+
+            return portals
+                .OrderBy(x => ByTranslation(x.GetSaveTransform()))
+                .Select(portal => new TiltPortal
+                {
+                    ShapeType = StencilType.Sphere,
+                    Transform = portal.GetSaveTransform(),
+                    Destination = portal.Destination,
+                    Pinned = portal.Pinned,
+                    GroupId = groupIdMapping.GetId(portal.Group),
+                    LayerId = App.Scene.GetIndexOfCanvas(portal.Canvas),
+                })
+                .ToArray();
+        }
+
         public static TiltVideo[] GetTiltVideos(GroupIdMapping groupIdMapping)
         {
             return WidgetManager.m_Instance.VideoWidgets.Where(x => x.gameObject.activeSelf).Select(x => ConvertVideoToTiltVideo(x)).ToArray();
@@ -359,6 +384,10 @@ namespace TiltBrush
             {
                 UpgradeSchema_1to2(data);
             }
+            if (data.SchemaVersion < 3)
+            {
+                UpgradeSchema_2to3(data);
+            }
         }
 
         // Converts data.Set_deprecated[] to data.ModelIndex[].InSet
@@ -474,6 +503,12 @@ namespace TiltBrush
                 tm75.PinStates = SafeAppend(tm75.PinStates, true);
             }
             data.SchemaVersion = 2;
+        }
+
+        static void UpgradeSchema_2to3(SketchMetadata data)
+        {
+            Debug.Assert(data.SchemaVersion == 2);
+            data.SchemaVersion = 3;
         }
     }
 } // namespace TiltBrush

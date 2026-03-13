@@ -1187,6 +1187,17 @@ namespace TiltBrush
         }
 
         [ApiEndpoint(
+            "portal.add",
+            "Adds a portal to the scene",
+            "dLHpzNdygsg"
+        )]
+        public static void AddPortal(string destination)
+        {
+            WidgetManager.m_Instance.CreatePortalWidget(_CurrentBrushTransform(), destination);
+        }
+
+
+        [ApiEndpoint(
             "guide.select",
             "Selects a guide by index.",
             "2"
