@@ -43,6 +43,9 @@ namespace TiltBrush
         [SerializeField] private bool m_AddOverlay = false;
 
         protected Renderer m_ButtonRenderer;
+        private Renderer ButtonRenderer => m_ButtonRenderer != null
+            ? m_ButtonRenderer
+            : (m_ButtonRenderer = GetComponent<Renderer>());
         protected bool m_ToggleActive;
         protected bool m_ButtonSelected;
 
@@ -69,7 +72,7 @@ namespace TiltBrush
 
         protected void RefreshAtlasedMaterial()
         {
-            m_ButtonRenderer.material =
+            ButtonRenderer.material =
                 SketchControlsScript.m_Instance.IconTextureAtlas.GetAppropriateMaterial(
                     m_AtlasFlag_Activated, m_AtlasFlag_Focus);
         }
@@ -165,9 +168,9 @@ namespace TiltBrush
             // If we shouldn't atlas this texture, or we can't find it, fall back to default.
             if (useBackupTexture)
             {
-                if (m_CurrentButtonTexture != null)
+                if (m_CurrentButtonTexture != null && ButtonRenderer != null)
                 {
-                    m_ButtonRenderer.material.mainTexture = m_CurrentButtonTexture;
+                    ButtonRenderer.material.mainTexture = m_CurrentButtonTexture;
                 }
                 m_AtlasTexture = false;
             }
@@ -203,16 +206,19 @@ namespace TiltBrush
             else
             {
                 m_CurrentButtonTexture = rTexture;
-                m_ButtonRenderer.material.mainTexture = rTexture;
+                if (ButtonRenderer != null)
+                {
+                    ButtonRenderer.material.mainTexture = rTexture;
+                }
                 UpdateUVsForAspect(aspect);
             }
         }
 
         protected virtual void SetMaterialFloat(string name, float value)
         {
-            if (!m_AtlasTexture)
+            if (!m_AtlasTexture && ButtonRenderer != null)
             {
-                m_ButtonRenderer.material.SetFloat(name, value);
+                ButtonRenderer.material.SetFloat(name, value);
             }
         }
 
@@ -282,9 +288,9 @@ namespace TiltBrush
                 m_AtlasFlag_Focus = (rColor == Color.white);
                 RefreshAtlasedMaterial();
             }
-            else
+            else if (ButtonRenderer != null)
             {
-                m_ButtonRenderer.material.SetColor("_Color", rColor);
+                ButtonRenderer.material.SetColor("_Color", rColor);
             }
         }
 
@@ -310,10 +316,10 @@ namespace TiltBrush
                 color.a = alpha;
                 secondaryColor.a = alpha2;
             }
-            if (!m_AtlasTexture)
+            if (!m_AtlasTexture && ButtonRenderer != null)
             {
-                m_ButtonRenderer.material.SetColor("_Color", color);
-                m_ButtonRenderer.material.SetColor("_SecondaryColor", secondaryColor);
+                ButtonRenderer.material.SetColor("_Color", color);
+                ButtonRenderer.material.SetColor("_SecondaryColor", secondaryColor);
             }
         }
 
@@ -466,7 +472,7 @@ namespace TiltBrush
                 {
                     aspect = m_CurrentButtonTexture.width / m_CurrentButtonTexture.height;
                 }
-                m_ButtonRenderer.material.SetFloat("_Aspect", aspect);
+                ButtonRenderer.material.SetFloat("_Aspect", aspect);
             }
         }
     }
