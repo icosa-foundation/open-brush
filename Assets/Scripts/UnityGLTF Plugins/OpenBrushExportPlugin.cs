@@ -569,6 +569,7 @@ namespace TiltBrush
                 switch (manifest.m_BlendMode)
                 {
                     case ExportableMaterialBlendMode.AdditiveBlend:
+                        exporter.DeclareExtensionUsage(EXT_blend_operations.EXTENSION_NAME, false);
                         AddExtension(materialNode, EXT_blend_operations.Add);
                         materialNode.AlphaMode = AlphaMode.BLEND;
                         break;
