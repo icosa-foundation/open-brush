@@ -176,6 +176,10 @@ namespace TiltBrush
                         stroke.Recreate(null, canvas);
                         var mesh = stroke.m_Object.GetComponent<MeshFilter>().sharedMesh;
                         mesh = BrushBaker.m_Instance.ProcessMesh(mesh, stroke.m_BrushGuid.ToString());
+                        var strokeShaderName = BrushCatalog.m_Instance.GetBrush(stroke.m_BrushGuid)?.m_Material?.shader?.name;
+                        if (strokeShaderName != "Brush/StandardSingleSided" &&
+                            strokeShaderName != "Brush/StandardDoubleSided")
+                            mesh.tangents = null;
                         stroke.m_Object.GetComponent<MeshFilter>().sharedMesh = mesh;
                         stroke.m_Object.GetComponent<MeshFilter>().mesh = mesh;
                         stroke.m_Object.name = $"{stroke.m_Object.name}_{i}";
@@ -205,6 +209,9 @@ namespace TiltBrush
                     }
                     batch.m_EditorDebugMesh = mf.sharedMesh;
                     mesh = BrushBaker.m_Instance.ProcessMesh(mesh, brush.m_Guid.ToString());
+                    if (brush.shader.name != "Brush/StandardSingleSided" &&
+                        brush.shader.name != "Brush/StandardDoubleSided")
+                        mesh.tangents = null;
                     mf.sharedMesh = mesh;
                     mf.mesh = mesh;
                 }
