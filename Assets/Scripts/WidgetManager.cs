@@ -937,7 +937,7 @@ namespace TiltBrush
             if (PointerManager.m_Instance.IsLineEnabled())
             {
                 // If we don't have an active stencil, we're done here.
-                if (m_ActiveStencil == null || !m_ActiveStencil.ParticipatesInMagnetization)
+                if (m_ActiveStencil == null)
                 {
                     m_ActiveStencil = null;
                     return false;
@@ -965,8 +965,7 @@ namespace TiltBrush
                 int sIndex = 0;
 
                 IEnumerable<StencilWidget> widgetsToCheck = m_StencilWidgets
-                    .Select(w => w.WidgetScript)
-                    .Where(w => w.ParticipatesInMagnetization);
+                    .Select(w => w.WidgetScript);
                 if (stencilsToIgnore != null) widgetsToCheck = widgetsToCheck.Except(stencilsToIgnore);
                 foreach (var sw in widgetsToCheck)
                 {
