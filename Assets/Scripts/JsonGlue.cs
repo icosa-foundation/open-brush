@@ -25,13 +25,9 @@ namespace TiltBrush
     {
         public BadJson(string message) : base(message) { }
         public BadJson(string fmt, params System.Object[] args)
-            : base(string.Format(fmt, args))
-        {
-        }
+          : base(string.Format(fmt, args)) { }
         public BadJson(Exception inner, string fmt, params System.Object[] args)
-            : base(string.Format(fmt, args), inner)
-        {
-        }
+          : base(string.Format(fmt, args), inner) { }
     }
 
     // Extends JsonTextWriter with support for terse array & object formatting, so
@@ -144,6 +140,16 @@ namespace TiltBrush
             }
             WriteEndArray();
         }
+
+        public void WriteValue(float[] v)
+        {
+            WriteStartArray(true);
+            for (var i = 0; i < v.Length; ++i)
+            {
+                WriteValue(v[i]);
+            }
+            WriteEndArray();
+        }
     }
 
     // Supports Unity vectors represented as arrays.
@@ -153,11 +159,11 @@ namespace TiltBrush
 
         public override bool CanConvert(Type objectType)
         {
-            return (objectType == typeof(Vector3)
-                || objectType == typeof(Vector2)
-                || objectType == typeof(Color)
-                || objectType == typeof(Color32)
-                || objectType == typeof(Quaternion));
+            return (objectType == typeof(Vector3) || objectType == typeof(Vector3?)
+                    || objectType == typeof(Vector2) || objectType == typeof(Vector2?)
+                    || objectType == typeof(Color) || objectType == typeof(Color?)
+                    || objectType == typeof(Color32) || objectType == typeof(Color32?)
+                    || objectType == typeof(Quaternion) || objectType == typeof(Quaternion?));
         }
 
         private static float ReadFloat(JsonReader reader)
@@ -178,20 +184,20 @@ namespace TiltBrush
                 throw new TiltBrush.BadJson("Expected array");
             }
             object result;
-            if (objectType == typeof(Vector3))
+            if (objectType == typeof(Vector3) || objectType == typeof(Vector3?))
             {
                 result = new Vector3(
                     ReadFloat(reader),
                     ReadFloat(reader),
                     ReadFloat(reader));
             }
-            else if (objectType == typeof(Vector2))
+            else if (objectType == typeof(Vector2) || objectType == typeof(Vector2?))
             {
                 result = new Vector2(
                     ReadFloat(reader),
                     ReadFloat(reader));
             }
-            else if (objectType == typeof(Color))
+            else if (objectType == typeof(Color) || objectType == typeof(Color?))
             {
                 result = new Color(
                     ReadFloat(reader),
@@ -199,7 +205,7 @@ namespace TiltBrush
                     ReadFloat(reader),
                     ReadFloat(reader));
             }
-            else if (objectType == typeof(Color32))
+            else if (objectType == typeof(Color32) || objectType == typeof(Color32?))
             {
                 result = new Color32(
                     (byte)ReadFloat(reader),
@@ -207,13 +213,13 @@ namespace TiltBrush
                     (byte)ReadFloat(reader),
                     (byte)ReadFloat(reader));
             }
-            else if (objectType == typeof(Quaternion))
+            else if (objectType == typeof(Quaternion) || objectType == typeof(Quaternion?))
             {
                 result = new Quaternion(
-                    ReadFloat(reader),
-                    ReadFloat(reader),
-                    ReadFloat(reader),
-                    ReadFloat(reader));
+                  ReadFloat(reader),
+                  ReadFloat(reader),
+                  ReadFloat(reader),
+                  ReadFloat(reader));
             }
             else
             {
@@ -232,25 +238,29 @@ namespace TiltBrush
         {
             var customWriter = writer as CustomJsonWriter;
             var objectType = value.GetType();
-            if (objectType == typeof(Vector3))
+            if (objectType == typeof(Vector3) || objectType == typeof(Vector3?))
             {
                 customWriter.WriteValue((Vector3)value);
             }
-            else if (objectType == typeof(Vector2))
+            else if (objectType == typeof(Vector2) || objectType == typeof(Vector2?))
             {
                 customWriter.WriteValue((Vector2)value);
             }
-            else if (objectType == typeof(Color))
+            else if (objectType == typeof(Color) || objectType == typeof(Color?))
             {
                 customWriter.WriteValue((Color)value);
             }
-            else if (objectType == typeof(Color32))
+            else if (objectType == typeof(Color32) || objectType == typeof(Color32?))
             {
                 customWriter.WriteValue((Color32)value);
             }
-            else if (objectType == typeof(Quaternion))
+            else if (objectType == typeof(Quaternion) || objectType == typeof(Quaternion?))
             {
                 customWriter.WriteValue((Quaternion)value);
+            }
+            else if (objectType == typeof(float[]))
+            {
+                customWriter.WriteValue((float[])value);
             }
             else
             {
@@ -343,11 +353,12 @@ namespace TiltBrush
         protected override JsonContract CreateContract(Type objectType)
         {
             JsonContract contract = base.CreateContract(objectType);
-            if (objectType == typeof(Vector3)
-                || objectType == typeof(Vector2)
-                || objectType == typeof(Color)
-                || objectType == typeof(Color32)
-                || objectType == typeof(Quaternion))
+            if (objectType == typeof(Vector3) || objectType == typeof(Vector3?)
+                || objectType == typeof(Vector2) || objectType == typeof(Vector2?)
+                || objectType == typeof(Color) || objectType == typeof(Color?)
+                || objectType == typeof(Color32) || objectType == typeof(Color32?)
+                || objectType == typeof(Quaternion) || objectType == typeof(Quaternion?)
+                || objectType == typeof(float[]))
             {
                 contract.Converter = new JsonVectorConverter();
             }
@@ -360,4 +371,4 @@ namespace TiltBrush
         }
     }
 
-} // namespace TiltBrush
+}  // namespace TiltBrush
