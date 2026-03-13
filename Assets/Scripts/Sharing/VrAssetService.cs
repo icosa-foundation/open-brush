@@ -1194,6 +1194,8 @@ namespace TiltBrush
         // Download a tilt file to a temporary file and load it
         public IEnumerator LoadTiltFile(string id)
         {
+            BeginLoadSketchOverlap();
+
             string path = Path.GetTempFileName();
             string uri = String.Format("{0}{1}/{2}", IcosaApiRoot, kListAssetsUri, id);
             WebRequest request = new WebRequest(uri, App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
@@ -1234,6 +1236,27 @@ namespace TiltBrush
             catch (Exception e)
             {
                 Debug.LogWarning($"Could not delete temporary Icosa tilt '{path}': {e}");
+            }
+        }
+
+        private static void BeginLoadSketchOverlap()
+        {
+            if (OverlayManager.m_Instance == null)
+            {
+                return;
+            }
+
+            OverlayManager.m_Instance.SetOverlayFromType(OverlayType.LoadSketch);
+            if (ViewpointScript.m_Instance != null)
+            {
+                if (ViewpointScript.m_Instance.AllowsFading)
+                {
+                    OverlayManager.m_Instance.FadeToCompositor(0);
+                }
+                else
+                {
+                    ViewpointScript.m_Instance.SetOverlayToBlack();
+                }
             }
         }
 

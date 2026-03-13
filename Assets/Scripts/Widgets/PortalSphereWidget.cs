@@ -295,11 +295,6 @@ namespace TiltBrush
                 ? primaryMaterial.GetTextureOffset("_MainTex")
                 : Vector2.zero;
 
-            Debug.Log(
-                $"{kLogPrefix} Applying thumbnail '{DescribeTexture(textureToApply)}' to renderer '{thumbnailRenderer.name}' " +
-                $"material '{primaryMaterial.name}' on {name}. Previous mainTexture='{DescribeTexture(primaryMaterial.mainTexture)}' " +
-                $"scale={previousScale} offset={previousOffset}");
-
             ApplyThumbnailToMaterials(rendererMaterials, textureToApply);
             thumbnailRenderer.materials = rendererMaterials;
             SyncTrackedMaterialCopies(thumbnailRenderer, textureToApply);
