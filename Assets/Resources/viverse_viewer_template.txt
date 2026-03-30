@@ -2,7 +2,7 @@
 <meta charset="utf-8">
 <html>
     <head>
-    <title>viverse icosa viewer v260310</title>
+    <title>viverse icosa viewer v260317</title>
         <script type="importmap" class="es6_modules_map">
             {
                 "imports": {
@@ -202,17 +202,25 @@
 
 					// check data
 					if( !( 'data' in actor.properties )) continue
-
-					// position it
 					const data = actor.properties.data
 
 					// place the eyes_middle at px, py, pz
-					const eye_right                         = actor.properties.character.getObjectByName( "Avatar_EyeR" )
-					const eye_left                          = actor.properties.character.getObjectByName( "Avatar_EyeL" )
-					const eye_right_position                = eye_right.getWorldPosition( new THREE.Vector3())
-					const eye_left_position                 = eye_left.getWorldPosition( new THREE.Vector3())
+					let left_bone, right_bone
+					const target_position = new THREE.Vector3( data.px, data.py, data.pz )
+					actor.properties.character.traverse( child =>{
+						if( child.name.toLowerCase().indexOf( 'eyel' ) != -1 ) left_bone   = child
+						if( child.name.toLowerCase().indexOf( 'eyer' ) != -1 ) right_bone   = child
+					})
+					if( ! left_bone || ! right_bone ){
+						left_bone              = new THREE.Object3d()
+						left_bone.position.copy( target_position )
+
+						right_bone              = new THREE.Object3d()
+						right_bone.position.copy( target_position )
+					}
+					const eye_right_position                = right_bone.getWorldPosition( new THREE.Vector3())
+					const eye_left_position                 = left_bone.getWorldPosition( new THREE.Vector3())
 					const eyes_middle                       = eye_right_position.clone().add( eye_left_position ).multiplyScalar( 1 / 2 )
-					const target_position                   = new THREE.Vector3( data.px, data.py, data.pz )
 					const eyes_offset                       = eyes_middle.clone().sub( actor.properties.character.position )
 					actor.properties.character.position.copy( target_position.clone().sub( eyes_offset ))
 
