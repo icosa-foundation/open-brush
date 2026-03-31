@@ -80,10 +80,10 @@
 	#loadscreen {
 		/*border: 5px solid green;*/
 		/*background-color : rgba( 1, 0, 0, 0.5 )!important;*/
-		background: url("https://cookie-cdn.cookiepro.com/logos/06a4a24e-29c3-4c5b-8678-7829fec7d853/ff49f69a-bd62-40d4-af61-03b56894b347/64f5b61d-8dea-461d-8967-c207167491fa/viverse_logo_horizontal.png"), url("https://openbrush.app/assets/logo.png");
+		background: url("https://f005.backblazeb2.com/file/icosa-gallery/sketch-assets-v2025-11-12/logos/viverse_logo.png"), url("https://f005.backblazeb2.com/file/icosa-gallery/sketch-assets-v2025-11-12/logos/openbrush_logo.png");
 		background-size    : 100%;
 		background-repeat: no-repeat;
-		background-position: center calc(50% - 15%), center calc(50% + 20%);
+		background-position: center calc(50% - 20%), center calc(50% + 25%);
 		background-size: 30%;
 	}
 
