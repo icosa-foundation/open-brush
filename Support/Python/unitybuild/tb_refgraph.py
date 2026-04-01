@@ -112,8 +112,7 @@ def create_dummy_cs(project_dir, command_edges):
 
     cs_name = os.path.join(project_dir, "Assets/Editor/DummyCommandRefs.cs")
     with open(cs_name, "w") as outf:
-        outf.write(
-            """// Copyright 2020 The Tilt Brush Authors
+        outf.write("""// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -136,9 +135,7 @@ public static class DummyCommandRefs {
   static void Use(GlobalCommands c) { UnityEngine.Debug.Log(c.ToString()); }
 
 %s}
-}"""
-            % "\n".join([as_func(fc) for fc in file_to_commands])
-        )
+}""" % "\n".join([as_func(fc) for fc in file_to_commands]))
 
 
 if __name__ == "__main__":
