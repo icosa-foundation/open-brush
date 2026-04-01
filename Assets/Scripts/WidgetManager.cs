@@ -151,6 +151,8 @@ namespace TiltBrush
         private List<TypedWidgetData<ModelWidget>> m_ModelWidgets;
         private List<TypedWidgetData<LightWidget>> m_LightWidgets;
         private List<TypedWidgetData<PortalSphereWidget>> m_PortalWidgets;
+        private List<TypedWidgetData<GaussianCaptureSphereWidget>> m_GaussianCaptureSphereWidgets;
+        private List<TypedWidgetData<GaussianCaptureBoxWidget>> m_GaussianCaptureBoxWidgets;
         private List<TypedWidgetData<StencilWidget>> m_StencilWidgets;
         private List<TypedWidgetData<ImageWidget>> m_ImageWidgets;
         private List<TypedWidgetData<TextWidget>> m_TextWidgets;
@@ -311,6 +313,8 @@ namespace TiltBrush
             m_ModelWidgets = new List<TypedWidgetData<ModelWidget>>();
             m_LightWidgets = new List<TypedWidgetData<LightWidget>>();
             m_PortalWidgets = new List<TypedWidgetData<PortalSphereWidget>>();
+            m_GaussianCaptureSphereWidgets = new List<TypedWidgetData<GaussianCaptureSphereWidget>>();
+            m_GaussianCaptureBoxWidgets = new List<TypedWidgetData<GaussianCaptureBoxWidget>>();
             m_StencilWidgets = new List<TypedWidgetData<StencilWidget>>();
             m_ImageWidgets = new List<TypedWidgetData<ImageWidget>>();
             m_TextWidgets = new List<TypedWidgetData<TextWidget>>();
@@ -1170,6 +1174,8 @@ namespace TiltBrush
             GetUnselectedActiveWidgetsInList(m_ModelWidgets);
             GetUnselectedActiveWidgetsInList(m_LightWidgets);
             GetUnselectedActiveWidgetsInList(m_PortalWidgets);
+            GetUnselectedActiveWidgetsInList(m_GaussianCaptureSphereWidgets);
+            GetUnselectedActiveWidgetsInList(m_GaussianCaptureBoxWidgets);
             GetUnselectedActiveWidgetsInList(m_ImageWidgets);
             GetUnselectedActiveWidgetsInList(m_TextWidgets);
             GetUnselectedActiveWidgetsInList(m_VideoWidgets);
@@ -1203,6 +1209,8 @@ namespace TiltBrush
                 RefreshPinUnpinWidgetList(m_ModelWidgets);
                 RefreshPinUnpinWidgetList(m_LightWidgets);
                 RefreshPinUnpinWidgetList(m_PortalWidgets);
+                RefreshPinUnpinWidgetList(m_GaussianCaptureSphereWidgets);
+                RefreshPinUnpinWidgetList(m_GaussianCaptureBoxWidgets);
                 RefreshPinUnpinWidgetList(m_ImageWidgets);
                 RefreshPinUnpinWidgetList(m_TextWidgets);
                 RefreshPinUnpinWidgetList(m_VideoWidgets);
@@ -1279,6 +1287,14 @@ namespace TiltBrush
             {
                 m_PortalWidgets.Add(new TypedWidgetData<PortalSphereWidget>(portal));
             }
+            else if (generic is GaussianCaptureSphereWidget gcSphere)
+            {
+                m_GaussianCaptureSphereWidgets.Add(new TypedWidgetData<GaussianCaptureSphereWidget>(gcSphere));
+            }
+            else if (generic is GaussianCaptureBoxWidget gcBox)
+            {
+                m_GaussianCaptureBoxWidgets.Add(new TypedWidgetData<GaussianCaptureBoxWidget>(gcBox));
+            }
             else if (generic is StencilWidget stencil)
             {
                 m_StencilWidgets.Add(new TypedWidgetData<StencilWidget>(stencil));
@@ -1344,6 +1360,8 @@ namespace TiltBrush
             if (RemoveFrom(m_ModelWidgets, rWidget)) { return; }
             if (RemoveFrom(m_LightWidgets, rWidget)) { return; }
             if (RemoveFrom(m_PortalWidgets, rWidget)) { return; }
+            if (RemoveFrom(m_GaussianCaptureSphereWidgets, rWidget)) { return; }
+            if (RemoveFrom(m_GaussianCaptureBoxWidgets, rWidget)) { return; }
             if (RemoveFrom(m_StencilWidgets, rWidget)) { return; }
             if (RemoveFrom(m_ImageWidgets, rWidget)) { return; }
             if (RemoveFrom(m_TextWidgets, rWidget)) { return; }
@@ -1522,6 +1540,8 @@ namespace TiltBrush
             DestroyWidgetList(m_ModelWidgets);
             DestroyWidgetList(m_LightWidgets);
             DestroyWidgetList(m_PortalWidgets);
+            DestroyWidgetList(m_GaussianCaptureSphereWidgets);
+            DestroyWidgetList(m_GaussianCaptureBoxWidgets);
             DestroyWidgetList(m_ImageWidgets);
             DestroyWidgetList(m_TextWidgets);
             DestroyWidgetList(m_VideoWidgets);
@@ -1712,6 +1732,10 @@ namespace TiltBrush
             m_LightWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<PortalSphereWidget>> ActivePortalWidgets =>
             m_PortalWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+        public List<TypedWidgetData<GaussianCaptureSphereWidget>> ActiveGaussianCaptureSphereWidgets =>
+            m_GaussianCaptureSphereWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+        public List<TypedWidgetData<GaussianCaptureBoxWidget>> ActiveGaussianCaptureBoxWidgets =>
+            m_GaussianCaptureBoxWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<ModelWidget>> ActiveModelWidgets =>
             m_ModelWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<VideoWidget>> ActiveVideoWidgets =>
