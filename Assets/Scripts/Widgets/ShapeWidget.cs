@@ -27,6 +27,22 @@ namespace TiltBrush
         protected bool m_SkipIntroAnim;
         protected float m_PreviousShowRatio;
 
+        protected virtual IWidgetShape Shape => null;
+
+        public override float GetActivationScore(Vector3 vControllerPos, InputManager.ControllerName name)
+        {
+            return Shape != null
+                ? Shape.GetActivationScore(transform, GetSignedWidgetSize(), m_MaxSize_CS, vControllerPos)
+                : base.GetActivationScore(vControllerPos, name);
+        }
+
+        public override Bounds GetBounds_SelectionCanvasSpace()
+        {
+            return Shape != null
+                ? Shape.GetSelectionCanvasBounds(m_Collider, base.GetBounds_SelectionCanvasSpace())
+                : base.GetBounds_SelectionCanvasSpace();
+        }
+
         protected override void Awake()
         {
             base.Awake();

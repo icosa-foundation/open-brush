@@ -109,6 +109,7 @@ namespace TiltBrush
         [SerializeField] TextWidget m_TextWidgetPrefab;
         [SerializeField] LightWidget m_LightWidgetPrefab;
         [SerializeField] PortalSphereWidget m_PortalWidgetPrefab;
+        [SerializeField] PortalBoxWidget m_PortalBoxWidgetPrefab;
         [SerializeField] SceneLightGizmo m_SceneLightGizmoPrefab;
         [SerializeField] CameraPathWidget m_CameraPathWidgetPrefab;
         [SerializeField] private GameObject m_CameraPathPositionKnotPrefab;
@@ -341,6 +342,7 @@ namespace TiltBrush
         public TextWidget TextWidgetPrefab { get { return m_TextWidgetPrefab; } }
         public LightWidget LightWidgetPrefab { get { return m_LightWidgetPrefab; } }
         public PortalSphereWidget PortalWidgetPrefab { get { return m_PortalWidgetPrefab; } }
+        public PortalBoxWidget PortalBoxWidgetPrefab { get { return m_PortalBoxWidgetPrefab; } }
         public SceneLightGizmo SceneLightGizmoPrefab { get { return m_SceneLightGizmoPrefab; } }
         public CameraPathWidget CameraPathWidgetPrefab { get { return m_CameraPathWidgetPrefab; } }
         public GameObject CameraPathPositionKnotPrefab { get { return m_CameraPathPositionKnotPrefab; } }

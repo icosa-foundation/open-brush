@@ -17,8 +17,16 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-    internal static class SphereShape
+    internal class SphereShape : IWidgetShape
     {
+        public static readonly SphereShape Instance = new SphereShape();
+
+        float IWidgetShape.GetActivationScore(Transform transform, float size, float maxSize, Vector3 controllerPos)
+            => GetActivationScore(transform, size, maxSize, controllerPos);
+
+        Bounds IWidgetShape.GetSelectionCanvasBounds(Collider collider, Bounds fallback)
+            => collider != null ? GetSelectionCanvasBounds(collider) : fallback;
+
         public static Vector3 GetExtents(float size)
         {
             return size * Vector3.one;

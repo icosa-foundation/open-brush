@@ -28,6 +28,8 @@ namespace TiltBrush
             }
         }
 
+        protected override IWidgetShape Shape => SphereShape.Instance;
+
         protected override void Awake()
         {
             base.Awake();
@@ -39,12 +41,6 @@ namespace TiltBrush
         {
             SphereShape.FindClosestPointOnSurface(
                 transform, GetSignedWidgetSize(), pos, out surfacePos, out surfaceNorm);
-        }
-
-        override public float GetActivationScore(
-            Vector3 vControllerPos, InputManager.ControllerName name)
-        {
-            return SphereShape.GetActivationScore(transform, GetSignedWidgetSize(), m_MaxSize_CS, vControllerPos);
         }
 
         protected override Axis GetInferredManipulationAxis(
@@ -80,11 +76,5 @@ namespace TiltBrush
             return axis;
         }
 
-        public override Bounds GetBounds_SelectionCanvasSpace()
-        {
-            return m_Collider != null
-                ? SphereShape.GetSelectionCanvasBounds(m_Collider)
-                : base.GetBounds_SelectionCanvasSpace();
-        }
     }
 } // namespace TiltBrush

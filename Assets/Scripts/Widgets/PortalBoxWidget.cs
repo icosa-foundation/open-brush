@@ -16,9 +16,9 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-    public class PortalSphereWidget : PortalWidgetBase
+    public class PortalBoxWidget : PortalWidgetBase
     {
-        protected override IWidgetShape Shape => SphereShape.Instance;
+        protected override IWidgetShape Shape => BoxShape.Instance;
 
         public override GrabWidget Clone()
         {
@@ -27,7 +27,7 @@ namespace TiltBrush
 
         public override GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
         {
-            PortalSphereWidget clone = Instantiate(WidgetManager.m_Instance.PortalWidgetPrefab);
+            PortalBoxWidget clone = Instantiate(WidgetManager.m_Instance.PortalBoxWidgetPrefab);
             clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.transform.position = position;
             clone.transform.rotation = rotation;
@@ -44,13 +44,13 @@ namespace TiltBrush
 
         public static void FromTiltPortal(TiltPortal tiltPortal)
         {
-            if (tiltPortal.ShapeType != StencilType.Sphere)
+            if (tiltPortal.ShapeType != StencilType.Cube)
             {
                 Debug.LogWarning($"{kLogPrefix} Unsupported portal shape '{tiltPortal.ShapeType}' while loading portal destination '{tiltPortal.Destination}'");
                 return;
             }
 
-            PortalSphereWidget widget = Instantiate(WidgetManager.m_Instance.PortalWidgetPrefab);
+            PortalBoxWidget widget = Instantiate(WidgetManager.m_Instance.PortalBoxWidgetPrefab);
             InitFromTiltPortal(widget, tiltPortal);
         }
     }

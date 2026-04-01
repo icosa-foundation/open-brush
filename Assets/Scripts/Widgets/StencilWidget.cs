@@ -276,11 +276,6 @@ namespace TiltBrush
             }
         }
 
-        protected override void SpoofScaleForShowAnim(float showRatio)
-        {
-            transform.localScale = m_Size * showRatio * Vector3.one;
-        }
-
         override protected void OnUserBeginInteracting()
         {
             base.OnUserBeginInteracting();
