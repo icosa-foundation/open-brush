@@ -78,11 +78,15 @@ public class BrushBaker : MonoBehaviour
         computeShader.SetFloat("_SqueezeAmount", squeezeAmount);
 
         ComputeBuffer uv1Buffer = null;
-        // if we need texcoord1
-        if (mesh.uv2.Length > 0)
+        bool needsUv1Buffer = mapping.ModifyUv1 || mesh.uv2.Length > 0;
+        if (needsUv1Buffer)
         {
             List<Vector4> uv1s = new List<Vector4>();
             mesh.GetUVs(1, uv1s);
+            if (uv1s.Count != mesh.vertexCount)
+            {
+                uv1s = Enumerable.Repeat(Vector4.zero, mesh.vertexCount).ToList();
+            }
             uv1Buffer = new ComputeBuffer(uv1s.Count, sizeof(float) * 4);
             uv1Buffer.SetData(uv1s);
             computeShader.SetBuffer(0, "uv1Buffer", uv1Buffer);
@@ -116,7 +120,7 @@ public class BrushBaker : MonoBehaviour
             mesh.SetUVs(0, newUvs);
         }
 
-        if (mapping.ModifyUv1)
+        if (mapping.ModifyUv1 && uv1Buffer != null)
         {
             var newUv1s = new Vector4[mesh.vertexCount];
             uv1Buffer.GetData(newUv1s);
@@ -126,7 +130,7 @@ public class BrushBaker : MonoBehaviour
         vertexBuffer.Release();
         normalBuffer.Release();
         uvBuffer.Release();
-        if (mesh.uv2.Length > 0)
+        if (uv1Buffer != null)
         {
             uv1Buffer.Release();
         }
