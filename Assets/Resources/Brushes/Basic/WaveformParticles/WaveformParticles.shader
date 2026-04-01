@@ -97,13 +97,11 @@ Category {
         UNITY_INITIALIZE_OUTPUT(v2f, o);
         UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
-        float4 worldPos = mul(unity_ObjectToWorld, v.vertex);
         float3 perVertOffset = v.texcoord1.xyz;
         float lifetime = GetTime().y - v.texcoord1.w;
         o.lifetime = lifetime;
         float release = saturate(lifetime * .1);
         float3 localMidpointPos = v.vertex.xyz - perVertOffset;
-        float4 worldMidpointPos = mul(unity_ObjectToWorld, localMidpointPos);
 
 #ifdef AUDIO_REACTIVE
         lifetime = -lifetime*.1 + _BeatOutputAccum.x;
@@ -113,12 +111,13 @@ Category {
         float time = lifetime;
         float d = 10 + v.color.g * 3;
         float freq = 1.5 + v.color.r;
-        float3 disp = float3(1,0,0) * curlX(worldMidpointPos.xyz * freq + time, d);
-        disp += float3(0,1,0) * curlY(worldMidpointPos.xyz * freq +time, d);
-        disp += float3(0,0,1) * curlZ(worldMidpointPos.xyz * freq + time, d);
+        float3 dispOS = float3(1,0,0) * curlX(localMidpointPos.xyz * freq + time, d);
+        dispOS += float3(0,1,0) * curlY(localMidpointPos.xyz * freq +time, d);
+        dispOS += float3(0,0,1) * curlZ(localMidpointPos.xyz * freq + time, d);
 
-        worldMidpointPos.xyz += release * disp * 10;
-        worldPos.xyz = worldMidpointPos.xyz + perVertOffset;
+        localMidpointPos += release * dispOS * 10;
+        float3 localPos = localMidpointPos + perVertOffset;
+        float4 worldPos = mul(unity_ObjectToWorld, float4(localPos, 1.0));
 
         o.vertex = mul(UNITY_MATRIX_VP, worldPos);
         o.color = v.color;
