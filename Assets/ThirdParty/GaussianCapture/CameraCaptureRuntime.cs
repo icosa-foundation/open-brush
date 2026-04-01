@@ -43,13 +43,13 @@ public class CameraCaptureRuntime : MonoBehaviour
     public int viewsPerRing = 20;
     public float radius = 5f;
     public float heightOffset = 1.5f;
-    private TiltBrush.GaussianCaptureSphereWidget m_SphereWidget;
+    [SerializeField] private TiltBrush.GaussianCaptureSphereWidget m_SphereWidget;
 
     [Header("Volume Capture")]
     public Vector3 volumeCenter = Vector3.zero;
     public Vector3 volumeSize = new Vector3(5, 5, 5);
     public int subdivX = 2, subdivY = 2, subdivZ = 2;
-    private TiltBrush.GaussianCaptureBoxWidget m_CubeWidget;
+    [SerializeField] private TiltBrush.GaussianCaptureBoxWidget m_CubeWidget;
 
     [Header("Transparents/Particles depth")]
     public bool includeTransparentsAndParticles = true;
