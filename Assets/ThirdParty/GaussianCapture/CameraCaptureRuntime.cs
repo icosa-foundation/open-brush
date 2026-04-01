@@ -43,13 +43,13 @@ public class CameraCaptureRuntime : MonoBehaviour
     public int viewsPerRing = 20;
     public float radius = 5f;
     public float heightOffset = 1.5f;
-    private SphereStencil m_SphereWidget;
+    private TiltBrush.GaussianCaptureSphereWidget m_SphereWidget;
 
     [Header("Volume Capture")]
     public Vector3 volumeCenter = Vector3.zero;
     public Vector3 volumeSize = new Vector3(5, 5, 5);
     public int subdivX = 2, subdivY = 2, subdivZ = 2;
-    private CubeStencil m_CubeWidget;
+    private TiltBrush.GaussianCaptureBoxWidget m_CubeWidget;
 
     [Header("Transparents/Particles depth")]
     public bool includeTransparentsAndParticles = true;
@@ -70,7 +70,8 @@ public class CameraCaptureRuntime : MonoBehaviour
     public void StartDomeCapture()
     {
         if (!ValidateCommon(domeMode: true)) return;
-        this.radius = m_SphereWidget.Extents.x;
+        this.target = m_SphereWidget.transform; // cameras look at this transform; position is in scene space
+        this.radius = m_SphereWidget.DomeRadius;
         this.heightOffset = 0;
         if (runtimeSequence)
             StartCoroutine(RuntimeSequenceCoroutine(isDome: true));
@@ -82,8 +83,8 @@ public class CameraCaptureRuntime : MonoBehaviour
     public void StartVolumeCapture()
     {
         if (!ValidateCommon(domeMode: false)) return;
-        this.volumeCenter = m_CubeWidget.transform.position;
-        this.volumeSize = m_CubeWidget.Extents;
+        this.volumeCenter = m_CubeWidget.VolumeCenter;
+        this.volumeSize = m_CubeWidget.VolumeExtents;
 
         if (runtimeSequence)
             StartCoroutine(RuntimeSequenceCoroutine(isDome: false));

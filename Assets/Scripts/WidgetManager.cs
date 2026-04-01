@@ -110,6 +110,8 @@ namespace TiltBrush
         [SerializeField] LightWidget m_LightWidgetPrefab;
         [SerializeField] PortalSphereWidget m_PortalWidgetPrefab;
         [SerializeField] PortalBoxWidget m_PortalBoxWidgetPrefab;
+        [SerializeField] GaussianCaptureSphereWidget m_GaussianCaptureSphereWidgetPrefab;
+        [SerializeField] GaussianCaptureBoxWidget m_GaussianCaptureBoxWidgetPrefab;
         [SerializeField] SceneLightGizmo m_SceneLightGizmoPrefab;
         [SerializeField] CameraPathWidget m_CameraPathWidgetPrefab;
         [SerializeField] private GameObject m_CameraPathPositionKnotPrefab;
@@ -343,6 +345,8 @@ namespace TiltBrush
         public LightWidget LightWidgetPrefab { get { return m_LightWidgetPrefab; } }
         public PortalSphereWidget PortalWidgetPrefab { get { return m_PortalWidgetPrefab; } }
         public PortalBoxWidget PortalBoxWidgetPrefab { get { return m_PortalBoxWidgetPrefab; } }
+        public GaussianCaptureSphereWidget GaussianCaptureSphereWidgetPrefab { get { return m_GaussianCaptureSphereWidgetPrefab; } }
+        public GaussianCaptureBoxWidget GaussianCaptureBoxWidgetPrefab { get { return m_GaussianCaptureBoxWidgetPrefab; } }
         public SceneLightGizmo SceneLightGizmoPrefab { get { return m_SceneLightGizmoPrefab; } }
         public CameraPathWidget CameraPathWidgetPrefab { get { return m_CameraPathWidgetPrefab; } }
         public GameObject CameraPathPositionKnotPrefab { get { return m_CameraPathPositionKnotPrefab; } }
