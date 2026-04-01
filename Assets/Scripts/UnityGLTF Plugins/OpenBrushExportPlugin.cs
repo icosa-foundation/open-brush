@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using GLTF.Schema;
 using Newtonsoft.Json.Linq;
@@ -465,8 +466,8 @@ namespace TiltBrush
             gltfRoot.Asset.Generator = $"Open Brush UnityGLTF Exporter {App.Config.m_VersionNumber}.{App.Config.m_BuildStamp})";
 
             JToken ColorToJString(Color c, bool includeAlpha = false) =>
-                $"{c.r}, {c.g}, {c.b}" + (includeAlpha ? ", {c.a}" : "");
-            JToken Vector3ToJString(Vector3 c) => $"{c.x}, {c.y}, {c.z}";
+                string.Format(CultureInfo.InvariantCulture, "{0}, {1}, {2}" + (includeAlpha ? ", {3}" : ""), c.r, c.g, c.b, c.a);
+            JToken Vector3ToJString(Vector3 c) => string.Format(CultureInfo.InvariantCulture, "{0}, {1}, {2}", c.x, c.y, c.z);
 
             var metadata = new SketchSnapshot().GetSketchMetadata();
 
@@ -485,7 +486,7 @@ namespace TiltBrush
             extras["TB_SkyGradientDirection"] = Vector3ToJString(
                 exportFromUnity * (settings.GradientOrientation * Vector3.up));
             extras["TB_FogColor"] = ColorToJString(settings.FogColor);
-            extras["TB_FogDensity"] = $"{settings.FogDensity}";
+            extras["TB_FogDensity"] = string.Format(CultureInfo.InvariantCulture, "{0}", settings.FogDensity);
             extras["TB_AmbientLightColor"] = ColorToJString(RenderSettings.ambientLight);
             for (int i = 0; i < App.Scene.GetNumLights(); i++)
             {
@@ -502,7 +503,7 @@ namespace TiltBrush
             }
             extras["TB_PoseTranslation"] = Vector3ToJString(pose.translation);
             extras["TB_PoseRotation"] = Vector3ToJString(pose.rotation.eulerAngles);
-            extras["TB_PoseScale"] = $"{pose.scale}";
+            extras["TB_PoseScale"] = string.Format(CultureInfo.InvariantCulture, "{0}", pose.scale);
             extras["TB_ExportedFromVersion"] = App.Config.m_VersionNumber;
 
             TrTransform cameraPose = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
