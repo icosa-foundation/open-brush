@@ -50,6 +50,22 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The dimensions of the Guide Widget")]
+        public Vector3 dimensions
+        {
+            get => _StencilWidget.CustomDimension;
+            set
+            {
+                _StencilWidget.CustomDimension = value;
+            }
+        }
+
+        [LuaDocsDescription("The type of the Guide Widget")]
+        public string guideType
+        {
+            get => _StencilWidget.Type.ToString();
+        }
+
         [LuaDocsDescription("The 3D position of the Guide Widget")]
         public Vector3 position
         {
@@ -133,6 +149,16 @@ namespace TiltBrush
         [LuaDocsParameter("scale", "The scale vector for scaling the Guide Widget")]
         public void Scale(Vector3 scale) => SketchMemoryScript.m_Instance.PerformAndRecordCommand(
             new MoveWidgetCommand(_StencilWidget, _StencilWidget.LocalTransform, scale));
+
+        [LuaDocsDescription("")]
+        [LuaDocsExample("myGuide:ClosestPoint(Vector3:New(2, 3, 4)")]
+        [LuaDocsParameter("point", "")]
+        public TransformApiWrapper ClosestPoint(Vector3 point)
+        {
+            _StencilWidget.FindClosestPointOnSurface(point, out Vector3 closestPoint, out Vector3 normal);
+            Quaternion rotation = Quaternion.LookRotation(Vector3.up, normal);
+            return new TransformApiWrapper(closestPoint, rotation);
+        }
 
         private static GuideApiWrapper _Add(StencilType type, TrTransform tr)
         {
