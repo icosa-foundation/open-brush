@@ -59,8 +59,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.69, y: 0.91, z: 0.01}
-  m_Center: {x: 0.96, y: -0.25, z: -0.06}
+  m_Size: {x: 1.65, y: 1.1, z: 0.01}
+  m_Center: {x: 0.96, y: -0.26, z: -0.06}
 --- !u!114 &114000011997523446
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -93,6 +93,7 @@ MonoBehaviour:
   m_OrderedPageButtons: []
   m_PrevButton: {fileID: 0}
   m_NextButton: {fileID: 0}
+  m_DropPortalButton: {fileID: 8934318447404256555}
 --- !u!114 &114269361560048944
 MonoBehaviour:
   m_ObjectHideFlags: 0

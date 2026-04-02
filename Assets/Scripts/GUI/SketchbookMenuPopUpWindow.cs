@@ -20,13 +20,16 @@ namespace TiltBrush
 
     class SketchbookMenuPopUpWindow : MenuPopUpWindow
     {
+        public Transform m_DropPortalButton;
         private int m_CommandParam;
-        private int m_CommandParam2;
+        private SketchSetType m_SketchSetType;
 
         public override void SetPopupCommandParameters(int iCommandParam, int iCommandParam2)
         {
             m_CommandParam = iCommandParam;
-            m_CommandParam2 = iCommandParam2;
+            m_SketchSetType = (SketchSetType)iCommandParam2;
+            bool isLinkableSketch = m_SketchSetType == SketchSetType.Curated || m_SketchSetType == SketchSetType.User;
+            m_DropPortalButton.gameObject.SetActive(isLinkableSketch);
 
             OptionButton[] optionButtons = GetComponentsInChildren<OptionButton>();
             foreach (OptionButton button in optionButtons)
@@ -50,7 +53,7 @@ namespace TiltBrush
 
         public void SetInitialKeyboardText(KeyboardPopupButton btn)
         {
-            var sceneFileInfo = getSceneFileInfo(btn.m_CommandParam, btn.m_CommandParam2);
+            var sceneFileInfo = getSceneFileInfo(btn.m_CommandParam, m_SketchSetType);
             var currentName = Path.GetFileName(sceneFileInfo.FullPath);
             if (currentName.EndsWith(SaveLoadScript.TILT_SUFFIX))
             {
@@ -59,16 +62,15 @@ namespace TiltBrush
             KeyboardPopUpWindow.m_InitialText = currentName;
         }
 
-        private SceneFileInfo getSceneFileInfo(int commandParam, int commandParam2)
+        private SceneFileInfo getSceneFileInfo(int commandParam, SketchSetType sketchSetType)
         {
-            SketchSetType sketchSetType = (SketchSetType)commandParam2;
             var sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
             return sketchSet.GetSketchSceneFileInfo(commandParam);
         }
 
         public void HandleDropPortalButton()
         {
-            var sceneFileInfo = getSceneFileInfo(m_CommandParam, m_CommandParam2);
+            var sceneFileInfo = getSceneFileInfo(m_CommandParam, m_SketchSetType);
             if (sceneFileInfo == null)
             {
                 Debug.LogWarning("HandleDropPortalButton called without a valid sketch.");
