@@ -28,7 +28,7 @@ namespace TiltBrush
         {
             m_CommandParam = iCommandParam;
             m_SketchSetType = (SketchSetType)iCommandParam2;
-            bool isLinkableSketch = m_SketchSetType == SketchSetType.Curated || m_SketchSetType == SketchSetType.User;
+            bool isLinkableSketch = m_SketchSetType is SketchSetType.Curated or SketchSetType.Liked;
             m_DropPortalButton.gameObject.SetActive(isLinkableSketch);
 
             OptionButton[] optionButtons = GetComponentsInChildren<OptionButton>();
