@@ -63,6 +63,7 @@ public class CameraCaptureRuntime : MonoBehaviour
     private bool isRunning = false;
     private bool cancel = false;
     private Material _eyeDepthMat;
+    private Transform m_VolumeTransform;
 
     public enum OutputFormat { PSHT, PLY }
     public enum TrainingProfile { Splat3, MCMC, ADC }
@@ -104,7 +105,9 @@ public class CameraCaptureRuntime : MonoBehaviour
             Debug.LogError("[GaussianCapture] No GaussianCaptureBoxWidget found in scene. Place one to define the volume capture area.");
             return;
         }
-        // Use world-space position and size: lossyScale incorporates canvas scale and aspect ratio
+        // Store the widget transform so the coroutine can use TransformPoint for rotation support.
+        // volumeCenter/volumeSize kept for Inspector visibility only.
+        m_VolumeTransform = boxWidget.transform;
         this.volumeCenter = boxWidget.transform.position;
         this.volumeSize = boxWidget.transform.lossyScale;
 
@@ -320,12 +323,16 @@ public class CameraCaptureRuntime : MonoBehaviour
             Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
 
             int imageId = 1;
-            Vector3 step = new Vector3(
-                (subdivX > 0 ? volumeSize.x / subdivX : volumeSize.x),
-                (subdivY > 0 ? volumeSize.y / subdivY : volumeSize.y),
-                (subdivZ > 0 ? volumeSize.z / subdivZ : volumeSize.z));
+            // Grid is computed in the widget's local space (range -0.5..0.5 per axis)
+            // and transformed to world space, so widget rotation is respected.
+            int countX = Mathf.Max(1, subdivX);
+            int countY = Mathf.Max(1, subdivY);
+            int countZ = Mathf.Max(1, subdivZ);
+            float stepX = 1f / countX;
+            float stepY = 1f / countY;
+            float stepZ = 1f / countZ;
             List<Vector3> directions = GenerateCustomSphericalDirections();
-            int totalImages = Mathf.Max(1, subdivX * subdivY * subdivZ * directions.Count);
+            int totalImages = Mathf.Max(1, countX * countY * countZ * directions.Count);
             int currentImage = 0;
             int batchSize = 40;
             int batchCounter = 0;
@@ -339,14 +346,17 @@ public class CameraCaptureRuntime : MonoBehaviour
 
                 BakeSkinnedMeshColliders();
 
-                for (int ix = 0; ix < Mathf.Max(1, subdivX); ix++)
+                for (int ix = 0; ix < countX; ix++)
                 {
-                    for (int iy = 0; iy < Mathf.Max(1, subdivY); iy++)
+                    for (int iy = 0; iy < countY; iy++)
                     {
-                        for (int iz = 0; iz < Mathf.Max(1, subdivZ); iz++)
+                        for (int iz = 0; iz < countZ; iz++)
                         {
-                            Vector3 cellCenter = volumeCenter - volumeSize / 2f + step * 0.5f
-                                + new Vector3(ix * step.x, iy * step.y, iz * step.z);
+                            Vector3 localCell = new Vector3(
+                                -0.5f + (ix + 0.5f) * stepX,
+                                -0.5f + (iy + 0.5f) * stepY,
+                                -0.5f + (iz + 0.5f) * stepZ);
+                            Vector3 cellCenter = m_VolumeTransform.TransformPoint(localCell);
 
                             foreach (Vector3 dir in directions)
                             {
