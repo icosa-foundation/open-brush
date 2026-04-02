@@ -732,6 +732,17 @@ namespace TiltBrush
     }
 
     [Serializable]
+    public class TiltGaussianCapture
+    {
+        public StencilType ShapeType { get; set; }
+        public TrTransform Transform { get; set; }
+        public Vector3 AspectRatio { get; set; }
+        public bool Pinned { get; set; }
+        public uint GroupId { get; set; }
+        public int LayerId { get; set; }
+    }
+
+    [Serializable]
     // Serializable protects data members obfuscator, but we need to also protect
     // method names like ShouldSerializeXxx(...) that are used by Json.NET
     [System.Reflection.Obfuscation(Exclude = true)]
@@ -851,5 +862,7 @@ namespace TiltBrush
         public TiltText[] TextWidgets { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TiltPortal[] Portals { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TiltGaussianCapture[] GaussianCaptures { get; set; }
     }
 } // namespace TiltBrush

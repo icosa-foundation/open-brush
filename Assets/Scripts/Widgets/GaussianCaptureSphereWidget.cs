@@ -30,6 +30,22 @@ namespace TiltBrush
         // Scene-space radius of the capture dome.
         public float DomeRadius => m_Size * 0.5f;
 
+        public static void FromTiltGaussianCapture(TiltGaussianCapture tilt)
+        {
+            GaussianCaptureSphereWidget widget =
+                Instantiate(WidgetManager.m_Instance.GaussianCaptureSphereWidgetPrefab);
+            widget.m_SkipIntroAnim = true;
+            widget.transform.parent = App.Instance.m_CanvasTransform;
+            widget.transform.localScale = Vector3.one;
+            widget.SetSignedWidgetSize(tilt.Transform.scale);
+            widget.Show(bShow: true, bPlayAudio: false);
+            widget.transform.localPosition = tilt.Transform.translation;
+            widget.transform.localRotation = tilt.Transform.rotation;
+            if (tilt.Pinned) { widget.PinFromSave(); }
+            widget.Group = App.GroupManager.GetGroupFromId(tilt.GroupId);
+            widget.SetCanvas(App.Scene.GetOrCreateLayer(tilt.LayerId));
+        }
+
         public override GrabWidget Clone()
         {
             return Clone(transform.position, transform.rotation, GetSignedWidgetSize());

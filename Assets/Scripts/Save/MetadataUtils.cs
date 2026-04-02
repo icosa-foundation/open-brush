@@ -200,6 +200,38 @@ namespace TiltBrush
                 .ToArray();
         }
 
+        public static TiltGaussianCapture[] GetTiltGaussianCaptures(GroupIdMapping groupIdMapping)
+        {
+            var spheres = WidgetManager.m_Instance.ActiveGaussianCaptureSphereWidgets
+                .Select(x => x.WidgetScript).Where(x => x.gameObject.activeSelf);
+            var boxes = WidgetManager.m_Instance.ActiveGaussianCaptureBoxWidgets
+                .Select(x => x.WidgetScript).Where(x => x.gameObject.activeSelf);
+
+            var results = spheres
+                .Select(w => new TiltGaussianCapture
+                {
+                    ShapeType = StencilType.Sphere,
+                    Transform = w.GetSaveTransform(),
+                    AspectRatio = Vector3.one,
+                    Pinned = w.Pinned,
+                    GroupId = groupIdMapping.GetId(w.Group),
+                    LayerId = App.Scene.GetIndexOfCanvas(w.Canvas),
+                })
+                .Concat(boxes.Select(w => new TiltGaussianCapture
+                {
+                    ShapeType = StencilType.Cube,
+                    Transform = w.GetSaveTransform(),
+                    AspectRatio = w.CustomDimension,
+                    Pinned = w.Pinned,
+                    GroupId = groupIdMapping.GetId(w.Group),
+                    LayerId = App.Scene.GetIndexOfCanvas(w.Canvas),
+                }))
+                .OrderBy(x => ByTranslation(x.Transform))
+                .ToArray();
+
+            return results.Length == 0 ? null : results;
+        }
+
         public static TiltVideo[] GetTiltVideos(GroupIdMapping groupIdMapping)
         {
             return WidgetManager.m_Instance.VideoWidgets.Where(x => x.gameObject.activeSelf).Select(x => ConvertVideoToTiltVideo(x)).ToArray();

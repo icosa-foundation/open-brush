@@ -859,6 +859,17 @@ namespace TiltBrush
             }
         }
 
+        public void SetGaussianCaptureDataFromTilt(TiltGaussianCapture[] captures)
+        {
+            foreach (var capture in captures)
+            {
+                if (capture.ShapeType == StencilType.Sphere)
+                    GaussianCaptureSphereWidget.FromTiltGaussianCapture(capture);
+                else if (capture.ShapeType == StencilType.Cube)
+                    GaussianCaptureBoxWidget.FromTiltGaussianCapture(capture);
+            }
+        }
+
 
         public void SetVideoDataFromTilt(TiltVideo[] value)
         {

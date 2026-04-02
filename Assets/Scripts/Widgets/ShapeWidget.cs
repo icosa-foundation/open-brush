@@ -106,6 +106,13 @@ namespace TiltBrush
             UpdateMaterialScale();
         }
 
+        public TrTransform GetSaveTransform()
+        {
+            var xf = TrTransform.FromLocalTransform(transform);
+            xf.scale = GetSignedWidgetSize();
+            return xf;
+        }
+
         public override float GetSignedWidgetSize()
         {
             return m_Size;
