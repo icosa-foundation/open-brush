@@ -52,6 +52,10 @@ public class CameraCaptureRuntime : MonoBehaviour
     public Vector3 volumeSize = new Vector3(5, 5, 5);
     public int subdivX = 2, subdivY = 2, subdivZ = 2;
 
+    [Header("Background")]
+    [Tooltip("Render skybox and environment as background (default). Disable to get transparent background for COLMAP masking.")]
+    public bool transparentBackground = false;
+
     [Header("Transparents/Particles depth")]
     public bool includeTransparentsAndParticles = true;
     [Range(0f, 1f)] public float alphaThreshold = 0.05f;
@@ -71,6 +75,87 @@ public class CameraCaptureRuntime : MonoBehaviour
     public void Awake()
     {
         m_Instance = this;
+    }
+
+    // When transparentBackground is off, use RGB24 so sky pixels (alpha=0 in the RT) don't
+    // bleed through into the PNG as transparent — the alpha channel is simply not written.
+    private TextureFormat CaptureTextureFormat =>
+        transparentBackground ? TextureFormat.RGBA32 : TextureFormat.RGB24;
+
+    private void SetupCaptureCamera()
+    {
+        if (transparentBackground)
+        {
+            // Transparent clear: pixels with no geometry stay alpha=0.
+            // Useful as a mask for COLMAP/NeRF training pipelines.
+            cameraToUse.clearFlags = CameraClearFlags.SolidColor;
+            cameraToUse.backgroundColor = new Color(0, 0, 0, 0);
+        }
+        else
+        {
+            // Render skybox and environment as background, matching what the player sees.
+            cameraToUse.clearFlags = CameraClearFlags.Skybox;
+            cameraToUse.backgroundColor = RenderSettings.fogColor;
+        }
+    }
+
+    // Returns world-space camera poses for a dome capture, without performing any capture.
+    // Used by both the capture coroutine and widget visualization.
+    public List<(Vector3 position, Quaternion rotation)> GetDomeCameraPoses(Vector3 center, float r)
+    {
+        var poses = new List<(Vector3, Quaternion)>();
+        for (int ring = 0; ring < numRings; ring++)
+        {
+            float elevation = Mathf.Lerp(-Mathf.PI / 4f, Mathf.PI / 4f,
+                numRings == 1 ? 0.5f : (float)ring / (numRings - 1));
+            for (int i = 0; i < viewsPerRing; i++)
+            {
+                float azimuth = i * Mathf.PI * 2f / viewsPerRing;
+                float x = r * Mathf.Cos(elevation) * Mathf.Cos(azimuth);
+                float y = r * Mathf.Sin(elevation);
+                float z = r * Mathf.Cos(elevation) * Mathf.Sin(azimuth);
+                Vector3 pos = center + new Vector3(x, y + heightOffset, z);
+                poses.Add((pos, Quaternion.LookRotation(center - pos, Vector3.up)));
+            }
+        }
+        return poses;
+    }
+
+    // Returns world-space cell centers for a volume capture grid, without performing any capture.
+    // Used by both the capture coroutine and widget visualization.
+    public List<Vector3> GetVolumeCameraGridCenters(Transform volumeTransform)
+    {
+        var centers = new List<Vector3>();
+        int countX = Mathf.Max(1, subdivX);
+        int countY = Mathf.Max(1, subdivY);
+        int countZ = Mathf.Max(1, subdivZ);
+        float stepX = 1f / countX;
+        float stepY = 1f / countY;
+        float stepZ = 1f / countZ;
+        for (int ix = 0; ix < countX; ix++)
+            for (int iy = 0; iy < countY; iy++)
+                for (int iz = 0; iz < countZ; iz++)
+                {
+                    var localCell = new Vector3(
+                        -0.5f + (ix + 0.5f) * stepX,
+                        -0.5f + (iy + 0.5f) * stepY,
+                        -0.5f + (iz + 0.5f) * stepZ);
+                    centers.Add(volumeTransform.TransformPoint(localCell));
+                }
+        return centers;
+    }
+
+    // Returns world-space camera poses (position + rotation) for all volume capture views.
+    // Combines grid cell centers with all spherical capture directions.
+    public List<(Vector3 position, Quaternion rotation)> GetVolumeCameraPoses(Transform volumeTransform)
+    {
+        var poses = new List<(Vector3, Quaternion)>();
+        var centers = GetVolumeCameraGridCenters(volumeTransform);
+        var directions = GenerateCustomSphericalDirections();
+        foreach (var center in centers)
+            foreach (var dir in directions)
+                poses.Add((center, Quaternion.LookRotation(dir, Vector3.up)));
+        return poses;
     }
 
     [ContextMenu("Start Dome Capture")]
@@ -207,13 +292,14 @@ public class CameraCaptureRuntime : MonoBehaviour
             imgWriter.WriteLine("# IMAGE_ID, QW, QX, QY, QZ, TX, TY, TZ, CAMERA_ID, IMAGE_NAME");
             imgWriter.WriteLine("# POINTS2D[] as X, Y, POINT3D_ID");
 
-            RenderTexture rt = new RenderTexture(width, height, 32, RenderTextureFormat.ARGBFloat);
-            Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            RenderTexture rt = new RenderTexture(width, height, 32, RenderTextureFormat.Default, RenderTextureReadWrite.sRGB);
+            Texture2D tex = new Texture2D(width, height, CaptureTextureFormat, false);
 
             int imageId = 1;
             int batchSize = 40;
             int batchCounter = 0;
-            int totalImages = viewsPerRing * Mathf.Max(1, numRings);
+            var poses = GetDomeCameraPoses(target.position, radius);
+            int totalImages = poses.Count;
             int currentImage = 0;
 
             using (StreamWriter writer3D = new StreamWriter(Path.Combine(folderPath, "points3D.txt")))
@@ -224,22 +310,14 @@ public class CameraCaptureRuntime : MonoBehaviour
 
                 BakeSkinnedMeshColliders();
 
-                for (int ring = 0; ring < numRings; ring++)
+                foreach (var (position, rotation) in poses)
                 {
-                    float elevation = Mathf.Lerp(-Mathf.PI / 4f, Mathf.PI / 4f, (numRings == 1) ? 0.5f : (float)ring / (numRings - 1));
-                    for (int i = 0; i < viewsPerRing; i++)
-                    {
-                        if (cancel) { CleanupRT(ref cameraToUse, ref rt, ref tex); isRunning = false; yield break; }
+                    if (cancel) { CleanupRT(ref cameraToUse, ref rt, ref tex); isRunning = false; yield break; }
 
                         float progress = (float)currentImage / Mathf.Max(1, totalImages);
                         ReportProgress(progress, $"Dome Capture {currentImage + 1}/{totalImages}");
 
-                        float azimuth = i * Mathf.PI * 2f / viewsPerRing;
-                        float x = radius * Mathf.Cos(elevation) * Mathf.Cos(azimuth);
-                        float y = radius * Mathf.Sin(elevation);
-                        float z = radius * Mathf.Cos(elevation) * Mathf.Sin(azimuth);
-                        Vector3 position = target.position + new Vector3(x, y + heightOffset, z);
-                        cameraToUse.transform.SetPositionAndRotation(position, Quaternion.LookRotation(target.position - position, Vector3.up));
+                        cameraToUse.transform.SetPositionAndRotation(position, rotation);
 
                         Matrix4x4 worldToCamera = cameraToUse.worldToCameraMatrix;
                         Matrix4x4 unityToColmap = Matrix4x4.Scale(new Vector3(1, -1, -1));
@@ -251,8 +329,7 @@ public class CameraCaptureRuntime : MonoBehaviour
 
                         string imageName = $"view_{imageId:D3}.png";
                         string imagePath = Path.Combine(folderPath, imageName);
-                        cameraToUse.clearFlags = CameraClearFlags.SolidColor;
-                        cameraToUse.backgroundColor = new Color(0, 0, 0, 0);
+                        SetupCaptureCamera();
                         cameraToUse.targetTexture = rt;
                         cameraToUse.Render();
                         RenderTexture.active = rt;
@@ -269,11 +346,10 @@ public class CameraCaptureRuntime : MonoBehaviour
                         batchCounter++;
                         currentImage++;
 
-                        if (batchCounter >= batchSize)
-                        {
-                            BatchMemoryStep(ref rt, ref tex);
-                            yield return null;
-                        }
+                    if (batchCounter >= batchSize)
+                    {
+                        BatchMemoryStep(ref rt, ref tex);
+                        yield return null;
                     }
                 }
             }
@@ -319,20 +395,13 @@ public class CameraCaptureRuntime : MonoBehaviour
             imgWriter.WriteLine("# IMAGE_ID, QW, QX, QY, QZ, TX, TY, TZ, CAMERA_ID, IMAGE_NAME");
             imgWriter.WriteLine("# POINTS2D[] as X, Y, POINT3D_ID");
 
-            RenderTexture rt = new RenderTexture(width, height, 32, RenderTextureFormat.ARGBFloat);
-            Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            RenderTexture rt = new RenderTexture(width, height, 32, RenderTextureFormat.Default, RenderTextureReadWrite.sRGB);
+            Texture2D tex = new Texture2D(width, height, CaptureTextureFormat, false);
 
             int imageId = 1;
-            // Grid is computed in the widget's local space (range -0.5..0.5 per axis)
-            // and transformed to world space, so widget rotation is respected.
-            int countX = Mathf.Max(1, subdivX);
-            int countY = Mathf.Max(1, subdivY);
-            int countZ = Mathf.Max(1, subdivZ);
-            float stepX = 1f / countX;
-            float stepY = 1f / countY;
-            float stepZ = 1f / countZ;
+            var cellCenters = GetVolumeCameraGridCenters(m_VolumeTransform);
             List<Vector3> directions = GenerateCustomSphericalDirections();
-            int totalImages = Mathf.Max(1, countX * countY * countZ * directions.Count);
+            int totalImages = Mathf.Max(1, cellCenters.Count * directions.Count);
             int currentImage = 0;
             int batchSize = 40;
             int batchCounter = 0;
@@ -346,82 +415,69 @@ public class CameraCaptureRuntime : MonoBehaviour
 
                 BakeSkinnedMeshColliders();
 
-                for (int ix = 0; ix < countX; ix++)
+                foreach (var cellCenter in cellCenters)
                 {
-                    for (int iy = 0; iy < countY; iy++)
+                    foreach (Vector3 dir in directions)
                     {
-                        for (int iz = 0; iz < countZ; iz++)
+                        if (cancel) { CleanupRT(ref cameraToUse, ref rt, ref tex); isRunning = false; yield break; }
+
+                        float progress = (float)currentImage / totalImages;
+                        ReportProgress(progress, $"Volume Capture {currentImage + 1}/{totalImages} Skipped:{imagesSkipped}");
+
+                        cameraToUse.transform.SetPositionAndRotation(cellCenter, Quaternion.LookRotation(dir, Vector3.up));
+
+                        Plane[] planes = GeometryUtility.CalculateFrustumPlanes(cameraToUse);
+                        bool objectVisible = false;
+                        foreach (Renderer renderer in GameObject.FindObjectsOfType<Renderer>())
                         {
-                            Vector3 localCell = new Vector3(
-                                -0.5f + (ix + 0.5f) * stepX,
-                                -0.5f + (iy + 0.5f) * stepY,
-                                -0.5f + (iz + 0.5f) * stepZ);
-                            Vector3 cellCenter = m_VolumeTransform.TransformPoint(localCell);
-
-                            foreach (Vector3 dir in directions)
+                            if (GeometryUtility.TestPlanesAABB(planes, renderer.bounds))
                             {
-                                if (cancel) { CleanupRT(ref cameraToUse, ref rt, ref tex); isRunning = false; yield break; }
-
-                                float progress = (float)currentImage / totalImages;
-                                ReportProgress(progress, $"Volume Capture {currentImage + 1}/{totalImages} Skipped:{imagesSkipped}");
-
-                                cameraToUse.transform.SetPositionAndRotation(cellCenter, Quaternion.LookRotation(dir, Vector3.up));
-
-                                Plane[] planes = GeometryUtility.CalculateFrustumPlanes(cameraToUse);
-                                bool objectVisible = false;
-                                foreach (Renderer renderer in GameObject.FindObjectsOfType<Renderer>())
-                                {
-                                    if (GeometryUtility.TestPlanesAABB(planes, renderer.bounds))
-                                    {
-                                        objectVisible = true;
-                                        break;
-                                    }
-                                }
-                                if (!objectVisible)
-                                {
-                                    imagesSkipped++;
-                                    currentImage++;
-                                    continue;
-                                }
-
-                                Matrix4x4 worldToCamera = cameraToUse.worldToCameraMatrix;
-                                Matrix4x4 unityToColmap = Matrix4x4.Scale(new Vector3(1, -1, -1));
-                                Matrix4x4 colmapMatrix = unityToColmap * worldToCamera;
-                                Matrix4x4 R = colmapMatrix;
-                                R.SetColumn(3, new Vector4(0, 0, 0, 1));
-                                Quaternion q = QuaternionFromMatrix(R);
-                                Vector3 t = new Vector3(colmapMatrix.m03, colmapMatrix.m13, colmapMatrix.m23);
-
-                                string imageName = $"vol_{imageId:D4}.png";
-                                string imagePath = Path.Combine(folderPath, imageName);
-
-                                cameraToUse.clearFlags = CameraClearFlags.SolidColor;
-                                cameraToUse.backgroundColor = new Color(0, 0, 0, 0);
-                                cameraToUse.targetTexture = rt;
-                                cameraToUse.Render();
-                                RenderTexture.active = rt;
-                                tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-                                tex.Apply();
-
-                                CapturePointCloudFromCamera(cameraToUse, tex, raysPerView, writer3D, imageId, ref pointId);
-
-                                byte[] pngData = tex.EncodeToPNG();
-                                File.WriteAllBytes(imagePath, pngData);
-                                pngData = null;
-
-                                imgWriter.WriteLine($"{imageId} {q.w.ToString(CultureInfo.InvariantCulture)} {q.x.ToString(CultureInfo.InvariantCulture)} {q.y.ToString(CultureInfo.InvariantCulture)} {q.z.ToString(CultureInfo.InvariantCulture)} {t.x.ToString(CultureInfo.InvariantCulture)} {t.y.ToString(CultureInfo.InvariantCulture)} {t.z.ToString(CultureInfo.InvariantCulture)} 1 {imageName}");
-                                imgWriter.WriteLine();
-
-                                imageId++;
-                                currentImage++;
-                                batchCounter++;
-
-                                if (batchCounter >= batchSize)
-                                {
-                                    BatchMemoryStep(ref rt, ref tex);
-                                    yield return null;
-                                }
+                                objectVisible = true;
+                                break;
                             }
+                        }
+                        if (!objectVisible)
+                        {
+                            imagesSkipped++;
+                            currentImage++;
+                            continue;
+                        }
+
+                        Matrix4x4 worldToCamera = cameraToUse.worldToCameraMatrix;
+                        Matrix4x4 unityToColmap = Matrix4x4.Scale(new Vector3(1, -1, -1));
+                        Matrix4x4 colmapMatrix = unityToColmap * worldToCamera;
+                        Matrix4x4 R = colmapMatrix;
+                        R.SetColumn(3, new Vector4(0, 0, 0, 1));
+                        Quaternion q = QuaternionFromMatrix(R);
+                        Vector3 t = new Vector3(colmapMatrix.m03, colmapMatrix.m13, colmapMatrix.m23);
+
+                        string imageName = $"vol_{imageId:D4}.png";
+                        string imagePath = Path.Combine(folderPath, imageName);
+
+                        SetupCaptureCamera();
+                        cameraToUse.targetTexture = rt;
+                        cameraToUse.Render();
+                        RenderTexture.active = rt;
+                        tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+                        tex.Apply();
+
+                        CapturePointCloudFromCamera(cameraToUse, tex, raysPerView, writer3D, imageId, ref pointId);
+
+                        byte[] pngData = tex.EncodeToPNG();
+                        File.WriteAllBytes(imagePath, pngData);
+                        pngData = null;
+
+                        imgWriter.WriteLine($"{imageId} {q.w.ToString(CultureInfo.InvariantCulture)} {q.x.ToString(CultureInfo.InvariantCulture)} {q.y.ToString(CultureInfo.InvariantCulture)} {q.z.ToString(CultureInfo.InvariantCulture)} {t.x.ToString(CultureInfo.InvariantCulture)} {t.y.ToString(CultureInfo.InvariantCulture)} {t.z.ToString(CultureInfo.InvariantCulture)} 1 {imageName}");
+                        imgWriter.WriteLine();
+
+                        imageId++;
+                        currentImage++;
+                        batchCounter++;
+
+                        if (batchCounter >= batchSize)
+                        {
+                            BatchMemoryStep(ref rt, ref tex);
+                            yield return null;
                         }
                     }
                 }
@@ -464,7 +520,7 @@ public class CameraCaptureRuntime : MonoBehaviour
         SafeDestroy(tex);
         Resources.UnloadUnusedAssets();
         GC.Collect();
-        rt = new RenderTexture(width, height, 32, RenderTextureFormat.ARGBFloat);
+        rt = new RenderTexture(width, height, 32, RenderTextureFormat.Default, RenderTextureReadWrite.sRGB);
         tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
     }
 
