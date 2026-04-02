@@ -36,6 +36,12 @@ namespace TiltBrush
         // Scene-space radius of the capture dome.
         public float DomeRadius => m_Size * 0.5f;
 
+        protected override void Awake()
+        {
+            base.Awake();
+            RestoreStencilWidgetLayers();
+        }
+
         protected override void OnUpdate()
         {
             base.OnUpdate();
@@ -45,6 +51,18 @@ namespace TiltBrush
         private void OnDestroy()
         {
             ClearPreviewMarkers();
+        }
+
+        public override void RestoreGameObjectLayer(int layer)
+        {
+            HierarchyUtils.RecursivelySetLayer(transform, layer);
+            RestoreStencilWidgetLayers();
+        }
+
+        protected override void InitPin()
+        {
+            base.InitPin();
+            RestoreStencilWidgetLayers();
         }
 
         private void OnDrawGizmosSelected()

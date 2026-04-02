@@ -86,6 +86,7 @@ namespace TiltBrush
         protected override void Awake()
         {
             base.Awake();
+            RestoreStencilWidgetLayers();
             Renderer thumbnailRenderer = GetThumbnailRenderer();
             if (thumbnailRenderer != null)
             {
@@ -115,6 +116,18 @@ namespace TiltBrush
             StopLoadingVisuals();
             ReleaseOwnedThumbnail();
             base.OnDestroy();
+        }
+
+        public override void RestoreGameObjectLayer(int layer)
+        {
+            HierarchyUtils.RecursivelySetLayer(transform, layer);
+            RestoreStencilWidgetLayers();
+        }
+
+        protected override void InitPin()
+        {
+            base.InitPin();
+            RestoreStencilWidgetLayers();
         }
 
         protected override void OnUpdate()

@@ -158,5 +158,18 @@ namespace TiltBrush
         {
             transform.localScale = m_Size * showRatio * Vector3.one;
         }
+
+        protected void RestoreStencilWidgetLayers()
+        {
+            int layerIndex = Pinned ? WidgetManager.m_Instance.PinnedStencilLayerIndex :
+                WidgetManager.m_Instance.StencilLayerIndex;
+
+            // Keep the collider on the stencil layer so stencil-specific physics queries still work.
+            m_Collider.gameObject.layer = WidgetManager.m_Instance.StencilLayerIndex;
+            for (int i = 0; i < m_TintableMeshes.Length; ++i)
+            {
+                m_TintableMeshes[i].gameObject.layer = layerIndex;
+            }
+        }
     }
 } // namespace TiltBrush
