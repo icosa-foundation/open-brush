@@ -3627,6 +3627,10 @@ MonoBehaviour:
     m_Key: POPUP_SKETCHMENU_BUTTON_DESCRIPTION_PORTAL
     m_Metadata:
       m_Items: []
+  - m_Id: 482980427487338496
+    m_Key: LABS_PANEL_GAUSSIAN_CAPTURE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

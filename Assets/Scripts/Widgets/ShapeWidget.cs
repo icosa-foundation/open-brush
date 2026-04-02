@@ -32,7 +32,7 @@ namespace TiltBrush
         public override float GetActivationScore(Vector3 vControllerPos, InputManager.ControllerName name)
         {
             return Shape != null
-                ? Shape.GetActivationScore(transform, GetSignedWidgetSize(), m_MaxSize_CS, vControllerPos)
+                ? Shape.GetActivationScore(transform, m_Collider, GetSignedWidgetSize(), m_MaxSize_CS, vControllerPos)
                 : base.GetActivationScore(vControllerPos, name);
         }
 

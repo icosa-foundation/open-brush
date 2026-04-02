@@ -5,6 +5,7 @@ using System.IO;
 using System.Globalization;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Diagnostics;
 using TiltBrush;
 using Debug = UnityEngine.Debug;
@@ -12,6 +13,8 @@ using Debug = UnityEngine.Debug;
 [DisallowMultipleComponent]
 public class CameraCaptureRuntime : MonoBehaviour
 {
+    public static CameraCaptureRuntime m_Instance;
+
     [Header("Common")]
     public Camera cameraToUse;
     public int width = 1920;
@@ -43,13 +46,11 @@ public class CameraCaptureRuntime : MonoBehaviour
     public int viewsPerRing = 20;
     public float radius = 5f;
     public float heightOffset = 1.5f;
-    [SerializeField] private TiltBrush.GaussianCaptureSphereWidget m_SphereWidget;
 
     [Header("Volume Capture")]
     public Vector3 volumeCenter = Vector3.zero;
     public Vector3 volumeSize = new Vector3(5, 5, 5);
     public int subdivX = 2, subdivY = 2, subdivZ = 2;
-    [SerializeField] private TiltBrush.GaussianCaptureBoxWidget m_CubeWidget;
 
     [Header("Transparents/Particles depth")]
     public bool includeTransparentsAndParticles = true;
@@ -66,12 +67,24 @@ public class CameraCaptureRuntime : MonoBehaviour
     public enum OutputFormat { PSHT, PLY }
     public enum TrainingProfile { Splat3, MCMC, ADC }
 
+    public void Awake()
+    {
+        m_Instance = this;
+    }
+
     [ContextMenu("Start Dome Capture")]
     public void StartDomeCapture()
     {
         if (!ValidateCommon(domeMode: true)) return;
-        this.target = m_SphereWidget.transform; // cameras look at this transform; position is in scene space
-        this.radius = m_SphereWidget.DomeRadius;
+        var sphereWidget = TiltBrush.WidgetManager.m_Instance.ActiveGaussianCaptureSphereWidgets
+            .Select(d => d.WidgetScript).FirstOrDefault();
+        if (sphereWidget == null)
+        {
+            Debug.LogError("[GaussianCapture] No GaussianCaptureSphereWidget found in scene. Place one to define the dome capture volume.");
+            return;
+        }
+        this.target = sphereWidget.transform;
+        this.radius = sphereWidget.DomeRadius;
         this.heightOffset = 0;
         if (runtimeSequence)
             StartCoroutine(RuntimeSequenceCoroutine(isDome: true));
@@ -83,8 +96,15 @@ public class CameraCaptureRuntime : MonoBehaviour
     public void StartVolumeCapture()
     {
         if (!ValidateCommon(domeMode: false)) return;
-        this.volumeCenter = m_CubeWidget.VolumeCenter;
-        this.volumeSize = m_CubeWidget.VolumeExtents;
+        var boxWidget = TiltBrush.WidgetManager.m_Instance.ActiveGaussianCaptureBoxWidgets
+            .Select(d => d.WidgetScript).FirstOrDefault();
+        if (boxWidget == null)
+        {
+            Debug.LogError("[GaussianCapture] No GaussianCaptureBoxWidget found in scene. Place one to define the volume capture area.");
+            return;
+        }
+        this.volumeCenter = boxWidget.VolumeCenter;
+        this.volumeSize = boxWidget.VolumeExtents;
 
         if (runtimeSequence)
             StartCoroutine(RuntimeSequenceCoroutine(isDome: false));

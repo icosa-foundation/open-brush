@@ -20,16 +20,31 @@ namespace TiltBrush
     {
         public static readonly BoxShape Instance = new BoxShape();
 
-        public float GetActivationScore(Transform transform, float size, float maxSize, Vector3 controllerPos)
+        public float GetActivationScore(Transform transform, Collider collider, float size, float maxSize, Vector3 controllerPos)
         {
-            float halfExtent = size * 0.5f * Coords.CanvasPose.scale;
-            Vector3 localPos = transform.InverseTransformPoint(controllerPos);
-            float xDiff = halfExtent - Mathf.Abs(localPos.x);
-            float yDiff = halfExtent - Mathf.Abs(localPos.y);
-            float zDiff = halfExtent - Mathf.Abs(localPos.z);
-            if (xDiff <= 0f || yDiff <= 0f || zDiff <= 0f) return -1f;
-            float baseScore = (xDiff / halfExtent + yDiff / halfExtent + zDiff / halfExtent) * 0.333f;
-            return baseScore * Mathf.Pow(1 - size / maxSize, 2);
+            BoxCollider box = collider as BoxCollider;
+            if (box != null)
+            {
+                Vector3 half = box.size * 0.5f;
+                Vector3 localPos = box.transform.InverseTransformPoint(controllerPos);
+                float xDiff = half.x - Mathf.Abs(localPos.x);
+                float yDiff = half.y - Mathf.Abs(localPos.y);
+                float zDiff = half.z - Mathf.Abs(localPos.z);
+                if (xDiff <= 0f || yDiff <= 0f || zDiff <= 0f) return -1f;
+                float baseScore = (xDiff / half.x + yDiff / half.y + zDiff / half.z) * 0.333f;
+                return baseScore * Mathf.Pow(1 - size / maxSize, 2);
+            }
+            else
+            {
+                float halfExtent = size * 0.5f * Coords.CanvasPose.scale;
+                Vector3 localPos = transform.InverseTransformPoint(controllerPos);
+                float xDiff = halfExtent - Mathf.Abs(localPos.x);
+                float yDiff = halfExtent - Mathf.Abs(localPos.y);
+                float zDiff = halfExtent - Mathf.Abs(localPos.z);
+                if (xDiff <= 0f || yDiff <= 0f || zDiff <= 0f) return -1f;
+                float baseScore = (xDiff / halfExtent + yDiff / halfExtent + zDiff / halfExtent) * 0.333f;
+                return baseScore * Mathf.Pow(1 - size / maxSize, 2);
+            }
         }
 
         public Bounds GetSelectionCanvasBounds(Collider collider, Bounds fallback)

@@ -25,16 +25,16 @@ namespace TiltBrush
     [Serializable]
     public enum StencilType
     {
-        Plane,
-        Cube,
-        Sphere,
-        Capsule,
-        Cone,
-        Cylinder,
-        InteriorDome,
-        Pyramid,
-        Ellipsoid,
-        Custom
+        Plane = 0,
+        Cube = 1,
+        Sphere = 2,
+        Capsule = 3,
+        Cone = 4,
+        Cylinder = 5,
+        InteriorDome = 6,
+        Pyramid = 7,
+        Ellipsoid = 8,
+        Custom = 9,
     }
 
     [Serializable]
@@ -371,6 +371,18 @@ namespace TiltBrush
             return portalWidget;
         }
 
+        public void CreateGaussianCaptureWidget(TrTransform spawnXf, StencilType stencilType)
+        {
+            GrabWidget prefab = stencilType switch
+            {
+                StencilType.Cube => m_GaussianCaptureBoxWidgetPrefab,
+                StencilType.Sphere => m_GaussianCaptureSphereWidgetPrefab,
+                _ => throw new ArgumentOutOfRangeException(nameof(stencilType), stencilType, null)
+            };
+            var createCommand = new CreateWidgetCommand(prefab, spawnXf, forceTransform: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
+        }
+
         public IEnumerable<GrabWidgetData> ActiveGrabWidgets
         {
             get
@@ -417,6 +429,20 @@ namespace TiltBrush
                 if (m_PortalWidgets[i].m_WidgetObject.activeSelf)
                 {
                     yield return m_PortalWidgets[i];
+                }
+            }
+            for (int i = 0; i < m_GaussianCaptureSphereWidgets.Count; ++i)
+            {
+                if (m_GaussianCaptureSphereWidgets[i].m_WidgetObject.activeSelf)
+                {
+                    yield return m_GaussianCaptureSphereWidgets[i];
+                }
+            }
+            for (int i = 0; i < m_GaussianCaptureBoxWidgets.Count; ++i)
+            {
+                if (m_GaussianCaptureBoxWidgets[i].m_WidgetObject.activeSelf)
+                {
+                    yield return m_GaussianCaptureBoxWidgets[i];
                 }
             }
             for (int i = 0; i < m_StencilWidgets.Count; ++i)

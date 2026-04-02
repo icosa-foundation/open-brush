@@ -1,4 +1,4 @@
-// Copyright 2026 The Open Brush Authors
+﻿// Copyright 2026 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using UnityEngine;
+using UnityEngine.XR;
 
 namespace TiltBrush
 {
-    public interface IWidgetShape
+    public class ExportTray : BaseTray
     {
-        float GetActivationScore(Transform transform, Collider collider, float size, float maxSize, Vector3 controllerPos);
-        Bounds GetSelectionCanvasBounds(Collider collider, Bounds fallback);
+        public void ToggleTray(ActionToggleButton btn)
+        {
+            EnableTray(btn.enabled);
+        }
     }
+
 } // namespace TiltBrush

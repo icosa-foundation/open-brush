@@ -21,7 +21,7 @@ namespace TiltBrush
     {
         public static readonly SphereShape Instance = new SphereShape();
 
-        float IWidgetShape.GetActivationScore(Transform transform, float size, float maxSize, Vector3 controllerPos)
+        float IWidgetShape.GetActivationScore(Transform transform, Collider collider, float size, float maxSize, Vector3 controllerPos)
             => GetActivationScore(transform, size, maxSize, controllerPos);
 
         Bounds IWidgetShape.GetSelectionCanvasBounds(Collider collider, Bounds fallback)

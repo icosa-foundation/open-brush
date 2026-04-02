@@ -198,6 +198,8 @@ namespace TiltBrush
             ChangeSnapAngle = 8000,
             OpenColorPicker = 9000,
             OpenTexturePicker = 9001,
+            SpawnGaussianCaptureWidget = 9600,
+            ExportGaussianSplatPoses = 9601,
             MergeBrushStrokes = 10000,
             RepaintOptions = 11500,
             OpenNumericInputPopup = 12000
@@ -5108,6 +5110,14 @@ namespace TiltBrush
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }
+                case GlobalCommands.SpawnGaussianCaptureWidget:
+                    var brushAttach = InputManager.m_Instance.GetBrushControllerAttachPoint();
+                    var spawnXf = TrTransform.TR(brushAttach.position, brushAttach.rotation);
+                    m_WidgetManager.CreateGaussianCaptureWidget(spawnXf, (StencilType)iParam1);
+                    break;
+                case GlobalCommands.ExportGaussianSplatPoses:
+                    CameraCaptureRuntime.m_Instance.StartDomeCapture();
+                    break;
                 case GlobalCommands.RepaintOptions:
                 case GlobalCommands.MultiplayerPanelOptions:
                 case GlobalCommands.MultiplayerJoinRoom:
