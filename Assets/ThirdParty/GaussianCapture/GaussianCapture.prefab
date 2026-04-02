@@ -42,7 +42,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0.019607844}
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0.019607844}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -71,7 +71,7 @@ Camera:
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 4264833503
+    m_Bits: 1048577
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -133,7 +133,7 @@ MonoBehaviour:
   width: 1920
   height: 1080
   raysPerView: 1000
-  outputFolder: 
+  outputFolder: C:\Users\andyb\Documents\Open Brush\SplatPoses
   runtimeSequence: 0
   fbs: 25
   duration: 1
