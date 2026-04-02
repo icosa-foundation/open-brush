@@ -12902,11 +12902,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: GaussianCapture
       objectReference: {fileID: 0}
-    - target: {fileID: 1172868486959084137, guid: fb59bd93f52188148b1a1d7d96b4814b,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 1782612775646965092, guid: fb59bd93f52188148b1a1d7d96b4814b,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -12956,11 +12951,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6201357069329769655, guid: fb59bd93f52188148b1a1d7d96b4814b,
-        type: 3}
-      propertyPath: outputFolder
-      value: C:\Users\andyb\Documents\Open Brush\SplatPoses
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
