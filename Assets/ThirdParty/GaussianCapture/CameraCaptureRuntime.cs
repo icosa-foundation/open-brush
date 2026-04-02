@@ -84,7 +84,8 @@ public class CameraCaptureRuntime : MonoBehaviour
             return;
         }
         this.target = sphereWidget.transform;
-        this.radius = sphereWidget.DomeRadius;
+        // lossyScale already incorporates canvas scale, giving world-space radius
+        this.radius = sphereWidget.transform.lossyScale.x * 0.5f;
         this.heightOffset = 0;
         if (runtimeSequence)
             StartCoroutine(RuntimeSequenceCoroutine(isDome: true));
@@ -103,8 +104,9 @@ public class CameraCaptureRuntime : MonoBehaviour
             Debug.LogError("[GaussianCapture] No GaussianCaptureBoxWidget found in scene. Place one to define the volume capture area.");
             return;
         }
-        this.volumeCenter = boxWidget.VolumeCenter;
-        this.volumeSize = boxWidget.VolumeExtents;
+        // Use world-space position and size: lossyScale incorporates canvas scale and aspect ratio
+        this.volumeCenter = boxWidget.transform.position;
+        this.volumeSize = boxWidget.transform.lossyScale;
 
         if (runtimeSequence)
             StartCoroutine(RuntimeSequenceCoroutine(isDome: false));
