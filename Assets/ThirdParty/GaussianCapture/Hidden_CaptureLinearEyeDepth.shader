@@ -1,5 +1,14 @@
 Shader "Hidden/CaptureLinearEyeDepth"
 {
+    Properties
+    {
+        _MainTex ("MainTex", 2D) = "white" {}
+        _BaseMap ("BaseMap", 2D) = "white" {}
+        _BaseColorMap ("BaseColorMap", 2D) = "white" {}
+        _Color ("Color", Color) = (1,1,1,1)
+        _BaseColor ("BaseColor", Color) = (1,1,1,1)
+        _TintColor ("TintColor", Color) = (1,1,1,1)
+    }
     SubShader
     {
         Tags { "IgnoreProjector" = "True" }
@@ -8,7 +17,7 @@ Shader "Hidden/CaptureLinearEyeDepth"
             Tags { "LightMode" = "Always" }
             ZWrite On
             ZTest LEqual
-            Cull Back
+            Cull Off
             Blend Off
             ColorMask R
 
@@ -37,8 +46,10 @@ Shader "Hidden/CaptureLinearEyeDepth"
             struct v2f
             {
                 float4 pos  : SV_POSITION;
-                float2 uv0  : TEXCOORD0;
-                float  eyeZ : TEXCOORD1;
+                float2 uvMain : TEXCOORD0;
+                float2 uvBase : TEXCOORD1;
+                float2 uvBaseColor : TEXCOORD2;
+                float  eyeZ : TEXCOORD3;
             };
 
             v2f vert(appdata v)
@@ -46,36 +57,28 @@ Shader "Hidden/CaptureLinearEyeDepth"
                 v2f o;
                 float3 viewPos = UnityObjectToViewPos(v.vertex);
                 o.pos = UnityObjectToClipPos(v.vertex);
-                o.eyeZ = -viewPos.z;     
-                o.uv0 = TRANSFORM_TEX(v.uv, _MainTex);
+                o.eyeZ = -viewPos.z;
+                o.uvMain = TRANSFORM_TEX(v.uv, _MainTex);
+                o.uvBase = TRANSFORM_TEX(v.uv, _BaseMap);
+                o.uvBaseColor = TRANSFORM_TEX(v.uv, _BaseColorMap);
                 return o;
             }
 
-            float ComputeAlpha(float2 uv)
+            float ComputeAlpha(v2f i)
             {
-                float a = 1.0;
+                float4 cMain = tex2D(_MainTex, i.uvMain);
+                float4 cBase = tex2D(_BaseMap, i.uvBase);
+                float4 cBC = tex2D(_BaseColorMap, i.uvBaseColor);
 
-                float4 cMain = tex2D(_MainTex, uv);
-                a *= (cMain.a == 0 ? 1 : cMain.a);
+                float alphaFromTextures = max(cMain.a, max(cBase.a, cBC.a));
+                float alphaFromColors = max(_Color.a, max(_BaseColor.a, _TintColor.a));
 
-                float2 uvBase = TRANSFORM_TEX(uv, _BaseMap);
-                float4 cBase = tex2D(_BaseMap, uvBase);
-                a *= (cBase.a == 0 ? 1 : cBase.a);
-
-                float2 uvBC = TRANSFORM_TEX(uv, _BaseColorMap);
-                float4 cBC = tex2D(_BaseColorMap, uvBC);
-                a *= (cBC.a == 0 ? 1 : cBC.a);
-
-                a *= (_Color.a == 0 ? 1 : _Color.a);
-                a *= (_BaseColor.a == 0 ? 1 : _BaseColor.a);
-                a *= (_TintColor.a == 0 ? 1 : _TintColor.a);
-
-                return a;
+                return alphaFromTextures * alphaFromColors;
             }
 
             float4 frag(v2f i) : SV_Target
             {
-                float a = ComputeAlpha(i.uv0);
+                float a = ComputeAlpha(i);
                 clip(a - _AlphaThreshold);
 
                 float depth = (i.eyeZ > 0) ? i.eyeZ : _CaptureFar;

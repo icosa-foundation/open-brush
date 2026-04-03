@@ -5150,7 +5150,7 @@ namespace TiltBrush
                     m_WidgetManager.CreateGaussianCaptureWidget(spawnXf, (StencilType)iParam1);
                     break;
                 case GlobalCommands.ExportGaussianSplatPoses:
-                    CameraCaptureRuntime.m_Instance.StartDomeCapture();
+                    CameraCaptureRuntime.m_Instance.StartAllCapture();
                     break;
                 case GlobalCommands.RepaintOptions:
                 case GlobalCommands.MultiplayerPanelOptions:
