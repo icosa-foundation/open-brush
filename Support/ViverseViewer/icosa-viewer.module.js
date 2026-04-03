@@ -4035,6 +4035,15 @@ class $677737c8a5cbea2f$var$SketchMetadata {
         this.SkyTexture = userData['TB_SkyTexture'] ?? this.EnvironmentPreset.SkyTexture;
         this.ReflectionTexture = userData['TB_ReflectionTexture'] ?? this.EnvironmentPreset.ReflectionTexture;
         this.ReflectionIntensity = userData['TB_ReflectionIntensity'] ?? this.EnvironmentPreset.ReflectionIntensity;
+        // Convert Unity Euler angles (YXZ, left-handed) to Three.js XYZ Euler degrees.
+        // Goes through a quaternion to correctly change both Euler order and handedness.
+        function unityRotToThreeJSDegrees(rot, label) {
+            const unityEuler = new $hBQxr$three.Euler($hBQxr$three.MathUtils.degToRad(-rot.x), $hBQxr$three.MathUtils.degToRad(-rot.y), $hBQxr$three.MathUtils.degToRad(rot.z), 'YXZ');
+            const q = new $hBQxr$three.Quaternion().setFromEuler(unityEuler);
+            const threeEuler = new $hBQxr$three.Euler().setFromQuaternion(q, 'XYZ');
+            const result = new $hBQxr$three.Vector3($hBQxr$three.MathUtils.radToDeg(threeEuler.x), $hBQxr$three.MathUtils.radToDeg(threeEuler.y), $hBQxr$three.MathUtils.radToDeg(threeEuler.z));
+            return result;
+        }
         function radToDeg3(rot) {
             return {
                 x: $hBQxr$three.MathUtils.radToDeg(rot.x),
@@ -4042,16 +4051,19 @@ class $677737c8a5cbea2f$var$SketchMetadata {
                 z: $hBQxr$three.MathUtils.radToDeg(rot.z)
             };
         }
+        // GLTF node rotations are already in Three.js right-handed XYZ space.
         let light0rot = sceneLights.length >= 1 ? radToDeg3(sceneLights[0].rotation) : null;
         let light1rot = sceneLights.length >= 2 ? radToDeg3(sceneLights[1].rotation) : null;
         // Light 0 Rotation
-        if (userData['TB_SceneLight0Rotation']) this.SceneLight0Rotation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_SceneLight0Rotation']);
+        // Metadata and preset values are in Unity format and need conversion.
+        // GLTF node rotations are already in Three.js space.
+        if (userData['TB_SceneLight0Rotation']) this.SceneLight0Rotation = unityRotToThreeJSDegrees($677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_SceneLight0Rotation']), 'Light0 TB_metadata');
         else if (light0rot) this.SceneLight0Rotation = new $hBQxr$three.Vector3(light0rot.x, light0rot.y, light0rot.z);
-        else this.SceneLight0Rotation = this.EnvironmentPreset.SceneLight0Rotation;
+        else this.SceneLight0Rotation = unityRotToThreeJSDegrees(this.EnvironmentPreset.SceneLight0Rotation, 'Light0 preset');
         // Light 1 Rotation
-        if (userData['TB_SceneLight1Rotation']) this.SceneLight1Rotation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_SceneLight1Rotation']);
+        if (userData['TB_SceneLight1Rotation']) this.SceneLight1Rotation = unityRotToThreeJSDegrees($677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_SceneLight1Rotation']), 'Light1 TB_metadata');
         else if (light1rot) this.SceneLight1Rotation = new $hBQxr$three.Vector3(light1rot.x, light1rot.y, light1rot.z);
-        else this.SceneLight1Rotation = this.EnvironmentPreset.SceneLight1Rotation;
+        else this.SceneLight1Rotation = unityRotToThreeJSDegrees(this.EnvironmentPreset.SceneLight1Rotation, 'Light1 preset');
         // Light 0 Color
         if (userData['TB_SceneLight0Color']) this.SceneLight0Color = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBColorString(userData['TB_SceneLight0Color'], this.EnvironmentPreset.SceneLight0Color);
         else this.SceneLight0Color = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBColorString(null, this.EnvironmentPreset.SceneLight0Color);
@@ -6243,8 +6255,8 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         canvas.height = 256;
         const context = canvas.getContext('2d');
         const gradient = context.createLinearGradient(0, 0, 0, 256);
-        gradient.addColorStop(0, colorB.clone().convertSRGBToLinear().getStyle());
-        gradient.addColorStop(1, colorA.clone().convertSRGBToLinear().getStyle());
+        gradient.addColorStop(0, colorB.getStyle());
+        gradient.addColorStop(1, colorA.getStyle());
         context.fillStyle = gradient;
         context.fillRect(0, 0, 1, 256);
         const texture = new $hBQxr$three.CanvasTexture(canvas);
@@ -6454,7 +6466,9 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         // 3. Does the GLTF have custom metadata for light transform and color?
         // 4. Does the GLTF have an environment preset guid? If so use the light transform and colors from that
         // 5. If there's neither custom metadata, an environment guid or explicit GLTF lights - create some default lighting.
-        function convertTBEuler(rot) {
+        // All rotations are now stored in Three.js XYZ Euler degrees
+        // (Unity values are converted at parse time in the SketchMetadata constructor).
+        function toEuler(rot) {
             return new $hBQxr$three.Euler($hBQxr$three.MathUtils.degToRad(rot.x), $hBQxr$three.MathUtils.degToRad(rot.y), $hBQxr$three.MathUtils.degToRad(rot.z));
         }
         if (this.sketchMetadata == undefined || this.sketchMetadata == null) {
@@ -6465,16 +6479,11 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         }
         let l0 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight0Color, 1.0);
         let l1 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight1Color, 1.0);
-        let light0Euler = convertTBEuler(this.sketchMetadata.SceneLight0Rotation);
-        let light1Euler = convertTBEuler(this.sketchMetadata.SceneLight1Rotation);
-        // Same rotation adjustment we apply to scene and environment
-        if (this.isNewTiltExporter(this.sceneGltf) || this.isV1) {
-            light0Euler.y += Math.PI;
-            light1Euler.y += Math.PI;
-        }
-        const light0Direction = new $hBQxr$three.Vector3(0, 0, 1).applyEuler(light0Euler);
+        let light0Euler = toEuler(this.sketchMetadata.SceneLight0Rotation);
+        let light1Euler = toEuler(this.sketchMetadata.SceneLight1Rotation);
+        const light0Direction = new $hBQxr$three.Vector3(0, 0, -1).applyEuler(light0Euler);
         l0.position.copy(light0Direction.multiplyScalar(10));
-        const light1Direction = new $hBQxr$three.Vector3(0, 0, 1).applyEuler(light1Euler);
+        const light1Direction = new $hBQxr$three.Vector3(0, 0, -1).applyEuler(light1Euler);
         l1.position.copy(light1Direction.multiplyScalar(10));
         l0.castShadow = true;
         l1.castShadow = false;
