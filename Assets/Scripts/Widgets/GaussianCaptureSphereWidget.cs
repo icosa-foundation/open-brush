@@ -21,7 +21,7 @@ namespace TiltBrush
     // Cameras are placed on a hemisphere of DomeRadius around DomeCenter,
     // all looking inward at DomeCenter.
     // Both properties are in world space, accounting for scene scale.
-    public class GaussianCaptureSphereWidget : ShapeWidget
+    public class GaussianCaptureSphereWidget : GaussianCaptureWidgetBase
     {
         protected override IWidgetShape Shape => SphereShape.Instance;
 
@@ -63,6 +63,20 @@ namespace TiltBrush
         {
             base.InitPin();
             RestoreStencilWidgetLayers();
+        }
+
+        protected override string GetAdjustmentHintText()
+        {
+            return "Hold X/A while scaling to change rings + views";
+        }
+
+        protected override bool TryApplyRuntimeStep(
+            CameraCaptureRuntime runtime, int stepCount, out string statusText)
+        {
+            runtime.numRings = Mathf.Max(1, runtime.numRings + stepCount);
+            runtime.viewsPerRing = Mathf.Max(1, runtime.viewsPerRing + stepCount);
+            statusText = $"Rings: {runtime.numRings} Views/Ring: {runtime.viewsPerRing}";
+            return true;
         }
 
         private void OnDrawGizmosSelected()

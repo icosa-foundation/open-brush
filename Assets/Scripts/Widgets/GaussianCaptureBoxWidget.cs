@@ -21,8 +21,15 @@ namespace TiltBrush
     // Defines the volume capture area for Gaussian splat capture.
     // Cameras are distributed through a box volume and capture from multiple angles.
     // Both properties are in scene space, accounting for scene scale.
-    public class GaussianCaptureBoxWidget : ShapeWidget
+    public class GaussianCaptureBoxWidget : GaussianCaptureWidgetBase
     {
+        private enum SubdivisionAxis
+        {
+            X,
+            Y,
+            Z
+        }
+
         protected override IWidgetShape Shape => BoxShape.Instance;
 
         private readonly List<GameObject> m_PreviewMarkers = new List<GameObject>();
@@ -32,6 +39,7 @@ namespace TiltBrush
 
         private Vector3 m_AspectRatio = Vector3.one;
         private Axis? m_LockedManipulationAxis;
+        private SubdivisionAxis m_SelectedSubdivisionAxis = SubdivisionAxis.X;
 
         public override Vector3 CustomDimension
         {
@@ -71,14 +79,7 @@ namespace TiltBrush
             base.OnUserBeginTwoHandGrab(primaryHand, secondaryHand, secondaryHandInObject);
             if (!secondaryHandInObject)
             {
-                Vector3 handsInObjectSpace = transform.InverseTransformDirection(primaryHand - secondaryHand);
-                Vector3 abs = handsInObjectSpace.Abs();
-                if (abs.x > abs.y && abs.x > abs.z)
-                    m_LockedManipulationAxis = Axis.X;
-                else if (abs.y > abs.z)
-                    m_LockedManipulationAxis = Axis.Y;
-                else
-                    m_LockedManipulationAxis = Axis.Z;
+                m_LockedManipulationAxis = GetDominantAxisFromHands(primaryHand, secondaryHand);
             }
             else
             {
@@ -120,22 +121,6 @@ namespace TiltBrush
             return axis;
         }
 
-        public override void RecordAndApplyScaleToAxis(float deltaScale, Axis axis)
-        {
-            if (m_RecordMovements)
-            {
-                Vector3 newDimensions = CustomDimension;
-                newDimensions[(int)axis] *= deltaScale;
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                    new MoveWidgetCommand(this, LocalTransform, newDimensions));
-            }
-            else
-            {
-                m_AspectRatio[(int)axis] *= deltaScale;
-                UpdateScale();
-            }
-        }
-
         protected override void OnUpdate()
         {
             base.OnUpdate();
@@ -157,6 +142,78 @@ namespace TiltBrush
         {
             base.InitPin();
             RestoreStencilWidgetLayers();
+        }
+
+        protected override string GetAdjustmentHintText()
+        {
+            return $"Hold X/A while scaling to change subdiv ({m_SelectedSubdivisionAxis})";
+        }
+
+        protected override bool TryApplyRuntimeStep(
+            CameraCaptureRuntime runtime, int stepCount, out string statusText)
+        {
+            switch (m_SelectedSubdivisionAxis)
+            {
+                case SubdivisionAxis.X:
+                    runtime.subdivX = Mathf.Max(1, runtime.subdivX + stepCount);
+                    statusText = $"Subdiv X: {runtime.subdivX}";
+                    return true;
+                case SubdivisionAxis.Y:
+                    runtime.subdivY = Mathf.Max(1, runtime.subdivY + stepCount);
+                    statusText = $"Subdiv Y: {runtime.subdivY}";
+                    return true;
+                default:
+                    runtime.subdivZ = Mathf.Max(1, runtime.subdivZ + stepCount);
+                    statusText = $"Subdiv Z: {runtime.subdivZ}";
+                    return true;
+            }
+        }
+
+        public override void RecordAndApplyScaleToAxis(float deltaScale, Axis axis)
+        {
+            if (m_RecordMovements)
+            {
+                Vector3 newDimensions = CustomDimension;
+                newDimensions[(int)axis] *= deltaScale;
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                    new MoveWidgetCommand(this, LocalTransform, newDimensions));
+            }
+            else
+            {
+                m_AspectRatio[(int)axis] *= deltaScale;
+                UpdateScale();
+            }
+        }
+
+        public void SetActiveSubdivisionAxis(Axis axis)
+        {
+            m_SelectedSubdivisionAxis = axis switch
+            {
+                Axis.X => SubdivisionAxis.X,
+                Axis.Y => SubdivisionAxis.Y,
+                Axis.Z => SubdivisionAxis.Z,
+                _ => m_SelectedSubdivisionAxis
+            };
+        }
+
+        public void SetActiveSubdivisionAxisFromHands(Vector3 primaryHand, Vector3 secondaryHand)
+        {
+            SetActiveSubdivisionAxis(GetDominantAxisFromHands(primaryHand, secondaryHand));
+        }
+
+        private Axis GetDominantAxisFromHands(Vector3 primaryHand, Vector3 secondaryHand)
+        {
+            Vector3 handsInObjectSpace = transform.InverseTransformDirection(primaryHand - secondaryHand);
+            Vector3 abs = handsInObjectSpace.Abs();
+            if (abs.x > abs.y && abs.x > abs.z)
+            {
+                return Axis.X;
+            }
+            if (abs.y > abs.z)
+            {
+                return Axis.Y;
+            }
+            return Axis.Z;
         }
 
         private void OnDrawGizmosSelected()
@@ -292,6 +349,7 @@ namespace TiltBrush
             clone.SetSignedWidgetSize(size);
             clone.CustomDimension = CustomDimension;
             clone.CloneInitialMaterials(this);
+            clone.m_SelectedSubdivisionAxis = m_SelectedSubdivisionAxis;
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             return clone;
         }

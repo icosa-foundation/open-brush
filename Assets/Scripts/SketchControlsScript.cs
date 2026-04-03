@@ -2129,6 +2129,11 @@ namespace TiltBrush
             TrTransform xfBrush = TrTransform.FromTransform(InputManager.Brush.Transform);
             TrTransform xfWand = TrTransform.FromTransform(InputManager.Wand.Transform);
             Vector2 vSizeRange = m_CurrentGrabWidget.GetWidgetSizeRange();
+            bool adjustGaussianCaptureParams =
+                InputManager.Brush.GetVrInput(VrInput.Button01) ||
+                InputManager.Wand.GetVrInput(VrInput.Button01);
+            GaussianCaptureWidgetBase gaussianCaptureWidget =
+                m_CurrentGrabWidget as GaussianCaptureWidgetBase;
 
             GrabWidget.Axis axis = m_CurrentGrabWidget.GetScaleAxis(
                 xfWand.translation, xfBrush.translation,
@@ -2166,7 +2171,15 @@ namespace TiltBrush
                 // The above functions return undefined values in newWidgetXf.scale; but that's
                 // okay because RecordAndSetPosRot ignores xf.scale.
                 // TODO: do this more cleanly
-                m_CurrentGrabWidget.RecordAndApplyScaleToAxis(deltaScale, axis);
+                if (adjustGaussianCaptureParams && gaussianCaptureWidget is GaussianCaptureBoxWidget gaussianBox)
+                {
+                    gaussianBox.SetActiveSubdivisionAxis(axis);
+                    gaussianCaptureWidget.TryAdjustCaptureParametersFromScale(deltaScale);
+                }
+                else
+                {
+                    m_CurrentGrabWidget.RecordAndApplyScaleToAxis(deltaScale, axis);
+                }
             }
             else
             {
@@ -2211,7 +2224,28 @@ namespace TiltBrush
                 }
 
                 // Must do separately becvause RecordAndSetPosRot ignores newWidgetXf.scale
-                m_CurrentGrabWidget.RecordAndSetSize(newWidgetXf.scale);
+                if (adjustGaussianCaptureParams && gaussianCaptureWidget is GaussianCaptureBoxWidget gaussianBox)
+                {
+                    float widgetSizeBeforeScale = Mathf.Abs(m_CurrentGrabWidget.GetSignedWidgetSize());
+                    float deltaScale = widgetSizeBeforeScale > 0.0f
+                        ? newWidgetXf.scale / widgetSizeBeforeScale
+                        : 1.0f;
+                    gaussianBox.SetActiveSubdivisionAxisFromHands(
+                        xfBrush.translation, xfWand.translation);
+                    gaussianCaptureWidget.TryAdjustCaptureParametersFromScale(deltaScale);
+                }
+                else if (adjustGaussianCaptureParams && gaussianCaptureWidget is GaussianCaptureSphereWidget)
+                {
+                    float widgetSizeBeforeScale = Mathf.Abs(m_CurrentGrabWidget.GetSignedWidgetSize());
+                    float deltaScale = widgetSizeBeforeScale > 0.0f
+                        ? newWidgetXf.scale / widgetSizeBeforeScale
+                        : 1.0f;
+                    gaussianCaptureWidget.TryAdjustCaptureParametersFromScale(deltaScale);
+                }
+                else
+                {
+                    m_CurrentGrabWidget.RecordAndSetSize(newWidgetXf.scale);
+                }
 
                 float currentSize = Mathf.Abs(m_CurrentGrabWidget.GetSignedWidgetSize());
                 if (currentSize == vSizeRange.x || currentSize == vSizeRange.y)
