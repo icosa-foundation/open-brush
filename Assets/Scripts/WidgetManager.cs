@@ -376,11 +376,16 @@ namespace TiltBrush
             GrabWidget prefab = stencilType switch
             {
                 StencilType.Cube => m_GaussianCaptureBoxWidgetPrefab,
+                StencilType.InteriorDome => m_GaussianCaptureSphereWidgetPrefab,
                 StencilType.Sphere => m_GaussianCaptureSphereWidgetPrefab,
                 _ => throw new ArgumentOutOfRangeException(nameof(stencilType), stencilType, null)
             };
             var createCommand = new CreateWidgetCommand(prefab, spawnXf, forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
+            if (createCommand.Widget is GaussianCaptureSphereWidget sphereWidget)
+            {
+                sphereWidget.CaptureShapeType = stencilType;
+            }
         }
 
         public IEnumerable<GrabWidgetData> ActiveGrabWidgets
@@ -863,7 +868,8 @@ namespace TiltBrush
         {
             foreach (var capture in captures)
             {
-                if (capture.ShapeType == StencilType.Sphere)
+                if (capture.ShapeType == StencilType.Sphere ||
+                    capture.ShapeType == StencilType.InteriorDome)
                     GaussianCaptureSphereWidget.FromTiltGaussianCapture(capture);
                 else if (capture.ShapeType == StencilType.Cube)
                     GaussianCaptureBoxWidget.FromTiltGaussianCapture(capture);

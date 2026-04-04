@@ -18,7 +18,7 @@ using UnityEngine;
 namespace TiltBrush
 {
     // Defines the dome capture volume for Gaussian splat capture.
-    // Cameras are placed on a hemisphere of DomeRadius around DomeCenter,
+    // Cameras are distributed on the selected dome shape around DomeCenter,
     // all looking inward at DomeCenter.
     // Both properties are in world space, accounting for scene scale.
     public class GaussianCaptureSphereWidget : GaussianCaptureWidgetBase
@@ -27,6 +27,7 @@ namespace TiltBrush
 
         [SerializeField] private int m_NumRings = 4;
         [SerializeField] private int m_ViewsPerRing = 20;
+        [SerializeField] private StencilType m_CaptureShapeType = StencilType.Sphere;
 
         private readonly List<GameObject> m_PreviewMarkers = new List<GameObject>();
         private static Mesh s_FrustumMesh;
@@ -43,6 +44,16 @@ namespace TiltBrush
         {
             get => Mathf.Max(1, m_ViewsPerRing);
             set => m_ViewsPerRing = Mathf.Max(1, value);
+        }
+
+        public StencilType CaptureShapeType
+        {
+            get => m_CaptureShapeType == StencilType.InteriorDome
+                ? StencilType.InteriorDome
+                : StencilType.Sphere;
+            set => m_CaptureShapeType = value == StencilType.InteriorDome
+                ? StencilType.InteriorDome
+                : StencilType.Sphere;
         }
 
         // Scene-space center of the capture dome (the point cameras look at).
@@ -98,7 +109,8 @@ namespace TiltBrush
             var runtime = CameraCaptureRuntime.m_Instance;
             if (runtime == null) return;
             float r = transform.lossyScale.x * 0.5f;
-            var poses = runtime.GetDomeCameraPoses(transform.position, r, NumRings, ViewsPerRing);
+            var poses = runtime.GetDomeCameraPoses(
+                transform.position, r, NumRings, ViewsPerRing, CaptureShapeType);
             float frustumDepth = r * 0.12f;
             float fov = runtime.cameraToUse != null ? runtime.cameraToUse.fieldOfView : 60f;
             float aspect = runtime.width > 0 && runtime.height > 0
@@ -128,7 +140,8 @@ namespace TiltBrush
             if (runtime == null) { ClearPreviewMarkers(); return; }
 
             float r = transform.lossyScale.x * 0.5f;
-            var poses = runtime.GetDomeCameraPoses(transform.position, r, NumRings, ViewsPerRing);
+            var poses = runtime.GetDomeCameraPoses(
+                transform.position, r, NumRings, ViewsPerRing, CaptureShapeType);
             float frustumDepth = r * 0.12f;
 
             EnsureFrustumMesh(runtime);
@@ -203,6 +216,7 @@ namespace TiltBrush
             widget.transform.parent = App.Instance.m_CanvasTransform;
             widget.transform.localScale = Vector3.one;
             widget.SetSignedWidgetSize(tilt.Transform.scale);
+            widget.CaptureShapeType = tilt.ShapeType;
             if (tilt.NumRings.HasValue)
             {
                 widget.NumRings = tilt.NumRings.Value;
@@ -235,6 +249,7 @@ namespace TiltBrush
             clone.transform.parent = transform.parent;
             clone.Show(true, false);
             clone.SetSignedWidgetSize(size);
+            clone.CaptureShapeType = CaptureShapeType;
             clone.NumRings = NumRings;
             clone.ViewsPerRing = ViewsPerRing;
             clone.CloneInitialMaterials(this);

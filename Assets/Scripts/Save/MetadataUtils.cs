@@ -210,7 +210,7 @@ namespace TiltBrush
             var results = spheres
                 .Select(w => new TiltGaussianCapture
                 {
-                    ShapeType = StencilType.Sphere,
+                    ShapeType = w.CaptureShapeType,
                     Transform = w.GetSaveTransform(),
                     AspectRatio = Vector3.one,
                     NumRings = w.NumRings,

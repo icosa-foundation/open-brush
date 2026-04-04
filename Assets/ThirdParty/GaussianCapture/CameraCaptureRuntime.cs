@@ -93,6 +93,7 @@ public class CameraCaptureRuntime : MonoBehaviour
         public float Radius;
         public int NumRings;
         public int ViewsPerRing;
+        public StencilType ShapeType;
         public string FilePrefix;
     }
 
@@ -138,15 +139,19 @@ public class CameraCaptureRuntime : MonoBehaviour
         Vector3 center,
         float r,
         int captureNumRings,
-        int captureViewsPerRing)
+        int captureViewsPerRing,
+        StencilType captureShapeType = StencilType.Sphere)
     {
         var poses = new List<(Vector3, Quaternion)>();
         int ringCount = Mathf.Max(1, captureNumRings);
         int viewsPerRingCount = Mathf.Max(1, captureViewsPerRing);
+        bool isHemisphere = captureShapeType == StencilType.InteriorDome;
         for (int ring = 0; ring < ringCount; ring++)
         {
-            float elevation = Mathf.Lerp(-Mathf.PI / 4f, Mathf.PI / 4f,
-                ringCount == 1 ? 0.5f : (float)ring / (ringCount - 1));
+            float ringT = ringCount == 1 ? 0.5f : (float)ring / (ringCount - 1);
+            float elevation = isHemisphere
+                ? Mathf.Lerp(0f, Mathf.PI / 2f, ringT)
+                : Mathf.Lerp(-Mathf.PI / 4f, Mathf.PI / 4f, ringT);
             for (int i = 0; i < viewsPerRingCount; i++)
             {
                 float azimuth = i * Mathf.PI * 2f / viewsPerRingCount;
@@ -218,7 +223,7 @@ public class CameraCaptureRuntime : MonoBehaviour
         var domeTargets = GetActiveDomeCaptureTargets();
         if (domeTargets.Count == 0)
         {
-            Debug.LogError("[GaussianCapture] No GaussianCaptureSphereWidget found in scene. Place one to define the dome capture volume.");
+            Debug.LogError("[GaussianCapture] No GaussianCapture dome widget found in scene. Place one to define the dome capture volume.");
             return;
         }
         this.target = domeTargets[0].Transform;
@@ -266,7 +271,7 @@ public class CameraCaptureRuntime : MonoBehaviour
         var volumeTargets = GetActiveVolumeCaptureTargets();
         if (domeTargets.Count == 0 && volumeTargets.Count == 0)
         {
-            Debug.LogError("[GaussianCapture] No GaussianCapture widgets found in scene. Place sphere or box capture widgets to define capture areas.");
+            Debug.LogError("[GaussianCapture] No GaussianCapture widgets found in scene. Place sphere, hemisphere, or box capture widgets to define capture areas.");
             return;
         }
 
@@ -451,7 +456,7 @@ public class CameraCaptureRuntime : MonoBehaviour
                 if (volumeTargets == null) { volumeTargets = new List<VolumeCaptureTarget>(); }
                 int totalImages =
                     domeTargets.Sum(x => GetDomeCameraPoses(
-                        x.Transform.position, x.Radius, x.NumRings, x.ViewsPerRing).Count) +
+                        x.Transform.position, x.Radius, x.NumRings, x.ViewsPerRing, x.ShapeType).Count) +
                     volumeTargets.Sum(x => GetVolumeCameraGridCenters(
                         x.Transform, x.SubdivX, x.SubdivY, x.SubdivZ).Count * directions.Count);
                 int currentImage = 0;
@@ -480,7 +485,8 @@ public class CameraCaptureRuntime : MonoBehaviour
                             domeTarget.Transform.position,
                             domeTarget.Radius,
                             domeTarget.NumRings,
-                            domeTarget.ViewsPerRing);
+                            domeTarget.ViewsPerRing,
+                            domeTarget.ShapeType);
                         foreach (var (position, rotation) in poses)
                         {
                             if (cancel) { CleanupRT(ref cameraToUse, ref rt, ref resolvedRt, ref tex); isRunning = false; yield break; }
@@ -638,7 +644,11 @@ public class CameraCaptureRuntime : MonoBehaviour
                 Radius = widget.transform.lossyScale.x * 0.5f,
                 NumRings = widget.NumRings,
                 ViewsPerRing = widget.ViewsPerRing,
-                FilePrefix = BuildCaptureFilePrefix("sphere", index, widget.name)
+                ShapeType = widget.CaptureShapeType,
+                FilePrefix = BuildCaptureFilePrefix(
+                    widget.CaptureShapeType == StencilType.InteriorDome ? "hemisphere" : "sphere",
+                    index,
+                    widget.name)
             })
             .ToList();
     }
