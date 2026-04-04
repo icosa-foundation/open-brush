@@ -27,7 +27,6 @@ namespace TiltBrush
 
         [SerializeField] private int m_NumRings = 4;
         [SerializeField] private int m_ViewsPerRing = 20;
-        [SerializeField] private StencilType m_CaptureShapeType = StencilType.Sphere;
 
         private readonly List<GameObject> m_PreviewMarkers = new List<GameObject>();
         private static Mesh s_FrustumMesh;
@@ -46,15 +45,7 @@ namespace TiltBrush
             set => m_ViewsPerRing = Mathf.Max(1, value);
         }
 
-        public StencilType CaptureShapeType
-        {
-            get => m_CaptureShapeType == StencilType.InteriorDome
-                ? StencilType.InteriorDome
-                : StencilType.Sphere;
-            set => m_CaptureShapeType = value == StencilType.InteriorDome
-                ? StencilType.InteriorDome
-                : StencilType.Sphere;
-        }
+        public virtual StencilType CaptureShapeType => StencilType.Sphere;
 
         // Scene-space center of the capture dome (the point cameras look at).
         public Vector3 DomeCenter => transform.localPosition;
@@ -208,15 +199,14 @@ namespace TiltBrush
             return go;
         }
 
-        public static void FromTiltGaussianCapture(TiltGaussianCapture tilt)
+        protected static T CreateFromTiltGaussianCapture<T>(TiltGaussianCapture tilt, T prefab)
+            where T : GaussianCaptureSphereWidget
         {
-            GaussianCaptureSphereWidget widget =
-                Instantiate(WidgetManager.m_Instance.GaussianCaptureSphereWidgetPrefab);
+            T widget = Instantiate(prefab);
             widget.m_SkipIntroAnim = true;
             widget.transform.parent = App.Instance.m_CanvasTransform;
             widget.transform.localScale = Vector3.one;
             widget.SetSignedWidgetSize(tilt.Transform.scale);
-            widget.CaptureShapeType = tilt.ShapeType;
             if (tilt.NumRings.HasValue)
             {
                 widget.NumRings = tilt.NumRings.Value;
@@ -231,6 +221,12 @@ namespace TiltBrush
             if (tilt.Pinned) { widget.PinFromSave(); }
             widget.Group = App.GroupManager.GetGroupFromId(tilt.GroupId);
             widget.SetCanvas(App.Scene.GetOrCreateLayer(tilt.LayerId));
+            return widget;
+        }
+
+        public static void FromTiltGaussianCapture(TiltGaussianCapture tilt)
+        {
+            CreateFromTiltGaussianCapture(tilt, WidgetManager.m_Instance.GaussianCaptureSphereWidgetPrefab);
         }
 
         public override GrabWidget Clone()
@@ -240,7 +236,7 @@ namespace TiltBrush
 
         public override GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
         {
-            GaussianCaptureSphereWidget clone = Instantiate(WidgetManager.m_Instance.GaussianCaptureSphereWidgetPrefab);
+            GaussianCaptureSphereWidget clone = Instantiate(GetPrefabForClone());
             clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.transform.position = position;
             clone.transform.rotation = rotation;
@@ -249,12 +245,16 @@ namespace TiltBrush
             clone.transform.parent = transform.parent;
             clone.Show(true, false);
             clone.SetSignedWidgetSize(size);
-            clone.CaptureShapeType = CaptureShapeType;
             clone.NumRings = NumRings;
             clone.ViewsPerRing = ViewsPerRing;
             clone.CloneInitialMaterials(this);
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             return clone;
+        }
+
+        protected virtual GaussianCaptureSphereWidget GetPrefabForClone()
+        {
+            return WidgetManager.m_Instance.GaussianCaptureSphereWidgetPrefab;
         }
     }
 } // namespace TiltBrush

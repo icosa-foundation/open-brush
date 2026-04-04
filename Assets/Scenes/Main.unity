@@ -26012,6 +26012,8 @@ MonoBehaviour:
     type: 3}
   m_GaussianCaptureSphereWidgetPrefab: {fileID: 114000010304738242, guid: 4774a63237b7e1e498e5cd21e98789ad,
     type: 3}
+  m_GaussianCaptureHemisphereWidgetPrefab: {fileID: 114000010304738242, guid: 63db937337324638b7f9e698ccaeba56,
+    type: 3}
   m_GaussianCaptureBoxWidgetPrefab: {fileID: 114000014087559444, guid: f9ad49aead9954f49ae84bb8b28615aa,
     type: 3}
   m_SceneLightGizmoPrefab: {fileID: 1712584378369130260, guid: f28bfd6efbf3cb046be485c6573ca207,

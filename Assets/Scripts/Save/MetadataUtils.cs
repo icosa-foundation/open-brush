@@ -204,10 +204,13 @@ namespace TiltBrush
         {
             var spheres = WidgetManager.m_Instance.ActiveGaussianCaptureSphereWidgets
                 .Select(x => x.WidgetScript).Where(x => x.gameObject.activeSelf);
+            var hemispheres = WidgetManager.m_Instance.ActiveGaussianCaptureHemisphereWidgets
+                .Select(x => x.WidgetScript).Where(x => x.gameObject.activeSelf);
             var boxes = WidgetManager.m_Instance.ActiveGaussianCaptureBoxWidgets
                 .Select(x => x.WidgetScript).Where(x => x.gameObject.activeSelf);
 
             var results = spheres
+                .Concat<GaussianCaptureSphereWidget>(hemispheres)
                 .Select(w => new TiltGaussianCapture
                 {
                     ShapeType = w.CaptureShapeType,

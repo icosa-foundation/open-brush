@@ -111,6 +111,7 @@ namespace TiltBrush
         [SerializeField] PortalSphereWidget m_PortalWidgetPrefab;
         [SerializeField] PortalBoxWidget m_PortalBoxWidgetPrefab;
         [SerializeField] GaussianCaptureSphereWidget m_GaussianCaptureSphereWidgetPrefab;
+        [SerializeField] GaussianCaptureHemisphereWidget m_GaussianCaptureHemisphereWidgetPrefab;
         [SerializeField] GaussianCaptureBoxWidget m_GaussianCaptureBoxWidgetPrefab;
         [SerializeField] SceneLightGizmo m_SceneLightGizmoPrefab;
         [SerializeField] CameraPathWidget m_CameraPathWidgetPrefab;
@@ -152,6 +153,7 @@ namespace TiltBrush
         private List<TypedWidgetData<LightWidget>> m_LightWidgets;
         private List<TypedWidgetData<PortalSphereWidget>> m_PortalWidgets;
         private List<TypedWidgetData<GaussianCaptureSphereWidget>> m_GaussianCaptureSphereWidgets;
+        private List<TypedWidgetData<GaussianCaptureHemisphereWidget>> m_GaussianCaptureHemisphereWidgets;
         private List<TypedWidgetData<GaussianCaptureBoxWidget>> m_GaussianCaptureBoxWidgets;
         private List<TypedWidgetData<StencilWidget>> m_StencilWidgets;
         private List<TypedWidgetData<ImageWidget>> m_ImageWidgets;
@@ -314,6 +316,7 @@ namespace TiltBrush
             m_LightWidgets = new List<TypedWidgetData<LightWidget>>();
             m_PortalWidgets = new List<TypedWidgetData<PortalSphereWidget>>();
             m_GaussianCaptureSphereWidgets = new List<TypedWidgetData<GaussianCaptureSphereWidget>>();
+            m_GaussianCaptureHemisphereWidgets = new List<TypedWidgetData<GaussianCaptureHemisphereWidget>>();
             m_GaussianCaptureBoxWidgets = new List<TypedWidgetData<GaussianCaptureBoxWidget>>();
             m_StencilWidgets = new List<TypedWidgetData<StencilWidget>>();
             m_ImageWidgets = new List<TypedWidgetData<ImageWidget>>();
@@ -350,6 +353,7 @@ namespace TiltBrush
         public PortalSphereWidget PortalWidgetPrefab { get { return m_PortalWidgetPrefab; } }
         public PortalBoxWidget PortalBoxWidgetPrefab { get { return m_PortalBoxWidgetPrefab; } }
         public GaussianCaptureSphereWidget GaussianCaptureSphereWidgetPrefab { get { return m_GaussianCaptureSphereWidgetPrefab; } }
+        public GaussianCaptureHemisphereWidget GaussianCaptureHemisphereWidgetPrefab { get { return m_GaussianCaptureHemisphereWidgetPrefab; } }
         public GaussianCaptureBoxWidget GaussianCaptureBoxWidgetPrefab { get { return m_GaussianCaptureBoxWidgetPrefab; } }
         public SceneLightGizmo SceneLightGizmoPrefab { get { return m_SceneLightGizmoPrefab; } }
         public CameraPathWidget CameraPathWidgetPrefab { get { return m_CameraPathWidgetPrefab; } }
@@ -376,16 +380,12 @@ namespace TiltBrush
             GrabWidget prefab = stencilType switch
             {
                 StencilType.Cube => m_GaussianCaptureBoxWidgetPrefab,
-                StencilType.InteriorDome => m_GaussianCaptureSphereWidgetPrefab,
+                StencilType.InteriorDome => m_GaussianCaptureHemisphereWidgetPrefab,
                 StencilType.Sphere => m_GaussianCaptureSphereWidgetPrefab,
                 _ => throw new ArgumentOutOfRangeException(nameof(stencilType), stencilType, null)
             };
             var createCommand = new CreateWidgetCommand(prefab, spawnXf, forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-            if (createCommand.Widget is GaussianCaptureSphereWidget sphereWidget)
-            {
-                sphereWidget.CaptureShapeType = stencilType;
-            }
         }
 
         public IEnumerable<GrabWidgetData> ActiveGrabWidgets
@@ -441,6 +441,13 @@ namespace TiltBrush
                 if (m_GaussianCaptureSphereWidgets[i].m_WidgetObject.activeSelf)
                 {
                     yield return m_GaussianCaptureSphereWidgets[i];
+                }
+            }
+            for (int i = 0; i < m_GaussianCaptureHemisphereWidgets.Count; ++i)
+            {
+                if (m_GaussianCaptureHemisphereWidgets[i].m_WidgetObject.activeSelf)
+                {
+                    yield return m_GaussianCaptureHemisphereWidgets[i];
                 }
             }
             for (int i = 0; i < m_GaussianCaptureBoxWidgets.Count; ++i)
@@ -868,9 +875,10 @@ namespace TiltBrush
         {
             foreach (var capture in captures)
             {
-                if (capture.ShapeType == StencilType.Sphere ||
-                    capture.ShapeType == StencilType.InteriorDome)
+                if (capture.ShapeType == StencilType.Sphere)
                     GaussianCaptureSphereWidget.FromTiltGaussianCapture(capture);
+                else if (capture.ShapeType == StencilType.InteriorDome)
+                    GaussianCaptureHemisphereWidget.FromTiltGaussianCapture(capture);
                 else if (capture.ShapeType == StencilType.Cube)
                     GaussianCaptureBoxWidget.FromTiltGaussianCapture(capture);
             }
@@ -1218,6 +1226,7 @@ namespace TiltBrush
             GetUnselectedActiveWidgetsInList(m_LightWidgets);
             GetUnselectedActiveWidgetsInList(m_PortalWidgets);
             GetUnselectedActiveWidgetsInList(m_GaussianCaptureSphereWidgets);
+            GetUnselectedActiveWidgetsInList(m_GaussianCaptureHemisphereWidgets);
             GetUnselectedActiveWidgetsInList(m_GaussianCaptureBoxWidgets);
             GetUnselectedActiveWidgetsInList(m_ImageWidgets);
             GetUnselectedActiveWidgetsInList(m_TextWidgets);
@@ -1253,6 +1262,7 @@ namespace TiltBrush
                 RefreshPinUnpinWidgetList(m_LightWidgets);
                 RefreshPinUnpinWidgetList(m_PortalWidgets);
                 RefreshPinUnpinWidgetList(m_GaussianCaptureSphereWidgets);
+                RefreshPinUnpinWidgetList(m_GaussianCaptureHemisphereWidgets);
                 RefreshPinUnpinWidgetList(m_GaussianCaptureBoxWidgets);
                 RefreshPinUnpinWidgetList(m_ImageWidgets);
                 RefreshPinUnpinWidgetList(m_TextWidgets);
@@ -1330,6 +1340,10 @@ namespace TiltBrush
             {
                 m_PortalWidgets.Add(new TypedWidgetData<PortalSphereWidget>(portal));
             }
+            else if (generic is GaussianCaptureHemisphereWidget gcHemisphere)
+            {
+                m_GaussianCaptureHemisphereWidgets.Add(new TypedWidgetData<GaussianCaptureHemisphereWidget>(gcHemisphere));
+            }
             else if (generic is GaussianCaptureSphereWidget gcSphere)
             {
                 m_GaussianCaptureSphereWidgets.Add(new TypedWidgetData<GaussianCaptureSphereWidget>(gcSphere));
@@ -1403,6 +1417,7 @@ namespace TiltBrush
             if (RemoveFrom(m_ModelWidgets, rWidget)) { return; }
             if (RemoveFrom(m_LightWidgets, rWidget)) { return; }
             if (RemoveFrom(m_PortalWidgets, rWidget)) { return; }
+            if (RemoveFrom(m_GaussianCaptureHemisphereWidgets, rWidget)) { return; }
             if (RemoveFrom(m_GaussianCaptureSphereWidgets, rWidget)) { return; }
             if (RemoveFrom(m_GaussianCaptureBoxWidgets, rWidget)) { return; }
             if (RemoveFrom(m_StencilWidgets, rWidget)) { return; }
@@ -1583,6 +1598,7 @@ namespace TiltBrush
             DestroyWidgetList(m_ModelWidgets);
             DestroyWidgetList(m_LightWidgets);
             DestroyWidgetList(m_PortalWidgets);
+            DestroyWidgetList(m_GaussianCaptureHemisphereWidgets);
             DestroyWidgetList(m_GaussianCaptureSphereWidgets);
             DestroyWidgetList(m_GaussianCaptureBoxWidgets);
             DestroyWidgetList(m_ImageWidgets);
@@ -1775,6 +1791,8 @@ namespace TiltBrush
             m_LightWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<PortalSphereWidget>> ActivePortalWidgets =>
             m_PortalWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+        public List<TypedWidgetData<GaussianCaptureHemisphereWidget>> ActiveGaussianCaptureHemisphereWidgets =>
+            m_GaussianCaptureHemisphereWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<GaussianCaptureSphereWidget>> ActiveGaussianCaptureSphereWidgets =>
             m_GaussianCaptureSphereWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<GaussianCaptureBoxWidget>> ActiveGaussianCaptureBoxWidgets =>

@@ -66,7 +66,7 @@ GameObject:
   - component: {fileID: 114000010304738242}
   - component: {fileID: -578355158392930358}
   m_Layer: 10
-  m_Name: CaptureDome
+  m_Name: CaptureHemisphere
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -97,7 +97,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1000011148842312}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 082225dfc9d3ac049858564d66fe9f12, type: 3}
+  m_Script: {fileID: 11500000, guid: c3d77f4db53b42f3a8f85473c4f34cb2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_ShowDuration: 0.2
@@ -124,8 +124,6 @@ MonoBehaviour:
   m_SnapGhostMaterial: {fileID: 2100000, guid: 43172d360a2f0f44798d94e9c440e24b, type: 2}
   m_MinSize_CS: 0.1
   m_MaxSize_CS: 200
-  m_NumRings: 4
-  m_ViewsPerRing: 20
 --- !u!114 &-578355158392930358
 MonoBehaviour:
   m_ObjectHideFlags: 0

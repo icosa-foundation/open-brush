@@ -163,7 +163,7 @@ MonoBehaviour:
   volumeCenter: {x: 0, y: 0, z: 0}
   volumeSize: {x: 5, y: 5, z: 5}
   transparentBackground: 0
-  includeTransparentsAndParticles: 1
+  includeTransparentsAndParticles: 0
   alphaThreshold: 0.05
   depthReplacementShader: {fileID: 4800000, guid: 0da7fe4fde6d6784696f9dd8e3c781f4,
     type: 3}

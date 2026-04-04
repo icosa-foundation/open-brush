@@ -223,7 +223,7 @@ public class CameraCaptureRuntime : MonoBehaviour
         var domeTargets = GetActiveDomeCaptureTargets();
         if (domeTargets.Count == 0)
         {
-            Debug.LogError("[GaussianCapture] No GaussianCapture dome widget found in scene. Place one to define the dome capture volume.");
+            Debug.LogError("[GaussianCapture] No GaussianCapture sphere or hemisphere widget found in scene. Place one to define the dome capture volume.");
             return;
         }
         this.target = domeTargets[0].Transform;
@@ -637,6 +637,8 @@ public class CameraCaptureRuntime : MonoBehaviour
     {
         return TiltBrush.WidgetManager.m_Instance.ActiveGaussianCaptureSphereWidgets
             .Select(x => x.WidgetScript)
+            .Concat(TiltBrush.WidgetManager.m_Instance.ActiveGaussianCaptureHemisphereWidgets
+                .Select(x => x.WidgetScript))
             .Where(x => x != null && x.gameObject.activeSelf)
             .Select((widget, index) => new DomeCaptureTarget
             {
