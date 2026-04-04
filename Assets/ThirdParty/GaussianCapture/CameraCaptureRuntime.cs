@@ -48,15 +48,12 @@ public class CameraCaptureRuntime : MonoBehaviour
     [Header("Dome Capture")]
     public Transform target;
     public Shader eyeDepthShader;
-    public int numRings = 4;
-    public int viewsPerRing = 20;
     public float radius = 5f;
     public float heightOffset = 1.5f;
 
     [Header("Volume Capture")]
     public Vector3 volumeCenter = Vector3.zero;
     public Vector3 volumeSize = new Vector3(5, 5, 5);
-    public int subdivX = 2, subdivY = 2, subdivZ = 2;
 
     [Header("Background")]
     [Tooltip("Render skybox and environment as background (default). Disable to get transparent background for COLMAP masking.")]
@@ -137,11 +134,6 @@ public class CameraCaptureRuntime : MonoBehaviour
 
     // Returns world-space camera poses for a dome capture, without performing any capture.
     // Used by both the capture coroutine and widget visualization.
-    public List<(Vector3 position, Quaternion rotation)> GetDomeCameraPoses(Vector3 center, float r)
-    {
-        return GetDomeCameraPoses(center, r, numRings, viewsPerRing);
-    }
-
     public List<(Vector3 position, Quaternion rotation)> GetDomeCameraPoses(
         Vector3 center,
         float r,
@@ -170,11 +162,6 @@ public class CameraCaptureRuntime : MonoBehaviour
 
     // Returns world-space cell centers for a volume capture grid, without performing any capture.
     // Used by both the capture coroutine and widget visualization.
-    public List<Vector3> GetVolumeCameraGridCenters(Transform volumeTransform)
-    {
-        return GetVolumeCameraGridCenters(volumeTransform, subdivX, subdivY, subdivZ);
-    }
-
     public List<Vector3> GetVolumeCameraGridCenters(
         Transform volumeTransform,
         int captureSubdivX,
@@ -203,11 +190,6 @@ public class CameraCaptureRuntime : MonoBehaviour
 
     // Returns world-space camera poses (position + rotation) for all volume capture views.
     // Combines grid cell centers with all spherical capture directions.
-    public List<(Vector3 position, Quaternion rotation)> GetVolumeCameraPoses(Transform volumeTransform)
-    {
-        return GetVolumeCameraPoses(volumeTransform, subdivX, subdivY, subdivZ);
-    }
-
     public List<(Vector3 position, Quaternion rotation)> GetVolumeCameraPoses(
         Transform volumeTransform,
         int captureSubdivX,
@@ -241,8 +223,6 @@ public class CameraCaptureRuntime : MonoBehaviour
         }
         this.target = domeTargets[0].Transform;
         this.radius = domeTargets[0].Radius;
-        this.numRings = domeTargets[0].NumRings;
-        this.viewsPerRing = domeTargets[0].ViewsPerRing;
         StartCaptureInCompositor(runtimeSequence
             ? RuntimeSequenceCoroutine(domeTargets, null)
             : CaptureTargetsAndExportColmap(domeTargets, null, outAdd: ""));
@@ -266,9 +246,6 @@ public class CameraCaptureRuntime : MonoBehaviour
         m_VolumeTransform = volumeTargets[0].Transform;
         this.volumeCenter = volumeTargets[0].Transform.position;
         this.volumeSize = volumeTargets[0].Transform.lossyScale;
-        this.subdivX = volumeTargets[0].SubdivX;
-        this.subdivY = volumeTargets[0].SubdivY;
-        this.subdivZ = volumeTargets[0].SubdivZ;
 
         StartCaptureInCompositor(runtimeSequence
             ? RuntimeSequenceCoroutine(null, volumeTargets)
@@ -297,17 +274,12 @@ public class CameraCaptureRuntime : MonoBehaviour
         {
             this.target = domeTargets[0].Transform;
             this.radius = domeTargets[0].Radius;
-            this.numRings = domeTargets[0].NumRings;
-            this.viewsPerRing = domeTargets[0].ViewsPerRing;
         }
         if (volumeTargets.Count > 0)
         {
             m_VolumeTransform = volumeTargets[0].Transform;
             this.volumeCenter = volumeTargets[0].Transform.position;
             this.volumeSize = volumeTargets[0].Transform.lossyScale;
-            this.subdivX = volumeTargets[0].SubdivX;
-            this.subdivY = volumeTargets[0].SubdivY;
-            this.subdivZ = volumeTargets[0].SubdivZ;
         }
 
         StartCaptureInCompositor(runtimeSequence
@@ -427,37 +399,13 @@ public class CameraCaptureRuntime : MonoBehaviour
 
     public IEnumerator CaptureViewsAndExportColmap(string outAdd)
     {
-        var domeTargets = target != null
-            ? new List<DomeCaptureTarget>
-            {
-                new DomeCaptureTarget
-                {
-                    Transform = target,
-                    Radius = radius,
-                    NumRings = numRings,
-                    ViewsPerRing = viewsPerRing,
-                    FilePrefix = "sphere_00"
-                }
-            }
-            : GetActiveDomeCaptureTargets();
+        var domeTargets = GetActiveDomeCaptureTargets();
         yield return StartCoroutine(CaptureTargetsAndExportColmap(domeTargets, null, outAdd));
     }
 
     public IEnumerator CaptureVolumeViewsAndExportColmap(string outAdd)
     {
-        var volumeTargets = m_VolumeTransform != null
-            ? new List<VolumeCaptureTarget>
-            {
-                new VolumeCaptureTarget
-                {
-                    Transform = m_VolumeTransform,
-                    SubdivX = subdivX,
-                    SubdivY = subdivY,
-                    SubdivZ = subdivZ,
-                    FilePrefix = "box_00"
-                }
-            }
-            : GetActiveVolumeCaptureTargets();
+        var volumeTargets = GetActiveVolumeCaptureTargets();
         yield return StartCoroutine(CaptureTargetsAndExportColmap(null, volumeTargets, outAdd));
     }
 

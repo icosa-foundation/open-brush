@@ -78,7 +78,6 @@ namespace TiltBrush
         protected override void Awake()
         {
             base.Awake();
-            EnsureCaptureSettingsInitialized();
             RestoreStencilWidgetLayers();
         }
 
@@ -147,7 +146,6 @@ namespace TiltBrush
         protected override void OnUpdate()
         {
             base.OnUpdate();
-            EnsureCaptureSettingsInitialized();
             UpdatePreviewMarkers();
         }
 
@@ -171,13 +169,6 @@ namespace TiltBrush
         protected override string GetAdjustmentHintText()
         {
             return $"Hold X/A while scaling to change subdiv ({m_SelectedSubdivisionAxis})";
-        }
-
-        protected override void InitializeCaptureSettings(CameraCaptureRuntime runtime)
-        {
-            SubdivX = runtime.subdivX;
-            SubdivY = runtime.subdivY;
-            SubdivZ = runtime.subdivZ;
         }
 
         protected override bool TryApplyCaptureStep(int stepCount, out string statusText)
@@ -353,25 +344,17 @@ namespace TiltBrush
             widget.transform.localScale = Vector3.one;
             widget.SetSignedWidgetSize(tilt.Transform.scale);
             widget.CustomDimension = tilt.AspectRatio;
-            bool hasSerializedCaptureSettings = false;
             if (tilt.SubdivX.HasValue)
             {
                 widget.SubdivX = tilt.SubdivX.Value;
-                hasSerializedCaptureSettings = true;
             }
             if (tilt.SubdivY.HasValue)
             {
                 widget.SubdivY = tilt.SubdivY.Value;
-                hasSerializedCaptureSettings = true;
             }
             if (tilt.SubdivZ.HasValue)
             {
                 widget.SubdivZ = tilt.SubdivZ.Value;
-                hasSerializedCaptureSettings = true;
-            }
-            if (hasSerializedCaptureSettings)
-            {
-                widget.MarkCaptureSettingsInitialized();
             }
             widget.Show(bShow: true, bPlayAudio: false);
             widget.transform.localPosition = tilt.Transform.translation;
@@ -401,7 +384,6 @@ namespace TiltBrush
             clone.SubdivX = SubdivX;
             clone.SubdivY = SubdivY;
             clone.SubdivZ = SubdivZ;
-            clone.MarkCaptureSettingsInitialized();
             clone.CloneInitialMaterials(this);
             clone.m_SelectedSubdivisionAxis = m_SelectedSubdivisionAxis;
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);

@@ -107,7 +107,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1782612775646965092}
   - component: {fileID: 6201357069329769655}
-  - component: {fileID: 462240973006427450}
   m_Layer: 0
   m_Name: GaussianCapture
   m_TagString: Untagged
@@ -159,15 +158,10 @@ MonoBehaviour:
   profile: 0
   target: {fileID: 1782612775646965092}
   eyeDepthShader: {fileID: 4800000, guid: 92dc4e129e718a549bac62147f1f27e8, type: 3}
-  numRings: 4
-  viewsPerRing: 20
   radius: 5
   heightOffset: 0
   volumeCenter: {x: 0, y: 0, z: 0}
   volumeSize: {x: 5, y: 5, z: 5}
-  subdivX: 2
-  subdivY: 2
-  subdivZ: 2
   transparentBackground: 0
   includeTransparentsAndParticles: 1
   alphaThreshold: 0.05
@@ -176,27 +170,3 @@ MonoBehaviour:
   saveDepthDebugImages: 0
   saveDepthDebugPreviewPng: 0
   saveOpaqueDepthReference: 0
---- !u!114 &462240973006427450
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1172868486959084137}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b38b8a2cec099384ca0d0b404c816a45, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  target: {fileID: 1782612775646965092}
-  numRings: 4
-  viewsPerRing: 20
-  radius: 5
-  height: 0
-  volumeCenter: {x: 0, y: 0, z: 0}
-  volumeSize: {x: 5, y: 5, z: 5}
-  subdivX: 2
-  subdivY: 2
-  subdivZ: 2
-  showDome: 1
-  showVolume: 0

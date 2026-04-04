@@ -54,14 +54,12 @@ namespace TiltBrush
         protected override void Awake()
         {
             base.Awake();
-            EnsureCaptureSettingsInitialized();
             RestoreStencilWidgetLayers();
         }
 
         protected override void OnUpdate()
         {
             base.OnUpdate();
-            EnsureCaptureSettingsInitialized();
             UpdatePreviewMarkers();
         }
 
@@ -85,12 +83,6 @@ namespace TiltBrush
         protected override string GetAdjustmentHintText()
         {
             return "Hold X/A while scaling to change rings + views";
-        }
-
-        protected override void InitializeCaptureSettings(CameraCaptureRuntime runtime)
-        {
-            NumRings = runtime.numRings;
-            ViewsPerRing = runtime.viewsPerRing;
         }
 
         protected override bool TryApplyCaptureStep(int stepCount, out string statusText)
@@ -211,20 +203,13 @@ namespace TiltBrush
             widget.transform.parent = App.Instance.m_CanvasTransform;
             widget.transform.localScale = Vector3.one;
             widget.SetSignedWidgetSize(tilt.Transform.scale);
-            bool hasSerializedCaptureSettings = false;
             if (tilt.NumRings.HasValue)
             {
                 widget.NumRings = tilt.NumRings.Value;
-                hasSerializedCaptureSettings = true;
             }
             if (tilt.ViewsPerRing.HasValue)
             {
                 widget.ViewsPerRing = tilt.ViewsPerRing.Value;
-                hasSerializedCaptureSettings = true;
-            }
-            if (hasSerializedCaptureSettings)
-            {
-                widget.MarkCaptureSettingsInitialized();
             }
             widget.Show(bShow: true, bPlayAudio: false);
             widget.transform.localPosition = tilt.Transform.translation;
@@ -252,7 +237,6 @@ namespace TiltBrush
             clone.SetSignedWidgetSize(size);
             clone.NumRings = NumRings;
             clone.ViewsPerRing = ViewsPerRing;
-            clone.MarkCaptureSettingsInitialized();
             clone.CloneInitialMaterials(this);
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             return clone;
