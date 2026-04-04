@@ -21,6 +21,7 @@ namespace TiltBrush
         private const float kScaleStepSize = 0.12f;
 
         private float m_RuntimeScaleAccumulator;
+        private bool m_CaptureSettingsInitialized;
 
         public override void AssignControllerMaterials(InputManager.ControllerName controller)
         {
@@ -44,18 +45,42 @@ namespace TiltBrush
             base.OnUserEndInteracting();
         }
 
-        protected abstract string GetAdjustmentHintText();
-
-        protected abstract bool TryApplyRuntimeStep(
-            CameraCaptureRuntime runtime, int stepCount, out string statusText);
-
-        public bool TryAdjustCaptureParametersFromScale(float deltaScale)
+        protected void EnsureCaptureSettingsInitialized()
         {
+            if (m_CaptureSettingsInitialized)
+            {
+                return;
+            }
+
             var runtime = CameraCaptureRuntime.m_Instance;
             if (runtime == null)
             {
+                return;
+            }
+
+            InitializeCaptureSettings(runtime);
+            m_CaptureSettingsInitialized = true;
+        }
+
+        protected abstract string GetAdjustmentHintText();
+
+        protected void MarkCaptureSettingsInitialized()
+        {
+            m_CaptureSettingsInitialized = true;
+        }
+
+        protected abstract void InitializeCaptureSettings(CameraCaptureRuntime runtime);
+
+        protected abstract bool TryApplyCaptureStep(int stepCount, out string statusText);
+
+        public bool TryAdjustCaptureParametersFromScale(float deltaScale)
+        {
+            if (CameraCaptureRuntime.m_Instance == null)
+            {
                 return false;
             }
+
+            EnsureCaptureSettingsInitialized();
 
             if (deltaScale <= 0.0f || Mathf.Approximately(deltaScale, 1.0f))
             {
@@ -78,7 +103,7 @@ namespace TiltBrush
             }
 
             m_RuntimeScaleAccumulator -= stepCount * stepThreshold;
-            if (!TryApplyRuntimeStep(runtime, stepCount, out string statusText))
+            if (!TryApplyCaptureStep(stepCount, out string statusText))
             {
                 return true;
             }

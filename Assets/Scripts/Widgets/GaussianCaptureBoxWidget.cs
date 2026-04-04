@@ -32,6 +32,10 @@ namespace TiltBrush
 
         protected override IWidgetShape Shape => BoxShape.Instance;
 
+        [SerializeField] private int m_SubdivX = 2;
+        [SerializeField] private int m_SubdivY = 2;
+        [SerializeField] private int m_SubdivZ = 2;
+
         private readonly List<GameObject> m_PreviewMarkers = new List<GameObject>();
         private static Mesh s_FrustumMesh;
         private static float s_CachedFov;
@@ -53,9 +57,28 @@ namespace TiltBrush
         // Scene-space extents of the capture volume.
         public Vector3 VolumeExtents => m_Size * m_AspectRatio;
 
+        public int SubdivX
+        {
+            get => Mathf.Max(1, m_SubdivX);
+            set => m_SubdivX = Mathf.Max(1, value);
+        }
+
+        public int SubdivY
+        {
+            get => Mathf.Max(1, m_SubdivY);
+            set => m_SubdivY = Mathf.Max(1, value);
+        }
+
+        public int SubdivZ
+        {
+            get => Mathf.Max(1, m_SubdivZ);
+            set => m_SubdivZ = Mathf.Max(1, value);
+        }
+
         protected override void Awake()
         {
             base.Awake();
+            EnsureCaptureSettingsInitialized();
             RestoreStencilWidgetLayers();
         }
 
@@ -124,6 +147,7 @@ namespace TiltBrush
         protected override void OnUpdate()
         {
             base.OnUpdate();
+            EnsureCaptureSettingsInitialized();
             UpdatePreviewMarkers();
         }
 
@@ -149,22 +173,28 @@ namespace TiltBrush
             return $"Hold X/A while scaling to change subdiv ({m_SelectedSubdivisionAxis})";
         }
 
-        protected override bool TryApplyRuntimeStep(
-            CameraCaptureRuntime runtime, int stepCount, out string statusText)
+        protected override void InitializeCaptureSettings(CameraCaptureRuntime runtime)
+        {
+            SubdivX = runtime.subdivX;
+            SubdivY = runtime.subdivY;
+            SubdivZ = runtime.subdivZ;
+        }
+
+        protected override bool TryApplyCaptureStep(int stepCount, out string statusText)
         {
             switch (m_SelectedSubdivisionAxis)
             {
                 case SubdivisionAxis.X:
-                    runtime.subdivX = Mathf.Max(1, runtime.subdivX + stepCount);
-                    statusText = $"Subdiv X: {runtime.subdivX}";
+                    SubdivX += stepCount;
+                    statusText = $"Subdiv X: {SubdivX}";
                     return true;
                 case SubdivisionAxis.Y:
-                    runtime.subdivY = Mathf.Max(1, runtime.subdivY + stepCount);
-                    statusText = $"Subdiv Y: {runtime.subdivY}";
+                    SubdivY += stepCount;
+                    statusText = $"Subdiv Y: {SubdivY}";
                     return true;
                 default:
-                    runtime.subdivZ = Mathf.Max(1, runtime.subdivZ + stepCount);
-                    statusText = $"Subdiv Z: {runtime.subdivZ}";
+                    SubdivZ += stepCount;
+                    statusText = $"Subdiv Z: {SubdivZ}";
                     return true;
             }
         }
@@ -220,7 +250,7 @@ namespace TiltBrush
         {
             var runtime = CameraCaptureRuntime.m_Instance;
             if (runtime == null) return;
-            var poses = runtime.GetVolumeCameraPoses(transform);
+            var poses = runtime.GetVolumeCameraPoses(transform, SubdivX, SubdivY, SubdivZ);
             float fov = runtime.cameraToUse != null ? runtime.cameraToUse.fieldOfView : 60f;
             float aspect = runtime.width > 0 && runtime.height > 0
                 ? (float)runtime.width / runtime.height : 16f / 9f;
@@ -249,7 +279,7 @@ namespace TiltBrush
             var runtime = CameraCaptureRuntime.m_Instance;
             if (runtime == null) { ClearPreviewMarkers(); return; }
 
-            var poses = runtime.GetVolumeCameraPoses(transform);
+            var poses = runtime.GetVolumeCameraPoses(transform, SubdivX, SubdivY, SubdivZ);
             float frustumDepth = transform.lossyScale.magnitude * 0.05f;
 
             EnsureFrustumMesh(runtime);
@@ -323,6 +353,26 @@ namespace TiltBrush
             widget.transform.localScale = Vector3.one;
             widget.SetSignedWidgetSize(tilt.Transform.scale);
             widget.CustomDimension = tilt.AspectRatio;
+            bool hasSerializedCaptureSettings = false;
+            if (tilt.SubdivX.HasValue)
+            {
+                widget.SubdivX = tilt.SubdivX.Value;
+                hasSerializedCaptureSettings = true;
+            }
+            if (tilt.SubdivY.HasValue)
+            {
+                widget.SubdivY = tilt.SubdivY.Value;
+                hasSerializedCaptureSettings = true;
+            }
+            if (tilt.SubdivZ.HasValue)
+            {
+                widget.SubdivZ = tilt.SubdivZ.Value;
+                hasSerializedCaptureSettings = true;
+            }
+            if (hasSerializedCaptureSettings)
+            {
+                widget.MarkCaptureSettingsInitialized();
+            }
             widget.Show(bShow: true, bPlayAudio: false);
             widget.transform.localPosition = tilt.Transform.translation;
             widget.transform.localRotation = tilt.Transform.rotation;
@@ -348,6 +398,10 @@ namespace TiltBrush
             clone.Show(true, false);
             clone.SetSignedWidgetSize(size);
             clone.CustomDimension = CustomDimension;
+            clone.SubdivX = SubdivX;
+            clone.SubdivY = SubdivY;
+            clone.SubdivZ = SubdivZ;
+            clone.MarkCaptureSettingsInitialized();
             clone.CloneInitialMaterials(this);
             clone.m_SelectedSubdivisionAxis = m_SelectedSubdivisionAxis;
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);

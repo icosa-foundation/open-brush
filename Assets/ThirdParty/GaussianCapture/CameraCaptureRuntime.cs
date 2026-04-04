@@ -94,12 +94,17 @@ public class CameraCaptureRuntime : MonoBehaviour
     {
         public Transform Transform;
         public float Radius;
+        public int NumRings;
+        public int ViewsPerRing;
         public string FilePrefix;
     }
 
     private struct VolumeCaptureTarget
     {
         public Transform Transform;
+        public int SubdivX;
+        public int SubdivY;
+        public int SubdivZ;
         public string FilePrefix;
     }
 
@@ -134,14 +139,25 @@ public class CameraCaptureRuntime : MonoBehaviour
     // Used by both the capture coroutine and widget visualization.
     public List<(Vector3 position, Quaternion rotation)> GetDomeCameraPoses(Vector3 center, float r)
     {
+        return GetDomeCameraPoses(center, r, numRings, viewsPerRing);
+    }
+
+    public List<(Vector3 position, Quaternion rotation)> GetDomeCameraPoses(
+        Vector3 center,
+        float r,
+        int captureNumRings,
+        int captureViewsPerRing)
+    {
         var poses = new List<(Vector3, Quaternion)>();
-        for (int ring = 0; ring < numRings; ring++)
+        int ringCount = Mathf.Max(1, captureNumRings);
+        int viewsPerRingCount = Mathf.Max(1, captureViewsPerRing);
+        for (int ring = 0; ring < ringCount; ring++)
         {
             float elevation = Mathf.Lerp(-Mathf.PI / 4f, Mathf.PI / 4f,
-                numRings == 1 ? 0.5f : (float)ring / (numRings - 1));
-            for (int i = 0; i < viewsPerRing; i++)
+                ringCount == 1 ? 0.5f : (float)ring / (ringCount - 1));
+            for (int i = 0; i < viewsPerRingCount; i++)
             {
-                float azimuth = i * Mathf.PI * 2f / viewsPerRing;
+                float azimuth = i * Mathf.PI * 2f / viewsPerRingCount;
                 float x = r * Mathf.Cos(elevation) * Mathf.Cos(azimuth);
                 float y = r * Mathf.Sin(elevation);
                 float z = r * Mathf.Cos(elevation) * Mathf.Sin(azimuth);
@@ -156,10 +172,19 @@ public class CameraCaptureRuntime : MonoBehaviour
     // Used by both the capture coroutine and widget visualization.
     public List<Vector3> GetVolumeCameraGridCenters(Transform volumeTransform)
     {
+        return GetVolumeCameraGridCenters(volumeTransform, subdivX, subdivY, subdivZ);
+    }
+
+    public List<Vector3> GetVolumeCameraGridCenters(
+        Transform volumeTransform,
+        int captureSubdivX,
+        int captureSubdivY,
+        int captureSubdivZ)
+    {
         var centers = new List<Vector3>();
-        int countX = Mathf.Max(1, subdivX);
-        int countY = Mathf.Max(1, subdivY);
-        int countZ = Mathf.Max(1, subdivZ);
+        int countX = Mathf.Max(1, captureSubdivX);
+        int countY = Mathf.Max(1, captureSubdivY);
+        int countZ = Mathf.Max(1, captureSubdivZ);
         float stepX = 1f / countX;
         float stepY = 1f / countY;
         float stepZ = 1f / countZ;
@@ -180,8 +205,18 @@ public class CameraCaptureRuntime : MonoBehaviour
     // Combines grid cell centers with all spherical capture directions.
     public List<(Vector3 position, Quaternion rotation)> GetVolumeCameraPoses(Transform volumeTransform)
     {
+        return GetVolumeCameraPoses(volumeTransform, subdivX, subdivY, subdivZ);
+    }
+
+    public List<(Vector3 position, Quaternion rotation)> GetVolumeCameraPoses(
+        Transform volumeTransform,
+        int captureSubdivX,
+        int captureSubdivY,
+        int captureSubdivZ)
+    {
         var poses = new List<(Vector3, Quaternion)>();
-        var centers = GetVolumeCameraGridCenters(volumeTransform);
+        var centers = GetVolumeCameraGridCenters(
+            volumeTransform, captureSubdivX, captureSubdivY, captureSubdivZ);
         var directions = GenerateCustomSphericalDirections();
         foreach (var center in centers)
             foreach (var dir in directions)
@@ -206,6 +241,8 @@ public class CameraCaptureRuntime : MonoBehaviour
         }
         this.target = domeTargets[0].Transform;
         this.radius = domeTargets[0].Radius;
+        this.numRings = domeTargets[0].NumRings;
+        this.viewsPerRing = domeTargets[0].ViewsPerRing;
         StartCaptureInCompositor(runtimeSequence
             ? RuntimeSequenceCoroutine(domeTargets, null)
             : CaptureTargetsAndExportColmap(domeTargets, null, outAdd: ""));
@@ -229,6 +266,9 @@ public class CameraCaptureRuntime : MonoBehaviour
         m_VolumeTransform = volumeTargets[0].Transform;
         this.volumeCenter = volumeTargets[0].Transform.position;
         this.volumeSize = volumeTargets[0].Transform.lossyScale;
+        this.subdivX = volumeTargets[0].SubdivX;
+        this.subdivY = volumeTargets[0].SubdivY;
+        this.subdivZ = volumeTargets[0].SubdivZ;
 
         StartCaptureInCompositor(runtimeSequence
             ? RuntimeSequenceCoroutine(null, volumeTargets)
@@ -257,12 +297,17 @@ public class CameraCaptureRuntime : MonoBehaviour
         {
             this.target = domeTargets[0].Transform;
             this.radius = domeTargets[0].Radius;
+            this.numRings = domeTargets[0].NumRings;
+            this.viewsPerRing = domeTargets[0].ViewsPerRing;
         }
         if (volumeTargets.Count > 0)
         {
             m_VolumeTransform = volumeTargets[0].Transform;
             this.volumeCenter = volumeTargets[0].Transform.position;
             this.volumeSize = volumeTargets[0].Transform.lossyScale;
+            this.subdivX = volumeTargets[0].SubdivX;
+            this.subdivY = volumeTargets[0].SubdivY;
+            this.subdivZ = volumeTargets[0].SubdivZ;
         }
 
         StartCaptureInCompositor(runtimeSequence
@@ -389,6 +434,8 @@ public class CameraCaptureRuntime : MonoBehaviour
                 {
                     Transform = target,
                     Radius = radius,
+                    NumRings = numRings,
+                    ViewsPerRing = viewsPerRing,
                     FilePrefix = "sphere_00"
                 }
             }
@@ -404,6 +451,9 @@ public class CameraCaptureRuntime : MonoBehaviour
                 new VolumeCaptureTarget
                 {
                     Transform = m_VolumeTransform,
+                    SubdivX = subdivX,
+                    SubdivY = subdivY,
+                    SubdivZ = subdivZ,
                     FilePrefix = "box_00"
                 }
             }
@@ -452,8 +502,10 @@ public class CameraCaptureRuntime : MonoBehaviour
                 if (domeTargets == null) { domeTargets = new List<DomeCaptureTarget>(); }
                 if (volumeTargets == null) { volumeTargets = new List<VolumeCaptureTarget>(); }
                 int totalImages =
-                    domeTargets.Sum(x => GetDomeCameraPoses(x.Transform.position, x.Radius).Count) +
-                    volumeTargets.Sum(x => GetVolumeCameraGridCenters(x.Transform).Count * directions.Count);
+                    domeTargets.Sum(x => GetDomeCameraPoses(
+                        x.Transform.position, x.Radius, x.NumRings, x.ViewsPerRing).Count) +
+                    volumeTargets.Sum(x => GetVolumeCameraGridCenters(
+                        x.Transform, x.SubdivX, x.SubdivY, x.SubdivZ).Count * directions.Count);
                 int currentImage = 0;
                 const int batchSize = 40;
                 int batchCounter = 0;
@@ -476,7 +528,11 @@ public class CameraCaptureRuntime : MonoBehaviour
 
                     foreach (var domeTarget in domeTargets)
                     {
-                        var poses = GetDomeCameraPoses(domeTarget.Transform.position, domeTarget.Radius);
+                        var poses = GetDomeCameraPoses(
+                            domeTarget.Transform.position,
+                            domeTarget.Radius,
+                            domeTarget.NumRings,
+                            domeTarget.ViewsPerRing);
                         foreach (var (position, rotation) in poses)
                         {
                             if (cancel) { CleanupRT(ref cameraToUse, ref rt, ref resolvedRt, ref tex); isRunning = false; yield break; }
@@ -526,7 +582,11 @@ public class CameraCaptureRuntime : MonoBehaviour
 
                     foreach (var volumeTarget in volumeTargets)
                     {
-                        var cellCenters = GetVolumeCameraGridCenters(volumeTarget.Transform);
+                        var cellCenters = GetVolumeCameraGridCenters(
+                            volumeTarget.Transform,
+                            volumeTarget.SubdivX,
+                            volumeTarget.SubdivY,
+                            volumeTarget.SubdivZ);
                         int imagesSkipped = 0;
                         foreach (var cellCenter in cellCenters)
                         {
@@ -628,6 +688,8 @@ public class CameraCaptureRuntime : MonoBehaviour
             {
                 Transform = widget.transform,
                 Radius = widget.transform.lossyScale.x * 0.5f,
+                NumRings = widget.NumRings,
+                ViewsPerRing = widget.ViewsPerRing,
                 FilePrefix = BuildCaptureFilePrefix("sphere", index, widget.name)
             })
             .ToList();
@@ -641,6 +703,9 @@ public class CameraCaptureRuntime : MonoBehaviour
             .Select((widget, index) => new VolumeCaptureTarget
             {
                 Transform = widget.transform,
+                SubdivX = widget.SubdivX,
+                SubdivY = widget.SubdivY,
+                SubdivZ = widget.SubdivZ,
                 FilePrefix = BuildCaptureFilePrefix("box", index, widget.name)
             })
             .ToList();

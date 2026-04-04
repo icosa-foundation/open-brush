@@ -737,6 +737,16 @@ namespace TiltBrush
         public StencilType ShapeType { get; set; }
         public TrTransform Transform { get; set; }
         public Vector3 AspectRatio { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int? NumRings { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int? ViewsPerRing { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int? SubdivX { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int? SubdivY { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int? SubdivZ { get; set; }
         public bool Pinned { get; set; }
         public uint GroupId { get; set; }
         public int LayerId { get; set; }

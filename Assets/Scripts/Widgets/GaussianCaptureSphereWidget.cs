@@ -25,10 +25,25 @@ namespace TiltBrush
     {
         protected override IWidgetShape Shape => SphereShape.Instance;
 
+        [SerializeField] private int m_NumRings = 4;
+        [SerializeField] private int m_ViewsPerRing = 20;
+
         private readonly List<GameObject> m_PreviewMarkers = new List<GameObject>();
         private static Mesh s_FrustumMesh;
         private static float s_CachedFov;
         private static float s_CachedAspect;
+
+        public int NumRings
+        {
+            get => Mathf.Max(1, m_NumRings);
+            set => m_NumRings = Mathf.Max(1, value);
+        }
+
+        public int ViewsPerRing
+        {
+            get => Mathf.Max(1, m_ViewsPerRing);
+            set => m_ViewsPerRing = Mathf.Max(1, value);
+        }
 
         // Scene-space center of the capture dome (the point cameras look at).
         public Vector3 DomeCenter => transform.localPosition;
@@ -39,12 +54,14 @@ namespace TiltBrush
         protected override void Awake()
         {
             base.Awake();
+            EnsureCaptureSettingsInitialized();
             RestoreStencilWidgetLayers();
         }
 
         protected override void OnUpdate()
         {
             base.OnUpdate();
+            EnsureCaptureSettingsInitialized();
             UpdatePreviewMarkers();
         }
 
@@ -70,12 +87,17 @@ namespace TiltBrush
             return "Hold X/A while scaling to change rings + views";
         }
 
-        protected override bool TryApplyRuntimeStep(
-            CameraCaptureRuntime runtime, int stepCount, out string statusText)
+        protected override void InitializeCaptureSettings(CameraCaptureRuntime runtime)
         {
-            runtime.numRings = Mathf.Max(1, runtime.numRings + stepCount);
-            runtime.viewsPerRing = Mathf.Max(1, runtime.viewsPerRing + stepCount);
-            statusText = $"Rings: {runtime.numRings} Views/Ring: {runtime.viewsPerRing}";
+            NumRings = runtime.numRings;
+            ViewsPerRing = runtime.viewsPerRing;
+        }
+
+        protected override bool TryApplyCaptureStep(int stepCount, out string statusText)
+        {
+            NumRings += stepCount;
+            ViewsPerRing += stepCount;
+            statusText = $"Rings: {NumRings} Views/Ring: {ViewsPerRing}";
             return true;
         }
 
@@ -84,7 +106,7 @@ namespace TiltBrush
             var runtime = CameraCaptureRuntime.m_Instance;
             if (runtime == null) return;
             float r = transform.lossyScale.x * 0.5f;
-            var poses = runtime.GetDomeCameraPoses(transform.position, r);
+            var poses = runtime.GetDomeCameraPoses(transform.position, r, NumRings, ViewsPerRing);
             float frustumDepth = r * 0.12f;
             float fov = runtime.cameraToUse != null ? runtime.cameraToUse.fieldOfView : 60f;
             float aspect = runtime.width > 0 && runtime.height > 0
@@ -114,7 +136,7 @@ namespace TiltBrush
             if (runtime == null) { ClearPreviewMarkers(); return; }
 
             float r = transform.lossyScale.x * 0.5f;
-            var poses = runtime.GetDomeCameraPoses(transform.position, r);
+            var poses = runtime.GetDomeCameraPoses(transform.position, r, NumRings, ViewsPerRing);
             float frustumDepth = r * 0.12f;
 
             EnsureFrustumMesh(runtime);
@@ -189,6 +211,21 @@ namespace TiltBrush
             widget.transform.parent = App.Instance.m_CanvasTransform;
             widget.transform.localScale = Vector3.one;
             widget.SetSignedWidgetSize(tilt.Transform.scale);
+            bool hasSerializedCaptureSettings = false;
+            if (tilt.NumRings.HasValue)
+            {
+                widget.NumRings = tilt.NumRings.Value;
+                hasSerializedCaptureSettings = true;
+            }
+            if (tilt.ViewsPerRing.HasValue)
+            {
+                widget.ViewsPerRing = tilt.ViewsPerRing.Value;
+                hasSerializedCaptureSettings = true;
+            }
+            if (hasSerializedCaptureSettings)
+            {
+                widget.MarkCaptureSettingsInitialized();
+            }
             widget.Show(bShow: true, bPlayAudio: false);
             widget.transform.localPosition = tilt.Transform.translation;
             widget.transform.localRotation = tilt.Transform.rotation;
@@ -213,6 +250,9 @@ namespace TiltBrush
             clone.transform.parent = transform.parent;
             clone.Show(true, false);
             clone.SetSignedWidgetSize(size);
+            clone.NumRings = NumRings;
+            clone.ViewsPerRing = ViewsPerRing;
+            clone.MarkCaptureSettingsInitialized();
             clone.CloneInitialMaterials(this);
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             return clone;
