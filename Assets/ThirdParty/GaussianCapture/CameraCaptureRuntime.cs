@@ -90,7 +90,7 @@ public class CameraCaptureRuntime : MonoBehaviour
     private struct DomeCaptureTarget
     {
         public Transform Transform;
-        public float Radius;
+        public Vector3 Radii;
         public int NumRings;
         public int ViewsPerRing;
         public StencilType ShapeType;
@@ -142,10 +142,25 @@ public class CameraCaptureRuntime : MonoBehaviour
         int captureViewsPerRing,
         StencilType captureShapeType = StencilType.Sphere)
     {
+        return GetDomeCameraPoses(
+            center, Vector3.one * r, captureNumRings, captureViewsPerRing, captureShapeType);
+    }
+
+    public List<(Vector3 position, Quaternion rotation)> GetDomeCameraPoses(
+        Vector3 center,
+        Vector3 radii,
+        int captureNumRings,
+        int captureViewsPerRing,
+        StencilType captureShapeType = StencilType.Sphere)
+    {
         var poses = new List<(Vector3, Quaternion)>();
         int ringCount = Mathf.Max(1, captureNumRings);
         int viewsPerRingCount = Mathf.Max(1, captureViewsPerRing);
         bool isHemisphere = captureShapeType == StencilType.InteriorDome;
+        Vector3 safeRadii = new Vector3(
+            Mathf.Max(0.0001f, radii.x),
+            Mathf.Max(0.0001f, radii.y),
+            Mathf.Max(0.0001f, radii.z));
         for (int ring = 0; ring < ringCount; ring++)
         {
             float ringT = ringCount == 1 ? 0.5f : (float)ring / (ringCount - 1);
@@ -155,9 +170,9 @@ public class CameraCaptureRuntime : MonoBehaviour
             for (int i = 0; i < viewsPerRingCount; i++)
             {
                 float azimuth = i * Mathf.PI * 2f / viewsPerRingCount;
-                float x = r * Mathf.Cos(elevation) * Mathf.Cos(azimuth);
-                float y = r * Mathf.Sin(elevation);
-                float z = r * Mathf.Cos(elevation) * Mathf.Sin(azimuth);
+                float x = safeRadii.x * Mathf.Cos(elevation) * Mathf.Cos(azimuth);
+                float y = safeRadii.y * Mathf.Sin(elevation);
+                float z = safeRadii.z * Mathf.Cos(elevation) * Mathf.Sin(azimuth);
                 Vector3 pos = center + new Vector3(x, y + heightOffset, z);
                 poses.Add((pos, Quaternion.LookRotation(center - pos, Vector3.up)));
             }
@@ -223,11 +238,11 @@ public class CameraCaptureRuntime : MonoBehaviour
         var domeTargets = GetActiveDomeCaptureTargets();
         if (domeTargets.Count == 0)
         {
-            Debug.LogError("[GaussianCapture] No GaussianCapture sphere or hemisphere widget found in scene. Place one to define the dome capture volume.");
+            Debug.LogError("[GaussianCapture] No GaussianCapture sphere, ellipsoid, or hemisphere widget found in scene. Place one to define the dome capture volume.");
             return;
         }
         this.target = domeTargets[0].Transform;
-        this.radius = domeTargets[0].Radius;
+        this.radius = domeTargets[0].Radii.Max();
         StartCaptureInCompositor(runtimeSequence
             ? RuntimeSequenceCoroutine(domeTargets, null)
             : CaptureTargetsAndExportColmap(domeTargets, null, outAdd: ""));
@@ -271,14 +286,14 @@ public class CameraCaptureRuntime : MonoBehaviour
         var volumeTargets = GetActiveVolumeCaptureTargets();
         if (domeTargets.Count == 0 && volumeTargets.Count == 0)
         {
-            Debug.LogError("[GaussianCapture] No GaussianCapture widgets found in scene. Place sphere, hemisphere, or box capture widgets to define capture areas.");
+            Debug.LogError("[GaussianCapture] No GaussianCapture widgets found in scene. Place sphere, ellipsoid, hemisphere, or box capture widgets to define capture areas.");
             return;
         }
 
         if (domeTargets.Count > 0)
         {
             this.target = domeTargets[0].Transform;
-            this.radius = domeTargets[0].Radius;
+            this.radius = domeTargets[0].Radii.Max();
         }
         if (volumeTargets.Count > 0)
         {
@@ -456,7 +471,7 @@ public class CameraCaptureRuntime : MonoBehaviour
                 if (volumeTargets == null) { volumeTargets = new List<VolumeCaptureTarget>(); }
                 int totalImages =
                     domeTargets.Sum(x => GetDomeCameraPoses(
-                        x.Transform.position, x.Radius, x.NumRings, x.ViewsPerRing, x.ShapeType).Count) +
+                        x.Transform.position, x.Radii, x.NumRings, x.ViewsPerRing, x.ShapeType).Count) +
                     volumeTargets.Sum(x => GetVolumeCameraGridCenters(
                         x.Transform, x.SubdivX, x.SubdivY, x.SubdivZ).Count * directions.Count);
                 int currentImage = 0;
@@ -483,7 +498,7 @@ public class CameraCaptureRuntime : MonoBehaviour
                     {
                         var poses = GetDomeCameraPoses(
                             domeTarget.Transform.position,
-                            domeTarget.Radius,
+                            domeTarget.Radii,
                             domeTarget.NumRings,
                             domeTarget.ViewsPerRing,
                             domeTarget.ShapeType);
@@ -635,30 +650,73 @@ public class CameraCaptureRuntime : MonoBehaviour
 
     private List<DomeCaptureTarget> GetActiveDomeCaptureTargets()
     {
-        return TiltBrush.WidgetManager.m_Instance.ActiveGaussianCaptureSphereWidgets
-            .Select(x => x.WidgetScript)
-            .Concat(TiltBrush.WidgetManager.m_Instance.ActiveGaussianCaptureHemisphereWidgets
-                .Select(x => x.WidgetScript))
-            .Where(x => x != null && x.gameObject.activeSelf)
-            .Select((widget, index) => new DomeCaptureTarget
+        var targets = new List<DomeCaptureTarget>();
+
+        void AddTarget(Transform transform, Vector3 radii, int numRings, int viewsPerRing,
+            StencilType shapeType, string widgetName)
+        {
+            string shapeName = shapeType switch
             {
-                Transform = widget.transform,
-                Radius = widget.transform.lossyScale.x * 0.5f,
-                NumRings = widget.NumRings,
-                ViewsPerRing = widget.ViewsPerRing,
-                ShapeType = widget.CaptureShapeType,
+                StencilType.InteriorDome => "hemisphere",
+                StencilType.Ellipsoid => "ellipsoid",
+                _ => "sphere",
+            };
+
+            targets.Add(new DomeCaptureTarget
+            {
+                Transform = transform,
+                Radii = radii,
+                NumRings = numRings,
+                ViewsPerRing = viewsPerRing,
+                ShapeType = shapeType,
                 FilePrefix = BuildCaptureFilePrefix(
-                    widget.CaptureShapeType == StencilType.InteriorDome ? "hemisphere" : "sphere",
-                    index,
-                    widget.name)
-            })
-            .ToList();
+                    shapeName,
+                    targets.Count,
+                    widgetName)
+            });
+        }
+
+        foreach (var widgetData in TiltBrush.WidgetManager.m_Instance.ActiveGaussianCaptureWidgets)
+        {
+            var widget = widgetData.WidgetScript;
+            if (widget != null && widget.gameObject.activeSelf)
+            {
+                if (widget is GaussianCaptureBoxWidget)
+                {
+                    continue;
+                }
+
+                if (widget is GaussianCaptureEllipsoidWidget ellipsoid)
+                {
+                    AddTarget(
+                        ellipsoid.transform,
+                        ellipsoid.transform.lossyScale * 0.5f,
+                        ellipsoid.NumRings,
+                        ellipsoid.ViewsPerRing,
+                        ellipsoid.CaptureShapeType,
+                        ellipsoid.name);
+                }
+                else if (widget is GaussianCaptureSphereWidget dome)
+                {
+                    AddTarget(
+                        dome.transform,
+                        Vector3.one * (dome.transform.lossyScale.x * 0.5f),
+                        dome.NumRings,
+                        dome.ViewsPerRing,
+                        dome.CaptureShapeType,
+                        dome.name);
+                }
+            }
+        }
+
+        return targets;
     }
 
     private List<VolumeCaptureTarget> GetActiveVolumeCaptureTargets()
     {
-        return TiltBrush.WidgetManager.m_Instance.ActiveGaussianCaptureBoxWidgets
+        return TiltBrush.WidgetManager.m_Instance.ActiveGaussianCaptureWidgets
             .Select(x => x.WidgetScript)
+            .OfType<GaussianCaptureBoxWidget>()
             .Where(x => x != null && x.gameObject.activeSelf)
             .Select((widget, index) => new VolumeCaptureTarget
             {

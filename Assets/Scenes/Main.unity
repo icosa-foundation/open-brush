@@ -20966,6 +20966,40 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 2020398954}
   m_PrefabAsset: {fileID: 0}
+--- !u!21 &1457583701
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: FX/FXAA
+  m_Shader: {fileID: 4800000, guid: 0aceeb1a35943154d878d4390c1a6f55, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _ContrastThreshold: 0.0312
+    - _RelativeThreshold: 0.063
+    - _SubpixelBlending: 1
+    m_Colors: []
+  m_BuildTextureStacks: []
 --- !u!1 &1476953170
 GameObject:
   m_ObjectHideFlags: 0
@@ -24424,40 +24458,6 @@ MeshRenderer:
     type: 3}
   m_PrefabInstance: {fileID: 241392954}
   m_PrefabAsset: {fileID: 0}
---- !u!21 &1682402681
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: FX/FXAA
-  m_Shader: {fileID: 4800000, guid: 0aceeb1a35943154d878d4390c1a6f55, type: 3}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats:
-    - _ContrastThreshold: 0.0312
-    - _RelativeThreshold: 0.063
-    - _SubpixelBlending: 1
-    m_Colors: []
-  m_BuildTextureStacks: []
 --- !u!4 &1682815313
 Transform:
   m_ObjectHideFlags: 0
@@ -26011,6 +26011,8 @@ MonoBehaviour:
   m_PortalBoxWidgetPrefab: {fileID: 114000010150538192, guid: d904f8c97b6436448aad1c6f602b31db,
     type: 3}
   m_GaussianCaptureSphereWidgetPrefab: {fileID: 114000010304738242, guid: 4774a63237b7e1e498e5cd21e98789ad,
+    type: 3}
+  m_GaussianCaptureEllipsoidWidgetPrefab: {fileID: 114000010304738242, guid: d648f1d8d7a55204fa8e2d8cd794f1d1,
     type: 3}
   m_GaussianCaptureHemisphereWidgetPrefab: {fileID: 114000010304738242, guid: 63db937337324638b7f9e698ccaeba56,
     type: 3}

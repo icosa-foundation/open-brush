@@ -101,6 +101,7 @@ namespace TiltBrush
                     case PortalSphereWidget:
                     case PortalBoxWidget:
                     case GaussianCaptureBoxWidget:
+                    case GaussianCaptureEllipsoidWidget:
                     case GaussianCaptureSphereWidget:
                     case LightWidget:
                     case ImageWidget:

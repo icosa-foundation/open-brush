@@ -845,7 +845,7 @@ MonoBehaviour:
   m_Border: {fileID: 3108609399761811635}
   m_AnimateSpeed: 8
   m_AnimateRange: {x: 0, y: 1}
-  m_ShowOnToolType: 21
+  m_ShowOnToolType: 0
   references:
     version: 2
     RefIds: []
@@ -1042,7 +1042,7 @@ MonoBehaviour:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: a5778be0632c3774b8b769f3dd79f02e, type: 3}
-  m_AtlasTexture: 1
+  m_AtlasTexture: 0
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 1

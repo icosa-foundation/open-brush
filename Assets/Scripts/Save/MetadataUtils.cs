@@ -202,38 +202,62 @@ namespace TiltBrush
 
         public static TiltGaussianCapture[] GetTiltGaussianCaptures(GroupIdMapping groupIdMapping)
         {
-            var spheres = WidgetManager.m_Instance.ActiveGaussianCaptureSphereWidgets
-                .Select(x => x.WidgetScript).Where(x => x.gameObject.activeSelf);
-            var hemispheres = WidgetManager.m_Instance.ActiveGaussianCaptureHemisphereWidgets
-                .Select(x => x.WidgetScript).Where(x => x.gameObject.activeSelf);
-            var boxes = WidgetManager.m_Instance.ActiveGaussianCaptureBoxWidgets
-                .Select(x => x.WidgetScript).Where(x => x.gameObject.activeSelf);
+            var captures = WidgetManager.m_Instance.ActiveGaussianCaptureWidgets
+                .Select(x => x.WidgetScript)
+                .Where(x => x.gameObject.activeSelf);
 
-            var results = spheres
-                .Concat<GaussianCaptureSphereWidget>(hemispheres)
-                .Select(w => new TiltGaussianCapture
+            var results = captures
+                .Select(widget =>
                 {
-                    ShapeType = w.CaptureShapeType,
-                    Transform = w.GetSaveTransform(),
-                    AspectRatio = Vector3.one,
-                    NumRings = w.NumRings,
-                    ViewsPerRing = w.ViewsPerRing,
-                    Pinned = w.Pinned,
-                    GroupId = groupIdMapping.GetId(w.Group),
-                    LayerId = App.Scene.GetIndexOfCanvas(w.Canvas),
+                    if (widget is GaussianCaptureBoxWidget box)
+                    {
+                        return new TiltGaussianCapture
+                        {
+                            ShapeType = StencilType.Cube,
+                            Transform = box.GetSaveTransform(),
+                            AspectRatio = box.CustomDimension,
+                            SubdivX = box.SubdivX,
+                            SubdivY = box.SubdivY,
+                            SubdivZ = box.SubdivZ,
+                            Pinned = box.Pinned,
+                            GroupId = groupIdMapping.GetId(box.Group),
+                            LayerId = App.Scene.GetIndexOfCanvas(box.Canvas),
+                        };
+                    }
+
+                    if (widget is GaussianCaptureEllipsoidWidget ellipsoid)
+                    {
+                        return new TiltGaussianCapture
+                        {
+                            ShapeType = ellipsoid.CaptureShapeType,
+                            Transform = ellipsoid.GetSaveTransform(),
+                            AspectRatio = ellipsoid.CustomDimension,
+                            NumRings = ellipsoid.NumRings,
+                            ViewsPerRing = ellipsoid.ViewsPerRing,
+                            Pinned = ellipsoid.Pinned,
+                            GroupId = groupIdMapping.GetId(ellipsoid.Group),
+                            LayerId = App.Scene.GetIndexOfCanvas(ellipsoid.Canvas),
+                        };
+                    }
+
+                    if (widget is GaussianCaptureSphereWidget dome)
+                    {
+                        return new TiltGaussianCapture
+                        {
+                            ShapeType = dome.CaptureShapeType,
+                            Transform = dome.GetSaveTransform(),
+                            AspectRatio = Vector3.one,
+                            NumRings = dome.NumRings,
+                            ViewsPerRing = dome.ViewsPerRing,
+                            Pinned = dome.Pinned,
+                            GroupId = groupIdMapping.GetId(dome.Group),
+                            LayerId = App.Scene.GetIndexOfCanvas(dome.Canvas),
+                        };
+                    }
+
+                    return null;
                 })
-                .Concat(boxes.Select(w => new TiltGaussianCapture
-                {
-                    ShapeType = StencilType.Cube,
-                    Transform = w.GetSaveTransform(),
-                    AspectRatio = w.CustomDimension,
-                    SubdivX = w.SubdivX,
-                    SubdivY = w.SubdivY,
-                    SubdivZ = w.SubdivZ,
-                    Pinned = w.Pinned,
-                    GroupId = groupIdMapping.GetId(w.Group),
-                    LayerId = App.Scene.GetIndexOfCanvas(w.Canvas),
-                }))
+                .Where(x => x != null)
                 .OrderBy(x => ByTranslation(x.Transform))
                 .ToArray();
 
