@@ -126,6 +126,7 @@ MonoBehaviour:
   m_MaxSize_CS: 200
   m_NumRings: 4
   m_ViewsPerRing: 20
+  m_AspectRatio: {x: 1, y: 1, z: 1}
 --- !u!114 &-578355158392930358
 MonoBehaviour:
   m_ObjectHideFlags: 0
