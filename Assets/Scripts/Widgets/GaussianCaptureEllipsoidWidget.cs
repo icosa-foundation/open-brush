@@ -281,7 +281,7 @@ namespace TiltBrush
             var runtime = CameraCaptureRuntime.m_Instance;
             if (runtime == null) return;
             var poses = runtime.GetDomeCameraPoses(
-                transform.position, DomeRadii, NumRings, ViewsPerRing, CaptureShapeType);
+                transform, DomeRadii, NumRings, ViewsPerRing, CaptureShapeType);
             float frustumDepth = DomeRadii.Max() * 0.12f;
             float fov = runtime.cameraToUse != null ? runtime.cameraToUse.fieldOfView : 60f;
             float aspect = runtime.width > 0 && runtime.height > 0
@@ -317,7 +317,7 @@ namespace TiltBrush
             }
 
             var poses = runtime.GetDomeCameraPoses(
-                transform.position, DomeRadii, NumRings, ViewsPerRing, CaptureShapeType);
+                transform, DomeRadii, NumRings, ViewsPerRing, CaptureShapeType);
             float frustumDepth = DomeRadii.Max() * 0.12f;
 
             EnsureFrustumMesh(runtime);

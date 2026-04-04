@@ -101,7 +101,7 @@ namespace TiltBrush
             if (runtime == null) return;
             float r = transform.lossyScale.x * 0.5f;
             var poses = runtime.GetDomeCameraPoses(
-                transform.position, r, NumRings, ViewsPerRing, CaptureShapeType);
+                transform, Vector3.one * r, NumRings, ViewsPerRing, CaptureShapeType);
             float frustumDepth = r * 0.12f;
             float fov = runtime.cameraToUse != null ? runtime.cameraToUse.fieldOfView : 60f;
             float aspect = runtime.width > 0 && runtime.height > 0
@@ -132,7 +132,7 @@ namespace TiltBrush
 
             float r = transform.lossyScale.x * 0.5f;
             var poses = runtime.GetDomeCameraPoses(
-                transform.position, r, NumRings, ViewsPerRing, CaptureShapeType);
+                transform, Vector3.one * r, NumRings, ViewsPerRing, CaptureShapeType);
             float frustumDepth = r * 0.12f;
 
             EnsureFrustumMesh(runtime);

@@ -143,7 +143,7 @@ public class CameraCaptureRuntime : MonoBehaviour
         StencilType captureShapeType = StencilType.Sphere)
     {
         return GetDomeCameraPoses(
-            center, Vector3.one * r, captureNumRings, captureViewsPerRing, captureShapeType);
+            center, Quaternion.identity, Vector3.one * r, captureNumRings, captureViewsPerRing, captureShapeType);
     }
 
     public List<(Vector3 position, Quaternion rotation)> GetDomeCameraPoses(
@@ -152,6 +152,34 @@ public class CameraCaptureRuntime : MonoBehaviour
         int captureNumRings,
         int captureViewsPerRing,
         StencilType captureShapeType = StencilType.Sphere)
+    {
+        return GetDomeCameraPoses(
+            center, Quaternion.identity, radii, captureNumRings, captureViewsPerRing, captureShapeType);
+    }
+
+    public List<(Vector3 position, Quaternion rotation)> GetDomeCameraPoses(
+        Transform domeTransform,
+        Vector3 radii,
+        int captureNumRings,
+        int captureViewsPerRing,
+        StencilType captureShapeType = StencilType.Sphere)
+    {
+        return GetDomeCameraPoses(
+            domeTransform.position,
+            domeTransform.rotation,
+            radii,
+            captureNumRings,
+            captureViewsPerRing,
+            captureShapeType);
+    }
+
+    private List<(Vector3 position, Quaternion rotation)> GetDomeCameraPoses(
+        Vector3 center,
+        Quaternion orientation,
+        Vector3 radii,
+        int captureNumRings,
+        int captureViewsPerRing,
+        StencilType captureShapeType)
     {
         var poses = new List<(Vector3, Quaternion)>();
         int ringCount = Mathf.Max(1, captureNumRings);
@@ -170,11 +198,13 @@ public class CameraCaptureRuntime : MonoBehaviour
             for (int i = 0; i < viewsPerRingCount; i++)
             {
                 float azimuth = i * Mathf.PI * 2f / viewsPerRingCount;
-                float x = safeRadii.x * Mathf.Cos(elevation) * Mathf.Cos(azimuth);
-                float y = safeRadii.y * Mathf.Sin(elevation);
-                float z = safeRadii.z * Mathf.Cos(elevation) * Mathf.Sin(azimuth);
-                Vector3 pos = center + new Vector3(x, y + heightOffset, z);
-                poses.Add((pos, Quaternion.LookRotation(center - pos, Vector3.up)));
+                Vector3 localOffset = new Vector3(
+                    safeRadii.x * Mathf.Cos(elevation) * Mathf.Cos(azimuth),
+                    safeRadii.y * Mathf.Sin(elevation) + heightOffset,
+                    safeRadii.z * Mathf.Cos(elevation) * Mathf.Sin(azimuth));
+                Vector3 pos = center + orientation * localOffset;
+                Vector3 up = orientation * Vector3.up;
+                poses.Add((pos, Quaternion.LookRotation(center - pos, up)));
             }
         }
         return poses;
@@ -471,7 +501,7 @@ public class CameraCaptureRuntime : MonoBehaviour
                 if (volumeTargets == null) { volumeTargets = new List<VolumeCaptureTarget>(); }
                 int totalImages =
                     domeTargets.Sum(x => GetDomeCameraPoses(
-                        x.Transform.position, x.Radii, x.NumRings, x.ViewsPerRing, x.ShapeType).Count) +
+                        x.Transform, x.Radii, x.NumRings, x.ViewsPerRing, x.ShapeType).Count) +
                     volumeTargets.Sum(x => GetVolumeCameraGridCenters(
                         x.Transform, x.SubdivX, x.SubdivY, x.SubdivZ).Count * directions.Count);
                 int currentImage = 0;
@@ -497,7 +527,7 @@ public class CameraCaptureRuntime : MonoBehaviour
                     foreach (var domeTarget in domeTargets)
                     {
                         var poses = GetDomeCameraPoses(
-                            domeTarget.Transform.position,
+                            domeTarget.Transform,
                             domeTarget.Radii,
                             domeTarget.NumRings,
                             domeTarget.ViewsPerRing,
