@@ -12,13 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using UnityEngine;
-using UnityEngine.XR;
-
 namespace TiltBrush
 {
-    public class ExportTray : BaseTray
+    public class CaptureTray : BaseTray
     {
         public void ToggleTray(ActionToggleButton btn)
         {
