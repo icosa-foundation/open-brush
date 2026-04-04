@@ -2171,9 +2171,9 @@ namespace TiltBrush
                 // The above functions return undefined values in newWidgetXf.scale; but that's
                 // okay because RecordAndSetPosRot ignores xf.scale.
                 // TODO: do this more cleanly
-                if (adjustGaussianCaptureParams && gaussianCaptureWidget is GaussianCaptureBoxWidget gaussianBox)
+                if (adjustGaussianCaptureParams && gaussianCaptureWidget != null)
                 {
-                    gaussianBox.SetActiveSubdivisionAxis(axis);
+                    gaussianCaptureWidget.PrepareCaptureAdjustmentForAxis(axis);
                     gaussianCaptureWidget.TryAdjustCaptureParametersFromScale(deltaScale);
                 }
                 else
@@ -2224,22 +2224,14 @@ namespace TiltBrush
                 }
 
                 // Must do separately becvause RecordAndSetPosRot ignores newWidgetXf.scale
-                if (adjustGaussianCaptureParams && gaussianCaptureWidget is GaussianCaptureBoxWidget gaussianBox)
+                if (adjustGaussianCaptureParams && gaussianCaptureWidget != null)
                 {
                     float widgetSizeBeforeScale = Mathf.Abs(m_CurrentGrabWidget.GetSignedWidgetSize());
                     float deltaScale = widgetSizeBeforeScale > 0.0f
                         ? newWidgetXf.scale / widgetSizeBeforeScale
                         : 1.0f;
-                    gaussianBox.SetActiveSubdivisionAxisFromHands(
+                    gaussianCaptureWidget.PrepareCaptureAdjustmentFromHands(
                         xfBrush.translation, xfWand.translation);
-                    gaussianCaptureWidget.TryAdjustCaptureParametersFromScale(deltaScale);
-                }
-                else if (adjustGaussianCaptureParams && gaussianCaptureWidget is GaussianCaptureSphereWidget)
-                {
-                    float widgetSizeBeforeScale = Mathf.Abs(m_CurrentGrabWidget.GetSignedWidgetSize());
-                    float deltaScale = widgetSizeBeforeScale > 0.0f
-                        ? newWidgetXf.scale / widgetSizeBeforeScale
-                        : 1.0f;
                     gaussianCaptureWidget.TryAdjustCaptureParametersFromScale(deltaScale);
                 }
                 else

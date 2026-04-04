@@ -206,7 +206,18 @@ namespace TiltBrush
             }
         }
 
-        public void SetActiveSubdivisionAxis(Axis axis)
+        public override void PrepareCaptureAdjustmentForAxis(Axis axis)
+        {
+            SetActiveSubdivisionAxis(axis);
+        }
+
+        public override void PrepareCaptureAdjustmentFromHands(
+            Vector3 primaryHand, Vector3 secondaryHand)
+        {
+            SetActiveSubdivisionAxisFromHands(primaryHand, secondaryHand);
+        }
+
+        private void SetActiveSubdivisionAxis(Axis axis)
         {
             m_SelectedSubdivisionAxis = axis switch
             {
@@ -217,7 +228,7 @@ namespace TiltBrush
             };
         }
 
-        public void SetActiveSubdivisionAxisFromHands(Vector3 primaryHand, Vector3 secondaryHand)
+        private void SetActiveSubdivisionAxisFromHands(Vector3 primaryHand, Vector3 secondaryHand)
         {
             SetActiveSubdivisionAxis(GetDominantAxisFromHands(primaryHand, secondaryHand));
         }

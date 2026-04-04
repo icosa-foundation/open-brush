@@ -48,6 +48,11 @@ namespace TiltBrush
 
         protected abstract bool TryApplyCaptureStep(int stepCount, out string statusText);
 
+        public virtual void PrepareCaptureAdjustmentForAxis(Axis axis) { }
+
+        public virtual void PrepareCaptureAdjustmentFromHands(
+            Vector3 primaryHand, Vector3 secondaryHand) { }
+
         public bool TryAdjustCaptureParametersFromScale(float deltaScale)
         {
             if (deltaScale <= 0.0f || Mathf.Approximately(deltaScale, 1.0f))
