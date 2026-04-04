@@ -115,10 +115,10 @@ namespace TiltBrush
 
         private static void DrawFrustumGizmo(Vector3 pos, Quaternion rot, float w, float h, float d)
         {
-            var tl = pos + rot * new Vector3(-w,  h, d);
-            var tr = pos + rot * new Vector3( w,  h, d);
+            var tl = pos + rot * new Vector3(-w, h, d);
+            var tr = pos + rot * new Vector3(w, h, d);
             var bl = pos + rot * new Vector3(-w, -h, d);
-            var br = pos + rot * new Vector3( w, -h, d);
+            var br = pos + rot * new Vector3(w, -h, d);
             Gizmos.DrawLine(pos, tl); Gizmos.DrawLine(pos, tr);
             Gizmos.DrawLine(pos, bl); Gizmos.DrawLine(pos, br);
             Gizmos.DrawLine(tl, tr); Gizmos.DrawLine(tr, br);

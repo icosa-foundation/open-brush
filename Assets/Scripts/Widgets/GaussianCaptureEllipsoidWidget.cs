@@ -171,26 +171,26 @@ namespace TiltBrush
                     extent = parentScale * extents[(int)axis];
                     break;
                 case Axis.YZ:
-                {
-                    Vector3 plane = transform.rotation * new Vector3(1, 0, 0);
-                    axisVec = (delta - Vector3.Dot(delta, plane) * plane).normalized;
-                    extent = parentScale * Mathf.Max(extents[1], extents[2]);
-                    break;
-                }
+                    {
+                        Vector3 plane = transform.rotation * new Vector3(1, 0, 0);
+                        axisVec = (delta - Vector3.Dot(delta, plane) * plane).normalized;
+                        extent = parentScale * Mathf.Max(extents[1], extents[2]);
+                        break;
+                    }
                 case Axis.XZ:
-                {
-                    Vector3 plane = transform.rotation * new Vector3(0, 1, 0);
-                    axisVec = (delta - Vector3.Dot(delta, plane) * plane).normalized;
-                    extent = parentScale * Mathf.Max(extents[0], extents[2]);
-                    break;
-                }
+                    {
+                        Vector3 plane = transform.rotation * new Vector3(0, 1, 0);
+                        axisVec = (delta - Vector3.Dot(delta, plane) * plane).normalized;
+                        extent = parentScale * Mathf.Max(extents[0], extents[2]);
+                        break;
+                    }
                 case Axis.XY:
-                {
-                    Vector3 plane = transform.rotation * new Vector3(0, 0, 1);
-                    axisVec = (delta - Vector3.Dot(delta, plane) * plane).normalized;
-                    extent = parentScale * Mathf.Max(extents[0], extents[1]);
-                    break;
-                }
+                    {
+                        Vector3 plane = transform.rotation * new Vector3(0, 0, 1);
+                        axisVec = (delta - Vector3.Dot(delta, plane) * plane).normalized;
+                        extent = parentScale * Mathf.Max(extents[0], extents[1]);
+                        break;
+                    }
                 case Axis.Invalid:
                     axisVec = default;
                     extent = default;

@@ -51,7 +51,8 @@ namespace TiltBrush
         public virtual void PrepareCaptureAdjustmentForAxis(Axis axis) { }
 
         public virtual void PrepareCaptureAdjustmentFromHands(
-            Vector3 primaryHand, Vector3 secondaryHand) { }
+            Vector3 primaryHand, Vector3 secondaryHand)
+        { }
 
         public bool TryAdjustCaptureParametersFromScale(float deltaScale)
         {
