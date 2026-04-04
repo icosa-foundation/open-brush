@@ -7,12 +7,13 @@
       "dependencies": {}
     },
     "com.immersive-foundation.imm-stroke-reader": {
-      "version": "file:../../IMM/code/ImmUnitySampleProject/Packages/com.immersive-foundation.imm-stroke-reader",
+      "version": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#upm",
       "depth": 0,
-      "source": "local",
+      "source": "git",
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "3.2.1"
-      }
+      },
+      "hash": "5e6ee762c5e3f7c81b0e73b512228307d79be5da"
     },
     "com.ixxy.unitysymmetry": {
       "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
