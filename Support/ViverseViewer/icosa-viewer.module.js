@@ -4057,11 +4057,11 @@ class $677737c8a5cbea2f$var$SketchMetadata {
         // Light 0 Rotation
         // Metadata and preset values are in Unity format and need conversion.
         // GLTF node rotations are already in Three.js space.
-        if (userData['TB_SceneLight0Rotation']) this.SceneLight0Rotation = unityRotToThreeJSDegrees($677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_SceneLight0Rotation']), 'Light0 TB_metadata');
+        if (userData['TB_SceneLight0Rotation']) this.SceneLight0Rotation = scene.userData?.isNewTiltExporter ? $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_SceneLight0Rotation']) : unityRotToThreeJSDegrees($677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_SceneLight0Rotation']), 'Light0 TB_metadata');
         else if (light0rot) this.SceneLight0Rotation = new $hBQxr$three.Vector3(light0rot.x, light0rot.y, light0rot.z);
         else this.SceneLight0Rotation = unityRotToThreeJSDegrees(this.EnvironmentPreset.SceneLight0Rotation, 'Light0 preset');
         // Light 1 Rotation
-        if (userData['TB_SceneLight1Rotation']) this.SceneLight1Rotation = unityRotToThreeJSDegrees($677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_SceneLight1Rotation']), 'Light1 TB_metadata');
+        if (userData['TB_SceneLight1Rotation']) this.SceneLight1Rotation = scene.userData?.isNewTiltExporter ? $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_SceneLight1Rotation']) : unityRotToThreeJSDegrees($677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_SceneLight1Rotation']), 'Light1 TB_metadata');
         else if (light1rot) this.SceneLight1Rotation = new $hBQxr$three.Vector3(light1rot.x, light1rot.y, light1rot.z);
         else this.SceneLight1Rotation = unityRotToThreeJSDegrees(this.EnvironmentPreset.SceneLight1Rotation, 'Light1 preset');
         // Light 0 Color
@@ -6478,15 +6478,36 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             return;
         }
         let l0 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight0Color, 1.0);
+        l0.name = "SceneLight0";
         let l1 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight1Color, 1.0);
+        l1.name = "SceneLight1";
         let light0Euler = toEuler(this.sketchMetadata.SceneLight0Rotation);
         let light1Euler = toEuler(this.sketchMetadata.SceneLight1Rotation);
+        // New Tilt exports keep the sketch root unposed in viewer space, so
+        // metadata-driven light rotations need the same 180-degree yaw offset
+        // that older lighting code applied on this path.
+        if (this.isNewTiltExporter(this.sceneGltf)) {
+            light0Euler.y += Math.PI;
+            light1Euler.y += Math.PI;
+        }
         const light0Direction = new $hBQxr$three.Vector3(0, 0, -1).applyEuler(light0Euler);
         l0.position.copy(light0Direction.multiplyScalar(10));
         const light1Direction = new $hBQxr$three.Vector3(0, 0, -1).applyEuler(light1Euler);
         l1.position.copy(light1Direction.multiplyScalar(10));
+        // DirectionalLight points from its position toward its target, so attach
+        // local targets to the sketch root to keep lighting relative to the sketch.
+        const light0Target = new $hBQxr$three.Object3D();
+        light0Target.name = "SceneLight0Target";
+        light0Target.position.set(0, 0, 0);
+        l0.target = light0Target;
+        const light1Target = new $hBQxr$three.Object3D();
+        light1Target.name = "SceneLight1Target";
+        light1Target.position.set(0, 0, 0);
+        l1.target = light1Target;
         l0.castShadow = true;
         l1.castShadow = false;
+        this.loadedModel?.add(light0Target);
+        this.loadedModel?.add(light1Target);
         this.loadedModel?.add(l0);
         this.loadedModel?.add(l1);
         const ambientLight = new $hBQxr$three.AmbientLight();
