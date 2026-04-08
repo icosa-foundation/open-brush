@@ -29,6 +29,7 @@ namespace TiltBrush
     {
 
         const int kDownloadBufferSize = 1024 * 1024; // 1MB
+        private const string kPortalPreloadLogPrefix = "[PortalPreload_20260408]";
 
         // Downloading is handled by IcosaSketchSet which will set the local paths
 
@@ -105,6 +106,8 @@ namespace TiltBrush
         private float m_CooldownTimer;
         private List<int> m_RequestedIcons = new List<int>();
         private Coroutine m_TextureLoaderCoroutine;
+        private readonly Dictionary<string, Coroutine> m_PreloadingTiltsByAssetId =
+            new Dictionary<string, Coroutine>();
 
         public SketchSetType Type { get { return m_Type; } }
         public SketchCatalog.SketchQueryParameters m_QueryParams;
@@ -274,6 +277,45 @@ namespace TiltBrush
             return TryGetSketchForAssetId(assetId, out _, out index);
         }
 
+        public bool TryPreloadSketchForAssetId(string assetId)
+        {
+            if (!TryGetSketchForAssetId(assetId, out var sketch, out _))
+            {
+                return false;
+            }
+
+            if (!EnsureCacheDirAvailable())
+            {
+                Debug.LogWarning(
+                    $"{kPortalPreloadLogPrefix} Cannot preload sketch '{assetId}' for set {m_Type}: cache directory unavailable");
+                return false;
+            }
+
+            var sceneFileInfo = sketch.IcosaSceneFileInfo;
+            RestoreLocalCacheState(sceneFileInfo);
+
+            if (sceneFileInfo.TiltDownloaded)
+            {
+                return true;
+            }
+
+            if (m_PreloadingTiltsByAssetId.ContainsKey(assetId))
+            {
+                return true;
+            }
+
+            Debug.Log($"{kPortalPreloadLogPrefix} Queueing preload for sketch '{assetId}' from set {m_Type}");
+            m_PreloadingTiltsByAssetId[assetId] =
+                m_Parent.StartCoroutine(PreloadSketchForAssetCoroutine(assetId, sketch));
+            return true;
+        }
+
+        public bool IsPreloadingSketchForAssetId(string assetId)
+        {
+            return !string.IsNullOrWhiteSpace(assetId) &&
+                m_PreloadingTiltsByAssetId.ContainsKey(assetId);
+        }
+
         private bool TryGetSketchForAssetId(string assetId, out IcosaSketch sketch, out int index)
         {
             sketch = null;
@@ -322,6 +364,57 @@ namespace TiltBrush
             info.IconPath = Path.Combine(m_CacheDir, string.Format("{0}.png", info.AssetId));
             info.TiltDownloaded = File.Exists(info.TiltPath);
             info.IconDownloaded = File.Exists(info.IconPath);
+        }
+
+        private bool EnsureCacheDirAvailable()
+        {
+            if (!string.IsNullOrWhiteSpace(m_CacheDir))
+            {
+                return true;
+            }
+
+            m_CacheDir = CacheDir(Type);
+            if (string.IsNullOrWhiteSpace(m_CacheDir))
+            {
+                return false;
+            }
+
+            try
+            {
+                Directory.CreateDirectory(m_CacheDir);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (!(ex is SystemException) || ex is ArgumentNullException)
+                {
+                    Debug.LogException(ex);
+                }
+                return false;
+            }
+        }
+
+        private IEnumerator PreloadSketchForAssetCoroutine(string assetId, IcosaSketch sketch)
+        {
+            try
+            {
+                yield return DownloadTiltsCoroutine(new List<IcosaSketch> { sketch });
+
+                if (sketch.IcosaSceneFileInfo.TiltDownloaded)
+                {
+                    Debug.Log($"{kPortalPreloadLogPrefix} Finished preload for sketch '{assetId}' from set {m_Type}");
+                    OnChanged();
+                }
+                else
+                {
+                    Debug.LogWarning(
+                        $"{kPortalPreloadLogPrefix} Preload did not produce a cached tilt for sketch '{assetId}' from set {m_Type}");
+                }
+            }
+            finally
+            {
+                m_PreloadingTiltsByAssetId.Remove(assetId);
+            }
         }
 
         public SceneFileInfo GetSketchSceneFileInfo(int i)

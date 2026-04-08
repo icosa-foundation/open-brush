@@ -22,6 +22,7 @@ namespace TiltBrush
     {
         protected const string kLogPrefix = "[PortalDbg_20260313]";
         protected const string kLoadCompareLogPrefix = "[PortalLoadCmp_20260313]";
+        protected const string kPreloadLogPrefix = "[PortalPreload_20260408]";
 
         private string m_Destination;
         private bool m_TriggerWithBrushInside = true;
@@ -45,6 +46,8 @@ namespace TiltBrush
         private bool m_IsShowingLoadingVisual;
         private float m_LoadingVisualStartTime;
         private float? m_LoadingProgress;
+        private Coroutine m_WaitForPreloadThenLoadCoroutine;
+        private string m_WaitForPreloadDestination;
 
         public string Destination
         {
@@ -113,6 +116,7 @@ namespace TiltBrush
         {
             UnsubscribeFromSketchSets();
             StopThumbnailFetch();
+            StopWaitingForPreload();
             StopLoadingVisuals();
             ReleaseOwnedThumbnail();
             base.OnDestroy();
@@ -171,6 +175,7 @@ namespace TiltBrush
 
             if (TryApplyIcosaThumbnail())
             {
+                TryPreloadDestinationSketch();
                 return;
             }
 
@@ -178,6 +183,7 @@ namespace TiltBrush
             ApplyThumbnailTexture(m_DefaultThumbnail);
             SubscribeToSketchSets();
             EnsureThumbnailFetchStarted();
+            TryPreloadDestinationSketch();
         }
 
         private bool TryApplyIcosaThumbnail()
@@ -257,6 +263,7 @@ namespace TiltBrush
         private void OnSketchSetChanged()
         {
             TryApplyIcosaThumbnail();
+            TryPreloadDestinationSketch();
         }
 
         private void EnsureThumbnailFetchStarted()
@@ -284,6 +291,17 @@ namespace TiltBrush
                 m_ThumbnailFetchCoroutine = null;
             }
             m_ThumbnailFetchAssetId = null;
+        }
+
+        private void StopWaitingForPreload()
+        {
+            if (m_WaitForPreloadThenLoadCoroutine != null)
+            {
+                StopCoroutine(m_WaitForPreloadThenLoadCoroutine);
+                m_WaitForPreloadThenLoadCoroutine = null;
+            }
+
+            m_WaitForPreloadDestination = null;
         }
 
         private System.Collections.IEnumerator FetchThumbnailForAssetIdCoroutine(string assetId)
@@ -624,6 +642,138 @@ namespace TiltBrush
             return texture == null ? "null" : $"{texture.name} ({texture.width}x{texture.height})";
         }
 
+        private void TryPreloadDestinationSketch()
+        {
+            if (string.IsNullOrWhiteSpace(m_Destination) || SketchCatalog.m_Instance == null)
+            {
+                return;
+            }
+
+            foreach (var setType in new[]
+                     {
+                         SketchSetType.Curated,
+                         SketchSetType.Liked,
+                         SketchSetType.User,
+                     })
+            {
+                var icosaSet = SketchCatalog.m_Instance.GetSet(setType) as IcosaSketchSet;
+                if (icosaSet == null)
+                {
+                    continue;
+                }
+
+                if (!icosaSet.IsReadyForAccess)
+                {
+                    icosaSet.RequestRefresh();
+                    continue;
+                }
+
+                if (!icosaSet.TryPreloadSketchForAssetId(m_Destination))
+                {
+                    continue;
+                }
+
+                Debug.Log(
+                    $"{kPreloadLogPrefix} Requested preload for destination '{m_Destination}' from set {setType} on portal {name}");
+                return;
+            }
+        }
+
+        private bool TryGetDestinationSketchInfo(
+            out SketchSetType setType,
+            out IcosaSketchSet icosaSet,
+            out int sketchIndex,
+            out SceneFileInfo sceneFileInfo)
+        {
+            setType = default;
+            icosaSet = null;
+            sketchIndex = -1;
+            sceneFileInfo = null;
+
+            if (string.IsNullOrWhiteSpace(m_Destination) || SketchCatalog.m_Instance == null)
+            {
+                return false;
+            }
+
+            foreach (var candidateSetType in new[]
+                     {
+                         SketchSetType.Curated,
+                         SketchSetType.Liked,
+                         SketchSetType.User,
+                     })
+            {
+                var candidateSet = SketchCatalog.m_Instance.GetSet(candidateSetType) as IcosaSketchSet;
+                if (candidateSet == null || !candidateSet.IsReadyForAccess)
+                {
+                    continue;
+                }
+
+                if (!candidateSet.TryGetSketchIndexForAssetId(m_Destination, out var candidateIndex))
+                {
+                    continue;
+                }
+
+                var candidateSceneFileInfo = candidateSet.GetSketchSceneFileInfo(candidateIndex);
+                if (candidateSceneFileInfo == null)
+                {
+                    Debug.LogWarning(
+                        $"{kLogPrefix} Resolved destination '{m_Destination}' via {candidateSetType} set index {candidateIndex}, but SceneFileInfo was null on {name}");
+                    return false;
+                }
+
+                setType = candidateSetType;
+                icosaSet = candidateSet;
+                sketchIndex = candidateIndex;
+                sceneFileInfo = candidateSceneFileInfo;
+                return true;
+            }
+
+            return false;
+        }
+
+        private void WaitForPreloadThenLoad(IcosaSketchSet icosaSet)
+        {
+            if (icosaSet == null || string.IsNullOrWhiteSpace(m_Destination))
+            {
+                return;
+            }
+
+            if (m_WaitForPreloadThenLoadCoroutine != null && m_WaitForPreloadDestination == m_Destination)
+            {
+                return;
+            }
+
+            StopWaitingForPreload();
+            m_WaitForPreloadDestination = m_Destination;
+            m_WaitForPreloadThenLoadCoroutine =
+                StartCoroutine(WaitForPreloadThenLoadCoroutine(m_Destination, icosaSet));
+        }
+
+        private System.Collections.IEnumerator WaitForPreloadThenLoadCoroutine(
+            string assetId,
+            IcosaSketchSet icosaSet)
+        {
+            Debug.Log(
+                $"{kPreloadLogPrefix} Waiting for preload before loading destination '{assetId}' on portal {name}");
+
+            while (m_Destination == assetId && icosaSet != null && icosaSet.IsPreloadingSketchForAssetId(assetId))
+            {
+                yield return null;
+            }
+
+            m_WaitForPreloadThenLoadCoroutine = null;
+            m_WaitForPreloadDestination = null;
+
+            if (m_Destination != assetId)
+            {
+                yield break;
+            }
+
+            Debug.Log(
+                $"{kPreloadLogPrefix} Preload wait finished for destination '{assetId}' on portal {name}; retrying load");
+            TryLoadDestinationSketch();
+        }
+
         private bool ExecutePortalCommand()
         {
             if (AudioManager.m_Instance != null)
@@ -642,33 +792,20 @@ namespace TiltBrush
                 return false;
             }
 
-            foreach (var setType in new[]
-                     {
-                         SketchSetType.Curated,
-                         SketchSetType.Liked,
-                         SketchSetType.User,
-                     })
+            if (TryGetDestinationSketchInfo(out var setType, out var icosaSet, out var sketchIndex, out var sceneFileInfo))
             {
-                var icosaSet = SketchCatalog.m_Instance.GetSet(setType) as IcosaSketchSet;
-                if (icosaSet == null || !icosaSet.IsReadyForAccess)
-                {
-                    continue;
-                }
-
-                if (!icosaSet.TryGetSketchIndexForAssetId(m_Destination, out var sketchIndex))
-                {
-                    continue;
-                }
-
-                var sceneFileInfo = icosaSet.GetSketchSceneFileInfo(sketchIndex);
-                if (sceneFileInfo == null)
-                {
-                    Debug.LogWarning($"{kLogPrefix} Resolved destination '{m_Destination}' via {setType} set index {sketchIndex}, but SceneFileInfo was null on {name}");
-                    return false;
-                }
-
                 if (!sceneFileInfo.Available)
                 {
+                    if (icosaSet.IsPreloadingSketchForAssetId(m_Destination))
+                    {
+                        StartLoadingVisuals();
+                        Debug.Log(
+                            $"{kPreloadLogPrefix} Portal waiting on active preload. " +
+                            $"destination='{m_Destination}' set={setType} index={sketchIndex} portal={name}");
+                        WaitForPreloadThenLoad(icosaSet);
+                        return true;
+                    }
+
                     StartLoadingVisuals();
                     Debug.Log(
                         $"{kLoadCompareLogPrefix} Portal taking direct Icosa fetch branch. " +
