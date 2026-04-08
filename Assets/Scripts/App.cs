@@ -2462,6 +2462,10 @@ namespace TiltBrush
 
             ODS.HybridCamera cam = driver.OdsCamera;
             cam.CollapseIpd = Config.m_OdsCollapseIpd;
+            if (App.UserConfig.Video.OfflineResolutionValid)
+            {
+                cam.imageWidth = App.UserConfig.Video.OfflineResolution;
+            }
             cam.imageWidth /= Config.m_OdsPreview ? 4 : 1;
             if (Config.m_SdkMode == SdkMode.Ods)
             {
