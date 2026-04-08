@@ -29,6 +29,8 @@ namespace TiltBrush
     {
 
         const int kDownloadBufferSize = 1024 * 1024; // 1MB
+        private const string kSharedIcosaCacheFolder = "Icosa Sketches";
+        private static readonly object s_SharedCachePruneLock = new object();
 
         // Downloading is handled by IcosaSketchSet which will set the local paths
 
@@ -880,10 +882,9 @@ namespace TiltBrush
             yield return null;
         }
 
-        // If we've exceeded our max cache size, prune the cache by deleting the
-        // oldest entries first. Only delete files that aren't referenced in
-        // m_Sketches (actually m_AssetIds). Do this on a background thread so
-        // prevent hitches.
+        // If we've exceeded our max cache size, prune the shared Icosa cache by deleting the
+        // least recently accessed entries first. This cache is shared across all Icosa-backed
+        // sketch sets, so pruning cannot rely on one set's current asset ids.
         private IEnumerator PruneOldSketchesCoroutine()
         {
             yield return null;
@@ -894,55 +895,60 @@ namespace TiltBrush
 
             var task = new Future<(int, long)>(() =>
             {
-                var cacheFiles = new DirectoryInfo(m_CacheDir).EnumerateFiles();
-                var pruneCandidates = new List<FileInfo>();
-
-                var totalSize = (long)0;
-                foreach (var file in cacheFiles)
+                lock (s_SharedCachePruneLock)
                 {
-                    totalSize += file.Length;
+                    var cacheFiles = new DirectoryInfo(m_CacheDir).EnumerateFiles();
+                    var pruneCandidates = new List<FileInfo>();
 
-                    // Two types of files in the cache: icons and tilts.
-                    // Store reference to tilts only as we're interested in
-                    // when the tilts (rather than the icons) were last
-                    // loaded.
-                    if (file.Extension == ".tilt" &&
-                        !m_AssetIds.ContainsKey(Path.GetFileNameWithoutExtension(file.Name)))
+                    var totalSize = (long)0;
+                    foreach (var file in cacheFiles)
                     {
-                        // It's not possible for this tilt file to be loaded
-                        // until the sketch set is refreshed, so we can
-                        // safely prune it.
-                        pruneCandidates.Add(file);
+                        totalSize += file.Length;
+
+                        // Use the tilt timestamp as the cache recency signal and delete its
+                        // paired icon at the same time.
+                        if (string.Equals(file.Extension, ".tilt", StringComparison.OrdinalIgnoreCase))
+                        {
+                            pruneCandidates.Add(file);
+                        }
                     }
+
+                    if (totalSize <= maxSize)
+                    {
+                        // No need to prune - sketch size within bounds.
+                        return (0, totalSize);
+                    }
+
+                    // Prune the cache.
+                    var prunedCount = 0;
+                    pruneCandidates.Sort(CompareLastAccessTimeAscending);
+                    for (int i = 0;
+                         i < pruneCandidates.Count && totalSize > maxSize;
+                         i++)
+                    {
+                        var candidateTilt = pruneCandidates[i];
+                        if (!candidateTilt.Exists)
+                        {
+                            continue;
+                        }
+
+                        var candidateImg = new FileInfo(
+                            Path.ChangeExtension(candidateTilt.FullName, ".png"));
+
+                        totalSize -= candidateTilt.Length;
+                        if (candidateImg.Exists)
+                        {
+                            totalSize -= candidateImg.Length;
+                            candidateImg.Delete();
+                        }
+
+                        candidateTilt.Delete();
+
+                        prunedCount++;
+                    }
+
+                    return (prunedCount, totalSize);
                 }
-
-                if (totalSize <= maxSize)
-                {
-                    // No need to prune - sketch size within bounds.
-                    return (0, totalSize);
-                }
-
-                // Prune the cache.
-                var prunedCount = 0;
-                pruneCandidates.Sort(CompareLastAccessTimeAscending);
-                for (int i = 0;
-                     i < pruneCandidates.Count && totalSize > maxSize;
-                     i++)
-                {
-                    // Remove tilt and accompanying img.
-                    var candidateTilt = pruneCandidates[i];
-                    var candidateImg = new FileInfo(
-                        Path.ChangeExtension(candidateTilt.FullName, ".png"));
-
-                    totalSize -= candidateImg.Length + candidateTilt.Length;
-
-                    candidateImg.Delete();
-                    candidateTilt.Delete();
-
-                    prunedCount++;
-                }
-
-                return (prunedCount, totalSize);
             });
 
             // Poll for task complete.
@@ -995,13 +1001,10 @@ namespace TiltBrush
         {
             switch (type)
             {
-                case SketchSetType.Liked:
-                    {
-                        string id = App.IcosaUserId;
-                        return Path.Combine(Application.persistentDataPath, String.Format("users/{0}/liked", id));
-                    }
                 case SketchSetType.Curated:
-                    return Path.Combine(Application.persistentDataPath, "Curated Sketches");
+                case SketchSetType.Liked:
+                case SketchSetType.User:
+                    return Path.Combine(Application.persistentDataPath, kSharedIcosaCacheFolder);
                 default:
                     return null;
             }
