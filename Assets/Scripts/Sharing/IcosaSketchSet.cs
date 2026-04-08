@@ -285,7 +285,6 @@ namespace TiltBrush
 
             if (!EnsureCacheDirAvailable())
             {
-                    $"{kPortalPreloadLogPrefix} Cannot preload sketch '{assetId}' for set {m_Type}: cache directory unavailable");
                 return false;
             }
 
@@ -400,10 +399,6 @@ namespace TiltBrush
                 if (sketch.IcosaSceneFileInfo.TiltDownloaded)
                 {
                     OnChanged();
-                }
-                {
-                    Debug.LogWarning(
-                        $"{kPortalPreloadLogPrefix} Preload did not produce a cached tilt for sketch '{assetId}' from set {m_Type}");
                 }
             }
             finally
