@@ -22,7 +22,6 @@ namespace TiltBrush
     {
         protected const string kLogPrefix = "[PortalDbg_20260313]";
         protected const string kLoadCompareLogPrefix = "[PortalLoadCmp_20260313]";
-        protected const string kPreloadLogPrefix = "[PortalPreload_20260408]";
 
         private string m_Destination;
         private bool m_TriggerWithBrushInside = true;
@@ -673,8 +672,6 @@ namespace TiltBrush
                     continue;
                 }
 
-                Debug.Log(
-                    $"{kPreloadLogPrefix} Requested preload for destination '{m_Destination}' from set {setType} on portal {name}");
                 return;
             }
         }
@@ -753,9 +750,6 @@ namespace TiltBrush
             string assetId,
             IcosaSketchSet icosaSet)
         {
-            Debug.Log(
-                $"{kPreloadLogPrefix} Waiting for preload before loading destination '{assetId}' on portal {name}");
-
             while (m_Destination == assetId && icosaSet != null && icosaSet.IsPreloadingSketchForAssetId(assetId))
             {
                 yield return null;
@@ -769,8 +763,6 @@ namespace TiltBrush
                 yield break;
             }
 
-            Debug.Log(
-                $"{kPreloadLogPrefix} Preload wait finished for destination '{assetId}' on portal {name}; retrying load");
             TryLoadDestinationSketch();
         }
 
@@ -799,9 +791,6 @@ namespace TiltBrush
                     if (icosaSet.IsPreloadingSketchForAssetId(m_Destination))
                     {
                         StartLoadingVisuals();
-                        Debug.Log(
-                            $"{kPreloadLogPrefix} Portal waiting on active preload. " +
-                            $"destination='{m_Destination}' set={setType} index={sketchIndex} portal={name}");
                         WaitForPreloadThenLoad(icosaSet);
                         return true;
                     }

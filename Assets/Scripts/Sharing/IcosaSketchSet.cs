@@ -29,7 +29,6 @@ namespace TiltBrush
     {
 
         const int kDownloadBufferSize = 1024 * 1024; // 1MB
-        private const string kPortalPreloadLogPrefix = "[PortalPreload_20260408]";
 
         // Downloading is handled by IcosaSketchSet which will set the local paths
 
@@ -286,7 +285,6 @@ namespace TiltBrush
 
             if (!EnsureCacheDirAvailable())
             {
-                Debug.LogWarning(
                     $"{kPortalPreloadLogPrefix} Cannot preload sketch '{assetId}' for set {m_Type}: cache directory unavailable");
                 return false;
             }
@@ -304,7 +302,6 @@ namespace TiltBrush
                 return true;
             }
 
-            Debug.Log($"{kPortalPreloadLogPrefix} Queueing preload for sketch '{assetId}' from set {m_Type}");
             m_PreloadingTiltsByAssetId[assetId] =
                 m_Parent.StartCoroutine(PreloadSketchForAssetCoroutine(assetId, sketch));
             return true;
@@ -402,10 +399,8 @@ namespace TiltBrush
 
                 if (sketch.IcosaSceneFileInfo.TiltDownloaded)
                 {
-                    Debug.Log($"{kPortalPreloadLogPrefix} Finished preload for sketch '{assetId}' from set {m_Type}");
                     OnChanged();
                 }
-                else
                 {
                     Debug.LogWarning(
                         $"{kPortalPreloadLogPrefix} Preload did not produce a cached tilt for sketch '{assetId}' from set {m_Type}");
