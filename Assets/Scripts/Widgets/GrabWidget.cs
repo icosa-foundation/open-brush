@@ -1171,9 +1171,12 @@ namespace TiltBrush
             // Refresh snap input and enter/exit snapping state.
             if (m_AllowSnapping)
             {
-                bool snapPanelSettingsActive = SelectionManager.m_Instance.AngleOrPositionSnapEnabled();
+                bool snapPanelSettingsActive = IsSnapPanelSettingsActive();
                 bool quickSnapPressed = IsQuickSnapPressed();
-                SnapEnabled = (snapPanelSettingsActive || quickSnapPressed) && !m_Pinned;
+                bool snappingOverriddenOff = quickSnapPressed && snapPanelSettingsActive;
+                SnapEnabled = !snappingOverriddenOff &&
+                    (snapPanelSettingsActive || quickSnapPressed) &&
+                    !m_Pinned;
 
                 if (!m_bWasSnapping && SnapEnabled)
                 {
@@ -1279,11 +1282,16 @@ namespace TiltBrush
         // The scale of the returned TrTransform should be ignored.
         virtual protected TrTransform GetSnappedTransform(TrTransform xf_GS)
         {
+            bool snapPanelSettingsActive = IsSnapPanelSettingsActive();
             bool quickSnapPressed = IsQuickSnapPressed();
             bool angleSnapEnabled = SelectionManager.m_Instance.CurrentSnapAngleIndex != 0;
             bool gridSnapEnabled = SelectionManager.m_Instance.CurrentSnapGridIndex != 0;
 
-            if (quickSnapPressed)
+            if (quickSnapPressed && snapPanelSettingsActive)
+            {
+                return xf_GS;
+            }
+            else if (quickSnapPressed)
             {
                 return GetQuickSnapTransform(xf_GS);
             }
@@ -1302,6 +1310,11 @@ namespace TiltBrush
             return InputManager.Controllers[(int)m_InteractingController].GetCommand(
                 InputManager.SketchCommands.MenuContextClick) &&
                 SketchControlsScript.m_Instance.ShouldRespondToPadInput(m_InteractingController);
+        }
+
+        private bool IsSnapPanelSettingsActive()
+        {
+            return SelectionManager.m_Instance.AngleOrPositionSnapEnabled();
         }
 
         private void UpdateSnapGhostTransform(TrTransform inputXf, TrTransform snappedXf)
@@ -1759,13 +1772,8 @@ namespace TiltBrush
 
             // If the widget is pinned, don't pretend like we can snap it to things.
             bool show = m_AllowSnapping && !Pinned;
-
-            // The "old" snapping is only active if we're not using the Snap Settings panel
-            if (!SelectionManager.m_Instance.AngleOrPositionSnapEnabled())
-            {
-                InputManager.GetControllerGeometry(m_InteractingController)
-                    .TogglePadSnapHint(SnapEnabled, show);
-            }
+            InputManager.GetControllerGeometry(m_InteractingController)
+                .TogglePadSnapHint(SnapEnabled, show);
         }
 
         // Returns distance from center of collider if point is inside, 0..1
