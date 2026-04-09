@@ -35,6 +35,8 @@ namespace TiltBrush
 
         override protected void OnUpdate()
         {
+            base.OnUpdate();
+
             // Animate scale with the show/hide ratio, matching PanelWidget behaviour.
             transform.localScale = m_BaseScale * GetShowRatio();
 
