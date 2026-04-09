@@ -1171,9 +1171,10 @@ namespace TiltBrush
             // Refresh snap input and enter/exit snapping state.
             if (m_AllowSnapping)
             {
-                SnapEnabled = SelectionManager.m_Instance.AngleOrPositionSnapEnabled() &&
-                    SketchControlsScript.m_Instance.ShouldRespondToPadInput(m_InteractingController) &&
-                    !m_Pinned;
+                bool snapPanelSettingsActive = SelectionManager.m_Instance.AngleOrPositionSnapEnabled();
+                bool quickSnapPressed = InputManager.Controllers[(int)m_InteractingController].GetCommand(
+                    InputManager.SketchCommands.MenuContextClick) && SketchControlsScript.m_Instance.ShouldRespondToPadInput(m_InteractingController);
+                SnapEnabled = (snapPanelSettingsActive || quickSnapPressed) && !m_Pinned;
 
                 if (!m_bWasSnapping && SnapEnabled)
                 {
@@ -1283,6 +1284,19 @@ namespace TiltBrush
         // The scale of the returned TrTransform should be ignored.
         virtual protected TrTransform GetSnappedTransform(TrTransform xf_GS)
         {
+            if (SelectionManager.m_Instance.AngleOrPositionSnapEnabled())
+            {
+                return GetSnapPanelTransform(xf_GS);
+            }
+            else
+            {
+                return GetQuickSnapTransform(xf_GS);
+            }
+        }
+
+        // The "new" snapping - based on the settings on the Snap Panel
+        private TrTransform GetSnapPanelTransform(TrTransform xf_GS)
+        {
             TrTransform outXf_GS = xf_GS;
 
             if (SelectionManager.m_Instance.CurrentSnapAngleIndex != 0)
@@ -1328,6 +1342,41 @@ namespace TiltBrush
             {
                 outXf_GS.translation = SelectionManager.m_Instance.SnapToGrid_GS(outXf_GS.translation);
             }
+
+            return outXf_GS;
+        }
+
+        // The "old" snapping - the A button on the brush controller (or equivalent)
+
+        private TrTransform GetQuickSnapTransform(TrTransform xf_GS)
+        {
+            TrTransform outXf_GS = xf_GS;
+            int iNearestIndex = GetBestSnapRotationIndex(xf_GS.rotation);
+
+            // Update our rotation if we found a valid, new index and the dot value is
+            // beyond our sticky threshold.
+            if (iNearestIndex != -1 && iNearestIndex != m_PrevValidSnapRotationIndex)
+            {
+                bool bUpdateRotation = true;
+                if (m_PrevValidSnapRotationIndex != -1)
+                {
+                    float a = Quaternion.Angle(xf_GS.rotation, App.Scene.Pose.rotation *
+                        m_ValidSnapRotations_SS[m_PrevValidSnapRotationIndex]);
+                    bUpdateRotation = a > m_ValidSnapRotationStickyAngle;
+                }
+
+                if (bUpdateRotation)
+                {
+                    m_PrevValidSnapRotationIndex = iNearestIndex;
+                }
+            }
+            outXf_GS.rotation =
+                App.Scene.Pose.rotation * m_ValidSnapRotations_SS[m_PrevValidSnapRotationIndex];
+
+            Quaternion qDelta = outXf_GS.rotation * Quaternion.Inverse(xf_GS.rotation);
+            Vector3 grabSpot = InputManager.m_Instance.GetControllerPosition(m_InteractingController);
+            Vector3 grabToCenter = xf_GS.translation - grabSpot;
+            outXf_GS.translation = grabSpot + qDelta * grabToCenter;
 
             return outXf_GS;
         }
@@ -1655,8 +1704,13 @@ namespace TiltBrush
 
             // If the widget is pinned, don't pretend like we can snap it to things.
             bool show = m_AllowSnapping && !Pinned;
-            InputManager.GetControllerGeometry(m_InteractingController)
-                .TogglePadSnapHint(SnapEnabled, show);
+
+            // The "old" snapping is only active if we're not using the Snap Settings panel
+            if (!SelectionManager.m_Instance.AngleOrPositionSnapEnabled())
+            {
+                InputManager.GetControllerGeometry(m_InteractingController)
+                    .TogglePadSnapHint(SnapEnabled, show);
+            }
         }
 
         // Returns distance from center of collider if point is inside, 0..1
