@@ -50,7 +50,6 @@ public class BrushBaker : MonoBehaviour
 
         if (!TryGetComputeShaderMapping(brushGuid, out var mapping))
         {
-            Debug.LogWarning($"No compute shader mapping found for brushGuid {brushGuid}");
             return mesh;
         }
 
