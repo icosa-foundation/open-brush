@@ -90,6 +90,7 @@ public class BrushBaker : MonoBehaviour
         computeShader.SetBuffer(0, "colorBuffer", colorBuffer);
         computeShader.SetBuffer(0, "uvBuffer", uvBuffer);
         computeShader.SetFloat("_SqueezeAmount", squeezeAmount);
+        computeShader.SetInt("_VertexCount", vertexCount);
 
         ComputeBuffer uv1Buffer = null;
         bool needsUv1Buffer = mapping.ModifyUv1 || mesh.uv2.Length > 0;
