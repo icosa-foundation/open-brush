@@ -44,18 +44,18 @@ public class BrushBaker : MonoBehaviour
         if (vertexCount == 0) return mesh;
 
         var verticesArray = mesh.vertices;
-        if (verticesArray == null || verticesArray.Length != vertexCount) return mesh;
+        if (verticesArray == null || verticesArray.Length == 0) return mesh;
 
         var normalsArray = mesh.normals;
-        if (normalsArray == null || normalsArray.Length != vertexCount) return mesh;
+        if (normalsArray == null || normalsArray.Length == 0) return mesh;
 
         var colors = new List<Color>();
         mesh.GetColors(colors);
-        if (colors.Count != vertexCount) return mesh;
+        if (colors.Count == 0) return mesh;
 
         var uvs = new List<Vector3>();
         mesh.GetUVs(0, uvs);
-        if (uvs.Count != vertexCount) return mesh;
+        if (uvs.Count == 0) return mesh;
 
         computeShader.SetMatrix("TransformObjectToWorld", transform.localToWorldMatrix);
         computeShader.SetMatrix("TransformWorldToObject", transform.worldToLocalMatrix);
@@ -87,7 +87,8 @@ public class BrushBaker : MonoBehaviour
             computeShader.SetFloat("_SqueezeAmount", squeezeAmount);
             computeShader.SetInt("_VertexCount", vertexCount);
 
-            if (mapping.ModifyUv1)
+            bool needsUv1Buffer = mapping.ModifyUv1 || mesh.uv2.Length > 0;
+            if (needsUv1Buffer)
             {
                 var uv1s = new List<Vector4>();
                 mesh.GetUVs(1, uv1s);
@@ -126,7 +127,7 @@ public class BrushBaker : MonoBehaviour
                 mesh.SetUVs(0, newUvs);
             }
 
-            if (mapping.ModifyUv1)
+            if (mapping.ModifyUv1 && uv1Buffer != null)
             {
                 var newUv1s = new Vector4[vertexCount];
                 uv1Buffer.GetData(newUv1s);
