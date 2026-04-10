@@ -32,6 +32,8 @@ public class BrushBaker : MonoBehaviour
     {
         ComputeShaderMapping mapping;
         ComputeShader computeShader;
+        if (mesh == null) return null;
+
         try
         {
             mapping = computeShaders.First(x => x.brushGuid == brushGuid);
@@ -42,7 +44,24 @@ public class BrushBaker : MonoBehaviour
             Debug.LogWarning($"No mapping found for brushGuid {brushGuid}: {e.Message}");
             return mesh;
         }
+
+        int vertexCount = mesh.vertexCount;
         if (computeShader == null) return mesh;
+        if (vertexCount == 0) return mesh;
+
+        var verticesArray = mesh.vertices;
+        if (verticesArray == null || verticesArray.Length != vertexCount) return mesh;
+
+        var normalsArray = mesh.normals;
+        if (normalsArray == null || normalsArray.Length != vertexCount) return mesh;
+
+        List<Color> colors = new List<Color>();
+        mesh.GetColors(colors);
+        if (colors.Count != vertexCount) return mesh;
+
+        List<Vector3> uvs = new List<Vector3>();
+        mesh.GetUVs(0, uvs);
+        if (uvs.Count != vertexCount) return mesh;
 
         // Get the transformation matrix from the GameObject's transform
         Matrix4x4 localToWorldtransformMatrix = transform.localToWorldMatrix;
@@ -52,22 +71,17 @@ public class BrushBaker : MonoBehaviour
         computeShader.SetMatrix("TransformObjectToWorld", localToWorldtransformMatrix);
         computeShader.SetMatrix("TransformWorldToObject", worldToLocaltransformMatrix);
 
-        NativeArray<Vector3> vertices = new NativeArray<Vector3>(mesh.vertices, Allocator.TempJob);
+        NativeArray<Vector3> vertices = new NativeArray<Vector3>(verticesArray, Allocator.TempJob);
         ComputeBuffer vertexBuffer = new ComputeBuffer(vertices.Length, sizeof(float) * 3);
         vertexBuffer.SetData(vertices);
 
-        NativeArray<Vector3> normals = new NativeArray<Vector3>(mesh.normals, Allocator.TempJob);
+        NativeArray<Vector3> normals = new NativeArray<Vector3>(normalsArray, Allocator.TempJob);
         ComputeBuffer normalBuffer = new ComputeBuffer(normals.Length, sizeof(float) * 3);
         normalBuffer.SetData(normals);
 
-        // get color buffer as well
-        List<Color> colors = new List<Color>();
-        mesh.GetColors(colors);
         ComputeBuffer colorBuffer = new ComputeBuffer(colors.Count, sizeof(float) * 4);
         colorBuffer.SetData(colors);
 
-        List<Vector3> uvs = new List<Vector3>();
-        mesh.GetUVs(0, uvs);
         ComputeBuffer uvBuffer = new ComputeBuffer(uvs.Count, sizeof(float) * 3);
         uvBuffer.SetData(uvs);
 
@@ -92,7 +106,7 @@ public class BrushBaker : MonoBehaviour
             computeShader.SetBuffer(0, "uv1Buffer", uv1Buffer);
         }
 
-        int threadGroups = Mathf.CeilToInt(mesh.vertices.Length / 8f);
+        int threadGroups = Mathf.CeilToInt(vertexCount / 8f);
         computeShader.Dispatch(0, threadGroups, 1, 1);
 
         var newVerts = new Vector3[mesh.vertexCount];
