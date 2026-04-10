@@ -202,6 +202,16 @@ namespace TiltBrush
 
         public override bool ShouldNodeExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Transform transform)
         {
+            // Skip empty batches
+            if (transform.GetComponent<Batch>() != null)
+            {
+                var mf = transform.GetComponent<MeshFilter>();
+                if (mf == null) return false;
+                var mesh = mf.sharedMesh;
+                if (mesh == null) return false;
+                if (mesh.vertexCount == 0) return false;
+            }
+
             Type[] excludedTypes =
             {
                 typeof(SnapGrid3D),
