@@ -23,7 +23,7 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
     float3 uv0 = uvBuffer[id.x];
     float4 uv1 = uv1Buffer[id.x];
 
-    // according to paricles.cginc, the originWS for ParticleVertexWithSpread_t 
+    // according to particles.cginc, the originWS for ParticleVertexWithSpread_t
     // is the normal.xyz instead of uv1
     float4 originWS = mul(TransformObjectToWorld, float4(normal.xyz, 1.0));
     // float4 originWS = mul(TransformObjectToWorld, float4(uv1, 1.0));
