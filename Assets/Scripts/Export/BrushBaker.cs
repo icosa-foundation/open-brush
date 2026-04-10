@@ -1,7 +1,6 @@
 using System;
 using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
 
 public class BrushBaker : MonoBehaviour
 {
@@ -27,18 +26,40 @@ public class BrushBaker : MonoBehaviour
         m_Instance = this;
     }
 
+    private bool TryGetComputeShaderMapping(string brushGuid, out ComputeShaderMapping mapping)
+    {
+        if (computeShaders != null)
+        {
+            for (int i = 0; i < computeShaders.Count; i++)
+            {
+                if (computeShaders[i].brushGuid == brushGuid)
+                {
+                    mapping = computeShaders[i];
+                    return true;
+                }
+            }
+        }
+
+        mapping = default;
+        return false;
+    }
+
     public Mesh ProcessMesh(Mesh mesh, string brushGuid)
     {
         if (mesh == null) return null;
 
-        var match = computeShaders.FirstOrDefault(x => x.brushGuid == brushGuid);
-        if (match.computeShader == null)
+        if (!TryGetComputeShaderMapping(brushGuid, out var mapping))
         {
             Debug.LogWarning($"No compute shader mapping found for brushGuid {brushGuid}");
             return mesh;
         }
-        var mapping = match;
+
         var computeShader = mapping.computeShader;
+        if (computeShader == null)
+        {
+            Debug.LogWarning($"Mapping for brushGuid {brushGuid} has no compute shader assigned");
+            return mesh;
+        }
 
         int vertexCount = mesh.vertexCount;
         if (vertexCount == 0) return mesh;
