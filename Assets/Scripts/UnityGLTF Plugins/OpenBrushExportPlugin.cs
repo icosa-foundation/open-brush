@@ -212,6 +212,15 @@ namespace TiltBrush
                 if (mesh.vertexCount == 0) return false;
             }
 
+            // Don't export the preview stroke
+            if (transform.GetComponent<BaseBrushScript>() != null)
+            {
+                if (transform.gameObject.name.StartsWith("Preview "))
+                {
+                    return false;
+                }
+            }
+
             Type[] excludedTypes =
             {
                 typeof(SnapGrid3D),
