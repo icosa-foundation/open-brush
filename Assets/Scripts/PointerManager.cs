@@ -385,6 +385,32 @@ namespace TiltBrush
             set { m_SymmetryPointerBrushes = value; }
         }
 
+        public List<Color32?> SymmetryPointerColorOverrides
+        {
+            get => m_Pointers.Select(p => p.m_Script.CurrentColorOverride).ToList();
+            set
+            {
+                for (var i = 0; i < Math.Min(m_Pointers.Length, value.Count); i++)
+                {
+                    var p = m_Pointers[i];
+                    p.m_Script.CurrentColorOverride = value[i];
+                }
+            }
+        }
+
+        public List<ColorOverrideMode> SymmetryPointerColorOverrideModes
+        {
+            get => m_Pointers.Select(p => p.m_Script.CurrentColorOverrideMode).ToList();
+            set
+            {
+                for (var i = 0; i < Math.Min(m_Pointers.Length, value.Count); i++)
+                {
+                    var p = m_Pointers[i];
+                    p.m_Script.CurrentColorOverrideMode = value[i];
+                }
+            }
+        }
+
         static public void ClearPlayerPrefs()
         {
             PlayerPrefs.DeleteKey(PLAYER_PREFS_POINTER_ANGLE_OLD);
@@ -2223,6 +2249,30 @@ namespace TiltBrush
                     break;
             }
             return xfSymmetriesGS;
+        }
+
+        public void SetAllPointerColorOverrides(Color color)
+        {
+            for (int i = 0; i < m_NumActivePointers; ++i)
+            {
+                m_Pointers[i].m_Script.CurrentColorOverride = color;
+            }
+        }
+
+        public void SetAllPointerColorOverrideModes(ColorOverrideMode mode)
+        {
+            for (int i = 0; i < m_NumActivePointers; ++i)
+            {
+                m_Pointers[i].m_Script.CurrentColorOverrideMode = mode;
+            }
+        }
+
+        public void ClearSymmetryPointerColorOverrides()
+        {
+            for (int i = 0; i < m_NumActivePointers; ++i)
+            {
+                m_Pointers[i].m_Script.CurrentColorOverrideMode = ColorOverrideMode.None;
+            }
         }
     }
 } // namespace TiltBrush

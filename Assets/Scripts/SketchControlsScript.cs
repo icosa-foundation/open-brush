@@ -200,7 +200,10 @@ namespace TiltBrush
             OpenTexturePicker = 9001,
             MergeBrushStrokes = 10000,
             RepaintOptions = 11500,
-            OpenNumericInputPopup = 12000
+            OpenNumericInputPopup = 12000,
+            LoadQuillConfirmUnsaved = 13000,
+            LoadQuillFile = 13001,
+            OpenQuillPanelSearchPopup = 13002,
         }
 
         public enum ControlsType
@@ -4039,6 +4042,41 @@ namespace TiltBrush
                 }, 0.25f, false, true);
         }
 
+        IEnumerator LoadQuillCoroutine(string path, int chapterIndex = -1)
+        {
+            var blackEnv = EnvironmentCatalog.m_Instance.AllEnvironments
+                .FirstOrDefault(x => x.name.Equals("Black", StringComparison.OrdinalIgnoreCase));
+            if (blackEnv != null)
+            {
+                SceneSettings.m_Instance.SetDesiredPreset(blackEnv, keepSceneTransform: true,
+                    forceTransition: false, hasCustomLights: false, skipFade: true);
+            }
+
+            using (var coroutine = OverlayManager.m_Instance.RunInCompositor(
+                OverlayType.LoadSketch, () =>
+                {
+                    Quill.Load(path, chapterIndex: chapterIndex);
+                }, 0.25f, false, false))
+            {
+                while (coroutine.MoveNext())
+                {
+                    yield return coroutine.Current;
+                }
+            }
+
+            if (Quill.LastLoadedBackgroundColor.HasValue)
+            {
+                var bgColor = Quill.LastLoadedBackgroundColor.Value;
+                SceneSettings.m_Instance.SkyColorA = bgColor;
+                SceneSettings.m_Instance.SkyColorB = bgColor;
+            }
+
+            if (Quill.LastLoaded360SkyboxName != null)
+            {
+                SceneSettings.m_Instance.LoadCustomSkybox(Quill.LastLoaded360SkyboxName);
+            }
+        }
+
         private void SaveModel()
         {
 #if USD_SUPPORTED
@@ -4251,7 +4289,7 @@ namespace TiltBrush
             }
             PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
             var newLayer = App.Scene.AddLayerNow();
-            int newLayerIndex = App.Scene.GetIndexOfCanvas(newLayer);
+            (int newLayerIndex, int _) = App.Scene.GetIndexOfCanvas(newLayer);
             if (SaveLoadScript.m_Instance.Load(fileInfo, bAdditive: true, targetLayer: newLayerIndex, out List<Stroke> loadedStrokes))
             {
                 // A new layer will have been created for the merged strokes.
@@ -4994,6 +5032,34 @@ namespace TiltBrush
                         }
                     }
                     break;
+                case GlobalCommands.LoadQuillConfirmUnsaved:
+                    {
+                        if (SketchMemoryScript.m_Instance.IsMemoryDirty())
+                        {
+                            var quillPanel = m_PanelManager.GetActivePanelByType(
+                                BasePanel.PanelType.QuillLibrary) as QuillLibraryPanel;
+                            if (quillPanel != null)
+                            {
+                                quillPanel.ShowConfirmLoadPopUp();
+                            }
+                        }
+                        else
+                        {
+                            IssueGlobalCommand(GlobalCommands.LoadQuillFile, 0, 0);
+                        }
+                    }
+                    break;
+                case GlobalCommands.LoadQuillFile:
+                    {
+                        var options = Quill.PendingLoadOptions;
+                        Quill.PendingLoadOptions = null;
+                        if (options != null && !string.IsNullOrEmpty(options.Path))
+                        {
+                            NewSketch(fade: false);
+                            StartCoroutine(LoadQuillCoroutine(options.Path, options.ChapterIndex));
+                        }
+                    }
+                    break;
                 case GlobalCommands.LoadWaitOnDownload:
                     {
                         var download = false;
@@ -5105,6 +5171,12 @@ namespace TiltBrush
                     {
                         SketchSetType currentSet = (SketchSetType)iParam1;
                         SketchCatalog.m_Instance.UpdateSearchText(currentSet, KeyboardPopUpWindow.m_LastInput, forceRefresh: true);
+                        DismissPopupOnCurrentGazeObject(false);
+                        break;
+                    }
+                case GlobalCommands.OpenQuillPanelSearchPopup:
+                    {
+                        QuillFileCatalog.Instance.SearchText = KeyboardPopUpWindow.m_LastInput;
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }
@@ -5246,6 +5318,7 @@ namespace TiltBrush
             PointerManager.m_Instance.ResetSymmetryToHome();
             PointerManager.m_Instance.FinalizeLine(false, true);
             App.Scene.ResetLayers(notify: true);
+            App.Scene.animationUI_manager.StartTimeline();
             ApiManager.Instance.ResetBrushTransform();
             ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.None;
             PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None);

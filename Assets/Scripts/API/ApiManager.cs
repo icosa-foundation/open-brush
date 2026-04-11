@@ -686,6 +686,8 @@ Success. If you are not automatically redirected, please visit <a href='{success
             {
                 case "query.queue":
                     return m_OutgoingCommandQueue.Count.ToString();
+                case "query.quill.stats":
+                    return JsonConvert.SerializeObject(Quill.QuillDiagnostics.LastLoad, Formatting.Indented);
                 case "query.command":
                     if (m_CommandStatuses.ContainsKey(commandPair[1]))
                     {
