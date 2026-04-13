@@ -9,6 +9,7 @@ StructuredBuffer<float3> normalBuffer;
 StructuredBuffer<float4> colorBuffer;
 StructuredBuffer<float3> uvBuffer;
 RWStructuredBuffer<float4> uv1Buffer;
+RWStructuredBuffer<float2> uv2Buffer;
 
 float _SqueezeAmount;
 
@@ -39,6 +40,7 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
     float3 vertex = vertexBuffer[id.x];
     float3 uv0 = uvBuffer[id.x];
     float4 uv1 = uv1Buffer[id.x];
+    float2 uv2 = uv2Buffer[id.x];
 
     half envelope = sin(uv0.x * 3.14159);
     half envelopePow =  (1-pow(1  - envelope, 10));
@@ -57,7 +59,9 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
 
     vertexBuffer[id.x] = vertex;
 
-    // Preserve the third texcoord1 component for exporters that truncate TEXCOORD_1 to vec2.
-    uv1.x = offsetFromMiddleToEdge_CS.z;
+    // Preserve the exact Unity animation inputs across XY-only UV channels.
+    uv1.xy = midpointPos_CS.xy;
     uv1Buffer[id.x] = uv1;
+    uv2 = float2(midpointPos_CS.z, widthiness_CS);
+    uv2Buffer[id.x] = uv2;
 }

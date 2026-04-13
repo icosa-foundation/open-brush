@@ -149,6 +149,7 @@ MonoBehaviour:
     ModifyNormal: 0
     ModifyUv0: 0
     ModifyUv1: 1
+    ModifyUv2: 1
   - name: HyperGrid
     shader: {fileID: 4800000, guid: a2fa29912c23a774898a1b8b236ed79d, type: 3}
     brushGuid: 6a1cf9f9-032c-45ec-9b6e-a6680bee32e9
