@@ -6265,8 +6265,8 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         canvas.height = 256;
         const context = canvas.getContext('2d');
         const gradient = context.createLinearGradient(0, 0, 0, 256);
-        gradient.addColorStop(0, colorB.getStyle());
-        gradient.addColorStop(1, colorA.getStyle());
+        gradient.addColorStop(0, colorB.clone().convertSRGBToLinear().getStyle());
+        gradient.addColorStop(1, colorA.clone().convertSRGBToLinear().getStyle());
         context.fillStyle = gradient;
         context.fillRect(0, 0, 1, 256);
         const texture = new $hBQxr$three.CanvasTexture(canvas);
@@ -6520,7 +6520,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
     }
     initFog() {
         if (this.sketchMetadata == undefined || this.sketchMetadata == null) return;
-        this.scene.fog = new $hBQxr$three.FogExp2(this.sketchMetadata.FogColor, this.sketchMetadata.FogDensity);
+        this.scene.fog = new $hBQxr$three.FogExp2(this.sketchMetadata.FogColor.clone().convertSRGBToLinear(), this.sketchMetadata.FogDensity);
     }
     initSceneBackground() {
         // OBJ and FBX models don't have metadata
