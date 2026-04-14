@@ -4161,8 +4161,13 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             document.getElementById('loadscreen')?.classList.remove('loaded');
         };
         manager.onLoad = function() {
+            const evt = new Event("icosa-viewer-load-gltf", {
+                bubbles: true,
+                cancelable: false
+            });
             let loadscreen = document.getElementById('loadscreen');
             if (!loadscreen?.classList.contains('loaderror')) loadscreen?.classList.add('fade-out');
+            document.dispatchEvent(evt);
         };
         this.brushPath = new URL('brushes/', assetBaseUrl);
         this.environmentPath = new URL('environments/', assetBaseUrl);
@@ -5973,6 +5978,11 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         this.loadedModel = sceneGltf.scene;
         this.sceneGltf = sceneGltf;
         this.initializeScene();
+        const evt = new Event("icosa-viewer-init-scene-gltf", {
+            bubbles: true,
+            cancelable: false
+        });
+        document.dispatchEvent(evt);
     }
     isLegacyTiltExporter(sceneGltf) {
         const generator = sceneGltf.asset?.generator;
@@ -6255,8 +6265,8 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         canvas.height = 256;
         const context = canvas.getContext('2d');
         const gradient = context.createLinearGradient(0, 0, 0, 256);
-        gradient.addColorStop(0, colorB.getStyle());
-        gradient.addColorStop(1, colorA.getStyle());
+        gradient.addColorStop(0, colorB.clone().convertSRGBToLinear().getStyle());
+        gradient.addColorStop(1, colorA.clone().convertSRGBToLinear().getStyle());
         context.fillStyle = gradient;
         context.fillRect(0, 0, 1, 256);
         const texture = new $hBQxr$three.CanvasTexture(canvas);
@@ -6468,8 +6478,8 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         // 5. If there's neither custom metadata, an environment guid or explicit GLTF lights - create some default lighting.
         // All rotations are now stored in Three.js XYZ Euler degrees
         // (Unity values are converted at parse time in the SketchMetadata constructor).
-        function toEuler(rot) {
-            return new $hBQxr$three.Euler($hBQxr$three.MathUtils.degToRad(rot.x), $hBQxr$three.MathUtils.degToRad(rot.y), $hBQxr$three.MathUtils.degToRad(rot.z));
+        function toEuler(rot, order = 'XYZ') {
+            return new $hBQxr$three.Euler($hBQxr$three.MathUtils.degToRad(rot.x), $hBQxr$three.MathUtils.degToRad(rot.y), $hBQxr$three.MathUtils.degToRad(rot.z), order);
         }
         if (this.sketchMetadata == undefined || this.sketchMetadata == null) {
             const light = new $hBQxr$three.DirectionalLight(0xffffff, 1);
@@ -6481,19 +6491,13 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         l0.name = "SceneLight0";
         let l1 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight1Color, 1.0);
         l1.name = "SceneLight1";
-        let light0Euler = toEuler(this.sketchMetadata.SceneLight0Rotation);
-        let light1Euler = toEuler(this.sketchMetadata.SceneLight1Rotation);
-        // New Tilt exports keep the sketch root unposed in viewer space, so
-        // metadata-driven light rotations need the same 180-degree yaw offset
-        // that older lighting code applied on this path.
-        if (this.isNewTiltExporter(this.sceneGltf)) {
-            light0Euler.y += Math.PI;
-            light1Euler.y += Math.PI;
-        }
+        const lightEulerOrder = this.isNewTiltExporter(this.sceneGltf) ? 'YXZ' : 'XYZ';
+        let light0Euler = toEuler(this.sketchMetadata.SceneLight0Rotation, lightEulerOrder);
+        let light1Euler = toEuler(this.sketchMetadata.SceneLight1Rotation, lightEulerOrder);
         const light0Direction = new $hBQxr$three.Vector3(0, 0, -1).applyEuler(light0Euler);
-        l0.position.copy(light0Direction.multiplyScalar(10));
+        l0.position.copy(light0Direction).multiplyScalar(10);
         const light1Direction = new $hBQxr$three.Vector3(0, 0, -1).applyEuler(light1Euler);
-        l1.position.copy(light1Direction.multiplyScalar(10));
+        l1.position.copy(light1Direction).multiplyScalar(10);
         // DirectionalLight points from its position toward its target, so attach
         // local targets to the sketch root to keep lighting relative to the sketch.
         const light0Target = new $hBQxr$three.Object3D();
@@ -6516,7 +6520,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
     }
     initFog() {
         if (this.sketchMetadata == undefined || this.sketchMetadata == null) return;
-        this.scene.fog = new $hBQxr$three.FogExp2(this.sketchMetadata.FogColor, this.sketchMetadata.FogDensity);
+        this.scene.fog = new $hBQxr$three.FogExp2(this.sketchMetadata.FogColor.clone().convertSRGBToLinear(), this.sketchMetadata.FogDensity);
     }
     initSceneBackground() {
         // OBJ and FBX models don't have metadata
