@@ -44,7 +44,7 @@ namespace TiltBrush
             {
                 panel.CreatePopUp(
                     m_ColorPickerPopup.gameObject,
-                    transform.position + transform.forward * 0.3f,
+                    transform.position + transform.forward * -0.3f,
                     true, true
                 );
                 ResetState();
