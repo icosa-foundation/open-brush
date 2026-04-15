@@ -42,10 +42,9 @@ namespace TiltBrush
             BasePanel panel = m_Manager.GetPanelForPopUps();
             if (panel != null)
             {
-                float zOffset = App.Config.m_SdkMode == SdkMode.Monoscopic ? 0.3f : -0.3f;
                 panel.CreatePopUp(
                     m_ColorPickerPopup.gameObject,
-                    transform.position + Vector3.forward * zOffset,
+                    transform.position + transform.forward * 0.3f,
                     true, true
                 );
                 ResetState();
