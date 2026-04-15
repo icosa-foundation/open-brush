@@ -108,6 +108,7 @@ class $4fdc68aa1ebb2033$export$bcc22bf437a07d8f extends $fugmd$Loader {
             else if (typeof materialParams.uniforms.u_BumpMap.value === "string") {
                 const bumpMap = await textureLoader.loadAsync(materialParams.uniforms.u_BumpMap.value);
                 bumpMap.name = `${brushName}_BumpMap`;
+                bumpMap.colorSpace = $fugmd$NoColorSpace; // Normal maps are data, not color
                 bumpMap.wrapS = $fugmd$RepeatWrapping;
                 bumpMap.wrapT = $fugmd$RepeatWrapping;
                 bumpMap.flipY = false;
@@ -3503,6 +3504,9 @@ const $4fdc68aa1ebb2033$var$tiltBrushMaterialParams = {
     },
     "Smoke": {
         uniforms: {
+            u_time: {
+                value: new $fugmd$Vector4()
+            },
             u_SceneLight_0_matrix: {
                 value: [
                     1,
