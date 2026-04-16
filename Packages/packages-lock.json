@@ -6,6 +6,15 @@
       "source": "embedded",
       "dependencies": {}
     },
+    "com.immersive-foundation.imm-stroke-reader": {
+      "version": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "3.2.1"
+      },
+      "hash": "5e6ee762c5e3f7c81b0e73b512228307d79be5da"
+    },
     "com.ixxy.unitysymmetry": {
       "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
       "depth": 0,
@@ -355,6 +364,13 @@
       },
       "url": "https://packages.unity.com"
     },
+    "com.valvesoftware.steamaudio": {
+      "version": "https://github.com/icosa-mirror/com.valvesoftware.steamaudio.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "7ae596f571e5a3141f7e6d0be0e7dcb7312722c0"
+    },
     "com.watertrans.glyphloader": {
       "version": "https://github.com/icosa-mirror/GlyphLoader-Unity.git#upm",
       "depth": 0,
@@ -377,7 +393,7 @@
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "dd39e8b23a399938e91a1088a78ef63ca64f2cd8"
+      "hash": "13e7544ef6f48c26ce692a346b328467e01bfe69"
     },
     "org.khronos.unitygltf": {
       "version": "https://github.com/KhronosGroup/UnityGLTF.git#dev",

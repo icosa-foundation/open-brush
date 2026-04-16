@@ -455,7 +455,8 @@ namespace TiltBrush
             }
             m_geometry.m_Vertices.Add(v);
             m_geometry.m_Normals.Add(n);
-            m_geometry.m_Colors.Add(m_Color);
+            Color32 color = k.color;
+            m_geometry.m_Colors.Add(color);
             k.nVert += 1;
             if (m_bDoubleSided)
             {
@@ -463,7 +464,7 @@ namespace TiltBrush
                 m_geometry.m_Normals.Add(-n);
                 // TODO: backface is a different color for visualization reasons
                 // Probably better to use a non-culling shader instead of doubling the geo.
-                m_geometry.m_Colors.Add(m_Color);
+                m_geometry.m_Colors.Add(color);
                 k.nVert += 1;
             }
         }
