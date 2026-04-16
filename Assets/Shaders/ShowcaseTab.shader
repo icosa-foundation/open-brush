@@ -19,46 +19,56 @@ Shader "Custom/ShowcaseTab" {
     _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
   }
   SubShader {
-    Tags { "RenderType"="Opaque" }
+    Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Opaque" }
     LOD 100
     Cull Off
-    CGPROGRAM
-    #pragma surface surf Unlit nofog
-    half4 LightingUnlit(SurfaceOutput s, half3 lightDir, half atten) {
-      half4 c;
-      c.rgb = s.Albedo;
-      c.a = 1.0;
-      return c;
-    }
+    Pass {
+      Name "ForwardUnlit"
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+      #pragma vertex Vert
+      #pragma fragment Frag
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-    sampler2D _MainTex;
-    fixed4 _Color;
-    float _Cutoff;
-    uniform float _Activated;
+      TEXTURE2D(_MainTex);
+      SAMPLER(sampler_MainTex);
 
-    struct Input {
-      float2 uv_MainTex;
-      float3 worldPos;
-    };
+      CBUFFER_START(UnityPerMaterial)
+      half4 _Color;
+      float _Cutoff;
+      float _Activated;
+      CBUFFER_END
 
-    void surf (Input IN, inout SurfaceOutput o) {
-      fixed4 c = tex2D(_MainTex, IN.uv_MainTex);
-      if( _Activated > 0.5f )
-      {
-        c.rgb = .75 * (1 - c.rgb);
+      struct Attributes {
+        float4 positionOS : POSITION;
+        float2 uv : TEXCOORD0;
+      };
+
+      struct Varyings {
+        float4 positionHCS : SV_POSITION;
+        float2 uv : TEXCOORD0;
+      };
+
+      Varyings Vert(Attributes IN) {
+        Varyings OUT;
+        OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+        OUT.uv = IN.uv;
+        return OUT;
       }
-      else
-      {
-        c.rgb *= .75;
-      	if (c.r < _Cutoff) discard;
-      }
 
-      c *= _Color;
-      o.Emission = c.rgb;
-      o.Alpha = c.a;
+      half4 Frag(Varyings IN) : SV_Target {
+        half4 c = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv);
+        if (_Activated > 0.5) {
+          c.rgb = 0.75h * (1.0h - c.rgb);
+        } else {
+          c.rgb *= 0.75h;
+          clip(c.r - _Cutoff);
+        }
+        c *= _Color;
+        return c;
+      }
+      ENDHLSL
     }
-    ENDCG
   }
-  FallBack "Diffuse"
+  FallBack Off
 }
-

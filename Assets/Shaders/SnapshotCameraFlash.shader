@@ -23,12 +23,14 @@ Shader "Unlit/Snapshot Camera Flash"
     }
     SubShader
     {
+    Tags { "RenderPipeline"="UniversalPipeline" }
         Tags { "Queue"="Transparent" "RenderType"="Transparent" }
         Blend SrcAlpha OneMinusSrcAlpha
         LOD 100
 
         Pass
         {
+            Tags { "LightMode"="UniversalForward" }
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
@@ -89,3 +91,4 @@ Shader "Unlit/Snapshot Camera Flash"
         }
     }
 }
+

@@ -22,55 +22,50 @@ Shader "Custom/LinearGradient" {
 
     SubShader
     {
-        Tags { "Queue"="Background" "RenderType"="Background" "PreviewType"="Skybox" }
+        Tags { "RenderPipeline"="UniversalPipeline" "Queue"="Background" "RenderType"="Background" "PreviewType"="Skybox" }
         Cull Off ZWrite Off
 
         Pass
         {
-            CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
+            Tags { "LightMode"="UniversalForward" }
+            HLSLPROGRAM
+            #pragma vertex Vert
+            #pragma fragment Frag
 
-            #include "UnityCG.cginc"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            struct vertexIn {
-                float4 pos : POSITION;
-                float2 uv : TEXCOORD0;
-
-                UNITY_VERTEX_INPUT_INSTANCE_ID
-            };
-
-            struct v2f {
-                float4 pos : SV_POSITION;
-                float2 uv : TEXCOORD0;
-                float3 modelpos : TEXCOORD1;
-
-                UNITY_VERTEX_OUTPUT_STEREO 
-            };
-
-            v2f vert(vertexIn input)
-            {
-                v2f output;
-
-                UNITY_SETUP_INSTANCE_ID(input);
-                UNITY_INITIALIZE_OUTPUT(v2f, output);
-                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
-
-                output.pos = UnityObjectToClipPos(input.pos);
-                output.uv = input.uv;
-                output.modelpos = input.pos;
-                return output;
-            }
-
-            fixed4 _ColorA, _ColorB;
+            CBUFFER_START(UnityPerMaterial)
+            half4 _ColorA;
+            half4 _ColorB;
             float3 _GradientDirection;
+            CBUFFER_END
 
-            fixed4 frag(v2f input) : COLOR
+            struct Attributes {
+                float4 positionOS : POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            struct Varyings {
+                float4 positionHCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
+                float3 modelPos : TEXCOORD1;
+            };
+
+            Varyings Vert(Attributes IN)
             {
-                float t = (dot(normalize(input.modelpos), _GradientDirection) + 1.0f) / 2.0f;
-            return lerp(_ColorA, _ColorB, t);
+                Varyings OUT;
+                OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+                OUT.uv = IN.uv;
+                OUT.modelPos = IN.positionOS.xyz;
+                return OUT;
             }
-            ENDCG
+
+            half4 Frag(Varyings IN) : SV_Target
+            {
+                float t = (dot(normalize(IN.modelPos), _GradientDirection) + 1.0f) / 2.0f;
+                return lerp(_ColorA, _ColorB, (half)t);
+            }
+            ENDHLSL
         }
 
     }

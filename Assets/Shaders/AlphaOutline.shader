@@ -20,57 +20,80 @@ Shader "Custom/AlphaOutline" {
 
   }
   SubShader {
-    Tags {"Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent"}
+    Tags {"RenderPipeline"="UniversalPipeline" "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent"}
+    Blend SrcAlpha OneMinusSrcAlpha
+    ZWrite Off
 
-    Cull Front
-    CGPROGRAM
-    #pragma surface surf Lambert alpha vertex:vert
+    Pass {
+      Name "OutlineShell"
+      Tags { "LightMode"="UniversalForward" }
+      Cull Front
+      HLSLPROGRAM
+      #pragma vertex VertOutline
+      #pragma fragment FragOutline
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-    struct Input {
-      float2 uv_MainTex;
-    };
+      CBUFFER_START(UnityPerMaterial)
+      half4 _Color;
+      float _OutlineWidth;
+      CBUFFER_END
 
-    uniform float4 _Color;
-    sampler2D _MainTex;
-    uniform float _OutlineWidth;
+      struct Attributes {
+        float4 positionOS : POSITION;
+        float3 normalOS : NORMAL;
+      };
 
-    void vert (inout appdata_full v) {
-          // Transform into worldspace
-          float4 world_space_vertex = mul( unity_ObjectToWorld, v.vertex );
+      struct Varyings {
+        float4 positionHCS : SV_POSITION;
+      };
 
-          // Create outline
-        world_space_vertex.xyz += normalize(mul( unity_ObjectToWorld, float4(v.normal,1) ).xyz ) * _OutlineWidth;
+      Varyings VertOutline(Attributes IN) {
+        Varyings OUT;
+        float4 worldPos = mul(unity_ObjectToWorld, IN.positionOS);
+        float3 worldNormal = normalize(mul(unity_ObjectToWorld, float4(IN.normalOS, 1.0)).xyz);
+        worldPos.xyz += worldNormal * _OutlineWidth;
+        float4 objectPos = mul(unity_WorldToObject, worldPos);
+        OUT.positionHCS = TransformObjectToHClip(objectPos.xyz);
+        return OUT;
+      }
 
-          // Transform back into local space
-          v.vertex = mul( unity_WorldToObject, world_space_vertex );
-
-        }
-
-    void surf (Input IN, inout SurfaceOutput o) {
-
-      o.Albedo = 0;
-      o.Emission = 0.0f;
-      o.Alpha = _Color.a;
+      half4 FragOutline(Varyings IN) : SV_Target {
+        return half4(0.0h, 0.0h, 0.0h, _Color.a);
+      }
+      ENDHLSL
     }
-    ENDCG
 
-    CGPROGRAM
-    #pragma surface surf Lambert alpha
+    Pass {
+      Name "MainFill"
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+      #pragma vertex VertMain
+      #pragma fragment FragMain
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-    struct Input {
-      float2 uv_MainTex;
-    };
+      CBUFFER_START(UnityPerMaterial)
+      half4 _Color;
+      CBUFFER_END
 
-    uniform float4 _Color;
-    sampler2D _MainTex;
+      struct Attributes {
+        float4 positionOS : POSITION;
+      };
 
-    void surf (Input IN, inout SurfaceOutput o) {
+      struct Varyings {
+        float4 positionHCS : SV_POSITION;
+      };
 
-      o.Albedo = 0;
-      o.Emission = _Color.rgb;
-      o.Alpha = _Color.a;
+      Varyings VertMain(Attributes IN) {
+        Varyings OUT;
+        OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+        return OUT;
+      }
+
+      half4 FragMain(Varyings IN) : SV_Target {
+        return half4(_Color.rgb, _Color.a);
+      }
+      ENDHLSL
     }
-    ENDCG
   }
-  FallBack "Diffuse"
+  FallBack Off
 }

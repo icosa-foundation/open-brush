@@ -30,9 +30,10 @@ Category {
 
 
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Pass {
 
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
       #pragma multi_compile_particles
@@ -95,8 +96,9 @@ Category {
         outColor *= smoothstep(_FarFadeDistanceEnd, _FarFadeDistanceStart, i.viewdist);
         return outColor;
       }
-      ENDCG
+      ENDHLSL
     }
   }
 }
 }
+

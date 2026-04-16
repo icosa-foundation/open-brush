@@ -20,12 +20,13 @@ Shader "Custom/UnlitHDRColorButton" {
         _EdgeWidth ("Edge Width", Float) = 1.5
     }
     SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
 
         Tags {"RenderType"="Opaque"}
         LOD 100
 
         Pass {
-            CGPROGRAM
+            HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
             #include "UnityCG.cginc"
@@ -66,8 +67,9 @@ Shader "Custom/UnlitHDRColorButton" {
                 float vignette = pow( abs(i.uv - .5) * _EdgeWidth, _EdgeFalloff);
                 return lerp(_Color, _SecondaryColor, saturate(vignette));
             }
-            ENDCG
+            ENDHLSL
         }
     }
     FallBack "Diffuse"
 }
+

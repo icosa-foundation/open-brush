@@ -19,11 +19,10 @@ Shader "Custom/BrowserButton" {
     _Grayscale ("Grayscale", Float) = 0
   }
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags {"Queue"="AlphaTest+20"}
 
     Pass {
-      Lighting Off
-
       CGPROGRAM
       #pragma vertex vert
       #pragma fragment frag
@@ -93,4 +92,5 @@ Shader "Custom/BrowserButton" {
   FallBack "Diffuse"
 
 }
+
 

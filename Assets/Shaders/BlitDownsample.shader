@@ -21,12 +21,13 @@ Shader "Hidden/BlitDownsample"
   }
   SubShader
   {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     // No culling or depth
     Cull Off ZWrite Off ZTest Always
 
     Pass
     {
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
 
@@ -71,7 +72,8 @@ Shader "Hidden/BlitDownsample"
 
         return UNITY_SAMPLE_SCREENSPACE_TEXTURE(_MainTex, i.uv);
       }
-      ENDCG
+      ENDHLSL
     }
   }
 }
+

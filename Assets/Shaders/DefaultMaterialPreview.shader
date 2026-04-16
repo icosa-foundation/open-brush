@@ -23,9 +23,9 @@ Category {
   Blend SrcAlpha One
   AlphaTest Greater .01
   ColorMask RGB
-  Lighting Off ZWrite Off Fog { Color (0,0,0,0) }
-
+  ZWrite Off
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Pass {
 
       CGPROGRAM
@@ -76,3 +76,4 @@ Category {
   }
 }
 }
+

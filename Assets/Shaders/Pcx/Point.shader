@@ -11,9 +11,11 @@ Shader "Point Cloud/Point"
     }
     SubShader
     {
+    Tags { "RenderPipeline"="UniversalPipeline" }
         Tags { "RenderType"="Opaque" }
         Pass
         {
+            Tags { "LightMode"="UniversalForward" }
             CGPROGRAM
 
             #pragma vertex Vertex
@@ -100,3 +102,4 @@ Shader "Point Cloud/Point"
     }
     CustomEditor "Pcx.PointMaterialInspector"
 }
+

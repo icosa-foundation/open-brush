@@ -20,93 +20,84 @@ Shader "TiltBrush/MobileDiffuse" {
   }
 
   SubShader {
-    Tags { "RenderType"="Opaque" "LightMode"="ForwardBase"}
+    Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Opaque" }
     LOD 100
 
     Pass {
-      Tags{ "LightMode" = "ForwardBase" }
+      Tags { "LightMode" = "UniversalForward" }
 
-      CGPROGRAM
-        #pragma vertex vert
-        #pragma fragment frag
-        #pragma target 3.0
-        #pragma multi_compile_fog
+      HLSLPROGRAM
+      #pragma target 3.0
+      #pragma vertex vert
+      #pragma fragment frag
+      #pragma multi_compile_fog
+      #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
+      #pragma multi_compile_fragment _ _SHADOWS_SOFT
 
-        #include "UnityCG.cginc"
-        #include "Lighting.cginc"
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
-        // Disable all the things.
-        // For details, see:
-        // https://docs.unity3d.com/560/Documentation/Manual/SL-VertexFragmentShaderExamples.html
-        #pragma multi_compile_fwdbase nolightmap nodirlightmap nodynlightmap novertexlight
-        #include "AutoLight.cginc"
+      struct Attributes {
+        float4 positionOS : POSITION;
+        float2 uv0 : TEXCOORD0;
+        float2 uv1 : TEXCOORD1;
+        half3 normalOS : NORMAL;
+      };
 
-        struct appdata_t {
-          float4 vertex : POSITION;
-          float2 uv0 : TEXCOORD0;
-          float2 uv1 : TEXCOORD1;
-          half3 normal : NORMAL;
-          float4 color : COLOR;
+      struct Varyings {
+        float4 positionCS : SV_POSITION;
+        float2 uv0 : TEXCOORD0;
+        float2 uv1 : TEXCOORD1;
+        half3 normalWS : TEXCOORD2;
+        float3 positionWS : TEXCOORD3;
+        half fogFactor : TEXCOORD4;
+      };
 
-          UNITY_VERTEX_INPUT_INSTANCE_ID
-        };
+      TEXTURE2D(_MainTex);
+      SAMPLER(sampler_MainTex);
+      TEXTURE2D(_LightMap);
+      SAMPLER(sampler_LightMap);
 
-        struct v2f {
-          float4 pos : SV_POSITION;  // Required to be called "pos" by shadow reciever.
-          float2 uv0 : TEXCOORD0;
-          float2 uv1 : TEXCOORD1;
-          half3 worldNormal : NORMAL;
-          UNITY_FOG_COORDS(2)
-          SHADOW_COORDS(3) // put shadows data into TEXCOORD3
+      CBUFFER_START(UnityPerMaterial)
+      float4 _Color;
+      float4 _MainTex_ST;
+      float4 _LightMap_ST;
+      CBUFFER_END
 
-          UNITY_VERTEX_OUTPUT_STEREO
-        };
+      Varyings vert(Attributes v) {
+        Varyings o;
+        VertexPositionInputs posInput = GetVertexPositionInputs(v.positionOS.xyz);
+        VertexNormalInputs normalInput = GetVertexNormalInputs(v.normalOS);
+        o.positionCS = posInput.positionCS;
+        o.positionWS = posInput.positionWS;
+        o.uv0 = TRANSFORM_TEX(v.uv0, _MainTex);
+        o.uv1 = TRANSFORM_TEX(v.uv1, _LightMap);
+        o.normalWS = normalInput.normalWS;
+        o.fogFactor = ComputeFogFactor(posInput.positionCS.z);
+        return o;
+      }
 
-        sampler2D _MainTex;
-        uniform float4 _MainTex_ST;
-        uniform float4 _LightMap_ST;
-        sampler2D _LightMap;
-        float4 _Color;
+      half4 frag(Varyings i, bool isFrontFace : SV_IsFrontFace) : SV_Target {
+        half4 albedo = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv0) * _Color;
+        half3 lightMap = SAMPLE_TEXTURE2D(_LightMap, sampler_LightMap, i.uv1).rgb;
 
-        v2f vert (appdata_t v) {
-          v2f o;
+        half faceSign = isFrontFace ? 1.0h : -1.0h;
+        half3 normalWS = normalize(i.normalWS * faceSign);
 
-          UNITY_SETUP_INSTANCE_ID(v);
-          UNITY_INITIALIZE_OUTPUT(v2f, o);
-          UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-          
-          o.pos = UnityObjectToClipPos(v.vertex);
-          o.uv0 = TRANSFORM_TEX(v.uv0, _MainTex);
-          o.uv1 = TRANSFORM_TEX(v.uv1, _LightMap);
-          o.worldNormal = UnityObjectToWorldNormal(v.normal);
+        Light mainLight = GetMainLight(TransformWorldToShadowCoord(i.positionWS));
+        half ndotl = saturate(dot(normalWS, mainLight.direction));
+        half3 lighting = ndotl * mainLight.color * mainLight.shadowAttenuation;
+        lighting += SampleSH(normalWS);
 
-          UNITY_TRANSFER_FOG(o, o.pos);
-          TRANSFER_SHADOW(o);
-          return o;
-        }
-
-        fixed4 frag(v2f i, fixed facing : VFACE) : SV_Target {
-          fixed4 albedo = tex2D(_MainTex, i.uv0) * _Color;
-          fixed4 lightMap = tex2D(_LightMap, i.uv1);
-          fixed shadow = SHADOW_ATTENUATION(i);
-
-          half3 worldNormal = normalize(i.worldNormal * facing);
-
-          fixed ndotl = saturate(dot(worldNormal, normalize(_WorldSpaceLightPos0.xyz)));
-          fixed3 lighting = ndotl * _LightColor0 * shadow;
-          lighting += ShadeSH9(half4(worldNormal, 1.0));
-
-          // Pass lighting + baked lightmap to diffuse
-          float4 finalColor = albedo;
-
-          finalColor.rgb *= lightMap * lighting;
-
-          UNITY_APPLY_FOG(i.fogCoord, finalColor);
-          return finalColor;
-        }
-      ENDCG
+        half4 finalColor = albedo;
+        finalColor.rgb *= lightMap * lighting;
+        finalColor.rgb = MixFog(finalColor.rgb, i.fogFactor);
+        return finalColor;
+      }
+      ENDHLSL
     } // pass
   } // subshader
 
 Fallback "Mobile/VertexLit"
 }
+

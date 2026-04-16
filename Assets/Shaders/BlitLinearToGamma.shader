@@ -17,12 +17,14 @@ Properties {
  _MainTex ("", 2D) = "white" {}
 }
 
-SubShader {
+SubShader
+  {
+    Tags { "RenderPipeline"="UniversalPipeline" }
 
 ZTest Always Cull Off ZWrite Off Fog { Mode Off } //Rendering settings
 
  Pass{
-  CGPROGRAM
+  HLSLPROGRAM
   #pragma vertex vert
   #pragma fragment frag
   #include "UnityCG.cginc"
@@ -56,8 +58,9 @@ ZTest Always Cull Off ZWrite Off Fog { Mode Off } //Rendering settings
   fixed4 tex = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_MainTex, i.uv); //Get the orginal rendered color
      return pow(tex, 1.0/2.2);
   }
-  ENDCG
+  ENDHLSL
  }
 }
  FallBack "Diffuse"
 }
+

@@ -27,9 +27,10 @@ Shader "Custom/VisualizerRing" {
     Cull Off Lighting Off ZWrite Off Fog{ Color(0,0,0,0) }
 
     SubShader{
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Pass{
 
-    CGPROGRAM
+    HLSLPROGRAM
     #pragma vertex vert
     #pragma fragment frag
     #pragma multi_compile_particles
@@ -82,8 +83,9 @@ Shader "Custom/VisualizerRing" {
   c.w = 1;
   return i.color * c * _Color;
   }
-    ENDCG
+    ENDHLSL
   }
   }
   }
 }
+

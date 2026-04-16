@@ -26,8 +26,9 @@ Category {
   Cull Off Lighting Off ZWrite Off Fog { Color (0, 0, 0, 0) }
 
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Pass {
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
       #pragma target 3.0
@@ -85,8 +86,9 @@ Category {
         grid = grid > .98 ? 1 : 0;
         return fixed4((0.05 + grid) * withinAngle * withinCircle * _Color.rgb, 1);
       }
-      ENDCG
+      ENDHLSL
     }
   }
 }
 }
+
