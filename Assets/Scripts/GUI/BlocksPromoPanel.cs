@@ -16,6 +16,9 @@ namespace TiltBrush
 {
     public class BlocksPromoPanel : BasePanel
     {
-
+        public void DismissPanel()
+        {
+            PanelManager.m_Instance.HidePanel(m_PanelType);
+        }
     }
 } // namespace TiltBrush
