@@ -30,14 +30,31 @@ namespace TiltBrush
         private GameObject m_ThumbnailCamera;
         private bool m_WasUsingBatchedBrushes;
 
+        // Per-export state for additive brush emissive color modulation
+        private GLTFRoot _gltfRoot;
+        // Template additive material → emission gain
+        private Dictionary<GLTFMaterial, float> _additiveBrushGains;
+        // (template material, stroke Color32) → index of per-colour clone in gltfRoot.Materials
+        private Dictionary<(GLTFMaterial, Color32), int> _colorModulatedMaterials;
+        // colorKey → cached atlas texture (colorKey = comma-separated sorted RRGGBB hex)
+        private Dictionary<string, Texture2D> _atlasTextureCache;
+        // (template material, colorKey) → index of atlas material clone in gltfRoot.Materials
+        private Dictionary<(GLTFMaterial, string), int> _atlasMaterialCache;
+
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
+            _gltfRoot = gltfRoot;
+            _additiveBrushGains = new Dictionary<GLTFMaterial, float>();
+            _colorModulatedMaterials = new Dictionary<(GLTFMaterial, Color32), int>();
+            _atlasTextureCache = new Dictionary<string, Texture2D>();
+            _atlasMaterialCache = new Dictionary<(GLTFMaterial, string), int>();
+            _meshesToBatches = new Dictionary<int, Batch>();
+
             if (Application.isPlaying && App.UserConfig.Export.ExportCustomSkybox)
             {
                 GltfExportStandinManager.m_Instance.CreateSkyStandin();
             }
             SelectionManager.m_Instance?.ClearActiveSelection();
-            _meshesToBatches = new Dictionary<int, Batch>();
             GenerateCameraPathsCameras();
             m_ThumbnailCamera = App.Instance.InstantiateThumbnailCamera();
             m_ThumbnailCamera.transform.SetParent(App.Scene.MainCanvas.transform, worldPositionStays: true);
@@ -196,6 +213,10 @@ namespace TiltBrush
                     mesh = BrushBaker.m_Instance.ProcessMesh(mesh, brush.m_Guid.ToString());
                     mf.sharedMesh = mesh;
                     mf.mesh = mesh;
+                    // Swap the per-batch material instance back to the canonical brush material
+                    // so UnityGLTF sees the same Material object reference across all batches
+                    // of the same brush and can deduplicate correctly.
+                    batch.gameObject.GetComponent<Renderer>().sharedMaterial = brush.Material;
                 }
             }
         }
@@ -220,17 +241,13 @@ namespace TiltBrush
                 BeforeLayerExport(transform);
             }
             if (!Application.isPlaying) return;
-            if (!App.UserConfig.Export.KeepStrokes &&
-                App.UserConfig.Export.ExportStrokeMetadata)
+            if (!App.UserConfig.Export.KeepStrokes)
             {
-                // We'll need a way to find the batch for each mesh later
+                // Register all batches so AfterPrimitiveExport can look up stroke data
                 var batch = transform.GetComponent<Batch>();
                 var mf = transform.GetComponent<MeshFilter>();
                 if (batch != null && mf != null)
-                {
-                    var mesh = mf.sharedMesh;
-                    _meshesToBatches[mesh.GetHashCode()] = batch;
-                }
+                    _meshesToBatches[mf.sharedMesh.GetHashCode()] = batch;
             }
         }
 
@@ -274,6 +291,8 @@ namespace TiltBrush
                     var mf = batch.gameObject.GetComponent<MeshFilter>();
                     mf.sharedMesh = batch.m_EditorDebugMesh;
                     batch.m_EditorDebugMesh = null;
+                    // Restore the per-batch material instance that runtime code depends on.
+                    batch.gameObject.GetComponent<Renderer>().sharedMaterial = batch.InstantiatedMaterial;
                 }
             }
         }
@@ -336,55 +355,227 @@ namespace TiltBrush
         public override void AfterPrimitiveExport(GLTFSceneExporter exporter, Mesh mesh, MeshPrimitive primitive, int index)
         {
             if (!Application.isPlaying) return;
-            if (App.UserConfig.Export.ExportStrokeMetadata)
+
+            if (App.UserConfig.Export.ExportStrokeMetadata && App.UserConfig.Export.KeepStrokes)
             {
-                if (App.UserConfig.Export.KeepStrokes)
+                Batch batch;
+                if (_meshesToBatches.TryGetValue(mesh.GetHashCode(), out batch))
                 {
-                    Batch batch;
-                    var result = _meshesToBatches.TryGetValue(mesh.GetHashCode(), out batch);
-                    if (result)
+                    var batchInfo = new List<Dictionary<string, string>>();
+                    foreach (var subset in batch.m_Groups)
                     {
-                        var batchInfo = new List<Dictionary<string, string>>();
-                        foreach (var subset in batch.m_Groups)
-                        {
-                            var subsetInfo = new Dictionary<string, string>();
-                            subsetInfo["StartVertIndex"] = subset.m_StartVertIndex.ToString();
-                            subsetInfo["VertLength"] = subset.m_VertLength.ToString();
-                            subsetInfo["HeadTimestampMs"] = subset.m_Stroke.HeadTimestampMs.ToString();
-                            subsetInfo["TailTimestampMs"] = subset.m_Stroke.TailTimestampMs.ToString();
-                            subsetInfo["Group"] = subset.m_Stroke.Group.GetHashCode().ToString();
-                            subsetInfo["Seed"] = subset.m_Stroke.m_Seed.ToString();
-                            subsetInfo["Color"] = subset.m_Stroke.m_Color.ToString();
-                            batchInfo.Add(subsetInfo);
-                        }
-                        var primitiveExtras = new Dictionary<string, List<Dictionary<string, string>>>
-                        {
-                            ["ICOSA_batchInfo"] = batchInfo
-                        };
-                        primitive.Extras = JToken.FromObject(primitiveExtras);
+                        var subsetInfo = new Dictionary<string, string>();
+                        subsetInfo["StartVertIndex"] = subset.m_StartVertIndex.ToString();
+                        subsetInfo["VertLength"] = subset.m_VertLength.ToString();
+                        subsetInfo["HeadTimestampMs"] = subset.m_Stroke.HeadTimestampMs.ToString();
+                        subsetInfo["TailTimestampMs"] = subset.m_Stroke.TailTimestampMs.ToString();
+                        subsetInfo["Group"] = subset.m_Stroke.Group.GetHashCode().ToString();
+                        subsetInfo["Seed"] = subset.m_Stroke.m_Seed.ToString();
+                        subsetInfo["Color"] = subset.m_Stroke.m_Color.ToString();
+                        batchInfo.Add(subsetInfo);
                     }
+                    primitive.Extras = JToken.FromObject(new Dictionary<string, object>
+                        { ["ICOSA_batchInfo"] = batchInfo });
                 }
+            }
+
+            if (primitive.Material == null || _gltfRoot == null) return;
+            var mat = _gltfRoot.Materials[primitive.Material.Id];
+            if (!_additiveBrushGains.TryGetValue(mat, out float gain)) return;
+
+            if (App.UserConfig.Export.KeepStrokes)
+            {
+                // Each primitive is one stroke with uniform vertex colour — use it directly.
+                var colors = mesh.colors32;
+                var strokeColor = colors.Length > 0 ? colors[0] : new Color32(255, 255, 255, 255);
+                int cloneIdx = GetOrCreateColoredAdditiveMaterial(mat, strokeColor, gain, exporter);
+                primitive.Material = new MaterialId { Id = cloneIdx, Root = _gltfRoot };
+            }
+            else
+            {
+                // Batch may contain strokes of different colours. Build a 1×N colour atlas and
+                // inject it as TEXCOORD_7 so the emissive texture is sampled per-vertex.
+                if (!_meshesToBatches.TryGetValue(mesh.GetHashCode(), out Batch batchForAtlas)) return;
+                int cloneIdx = GetOrCreateAtlasMaterial(mat, batchForAtlas, mesh, primitive, gain, exporter);
+                primitive.Material = new MaterialId { Id = cloneIdx, Root = _gltfRoot };
             }
         }
 
-        void AddExtension(GLTFMaterial materialNode, IExtension blend)
+        // KeepStrokes=true: one clone per (material, strokeColor)
+        private int GetOrCreateColoredAdditiveMaterial(GLTFMaterial source, Color32 strokeColor, float gain, GLTFSceneExporter exporter)
+        {
+            var key = (source, strokeColor);
+            if (_colorModulatedMaterials.TryGetValue(key, out int existing)) return existing;
+
+            var clone = CloneGltfMaterial(source);
+            float r = strokeColor.r / 255f;
+            float g = strokeColor.g / 255f;
+            float b = strokeColor.b / 255f;
+            clone.EmissiveFactor = new GLTF.Math.Color(r, g, b, 1f);
+            if (gain > 1f) ApplyEmissiveStrength(clone, gain, exporter);
+
+            _gltfRoot.Materials.Add(clone);
+            int idx = _gltfRoot.Materials.Count - 1;
+            _colorModulatedMaterials[key] = idx;
+            return idx;
+        }
+
+        private static string ColorKey(List<Color32> colors)
+        {
+            return string.Join(",", colors.Select(c => $"{c.r:X2}{c.g:X2}{c.b:X2}"));
+        }
+
+        // KeepStrokes=false: one clone per (source material, color set), with TEXCOORD_n colour atlas injected
+        private int GetOrCreateAtlasMaterial(GLTFMaterial source, Batch batch, Mesh mesh, MeshPrimitive primitive, float gain, GLTFSceneExporter exporter)
+        {
+            // Build colour atlas and per-vertex UV data
+            var subsets = batch.m_Groups;
+            var uniqueColors = subsets.Select(s => (Color32)s.m_Stroke.m_Color).Distinct().ToList();
+            int N = uniqueColors.Count;
+            string colorKey = ColorKey(uniqueColors);
+
+            // Reuse cached material clone if this (source, colorSet) was seen before —
+            // but we still need to inject the per-primitive TEXCOORD accessor below.
+            bool materialCached = _atlasMaterialCache.TryGetValue((source, colorKey), out int cachedIdx);
+
+            // Get or create the atlas texture
+            if (!_atlasTextureCache.TryGetValue(colorKey, out Texture2D atlas))
+            {
+                atlas = new Texture2D(N, 1, TextureFormat.RGBA32, mipChain: false, linear: false);
+                atlas.filterMode = FilterMode.Point;
+                atlas.wrapMode = TextureWrapMode.Clamp;
+                for (int i = 0; i < N; i++) atlas.SetPixel(i, 0, uniqueColors[i]);
+                atlas.Apply();
+                _atlasTextureCache[colorKey] = atlas;
+            }
+
+            // Per-vertex UV: U = texel centre for this stroke's colour, V = 0.5
+            int vertCount = mesh.vertexCount;
+            var uv = new Vector2[vertCount];
+            foreach (var subset in subsets)
+            {
+                int colorIdx = uniqueColors.IndexOf((Color32)subset.m_Stroke.m_Color);
+                float u = (colorIdx + 0.5f) / N;
+                // GLTF UV origin is bottom-left; flip V (0.5 stays 0.5 for a 1-row atlas)
+                int end = Mathf.Min(subset.m_StartVertIndex + subset.m_VertLength, vertCount);
+                for (int v = subset.m_StartVertIndex; v < end; v++)
+                    uv[v] = new Vector2(u, 0.5f);
+            }
+
+            // Build GLTF accessor for the UV data
+            float minX = float.MaxValue, minY = float.MaxValue;
+            float maxX = float.MinValue, maxY = float.MinValue;
+            var bytes = new byte[vertCount * 8];
+            for (int i = 0; i < vertCount; i++)
+            {
+                if (uv[i].x < minX) minX = uv[i].x;
+                if (uv[i].y < minY) minY = uv[i].y;
+                if (uv[i].x > maxX) maxX = uv[i].x;
+                if (uv[i].y > maxY) maxY = uv[i].y;
+                Buffer.BlockCopy(BitConverter.GetBytes(uv[i].x), 0, bytes, i * 8,     4);
+                Buffer.BlockCopy(BitConverter.GetBytes(uv[i].y), 0, bytes, i * 8 + 4, 4);
+            }
+            var accessorId = exporter.ExportAccessor(bytes, (uint)vertCount,
+                GLTFAccessorAttributeType.VEC2, GLTFComponentType.Float,
+                new List<double> { minX, minY }, new List<double> { maxX, maxY });
+
+            // Find the next sequential TEXCOORD index after whatever the mesh already has
+            int texCoordIndex = 0;
+            while (primitive.Attributes.ContainsKey($"TEXCOORD_{texCoordIndex}"))
+                texCoordIndex++;
+
+            primitive.Attributes[$"TEXCOORD_{texCoordIndex}"] = accessorId;
+
+            // Export atlas texture and build emissiveTexture pointing at that channel
+            var atlasTexInfo = exporter.ExportTextureInfo(atlas, GLTFSceneExporter.TextureMapType.Emissive);
+            atlasTexInfo.TexCoord = texCoordIndex;
+
+            int materialIdx;
+            if (materialCached)
+            {
+                materialIdx = cachedIdx;
+            }
+            else
+            {
+                var clone = CloneGltfMaterial(source);
+                clone.EmissiveFactor = new GLTF.Math.Color(1f, 1f, 1f, 1f);
+                clone.EmissiveTexture = atlasTexInfo;
+                if (gain > 1f) ApplyEmissiveStrength(clone, gain, exporter);
+                _gltfRoot.Materials.Add(clone);
+                materialIdx = _gltfRoot.Materials.Count - 1;
+                _atlasMaterialCache[(source, colorKey)] = materialIdx;
+            }
+
+            return materialIdx;
+        }
+
+        private static GLTFMaterial CloneGltfMaterial(GLTFMaterial src) => new GLTFMaterial
+        {
+            Name = src.Name,
+            PbrMetallicRoughness = src.PbrMetallicRoughness,
+            NormalTexture = src.NormalTexture,
+            OcclusionTexture = src.OcclusionTexture,
+            EmissiveTexture = src.EmissiveTexture,
+            AlphaMode = src.AlphaMode,
+            AlphaCutoff = src.AlphaCutoff,
+            DoubleSided = src.DoubleSided,
+            Extras = src.Extras,
+            Extensions = src.Extensions != null
+                ? new Dictionary<string, IExtension>(src.Extensions)
+                : new Dictionary<string, IExtension>()
+        };
+
+        private static void ApplyEmissiveStrength(GLTFMaterial mat, float strength, GLTFSceneExporter exporter)
+        {
+            exporter.DeclareExtensionUsage(KHR_materials_emissive_strength_Factory.EXTENSION_NAME, false);
+            mat.Extensions[KHR_materials_emissive_strength_Factory.EXTENSION_NAME] =
+                new KHR_materials_emissive_strength { emissiveStrength = strength };
+        }
+
+        void AddExtension(GLTFMaterial materialNode, IExtension ext, string name = null)
         {
             if (materialNode.Extensions == null)
                 materialNode.Extensions = new Dictionary<string, IExtension>();
-            materialNode.Extensions.Add(EXT_blend_operations.EXTENSION_NAME, blend);
+            materialNode.Extensions[name ?? EXT_blend_operations.EXTENSION_NAME] = ext;
+        }
+
+        private PbrMetallicRoughness BuildBrushPbr(GLTFSceneExporter exporter, Material material)
+        {
+            var pbr = new PbrMetallicRoughness { MetallicFactor = 0f };
+
+            if (material.HasProperty("_Color"))
+            {
+                var c = material.GetColor("_Color");
+                pbr.BaseColorFactor = new GLTF.Math.Color(c.r, c.g, c.b, c.a);
+            }
+            else if (material.HasProperty("_TintColor"))
+            {
+                var c = material.GetColor("_TintColor");
+                pbr.BaseColorFactor = new GLTF.Math.Color(c.r, c.g, c.b, c.a);
+            }
+
+            if (material.HasProperty("_MainTex"))
+            {
+                var tex = material.GetTexture("_MainTex");
+                if (tex != null)
+                    pbr.BaseColorTexture = exporter.ExportTextureInfo(tex, GLTFSceneExporter.TextureMapType.BaseColor);
+            }
+
+            // _Shininess is Unity smoothness [0,1]; roughness = 1 - smoothness
+            pbr.RoughnessFactor = material.HasProperty("_Shininess")
+                ? 1f - material.GetFloat("_Shininess")
+                : 1f;
+
+            return pbr;
         }
 
         public override void AfterMaterialExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Material material, GLTFMaterial materialNode)
         {
             // Only process Open Brush or Open Blocks materials
-            // Use shaderName to determine if this is the case
             string shaderName = material.shader.name;
 
             if (shaderName.StartsWith("Brush/"))
             {
-
-                // TODO - This assumes that every brush has a unique material with a unique name
-                // Currently, this is true, but it may not always be the case
                 var brushes = BrushCatalog.m_Instance.AllBrushes
                     .Where(b => b.Material.name == material.name.Replace("(Instance)", "").TrimEnd())
                     .ToList();
@@ -403,21 +594,74 @@ namespace TiltBrush
                 var manifest = BrushCatalog.m_Instance.GetBrush(brush.m_Guid);
 
                 materialNode.Name = $"ob-{manifest.DurableName}";
-                // Do we need to override the regular UnityGLTF logic here?
                 materialNode.DoubleSided = manifest.m_RenderBackfaces;
+                materialNode.Extras = new JObject { ["TB_BrushGuid"] = manifest.m_Guid.ToString("D") };
+                materialNode.PbrMetallicRoughness = BuildBrushPbr(exporter, material);
+
+                if (material.HasProperty("_BumpMap"))
+                {
+                    var bumpTex = material.GetTexture("_BumpMap");
+                    if (bumpTex != null)
+                        materialNode.NormalTexture = exporter.ExportNormalTextureInfo(
+                            bumpTex, GLTFSceneExporter.TextureMapType.Normal, material);
+                }
 
                 switch (manifest.m_BlendMode)
                 {
                     case ExportableMaterialBlendMode.AdditiveBlend:
+                        exporter.DeclareExtensionUsage(EXT_blend_operations.EXTENSION_NAME, false);
                         AddExtension(materialNode, EXT_blend_operations.Add);
                         materialNode.AlphaMode = AlphaMode.BLEND;
                         break;
                     case ExportableMaterialBlendMode.AlphaMask:
                         materialNode.AlphaMode = AlphaMode.MASK;
+                        if (material.HasProperty("_Cutoff"))
+                            materialNode.AlphaCutoff = material.GetFloat("_Cutoff");
                         break;
                     case ExportableMaterialBlendMode.AlphaBlend:
                         materialNode.AlphaMode = AlphaMode.BLEND;
                         break;
+                }
+
+                if (manifest.m_BlendMode == ExportableMaterialBlendMode.AdditiveBlend)
+                {
+                    // Emissive colour comes from vertex colour, sampled per-primitive in
+                    // AfterPrimitiveExport. Store gain here; emissive texture is set on clones.
+                    float gain = manifest.m_EmissiveFactor;
+                    if (gain <= 0f && material.HasProperty("_EmissionGain"))
+                        gain = material.GetFloat("_EmissionGain");
+                    if (gain <= 0f) gain = 1f;
+                    _additiveBrushGains[materialNode] = gain;
+
+                    // Set emissive texture on template now — KeepStrokes=true clones inherit it.
+                    // KeepStrokes=false clones replace it with the per-batch colour atlas.
+                    if (material.HasProperty("_MainTex"))
+                    {
+                        var emTex = material.GetTexture("_MainTex");
+                        if (emTex != null)
+                            materialNode.EmissiveTexture = exporter.ExportTextureInfo(
+                                emTex, GLTFSceneExporter.TextureMapType.Emissive);
+                    }
+                }
+                else
+                {
+                    float emissiveFactor = manifest.m_EmissiveFactor;
+                    if (emissiveFactor <= 0f && material.HasProperty("_EmissionGain"))
+                        emissiveFactor = material.GetFloat("_EmissionGain");
+                    if (emissiveFactor > 0f)
+                    {
+                        float clamped = Mathf.Min(emissiveFactor, 1f);
+                        materialNode.EmissiveFactor = new GLTF.Math.Color(clamped, clamped, clamped, 1f);
+                        if (emissiveFactor > 1f)
+                            ApplyEmissiveStrength(materialNode, emissiveFactor, exporter);
+                    }
+                }
+
+                if (shaderName == "Brush/Special/Unlit")
+                {
+                    exporter.DeclareExtensionUsage(KHR_MaterialsUnlitExtensionFactory.EXTENSION_NAME, false);
+                    AddExtension(materialNode, new KHR_MaterialsUnlitExtension(),
+                        KHR_MaterialsUnlitExtensionFactory.EXTENSION_NAME);
                 }
             }
             else if (shaderName.StartsWith("Blocks/"))
@@ -430,8 +674,19 @@ namespace TiltBrush
                 {
                     BaseColorFactor = new GLTF.Math.Color(r, g, b, a),
                     MetallicFactor = 0.0f,
-                    RoughnessFactor = Mathf.Sqrt(2f / (material.GetFloat("_Shininess") + 2f))
+                    RoughnessFactor = material.HasProperty("_Shininess")
+                        ? 1f - material.GetFloat("_Shininess")
+                        : 1f
                 };
+
+                if (material.HasProperty("_MainTex"))
+                {
+                    var tex = material.GetTexture("_MainTex");
+                    if (tex != null)
+                        pbr.BaseColorTexture = exporter.ExportTextureInfo(
+                            tex, GLTFSceneExporter.TextureMapType.BaseColor);
+                }
+
                 if (shaderName == "Blocks/BlocksGlass")
                 {
                     materialNode.AlphaMode = AlphaMode.BLEND;
