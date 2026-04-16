@@ -77,6 +77,7 @@ namespace TiltBrush
         private BaseBrushScript m_CurrentLine;
         private ParametricStrokeCreator m_CurrentCreator;
         private float m_ParametricCreatorBackupStrokeSize; // In pointer aka room space
+        private ToolScriptStrokeCreator m_ToolScriptStrokeCreator;
 
         private float m_AudioVolumeDesired;
         private float m_CurrentTotalVolume; // Brush audio volume before being divided between layers
@@ -512,32 +513,43 @@ namespace TiltBrush
             }
             else if (m_PreviewLineEnabled && m_CurrentBrush != null)
             {
-                // Preview mode: Create a preview line if we need one but don't have one
-                if (m_AllowPreviewLine && m_PreviewLine == null)
+                if (m_ToolScriptStrokeCreator != null)
                 {
-                    m_AllowPreviewLineTimer -= Time.deltaTime;
-                    if (m_AllowPreviewLineTimer <= 0.0f)
+                    if (m_PreviewLine == null)
                     {
                         CreatePreviewLine();
                     }
+
+                    if (m_PreviewLine != null)
+                    {
+                        UpdateToolScriptPreviewLine();
+                    }
                 }
-
-                if (m_PreviewLine != null)
+                else
                 {
-                    // For most brushes, we control the rebuilding of the preview brush,
-                    // since we have the necessary timing information and the brush doesn't.
-                    if (m_PreviewLine.AlwaysRebuildPreviewBrush())
+                    if (m_AllowPreviewLine && m_PreviewLine == null)
                     {
-                        RebuildPreviewLine();
-                    }
-                    else
-                    {
-                        m_PreviewLine.DecayBrush();
-                        m_PreviewLine.UpdatePosition_LS(GetTransformForLine(m_PreviewLine.transform), 1f);
+                        m_AllowPreviewLineTimer -= Time.deltaTime;
+                        if (m_AllowPreviewLineTimer <= 0.0f)
+                        {
+                            CreatePreviewLine();
+                        }
                     }
 
-                    // Always update preview brush after each frame
-                    m_PreviewLine.ApplyChangesToVisuals();
+                    if (m_PreviewLine != null)
+                    {
+                        if (m_PreviewLine.AlwaysRebuildPreviewBrush())
+                        {
+                            RebuildPreviewLine();
+                        }
+                        else
+                        {
+                            m_PreviewLine.DecayBrush();
+                            m_PreviewLine.UpdatePosition_LS(GetTransformForLine(m_PreviewLine.transform), 1f);
+                        }
+
+                        m_PreviewLine.ApplyChangesToVisuals();
+                    }
                 }
             }
 
@@ -716,6 +728,37 @@ namespace TiltBrush
             }
         }
 
+        private void UpdateToolScriptPreviewLine()
+        {
+            if (m_PreviewLine == null)
+            {
+                return;
+            }
+
+            var controlPoints = m_ToolScriptStrokeCreator?.ControlPoints;
+            if (controlPoints == null || controlPoints.Count < 2)
+            {
+                ClearToolScriptPreview();
+                return;
+            }
+
+            float scale = m_PreviewLine.StrokeScale;
+            var first = controlPoints[0];
+            m_PreviewLine.ResetBrushForPreview(TrTransform.TRS(first.m_Pos, first.m_Orient, scale));
+            for (int i = 0; i < controlPoints.Count; ++i)
+            {
+                if (m_PreviewLine.IsOutOfVerts())
+                {
+                    break;
+                }
+
+                var cp = controlPoints[i];
+                m_PreviewLine.UpdatePosition_LS(TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure);
+            }
+
+            m_PreviewLine.ApplyChangesToVisuals();
+        }
+
         void ResetPreviewProperties()
         {
             if (m_PreviewLine)
@@ -874,6 +917,36 @@ namespace TiltBrush
             }
 
             m_LastControlPointIsKeeper = isKeeper;
+        }
+
+        public void SetToolScriptPreview(IReadOnlyList<PointerManager.ControlPoint> controlPoints)
+        {
+            if (controlPoints == null || controlPoints.Count < 2)
+            {
+                ClearToolScriptPreview();
+                return;
+            }
+
+            if (m_ToolScriptStrokeCreator == null)
+            {
+                m_ToolScriptStrokeCreator = new ToolScriptStrokeCreator(controlPoints);
+            }
+            else
+            {
+                m_ToolScriptStrokeCreator.SetControlPoints(controlPoints);
+            }
+
+            m_AllowPreviewLine = true;
+            m_AllowPreviewLineTimer = 0f;
+        }
+
+        public void ClearToolScriptPreview()
+        {
+            m_ToolScriptStrokeCreator = null;
+            if (m_PreviewLine != null)
+            {
+                DisablePreviewLine();
+            }
         }
 
         /// Pass a Canvas parent, and a transform in that canvas's space.

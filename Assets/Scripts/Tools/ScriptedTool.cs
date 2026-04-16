@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -49,6 +50,8 @@ namespace TiltBrush
         private int currentSnap;
         private float angleSnappingAngle;
 
+        private LuaManager.ToolScriptExecutionResult m_LastToolScriptResult;
+
         //Init is similar to Awake(), and should be used for initializing references and other setup code
         public override void Init()
         {
@@ -83,6 +86,8 @@ namespace TiltBrush
                 LuaManager.Instance.EndActiveScript(LuaApiCategory.ToolScript);
                 m_AttachmentSphere.parent = transform;
                 m_AttachmentSphere.gameObject.SetActive(false);
+                PointerManager.m_Instance.MainPointer.ClearToolScriptPreview();
+                m_LastToolScriptResult = null;
             }
 
             // Make sure our UI reticle isn't active.
@@ -133,6 +138,7 @@ namespace TiltBrush
                 // Initial click. Store the transform
                 m_FirstPositionClicked_CS = rAttachPoint_CS;
                 m_FirstPositionClicked_GS = rAttachPoint_GS;
+                m_LastToolScriptResult = null;
 
                 SetApiProperty($"Tool.{LuaNames.ToolScriptStartPoint}", m_FirstPositionClicked_CS);
                 ApiManager.Instance.StartUndo();
@@ -145,6 +151,8 @@ namespace TiltBrush
             {
                 var previewTypeVal = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, LuaNames.ToolPreviewType);
                 var previewAxisVal = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, LuaNames.ToolPreviewAxis);
+                var previewModeVal = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, LuaNames.ToolPreviewMode);
+                bool useStrokePreview = string.Equals(previewModeVal?.String, "stroke", StringComparison.OrdinalIgnoreCase);
 
                 var drawnVector_CS = SelectionManager.m_Instance.SnapToGrid_CS(rAttachPoint_CS.translation) -
                     SelectionManager.m_Instance.SnapToGrid_CS(m_FirstPositionClicked_CS.translation);
@@ -153,7 +161,7 @@ namespace TiltBrush
 
                 upVector = InputManager.m_Instance.GetBrushControllerAttachPoint().up;
 
-                if (drawnVector_GS.sqrMagnitude > 0)
+                if (!useStrokePreview && drawnVector_GS.sqrMagnitude > 0)
                 {
                     var rotation_CS = Quaternion.LookRotation(drawnVector_CS, upVector);
                     var rotation_GS = Quaternion.LookRotation(drawnVector_GS, upVector);
@@ -234,8 +242,45 @@ namespace TiltBrush
                 }
             }
 
-            LuaManager.Instance.DoToolScript(LuaNames.Main, m_FirstPositionClicked_CS, rAttachPoint_CS);
-            if (shouldEndUndo) ApiManager.Instance.EndUndo();
+            var executionResult = LuaManager.Instance.DoToolScript(LuaNames.Main, m_FirstPositionClicked_CS, rAttachPoint_CS);
+            if (executionResult != null)
+            {
+                m_LastToolScriptResult = executionResult;
+            }
+
+            var previewModeSetting = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, LuaNames.ToolPreviewMode);
+            bool strokePreviewRequested = string.Equals(previewModeSetting?.String, "stroke", StringComparison.OrdinalIgnoreCase);
+
+            if (strokePreviewRequested)
+            {
+                if (executionResult?.PreviewControlPoints != null && executionResult.PreviewControlPoints.Count > 1)
+                {
+                    PointerManager.m_Instance.MainPointer.SetToolScriptPreview(executionResult.PreviewControlPoints);
+                }
+                else if (executionResult == null)
+                {
+                    PointerManager.m_Instance.MainPointer.ClearToolScriptPreview();
+                }
+            }
+            else
+            {
+                PointerManager.m_Instance.MainPointer.ClearToolScriptPreview();
+            }
+
+            if (shouldEndUndo)
+            {
+                if (m_LastToolScriptResult != null)
+                {
+                    LuaManager.Instance.DrawToolScriptResult(m_LastToolScriptResult);
+                }
+                PointerManager.m_Instance.MainPointer.ClearToolScriptPreview();
+                ApiManager.Instance.EndUndo();
+            }
+            else if (executionResult == null && strokePreviewRequested)
+            {
+                // Ensure we don't leave stale preview geometry when the script stops emitting paths.
+                PointerManager.m_Instance.MainPointer.ClearToolScriptPreview();
+            }
         }
 
         private void SetApiProperty(string key, object value)
