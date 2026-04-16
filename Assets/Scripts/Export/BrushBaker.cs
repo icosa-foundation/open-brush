@@ -19,6 +19,7 @@ public class BrushBaker : MonoBehaviour
         public bool ModifyNormal;
         public bool ModifyUv0;
         public bool ModifyUv1;
+        public bool ModifyUv2;
     }
 
     void Start()
@@ -85,6 +86,7 @@ public class BrushBaker : MonoBehaviour
         ComputeBuffer colorBuffer = null;
         ComputeBuffer uvBuffer = null;
         ComputeBuffer uv1Buffer = null;
+        ComputeBuffer uv2Buffer = null;
 
         try
         {
@@ -117,6 +119,18 @@ public class BrushBaker : MonoBehaviour
                 uv1Buffer = new ComputeBuffer(vertexCount, sizeof(float) * 4);
                 uv1Buffer.SetData(uv1s);
                 computeShader.SetBuffer(0, "uv1Buffer", uv1Buffer);
+            }
+
+            bool needsUv2Buffer = mapping.ModifyUv2 || mesh.uv3.Length > 0;
+            if (needsUv2Buffer)
+            {
+                var uv2s = new List<Vector2>();
+                mesh.GetUVs(2, uv2s);
+                if (uv2s.Count != vertexCount)
+                    uv2s = new List<Vector2>(new Vector2[vertexCount]);
+                uv2Buffer = new ComputeBuffer(vertexCount, sizeof(float) * 2);
+                uv2Buffer.SetData(uv2s);
+                computeShader.SetBuffer(0, "uv2Buffer", uv2Buffer);
             }
 
             int threadGroups = Mathf.CeilToInt(vertexCount / 8f);
@@ -153,9 +167,17 @@ public class BrushBaker : MonoBehaviour
                 uv1Buffer.GetData(newUv1s);
                 mesh.SetUVs(1, newUv1s);
             }
+
+            if (mapping.ModifyUv2 && uv2Buffer != null)
+            {
+                var newUv2s = new Vector2[vertexCount];
+                uv2Buffer.GetData(newUv2s);
+                mesh.SetUVs(2, newUv2s);
+            }
         }
         finally
         {
+            uv2Buffer?.Release();
             uv1Buffer?.Release();
             uvBuffer?.Release();
             colorBuffer?.Release();
