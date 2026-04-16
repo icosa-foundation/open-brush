@@ -47,6 +47,8 @@ namespace TiltBrush
         private Dictionary<string, string> m_CommandStatuses;
         private Queue m_OutgoingCommandQueue = Queue.Synchronized(new Queue());
         private List<Uri> m_OutgoingApiListeners;
+        private Dictionary<string, Queue<KeyValuePair<string, string>>> m_PollingListenerQueues;
+        private readonly object m_PollingQueueLock = new object();
         private static ApiManager m_Instance;
         private Dictionary<string, ApiEndpoint> endpoints;
         private byte[] CameraViewPng;
@@ -681,6 +683,7 @@ Success. If you are not automatically redirected, please visit <a href='{success
             // API queries are distinct from commands in that they return immediate results and never change the scene
 
             string[] commandPair = commandString.Split(new[] { '=' }, 2);
+            Debug.Log($"POLL_DEBUG HandleApiQuery: {commandString}");
             if (commandPair.Length < 1) return null;
             switch (commandPair[0])
             {
@@ -701,11 +704,24 @@ Success. If you are not automatically redirected, please visit <a href='{success
                     return ApiMainThreadObserver.Instance.SpectatorCamRotation.eulerAngles.ToString();
                 case "query.spectator.target":
                     return ApiMainThreadObserver.Instance.SpectatorCamTargetPosition.ToString();
+                case "query.outgoing.poll":
+                    if (commandPair.Length < 2 || string.IsNullOrEmpty(commandPair[1])) return "";
+                    lock (m_PollingQueueLock)
+                    {
+                        if (m_PollingListenerQueues == null || !m_PollingListenerQueues.TryGetValue(commandPair[1], out var queue))
+                        {
+                            return "";
+                        }
+                        var commands = new List<KeyValuePair<string, string>>(queue);
+                        queue.Clear();
+                        return string.Join("\n", commands.Select(c => $"{c.Key}={c.Value}"));
+                    }
             }
             return "unknown query";
         }
 
         public bool HasOutgoingListeners => m_OutgoingApiListeners != null && m_OutgoingApiListeners.Count > 0;
+        public bool HasPollingListeners => m_PollingListenerQueues != null && m_PollingListenerQueues.Count > 0;
 
         // TODO Find a better home for this. It won't always be API specific
         public CHRFont TextFont
@@ -734,7 +750,7 @@ Success. If you are not automatically redirected, please visit <a href='{success
 
         public void EnqueueOutgoingCommands(List<KeyValuePair<string, string>> commands)
         {
-            if (!HasOutgoingListeners) return;
+            if (!HasOutgoingListeners && !HasPollingListeners) return;
             foreach (var command in commands)
             {
                 m_OutgoingCommandQueue.Enqueue(command);
@@ -746,12 +762,22 @@ Success. If you are not automatically redirected, please visit <a href='{success
             if (m_OutgoingApiListeners == null) m_OutgoingApiListeners = new List<Uri>();
             if (m_OutgoingApiListeners.Contains(uri)) return;
             m_OutgoingApiListeners.Add(uri);
+        }
 
+        public void AddPollingCommandListener(string clientId)
+        {
+            lock (m_PollingQueueLock)
+            {
+                if (m_PollingListenerQueues == null)
+                    m_PollingListenerQueues = new Dictionary<string, Queue<KeyValuePair<string, string>>>();
+                if (!m_PollingListenerQueues.ContainsKey(clientId))
+                    m_PollingListenerQueues[clientId] = new Queue<KeyValuePair<string, string>>();
+            }
         }
 
         private void OutgoingApiCommand()
         {
-            if (!HasOutgoingListeners) return;
+            if (!HasOutgoingListeners && !HasPollingListeners) return;
 
             KeyValuePair<string, string> command;
             try
@@ -763,7 +789,19 @@ Success. If you are not automatically redirected, please visit <a href='{success
                 return;
             }
 
-            foreach (var listenerUrl in m_OutgoingApiListeners)
+
+            if (HasPollingListeners)
+            {
+                lock (m_PollingQueueLock)
+                {
+                    foreach (var kvp in m_PollingListenerQueues)
+                    {
+                        kvp.Value.Enqueue(command);
+                    }
+                }
+            }
+
+            foreach (var listenerUrl in m_OutgoingApiListeners ?? new List<Uri>())
             {
                 string getUri = $"{listenerUrl}?{command.Key}={command.Value}";
                 if (getUri.Length < 512)  // Actually limit is 2083 but let's be conservative
@@ -957,7 +995,7 @@ Success. If you are not automatically redirected, please visit <a href='{success
 
         public void HandleStrokeListeners(IEnumerable<PointerManager.ControlPoint> controlPoints, Guid guid, Color color, float size)
         {
-            if (!HasOutgoingListeners) return;
+            if (!HasOutgoingListeners && !HasPollingListeners) return;
             var pointsAsStrings = new List<string>();
             foreach (var cp in controlPoints)
             {

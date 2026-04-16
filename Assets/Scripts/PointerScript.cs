@@ -977,7 +977,7 @@ namespace TiltBrush
                 Debug.Assert(strokeFlags == SketchMemoryScript.StrokeFlags.None);
             }
 
-            if (ApiManager.Instance.HasOutgoingListeners)
+            if (ApiManager.Instance.HasOutgoingListeners || ApiManager.Instance.HasPollingListeners)
             {
                 if (rMemoryObjectForPlayback == null)
                 {
