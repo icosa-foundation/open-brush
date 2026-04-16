@@ -8,15 +8,39 @@ RWStructuredBuffer<float3> vertexBuffer;
 StructuredBuffer<float3> normalBuffer;
 StructuredBuffer<float4> colorBuffer;
 StructuredBuffer<float3> uvBuffer;
-StructuredBuffer<float4> uv1Buffer;
+RWStructuredBuffer<float4> uv1Buffer;
+RWStructuredBuffer<float2> uv2Buffer;
 
 float _SqueezeAmount;
+
+static const float kElectricityMod = 1.0;
+static const float kDisplacementIntensity = 0.1;
+
+float3 ComputeDisplacement(float3 pos, float mod)
+{
+    float time = 0;
+    float d = 30;
+    float freq = 0.1 + mod;
+    float3 disp = float3(1, 0, 0) * curlX(pos * freq + time, d);
+    disp += float3(0, 1, 0) * curlY(pos * freq + time, d);
+    disp += float3(0, 0, 1) * curlZ(pos * freq + time, d);
+
+    time = 0;
+    d = 100;
+    freq = 0.2 + mod;
+    float3 disp2 = float3(1, 0, 0) * curlX(pos * freq + time, d);
+    disp2 += float3(0, 1, 0) * curlY(pos * freq + time, d);
+    disp2 += float3(0, 0, 1) * curlZ(pos * freq + time, d);
+
+    return disp * 3 + disp2 * 7;
+}
 
 [numthreads(8, 1, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID) {
     float3 vertex = vertexBuffer[id.x];
     float3 uv0 = uvBuffer[id.x];
     float4 uv1 = uv1Buffer[id.x];
+    float2 uv2 = uv2Buffer[id.x];
 
     half envelope = sin(uv0.x * 3.14159);
     half envelopePow =  (1-pow(1  - envelope, 10));
@@ -26,41 +50,18 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
     half3 midpointPos_CS = vertex.xyz - offsetFromMiddleToEdge_CS;
     vertex = midpointPos_CS + offsetFromMiddleToEdge_CS * envelopePow;
 
-    // the movement is based on Unity Built-in shader variables
-    // _Time.y (t) and _Time.x (t/20)
-    // we will take the t = 0 in this compute shader
-
-    // // leaving this parameters here for generating animated mesh in the future
-
-    // float timedoty = 0;
-    // float timedotw = timedoty * 3;
-    
-    // // Note: Electricity is a multiple render passes shader
-    // //       each pass will have a different offset
-   
-    // // mod is the offset of the wave. Values from the source Project: 1, 1.333, 1.77
-    // float mod = 1; 
-    
-    // float time = timedotw;
-    // float d = 30;
-    // float freq = .1 + mod;
-    // float3 pos = midpointPos_CS / widthiness_CS;
-    // float3 disp = float3(1,0,0) * curlX(pos * freq + time, d);
-    // disp += float3(0,1,0) * curlY(pos * freq + time, d);
-    // disp += float3(0,0,1) * curlZ(pos * freq + time, d);
-
-    // time = timedotw*1.777;
-    // d = 100;
-    // freq = .2 + mod;
-    // float3 disp2 = float3(1,0,0) * curlX(pos * freq + time, d);
-    // disp2 += float3(0,1,0) * curlY(pos * freq + time, d);
-    // disp2 += float3(0,0,1) * curlZ(pos * freq + time, d);
-    // disp = disp * 3 + disp2 * 7;
-
-    // disp *= widthiness_CS;
-
-    // float displacementIntensity = 2;
-    // vertex += disp * displacementIntensity * envelopePow;
+    if (widthiness_CS > 0)
+    {
+        float3 disp = ComputeDisplacement(midpointPos_CS / widthiness_CS, kElectricityMod);
+        disp *= widthiness_CS;
+        vertex += disp * kDisplacementIntensity * envelopePow;
+    }
 
     vertexBuffer[id.x] = vertex;
+
+    // Preserve the exact Unity animation inputs across XY-only UV channels.
+    uv1.xy = midpointPos_CS.xy;
+    uv1Buffer[id.x] = uv1;
+    uv2 = float2(midpointPos_CS.z, widthiness_CS);
+    uv2Buffer[id.x] = uv2;
 }
