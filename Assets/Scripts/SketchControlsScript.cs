@@ -5133,10 +5133,11 @@ namespace TiltBrush
                 case GlobalCommands.OpenIcosaPanelOptionsPopup:
                 case GlobalCommands.OpenIcosaPanelFilterPopup:
                 case GlobalCommands.OpenSketchbookPanelFilterPopup:
+                case GlobalCommands.OpenScriptParametersPopup:
                 case GlobalCommands.Null:
                     break; // Intentionally blank.
                 default:
-                    Debug.LogError($"Unrecognized command {rEnum}");
+                    Debug.LogWarning($"Unrecognized command {rEnum}");
                     break;
             }
         }
