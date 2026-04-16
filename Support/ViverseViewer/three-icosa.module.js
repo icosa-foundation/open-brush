@@ -108,6 +108,7 @@ class $4fdc68aa1ebb2033$export$bcc22bf437a07d8f extends $fugmd$Loader {
             else if (typeof materialParams.uniforms.u_BumpMap.value === "string") {
                 const bumpMap = await textureLoader.loadAsync(materialParams.uniforms.u_BumpMap.value);
                 bumpMap.name = `${brushName}_BumpMap`;
+                bumpMap.colorSpace = $fugmd$NoColorSpace; // Normal maps are data, not color
                 bumpMap.wrapS = $fugmd$RepeatWrapping;
                 bumpMap.wrapT = $fugmd$RepeatWrapping;
                 bumpMap.flipY = false;
@@ -3503,6 +3504,9 @@ const $4fdc68aa1ebb2033$var$tiltBrushMaterialParams = {
     },
     "Smoke": {
         uniforms: {
+            u_time: {
+                value: new $fugmd$Vector4()
+            },
             u_SceneLight_0_matrix: {
                 value: [
                     1,
@@ -10621,6 +10625,8 @@ class $e02d07ddc3ccd105$export$2b011a5b12963d65 {
                 renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
                 renameAttribute(mesh, "texcoord_0", "a_texcoord0");
                 setAttributeIfExists(mesh, "uv", "a_texcoord0");
+                renameAttribute(mesh, "uv1", "a_texcoord1");
+                renameAttribute(mesh, "uv2", "a_texcoord2");
                 renameAttribute(mesh, "_tb_unity_texcoord_1", "a_texcoord1");
                 renameAttribute(mesh, "texcoord_1", "a_texcoord1");
                 shader = await this.tiltShaderLoader.loadAsync("Electricity");
@@ -11855,6 +11861,7 @@ class $e02d07ddc3ccd105$export$2b011a5b12963d65 {
                 renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
                 renameAttribute(mesh, "texcoord_0", "a_texcoord0");
                 setAttributeIfExists(mesh, "uv", "a_texcoord0");
+                setAttributeIfExists(mesh, "uv1", "a_texcoord1");
                 renameAttribute(mesh, "_tb_unity_texcoord_1", "a_texcoord1");
                 renameAttribute(mesh, "texcoord_1", "a_texcoord1");
                 shader = await this.tiltShaderLoader.loadAsync("KeijiroTube");
@@ -12117,7 +12124,7 @@ class $e02d07ddc3ccd105$export$2b011a5b12963d65 {
                     }
                     // Transforms
                     if (material.uniforms.u_SceneLight_0_matrix) {
-                        const direction = material.uniforms.directionalLights.value[0].direction;
+                        const direction = material.uniforms.directionalLights.value[0].direction.clone().negate();
                         material.uniforms.u_SceneLight_0_matrix.value = new $fugmd$Matrix4().lookAt(new $fugmd$Vector3(0, 0, 0), direction, new $fugmd$Vector3(0, 1, 0));
                     }
                 }
@@ -12130,7 +12137,7 @@ class $e02d07ddc3ccd105$export$2b011a5b12963d65 {
                     }
                     // Transforms
                     if (material.uniforms.u_SceneLight_1_matrix) {
-                        const direction = material.uniforms.directionalLights.value[1].direction;
+                        const direction = material.uniforms.directionalLights.value[1].direction.clone().negate();
                         material.uniforms.u_SceneLight_1_matrix.value = new $fugmd$Matrix4().lookAt(new $fugmd$Vector3(0, 0, 0), direction, new $fugmd$Vector3(0, 1, 0));
                     }
                 }
