@@ -20,7 +20,7 @@ public class HybridCamera : MonoBehaviour {
   };
 
   const int MaxRenders = 1000;
-  const int MaxImageWidth = 6000;
+  const int MaxImageWidth = 8192;
                        
   public float interPupillaryDistance = 0.05f;
   public int imageWidth = 4096;
