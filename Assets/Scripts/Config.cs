@@ -593,8 +593,28 @@ namespace TiltBrush
                         ParseUserSetting("--Flags.DisableXrMode", "true");
                 }
 
-                // Register dynamic shortcuts so they appear on long-press with the correct package name.
-                RegisterDynamicShortcuts(activity);
+                // Register dynamic shortcuts on a background thread — setDynamicShortcuts() is a
+                // Binder IPC call that can block for minutes on Quest's launcher service.
+                var thread = new System.Threading.Thread(() =>
+                {
+                    try
+                    {
+                        AndroidJNI.AttachCurrentThread();
+                        using var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                        using var act = player.GetStatic<AndroidJavaObject>("currentActivity");
+                        RegisterDynamicShortcuts(act);
+                    }
+                    catch (Exception e)
+                    {
+                        UnityEngine.Debug.LogWarning($"[OB-Shortcuts] background registration failed: {e.Message}");
+                    }
+                    finally
+                    {
+                        AndroidJNI.DetachCurrentThread();
+                    }
+                });
+                thread.IsBackground = true;
+                thread.Start();
             }
             catch (Exception e)
             {
