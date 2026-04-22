@@ -1835,6 +1835,18 @@ static class BuildTiltBrush
                     root["UIFileSharingEnabled"] = enable;
                     root["LSSupportsOpeningDocumentsInPlace"] = enable;
 
+                    PlistElementArray shortcuts = root.CreateArray("UIApplicationShortcutItems");
+
+                    var monoscopic = shortcuts.AddDict();
+                    monoscopic.SetString("UIApplicationShortcutItemType", "OpenBrushMonoscopicMode");
+                    monoscopic.SetString("UIApplicationShortcutItemTitle", "Flat Mode");
+                    monoscopic.SetString("UIApplicationShortcutItemSubtitle", "Launch without VR");
+
+                    var noXr = shortcuts.AddDict();
+                    noXr.SetString("UIApplicationShortcutItemType", "OpenBrushDisableXrMode");
+                    noXr.SetString("UIApplicationShortcutItemTitle", "No VR Mode");
+                    noXr.SetString("UIApplicationShortcutItemSubtitle", "Launch with XR disabled");
+
                     //save plist values
                     plist.WriteToFile(plistPath);
 #endif

@@ -30,6 +30,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityGLTF;
 
@@ -107,6 +108,11 @@ namespace TiltBrush
 
         [Header("Startup")]
         public string m_FakeCommandLineArgsInEditor;
+
+#if UNITY_IOS
+        [DllImport("__Internal")]
+        private static extern string OB_GetLaunchShortcutType();
+#endif
 
         [Header("Overwritten by build process")]
         [SerializeField] private PlatformConfig m_PlatformConfig;
@@ -605,7 +611,20 @@ namespace TiltBrush
             {
                 UnityEngine.Debug.LogException(e);
             }
-#elif !UNITY_IOS
+#elif UNITY_IOS
+            try
+            {
+                string shortcutType = OB_GetLaunchShortcutType();
+                if (shortcutType == "OpenBrushMonoscopicMode")
+                    ParseUserSetting("--Flags.EnableMonoscopicMode", "true");
+                else if (shortcutType == "OpenBrushDisableXrMode")
+                    ParseUserSetting("--Flags.DisableXrMode", "true");
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogException(e);
+            }
+#else
             try
             {
                 ParseArgs(System.Environment.GetCommandLineArgs());
