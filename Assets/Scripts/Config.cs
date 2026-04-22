@@ -481,6 +481,14 @@ namespace TiltBrush
                     m_SdkMode = SdkMode.Monoscopic;
                     UnityEngine.XR.XRSettings.enabled = false;
                 }
+                else if (args[i] == "--EnableMonoscopicMode")
+                {
+                    ParseUserSetting("--Flags.EnableMonoscopicMode", "true");
+                }
+                else if (args[i] == "--DisableXrMode")
+                {
+                    ParseUserSetting("--Flags.DisableXrMode", "true");
+                }
                 else if (args[i].Contains("."))
                 {
                     if (i == args.Length - 1)
