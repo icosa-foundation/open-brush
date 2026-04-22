@@ -575,13 +575,30 @@ namespace TiltBrush
                 using var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
                 using var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
                 using var intent = activity.Call<AndroidJavaObject>("getIntent");
+
+                // Intent extras: set by app shortcuts or ADB (android:value is a string in shortcuts.xml)
                 if ("true".Equals(intent.Call<string>("getStringExtra", "EnableMonoscopicMode")))
-                {
                     ParseUserSetting("--Flags.EnableMonoscopicMode", "true");
-                }
                 if ("true".Equals(intent.Call<string>("getStringExtra", "DisableXrMode")))
-                {
                     ParseUserSetting("--Flags.DisableXrMode", "true");
+
+                // Activity alias meta-data: set when launched via an activity-alias launcher tile.
+                // getComponent() returns the alias name, so getActivityInfo gives us the alias's meta-data.
+                using var component = intent.Call<AndroidJavaObject>("getComponent");
+                if (component != null)
+                {
+                    using var pm = activity.Call<AndroidJavaObject>("getPackageManager");
+                    using var pmClass = new AndroidJavaClass("android.content.pm.PackageManager");
+                    int GET_META_DATA = pmClass.GetStatic<int>("GET_META_DATA");
+                    using var activityInfo = pm.Call<AndroidJavaObject>("getActivityInfo", component, GET_META_DATA);
+                    using var metaData = activityInfo?.Get<AndroidJavaObject>("metaData");
+                    if (metaData != null)
+                    {
+                        if (metaData.Call<bool>("getBoolean", "EnableMonoscopicMode", false))
+                            ParseUserSetting("--Flags.EnableMonoscopicMode", "true");
+                        if (metaData.Call<bool>("getBoolean", "DisableXrMode", false))
+                            ParseUserSetting("--Flags.DisableXrMode", "true");
+                    }
                 }
             }
             catch (Exception e)

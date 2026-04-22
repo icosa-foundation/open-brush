@@ -4,4 +4,6 @@
     <string name="shortcut_monoscopic_long">Launch in Flat (Monoscopic) Mode</string>
     <string name="shortcut_noxr_short">No VR Mode</string>
     <string name="shortcut_noxr_long">Launch without VR/XR</string>
+    <string name="alias_monoscopic_label">Open Brush (Flat Mode)</string>
+    <string name="alias_noxr_label">Open Brush (No VR)</string>
 </resources>

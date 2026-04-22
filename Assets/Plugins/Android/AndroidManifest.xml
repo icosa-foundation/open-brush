@@ -16,6 +16,34 @@
             </intent-filter>
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity>
+        <!-- Alias that launches into flat/monoscopic mode without VR -->
+        <activity-alias
+            android:name=".MonoscopicModeActivity"
+            android:targetActivity="com.unity3d.player.UnityPlayerActivity"
+            android:label="@string/alias_monoscopic_label"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <meta-data android:name="EnableMonoscopicMode" android:value="true" />
+        </activity-alias>
+
+        <!-- Alias that launches with XR/VR disabled -->
+        <activity-alias
+            android:name=".DisableXrModeActivity"
+            android:targetActivity="com.unity3d.player.UnityPlayerActivity"
+            android:label="@string/alias_noxr_label"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <meta-data android:name="DisableXrMode" android:value="true" />
+        </activity-alias>
+
         <meta-data android:name="unityplayer.SkipPermissionsDialog" android:value="false" />
         <meta-data android:name="pvr.app.type" android:value="vr" />
     </application>
