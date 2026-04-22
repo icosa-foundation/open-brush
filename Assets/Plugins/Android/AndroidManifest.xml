@@ -14,6 +14,7 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
                 <category android:name="com.oculus.intent.category.VR"/>
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity>
         <meta-data android:name="unityplayer.SkipPermissionsDialog" android:value="false" />
         <meta-data android:name="pvr.app.type" android:value="vr" />

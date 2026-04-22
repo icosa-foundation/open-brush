@@ -569,7 +569,26 @@ namespace TiltBrush
                     Application.Quit();
                 }
             }
-#elif !(UNITY_ANDROID || UNITY_IOS)
+#elif UNITY_ANDROID
+            try
+            {
+                using var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                using var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+                using var intent = activity.Call<AndroidJavaObject>("getIntent");
+                if ("true".Equals(intent.Call<string>("getStringExtra", "EnableMonoscopicMode")))
+                {
+                    ParseUserSetting("--Flags.EnableMonoscopicMode", "true");
+                }
+                if ("true".Equals(intent.Call<string>("getStringExtra", "DisableXrMode")))
+                {
+                    ParseUserSetting("--Flags.DisableXrMode", "true");
+                }
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogException(e);
+            }
+#elif !UNITY_IOS
             try
             {
                 ParseArgs(System.Environment.GetCommandLineArgs());
