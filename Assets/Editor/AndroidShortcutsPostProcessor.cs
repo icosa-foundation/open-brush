@@ -25,9 +25,9 @@ namespace TiltBrush
 
         public void OnPostGenerateGradleAndroidProject(string unityLibraryPath)
         {
-            // Unity puts Assets/Plugins/Android/res/ into the launcher module, sibling of unityLibrary.
-            string launcherPath = Path.Combine(Path.GetDirectoryName(unityLibraryPath), "launcher");
-            string shortcutsPath = Path.Combine(launcherPath, "src", "main", "res", "xml", "shortcuts.xml");
+            // Unity generates a Gradle module for each .androidlib, named after the folder.
+            string libraryPath = Path.Combine(Path.GetDirectoryName(unityLibraryPath), "OpenBrushResources");
+            string shortcutsPath = Path.Combine(libraryPath, "src", "main", "res", "xml", "shortcuts.xml");
 
             if (!File.Exists(shortcutsPath))
             {
