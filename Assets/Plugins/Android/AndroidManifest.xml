@@ -14,7 +14,6 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
                 <category android:name="com.oculus.intent.category.VR"/>
             </intent-filter>
-            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity>
         <!-- Alias that launches into flat/monoscopic mode without VR -->
         <activity-alias
