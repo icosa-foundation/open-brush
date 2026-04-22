@@ -54,7 +54,7 @@ namespace TiltBrush
 #if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
                     return true;
 #else
-                    return m_DisableXrMode ?? false;
+                    return (m_DisableXrMode ?? false) || EnableMonoscopicMode;
 #endif
                 }
                 set { m_DisableXrMode = value; }
