@@ -577,10 +577,8 @@ namespace TiltBrush
                 using var intent = activity.Call<AndroidJavaObject>("getIntent");
 
                 // Intent extras: set by dynamic shortcuts, ADB, or activity aliases.
-                if (intent.Call<bool>("getBooleanExtra", "EnableMonoscopicMode", false))
-                    ParseUserSetting("--Flags.EnableMonoscopicMode", "true");
-                if (intent.Call<bool>("getBooleanExtra", "DisableXrMode", false))
-                    ParseUserSetting("--Flags.DisableXrMode", "true");
+                bool enableMonoscopic = intent.Call<bool>("getBooleanExtra", "EnableMonoscopicMode", false);
+                bool disableXr = intent.Call<bool>("getBooleanExtra", "DisableXrMode", false);
 
                 // Activity alias: when launched via an alias, getComponent() returns the alias class name.
                 using var component = intent.Call<AndroidJavaObject>("getComponent");
@@ -588,9 +586,21 @@ namespace TiltBrush
                 {
                     string className = component.Call<string>("getClassName");
                     if (className.EndsWith(".MonoscopicModeActivity"))
-                        ParseUserSetting("--Flags.EnableMonoscopicMode", "true");
+                        enableMonoscopic = true;
                     else if (className.EndsWith(".DisableXrModeActivity"))
-                        ParseUserSetting("--Flags.DisableXrMode", "true");
+                        disableXr = true;
+                }
+
+                if (enableMonoscopic)
+                {
+                    ParseUserSetting("--Flags.EnableMonoscopicMode", "true");
+                    m_SdkMode = SdkMode.Monoscopic;
+                    UnityEngine.XR.XRSettings.enabled = false;
+                }
+                else if (disableXr)
+                {
+                    ParseUserSetting("--Flags.DisableXrMode", "true");
+                    UnityEngine.XR.XRSettings.enabled = false;
                 }
 
                 // Register dynamic shortcuts on a background thread — setDynamicShortcuts() is a
