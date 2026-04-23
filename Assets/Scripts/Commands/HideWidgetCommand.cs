@@ -28,7 +28,7 @@ namespace TiltBrush
             : base(parent)
         {
             m_Widget = widget;
-            if (widget is StencilWidget)
+            if (widget is ShapeWidget)
             {
                 m_WidgetTransform = TrTransform.FromLocalTransform(widget.transform);
             }

@@ -21,19 +21,12 @@ using System.Runtime.CompilerServices;
 namespace TiltBrush
 {
 
-    public abstract class StencilWidget : GrabWidget
+    public abstract class StencilWidget : ShapeWidget
     {
-        [SerializeField] protected float m_MinSize_CS;
-        [SerializeField] protected float m_MaxSize_CS;
         [SerializeField] private Color m_TintColor;
         [SerializeField] protected float m_StencilGrabDistance = 1.0f;
         [SerializeField] protected float m_PointerLiftSlope;
-
-        protected Collider m_Collider;
-        protected float m_Size = 1.0f;
         protected StencilType m_Type;
-        private bool m_SkipIntroAnim;
-        private float m_PreviousShowRatio;
         protected Vector3 m_KahanSummationC;
         protected bool m_StickyTransformEnabled;
         protected TrTransform m_StickyTransformBreakDelta;
@@ -116,28 +109,6 @@ namespace TiltBrush
         override protected void Awake()
         {
             base.Awake();
-            // Normalize for size.
-            // Use transform.localScale.x because prefabs have scales != Vector3.one.
-            m_Size = transform.localScale.x / Coords.CanvasPose.scale;
-
-            // Manually apply Canvas scale because Awake() is called before the transform is parented.
-            var sizeRange = GetWidgetSizeRange();
-            if (m_Size < sizeRange.x)
-            {
-                m_Size = sizeRange.x;
-                transform.localScale = m_Size * Vector3.one * Coords.CanvasPose.scale;
-            }
-            if (m_Size > sizeRange.y)
-            {
-                m_Size = sizeRange.y;
-                transform.localScale = m_Size * Vector3.one * Coords.CanvasPose.scale;
-            }
-
-            m_Collider = GetComponentInChildren<Collider>();
-            InitSnapGhost(m_Collider.transform, transform);
-
-            // Pull tintable meshes from collider and reuse them for the highlight meshes.
-            m_HighlightMeshFilters = m_TintableMeshes.Select(x => x.GetComponent<MeshFilter>()).ToArray();
 
             // Custom pin scalar for stencils.
             m_PinScalar = 0.5f;
@@ -197,11 +168,6 @@ namespace TiltBrush
             surfaceNorm = transform.forward;
         }
 
-        override public Vector2 GetWidgetSizeRange()
-        {
-            return new Vector2(m_MinSize_CS, m_MaxSize_CS);
-        }
-
         override protected void OnUserBeginTwoHandGrab(
             Vector3 primaryHand, Vector3 secondaryHand, bool secondaryHandInObject)
         {
@@ -220,29 +186,8 @@ namespace TiltBrush
         {
             base.OnShow();
 
-            if (!m_SkipIntroAnim)
-            {
-                m_IntroAnimState = IntroAnimState.In;
-                Debug.Assert(!IsMoving(), "Shouldn't have velocity!");
-                ClearVelocities();
-                m_IntroAnimValue = 0.0f;
-                UpdateIntroAnim();
-            }
-            else
-            {
-                m_IntroAnimState = IntroAnimState.On;
-            }
-
             // Refresh visibility with current state of stencil interaction.
             RefreshVisibility(WidgetManager.m_Instance.StencilsDisabled);
-            UpdateMaterialScale();
-            SpoofScaleForShowAnim(GetShowRatio());
-        }
-
-        public override void RestoreFromToss()
-        {
-            m_SkipIntroAnim = true;
-            base.RestoreFromToss();
         }
 
         virtual public void SetInUse(bool bInUse)
@@ -294,30 +239,6 @@ namespace TiltBrush
             Extents = tmp;
         }
 
-        // Maintain the invariant that localScale == m_Size, and that aspect ratio
-        // (if supported) and m_Size satisfy the invariants:
-        //   extent = aspectRatio * size
-        //   aspectRatio.max() == 1
-        //
-        // Should be called after touching m_Size (or better yet, why not just call SetWidgetSize?)
-        protected virtual void UpdateScale()
-        {
-            transform.localScale = m_Size * Vector3.one;
-            UpdateMaterialScale();
-        }
-
-        override public float GetSignedWidgetSize()
-        {
-            return m_Size;
-        }
-
-        override protected void SetWidgetSizeInternal(float fScale)
-        {
-            // Allow stencil sizes to go beyond range due to pointer lift.
-            m_Size = fScale;
-            UpdateScale();
-        }
-
         public StencilType Type
         {
             get { return m_Type; }
@@ -353,41 +274,6 @@ namespace TiltBrush
                 }
                 stencil.Show(true, false);
             }
-        }
-
-        protected void UpdateMaterialScale()
-        {
-            // Because I hate the name Vector3.Scale.
-            Vector3 Mul(Vector3 a, Vector3 b) => Vector3.Scale(a, b);
-
-            // Update visuals
-            if (m_TintableMeshes != null)
-            {
-                // Parent (if there is one) will be a Canvas, and never has nonuniform scale
-                Vector3 parentScale = (transform.parent == null) ? Vector3.one : transform.parent.localScale;
-                parentScale.x = 1;
-
-                foreach (Renderer r in m_TintableMeshes)
-                {
-                    r.material.SetVector("_LocalScale",
-                        Mul(parentScale, Mul(transform.localScale, r.transform.localScale)));
-                }
-            }
-        }
-
-        override protected void OnUpdate()
-        {
-            float showRatio = GetShowRatio();
-            if (m_PreviousShowRatio != showRatio)
-            {
-                SpoofScaleForShowAnim(showRatio);
-                m_PreviousShowRatio = showRatio;
-            }
-        }
-
-        virtual protected void SpoofScaleForShowAnim(float showRatio)
-        {
-            transform.localScale = m_Size * showRatio * Vector3.one;
         }
 
         override protected void OnUserBeginInteracting()

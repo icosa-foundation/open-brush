@@ -124,14 +124,19 @@ namespace TiltBrush
             return BasePanel.DoesRayHitCollider(ray, GetCollider(), out hitInfo);
         }
 
-        protected virtual void OnToolChanged()
+        public void EnableTray(bool activate)
         {
-            bool isSelectionTool = SketchSurfacePanel.m_Instance.GetCurrentToolType() ==
-                m_ShowOnToolType;
-            if (isSelectionTool != m_AnimateIn)
+            if (activate != m_AnimateIn)
             {
                 DoAnimateIn();
             }
+        }
+
+        protected virtual void OnToolChanged()
+        {
+            bool isLinkedTool = SketchSurfacePanel.m_Instance.GetCurrentToolType() ==
+                m_ShowOnToolType;
+            EnableTray(isLinkedTool);
         }
 
         public void DoAnimateIn()

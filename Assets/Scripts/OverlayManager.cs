@@ -121,7 +121,7 @@ namespace TiltBrush
             switch (m_CurrentOverlayState)
             {
                 case OverlayState.Exiting:
-                    m_OverlayStateTransitionValue -= Time.deltaTime;
+                    m_OverlayStateTransitionValue -= Time.unscaledDeltaTime;
                     SetOverlayAlpha(
                         Mathf.Max(m_OverlayStateTransitionValue, 0.0f) / m_OverlayStateTransitionDuration);
                     if (m_OverlayStateTransitionValue <= 0.0f)
@@ -397,7 +397,7 @@ namespace TiltBrush
                 // alpha, so you can't reliably wait for it to be done.
                 // Therefore, we use the simple method of just waiting a bit longer than we should
                 // need to.
-                for (float t = 0; t < 1.1f; t += Time.deltaTime / fadeDuration)
+                for (float t = 0; t < 1.1f; t += Time.unscaledDeltaTime / fadeDuration)
                 {
                     SetOverlayTransitionRatio(Mathf.Clamp01(t));
                     yield return null;
@@ -438,14 +438,14 @@ namespace TiltBrush
                     float successHold = 1.0f;
                     while (successHold >= 0.0f)
                     {
-                        successHold -= Time.deltaTime;
+                        successHold -= Time.unscaledDeltaTime;
                         yield return null;
                     }
                 }
 
                 PauseRendering(false);
                 FadeFromCompositor(fadeDuration);
-                for (float t = 1; t > 0; t -= Time.deltaTime / fadeDuration)
+                for (float t = 1; t > 0; t -= Time.unscaledDeltaTime / fadeDuration)
                 {
                     SetOverlayTransitionRatio(Mathf.Clamp01(t));
                     yield return null;
@@ -472,7 +472,7 @@ namespace TiltBrush
             if (end > start) { FadeToCompositor(duration); }
             else { FadeFromCompositor(duration); }
 
-            for (float elapsed = 0; elapsed < duration; elapsed += Time.deltaTime)
+            for (float elapsed = 0; elapsed < duration; elapsed += Time.unscaledDeltaTime)
             {
                 float cur = Mathf.Lerp(start, end, elapsed / duration);
                 SetOverlayTransitionRatio(Mathf.Clamp01(cur));

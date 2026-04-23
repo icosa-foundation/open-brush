@@ -1233,11 +1233,11 @@ namespace TiltBrush
 
         // Used by align/distribute etc
         // Controls which widget types should be affected
-        // Currently it's "any subclass of MediaWidget or StencilWidget"
+        // Currently it's "any subclass of MediaWidget or ShapeWidget"
         public List<GrabWidget> GetValidSelectedWidgets() => SelectedWidgets
             .Where(widget =>
                 widget.GetType().IsSubclassOf(typeof(MediaWidget)) ||
-                widget.GetType().IsSubclassOf(typeof(StencilWidget))
+                widget.GetType().IsSubclassOf(typeof(ShapeWidget))
             )
             .ToList();
 
