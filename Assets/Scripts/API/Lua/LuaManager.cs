@@ -933,6 +933,7 @@ namespace TiltBrush
             RegisterApiClass(script, "Video", typeof(VideoApiWrapper));
             RegisterApiClass(script, "VideoList", typeof(VideoListApiWrapper));
             RegisterApiClass(script, "Visualizer", typeof(VisualizerApiWrapper));
+            RegisterApiClass(script, "Vox", typeof(VoxApiWrapper));
             RegisterApiClass(script, "Wand", typeof(WandApiWrapper));
             RegisterApiClass(script, "Waveform", typeof(WaveformApiWrapper));
             RegisterApiClass(script, "WebRequest", typeof(WebRequestApiWrapper));
