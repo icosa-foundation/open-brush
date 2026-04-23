@@ -1,6 +1,11 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/ThirdParty/ObjLoader/README.md.meta
+guid: cfccf0f36ec02e640b74d6e345c1a59e
+TextScriptImporter:
+========
 guid: 55425021012e7e4469ffd2fd93f3b071
 PrefabImporter:
+>>>>>>>> origin/main:Assets/Prefabs/API/LuaManager.prefab.meta
   externalObjects: {}
   userData: 
   assetBundleName: 
