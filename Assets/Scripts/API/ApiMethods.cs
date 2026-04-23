@@ -1218,5 +1218,20 @@ namespace TiltBrush
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new MoveWidgetCommand(stencil, stencil.LocalTransform, scale));
         }
+
+        [ApiEndpoint(
+            "app.snapshot",
+            "Takes a snapshot using the given camera postion and direction",
+            "0,10,0,0,45,45,hello,1024,768"
+        )]
+        public static void TakeSnapshot(Vector3 position, Vector3 direction, string filename, int width, int height)
+        {
+            TrTransform tr = TrTransform.TR(position, Quaternion.Euler(direction));
+            float superSampling = 1f;
+            bool removeBackground = false;
+            bool renderDepth = true;
+            bool renderNormals = true;
+            ScreenshotManager.TakeSnapshot(tr, filename, width, height, superSampling, removeBackground, renderDepth, renderNormals);
+        }
     }
 }
