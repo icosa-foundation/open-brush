@@ -992,6 +992,8 @@ jobs:
         with:
           name: Linux
           path: build_linux
+      - name: Add bundled tools
+        run: cp Support/steam/tools/TiltThumbs-Installer.exe build_windows_openxr/StandaloneWindows64/
       - name: Upload Build
         run: |
           cd build_macos
