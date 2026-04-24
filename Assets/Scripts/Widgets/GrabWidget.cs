@@ -1347,14 +1347,17 @@ namespace TiltBrush
         {
             TrTransform outXf_GS = xf_GS;
 
-            Quaternion snappedRotation_GS = GetConfiguredSnapRotation_GS(xf_GS.rotation);
-            if (snappedRotation_GS != xf_GS.rotation)
+            if (SelectionManager.m_Instance.CurrentSnapAngleIndex != 0)
             {
-                outXf_GS.rotation = snappedRotation_GS;
-                Quaternion qDelta = outXf_GS.rotation * Quaternion.Inverse(xf_GS.rotation);
-                Vector3 grabSpot = InputManager.m_Instance.GetControllerPosition(m_InteractingController);
-                Vector3 grabToCenter = xf_GS.translation - grabSpot;
-                outXf_GS.translation = grabSpot + qDelta * grabToCenter;
+                Quaternion snappedRotation_GS = GetConfiguredSnapRotation_GS(xf_GS.rotation);
+                if (snappedRotation_GS != xf_GS.rotation)
+                {
+                    outXf_GS.rotation = snappedRotation_GS;
+                    Quaternion qDelta = outXf_GS.rotation * Quaternion.Inverse(xf_GS.rotation);
+                    Vector3 grabSpot = InputManager.m_Instance.GetControllerPosition(m_InteractingController);
+                    Vector3 grabToCenter = xf_GS.translation - grabSpot;
+                    outXf_GS.translation = grabSpot + qDelta * grabToCenter;
+                }
             }
 
             if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
@@ -1398,7 +1401,7 @@ namespace TiltBrush
 
         private Quaternion GetConfiguredSnapRotation_GS(Quaternion rotation_GS)
         {
-            var rot_CS = rotation_GS * App.Scene.Pose.rotation.TrueInverse();
+            var rot_CS = App.Scene.Pose.rotation.TrueInverse() * rotation_GS;
             Quaternion nearestSnapRotation_CS = SelectionManager.m_Instance.QuantizeAngle(rot_CS);
 
             float snapAngle = SelectionManager.m_Instance.SnappingAngle;
