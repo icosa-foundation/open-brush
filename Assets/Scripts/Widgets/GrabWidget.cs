@@ -1305,10 +1305,13 @@ namespace TiltBrush
             }
         }
 
+        protected virtual bool SnapButtonConflictsWithDuplicate => false;
+
         private bool IsQuickSnapPressed()
         {
-            return InputManager.Controllers[(int)m_InteractingController].GetCommand(
-                InputManager.SketchCommands.MenuContextClick) &&
+            return !SnapButtonConflictsWithDuplicate &&
+                InputManager.Controllers[(int)m_InteractingController].GetCommand(
+                    InputManager.SketchCommands.MenuContextClick) &&
                 SketchControlsScript.m_Instance.ShouldRespondToPadInput(m_InteractingController);
         }
 
