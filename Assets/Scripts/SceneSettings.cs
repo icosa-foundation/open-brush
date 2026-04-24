@@ -947,5 +947,7 @@ namespace TiltBrush
         {
             return !string.IsNullOrEmpty(m_CustomSkyboxTextureName);
         }
+
+        public string CustomSkyboxTextureName => m_CustomSkyboxTextureName;
     }
 } // namespace TiltBrush
