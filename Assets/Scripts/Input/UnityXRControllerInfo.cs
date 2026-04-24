@@ -257,7 +257,7 @@ namespace TiltBrush
                     if (IsStylusActive())
                         return stylusState.cluster_front_value;
 #endif
-                    return FindAction("GripAxis").IsPressed();
+                    return GetGripValue() >= App.VrSdk.VrControls.GripPressThreshold;
                 case VrInput.Button01:
                 case VrInput.Button04:
                 case VrInput.Button06:

@@ -61,5 +61,26 @@ namespace TiltBrush
         [LuaDocsExample("myRotation = Wand.PastRotation(5)")]
         [LuaDocsParameter("back", "How far back in the history to get the rotation from")]
         public static Quaternion PastRotation(int back) => LuaManager.Instance.GetPastWandRot(back);
+
+        [LuaDocsDescription("Gets or sets the current geometry offset of the wand controller")]
+        public static Vector3 controllerOffset
+        {
+            get => InputManager.Wand.Behavior.EffectiveGeometryOffset;
+            set => InputManager.Wand.Behavior.SetRuntimeGeometryOffset(value);
+        }
+
+        [LuaDocsDescription("Gets or sets the current geometry rotation of the wand controller as euler angles")]
+        public static Vector3 controllerRotation
+        {
+            get => InputManager.Wand.Behavior.EffectiveGeometryRotation.eulerAngles;
+            set => InputManager.Wand.Behavior.SetRuntimeGeometryRotation(value);
+        }
+
+        [LuaDocsDescription("Resets the wand controller geometry to its default prefab values")]
+        [LuaDocsExample("Wand:ResetControllerGeometry()")]
+        public static void ResetControllerGeometry()
+        {
+            InputManager.Wand.Behavior.ClearRuntimeGeometryOverrides();
+        }
     }
 }
