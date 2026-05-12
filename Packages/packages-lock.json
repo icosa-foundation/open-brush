@@ -335,7 +335,7 @@
       }
     },
     "com.unity.vectorgraphics": {
-      "version": "https://github.com/icosa-mirror/com.unity.vectorgraphics.git#open-brush",
+      "version": "https://github.com/icosa-mirror/com.unity.vectorgraphics.git#open-brush-unity6",
       "depth": 0,
       "source": "git",
       "dependencies": {
@@ -351,7 +351,7 @@
         "com.unity.modules.unitywebrequesttexture": "1.0.0",
         "com.unity.modules.unitywebrequestwww": "1.0.0"
       },
-      "hash": "a933fb8541371ff8ab171ab8e6af50a36f1f113e"
+      "hash": "942fc9ed86cfaa1d03bd60520f692deff5269e74"
     },
     "com.unity.xr.compositionlayers": {
       "version": "2.2.0",
