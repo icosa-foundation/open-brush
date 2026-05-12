@@ -24,7 +24,7 @@ Shader "Custom/FixDistortion" {
   }
 
   SubShader {
-      Lighting Off
+    Tags { "RenderPipeline"="UniversalPipeline" }
       Cull Off
       Zwrite Off
 
@@ -89,3 +89,4 @@ Shader "Custom/FixDistortion" {
     }
   }
 }
+

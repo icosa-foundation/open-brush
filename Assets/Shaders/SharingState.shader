@@ -22,11 +22,12 @@ Properties {
 }
 
 SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
   Tags { "RenderType"="Opaque" }
   LOD 100
 
   Pass {
-    CGPROGRAM
+    HLSLPROGRAM
     #pragma vertex vert
     #pragma fragment frag
     #include "UnityCG.cginc"
@@ -122,9 +123,11 @@ SubShader {
     float4 color = (float4(tex, 1) + bg_tex) * _Color;
     return encodeHdr(color);
   }
-    ENDCG
+    ENDHLSL
   }
 }
 
 }
+
+
 

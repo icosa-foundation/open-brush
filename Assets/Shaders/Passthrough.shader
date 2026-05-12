@@ -6,6 +6,7 @@ Shader "Special/Passthrough"
     }
     SubShader
     {
+    Tags { "RenderPipeline"="UniversalPipeline" }
         Tags { "RenderType"="Opaque" }
         LOD 100
         Cull Off
@@ -15,7 +16,7 @@ Shader "Special/Passthrough"
            BlendOp RevSub
            Blend One Zero, Zero Zero
 
-            CGPROGRAM
+            HLSLPROGRAM
 
             #pragma vertex vert
             #pragma fragment frag
@@ -49,7 +50,8 @@ Shader "Special/Passthrough"
             {
                 return float4(0, 0, 0, 0);
             }
-            ENDCG
+            ENDHLSL
         }
     }
 }
+

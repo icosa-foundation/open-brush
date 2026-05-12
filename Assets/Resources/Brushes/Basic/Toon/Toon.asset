@@ -26,7 +26,6 @@ MonoBehaviour:
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
   m_ButtonTexture: {fileID: 2800000, guid: ea30e3f95aa84414ea4b0f0ce0868f21, type: 3}
-  m_Description: BRUSH_TOON
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
@@ -48,7 +47,7 @@ MonoBehaviour:
   m_VolumeVelocityRangeMultiplier: 1.5
   m_AudioReactive: 1
   m_ButtonAudio: {fileID: 0}
-  m_Material: {fileID: 2100000, guid: 46d424e4b93d748d4be5a08b4227f14f, type: 2}
+  m_Material: {fileID: 2100000, guid: 66b410f19393cc04688b3b5b7a29b226, type: 2}
   m_TextureAtlasV: 1
   m_TileRate: 0.15
   m_UseBloomSwatchOnColorPicker: 0

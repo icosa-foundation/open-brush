@@ -23,12 +23,14 @@ Shader "Custom/BlitLdrPmaOverlay" {
     _OverlayUvRange  ("Overlay UV Range", Vector) = (0, 0, 1, 1)
   }
 
-  SubShader {
+  SubShader
+  {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     ZTest Off Cull Off ZWrite Off Fog { Mode Off }
     Blend Off
 
     Pass{
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
       #include "UnityCG.cginc"
@@ -73,7 +75,8 @@ Shader "Custom/BlitLdrPmaOverlay" {
         // Composite the result.
         return (1.0f - overlayTex.a) * saturate(mainTex) + overlayTex;
       }
-      ENDCG
+      ENDHLSL
     }
   }
 }
+

@@ -85,3 +85,7 @@
 
 # Cache files
 *.cache
+
+# ViverseViewer is built from source directory, not checked in
+/Assets/Resources/ViverseViewer.bytes
+/Assets/Resources/ViverseViewer.bytes.meta

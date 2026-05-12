@@ -22,11 +22,11 @@ Properties {
 
 
 SubShader {
-  Tags {"Queue"="AlphaTest+20" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
+  Tags {"RenderPipeline"="UniversalPipeline" "Queue"="AlphaTest+20" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
   LOD 100
 
   Pass {
-    CGPROGRAM
+    HLSLPROGRAM
     #pragma vertex vert
     #pragma fragment frag
     #include "UnityCG.cginc"
@@ -88,9 +88,10 @@ SubShader {
 
     return encodeHdr(c.rgb * c.a);
   }
-    ENDCG
+    ENDHLSL
   }
 }
 
 }
+
 

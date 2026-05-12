@@ -22,53 +22,106 @@ Properties {
 }
 
 SubShader {
-  Tags {"Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent"}
+  Tags {"RenderPipeline"="UniversalPipeline" "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent"}
   LOD 100
+  Blend SrcAlpha OneMinusSrcAlpha
+  ZWrite Off
 
-CGPROGRAM
-#pragma surface surf Lambert alpha
+  Pass {
+    Name "FrontFace"
+    Tags { "LightMode"="UniversalForward" }
+    HLSLPROGRAM
+    #pragma vertex Vert
+    #pragma fragment FragFront
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-sampler2D _MainTex;
-sampler2D _BorderTex;
-fixed4 _Color;
+    TEXTURE2D(_MainTex);
+    SAMPLER(sampler_MainTex);
+    TEXTURE2D(_BorderTex);
+    SAMPLER(sampler_BorderTex);
 
-struct Input {
-  float2 uv_MainTex;
-  float2 uv_BorderTex;
-};
+    CBUFFER_START(UnityPerMaterial)
+    half4 _Color;
+    half4 _BackColor;
+    CBUFFER_END
 
-void surf (Input IN, inout SurfaceOutput o) {
-  fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
-  fixed4 border = tex2D(_BorderTex, IN.uv_BorderTex) * _Color;
-  o.Emission = c.rgb + border.rgb;
-  o.Alpha = c.a * .25 + border.a;
+    struct Attributes {
+      float4 positionOS : POSITION;
+      float2 uv0 : TEXCOORD0;
+    };
+
+    struct Varyings {
+      float4 positionHCS : SV_POSITION;
+      float2 uvMain : TEXCOORD0;
+      float2 uvBorder : TEXCOORD1;
+    };
+
+    Varyings Vert(Attributes IN) {
+      Varyings OUT;
+      OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+      OUT.uvMain = IN.uv0;
+      OUT.uvBorder = IN.uv0;
+      return OUT;
+    }
+
+    half4 FragFront(Varyings IN) : SV_Target {
+      half4 c = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uvMain) * _Color;
+      half4 border = SAMPLE_TEXTURE2D(_BorderTex, sampler_BorderTex, IN.uvBorder) * _Color;
+      half3 emission = c.rgb + border.rgb;
+      half alpha = c.a * 0.25h + border.a;
+      return half4(emission, alpha);
+    }
+    ENDHLSL
+  }
+
+  Pass {
+    Name "BackFace"
+    Tags { "LightMode"="UniversalForward" }
+    Cull Front
+    HLSLPROGRAM
+    #pragma vertex Vert
+    #pragma fragment FragBack
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+    TEXTURE2D(_BackTex);
+    SAMPLER(sampler_BackTex);
+    TEXTURE2D(_BorderTex);
+    SAMPLER(sampler_BorderTex);
+
+    CBUFFER_START(UnityPerMaterial)
+    half4 _Color;
+    half4 _BackColor;
+    CBUFFER_END
+
+    struct Attributes {
+      float4 positionOS : POSITION;
+      float2 uv0 : TEXCOORD0;
+    };
+
+    struct Varyings {
+      float4 positionHCS : SV_POSITION;
+      float2 uvMain : TEXCOORD0;
+      float2 uvBorder : TEXCOORD1;
+    };
+
+    Varyings Vert(Attributes IN) {
+      Varyings OUT;
+      OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+      OUT.uvMain = IN.uv0;
+      OUT.uvBorder = IN.uv0;
+      return OUT;
+    }
+
+    half4 FragBack(Varyings IN) : SV_Target {
+      half4 c = SAMPLE_TEXTURE2D(_BackTex, sampler_BackTex, IN.uvMain) * _BackColor;
+      half4 border = SAMPLE_TEXTURE2D(_BorderTex, sampler_BorderTex, IN.uvBorder) * _BackColor;
+      half3 emission = c.rgb + border.rgb;
+      half alpha = c.a * 0.25h + border.a;
+      return half4(emission, alpha);
+    }
+    ENDHLSL
+  }
 }
-ENDCG
 
-
-
-Cull Front
-CGPROGRAM
-#pragma surface surf Lambert alpha
-
-sampler2D _BackTex;
-sampler2D _BorderTex;
-fixed4 _BackColor;
-
-struct Input {
-  float2 uv_MainTex;
-  float2 uv_BorderTex;
-};
-
-void surf (Input IN, inout SurfaceOutput o) {
-  fixed4 c = tex2D(_BackTex, IN.uv_MainTex) * _BackColor;
-  fixed4 border = tex2D(_BorderTex, IN.uv_BorderTex) * _BackColor;
-  o.Emission = c.rgb + border.rgb;
-  o.Alpha = c.a * .25 + border.a;
-}
-ENDCG
-
-}
-
-Fallback "Unlit/Diffuse"
+Fallback Off
 }

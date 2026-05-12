@@ -43,14 +43,12 @@ CGINCLUDE
 ENDCG
 
 SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags {
         "Queue"="AlphaTest+20"
         "IgnoreProjector"="True"
         "RenderType"="TransparentCutout"
     }
-
-    Lighting Off
-    Fog { Mode Off }
     LOD 100
 
     Pass {
@@ -114,3 +112,4 @@ SubShader {
 }
 
 }
+

@@ -26,25 +26,20 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
     // we will take the t = 0 in this compute shader
     float timedoty = 0;
 
-    float4 posWS = mul(TransformObjectToWorld, float4(vertex, 1.0));
     float3 perVertOffset = uv1.xyz;
     float lifetime = timedoty - uv1.w;
     float release = saturate(lifetime * .1);
     float3 localMidpointPos = vertex.xyz - perVertOffset;
-    float4 worldMidpointPos = mul(TransformObjectToWorld, localMidpointPos);
 
     float time = lifetime;
     float d = 10 + color.g * 3;
     float freq = 1.5 + color.r;
-    float3 disp = float3(1,0,0) * curlX(worldMidpointPos.xyz * freq + time, d);
-    disp += float3(0,1,0) * curlY(worldMidpointPos.xyz * freq +time, d);
-    disp += float3(0,0,1) * curlZ(worldMidpointPos.xyz * freq + time, d);
+    float3 disp = float3(1,0,0) * curlX(localMidpointPos.xyz * freq + time, d);
+    disp += float3(0,1,0) * curlY(localMidpointPos.xyz * freq +time, d);
+    disp += float3(0,0,1) * curlZ(localMidpointPos.xyz * freq + time, d);
 
-    worldMidpointPos.xyz += release * disp * 10;
-    posWS.xyz = worldMidpointPos.xyz + perVertOffset;
-
-    float4 posOS = mul(TransformWorldToObject, posWS);
-    vertex = posOS.xyz;
+    localMidpointPos += release * disp * 10;
+    vertex = localMidpointPos + perVertOffset;
 
     vertexBuffer[id.x] = vertex;
 }

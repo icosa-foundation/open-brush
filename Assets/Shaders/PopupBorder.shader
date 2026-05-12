@@ -17,31 +17,41 @@ Shader "Custom/PopupBorder" {
     _Color ("Main Color", Color) = (1,1,1,1)
   }
   SubShader {
-    Tags { "RenderType"="Opaque" }
+    Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Opaque" }
     LOD 100
-    CGPROGRAM
-    #pragma surface surf Unlit nofog
-    half4 LightingUnlit(SurfaceOutput s, half3 lightDir, half atten) {
-      half4 c;
-      c.rgb = s.Albedo;
-      c.a = 1.0;
-      return c;
+    Pass {
+      Name "ForwardUnlit"
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+      #pragma vertex Vert
+      #pragma fragment Frag
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+      CBUFFER_START(UnityPerMaterial)
+      half4 _Color;
+      CBUFFER_END
+
+      struct Attributes {
+        float4 positionOS : POSITION;
+      };
+
+      struct Varyings {
+        float4 positionHCS : SV_POSITION;
+      };
+
+      Varyings Vert(Attributes IN) {
+        Varyings OUT;
+        OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+        return OUT;
+      }
+
+      half4 Frag(Varyings IN) : SV_Target {
+        half4 c = _Color * 0.75h;
+        return c;
+      }
+      ENDHLSL
     }
-
-    fixed4 _Color;
-
-    struct Input {
-      float3 worldPos;
-    };
-
-    void surf (Input IN, inout SurfaceOutput o) {
-      fixed4 c = _Color * .75;
-      o.Emission = c.rgb;
-      o.Alpha = c.a;
-    }
-    ENDCG
   }
-  FallBack "Diffuse"
+  FallBack Off
 }
-
 

@@ -21,69 +21,87 @@ Shader "Custom/ProgressRing" {
 
   }
   SubShader {
-    Tags { "Queue"="Geometry" "RenderType"="Geometry" }
+    Tags { "RenderPipeline"="UniversalPipeline" "Queue"="Geometry" "RenderType"="Geometry" }
 
-    CGPROGRAM
-    #pragma surface surf Lambert
+    Pass {
+      Name "RingMain"
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+      #pragma vertex VertMain
+      #pragma fragment FragMain
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-    struct Input {
-      float2 uv_MainTex;
-    };
+      CBUFFER_START(UnityPerMaterial)
+      half4 _Color;
+      half4 _ProgressColor;
+      half _Progress;
+      CBUFFER_END
 
-    uniform float4 _Color;
-    uniform float4 _ProgressColor;
-    uniform float _Progress;
-    sampler2D _MainTex;
+      struct Attributes {
+        float4 positionOS : POSITION;
+        float2 uv : TEXCOORD0;
+      };
 
-    void surf (Input IN, inout SurfaceOutput o) {
+      struct Varyings {
+        float4 positionHCS : SV_POSITION;
+        float2 uv : TEXCOORD0;
+      };
 
-      o.Albedo = 0;
-      _Color = IN.uv_MainTex.x < _Progress ? _ProgressColor : _Color;
+      Varyings VertMain(Attributes IN) {
+        Varyings OUT;
+        OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+        OUT.uv = IN.uv;
+        return OUT;
+      }
 
-      o.Emission = _Color.rgb;
-      o.Alpha = 1.0;
+      half4 FragMain(Varyings IN) : SV_Target {
+        half4 col = IN.uv.x < _Progress ? _ProgressColor : _Color;
+        return half4(col.rgb, 1.0h);
+      }
+      ENDHLSL
     }
-    ENDCG
 
-    Cull Front
-    CGPROGRAM
-    #pragma surface surf Lambert vertex:vert
-    #include "Assets/Shaders/Include/Math.cginc"
+    Pass {
+      Name "RingOutline"
+      Tags { "LightMode"="UniversalForward" }
+      Cull Front
+      HLSLPROGRAM
+      #pragma vertex VertOutline
+      #pragma fragment FragOutline
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+      #include "Assets/Shaders/Include/Math.cginc"
 
-    struct Input {
-      float2 uv_MainTex;
-    };
+      CBUFFER_START(UnityPerMaterial)
+      float _OutlineWidth;
+      CBUFFER_END
 
-    uniform float4 _Color;
-    sampler2D _MainTex;
-    uniform float _OutlineWidth;
+      struct Attributes {
+        float4 positionOS : POSITION;
+        float3 normalOS : NORMAL;
+      };
 
-    void vert (inout appdata_full v) {
-          // Transform into worldspace
-          float4 world_space_vertex = mul( unity_ObjectToWorld, v.vertex );
+      struct Varyings {
+        float4 positionHCS : SV_POSITION;
+      };
 
-          // Create outline.
+      Varyings VertOutline(Attributes IN) {
+        Varyings OUT;
+        float4 worldPos = mul(unity_ObjectToWorld, IN.positionOS);
+        float3x3 unscaledObject2World;
+        float3 unusedScale;
+        factorRotationAndLocalScale((float3x3)unity_ObjectToWorld, unscaledObject2World, unusedScale);
+        float3 worldNormal = normalize(mul(unscaledObject2World, IN.normalOS));
+        worldPos.xyz += worldNormal * _OutlineWidth;
+        float4 objectPos = mul(unity_WorldToObject, worldPos);
+        OUT.positionHCS = TransformObjectToHClip(objectPos.xyz);
+        return OUT;
+      }
 
-          // Push the outline out in the direction of the unscaled normal.
-          float3x3 unscaledObject2World;
-          float3 unusedScale;
-          factorRotationAndLocalScale(
-              (float3x3)unity_ObjectToWorld, unscaledObject2World, unusedScale);
-
-          // Push the outline out in the direction of the new unscaled normal.
-          float3 world_normal = normalize(mul(unscaledObject2World, v.normal));
-          world_space_vertex.xyz += world_normal * _OutlineWidth;
-
-          // Transform back into local space
-          v.vertex = mul( unity_WorldToObject, world_space_vertex );
-        }
-
-    void surf (Input IN, inout SurfaceOutput o) {
-      o.Albedo = 0;
-      o.Emission = 0.0f;
-      o.Alpha = 1.0;
+      half4 FragOutline(Varyings IN) : SV_Target {
+        return half4(0.0h, 0.0h, 0.0h, 1.0h);
+      }
+      ENDHLSL
     }
-    ENDCG
   }
-  FallBack "Diffuse"
+  FallBack Off
 }

@@ -22,9 +22,9 @@ Shader "Custom/ReferenceImage" {
 		[Enum(UnityEngine.Rendering.CullMode)] _CullMode ("CullMode", Int) = 2
     }
     SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
         Tags{ "Queue" = "AlphaTest+20" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
         Pass {
-            Lighting Off
             Cull [_CullMode]
 
             CGPROGRAM
@@ -107,3 +107,4 @@ Shader "Custom/ReferenceImage" {
         }
     }
 }
+

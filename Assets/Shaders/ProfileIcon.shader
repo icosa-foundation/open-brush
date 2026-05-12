@@ -21,10 +21,9 @@ Shader "Custom/ProfileIcon" {
  _Grayscale ("Grayscale", Float) = 0
   }
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Pass {
       Tags{ "Queue" = "AlphaTest" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
-      Lighting Off
-
       CGPROGRAM
       #pragma vertex vert
       #pragma fragment frag
@@ -85,3 +84,4 @@ Shader "Custom/ProfileIcon" {
     }
   }
 }
+

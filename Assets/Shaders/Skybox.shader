@@ -21,12 +21,13 @@ Properties {
 }
 
 SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
   Tags { "Queue"="Background" "RenderType"="Background" "PreviewType"="Skybox" }
   Cull Off ZWrite Off
 
   Pass {
 
-    CGPROGRAM
+    HLSLPROGRAM
     #pragma vertex vert
     #pragma fragment frag
 
@@ -83,7 +84,7 @@ SubShader {
       c *= _Exposure;
       return half4(c, 1);
     }
-    ENDCG
+    ENDHLSL
   }
 }
 
@@ -91,3 +92,5 @@ SubShader {
 Fallback Off
 
 }
+
+

@@ -19,32 +19,49 @@ Shader "Custom/ColorPicker" {
     _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
   }
   SubShader {
-    Tags {"Queue"="AlphaTest+20" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
+    Tags {"RenderPipeline"="UniversalPipeline" "Queue"="AlphaTest+20" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
 
-    Lighting Off
+    Pass {
+      Name "ForwardUnlit"
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+      #pragma vertex Vert
+      #pragma fragment Frag
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-    CGPROGRAM
-    #pragma surface surf Lambert nofog
+      TEXTURE2D(_MainTex);
+      SAMPLER(sampler_MainTex);
 
-    sampler2D _MainTex;
-    fixed4 _Color;
-    fixed _Cutoff;
+      CBUFFER_START(UnityPerMaterial)
+      half4 _Color;
+      half _Cutoff;
+      CBUFFER_END
 
-    struct Input {
-      float2 uv_MainTex;
-    };
+      struct Attributes {
+        float4 positionOS : POSITION;
+        float2 uv : TEXCOORD0;
+      };
 
-    void surf (Input IN, inout SurfaceOutput o) {
-      half4 tex = tex2D (_MainTex, IN.uv_MainTex);
-      float4 c = tex * _Color;
-      o.Emission = c.rgb;
-      o.Albedo = 0;
-      if (c.a < _Cutoff) {
-        discard;
+      struct Varyings {
+        float4 positionHCS : SV_POSITION;
+        float2 uv : TEXCOORD0;
+      };
+
+      Varyings Vert(Attributes IN) {
+        Varyings OUT;
+        OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+        OUT.uv = IN.uv;
+        return OUT;
       }
-      o.Alpha = 1;
+
+      half4 Frag(Varyings IN) : SV_Target {
+        half4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv);
+        half4 c = tex * _Color;
+        clip(c.a - _Cutoff);
+        return half4(c.rgb, 1.0h);
+      }
+      ENDHLSL
     }
-    ENDCG
   }
-  FallBack "Unlit/Diffuse"
+  FallBack Off
 }

@@ -22,49 +22,90 @@ Shader "Custom/TeleporterLine" {
     _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
   }
   SubShader {
-    Tags { "Queue"="Geometry" "RenderType"="Geometry" }
+    Tags { "RenderPipeline"="UniversalPipeline" "Queue"="Geometry" "RenderType"="Geometry" }
 
-    CGPROGRAM
-    #pragma surface surf Lambert alphatest:_Cutoff
+    Pass {
+      Name "MainPulse"
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+      #pragma vertex Vert
+      #pragma fragment FragMain
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-    struct Input {
-      float2 uv_MainTex;
-    };
+      CBUFFER_START(UnityPerMaterial)
+      half4 _Color;
+      half4 _Color2;
+      half _ScrollSpeed;
+      half _Cutoff;
+      CBUFFER_END
 
-    uniform float4 _Color;
-    uniform float4 _Color2;
-    uniform half _ScrollSpeed;
+      struct Attributes {
+        float4 positionOS : POSITION;
+        float2 uv : TEXCOORD0;
+      };
 
-    void surf (Input IN, inout SurfaceOutput o) {
+      struct Varyings {
+        float4 positionHCS : SV_POSITION;
+        float2 uv : TEXCOORD0;
+      };
 
-      o.Albedo = 0;
-      float t = abs(sin(_Time.y * 4));
-      o.Emission = lerp( _Color2, _Color, t );
-      o.Alpha = 1.2 * (sin(IN.uv_MainTex.x + _Time.x * _ScrollSpeed) + 1.0f)/2.0f;
+      Varyings Vert(Attributes IN) {
+        Varyings OUT;
+        OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+        OUT.uv = IN.uv;
+        return OUT;
+      }
+
+      half4 FragMain(Varyings IN) : SV_Target {
+        half t = abs(sin(_Time.y * 4.0h));
+        half3 emission = lerp(_Color2.rgb, _Color.rgb, t);
+        half alpha = 1.2h * (sin(IN.uv.x + _Time.x * _ScrollSpeed) + 1.0h) * 0.5h;
+        clip(alpha - _Cutoff);
+        return half4(emission, alpha);
+      }
+      ENDHLSL
     }
-    ENDCG
 
-    CGPROGRAM
-    #pragma surface surf Lambert alphatest:_Cutoff
+    Pass {
+      Name "InnerStrip"
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+      #pragma vertex Vert
+      #pragma fragment FragStrip
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-    struct Input {
-      float2 uv_MainTex;
-    };
+      CBUFFER_START(UnityPerMaterial)
+      half _ScrollSpeed;
+      half4 _EmissionColor;
+      half _Cutoff;
+      CBUFFER_END
 
-    uniform half _ScrollSpeed;
-    uniform half4 _EmissionColor;
+      struct Attributes {
+        float4 positionOS : POSITION;
+        float2 uv : TEXCOORD0;
+      };
 
-    void surf (Input IN, inout SurfaceOutput o) {
+      struct Varyings {
+        float4 positionHCS : SV_POSITION;
+        float2 uv : TEXCOORD0;
+      };
 
-      o.Albedo = 0;
-      o.Emission = _EmissionColor.xyz;
+      Varyings Vert(Attributes IN) {
+        Varyings OUT;
+        OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+        OUT.uv = IN.uv;
+        return OUT;
+      }
 
-      // Isolate a thin strip inside the line renderer
-      float strip = abs(IN.uv_MainTex.y - .5);
-      strip = strip > .1 ? 0 : 1;
-      o.Alpha = strip * (sin(IN.uv_MainTex.x + _Time.x * _ScrollSpeed) + 1.0f)/2.0f;
+      half4 FragStrip(Varyings IN) : SV_Target {
+        half strip = abs(IN.uv.y - 0.5h);
+        strip = strip > 0.1h ? 0.0h : 1.0h;
+        half alpha = strip * (sin(IN.uv.x + _Time.x * _ScrollSpeed) + 1.0h) * 0.5h;
+        clip(alpha - _Cutoff);
+        return half4(_EmissionColor.rgb, alpha);
+      }
+      ENDHLSL
     }
-    ENDCG
   }
-  FallBack "Diffuse"
+  FallBack Off
 }

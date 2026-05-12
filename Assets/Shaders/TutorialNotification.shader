@@ -27,9 +27,10 @@ Category {
   Cull Off Lighting Off ZTest Off ZWrite Off Fog { Color (0,0,0,0) }
 
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Pass {
 
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
       #pragma multi_compile_particles
@@ -77,8 +78,10 @@ Category {
       {
         return 2.0f * i.color * _TintColor * tex2D(_MainTex, i.texcoord) * (exp(_EmissionGain * 5.0f));
       }
-      ENDCG
+      ENDHLSL
     }
   }
 }
 }
+
+

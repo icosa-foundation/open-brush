@@ -26,6 +26,7 @@ Shader "Unlit/CircularProgress"
   }
   SubShader
   {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags { "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent" }
     LOD 100
 
@@ -34,7 +35,7 @@ Shader "Unlit/CircularProgress"
 
     Pass
     {
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
 
@@ -94,7 +95,9 @@ Shader "Unlit/CircularProgress"
 
         return col;
       }
-      ENDCG
+      ENDHLSL
     }
   }
 }
+
+

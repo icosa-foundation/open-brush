@@ -24,12 +24,12 @@ Shader "Unlit/GroundPlaneOverlay"
   SubShader
   {
 	LOD 201
-    Tags { "Queue"="Overlay" "RenderType"="Transparent" }
+    Tags { "RenderPipeline"="UniversalPipeline" "Queue"="Overlay" "RenderType"="Transparent" }
     Blend SrcAlpha OneMinusSrcAlpha, Zero One
     ZTest Always
     ZWrite Off
     Pass {
-      CGPROGRAM
+      HLSLPROGRAM
         #pragma vertex vert
         #pragma fragment frag
         #pragma exclude_renderers d3d9 d3d11_9x
@@ -107,19 +107,19 @@ Shader "Unlit/GroundPlaneOverlay"
           _Color.w = .1 * t;
           return grid * _Color;
         }
-      ENDCG
+      ENDHLSL
     }
   }
 
   // MOBILE VERSION
   SubShader {
 	LOD 100
-    Tags { "Queue"="Overlay" "RenderType"="Transparent" }
+    Tags { "RenderPipeline"="UniversalPipeline" "Queue"="Overlay" "RenderType"="Transparent" }
     Blend SrcAlpha OneMinusSrcAlpha, Zero One
     ZTest Always
     ZWrite Off
     Pass {
-      CGPROGRAM
+      HLSLPROGRAM
         #pragma vertex vert
         #pragma fragment frag
         #pragma exclude_renderers d3d9 d3d11_9x
@@ -187,7 +187,8 @@ Shader "Unlit/GroundPlaneOverlay"
           _Color.w = .1;
           return grid * _Color;
         }
-      ENDCG
+      ENDHLSL
     }
   }
 }
+

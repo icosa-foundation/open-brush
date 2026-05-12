@@ -22,10 +22,12 @@ Shader "Custom/LightWidget" {
         _FlattenAmount ("Flatten Amount", Range(0,1)) = 0
     }
     SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
 
         Tags {"RenderType"="Opaque"}
 
         Pass {
+            Tags { "LightMode"="SRPDefaultUnlit" }
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
@@ -84,6 +86,7 @@ Shader "Custom/LightWidget" {
 
     //Make a white outline!
         Pass{
+            Tags { "LightMode"="SRPDefaultUnlit" }
 
             Cull Front
 
@@ -123,6 +126,7 @@ Shader "Custom/LightWidget" {
         // Make a black outline!
 
         Pass{
+            Tags { "LightMode"="SRPDefaultUnlit" }
 
             Cull Front
             CGPROGRAM
@@ -159,3 +163,4 @@ Shader "Custom/LightWidget" {
     }
     FallBack "Diffuse"
 }
+

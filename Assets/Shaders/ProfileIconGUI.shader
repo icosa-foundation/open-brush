@@ -19,36 +19,58 @@ Shader "Custom/ProfileIconGUI" {
         _AlphaMask ("Mask", 2D) = "white" {}
     }
     SubShader {
-    Tags { "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "Transparent"
+    Tags { "RenderPipeline"="UniversalPipeline" "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "Transparent"
     "PreviewType" = "Plane" "CanUseSpriteAtlas" = "True"}
         LOD 200
 
     Cull Off
-    Lighting Off
     ZWrite Off
     Blend One OneMinusSrcAlpha
 
-        CGPROGRAM
-        #pragma surface surf Lambert alpha nofog
-        #pragma target 3.0
-    #include "UnityCG.cginc"
+        Pass {
+            Name "ForwardUnlit"
+            Tags { "LightMode"="UniversalForward" }
+            HLSLPROGRAM
+            #pragma target 3.0
+            #pragma vertex Vert
+            #pragma fragment Frag
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-        sampler2D _MainTex;
-        sampler2D _AlphaMask;
+            TEXTURE2D(_MainTex);
+            SAMPLER(sampler_MainTex);
+            TEXTURE2D(_AlphaMask);
+            SAMPLER(sampler_AlphaMask);
 
-        struct Input {
-            float2 uv_MainTex;
-            float2 uv_AlphaMask;
-        };
+            CBUFFER_START(UnityPerMaterial)
+            half4 _Color;
+            CBUFFER_END
 
-        fixed4 _Color;
+            struct Attributes {
+                float4 positionOS : POSITION;
+                float2 uv0 : TEXCOORD0;
+            };
 
-        void surf (Input IN, inout SurfaceOutput o) {
-            fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * _Color;
-            o.Emission = c.rgb;
-            o.Alpha = tex2D (_AlphaMask, IN.uv_AlphaMask).a;
+            struct Varyings {
+                float4 positionHCS : SV_POSITION;
+                float2 uvMain : TEXCOORD0;
+                float2 uvMask : TEXCOORD1;
+            };
+
+            Varyings Vert(Attributes IN) {
+                Varyings OUT;
+                OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+                OUT.uvMain = IN.uv0;
+                OUT.uvMask = IN.uv0;
+                return OUT;
+            }
+
+            half4 Frag(Varyings IN) : SV_Target {
+                half4 c = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uvMain) * _Color;
+                half maskAlpha = SAMPLE_TEXTURE2D(_AlphaMask, sampler_AlphaMask, IN.uvMask).a;
+                return half4(c.rgb, maskAlpha);
+            }
+            ENDHLSL
         }
-        ENDCG
     }
-    FallBack "Unlit/Diffuse"
+    FallBack Off
 }

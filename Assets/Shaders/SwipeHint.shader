@@ -1,17 +1,4 @@
 // Copyright 2020 The Tilt Brush Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 Shader "Custom/SwipeHint" {
   Properties{
     _MainTex("Base (RGB) Transgloss (A)", 2D) = "white" {}
@@ -21,45 +8,32 @@ Shader "Custom/SwipeHint" {
     _PulseColorDark("Pulse Color Dark", Color) = (3,3,3,3)
     _PulseFrequency ("Pulse Frequency", Float) = 10
     _PulseIntensity ("Pulse Intensity", Float) = 10
-
   }
-    SubShader{
-      Tags { "RenderType" = "Opaque" }
-      LOD 100
-
-      CGPROGRAM
-      #pragma surface surf Standard nofog
-      #pragma target 3.0
-      #include "Assets/Shaders/Include/Math.cginc"
-
-      sampler2D _MainTex;
-      float2 uv_MainTex;
-      half _Shininess;
-      float4 _Color;
-      uniform float4 _PulseColor;
-      uniform float4 _PulseColorDark;
-      uniform float _PulseFrequency;
-      uniform float _PulseIntensity;
-
-      struct Input {
-      float2 uv_MainTex;
-      };
-
-      void surf(Input IN, inout SurfaceOutputStandard o) {
-      fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);
-      fixed4 c = tex * _Color;
-      o.Smoothness = _Shininess;
-
-      // animate a nice lil' pulse
-      float t = sin(_Time.y * _PulseFrequency) * 0.5 + 0.5;
-      float4 lerpedColor = lerp(_PulseColor * c, _PulseColorDark * c, t);
-
-      //rest o' the outputs
-      o.Emission = lerpedColor * _PulseIntensity;
-      o.Albedo = 0;
+  SubShader{
+    Tags { "RenderPipeline"="UniversalPipeline" "RenderType" = "Opaque" }
+    LOD 100
+    Pass {
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+      #pragma vertex Vert
+      #pragma fragment Frag
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+      TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
+      CBUFFER_START(UnityPerMaterial)
+      half4 _Color; half4 _PulseColor; half4 _PulseColorDark; half _PulseFrequency; half _PulseIntensity; float4 _MainTex_ST;
+      CBUFFER_END
+      struct A{float4 positionOS:POSITION; float2 uv:TEXCOORD0;};
+      struct V{float4 positionHCS:SV_POSITION; float2 uv:TEXCOORD0;};
+      V Vert(A i){V o; o.positionHCS=TransformObjectToHClip(i.positionOS.xyz); o.uv=TRANSFORM_TEX(i.uv,_MainTex); return o;}
+      half4 Frag(V i):SV_Target {
+        half4 tex = SAMPLE_TEXTURE2D(_MainTex,sampler_MainTex,i.uv);
+        half4 c = tex * _Color;
+        half t = sin(_Time.y * _PulseFrequency) * 0.5h + 0.5h;
+        half3 lerped = lerp((_PulseColor * c).rgb, (_PulseColorDark * c).rgb, t);
+        return half4(lerped * _PulseIntensity, 1.0h);
+      }
+      ENDHLSL
     }
-    ENDCG
   }
-Fallback "Unlit/Diffuse"
+  Fallback Off
 }
-

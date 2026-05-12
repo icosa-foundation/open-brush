@@ -23,12 +23,12 @@ Shader "Unlit/GpuText"
     }
     SubShader
     {
-        Tags { "RenderType"="Opaque" }
+        Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Opaque" }
         LOD 100
 
         Pass
         {
-            CGPROGRAM
+            HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
 
@@ -102,7 +102,8 @@ Shader "Unlit/GpuText"
 
                 return col;
             }
-            ENDCG
+            ENDHLSL
         }
     }
 }
+

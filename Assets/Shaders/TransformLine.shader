@@ -19,11 +19,12 @@ Properties {
 
 Category {
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
   Pass {
 
       Cull Front
 
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
       #pragma target 3.0
@@ -65,8 +66,10 @@ Category {
      return float4(_Color.xyz,1);
 
       }
-      ENDCG
+      ENDHLSL
     }
   }
 }
 }
+
+

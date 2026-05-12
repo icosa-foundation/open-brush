@@ -25,7 +25,6 @@ MonoBehaviour:
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
   m_ButtonTexture: {fileID: 2800000, guid: 9b3fedde26760b648a123465770d4ec3, type: 3}
-  m_Description: BRUSH_TAPEREDWIRE
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
@@ -45,7 +44,7 @@ MonoBehaviour:
   m_VolumeVelocityRangeMultiplier: 1
   m_AudioReactive: 0
   m_ButtonAudio: {fileID: 0}
-  m_Material: {fileID: 2100000, guid: 3e53df3da66fa294c82bbe5680a23942, type: 2}
+  m_Material: {fileID: 2100000, guid: 713ea7a645841ab4995e994a511a5561, type: 2}
   m_TextureAtlasV: 1
   m_TileRate: 1
   m_UseBloomSwatchOnColorPicker: 0

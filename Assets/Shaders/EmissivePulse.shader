@@ -19,66 +19,65 @@ Shader "Custom/EmissivePulse" {
     _PulseFrequency("Pulse Frequency", Float) = 8
   }
 
-  // -------------------------------------------------------------------------------------------- //
-  // DESKTOP VERSION
-  // -------------------------------------------------------------------------------------------- //
   SubShader {
-    Tags { "Queue"="Geometry" "RenderType"="Geometry" }
+    Tags { "RenderPipeline"="UniversalPipeline" "Queue"="Geometry" "RenderType"="Geometry" }
     LOD 201
 
-    CGPROGRAM
-    #pragma surface surf Lambert vertex:vert
-    #include "Assets/Shaders/Include/Math.cginc"
+    Pass {
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+      #pragma vertex Vert
+      #pragma fragment Frag
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-    uniform float4 _BaseColor;
-    uniform float4 _PulseColor;
-    uniform float _PulseFrequency;
+      CBUFFER_START(UnityPerMaterial)
+      half4 _BaseColor;
+      half4 _PulseColor;
+      half _PulseFrequency;
+      CBUFFER_END
 
-    struct Input {
-      float2 uv_MainTex;
-    };
+      struct Attributes { float4 positionOS : POSITION; };
+      struct Varyings { float4 positionHCS : SV_POSITION; };
 
-    void vert (inout appdata_full v) {
+      Varyings Vert(Attributes IN) { Varyings OUT; OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz); return OUT; }
+
+      half4 Frag(Varyings IN) : SV_Target {
+        half t = abs(sin(_Time.y * _PulseFrequency));
+        return half4(lerp(_BaseColor, _PulseColor, t).rgb * 100.0h, 1.0h);
+      }
+      ENDHLSL
     }
-
-    void surf (Input IN, inout SurfaceOutput o) {
-      float t = abs(sin(_Time.y * _PulseFrequency));
-      o.Albedo = 0.0;
-      o.Emission = lerp(_BaseColor, _PulseColor, t) * 100.0;
-      o.Alpha = 1.0;
-    }
-    ENDCG
   }
 
-  // -------------------------------------------------------------------------------------------- //
-  // MOBILE VERSION
-  // -------------------------------------------------------------------------------------------- //
   SubShader {
-    Tags { "Queue"="Geometry" "RenderType"="Geometry" }
+    Tags { "RenderPipeline"="UniversalPipeline" "Queue"="Geometry" "RenderType"="Geometry" }
     LOD 150
 
-    CGPROGRAM
-    #pragma surface surf Lambert vertex:vert
-    #include "Assets/Shaders/Include/Math.cginc"
+    Pass {
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+      #pragma vertex Vert
+      #pragma fragment Frag
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-    uniform float4 _BaseColor;
-    uniform float4 _PulseColor;
-    uniform float _PulseFrequency;
+      CBUFFER_START(UnityPerMaterial)
+      half4 _BaseColor;
+      half4 _PulseColor;
+      half _PulseFrequency;
+      CBUFFER_END
 
-    struct Input {
-      float2 uv_MainTex;
-    };
+      struct Attributes { float4 positionOS : POSITION; };
+      struct Varyings { float4 positionHCS : SV_POSITION; };
 
-    void vert (inout appdata_full v) {
+      Varyings Vert(Attributes IN) { Varyings OUT; OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz); return OUT; }
+
+      half4 Frag(Varyings IN) : SV_Target {
+        half t = abs(sin(_Time.y * _PulseFrequency));
+        half3 c = _BaseColor.rgb + t * _PulseColor.rgb;
+        return half4(c, 1.0h);
+      }
+      ENDHLSL
     }
-
-    void surf (Input IN, inout SurfaceOutput o) {
-      float t = abs(sin(_Time.y * _PulseFrequency));
-      o.Albedo = _BaseColor;
-      o.Emission = t * _PulseColor;
-      o.Alpha = 1.0;
-    }
-    ENDCG
   }
-  FallBack "Diffuse"
+  FallBack Off
 }

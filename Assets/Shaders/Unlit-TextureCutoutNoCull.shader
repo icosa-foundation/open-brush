@@ -20,39 +20,107 @@ Properties {
 }
 
 SubShader {
-Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
-Cull Off
+  Tags { "RenderPipeline"="UniversalPipeline" "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout" }
+  Cull Off
 
-CGPROGRAM
-#pragma surface surf Lambert vertex:vert alphatest:_Cutoff addshadow
+  Pass {
+    Name "ForwardUnlit"
+    Tags { "LightMode"="UniversalForward" }
 
-sampler2D _MainTex;
-fixed4 _Color;
-float _SceneFadeAmount;
+    HLSLPROGRAM
+    #pragma vertex Vert
+    #pragma fragment Frag
 
-struct Input {
-  float2 uv_MainTex;
-  float4 color : COLOR;
-};
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-void vert (inout appdata_full v) {
+    TEXTURE2D(_MainTex);
+    SAMPLER(sampler_MainTex);
+
+    CBUFFER_START(UnityPerMaterial)
+    half4 _Color;
+    half _Cutoff;
+    float4 _MainTex_ST;
+    CBUFFER_END
+
+    half _SceneFadeAmount;
+
+    struct Attributes {
+      float4 positionOS : POSITION;
+      float2 uv : TEXCOORD0;
+      half4 color : COLOR;
+    };
+
+    struct Varyings {
+      float4 positionHCS : SV_POSITION;
+      float2 uv : TEXCOORD0;
+      half4 color : TEXCOORD1;
+    };
+
+    Varyings Vert(Attributes IN) {
+      Varyings OUT;
+      OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+      OUT.uv = IN.uv * _MainTex_ST.xy + _MainTex_ST.zw;
+      OUT.color = IN.color;
+      return OUT;
+    }
+
+    half4 Frag(Varyings IN) : SV_Target {
+      half4 c = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv) * _Color;
+      c.rgb *= _SceneFadeAmount;
+      c.rgb *= IN.color.rgb;
+      c.a *= IN.color.a;
+      clip(c.a - _Cutoff);
+      return half4(c.rgb, 1.0h);
+    }
+    ENDHLSL
   }
 
-void surf (Input IN, inout SurfaceOutput o) {
-  fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
-  c.rgb *= _SceneFadeAmount;
+  Pass {
+    Name "ShadowCaster"
+    Tags { "LightMode"="ShadowCaster" }
 
-  o.Emission = c.rgb * IN.color.rgb * 1.0;
-  o.Albedo = 0.0;
+    HLSLPROGRAM
+    #pragma vertex VertShadow
+    #pragma fragment FragShadow
 
-  // original implementation with subtle shadows:
-  //o.Emission = c.rgb * IN.color.rgb * .9;
-  //o.Albedo = c.rgb * IN.color.rgb * .1; // Just to get a hint of shadows/highlights
-  o.Alpha = c.a * IN.color.a;
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+    TEXTURE2D(_MainTex);
+    SAMPLER(sampler_MainTex);
+
+    CBUFFER_START(UnityPerMaterial)
+    half _Cutoff;
+    float4 _MainTex_ST;
+    CBUFFER_END
+
+    struct Attributes {
+      float4 positionOS : POSITION;
+      float2 uv : TEXCOORD0;
+      half4 color : COLOR;
+    };
+
+    struct Varyings {
+      float4 positionCS : SV_POSITION;
+      float2 uv : TEXCOORD0;
+      half alphaMul : TEXCOORD1;
+    };
+
+    Varyings VertShadow(Attributes IN) {
+      Varyings OUT;
+      OUT.positionCS = TransformObjectToHClip(IN.positionOS.xyz);
+      OUT.uv = IN.uv * _MainTex_ST.xy + _MainTex_ST.zw;
+      OUT.alphaMul = IN.color.a;
+      return OUT;
+    }
+
+    half4 FragShadow(Varyings IN) : SV_Target {
+      half alpha = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv).a * IN.alphaMul;
+      clip(alpha - _Cutoff);
+      return 0;
+    }
+    ENDHLSL
+  }
 }
-ENDCG
-}
 
-
-Fallback "Unlit/Diffuse"
+FallBack Off
 }

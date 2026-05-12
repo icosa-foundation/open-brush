@@ -20,32 +20,81 @@ Properties {
 }
 
 SubShader {
-  Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
-  CGPROGRAM
-  #pragma surface surf Lambert vertex:vert alphatest:_Cutoff addshadow
+  Tags { "RenderPipeline"="UniversalPipeline" "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout" }
 
-  sampler2D _MainTex;
-  uniform float4 _Color;
+  Pass {
+    Tags { "LightMode"="UniversalForward" }
+    HLSLPROGRAM
+    #pragma vertex Vert
+    #pragma fragment Frag
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-  struct Input {
-    float2 uv_MainTex;
-  };
+    TEXTURE2D(_MainTex);
+    SAMPLER(sampler_MainTex);
 
-  void vert (inout appdata_full v) {
+    CBUFFER_START(UnityPerMaterial)
+    half4 _Color;
+    half _Cutoff;
+    float4 _MainTex_ST;
+    CBUFFER_END
+
+    struct Attributes { float4 positionOS : POSITION; float2 uv : TEXCOORD0; };
+    struct Varyings { float4 positionHCS : SV_POSITION; float2 uv : TEXCOORD0; };
+
+    Varyings Vert(Attributes IN) {
+      Varyings OUT;
+      OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+      OUT.uv = TRANSFORM_TEX(IN.uv, _MainTex);
+      return OUT;
+    }
+
+    half4 Frag(Varyings IN) : SV_Target {
+      float2 timeUVs = IN.uv;
+      timeUVs.x += _Time.x * 2.0;
+      timeUVs.y -= _Time.x * 1.0;
+      half4 c = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, timeUVs) * _Color;
+      clip(c.a - _Cutoff);
+      return half4(c.rgb, 1.0h);
+    }
+    ENDHLSL
   }
 
-  void surf (Input IN, inout SurfaceOutput o) {
-    float2 timeUVs = IN.uv_MainTex;
-    timeUVs.x += _Time.x * 2.0;
-    timeUVs.y -= _Time.x * 1.0;
-    fixed4 c = tex2D(_MainTex, timeUVs);
+  Pass {
+    Tags { "LightMode"="ShadowCaster" }
+    HLSLPROGRAM
+    #pragma vertex Vert
+    #pragma fragment FragShadow
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-    o.Albedo = c.rgb * _Color;
-    o.Emission = c.rgb * _Color;
-    o.Alpha = c.a;
+    TEXTURE2D(_MainTex);
+    SAMPLER(sampler_MainTex);
+
+    CBUFFER_START(UnityPerMaterial)
+    half _Cutoff;
+    float4 _MainTex_ST;
+    CBUFFER_END
+
+    struct Attributes { float4 positionOS : POSITION; float2 uv : TEXCOORD0; };
+    struct Varyings { float4 positionCS : SV_POSITION; float2 uv : TEXCOORD0; };
+
+    Varyings Vert(Attributes IN) {
+      Varyings OUT;
+      OUT.positionCS = TransformObjectToHClip(IN.positionOS.xyz);
+      OUT.uv = TRANSFORM_TEX(IN.uv, _MainTex);
+      return OUT;
+    }
+
+    half4 FragShadow(Varyings IN) : SV_Target {
+      float2 timeUVs = IN.uv;
+      timeUVs.x += _Time.x * 2.0;
+      timeUVs.y -= _Time.x * 1.0;
+      half a = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, timeUVs).a;
+      clip(a - _Cutoff);
+      return 0;
+    }
+    ENDHLSL
   }
-  ENDCG
 }
 
-Fallback "Unlit/Diffuse"
+Fallback Off
 }

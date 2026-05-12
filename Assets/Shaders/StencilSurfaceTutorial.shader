@@ -153,11 +153,12 @@ CGINCLUDE
 ENDCG
 
 SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
 Tags {"Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
 
 LOD 100
 ColorMask RGB
-Lighting Off Fog { Color (0,0,0,0) }
+
 ZWrite Off
 
 // back faces
@@ -200,3 +201,4 @@ Pass {
 } // end subshader
 Fallback "Unlit/Diffuse"
 }
+

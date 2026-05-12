@@ -22,40 +22,53 @@ Shader "Custom/ProgressBar" {
 
     }
     SubShader {
-        Tags{ "Queue" = "AlphaTest" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
+        Tags{ "RenderPipeline"="UniversalPipeline" "Queue" = "AlphaTest" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
 
         LOD 100
-        CGPROGRAM
-        #pragma surface surf Unlit nofog alphatest:_Cutoff
-        #pragma target 3.0
+        Pass {
+            Name "ForwardUnlit"
+            Tags { "LightMode"="UniversalForward" }
+            HLSLPROGRAM
+            #pragma target 3.0
+            #pragma vertex Vert
+            #pragma fragment Frag
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-        half4 LightingUnlit(SurfaceOutput s, half3 lightDir, half atten) {
-            half4 c;
-            c.rgb = s.Albedo;
-            c.a = 1.0;
-            return c;
+            TEXTURE2D(_MainTex);
+            SAMPLER(sampler_MainTex);
+
+            CBUFFER_START(UnityPerMaterial)
+            float4 _Color;
+            float4 _ProgressColor;
+            float _Ratio;
+            float _Cutoff;
+            CBUFFER_END
+
+            struct Attributes {
+                float4 positionOS : POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            struct Varyings {
+                float4 positionHCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            Varyings Vert(Attributes IN) {
+                Varyings OUT;
+                OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+                OUT.uv = IN.uv;
+                return OUT;
+            }
+
+            half4 Frag(Varyings IN) : SV_Target {
+                half4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv);
+                clip(tex.a - _Cutoff);
+                half3 col = (IN.uv.x < _Ratio) ? _ProgressColor.rgb : _Color.rgb;
+                return half4(col, 1.0h);
+            }
+            ENDHLSL
         }
-
-        sampler2D _MainTex;
-        float _Ratio;
-        float4 _Color;
-        float4 _ProgressColor;
-
-        struct Input {
-        float2 uv_MainTex;
-        };
-
-        void surf (Input IN, inout SurfaceOutput o) {
-
-            _Color = IN.uv_MainTex.x < _Ratio ? _ProgressColor : _Color;
-            fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);
-
-            o.Albedo = 0;
-            o.Emission = _Color.rgb;
-            o.Alpha = tex;
-
-        }
-        ENDCG
     }
-    FallBack "Diffuse"
+    FallBack Off
 }

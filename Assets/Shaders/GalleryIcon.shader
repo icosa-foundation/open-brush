@@ -20,49 +20,63 @@ Shader "Custom/GalleryIcon" {
     _Aspect("Aspect Ratio", Float) = 1
   }
   SubShader {
-    Tags { "RenderType"="Opaque" }
+    Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Opaque" }
     LOD 100
 
-    CGPROGRAM
-    #pragma surface surf Lambert nofog
-    #include "Assets/Shaders/Include/Hdr.cginc"
+    Pass {
+      Name "ForwardUnlit"
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+      #pragma vertex Vert
+      #pragma fragment Frag
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-    sampler2D _MainTex;
-    float _FadeIn;
-    float _Aspect;
-    fixed4 _Color;
+      TEXTURE2D(_MainTex);
+      SAMPLER(sampler_MainTex);
 
-    struct Input {
-      float2 uv_MainTex;
-    };
+      CBUFFER_START(UnityPerMaterial)
+      float _FadeIn;
+      float _Aspect;
+      half4 _Color;
+      CBUFFER_END
 
-    void surf (Input IN, inout SurfaceOutput o) {
-      IN.uv_MainTex -= 0.5;
+      struct Attributes {
+        float4 positionOS : POSITION;
+        float2 uv : TEXCOORD0;
+      };
 
-      // Landscape format images
-      if (_Aspect > 1.0) {
-          IN.uv_MainTex.x /= _Aspect;
+      struct Varyings {
+        float4 positionHCS : SV_POSITION;
+        float2 uv : TEXCOORD0;
+      };
+
+      Varyings Vert(Attributes IN) {
+        Varyings OUT;
+        OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+        OUT.uv = IN.uv;
+        return OUT;
       }
 
-      // Portrait format images
-      else {
-          IN.uv_MainTex.y *= _Aspect;
+      half4 Frag(Varyings IN) : SV_Target {
+        float2 uv = IN.uv - 0.5;
+        if (_Aspect > 1.0) {
+          uv.x /= _Aspect;
+        } else {
+          uv.y *= _Aspect;
+        }
+        uv += 0.5;
+
+        half4 c = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv);
+        float2 vignette2 = pow(abs(uv - 0.5) * 1.5, 2.0);
+        float vignette = saturate(vignette2.x + vignette2.y);
+        half3 emission = lerp(c.rgb, max(c.rgb, 0.15h), (half)vignette);
+
+        float t = clamp(_FadeIn, 0.0, 1.0) * 0.5 + 0.5;
+        emission = lerp(half3(0.5h, 0.5h, 0.5h), emission * _Color.rgb, (half)t);
+        return half4(emission, c.a);
       }
-
-      IN.uv_MainTex += 0.5;
-
-      fixed4 c = tex2D(_MainTex, IN.uv_MainTex);
-     float vignette = pow( abs(IN.uv_MainTex - .5) * 1.5, 2);
-     // Apply a subtle vignette to thumbnails with dark values.
-      o.Emission = lerp(c.rgb, max(c.rgb, 0.15), saturate(vignette));
-      o.Alpha = c.a;
-
-      //Put t in .5:1 range
-      float t = clamp(_FadeIn, 0.0, 1.0) * .5 + .5;
-      //tints unloaded files gray
-      o.Emission = lerp(0.5f, o.Emission * _Color, t);
+      ENDHLSL
     }
-    ENDCG
   }
-  FallBack "Diffuse"
+  FallBack Off
 }
