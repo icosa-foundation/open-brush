@@ -12823,7 +12823,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1631327297680716}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
+  m_Script: {fileID: 11500000, guid: c247e1fc5473c884a9dd9cf29ae40d51, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: -1
@@ -12889,6 +12889,27 @@ MonoBehaviour:
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
+  m_AnonymousTexture: {fileID: 0}
+  m_LoggedInText: 
+  m_LocalizedLoggedInText:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_LogInText: 
+  m_LocalizedLogInText:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   references:
     version: 2
     RefIds: []
