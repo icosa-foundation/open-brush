@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.icosa.open-brush-unity-tools": "https://github.com/icosa-foundation/open-brush-unity-tools.git#upm",
     "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
     "com.meta.xr.sdk.platform": "69.0.0",
     "com.sandrofigo.voxreader": "5.0.6",

@@ -6,6 +6,13 @@
       "source": "embedded",
       "dependencies": {}
     },
+    "com.icosa.open-brush-unity-tools": {
+      "version": "https://github.com/icosa-foundation/open-brush-unity-tools.git#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "dab7c95844006f11d77d2e18d91f64204040fc7b"
+    },
     "com.ixxy.unitysymmetry": {
       "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
       "depth": 0,
