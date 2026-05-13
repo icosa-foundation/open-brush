@@ -14,6 +14,7 @@
 
 using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.Localization;
 
@@ -77,9 +78,11 @@ namespace TiltBrush
                 {
                     m_Overlay.MessageStatus = m_RequestAndroidFolderPermissions.GetLocalizedStringAsync().Result;
                     yield return null; // ensure message is visible before waiting for input
-                    while (!Input.anyKeyDown)
+                    bool buttonPressed = false;
+                    using (InputSystem.onAnyButtonPress.Subscribe(_ => buttonPressed = true))
                     {
-                        yield return null;
+                        while (!buttonPressed)
+                            yield return null;
                     }
                     m_WaitingForPermission = true;
                     AskForManageStoragePermission();
