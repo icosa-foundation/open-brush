@@ -143,11 +143,20 @@ namespace TiltBrush
                 // Null checks are for Linux view mode
                 // TODO: Need to investigate exactly why Linux hits an NRE here
                 // When other platforms don't
+
                 XRGeneralSettings.Instance?.Manager?.InitializeLoaderSync();
 
                 if (XRGeneralSettings.Instance?.Manager?.activeLoader != null)
                 {
-                    XRGeneralSettings.Instance?.Manager?.StartSubsystems();
+                    // XR may already be running (e.g. via m_InitManagerOnStart or XROrigin.Awake).
+                    // Calling StartSubsystems() on already-running subsystems restarts the display
+                    // subsystem, disrupting the OpenXR session and causing the loading overlay to flicker.
+                    var displaySubsystem = XRGeneralSettings.Instance.Manager.activeLoader
+                        .GetLoadedSubsystem<XRDisplaySubsystem>();
+                    if (displaySubsystem == null || !displaySubsystem.running)
+                    {
+                        XRGeneralSettings.Instance?.Manager?.StartSubsystems();
+                    }
                 }
             }
 
