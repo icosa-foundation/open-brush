@@ -133,13 +133,13 @@
       "dependencies": {}
     },
     "com.unity.formats.usd": {
-      "version": "1.0.3-preview.2",
+      "version": "https://github.com/icosa-mirror/com.unity.formats.usd.git#unity6-compatibility",
       "depth": 0,
-      "source": "registry",
+      "source": "git",
       "dependencies": {
         "com.unity.timeline": "1.0.0"
       },
-      "url": "https://packages.unity.com"
+      "hash": "0eadde3074416ea3f09de78abcae21174b8b8cb5"
     },
     "com.unity.ide.rider": {
       "version": "3.0.40",
