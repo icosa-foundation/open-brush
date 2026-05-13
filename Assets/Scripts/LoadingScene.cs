@@ -79,10 +79,13 @@ namespace TiltBrush
                     m_Overlay.MessageStatus = m_RequestAndroidFolderPermissions.GetLocalizedStringAsync().Result;
                     yield return null; // ensure message is visible before waiting for input
                     bool buttonPressed = false;
-                    using (InputSystem.onAnyButtonPress.Subscribe(_ => buttonPressed = true))
+                    while (!buttonPressed)
                     {
-                        while (!buttonPressed)
-                            yield return null;
+                        foreach (var device in InputSystem.devices)
+                            foreach (var control in device.allControls)
+                                if (control is ButtonControl btn && btn.wasPressedThisFrame)
+                                    buttonPressed = true;
+                        yield return null;
                     }
                     m_WaitingForPermission = true;
                     AskForManageStoragePermission();
@@ -178,6 +181,7 @@ namespace TiltBrush
                 AskForManageStoragePermission();
             }
         }
+
 #endif
     }
 } // namespace TiltBrush
