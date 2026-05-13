@@ -35,6 +35,8 @@ namespace TiltBrush
         private int m_IntersectionFrame;
         private Vector2 m_SizeRange;
 
+        protected override bool SnapButtonConflictsWithDuplicate => true;
+
         public override bool AllowDormancy
         {
             get

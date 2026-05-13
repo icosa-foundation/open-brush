@@ -468,6 +468,9 @@ MonoBehaviour:
   m_Collider: {fileID: 6504288}
   m_Mesh: {fileID: 138864}
   m_Border: {fileID: 23000012709485446}
+  m_BorderIsSplit: 0
+  m_BorderTop: {fileID: 0}
+  m_BorderBottom: {fileID: 0}
   m_MeshCollider: {fileID: 6509770}
   m_ParticleBounds: {x: 0, y: 0, z: 0}
   m_PanelPopUpMap:
@@ -2611,7 +2614,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &468632
 Transform:
   m_ObjectHideFlags: 0
@@ -6285,7 +6288,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4000012031974818
 Transform:
   m_ObjectHideFlags: 0
@@ -13824,7 +13827,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4459060226476560
 Transform:
   m_ObjectHideFlags: 0
@@ -15136,7 +15139,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3329662063255159416
 Transform:
   m_ObjectHideFlags: 0
@@ -15776,7 +15779,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4658614428857437220
 Transform:
   m_ObjectHideFlags: 0

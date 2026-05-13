@@ -856,13 +856,14 @@ namespace TiltBrush
 
             // Copy ViverseViewer files FIRST directly to exportDir (not to a subdirectory)
             // This establishes the base structure: libs/, css/, helpers/, img/, legacy/, icosa-viewer.module.js, etc.
-            string tempZip = Path.Combine(Application.temporaryCachePath, "viverseviewer_temp.zip");
-
 #if UNITY_EDITOR
-            // In editor, always regenerate ViverseViewer.bytes from source before publishing
+            // Keep the resource asset up to date for editor workflows that still reference it.
             GenerateViverseViewerBytes();
-#endif
-
+            // In editor, copy directly from the source tree so publishing always uses the
+            // latest Support/ViverseViewer contents instead of a potentially stale imported asset.
+            CopyViverseViewerToDirectory(exportDir);
+#else
+            string tempZip = Path.Combine(Application.temporaryCachePath, "viverseviewer_temp.zip");
             FileUtils.WriteBytesFromResources("ViverseViewer", tempZip);
 
             if (!File.Exists(tempZip))
@@ -893,7 +894,7 @@ namespace TiltBrush
 
                     extractedCount++;
 
-#if !UNITY_EDITOR && !UNITY_STANDALONE
+#if !UNITY_STANDALONE
                     // Yield every 10 files to prevent freezing on mobile
                     if (extractedCount % 10 == 0)
                     {
@@ -905,6 +906,7 @@ namespace TiltBrush
             }
 
             File.Delete(tempZip);
+#endif
 
             // Now create/ensure assets folder exists in exportDir
             string assetsDir = Path.Combine(exportDir, "assets");
@@ -1306,6 +1308,34 @@ namespace TiltBrush
         }
 
 #if UNITY_EDITOR
+        private static void CopyViverseViewerToDirectory(string exportDir)
+        {
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string sourceDir = Path.Combine(projectRoot, "Support", "ViverseViewer");
+
+            if (!Directory.Exists(sourceDir))
+            {
+                throw new VrAssetServiceException(
+                    $"ViverseViewer source directory not found: {sourceDir}\n" +
+                    "This directory must exist and contain the ViverseViewer files."
+                );
+            }
+
+            foreach (string sourcePath in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories))
+            {
+                string relativePath = Path.GetRelativePath(sourceDir, sourcePath);
+                string targetPath = Path.Combine(exportDir, relativePath);
+                string targetDir = Path.GetDirectoryName(targetPath);
+
+                if (!Directory.Exists(targetDir))
+                {
+                    Directory.CreateDirectory(targetDir);
+                }
+
+                File.Copy(sourcePath, targetPath, overwrite: true);
+            }
+        }
+
         /// <summary>
         /// Generates Assets/Resources/ViverseViewer.bytes from ViverseViewer/ source directory
         /// Called automatically in editor before ViveVerse publishing
