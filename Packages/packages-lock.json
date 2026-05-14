@@ -13,6 +13,13 @@
       "dependencies": {},
       "hash": "4f87195d54ccefe076678cb83a296b3f0428fc53"
     },
+    "com.meta.xr.sdk.core": {
+      "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.core.git#68.0.2-openbrush-hotfix",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "cc9462850915e74dbb5cd6094f77464c5e606da1"
+    },
     "com.meta.xr.sdk.platform": {
       "version": "69.0.0",
       "depth": 0,
