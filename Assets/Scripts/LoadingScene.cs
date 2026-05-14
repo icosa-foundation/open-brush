@@ -20,6 +20,7 @@ using UnityEngine.Localization;
 
 #if UNITY_ANDROID
 using UnityEngine.Android;
+using UnityEngine.InputSystem.Controls;
 #endif
 
 namespace TiltBrush
