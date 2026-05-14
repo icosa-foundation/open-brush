@@ -226,7 +226,7 @@ namespace TiltBrush
             m_Color = rColor;
             m_BaseSize_PS = fSize;
             // TODO: do preview brushes really need this?
-            GetComponent<Renderer>().material = m_Desc.Material;
+            SetRendererMaterials(GetComponent<Renderer>(), m_Desc);
         }
 
         public void DestroyMesh()
@@ -243,11 +243,19 @@ namespace TiltBrush
         #region To override
 
         // Passed transform is relative to the stroke
+        protected static void SetRendererMaterials(Renderer renderer, BrushDescriptor desc)
+        {
+            if (desc.m_OverlayMaterial != null)
+                renderer.materials = new Material[] { desc.Material, desc.m_OverlayMaterial };
+            else
+                renderer.material = desc.Material;
+        }
+
         protected virtual void InitBrush(BrushDescriptor desc, TrTransform localPointerXf)
         {
             Debug.Assert(m_BaseSize_PS != 0, "Set size and color first");
             m_Desc = desc;
-            GetComponent<Renderer>().material = m_Desc.Material;
+            SetRendererMaterials(GetComponent<Renderer>(), desc);
             m_EnableBackfaces = desc.m_RenderBackfaces;
             m_rng = new StatelessRng(MathUtils.RandomInt());
 

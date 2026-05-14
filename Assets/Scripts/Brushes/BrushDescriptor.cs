@@ -129,6 +129,7 @@ namespace TiltBrush
 
         [Header("Material")]
         [SerializeField] private Material m_Material;
+        public Material m_OverlayMaterial;
         // Number of atlas textures in the V direction
         public int m_TextureAtlasV;
         public float m_TileRate;
