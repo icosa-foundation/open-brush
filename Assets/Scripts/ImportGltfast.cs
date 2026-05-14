@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using TiltBrushToolkit;
@@ -87,6 +88,9 @@ namespace TiltBrush
                 // See https://github.com/KhronosGroup/UnityGLTF/issues/805
                 var uriPath = $"file:///{normalizedPath}";
                 GLTFSceneImporter gltf = new GLTFSceneImporter(uriPath, options);
+
+                if (options.ImportContext.TryGetPlugin<UnityGLTF.Plugins.OpenBrushAudioImportContext>(out var audioPlugin))
+                    audioPlugin.GltfDirectory = Path.GetDirectoryName(localPath);
 
                 gltf.IsMultithreaded = false;
                 AsyncHelpers.RunSync(() => gltf.LoadSceneAsync());
