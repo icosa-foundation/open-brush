@@ -49,37 +49,14 @@ SubShader {
         "IgnoreProjector"="True"
         "RenderType"="TransparentCutout"
     }
+
+    Lighting Off
+    Fog { Mode Off }
     LOD 100
 
     Pass {
-        CGPROGRAM
-
-        #pragma vertex vert
-        #pragma fragment frag
-
-        v2f vert(appdata_t v)
-        {
-            v2f o;
-
-            UNITY_SETUP_INSTANCE_ID(v);
-            UNITY_INITIALIZE_OUTPUT(v2f, o);
-            UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-
-            v.vertex.z += v.vertex.z + 0.05;
-            o.pos = UnityObjectToClipPos(v.vertex);
-            o.texcoord = v.texcoord;
-            return o;
-        }
-
-        fixed4 frag(v2f i) : SV_Target
-        {
-            return encodeHdr(fixed4(0,0,0,0));
-        }
-
-        ENDCG
-        }
-
-    Pass {
+        Name "ForwardUnlit"
+        Tags { "LightMode"="UniversalForward" }
         CGPROGRAM
 
         #pragma vertex vert
@@ -112,4 +89,3 @@ SubShader {
 }
 
 }
-
