@@ -108,13 +108,17 @@ namespace TiltBrush
                 yield return null;
             }
 
+            // Hide the overlay now that the Main scene is loaded. The overlay objects (layer 24)
+            // remain alive in DontDestroyOnLoad and would be rendered by Main scene cameras,
+            // causing the overlay to appear overlaid on the main scene until Destroy() is called.
+            m_Overlay.gameObject.SetActive(false);
+
             // Skip a frame to allow app to get out of Standard and in to LoadingBrushesAndLighting state.
             yield return null;
 
             // We can't check against app state until main scene loading is done.
             while (App.CurrentState == App.AppState.LoadingBrushesAndLighting)
             {
-                UpdateProgress(m_SceneLoadRatio, 1f - m_SceneLoadRatio, ShaderWarmup.Instance.Progress);
                 yield return null;
             }
 
