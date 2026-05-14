@@ -11,7 +11,7 @@
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "d1b7db3e680a8937acf7caba31b55ce6a3c5d2d9"
+      "hash": "8b8238b91890c95780882fca18993ec2a2bc53ba"
     },
     "com.ixxy.unitysymmetry": {
       "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
