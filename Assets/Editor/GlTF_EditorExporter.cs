@@ -433,6 +433,11 @@ namespace TiltBrush
         /// Raises ExportException if it can't be determined.
         private static bool GetEnableCull(BrushDescriptor descriptor)
         {
+            if (descriptor.Material == null || !descriptor.Material)
+            {
+                Debug.LogWarning($"GlTF export: brush '{descriptor.name}' has a missing m_Material — defaulting enableCull to true");
+                return true;
+            }
             string projectPath = Path.GetDirectoryName(Application.dataPath);
             string shaderPath = AssetDatabase.GetAssetPath(descriptor.Material.shader);
             if (shaderPath == null)
