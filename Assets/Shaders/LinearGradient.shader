@@ -27,18 +27,14 @@ Shader "Custom/LinearGradient" {
 
         Pass
         {
-            Tags { "LightMode"="UniversalForward" }
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
 
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "UnityCG.cginc"
 
-            CBUFFER_START(UnityPerMaterial)
-            half4 _ColorA;
-            half4 _ColorB;
+            fixed4 _ColorA, _ColorB;
             float3 _GradientDirection;
-            CBUFFER_END
 
             struct Attributes {
                 float4 positionOS : POSITION;
@@ -60,9 +56,10 @@ Shader "Custom/LinearGradient" {
                 Varyings OUT;
 
                 UNITY_SETUP_INSTANCE_ID(IN);
+                UNITY_INITIALIZE_OUTPUT(Varyings, OUT);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
 
-                OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+                OUT.positionHCS = UnityObjectToClipPos(IN.positionOS);
                 OUT.uv = IN.uv;
                 OUT.modelPos = IN.positionOS.xyz;
                 return OUT;
