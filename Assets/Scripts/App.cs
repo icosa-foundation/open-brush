@@ -495,10 +495,21 @@ namespace TiltBrush
                 m_IntroSketchRenderers = m_IntroSketch.GetComponentsInChildren<Renderer>();
                 for (int i = 0; i < m_IntroSketchRenderers.Length; ++i)
                 {
-                    m_IntroSketchRenderers[i].material.SetFloat("_IntroDissolve", 1);
-                    m_IntroSketchRenderers[i].material.SetFloat("_GreyScale", 0);
+                    SetIntroSketchMaterialFade(m_IntroSketchRenderers[i].material, 1);
                 }
             }
+        }
+
+        void SetIntroSketchMaterialFade(Material material, float introDissolve)
+        {
+            material.SetFloat("_IntroDissolve", introDissolve);
+
+            if (material.HasProperty("_Dissolve"))
+            {
+                material.SetFloat("_Dissolve", 1 - introDissolve);
+            }
+
+            material.SetFloat("_GreyScale", 0);
         }
 
         void DestroyIntroSketch()
@@ -1696,7 +1707,8 @@ namespace TiltBrush
 
             for (int i = 0; i < m_IntroSketchRenderers.Length; ++i)
             {
-                m_IntroSketchRenderers[i].material.SetFloat("_IntroDissolve",
+                SetIntroSketchMaterialFade(
+                    m_IntroSketchRenderers[i].material,
                     Mathf.SmoothStep(0, 1, Math.Abs(1 - m_IntroFadeTimer)));
             }
 

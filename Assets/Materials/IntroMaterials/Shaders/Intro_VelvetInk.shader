@@ -18,7 +18,7 @@ Properties {
 }
 
 Category {
-  Tags { "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent" }
+  Tags { "RenderPipeline"="UniversalPipeline" "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent" }
   Blend SrcAlpha One
   AlphaTest Greater .01
   ColorMask RGB
@@ -26,6 +26,7 @@ Category {
 
   SubShader {
     Pass {
+      Tags { "LightMode"="UniversalForward" }
 
       CGPROGRAM
       #pragma vertex vert
