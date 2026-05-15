@@ -307,7 +307,7 @@ jobs:
         with:
           token: ${{ env.PHOTON_PAT }}
           repository: icosa-mirror/photon-fusion
-          ref: Fusion_v2_Voice_2
+          ref: fusion-2.0.12-voice-2.63-unity6
           path: photon-fusion-mirror/
 
       - name: Copy photon files
