@@ -3621,8 +3621,8 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 439543840074457088
     m_Key: SNAP_SETTINGS_PANEL_TOGGLE_Z_ROTATION_SNAP
-  m_Metadata:
-    m_Items: []
+    m_Metadata:
+      m_Items: []
   - m_Id: 423748078849216512
     m_Key: POPUP_ACCOUNTS_VIVEINFO_TITLE
     m_Metadata:
@@ -3639,6 +3639,8 @@ MonoBehaviour:
     m_Key: POPUP_UPLOAD_VIVERSE_DESCRIPTION
     m_Metadata:
       m_Items: []
+  m_Metadata:
+    m_Items: []
   m_KeyGenerator:
     rid: 6394126504544960513
   references:
