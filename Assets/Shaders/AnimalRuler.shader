@@ -38,6 +38,7 @@ Shader "Custom/AnimalRuler" {
       half4 _Color;
       float _Saturation;
       half _Cutoff;
+      float4 _MainTex_ST;
       CBUFFER_END
 
       struct Attributes {
@@ -53,7 +54,7 @@ Shader "Custom/AnimalRuler" {
       Varyings Vert(Attributes IN) {
         Varyings OUT;
         OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
-        OUT.uv = IN.uv;
+        OUT.uv = TRANSFORM_TEX(IN.uv, _MainTex);
         return OUT;
       }
 
@@ -68,4 +69,3 @@ Shader "Custom/AnimalRuler" {
   }
   FallBack Off
 }
-
