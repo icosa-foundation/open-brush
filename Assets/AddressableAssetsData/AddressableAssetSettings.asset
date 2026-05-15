@@ -13,24 +13,41 @@ MonoBehaviour:
   m_Name: AddressableAssetSettings
   m_EditorClassIdentifier: 
   m_DefaultGroup: 677cec2ce1ef8b5428e8380b98e780ba
-  m_CachedHash:
+  m_currentHash:
     serializedVersion: 2
-    Hash: 2b7bea248e2793f7f7f356bce5824c4f
+    Hash: 5a2199d7726f3145fac7d39d6b5b1074
   m_OptimizeCatalogSize: 0
   m_BuildRemoteCatalog: 0
-  m_BundleLocalCatalog: 0
   m_CatalogRequestsTimeout: 0
   m_DisableCatalogUpdateOnStart: 0
+  m_InternalIdNamingMode: 0
+  m_InternalBundleIdMode: 1
+  m_AssetLoadMode: 0
+  m_BundledAssetProviderType:
+    m_AssemblyName: Unity.ResourceManager, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+    m_ClassName: UnityEngine.ResourceManagement.ResourceProviders.BundledAssetProvider
+  m_AssetBundleProviderType:
+    m_AssemblyName: Unity.ResourceManager, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+    m_ClassName: UnityEngine.ResourceManagement.ResourceProviders.AssetBundleProvider
   m_IgnoreUnsupportedFilesInBuild: 0
   m_UniqueBundleIds: 0
+  m_EnableJsonCatalog: 0
   m_NonRecursiveBuilding: 1
+  m_AllowNestedBundleFolders: 0
   m_CCDEnabled: 0
   m_maxConcurrentWebRequests: 500
+  m_UseUWRForLocalBundles: 0
+  m_BundleTimeout: 0
+  m_BundleRetryCount: 0
+  m_BundleRedirectLimit: -1
+  m_SharedBundleSettings: 0
+  m_SharedBundleSettingsCustomGroupIndex: 0
+  m_simulatedLoadDelay: 0.1
   m_ContiguousBundles: 1
   m_StripUnityVersionFromBundleBuild: 0
   m_DisableVisibleSubAssetRepresentations: 0
-  m_ShaderBundleNaming: 0
-  m_ShaderBundleCustomNaming: 
+  m_BuiltInBundleNaming: 0
+  mBuiltInBundleCustomNaming: 
   m_MonoScriptBundleNaming: 0
   m_CheckForContentUpdateRestrictionsOption: 0
   m_MonoScriptBundleCustomNaming: 
@@ -44,46 +61,44 @@ MonoBehaviour:
   m_BuildAddressablesWithPlayerBuild: 0
   m_overridePlayerVersion: 
   m_GroupAssets:
+  - {fileID: 11400000, guid: 1669189dd5d91ca44bff4e82d9762a6e, type: 2}
+  - {fileID: 11400000, guid: 39e2d84665e8d5c4ca68de8a2be822bb, type: 2}
   - {fileID: 11400000, guid: 73ac9e5ff81c65b4b85af89bf92c7a1a, type: 2}
-  - {fileID: 11400000, guid: 50654217d3ca53d448ccdd17c5a5c80b, type: 2}
-  - {fileID: 11400000, guid: ee3be54d1f5f1444da32efcb9e74c531, type: 2}
-  - {fileID: 11400000, guid: cfd0db2c64f698348b1ee0299999a9e8, type: 2}
-  - {fileID: 11400000, guid: d1c3304b2b847da44a283dc86b291bff, type: 2}
   - {fileID: 11400000, guid: 8761a6bfa9787d148a26fe1b8ca0ad89, type: 2}
-  - {fileID: 11400000, guid: a0334986a3452b743a7b7c86bdd334e6, type: 2}
+  - {fileID: 11400000, guid: b365b23cb831d0c48931c54281d3b120, type: 2}
   - {fileID: 11400000, guid: afe107b52100064408d401b25a7d9f9c, type: 2}
+  - {fileID: 11400000, guid: 73724c687487b5c4097fb53e64a2a50d, type: 2}
   - {fileID: 11400000, guid: 32e9bbd010fce324986e4f8525597323, type: 2}
   - {fileID: 11400000, guid: d477596c7cbbddb4d94d04941a831476, type: 2}
-  - {fileID: 11400000, guid: c6723b7ba32458a4885c4fe0da2a2e34, type: 2}
-  - {fileID: 11400000, guid: 30dc9b1ac34085f44b0a4f0b5c4651cb, type: 2}
-  - {fileID: 11400000, guid: e7a8002261e4c2e42a4bfc103b937a49, type: 2}
-  - {fileID: 11400000, guid: b3bae123cb03983439d66ec62bdf621f, type: 2}
-  - {fileID: 11400000, guid: 71e27e81c05695344a32c7d7d1333091, type: 2}
-  - {fileID: 11400000, guid: fab6deccd96a18949a929dea5f306524, type: 2}
-  - {fileID: 11400000, guid: abc0734b4cb880b4fac1dfa390033377, type: 2}
-  - {fileID: 11400000, guid: 9b0034d2be932af4dba9eb92d0479c9f, type: 2}
-  - {fileID: 11400000, guid: 1669189dd5d91ca44bff4e82d9762a6e, type: 2}
-  - {fileID: 11400000, guid: df663073d140b8142a6451b96a0cdd6b, type: 2}
-  - {fileID: 11400000, guid: 4dd7453986aa4214892d9f59d188b9c1, type: 2}
-  - {fileID: 11400000, guid: db6f380fe2a1e31448fc73a3fa05d31b, type: 2}
-  - {fileID: 11400000, guid: 75a1d9b650752b849a87a226049a2afc, type: 2}
-  - {fileID: 11400000, guid: ef6379c889abe334988903ecd6153e2e, type: 2}
-  - {fileID: 11400000, guid: 70d37812f04373047a6516c467fb78a7, type: 2}
-  - {fileID: 11400000, guid: b365b23cb831d0c48931c54281d3b120, type: 2}
-  - {fileID: 11400000, guid: 25208916e01863d4b9f8b96ceb6ee7ff, type: 2}
-  - {fileID: 11400000, guid: af49b136567ee4645a343a7c80d2005e, type: 2}
-  - {fileID: 11400000, guid: 3ed81040fbcbe4a41b005c5191be0ed7, type: 2}
   - {fileID: 11400000, guid: fafae1350b8e6e044980d2e066c397b9, type: 2}
-  - {fileID: 11400000, guid: 5bd7ddc2d7ad60441b8e23e02602c826, type: 2}
+  - {fileID: 11400000, guid: c6723b7ba32458a4885c4fe0da2a2e34, type: 2}
   - {fileID: 11400000, guid: 5ff0cec3a3fae824cac5076181ed7515, type: 2}
-  - {fileID: 11400000, guid: 5591077cbc77f9449a1c1c3ae544a74f, type: 2}
-  - {fileID: 11400000, guid: ea30395bde565804981dbbe5eba5a2d8, type: 2}
+  - {fileID: 11400000, guid: 70d37812f04373047a6516c467fb78a7, type: 2}
+  - {fileID: 11400000, guid: 30dc9b1ac34085f44b0a4f0b5c4651cb, type: 2}
+  - {fileID: 11400000, guid: 3ed81040fbcbe4a41b005c5191be0ed7, type: 2}
+  - {fileID: 11400000, guid: df663073d140b8142a6451b96a0cdd6b, type: 2}
+  - {fileID: 11400000, guid: 50654217d3ca53d448ccdd17c5a5c80b, type: 2}
+  - {fileID: 11400000, guid: 5bd7ddc2d7ad60441b8e23e02602c826, type: 2}
+  - {fileID: 11400000, guid: b3bae123cb03983439d66ec62bdf621f, type: 2}
+  - {fileID: 11400000, guid: 75a1d9b650752b849a87a226049a2afc, type: 2}
+  - {fileID: 11400000, guid: 71e27e81c05695344a32c7d7d1333091, type: 2}
+  - {fileID: 11400000, guid: 4dd7453986aa4214892d9f59d188b9c1, type: 2}
+  - {fileID: 11400000, guid: ef6379c889abe334988903ecd6153e2e, type: 2}
+  - {fileID: 11400000, guid: cfd0db2c64f698348b1ee0299999a9e8, type: 2}
+  - {fileID: 11400000, guid: 9b0034d2be932af4dba9eb92d0479c9f, type: 2}
+  - {fileID: 11400000, guid: af49b136567ee4645a343a7c80d2005e, type: 2}
+  - {fileID: 11400000, guid: fab6deccd96a18949a929dea5f306524, type: 2}
+  - {fileID: 11400000, guid: e7a8002261e4c2e42a4bfc103b937a49, type: 2}
   - {fileID: 11400000, guid: 2de83983b4436b345a2c7457b7f51d0b, type: 2}
-  - {fileID: 11400000, guid: 39e2d84665e8d5c4ca68de8a2be822bb, type: 2}
-  - {fileID: 11400000, guid: 73724c687487b5c4097fb53e64a2a50d, type: 2}
+  - {fileID: 11400000, guid: db6f380fe2a1e31448fc73a3fa05d31b, type: 2}
+  - {fileID: 11400000, guid: 25208916e01863d4b9f8b96ceb6ee7ff, type: 2}
+  - {fileID: 11400000, guid: abc0734b4cb880b4fac1dfa390033377, type: 2}
+  - {fileID: 11400000, guid: ea30395bde565804981dbbe5eba5a2d8, type: 2}
+  - {fileID: 11400000, guid: 5591077cbc77f9449a1c1c3ae544a74f, type: 2}
+  - {fileID: 11400000, guid: d1c3304b2b847da44a283dc86b291bff, type: 2}
+  - {fileID: 11400000, guid: ee3be54d1f5f1444da32efcb9e74c531, type: 2}
+  - {fileID: 11400000, guid: a0334986a3452b743a7b7c86bdd334e6, type: 2}
   m_BuildSettings:
-    m_CompileScriptsInVirtualMode: 0
-    m_CleanupStreamingAssetsAfterBuilds: 1
     m_LogResourceManagerExceptions: 1
     m_BundleBuildPath: Temp/com.unity.addressables/AssetBundles
   m_ProfileSettings:
@@ -92,19 +107,19 @@ MonoBehaviour:
       m_Id: 4afc910023973b542b861965f80a899f
       m_ProfileName: Default
       m_Values:
-      - m_Id: c0204539ec6b5a948bb3d0c027f9d164
-        m_Value: '[UnityEditor.EditorUserBuildSettings.activeBuildTarget]'
+      - m_Id: 0f23815ecabf41a41b72b1d4c4cd589a
+        m_Value: 'http://[PrivateIpAddress]:[HostingServicePort]'
       - m_Id: 40e3b6a4e6baa394eafdade988898fbf
         m_Value: '[UnityEngine.AddressableAssets.Addressables.BuildPath]/[BuildTarget]'
       - m_Id: 65bc6794d26a101498755462e9f59079
         m_Value: '{UnityEngine.AddressableAssets.Addressables.RuntimePath}/[BuildTarget]'
       - m_Id: 66da8d2d228d8bf4e8b099b2990b4c57
-        m_Value: ServerData/[BuildTarget]
-      - m_Id: 0f23815ecabf41a41b72b1d4c4cd589a
-        m_Value: http://[PrivateIpAddress]:[HostingServicePort]
+        m_Value: 'ServerData/[BuildTarget]'
+      - m_Id: c0204539ec6b5a948bb3d0c027f9d164
+        m_Value: '[UnityEditor.EditorUserBuildSettings.activeBuildTarget]'
     m_ProfileEntryNames:
-    - m_Id: c0204539ec6b5a948bb3d0c027f9d164
-      m_Name: BuildTarget
+    - m_Id: 0f23815ecabf41a41b72b1d4c4cd589a
+      m_Name: Remote.LoadPath
       m_InlineUsage: 0
     - m_Id: 40e3b6a4e6baa394eafdade988898fbf
       m_Name: Local.BuildPath
@@ -115,8 +130,8 @@ MonoBehaviour:
     - m_Id: 66da8d2d228d8bf4e8b099b2990b4c57
       m_Name: Remote.BuildPath
       m_InlineUsage: 0
-    - m_Id: 0f23815ecabf41a41b72b1d4c4cd589a
-      m_Name: Remote.LoadPath
+    - m_Id: c0204539ec6b5a948bb3d0c027f9d164
+      m_Name: BuildTarget
       m_InlineUsage: 0
     m_ProfileVersion: 1
   m_LabelTable:
@@ -146,8 +161,3 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e1554e02fbafe95408d0b42db0576644, type: 2}
   - {fileID: 11400000, guid: 36d0b1b9b27c43448b0a0a4b910d0f87, type: 2}
   m_ActiveProfileId: 4afc910023973b542b861965f80a899f
-  m_HostingServicesManager:
-    m_HostingServiceInfos: []
-    m_Settings: {fileID: 11400000}
-    m_NextInstanceId: 0
-    m_RegisteredServiceTypeRefs: []
