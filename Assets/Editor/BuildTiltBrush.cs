@@ -1556,6 +1556,13 @@ static class BuildTiltBrush
             foreach (BrushDescriptor desc in manifest.UniqueBrushes())
             {
                 copyRequests.AddRange(desc.CopyRequests);
+                if (desc.Material == null || !desc.Material)
+                {
+                    Debug.LogWarning(
+                        $"_btb_null_brush_material_20260515_ Skipping support brush export for '{desc.name}' ({desc.m_DurableName}, {desc.m_Guid}) because Material is missing.",
+                        desc);
+                    continue;
+                }
                 GlTFEditorExporter.ExportBrush(supportBrushTexturesRequests, desc,
                     ExportUtils.kProjectRelativeSupportBrushTexturesRoot);
             }

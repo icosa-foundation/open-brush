@@ -529,6 +529,13 @@ namespace TiltBrush
             string shaderFmt = "{0}-v{1}-{2}.glsl";
 
             var exp = new ExportGlTF.ExportedBrush();
+            Material material = descriptor.Material;
+            if (material == null || !material)
+            {
+                throw new ExportException(
+                    "_btb_null_brush_material_20260515_ Brush '{0}' ({1}, {2}) has no material",
+                    descriptor.name, descriptor.m_DurableName, descriptor.m_Guid);
+            }
             exp.name = descriptor.m_DurableName;
             exp.guid = descriptor.m_Guid;
             exp.folderName = string.Format(brushFolderNameFmt, exp.name, exp.guid.ToString("D"));
@@ -540,7 +547,6 @@ namespace TiltBrush
 
             // And the material
             {
-                Material material = descriptor.Material;
                 Shader shader = material.shader;
                 for (int i = 0; i < ShaderUtil.GetPropertyCount(shader); i++)
                 {
