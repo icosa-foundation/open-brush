@@ -54,6 +54,7 @@ Shader "Custom/SketchbookButton" {
     float4 vertex : SV_POSITION;
     float4 color : COLOR;
     float4 texcoord : TEXCOORD0;
+    float3 viewDir : TEXCOORD1;
 
     UNITY_VERTEX_OUTPUT_STEREO
   };
@@ -68,18 +69,22 @@ Shader "Custom/SketchbookButton" {
     o.vertex = UnityObjectToClipPos(v.vertex);
     o.color = 0;
     o.texcoord = float4(TRANSFORM_TEX(v.texcoord,_Tex_0).xy, 0, _PanelMipmapBias);
+    o.viewDir = ObjSpaceViewDir(v.vertex);
     return o;
   }
 
-  // URP only renders one pass per object, so composite both textures here.
-  // _Tex_0 renders on top; _Tex_1 shows through where _Tex_0 is transparent.
+  // _Tex_0 is the front layer; _Tex_1 is the recessed background.
+  // UV offset on _Tex_1 based on view angle simulates parallax depth.
   fixed4 frag (v2f i) : SV_TARGET {
-    fixed4 tex0 = tex2Dbias(_Tex_0, i.texcoord);
+    float3 viewDir = normalize(i.viewDir);
+    float2 parallaxOffset = viewDir.xy * (_Distance * 0.1);
+    fixed4 tex0 = tex2Dbias(_Tex_0, float4(i.texcoord.xy - parallaxOffset, 0, i.texcoord.w));
     fixed4 tex1 = tex2D(_Tex_1, i.texcoord.xy);
     tex0.rgb *= .75;
     tex1.rgb *= .75;
 
-    fixed4 tex = (tex0.a >= _Cutoff) ? tex0 : tex1;
+    // _Tex_1 is the icon overlay (front); _Tex_0 is the sketch background (back, parallax-shifted)
+    fixed4 tex = (tex1.a >= _Cutoff) ? tex1 : tex0;
     float4 myColor = _Color * tex;
     myColor.a = tex.a;
 
