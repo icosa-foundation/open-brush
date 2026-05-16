@@ -40,6 +40,7 @@ namespace TiltBrush
         // m_MaximumLoadingTime
         private float m_FakeLoadingRate;
         private float m_CurrentLoadingPosition;
+        private bool m_OverlayHidden;
 #if UNITY_ANDROID
         private bool m_FolderPermissionOverride = false;
         private bool m_WaitingForPermission = false;
@@ -108,6 +109,7 @@ namespace TiltBrush
 
             yield return null;
 
+            HideOverlay();
             Destroy(gameObject);
         }
 
@@ -121,6 +123,22 @@ namespace TiltBrush
             float position = start + scale * progress;
             m_CurrentLoadingPosition = Mathf.Max(m_CurrentLoadingPosition, position);
             m_Overlay.Progress = m_CurrentLoadingPosition;
+        }
+
+        private void HideOverlay()
+        {
+            if (m_OverlayHidden || m_Overlay == null)
+            {
+                return;
+            }
+
+            m_OverlayHidden = true;
+            m_Overlay.gameObject.SetActive(false);
+        }
+
+        private void OnDestroy()
+        {
+            HideOverlay();
         }
 
 #if UNITY_ANDROID
