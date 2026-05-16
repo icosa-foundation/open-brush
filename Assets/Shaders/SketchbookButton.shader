@@ -58,21 +58,12 @@ Shader "Custom/SketchbookButton" {
     UNITY_VERTEX_OUTPUT_STEREO
   };
 
-  v2f vertInflate (appdata_t v, float currentSliceIndex) {
-
-    
+  v2f vert (appdata_t v) {
     v2f o;
-    
+
     UNITY_SETUP_INSTANCE_ID(v);
     UNITY_INITIALIZE_OUTPUT(v2f, o);
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-    
-    v.tangent.w = 1.0;
-    float totalNumSlices = 5;
-    float  ratio = (currentSliceIndex / (totalNumSlices - 1));
-    float ratioMultiplier = .5;
-    v.vertex.z -= ratioMultiplier * ratio * _Distance;
-    totalNumSlices = 5;
 
     o.vertex = UnityObjectToClipPos(v.vertex);
     o.color = 0;
@@ -80,46 +71,24 @@ Shader "Custom/SketchbookButton" {
     return o;
   }
 
-  v2f vertLayer0 (appdata_t v) {
-    return vertInflate(v,0.25);
-  }
+  // URP only renders one pass per object, so composite both textures here.
+  // _Tex_0 renders on top; _Tex_1 shows through where _Tex_0 is transparent.
+  fixed4 frag (v2f i) : SV_TARGET {
+    fixed4 tex0 = tex2Dbias(_Tex_0, i.texcoord);
+    fixed4 tex1 = tex2D(_Tex_1, i.texcoord.xy);
+    tex0.rgb *= .75;
+    tex1.rgb *= .75;
 
-  v2f vertLayer1 (appdata_t v) {
-    return vertInflate(v,0.6);
-  }
-
-  fixed4 frag0 (v2f i) : SV_TARGET {
-    fixed4 tex = tex2Dbias(_Tex_0, i.texcoord);
-    // dim white values to match the rest of panel buttons
-    tex.rgb *= .75;
+    fixed4 tex = (tex0.a >= _Cutoff) ? tex0 : tex1;
     float4 myColor = _Color * tex;
     myColor.a = tex.a;
 
     if (myColor.a < _Cutoff)
       discard;
 
-    // Let color bits go grayscale when not in focus
     if (_Grayscale == 1) {
-        float grayscale = dot(myColor, float3(0.3, 0.59, 0.11));
-        return encodeHdr(grayscale);
-    }
-
-    return encodeHdr(myColor);
-  }
-
-  fixed4 frag1 (v2f i) : SV_TARGET {
-    fixed4 tex = tex2D(_Tex_1, i.texcoord.xy);
-	tex.rgb *= .75;
-    float4 myColor = _Color * tex;
-    myColor.a = tex.a;
-
-    if (myColor.a < _Cutoff)
-      discard;
-
-    // Let color bits go grayscale when not in focus
-    if (_Grayscale == 1) {
-        float grayscale = dot(myColor, float3(0.3, 0.59, 0.11));
-        return encodeHdr(grayscale);
+      float grayscale = dot(myColor.rgb, float3(0.3, 0.59, 0.11));
+      return encodeHdr(grayscale);
     }
 
     return encodeHdr(myColor);
@@ -128,25 +97,15 @@ Shader "Custom/SketchbookButton" {
   ENDCG
 
   SubShader {
-    Tags { "RenderPipeline"="UniversalPipeline" }
-  Tags{ "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
+    Tags { "RenderPipeline"="UniversalPipeline" "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
     AlphaTest Greater .01
 
     Zwrite On
     Ztest LEqual
-    Pass{
+    Pass {
       CGPROGRAM
-      #pragma vertex vertLayer0
-      #pragma fragment frag0
-      ENDCG
-    }
-
-    Zwrite On
-    Ztest LEqual
-    Pass{
-      CGPROGRAM
-      #pragma vertex vertLayer1
-      #pragma fragment frag1
+      #pragma vertex vert
+      #pragma fragment frag
       ENDCG
     }
   }
