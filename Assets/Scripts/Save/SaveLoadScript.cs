@@ -20,6 +20,10 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
+using Polyhydra.Core;
+using Polyhydra.Wythoff;
+using TiltBrush.MeshEditing;
 using UnityEngine;
 
 namespace TiltBrush
@@ -798,6 +802,51 @@ namespace TiltBrush
                     if (jsonData.ModelIndex != null)
                     {
                         WidgetManager.m_Instance.SetModelDataFromTilt(jsonData.ModelIndex);
+                    }
+
+                    if (jsonData.EditableModelIndex != null)
+                    {
+                        var generatedModels = new List<TiltEditableModels>();
+                        var filesystemModels = new List<TiltEditableModels>();
+
+                        foreach (var model in jsonData.EditableModelIndex)
+                        {
+                            if (jsonData.EditableModelDefinitions != null && jsonData.EditableModelDefinitions.ContainsKey(model.AssetId))
+                            {
+                                generatedModels.Add(model);
+                            }
+                            else
+                            {
+                                filesystemModels.Add(model);
+                            }
+                        }
+
+                        // Queue filesystem models for loading
+                        WidgetManager.m_Instance.SetDataFromTilt(filesystemModels);
+
+                        // Rebuild generated models
+                        foreach (TiltEditableModels model in generatedModels)
+                        {
+                            PolyRecipe recipe = PolyRecipe.FromDef(jsonData.EditableModelDefinitions[model.AssetId]);
+
+                            // Handle saves with missing colors (legacy)
+                            if (recipe.Colors == null || recipe.Colors.Length == 0)
+                            {
+                                PolyhydraPanel polyPanel = (PolyhydraPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Polyhydra);
+                                recipe.Colors = (Color[])polyPanel.DefaultColorPalette.Clone();
+                            }
+                            for (var i = 0; i < model.RawTransforms.Length; i++)
+                            {
+                                var tr = model.RawTransforms[i];
+                                var (poly, meshData) = PolyBuilder.BuildFromPolyDef(recipe);
+                                var widget = EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, tr, meshData);
+                                if (model.LayerIds != null && i < model.LayerIds.Length)
+                                {
+                                    var canvas = App.Scene.GetOrCreateLayer(model.LayerIds[i]);
+                                    widget.SetCanvas(canvas);
+                                }
+                            }
+                        }
                     }
 
                     if (jsonData.LightIndex != null)
