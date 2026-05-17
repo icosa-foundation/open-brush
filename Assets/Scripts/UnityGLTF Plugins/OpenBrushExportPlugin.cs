@@ -164,9 +164,12 @@ namespace TiltBrush
                         stroke.Uncreate();
                         stroke.Recreate(null, canvas);
                         var mesh = stroke.m_Object.GetComponent<MeshFilter>().sharedMesh;
-                        mesh = BrushBaker.m_Instance.ProcessMesh(mesh, stroke.m_BrushGuid.ToString());
-                        stroke.m_Object.GetComponent<MeshFilter>().sharedMesh = mesh;
-                        stroke.m_Object.GetComponent<MeshFilter>().mesh = mesh;
+                        if (mesh.vertexCount > 0)
+                        {
+                            mesh = BrushBaker.m_Instance.ProcessMesh(mesh, stroke.m_BrushGuid.ToString());
+                            stroke.m_Object.GetComponent<MeshFilter>().sharedMesh = mesh;
+                            stroke.m_Object.GetComponent<MeshFilter>().mesh = mesh;
+                        }
                         stroke.m_Object.name = $"{stroke.m_Object.name}_{i}";
                         if (App.UserConfig.Export.KeepGroups)
                         {
@@ -192,16 +195,31 @@ namespace TiltBrush
                         Debug.LogError($"No mesh found for brush {brush.name}");
                         continue;
                     }
+#if UNITY_EDITOR
                     batch.m_EditorDebugMesh = mf.sharedMesh;
-                    mesh = BrushBaker.m_Instance.ProcessMesh(mesh, brush.m_Guid.ToString());
-                    mf.sharedMesh = mesh;
-                    mf.mesh = mesh;
+#endif
+                    if (mesh.vertexCount > 0)
+                    {
+                        mesh = BrushBaker.m_Instance.ProcessMesh(mesh, brush.m_Guid.ToString());
+                        mf.sharedMesh = mesh;
+                        mf.mesh = mesh;
+                    }
                 }
             }
         }
 
         public override bool ShouldNodeExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Transform transform)
         {
+            var batch = transform.GetComponent<Batch>();
+            if (batch != null)
+            {
+                var mesh = transform.GetComponent<MeshFilter>().sharedMesh;
+                if (mesh.vertexCount == 0)
+                {
+                    return false;
+                }
+            }
+
             Type[] excludedTypes =
             {
                 typeof(SnapGrid3D),
