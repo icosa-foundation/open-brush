@@ -14,6 +14,7 @@
 
 using UnityEngine;
 using System.Collections.Generic;
+using System.IO;
 
 namespace TiltBrush
 {
@@ -71,6 +72,17 @@ namespace TiltBrush
         [SerializeField] private Shader m_DownsampleShader;
         [SerializeField] private ComputeShader m_ComputeCopyShader;
 
+        // [OB_SEL] selection-debug instrumentation. All log lines / file dumps are gated by these.
+        // Flip to true, commit, let CI build. Log prefix is "[OB_SEL]" for logcat filtering.
+        // Why static readonly and not const: const would fold the gated branches away and trigger
+        // CS0162 unreachable-code warnings in the default-off state.
+        private static readonly bool kDebugLog = true;
+        private static readonly bool kDebugDumpHighResTex = true;
+        private static readonly bool kDebugForceNonGeomFallback = false;
+        // Throttle expensive logging / dumping. 0 = every request, N = every Nth.
+        private static readonly int kDebugThrottleFrames = 60;
+        private int m_DebugRequestCounter;
+
         private Material m_DownsampleMat;
         private RenderTexture m_HighResTex;
         private Camera m_IntersectionCamera;
@@ -95,6 +107,49 @@ namespace TiltBrush
 
             // Shutdown hook to fix a warning in-editor.
             App.Instance.AppExit += OnGuaranteedAppQuit;
+
+            if (kDebugLog)
+            {
+                Debug.Log($"[OB_SEL] GpuIntersector.Start " +
+                    $"graphicsAPI={SystemInfo.graphicsDeviceType} " +
+                    $"supportsGeomShaders={SystemInfo.supportsGeometryShaders} " +
+                    $"supportsCompute={SystemInfo.supportsComputeShaders} " +
+                    $"forceFallback={kDebugForceNonGeomFallback}");
+            }
+        }
+
+        private void DumpHighResTex(bool useGeomPath)
+        {
+            var prev = RenderTexture.active;
+            try
+            {
+                RenderTexture.active = m_HighResTex;
+                var tex2d = new Texture2D(m_HighResTex.width, m_HighResTex.height,
+                    TextureFormat.RGBA32, false);
+                tex2d.ReadPixels(new Rect(0, 0, m_HighResTex.width, m_HighResTex.height), 0, 0);
+                tex2d.Apply();
+                byte[] png = tex2d.EncodeToPNG();
+                Object.Destroy(tex2d);
+
+                string dir = Path.Combine(Application.persistentDataPath, "ob_sel_dumps");
+                Directory.CreateDirectory(dir);
+                string file = Path.Combine(dir,
+                    $"hires_{(useGeomPath ? "geom" : "fb")}_f{Time.frameCount:D8}.png");
+                File.WriteAllBytes(file, png);
+
+                if (kDebugLog)
+                {
+                    Debug.Log($"[OB_SEL] DumpHighResTex -> {file} ({png.Length} bytes)");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[OB_SEL] DumpHighResTex failed: {e.Message}");
+            }
+            finally
+            {
+                RenderTexture.active = prev;
+            }
         }
 
         private void OnGuaranteedAppQuit()
@@ -258,7 +313,8 @@ namespace TiltBrush
             m_IntersectionCamera.cullingMask = renderCullingMask;
 
             // Render all geometry tagged as "intersection" with the intersection shader.
-            if (App.Config.GeometryShaderSuppported)
+            bool useGeomPath = App.Config.GeometryShaderSuppported && !kDebugForceNonGeomFallback;
+            if (useGeomPath)
             {
                 m_IntersectionCamera.RenderWithShader(m_IntersectionShader, string.Empty);
             }
@@ -267,9 +323,25 @@ namespace TiltBrush
                 m_IntersectionCamera.RenderWithShader(m_IntersectionShaderFallback, string.Empty);
             }
 
+            bool debugThisRequest = (kDebugLog || kDebugDumpHighResTex)
+                && (kDebugThrottleFrames <= 0
+                    || (m_DebugRequestCounter++ % Mathf.Max(1, kDebugThrottleFrames)) == 0);
+
+            if (debugThisRequest && kDebugDumpHighResTex)
+            {
+                DumpHighResTex(useGeomPath);
+            }
+
             // Downsample to a tiny texture using a point filter, since we don't have an ordering to
             // selected strokes.
             Graphics.Blit(m_HighResTex, curRenderSmall, m_DownsampleMat);
+
+            if (debugThisRequest && kDebugLog)
+            {
+                Debug.Log($"[OB_SEL] RenderIntersection center={vDetectionCenter_GS} radius={radius_GS} " +
+                    $"cull=0x{renderCullingMask:x} path={(useGeomPath ? "geom" : "fallback")} " +
+                    $"frame={Time.frameCount}");
+            }
 
             // Ensure we mark the contents of the high res texture as discardable to ensure that
             // Unity isn't tempted to resolve in unnecessarily.
@@ -455,6 +527,22 @@ namespace TiltBrush
                 }
 
                 uint[] resultColors = GetTextureColors();
+
+                if (kDebugLog)
+                {
+                    int nonZero = 0;
+                    uint sample = 0;
+                    for (int k = 0; k < resultColors.Length; k++)
+                    {
+                        if (resultColors[k] != 0)
+                        {
+                            if (nonZero == 0) sample = resultColors[k];
+                            nonZero++;
+                        }
+                    }
+                    Debug.Log($"[OB_SEL] Batch OnReadResults nonZero={nonZero}/{resultColors.Length} " +
+                        $"firstSample=0x{sample:x8} startFrame={m_StartFrame} nowFrame={Time.frameCount}");
+                }
 
                 //
                 // Process the color buffer into result objects, if requested.
