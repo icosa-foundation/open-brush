@@ -35,6 +35,8 @@ namespace TiltBrush
         [SerializeField] private LocalizedString m_LoadingText;
         [SerializeField] private LocalizedString m_RequestAndroidFolderPermissions;
 
+        private const string kLogPrefix = "LOADXR20260517";
+
         // We have a slightly faked loading position that will always increase
         // The fake loading rate is the minimum amount it will increase in one second, the reciprocal of
         // m_MaximumLoadingTime
@@ -97,6 +99,8 @@ namespace TiltBrush
                 yield return null;
             }
 
+            HandoffOverlayToMainCamera();
+
             // Skip a frame to allow app to get out of Standard and in to LoadingBrushesAndLighting state.
             yield return null;
 
@@ -123,6 +127,66 @@ namespace TiltBrush
             float position = start + scale * progress;
             m_CurrentLoadingPosition = Mathf.Max(m_CurrentLoadingPosition, position);
             m_Overlay.Progress = m_CurrentLoadingPosition;
+        }
+
+        private void HandoffOverlayToMainCamera()
+        {
+            Camera mainCamera = null;
+            if (App.Instance != null && App.VrSdk != null)
+            {
+                mainCamera = App.VrSdk.GetVrCamera();
+            }
+
+            if (mainCamera == null)
+            {
+                Debug.LogWarning($"{kLogPrefix} Main camera was not available after Main scene load; loading camera remains active.");
+                return;
+            }
+
+            if (mainCamera == m_VrCamera)
+            {
+                Debug.Log($"{kLogPrefix} Loading camera is already the main camera.");
+                return;
+            }
+
+            LogActiveStereoCameras("before handoff");
+            PositionOverlayForCamera(mainCamera);
+            m_Overlay.SetVrCamera(mainCamera);
+
+            if (m_VrCamera != null)
+            {
+                Debug.Log($"{kLogPrefix} Disabling loading camera after handoff to {mainCamera.name}.");
+                m_VrCamera.gameObject.SetActive(false);
+            }
+            LogActiveStereoCameras("after handoff");
+        }
+
+        private void PositionOverlayForCamera(Camera camera)
+        {
+            m_Overlay.transform.parent = camera.transform;
+            m_Overlay.transform.localPosition = Vector3.zero;
+            m_Overlay.transform.localRotation = Quaternion.identity;
+            float scale = 0.5f * camera.farClipPlane / camera.transform.lossyScale.z;
+            m_Overlay.transform.localScale = Vector3.one * scale;
+
+            m_Overlay.transform.parent = transform;
+
+            Vector3 eulerAngles = m_Overlay.transform.localRotation.eulerAngles;
+            m_Overlay.transform.localRotation = Quaternion.Euler(new Vector3(0, eulerAngles.y, 0));
+        }
+
+        private void LogActiveStereoCameras(string label)
+        {
+            foreach (Camera camera in FindObjectsOfType<Camera>())
+            {
+                if (camera.enabled &&
+                    camera.gameObject.activeInHierarchy &&
+                    camera.targetTexture == null &&
+                    camera.stereoTargetEye != StereoTargetEyeMask.None)
+                {
+                    Debug.Log($"{kLogPrefix} {label}: {camera.name} targetEye={camera.stereoTargetEye} depth={camera.depth} cullingMask={camera.cullingMask}");
+                }
+            }
         }
 
         private void HideOverlay()

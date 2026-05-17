@@ -57,21 +57,55 @@ namespace TiltBrush
 
         private int m_OriginalCameraCullingMask;
 
+        public void SetVrCamera(Camera vrCamera)
+        {
+            if (m_VrCamera == vrCamera)
+            {
+                return;
+            }
+
+            RestoreCameraCullingMask();
+            m_VrCamera = vrCamera;
+
+            if (isActiveAndEnabled)
+            {
+                ApplyCameraCullingMask();
+            }
+        }
+
         public void OnEnable()
         {
-            m_ModifiedCamera = (m_VrCamera != null) ? m_VrCamera : App.VrSdk.GetVrCamera();
-            if (m_OriginalCameraCullingMask != kOverlayMask)
-            {
-                m_OriginalCameraCullingMask = m_ModifiedCamera.cullingMask;
-            }
-            m_ModifiedCamera.cullingMask = kOverlayMask;
+            ApplyCameraCullingMask();
         }
 
         public void OnDisable()
         {
+            RestoreCameraCullingMask();
+        }
+
+        private void ApplyCameraCullingMask()
+        {
+            m_ModifiedCamera = m_VrCamera;
+            if (m_ModifiedCamera == null && App.Instance != null)
+            {
+                m_ModifiedCamera = App.VrSdk.GetVrCamera();
+            }
+
+            if (m_ModifiedCamera == null)
+            {
+                return;
+            }
+
+            m_OriginalCameraCullingMask = m_ModifiedCamera.cullingMask;
+            m_ModifiedCamera.cullingMask = kOverlayMask;
+        }
+
+        private void RestoreCameraCullingMask()
+        {
             if (m_ModifiedCamera != null)
             {
                 m_ModifiedCamera.cullingMask = m_OriginalCameraCullingMask;
+                m_ModifiedCamera = null;
             }
         }
     }
