@@ -252,6 +252,9 @@ Shader "Brush/Special/Intersection" {
     }
   }
 
-  Fallback "Unlit/Diffuse"
+  // No Fallback by design: if this shader fails to compile or load, we want the
+  // intersection RT to stay empty (all-zero, from the camera clear) rather than be
+  // silently filled by Unlit/Diffuse sampling each brush's MainTex - which would
+  // produce garbage batch/triangle IDs and silently-wrong selection results.
 
 }

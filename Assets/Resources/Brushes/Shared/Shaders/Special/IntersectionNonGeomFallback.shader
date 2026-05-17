@@ -76,6 +76,7 @@ Shader "Brush/Special/Intersection" {
     }
   }
 
-  Fallback "Unlit/Diffuse"
+  // No Fallback by design: see Intersection.shader for rationale. Failing visibly
+  // (empty RT, zero hits) is preferable to failing silently with garbage IDs.
 
 }

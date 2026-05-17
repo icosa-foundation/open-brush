@@ -397,6 +397,22 @@ namespace TiltBrush
                     $"graphicsFormat={m_HighResTex.graphicsFormat} sRGB={m_HighResTex.sRGB} " +
                     $"colorSpace={QualitySettings.activeColorSpace} " +
                     $"graphicsAPI={SystemInfo.graphicsDeviceType}");
+
+                Shader serialized = m_IntersectionShader;
+                Shader serializedFb = m_IntersectionShaderFallback;
+                Shader byName = Shader.Find("Brush/Special/Intersection");
+                Debug.Log($"[OB_SEL] ShaderCheck primary " +
+                    $"name='{serialized?.name}' " +
+                    $"isSupported={serialized?.isSupported} " +
+                    $"passCount={serialized?.passCount} " +
+                    $"renderQueue={serialized?.renderQueue} " +
+                    $"findBackName='{byName?.name}' " +
+                    $"sameInstance={ReferenceEquals(serialized, byName)}");
+                Debug.Log($"[OB_SEL] ShaderCheck fallback " +
+                    $"name='{serializedFb?.name}' " +
+                    $"isSupported={serializedFb?.isSupported} " +
+                    $"passCount={serializedFb?.passCount} " +
+                    $"renderQueue={serializedFb?.renderQueue}");
             }
 
             // Render all geometry tagged as "intersection" with the intersection shader.
