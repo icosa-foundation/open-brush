@@ -14,6 +14,7 @@
 
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Experimental.Rendering;
 using System.Collections.Generic;
 using System.IO;
 
@@ -308,10 +309,25 @@ namespace TiltBrush
             // 512 and 64. The 64x64 texture uses 1/64th of the memory bandwidth, which is important on
             // mobile.
             int size = 64;
-            m_HighResTex = new RenderTexture(size, size, 16, RenderTextureFormat.ARGB32,
-                RenderTextureReadWrite.Linear);
+            // Use an explicit linear UNorm format so platforms (notably URP on Android) cannot
+            // reinterpret the texture as sRGB, which would corrupt the packed-int byte contents.
+            var desc = new RenderTextureDescriptor(size, size,
+                GraphicsFormat.R8G8B8A8_UNorm, depthBufferBits: 16)
+            {
+                sRGB = false,
+                msaaSamples = 1,
+                useMipMap = false,
+                autoGenerateMips = false,
+            };
+            m_HighResTex = new RenderTexture(desc);
             m_HighResTex.filterMode = FilterMode.Point;
             m_HighResTex.Create();
+
+            if (kDebugLog)
+            {
+                Debug.Log($"[OB_SEL] m_HighResTex created format={m_HighResTex.format} " +
+                    $"graphicsFormat={m_HighResTex.graphicsFormat} sRGB={m_HighResTex.sRGB}");
+            }
         }
 
         void OnDisable()
@@ -333,8 +349,15 @@ namespace TiltBrush
             //
             // WARNING: All textures must be LINEAR and sample filter modes should be POINT, to avoid
             //          interpolating or remapping the output batch and triangle IDs.
-            RenderTexture curRenderSmall = RenderTexture.GetTemporary(16, 16, 0,
-                RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
+            var smallDesc = new RenderTextureDescriptor(16, 16,
+                GraphicsFormat.R8G8B8A8_UNorm, depthBufferBits: 0)
+            {
+                sRGB = false,
+                msaaSamples = 1,
+                useMipMap = false,
+                autoGenerateMips = false,
+            };
+            RenderTexture curRenderSmall = RenderTexture.GetTemporary(smallDesc);
             curRenderSmall.filterMode = FilterMode.Point;
 
             // Unfortunately, RenderWithShader() has no RenderWithMaterial() equivalent, so we must use
@@ -584,16 +607,42 @@ namespace TiltBrush
                 {
                     int nonZero = 0;
                     uint sample = 0;
+                    var distinctBatchIds = new HashSet<ushort>();
                     for (int k = 0; k < resultColors.Length; k++)
                     {
-                        if (resultColors[k] != 0)
+                        uint v = resultColors[k];
+                        if (v != 0)
                         {
-                            if (nonZero == 0) sample = resultColors[k];
+                            if (nonZero == 0) sample = v;
                             nonZero++;
+                            distinctBatchIds.Add((ushort)((v & 0xffff0000) >> 16));
                         }
                     }
+
+                    int batchHits = 0, widgetHits = 0, unknown = 0;
+                    var canvas = App.ActiveCanvas;
+                    var widgetMgr = WidgetManager.m_Instance;
+                    var idDetail = new System.Text.StringBuilder();
+                    foreach (ushort bid in distinctBatchIds)
+                    {
+                        bool inBatch = canvas != null && canvas.BatchManager.GetBatch(bid) != null;
+                        bool inWidget = widgetMgr != null && widgetMgr.GetBatch(bid) != null;
+                        if (inBatch) batchHits++;
+                        else if (inWidget) widgetHits++;
+                        else unknown++;
+                        if (idDetail.Length < 200)
+                        {
+                            idDetail.Append(bid.ToString("x4"))
+                                .Append(inBatch ? "B" : (inWidget ? "W" : "?"))
+                                .Append(' ');
+                        }
+                    }
+
                     Debug.Log($"[OB_SEL] Batch OnReadResults nonZero={nonZero}/{resultColors.Length} " +
-                        $"firstSample=0x{sample:x8} startFrame={m_StartFrame} nowFrame={Time.frameCount}");
+                        $"distinctIds={distinctBatchIds.Count} " +
+                        $"batchHits={batchHits} widgetHits={widgetHits} unknown={unknown} " +
+                        $"firstSample=0x{sample:x8} ids={idDetail} " +
+                        $"startFrame={m_StartFrame} nowFrame={Time.frameCount}");
                 }
 
                 //
@@ -701,6 +750,11 @@ namespace TiltBrush
                 }
 
                 DeallocateHashSet(seen);
+                if (kDebugLog)
+                {
+                    Debug.Log($"[OB_SEL] Batch OnReadResults FINAL m_ResultCount={m_ResultCount} " +
+                        $"m_ResultList.Count={(m_ResultList != null ? m_ResultList.Count : -1)}");
+                }
                 UnityEngine.Profiling.Profiler.EndSample();
             }
         }
