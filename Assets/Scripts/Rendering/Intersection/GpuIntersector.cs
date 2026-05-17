@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using UnityEngine.Rendering;
 using System.Collections.Generic;
 using System.IO;
 
@@ -88,10 +89,24 @@ namespace TiltBrush
         private Camera m_IntersectionCamera;
         private List<ResultReader> m_activeResults = new List<ResultReader>();
 
+        // Speculative URP fallback: cache the main VR camera so the
+        // beginCameraRendering callback can filter to it.
+        private Camera m_MainVrCamera;
+        private int m_LastDispatchFrame = -1;
+        // Heartbeats throttled to every Nth frame to avoid spamming logcat.
+        private const int kHeartbeatModulo = 60;
+
         private void Start()
         {
-            App.VrSdk.GetVrCamera().gameObject
+            m_MainVrCamera = App.VrSdk.GetVrCamera();
+            m_MainVrCamera.gameObject
                 .GetComponent<RenderWrapper>().ReadBackTextures += ReadResultsDispatchCallback;
+
+            // Speculative fix for Android URP: RenderWrapper.OnPreCull may not fire
+            // (or may fire too late) under URP on Android. Subscribe to URP's own
+            // per-camera-rendering event as a parallel readback trigger. Guarded so
+            // we never dispatch more than once per frame across all paths.
+            RenderPipelineManager.beginCameraRendering += OnUrpBeginCameraRendering;
 
             // Compute kernel (blit tex -> buffer) setup.
             int pixelCount = kTexSize * kTexSize;
@@ -120,6 +135,10 @@ namespace TiltBrush
 
         private void DumpHighResTex(bool useGeomPath)
         {
+            // Ensure any GPU work writing m_HighResTex is flushed before ReadPixels;
+            // on Vulkan/Android the queued command might otherwise not have executed yet,
+            // which would make the dump misleadingly show pre-render state.
+            GL.Flush();
             var prev = RenderTexture.active;
             try
             {
@@ -159,17 +178,50 @@ namespace TiltBrush
             FutureResult.sm_ReadbackBuffer.Dispose();
         }
 
+        private void OnDestroy()
+        {
+            RenderPipelineManager.beginCameraRendering -= OnUrpBeginCameraRendering;
+        }
+
+        private void OnUrpBeginCameraRendering(ScriptableRenderContext ctx, Camera cam)
+        {
+            // Filter to the main VR camera only; the intersection camera itself also
+            // raises this event and would cause recursion.
+            if (cam != m_MainVrCamera) return;
+
+            if (kDebugLog && (Time.frameCount % kHeartbeatModulo) == 0)
+            {
+                Debug.Log($"[OB_SEL] URP beginCameraRendering cam={cam.name} " +
+                    $"pending={m_activeResults.Count} frame={Time.frameCount}");
+            }
+
+            ReadResultsDispatchCallback();
+        }
+
         // This method only exists to avoid adding and removing callbacks for every intersection request,
         // which generates garbage. In practice this saves ~0.7k of garbage for every request.
         private void ReadResultsDispatchCallback()
         {
+            // Guard: never dispatch more than once per frame across all trigger paths
+            // (RenderWrapper.OnPreCull, URP beginCameraRendering).
+            if (m_LastDispatchFrame == Time.frameCount) return;
+            m_LastDispatchFrame = Time.frameCount;
+
+            int processed = 0;
             for (int i = 0; i < m_activeResults.Count; i++)
             {
                 if (m_activeResults[i]())
                 {
                     m_activeResults.RemoveAt(i);
                     i--;
+                    processed++;
                 }
+            }
+
+            if (kDebugLog && processed > 0)
+            {
+                Debug.Log($"[OB_SEL] ReadResultsDispatchCallback processed={processed} " +
+                    $"remaining={m_activeResults.Count} frame={Time.frameCount}");
             }
         }
 

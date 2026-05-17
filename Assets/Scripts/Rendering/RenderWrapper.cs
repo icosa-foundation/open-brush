@@ -225,6 +225,14 @@ namespace TiltBrush
             }
 
             m_readbackTextureFrame = Time.frameCount;
+
+            // [OB_SEL] heartbeat - confirms whether OnPreCull fires on this platform.
+            // Throttled to once every 60 frames to avoid spamming logcat.
+            if ((Time.frameCount % 60) == 0)
+            {
+                Debug.Log($"[OB_SEL] RenderWrapper.OnPreCull frame={Time.frameCount} " +
+                    $"hasReadBackSubs={(ReadBackTextures != null)}");
+            }
         }
 
         public void OnPreRender()
