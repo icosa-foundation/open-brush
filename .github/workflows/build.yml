@@ -869,7 +869,7 @@ jobs:
           zip -r OpenBrush_Linux_$VERSION.zip OpenBrush_Linux_$VERSION/
 
       - name: Publish
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           body: ${{ steps.changelog.outputs.changelog }}
           prerelease: ${{ needs.configuration.outputs.prerelease }}
