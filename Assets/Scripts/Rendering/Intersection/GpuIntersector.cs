@@ -82,8 +82,11 @@ namespace TiltBrush
         private static readonly bool kDebugDumpHighResTex = true;
         private static readonly bool kDebugForceNonGeomFallback = false;
         // Throttle expensive logging / dumping. 0 = every request, N = every Nth.
-        private static readonly int kDebugThrottleFrames = 60;
+        private static readonly int kDebugThrottleFrames = 1;
         private int m_DebugRequestCounter;
+        // One-shot so the format log fires from RenderIntersection rather than Awake/Start
+        // (Awake logs are getting buffered out before adb captures them).
+        private bool m_LoggedTextureFormatOnce;
 
         private Material m_DownsampleMat;
         private RenderTexture m_HighResTex;
@@ -387,6 +390,15 @@ namespace TiltBrush
             // Intersect with strokes just the specified layer.
             m_IntersectionCamera.cullingMask = renderCullingMask;
 
+            if (kDebugLog && !m_LoggedTextureFormatOnce)
+            {
+                m_LoggedTextureFormatOnce = true;
+                Debug.Log($"[OB_SEL] HighResTex format={m_HighResTex.format} " +
+                    $"graphicsFormat={m_HighResTex.graphicsFormat} sRGB={m_HighResTex.sRGB} " +
+                    $"colorSpace={QualitySettings.activeColorSpace} " +
+                    $"graphicsAPI={SystemInfo.graphicsDeviceType}");
+            }
+
             // Render all geometry tagged as "intersection" with the intersection shader.
             bool useGeomPath = App.Config.GeometryShaderSuppported && !kDebugForceNonGeomFallback;
             if (useGeomPath)
@@ -533,6 +545,32 @@ namespace TiltBrush
             {
                 UnityEngine.Profiling.Profiler.BeginSample("Intersection: Readback Texture");
 
+                // [OB_SEL] head-to-head diagnostic: read the raw RT bytes via ReadPixels BEFORE
+                // dispatching the compute shader. If raw bytes show R != G while the compute
+                // shader output shows R == G in every pixel, the bug is in the compute shader's
+                // unpack (likely a Vulkan vector-cast/swizzle issue). If both show R == G, the
+                // bug is upstream (intersection shader output or the RT format).
+                Color32[] rawPixels = null;
+                if (kDebugLog && m_ResultTex != null)
+                {
+                    try
+                    {
+                        var prev = RenderTexture.active;
+                        RenderTexture.active = m_ResultTex;
+                        var t2d = new Texture2D(m_ResultTex.width, m_ResultTex.height,
+                            TextureFormat.RGBA32, false);
+                        t2d.ReadPixels(new Rect(0, 0, m_ResultTex.width, m_ResultTex.height), 0, 0);
+                        t2d.Apply();
+                        rawPixels = t2d.GetPixels32();
+                        UnityEngine.Object.Destroy(t2d);
+                        RenderTexture.active = prev;
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogWarning($"[OB_SEL] raw ReadPixels failed: {e.Message}");
+                    }
+                }
+
                 // Only set the InputTexture, since the OutputBuffer never changes.
                 sm_ComputeCopyShader.SetTexture(sm_CopyKernel, "InputTexture", m_ResultTex);
                 sm_ComputeCopyShader.Dispatch(sm_CopyKernel, 4, 4, 1);
@@ -543,6 +581,42 @@ namespace TiltBrush
                 // Read data without allocating new memory.
                 sm_ReadbackBuffer.GetData(sm_ReadbackBufferStorage);
                 uint[] resultColors = sm_ReadbackBufferStorage;
+
+                if (kDebugLog && rawPixels != null)
+                {
+                    int rawNonZero = 0, rawReqG = 0, rawRneG = 0;
+                    int firstSampleIdx = -1;
+                    for (int i = 0; i < rawPixels.Length; i++)
+                    {
+                        Color32 c = rawPixels[i];
+                        if (c.r != 0 || c.g != 0 || c.b != 0 || c.a != 0)
+                        {
+                            if (firstSampleIdx < 0) firstSampleIdx = i;
+                            rawNonZero++;
+                            if (c.r == c.g) rawReqG++; else rawRneG++;
+                        }
+                    }
+                    string firstSampleRaw = firstSampleIdx >= 0
+                        ? $"R={rawPixels[firstSampleIdx].r:X2} G={rawPixels[firstSampleIdx].g:X2} " +
+                          $"B={rawPixels[firstSampleIdx].b:X2} A={rawPixels[firstSampleIdx].a:X2}"
+                        : "(none)";
+
+                    int csNonZero = 0, csReqG = 0;
+                    for (int i = 0; i < resultColors.Length; i++)
+                    {
+                        uint v = resultColors[i];
+                        if (v != 0)
+                        {
+                            csNonZero++;
+                            byte r = (byte)((v >> 24) & 0xff);
+                            byte g = (byte)((v >> 16) & 0xff);
+                            if (r == g) csReqG++;
+                        }
+                    }
+
+                    Debug.Log($"[OB_SEL] HEAD-TO-HEAD raw[nonZero={rawNonZero} R==G={rawReqG} R!=G={rawRneG} " +
+                        $"first={firstSampleRaw}] cs[nonZero={csNonZero} R==G={csReqG}]");
+                }
 
                 UnityEngine.Profiling.Profiler.EndSample();
 
