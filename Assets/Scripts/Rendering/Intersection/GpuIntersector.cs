@@ -243,16 +243,30 @@ namespace TiltBrush
             m_IntersectionCamera.targetTexture = m_HighResTex;
 
             // Frame the camera to the detection sphere.
-            m_IntersectionCamera.transform.position = vDetectionCenter_GS;
-            m_IntersectionCamera.nearClipPlane = -radius_GS;
-            m_IntersectionCamera.farClipPlane = radius_GS;
-            m_IntersectionCamera.orthographicSize = radius_GS;
+            // Why this likely fixes Android-only selection misses after the URP switch:
+            // 1) The old code used nearClipPlane = -radius and farClipPlane = +radius from the sphere center.
+            //    That creates a frustum that crosses the camera origin. In practice, near <= 0 is undefined or
+            //    backend-dependent for many mobile GPU drivers.
+            // 2) On desktop APIs/drivers this often "works by accident" due to implicit clamping or more lenient
+            //    projection handling, so selection still appeared functional there.
+            // 3) On Android (URP on GLES/Vulkan + tile-based GPUs), near <= 0 is more likely to produce an
+            //    invalid/degenerate projection for this offscreen pass, yielding an all-clear intersection buffer
+            //    (ie, no hit IDs), which matches the observed symptom: selection visuals exist, but no strokes
+            //    are detected as selected.
+            // 4) This framing keeps the whole test sphere in view while enforcing a strictly positive near plane,
+            //    which is the cross-platform-safe camera invariant Unity expects.
+            float safeRadius = Mathf.Max(radius_GS, 0.001f);
+            m_IntersectionCamera.transform.rotation = ViewpointScript.Head.rotation;
+            Vector3 camForward = m_IntersectionCamera.transform.forward;
+            m_IntersectionCamera.transform.position = vDetectionCenter_GS - camForward * safeRadius;
+            m_IntersectionCamera.nearClipPlane = 0.001f;
+            m_IntersectionCamera.farClipPlane = safeRadius * 2.0f + 0.001f;
+            m_IntersectionCamera.orthographicSize = safeRadius;
 
             // This is a heuristic to generally orient the camera in the same way as the user's head, such
             // that if any object is visible to the user, it will also be visible for intersection. A better
             // way to do this is to implement conservative rasterization, though that has additional
             // challenges
-            m_IntersectionCamera.transform.rotation = ViewpointScript.Head.rotation;
 
             // Intersect with strokes just the specified layer.
             m_IntersectionCamera.cullingMask = renderCullingMask;
