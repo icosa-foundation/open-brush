@@ -17,7 +17,11 @@ Shader "Custom/Standard_NoFog" {
       #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
       TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
       CBUFFER_START(UnityPerMaterial)
-      half4 _Color; half4 _EmissionColor; float4 _MainTex_ST;
+      float4 _Color;
+      float4 _EmissionColor;
+      float4 _MainTex_ST;
+      float _Glossiness;
+      float _Metallic;
       CBUFFER_END
       struct A{float4 positionOS:POSITION; float2 uv:TEXCOORD0;};
       struct V{float4 positionHCS:SV_POSITION; float2 uv:TEXCOORD0;};
