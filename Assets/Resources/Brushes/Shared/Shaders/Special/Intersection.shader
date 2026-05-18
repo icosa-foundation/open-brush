@@ -225,7 +225,7 @@ Shader "Brush/Special/Intersection" {
 #endif
           test.vertex = currPos;
           test.worldPos = input[i].worldPos;
-          test.color = PackUint16x2ToRgba8(uint2(_BatchID, id));
+          test.color = PackUint16x2ToRgba8(uint2((uint)_BatchID, id));
 
           // Note, world space pos has not been inflated.
           OutputStream.Append(test);

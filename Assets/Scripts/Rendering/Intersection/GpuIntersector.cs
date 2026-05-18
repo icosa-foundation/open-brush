@@ -54,8 +54,9 @@ namespace TiltBrush
         }
 
         // The size of the square texture used to read back results from the GPU.
-        // A value of 16 here indicates that 16 x 16 pixel texture and buffers will be used.
-        private const int kTexSize = 16;
+        // We read the full hi-res RT directly (no downsample blit) - on URP+Vulkan
+        // Graphics.Blit corrupts channel data (forces R==G), so we skip it.
+        private const int kTexSize = 64;
 
         // Batch Id is 16 bits long. Given that our batches have ~10,000 triangles each, this gives us
         // enough space for ~65,000,000,000 triangles in a scene. That should be enough.
@@ -92,6 +93,12 @@ namespace TiltBrush
         private RenderTexture m_HighResTex;
         private Camera m_IntersectionCamera;
         private List<ResultReader> m_activeResults = new List<ResultReader>();
+
+        // Material wrapping the chosen intersection shader (geom vs fallback decided once at Awake).
+        // Used by the CommandBuffer-based render path that replaces Camera.RenderWithShader, which
+        // does not reliably substitute shaders under URP on Android/Vulkan.
+        private Material m_IntersectionMaterial;
+        private CommandBuffer m_IntersectionCB;
 
         // Speculative URP fallback: cache the main VR camera so the
         // beginCameraRendering callback can filter to it.
@@ -185,6 +192,8 @@ namespace TiltBrush
         private void OnDestroy()
         {
             RenderPipelineManager.beginCameraRendering -= OnUrpBeginCameraRendering;
+            if (m_IntersectionCB != null) { m_IntersectionCB.Release(); m_IntersectionCB = null; }
+            if (m_IntersectionMaterial != null) { Destroy(m_IntersectionMaterial); m_IntersectionMaterial = null; }
         }
 
         private void OnUrpBeginCameraRendering(ScriptableRenderContext ctx, Camera cam)
@@ -303,10 +312,21 @@ namespace TiltBrush
         void Awake()
         {
             m_IntersectionCamera = GetComponent<Camera>();
+            // Don't let URP include this camera in its render loop. We only use it
+            // for its projection-matrix setup; the actual draws go through a CommandBuffer.
+            m_IntersectionCamera.enabled = false;
 
             // WARNING: All textures must be LINEAR and sample filter modes should be POINT, to avoid
             //          interpolating or remapping the output batch and triangle IDs.
             m_DownsampleMat = new Material(m_DownsampleShader);
+
+            // Pick the intersection shader once per session (the geom-vs-fallback decision
+            // is per-platform, not per-frame) and wrap in a Material for CommandBuffer.DrawRenderer.
+            m_IntersectionMaterial = new Material(
+                App.Config.GeometryShaderSuppported
+                    ? m_IntersectionShader
+                    : m_IntersectionShaderFallback);
+            m_IntersectionCB = new CommandBuffer { name = "GpuIntersector" };
 
             // Note: This was previously 512, but I could not detect any difference between
             // 512 and 64. The 64x64 texture uses 1/64th of the memory bandwidth, which is important on
@@ -338,6 +358,7 @@ namespace TiltBrush
             m_HighResTex.Release();
         }
 
+
         // -------------------------------------------------------------------------------------------- //
         // Private Internals
         // -------------------------------------------------------------------------------------------- //
@@ -346,49 +367,17 @@ namespace TiltBrush
         private RenderTexture RenderIntersection(
             Vector3 vDetectionCenter_GS, float radius_GS, int renderCullingMask)
         {
-
-            // Future work: we could use an even smaller texture here, when we know the user doesn't care
-            // about the exact triangle intersections.
-            //
-            // WARNING: All textures must be LINEAR and sample filter modes should be POINT, to avoid
-            //          interpolating or remapping the output batch and triangle IDs.
-            var smallDesc = new RenderTextureDescriptor(16, 16,
-                GraphicsFormat.R8G8B8A8_UNorm, depthBufferBits: 0)
-            {
-                sRGB = false,
-                msaaSamples = 1,
-                useMipMap = false,
-                autoGenerateMips = false,
-            };
-            RenderTexture curRenderSmall = RenderTexture.GetTemporary(smallDesc);
-            curRenderSmall.filterMode = FilterMode.Point;
-
-            // Unfortunately, RenderWithShader() has no RenderWithMaterial() equivalent, so we must use
-            // global uniforms since that is the mechanism used to launch the render.
+            // Global uniforms read by the intersection shader's SphereInTriangle test.
             Shader.SetGlobalVector("vSphereCenter", vDetectionCenter_GS);
             Shader.SetGlobalFloat("fSphereRad", radius_GS);
 
-            // Clear to black, which is an invalid result.
-            m_IntersectionCamera.backgroundColor = Color.clear;
-            m_IntersectionCamera.clearFlags = CameraClearFlags.Color;
-
-            // Assign the texture to capture the output.
-            m_IntersectionCamera.targetTexture = m_HighResTex;
-
-            // Frame the camera to the detection sphere.
+            // Set up the camera's orthographic frustum centered on the detection sphere.
+            // The camera itself never renders (it's disabled) - we only use its matrices.
             m_IntersectionCamera.transform.position = vDetectionCenter_GS;
+            m_IntersectionCamera.transform.rotation = ViewpointScript.Head.rotation;
             m_IntersectionCamera.nearClipPlane = -radius_GS;
             m_IntersectionCamera.farClipPlane = radius_GS;
             m_IntersectionCamera.orthographicSize = radius_GS;
-
-            // This is a heuristic to generally orient the camera in the same way as the user's head, such
-            // that if any object is visible to the user, it will also be visible for intersection. A better
-            // way to do this is to implement conservative rasterization, though that has additional
-            // challenges
-            m_IntersectionCamera.transform.rotation = ViewpointScript.Head.rotation;
-
-            // Intersect with strokes just the specified layer.
-            m_IntersectionCamera.cullingMask = renderCullingMask;
 
             if (kDebugLog && !m_LoggedTextureFormatOnce)
             {
@@ -413,18 +402,52 @@ namespace TiltBrush
                     $"isSupported={serializedFb?.isSupported} " +
                     $"passCount={serializedFb?.passCount} " +
                     $"renderQueue={serializedFb?.renderQueue}");
+                Debug.Log($"[OB_SEL] IntersectionMaterial shader='{m_IntersectionMaterial?.shader?.name}' " +
+                    $"passCount={m_IntersectionMaterial?.passCount}");
             }
 
-            // Render all geometry tagged as "intersection" with the intersection shader.
-            bool useGeomPath = App.Config.GeometryShaderSuppported && !kDebugForceNonGeomFallback;
-            if (useGeomPath)
+            // CommandBuffer-driven render. Replaces Camera.RenderWithShader, which does not
+            // reliably substitute shaders under URP on Android/Vulkan.
+            m_IntersectionCB.Clear();
+            m_IntersectionCB.SetViewProjectionMatrices(
+                m_IntersectionCamera.worldToCameraMatrix,
+                GL.GetGPUProjectionMatrix(m_IntersectionCamera.projectionMatrix, true));
+            m_IntersectionCB.SetRenderTarget(m_HighResTex);
+            m_IntersectionCB.ClearRenderTarget(true, true, Color.clear);
+
+            int drawn = 0;
+
+            // Brush strokes. BatchManager.AllBatches() yields a small number of Batch components
+            // (usually a few dozen at most); each has a MeshRenderer with _BatchID already set on
+            // its MaterialPropertyBlock via Batch.cs.
+            foreach (var batch in App.ActiveCanvas.BatchManager.AllBatches())
             {
-                m_IntersectionCamera.RenderWithShader(m_IntersectionShader, string.Empty);
+                var r = batch.GetComponent<MeshRenderer>();
+                if (r == null) continue;
+                if (((1 << r.gameObject.layer) & renderCullingMask) == 0) continue;
+                m_IntersectionCB.DrawRenderer(r, m_IntersectionMaterial, 0, 0);
+                drawn++;
             }
-            else
+
+            // Widgets (models / images / stencils / lights / video). Each widget's child
+            // renderers share the widget's _BatchID via HierarchyUtils.RecursivelySetMaterialBatchID.
+            if (WidgetManager.m_Instance != null)
             {
-                m_IntersectionCamera.RenderWithShader(m_IntersectionShaderFallback, string.Empty);
+                foreach (var w in WidgetManager.m_Instance.ActiveGrabWidgets)
+                {
+                    if (w == null || w.m_WidgetScript == null) continue;
+                    var renderers = w.m_WidgetScript.GetComponentsInChildren<Renderer>(false);
+                    for (int i = 0; i < renderers.Length; i++)
+                    {
+                        var r = renderers[i];
+                        if (((1 << r.gameObject.layer) & renderCullingMask) == 0) continue;
+                        m_IntersectionCB.DrawRenderer(r, m_IntersectionMaterial, 0, 0);
+                        drawn++;
+                    }
+                }
             }
+
+            Graphics.ExecuteCommandBuffer(m_IntersectionCB);
 
             bool debugThisRequest = (kDebugLog || kDebugDumpHighResTex)
                 && (kDebugThrottleFrames <= 0
@@ -432,25 +455,19 @@ namespace TiltBrush
 
             if (debugThisRequest && kDebugDumpHighResTex)
             {
-                DumpHighResTex(useGeomPath);
+                DumpHighResTex(true /*useGeomPath - cosmetic only, used for filename*/);
             }
-
-            // Downsample to a tiny texture using a point filter, since we don't have an ordering to
-            // selected strokes.
-            Graphics.Blit(m_HighResTex, curRenderSmall, m_DownsampleMat);
 
             if (debugThisRequest && kDebugLog)
             {
                 Debug.Log($"[OB_SEL] RenderIntersection center={vDetectionCenter_GS} radius={radius_GS} " +
-                    $"cull=0x{renderCullingMask:x} path={(useGeomPath ? "geom" : "fallback")} " +
-                    $"frame={Time.frameCount}");
+                    $"cull=0x{renderCullingMask:x} drawn={drawn} frame={Time.frameCount}");
             }
 
-            // Ensure we mark the contents of the high res texture as discardable to ensure that
-            // Unity isn't tempted to resolve in unnecessarily.
-            m_HighResTex.DiscardContents();
-
-            return curRenderSmall;
+            // We bypass the legacy downsample blit (which corrupts channels on URP+Vulkan)
+            // and return the hi-res RT directly. The compute-shader readback handles the full
+            // 64x64 tex (4096 texels) - still trivial bandwidth.
+            return m_HighResTex;
         }
 
         // ------------------------------------------------------------------------------------------ //
@@ -589,9 +606,13 @@ namespace TiltBrush
 
                 // Only set the InputTexture, since the OutputBuffer never changes.
                 sm_ComputeCopyShader.SetTexture(sm_CopyKernel, "InputTexture", m_ResultTex);
-                sm_ComputeCopyShader.Dispatch(sm_CopyKernel, 4, 4, 1);
+                // Dispatch kTexSize/4 groups in each dimension - the compute shader uses
+                // [numthreads(4,4,1)], so 16x16 groups covers a 64x64 texture.
+                int groups = kTexSize / 4;
+                sm_ComputeCopyShader.Dispatch(sm_CopyKernel, groups, groups, 1);
 
-                RenderTexture.ReleaseTemporary(m_ResultTex);
+                // Note: m_ResultTex is the persistent m_HighResTex (no longer a temp from
+                // RenderTexture.GetTemporary), so we must NOT call ReleaseTemporary on it.
                 m_ResultTex = null;
 
                 // Read data without allocating new memory.
