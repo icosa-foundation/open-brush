@@ -141,6 +141,7 @@ Shader "TiltBrush/Standard (Specular setup)"
       half _Cutoff;
       half _BumpScale;
       half _OcclusionStrength;
+      float _UVSec;
       float4 _MainTex_ST;
       float4 _DetailAlbedoMap_ST;
       CBUFFER_END
@@ -175,7 +176,8 @@ Shader "TiltBrush/Standard (Specular setup)"
         OUT.positionCS = pos.positionCS;
         OUT.positionWS = pos.positionWS;
         OUT.uv = TRANSFORM_TEX(IN.uv0, _MainTex);
-        OUT.uvDetail = TRANSFORM_TEX(IN.uv0, _DetailAlbedoMap);
+        float2 detailUV = lerp(IN.uv0, IN.uv1, _UVSec);
+        OUT.uvDetail = TRANSFORM_TEX(detailUV, _DetailAlbedoMap);
         OUT.normalWS = nrm.normalWS;
         OUT.tangentWS = float4(nrm.tangentWS.xyz, IN.tangentOS.w);
         OUT.fogFactor = ComputeFogFactor(pos.positionCS.z);
