@@ -417,16 +417,21 @@ namespace TiltBrush
 
             int drawn = 0;
 
-            // Brush strokes. BatchManager.AllBatches() yields a small number of Batch components
-            // (usually a few dozen at most); each has a MeshRenderer with _BatchID already set on
-            // its MaterialPropertyBlock via Batch.cs.
-            foreach (var batch in App.ActiveCanvas.BatchManager.AllBatches())
+            // Brush strokes. Iterate ALL canvases (main + selection + layers), not just the
+            // active one, because selection-tool grip detection asks for intersections on the
+            // SelectionCanvas layer specifically, and selected strokes live there. The per-renderer
+            // layer-mask check below mirrors the original Camera.cullingMask semantics.
+            foreach (var canvas in App.Scene.AllCanvases)
             {
-                var r = batch.GetComponent<MeshRenderer>();
-                if (r == null) continue;
-                if (((1 << r.gameObject.layer) & renderCullingMask) == 0) continue;
-                m_IntersectionCB.DrawRenderer(r, m_IntersectionMaterial, 0, 0);
-                drawn++;
+                if (canvas == null) continue;
+                foreach (var batch in canvas.BatchManager.AllBatches())
+                {
+                    var r = batch.GetComponent<MeshRenderer>();
+                    if (r == null) continue;
+                    if (((1 << r.gameObject.layer) & renderCullingMask) == 0) continue;
+                    m_IntersectionCB.DrawRenderer(r, m_IntersectionMaterial, 0, 0);
+                    drawn++;
+                }
             }
 
             // Widgets (models / images / stencils / lights / video). Each widget's child
