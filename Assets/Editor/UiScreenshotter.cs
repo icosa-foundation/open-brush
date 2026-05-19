@@ -26,6 +26,8 @@ namespace TiltBrush
     public class UiScreenshotter : Editor
     {
         private const float kBrushScreenshotTime = 0.5f;
+        private const int kScreenshotSupersampling = 2;
+        private const int kScreenshotMsaaSamples = 4;
 
         private static bool IsPlaying()
         {
@@ -123,6 +125,7 @@ namespace TiltBrush
                         new List<IEnumerable<TrTransform>> { path },
                         TrTransform.T(origin));
                     SetFixedShaderTime(strokes, kBrushScreenshotTime);
+                    batchManager.FlushMeshUpdates();
                     SaveCurrentView(cam, $"brush-{brush.DurableName}.png", 1024, 1024);
                     DeleteStrokes(strokes);
                 }
@@ -207,6 +210,12 @@ namespace TiltBrush
             {
                 try
                 {
+                    var material = stroke.m_BatchSubset.m_ParentBatch.InstantiatedMaterial;
+                    if (!material.HasFloat("_TimeBlend") ||
+                        !material.HasVector("_TimeOverrideValue"))
+                    {
+                        continue;
+                    }
                     stroke.SetShaderFloat("_TimeBlend", 1f);
                     stroke.SetShaderVector(
                         "_TimeOverrideValue",
@@ -233,18 +242,46 @@ namespace TiltBrush
 
         static void SaveCurrentView(Camera cameraToCapture, string fileName, int resWidth, int resHeight)
         {
-            RenderTexture rt = new RenderTexture(resWidth, resHeight, 24);
-            cameraToCapture.targetTexture = rt;
-            Texture2D screenShot = new Texture2D(resWidth, resHeight, TextureFormat.RGB24, false);
-            cameraToCapture.Render();
-            RenderTexture.active = rt;
-            screenShot.ReadPixels(new Rect(0, 0, resWidth, resHeight), 0, 0);
-            cameraToCapture.targetTexture = null;
-            RenderTexture.active = null;
-            Destroy(rt);
-            byte[] bytes = screenShot.EncodeToPNG();
-            string filePath = Path.Combine(System.IO.Directory.GetCurrentDirectory(), fileName);
-            File.WriteAllBytes(filePath, bytes);
+            int renderWidth = resWidth * kScreenshotSupersampling;
+            int renderHeight = resHeight * kScreenshotSupersampling;
+            RenderTexture rt = new RenderTexture(renderWidth, renderHeight, 24, RenderTextureFormat.ARGB32)
+            {
+                antiAliasing = kScreenshotMsaaSamples,
+                filterMode = FilterMode.Bilinear
+            };
+            RenderTexture downsampledRt = new RenderTexture(resWidth, resHeight, 0, RenderTextureFormat.ARGB32)
+            {
+                filterMode = FilterMode.Bilinear
+            };
+            Texture2D screenShot = null;
+            RenderTexture previousActive = RenderTexture.active;
+            RenderTexture previousTarget = cameraToCapture.targetTexture;
+            bool previousAllowMsaa = cameraToCapture.allowMSAA;
+            try
+            {
+                cameraToCapture.allowMSAA = true;
+                cameraToCapture.targetTexture = rt;
+                screenShot = new Texture2D(resWidth, resHeight, TextureFormat.RGB24, false);
+                cameraToCapture.Render();
+                Graphics.Blit(rt, downsampledRt);
+                RenderTexture.active = downsampledRt;
+                screenShot.ReadPixels(new Rect(0, 0, resWidth, resHeight), 0, 0);
+                byte[] bytes = screenShot.EncodeToPNG();
+                string filePath = Path.Combine(System.IO.Directory.GetCurrentDirectory(), fileName);
+                File.WriteAllBytes(filePath, bytes);
+            }
+            finally
+            {
+                cameraToCapture.targetTexture = previousTarget;
+                cameraToCapture.allowMSAA = previousAllowMsaa;
+                RenderTexture.active = previousActive;
+                if (screenShot != null)
+                {
+                    Destroy(screenShot);
+                }
+                Destroy(rt);
+                Destroy(downsampledRt);
+            }
         }
     }
 }
