@@ -152,7 +152,7 @@ MonoBehaviour:
   previewQuad: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
   previewCapsule: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
   previewCylinder: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
-  previewMaterial: {fileID: 2100000, guid: 537db0387b31e004888533b91562f23d, type: 2}
+  previewMaterial: {fileID: 2100000, guid: a3f8d2b1c9e4f5a6b7c8d9e0f1a2b3c4, type: 2}
 --- !u!1 &7492514809168028468
 GameObject:
   m_ObjectHideFlags: 0
