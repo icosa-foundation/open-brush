@@ -233,7 +233,8 @@ namespace TiltBrush
                 {
                     m_WasClicked = false;
                     var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
-                    // upVector is already the controller's up at this frame (initialized above).
+                    // Tool.rotation is a legacy controller-up vector. Use endPoint.rotation
+                    // when a script needs the same full orientation as the preview.
                     SetApiProperty($"Tool.{LuaNames.ToolScriptEndPoint}", rAttachPoint_CS);
                     SetApiProperty($"Tool.{LuaNames.ToolScriptVector}", drawnVector_CS);
                     SetApiProperty($"Tool.{LuaNames.ToolScriptRotation}", upVector);
