@@ -44,7 +44,14 @@ namespace TiltBrush
         public Mesh previewCapsule;
         public Mesh previewCylinder;
 
-        public Material previewMaterial;
+        [System.Serializable]
+        public class PreviewMaterialEntry
+        {
+            public string previewType;
+            public Material material;
+        }
+
+        public List<PreviewMaterialEntry> previewMaterials;
 
         private int currentSnap;
         private float angleSnappingAngle;
@@ -151,17 +158,14 @@ namespace TiltBrush
                 var drawnVector_GS = SelectionManager.m_Instance.SnapToGrid_GS(rAttachPoint_GS) -
                     SelectionManager.m_Instance.SnapToGrid_GS(m_FirstPositionClicked_GS);
 
-                upVector = InputManager.m_Instance.GetBrushControllerAttachPoint().up;
-
+                Quaternion controllerRot = InputManager.m_Instance.GetBrushControllerAttachPoint().rotation;
                 if (drawnVector_GS.sqrMagnitude > 0)
                 {
-                    var rotation_CS = Quaternion.LookRotation(drawnVector_CS, upVector);
-                    var rotation_GS = Quaternion.LookRotation(drawnVector_GS, upVector);
-
-                    // Snapping needs compensating for the different rotation between global space and canvas space
-                    var CS_GS_offset = rotation_GS.eulerAngles - rotation_CS.eulerAngles;
-                    rotation_CS *= Quaternion.Euler(-CS_GS_offset);
-                    rotation_CS *= Quaternion.Euler(CS_GS_offset);
+                    // Orientation tracks the controller directly; drag magnitude is the only thing
+                    // that determines the preview's scale. The drag direction is intentionally
+                    // unused so no LookRotation/FromToRotation singularity can occur.
+                    Quaternion rotation_CS = Quaternion.Inverse(App.Scene.Pose.rotation) * controllerRot;
+                    upVector = controllerRot * Vector3.up;
 
                     Matrix4x4 transform_GS = TrTransform.TRS(
                         SelectionManager.m_Instance.SnapToGrid_GS(m_FirstPositionClicked_GS),
@@ -169,7 +173,9 @@ namespace TiltBrush
                         drawnVector_GS.magnitude * 2
                     ).ToMatrix4x4();
 
-                    switch (previewTypeVal.String?.ToLower())
+                    var previewTypeKey = previewTypeVal.String?.ToLower();
+                    Material previewMat = GetPreviewMaterial(previewTypeKey);
+                    switch (previewTypeKey)
                     {
                         case "alignedbox":
                             var aabbTr = Matrix4x4.TRS(
@@ -178,7 +184,7 @@ namespace TiltBrush
                                 // TODO Scale isn't correct but _CS doesn't seem to work either
                                 drawnVector_GS * 2
                             );
-                            Graphics.DrawMesh(previewCube, aabbTr, previewMaterial, 0);
+                            Graphics.DrawMesh(previewCube, aabbTr, previewMat, 0);
                             break;
                         case "alignedquad":
                             var aaquadTr = Matrix4x4.TRS(
@@ -187,13 +193,13 @@ namespace TiltBrush
                                 // TODO Scale isn't correct but _CS doesn't seem to work either
                                 new Vector3(drawnVector_GS.z * 2, drawnVector_GS.x * 2, 1)
                             );
-                            Graphics.DrawMesh(previewQuad, aaquadTr, previewMaterial, 0);
+                            Graphics.DrawMesh(previewQuad, aaquadTr, previewMat, 0);
                             break;
                         case "cube":
-                            Graphics.DrawMesh(previewCube, transform_GS, previewMaterial, 0);
+                            Graphics.DrawMesh(previewCube, transform_GS, previewMat, 0);
                             break;
                         case "sphere":
-                            Graphics.DrawMesh(previewSphere, transform_GS, previewMaterial, 0);
+                            Graphics.DrawMesh(previewSphere, transform_GS, previewMat, 0);
                             break;
                         case "quad":
                             var mat = transform_GS;
@@ -208,13 +214,13 @@ namespace TiltBrush
                                 default:
                                     break;
                             }
-                            Graphics.DrawMesh(previewQuad, mat, previewMaterial, 0);
+                            Graphics.DrawMesh(previewQuad, mat, previewMat, 0);
                             break;
                         case "capsule":
-                            Graphics.DrawMesh(previewCapsule, transform_GS, previewMaterial, 0);
+                            Graphics.DrawMesh(previewCapsule, transform_GS, previewMat, 0);
                             break;
                         case "cylinder":
-                            Graphics.DrawMesh(previewCylinder, transform_GS, previewMaterial, 0);
+                            Graphics.DrawMesh(previewCylinder, transform_GS, previewMat, 0);
                             break;
                         case null:
                             break;
@@ -227,6 +233,7 @@ namespace TiltBrush
                 {
                     m_WasClicked = false;
                     var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
+                    // upVector is already the controller's up at this frame (initialized above).
                     SetApiProperty($"Tool.{LuaNames.ToolScriptEndPoint}", rAttachPoint_CS);
                     SetApiProperty($"Tool.{LuaNames.ToolScriptVector}", drawnVector_CS);
                     SetApiProperty($"Tool.{LuaNames.ToolScriptRotation}", upVector);
@@ -243,6 +250,23 @@ namespace TiltBrush
             var script = LuaManager.Instance.GetActiveScript(LuaApiCategory.ToolScript);
             LuaManager.Instance.SetApiProperty(script, key, value);
         }
+
+        private Material GetPreviewMaterial(string previewType)
+        {
+            if (previewMaterials == null || previewMaterials.Count == 0) return null;
+            if (previewType != null)
+            {
+                foreach (var entry in previewMaterials)
+                {
+                    if (string.Equals(entry.previewType, previewType, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        return entry.material;
+                    }
+                }
+            }
+            return previewMaterials[0].material;
+        }
+
 
         //The actual Unity update function, used to update transforms and perform per-frame operations
         protected void Update()

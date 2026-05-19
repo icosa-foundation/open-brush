@@ -152,7 +152,21 @@ MonoBehaviour:
   previewQuad: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
   previewCapsule: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
   previewCylinder: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
-  previewMaterial: {fileID: 2100000, guid: a3f8d2b1c9e4f5a6b7c8d9e0f1a2b3c4, type: 2}
+  previewMaterials:
+  - previewType: alignedbox
+    material: {fileID: 2100000, guid: 2b3c4d5e6f7a80911c2d3e4f50617283, type: 2}
+  - previewType: alignedquad
+    material: {fileID: 2100000, guid: 7a8b9c0d1e2f3ab61c2d3e4f50617283, type: 2}
+  - previewType: cube
+    material: {fileID: 2100000, guid: 1a2b3c4d5e6f70801c2d3e4f50617283, type: 2}
+  - previewType: sphere
+    material: {fileID: 2100000, guid: 3c4d5e6f7a8b90a21c2d3e4f50617283, type: 2}
+  - previewType: quad
+    material: {fileID: 2100000, guid: 6f7a8b9c0d1e2ab51c2d3e4f50617283, type: 2}
+  - previewType: capsule
+    material: {fileID: 2100000, guid: 4d5e6f7a8b9c0ab31c2d3e4f50617283, type: 2}
+  - previewType: cylinder
+    material: {fileID: 2100000, guid: 5e6f7a8b9c0d1ab41c2d3e4f50617283, type: 2}
 --- !u!1 &7492514809168028468
 GameObject:
   m_ObjectHideFlags: 0
