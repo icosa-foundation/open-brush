@@ -16,7 +16,6 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Experimental.Rendering;
 using System.Collections.Generic;
-using System.IO;
 
 namespace TiltBrush
 {
@@ -75,20 +74,6 @@ namespace TiltBrush
         [SerializeField] private Shader m_DownsampleShader;
         [SerializeField] private ComputeShader m_ComputeCopyShader;
 
-        // [OB_SEL] selection-debug instrumentation. All log lines / file dumps are gated by these.
-        // Flip to true, commit, let CI build. Log prefix is "[OB_SEL]" for logcat filtering.
-        // Why static readonly and not const: const would fold the gated branches away and trigger
-        // CS0162 unreachable-code warnings in the default-off state.
-        private static readonly bool kDebugLog = true;
-        private static readonly bool kDebugDumpHighResTex = true;
-        private static readonly bool kDebugForceNonGeomFallback = false;
-        // Throttle expensive logging / dumping. 0 = every request, N = every Nth.
-        private static readonly int kDebugThrottleFrames = 1;
-        private int m_DebugRequestCounter;
-        // One-shot so the format log fires from RenderIntersection rather than Awake/Start
-        // (Awake logs are getting buffered out before adb captures them).
-        private bool m_LoggedTextureFormatOnce;
-
         private Material m_DownsampleMat;
         private RenderTexture m_HighResTex;
         private Camera m_IntersectionCamera;
@@ -104,8 +89,6 @@ namespace TiltBrush
         // beginCameraRendering callback can filter to it.
         private Camera m_MainVrCamera;
         private int m_LastDispatchFrame = -1;
-        // Heartbeats throttled to every Nth frame to avoid spamming logcat.
-        private const int kHeartbeatModulo = 60;
 
         private void Start()
         {
@@ -133,53 +116,6 @@ namespace TiltBrush
 
             // Shutdown hook to fix a warning in-editor.
             App.Instance.AppExit += OnGuaranteedAppQuit;
-
-            if (kDebugLog)
-            {
-                Debug.Log($"[OB_SEL] GpuIntersector.Start " +
-                    $"graphicsAPI={SystemInfo.graphicsDeviceType} " +
-                    $"supportsGeomShaders={SystemInfo.supportsGeometryShaders} " +
-                    $"supportsCompute={SystemInfo.supportsComputeShaders} " +
-                    $"forceFallback={kDebugForceNonGeomFallback}");
-            }
-        }
-
-        private void DumpHighResTex(bool useGeomPath)
-        {
-            // Ensure any GPU work writing m_HighResTex is flushed before ReadPixels;
-            // on Vulkan/Android the queued command might otherwise not have executed yet,
-            // which would make the dump misleadingly show pre-render state.
-            GL.Flush();
-            var prev = RenderTexture.active;
-            try
-            {
-                RenderTexture.active = m_HighResTex;
-                var tex2d = new Texture2D(m_HighResTex.width, m_HighResTex.height,
-                    TextureFormat.RGBA32, false);
-                tex2d.ReadPixels(new Rect(0, 0, m_HighResTex.width, m_HighResTex.height), 0, 0);
-                tex2d.Apply();
-                byte[] png = tex2d.EncodeToPNG();
-                Object.Destroy(tex2d);
-
-                string dir = Path.Combine(Application.persistentDataPath, "ob_sel_dumps");
-                Directory.CreateDirectory(dir);
-                string file = Path.Combine(dir,
-                    $"hires_{(useGeomPath ? "geom" : "fb")}_f{Time.frameCount:D8}.png");
-                File.WriteAllBytes(file, png);
-
-                if (kDebugLog)
-                {
-                    Debug.Log($"[OB_SEL] DumpHighResTex -> {file} ({png.Length} bytes)");
-                }
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogWarning($"[OB_SEL] DumpHighResTex failed: {e.Message}");
-            }
-            finally
-            {
-                RenderTexture.active = prev;
-            }
         }
 
         private void OnGuaranteedAppQuit()
@@ -202,12 +138,6 @@ namespace TiltBrush
             // raises this event and would cause recursion.
             if (cam != m_MainVrCamera) return;
 
-            if (kDebugLog && (Time.frameCount % kHeartbeatModulo) == 0)
-            {
-                Debug.Log($"[OB_SEL] URP beginCameraRendering cam={cam.name} " +
-                    $"pending={m_activeResults.Count} frame={Time.frameCount}");
-            }
-
             ReadResultsDispatchCallback();
         }
 
@@ -220,21 +150,13 @@ namespace TiltBrush
             if (m_LastDispatchFrame == Time.frameCount) return;
             m_LastDispatchFrame = Time.frameCount;
 
-            int processed = 0;
             for (int i = 0; i < m_activeResults.Count; i++)
             {
                 if (m_activeResults[i]())
                 {
                     m_activeResults.RemoveAt(i);
                     i--;
-                    processed++;
                 }
-            }
-
-            if (kDebugLog && processed > 0)
-            {
-                Debug.Log($"[OB_SEL] ReadResultsDispatchCallback processed={processed} " +
-                    $"remaining={m_activeResults.Count} frame={Time.frameCount}");
             }
         }
 
@@ -345,12 +267,6 @@ namespace TiltBrush
             m_HighResTex = new RenderTexture(desc);
             m_HighResTex.filterMode = FilterMode.Point;
             m_HighResTex.Create();
-
-            if (kDebugLog)
-            {
-                Debug.Log($"[OB_SEL] m_HighResTex created format={m_HighResTex.format} " +
-                    $"graphicsFormat={m_HighResTex.graphicsFormat} sRGB={m_HighResTex.sRGB}");
-            }
         }
 
         void OnDisable()
@@ -379,33 +295,6 @@ namespace TiltBrush
             m_IntersectionCamera.farClipPlane = radius_GS;
             m_IntersectionCamera.orthographicSize = radius_GS;
 
-            if (kDebugLog && !m_LoggedTextureFormatOnce)
-            {
-                m_LoggedTextureFormatOnce = true;
-                Debug.Log($"[OB_SEL] HighResTex format={m_HighResTex.format} " +
-                    $"graphicsFormat={m_HighResTex.graphicsFormat} sRGB={m_HighResTex.sRGB} " +
-                    $"colorSpace={QualitySettings.activeColorSpace} " +
-                    $"graphicsAPI={SystemInfo.graphicsDeviceType}");
-
-                Shader serialized = m_IntersectionShader;
-                Shader serializedFb = m_IntersectionShaderFallback;
-                Shader byName = Shader.Find("Brush/Special/Intersection");
-                Debug.Log($"[OB_SEL] ShaderCheck primary " +
-                    $"name='{serialized?.name}' " +
-                    $"isSupported={serialized?.isSupported} " +
-                    $"passCount={serialized?.passCount} " +
-                    $"renderQueue={serialized?.renderQueue} " +
-                    $"findBackName='{byName?.name}' " +
-                    $"sameInstance={ReferenceEquals(serialized, byName)}");
-                Debug.Log($"[OB_SEL] ShaderCheck fallback " +
-                    $"name='{serializedFb?.name}' " +
-                    $"isSupported={serializedFb?.isSupported} " +
-                    $"passCount={serializedFb?.passCount} " +
-                    $"renderQueue={serializedFb?.renderQueue}");
-                Debug.Log($"[OB_SEL] IntersectionMaterial shader='{m_IntersectionMaterial?.shader?.name}' " +
-                    $"passCount={m_IntersectionMaterial?.passCount}");
-            }
-
             // CommandBuffer-driven render. Replaces Camera.RenderWithShader, which does not
             // reliably substitute shaders under URP on Android/Vulkan.
             m_IntersectionCB.Clear();
@@ -414,8 +303,6 @@ namespace TiltBrush
                 GL.GetGPUProjectionMatrix(m_IntersectionCamera.projectionMatrix, true));
             m_IntersectionCB.SetRenderTarget(m_HighResTex);
             m_IntersectionCB.ClearRenderTarget(true, true, Color.clear);
-
-            int drawn = 0;
 
             // Brush strokes. Iterate ALL canvases (main + selection + layers), not just the
             // active one, because selection-tool grip detection asks for intersections on the
@@ -430,7 +317,6 @@ namespace TiltBrush
                     if (r == null) continue;
                     if (((1 << r.gameObject.layer) & renderCullingMask) == 0) continue;
                     m_IntersectionCB.DrawRenderer(r, m_IntersectionMaterial, 0, 0);
-                    drawn++;
                 }
             }
 
@@ -447,27 +333,11 @@ namespace TiltBrush
                         var r = renderers[i];
                         if (((1 << r.gameObject.layer) & renderCullingMask) == 0) continue;
                         m_IntersectionCB.DrawRenderer(r, m_IntersectionMaterial, 0, 0);
-                        drawn++;
                     }
                 }
             }
 
             Graphics.ExecuteCommandBuffer(m_IntersectionCB);
-
-            bool debugThisRequest = (kDebugLog || kDebugDumpHighResTex)
-                && (kDebugThrottleFrames <= 0
-                    || (m_DebugRequestCounter++ % Mathf.Max(1, kDebugThrottleFrames)) == 0);
-
-            if (debugThisRequest && kDebugDumpHighResTex)
-            {
-                DumpHighResTex(true /*useGeomPath - cosmetic only, used for filename*/);
-            }
-
-            if (debugThisRequest && kDebugLog)
-            {
-                Debug.Log($"[OB_SEL] RenderIntersection center={vDetectionCenter_GS} radius={radius_GS} " +
-                    $"cull=0x{renderCullingMask:x} drawn={drawn} frame={Time.frameCount}");
-            }
 
             // We bypass the legacy downsample blit (which corrupts channels on URP+Vulkan)
             // and return the hi-res RT directly. The compute-shader readback handles the full
@@ -583,32 +453,6 @@ namespace TiltBrush
             {
                 UnityEngine.Profiling.Profiler.BeginSample("Intersection: Readback Texture");
 
-                // [OB_SEL] head-to-head diagnostic: read the raw RT bytes via ReadPixels BEFORE
-                // dispatching the compute shader. If raw bytes show R != G while the compute
-                // shader output shows R == G in every pixel, the bug is in the compute shader's
-                // unpack (likely a Vulkan vector-cast/swizzle issue). If both show R == G, the
-                // bug is upstream (intersection shader output or the RT format).
-                Color32[] rawPixels = null;
-                if (kDebugLog && m_ResultTex != null)
-                {
-                    try
-                    {
-                        var prev = RenderTexture.active;
-                        RenderTexture.active = m_ResultTex;
-                        var t2d = new Texture2D(m_ResultTex.width, m_ResultTex.height,
-                            TextureFormat.RGBA32, false);
-                        t2d.ReadPixels(new Rect(0, 0, m_ResultTex.width, m_ResultTex.height), 0, 0);
-                        t2d.Apply();
-                        rawPixels = t2d.GetPixels32();
-                        UnityEngine.Object.Destroy(t2d);
-                        RenderTexture.active = prev;
-                    }
-                    catch (System.Exception e)
-                    {
-                        Debug.LogWarning($"[OB_SEL] raw ReadPixels failed: {e.Message}");
-                    }
-                }
-
                 // Only set the InputTexture, since the OutputBuffer never changes.
                 sm_ComputeCopyShader.SetTexture(sm_CopyKernel, "InputTexture", m_ResultTex);
                 // Dispatch kTexSize/4 groups in each dimension - the compute shader uses
@@ -623,42 +467,6 @@ namespace TiltBrush
                 // Read data without allocating new memory.
                 sm_ReadbackBuffer.GetData(sm_ReadbackBufferStorage);
                 uint[] resultColors = sm_ReadbackBufferStorage;
-
-                if (kDebugLog && rawPixels != null)
-                {
-                    int rawNonZero = 0, rawReqG = 0, rawRneG = 0;
-                    int firstSampleIdx = -1;
-                    for (int i = 0; i < rawPixels.Length; i++)
-                    {
-                        Color32 c = rawPixels[i];
-                        if (c.r != 0 || c.g != 0 || c.b != 0 || c.a != 0)
-                        {
-                            if (firstSampleIdx < 0) firstSampleIdx = i;
-                            rawNonZero++;
-                            if (c.r == c.g) rawReqG++; else rawRneG++;
-                        }
-                    }
-                    string firstSampleRaw = firstSampleIdx >= 0
-                        ? $"R={rawPixels[firstSampleIdx].r:X2} G={rawPixels[firstSampleIdx].g:X2} " +
-                          $"B={rawPixels[firstSampleIdx].b:X2} A={rawPixels[firstSampleIdx].a:X2}"
-                        : "(none)";
-
-                    int csNonZero = 0, csReqG = 0;
-                    for (int i = 0; i < resultColors.Length; i++)
-                    {
-                        uint v = resultColors[i];
-                        if (v != 0)
-                        {
-                            csNonZero++;
-                            byte r = (byte)((v >> 24) & 0xff);
-                            byte g = (byte)((v >> 16) & 0xff);
-                            if (r == g) csReqG++;
-                        }
-                    }
-
-                    Debug.Log($"[OB_SEL] HEAD-TO-HEAD raw[nonZero={rawNonZero} R==G={rawReqG} R!=G={rawRneG} " +
-                        $"first={firstSampleRaw}] cs[nonZero={csNonZero} R==G={csReqG}]");
-                }
 
                 UnityEngine.Profiling.Profiler.EndSample();
 
@@ -718,48 +526,6 @@ namespace TiltBrush
                 }
 
                 uint[] resultColors = GetTextureColors();
-
-                if (kDebugLog)
-                {
-                    int nonZero = 0;
-                    uint sample = 0;
-                    var distinctBatchIds = new HashSet<ushort>();
-                    for (int k = 0; k < resultColors.Length; k++)
-                    {
-                        uint v = resultColors[k];
-                        if (v != 0)
-                        {
-                            if (nonZero == 0) sample = v;
-                            nonZero++;
-                            distinctBatchIds.Add((ushort)((v & 0xffff0000) >> 16));
-                        }
-                    }
-
-                    int batchHits = 0, widgetHits = 0, unknown = 0;
-                    var canvas = App.ActiveCanvas;
-                    var widgetMgr = WidgetManager.m_Instance;
-                    var idDetail = new System.Text.StringBuilder();
-                    foreach (ushort bid in distinctBatchIds)
-                    {
-                        bool inBatch = canvas != null && canvas.BatchManager.GetBatch(bid) != null;
-                        bool inWidget = widgetMgr != null && widgetMgr.GetBatch(bid) != null;
-                        if (inBatch) batchHits++;
-                        else if (inWidget) widgetHits++;
-                        else unknown++;
-                        if (idDetail.Length < 200)
-                        {
-                            idDetail.Append(bid.ToString("x4"))
-                                .Append(inBatch ? "B" : (inWidget ? "W" : "?"))
-                                .Append(' ');
-                        }
-                    }
-
-                    Debug.Log($"[OB_SEL] Batch OnReadResults nonZero={nonZero}/{resultColors.Length} " +
-                        $"distinctIds={distinctBatchIds.Count} " +
-                        $"batchHits={batchHits} widgetHits={widgetHits} unknown={unknown} " +
-                        $"firstSample=0x{sample:x8} ids={idDetail} " +
-                        $"startFrame={m_StartFrame} nowFrame={Time.frameCount}");
-                }
 
                 //
                 // Process the color buffer into result objects, if requested.
@@ -866,11 +632,6 @@ namespace TiltBrush
                 }
 
                 DeallocateHashSet(seen);
-                if (kDebugLog)
-                {
-                    Debug.Log($"[OB_SEL] Batch OnReadResults FINAL m_ResultCount={m_ResultCount} " +
-                        $"m_ResultList.Count={(m_ResultList != null ? m_ResultList.Count : -1)}");
-                }
                 UnityEngine.Profiling.Profiler.EndSample();
             }
         }
