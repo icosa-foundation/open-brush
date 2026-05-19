@@ -25,6 +25,7 @@ namespace TiltBrush
 {
     public class UiScreenshotter : Editor
     {
+        private const float kBrushScreenshotTime = 0.5f;
 
         private static bool IsPlaying()
         {
@@ -106,13 +107,30 @@ namespace TiltBrush
                 path.Add(TrTransform.T(new Vector3(i, Mathf.Sin(i * 5f) * (1 - i / 3), 0)));
             }
 
-            foreach (var brush in BrushCatalog.m_Instance.GetTagFilteredBrushList())
+            var batchManager = App.Scene.ActiveCanvas.BatchManager;
+            bool wasOneStrokePerBatch = batchManager.OneStrokePerBatch;
+            bool wasForceDeterministicBirthTimeForExport = App.Config.m_ForceDeterministicBirthTimeForExport;
+            batchManager.OneStrokePerBatch = true;
+            App.Config.m_ForceDeterministicBirthTimeForExport = true;
+
+            try
             {
-                PointerManager.m_Instance.SetBrushForAllPointers(brush);
-                await Task.Delay(100);
-                DrawStrokes.DrawNestedTrList(new List<IEnumerable<TrTransform>> { path }, TrTransform.T(origin));
-                SaveCurrentView(cam, $"brush-{brush.DurableName}.png", 1024, 1024);
-                ApiMethods.DeleteStroke(0);
+                foreach (var brush in BrushCatalog.m_Instance.GetTagFilteredBrushList())
+                {
+                    PointerManager.m_Instance.SetBrushForAllPointers(brush);
+                    await Task.Delay(100);
+                    var strokes = DrawStrokes.DrawNestedTrList(
+                        new List<IEnumerable<TrTransform>> { path },
+                        TrTransform.T(origin));
+                    SetFixedShaderTime(strokes, kBrushScreenshotTime);
+                    SaveCurrentView(cam, $"brush-{brush.DurableName}.png", 1024, 1024);
+                    DeleteStrokes(strokes);
+                }
+            }
+            finally
+            {
+                App.Config.m_ForceDeterministicBirthTimeForExport = wasForceDeterministicBirthTimeForExport;
+                batchManager.OneStrokePerBatch = wasOneStrokePerBatch;
             }
         }
 
@@ -180,6 +198,37 @@ namespace TiltBrush
             cam.transform.position = new Vector3(0, 100, 0);
             cam.transform.rotation = Quaternion.identity;
             return cam;
+        }
+
+        private static void SetFixedShaderTime(IEnumerable<Stroke> strokes, float time)
+        {
+            Vector4 timeValue = new Vector4(time / 20f, time, time * 2f, time * 3f);
+            foreach (var stroke in strokes)
+            {
+                try
+                {
+                    stroke.SetShaderFloat("_TimeBlend", 1f);
+                    stroke.SetShaderVector(
+                        "_TimeOverrideValue",
+                        timeValue.x,
+                        timeValue.y,
+                        timeValue.z,
+                        timeValue.w);
+                }
+                catch (StrokeShaderModifierException)
+                {
+                    // Static brushes do not expose the time override properties.
+                }
+            }
+        }
+
+        private static void DeleteStrokes(IEnumerable<Stroke> strokes)
+        {
+            foreach (var stroke in strokes)
+            {
+                SketchMemoryScript.m_Instance.RemoveMemoryObject(stroke);
+                stroke.Uncreate();
+            }
         }
 
         static void SaveCurrentView(Camera cameraToCapture, string fileName, int resWidth, int resHeight)
