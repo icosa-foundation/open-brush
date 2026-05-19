@@ -328,11 +328,12 @@ namespace TiltBrush
             m_GlowIntensity = fGlowIntensity;
 
             Color rTintedColor = GetTintColor();
-            ControllerGeometry.MainMesh.material.SetColor("_EmissionColor", rTintedColor);
-            ControllerGeometry.TriggerMesh.material.SetColor("_EmissionColor", rTintedColor);
+            Color controllerMeshTint = GetControllerMeshTintColor(rTintedColor);
+            ControllerGeometry.MainMesh.material.SetColor("_EmissionColor", controllerMeshTint);
+            ControllerGeometry.TriggerMesh.material.SetColor("_EmissionColor", controllerMeshTint);
             for (int i = 0; i < ControllerGeometry.OtherMeshes.Length; ++i)
             {
-                ControllerGeometry.OtherMeshes[i].material.SetColor("_EmissionColor", rTintedColor);
+                ControllerGeometry.OtherMeshes[i].material.SetColor("_EmissionColor", controllerMeshTint);
             }
             ControllerGeometry.TransformVisualsRenderer.material.SetColor("_Color", rTintColor);
 
@@ -345,6 +346,22 @@ namespace TiltBrush
         private Color GetTintColor()
         {
             return m_Tint * (m_BaseIntensity + m_GlowIntensity);
+        }
+
+        private Color GetControllerMeshTintColor(Color tintColor)
+        {
+#if UNITY_ANDROID || UNITY_IOS
+            float maxChannel = Mathf.Max(tintColor.r, Mathf.Max(tintColor.g, tintColor.b));
+            if (maxChannel > 1.0f)
+            {
+                return new Color(
+                    tintColor.r / maxChannel,
+                    tintColor.g / maxChannel,
+                    tintColor.b / maxChannel,
+                    tintColor.a);
+            }
+#endif
+            return tintColor;
         }
 
         public void EnableTransformVisuals(bool bEnable, float fIntensity)
