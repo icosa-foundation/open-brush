@@ -35,10 +35,8 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _BackPassCullMode: 1
     - _Cutoff: 0.5
     - _FrameWidth: -40
-    - _FrontPassCullMode: 2
     - _GridLineWidth: 1
     - _GridSize: 30
     - _InvFade: 1

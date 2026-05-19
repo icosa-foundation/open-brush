@@ -22,8 +22,6 @@ Properties {
   _GridLineWidth ("Grid Line Width", Float) = .01
   _FrameWidth ("Frame Width", Float) = .1
   [KeywordEnum(Plane, Cube, Sphere, Capsule, Mesh)] _Shape ("Shape Type", Float) = 0
-  [Enum(UnityEngine.Rendering.CullMode)] _BackPassCullMode ("Back Pass Cull Mode", Int) = 1
-  [Enum(UnityEngine.Rendering.CullMode)] _FrontPassCullMode ("Front Pass Cull Mode", Int) = 2
 }
 
 CGINCLUDE
@@ -239,7 +237,7 @@ ColorMask RGB
 ZWrite Off
 
 // back faces
-Cull [_BackPassCullMode]
+Cull Front
 Blend SrcAlpha OneMinusSrcAlpha // overlay
 
 Pass {
@@ -265,7 +263,7 @@ Pass {
   }
 
 // front faces
-Cull [_FrontPassCullMode]
+Cull Back
 Blend SrcAlpha OneMinusSrcAlpha // overlay
 Pass {
   CGPROGRAM
@@ -292,3 +290,4 @@ Pass {
 } // end subshader
 Fallback "Unlit/Diffuse"
 }
+
