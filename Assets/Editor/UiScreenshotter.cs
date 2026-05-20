@@ -28,6 +28,7 @@ namespace TiltBrush
         private const float kBrushScreenshotTime = 0.5f;
         private const int kScreenshotSupersampling = 2;
         private const int kScreenshotMsaaSamples = 4;
+        private const string kScreenshotOutputDirectory = "Support/Screenshots";
 
         private static bool IsPlaying()
         {
@@ -267,7 +268,11 @@ namespace TiltBrush
                 RenderTexture.active = downsampledRt;
                 screenShot.ReadPixels(new Rect(0, 0, resWidth, resHeight), 0, 0);
                 byte[] bytes = screenShot.EncodeToPNG();
-                string filePath = Path.Combine(System.IO.Directory.GetCurrentDirectory(), fileName);
+                string outputDirectory = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    kScreenshotOutputDirectory);
+                Directory.CreateDirectory(outputDirectory);
+                string filePath = Path.Combine(outputDirectory, fileName);
                 File.WriteAllBytes(filePath, bytes);
             }
             finally
