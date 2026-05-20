@@ -112,7 +112,7 @@ namespace TiltBrush
                 }
             }
 
-            public string Extension => Path.GetExtension(AbsolutePath).ToLower();
+            public string Extension => Path.GetExtension(AbsolutePath)?.ToLowerInvariant() ?? "";
 
             public string AssetId
             {
