@@ -29,6 +29,7 @@ namespace TiltBrush
         private const int kScreenshotSupersampling = 2;
         private const int kScreenshotMsaaSamples = 4;
         private const string kScreenshotOutputDirectory = "Support/Screenshots";
+        private const string kLogPrefix = "_ui_screenshotter_20260520_";
 
         private static bool IsPlaying()
         {
@@ -120,6 +121,10 @@ namespace TiltBrush
             {
                 foreach (var brush in BrushCatalog.m_Instance.GetTagFilteredBrushList())
                 {
+                    if (!CanGenerateBrushScreenshot(brush))
+                    {
+                        continue;
+                    }
                     PointerManager.m_Instance.SetBrushForAllPointers(brush);
                     await Task.Delay(100);
                     var strokes = DrawStrokes.DrawNestedTrList(
@@ -136,6 +141,36 @@ namespace TiltBrush
                 App.Config.m_ForceDeterministicBirthTimeForExport = wasForceDeterministicBirthTimeForExport;
                 batchManager.OneStrokePerBatch = wasOneStrokePerBatch;
             }
+        }
+
+        private static bool CanGenerateBrushScreenshot(BrushDescriptor brush)
+        {
+            if (brush == null)
+            {
+                Debug.LogWarning($"{kLogPrefix} Skipping null brush descriptor.");
+                return false;
+            }
+
+            try
+            {
+                Material material = brush.Material;
+                if (material == null || !material)
+                {
+                    Debug.LogWarning(
+                        $"{kLogPrefix} Skipping brush '{brush.name}' ({brush.m_DurableName}, {brush.m_Guid}) " +
+                        "because its material is missing.");
+                    return false;
+                }
+            }
+            catch (MissingReferenceException exception)
+            {
+                Debug.LogWarning(
+                    $"{kLogPrefix} Skipping brush '{brush.name}' ({brush.m_DurableName}, {brush.m_Guid}) " +
+                    $"because its material reference is invalid: {exception.Message}");
+                return false;
+            }
+
+            return true;
         }
 
         async static void DelayedGeneratePanelScreenshots()
