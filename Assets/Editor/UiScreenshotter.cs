@@ -20,6 +20,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 namespace TiltBrush
 {
@@ -30,6 +31,7 @@ namespace TiltBrush
         private const int kScreenshotMsaaSamples = 4;
         private const string kScreenshotOutputDirectory = "Support/Screenshots";
         private const string kLogPrefix = "_ui_screenshotter_20260520_";
+        private const string kUrpPostLogPrefix = "[OB_URP_POST]";
 
         private static bool IsPlaying()
         {
@@ -132,7 +134,12 @@ namespace TiltBrush
                         TrTransform.T(origin));
                     SetFixedShaderTime(strokes, kBrushScreenshotTime);
                     batchManager.FlushMeshUpdates();
-                    SaveCurrentView(cam, $"brush-{brush.DurableName}.png", 1024, 1024);
+                    SaveCurrentView(
+                        cam,
+                        $"brush-{brush.DurableName}.png",
+                        1024,
+                        1024,
+                        enablePostProcessing: true);
                     DeleteStrokes(strokes);
                 }
             }
@@ -276,11 +283,19 @@ namespace TiltBrush
             }
         }
 
-        static void SaveCurrentView(Camera cameraToCapture, string fileName, int resWidth, int resHeight)
+        static void SaveCurrentView(
+            Camera cameraToCapture,
+            string fileName,
+            int resWidth,
+            int resHeight,
+            bool enablePostProcessing = false)
         {
             int renderWidth = resWidth * kScreenshotSupersampling;
             int renderHeight = resHeight * kScreenshotSupersampling;
-            RenderTexture rt = new RenderTexture(renderWidth, renderHeight, 24, RenderTextureFormat.ARGB32)
+            RenderTextureFormat sourceFormat = enablePostProcessing
+                ? RenderTextureFormat.DefaultHDR
+                : RenderTextureFormat.ARGB32;
+            RenderTexture rt = new RenderTexture(renderWidth, renderHeight, 24, sourceFormat)
             {
                 antiAliasing = kScreenshotMsaaSamples,
                 filterMode = FilterMode.Bilinear
@@ -293,9 +308,29 @@ namespace TiltBrush
             RenderTexture previousActive = RenderTexture.active;
             RenderTexture previousTarget = cameraToCapture.targetTexture;
             bool previousAllowMsaa = cameraToCapture.allowMSAA;
+            bool previousAllowHdr = cameraToCapture.allowHDR;
+            UniversalAdditionalCameraData cameraData =
+                cameraToCapture.GetComponent<UniversalAdditionalCameraData>();
+            bool hadCameraData = cameraData != null;
+            bool previousRenderPostProcessing = false;
             try
             {
+                if (enablePostProcessing)
+                {
+                    if (cameraData == null)
+                    {
+                        cameraData = cameraToCapture.gameObject.AddComponent<UniversalAdditionalCameraData>();
+                        Debug.Log(
+                            $"{kUrpPostLogPrefix} Added UniversalAdditionalCameraData to brush screenshot camera.");
+                    }
+                    previousRenderPostProcessing = cameraData.renderPostProcessing;
+                    cameraData.renderPostProcessing = true;
+                    cameraData.volumeTrigger = cameraToCapture.transform;
+                    cameraData.volumeLayerMask = ~0;
+                }
+
                 cameraToCapture.allowMSAA = true;
+                cameraToCapture.allowHDR = enablePostProcessing || previousAllowHdr;
                 cameraToCapture.targetTexture = rt;
                 screenShot = new Texture2D(resWidth, resHeight, TextureFormat.RGB24, false);
                 cameraToCapture.Render();
@@ -314,6 +349,15 @@ namespace TiltBrush
             {
                 cameraToCapture.targetTexture = previousTarget;
                 cameraToCapture.allowMSAA = previousAllowMsaa;
+                cameraToCapture.allowHDR = previousAllowHdr;
+                if (enablePostProcessing && cameraData != null)
+                {
+                    cameraData.renderPostProcessing = previousRenderPostProcessing;
+                    if (!hadCameraData)
+                    {
+                        Destroy(cameraData);
+                    }
+                }
                 RenderTexture.active = previousActive;
                 if (screenShot != null)
                 {

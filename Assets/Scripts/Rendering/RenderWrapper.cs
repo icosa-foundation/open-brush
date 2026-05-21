@@ -175,9 +175,6 @@ namespace TiltBrush
                     m_isRecorder = GetComponent<VideoRecorder>() != null;
                     m_features.Clear();
 
-                    AddFeature<FXAA>();
-                    AddFeature<SENaturalBloomAndDirtyLens>();
-
                     m_configuredFor = QualitySettings.GetQualityLevel();
                 }
 

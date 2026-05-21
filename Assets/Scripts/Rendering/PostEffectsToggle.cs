@@ -36,8 +36,8 @@ namespace TiltBrush
 
         void OnPostEffectsChanged()
         {
-            Toggle<TiltShift>(CameraConfig.PostEffects);
-            Toggle<Kino.Vignette>(CameraConfig.PostEffects);
+            Toggle<TiltShift>(false);
+            Toggle<Kino.Vignette>(false);
         }
     }
 

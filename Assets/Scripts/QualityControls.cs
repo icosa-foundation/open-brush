@@ -27,12 +27,9 @@ namespace TiltBrush
     {
         static public QualityControls m_Instance;
         private const string kAutoSimplificationEnabled = "Autosimplification Enabled";
+        private const string kLegacyPostLogPrefix = "[OB_URP_POST]";
 
         private List<Camera> m_Cameras;
-        private List<SENaturalBloomAndDirtyLens> m_Bloom;
-        private List<FXAA> m_Fxaa;
-        private List<MobileBloom> m_MobileBloom;
-        private float m_MobileBloomAmount;
 
         public event Action<int> OnQualityLevelChange;
 
@@ -69,7 +66,6 @@ namespace TiltBrush
         private int m_NumFramesFpsHighEnough;
         private int m_NumFramesGpuTooHigh;
         private int m_NumFramesGpuLowEnough;
-        private float m_DesiredBloom;
 
         /// A number from 0 (mobile, lowest) to 3 (future, highest)
         public int QualityLevel
@@ -138,9 +134,6 @@ namespace TiltBrush
             m_Instance = this;
 
             m_Cameras = new List<Camera>();
-            m_Bloom = new List<SENaturalBloomAndDirtyLens>();
-            m_Fxaa = new List<FXAA>();
-            m_MobileBloom = new List<MobileBloom>();
 
             // Simple desktop vs. mobile quality for now.  May need more control if e.g.
             // we need to set this differently for Win vs. Linux, or mobile level fragments
@@ -162,10 +155,6 @@ namespace TiltBrush
         /// Should be called after correct cameras are enabled
         public void Init()
         {
-            m_Bloom.Clear();
-            m_Fxaa.Clear();
-            m_MobileBloom.Clear();
-
             var cameras = new HashSet<Camera>(
                 FindObjectsOfType<Camera>(), new ReferenceComparer<Camera>());
             if (!App.Config.IsMobileHardware)
@@ -175,29 +164,9 @@ namespace TiltBrush
             }
             m_Cameras = cameras.Where(x => x.tag != "Ignore").ToList();
 
-            foreach (var camera in m_Cameras)
-            {
-                var rBloom = camera.GetComponent<SENaturalBloomAndDirtyLens>();
-                if (rBloom)
-                {
-                    m_Bloom.Add(rBloom);
-                }
-                var rFxaa = camera.GetComponent<FXAA>();
-                if (rFxaa)
-                {
-                    m_Fxaa.Add(rFxaa);
-                }
-                var mobileBloom = camera.GetComponent<MobileBloom>();
-                if (mobileBloom)
-                {
-                    m_MobileBloom.Add(mobileBloom);
-                }
-            }
+            DisableLegacyPostProcessing();
 
             m_FrameTimeStamps = new Queue<double>();
-
-            m_MobileBloomAmount = 0;
-            m_DesiredBloom = 1;
 
             // Set up the OVR overlay for the dynamic quality debug readout.
 #if OCULUS_SUPPORTED
@@ -301,25 +270,6 @@ namespace TiltBrush
                 m_NumFramesFpsHighEnough = 0;
             }
 
-            // Update the mobile bloom level for fade in / out
-            if (m_MobileBloomAmount != m_DesiredBloom)
-            {
-                float change = (Mathf.Sign(m_DesiredBloom - m_MobileBloomAmount) * Time.deltaTime)
-                    / AppQualityLevels.BloomFadeTime;
-                m_MobileBloomAmount = Mathf.Clamp01(m_MobileBloomAmount + change);
-                foreach (var bloom in m_MobileBloom)
-                {
-                    bloom.enabled = true;
-                    bloom.BloomAmount = m_MobileBloomAmount;
-                }
-                if (m_MobileBloomAmount == m_DesiredBloom)
-                {
-                    foreach (var bloom in m_MobileBloom)
-                    {
-                        bloom.enabled = m_DesiredBloom == 1;
-                    }
-                }
-            }
 #if OCULUS_SUPPORTED
             if (m_DebugText != null && m_DebugText.gameObject.activeInHierarchy)
             {
@@ -405,20 +355,42 @@ namespace TiltBrush
 
         void SetBloomMode(BloomMode rMode)
         {
-            for (int i = 0; i < m_Bloom.Count; ++i)
-            {
-                m_Bloom[i].enabled = (rMode == BloomMode.Full || rMode == BloomMode.Fast);
-            }
-
-            m_DesiredBloom = rMode == BloomMode.None ? 0 : 1;
+            // URP bloom is owned by UrpPostProcessingController during the migration.
         }
 
         void EnableFxaa(bool bEnable)
         {
-            foreach (var fxaa in m_Fxaa)
+            // Legacy FXAA is disabled during the URP migration. URP camera/post settings own AA.
+        }
+
+        void DisableLegacyPostProcessing()
+        {
+            int disabled = 0;
+            disabled += DisableAll<SENaturalBloomAndDirtyLens>();
+            disabled += DisableAll<FXAA>();
+            disabled += DisableAll<MobileBloom>();
+            disabled += DisableAll<TiltShift>();
+            disabled += DisableAll<Kino.Vignette>();
+            disabled += DisableAll<PostEffectsToggle>();
+
+            if (disabled > 0)
             {
-                fxaa.enabled = bEnable;
+                Debug.Log($"{kLegacyPostLogPrefix} Disabled {disabled} legacy post-processing components.");
             }
+        }
+
+        int DisableAll<T>() where T : MonoBehaviour
+        {
+            int disabled = 0;
+            foreach (T component in FindObjectsOfType<T>(includeInactive: true))
+            {
+                if (component.enabled)
+                {
+                    component.enabled = false;
+                    disabled++;
+                }
+            }
+            return disabled;
         }
 
         void EnableHDR(bool bEnable)
