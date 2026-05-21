@@ -62,9 +62,17 @@ namespace TiltBrush
             "snapshot.png,1024,768,1,true"
         )]
         public static string CaptureSnapshot(
-            string filename, int width, int height, float superSampling, bool includePostProcessing)
+            string filename,
+            int width,
+            int height,
+            float superSampling,
+            string includePostProcessing = "")
         {
             const string logPrefix = "[OB_URP_CAPTURE_API]";
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "snapshot");
 
             string fullPath = BuildCapturePath(filename, "snapshot.png", ".png");
             MultiCamCaptureRig rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
@@ -100,7 +108,7 @@ namespace TiltBrush
 
                 try
                 {
-                    rMgr.RenderToTexture(tmp, includePostProcessing: includePostProcessing);
+                    rMgr.RenderToTexture(tmp, includePostProcessing: usePostProcessing);
                 }
                 finally
                 {
@@ -117,7 +125,7 @@ namespace TiltBrush
 
                 Debug.Log(
                     $"{logPrefix} Saved snapshot path={fullPath} size={width}x{height} " +
-                    $"superSampling={superSampling} post={includePostProcessing}.");
+                    $"superSampling={superSampling} post={usePostProcessing}.");
                 return fullPath;
             }
             catch (Exception e)
@@ -140,11 +148,15 @@ namespace TiltBrush
         [ApiEndpoint(
             "capture.autogif",
             "Queues an Auto GIF capture to the user's Snapshots folder",
-            "autogif.gif"
+            "autogif.gif,true"
         )]
-        public static string CaptureAutoGif(string filename)
+        public static string CaptureAutoGif(string filename, string includePostProcessing = "")
         {
             const string logPrefix = "[OB_URP_CAPTURE_API]";
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "autogif");
 
             MultiCamTool cam = GetMultiCamToolForCaptureApi(logPrefix);
             if (cam == null)
@@ -153,17 +165,21 @@ namespace TiltBrush
             }
 
             string fullPath = BuildCapturePath(filename, "autogif.gif", ".gif");
-            return cam.CaptureAutoGifForApi(fullPath);
+            return cam.CaptureAutoGifForApi(fullPath, usePostProcessing);
         }
 
         [ApiEndpoint(
             "capture.timegif",
             "Queues a Time GIF capture to the user's Snapshots folder",
-            "timegif.gif"
+            "timegif.gif,true"
         )]
-        public static string CaptureTimeGif(string filename)
+        public static string CaptureTimeGif(string filename, string includePostProcessing = "")
         {
             const string logPrefix = "[OB_URP_CAPTURE_API]";
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "timegif");
 
             MultiCamTool cam = GetMultiCamToolForCaptureApi(logPrefix);
             if (cam == null)
@@ -172,7 +188,7 @@ namespace TiltBrush
             }
 
             string fullPath = BuildCapturePath(filename, "timegif.gif", ".gif");
-            return cam.CaptureTimeGifForApi(fullPath);
+            return cam.CaptureTimeGifForApi(fullPath, usePostProcessing);
         }
 
         [ApiEndpoint(
@@ -213,9 +229,16 @@ namespace TiltBrush
             "dropcam.png,1024,576,true"
         )]
         public static string CaptureDropCam(
-            string filename, int width = 1024, int height = 576, bool includePostProcessing = true)
+            string filename,
+            int width = 1024,
+            int height = 576,
+            string includePostProcessing = "")
         {
             const string logPrefix = "[OB_URP_CAPTURE_API]";
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "dropcam");
 
             string fullPath = BuildCapturePath(filename, "dropcam.png", ".png");
             try
@@ -231,12 +254,12 @@ namespace TiltBrush
                     return null;
                 }
 
-                RenderCameraToPng(camera, fullPath, width, height, includePostProcessing);
+                RenderCameraToPng(camera, fullPath, width, height, usePostProcessing);
                 dropCam.ShowInstantly(wasActive);
 
                 Debug.Log(
                     $"{logPrefix} Saved dropcam capture path={fullPath} size={width}x{height} " +
-                    $"post={includePostProcessing}.");
+                    $"post={usePostProcessing}.");
                 return fullPath;
             }
             catch (Exception e)
@@ -249,15 +272,27 @@ namespace TiltBrush
         [ApiEndpoint(
             "capture.video",
             "Records a short MultiCam video-camera frame-sequence smoke test into the user's Videos folder",
-            "video.mp4,1.0"
+            "video.mp4,1.0,true"
         )]
-        public static string CaptureVideo(string filename, float seconds = 1.0f)
+        public static string CaptureVideo(
+            string filename,
+            float seconds = 1.0f,
+            string includePostProcessing = "")
         {
             const string logPrefix = "[OB_URP_CAPTURE_API]";
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "video");
 
             string fullPath = BuildCapturePath(filename, "video.mp4", ".mp4", App.VideosPath());
-            App.Instance.StartCoroutine(CaptureVideoCoroutine(fullPath, Mathf.Max(0.1f, seconds)));
-            Debug.Log($"{logPrefix} Queued video capture path={fullPath} seconds={seconds}.");
+            App.Instance.StartCoroutine(CaptureVideoCoroutine(
+                fullPath,
+                Mathf.Max(0.1f, seconds),
+                usePostProcessing));
+            Debug.Log(
+                $"{logPrefix} Queued video capture path={fullPath} " +
+                $"seconds={seconds} post={usePostProcessing}.");
             return fullPath;
         }
 
@@ -314,7 +349,31 @@ namespace TiltBrush
             return cam;
         }
 
-        private static IEnumerator CaptureVideoCoroutine(string fullPath, float seconds)
+        private static bool ParseCapturePostProcessingOption(
+            string value,
+            string logPrefix,
+            string captureKind)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return CameraConfig.PostEffects;
+            }
+
+            if (bool.TryParse(value, out bool result))
+            {
+                return result;
+            }
+
+            Debug.LogWarning(
+                $"{logPrefix} Invalid post-processing value '{value}' for {captureKind}; " +
+                $"using CameraConfig.PostEffects={CameraConfig.PostEffects}.");
+            return CameraConfig.PostEffects;
+        }
+
+        private static IEnumerator CaptureVideoCoroutine(
+            string fullPath,
+            float seconds,
+            bool includePostProcessing)
         {
             const string logPrefix = "[OB_URP_CAPTURE_API]";
 
@@ -341,7 +400,7 @@ namespace TiltBrush
                     cameraData = camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
                 }
                 renderPostProcessingRestore = cameraData.renderPostProcessing;
-                cameraData.renderPostProcessing = CameraConfig.PostEffects;
+                cameraData.renderPostProcessing = includePostProcessing;
                 cameraData.volumeLayerMask = ~0;
                 cameraData.volumeTrigger = camera.transform;
 
@@ -368,7 +427,9 @@ namespace TiltBrush
                 }
 
                 VideoRecorderUtils.StopVideoCapture(saveCapture: true);
-                Debug.Log($"{logPrefix} Video capture finished path={fullPath} seconds={seconds}.");
+                Debug.Log(
+                    $"{logPrefix} Video capture finished path={fullPath} " +
+                    $"seconds={seconds} post={includePostProcessing}.");
             }
             finally
             {
