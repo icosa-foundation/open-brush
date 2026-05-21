@@ -14,6 +14,7 @@
 
 using System.IO;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 namespace TiltBrush
@@ -216,23 +217,26 @@ namespace TiltBrush
                 {
                     m_LeftInfo.camera.allowHDR = false;
                 }
-                var mobileBloom = GetComponent<MobileBloom>();
-                if (mobileBloom != null)
+                if (GraphicsSettings.currentRenderPipeline == null)
                 {
-                    mobileBloom.enabled = false;
-                }
-                else
-                {
-                    Debug.LogAssertion("No MobileBloom on the Screenshot Manager.");
-                }
-                var pcBloom = GetComponent<SENaturalBloomAndDirtyLens>();
-                if (pcBloom != null)
-                {
-                    pcBloom.enabled = false;
-                }
-                else
-                {
-                    Debug.LogAssertion("No SENaturalBloomAndDirtyLens on the Screenshot Manager.");
+                    var mobileBloom = GetComponent<MobileBloom>();
+                    if (mobileBloom != null)
+                    {
+                        mobileBloom.enabled = false;
+                    }
+                    else
+                    {
+                        Debug.LogAssertion("No MobileBloom on the Screenshot Manager.");
+                    }
+                    var pcBloom = GetComponent<SENaturalBloomAndDirtyLens>();
+                    if (pcBloom != null)
+                    {
+                        pcBloom.enabled = false;
+                    }
+                    else
+                    {
+                        Debug.LogAssertion("No SENaturalBloomAndDirtyLens on the Screenshot Manager.");
+                    }
                 }
             }
             if (m_UseDisplayWidthFromConfigFile)

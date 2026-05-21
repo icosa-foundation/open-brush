@@ -477,6 +477,49 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
 
+        [ApiEndpoint("profiling.start", "Starts profiling. Mode can be standard, light, or deep.", "standard")]
+        public static string StartProfiling(string mode = "standard")
+        {
+            ProfilingManager profilingManager = ProfilingManager.Instance;
+            if (profilingManager.IsProfiling)
+            {
+                return "Profiling is already running.";
+            }
+
+            ProfilingManager.Mode profilingMode = ParseProfilingMode(mode);
+            profilingManager.StartProfiling(profilingMode);
+            return $"Started {profilingMode} profiling.";
+        }
+
+        [ApiEndpoint("profiling.stop", "Stops profiling and writes the summary output")]
+        public static string StopProfiling()
+        {
+            ProfilingManager profilingManager = ProfilingManager.Instance;
+            if (!profilingManager.IsProfiling)
+            {
+                return "Profiling is not running.";
+            }
+
+            profilingManager.StopProfiling();
+            return "Stopped profiling.";
+        }
+
+        private static ProfilingManager.Mode ParseProfilingMode(string mode)
+        {
+            if (string.IsNullOrEmpty(mode))
+            {
+                return ProfilingManager.Mode.Standard;
+            }
+
+            if (System.Enum.TryParse(mode, ignoreCase: true, out ProfilingManager.Mode parsedMode))
+            {
+                return parsedMode;
+            }
+
+            UnityEngine.Debug.LogWarning($"[OB_PERF] Unknown profiling mode '{mode}', using Standard.");
+            return ProfilingManager.Mode.Standard;
+        }
+
         // // TODO Do we need this?
         // [ApiEndpoint("autoprofile", "Runs autoprofile")]
         // public static void DoAutoProfile()
@@ -627,5 +670,3 @@ namespace TiltBrush
         }
     }
 }
-
-

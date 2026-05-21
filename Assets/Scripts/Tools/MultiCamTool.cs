@@ -243,6 +243,7 @@ namespace TiltBrush
 
         private int m_RenderGap;
         private float m_CurrentGap = 1f;
+        private bool? m_CapturePostProcessingOverride;
 
         MultiCamStyle CurrentCameraStyle
         {
@@ -1944,7 +1945,7 @@ namespace TiltBrush
         // TimeGif
         //
 
-        public string CaptureAutoGifForApi(string saveName)
+        public string CaptureAutoGifForApi(string saveName, bool includePostProcessing)
         {
             const string logPrefix = "[OB_URP_CAPTURE_API]";
 
@@ -1955,12 +1956,12 @@ namespace TiltBrush
                 return null;
             }
 
-            App.Instance.StartCoroutine(CaptureAutoGifForApiCoroutine(saveName));
-            Debug.Log($"{logPrefix} Queued Auto GIF capture path={saveName}.");
+            App.Instance.StartCoroutine(CaptureAutoGifForApiCoroutine(saveName, includePostProcessing));
+            Debug.Log($"{logPrefix} Queued Auto GIF capture path={saveName} post={includePostProcessing}.");
             return saveName;
         }
 
-        public string CaptureTimeGifForApi(string saveName)
+        public string CaptureTimeGifForApi(string saveName, bool includePostProcessing)
         {
             const string logPrefix = "[OB_URP_CAPTURE_API]";
 
@@ -1971,22 +1972,24 @@ namespace TiltBrush
                 return null;
             }
 
-            App.Instance.StartCoroutine(CaptureTimeGifForApiCoroutine(saveName));
-            Debug.Log($"{logPrefix} Queued Time GIF capture path={saveName}.");
+            App.Instance.StartCoroutine(CaptureTimeGifForApiCoroutine(saveName, includePostProcessing));
+            Debug.Log($"{logPrefix} Queued Time GIF capture path={saveName} post={includePostProcessing}.");
             return saveName;
         }
 
-        IEnumerator CaptureAutoGifForApiCoroutine(string saveName)
+        IEnumerator CaptureAutoGifForApiCoroutine(string saveName, bool includePostProcessing)
         {
             const string logPrefix = "[OB_URP_CAPTURE_API]";
 
             MultiCamCaptureRig rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
             bool initialRigActive = rig.gameObject.activeSelf;
+            bool? previousCapturePostProcessingOverride = m_CapturePostProcessingOverride;
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(saveName));
                 rig.gameObject.SetActive(true);
                 rig.EnableCamera(true);
+                m_CapturePostProcessingOverride = includePostProcessing;
 
                 m_AutoGifCreationState = GifCreationState.Capturing;
                 m_Captures = new List<Color32[]>(m_GifFrames);
@@ -1996,7 +1999,9 @@ namespace TiltBrush
                 {
                     AutoGifTransitionCapturingToBuilding(saveName);
                     yield return WaitForApiGifTask();
-                    Debug.Log($"{logPrefix} Auto GIF capture encoded path={saveName} frames={m_GifFrames}.");
+                    Debug.Log(
+                        $"{logPrefix} Auto GIF capture encoded path={saveName} " +
+                        $"frames={m_GifFrames} post={includePostProcessing}.");
                 }
                 else
                 {
@@ -2009,20 +2014,23 @@ namespace TiltBrush
             {
                 rig.EnableCamera(App.PlatformConfig.EnableMulticamPreview);
                 rig.gameObject.SetActive(initialRigActive);
+                m_CapturePostProcessingOverride = previousCapturePostProcessingOverride;
             }
         }
 
-        IEnumerator CaptureTimeGifForApiCoroutine(string saveName)
+        IEnumerator CaptureTimeGifForApiCoroutine(string saveName, bool includePostProcessing)
         {
             const string logPrefix = "[OB_URP_CAPTURE_API]";
 
             MultiCamCaptureRig rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
             bool initialRigActive = rig.gameObject.activeSelf;
+            bool? previousCapturePostProcessingOverride = m_CapturePostProcessingOverride;
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(saveName));
                 rig.gameObject.SetActive(true);
                 rig.EnableCamera(true);
+                m_CapturePostProcessingOverride = includePostProcessing;
 
                 int frameCount = Mathf.Max(1, Mathf.CeilToInt(m_TimeGifFPS * m_TimeGifDuration));
                 m_TimeGifCreationState = GifCreationState.Capturing;
@@ -2040,7 +2048,9 @@ namespace TiltBrush
                 {
                     TimeGifTransitionCapturingToBuilding();
                     yield return WaitForApiGifTask();
-                    Debug.Log($"{logPrefix} Time GIF capture encoded path={saveName} frames={frameCount}.");
+                    Debug.Log(
+                        $"{logPrefix} Time GIF capture encoded path={saveName} " +
+                        $"frames={frameCount} post={includePostProcessing}.");
                 }
                 else
                 {
@@ -2053,7 +2063,13 @@ namespace TiltBrush
             {
                 rig.EnableCamera(App.PlatformConfig.EnableMulticamPreview);
                 rig.gameObject.SetActive(initialRigActive);
+                m_CapturePostProcessingOverride = previousCapturePostProcessingOverride;
             }
+        }
+
+        bool CapturePostProcessingEnabled()
+        {
+            return m_CapturePostProcessingOverride ?? CameraConfig.PostEffects;
         }
 
         IEnumerator WaitForApiGifTask()
@@ -2107,7 +2123,7 @@ namespace TiltBrush
 
             ScreenshotManager rMgr = GetScreenshotManager(MultiCamStyle.TimeGif);
             var tempTarget = rMgr.CreateTemporaryTargetForSave(tempTex.width, tempTex.height);
-            rMgr.RenderToTexture(tempTarget, includePostProcessing: CameraConfig.PostEffects);
+            rMgr.RenderToTexture(tempTarget, includePostProcessing: CapturePostProcessingEnabled());
 
             RenderTexture.active = tempTarget;
             tempTex.ReadPixels(new Rect(0, 0, tempTex.width, tempTex.height), 0, 0, false);
@@ -2192,7 +2208,7 @@ namespace TiltBrush
                 TrTransform offsetXf = GetGifTransform(t);
                 var tmp = (baseXf * offsetXf); // Work around 2018.3.x Mono parse bug
                 tmp.ToTransform(camera);
-                rMgr.RenderToTexture(tempTarget, includePostProcessing: CameraConfig.PostEffects);
+                rMgr.RenderToTexture(tempTarget, includePostProcessing: CapturePostProcessingEnabled());
                 prevXf.ToLocalTransform(camera);
 
                 RenderTexture.active = tempTarget;

@@ -76,6 +76,11 @@ namespace TiltBrush
             }
         }
 
+        public bool IsProfiling
+        {
+            get { return m_Profiling; }
+        }
+
         public void StartProfiling(Mode mode)
         {
             Debug.Assert(m_Profiling == false);

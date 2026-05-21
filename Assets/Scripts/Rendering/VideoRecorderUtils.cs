@@ -17,6 +17,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Rendering;
 using Debug = UnityEngine.Debug;
 
 namespace TiltBrush
@@ -135,7 +136,9 @@ namespace TiltBrush
             // No ffmpeg binary on mobile, so always do still frame capture.
             bool stillFrameCapture = true;
 #else
-            bool stillFrameCapture = App.UserConfig.Video.ForceFrameSequenceRender;
+            bool stillFrameCapture =
+                App.UserConfig.Video.ForceFrameSequenceRender ||
+                GraphicsSettings.currentRenderPipeline != null;
 #endif
 
             if (stillFrameCapture)

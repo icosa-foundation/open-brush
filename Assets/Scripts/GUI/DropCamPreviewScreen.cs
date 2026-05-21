@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace TiltBrush
 {
@@ -124,23 +125,26 @@ namespace TiltBrush
                 {
                     m_CameraInfo.camera.allowHDR = false;
                 }
-                var mobileBloom = GetComponent<MobileBloom>();
-                if (mobileBloom != null)
+                if (GraphicsSettings.currentRenderPipeline == null)
                 {
-                    mobileBloom.enabled = false;
-                }
-                else
-                {
-                    Debug.LogAssertion("No MobileBloom on the Screenshot Manager.");
-                }
-                var pcBloom = m_Camera.GetComponent<SENaturalBloomAndDirtyLens>();
-                if (pcBloom != null)
-                {
-                    pcBloom.enabled = false;
-                }
-                else
-                {
-                    Debug.LogAssertion("No SENaturalBloomAndDirtyLens on the Screenshot Manager.");
+                    var mobileBloom = GetComponent<MobileBloom>();
+                    if (mobileBloom != null)
+                    {
+                        mobileBloom.enabled = false;
+                    }
+                    else
+                    {
+                        Debug.LogAssertion("No MobileBloom on the Screenshot Manager.");
+                    }
+                    var pcBloom = m_Camera.GetComponent<SENaturalBloomAndDirtyLens>();
+                    if (pcBloom != null)
+                    {
+                        pcBloom.enabled = false;
+                    }
+                    else
+                    {
+                        Debug.LogAssertion("No SENaturalBloomAndDirtyLens on the Screenshot Manager.");
+                    }
                 }
             }
             CreateDisplayRenderTextures();

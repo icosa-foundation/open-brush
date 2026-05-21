@@ -241,10 +241,14 @@ namespace TiltBrush
                 "dropcam");
 
             string fullPath = BuildCapturePath(filename, "dropcam.png", ".png");
+            DropCamWidget dropCam = null;
+            bool wasActive = false;
+            bool shouldRestoreDropCam = false;
             try
             {
-                DropCamWidget dropCam = SketchControlsScript.m_Instance.GetDropCampWidget();
-                bool wasActive = dropCam.gameObject.activeSelf;
+                dropCam = SketchControlsScript.m_Instance.GetDropCampWidget();
+                wasActive = dropCam.gameObject.activeSelf;
+                shouldRestoreDropCam = true;
                 dropCam.ShowInstantly(true);
 
                 Camera camera = dropCam.GetComponentInChildren<Camera>(includeInactive: true);
@@ -255,7 +259,6 @@ namespace TiltBrush
                 }
 
                 RenderCameraToPng(camera, fullPath, width, height, usePostProcessing);
-                dropCam.ShowInstantly(wasActive);
 
                 Debug.Log(
                     $"{logPrefix} Saved dropcam capture path={fullPath} size={width}x{height} " +
@@ -266,6 +269,13 @@ namespace TiltBrush
             {
                 Debug.LogError($"{logPrefix} Dropcam capture failed: {e}");
                 return null;
+            }
+            finally
+            {
+                if (shouldRestoreDropCam && dropCam != null)
+                {
+                    dropCam.ShowInstantly(wasActive);
+                }
             }
         }
 

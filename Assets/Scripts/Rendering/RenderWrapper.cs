@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UObject = UnityEngine.Object;
 
 #if UNITY_ANDROID || UNITY_IOS
@@ -236,6 +237,17 @@ namespace TiltBrush
             m_isRecording = (VideoRecorderUtils.ActiveVideoRecording != null) &&
                 VideoRecorderUtils.ActiveVideoRecording.IsCapturing;
 
+            if (GraphicsSettings.currentRenderPipeline != null)
+            {
+                Shader.DisableKeyword("HDR_EMULATED");
+                if (m_hdrTarget != null)
+                {
+                    UObject.Destroy(m_hdrTarget);
+                    m_hdrTarget = null;
+                }
+                return;
+            }
+
 #if UNITY_ANDROID || UNITY_IOS
     // TODO:Mikesky - setting MSAA seems to crash quest when in Vulkan
     
@@ -379,7 +391,7 @@ namespace TiltBrush
             //
             // There are cases where we omit the decode pass for performance reasons;
             // eg, mobile quality setting, or when recording video.
-            if (fmt == RenderTextureFormat.ARGB32 && HasHdrDecodePass())
+            if (ShouldEncodeHdrToLdr(fmt))
             {
                 Shader.EnableKeyword("HDR_EMULATED"); // RGBAE: turn on alpha-exp encoding
             }
@@ -430,15 +442,16 @@ namespace TiltBrush
             srcCam.clearFlags = m_cameraClearFlags;
         }
 
-        bool ExistsAndIsEnabled<T>() where T : MonoBehaviour
+        bool ShouldEncodeHdrToLdr(RenderTextureFormat fmt)
         {
-            T c = GetComponent<T>();
-            return (c != null && c.enabled);
-        }
+            if (fmt != RenderTextureFormat.ARGB32)
+            {
+                return false;
+            }
 
-        bool HasHdrDecodePass()
-        {
-            return (ExistsAndIsEnabled<SENaturalBloomAndDirtyLens>());
+            // URP post-processing consumes HDR camera targets directly. The legacy alpha-exponent
+            // path only made sense when a Built-in image effect decoded it later in the chain.
+            return GraphicsSettings.currentRenderPipeline == null;
         }
 
         // -------------------------------------------------------------------------------------------- //
@@ -448,6 +461,12 @@ namespace TiltBrush
 #if !(UNITY_ANDROID || UNITY_IOS)
         public void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
+            if (GraphicsSettings.currentRenderPipeline != null)
+            {
+                Graphics.Blit(source, destination);
+                return;
+            }
+
             // We could skip the offscreen render when anti-aliasing is disabled.
             if (m_hdrTarget == null)
             {

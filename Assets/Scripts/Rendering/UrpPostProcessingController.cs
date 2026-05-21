@@ -44,6 +44,8 @@ namespace TiltBrush
         private VolumeProfile m_RuntimeCaptureProfile;
         private Bloom m_Bloom;
         private Vignette m_Vignette;
+        private bool m_CurrentHdr = true;
+        private bool m_CurrentFxaa;
 
         public VolumeProfile MainProfile => m_RuntimeMainProfile;
         public VolumeProfile CaptureProfile => m_RuntimeCaptureProfile;
@@ -116,11 +118,8 @@ namespace TiltBrush
                     Debug.Log($"{kLogPrefix} Added UniversalAdditionalCameraData to camera {camera.name}.");
                 }
 
-                cameraData.volumeLayerMask = m_VolumeLayerMask;
-                cameraData.volumeTrigger = camera.transform;
-
                 bool isCapture = IsCaptureCamera(camera);
-                cameraData.renderPostProcessing = !isCapture && m_EnablePostProcessingOnMainCameras;
+                ApplyCameraBaseline(camera, cameraData, isCapture);
 
                 if (isCapture)
                 {
@@ -184,10 +183,36 @@ namespace TiltBrush
 
             AppQualitySettingLevels.AppQualitySettings settings =
                 QualityControls.m_Instance.AppQualityLevels[qualityLevel];
+            m_CurrentHdr = settings.Hdr;
+            m_CurrentFxaa = settings.Fxaa;
             bool enableBloom = settings.Bloom != AppQualitySettingLevels.BloomMode.None && settings.Hdr;
 
             ApplyBaselineBloom(enableBloom);
-            Debug.Log($"{kLogPrefix} Applied quality={qualityLevel} bloom={settings.Bloom} hdr={settings.Hdr}.");
+            RefreshCameras();
+            Debug.Log($"{kLogPrefix} Applied quality={qualityLevel} bloom={settings.Bloom} hdr={settings.Hdr} fxaa={settings.Fxaa}.");
+        }
+
+        private void ApplyCameraBaseline(
+            Camera camera,
+            UniversalAdditionalCameraData cameraData,
+            bool isCapture)
+        {
+            cameraData.volumeLayerMask = m_VolumeLayerMask;
+            cameraData.volumeTrigger = camera.transform;
+            cameraData.renderPostProcessing = !isCapture && m_EnablePostProcessingOnMainCameras;
+
+            if (!isCapture)
+            {
+                camera.allowHDR = m_CurrentHdr;
+                cameraData.antialiasing = m_CurrentFxaa
+                    ? AntialiasingMode.FastApproximateAntialiasing
+                    : AntialiasingMode.None;
+                cameraData.antialiasingQuality = AntialiasingQuality.High;
+            }
+            else
+            {
+                cameraData.antialiasing = AntialiasingMode.None;
+            }
         }
 
         private void EnsureProfiles()
@@ -278,7 +303,7 @@ namespace TiltBrush
             }
         }
 
-        private void DisableLegacyPostProcessing()
+        public void DisableLegacyPostProcessing()
         {
             int disabled = 0;
             disabled += DisableAll<SENaturalBloomAndDirtyLens>();

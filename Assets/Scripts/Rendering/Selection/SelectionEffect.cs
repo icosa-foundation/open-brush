@@ -23,6 +23,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace TiltBrush
 {
@@ -176,6 +177,90 @@ namespace TiltBrush
 #endif
         }
 
+#if FEATURE_CUSTOM_MESH_RENDER
+        public bool ShouldRenderUrpSelection
+        {
+            get
+            {
+                if (Application.isMobilePlatform ||
+                    !Application.isPlaying ||
+                    GraphicsSettings.currentRenderPipeline == null ||
+                    VideoRecorderUtils.ActiveVideoRecording?.IsCapturing == true ||
+                    DisableSelectionEffects ||
+                    OverlayManager.m_Instance == null ||
+                    OverlayManager.m_Instance.OverlayEnabled ||
+                    ActivePostEffect() == null ||
+                    m_GrabHighlightMaskMaterial == null ||
+                    m_CmrRequestedMeshes == null ||
+                    m_CmrRequestedMeshes.Count == 0)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+        }
+
+        public Material UrpStencilToMaskMaterial =>
+            m_CmrRenderWrapper != null ? m_CmrRenderWrapper.m_StencilToMaskMaterial : null;
+
+        public Material UrpPostEffectMaterial => ActivePostEffect();
+
+        public float UrpBlurWidth => m_BlurWidth;
+
+        public bool HasPreparedUrpSelectionFrame =>
+            ShouldRenderUrpSelection;
+
+        public void DrawUrpHighlightMeshes(CommandBuffer cmd, Material maskMaterial)
+        {
+            if (!ShouldRenderUrpSelection || maskMaterial == null)
+            {
+                m_CmrRequestedMeshes?.Clear();
+                return;
+            }
+
+            m_CmrRenderHighlight = true;
+            try
+            {
+                for (int i = 0; i < m_CmrRequestedMeshes.Count; i++)
+                {
+                    MeshFilter meshFilter = m_CmrRequestedMeshes[i];
+                    if (meshFilter == null)
+                    {
+                        continue;
+                    }
+
+                    Mesh mesh = meshFilter.sharedMesh;
+                    if (mesh == null)
+                    {
+                        continue;
+                    }
+
+                    Transform xf = meshFilter.transform;
+                    for (int iSubMesh = 0; iSubMesh < mesh.subMeshCount; iSubMesh++)
+                    {
+                        cmd.DrawMesh(
+                            mesh,
+                            xf.localToWorldMatrix,
+                            maskMaterial,
+                            iSubMesh);
+                    }
+                }
+            }
+            finally
+            {
+                m_CmrRequestedMeshes.Clear();
+            }
+        }
+
+        public void EndUrpSelectionFrame()
+        {
+            m_bCmrPosesApplied = false;
+            m_bCmrPreCulled = false;
+            m_CmrRenderHighlight = false;
+        }
+#endif
+
         // Internal API for FEATURE_CUSTOM_MESH_RENDER
 
         // If highlight meshes have been populated, render them using our special grab mask material
@@ -190,6 +275,14 @@ namespace TiltBrush
         {
             if (Application.isMobilePlatform)
             {
+                return;
+            }
+            if (GraphicsSettings.currentRenderPipeline != null)
+            {
+                if (ShouldRenderUrpSelection)
+                {
+                    m_CmrRenderHighlight = true;
+                }
                 return;
             }
             if (m_bCmrPreCulled && m_bCmrPosesApplied)
@@ -250,6 +343,12 @@ namespace TiltBrush
             // Clear flags for the next frame.
             m_bCmrPosesApplied = false;
             m_bCmrPreCulled = false;
+
+            if (GraphicsSettings.currentRenderPipeline != null)
+            {
+                Graphics.Blit(source, destination);
+                return;
+            }
 
             // Early out, if possible
             Material postEffect = ActivePostEffect();

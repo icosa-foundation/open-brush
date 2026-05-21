@@ -365,6 +365,12 @@ namespace TiltBrush
 
         void DisableLegacyPostProcessing()
         {
+            if (UrpPostProcessingController.Instance != null)
+            {
+                UrpPostProcessingController.Instance.DisableLegacyPostProcessing();
+                return;
+            }
+
             int disabled = 0;
             disabled += DisableAll<SENaturalBloomAndDirtyLens>();
             disabled += DisableAll<FXAA>();
