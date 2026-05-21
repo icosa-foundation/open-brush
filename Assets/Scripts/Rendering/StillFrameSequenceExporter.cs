@@ -106,7 +106,7 @@ namespace TiltBrush
             try
             {
                 // Render the current frame
-                m_ScreenshotManager.RenderToTexture(renderTexture);
+                m_ScreenshotManager.RenderToTexture(renderTexture, includePostProcessing: true);
 
                 byte[] frameData = ScreenshotManager.SaveToMemory(renderTexture, UsePng); // false = JPG
                 File.WriteAllBytes(frameFilePath, frameData);

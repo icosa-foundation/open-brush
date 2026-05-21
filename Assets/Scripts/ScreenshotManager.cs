@@ -14,6 +14,7 @@
 
 using System.IO;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 namespace TiltBrush
 {
@@ -41,6 +42,19 @@ namespace TiltBrush
             public Camera camera;
             public RenderTexture renderTexture;
         }
+
+        struct CameraPostProcessingState
+        {
+            public Camera camera;
+            public UniversalAdditionalCameraData cameraData;
+            public bool renderPostProcessing;
+            public LayerMask volumeLayerMask;
+            public Transform volumeTrigger;
+            public bool allowHDR;
+        }
+
+        private const string kCapturePostLogPrefix = "[OB_URP_CAPTURE]";
+        private static int s_CapturePostLogCount;
 
         const float MM_TO_UNITS = .001f * App.METERS_TO_UNITS;
         const float HYSTERESIS_DEGREES = 10;
@@ -422,9 +436,16 @@ namespace TiltBrush
 
         /// If m_AutoAlignRig is set, you should pass in a RenderTexture created
         /// with CreateTemporaryTargetForSave().
-        public void RenderToTexture(RenderTexture rTexture, bool asDepth = false, bool removeBackground = false)
+        public void RenderToTexture(
+            RenderTexture rTexture,
+            bool asDepth = false,
+            bool removeBackground = false,
+            bool includePostProcessing = false)
         {
-            RenderTextureFormat format = CameraFormat();
+            bool usePostProcessing = includePostProcessing && !asDepth && !removeBackground;
+            RenderTextureFormat format = usePostProcessing
+                ? RenderTextureFormat.ARGBFloat
+                : CameraFormat();
             int depth = 24;
 
             // Use a temporary rather than rendering to rTexture because we don't know
@@ -437,33 +458,42 @@ namespace TiltBrush
                 // the camera target.  That would be wrong, because the camera target's
                 // resolution might be much lower than rTexture.
                 var camera = LeftInfo.camera;
+                CameraPostProcessingState postProcessingState =
+                    BeginCapturePostProcessing(camera, usePostProcessing);
                 var prev = camera.targetTexture;
-                camera.targetTexture = targetA;
-                if (asDepth)
+                try
                 {
-                    var prevDepthTextureMode = camera.depthTextureMode;
-                    camera.depthTextureMode = DepthTextureMode.Depth;
-                    camera.RenderWithShader(Shader.Find("Hidden/Internal-DepthNormalsTexture"), "");
-                    camera.depthTextureMode = prevDepthTextureMode;
+                    camera.targetTexture = targetA;
+                    if (asDepth)
+                    {
+                        var prevDepthTextureMode = camera.depthTextureMode;
+                        camera.depthTextureMode = DepthTextureMode.Depth;
+                        camera.RenderWithShader(Shader.Find("Hidden/Internal-DepthNormalsTexture"), "");
+                        camera.depthTextureMode = prevDepthTextureMode;
+                    }
+                    else if (removeBackground)
+                    {
+                        var prevClearFlags = camera.clearFlags;
+                        var prevBackgroundColor = camera.backgroundColor;
+                        var prevCullingMask = camera.cullingMask;
+                        camera.clearFlags = CameraClearFlags.SolidColor;
+                        camera.backgroundColor = new Color(0, 0, 0, 0);
+                        camera.cullingMask = LayerMask.GetMask("MainCanvas");
+                        camera.Render();
+                        camera.clearFlags = prevClearFlags;
+                        camera.backgroundColor = prevBackgroundColor;
+                        camera.cullingMask = prevCullingMask;
+                    }
+                    else
+                    {
+                        camera.Render();
+                    }
                 }
-                else if (removeBackground)
+                finally
                 {
-                    var prevClearFlags = camera.clearFlags;
-                    var prevBackgroundColor = camera.backgroundColor;
-                    var prevCullingMask = camera.cullingMask;
-                    camera.clearFlags = CameraClearFlags.SolidColor;
-                    camera.backgroundColor = new Color(0, 0, 0, 0);
-                    camera.cullingMask = LayerMask.GetMask("MainCanvas");
-                    camera.Render();
-                    camera.clearFlags = prevClearFlags;
-                    camera.backgroundColor = prevBackgroundColor;
-                    camera.cullingMask = prevCullingMask;
+                    camera.targetTexture = prev;
+                    EndCapturePostProcessing(postProcessingState);
                 }
-                else
-                {
-                    camera.Render();
-                }
-                camera.targetTexture = prev;
             }
 
             if (targetA != rTexture)
@@ -471,6 +501,65 @@ namespace TiltBrush
                 Graphics.Blit(targetA, rTexture);
                 RenderTexture.ReleaseTemporary(targetA);
             }
+        }
+
+        CameraPostProcessingState BeginCapturePostProcessing(Camera camera, bool includePostProcessing)
+        {
+            CameraPostProcessingState state = new CameraPostProcessingState
+            {
+                camera = camera,
+                allowHDR = camera.allowHDR
+            };
+
+            if (!includePostProcessing)
+            {
+                return state;
+            }
+
+            UniversalAdditionalCameraData cameraData =
+                camera.GetComponent<UniversalAdditionalCameraData>();
+            if (cameraData == null)
+            {
+                cameraData = camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
+            }
+
+            state.cameraData = cameraData;
+            state.renderPostProcessing = cameraData.renderPostProcessing;
+            state.volumeLayerMask = cameraData.volumeLayerMask;
+            state.volumeTrigger = cameraData.volumeTrigger;
+
+            camera.allowHDR = true;
+            cameraData.renderPostProcessing = true;
+            cameraData.volumeLayerMask = ~0;
+            cameraData.volumeTrigger = camera.transform;
+
+            if (s_CapturePostLogCount < 8)
+            {
+                Debug.Log(
+                    $"{kCapturePostLogPrefix} Enabled URP post-processing for capture camera " +
+                    $"{camera.name} hdr={camera.allowHDR}.");
+                s_CapturePostLogCount++;
+            }
+
+            return state;
+        }
+
+        void EndCapturePostProcessing(CameraPostProcessingState state)
+        {
+            if (state.camera == null)
+            {
+                return;
+            }
+
+            state.camera.allowHDR = state.allowHDR;
+            if (state.cameraData == null)
+            {
+                return;
+            }
+
+            state.cameraData.renderPostProcessing = state.renderPostProcessing;
+            state.cameraData.volumeLayerMask = state.volumeLayerMask;
+            state.cameraData.volumeTrigger = state.volumeTrigger;
         }
 
         static public void Save(Stream outf, RenderTexture rTextureToSave, bool bSaveAsPng)

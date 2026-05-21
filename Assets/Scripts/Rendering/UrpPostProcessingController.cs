@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -64,6 +66,8 @@ namespace TiltBrush
             EnsureProfiles();
             EnsureGlobalVolume();
             RefreshCameras();
+            DisableCompositionLayerEditorEmulationIfUnused();
+            StartCoroutine(DisableCompositionLayerEditorEmulationAfterStartup());
 
             if (QualityControls.m_Instance != null)
             {
@@ -289,6 +293,45 @@ namespace TiltBrush
                 Debug.Log($"{kLogPrefix} Disabled {disabled} legacy post-processing components.");
             }
         }
+
+        private void DisableCompositionLayerEditorEmulationIfUnused()
+        {
+#if UNITY_EDITOR
+            InvokeCompositionLayerEmulationMethod(
+                "Unity.XR.CompositionLayers.Emulation.EmulationColorScaleBiasPass",
+                "UnregisterScriptableRendererPass");
+            InvokeCompositionLayerEmulationMethod(
+                "Unity.XR.CompositionLayers.Emulation.EmulationLayerUniversalScriptableRendererPass",
+                "UnregisterScriptableRendererPass");
+#endif
+        }
+
+        private System.Collections.IEnumerator DisableCompositionLayerEditorEmulationAfterStartup()
+        {
+#if UNITY_EDITOR
+            yield return null;
+            yield return null;
+            DisableCompositionLayerEditorEmulationIfUnused();
+#else
+            yield break;
+#endif
+        }
+
+#if UNITY_EDITOR
+        private static void InvokeCompositionLayerEmulationMethod(string typeName, string methodName)
+        {
+            Type type = Type.GetType($"{typeName}, Unity.XR.CompositionLayers");
+            MethodInfo method = type?.GetMethod(methodName, BindingFlags.Static | BindingFlags.NonPublic);
+            if (method == null)
+            {
+                Debug.LogWarning($"{kLogPrefix} Could not find Composition Layers emulation method {typeName}.{methodName}.");
+                return;
+            }
+
+            method.Invoke(null, null);
+            Debug.Log($"{kLogPrefix} Disabled Composition Layers editor emulation method {typeName}.{methodName}.");
+        }
+#endif
 
         private static int DisableAll<T>() where T : MonoBehaviour
         {

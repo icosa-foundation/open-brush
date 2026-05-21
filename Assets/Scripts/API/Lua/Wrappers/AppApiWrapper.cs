@@ -213,7 +213,11 @@ namespace TiltBrush
                 RenderWrapper wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
                 float ssaaRestore = wrapper.SuperSampling;
                 wrapper.SuperSampling = superSampling;
-                rMgr.RenderToTexture(tmp, asDepth: renderDepth, removeBackground: removeBackground);
+                rMgr.RenderToTexture(
+                    tmp,
+                    asDepth: renderDepth,
+                    removeBackground: removeBackground,
+                    includePostProcessing: !renderDepth && !removeBackground);
                 wrapper.SuperSampling = ssaaRestore;
                 using (var fs = new FileStream(path, FileMode.Create))
                 {
@@ -231,6 +235,10 @@ namespace TiltBrush
         public static void Take360Snapshot(TrTransform tr, string filename, int width = 4096)
         {
             var odsDriver = App.Instance.InitOds();
+            for (Transform transform = odsDriver.OdsCamera.transform; transform != null; transform = transform.parent)
+            {
+                transform.gameObject.SetActive(true);
+            }
             App.Scene.AsScene[odsDriver.gameObject.transform] = tr;
             odsDriver.FramesToCapture = 1;
             odsDriver.OdsCamera.basename = filename;

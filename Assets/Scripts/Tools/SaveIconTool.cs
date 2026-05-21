@@ -261,7 +261,8 @@ namespace TiltBrush
                     float ssaaRestore = wrapper.SuperSampling;
                     wrapper.SuperSampling = m_superSampling;
                     m_SaveIconScreenshotManager.RenderToTexture(
-                        SaveLoadScript.m_Instance.GetSaveIconRenderTexture());
+                        SaveLoadScript.m_Instance.GetSaveIconRenderTexture(),
+                        includePostProcessing: true);
                     wrapper.SuperSampling = ssaaRestore;
 
                     // save off camera transform from the position we took the snapshot
@@ -371,7 +372,8 @@ namespace TiltBrush
                 float ssaaRestore = wrapper.SuperSampling;
                 wrapper.SuperSampling = m_superSampling;
                 m_SaveIconScreenshotManager.RenderToTexture(
-                    SaveLoadScript.m_Instance.GetSaveIconRenderTexture());
+                    SaveLoadScript.m_Instance.GetSaveIconRenderTexture(),
+                    includePostProcessing: true);
                 // save off camera transform from the position we took the snapshot
                 wrapper.SuperSampling = ssaaRestore;
                 m_LastSaveCameraRigState = CurrentCameraRigState;

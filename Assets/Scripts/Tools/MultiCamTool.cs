@@ -1880,7 +1880,7 @@ namespace TiltBrush
                     {
                         wrapper.SuperSampling = m_superSampling;
                     }
-                    rMgr.RenderToTexture(tmp, asDepth: false);
+                    rMgr.RenderToTexture(tmp, asDepth: false, includePostProcessing: true);
                     if (renderDepth)
                     {
                         tmpDepth = rMgr.CreateTemporaryTargetForSave(
@@ -1941,6 +1941,128 @@ namespace TiltBrush
         // TimeGif
         //
 
+        public string CaptureAutoGifForApi(string saveName)
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+
+            if (m_AutoGifCreationState != GifCreationState.Ready ||
+                m_TimeGifCreationState != GifCreationState.Ready)
+            {
+                Debug.LogWarning($"{logPrefix} Auto GIF capture skipped because GIF capture is busy.");
+                return null;
+            }
+
+            App.Instance.StartCoroutine(CaptureAutoGifForApiCoroutine(saveName));
+            Debug.Log($"{logPrefix} Queued Auto GIF capture path={saveName}.");
+            return saveName;
+        }
+
+        public string CaptureTimeGifForApi(string saveName)
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+
+            if (m_AutoGifCreationState != GifCreationState.Ready ||
+                m_TimeGifCreationState != GifCreationState.Ready)
+            {
+                Debug.LogWarning($"{logPrefix} Time GIF capture skipped because GIF capture is busy.");
+                return null;
+            }
+
+            App.Instance.StartCoroutine(CaptureTimeGifForApiCoroutine(saveName));
+            Debug.Log($"{logPrefix} Queued Time GIF capture path={saveName}.");
+            return saveName;
+        }
+
+        IEnumerator CaptureAutoGifForApiCoroutine(string saveName)
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+
+            MultiCamCaptureRig rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
+            bool initialRigActive = rig.gameObject.activeSelf;
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(saveName));
+                rig.gameObject.SetActive(true);
+                rig.EnableCamera(true);
+
+                m_AutoGifCreationState = GifCreationState.Capturing;
+                m_Captures = new List<Color32[]>(m_GifFrames);
+                yield return AutoGifStateCapturing();
+
+                if (m_Captures != null && m_Captures.Count > 0)
+                {
+                    AutoGifTransitionCapturingToBuilding(saveName);
+                    yield return WaitForApiGifTask();
+                    Debug.Log($"{logPrefix} Auto GIF capture encoded path={saveName} frames={m_GifFrames}.");
+                }
+                else
+                {
+                    m_Captures = null;
+                    m_AutoGifCreationState = GifCreationState.Ready;
+                    Debug.LogError($"{logPrefix} Auto GIF capture failed: no frames captured.");
+                }
+            }
+            finally
+            {
+                rig.EnableCamera(App.PlatformConfig.EnableMulticamPreview);
+                rig.gameObject.SetActive(initialRigActive);
+            }
+        }
+
+        IEnumerator CaptureTimeGifForApiCoroutine(string saveName)
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+
+            MultiCamCaptureRig rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
+            bool initialRigActive = rig.gameObject.activeSelf;
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(saveName));
+                rig.gameObject.SetActive(true);
+                rig.EnableCamera(true);
+
+                int frameCount = Mathf.Max(1, Mathf.CeilToInt(m_TimeGifFPS * m_TimeGifDuration));
+                m_TimeGifCreationState = GifCreationState.Capturing;
+                m_Captures = new List<Color32[]>(frameCount);
+                m_TimedGifSaveName = saveName;
+                m_TimeGifCaptureTimer = 0.0f;
+
+                for (int i = 0; i < frameCount; ++i)
+                {
+                    TimeGifCapture();
+                    yield return null;
+                }
+
+                if (m_Captures != null && m_Captures.Count > 0)
+                {
+                    TimeGifTransitionCapturingToBuilding();
+                    yield return WaitForApiGifTask();
+                    Debug.Log($"{logPrefix} Time GIF capture encoded path={saveName} frames={frameCount}.");
+                }
+                else
+                {
+                    m_Captures = null;
+                    m_TimeGifCreationState = GifCreationState.Ready;
+                    Debug.LogError($"{logPrefix} Time GIF capture failed: no frames captured.");
+                }
+            }
+            finally
+            {
+                rig.EnableCamera(App.PlatformConfig.EnableMulticamPreview);
+                rig.gameObject.SetActive(initialRigActive);
+            }
+        }
+
+        IEnumerator WaitForApiGifTask()
+        {
+            while (m_Task != null && !m_Task.IsDone)
+            {
+                yield return null;
+            }
+
+            ReportGifTaskDone();
+        }
+
         void SetTimeBar(float fTime)
         {
             // Figure how far through our duration we are.
@@ -1982,7 +2104,7 @@ namespace TiltBrush
 
             ScreenshotManager rMgr = GetScreenshotManager(MultiCamStyle.TimeGif);
             var tempTarget = rMgr.CreateTemporaryTargetForSave(tempTex.width, tempTex.height);
-            rMgr.RenderToTexture(tempTarget);
+            rMgr.RenderToTexture(tempTarget, includePostProcessing: true);
 
             RenderTexture.active = tempTarget;
             tempTex.ReadPixels(new Rect(0, 0, tempTex.width, tempTex.height), 0, 0, false);
@@ -2067,7 +2189,7 @@ namespace TiltBrush
                 TrTransform offsetXf = GetGifTransform(t);
                 var tmp = (baseXf * offsetXf); // Work around 2018.3.x Mono parse bug
                 tmp.ToTransform(camera);
-                rMgr.RenderToTexture(tempTarget);
+                rMgr.RenderToTexture(tempTarget, includePostProcessing: true);
                 prevXf.ToLocalTransform(camera);
 
                 RenderTexture.active = tempTarget;
