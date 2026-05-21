@@ -1880,7 +1880,10 @@ namespace TiltBrush
                     {
                         wrapper.SuperSampling = m_superSampling;
                     }
-                    rMgr.RenderToTexture(tmp, asDepth: false, includePostProcessing: true);
+                    rMgr.RenderToTexture(
+                        tmp,
+                        asDepth: false,
+                        includePostProcessing: CameraConfig.PostEffects);
                     if (renderDepth)
                     {
                         tmpDepth = rMgr.CreateTemporaryTargetForSave(
@@ -2104,7 +2107,7 @@ namespace TiltBrush
 
             ScreenshotManager rMgr = GetScreenshotManager(MultiCamStyle.TimeGif);
             var tempTarget = rMgr.CreateTemporaryTargetForSave(tempTex.width, tempTex.height);
-            rMgr.RenderToTexture(tempTarget, includePostProcessing: true);
+            rMgr.RenderToTexture(tempTarget, includePostProcessing: CameraConfig.PostEffects);
 
             RenderTexture.active = tempTarget;
             tempTex.ReadPixels(new Rect(0, 0, tempTex.width, tempTex.height), 0, 0, false);
@@ -2189,7 +2192,7 @@ namespace TiltBrush
                 TrTransform offsetXf = GetGifTransform(t);
                 var tmp = (baseXf * offsetXf); // Work around 2018.3.x Mono parse bug
                 tmp.ToTransform(camera);
-                rMgr.RenderToTexture(tempTarget, includePostProcessing: true);
+                rMgr.RenderToTexture(tempTarget, includePostProcessing: CameraConfig.PostEffects);
                 prevXf.ToLocalTransform(camera);
 
                 RenderTexture.active = tempTarget;

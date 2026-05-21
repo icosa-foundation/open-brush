@@ -217,7 +217,8 @@ namespace TiltBrush
                     tmp,
                     asDepth: renderDepth,
                     removeBackground: removeBackground,
-                    includePostProcessing: !renderDepth && !removeBackground);
+                    includePostProcessing:
+                        CameraConfig.PostEffects && !renderDepth && !removeBackground);
                 wrapper.SuperSampling = ssaaRestore;
                 using (var fs = new FileStream(path, FileMode.Create))
                 {

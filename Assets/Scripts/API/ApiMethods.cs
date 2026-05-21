@@ -341,7 +341,7 @@ namespace TiltBrush
                     cameraData = camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
                 }
                 renderPostProcessingRestore = cameraData.renderPostProcessing;
-                cameraData.renderPostProcessing = true;
+                cameraData.renderPostProcessing = CameraConfig.PostEffects;
                 cameraData.volumeLayerMask = ~0;
                 cameraData.volumeTrigger = camera.transform;
 
