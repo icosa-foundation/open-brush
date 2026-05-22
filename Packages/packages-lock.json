@@ -14,13 +14,14 @@
         "com.unity.nuget.newtonsoft-json": "3.0.2",
         "com.unity.test-framework": "1.1.31"
       },
-      "hash": "4c29526a67656dd9d0180c4b723673be285987b0"
+      "hash": "a2a5edf8d8e3f715881c0db4589c18feff7c379f"
     },
     "com.icosa.open-brush-unity-tools": {
-      "version": "file:../../open-brush-unity-tools/Packages/open-brush-unity-tools",
+      "version": "https://github.com/icosa-foundation/open-brush-unity-tools.git#upm",
       "depth": 0,
-      "source": "local",
-      "dependencies": {}
+      "source": "git",
+      "dependencies": {},
+      "hash": "80091e67f96f01d46d36bb8402f772498f8db674"
     },
     "com.ixxy.unitysymmetry": {
       "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
