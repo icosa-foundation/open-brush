@@ -33,6 +33,7 @@ SubShader {
     HLSLPROGRAM
     #pragma vertex Vert
     #pragma fragment FragFront
+    #pragma multi_compile_instancing
     #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
     TEXTURE2D(_MainTex);
@@ -48,16 +49,24 @@ SubShader {
     struct Attributes {
       float4 positionOS : POSITION;
       float2 uv0 : TEXCOORD0;
+
+      UNITY_VERTEX_INPUT_INSTANCE_ID
     };
 
     struct Varyings {
       float4 positionHCS : SV_POSITION;
       float2 uvMain : TEXCOORD0;
       float2 uvBorder : TEXCOORD1;
+
+      UNITY_VERTEX_INPUT_INSTANCE_ID
+      UNITY_VERTEX_OUTPUT_STEREO
     };
 
     Varyings Vert(Attributes IN) {
       Varyings OUT;
+      UNITY_SETUP_INSTANCE_ID(IN);
+      UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
+      UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
       OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
       OUT.uvMain = IN.uv0;
       OUT.uvBorder = IN.uv0;
@@ -65,6 +74,7 @@ SubShader {
     }
 
     half4 FragFront(Varyings IN) : SV_Target {
+      UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
       half4 c = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uvMain) * _Color;
       half4 border = SAMPLE_TEXTURE2D(_BorderTex, sampler_BorderTex, IN.uvBorder) * _Color;
       half3 emission = c.rgb + border.rgb;
@@ -81,6 +91,7 @@ SubShader {
     HLSLPROGRAM
     #pragma vertex Vert
     #pragma fragment FragBack
+    #pragma multi_compile_instancing
     #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
     TEXTURE2D(_BackTex);
@@ -96,16 +107,24 @@ SubShader {
     struct Attributes {
       float4 positionOS : POSITION;
       float2 uv0 : TEXCOORD0;
+
+      UNITY_VERTEX_INPUT_INSTANCE_ID
     };
 
     struct Varyings {
       float4 positionHCS : SV_POSITION;
       float2 uvMain : TEXCOORD0;
       float2 uvBorder : TEXCOORD1;
+
+      UNITY_VERTEX_INPUT_INSTANCE_ID
+      UNITY_VERTEX_OUTPUT_STEREO
     };
 
     Varyings Vert(Attributes IN) {
       Varyings OUT;
+      UNITY_SETUP_INSTANCE_ID(IN);
+      UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
+      UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
       OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
       OUT.uvMain = IN.uv0;
       OUT.uvBorder = IN.uv0;
@@ -113,6 +132,7 @@ SubShader {
     }
 
     half4 FragBack(Varyings IN) : SV_Target {
+      UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
       half4 c = SAMPLE_TEXTURE2D(_BackTex, sampler_BackTex, IN.uvMain) * _BackColor;
       half4 border = SAMPLE_TEXTURE2D(_BorderTex, sampler_BorderTex, IN.uvBorder) * _BackColor;
       half3 emission = c.rgb + border.rgb;

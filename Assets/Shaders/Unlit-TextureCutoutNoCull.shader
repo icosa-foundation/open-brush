@@ -30,6 +30,7 @@ SubShader {
     HLSLPROGRAM
     #pragma vertex Vert
     #pragma fragment Frag
+    #pragma multi_compile_instancing
 
     #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -48,16 +49,24 @@ SubShader {
       float4 positionOS : POSITION;
       float2 uv : TEXCOORD0;
       half4 color : COLOR;
+
+      UNITY_VERTEX_INPUT_INSTANCE_ID
     };
 
     struct Varyings {
       float4 positionHCS : SV_POSITION;
       float2 uv : TEXCOORD0;
       half4 color : TEXCOORD1;
+
+      UNITY_VERTEX_INPUT_INSTANCE_ID
+      UNITY_VERTEX_OUTPUT_STEREO
     };
 
     Varyings Vert(Attributes IN) {
       Varyings OUT;
+      UNITY_SETUP_INSTANCE_ID(IN);
+      UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
+      UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
       OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
       OUT.uv = IN.uv * _MainTex_ST.xy + _MainTex_ST.zw;
       OUT.color = IN.color;
@@ -65,6 +74,7 @@ SubShader {
     }
 
     half4 Frag(Varyings IN) : SV_Target {
+      UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
       half4 c = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv) * _Color;
       c.rgb *= _SceneFadeAmount;
       c.rgb *= IN.color.rgb;
@@ -82,6 +92,7 @@ SubShader {
     HLSLPROGRAM
     #pragma vertex VertShadow
     #pragma fragment FragShadow
+    #pragma multi_compile_instancing
 
     #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -97,16 +108,24 @@ SubShader {
       float4 positionOS : POSITION;
       float2 uv : TEXCOORD0;
       half4 color : COLOR;
+
+      UNITY_VERTEX_INPUT_INSTANCE_ID
     };
 
     struct Varyings {
       float4 positionCS : SV_POSITION;
       float2 uv : TEXCOORD0;
       half alphaMul : TEXCOORD1;
+
+      UNITY_VERTEX_INPUT_INSTANCE_ID
+      UNITY_VERTEX_OUTPUT_STEREO
     };
 
     Varyings VertShadow(Attributes IN) {
       Varyings OUT;
+      UNITY_SETUP_INSTANCE_ID(IN);
+      UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
+      UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
       OUT.positionCS = TransformObjectToHClip(IN.positionOS.xyz);
       OUT.uv = IN.uv * _MainTex_ST.xy + _MainTex_ST.zw;
       OUT.alphaMul = IN.color.a;
@@ -114,6 +133,7 @@ SubShader {
     }
 
     half4 FragShadow(Varyings IN) : SV_Target {
+      UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
       half alpha = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv).a * IN.alphaMul;
       clip(alpha - _Cutoff);
       return 0;

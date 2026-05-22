@@ -56,6 +56,7 @@ Shader "Custom/Grid3D"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
 
             #include "UnityCG.cginc"
             float _InMin;
@@ -68,12 +69,11 @@ Shader "Custom/Grid3D"
             float _GridInterval;
             float _LineWidth;
             float _LineLength;
-            float _CanvasScale; 
+            float _CanvasScale;
             float4x4 _CanvasToWorldMatrix;
             float4x4 _WorldToCanvasMatrix;
 
-            struct appdata
-            {
+            struct appdata {
                 uint id : SV_VERTEXID;
                 float4 vertex : POSITION;
                 float4 pos : TEXCOORD2;
@@ -81,12 +81,13 @@ Shader "Custom/Grid3D"
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
-            struct v2f
-            {
+            struct v2f {
                 float4 vertex : SV_POSITION;
                 float4 pos : TEXCOORD2;
 
-                UNITY_VERTEX_OUTPUT_STEREO
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+
+              UNITY_VERTEX_OUTPUT_STEREO
             };
 
             float3 calcQuadVertex(uint vtx_idx) // face 0:x 1:y 2:z
@@ -128,6 +129,7 @@ Shader "Custom/Grid3D"
 
                 UNITY_SETUP_INSTANCE_ID(v);
                 UNITY_INITIALIZE_OUTPUT(v2f, o);
+                UNITY_TRANSFER_INSTANCE_ID(v, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
                 uint vtx_per_quad = 6;
@@ -154,9 +156,9 @@ Shader "Custom/Grid3D"
 
                 float3 gridOrigin_CS = _GridCount * -0.5;
                 float3 vertexPos_CS = (xyzIndex + gridOrigin_CS) * _GridInterval + quad;
-                
+
                 float3 _Pointer_CS = mul(_WorldToCanvasMatrix, _Pointer_GS);
-                
+
                 float3 quantizedPointer_CS = float3(
                     round(_Pointer_CS.x / _GridInterval) * _GridInterval,
                     round(_Pointer_CS.y / _GridInterval) * _GridInterval,
@@ -177,7 +179,7 @@ Shader "Custom/Grid3D"
                 vertexPos_GS -= canvasOffsetFix_GS;
                 o.vertex = mul(UNITY_MATRIX_VP, float4(vertexPos_GS, 1));
 
-                
+
                 // TODO - the brightness of each grid point should be based on the non-quantized pointer position.
                 //float3 remainder = (quantizedPointerOffset_CS - _PointerOffset_CS) * _GridInterval;
                 float3 remainder = float3(0, 0, 0);
@@ -194,6 +196,7 @@ Shader "Custom/Grid3D"
 
             fixed4 frag (v2f i) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 return saturate(i.pos) * _Color;
                 // return i.pos * _Color;
             }

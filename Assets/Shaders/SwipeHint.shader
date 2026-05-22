@@ -17,15 +17,22 @@ Shader "Custom/SwipeHint" {
       HLSLPROGRAM
       #pragma vertex Vert
       #pragma fragment Frag
+      #pragma multi_compile_instancing
       #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
       TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
       CBUFFER_START(UnityPerMaterial)
       half4 _Color; half4 _PulseColor; half4 _PulseColorDark; half _PulseFrequency; half _PulseIntensity; float4 _MainTex_ST;
       CBUFFER_END
-      struct A{float4 positionOS:POSITION; float2 uv:TEXCOORD0;};
-      struct V{float4 positionHCS:SV_POSITION; float2 uv:TEXCOORD0;};
-      V Vert(A i){V o; o.positionHCS=TransformObjectToHClip(i.positionOS.xyz); o.uv=TRANSFORM_TEX(i.uv,_MainTex); return o;}
+      struct A {float4 positionOS:POSITION; float2 uv:TEXCOORD0;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+      };
+      struct V {float4 positionHCS:SV_POSITION; float2 uv:TEXCOORD0;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+        UNITY_VERTEX_OUTPUT_STEREO
+      };
+      V Vert(A i){V o; UNITY_SETUP_INSTANCE_ID(i); UNITY_TRANSFER_INSTANCE_ID(i, o); UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o); o.positionHCS=TransformObjectToHClip(i.positionOS.xyz); o.uv=TRANSFORM_TEX(i.uv,_MainTex); return o;}
       half4 Frag(V i):SV_Target {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
         half4 tex = SAMPLE_TEXTURE2D(_MainTex,sampler_MainTex,i.uv);
         half4 c = tex * _Color;
         half t = sin(_Time.y * _PulseFrequency) * 0.5h + 0.5h;

@@ -13,6 +13,7 @@ Shader "Custom/Standard_AudioReactive" {
       HLSLPROGRAM
       #pragma vertex Vert
       #pragma fragment Frag
+      #pragma multi_compile_instancing
       #pragma multi_compile __ AUDIO_REACTIVE
       #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -26,11 +27,17 @@ Shader "Custom/Standard_AudioReactive" {
 
       float4 _BeatOutput;
 
-      struct A { float4 positionOS:POSITION; float2 uv:TEXCOORD0; };
-      struct V { float4 positionHCS:SV_POSITION; float2 uv:TEXCOORD0; };
-      V Vert(A i){V o; o.positionHCS=TransformObjectToHClip(i.positionOS.xyz); o.uv=TRANSFORM_TEX(i.uv,_MainTex); return o;}
+      struct A { float4 positionOS:POSITION; float2 uv:TEXCOORD0;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+      };
+      struct V { float4 positionHCS:SV_POSITION; float2 uv:TEXCOORD0;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+        UNITY_VERTEX_OUTPUT_STEREO
+      };
+      V Vert(A i){V o; UNITY_SETUP_INSTANCE_ID(i); UNITY_TRANSFER_INSTANCE_ID(i, o); UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o); o.positionHCS=TransformObjectToHClip(i.positionOS.xyz); o.uv=TRANSFORM_TEX(i.uv,_MainTex); return o;}
 
       half4 Frag(V i):SV_Target {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
         half index = i.uv.y;
         half4 c;
         #ifdef AUDIO_REACTIVE

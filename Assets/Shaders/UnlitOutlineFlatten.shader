@@ -29,6 +29,7 @@ Shader "Custom/UnlitOutlineFlatten" {
       HLSLPROGRAM
       #pragma vertex VertMain
       #pragma fragment FragMain
+      #pragma multi_compile_instancing
       #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
       CBUFFER_START(UnityPerMaterial)
@@ -38,14 +39,22 @@ Shader "Custom/UnlitOutlineFlatten" {
 
       struct Attributes {
         float4 positionOS : POSITION;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct Varyings {
         float4 positionHCS : SV_POSITION;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       Varyings VertMain(Attributes IN) {
         Varyings OUT;
+        UNITY_SETUP_INSTANCE_ID(IN);
+        UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
         float3 pos = IN.positionOS.xyz;
         pos.z = pos.z - pos.z * _FlattenAmount;
         OUT.positionHCS = TransformObjectToHClip(pos);
@@ -53,6 +62,7 @@ Shader "Custom/UnlitOutlineFlatten" {
       }
 
       half4 FragMain(Varyings IN) : SV_Target {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
         return half4(_Color.rgb, 1.0h);
       }
       ENDHLSL
@@ -65,6 +75,7 @@ Shader "Custom/UnlitOutlineFlatten" {
       HLSLPROGRAM
       #pragma vertex VertOutline
       #pragma fragment FragOutline
+      #pragma multi_compile_instancing
       #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
       #include "Assets/Shaders/Include/Math.cginc"
 
@@ -76,14 +87,22 @@ Shader "Custom/UnlitOutlineFlatten" {
       struct Attributes {
         float4 positionOS : POSITION;
         float3 normalOS : NORMAL;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct Varyings {
         float4 positionHCS : SV_POSITION;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       Varyings VertOutline(Attributes IN) {
         Varyings OUT;
+        UNITY_SETUP_INSTANCE_ID(IN);
+        UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
         float4 objectPos = IN.positionOS;
         objectPos.z = objectPos.z - objectPos.z * _FlattenAmount;
 
@@ -100,6 +119,7 @@ Shader "Custom/UnlitOutlineFlatten" {
       }
 
       half4 FragOutline(Varyings IN) : SV_Target {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
         return half4(0.0h, 0.0h, 0.0h, 1.0h);
       }
       ENDHLSL

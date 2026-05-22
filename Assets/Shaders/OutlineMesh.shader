@@ -31,6 +31,7 @@ Shader "Custom/OutlineMesh" {
       HLSLPROGRAM
       #pragma vertex Vert
       #pragma fragment Frag
+      #pragma multi_compile_instancing
       #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
       half4 _Color;
@@ -38,21 +39,30 @@ Shader "Custom/OutlineMesh" {
       struct Attributes {
         float4 positionOS : POSITION;
         half4 color : COLOR;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct Varyings {
         float4 positionHCS : SV_POSITION;
         half3 color : COLOR;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       Varyings Vert(Attributes IN) {
         Varyings OUT;
+        UNITY_SETUP_INSTANCE_ID(IN);
+        UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
         OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
         OUT.color = IN.color.rgb;
         return OUT;
       }
 
       half4 Frag(Varyings IN) : SV_Target {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
         return half4(_Color.rgb * IN.color, 1.0h);
       }
       ENDHLSL
@@ -67,6 +77,7 @@ Shader "Custom/OutlineMesh" {
       CGPROGRAM
       #pragma vertex vert
       #pragma fragment frag
+      #pragma multi_compile_instancing
       #include "UnityCG.cginc"
 
       fixed4 _Color;
@@ -74,21 +85,30 @@ Shader "Custom/OutlineMesh" {
       struct appdata {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
         float4 pos : SV_POSITION;
         fixed3 color : COLOR;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       v2f vert(appdata v) {
         v2f o;
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_TRANSFER_INSTANCE_ID(v, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
         o.pos = UnityObjectToClipPos(v.vertex);
         o.color = v.color.rgb;
         return o;
       }
 
       fixed4 frag(v2f i) : SV_Target {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
         return fixed4(_Color.rgb * i.color, 1.0);
       }
       ENDCG

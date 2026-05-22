@@ -29,6 +29,7 @@ Shader "Custom/GalleryIcon" {
       HLSLPROGRAM
       #pragma vertex Vert
       #pragma fragment Frag
+      #pragma multi_compile_instancing
       #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
       TEXTURE2D(_MainTex);
@@ -43,21 +44,30 @@ Shader "Custom/GalleryIcon" {
       struct Attributes {
         float4 positionOS : POSITION;
         float2 uv : TEXCOORD0;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct Varyings {
         float4 positionHCS : SV_POSITION;
         float2 uv : TEXCOORD0;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       Varyings Vert(Attributes IN) {
         Varyings OUT;
+        UNITY_SETUP_INSTANCE_ID(IN);
+        UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
         OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
         OUT.uv = IN.uv;
         return OUT;
       }
 
       half4 Frag(Varyings IN) : SV_Target {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
         float2 uv = IN.uv - 0.5;
         if (_Aspect > 1.0) {
           uv.x /= _Aspect;

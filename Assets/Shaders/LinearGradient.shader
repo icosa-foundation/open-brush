@@ -30,6 +30,7 @@ Shader "Custom/LinearGradient" {
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
+            #pragma multi_compile_instancing
 
             #include "UnityCG.cginc"
 
@@ -48,7 +49,9 @@ Shader "Custom/LinearGradient" {
                 float2 uv : TEXCOORD0;
                 float3 modelPos : TEXCOORD1;
 
-                UNITY_VERTEX_OUTPUT_STEREO
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+
+              UNITY_VERTEX_OUTPUT_STEREO
             };
 
             Varyings Vert(Attributes IN)
@@ -57,6 +60,7 @@ Shader "Custom/LinearGradient" {
 
                 UNITY_SETUP_INSTANCE_ID(IN);
                 UNITY_INITIALIZE_OUTPUT(Varyings, OUT);
+                UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
 
                 OUT.positionHCS = UnityObjectToClipPos(IN.positionOS);
@@ -67,6 +71,7 @@ Shader "Custom/LinearGradient" {
 
             half4 Frag(Varyings IN) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
                 float t = (dot(normalize(IN.modelPos), _GradientDirection) + 1.0f) / 2.0f;
                 return lerp(_ColorA, _ColorB, (half)t);
             }

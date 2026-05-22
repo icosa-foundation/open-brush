@@ -30,6 +30,7 @@ Shader "TiltBrush/MobileDiffuse" {
       #pragma target 3.0
       #pragma vertex vert
       #pragma fragment frag
+      #pragma multi_compile_instancing
       #pragma multi_compile_fog
       #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
       #pragma multi_compile_fragment _ _SHADOWS_SOFT
@@ -42,6 +43,8 @@ Shader "TiltBrush/MobileDiffuse" {
         float2 uv0 : TEXCOORD0;
         float2 uv1 : TEXCOORD1;
         half3 normalOS : NORMAL;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct Varyings {
@@ -51,6 +54,9 @@ Shader "TiltBrush/MobileDiffuse" {
         half3 normalWS : TEXCOORD2;
         float3 positionWS : TEXCOORD3;
         half fogFactor : TEXCOORD4;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       TEXTURE2D(_MainTex);
@@ -66,6 +72,9 @@ Shader "TiltBrush/MobileDiffuse" {
 
       Varyings vert(Attributes v) {
         Varyings o;
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_TRANSFER_INSTANCE_ID(v, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
         VertexPositionInputs posInput = GetVertexPositionInputs(v.positionOS.xyz);
         VertexNormalInputs normalInput = GetVertexNormalInputs(v.normalOS);
         o.positionCS = posInput.positionCS;
@@ -78,6 +87,7 @@ Shader "TiltBrush/MobileDiffuse" {
       }
 
       half4 frag(Varyings i, bool isFrontFace : SV_IsFrontFace) : SV_Target {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
         half4 albedo = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv0) * _Color;
         half3 lightMap = SAMPLE_TEXTURE2D(_LightMap, sampler_LightMap, i.uv1).rgb;
 

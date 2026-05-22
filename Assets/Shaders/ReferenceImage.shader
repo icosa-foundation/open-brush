@@ -30,6 +30,7 @@ Shader "Custom/ReferenceImage" {
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
             #pragma multi_compile __ SELECTION_ON HIGHLIGHT_ON
             #include "UnityCG.cginc"
             #include "Assets/Shaders/Include/Hdr.cginc"
@@ -55,7 +56,9 @@ Shader "Custom/ReferenceImage" {
                 float2 uv : TEXCOORD0;
                 float4 vertex : SV_POSITION;
 
-                UNITY_VERTEX_OUTPUT_STEREO
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+
+              UNITY_VERTEX_OUTPUT_STEREO
             };
 
             v2f vert (appdata v) {
@@ -63,6 +66,7 @@ Shader "Custom/ReferenceImage" {
 
                 UNITY_SETUP_INSTANCE_ID(v);
                 UNITY_INITIALIZE_OUTPUT(v2f, o);
+                UNITY_TRANSFER_INSTANCE_ID(v, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
                 v.uv -= 0.5;
@@ -85,6 +89,7 @@ Shader "Custom/ReferenceImage" {
             }
 
             fixed4 frag (v2f i) : SV_Target {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 fixed4 c = tex2D(_MainTex, i.uv) * _Color;
 
                 if (c.a < _Cutoff) discard;

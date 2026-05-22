@@ -38,6 +38,7 @@ Shader "Custom/PointerScreenSpace" {
       HLSLPROGRAM
       #pragma vertex VertMain
       #pragma fragment FragMain
+      #pragma multi_compile_instancing
       #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
       #include "Assets/Shaders/Include/Math.cginc"
 
@@ -54,15 +55,23 @@ Shader "Custom/PointerScreenSpace" {
         float4 positionOS : POSITION;
         float3 normalOS : NORMAL;
         float2 uv : TEXCOORD0;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct Varyings {
         float4 positionHCS : SV_POSITION;
         float2 uv : TEXCOORD0;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       Varyings VertMain(Attributes IN) {
         Varyings OUT;
+        UNITY_SETUP_INSTANCE_ID(IN);
+        UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
         float4 worldPos = mul(unity_ObjectToWorld, IN.positionOS);
         float3 camPos = _WorldSpaceCameraPos.xyz;
         float vertexDistance = length(worldPos.xyz - camPos);
@@ -83,6 +92,7 @@ Shader "Custom/PointerScreenSpace" {
       }
 
       half4 FragMain(Varyings IN) : SV_Target {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
         half alpha = 1.0h;
         if (_RevealStartTime != 0.0) {
           alpha = IN.uv.x < (_Time.y - _RevealStartTime) * _RevealSpeed ? 1.0h : 0.0h;
@@ -100,6 +110,7 @@ Shader "Custom/PointerScreenSpace" {
       HLSLPROGRAM
       #pragma vertex VertOutline
       #pragma fragment FragOutline
+      #pragma multi_compile_instancing
       #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
       #include "Assets/Shaders/Include/Math.cginc"
 
@@ -116,15 +127,23 @@ Shader "Custom/PointerScreenSpace" {
         float4 positionOS : POSITION;
         float3 normalOS : NORMAL;
         float2 uv : TEXCOORD0;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct Varyings {
         float4 positionHCS : SV_POSITION;
         float2 uv : TEXCOORD0;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       Varyings VertOutline(Attributes IN) {
         Varyings OUT;
+        UNITY_SETUP_INSTANCE_ID(IN);
+        UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
         float4 worldPos = mul(unity_ObjectToWorld, IN.positionOS);
         float3 camPos = _WorldSpaceCameraPos.xyz;
         float vertexDistance = length(worldPos.xyz - camPos);
@@ -146,6 +165,7 @@ Shader "Custom/PointerScreenSpace" {
       }
 
       half4 FragOutline(Varyings IN) : SV_Target {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
         half alpha = 1.0h;
         if (_RevealStartTime != 0.0 && _RevealSpeed != 0.0) {
           alpha = IN.uv.x < (_Time.y - _RevealStartTime) * _RevealSpeed ? 1.0h : 0.0h;

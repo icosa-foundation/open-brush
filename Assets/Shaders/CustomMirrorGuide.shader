@@ -45,11 +45,14 @@ Shader "Custom/CustomMirrorGuide" {
 
       struct Varyings {
         float4 positionHCS : SV_POSITION;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+
         UNITY_VERTEX_OUTPUT_STEREO
       };
 
       Varyings VertMain(Attributes IN) {
         Varyings OUT;
+        UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
         UNITY_SETUP_INSTANCE_ID(IN);
         UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
         OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
@@ -57,6 +60,7 @@ Shader "Custom/CustomMirrorGuide" {
       }
 
       half4 FragMain(Varyings IN) : SV_Target {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
         return half4(_Color.rgb, 1.0h);
       }
       ENDHLSL
@@ -88,11 +92,14 @@ Shader "Custom/CustomMirrorGuide" {
 
       struct Varyings {
         float4 positionHCS : SV_POSITION;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+
         UNITY_VERTEX_OUTPUT_STEREO
       };
 
       Varyings VertOutline(Attributes IN) {
         Varyings OUT;
+        UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
         UNITY_SETUP_INSTANCE_ID(IN);
         UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
 
@@ -107,6 +114,7 @@ Shader "Custom/CustomMirrorGuide" {
       }
 
       half4 FragOutline(Varyings IN) : SV_Target {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
         return half4(0.0h, 0.0h, 0.0h, 1.0h);
       }
       ENDHLSL

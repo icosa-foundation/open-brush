@@ -38,7 +38,9 @@ SubShader {
     #pragma vertex vert
     #pragma geometry geom
     #pragma fragment frag
+    #pragma multi_compile_instancing
     #pragma target 4.5
+    #pragma require geometry
     #pragma multi_compile __ SHADER_SCRIPTING_ON
     #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
     #pragma multi_compile_fragment _ _SHADOWS_SOFT
@@ -63,6 +65,8 @@ SubShader {
       float2 uv : TEXCOORD0;
       float4 color : COLOR;
       uint id : SV_VertexID;
+
+      UNITY_VERTEX_INPUT_INSTANCE_ID
     };
 
     struct VaryingsToGeom {
@@ -71,6 +75,9 @@ SubShader {
       float3 positionWS : TEXCOORD1;
       float4 color : TEXCOORD2;
       float id : TEXCOORD3;
+
+      UNITY_VERTEX_INPUT_INSTANCE_ID
+      UNITY_VERTEX_OUTPUT_STEREO
     };
 
     struct Varyings {
@@ -80,6 +87,9 @@ SubShader {
       float3 positionWS : TEXCOORD2;
       float4 color : TEXCOORD3;
       float id : TEXCOORD4;
+
+      UNITY_VERTEX_INPUT_INSTANCE_ID
+      UNITY_VERTEX_OUTPUT_STEREO
     };
 
     float Dither8x8(float2 position) {
@@ -104,6 +114,9 @@ SubShader {
 
     VaryingsToGeom vert(Attributes v) {
       VaryingsToGeom o;
+      UNITY_SETUP_INSTANCE_ID(v);
+      UNITY_TRANSFER_INSTANCE_ID(v, o);
+      UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
       VertexPositionInputs posInput = GetVertexPositionInputs(v.positionOS.xyz);
       o.positionCS = posInput.positionCS;
       o.positionWS = posInput.positionWS;
@@ -148,6 +161,7 @@ SubShader {
     }
 
     half4 frag(Varyings i) : SV_TARGET {
+      UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
       #ifdef SHADER_SCRIPTING_ON
       if (_ClipEnd > 0 && !(i.id > _ClipStart && i.id < _ClipEnd)) discard;
       if (_Dissolve < 1 && Dither8x8(i.positionCS.xy) >= _Dissolve) discard;
@@ -183,24 +197,37 @@ SubShader {
     #pragma target 4.5
     #pragma vertex vert
     #pragma fragment frag
+    #pragma multi_compile_instancing
     #pragma geometry geom
+    #pragma require geometry
 
     #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
     struct Attributes {
       float4 positionOS : POSITION;
+
+      UNITY_VERTEX_INPUT_INSTANCE_ID
     };
 
     struct VaryingsToGeom {
       float4 positionCS : SV_POSITION;
+
+      UNITY_VERTEX_INPUT_INSTANCE_ID
+      UNITY_VERTEX_OUTPUT_STEREO
     };
 
     struct Varyings {
       float4 positionCS : SV_POSITION;
+
+      UNITY_VERTEX_INPUT_INSTANCE_ID
+      UNITY_VERTEX_OUTPUT_STEREO
     };
 
     VaryingsToGeom vert(Attributes v) {
       VaryingsToGeom o;
+      UNITY_SETUP_INSTANCE_ID(v);
+      UNITY_TRANSFER_INSTANCE_ID(v, o);
+      UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
       o.positionCS = TransformObjectToHClip(v.positionOS.xyz);
       return o;
     }
@@ -224,4 +251,3 @@ SubShader {
   }
 }
 }
-

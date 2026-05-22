@@ -53,6 +53,8 @@ CGINCLUDE
     float2 texcoord : TEXCOORD3;
     float4 screenPos : TEXCOORD4;
 
+    UNITY_VERTEX_INPUT_INSTANCE_ID
+
     UNITY_VERTEX_OUTPUT_STEREO
   };
 
@@ -62,6 +64,7 @@ CGINCLUDE
 
     UNITY_SETUP_INSTANCE_ID(v);
     UNITY_INITIALIZE_OUTPUT(v2f, o);
+    UNITY_TRANSFER_INSTANCE_ID(v, o);
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
     // Shrink the stencil slightly to prevent z fighting when the user is drawing on top of it.
@@ -168,8 +171,10 @@ Pass {
   CGPROGRAM
     #pragma vertex vert
     #pragma fragment frag
+    #pragma multi_compile_instancing
     fixed4 frag (v2f i) : SV_Target
     {
+      UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
       float4 c = createStencilGrid(i,2,.5,.25);
       //clip( c.x < 0.01f ? -1:1 );
       c.rgb += float3(.2,.2,.2);
@@ -187,9 +192,11 @@ Pass {
   CGPROGRAM
     #pragma vertex vert
     #pragma fragment frag
+    #pragma multi_compile_instancing
 
     fixed4 frag (v2f i) : SV_Target
     {
+      UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
       float4 c = createStencilGrid(i,1,1,.5);
       //clip( c.x < 0.01f ? -1:1 );
       c.a = .5;

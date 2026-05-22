@@ -16,14 +16,21 @@ Shader "Custom/StandardWithOutlineFlatten" {
       HLSLPROGRAM
       #pragma vertex Vert
       #pragma fragment Frag
+      #pragma multi_compile_instancing
       #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
       CBUFFER_START(UnityPerMaterial)
       half4 _Color; half _FlattenAmount;
       CBUFFER_END
-      struct A{float4 positionOS:POSITION;};
-      struct V{float4 positionHCS:SV_POSITION;};
+      struct A {float4 positionOS:POSITION;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+      };
+      struct V {float4 positionHCS:SV_POSITION;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+        UNITY_VERTEX_OUTPUT_STEREO
+      };
       V Vert(A v){V o; float3 p=v.positionOS.xyz; p.z = p.z - p.z * _FlattenAmount; o.positionHCS=TransformObjectToHClip(p); return o;}
-      half4 Frag(V i):SV_Target { return half4(_Color.rgb,1); }
+      half4 Frag(V i):SV_Target {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i); return half4(_Color.rgb,1); }
       ENDHLSL
     }
 
@@ -33,15 +40,24 @@ Shader "Custom/StandardWithOutlineFlatten" {
       HLSLPROGRAM
       #pragma vertex VertOutline
       #pragma fragment FragOutline
+      #pragma multi_compile_instancing
       #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
       #include "Assets/Shaders/Include/Math.cginc"
       CBUFFER_START(UnityPerMaterial)
       float _OutlineWidth; float _FlattenAmount;
       CBUFFER_END
-      struct A{float4 positionOS:POSITION; float3 normalOS:NORMAL;};
-      struct V{float4 positionHCS:SV_POSITION;};
+      struct A {float4 positionOS:POSITION; float3 normalOS:NORMAL;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+      };
+      struct V {float4 positionHCS:SV_POSITION;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+        UNITY_VERTEX_OUTPUT_STEREO
+      };
       V VertOutline(A v){
         V o;
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_TRANSFER_INSTANCE_ID(v, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
         float3 p = v.positionOS.xyz;
         p.z = p.z - p.z * _FlattenAmount;
         float4 worldPos = mul(unity_ObjectToWorld, float4(p,1));
@@ -52,7 +68,8 @@ Shader "Custom/StandardWithOutlineFlatten" {
         o.positionHCS = TransformWorldToHClip(worldPos.xyz);
         return o;
       }
-      half4 FragOutline(V i):SV_Target { return half4(0,0,0,1); }
+      half4 FragOutline(V i):SV_Target {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i); return half4(0,0,0,1); }
       ENDHLSL
     }
 
@@ -61,14 +78,21 @@ Shader "Custom/StandardWithOutlineFlatten" {
       HLSLPROGRAM
       #pragma vertex VertShadow
       #pragma fragment FragShadow
+      #pragma multi_compile_instancing
       #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
       CBUFFER_START(UnityPerMaterial)
       float _FlattenAmount;
       CBUFFER_END
-      struct A{float4 positionOS:POSITION;};
-      struct V{float4 positionCS:SV_POSITION;};
+      struct A {float4 positionOS:POSITION;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+      };
+      struct V {float4 positionCS:SV_POSITION;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+        UNITY_VERTEX_OUTPUT_STEREO
+      };
       V VertShadow(A v){V o; float3 p=v.positionOS.xyz; p.z=p.z-p.z*_FlattenAmount; o.positionCS=TransformObjectToHClip(p); return o;}
-      half4 FragShadow(V i):SV_Target { return 0; }
+      half4 FragShadow(V i):SV_Target {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i); return 0; }
       ENDHLSL
     }
   }

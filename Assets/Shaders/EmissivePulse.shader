@@ -28,6 +28,7 @@ Shader "Custom/EmissivePulse" {
       HLSLPROGRAM
       #pragma vertex Vert
       #pragma fragment Frag
+      #pragma multi_compile_instancing
       #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
       CBUFFER_START(UnityPerMaterial)
@@ -36,12 +37,18 @@ Shader "Custom/EmissivePulse" {
       half _PulseFrequency;
       CBUFFER_END
 
-      struct Attributes { float4 positionOS : POSITION; };
-      struct Varyings { float4 positionHCS : SV_POSITION; };
+      struct Attributes { float4 positionOS : POSITION;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+      };
+      struct Varyings { float4 positionHCS : SV_POSITION;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+        UNITY_VERTEX_OUTPUT_STEREO
+      };
 
-      Varyings Vert(Attributes IN) { Varyings OUT; OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz); return OUT; }
+      Varyings Vert(Attributes IN){Varyings OUT; UNITY_SETUP_INSTANCE_ID(IN); UNITY_TRANSFER_INSTANCE_ID(IN, OUT); UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT); OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz); return OUT; }
 
       half4 Frag(Varyings IN) : SV_Target {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
         half t = abs(sin(_Time.y * _PulseFrequency));
         return half4(lerp(_BaseColor, _PulseColor, t).rgb * 100.0h, 1.0h);
       }
@@ -58,6 +65,7 @@ Shader "Custom/EmissivePulse" {
       HLSLPROGRAM
       #pragma vertex Vert
       #pragma fragment Frag
+      #pragma multi_compile_instancing
       #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
       CBUFFER_START(UnityPerMaterial)
@@ -66,12 +74,18 @@ Shader "Custom/EmissivePulse" {
       half _PulseFrequency;
       CBUFFER_END
 
-      struct Attributes { float4 positionOS : POSITION; };
-      struct Varyings { float4 positionHCS : SV_POSITION; };
+      struct Attributes { float4 positionOS : POSITION;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+      };
+      struct Varyings { float4 positionHCS : SV_POSITION;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+        UNITY_VERTEX_OUTPUT_STEREO
+      };
 
-      Varyings Vert(Attributes IN) { Varyings OUT; OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz); return OUT; }
+      Varyings Vert(Attributes IN){Varyings OUT; UNITY_SETUP_INSTANCE_ID(IN); UNITY_TRANSFER_INSTANCE_ID(IN, OUT); UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT); OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz); return OUT; }
 
       half4 Frag(Varyings IN) : SV_Target {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
         half t = abs(sin(_Time.y * _PulseFrequency));
         half3 c = _BaseColor.rgb + t * _PulseColor.rgb;
         return half4(c, 1.0h);

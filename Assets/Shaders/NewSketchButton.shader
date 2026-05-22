@@ -59,6 +59,8 @@ Shader "Custom/NewSketchButton" {
     float2 texcoord : TEXCOORD0;
     float3 viewDir : TEXCOORD1;
 
+    UNITY_VERTEX_INPUT_INSTANCE_ID
+
     UNITY_VERTEX_OUTPUT_STEREO
   };
 
@@ -67,6 +69,7 @@ Shader "Custom/NewSketchButton" {
 
     UNITY_SETUP_INSTANCE_ID(v);
     UNITY_INITIALIZE_OUTPUT(v2f, o);
+    UNITY_TRANSFER_INSTANCE_ID(v, o);
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
     o.vertex = UnityObjectToClipPos(v.vertex);
@@ -82,6 +85,7 @@ Shader "Custom/NewSketchButton" {
   // the same depth, making pass 3 (_Tex_3) override pass 2 (_Tex_2).
   // Back layers receive a larger UV parallax offset to simulate depth separation.
   fixed4 frag (v2f i) : SV_TARGET {
+    UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
     float3 viewDir = normalize(i.viewDir);
     float2 offset1 = viewDir.xy * (_Distance * 0.05);
     float2 offset2 = viewDir.xy * (_Distance * 0.10);
@@ -131,6 +135,7 @@ Shader "Custom/NewSketchButton" {
       CGPROGRAM
       #pragma vertex vert
       #pragma fragment frag
+      #pragma multi_compile_instancing
       ENDCG
     }
   }

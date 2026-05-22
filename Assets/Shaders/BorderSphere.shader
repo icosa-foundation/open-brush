@@ -26,6 +26,7 @@ Shader "Custom/BorderSphere" {
       HLSLPROGRAM
       #pragma vertex Vert
       #pragma fragment Frag
+      #pragma multi_compile_instancing
       #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
       CBUFFER_START(UnityPerMaterial)
@@ -37,15 +38,23 @@ Shader "Custom/BorderSphere" {
 
       struct Attributes {
         float4 positionOS : POSITION;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct Varyings {
         float4 positionHCS : SV_POSITION;
         float3 worldPos : TEXCOORD0;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       Varyings Vert(Attributes IN) {
         Varyings OUT;
+        UNITY_SETUP_INSTANCE_ID(IN);
+        UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
         VertexPositionInputs positionInputs = GetVertexPositionInputs(IN.positionOS.xyz);
         OUT.positionHCS = positionInputs.positionCS;
         OUT.worldPos = positionInputs.positionWS;
@@ -53,6 +62,7 @@ Shader "Custom/BorderSphere" {
       }
 
       half4 Frag(Varyings IN) : SV_Target {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
         float safeRadius = max(_HighlightRadius, 0.0001);
         float distanceToHighlight = distance(_HighlightCenter, IN.worldPos);
         float highlightRatio = saturate(distanceToHighlight / safeRadius);

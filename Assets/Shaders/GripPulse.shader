@@ -26,6 +26,7 @@ Shader "Custom/GripPulse" {
       HLSLPROGRAM
         #pragma vertex Vert
         #pragma fragment Frag
+        #pragma multi_compile_instancing
 
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -35,19 +36,28 @@ Shader "Custom/GripPulse" {
 
         struct Attributes {
           float4 positionOS : POSITION;
+
+          UNITY_VERTEX_INPUT_INSTANCE_ID
         };
 
         struct Varyings {
           float4 positionHCS : SV_POSITION;
+
+          UNITY_VERTEX_INPUT_INSTANCE_ID
+          UNITY_VERTEX_OUTPUT_STEREO
         };
 
         Varyings Vert(Attributes IN) {
           Varyings OUT;
+          UNITY_SETUP_INSTANCE_ID(IN);
+          UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
+          UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
           OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
           return OUT;
         }
 
         half4 Frag(Varyings IN) : SV_Target {
+          UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
           half4 color = _Color;
           color -= (0.4h - 0.4h * abs(sin(_Time.w * 2.0h)));
           color += 0.2h;

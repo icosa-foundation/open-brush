@@ -37,7 +37,9 @@ CGINCLUDE
         float2 texcoord : TEXCOORD0;
         float4 pos : POSITION;
 
-        UNITY_VERTEX_OUTPUT_STEREO
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+
+      UNITY_VERTEX_OUTPUT_STEREO
     };
 ENDCG
 
@@ -60,6 +62,7 @@ SubShader {
 
         #pragma vertex vert
         #pragma fragment frag
+        #pragma multi_compile_instancing
 
         float _LogVMax;
         uniform float _LogVMin;
@@ -70,6 +73,7 @@ SubShader {
 
             UNITY_SETUP_INSTANCE_ID(v);
             UNITY_INITIALIZE_OUTPUT(v2f, o);
+            UNITY_TRANSFER_INSTANCE_ID(v, o);
             UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
             o.pos = UnityObjectToClipPos(v.vertex);
@@ -85,6 +89,7 @@ SubShader {
 
         // Slider: HDR "value". Polar.
         float4 frag (v2f i) : SV_Target {
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
             float2 rang = xy_to_polar(i.texcoord);
             clip(1 - rang.x);
             float3 base_rgb = hue33_to_base_rgb(rang.y * 6);
