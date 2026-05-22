@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ce42899d4a15fa48aab17617f0bc29b, type: 3}
   m_Name: Open Brush Watermark
   m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.UrpWatermarkRendererFeature
-  m_Active: 0
+  m_Active: 1
   m_RenderPassEvent: 600
 --- !u!114 &11400000
 MonoBehaviour:

@@ -84,17 +84,10 @@ namespace TiltBrush
 
         private Material m_blitWithScale;
 
-        List<Feature> m_features = new List<Feature>();
         LightShadows[] m_shadows = new LightShadows[0];
 
         private Dictionary<RenderTextureFormat, RenderTextureFormat> m_GetCreatedFormatMemo =
             new Dictionary<RenderTextureFormat, RenderTextureFormat>();
-
-        struct Feature
-        {
-            public MonoBehaviour behaviour;
-            public bool defaultState;
-        }
 
         public float SuperSampling
         {
@@ -118,28 +111,6 @@ namespace TiltBrush
         // -------------------------------------------------------------------------------------------- //
         // Quality Control Helpers
         // -------------------------------------------------------------------------------------------- //
-
-        void AddFeature<T>()
-        {
-            MonoBehaviour feature = GetComponent<T>() as MonoBehaviour;
-            if (feature == null)
-            {
-                return;
-            }
-            m_features.Add(new Feature { behaviour = feature, defaultState = feature.enabled });
-        }
-
-        // Toggle the state of all known features.
-        // When enable is false, disable all features, when true, set to default state.
-        void ToggleFeatures(bool enable)
-        {
-            for (int i = 0; i < m_features.Count; i++)
-            {
-                m_features[i].behaviour.enabled = enable
-                    ? m_features[i].defaultState
-                    : false;
-            }
-        }
 
         RenderTextureFormat GetTargetFormat()
         {
@@ -174,7 +145,6 @@ namespace TiltBrush
                 if (m_configuredFor != QualitySettings.GetQualityLevel())
                 {
                     m_isRecorder = GetComponent<VideoRecorder>() != null;
-                    m_features.Clear();
 
                     m_configuredFor = QualitySettings.GetQualityLevel();
                 }
@@ -340,15 +310,10 @@ namespace TiltBrush
             if (m_isRecording && !m_isRecorder)
             {
                 msaa = 1;
-                ToggleFeatures(false);
                 for (int i = 0; i < App.Scene.GetNumLights(); i++)
                 {
                     App.Scene.GetLight(i).shadows = LightShadows.None;
                 }
-            }
-            else
-            {
-                ToggleFeatures(true);
             }
 
             // Setup the render texture framebuffer.

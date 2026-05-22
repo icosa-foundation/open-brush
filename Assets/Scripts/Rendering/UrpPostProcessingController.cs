@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -58,6 +59,7 @@ namespace TiltBrush
         private AppQualitySettingLevels.BloomMode m_CurrentBloomMode =
             AppQualitySettingLevels.BloomMode.None;
         private float m_MobileBloomAmount = 1f;
+        private readonly HashSet<Camera> m_ExplicitCaptureCameras = new HashSet<Camera>();
 
         public VolumeProfile MainProfile => m_RuntimeMainProfile;
         public VolumeProfile CaptureProfile => m_RuntimeCaptureProfile;
@@ -159,16 +161,19 @@ namespace TiltBrush
 
         public void ConfigureScreenshotCamera(Camera camera, bool enableCaptureEffects)
         {
+            RegisterCaptureCamera(camera);
             ConfigureCaptureCamera(camera, enableCaptureEffects, m_RuntimeCaptureProfile);
         }
 
         public void ConfigureDropCamCamera(Camera camera, bool enableCaptureEffects)
         {
+            RegisterCaptureCamera(camera);
             ConfigureCaptureCamera(camera, enableCaptureEffects, m_RuntimeCaptureProfile);
         }
 
         public void SetRecordingPostProcessing(Camera camera, bool enabled)
         {
+            RegisterCaptureCamera(camera);
             ConfigureCaptureCamera(camera, enabled, m_RuntimeCaptureProfile);
         }
 
@@ -204,9 +209,11 @@ namespace TiltBrush
 
             if (camera == null || !enablePostProcessing)
             {
+                RegisterCaptureCamera(camera);
                 return state;
             }
 
+            RegisterCaptureCamera(camera);
             UniversalAdditionalCameraData cameraData =
                 camera.GetComponent<UniversalAdditionalCameraData>();
             if (cameraData == null)
@@ -253,6 +260,7 @@ namespace TiltBrush
                 return;
             }
 
+            RegisterCaptureCamera(camera);
             UniversalAdditionalCameraData cameraData =
                 camera.GetComponent<UniversalAdditionalCameraData>();
             if (cameraData == null)
@@ -515,8 +523,21 @@ namespace TiltBrush
             }
         }
 
-        private static bool IsCaptureCamera(Camera camera)
+        private void RegisterCaptureCamera(Camera camera)
         {
+            if (camera != null)
+            {
+                m_ExplicitCaptureCameras.Add(camera);
+            }
+        }
+
+        private bool IsCaptureCamera(Camera camera)
+        {
+            if (m_ExplicitCaptureCameras.Contains(camera))
+            {
+                return true;
+            }
+
             string cameraName = camera.name.ToLowerInvariant();
             if (camera.targetTexture != null)
             {

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace TiltBrush
 {
@@ -365,7 +366,10 @@ namespace TiltBrush
             try
             {
                 // TODO XXX: Why is this Render() necessary?
-                m_SaveIconScreenshotManager.LeftEye.Render();
+                if (GraphicsSettings.currentRenderPipeline == null)
+                {
+                    m_SaveIconScreenshotManager.LeftEye.Render();
+                }
 
                 //snapshot the current scene and push it to the preview window
                 RenderWrapper wrapper = m_SaveIconScreenshotManager.gameObject.GetComponent<RenderWrapper>();
