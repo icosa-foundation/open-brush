@@ -950,7 +950,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6096094d69d82cc40947df806f66ab34, type: 3}
   m_Name: OpenXRCompositionLayersFeature Standalone
   m_EditorClassIdentifier: 
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Composition Layers Support
   version: 1.0.0
   featureIdInternal: com.unity.openxr.feature.compositionlayers
