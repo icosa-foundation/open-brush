@@ -36,6 +36,7 @@ namespace TiltBrush
 
         public Shader shader;
         private Material m_Material;
+        private static readonly int BlitTexture = Shader.PropertyToID("_BlitTexture");
 
         public Material Material
         {
@@ -106,6 +107,7 @@ namespace TiltBrush
             if (CameraConfig.Watermark)
             {
                 ConfigureMaterial(source.width, source.height);
+                m_Material.SetTexture(BlitTexture, source);
                 Graphics.Blit(source, destination, m_Material);
             }
             else

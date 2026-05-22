@@ -19,6 +19,7 @@
 Shader "Custom/BlitLdrPmaOverlay" {
   Properties {
     _MainTex ("", 2D) = "white" {}
+    _BlitTexture ("", 2D) = "white" {}
     _OverlayTex ("Overlay Texture", 2D) = "black" {}
     _OverlayUvRange  ("Overlay UV Range", Vector) = (0, 0, 1, 1)
   }
@@ -58,14 +59,15 @@ Shader "Custom/BlitLdrPmaOverlay" {
         return o;
       }
 
-      UNITY_DECLARE_SCREENSPACE_TEXTURE(_MainTex);
-      UNITY_DECLARE_SCREENSPACE_TEXTURE(_OverlayTex);
+      UNITY_DECLARE_SCREENSPACE_TEXTURE(_BlitTexture);
+      sampler2D _OverlayTex;
       float4 _OverlayUvRange;
 
       float4 frag(v2f i) : COLOR {
         UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
         // Get the original color.
-        float4 mainTex = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_MainTex, i.uv);
+        float2 sourceUv = UnityStereoTransformScreenSpaceTex(i.uv);
+        float4 mainTex = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_BlitTexture, sourceUv);
 
         // Calculate the overlay's texture coordinates.
         float2 uvMin = _OverlayUvRange.xy;
@@ -74,7 +76,7 @@ Shader "Custom/BlitLdrPmaOverlay" {
         float2 overlayUV = saturate((i.uv - uvMin) / uvSize);
 
         // Get the overlay color.
-        float4 overlayTex = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_OverlayTex, overlayUV);
+        float4 overlayTex = tex2D(_OverlayTex, overlayUV);
 
         // Composite the result.
         return (1.0f - overlayTex.a) * saturate(mainTex) + overlayTex;
@@ -83,4 +85,3 @@ Shader "Custom/BlitLdrPmaOverlay" {
     }
   }
 }
-

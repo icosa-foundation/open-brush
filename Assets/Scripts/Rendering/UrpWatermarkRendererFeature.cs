@@ -45,7 +45,7 @@ namespace TiltBrush
 
         private class WatermarkPass : ScriptableRenderPass
         {
-            private static readonly int MainTex = Shader.PropertyToID("_MainTex");
+            private static readonly int BlitTexture = Shader.PropertyToID("_BlitTexture");
             private WatermarkEffect m_Watermark;
             private RTHandle m_TemporaryColorTexture;
 
@@ -99,7 +99,7 @@ namespace TiltBrush
                         cmd,
                         cameraColorTarget,
                         m_TemporaryColorTexture);
-                    cmd.SetGlobalTexture(MainTex, m_TemporaryColorTexture);
+                    cmd.SetGlobalTexture(BlitTexture, m_TemporaryColorTexture);
                     Blitter.BlitCameraTexture(
                         cmd,
                         m_TemporaryColorTexture,

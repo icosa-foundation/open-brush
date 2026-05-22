@@ -28,6 +28,7 @@ Blend SrcAlpha OneMinusSrcAlpha // Alpha blending
   HLSLPROGRAM
   #pragma vertex vert
   #pragma fragment frag
+  #pragma multi_compile_instancing
   #include "UnityCG.cginc"
   //we include "UnityCG.cginc" to use the appdata_img struct
 
@@ -35,6 +36,7 @@ Blend SrcAlpha OneMinusSrcAlpha // Alpha blending
    float4 pos : POSITION;
    half2 uv : TEXCOORD0;
 
+   UNITY_VERTEX_INPUT_INSTANCE_ID
    UNITY_VERTEX_OUTPUT_STEREO
   };
 
@@ -44,6 +46,7 @@ Blend SrcAlpha OneMinusSrcAlpha // Alpha blending
 
     UNITY_SETUP_INSTANCE_ID(v);
     UNITY_INITIALIZE_OUTPUT(v2f, o);
+    UNITY_TRANSFER_INSTANCE_ID(v, o);
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
     o.pos = UnityObjectToClipPos (v.vertex);
@@ -64,4 +67,3 @@ Blend SrcAlpha OneMinusSrcAlpha // Alpha blending
 }
  FallBack "Diffuse"
 }
-
