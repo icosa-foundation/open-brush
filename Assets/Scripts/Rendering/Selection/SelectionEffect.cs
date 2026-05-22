@@ -327,6 +327,20 @@ namespace TiltBrush
             m_bCmrPreCulled = false;
             m_CmrRenderHighlight = false;
         }
+#else
+        public bool ShouldRenderUrpSelection => false;
+
+        public string UrpSelectionDebugStatus => "custom mesh selection disabled";
+
+        public Material UrpPostEffectMaterial => null;
+
+        public float UrpBlurWidth => 0.0f;
+
+        public bool HasPreparedUrpSelectionFrame => false;
+
+        public void DrawUrpHighlightMeshes(CommandBuffer cmd, Material maskMaterial) {}
+
+        public void EndUrpSelectionFrame() {}
 #endif
 
         // Internal API for FEATURE_CUSTOM_MESH_RENDER
