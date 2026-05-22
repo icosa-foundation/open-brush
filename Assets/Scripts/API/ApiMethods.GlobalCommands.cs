@@ -1,4 +1,4 @@
-﻿// Copyright 2022 The Open Brush Authors
+// Copyright 2022 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -533,6 +533,34 @@ namespace TiltBrush
         //     SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         // }
 
+        [ApiEndpoint("quality.get", "Returns the current quality level")]
+        public static string GetQualityLevel()
+        {
+            if (QualityControls.m_Instance == null)
+            {
+                return "QualityControls is not available.";
+            }
+
+            return $"Quality level is {QualityControls.m_Instance.QualityLevel}.";
+        }
+
+        [ApiEndpoint("quality.set", "Sets the current quality level by index", "2")]
+        public static string SetQualityLevel(int level)
+        {
+            if (QualityControls.m_Instance == null)
+            {
+                return "QualityControls is not available.";
+            }
+
+            int maxLevel = QualityControls.m_Instance.AppQualityLevels.Length - 1;
+            if (level < 0 || level > maxLevel)
+            {
+                return $"Quality level {level} is out of range 0..{maxLevel}.";
+            }
+
+            QualityControls.m_Instance.QualityLevel = level;
+            return $"Quality level set to {QualityControls.m_Instance.QualityLevel}.";
+        }
         // TODO Do we want panel toggles?
         [ApiEndpoint("settings.toggle", "Toggles the settings panel on or off")]
         public static void ToggleSettings()

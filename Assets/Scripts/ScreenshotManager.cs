@@ -44,16 +44,6 @@ namespace TiltBrush
             public RenderTexture renderTexture;
         }
 
-        struct CameraPostProcessingState
-        {
-            public Camera camera;
-            public UniversalAdditionalCameraData cameraData;
-            public bool renderPostProcessing;
-            public LayerMask volumeLayerMask;
-            public Transform volumeTrigger;
-            public bool allowHDR;
-        }
-
         private const string kCapturePostLogPrefix = "[OB_URP_CAPTURE]";
         private static int s_CapturePostLogCount;
 
@@ -462,7 +452,7 @@ namespace TiltBrush
                 // the camera target.  That would be wrong, because the camera target's
                 // resolution might be much lower than rTexture.
                 var camera = LeftInfo.camera;
-                CameraPostProcessingState postProcessingState =
+                UrpPostProcessingController.CameraPostProcessingState postProcessingState =
                     BeginCapturePostProcessing(camera, usePostProcessing);
                 var prev = camera.targetTexture;
                 try
@@ -507,13 +497,24 @@ namespace TiltBrush
             }
         }
 
-        CameraPostProcessingState BeginCapturePostProcessing(Camera camera, bool includePostProcessing)
+        UrpPostProcessingController.CameraPostProcessingState BeginCapturePostProcessing(
+            Camera camera, bool includePostProcessing)
         {
-            CameraPostProcessingState state = new CameraPostProcessingState
+            if (UrpPostProcessingController.Instance != null)
             {
-                camera = camera,
-                allowHDR = camera.allowHDR
-            };
+                UrpPostProcessingController.CameraPostProcessingState controllerState =
+                    UrpPostProcessingController.Instance.BeginCapturePostProcessing(
+                        camera, includePostProcessing);
+                LogCapturePostProcessing(camera, includePostProcessing);
+                return controllerState;
+            }
+
+            UrpPostProcessingController.CameraPostProcessingState state =
+                new UrpPostProcessingController.CameraPostProcessingState
+                {
+                    camera = camera,
+                    allowHDR = camera.allowHDR
+                };
 
             if (!includePostProcessing)
             {
@@ -537,19 +538,19 @@ namespace TiltBrush
             cameraData.volumeLayerMask = ~0;
             cameraData.volumeTrigger = camera.transform;
 
-            if (s_CapturePostLogCount < 8)
-            {
-                Debug.Log(
-                    $"{kCapturePostLogPrefix} Enabled URP post-processing for capture camera " +
-                    $"{camera.name} hdr={camera.allowHDR}.");
-                s_CapturePostLogCount++;
-            }
+            LogCapturePostProcessing(camera, includePostProcessing);
 
             return state;
         }
 
-        void EndCapturePostProcessing(CameraPostProcessingState state)
+        void EndCapturePostProcessing(UrpPostProcessingController.CameraPostProcessingState state)
         {
+            if (UrpPostProcessingController.Instance != null)
+            {
+                UrpPostProcessingController.Instance.EndCapturePostProcessing(state);
+                return;
+            }
+
             if (state.camera == null)
             {
                 return;
@@ -565,6 +566,20 @@ namespace TiltBrush
             state.cameraData.volumeLayerMask = state.volumeLayerMask;
             state.cameraData.volumeTrigger = state.volumeTrigger;
         }
+
+        void LogCapturePostProcessing(Camera camera, bool includePostProcessing)
+        {
+            if (!includePostProcessing || camera == null || s_CapturePostLogCount >= 8)
+            {
+                return;
+            }
+
+            Debug.Log(
+                $"{kCapturePostLogPrefix} Enabled URP post-processing for capture camera " +
+                $"{camera.name} hdr={camera.allowHDR}.");
+            s_CapturePostLogCount++;
+        }
+
 
         static public void Save(Stream outf, RenderTexture rTextureToSave, bool bSaveAsPng)
         {

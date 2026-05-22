@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -402,6 +402,11 @@ namespace TiltBrush
         void EnableHDR(bool bEnable)
         {
             m_enableHdr = bEnable;
+            if (UrpPostProcessingController.Instance != null)
+            {
+                return;
+            }
+
             foreach (var camera in m_Cameras)
             {
                 if (camera.gameObject.activeSelf)

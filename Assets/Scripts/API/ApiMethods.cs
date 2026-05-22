@@ -1,4 +1,4 @@
-﻿// Copyright 2021 The Open Brush Authors
+// Copyright 2021 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -392,8 +392,7 @@ namespace TiltBrush
             bool initialVideoObjectActive = false;
             bool forceFrameSequenceRestore = App.UserConfig.Video.ForceFrameSequenceRender;
             bool usePngRestore = App.UserConfig.Video.UsePngForFrameSequence;
-            UniversalAdditionalCameraData cameraData = null;
-            bool renderPostProcessingRestore = false;
+            UrpPostProcessingController.CameraPostProcessingState postProcessingState = default;
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
@@ -404,15 +403,12 @@ namespace TiltBrush
                 ScreenshotManager manager = rig.ManagerFromStyle(MultiCamStyle.Video);
                 VideoRecorder recorder = manager.GetComponent<VideoRecorder>();
                 Camera camera = manager.LeftEye;
-                cameraData = camera.GetComponent<UniversalAdditionalCameraData>();
-                if (cameraData == null)
+                if (UrpPostProcessingController.Instance != null)
                 {
-                    cameraData = camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
+                    postProcessingState =
+                        UrpPostProcessingController.Instance.BeginCapturePostProcessing(
+                            camera, includePostProcessing);
                 }
-                renderPostProcessingRestore = cameraData.renderPostProcessing;
-                cameraData.renderPostProcessing = includePostProcessing;
-                cameraData.volumeLayerMask = ~0;
-                cameraData.volumeTrigger = camera.transform;
 
                 App.UserConfig.Video.ForceFrameSequenceRender = true;
                 App.UserConfig.Video.UsePngForFrameSequence = true;
@@ -449,9 +445,9 @@ namespace TiltBrush
                     VideoRecorderUtils.StopVideoCapture(saveCapture: true);
                 }
 
-                if (cameraData != null)
+                if (UrpPostProcessingController.Instance != null)
                 {
-                    cameraData.renderPostProcessing = renderPostProcessingRestore;
+                    UrpPostProcessingController.Instance.EndCapturePostProcessing(postProcessingState);
                 }
 
                 App.UserConfig.Video.ForceFrameSequenceRender = forceFrameSequenceRestore;
@@ -475,29 +471,14 @@ namespace TiltBrush
                 24,
                 includePostProcessing ? RenderTextureFormat.ARGBFloat : RenderTextureFormat.ARGB32);
             RenderTexture previousTarget = camera.targetTexture;
-            bool allowHdrRestore = camera.allowHDR;
-            UniversalAdditionalCameraData cameraData = camera.GetComponent<UniversalAdditionalCameraData>();
-            bool addedCameraData = false;
-            bool renderPostProcessingRestore = false;
-            LayerMask volumeLayerMaskRestore = default;
-            Transform volumeTriggerRestore = null;
+            UrpPostProcessingController.CameraPostProcessingState postProcessingState = default;
             try
             {
-                if (includePostProcessing)
+                if (UrpPostProcessingController.Instance != null)
                 {
-                    if (cameraData == null)
-                    {
-                        cameraData = camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
-                        addedCameraData = true;
-                    }
-
-                    renderPostProcessingRestore = cameraData.renderPostProcessing;
-                    volumeLayerMaskRestore = cameraData.volumeLayerMask;
-                    volumeTriggerRestore = cameraData.volumeTrigger;
-                    camera.allowHDR = true;
-                    cameraData.renderPostProcessing = true;
-                    cameraData.volumeLayerMask = ~0;
-                    cameraData.volumeTrigger = camera.transform;
+                    postProcessingState =
+                        UrpPostProcessingController.Instance.BeginCapturePostProcessing(
+                            camera, includePostProcessing);
                 }
 
                 camera.targetTexture = target;
@@ -510,16 +491,9 @@ namespace TiltBrush
             finally
             {
                 camera.targetTexture = previousTarget;
-                camera.allowHDR = allowHdrRestore;
-                if (cameraData != null && includePostProcessing)
+                if (UrpPostProcessingController.Instance != null)
                 {
-                    cameraData.renderPostProcessing = renderPostProcessingRestore;
-                    cameraData.volumeLayerMask = volumeLayerMaskRestore;
-                    cameraData.volumeTrigger = volumeTriggerRestore;
-                }
-                if (addedCameraData)
-                {
-                    UnityEngine.Object.Destroy(cameraData);
+                    UrpPostProcessingController.Instance.EndCapturePostProcessing(postProcessingState);
                 }
                 RenderTexture.ReleaseTemporary(target);
             }
