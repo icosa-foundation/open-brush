@@ -254,6 +254,7 @@ namespace TiltBrush
                 try
                 {
                     var material = stroke.m_BatchSubset.m_ParentBatch.InstantiatedMaterial;
+                    material.EnableKeyword("SHADER_SCRIPTING_ON");
                     if (!material.HasFloat("_TimeBlend") ||
                         !material.HasVector("_TimeOverrideValue"))
                     {
