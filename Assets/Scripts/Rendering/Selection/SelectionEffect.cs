@@ -85,6 +85,9 @@ namespace TiltBrush
         private bool m_CmrRenderHighlight;
         private bool m_CmrUseStrokePostEffect;
         private List<MeshFilter> m_CmrRequestedMeshes;
+        private List<MeshFilter> m_UrpDiagnosticMeshes;
+        private int m_UrpDiagnosticFramesRemaining;
+        private bool m_UrpDiagnosticUseStrokePostEffect;
         private bool m_bCmrPosesApplied;
         private bool m_bCmrPreCulled;
 #endif
@@ -94,10 +97,29 @@ namespace TiltBrush
 #if FEATURE_CUSTOM_MESH_RENDER
             m_CmrRenderWrapper = GetComponent<RenderWrapper>();
             m_CmrRequestedMeshes = new List<MeshFilter>();
+            m_UrpDiagnosticMeshes = new List<MeshFilter>();
 #endif
             InputManager.m_Instance.ControllerPosesApplied += OnPosesApplied;
             Shader.SetGlobalColor("_LeftEyeSelectionColor", Color.white);
             Shader.SetGlobalColor("_RightEyeSelectionColor", Color.white);
+        }
+
+        void LateUpdate()
+        {
+#if FEATURE_CUSTOM_MESH_RENDER
+            if (m_UrpDiagnosticFramesRemaining <= 0 ||
+                GraphicsSettings.currentRenderPipeline == null)
+            {
+                return;
+            }
+
+            m_CmrUseStrokePostEffect = m_UrpDiagnosticUseStrokePostEffect;
+            m_UrpDiagnosticFramesRemaining--;
+            if (m_UrpDiagnosticFramesRemaining <= 0)
+            {
+                m_UrpDiagnosticMeshes.Clear();
+            }
+#endif
         }
 
         void OnPreCull()
@@ -177,29 +199,63 @@ namespace TiltBrush
 #endif
         }
 
+        public void QueueUrpDiagnosticHighlight(
+            MeshFilter meshFilter,
+            int frameCount,
+            bool useStrokePostEffect)
+        {
+#if FEATURE_CUSTOM_MESH_RENDER
+            if (meshFilter == null || frameCount <= 0)
+            {
+                return;
+            }
+
+            m_UrpDiagnosticMeshes.Clear();
+            m_UrpDiagnosticMeshes.Add(meshFilter);
+            m_UrpDiagnosticFramesRemaining = frameCount;
+            m_UrpDiagnosticUseStrokePostEffect = useStrokePostEffect;
+            m_CmrUseStrokePostEffect = useStrokePostEffect;
+            Shader.SetGlobalFloat("_GrabHighlightIntensity", 1.0f);
+            Shader.SetGlobalFloat("_NoGrabHighlightIntensity", useStrokePostEffect ? 0.0f : 1.0f);
+            Shader.SetGlobalColor("_GrabHighlightActiveColor", Color.white);
+#endif
+        }
+
 #if FEATURE_CUSTOM_MESH_RENDER
         public bool ShouldRenderUrpSelection
         {
             get
             {
-                if (Application.isMobilePlatform ||
-                    !Application.isPlaying ||
-                    GraphicsSettings.currentRenderPipeline == null ||
-                    VideoRecorderUtils.ActiveVideoRecording?.IsCapturing == true ||
-                    DisableSelectionEffects ||
-                    OverlayManager.m_Instance == null ||
-                    OverlayManager.m_Instance.OverlayEnabled ||
-                    ActivePostEffect() == null ||
-                    m_GrabHighlightMaskMaterial == null ||
-                    m_CmrRequestedMeshes == null ||
-                    m_CmrRequestedMeshes.Count == 0)
-                {
-                    return false;
-                }
-
-                return true;
+                return GetUrpSelectionBlockReason() == null;
             }
         }
+
+        public string UrpSelectionDebugStatus =>
+            GetUrpSelectionBlockReason() ?? $"ready meshes={m_CmrRequestedMeshes.Count}";
+
+        private string GetUrpSelectionBlockReason()
+        {
+            if (Application.isMobilePlatform) { return "mobile platform"; }
+            if (!Application.isPlaying) { return "not playing"; }
+            if (GraphicsSettings.currentRenderPipeline == null) { return "no SRP"; }
+            if (VideoRecorderUtils.ActiveVideoRecording?.IsCapturing == true) { return "video recording"; }
+            if (DisableSelectionEffects) { return "selection effects disabled"; }
+            if (OverlayManager.m_Instance == null) { return "overlay manager missing"; }
+            if (OverlayManager.m_Instance.OverlayEnabled) { return "overlay enabled"; }
+            if (ActivePostEffect() == null) { return "post effect missing"; }
+            if (m_GrabHighlightMaskMaterial == null) { return "grab highlight mask material missing"; }
+            if (m_CmrRequestedMeshes == null) { return "requested mesh list missing"; }
+            if (m_CmrRequestedMeshes.Count == 0 && !HasActiveUrpDiagnosticMeshes)
+            {
+                return "no requested meshes";
+            }
+            return null;
+        }
+
+        private bool HasActiveUrpDiagnosticMeshes =>
+            m_UrpDiagnosticFramesRemaining > 0 &&
+            m_UrpDiagnosticMeshes != null &&
+            m_UrpDiagnosticMeshes.Count > 0;
 
         public Material UrpStencilToMaskMaterial =>
             m_CmrRenderWrapper != null ? m_CmrRenderWrapper.m_StencilToMaskMaterial : null;
@@ -222,34 +278,46 @@ namespace TiltBrush
             m_CmrRenderHighlight = true;
             try
             {
-                for (int i = 0; i < m_CmrRequestedMeshes.Count; i++)
+                DrawMeshFilters(cmd, maskMaterial, m_CmrRequestedMeshes);
+                if (HasActiveUrpDiagnosticMeshes)
                 {
-                    MeshFilter meshFilter = m_CmrRequestedMeshes[i];
-                    if (meshFilter == null)
-                    {
-                        continue;
-                    }
-
-                    Mesh mesh = meshFilter.sharedMesh;
-                    if (mesh == null)
-                    {
-                        continue;
-                    }
-
-                    Transform xf = meshFilter.transform;
-                    for (int iSubMesh = 0; iSubMesh < mesh.subMeshCount; iSubMesh++)
-                    {
-                        cmd.DrawMesh(
-                            mesh,
-                            xf.localToWorldMatrix,
-                            maskMaterial,
-                            iSubMesh);
-                    }
+                    DrawMeshFilters(cmd, maskMaterial, m_UrpDiagnosticMeshes);
                 }
             }
             finally
             {
                 m_CmrRequestedMeshes.Clear();
+            }
+        }
+
+        private static void DrawMeshFilters(
+            CommandBuffer cmd,
+            Material maskMaterial,
+            List<MeshFilter> meshFilters)
+        {
+            for (int i = 0; i < meshFilters.Count; i++)
+            {
+                MeshFilter meshFilter = meshFilters[i];
+                if (meshFilter == null)
+                {
+                    continue;
+                }
+
+                Mesh mesh = meshFilter.sharedMesh;
+                if (mesh == null)
+                {
+                    continue;
+                }
+
+                Transform xf = meshFilter.transform;
+                for (int iSubMesh = 0; iSubMesh < mesh.subMeshCount; iSubMesh++)
+                {
+                    cmd.DrawMesh(
+                        mesh,
+                        xf.localToWorldMatrix,
+                        maskMaterial,
+                        iSubMesh);
+                }
             }
         }
 

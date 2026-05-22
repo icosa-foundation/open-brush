@@ -109,6 +109,7 @@ namespace TiltBrush
             m_CameraInfo = CamInfo;
 
             SceneSettings.m_Instance.RegisterCamera(m_CameraInfo.camera);
+            ConfigureUrpCaptureCamera(m_CameraInfo.camera);
 
             if (App.Config.IsMobileHardware)
             {
@@ -125,29 +126,41 @@ namespace TiltBrush
                 {
                     m_CameraInfo.camera.allowHDR = false;
                 }
-                if (GraphicsSettings.currentRenderPipeline == null)
-                {
-                    var mobileBloom = GetComponent<MobileBloom>();
-                    if (mobileBloom != null)
-                    {
-                        mobileBloom.enabled = false;
-                    }
-                    else
-                    {
-                        Debug.LogAssertion("No MobileBloom on the Screenshot Manager.");
-                    }
-                    var pcBloom = m_Camera.GetComponent<SENaturalBloomAndDirtyLens>();
-                    if (pcBloom != null)
-                    {
-                        pcBloom.enabled = false;
-                    }
-                    else
-                    {
-                        Debug.LogAssertion("No SENaturalBloomAndDirtyLens on the Screenshot Manager.");
-                    }
-                }
+                DisableOptionalBuiltInCapturePostEffects();
             }
             CreateDisplayRenderTextures();
+        }
+
+        void ConfigureUrpCaptureCamera(Camera camera)
+        {
+            if (camera == null || UrpPostProcessingController.Instance == null)
+            {
+                return;
+            }
+
+            UrpPostProcessingController.Instance.ConfigureDropCamCamera(
+                camera, enableCaptureEffects: false);
+        }
+
+        void DisableOptionalBuiltInCapturePostEffects()
+        {
+            if (GraphicsSettings.currentRenderPipeline != null)
+            {
+                return;
+            }
+
+            MobileBloom mobileBloom = GetComponent<MobileBloom>();
+            if (mobileBloom != null)
+            {
+                mobileBloom.enabled = false;
+            }
+
+            SENaturalBloomAndDirtyLens pcBloom =
+                m_Camera != null ? m_Camera.GetComponent<SENaturalBloomAndDirtyLens>() : null;
+            if (pcBloom != null)
+            {
+                pcBloom.enabled = false;
+            }
         }
 
         RenderTextureFormat CameraFormat()

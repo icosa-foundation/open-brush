@@ -184,6 +184,11 @@ namespace TiltBrush
             {
                 SceneSettings.m_Instance.RegisterCamera(m_RightInfo.camera);
             }
+            ConfigureUrpCaptureCamera(m_LeftInfo.camera);
+            if (m_RightInfo != null)
+            {
+                ConfigureUrpCaptureCamera(m_RightInfo.camera);
+            }
 
             if (!App.Config.PlatformConfig.EnableMulticamPreview)
             {
@@ -207,27 +212,7 @@ namespace TiltBrush
                 {
                     m_LeftInfo.camera.allowHDR = false;
                 }
-                if (GraphicsSettings.currentRenderPipeline == null)
-                {
-                    var mobileBloom = GetComponent<MobileBloom>();
-                    if (mobileBloom != null)
-                    {
-                        mobileBloom.enabled = false;
-                    }
-                    else
-                    {
-                        Debug.LogAssertion("No MobileBloom on the Screenshot Manager.");
-                    }
-                    var pcBloom = GetComponent<SENaturalBloomAndDirtyLens>();
-                    if (pcBloom != null)
-                    {
-                        pcBloom.enabled = false;
-                    }
-                    else
-                    {
-                        Debug.LogAssertion("No SENaturalBloomAndDirtyLens on the Screenshot Manager.");
-                    }
-                }
+                DisableOptionalBuiltInCapturePostEffects();
             }
             if (m_UseDisplayWidthFromConfigFile)
             {
@@ -237,6 +222,38 @@ namespace TiltBrush
 
             CameraConfig.FovChanged += RefreshFovs;
             RefreshFovs();
+        }
+
+        void ConfigureUrpCaptureCamera(Camera camera)
+        {
+            if (camera == null || UrpPostProcessingController.Instance == null)
+            {
+                return;
+            }
+
+            UrpPostProcessingController.Instance.ConfigureScreenshotCamera(
+                camera, enableCaptureEffects: false);
+        }
+
+        void DisableOptionalBuiltInCapturePostEffects()
+        {
+            if (GraphicsSettings.currentRenderPipeline != null)
+            {
+                return;
+            }
+
+            MobileBloom mobileBloom = GetComponent<MobileBloom>();
+            if (mobileBloom != null)
+            {
+                mobileBloom.enabled = false;
+            }
+
+            SENaturalBloomAndDirtyLens pcBloom =
+                GetComponent<SENaturalBloomAndDirtyLens>();
+            if (pcBloom != null)
+            {
+                pcBloom.enabled = false;
+            }
         }
 
         void RefreshFovs()

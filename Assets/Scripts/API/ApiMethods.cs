@@ -309,11 +309,18 @@ namespace TiltBrush
         [ApiEndpoint(
             "capture.360",
             "Queues a 360/ODS snapshot to the user's Snapshots folder",
-            "snapshot360.png,1024"
+            "snapshot360.png,1024,true"
         )]
-        public static string Capture360(string filename, int width = 1024)
+        public static string Capture360(
+            string filename,
+            int width = 1024,
+            string includePostProcessing = "")
         {
             const string logPrefix = "[OB_URP_CAPTURE_API]";
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "360");
 
             string safeFilename = Path.GetFileName(filename);
             if (string.IsNullOrWhiteSpace(safeFilename))
@@ -328,9 +335,15 @@ namespace TiltBrush
             try
             {
                 TrTransform captureTransform = TrTransform.T(new Vector3(0f, 12f, 3f));
-                AppApiWrapper.Take360Snapshot(captureTransform, safeFilename, width);
+                AppApiWrapper.Take360Snapshot(
+                    captureTransform,
+                    safeFilename,
+                    width,
+                    usePostProcessing);
                 string fullPath = Path.Combine(App.SnapshotPath(), safeFilename);
-                Debug.Log($"{logPrefix} Queued 360 capture path={fullPath} width={width}.");
+                Debug.Log(
+                    $"{logPrefix} Queued 360 capture path={fullPath} " +
+                    $"width={width} post={usePostProcessing}.");
                 return fullPath;
             }
             catch (Exception e)

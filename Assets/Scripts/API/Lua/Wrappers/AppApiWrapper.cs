@@ -307,12 +307,27 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Take a 360-degree snapshot of the scene and save it")]
-        [LuaDocsExample(@"App:Take360Snapshot(Transform:Position(0, 12, 3), ""my360snapshot.png"", 4096)")]
+        [LuaDocsExample(@"App:Take360Snapshot(Transform:Position(0, 12, 3), ""my360snapshot.png"", 4096, true)")]
         [LuaDocsParameter("tr", "Determines the position and orientation of the camera used to take the snapshot")]
         [LuaDocsParameter("filename", "The filename to use for the saved snapshot")]
         [LuaDocsParameter("width", "The width of the image")]
-        public static void Take360Snapshot(TrTransform tr, string filename, int width = 4096)
+        [LuaDocsParameter("includePostProcessing", "If true then include capture post-processing. If omitted, uses App:PostProcessing state")]
+        public static void Take360Snapshot(
+            TrTransform tr,
+            string filename,
+            int width,
+            bool includePostProcessing)
         {
+            Take360Snapshot(tr, filename, width, DynValue.NewBoolean(includePostProcessing));
+        }
+
+        public static void Take360Snapshot(
+            TrTransform tr,
+            string filename,
+            int width = 4096,
+            DynValue includePostProcessing = null)
+        {
+            bool usePostProcessing = ResolveCapturePostProcessing(includePostProcessing);
             var odsDriver = App.Instance.InitOds();
             for (Transform transform = odsDriver.OdsCamera.transform; transform != null; transform = transform.parent)
             {
@@ -323,6 +338,7 @@ namespace TiltBrush
             odsDriver.OdsCamera.basename = filename;
             odsDriver.OdsCamera.outputFolder = App.SnapshotPath();
             odsDriver.OdsCamera.imageWidth = width;
+            odsDriver.OdsCamera.includePostProcessing = usePostProcessing;
             odsDriver.OdsCamera.outputFolder = App.SnapshotPath();
             odsDriver.OdsCamera.SetOdsRendererType(HybridCamera.OdsRendererType.Slice);
             odsDriver.OdsCamera.gameObject.SetActive(true);

@@ -29,7 +29,9 @@ Shader "Hidden/SelectionPostEffectAlt"
     #pragma multi_compile __ HDR_EMULATED HDR_SIMPLE
 
     sampler2D _MainTex;
+    sampler2D _BlitTexture;
     uniform half4 _MainTex_TexelSize;
+    uniform float _UseBlitTexture;
     uniform float _BlurSize;
 
     struct v2f_simple
@@ -44,12 +46,20 @@ Shader "Hidden/SelectionPostEffectAlt"
 
     struct v2f_tap
     {
-      float4 pos : SV_POSITION;
-      half4 uv20 : TEXCOORD0;
-      half4 uv21 : TEXCOORD1;
-      half4 uv22 : TEXCOORD2;
-      half4 uv23 : TEXCOORD3;
+        float4 pos : SV_POSITION;
+        half4 uv20 : TEXCOORD0;
+        half4 uv21 : TEXCOORD1;
+        half4 uv22 : TEXCOORD2;
+        half4 uv23 : TEXCOORD3;
     };
+
+    float4 SampleSelectionSource(float2 uv)
+    {
+        return lerp(
+            tex2D(_MainTex, uv),
+            tex2D(_BlitTexture, uv),
+            saturate(_UseBlitTexture));
+    }
 
     v2f_tap vert4Tap ( appdata_img v )
     {
@@ -66,10 +76,10 @@ Shader "Hidden/SelectionPostEffectAlt"
     fixed4 fragDownsample ( v2f_tap i ) : COLOR
     {
       float4 color = float4(0, 0, 0, 0);
-      color += decodeHdr(tex2D(_MainTex, i.uv20.xy));
-      color += decodeHdr(tex2D(_MainTex, i.uv21.xy));
-      color += decodeHdr(tex2D(_MainTex, i.uv22.xy));
-      color += decodeHdr(tex2D(_MainTex, i.uv23.xy));
+      color += decodeHdr(SampleSelectionSource(i.uv20.xy));
+      color += decodeHdr(SampleSelectionSource(i.uv21.xy));
+      color += decodeHdr(SampleSelectionSource(i.uv22.xy));
+      color += decodeHdr(SampleSelectionSource(i.uv23.xy));
       return max(color/4, 0);
     }
 
@@ -122,7 +132,7 @@ Shader "Hidden/SelectionPostEffectAlt"
       half4 color = 0;
       for( int l = 0; l < 7; l++ )
       {
-        half4 tap = tex2D(_MainTex, coords);
+        half4 tap = SampleSelectionSource(coords);
         color += tap * curve4[l];
         coords += netFilterWidth;
       }
@@ -171,7 +181,7 @@ Shader "Hidden/SelectionPostEffectAlt"
 
       float4 frag (v2f i) : SV_Target
       {
-        float4 source = tex2D(_MainTex, i.uv);
+        float4 source = SampleSelectionSource(i.uv);
         float4 mask = tex2D(_SelectionMask, i.uv);
         float4 blurredmask = tex2D(_BlurredSelectionMask, i.uv);
         float4 selectionColor = float4(1,1,1,1);
