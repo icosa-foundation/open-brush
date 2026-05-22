@@ -8,7 +8,8 @@ namespace TiltBrush
 {
     public class UrpWatermarkRendererFeature : ScriptableRendererFeature
     {
-        [SerializeField] private RenderPassEvent m_RenderPassEvent =
+        [SerializeField]
+        private RenderPassEvent m_RenderPassEvent =
             RenderPassEvent.AfterRenderingPostProcessing;
 
         private WatermarkPass m_Pass;

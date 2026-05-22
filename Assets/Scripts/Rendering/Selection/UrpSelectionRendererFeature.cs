@@ -6,7 +6,8 @@ namespace TiltBrush
 {
     public class UrpSelectionRendererFeature : ScriptableRendererFeature
     {
-        [SerializeField] private RenderPassEvent m_RenderPassEvent =
+        [SerializeField]
+        private RenderPassEvent m_RenderPassEvent =
             RenderPassEvent.AfterRenderingPostProcessing;
 
         private SelectionPass m_Pass;
