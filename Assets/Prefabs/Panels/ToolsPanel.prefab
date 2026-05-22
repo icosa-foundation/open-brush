@@ -2061,7 +2061,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 884ad916a2abf32429c1242d1323e1b2, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 009d708f5cf2bc04a982a72f4460c8f7, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
