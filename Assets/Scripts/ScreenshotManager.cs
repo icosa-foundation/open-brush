@@ -574,8 +574,6 @@ namespace TiltBrush
 
         static public byte[] SaveToMemory(RenderTexture rTextureToSave, bool bSaveAsPng)
         {
-            Debug.Assert(rTextureToSave.format == RenderTextureFormat.ARGB32);
-
             // Copy out of the RenderTexture
             Texture2D rNoAlphaTexture;
             {

@@ -477,8 +477,11 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
 
-        [ApiEndpoint("profiling.start", "Starts profiling. Mode can be standard, light, or deep.", "standard")]
-        public static string StartProfiling(string mode = "standard")
+        [ApiEndpoint(
+            "profiling.start",
+            "Starts profiling. Mode can be standard, light, or deep. Optional second value sets the profile label.",
+            "standard,rendergraph_normal_core")]
+        public static string StartProfiling(string mode = "standard", string profileName = null)
         {
             ProfilingManager profilingManager = ProfilingManager.Instance;
             if (profilingManager.IsProfiling)
@@ -487,8 +490,10 @@ namespace TiltBrush
             }
 
             ProfilingManager.Mode profilingMode = ParseProfilingMode(mode);
-            profilingManager.StartProfiling(profilingMode);
-            return $"Started {profilingMode} profiling.";
+            profilingManager.StartProfiling(profilingMode, profileName);
+            return string.IsNullOrEmpty(profileName)
+                ? $"Started {profilingMode} profiling."
+                : $"Started {profilingMode} profiling for '{profileName}'.";
         }
 
         [ApiEndpoint("profiling.stop", "Stops profiling and writes the summary output")]

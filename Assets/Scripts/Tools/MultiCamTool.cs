@@ -1191,24 +1191,24 @@ namespace TiltBrush
                     case VideoState.Capturing:
                         if (!m_EatInput && !m_ToolHidden)
                         {
-                            float fSeconds = recorder.FrameCount / (float)recorder.FPS;
+                            int frameCount = VideoRecorderUtils.ActiveCaptureFrameCount;
+                            float fps = Mathf.Max(VideoRecorderUtils.ActiveCaptureFPS, 1.0f);
+                            float fSeconds = frameCount / fps;
                             int iMinutes = (int)(fSeconds / 60.0f);
                             int iSeconds = (int)(fSeconds % 60.0f);
-                            int iFrames = (int)(recorder.FrameCount % recorder.FPS);
+                            int iFrames = (int)(frameCount % fps);
 
                             // Proper SMPTE timecode is: hour:minute:second:frame
                             // Here only minute:second:frame is shown, since we don't expect/support hours of video.
-                            m_VideoRecordTimer.text = iMinutes
-                                + ":" + iSeconds.ToString("D2")
-                                + ":" + iFrames.ToString("D2");
+                            m_VideoRecordTimer.text = $"{iMinutes}:{iSeconds:D2}:{iFrames:D2}";
 
                             // Notify the user we are recording
                             Color recordingColor;
-                            if (recorder.IsCapturing)
+                            if (VideoRecorderUtils.IsCapturing)
                             {
                                 recordingColor = Color.Lerp(m_VideoRecordingIndicatorColor1,
                                     m_VideoRecordingIndicatorColor2,
-                                    Mathf.Abs(Mathf.Sin((float)recorder.FrameCount / 3.0f)));
+                                    Mathf.Abs(Mathf.Sin((float)frameCount / 3.0f)));
                             }
                             else
                             {
@@ -1688,20 +1688,16 @@ namespace TiltBrush
 
         void StopVideoCapture(bool showInfoCard)
         {
-            VideoRecorder recorder = VideoRecorderUtils.ActiveVideoRecording;
-            if (recorder == null)
+            if (!VideoRecorderUtils.IsCapturing)
             {
                 return;
             }
 
-            float currentVideoLength = (float)recorder.FrameCount / (float)recorder.FPS;
+            float fps = Mathf.Max(VideoRecorderUtils.ActiveCaptureFPS, 1.0f);
+            float currentVideoLength = VideoRecorderUtils.ActiveCaptureFrameCount / fps;
             bool validVideoLength = currentVideoLength >= m_VideoCaptureMinDuration;
 
-            string filePath = null;
-            if (VideoRecorderUtils.ActiveVideoRecording != null)
-            {
-                filePath = VideoRecorderUtils.ActiveVideoRecording.FilePath;
-            }
+            string filePath = VideoRecorderUtils.ActiveCaptureFilePath;
             VideoRecorderUtils.StopVideoCapture(validVideoLength);
 
             m_CurrentVideoState = validVideoLength ? VideoState.Processing : VideoState.Ready;
@@ -1818,9 +1814,19 @@ namespace TiltBrush
             //
             // State == Capturing
             //
+            if (!VideoRecorderUtils.IsCapturing)
+            {
+                m_CurrentVideoState = VideoState.Ready;
+                m_VideoRecordTimer.text = "0:00:00";
+                m_VideoRecordTimer.gameObject.SetActive(false);
+                m_VideoRecordIcon.gameObject.SetActive(false);
+                m_VideoRecordingIndicator.material.color = Color.white;
+                return;
+            }
 
             // If we're running out of disk space, stop recording.
-            if (!FileUtils.HasFreeSpace(recorder.FilePath))
+            string capturePath = VideoRecorderUtils.ActiveCaptureFilePath;
+            if (string.IsNullOrEmpty(capturePath) || !FileUtils.HasFreeSpace(capturePath))
             {
                 StopVideoCapture(false);
             }

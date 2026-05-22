@@ -31,6 +31,10 @@ namespace TiltBrush
         private float m_FrameInterval;
 
         public string FilePath => m_FilePath;
+        public int FrameCount => m_FrameCount;
+        public float FPS => m_FPS;
+        public bool IsCapturing => m_IsCapturing;
+        public bool IsSaving => m_IsSaving;
 
 
         private void Awake()
