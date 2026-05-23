@@ -113,14 +113,15 @@ Category {
         float halfSize = GetParticleHalfSize(v.corner.xyz, v.center, birthTime);
         float spreadProgress = SpreadProgress(birthTime, _SpreadRate);
         float4 center = SpreadParticle(v, spreadProgress);
-        PrepForOds(center);
 
         float3 displacement_SS = spreadProgress * computeDisplacement(center, 1);
         float3 displacement_WS = mul(xf_CS, float4(displacement_SS, 0));
         float3 displacement_OS = mul(unity_WorldToObject, float4(displacement_WS, 0));
         center.xyz += displacement_OS;
-        float4 corner = OrientParticle(center.xyz, halfSize, v.vid, rotation);
-        o.vertex = UnityObjectToClipPos(corner);
+        float4 center_WS = mul(unity_ObjectToWorld, center);
+        PrepForOdsWorldSpace(center_WS);
+        float4 corner_WS = OrientParticle_WS(center_WS.xyz, halfSize, v.vid, rotation);
+        o.vertex = mul(UNITY_MATRIX_VP, corner_WS);
 
         // Brighten up the bubbles
         o.color = v.color;
