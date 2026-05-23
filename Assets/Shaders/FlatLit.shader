@@ -135,9 +135,11 @@ SubShader {
 
       float3 triangleNormal = normalize(cross(p1 - p0, p2 - p0));
 
-      Varyings o;
+      Varyings o = (Varyings)0;
       o.normalWS = triangleNormal;
 
+      UNITY_TRANSFER_INSTANCE_ID(i[0], o);
+      UNITY_TRANSFER_VERTEX_OUTPUT_STEREO(i[0], o);
       o.positionCS = i[0].positionCS;
       o.uv = i[0].uv;
       o.positionWS = i[0].positionWS;
@@ -145,6 +147,8 @@ SubShader {
       o.id = i[0].id;
       stream.Append(o);
 
+      UNITY_TRANSFER_INSTANCE_ID(i[1], o);
+      UNITY_TRANSFER_VERTEX_OUTPUT_STEREO(i[1], o);
       o.positionCS = i[1].positionCS;
       o.uv = i[1].uv;
       o.positionWS = i[1].positionWS;
@@ -152,6 +156,8 @@ SubShader {
       o.id = i[1].id;
       stream.Append(o);
 
+      UNITY_TRANSFER_INSTANCE_ID(i[2], o);
+      UNITY_TRANSFER_VERTEX_OUTPUT_STEREO(i[2], o);
       o.positionCS = i[2].positionCS;
       o.uv = i[2].uv;
       o.positionWS = i[2].positionWS;
@@ -234,11 +240,17 @@ SubShader {
 
     [maxvertexcount(3)]
     void geom(triangle VaryingsToGeom i[3], inout TriangleStream<Varyings> stream) {
-      Varyings o;
+      Varyings o = (Varyings)0;
+      UNITY_TRANSFER_INSTANCE_ID(i[0], o);
+      UNITY_TRANSFER_VERTEX_OUTPUT_STEREO(i[0], o);
       o.positionCS = i[0].positionCS;
       stream.Append(o);
+      UNITY_TRANSFER_INSTANCE_ID(i[1], o);
+      UNITY_TRANSFER_VERTEX_OUTPUT_STEREO(i[1], o);
       o.positionCS = i[1].positionCS;
       stream.Append(o);
+      UNITY_TRANSFER_INSTANCE_ID(i[2], o);
+      UNITY_TRANSFER_VERTEX_OUTPUT_STEREO(i[2], o);
       o.positionCS = i[2].positionCS;
       stream.Append(o);
     }
