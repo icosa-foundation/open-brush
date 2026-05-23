@@ -189,6 +189,7 @@ namespace TiltBrush
                 return;
             }
 
+            info.camera.stereoTargetEye = StereoTargetEyeMask.None;
             info.camera.targetTexture = null;
             Destroy(info.renderTexture);
 

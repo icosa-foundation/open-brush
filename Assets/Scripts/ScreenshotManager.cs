@@ -418,6 +418,7 @@ namespace TiltBrush
                 return;
             }
 
+            info.camera.stereoTargetEye = StereoTargetEyeMask.None;
             info.camera.targetTexture = null;
             Destroy(info.renderTexture);
 
@@ -471,9 +472,11 @@ namespace TiltBrush
                 var camera = LeftInfo.camera;
                 UrpPostProcessingController.CameraPostProcessingState postProcessingState =
                     BeginCapturePostProcessing(camera, usePostProcessing);
-                var prev = camera.targetTexture;
+                RenderTexture prev = camera.targetTexture;
+                StereoTargetEyeMask prevStereoTargetEye = camera.stereoTargetEye;
                 try
                 {
+                    camera.stereoTargetEye = StereoTargetEyeMask.None;
                     camera.targetTexture = targetA;
                     if (asDepth)
                     {
@@ -503,6 +506,7 @@ namespace TiltBrush
                 finally
                 {
                     camera.targetTexture = prev;
+                    camera.stereoTargetEye = prevStereoTargetEye;
                     EndCapturePostProcessing(postProcessingState);
                 }
             }
