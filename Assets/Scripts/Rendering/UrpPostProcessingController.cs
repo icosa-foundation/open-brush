@@ -261,6 +261,7 @@ namespace TiltBrush
             }
 
             RegisterCaptureCamera(camera);
+            camera.stereoTargetEye = StereoTargetEyeMask.None;
             UniversalAdditionalCameraData cameraData =
                 camera.GetComponent<UniversalAdditionalCameraData>();
             if (cameraData == null)
@@ -268,6 +269,7 @@ namespace TiltBrush
                 cameraData = camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
             }
 
+            cameraData.allowXRRendering = false;
             cameraData.renderPostProcessing = enablePostProcessing;
             cameraData.volumeLayerMask = m_VolumeLayerMask;
             cameraData.volumeTrigger = camera.transform;
