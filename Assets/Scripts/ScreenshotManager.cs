@@ -226,13 +226,36 @@ namespace TiltBrush
 
         void ConfigureUrpCaptureCamera(Camera camera)
         {
-            if (camera == null || UrpPostProcessingController.Instance == null)
+            if (camera == null)
+            {
+                return;
+            }
+
+            EnsureCaptureVisibleLayers(camera);
+
+            if (UrpPostProcessingController.Instance == null)
             {
                 return;
             }
 
             UrpPostProcessingController.Instance.ConfigureScreenshotCamera(
                 camera, enableCaptureEffects: false);
+        }
+
+        void EnsureCaptureVisibleLayers(Camera camera)
+        {
+            AddLayerToCullingMask(camera, "Environment");
+        }
+
+        void AddLayerToCullingMask(Camera camera, string layerName)
+        {
+            int layer = LayerMask.NameToLayer(layerName);
+            if (layer < 0)
+            {
+                return;
+            }
+
+            camera.cullingMask |= 1 << layer;
         }
 
         void DisableOptionalBuiltInCapturePostEffects()
@@ -418,7 +441,10 @@ namespace TiltBrush
                 return;
             }
 
-            info.camera.stereoTargetEye = StereoTargetEyeMask.None;
+            if (GraphicsSettings.currentRenderPipeline == null)
+            {
+                info.camera.stereoTargetEye = StereoTargetEyeMask.None;
+            }
             info.camera.targetTexture = null;
             Destroy(info.renderTexture);
 
@@ -473,10 +499,18 @@ namespace TiltBrush
                 UrpPostProcessingController.CameraPostProcessingState postProcessingState =
                     BeginCapturePostProcessing(camera, usePostProcessing);
                 RenderTexture prev = camera.targetTexture;
-                StereoTargetEyeMask prevStereoTargetEye = camera.stereoTargetEye;
+                StereoTargetEyeMask prevStereoTargetEye = StereoTargetEyeMask.None;
+                bool restoreStereoTargetEye = GraphicsSettings.currentRenderPipeline == null;
+                if (restoreStereoTargetEye)
+                {
+                    prevStereoTargetEye = camera.stereoTargetEye;
+                }
                 try
                 {
-                    camera.stereoTargetEye = StereoTargetEyeMask.None;
+                    if (restoreStereoTargetEye)
+                    {
+                        camera.stereoTargetEye = StereoTargetEyeMask.None;
+                    }
                     camera.targetTexture = targetA;
                     if (asDepth)
                     {
@@ -506,7 +540,10 @@ namespace TiltBrush
                 finally
                 {
                     camera.targetTexture = prev;
-                    camera.stereoTargetEye = prevStereoTargetEye;
+                    if (restoreStereoTargetEye)
+                    {
+                        camera.stereoTargetEye = prevStereoTargetEye;
+                    }
                     EndCapturePostProcessing(postProcessingState);
                 }
             }
