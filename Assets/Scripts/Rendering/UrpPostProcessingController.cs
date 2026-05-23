@@ -171,6 +171,31 @@ namespace TiltBrush
             ConfigureCaptureCamera(camera, enableCaptureEffects, m_RuntimeCaptureProfile);
         }
 
+        public static void ConfigureOffscreenCaptureCamera(Camera camera)
+        {
+            if (camera == null)
+            {
+                return;
+            }
+
+            if (GraphicsSettings.currentRenderPipeline == null)
+            {
+                camera.stereoTargetEye = StereoTargetEyeMask.None;
+                return;
+            }
+
+            UniversalAdditionalCameraData cameraData =
+                camera.GetComponent<UniversalAdditionalCameraData>();
+            if (cameraData == null)
+            {
+                cameraData = camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
+            }
+
+            cameraData.allowXRRendering = false;
+            cameraData.renderType = CameraRenderType.Base;
+            cameraData.cameraStack.Clear();
+        }
+
         public void SetRecordingPostProcessing(Camera camera, bool enabled)
         {
             RegisterCaptureCamera(camera);
@@ -261,10 +286,7 @@ namespace TiltBrush
             }
 
             RegisterCaptureCamera(camera);
-            if (GraphicsSettings.currentRenderPipeline == null)
-            {
-                camera.stereoTargetEye = StereoTargetEyeMask.None;
-            }
+            ConfigureOffscreenCaptureCamera(camera);
             UniversalAdditionalCameraData cameraData =
                 camera.GetComponent<UniversalAdditionalCameraData>();
             if (cameraData == null)

@@ -441,21 +441,31 @@ namespace TiltBrush
                 return;
             }
 
-            if (GraphicsSettings.currentRenderPipeline == null)
-            {
-                info.camera.stereoTargetEye = StereoTargetEyeMask.None;
-            }
+            UrpPostProcessingController.ConfigureOffscreenCaptureCamera(info.camera);
             info.camera.targetTexture = null;
             Destroy(info.renderTexture);
 
-            info.renderTexture = new RenderTexture(width, height, 0, format);
+            info.renderTexture = CreatePreviewRenderTexture(width, height, format);
             info.renderTexture.name = "SshotTex" + tag;
-            info.renderTexture.depth = 24;
             Debug.Assert(info.renderer != null);
             Debug.Assert(info.renderer.material != null);
             info.renderer.material.SetTexture("_MainTex", info.renderTexture);
             info.renderer.material.name = "SshotMat" + tag;
             info.camera.targetTexture = info.renderTexture;
+        }
+
+        private static RenderTexture CreatePreviewRenderTexture(
+            int width, int height, RenderTextureFormat format)
+        {
+            var descriptor = new RenderTextureDescriptor(width, height, format, 24)
+            {
+                dimension = TextureDimension.Tex2D,
+                volumeDepth = 1,
+                msaaSamples = 1,
+                useDynamicScale = false,
+                vrUsage = VRTextureUsage.None
+            };
+            return new RenderTexture(descriptor);
         }
 
         /// Creates an ARGB32 save target. May transpose width and height if camera

@@ -15,7 +15,6 @@
 using System;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Rendering.Universal;
 
 namespace TiltBrush
 {
@@ -424,16 +423,8 @@ namespace TiltBrush
                 return;
             }
 
-            camera.stereoTargetEye = StereoTargetEyeMask.None;
             camera.targetDisplay = 0;
-
-            UniversalAdditionalCameraData cameraData =
-                camera.GetComponent<UniversalAdditionalCameraData>();
-            if (cameraData == null)
-            {
-                cameraData = camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
-            }
-            cameraData.allowXRRendering = false;
+            UrpPostProcessingController.ConfigureOffscreenCaptureCamera(camera);
         }
     }
 } // namespace TiltBrush
