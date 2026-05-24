@@ -22,13 +22,11 @@ namespace TiltBrush
 {
     public partial class MarkovPen
     {
-        /**
- * @class BaseCurve
- * @brief Represents the base curve of the MarkovPen.
- *
- * The BaseCurve class extends the functionality of the Curve class and provides
- * additional features such as projection, spline functionalities, and smoothing functionalities.
- */
+        /// <summary>
+        /// Represents the base curve of the MarkovPen.
+        /// The BaseCurve class extends the functionality of the Curve class and provides
+        /// additional features such as projection, spline functionalities, and smoothing functionalities.
+        /// </summary>
         public class BaseCurve : Curve
         {
             private float m_Tap = 0f;
@@ -42,28 +40,22 @@ namespace TiltBrush
             {
             }
 
-            /**
-     * @brief Set the tap value for smoothing.
-     *
-     * This method sets the tap value used for smoothing. A non-zero tap initiates
-     * the smoothing process during the addition of control points.
-     *
-     * @param tap The tap value for smoothing.
-     */
+                 /// <summary>
+                 /// Set the tap value for smoothing. A non-zero tap initiates the smoothing
+                 /// process during the addition of control points.
+                 /// </summary>
+                 /// <param name="tap">The tap value for smoothing.</param>
             public void SetTap(float tap)
             {
                 m_Tap = tap;
             }
 
-            /**
-     * @brief Add a control point to the base curve and update related information.
-     *
-     * This method extends the base class method to incorporate smoothing functionalities
-     * based on the tap value. It computes normals, smooth tangents, and smooth normals
-     * as part of the smoothing process.
-     *
-     * @param controlPoint The control point to be added to the base curve.
-     */
+                 /// <summary>
+                 /// Add a control point to the base curve and update related information.
+                 /// Extends the base class method to incorporate smoothing functionalities based on the tap value.
+                 /// </summary>
+                 /// <param name="controlPoint">The control point to be added to the base curve.</param>
+                 /// <param name="upVector">The up vector associated with the control point.</param>
             public override void AddControlPoint(Vector3 controlPoint, Vector3 upVector)
             {
                 base.AddControlPoint(controlPoint, upVector);
@@ -100,16 +92,12 @@ namespace TiltBrush
                 }
             }
 
-            /**
- * @brief Computes a smoothed tangent vector based on the specified center position.
- *
- * This function calculates a smoothed tangent vector by averaging the normalized first
- * derivatives at positions within a window around the given center position.
- *
- * @param center The center position around which the smoothed tangent is calculated.
- *
- * @return A vector representing the computed smoothed tangent.
- */
+            /// <summary>
+            /// Computes a smoothed tangent vector based on the specified center position.
+            /// Averages the normalized first derivatives at positions within a window around the given center.
+            /// </summary>
+            /// <param name="center">The center position around which the smoothed tangent is calculated.</param>
+            /// <returns>The computed smoothed tangent vector.</returns>
             private Vector3 ComputeSmoothTangent(float center)
             {
                 float windowSize = 2 * m_Tap + 1;
@@ -127,17 +115,13 @@ namespace TiltBrush
                 return smoothTangent / windowSize;
             }
 
-            /**
- * @brief Computes a smoothed normal vector based on the provided up vector and smooth tangent.
- *
- * This function calculates a smoothed normal vector by projecting the up vector onto
- * the smooth tangent and subtracting it from the up vector. The result is then normalized.
- *
- * @param upVector The original up vector to be smoothed.
- * @param smoothTangent The smooth tangent vector to influence the smoothing.
- *
- * @return A normalized vector representing the computed smoothed normal.
- */
+            /// <summary>
+            /// Computes a smoothed normal vector based on the provided up vector and smooth tangent.
+            /// Projects the up vector onto the smooth tangent and subtracts it, then normalizes the result.
+            /// </summary>
+            /// <param name="upVector">The original up vector to be smoothed.</param>
+            /// <param name="smoothTangent">The smooth tangent vector to influence the smoothing.</param>
+            /// <returns>A normalized vector representing the computed smoothed normal.</returns>
             private Vector3 ComputeSmoothNormal(Vector3 upVector, Vector3 smoothTangent)
             {
                 upVector = upVector.normalized * 100;
@@ -148,25 +132,18 @@ namespace TiltBrush
                 return (upVector - smoothTangent * projection).normalized;
             }
 
-            /**
- * @brief Evaluate the first derivative of a cubic Hermite spline at a specified parameter t.
- *
- * This function calculates the first derivative of a cubic Hermite spline at a given parameter t
- * based on four control points and specified tension, continuity, and bias parameters.
- *
- * @param point1 The first control point of the spline.
- * @param point2 The second control point of the spline.
- * @param point3 The third control point of the spline.
- * @param point4 The fourth control point of the spline.
- * @param tension Tension parameter affecting the shape of the spline.
- * @param continuity Continuity parameter affecting the smoothness of the spline.
- * @param bias Bias parameter affecting the directionality of the spline.
- * @param t The parameter at which to evaluate the first derivative (should be in the range [0, 1]).
- *
- * @return A Vector3 representing the first derivative of the spline at the specified parameter t.
- *         If t is less than or equal to 0, the derivative at the start point (point2) is returned.
- *         If t is greater than or equal to 1, the derivative at the end point (point3) is returned.
- */
+            /// <summary>
+            /// Evaluate the first derivative of a cubic Hermite spline at a specified parameter t.
+            /// </summary>
+            /// <param name="point1">The first control point of the spline.</param>
+            /// <param name="point2">The second control point of the spline.</param>
+            /// <param name="point3">The third control point of the spline.</param>
+            /// <param name="point4">The fourth control point of the spline.</param>
+            /// <param name="tension">Tension parameter affecting the shape of the spline.</param>
+            /// <param name="continuity">Continuity parameter affecting the smoothness of the spline.</param>
+            /// <param name="bias">Bias parameter affecting the directionality of the spline.</param>
+            /// <param name="t">The parameter at which to evaluate the first derivative (range [0,1]).</param>
+            /// <returns>The first derivative of the spline at parameter t.</returns>
             public static Vector3 EvaluateFirstDerivative(
                 Vector3 point1,
                 Vector3 point2,
@@ -206,16 +183,12 @@ namespace TiltBrush
                 return newPoint;
             }
 
-            /**
- * @brief Retrieve the smoothed normal vector at a specified arc length along the curve.
- * 
- * This method retrieves the smoothed normal vector at a specified arc length 'l' along the curve.
- * It utilizes cubic Hermite interpolation to calculate the smoothed normal based on the
- * corresponding time parameter and the neighboring smoothed normals.
- * 
- * @param l The arc length at which to retrieve the smoothed normal vector.
- * @return The computed smoothed normal vector at the specified arc length.
- */
+            /// <summary>
+            /// Retrieve the smoothed normal vector at a specified arc length along the curve.
+            /// Uses cubic Hermite interpolation between precomputed smooth normals.
+            /// </summary>
+            /// <param name="l">The arc length at which to retrieve the smoothed normal vector.</param>
+            /// <returns>The computed smoothed normal vector at the specified arc length.</returns>
             public Vector3 SmoothNormalAt(float l)
             {
                 if (m_Tap == 0)
@@ -281,14 +254,11 @@ namespace TiltBrush
                 return normal.normalized;
             }
 
-            /**
- * @brief Compute the total arc length of the curve.
- * 
- * This method computes the total arc length of the curve based on the smoothed normals.
- * The arc length is calculated as the last value in the precomputed arc length positions.
- * 
- * @return The total arc length of the curve.
- */
+            /// <summary>
+            /// Compute the total arc length of the curve.
+            /// Returns the last precomputed arc length position if enough data exists.
+            /// </summary>
+            /// <returns>The total arc length of the curve.</returns>
             public override float ArcLength()
             {
                 if (m_UpVectors.Count < 4)
@@ -299,16 +269,12 @@ namespace TiltBrush
                 return _arcLengthPositions[Math.Max(m_SmoothNormals.Count - 1, 0)];
             }
 
-            /**
- * @brief Retrieve the tangent vector at a specified arc length along the curve.
- * 
- * This method retrieves the tangent vector at a specified arc length 'l' along the curve.
- * It uses cubic Hermite interpolation to calculate the tangent based on the corresponding time
- * parameter and the control points of the curve segment.
- * 
- * @param l The arc length at which to retrieve the tangent vector.
- * @return The computed tangent vector at the specified arc length.
- */
+            /// <summary>
+            /// Retrieve the tangent vector at a specified arc length along the curve.
+            /// Uses cubic Hermite interpolation to compute the tangent for the segment.
+            /// </summary>
+            /// <param name="l">The arc length at which to retrieve the tangent vector.</param>
+            /// <returns>The computed tangent vector at the specified arc length.</returns>
             public Vector3 FirstDerivativeAt(float l)
             {
                 Vector3 firstDerivative;
@@ -355,16 +321,11 @@ namespace TiltBrush
                 return firstDerivative;
             }
 
-            /**
- * @brief Project a point onto the curve and return the arc length positions of the projections.
- * 
- * This method projects a given point 'toProject' onto the curve and returns a list of arc length
- * positions corresponding to the projections. It uses the normalized tangent vectors and normal
- * vectors of each curve segment for projection.
- * 
- * @param toProject The point to be projected onto the curve.
- * @return A list of arc length positions corresponding to the projections.
- */
+            /// <summary>
+            /// Project a point onto the curve and return the arc length positions of the projections.
+            /// </summary>
+            /// <param name="toProject">The point to be projected onto the curve.</param>
+            /// <returns>A list of arc length positions corresponding to the projections.</returns>
             public List<float> Project(Vector3 toProject)
             {
                 List<float> projections = new List<float>();
@@ -428,20 +389,15 @@ namespace TiltBrush
                 return projections;
             }
 
-            /**
- * @brief Recursively project a point onto a curve segment and update the arc length positions.
- * 
- * This method recursively projects a given point 'point' onto a curve segment defined by the
- * arc length positions 'l1' and 'l2'. It updates the list of arc length positions 'projections'
- * based on the recursive projection process. The projection is performed using a shooting method
- * with the given normal vector.
- * 
- * @param point The point to be projected onto the curve segment.
- * @param l1 The starting arc length position of the curve segment.
- * @param l2 The ending arc length position of the curve segment.
- * @param projections The list to store the resulting arc length positions.
- * @param normal The normal vector used for the shooting method.
- */
+            /// <summary>
+            /// Recursively project a point onto a curve segment and update the arc length positions.
+            /// Uses a recursive shooting method between arc length positions l1 and l2.
+            /// </summary>
+            /// <param name="point">The point to be projected onto the curve segment.</param>
+            /// <param name="l1">The starting arc length position of the curve segment.</param>
+            /// <param name="l2">The ending arc length position of the curve segment.</param>
+            /// <param name="projections">The list to store the resulting arc length positions.</param>
+            /// <param name="normal">The normal vector used for the shooting method.</param>
             private void Project(
                 Vector3 point,
                 float l1,
@@ -474,18 +430,13 @@ namespace TiltBrush
                 Project(point, middle, l2, projections, normal);
             }
 
-            /**
- * @brief Perform a shooting method to calculate the signed distance from a point to the curve.
- * 
- * This method performs a shooting method to calculate the signed distance from a given point
- * to the curve at a specified arc length position 'l'. It uses the normal vector of the curve
- * to perform the shooting and determine the closest point on the curve.
- * 
- * @param point The point from which to calculate the distance to the curve.
- * @param normal The normal vector used for the shooting method.
- * @param l The arc length position on the curve.
- * @return The signed distance from the point to the curve.
- */
+            /// <summary>
+            /// Perform a shooting method to calculate the signed distance from a point to the curve.
+            /// </summary>
+            /// <param name="point">The point from which to calculate the distance to the curve.</param>
+            /// <param name="normal">The normal vector used for the shooting method.</param>
+            /// <param name="l">The arc length position on the curve.</param>
+            /// <returns>The signed distance from the point to the curve.</returns>
             private float Shoot(Vector3 point, Vector3 normal, float l)
             {
                 Vector3 basePoint = PositionAt(l);
@@ -509,13 +460,10 @@ namespace TiltBrush
                 return dist;
             }
 
-            /**
- * @brief Finalize the curve by computing smoothed tangents and normals for the remaining control points.
- * 
- * This method finalizes the curve by computing smoothed tangents and normals for the remaining
- * control points. It ensures that the curve is prepared for further operations, and the smoothing
- * process is completed for all control points beyond the initially smoothed range.
- */
+            /// <summary>
+            /// Finalize the curve by computing smoothed tangents and normals for the remaining control points.
+            /// Ensures that the smoothing process is completed for all control points.
+            /// </summary>
             public override void Finish()
             {
                 base.Finish();

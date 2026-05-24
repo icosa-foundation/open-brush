@@ -21,49 +21,38 @@ namespace ThreeDimensionalMarkovPen._3DMP
 {
     partial class MarkovPen
     {
-        /**
- * @class Synthesizer
- * @brief The Synthesizer class is responsible for reconstructing the targetMapping based on the exampleMapping.
- *
- * This class is part of the MarkovPen and plays a key role in generating associations for the targetMapping
- * by utilizing the information from the exampleMapping. It calculates offsets and inflates associations to
- * reconstruct the relationship between curves.
- */
-        private class Synthesizer
+         /// <summary>
+         /// The Synthesizer class is responsible for reconstructing the targetMapping based on the exampleMapping.
+         /// Part of the MarkovPen; it generates associations for the targetMapping by utilizing information from the exampleMapping.
+         /// </summary>
+         private class Synthesizer
         {
             private Mapping m_ExampleMapping;
 
-            /**
-     * @brief Empty constructor for the Synthesizer class.
-     *
-     * This constructor initializes the Synthesizer with a null exampleMapping.
-     */
-            public Synthesizer()
+                 /// <summary>
+                 /// Empty constructor for the Synthesizer class. Initializes with a null example mapping.
+                 /// </summary>
+                 public Synthesizer()
             {
                 m_ExampleMapping = null;
             }
 
-            /**
-     * @brief Constructor for the Synthesizer class.
-     *
-     * This constructor initializes the Synthesizer with the provided exampleMapping.
-     *
-     * @param exampleMapping The exampleMapping used for generating associations.
-     */
-            public Synthesizer(Mapping exampleMapping)
+                 /// <summary>
+                 /// Constructor for the Synthesizer class.
+                 /// </summary>
+                 /// <param name="exampleMapping">The example mapping used for generating associations.</param>
+                 public Synthesizer(Mapping exampleMapping)
             {
                 m_ExampleMapping = exampleMapping;
             }
 
-            /**
-     * @brief Reconstructs the targetMapping by generating associations based on the exampleMapping.
-     *
-     * This method iteratively applies offsets to the targetMapping, generating associations and inflating points.
-     *
-     * @param targetMapping The targetMapping to be reconstructed.
-     * @return A list of associations representing the reconstructed relationship between curves.
-     */
-            public List<Tuple<UnityEngine.Vector3, UnityEngine.Vector3>> Reconstruct(Mapping targetMapping)
+                 /// <summary>
+                 /// Reconstructs the target mapping by generating associations based on the example mapping.
+                 /// Iteratively applies offsets to the target mapping, generating associations and inflating points.
+                 /// </summary>
+                 /// <param name="targetMapping">The target mapping to be reconstructed.</param>
+                 /// <returns>A list of associations representing the reconstructed relationship between curves.</returns>
+                 public List<Tuple<UnityEngine.Vector3, UnityEngine.Vector3>> Reconstruct(Mapping targetMapping)
             {
                 float offset = m_ExampleMapping.MaxOffset;
 
@@ -100,23 +89,18 @@ namespace ThreeDimensionalMarkovPen._3DMP
                 return associations;
             }
 
-            /**
- * @brief Checks if the Synthesizer is trained with an exampleMapping.
- *
- * This method determines whether the Synthesizer has been initialized with a valid exampleMapping.
- *
- * @return True if the Synthesizer is trained (exampleMapping is not null), false otherwise.
- */
+            /// <summary>
+            /// Checks if the Synthesizer is trained with an example mapping.
+            /// </summary>
+            /// <returns>True if the Synthesizer is trained (exampleMapping is not null); otherwise false.</returns>
             public bool IsTrained()
             {
                 return m_ExampleMapping != null;
             }
 
-            /**
- * @brief Clears the exampleMapping in the Synthesizer.
- *
- * This method sets the exampleMapping attribute to null, effectively clearing the training data in the Synthesizer.
- */
+            /// <summary>
+            /// Clears the example mapping in the Synthesizer, removing training data.
+            /// </summary>
             public void Clear()
             {
                 m_ExampleMapping = null;
