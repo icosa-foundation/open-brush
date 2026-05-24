@@ -34,6 +34,11 @@ namespace TiltBrush
             OnPostEffectsChanged();
         }
 
+        void OnDestroy()
+        {
+            CameraConfig.PostEffectsChanged -= OnPostEffectsChanged;
+        }
+
         void OnPostEffectsChanged()
         {
             Toggle<TiltShift>(false);
