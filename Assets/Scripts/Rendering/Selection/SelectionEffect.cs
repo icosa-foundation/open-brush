@@ -85,6 +85,7 @@ namespace TiltBrush
         private bool m_CmrRenderHighlight;
         private bool m_CmrUseStrokePostEffect;
         private List<MeshFilter> m_CmrRequestedMeshes;
+        private int m_CmrRequestedMeshesFrame = -1;
         private List<MeshFilter> m_UrpDiagnosticMeshes;
         private int m_UrpDiagnosticFramesRemaining;
         private bool m_UrpDiagnosticUseStrokePostEffect;
@@ -172,6 +173,15 @@ namespace TiltBrush
         public void RegisterMesh(MeshFilter meshFilter)
         {
 #if FEATURE_CUSTOM_MESH_RENDER
+            if (m_CmrRequestedMeshes == null)
+            {
+                m_CmrRequestedMeshes = new List<MeshFilter>();
+            }
+            if (m_CmrRequestedMeshesFrame != Time.frameCount)
+            {
+                m_CmrRequestedMeshes.Clear();
+                m_CmrRequestedMeshesFrame = Time.frameCount;
+            }
             m_CmrRequestedMeshes.Add(meshFilter);
 #endif
         }
@@ -179,7 +189,7 @@ namespace TiltBrush
         public void UnregisterMesh(MeshFilter meshFilter)
         {
 #if FEATURE_CUSTOM_MESH_RENDER
-            m_CmrRequestedMeshes.RemoveAll(x => x == meshFilter);
+            m_CmrRequestedMeshes?.RemoveAll(x => x == meshFilter);
 #endif
         }
 
@@ -231,7 +241,8 @@ namespace TiltBrush
         }
 
         public string UrpSelectionDebugStatus =>
-            GetUrpSelectionBlockReason() ?? $"ready meshes={m_CmrRequestedMeshes.Count}";
+            GetUrpSelectionBlockReason() ??
+            $"ready meshes={m_CmrRequestedMeshes.Count} frame={m_CmrRequestedMeshesFrame}";
 
         private string GetUrpSelectionBlockReason()
         {
@@ -245,12 +256,17 @@ namespace TiltBrush
             if (ActivePostEffect() == null) { return "post effect missing"; }
             if (m_GrabHighlightMaskMaterial == null) { return "grab highlight mask material missing"; }
             if (m_CmrRequestedMeshes == null) { return "requested mesh list missing"; }
-            if (m_CmrRequestedMeshes.Count == 0 && !HasActiveUrpDiagnosticMeshes)
+            if (!HasActiveUrpRequestedMeshes && !HasActiveUrpDiagnosticMeshes)
             {
                 return "no requested meshes";
             }
             return null;
         }
+
+        private bool HasActiveUrpRequestedMeshes =>
+            m_CmrRequestedMeshesFrame == Time.frameCount &&
+            m_CmrRequestedMeshes != null &&
+            m_CmrRequestedMeshes.Count > 0;
 
         private bool HasActiveUrpDiagnosticMeshes =>
             m_UrpDiagnosticFramesRemaining > 0 &&
@@ -271,22 +287,14 @@ namespace TiltBrush
         {
             if (!ShouldRenderUrpSelection || maskMaterial == null)
             {
-                m_CmrRequestedMeshes?.Clear();
                 return;
             }
 
             m_CmrRenderHighlight = true;
-            try
+            DrawMeshFilters(cmd, maskMaterial, m_CmrRequestedMeshes);
+            if (HasActiveUrpDiagnosticMeshes)
             {
-                DrawMeshFilters(cmd, maskMaterial, m_CmrRequestedMeshes);
-                if (HasActiveUrpDiagnosticMeshes)
-                {
-                    DrawMeshFilters(cmd, maskMaterial, m_UrpDiagnosticMeshes);
-                }
-            }
-            finally
-            {
-                m_CmrRequestedMeshes.Clear();
+                DrawMeshFilters(cmd, maskMaterial, m_UrpDiagnosticMeshes);
             }
         }
 

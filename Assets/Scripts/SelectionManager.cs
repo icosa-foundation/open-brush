@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace TiltBrush
 {
@@ -325,6 +326,10 @@ namespace TiltBrush
         {
             get
             {
+                if (GraphicsSettings.currentRenderPipeline != null)
+                {
+                    return true;
+                }
                 return !m_SelectionTool.IsHot || ShouldRemoveFromSelection();
             }
         }

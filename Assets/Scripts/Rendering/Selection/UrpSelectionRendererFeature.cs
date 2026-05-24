@@ -102,8 +102,16 @@ namespace TiltBrush
             private static readonly int SelectionMask = Shader.PropertyToID("_SelectionMask");
             private static readonly int BlurredSelectionMask =
                 Shader.PropertyToID("_BlurredSelectionMask");
+            private static readonly int SelectionColorSource =
+                Shader.PropertyToID("_SelectionColorSource");
+            private static readonly int UrpSelectionMask =
+                Shader.PropertyToID("_UrpSelectionMask");
+            private static readonly int UrpBlurredSelectionMask =
+                Shader.PropertyToID("_UrpBlurredSelectionMask");
             private static readonly int BlurSize = Shader.PropertyToID("_BlurSize");
             private static readonly int UseBlitTexture = Shader.PropertyToID("_UseBlitTexture");
+            private static readonly int SelectionUrpBlit =
+                Shader.PropertyToID("_SelectionUrpBlit");
             private static readonly int MainTexTexelSize = Shader.PropertyToID("_MainTex_TexelSize");
 
             private SelectionEffect m_Selection;
@@ -278,6 +286,18 @@ namespace TiltBrush
                 internal TextureHandle selectionMask;
             }
 
+            private class CompositeTexturePassData
+            {
+                internal TextureHandle colorCopy;
+                internal TextureHandle destination;
+                internal TextureHandle selectionMask;
+                internal TextureHandle blurredSelectionMask;
+                internal Material material;
+                internal MaterialPropertyBlock properties;
+                internal Mesh fullscreenMesh;
+                internal int shaderPass;
+            }
+
             public override void RecordRenderGraph(
                 RenderGraph renderGraph,
                 ContextContainer frameData)
@@ -432,20 +452,33 @@ namespace TiltBrush
                         Vector2.zero,
                         passName: "Open Brush Selection Color Copy");
 
-                    using (var compositeBuilder = renderGraph.AddBlitPass(
-                               CreateSelectionBlitParameters(
-                                   colorCopy,
-                                   cameraColor,
-                                   postEffect,
-                                   (int)SelectionEffectPass.OutlineComposite,
-                                   CreateBlitProperties(
-                                       cameraDescriptor.width,
-                                       cameraDescriptor.height)),
+                    using (var compositeBuilder = renderGraph.AddUnsafePass<CompositeTexturePassData>(
                                "Open Brush Selection Composite",
-                               true))
+                               out var compositeData))
                     {
-                        compositeBuilder.UseGlobalTexture(SelectionMask);
-                        compositeBuilder.UseGlobalTexture(BlurredSelectionMask);
+                        compositeData.colorCopy = colorCopy;
+                        compositeData.destination = cameraColor;
+                        compositeData.selectionMask = selectionMask;
+                        compositeData.blurredSelectionMask = downsampleB;
+                        compositeData.material = postEffect;
+                        compositeData.properties = CreateBlitProperties(
+                            cameraDescriptor.width,
+                            cameraDescriptor.height,
+                            urpBlitMode: 2f);
+                        compositeData.fullscreenMesh = RenderingUtils.fullscreenMesh;
+                        compositeData.shaderPass = (int)SelectionEffectPass.OutlineComposite;
+
+                        compositeBuilder.UseTexture(compositeData.colorCopy, AccessFlags.Read);
+                        compositeBuilder.UseTexture(compositeData.destination, AccessFlags.ReadWrite);
+                        compositeBuilder.UseTexture(compositeData.selectionMask, AccessFlags.Read);
+                        compositeBuilder.UseTexture(
+                            compositeData.blurredSelectionMask,
+                            AccessFlags.Read);
+                        compositeBuilder.AllowGlobalStateModification(true);
+                        compositeBuilder.AllowPassCulling(false);
+                        compositeBuilder.SetRenderFunc(
+                            static (CompositeTexturePassData data, UnsafeGraphContext context) =>
+                                ExecuteCompositePass(data, context));
                     }
                 }
 
@@ -474,10 +507,12 @@ namespace TiltBrush
             private static MaterialPropertyBlock CreateBlitProperties(
                 int width,
                 int height,
-                float? blurSize = null)
+                float? blurSize = null,
+                float urpBlitMode = 1f)
             {
                 MaterialPropertyBlock properties = new MaterialPropertyBlock();
                 properties.SetFloat(UseBlitTexture, 0f);
+                properties.SetFloat(SelectionUrpBlit, urpBlitMode);
                 properties.SetVector(
                     MainTexTexelSize,
                     new Vector4(1.0f / width, 1.0f / height, width, height));
@@ -504,6 +539,30 @@ namespace TiltBrush
                     context.cmd.SetGlobalFloat(UseBlitTexture, 0f);
                     data.selection.EndUrpSelectionFrame();
                 }
+            }
+
+            private static void ExecuteCompositePass(
+                CompositeTexturePassData data,
+                UnsafeGraphContext context)
+            {
+                context.cmd.SetRenderTarget(data.destination, 0, CubemapFace.Unknown, -1);
+                context.cmd.SetGlobalFloat(UseBlitTexture, 0f);
+                context.cmd.SetGlobalFloat(SelectionUrpBlit, 2f);
+                context.cmd.SetGlobalTexture(MainTex, data.colorCopy);
+                context.cmd.SetGlobalTexture(SelectionColorSource, data.colorCopy);
+                context.cmd.SetGlobalTexture(SelectionMask, data.selectionMask);
+                context.cmd.SetGlobalTexture(UrpSelectionMask, data.selectionMask);
+                context.cmd.SetGlobalTexture(BlurredSelectionMask, data.blurredSelectionMask);
+                context.cmd.SetGlobalTexture(
+                    UrpBlurredSelectionMask,
+                    data.blurredSelectionMask);
+                context.cmd.DrawMesh(
+                    data.fullscreenMesh,
+                    Matrix4x4.identity,
+                    data.material,
+                    0,
+                    data.shaderPass,
+                    data.properties);
             }
         }
     }
