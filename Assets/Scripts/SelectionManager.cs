@@ -593,9 +593,7 @@ namespace TiltBrush
                 {
                     widget.RegisterHighlight();
                 }
-#if !(UNITY_ANDROID || UNITY_IOS)
                 App.Scene.SelectionCanvas.RegisterHighlight();
-#endif
             }
         }
 

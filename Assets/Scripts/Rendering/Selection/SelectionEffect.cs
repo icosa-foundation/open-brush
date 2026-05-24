@@ -85,6 +85,7 @@ namespace TiltBrush
         private bool m_CmrRenderHighlight;
         private bool m_CmrUseStrokePostEffect;
         private List<MeshFilter> m_CmrRequestedMeshes;
+        private List<SkinnedMeshRenderer> m_CmrRequestedSkinnedMeshes;
         private int m_CmrRequestedMeshesFrame = -1;
         private List<MeshFilter> m_UrpDiagnosticMeshes;
         private int m_UrpDiagnosticFramesRemaining;
@@ -98,6 +99,7 @@ namespace TiltBrush
 #if FEATURE_CUSTOM_MESH_RENDER
             m_CmrRenderWrapper = GetComponent<RenderWrapper>();
             m_CmrRequestedMeshes = new List<MeshFilter>();
+            m_CmrRequestedSkinnedMeshes = new List<SkinnedMeshRenderer>();
             m_UrpDiagnosticMeshes = new List<MeshFilter>();
 #endif
             InputManager.m_Instance.ControllerPosesApplied += OnPosesApplied;
@@ -177,12 +179,38 @@ namespace TiltBrush
             {
                 m_CmrRequestedMeshes = new List<MeshFilter>();
             }
+            if (m_CmrRequestedSkinnedMeshes == null)
+            {
+                m_CmrRequestedSkinnedMeshes = new List<SkinnedMeshRenderer>();
+            }
             if (m_CmrRequestedMeshesFrame != Time.frameCount)
             {
                 m_CmrRequestedMeshes.Clear();
+                m_CmrRequestedSkinnedMeshes.Clear();
                 m_CmrRequestedMeshesFrame = Time.frameCount;
             }
             m_CmrRequestedMeshes.Add(meshFilter);
+#endif
+        }
+
+        public void RegisterMesh(SkinnedMeshRenderer renderer)
+        {
+#if FEATURE_CUSTOM_MESH_RENDER
+            if (m_CmrRequestedMeshes == null)
+            {
+                m_CmrRequestedMeshes = new List<MeshFilter>();
+            }
+            if (m_CmrRequestedSkinnedMeshes == null)
+            {
+                m_CmrRequestedSkinnedMeshes = new List<SkinnedMeshRenderer>();
+            }
+            if (m_CmrRequestedMeshesFrame != Time.frameCount)
+            {
+                m_CmrRequestedMeshes.Clear();
+                m_CmrRequestedSkinnedMeshes.Clear();
+                m_CmrRequestedMeshesFrame = Time.frameCount;
+            }
+            m_CmrRequestedSkinnedMeshes.Add(renderer);
 #endif
         }
 
@@ -190,6 +218,13 @@ namespace TiltBrush
         {
 #if FEATURE_CUSTOM_MESH_RENDER
             m_CmrRequestedMeshes?.RemoveAll(x => x == meshFilter);
+#endif
+        }
+
+        public void UnregisterMesh(SkinnedMeshRenderer renderer)
+        {
+#if FEATURE_CUSTOM_MESH_RENDER
+            m_CmrRequestedSkinnedMeshes?.RemoveAll(x => x == renderer);
 #endif
         }
 
@@ -242,7 +277,8 @@ namespace TiltBrush
 
         public string UrpSelectionDebugStatus =>
             GetUrpSelectionBlockReason() ??
-            $"ready meshes={m_CmrRequestedMeshes.Count} frame={m_CmrRequestedMeshesFrame}";
+            $"ready meshes={m_CmrRequestedMeshes.Count} " +
+            $"skinned={m_CmrRequestedSkinnedMeshes.Count} frame={m_CmrRequestedMeshesFrame}";
 
         private string GetUrpSelectionBlockReason()
         {
@@ -255,6 +291,7 @@ namespace TiltBrush
             if (ActivePostEffect() == null) { return "post effect missing"; }
             if (m_GrabHighlightMaskMaterial == null) { return "grab highlight mask material missing"; }
             if (m_CmrRequestedMeshes == null) { return "requested mesh list missing"; }
+            if (m_CmrRequestedSkinnedMeshes == null) { return "requested skinned mesh list missing"; }
             if (!HasActiveUrpRequestedMeshes && !HasActiveUrpDiagnosticMeshes)
             {
                 return "no requested meshes";
@@ -264,8 +301,10 @@ namespace TiltBrush
 
         private bool HasActiveUrpRequestedMeshes =>
             m_CmrRequestedMeshesFrame == Time.frameCount &&
-            m_CmrRequestedMeshes != null &&
-            m_CmrRequestedMeshes.Count > 0;
+            ((m_CmrRequestedMeshes != null &&
+                m_CmrRequestedMeshes.Count > 0) ||
+                (m_CmrRequestedSkinnedMeshes != null &&
+                m_CmrRequestedSkinnedMeshes.Count > 0));
 
         private bool HasActiveUrpDiagnosticMeshes =>
             m_UrpDiagnosticFramesRemaining > 0 &&
@@ -291,6 +330,7 @@ namespace TiltBrush
 
             m_CmrRenderHighlight = true;
             DrawMeshFilters(cmd, maskMaterial, m_CmrRequestedMeshes);
+            DrawSkinnedMeshRenderers(cmd, maskMaterial, m_CmrRequestedSkinnedMeshes);
             if (HasActiveUrpDiagnosticMeshes)
             {
                 DrawMeshFilters(cmd, maskMaterial, m_UrpDiagnosticMeshes);
@@ -324,6 +364,30 @@ namespace TiltBrush
                         xf.localToWorldMatrix,
                         maskMaterial,
                         iSubMesh);
+                }
+            }
+        }
+
+        private static void DrawSkinnedMeshRenderers(
+            CommandBuffer cmd,
+            Material maskMaterial,
+            List<SkinnedMeshRenderer> renderers)
+        {
+            for (int i = 0; i < renderers.Count; i++)
+            {
+                SkinnedMeshRenderer renderer = renderers[i];
+                if (renderer == null ||
+                    renderer.sharedMesh == null ||
+                    !renderer.enabled ||
+                    !renderer.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                Mesh mesh = renderer.sharedMesh;
+                for (int iSubMesh = 0; iSubMesh < mesh.subMeshCount; iSubMesh++)
+                {
+                    cmd.DrawRenderer(renderer, maskMaterial, iSubMesh);
                 }
             }
         }
@@ -393,6 +457,7 @@ namespace TiltBrush
                     // Also, we clear the m_bPosesApplied and m_bPreCulled flags later on OnRenderImage()
                     // to guarantee that poses and cull have been done before clearing those flags.
                     m_CmrRequestedMeshes.Clear();
+                    m_CmrRequestedSkinnedMeshes.Clear();
                 }
             }
         }

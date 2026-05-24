@@ -119,23 +119,26 @@ namespace TiltBrush
 
         public void RegisterHighlight()
         {
-#if !(UNITY_ANDROID || UNITY_IOS)
             for (int i = 0; i < m_MeshChildren.Length; i++)
             {
                 App.Instance.SelectionEffect.RegisterMesh(m_MeshChildren[i]);
-                // TODO Handle skinned meshes
             }
-#endif
+            for (int i = 0; i < m_SkinnedMeshChildren.Length; i++)
+            {
+                App.Instance.SelectionEffect.RegisterMesh(m_SkinnedMeshChildren[i]);
+            }
         }
 
         public void UnregisterHighlight()
         {
-#if !(UNITY_ANDROID || UNITY_IOS)
             for (int i = 0; i < m_MeshChildren.Length; i++)
             {
                 App.Instance.SelectionEffect.UnregisterMesh(m_MeshChildren[i]);
             }
-#endif
+            for (int i = 0; i < m_SkinnedMeshChildren.Length; i++)
+            {
+                App.Instance.SelectionEffect.UnregisterMesh(m_SkinnedMeshChildren[i]);
+            }
         }
 
     }
