@@ -85,6 +85,7 @@ namespace TiltBrush
 
             Instance = this;
             DisableLegacyPostProcessing();
+            CameraConfig.PostEffectsChanged += OnPostEffectsChanged;
         }
 
         private void Start()
@@ -113,6 +114,8 @@ namespace TiltBrush
             {
                 Instance = null;
             }
+
+            CameraConfig.PostEffectsChanged -= OnPostEffectsChanged;
 
             if (QualityControls.m_Instance != null)
             {
@@ -330,6 +333,11 @@ namespace TiltBrush
                 $"hdr={settings.Hdr} fxaa={settings.Fxaa} msaa={settings.MsaaLevel}.");
         }
 
+        private void OnPostEffectsChanged()
+        {
+            RefreshCameras();
+        }
+
         private void ApplyCameraBaseline(
             Camera camera,
             UniversalAdditionalCameraData cameraData,
@@ -337,7 +345,8 @@ namespace TiltBrush
         {
             cameraData.volumeLayerMask = m_VolumeLayerMask;
             cameraData.volumeTrigger = camera.transform;
-            cameraData.renderPostProcessing = !isCapture && m_EnablePostProcessingOnMainCameras;
+            cameraData.renderPostProcessing =
+                !isCapture && m_EnablePostProcessingOnMainCameras && CameraConfig.PostEffects;
 
             if (!isCapture)
             {
