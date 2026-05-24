@@ -10,6 +10,7 @@ namespace TiltBrush
     {
         private const string kDebugLogPrefix = "[OB_URP_SELECTION_DIAG]";
         private static int s_DebugSkipLogCount;
+        private static int s_MobileSelectionVisibleFrame = -1;
 
         [SerializeField]
         private RenderPassEvent m_RenderPassEvent =
@@ -18,14 +19,43 @@ namespace TiltBrush
         [SerializeField]
         private DebugOutput m_DebugOutput = DebugOutput.Off;
 
+        [SerializeField]
+        private SimpleCompositeMode m_SimpleCompositeMode = SimpleCompositeMode.FullOutline;
+
+        [SerializeField]
+        private bool m_UseMobileCompositeMode = true;
+
+        [SerializeField]
+        private SimpleCompositeMode m_MobileCompositeMode = SimpleCompositeMode.FullOutline;
+
+        [SerializeField]
+        private bool m_UseAdaptiveMobileCompositeMode = true;
+
+        [SerializeField]
+        private float m_AdaptiveMobileLowFps = 72.0f;
+
         private SelectionPass m_Pass;
         private Material m_MaskMaterial;
         private Material m_SimpleCompositeMaterial;
+        private SimpleCompositeMode m_CurrentAdaptiveMobileCompositeMode = SimpleCompositeMode.FullOutline;
+        private int m_LastSelectionVisibleFrame = -1;
+        private int m_NumSelectionFpsTooLow;
+
+        public static bool MobileSelectionQualityOverrideActive =>
+            s_MobileSelectionVisibleFrame >= 0 &&
+            Time.frameCount - s_MobileSelectionVisibleFrame <= 1;
 
         private enum DebugOutput
         {
             Off,
             RawMask
+        }
+
+        private enum SimpleCompositeMode
+        {
+            FullOutline,
+            CompromiseOutline,
+            BasicTint
         }
 
         public override void Create()
@@ -75,6 +105,7 @@ namespace TiltBrush
             }
             if (!selection.ShouldRenderUrpSelection)
             {
+                UpdateSelectionSession(false);
                 if (m_DebugOutput == DebugOutput.RawMask && s_DebugSkipLogCount < 12)
                 {
                     Debug.Log(
@@ -85,12 +116,97 @@ namespace TiltBrush
                 return;
             }
 
+            int simpleCompositeMode = (int)ResolveSimpleCompositeMode();
+            UpdateSelectionSession(true);
             m_Pass.Setup(
                 selection,
                 m_MaskMaterial,
                 m_SimpleCompositeMaterial,
+                simpleCompositeMode,
                 m_DebugOutput == DebugOutput.RawMask);
             renderer.EnqueuePass(m_Pass);
+        }
+
+        private SimpleCompositeMode ResolveSimpleCompositeMode()
+        {
+            bool isMobileHardware = App.Config != null && App.Config.IsMobileHardware;
+            if (!isMobileHardware || !m_UseMobileCompositeMode)
+            {
+                return m_SimpleCompositeMode;
+            }
+
+            if (!m_UseAdaptiveMobileCompositeMode)
+            {
+                return m_MobileCompositeMode;
+            }
+
+            if (IsNewSelectionSession())
+            {
+                m_CurrentAdaptiveMobileCompositeMode = m_MobileCompositeMode;
+                m_NumSelectionFpsTooLow = 0;
+            }
+
+            if (SelectionFpsIsTooLow())
+            {
+                m_NumSelectionFpsTooLow++;
+                int framesForLowerQuality = QualityControls.m_Instance != null
+                    ? QualityControls.m_Instance.AppQualityLevels.FramesForLowerQuality
+                    : 10;
+                if (m_NumSelectionFpsTooLow >= framesForLowerQuality)
+                {
+                    m_CurrentAdaptiveMobileCompositeMode =
+                        Degrade(m_CurrentAdaptiveMobileCompositeMode);
+                    m_NumSelectionFpsTooLow = 0;
+                }
+            }
+            else
+            {
+                m_NumSelectionFpsTooLow = 0;
+            }
+            return m_CurrentAdaptiveMobileCompositeMode;
+        }
+
+        private void UpdateSelectionSession(bool visible)
+        {
+            if (!visible || App.Config == null || !App.Config.IsMobileHardware)
+            {
+                return;
+            }
+
+            s_MobileSelectionVisibleFrame = Time.frameCount;
+            m_LastSelectionVisibleFrame = Time.frameCount;
+        }
+
+        private bool IsNewSelectionSession()
+        {
+            return m_LastSelectionVisibleFrame < 0 ||
+                Time.frameCount - m_LastSelectionVisibleFrame > 1;
+        }
+
+        private bool SelectionFpsIsTooLow()
+        {
+            if (QualityControls.m_Instance != null)
+            {
+                return QualityControls.m_Instance.FramesInLastSecond <=
+                    QualityControls.m_Instance.AppQualityLevels.LowerQualityFpsTrigger;
+            }
+
+            float smoothDeltaTime = Time.smoothDeltaTime;
+            return smoothDeltaTime > 0.0f &&
+                1.0f / smoothDeltaTime <= m_AdaptiveMobileLowFps;
+        }
+
+        private static SimpleCompositeMode Degrade(SimpleCompositeMode mode)
+        {
+            switch (mode)
+            {
+                case SimpleCompositeMode.FullOutline:
+                    return SimpleCompositeMode.CompromiseOutline;
+                case SimpleCompositeMode.CompromiseOutline:
+                    return SimpleCompositeMode.BasicTint;
+                default:
+                    return SimpleCompositeMode.BasicTint;
+            }
         }
 
         protected override void Dispose(bool disposing)
@@ -121,6 +237,8 @@ namespace TiltBrush
                 Shader.PropertyToID("_SimpleSelectionColorFlipY");
             private static readonly int SimpleSelectionMaskFlipY =
                 Shader.PropertyToID("_SimpleSelectionMaskFlipY");
+            private static readonly int SimpleSelectionMode =
+                Shader.PropertyToID("_SimpleSelectionMode");
             private static readonly int SelectionMask = Shader.PropertyToID("_SelectionMask");
             private static readonly int BlurredSelectionMask =
                 Shader.PropertyToID("_BlurredSelectionMask");
@@ -139,6 +257,7 @@ namespace TiltBrush
             private SelectionEffect m_Selection;
             private Material m_MaskMaterial;
             private Material m_SimpleCompositeMaterial;
+            private int m_SimpleCompositeMode;
             private bool m_DebugRawMask;
             private RTHandle m_ColorCopy;
             private RTHandle m_SelectionMask;
@@ -150,11 +269,13 @@ namespace TiltBrush
                 SelectionEffect selection,
                 Material maskMaterial,
                 Material simpleCompositeMaterial,
+                int simpleCompositeMode,
                 bool debugRawMask)
             {
                 m_Selection = selection;
                 m_MaskMaterial = maskMaterial;
                 m_SimpleCompositeMaterial = simpleCompositeMaterial;
+                m_SimpleCompositeMode = simpleCompositeMode;
                 m_DebugRawMask = debugRawMask;
             }
 
@@ -413,7 +534,8 @@ namespace TiltBrush
                         compositeData.material = m_SimpleCompositeMaterial;
                         compositeData.properties = CreateSimpleCompositeProperties(
                             maskDescriptor.width,
-                            maskDescriptor.height);
+                            maskDescriptor.height,
+                            m_SimpleCompositeMode);
                         compositeData.fullscreenMesh = RenderingUtils.fullscreenMesh;
                         compositeData.shaderPass = 0;
 
@@ -472,7 +594,8 @@ namespace TiltBrush
 
             private static MaterialPropertyBlock CreateSimpleCompositeProperties(
                 int width,
-                int height)
+                int height,
+                int simpleCompositeMode)
             {
                 MaterialPropertyBlock properties = new MaterialPropertyBlock();
                 properties.SetVector(
@@ -480,6 +603,7 @@ namespace TiltBrush
                     new Vector4(1.0f / width, 1.0f / height, width, height));
                 properties.SetFloat(SimpleSelectionColorFlipY, 1f);
                 properties.SetFloat(SimpleSelectionMaskFlipY, 1f);
+                properties.SetFloat(SimpleSelectionMode, simpleCompositeMode);
                 return properties;
             }
 

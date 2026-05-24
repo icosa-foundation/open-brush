@@ -87,3 +87,8 @@ MonoBehaviour:
   m_Active: 1
   m_RenderPassEvent: 600
   m_DebugOutput: 0
+  m_SimpleCompositeMode: 0
+  m_UseMobileCompositeMode: 1
+  m_MobileCompositeMode: 0
+  m_UseAdaptiveMobileCompositeMode: 1
+  m_AdaptiveMobileLowFps: 72

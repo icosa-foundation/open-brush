@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #if UNITY_ANDROID || UNITY_IOS
-# undef  FEATURE_CUSTOM_MESH_RENDER
+# define FEATURE_CUSTOM_MESH_RENDER
 # define FEATURE_MOBILE_SELECTION
 #else
 # define FEATURE_CUSTOM_MESH_RENDER
@@ -246,7 +246,6 @@ namespace TiltBrush
 
         private string GetUrpSelectionBlockReason()
         {
-            if (Application.isMobilePlatform) { return "mobile platform"; }
             if (!Application.isPlaying) { return "not playing"; }
             if (GraphicsSettings.currentRenderPipeline == null) { return "no SRP"; }
             if (VideoRecorderUtils.ActiveVideoRecording?.IsCapturing == true) { return "video recording"; }
@@ -363,7 +362,8 @@ namespace TiltBrush
 
         private void RenderHighlightsIfReady()
         {
-            if (Application.isMobilePlatform)
+            if (Application.isMobilePlatform &&
+                GraphicsSettings.currentRenderPipeline == null)
             {
                 return;
             }

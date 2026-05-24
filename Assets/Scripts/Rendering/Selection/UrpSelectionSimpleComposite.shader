@@ -22,6 +22,7 @@ Shader "Hidden/UrpSelectionSimpleComposite"
             float4 _SimpleSelectionMask_TexelSize;
             float _SimpleSelectionColorFlipY;
             float _SimpleSelectionMaskFlipY;
+            float _SimpleSelectionMode;
 
             struct Attributes
             {
@@ -78,23 +79,36 @@ Shader "Hidden/UrpSelectionSimpleComposite"
                 half center = MaskAt(uv);
                 float2 texel = _SimpleSelectionMask_TexelSize.xy;
                 half outer = center;
-                outer = max(outer, MaskAt(uv + texel * float2( 2.0,  0.0)));
-                outer = max(outer, MaskAt(uv + texel * float2(-2.0,  0.0)));
-                outer = max(outer, MaskAt(uv + texel * float2( 0.0,  2.0)));
-                outer = max(outer, MaskAt(uv + texel * float2( 0.0, -2.0)));
-                outer = max(outer, MaskAt(uv + texel * float2( 1.5,  1.5)));
-                outer = max(outer, MaskAt(uv + texel * float2(-1.5,  1.5)));
-                outer = max(outer, MaskAt(uv + texel * float2( 1.5, -1.5)));
-                outer = max(outer, MaskAt(uv + texel * float2(-1.5, -1.5)));
+                if (_SimpleSelectionMode < 1.5)
+                {
+                    outer = max(outer, MaskAt(uv + texel * float2( 2.0,  0.0)));
+                    outer = max(outer, MaskAt(uv + texel * float2(-2.0,  0.0)));
+                    outer = max(outer, MaskAt(uv + texel * float2( 0.0,  2.0)));
+                    outer = max(outer, MaskAt(uv + texel * float2( 0.0, -2.0)));
+                }
+                if (_SimpleSelectionMode < 0.5)
+                {
+                    outer = max(outer, MaskAt(uv + texel * float2( 1.5,  1.5)));
+                    outer = max(outer, MaskAt(uv + texel * float2(-1.5,  1.5)));
+                    outer = max(outer, MaskAt(uv + texel * float2( 1.5, -1.5)));
+                    outer = max(outer, MaskAt(uv + texel * float2(-1.5, -1.5)));
+                }
 
-                half outline = saturate(outer - center);
+                half outline = (_SimpleSelectionMode > 1.5)
+                    ? 0.0h
+                    : saturate(outer - center);
                 half pulse = 0.65h + 0.35h * sin(_Time.y * 5.0h);
                 half3 selectionColor = lerp(
                     half3(0.10h, 0.85h, 1.0h),
                     half3(1.0h, 1.0h, 1.0h),
                     pulse);
 
-                half3 tinted = lerp(source.rgb, source.rgb * 0.72h + selectionColor * 0.28h, center);
+                half tintStrength = (_SimpleSelectionMode > 1.5) ? 0.35h : 0.28h;
+                half sourceStrength = 1.0h - tintStrength;
+                half3 tinted = lerp(
+                    source.rgb,
+                    source.rgb * sourceStrength + selectionColor * tintStrength,
+                    center);
                 tinted = lerp(tinted, selectionColor, outline * 0.9h);
                 return half4(tinted, source.a);
             }
