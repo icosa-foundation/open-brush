@@ -583,6 +583,16 @@ namespace TiltBrush
         // Register highlights for all selected objects
         void RegisterHighlights()
         {
+            if (GraphicsSettings.currentRenderPipeline != null)
+            {
+                foreach (GrabWidget widget in m_SelectedWidgets)
+                {
+                    widget.RegisterHighlight();
+                }
+                App.Scene.SelectionCanvas.RegisterHighlight();
+                return;
+            }
+
             bool showHighlight =
                 !SketchControlsScript.m_Instance.IsUserAbleToInteractWithAnyWidget() ||
                 SketchControlsScript.m_Instance.IsUserIntersectingWithSelectionWidget() ||
