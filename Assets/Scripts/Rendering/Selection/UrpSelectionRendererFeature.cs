@@ -14,6 +14,7 @@ namespace TiltBrush
         private static int s_AndroidDebugLogCount;
         private static int s_MobileSelectionVisibleFrame = -1;
         private static string s_LastAndroidSkipStatus;
+        private bool m_HasLoggedMaterialRecovery;
 
         [SerializeField]
         private RenderPassEvent m_RenderPassEvent =
@@ -69,35 +70,78 @@ namespace TiltBrush
                 return;
             }
 
-            Debug.Log($"{kDebugLogPrefix} {message}");
+            string fullMessage = $"{kDebugLogPrefix} {message}";
+            Debug.Log(fullMessage);
+#if UNITY_ANDROID && !UNITY_EDITOR
+            using (AndroidJavaClass log = new AndroidJavaClass("android.util.Log"))
+            {
+                log.CallStatic<int>("i", "OBSelection", fullMessage);
+            }
+#endif
             s_AndroidDebugLogCount++;
         }
 
         public override void Create()
         {
-            Shader maskShader = Shader.Find("Hidden/UrpSelectionMask");
-            if (maskShader != null)
-            {
-                m_MaskMaterial = CoreUtils.CreateEngineMaterial(maskShader);
-            }
-
-            Shader simpleCompositeShader = Shader.Find("Hidden/UrpSelectionSimpleComposite");
-            if (simpleCompositeShader != null)
-            {
-                m_SimpleCompositeMaterial = CoreUtils.CreateEngineMaterial(simpleCompositeShader);
-            }
-
+            EnsureMaterials("Create");
             m_Pass = new SelectionPass
             {
                 renderPassEvent = m_RenderPassEvent
             };
+        }
+
+        private void EnsureMaterials(string source)
+        {
+            bool hadMaskMaterial = m_MaskMaterial != null;
+            bool hadSimpleMaterial = m_SimpleCompositeMaterial != null;
+            Shader maskShader = null;
+            Shader simpleCompositeShader = null;
+            if (m_MaskMaterial == null)
+            {
+                maskShader = Shader.Find("Hidden/UrpSelectionMask");
+                if (maskShader != null)
+                {
+                    m_MaskMaterial = CoreUtils.CreateEngineMaterial(maskShader);
+                }
+            }
+            if (m_SimpleCompositeMaterial == null)
+            {
+                simpleCompositeShader = Shader.Find("Hidden/UrpSelectionSimpleComposite");
+                if (simpleCompositeShader != null)
+                {
+                    m_SimpleCompositeMaterial = CoreUtils.CreateEngineMaterial(simpleCompositeShader);
+                }
+            }
+
+            if (source == "Create" ||
+                (!m_HasLoggedMaterialRecovery &&
+                    (hadMaskMaterial != (m_MaskMaterial != null) ||
+                     hadSimpleMaterial != (m_SimpleCompositeMaterial != null))))
+            {
+                m_HasLoggedMaterialRecovery = source != "Create";
+                LogAndroidSelection(
+                    $"EnsureMaterials source={source} " +
+                    $"maskShader={(maskShader != null ? maskShader.name : "not-searched-or-null")} " +
+                    $"maskMaterial={(m_MaskMaterial != null ? m_MaskMaterial.name : "null")} " +
+                    $"simpleShader={(simpleCompositeShader != null ? simpleCompositeShader.name : "not-searched-or-null")} " +
+                    $"simpleMaterial={(m_SimpleCompositeMaterial != null ? m_SimpleCompositeMaterial.name : "null")} " +
+                    $"renderPassEvent={m_RenderPassEvent}");
+            }
+        }
+
+        private bool HasSelectionMaterials(string source)
+        {
+            EnsureMaterials(source);
+            if (m_MaskMaterial != null && m_SimpleCompositeMaterial != null)
+            {
+                return true;
+            }
 
             LogAndroidSelection(
-                $"Create maskShader={(maskShader != null ? maskShader.name : "null")} " +
+                $"Missing selection materials source={source} " +
                 $"maskMaterial={(m_MaskMaterial != null ? m_MaskMaterial.name : "null")} " +
-                $"simpleShader={(simpleCompositeShader != null ? simpleCompositeShader.name : "null")} " +
-                $"simpleMaterial={(m_SimpleCompositeMaterial != null ? m_SimpleCompositeMaterial.name : "null")} " +
-                $"renderPassEvent={m_RenderPassEvent}");
+                $"simpleMaterial={(m_SimpleCompositeMaterial != null ? m_SimpleCompositeMaterial.name : "null")}");
+            return false;
         }
 
         public override void AddRenderPasses(
@@ -148,12 +192,17 @@ namespace TiltBrush
 
             int simpleCompositeMode = (int)ResolveSimpleCompositeMode();
             UpdateSelectionSession(true);
+            bool hasMaterials = HasSelectionMaterials("AddRenderPasses");
             LogAndroidSelection(
                 $"AddRenderPasses enqueue camera={camera.name} " +
                 $"cameraType={camera.cameraType} mode={(SimpleCompositeMode)simpleCompositeMode} " +
                 $"maskMaterial={(m_MaskMaterial != null ? m_MaskMaterial.name : "null")} " +
                 $"simpleMaterial={(m_SimpleCompositeMaterial != null ? m_SimpleCompositeMaterial.name : "null")} " +
                 $"status={selection.UrpSelectionDebugStatus}");
+            if (!hasMaterials)
+            {
+                return;
+            }
             m_Pass.Setup(
                 selection,
                 m_MaskMaterial,
@@ -575,6 +624,10 @@ namespace TiltBrush
                 CompositeTexturePassData data,
                 UnsafeGraphContext context)
             {
+                LogAndroidSelection(
+                    $"ExecuteCompositePass material={(data.material != null ? data.material.name : "null")} " +
+                    $"shader={(data.material != null && data.material.shader != null ? data.material.shader.name : "null")} " +
+                    $"pass={data.shaderPass}");
                 context.cmd.SetRenderTarget(data.destination, 0, CubemapFace.Unknown, -1);
                 context.cmd.SetGlobalTexture(SimpleSelectionColor, data.colorCopy);
                 context.cmd.SetGlobalTexture(SimpleSelectionMask, data.selectionMask);

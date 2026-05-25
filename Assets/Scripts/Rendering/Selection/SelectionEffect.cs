@@ -58,7 +58,14 @@ namespace TiltBrush
                 return;
             }
 
-            Debug.Log($"{kAndroidSelectionLogPrefix} {message}");
+            string fullMessage = $"{kAndroidSelectionLogPrefix} {message}";
+            Debug.Log(fullMessage);
+#if UNITY_ANDROID && !UNITY_EDITOR
+            using (AndroidJavaClass log = new AndroidJavaClass("android.util.Log"))
+            {
+                log.CallStatic<int>("i", "OBSelection", fullMessage);
+            }
+#endif
             s_AndroidSelectionLogCount++;
         }
 
@@ -390,17 +397,21 @@ namespace TiltBrush
             List<MeshFilter> meshFilters)
         {
             int draws = 0;
+            int skippedNull = 0;
+            int skippedNullMesh = 0;
             for (int i = 0; i < meshFilters.Count; i++)
             {
                 MeshFilter meshFilter = meshFilters[i];
                 if (meshFilter == null)
                 {
+                    skippedNull++;
                     continue;
                 }
 
                 Mesh mesh = meshFilter.sharedMesh;
                 if (mesh == null)
                 {
+                    skippedNullMesh++;
                     continue;
                 }
 
@@ -416,6 +427,11 @@ namespace TiltBrush
                 }
             }
 
+            if (skippedNull > 0 || skippedNullMesh > 0)
+            {
+                LogAndroidSelection(
+                    $"DrawMeshFilters skippedNull={skippedNull} skippedNullMesh={skippedNullMesh} draws={draws}");
+            }
             return draws;
         }
 
@@ -425,14 +441,21 @@ namespace TiltBrush
             List<SkinnedMeshRenderer> renderers)
         {
             int draws = 0;
+            int skippedNull = 0;
+            int skippedDisabled = 0;
             for (int i = 0; i < renderers.Count; i++)
             {
                 SkinnedMeshRenderer renderer = renderers[i];
                 if (renderer == null ||
-                    renderer.sharedMesh == null ||
-                    !renderer.enabled ||
+                    renderer.sharedMesh == null)
+                {
+                    skippedNull++;
+                    continue;
+                }
+                if (!renderer.enabled ||
                     !renderer.gameObject.activeInHierarchy)
                 {
+                    skippedDisabled++;
                     continue;
                 }
 
@@ -444,6 +467,11 @@ namespace TiltBrush
                 }
             }
 
+            if (skippedNull > 0 || skippedDisabled > 0)
+            {
+                LogAndroidSelection(
+                    $"DrawSkinnedMeshRenderers skippedNullOrMesh={skippedNull} skippedDisabled={skippedDisabled} draws={draws}");
+            }
             return draws;
         }
 
