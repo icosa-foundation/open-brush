@@ -30,6 +30,12 @@ namespace TiltBrush
 
     public class SelectionEffect : MonoBehaviour
     {
+#if FEATURE_CUSTOM_MESH_RENDER
+        private const string kAndroidSelectionLogPrefix = "[OB_SEL_ANDROID_DIAG]";
+        private const int kAndroidSelectionLogLimit = 160;
+        private static int s_AndroidSelectionLogCount;
+#endif
+
         // Static flag to disable selection effects during save icon capture
         private static bool s_DisableSelectionEffects = false;
         public static bool DisableSelectionEffects
@@ -44,6 +50,18 @@ namespace TiltBrush
         }
 
 #if FEATURE_CUSTOM_MESH_RENDER
+        [System.Diagnostics.Conditional("UNITY_ANDROID")]
+        private static void LogAndroidSelection(string message)
+        {
+            if (s_AndroidSelectionLogCount >= kAndroidSelectionLogLimit)
+            {
+                return;
+            }
+
+            Debug.Log($"{kAndroidSelectionLogPrefix} {message}");
+            s_AndroidSelectionLogCount++;
+        }
+
         private enum SelectionEffectPass
         {
             OutlineComposite, // 0
@@ -190,6 +208,17 @@ namespace TiltBrush
                 m_CmrRequestedMeshesFrame = Time.frameCount;
             }
             m_CmrRequestedMeshes.Add(meshFilter);
+            Renderer renderer = meshFilter != null ? meshFilter.GetComponent<Renderer>() : null;
+            LogAndroidSelection(
+                $"RegisterMesh frame={Time.frameCount} " +
+                $"object={(meshFilter != null ? meshFilter.name : "null")} " +
+                $"mesh={(meshFilter != null && meshFilter.sharedMesh != null ? meshFilter.sharedMesh.name : "null")} " +
+                $"subMeshes={(meshFilter != null && meshFilter.sharedMesh != null ? meshFilter.sharedMesh.subMeshCount : 0)} " +
+                $"rendererEnabled={(renderer != null && renderer.enabled)} " +
+                $"active={(meshFilter != null && meshFilter.gameObject.activeInHierarchy)} " +
+                $"material={(renderer != null && renderer.sharedMaterial != null ? renderer.sharedMaterial.name : "null")} " +
+                $"shader={(renderer != null && renderer.sharedMaterial != null && renderer.sharedMaterial.shader != null ? renderer.sharedMaterial.shader.name : "null")} " +
+                $"meshCount={m_CmrRequestedMeshes.Count} skinnedCount={m_CmrRequestedSkinnedMeshes.Count}");
 #endif
         }
 
@@ -211,6 +240,16 @@ namespace TiltBrush
                 m_CmrRequestedMeshesFrame = Time.frameCount;
             }
             m_CmrRequestedSkinnedMeshes.Add(renderer);
+            LogAndroidSelection(
+                $"RegisterSkinned frame={Time.frameCount} " +
+                $"object={(renderer != null ? renderer.name : "null")} " +
+                $"mesh={(renderer != null && renderer.sharedMesh != null ? renderer.sharedMesh.name : "null")} " +
+                $"subMeshes={(renderer != null && renderer.sharedMesh != null ? renderer.sharedMesh.subMeshCount : 0)} " +
+                $"rendererEnabled={(renderer != null && renderer.enabled)} " +
+                $"active={(renderer != null && renderer.gameObject.activeInHierarchy)} " +
+                $"material={(renderer != null && renderer.sharedMaterial != null ? renderer.sharedMaterial.name : "null")} " +
+                $"shader={(renderer != null && renderer.sharedMaterial != null && renderer.sharedMaterial.shader != null ? renderer.sharedMaterial.shader.name : "null")} " +
+                $"meshCount={m_CmrRequestedMeshes.Count} skinnedCount={m_CmrRequestedSkinnedMeshes.Count}");
 #endif
         }
 
@@ -288,8 +327,8 @@ namespace TiltBrush
             if (DisableSelectionEffects) { return "selection effects disabled"; }
             if (OverlayManager.m_Instance == null) { return "overlay manager missing"; }
             if (OverlayManager.m_Instance.OverlayEnabled) { return "overlay enabled"; }
-            if (ActivePostEffect() == null) { return "post effect missing"; }
-            if (m_GrabHighlightMaskMaterial == null) { return "grab highlight mask material missing"; }
+            // URP mask/composite uses materials owned by UrpSelectionRendererFeature.
+            // Legacy post-effect materials are only required by the non-SRP OnRenderImage path.
             if (m_CmrRequestedMeshes == null) { return "requested mesh list missing"; }
             if (m_CmrRequestedSkinnedMeshes == null) { return "requested skinned mesh list missing"; }
             if (!HasActiveUrpRequestedMeshes && !HasActiveUrpDiagnosticMeshes)
@@ -329,19 +368,28 @@ namespace TiltBrush
             }
 
             m_CmrRenderHighlight = true;
-            DrawMeshFilters(cmd, maskMaterial, m_CmrRequestedMeshes);
-            DrawSkinnedMeshRenderers(cmd, maskMaterial, m_CmrRequestedSkinnedMeshes);
+            int meshDraws = DrawMeshFilters(cmd, maskMaterial, m_CmrRequestedMeshes);
+            int skinnedDraws = DrawSkinnedMeshRenderers(cmd, maskMaterial, m_CmrRequestedSkinnedMeshes);
+            int diagnosticDraws = 0;
             if (HasActiveUrpDiagnosticMeshes)
             {
-                DrawMeshFilters(cmd, maskMaterial, m_UrpDiagnosticMeshes);
+                diagnosticDraws = DrawMeshFilters(cmd, maskMaterial, m_UrpDiagnosticMeshes);
             }
+
+            LogAndroidSelection(
+                $"DrawUrpHighlightMeshes frame={Time.frameCount} " +
+                $"requestedMeshes={(m_CmrRequestedMeshes != null ? m_CmrRequestedMeshes.Count : -1)} " +
+                $"requestedSkinned={(m_CmrRequestedSkinnedMeshes != null ? m_CmrRequestedSkinnedMeshes.Count : -1)} " +
+                $"meshDraws={meshDraws} skinnedDraws={skinnedDraws} diagnosticDraws={diagnosticDraws} " +
+                $"maskMaterial={(maskMaterial != null ? maskMaterial.name : "null")}");
         }
 
-        private static void DrawMeshFilters(
+        private static int DrawMeshFilters(
             CommandBuffer cmd,
             Material maskMaterial,
             List<MeshFilter> meshFilters)
         {
+            int draws = 0;
             for (int i = 0; i < meshFilters.Count; i++)
             {
                 MeshFilter meshFilter = meshFilters[i];
@@ -364,15 +412,19 @@ namespace TiltBrush
                         xf.localToWorldMatrix,
                         maskMaterial,
                         iSubMesh);
+                    draws++;
                 }
             }
+
+            return draws;
         }
 
-        private static void DrawSkinnedMeshRenderers(
+        private static int DrawSkinnedMeshRenderers(
             CommandBuffer cmd,
             Material maskMaterial,
             List<SkinnedMeshRenderer> renderers)
         {
+            int draws = 0;
             for (int i = 0; i < renderers.Count; i++)
             {
                 SkinnedMeshRenderer renderer = renderers[i];
@@ -388,8 +440,11 @@ namespace TiltBrush
                 for (int iSubMesh = 0; iSubMesh < mesh.subMeshCount; iSubMesh++)
                 {
                     cmd.DrawRenderer(renderer, maskMaterial, iSubMesh);
+                    draws++;
                 }
             }
+
+            return draws;
         }
 
         public void EndUrpSelectionFrame()

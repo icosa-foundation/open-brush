@@ -9,8 +9,11 @@ namespace TiltBrush
     public class UrpSelectionRendererFeature : ScriptableRendererFeature
     {
         private const string kDebugLogPrefix = "[OB_URP_SELECTION_DIAG]";
+        private const int kAndroidDebugLogLimit = 160;
         private static int s_DebugSkipLogCount;
+        private static int s_AndroidDebugLogCount;
         private static int s_MobileSelectionVisibleFrame = -1;
+        private static string s_LastAndroidSkipStatus;
 
         [SerializeField]
         private RenderPassEvent m_RenderPassEvent =
@@ -58,6 +61,18 @@ namespace TiltBrush
             BasicTint
         }
 
+        [System.Diagnostics.Conditional("UNITY_ANDROID")]
+        private static void LogAndroidSelection(string message)
+        {
+            if (s_AndroidDebugLogCount >= kAndroidDebugLogLimit)
+            {
+                return;
+            }
+
+            Debug.Log($"{kDebugLogPrefix} {message}");
+            s_AndroidDebugLogCount++;
+        }
+
         public override void Create()
         {
             Shader maskShader = Shader.Find("Hidden/UrpSelectionMask");
@@ -76,6 +91,13 @@ namespace TiltBrush
             {
                 renderPassEvent = m_RenderPassEvent
             };
+
+            LogAndroidSelection(
+                $"Create maskShader={(maskShader != null ? maskShader.name : "null")} " +
+                $"maskMaterial={(m_MaskMaterial != null ? m_MaskMaterial.name : "null")} " +
+                $"simpleShader={(simpleCompositeShader != null ? simpleCompositeShader.name : "null")} " +
+                $"simpleMaterial={(m_SimpleCompositeMaterial != null ? m_SimpleCompositeMaterial.name : "null")} " +
+                $"renderPassEvent={m_RenderPassEvent}");
         }
 
         public override void AddRenderPasses(
@@ -106,18 +128,32 @@ namespace TiltBrush
             if (!selection.ShouldRenderUrpSelection)
             {
                 UpdateSelectionSession(false);
+                string status = selection.UrpSelectionDebugStatus;
+                if (s_LastAndroidSkipStatus != status || s_DebugSkipLogCount < 12)
+                {
+                    LogAndroidSelection(
+                        $"AddRenderPasses skip camera={camera.name} " +
+                        $"cameraType={camera.cameraType} status={status}");
+                    s_LastAndroidSkipStatus = status;
+                }
                 if (m_DebugOutput == DebugOutput.RawMask && s_DebugSkipLogCount < 12)
                 {
                     Debug.Log(
                         $"{kDebugLogPrefix} Selection pass skipped camera={camera.name} " +
-                        $"status={selection.UrpSelectionDebugStatus}.");
-                    s_DebugSkipLogCount++;
+                        $"status={status}.");
                 }
+                s_DebugSkipLogCount++;
                 return;
             }
 
             int simpleCompositeMode = (int)ResolveSimpleCompositeMode();
             UpdateSelectionSession(true);
+            LogAndroidSelection(
+                $"AddRenderPasses enqueue camera={camera.name} " +
+                $"cameraType={camera.cameraType} mode={(SimpleCompositeMode)simpleCompositeMode} " +
+                $"maskMaterial={(m_MaskMaterial != null ? m_MaskMaterial.name : "null")} " +
+                $"simpleMaterial={(m_SimpleCompositeMaterial != null ? m_SimpleCompositeMaterial.name : "null")} " +
+                $"status={selection.UrpSelectionDebugStatus}");
             m_Pass.Setup(
                 selection,
                 m_MaskMaterial,
@@ -218,15 +254,6 @@ namespace TiltBrush
 
         private class SelectionPass : ScriptableRenderPass
         {
-            private enum SelectionEffectPass
-            {
-                OutlineComposite,
-                Downsample,
-                VerticalBlur,
-                HorizontalBlur
-            }
-
-            private static readonly int MainTex = Shader.PropertyToID("_MainTex");
             private static readonly int SimpleSelectionColor =
                 Shader.PropertyToID("_SimpleSelectionColor");
             private static readonly int SimpleSelectionMask =
@@ -240,19 +267,6 @@ namespace TiltBrush
             private static readonly int SimpleSelectionMode =
                 Shader.PropertyToID("_SimpleSelectionMode");
             private static readonly int SelectionMask = Shader.PropertyToID("_SelectionMask");
-            private static readonly int BlurredSelectionMask =
-                Shader.PropertyToID("_BlurredSelectionMask");
-            private static readonly int SelectionColorSource =
-                Shader.PropertyToID("_SelectionColorSource");
-            private static readonly int UrpSelectionMask =
-                Shader.PropertyToID("_UrpSelectionMask");
-            private static readonly int UrpBlurredSelectionMask =
-                Shader.PropertyToID("_UrpBlurredSelectionMask");
-            private static readonly int BlurSize = Shader.PropertyToID("_BlurSize");
-            private static readonly int UseBlitTexture = Shader.PropertyToID("_UseBlitTexture");
-            private static readonly int SelectionUrpBlit =
-                Shader.PropertyToID("_SelectionUrpBlit");
-            private static readonly int MainTexTexelSize = Shader.PropertyToID("_MainTex_TexelSize");
 
             private SelectionEffect m_Selection;
             private Material m_MaskMaterial;
@@ -261,9 +275,6 @@ namespace TiltBrush
             private bool m_DebugRawMask;
             private RTHandle m_ColorCopy;
             private RTHandle m_SelectionMask;
-            private RTHandle m_DownsampleA;
-            private RTHandle m_DownsampleB;
-            private RTHandle m_BlurA;
 
             public void Setup(
                 SelectionEffect selection,
@@ -283,14 +294,8 @@ namespace TiltBrush
             {
                 m_ColorCopy?.Release();
                 m_SelectionMask?.Release();
-                m_DownsampleA?.Release();
-                m_DownsampleB?.Release();
-                m_BlurA?.Release();
                 m_ColorCopy = null;
                 m_SelectionMask = null;
-                m_DownsampleA = null;
-                m_DownsampleB = null;
-                m_BlurA = null;
             }
 
             [System.Obsolete]
@@ -308,20 +313,23 @@ namespace TiltBrush
                 {
                     if (!m_Selection.HasPreparedUrpSelectionFrame)
                     {
+                        LogAndroidSelection(
+                            $"Execute compatibility skip status={m_Selection.UrpSelectionDebugStatus}");
                         return;
                     }
 
-                    Material postEffect = m_Selection.UrpPostEffectMaterial;
-                    if (m_MaskMaterial == null || postEffect == null)
+                    if (m_MaskMaterial == null || m_SimpleCompositeMaterial == null)
                     {
+                        LogAndroidSelection(
+                            $"Execute compatibility missing materials " +
+                            $"maskMaterial={(m_MaskMaterial != null ? m_MaskMaterial.name : "null")} " +
+                            $"simpleMaterial={(m_SimpleCompositeMaterial != null ? m_SimpleCompositeMaterial.name : "null")}");
                         return;
                     }
 
                     RenderTextureDescriptor cameraDescriptor =
                         renderingData.cameraData.cameraTargetDescriptor;
                     cameraDescriptor.depthBufferBits = 0;
-                    cmd.SetGlobalFloat(UseBlitTexture, 0f);
-
                     RenderingUtils.ReAllocateIfNeeded(
                         ref m_ColorCopy,
                         cameraDescriptor,
@@ -340,34 +348,6 @@ namespace TiltBrush
                         TextureWrapMode.Clamp,
                         name: "_OpenBrushSelectionMask");
 
-                    RenderTextureDescriptor blurDescriptor = maskDescriptor;
-                    blurDescriptor.width = 1024;
-                    blurDescriptor.height = 1024;
-
-                    RenderingUtils.ReAllocateIfNeeded(
-                        ref m_DownsampleA,
-                        blurDescriptor,
-                        FilterMode.Bilinear,
-                        TextureWrapMode.Clamp,
-                        name: "_OpenBrushSelectionDownsampleA");
-
-                    blurDescriptor.width = 512;
-                    blurDescriptor.height = 512;
-
-                    RenderingUtils.ReAllocateIfNeeded(
-                        ref m_DownsampleB,
-                        blurDescriptor,
-                        FilterMode.Bilinear,
-                        TextureWrapMode.Clamp,
-                        name: "_OpenBrushSelectionDownsampleB");
-
-                    RenderingUtils.ReAllocateIfNeeded(
-                        ref m_BlurA,
-                        blurDescriptor,
-                        FilterMode.Bilinear,
-                        TextureWrapMode.Clamp,
-                        name: "_OpenBrushSelectionBlurA");
-
                     RTHandle cameraColorTarget =
                         renderingData.cameraData.renderer.cameraColorTargetHandle;
                     CoreUtils.SetRenderTarget(
@@ -378,43 +358,34 @@ namespace TiltBrush
                     m_Selection.DrawUrpHighlightMeshes(cmd, m_MaskMaterial);
                     if (m_DebugRawMask)
                     {
+                        LogAndroidSelection(
+                            $"Execute compatibility raw-mask camera={renderingData.cameraData.camera.name} " +
+                            $"size={cameraDescriptor.width}x{cameraDescriptor.height}");
                         cmd.Blit(m_SelectionMask, cameraColorTarget);
                         context.ExecuteCommandBuffer(cmd);
                         return;
                     }
 
-                    cmd.Blit(
-                        m_SelectionMask,
-                        m_DownsampleA,
-                        postEffect,
-                        (int)SelectionEffectPass.Downsample);
-                    cmd.Blit(
-                        m_DownsampleA,
-                        m_DownsampleB,
-                        postEffect,
-                        (int)SelectionEffectPass.Downsample);
-
-                    postEffect.SetFloat(BlurSize, m_Selection.UrpBlurWidth);
-                    cmd.Blit(
-                        m_DownsampleB,
-                        m_BlurA,
-                        postEffect,
-                        (int)SelectionEffectPass.VerticalBlur);
-                    cmd.Blit(
-                        m_BlurA,
-                        m_DownsampleB,
-                        postEffect,
-                        (int)SelectionEffectPass.HorizontalBlur);
-
+                    LogAndroidSelection(
+                        $"Execute compatibility composite camera={renderingData.cameraData.camera.name} " +
+                        $"size={cameraDescriptor.width}x{cameraDescriptor.height} mode={(SimpleCompositeMode)m_SimpleCompositeMode}");
                     cmd.Blit(cameraColorTarget, m_ColorCopy);
-                    cmd.SetGlobalTexture(MainTex, m_ColorCopy);
-                    cmd.SetGlobalTexture(SelectionMask, m_SelectionMask);
-                    cmd.SetGlobalTexture(BlurredSelectionMask, m_DownsampleB);
-                    cmd.Blit(
-                        m_ColorCopy,
+                    CoreUtils.SetRenderTarget(
+                        cmd,
                         cameraColorTarget,
-                        postEffect,
-                        (int)SelectionEffectPass.OutlineComposite);
+                        ClearFlag.None);
+                    cmd.SetGlobalTexture(SimpleSelectionColor, m_ColorCopy);
+                    cmd.SetGlobalTexture(SimpleSelectionMask, m_SelectionMask);
+                    cmd.DrawMesh(
+                        RenderingUtils.fullscreenMesh,
+                        Matrix4x4.identity,
+                        m_SimpleCompositeMaterial,
+                        0,
+                        0,
+                        CreateSimpleCompositeProperties(
+                            cameraDescriptor.width,
+                            cameraDescriptor.height,
+                            m_SimpleCompositeMode));
 
                     context.ExecuteCommandBuffer(cmd);
                 }
@@ -454,17 +425,24 @@ namespace TiltBrush
                 if (m_Selection == null ||
                     !m_Selection.HasPreparedUrpSelectionFrame)
                 {
+                    LogAndroidSelection(
+                        $"RecordRenderGraph skip status={(m_Selection != null ? m_Selection.UrpSelectionDebugStatus : "selection null")}");
                     return;
                 }
 
                 if (m_MaskMaterial == null || m_SimpleCompositeMaterial == null)
                 {
+                    LogAndroidSelection(
+                        $"RecordRenderGraph missing materials " +
+                        $"maskMaterial={(m_MaskMaterial != null ? m_MaskMaterial.name : "null")} " +
+                        $"simpleMaterial={(m_SimpleCompositeMaterial != null ? m_SimpleCompositeMaterial.name : "null")}");
                     return;
                 }
 
                 UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
                 if (resourceData.isActiveTargetBackBuffer)
                 {
+                    LogAndroidSelection("RecordRenderGraph skip active target is back buffer");
                     return;
                 }
 
@@ -508,6 +486,8 @@ namespace TiltBrush
 
                 if (m_DebugRawMask)
                 {
+                    LogAndroidSelection(
+                        $"RecordRenderGraph raw-mask size={maskDescriptor.width}x{maskDescriptor.height}");
                     renderGraph.AddBlitPass(
                         selectionMask,
                         cameraColor,
@@ -517,6 +497,9 @@ namespace TiltBrush
                 }
                 else
                 {
+                    LogAndroidSelection(
+                        $"RecordRenderGraph composite size={maskDescriptor.width}x{maskDescriptor.height} " +
+                        $"mode={(SimpleCompositeMode)m_SimpleCompositeMode}");
                     renderGraph.AddBlitPass(
                         cameraColor,
                         colorCopy,
@@ -556,42 +539,6 @@ namespace TiltBrush
                 m_DebugRawMask = false;
             }
 
-            private static RenderGraphUtils.BlitMaterialParameters CreateSelectionBlitParameters(
-                TextureHandle source,
-                TextureHandle destination,
-                Material material,
-                int pass,
-                MaterialPropertyBlock properties)
-            {
-                return new RenderGraphUtils.BlitMaterialParameters(
-                    source,
-                    destination,
-                    material,
-                    pass,
-                    properties,
-                    RenderGraphUtils.FullScreenGeometryType.Mesh,
-                    MainTex);
-            }
-
-            private static MaterialPropertyBlock CreateBlitProperties(
-                int width,
-                int height,
-                float? blurSize = null,
-                float urpBlitMode = 1f)
-            {
-                MaterialPropertyBlock properties = new MaterialPropertyBlock();
-                properties.SetFloat(UseBlitTexture, 0f);
-                properties.SetFloat(SelectionUrpBlit, urpBlitMode);
-                properties.SetVector(
-                    MainTexTexelSize,
-                    new Vector4(1.0f / width, 1.0f / height, width, height));
-                if (blurSize.HasValue)
-                {
-                    properties.SetFloat(BlurSize, blurSize.Value);
-                }
-                return properties;
-            }
-
             private static MaterialPropertyBlock CreateSimpleCompositeProperties(
                 int width,
                 int height,
@@ -620,7 +567,6 @@ namespace TiltBrush
                 }
                 finally
                 {
-                    context.cmd.SetGlobalFloat(UseBlitTexture, 0f);
                     data.selection.EndUrpSelectionFrame();
                 }
             }
