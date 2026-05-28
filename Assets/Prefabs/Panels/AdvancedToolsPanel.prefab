@@ -565,8 +565,8 @@ Transform:
   m_GameObject: {fileID: 1239097257950828}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.21, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 0.192, y: -0.221, z: 0}
+  m_LocalScale: {x: 1, y: 1.5, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4661729169517730}
@@ -891,8 +891,8 @@ MonoBehaviour:
   m_InitialSpawnPos: {x: 4.61, y: 12, z: 5.34}
   m_InitialSpawnRotEulers: {x: 37.18, y: 63.12, z: 0}
   m_WandAttachAngle: 240
-  m_WandAttachYOffset: 1.4
-  m_WandAttachHalfHeight: 1.4
+  m_WandAttachYOffset: 2
+  m_WandAttachHalfHeight: 2
   m_BeginFixed: 1
   m_CanBeFixedToWand: 1
   m_CanBeDetachedFromWand: 1
@@ -2583,7 +2583,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 71c7ba9f3d5217f44b7942230345d535, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 009d708f5cf2bc04a982a72f4460c8f7, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
