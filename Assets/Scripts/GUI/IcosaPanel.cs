@@ -278,7 +278,7 @@ namespace TiltBrush
                     break;
                 case IcosaSetType.Featured:
                     m_PanelText.text = PanelTextFeatured;
-                    m_PanelTextSubtitle.gameObject.SetActive(false);
+                    m_PanelTextSubtitle.gameObject.SetActive(true);
                     m_PanelTextUserSubtitle.gameObject.SetActive(false);
                     break;
                 case IcosaSetType.Liked:
