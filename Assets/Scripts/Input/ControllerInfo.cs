@@ -261,6 +261,8 @@ namespace TiltBrush
                     return IsTrigger();
                 case SketchCommands.ScriptedTool:
                     return IsTrigger();
+                case SketchCommands.MarkovPenTool:
+                    return IsTrigger();
             }
 
             return false;
