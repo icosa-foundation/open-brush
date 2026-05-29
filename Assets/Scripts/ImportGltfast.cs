@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using TiltBrushToolkit;
@@ -79,14 +80,10 @@ namespace TiltBrush
                 options.AnimationMethod = AnimationMethod.Legacy;
 
                 var normalizedPath = Uri.UnescapeDataString(localPath).Replace("\\", "/");
-                if (normalizedPath.StartsWith("/"))
-                {
-                    normalizedPath = normalizedPath.TrimStart('/');
-                }
-
-                // See https://github.com/KhronosGroup/UnityGLTF/issues/805
-                var uriPath = $"file:///{normalizedPath}";
-                GLTFSceneImporter gltf = new GLTFSceneImporter(uriPath, options);
+                var directory = Path.GetDirectoryName(normalizedPath);
+                var fileName = Path.GetFileName(normalizedPath);
+                options.DataLoader = new UnityGLTF.Loader.FileLoader(directory);
+                GLTFSceneImporter gltf = new GLTFSceneImporter(fileName, options);
 
                 gltf.IsMultithreaded = false;
                 AsyncHelpers.RunSync(() => gltf.LoadSceneAsync());
