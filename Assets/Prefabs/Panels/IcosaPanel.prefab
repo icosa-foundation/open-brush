@@ -3393,7 +3393,7 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra: Public or unlisted models you upload to Icosa Gallery
   m_LocalizedDescriptionExtra:
     m_TableReference:
       m_TableCollectionName: 
@@ -5044,7 +5044,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra: Featured models on Icosa. Change the filter to see all
+    models
   m_LocalizedDescriptionExtra:
     m_TableReference:
       m_TableCollectionName: 
@@ -5210,7 +5211,7 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra: Browse Icosa Gallery and "like" models to see them here
   m_LocalizedDescriptionExtra:
     m_TableReference:
       m_TableCollectionName: 
