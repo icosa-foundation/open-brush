@@ -747,7 +747,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7931977472385024
-    m_Localized: Your Models
+    m_Localized: Your Uploaded Models
     m_Metadata:
       m_Items: []
   - m_Id: 7932160536977408
@@ -755,7 +755,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7932251041669120
-    m_Localized: Liked Models
+    m_Localized: Your Liked Models
     m_Metadata:
       m_Items: []
   - m_Id: 7932559960547328
@@ -3630,11 +3630,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 332573810292776960
-    m_Localized: Search
+    m_Localized: Search by text
     m_Metadata:
       m_Items: []
   - m_Id: 332574165927813120
-    m_Localized: Filter/Sorting
+    m_Localized: Filter and Sort Results
     m_Metadata:
       m_Items: []
   - m_Id: 326532953040941056
