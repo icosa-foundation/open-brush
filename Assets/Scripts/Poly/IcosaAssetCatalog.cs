@@ -1294,8 +1294,8 @@ namespace TiltBrush
         }
 
         // Ideally we would check against the format info from Poly that we have all the required
-        // elements but for now we know that there should be exactly one .gltf/.gltf2 and a .bin
-        // Returns the filename of the .gltf/.gltf2 file, or null if not valid.
+        // elements but for now we know there should be one root model file in a supported format.
+        // Returns the filename of the root model file, or null if not valid.
         private static string ValidModelCache(string dir)
         {
             // We now don't require a .bin file, as some assets are glbs
@@ -1304,25 +1304,26 @@ namespace TiltBrush
             //     return null;
             // }
 
-            var filesGltf1 = Directory.GetFiles(dir, "*.gltf");
-            var filesGltf2 = Directory.GetFiles(dir, "*.gltf2");
-            var filesObj = Directory.GetFiles(dir, "*.obj");
+            string[] preferredExtensions =
+            {
+                ".vox",
+                ".gltf2",
+                ".gltf",
+                ".glb",
+                ".obj",
+                ".ply"
+            };
 
-            if (filesGltf1.Length + filesGltf2.Length + filesObj.Length != 1)
+            var allFiles = Directory.GetFiles(dir);
+            var modelFiles = allFiles.Where(file =>
+                preferredExtensions.Contains(Path.GetExtension(file).ToLowerInvariant())).ToArray();
+
+            if (modelFiles.Length != 1)
             {
                 return null;
             }
 
-            // We used to prefer gltf1 for some reason. Stop doing that.
-            if (filesGltf2.Length == 1)
-            {
-                return filesGltf2[0];
-            }
-            if (filesGltf1.Length == 1)
-            {
-                return filesGltf1[0];
-            }
-            return filesObj[0];
+            return modelFiles[0];
         }
 
         public void ClearLoadingQueue()
