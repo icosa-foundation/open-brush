@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using UnityEngine;
+
 namespace TiltBrush
 {
 
@@ -25,6 +27,9 @@ namespace TiltBrush
             SetDescriptionActive(true);
             SetDescriptionVisualsAvailable(false);
         }
+
+        public override void ButtonPressed(RaycastHit rHitInfo)
+        {}
     }
 }
 
