@@ -1178,6 +1178,9 @@ namespace TiltBrush
             }
             uri += $"pageSize={m_AssetsPerPage}&";
             uri += $"triangleCountMax={queryParams.TriangleCountMax}&";
+            // A reported triangle count of 0 means "unknown complexity". We can't size-gate those, and
+            // at least one such model is pathologically large, so exclude them server-side.
+            uri += "triangleCountMin=1&";
             uri += $"orderBy={queryParams.OrderBy}&";
             if (!string.IsNullOrEmpty(queryParams.SearchText)) uri += $"name={queryParams.SearchText}&";
             if (!string.IsNullOrEmpty(queryParams.License)) uri += $"license={queryParams.License}&";

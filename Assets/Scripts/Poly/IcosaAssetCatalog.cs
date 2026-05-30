@@ -204,6 +204,10 @@ namespace TiltBrush
         // bytes (meshes + textures), not model count, since model sizes vary wildly. Models placed in
         // the scene (m_UsageCount > 0) are always retained and are not evicted.
         private const long kLoadedModelMemoryBudgetBytes = 512L * 1024 * 1024;
+        // A model whose measured runtime footprint exceeds this is remembered as "oversized" and no
+        // longer auto-preloaded/previewed (it still loads on explicit selection). This catches heavy
+        // models whose API triangle-count metadata under-reports their true cost.
+        private const long kOversizedModelByteThreshold = 256L * 1024 * 1024;
 
         // This may be a bit broader than an asset id, but it's a safe set of
         // filename characters.
@@ -253,6 +257,10 @@ namespace TiltBrush
             public string HumanName { get; }
             public string AccountName { get; }
             public Quaternion? ModelRotation { get; }
+            // Highest triangle count reported across the asset's formats (0 if unknown). Used to skip
+            // auto-preload/preview of very heavy models. This is metadata, so it's available before
+            // any download/import.
+            public int TriangleCount { get; }
 
             public Texture2D Thumbnail
             {
@@ -291,6 +299,22 @@ namespace TiltBrush
                 {
                     ModelRotation = null;
                 }
+
+                int maxTriangleCount = 0;
+                var formats = json["formats"];
+                if (formats != null)
+                {
+                    foreach (var format in formats)
+                    {
+                        var triToken = format?["formatComplexity"]?["triangleCount"];
+                        if (triToken != null && int.TryParse(triToken.ToString(), out int tris)
+                            && tris > maxTriangleCount)
+                        {
+                            maxTriangleCount = tris;
+                        }
+                    }
+                }
+                TriangleCount = maxTriangleCount;
 
                 m_Thumbnail = new Texture2D(4, 4, TextureFormat.ARGB32, false);
                 m_ThumbnailUrl = json?["thumbnail"]?["url"]?.ToString();
@@ -474,6 +498,12 @@ namespace TiltBrush
         // (m_Valid); they are removed on unload/evict via PruneModelCacheBookkeeping.
         private readonly Dictionary<string, long> m_LoadedModelBytes = new Dictionary<string, long>();
         private readonly Dictionary<string, float> m_ModelLastUsedTime = new Dictionary<string, float>();
+        // AssetIds the active panel is currently displaying. These are pinned (never evicted) so the
+        // visible page can't be unloaded out from under the user - which would thrash-reload it.
+        private readonly HashSet<string> m_VisibleAssetIds = new HashSet<string>();
+        // AssetIds measured (after a load) to exceed kOversizedModelByteThreshold. We stop
+        // auto-preloading these. Learned per session; not persisted.
+        private readonly HashSet<string> m_OversizedModelIds = new HashSet<string>();
 
         private AwaitableRateLimiter m_thumbnailFetchLimiter =
             new AwaitableRateLimiter(kThumbnailFetchRate, kThumbnailFetchMaxCount);
@@ -759,8 +789,15 @@ namespace TiltBrush
                 // Record cache size/recency for models that loaded successfully.
                 if (m_ModelsByAssetId.TryGetValue(assetId, out Model finished) && finished.m_Valid)
                 {
-                    m_LoadedModelBytes[assetId] = EstimateModelBytes(finished);
+                    long modelBytes = EstimateModelBytes(finished);
+                    m_LoadedModelBytes[assetId] = modelBytes;
                     m_ModelLastUsedTime[assetId] = Time.realtimeSinceStartup;
+                    if (modelBytes > kOversizedModelByteThreshold && m_OversizedModelIds.Add(assetId))
+                    {
+                        Debug.Log($"[ICOSALOAD] mark oversized {assetId} " +
+                            $"~{modelBytes / (1024 * 1024)}MB > {kOversizedModelByteThreshold / (1024 * 1024)}MB " +
+                            "- will not auto-preload");
+                    }
                 }
             }
             if (finishedModels.Count > 0)
@@ -768,6 +805,11 @@ namespace TiltBrush
                 // A load just completed: refresh IsLoading() and let the panel update its buttons.
                 m_IsLoadingMemo = null;
                 m_NotifyListeners = true;
+                long __cacheTotal = 0;
+                foreach (var kv in m_LoadedModelBytes) { __cacheTotal += kv.Value; }
+                Debug.Log($"[ICOSALOAD] cache {m_LoadedModelBytes.Count} models " +
+                    $"~{__cacheTotal / (1024 * 1024)}MB (budget {kLoadedModelMemoryBudgetBytes / (1024 * 1024)}MB, " +
+                    $"visible={m_VisibleAssetIds.Count})");
                 EnforceMemoryBudget();
             }
 
@@ -1378,12 +1420,30 @@ namespace TiltBrush
             PruneModelCacheBookkeeping();
         }
 
+        /// True if this model was measured (on a previous load this session) to be too large to be
+        /// worth auto-preloading/previewing.
+        public bool IsModelOversized(string assetId)
+        {
+            return m_OversizedModelIds.Contains(assetId);
+        }
+
         /// Marks a loaded model as recently used so it survives LRU eviction.
         public void MarkModelUsed(string assetId)
         {
             if (m_ModelLastUsedTime.ContainsKey(assetId))
             {
                 m_ModelLastUsedTime[assetId] = Time.realtimeSinceStartup;
+            }
+        }
+
+        /// Records which assetIds the panel is currently showing. Pinned models are never evicted,
+        /// so the budget can only reclaim models that have scrolled off-screen / out of the open tab.
+        public void SetVisibleModels(IEnumerable<string> assetIds)
+        {
+            m_VisibleAssetIds.Clear();
+            foreach (var id in assetIds)
+            {
+                if (id != null) { m_VisibleAssetIds.Add(id); }
             }
         }
 
@@ -1453,10 +1513,14 @@ namespace TiltBrush
                 return;
             }
 
+            // Evict largest-first: one oversized model can exceed the whole budget, and dropping it
+            // frees space with a single eviction, keeping the many small/quick models cached. (Pure
+            // LRU would flush all the cheap models before the one expensive one - the worst outcome.)
             var evictable = m_LoadedModelBytes.Keys
-                .Where(id => m_ModelsByAssetId.TryGetValue(id, out var m)
+                .Where(id => !m_VisibleAssetIds.Contains(id)
+                    && m_ModelsByAssetId.TryGetValue(id, out var m)
                     && m != null && m.m_Valid && m.m_UsageCount == 0)
-                .OrderBy(id => m_ModelLastUsedTime.TryGetValue(id, out var t) ? t : 0f)
+                .OrderByDescending(id => m_LoadedModelBytes.TryGetValue(id, out var b) ? b : 0L)
                 .ToList();
 
             bool evictedAny = false;
