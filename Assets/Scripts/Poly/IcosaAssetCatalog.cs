@@ -208,6 +208,11 @@ namespace TiltBrush
         // longer auto-preloaded/previewed (it still loads on explicit selection). This catches heavy
         // models whose API triangle-count metadata under-reports their true cost.
         private const long kOversizedModelByteThreshold = 256L * 1024 * 1024;
+        // Max simultaneous asset downloads. Capping this avoids bursting the asset host: legacy Poly
+        // assets are served via web.archive.org, which drops connections under a flood (manifesting
+        // as mass "couldn't connect" failures, not HTTP 429), so a page-load firing ~6+ downloads at
+        // once trips it. A small cap keeps throughput while staying under the throttle.
+        private const int kMaxConcurrentDownloads = 4;
 
         // This may be a bit broader than an asset id, but it's a safe set of
         // filename characters.
@@ -499,6 +504,10 @@ namespace TiltBrush
         /// TODO: figure out why we have this intermediate stage
         private List<ModelLoadRequest> m_RequestLoadQueue;
         private List<ModelLoadRequest> m_LoadQueue;
+        /// Asset downloads waiting for a free slot (see kMaxConcurrentDownloads). Dispatched in
+        /// UpdateCatalog by PumpDownloadQueue. Items here are not yet in m_ActiveRequests.
+        private readonly List<(string assetId, string reason)> m_PendingDownloads =
+            new List<(string assetId, string reason)>();
         /// Memoization data for IsLoading().
         /// Set this to null to invalidate it; or (if you are very confident) mutate it.
         /// Invariant: either null, or the union of m_ActiveRequests, m_RequestLoadQueue, m_LoadQueue.
@@ -543,6 +552,7 @@ namespace TiltBrush
             {
                 m_IsLoadingMemo = new HashSet<string>();
                 m_IsLoadingMemo.UnionWith(m_ActiveRequests.Select(request => request.Asset.Id));
+                m_IsLoadingMemo.UnionWith(m_PendingDownloads.Select(d => d.assetId));
                 m_IsLoadingMemo.UnionWith(m_RequestLoadQueue.Select(request => request.AssetId));
                 m_IsLoadingMemo.UnionWith(m_LoadQueue.Select(request => request.AssetId));
             }
@@ -949,9 +959,29 @@ namespace TiltBrush
             }
             else
             {
-                // Not downloaded yet.
-                // Kick off a download; when done the load will arrange for the download-complete to kick off the
-                // load-into-memory work.
+                // Not downloaded yet. Queue it; PumpDownloadQueue (in UpdateCatalog) starts the actual
+                // download once a slot is free, so we don't burst the asset host all at once.
+                m_PendingDownloads.Add((assetId, reason));
+                m_IsLoadingMemo?.Add(assetId);
+            }
+        }
+
+        /// Starts queued downloads up to kMaxConcurrentDownloads. Called once per frame from
+        /// UpdateCatalog. Capping concurrency prevents flooding the (rate-limited) asset host.
+        private void PumpDownloadQueue()
+        {
+            while (m_ActiveRequests.Count < kMaxConcurrentDownloads && m_PendingDownloads.Count > 0)
+            {
+                var (assetId, reason) = m_PendingDownloads[0];
+                m_PendingDownloads.RemoveAt(0);
+
+                // It may have been downloaded (or its request canceled) while waiting in the queue.
+                if (m_ModelsByAssetId.ContainsKey(assetId))
+                {
+                    m_IsLoadingMemo = null;
+                    continue;
+                }
+
                 string assetDir = GetCacheDirectoryForAsset(assetId);
                 try
                 {
@@ -966,12 +996,11 @@ namespace TiltBrush
                     Debug.LogError("Cannot create directory for online asset download.");
                 }
 
-                // Then request the asset from Icosa.
                 AssetGetter request = VrAssetService.m_Instance.GetAsset(
                     assetId, GetSupportedIcosaFormats(), reason);
                 StartCoroutine(request.GetAssetCoroutine());
                 m_ActiveRequests.Add(request);
-                m_IsLoadingMemo.Add(assetId);
+                m_IsLoadingMemo = null;
             }
         }
 
@@ -982,6 +1011,12 @@ namespace TiltBrush
         {
             if (IsLoading(assetId))
             {
+                // Drop it from the pending-download queue if it hasn't started yet.
+                if (m_PendingDownloads.RemoveAll(d => d.assetId == assetId) > 0)
+                {
+                    m_IsLoadingMemo = null;
+                }
+
                 // Might be tricky to safely remove from this queue, but at least mark it so that
                 // it doesn't go from "downloading" to "loading into memory"
                 bool isInActiveRequests = false;
@@ -1019,7 +1054,7 @@ namespace TiltBrush
                 // and we have enough information to mutate it properly.
                 if (!isInActiveRequests && !isInRequestLoadQueue && !isInLoadQueue)
                 {
-                    m_IsLoadingMemo.Remove(assetId);
+                    m_IsLoadingMemo?.Remove(assetId);
                 }
             }
 
@@ -1194,6 +1229,9 @@ namespace TiltBrush
                     m_NotifyListeners = true;
                 }
             }
+
+            // Start any queued downloads that now have a free slot.
+            PumpDownloadQueue();
 
             if (m_RequestLoadQueue.Count > 0 && m_LoadQueue.Count == 0)
             {
@@ -1435,6 +1473,7 @@ namespace TiltBrush
         {
             m_LoadQueue.Clear();
             m_RequestLoadQueue.Clear();
+            m_PendingDownloads.Clear();
             m_IsLoadingMemo = null;
             foreach (var req in m_ActiveRequests)
             {
