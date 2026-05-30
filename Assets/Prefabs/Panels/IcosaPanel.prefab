@@ -348,7 +348,7 @@ MonoBehaviour:
   m_OutOfDateMessage: {fileID: 1000010933935756}
   m_NotSupportedMessage: {fileID: 0}
   m_NoPolyConnectionMessage: {fileID: 2503533423454172181}
-  m_FilterInfoButton: {fileID: 0}
+  m_FilterInfoIcon: {fileID: 5118086876214542287}
   references:
     version: 2
     RefIds: []
