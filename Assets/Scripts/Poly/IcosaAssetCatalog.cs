@@ -541,8 +541,8 @@ namespace TiltBrush
         public void RequestAutoRefresh(IcosaSetType type)
         {
             EnsureCatalogsExist();
-            // We don't update featured except on startup
-            if (type != IcosaSetType.Featured && App.IcosaIsLoggedIn)
+            // We don't update public catalogue tabs except on startup or forced refresh.
+            if (type != IcosaSetType.Featured && type != IcosaSetType.AllModels && App.IcosaIsLoggedIn)
             {
                 m_AssetSetByType[type].m_RefreshRequested = true;
             }
@@ -651,11 +651,22 @@ namespace TiltBrush
                 }
             };
 
-            // Old way - newest curated
-            // "?curated=true&orderBy=NEWEST"
-            // For now try just sorting by "best"
-            // Something like orderBy=TRENDING would be good - BEST but weighted by recency
             m_AssetSetByType[IcosaSetType.Featured] = new AssetSet
+            {
+                m_RefreshRequested = true,
+                QueryParams = new IcosaQueryParameters
+                {
+                    SearchText = "",
+                    TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
+                    License = LicenseChoices.REMIXABLE,
+                    OrderBy = OrderByChoices.NEWEST,
+                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Curated = CuratedChoices.TRUE,
+                    Category = CategoryChoices.ANY
+                }
+            };
+
+            m_AssetSetByType[IcosaSetType.AllModels] = new AssetSet
             {
                 m_RefreshRequested = true,
                 QueryParams = new IcosaQueryParameters
@@ -665,15 +676,16 @@ namespace TiltBrush
                     License = LicenseChoices.REMIXABLE,
                     OrderBy = OrderByChoices.BEST,
                     Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
-                    Curated = CuratedChoices.TRUE,
+                    Curated = CuratedChoices.ANY,
                     Category = CategoryChoices.ANY
                 }
             };
 
-            if (App.IcosaIsLoggedIn)
-            {
-                m_AssetSetByType[IcosaSetType.Featured].m_RefreshRequested = true;
-            }
+            // if (App.IcosaIsLoggedIn)
+            // {
+            //     m_AssetSetByType[IcosaSetType.Featured].m_RefreshRequested = true;
+            //     m_AssetSetByType[IcosaSetType.AllModels].m_RefreshRequested = true;
+            // }
 
             RefreshFetchCoroutines();
         }

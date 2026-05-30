@@ -1170,6 +1170,7 @@ namespace TiltBrush
                 IcosaSetType.Liked => $"{IcosaApiRoot}{kUserLikesUri}?",
                 IcosaSetType.User => $"{IcosaApiRoot}{kUserAssetsUri}?",
                 IcosaSetType.Featured => $"{IcosaApiRoot}{kListAssetsUri}?",
+                IcosaSetType.AllModels => $"{IcosaApiRoot}{kListAssetsUri}?",
                 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
             };
             foreach (var format in queryParams.Formats)

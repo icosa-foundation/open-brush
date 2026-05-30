@@ -24,7 +24,8 @@ namespace TiltBrush
     {
         User,
         Liked,
-        Featured
+        Featured,
+        AllModels
     }
 
     public class IcosaPanel : ModalPanel
@@ -36,6 +37,8 @@ namespace TiltBrush
         public string PanelTextStandard { get { return m_PanelTextStandard.GetLocalizedStringAsync().Result; } }
         [SerializeField] private LocalizedString m_PanelTextFeatured;
         public string PanelTextFeatured { get { return m_PanelTextFeatured.GetLocalizedStringAsync().Result; } }
+        [SerializeField] private LocalizedString m_PanelTextAllModels;
+        public string PanelTextAllModels { get { return m_PanelTextAllModels.GetLocalizedStringAsync().Result; } }
         [SerializeField] private LocalizedString m_PanelTextLiked; // Liked Models
         public string PanelTextLiked { get { return m_PanelTextLiked.GetLocalizedStringAsync().Result; } }
         [SerializeField] private Renderer m_PolyGalleryRenderer;
@@ -61,6 +64,7 @@ namespace TiltBrush
         private Dictionary<IcosaSetType, float> m_CooldownByType = new Dictionary<IcosaSetType, float>();
 
         public bool ShowingFeatured { get { return m_CurrentSet == IcosaSetType.Featured; } }
+        public bool ShowingAllModels { get { return m_CurrentSet == IcosaSetType.AllModels; } }
         public bool ShowingLikes { get { return m_CurrentSet == IcosaSetType.Liked; } }
         public bool ShowingUser { get { return m_CurrentSet == IcosaSetType.User; } }
 
@@ -312,6 +316,11 @@ namespace TiltBrush
                     break;
                 case IcosaSetType.Featured:
                     m_PanelText.text = PanelTextFeatured;
+                    m_PanelTextSubtitle.gameObject.SetActive(true);
+                    m_PanelTextUserSubtitle.gameObject.SetActive(false);
+                    break;
+                case IcosaSetType.AllModels:
+                    m_PanelText.text = PanelTextAllModels;
                     m_PanelTextSubtitle.gameObject.SetActive(true);
                     m_PanelTextUserSubtitle.gameObject.SetActive(false);
                     break;
