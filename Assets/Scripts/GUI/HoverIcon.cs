@@ -29,7 +29,7 @@ namespace TiltBrush
         }
 
         public override void ButtonPressed(RaycastHit rHitInfo)
-        {}
+        { }
     }
 }
 
