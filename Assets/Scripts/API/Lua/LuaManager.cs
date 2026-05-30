@@ -170,9 +170,17 @@ namespace TiltBrush
             m_ScriptPathsToUpdate.Add(e.FullPath);
         }
 
+        // Fixes MissingReferenceException causing black screen, prevents calling StartCoroutine on a destroyed or inactive LuaManager object.
         public void Init(bool immediate = false)
         {
             if (m_IsInitialized) return;
+
+            // SAFETY FIX - prevents crash when LuaManager is destroyed during startup
+            if (this == null || gameObject == null || !gameObject.activeInHierarchy)
+            {
+                return;
+            }
+
             if (immediate)
             {
                 _InitImpl();

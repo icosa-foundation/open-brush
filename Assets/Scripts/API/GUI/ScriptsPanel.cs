@@ -24,11 +24,18 @@ namespace TiltBrush
         public BaseButton ToolScriptButton;
         public ToggleButton BackgroundScriptsButton;
 
+
+
+        // Added null-check for LuaManager.Instance to prevent black screen race condition
+        // during startup (panel creation could fail silently if LuaManager was not ready).
         protected override void OnEnablePanel()
         {
             base.OnEnablePanel();
-            // Safe to run multiple times as it checks m_IsInitialized
-            LuaManager.Instance?.Init();
+
+            if (LuaManager.Instance != null)
+            {
+                LuaManager.Instance.Init();
+            }
         }
 
         public void InitScriptUiNav()
