@@ -199,6 +199,11 @@ namespace TiltBrush
         const int kThumbnailFetchMaxCount = 30;
         const int kThumbnailReadRate = 4;
         private const int DEFAULT_MODEL_TRIANGLE_COUNT_MAX = 80000;
+        // Budget for keeping loaded-but-unplaced models resident so that browsing back to a recently
+        // viewed model (e.g. switching panel tabs) doesn't re-import it. Sized by estimated runtime
+        // bytes (meshes + textures), not model count, since model sizes vary wildly. Models placed in
+        // the scene (m_UsageCount > 0) are always retained and are not evicted.
+        private const long kLoadedModelMemoryBudgetBytes = 512L * 1024 * 1024;
 
         // This may be a bit broader than an asset id, but it's a safe set of
         // filename characters.
@@ -464,6 +469,11 @@ namespace TiltBrush
         private Dictionary<string, JObject> m_AssetJsonByAssetId;
         private Dictionary<IcosaSetType, AssetSet> m_AssetSetByType;
         private bool m_NotifyListeners;
+
+        // LRU bookkeeping for the in-memory model cache. Entries exist only while a model is loaded
+        // (m_Valid); they are removed on unload/evict via PruneModelCacheBookkeeping.
+        private readonly Dictionary<string, long> m_LoadedModelBytes = new Dictionary<string, long>();
+        private readonly Dictionary<string, float> m_ModelLastUsedTime = new Dictionary<string, float>();
 
         private AwaitableRateLimiter m_thumbnailFetchLimiter =
             new AwaitableRateLimiter(kThumbnailFetchRate, kThumbnailFetchMaxCount);
@@ -746,6 +756,19 @@ namespace TiltBrush
             foreach (var assetId in finishedModels)
             {
                 m_ModelsBeingLoaded.Remove(assetId);
+                // Record cache size/recency for models that loaded successfully.
+                if (m_ModelsByAssetId.TryGetValue(assetId, out Model finished) && finished.m_Valid)
+                {
+                    m_LoadedModelBytes[assetId] = EstimateModelBytes(finished);
+                    m_ModelLastUsedTime[assetId] = Time.realtimeSinceStartup;
+                }
+            }
+            if (finishedModels.Count > 0)
+            {
+                // A load just completed: refresh IsLoading() and let the panel update its buttons.
+                m_IsLoadingMemo = null;
+                m_NotifyListeners = true;
+                EnforceMemoryBudget();
             }
 
             if (!VrAssetService.m_Instance.Available)
@@ -837,6 +860,8 @@ namespace TiltBrush
 
                 if (model.m_Valid)
                 {
+                    // Already cached in memory; mark it recently used so it survives LRU eviction.
+                    MarkModelUsed(assetId);
                     return;
                 }
                 if (model.Error != null)
@@ -1126,37 +1151,44 @@ namespace TiltBrush
         void LoadModelsInQueueAsync()
         {
             UnityEngine.Profiling.Profiler.BeginSample("PAC.LoadModelsInQueueAsync");
-            for (int i = m_LoadQueue.Count - 1; i >= 0; --i)
+            // Load one model at a time. The UnityGLTF import is time-sliced across frames (see
+            // NewGltfImporter), so we start a single async load and wait for it to finish before
+            // starting the next. Completion is detected in Update(), which clears the assetId from
+            // m_ModelsBeingLoaded once the load sets m_Valid or Error.
+            if (m_ModelsBeingLoaded.Count == 0 && m_LoadQueue.Count > 0)
             {
-                Model model = m_LoadQueue[i].Model;
-                string assetId = model.GetLocation().AssetId;
-                m_ModelsBeingLoaded.Add(assetId);
-                model.LoadModel();
-                // TODO Back to async loading
-                // AsyncHelpers.RunSync(model.LoadModelAsync);
-                m_LoadQueue.RemoveAt(i);
+                var request = m_LoadQueue[0];
+                m_LoadQueue.RemoveAt(0);
                 m_IsLoadingMemo = null;
-                // Don't notify listeners when starting load - only when it actually completes
-                // m_NotifyListeners = true;
-                // if (!model.IsLoading())
-                // {
-                //     // If the overlay is up, hitching is okay; so avoid the slow threaded image load.
-                //     bool useThreadedImageLoad =
-                //         OverlayManager.m_Instance.CurrentOverlayState == OverlayState.Hidden;
-                //     // model.LoadModelAsync(useThreadedImageLoad);
-                //     model.LoadModel();
-                // }
-                // else
-                // {
-                //     if (model.TryLoadModel(true))
-                //     {
-                //         m_LoadQueue.RemoveAt(i);
-                //         m_IsLoadingMemo = null;
-                //         m_NotifyListeners = true;
-                //     }
-                // }
+
+                Model model = request.Model;
+                if (!model.m_Valid && model.Error == null)
+                {
+                    string assetId = model.GetLocation().AssetId;
+                    m_ModelsBeingLoaded.Add(assetId);
+                    LoadModelAsyncSafe(model, assetId);
+                }
             }
             UnityEngine.Profiling.Profiler.EndSample();
+        }
+
+        /// Fire-and-forget async model load. The normal completion path (valid or load error) is
+        /// observed in Update() via m_Valid/Error. This wrapper exists only to guard against an
+        /// unexpected exception leaving the asset stuck in m_ModelsBeingLoaded, which would stall
+        /// the single-at-a-time load queue indefinitely.
+        private async void LoadModelAsyncSafe(Model model, string assetId)
+        {
+            try
+            {
+                await model.LoadModelAsync();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                m_ModelsBeingLoaded.Remove(assetId);
+                m_IsLoadingMemo = null;
+                m_NotifyListeners = true;
+            }
         }
 
         private static HashSet<T> SetMinus<T>(HashSet<T> lhs, HashSet<T> rhs)
@@ -1342,6 +1374,106 @@ namespace TiltBrush
             foreach (var model in m_ModelsByAssetId.Values.Where(x => x != null && x.m_UsageCount == 0))
             {
                 model.UnloadModel();
+            }
+            PruneModelCacheBookkeeping();
+        }
+
+        /// Marks a loaded model as recently used so it survives LRU eviction.
+        public void MarkModelUsed(string assetId)
+        {
+            if (m_ModelLastUsedTime.ContainsKey(assetId))
+            {
+                m_ModelLastUsedTime[assetId] = Time.realtimeSinceStartup;
+            }
+        }
+
+        /// Drops cache bookkeeping for any asset that is no longer loaded.
+        private void PruneModelCacheBookkeeping()
+        {
+            var stale = m_LoadedModelBytes.Keys
+                .Where(id => !m_ModelsByAssetId.TryGetValue(id, out var m) || m == null || !m.m_Valid)
+                .ToList();
+            foreach (var id in stale)
+            {
+                m_LoadedModelBytes.Remove(id);
+                m_ModelLastUsedTime.Remove(id);
+            }
+        }
+
+        /// Estimates a loaded model's runtime footprint (meshes + textures) in bytes.
+        private static long EstimateModelBytes(Model model)
+        {
+            if (model == null || model.m_ModelParent == null)
+            {
+                return 0;
+            }
+            long bytes = 0;
+            var seenMeshes = new HashSet<int>();
+            foreach (var mf in model.m_ModelParent.GetComponentsInChildren<MeshFilter>(true))
+            {
+                var mesh = mf.sharedMesh;
+                if (mesh != null && seenMeshes.Add(mesh.GetInstanceID()))
+                {
+                    bytes += UnityEngine.Profiling.Profiler.GetRuntimeMemorySizeLong(mesh);
+                }
+            }
+            var seenTextures = new HashSet<int>();
+            foreach (var renderer in model.m_ModelParent.GetComponentsInChildren<Renderer>(true))
+            {
+                foreach (var mat in renderer.sharedMaterials)
+                {
+                    if (mat == null) { continue; }
+                    foreach (var nameId in mat.GetTexturePropertyNameIDs())
+                    {
+                        var tex = mat.GetTexture(nameId);
+                        if (tex != null && seenTextures.Add(tex.GetInstanceID()))
+                        {
+                            bytes += UnityEngine.Profiling.Profiler.GetRuntimeMemorySizeLong(tex);
+                        }
+                    }
+                }
+            }
+            return bytes;
+        }
+
+        /// Evicts least-recently-used, unplaced, loaded models until the in-memory model cache is
+        /// back under kLoadedModelMemoryBudgetBytes. Models placed in the scene (m_UsageCount > 0)
+        /// are never evicted (but still count toward the total).
+        private void EnforceMemoryBudget()
+        {
+            PruneModelCacheBookkeeping();
+
+            long total = 0;
+            foreach (var kv in m_LoadedModelBytes)
+            {
+                total += kv.Value;
+            }
+            if (total <= kLoadedModelMemoryBudgetBytes)
+            {
+                return;
+            }
+
+            var evictable = m_LoadedModelBytes.Keys
+                .Where(id => m_ModelsByAssetId.TryGetValue(id, out var m)
+                    && m != null && m.m_Valid && m.m_UsageCount == 0)
+                .OrderBy(id => m_ModelLastUsedTime.TryGetValue(id, out var t) ? t : 0f)
+                .ToList();
+
+            bool evictedAny = false;
+            foreach (var id in evictable)
+            {
+                if (total <= kLoadedModelMemoryBudgetBytes) { break; }
+                long freed = m_LoadedModelBytes.TryGetValue(id, out var b) ? b : 0;
+                m_ModelsByAssetId[id].UnloadModel();
+                m_LoadedModelBytes.Remove(id);
+                m_ModelLastUsedTime.Remove(id);
+                total -= freed;
+                evictedAny = true;
+            }
+            if (evictedAny)
+            {
+                m_IsLoadingMemo = null;
+                m_NotifyListeners = true;
             }
         }
 
