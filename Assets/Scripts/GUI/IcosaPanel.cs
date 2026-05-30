@@ -50,7 +50,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_OutOfDateMessage;
         [SerializeField] private GameObject m_NotSupportedMessage;
         [SerializeField] private GameObject m_NoPolyConnectionMessage;
-        [SerializeField] private ActionButton m_FilterInfoButton;
+        [SerializeField] private HoverIcon m_FilterInfoIcon;
 
         private IcosaSetType m_CurrentSet;
         public IcosaSetType CurrentSet => m_CurrentSet;
@@ -304,8 +304,8 @@ namespace TiltBrush
             }
 
 
-            m_FilterInfoButton.SetDescriptionText($"Filtering {CurrentSetFriendlyName} by:");
-            m_FilterInfoButton.SetExtraDescriptionText(CurrentQuery.FriendlyString);
+            m_FilterInfoIcon.SetDescriptionText($"Filtering {CurrentSetFriendlyName} by:");
+            m_FilterInfoIcon.SetExtraDescriptionText(CurrentQuery.FriendlyString);
 
             base.RefreshPage();
         }
