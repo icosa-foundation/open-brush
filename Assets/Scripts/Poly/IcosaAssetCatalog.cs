@@ -437,7 +437,7 @@ namespace TiltBrush
                 {
                     var parts = new List<string>();
                     string orderingLabel = OrderBy.ToLowerInvariant();
-                    orderingLabel = orderingLabel. Replace("_", " ");
+                    orderingLabel = orderingLabel.Replace("_", " ");
                     orderingLabel = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(orderingLabel);
                     if (!string.IsNullOrEmpty(OrderBy)) parts.Add($"{orderingLabel} first");
                     if (!string.IsNullOrEmpty(SearchText)) parts.Add($"Title contains \"{SearchText.ToLowerInvariant()}\"");

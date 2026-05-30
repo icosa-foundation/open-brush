@@ -309,15 +309,15 @@ namespace TiltBrush
 
             base.RefreshPage();
         }
-        
+
         public string CurrentSetFriendlyName => m_CurrentSet switch
-            {
-                IcosaSetType.User => "Your Models",
-                IcosaSetType.Liked => "Liked Models",
-                IcosaSetType.Featured => "Featured Models",
-                IcosaSetType.AllModels => "All Models",
-                _ => "Models"
-            };
+        {
+            IcosaSetType.User => "Your Models",
+            IcosaSetType.Liked => "Liked Models",
+            IcosaSetType.Featured => "Featured Models",
+            IcosaSetType.AllModels => "All Models",
+            _ => "Models"
+        };
 
 
         void RefreshPanelText()
