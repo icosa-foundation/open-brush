@@ -574,7 +574,7 @@ namespace TiltBrush
             {
                 material.EnableKeyword("SHADER_SCRIPTING_ON");
             }
-            batch.InstantiatedMaterial.SetVector(parameter, new Vector4(x, y, z, w));
+            material.SetVector(parameter, new Vector4(x, y, z, w));
         }
     }
 
