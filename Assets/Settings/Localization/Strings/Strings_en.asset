@@ -3638,11 +3638,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 332573810292776960
-    m_Localized: Search by text
+    m_Localized: 'Search by title '
     m_Metadata:
       m_Items: []
   - m_Id: 332574165927813120
-    m_Localized: Filter and Sort Results
+    m_Localized: Filter and sort
     m_Metadata:
       m_Items: []
   - m_Id: 326532953040941056

@@ -425,6 +425,25 @@ namespace TiltBrush
             public string[] Formats;
             public string Curated;
             public string Category;
+
+            public string FriendlyString
+            {
+                get
+                {
+                    var parts = new List<string>();
+                    string orderingLabel = OrderBy.ToLowerInvariant();
+                    orderingLabel = orderingLabel. Replace("_", " ");
+                    orderingLabel = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(orderingLabel);
+                    if (!string.IsNullOrEmpty(OrderBy)) parts.Add($"{orderingLabel} first");
+                    if (!string.IsNullOrEmpty(SearchText)) parts.Add($"Title contains \"{SearchText.ToLowerInvariant()}\"");
+                    if (!string.IsNullOrEmpty(License)) parts.Add($"{License.ToLowerInvariant()}");
+                    if (!string.IsNullOrEmpty(Category)) parts.Add($"Category is {Category.ToLowerInvariant()}");
+                    //if (!string.IsNullOrEmpty(Curated)) parts.Add($"Curated: {Curated.ToLowerInvariant()}");
+                    //if (Formats != null && Formats.Length > 0) parts.Add($"Formats: {string.Join(", ", Formats).ToLowerInvariant()}");
+                    if (TriangleCountMax > 0) parts.Add($"Max triangles {TriangleCountMax:N0}");
+                    return parts.Count > 0 ? string.Join(", ", parts) : "(no filters)";
+                }
+            }
         }
 
         private static Vector3? GetCameraForward(JToken cameraParams)
