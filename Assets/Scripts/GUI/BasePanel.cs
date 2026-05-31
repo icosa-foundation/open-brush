@@ -115,6 +115,7 @@ namespace TiltBrush
             TransformPanel = 12000,
             WhatsNewPanel = 20300,
             BlocksPromoPanel = 20301,
+            MarkovPenDrawingPanel = 99999,
         }
 
         private enum FixedTransitionState
@@ -1522,10 +1523,10 @@ namespace TiltBrush
         }
 
         public GameObject CreatePopUp(
-                            GameObject prefab, Vector3 position,
-                            bool explicitPosition, bool transition, int iCommandParam = -1, int iCommandParam2 = -1,
-                            SketchControlsScript.GlobalCommands delayedCommand = SketchControlsScript.GlobalCommands.Null,
-                            string sDelayedText = "", Action delayedClose = null)
+            GameObject prefab, Vector3 position,
+            bool explicitPosition, bool transition, int iCommandParam = -1, int iCommandParam2 = -1,
+            SketchControlsScript.GlobalCommands delayedCommand = SketchControlsScript.GlobalCommands.Null,
+            string sDelayedText = "", Action delayedClose = null)
         {
             // Create a new popup.
             GameObject popUp = Instantiate(prefab,

@@ -2453,7 +2453,7 @@ GameObject:
   - component: {fileID: 8418152343079167436}
   - component: {fileID: 8475751345369272462}
   - component: {fileID: 6898435711544463812}
-  - component: {fileID: 7401849438076491937}
+  - component: {fileID: 5302107569650824872}
   m_Layer: 16
   m_Name: Button_MarkovPen
   m_TagString: Untagged
@@ -2547,7 +2547,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 0.01}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &7401849438076491937
+--- !u!114 &5302107569650824872
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2556,12 +2556,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 869646083460455879}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 962894c5495cabc458506a8548e8a1e2, type: 3}
+  m_Script: {fileID: 11500000, guid: 200876bac21a46479372042f14e5a662, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: TOOLS_PANEL_MARKOV_BUTTON_DESCRIPTION
+  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_REPAINT
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
@@ -2589,12 +2589,13 @@ MonoBehaviour:
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 1
   m_ZAdjustHover: -0.02
-  m_ZAdjustClick: 0.02
+  m_ZAdjustClick: 0.05
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Tool: 11002
-  m_EatGazeInputOnPress: 1
+  m_Type: 99999
+  m_AlwaysSpawn: 0
+  m_LongPressDuration: 0.3
   references:
     version: 2
     RefIds: []

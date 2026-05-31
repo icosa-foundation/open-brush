@@ -200,7 +200,8 @@ namespace TiltBrush
             OpenTexturePicker = 9001,
             MergeBrushStrokes = 10000,
             RepaintOptions = 11500,
-            OpenNumericInputPopup = 12000
+            OpenNumericInputPopup = 12000,
+            MarkovPenPanel = 99999
         }
 
         public enum ControlsType
@@ -5108,6 +5109,11 @@ namespace TiltBrush
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }
+                case GlobalCommands.MarkovPenPanel: { // Spawn at brush controller and open the MarkovPen floating
+                    var spawn = TrTransform.FromTransform(InputManager.Brush.Geometry.transform); 
+                    OpenPanelOfType((BasePanel.PanelType)99999, spawn, forced: true); EatGazeObjectInput();
+                    break;
+                    }
                 case GlobalCommands.RepaintOptions:
                 case GlobalCommands.MultiplayerPanelOptions:
                 case GlobalCommands.MultiplayerJoinRoom:
@@ -5434,6 +5440,7 @@ namespace TiltBrush
         public void OpenPanelOfType(BasePanel.PanelType type, TrTransform trSpawnXf, bool forced = false)
         {
             m_PanelManager.OpenPanel(type, trSpawnXf, forced);
+            Debug.Log($"Opened panel {type} at {trSpawnXf}");
             EatGazeObjectInput();
         }
 
