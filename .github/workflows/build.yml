@@ -627,7 +627,7 @@ jobs:
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
-    runs-on: macos-latest
+    runs-on: macos-26
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -706,7 +706,7 @@ jobs:
       github.repository == 'icosa-foundation/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
-    runs-on: macos-latest
+    runs-on: macos-26
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -1149,7 +1149,7 @@ jobs:
   publish_oculus_quest:
     name: Publish Oculus Quest 2+ Release
     needs: [configuration, build]
-    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    runs-on: macos-26  # the ovr-platform-util tool is only available for Mac and Windows
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -1296,7 +1296,7 @@ jobs:
   publish_oculus_rift:
     name: Publish Oculus Rift Release
     needs: [configuration, build]
-    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    runs-on: macos-26  # the ovr-platform-util tool is only available for Mac and Windows
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
