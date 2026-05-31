@@ -937,7 +937,7 @@ MonoBehaviour:
   - {fileID: 103129477006767271}
   - {fileID: 7875633773414566808}
   - {fileID: 3409825189635461668}
-  - {fileID: 6781313199298781951}
+  - {fileID: -5283878353087867321}
   - {fileID: -7871932882014305355}
   - {fileID: -6188679329620277984}
   - {fileID: 6457187213107907505}
@@ -966,7 +966,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1927c045052a06d49a9b21fdcaa26db6, type: 3}
-  m_Name: OculusXRFeature Android
+  m_Name: MetaXRFeature Android
   m_EditorClassIdentifier: 
   m_enabled: 1
   nameUi: Meta XR Feature
@@ -1973,7 +1973,7 @@ MonoBehaviour:
   - {fileID: -7948448181323596937}
   - {fileID: 7755255244189431342}
   - {fileID: -2581017241881390745}
-  - {fileID: -4773087401744612407}
+  - {fileID: -5453487588099642660}
   - {fileID: 1104377150978337437}
   - {fileID: -5585190116095795567}
   - {fileID: -6490217007365981742}
