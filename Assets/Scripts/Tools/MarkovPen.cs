@@ -19,11 +19,11 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-    /// <summary>
-    /// The Markov Pen is a technique for generating character styles.
-    /// This class serves as the base for other partial classes and derives from MonoBehaviour.
-    /// </summary>
-    public partial class MarkovPen : MonoBehaviour
+    /// @class MarkovPen
+    /// @brief The Markov Pen is a technique for generating character styles.
+    ///
+    /// This class serves as the base for other partial classes and derives from MarkovTool.
+    public partial class MarkovPen : MarkovTool
     {
         private Mapping m_ExampleMapping;
         private Mapping m_TargetMapping;
@@ -35,10 +35,8 @@ namespace TiltBrush
         private BaseCurve m_ExampleBaseCurve;
         private BaseCurve m_TargetBaseCurve;
 
-         /// <summary>
-         /// Initializes the MarkovPen with an example mapping used for synthesis.
-         /// </summary>
-         /// <param name="exampleMapping">A Mapping computed from the example curves.</param>
+         /// @brief Initializes the MarkovPen with an example mapping used for synthesis.
+         /// @param exampleMapping A Mapping computed from the example curves.
          public void Initialize(Mapping exampleMapping)
         {
             m_ExampleMapping = exampleMapping;
@@ -48,11 +46,9 @@ namespace TiltBrush
             m_Synthesizer = new Synthesizer(m_ExampleMapping);
         }
 
-         /// <summary>
-         /// Reconstructs the target mapping using the Synthesizer and returns the reconstructed points.
-         /// </summary>
-         /// <param name="targetMapping">A Mapping representing the growing target base curve and an empty target style curve.</param>
-         /// <returns>A list of reconstructed point pairs on the target curve.</returns>
+         /// @brief Reconstructs the target mapping using the Synthesizer and returns the reconstructed points.
+         /// @param targetMapping A Mapping representing the growing target base curve and an empty target style curve.
+         /// @return A list of reconstructed point pairs on the target curve.
          public List<Tuple<Vector3, Vector3>> Reconstruct(Mapping targetMapping)
         {
             List<Tuple<Vector3, Vector3>> result =
@@ -61,18 +57,14 @@ namespace TiltBrush
             return result;
         }
 
-         /// <summary>
-         /// Checks whether the MarkovPen is trained (example mapping present).
-         /// </summary>
-         /// <returns>True if the MarkovPen is trained; otherwise false.</returns>
+         /// @brief Checks whether the MarkovPen is trained (example mapping present).
+         /// @return True if the MarkovPen is trained; otherwise false.
          public bool IsTrained()
         {
             return m_ExampleMapping != null;
         }
 
-         /// <summary>
-         /// Clears the MarkovPen state by nullifying the synthesizer and example mapping.
-         /// </summary>
+         /// @brief Clears the MarkovPen state by nullifying the synthesizer and example mapping.
          public void Clear()
         {
             m_Synthesizer = null;

@@ -21,10 +21,10 @@ namespace TiltBrush
 {
     partial class MarkovPen
     {
-         /// <summary>
-         /// Represents a mapping between arc length positions and offsets from style to base curve.
+         /// @class Mapping
+         /// @brief Represents a mapping between arc length positions and offsets from style to base curve.
+         ///
          /// Samples the style curve, projects samples onto the base curve, and computes mapping and offsets.
-         /// </summary>
          public class Mapping
         {
             //Curves
@@ -47,12 +47,10 @@ namespace TiltBrush
 
             public int LastIndex { get; private set; }
 
-                 /// <summary>
-                 /// Constructor for the Mapping class.
-                 /// </summary>
-                 /// <param name="styleCurve">The style curve for the mapping.</param>
-                 /// <param name="baseCurve">The base curve for the mapping.</param>
-                 /// <exception cref="NullReferenceException">Thrown if styleCurve or baseCurve is null.</exception>
+                 /// @brief Constructor for the Mapping class.
+                 /// @param styleCurve The style curve for the mapping.
+                 /// @param baseCurve The base curve for the mapping.
+                 /// @exception NullReferenceException Thrown if styleCurve or baseCurve is null.
                  public Mapping(Curve styleCurve, BaseCurve baseCurve)
             {
                 Debug.Log("ENter");
@@ -100,11 +98,9 @@ namespace TiltBrush
                 ComputeOffsets();
             }
 
-            /// <summary>
-            /// Sample the style curve uniformly based on the given sampling interval.
-            /// </summary>
-            /// <param name="samplingInterval">The interval representing arc length for sampling.</param>
-            /// <returns>A list of sampled points on the style curve.</returns>
+            /// @brief Sample the style curve uniformly based on the given sampling interval.
+            /// @param samplingInterval The interval representing arc length for sampling.
+            /// @return A list of sampled points on the style curve.
             public List<Vector3> SampleStyleCurveUniformly(float samplingInterval)
             {
                 List<Vector3> samples = new List<Vector3>();
@@ -120,11 +116,9 @@ namespace TiltBrush
                 return samples;
             }
 
-            /// <summary>
-            /// Projects a list of 3D samples onto the base curve and returns their projections.
-            /// </summary>
-            /// <param name="samples">A list of 3D vectors representing the samples to be projected.</param>
-            /// <returns>A list of float values representing the projections onto the base curve.</returns>
+            /// @brief Projects a list of 3D samples onto the base curve and returns their projections.
+            /// @param samples A list of 3D vectors representing the samples to be projected.
+            /// @return A list of float values representing the projections onto the base curve.
             public List<float> Project(List<Vector3> samples)
             {
                 List<float> projections = new List<float>();
@@ -138,10 +132,8 @@ namespace TiltBrush
                 return projections;
             }
 
-            /// <summary>
-            /// Compute the sampling interval to evenly sample the arc length of the style curve.
-            /// </summary>
-            /// <returns>The computed sampling interval.</returns>
+            /// @brief Compute the sampling interval to evenly sample the arc length of the style curve.
+            /// @return The computed sampling interval.
             public float ComputeSamplingInterval()
             {
                 int numSamples =
@@ -150,11 +142,9 @@ namespace TiltBrush
                 return m_StyleCurve.ArcLength() / numSamples;
             }
 
-            /// <summary>
-            /// Associate arc length positions of projected points to the corresponding offsets.
-            /// </summary>
-            /// <param name="samples">Samples aligned along the style curve.</param>
-            /// <param name="projections">Projected arc length positions aligned along the base curve.</param>
+            /// @brief Associate arc length positions of projected points to the corresponding offsets.
+            /// @param samples Samples aligned along the style curve.
+            /// @param projections Projected arc length positions aligned along the base curve.
             private void ComputeMapping(List<Vector3> samples, List<float> projections)
             {
                 m_Mapping = new List<Vector2>();
@@ -183,9 +173,7 @@ namespace TiltBrush
                 }
             }
 
-            /// <summary>
-            /// Compute the maximal offset from the associations in the mapping.
-            /// </summary>
+            /// @brief Compute the maximal offset from the associations in the mapping.
             private void ComputeMaxOffset()
             {
                 m_MaxOffset = 0;
@@ -197,10 +185,8 @@ namespace TiltBrush
                 }
             }
 
-            /// <summary>
-            /// Compute the offsets by iterating through the mapping and provide repetition handling.
+            /// @brief Compute the offsets by iterating through the mapping and provide repetition handling.
             /// Synchronizes start and end points in the mapping.
-            /// </summary>
             private void ComputeOffsets()
             {
                 // Synchronize start and end point in mapping
@@ -225,10 +211,8 @@ namespace TiltBrush
                 }
             }
 
-            /// <summary>
-            /// Sets the tap of the BaseCurve to the computed max offset.
-            /// </summary>
-            /// <param name="offset">The max offset to set as tap.</param>
+            /// @brief Sets the tap of the BaseCurve to the computed max offset.
+            /// @param offset The max offset to set as tap.
             public void SetMaxOffset(float offset)
             {
                 if (IsEmpty()) ;
@@ -238,20 +222,16 @@ namespace TiltBrush
                 //_maxOffset = offset;
             }
 
-            /// <summary>
-            /// Check if the mapping is configured as repetitive.
-            /// </summary>
-            /// <returns>True if the mapping is considered repetitive.</returns>
+            /// @brief Check if the mapping is configured as repetitive.
+            /// @return True if the mapping is considered repetitive.
             public bool IsRepetitive()
             {
                 return true;
             }
 
-            /// <summary>
-            /// Inflate an association of the mapping to obtain a tuple of 3D points (base point and inflated point).
-            /// </summary>
-            /// <param name="association">The 2D association containing arc length position and offset.</param>
-            /// <returns>A tuple of two Vector3 points representing the inflated segment.</returns>
+            /// @brief Inflate an association of the mapping to obtain a tuple of 3D points (base point and inflated point).
+            /// @param association The 2D association containing arc length position and offset.
+            /// @return A tuple of two Vector3 points representing the inflated segment.
             public Tuple<Vector3, Vector3> Inflate(Vector2 association)
             {
                 Vector3 basePoint =
@@ -273,11 +253,9 @@ namespace TiltBrush
                     basePoint + toPoint);
             }
 
-            /// <summary>
-            /// Get the offsets for a given index in the mapping.
-            /// </summary>
-            /// <param name="index">The index for which offsets are requested.</param>
-            /// <returns>A Vector2 containing the offset values.</returns>
+            /// @brief Get the offsets for a given index in the mapping.
+            /// @param index The index for which offsets are requested.
+            /// @return A Vector2 containing the offset values.
             public Vector2 GetOffsets(int index)
             {
                 return new Vector2(
@@ -285,12 +263,10 @@ namespace TiltBrush
                     m_Mapping[index].y);
             }
 
-            /// <summary>
-            /// Apply offsets to the mapping at a specific index and update the style curve.
-            /// </summary>
-            /// <param name="offsets">A Vector2 containing the offsets to be applied.</param>
-            /// <param name="index">The index at which the offsets are applied.</param>
-            /// <returns>True if the offsets are successfully applied; otherwise false.</returns>
+            /// @brief Apply offsets to the mapping at a specific index and update the style curve.
+            /// @param offsets A Vector2 containing the offsets to be applied.
+            /// @param index The index at which the offsets are applied.
+            /// @return True if the offsets are successfully applied; otherwise false.
             public bool Apply(Vector2 offsets, int index)
             {
                 // Calculate the current arcLength
@@ -316,18 +292,14 @@ namespace TiltBrush
                 return true;
             }
 
-            /// <summary>
-            /// Check if the mapping is empty.
-            /// </summary>
-            /// <returns>True if the mapping is empty; otherwise false.</returns>
+            /// @brief Check if the mapping is empty.
+            /// @return True if the mapping is empty; otherwise false.
             public bool IsEmpty()
             {
                 return m_Mapping.Count == 0;
             }
 
-            /// <summary>
-            /// Clears attributes related to the mapping and resets state.
-            /// </summary>
+            /// @brief Clears attributes related to the mapping and resets state.
             public void Clear()
             {
                 BaseCurve = null;
@@ -343,21 +315,15 @@ namespace TiltBrush
                 m_SamplingInterval = k_SamplingInterval;
             }
 
-            /// <summary>
-            /// Gets the mapping associated with the instance.
-            /// </summary>
+            /// @brief Gets the mapping associated with the instance.
             public List<Vector2> GetMapping => m_Mapping;
 
-            /// <summary>
-            /// Gets the maximum offset associated with the mapping instance.
-            /// </summary>
+            /// @brief Gets the maximum offset associated with the mapping instance.
             public float MaxOffset => m_MaxOffset;
 
-            /// <summary>
-            /// Gets the association at the specified index.
-            /// </summary>
-            /// <param name="index">The index of the association to retrieve.</param>
-            /// <returns>A Vector2 representing the association (x = arc length position, y = offset).</returns>
+            /// @brief Gets the association at the specified index.
+            /// @param index The index of the association to retrieve.
+            /// @return A Vector2 representing the association (x = arc length position, y = offset).
             public Vector2 GetAssociation(int index)
             {
                 return m_Mapping[index];
