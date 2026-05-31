@@ -1,162 +1,194 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace TiltBrush
 {
+    /// <summary>
+    /// MarkovTool — zeichnet eine Sinuskurve entlang eines Catmull-Rom Splines.
+    ///
+    /// PRO-FRAME-ARCHITEKTUR (aus PointerScript.UpdateLineFromObject() abgeleitet):
+    ///   PointerScript.UpdatePointer() → UpdateLineFromObject() liest Coords.AsRoom[transform]
+    ///   und fügt genau einen Kontrollpunkt pro Frame ein. SetPointerTransform() setzt diesen
+    ///   Transform. Wir liefern pro Frame einen Sine-versetzten Punkt via GetPointerPosition().
+    ///
+    /// SINE-ERZEUGUNG:
+    ///   - Die Sine-Phase wird durch die akkumulierte Weglänge der RAW Controller-Bewegung
+    ///     getrieben (nicht durch Spline-Punkte) → gleichmäßige Wellen bei jeder Geschwindigkeit.
+    ///   - Die Sine-Achse steht senkrecht zur Bewegungsrichtung und liegt in der Ebene
+    ///     des Controller-Up-Vektors.
+    ///   - Der Catmull-Rom Spline glättet die Richtungsberechnung damit die Wellen stabil bleiben.
+    /// </summary>
     public class MarkovTool : FreePaintTool
     {
-        private float m_SineAmplitude = 0.05f;
-        private float m_SineFrequency = 10f;
-        private float m_ControlPointMinDistance = 0.02f;
-        private int m_SamplesPerSegment = 20;
+        [Header("Sine Wave")]
+        [SerializeField] private float m_SineAmplitude = 0.05f;
+        [SerializeField] private float m_SineFrequency = 4f;
+
+        [Header("Spline Smoothing")]
+        // Kleinerer Wert = mehr Kontrollpunkte = glattere Richtung
+        [SerializeField] private float m_ControlPointMinDistance = 0.005f;
+
+        // ── Runtime state ──────────────────────────────────────────────────────────
+
+        // Rohe Controller-Positionen für Spline-Richtungsberechnung
         private readonly List<Vector3> m_ControlPoints = new List<Vector3>();
         private readonly List<Quaternion> m_ControlRotations = new List<Quaternion>();
-        private float m_SplineArcLength;
-        private int m_NextSegmentToEmit;
-        private Vector3? m_PendingSinePosition;
-        private Quaternion m_PendingSineRotation;
 
+        // Akkumulierte Weglänge der RAW Controller-Bewegung — treibt Sine-Phase
+        private float m_ArcLength;
+
+        // Letzter bekannter Controller-Pos für Weglängen-Berechnung
+        private Vector3 m_LastRawPos;
+        private bool m_HasLastRawPos;
+
+        // Sine-Position für diesen Frame (von GetPointerPosition zurückgegeben)
+        private Vector3? m_SinePos;
+        private Quaternion m_SineRot;
+
+        private bool m_WasTriggerHeld;
+
+        // ── Init / Enable ──────────────────────────────────────────────────────────
 
         public override void Init()
         {
             base.Init();
-            ResetSplineState();
+            ResetState();
         }
 
         public override void EnableTool(bool bEnable)
         {
             base.EnableTool(bEnable);
-            if(!bEnable)
-                ResetSplineState();
+            if (!bEnable) ResetState();
+            m_WasTriggerHeld = false;
         }
+
+        // ── UpdateTool ─────────────────────────────────────────────────────────────
+
         public override void UpdateTool()
         {
-            bool triggerDown = InputManager.Brush.GetCommandDown(InputManager.SketchCommands.Activate);
             bool triggerHeld = InputManager.Brush.GetCommand(InputManager.SketchCommands.Activate);
+            bool triggerDown = InputManager.Brush.GetCommandDown(InputManager.SketchCommands.Activate);
+            bool triggerUp = m_WasTriggerHeld && !triggerHeld;
 
-            if(triggerDown)
-                OnStrokeBegin();
+            if (triggerDown)
+            {
+                ResetState();
+                // Ersten Punkt sofort setzen
+                Transform a = InputManager.m_Instance.GetBrushControllerAttachPoint();
+                m_ControlPoints.Add(a.position);
+                m_ControlRotations.Add(a.rotation);
+                m_LastRawPos = a.position;
+                m_HasLastRawPos = true;
+            }
 
             if (triggerHeld)
-                OnStrokeContinue();
+            {
+                Transform attach = InputManager.m_Instance.GetBrushControllerAttachPoint();
+                Vector3 rawPos = attach.position;
+
+                // Weglänge akkumulieren — JEDES Frame, unabhängig von Kontrollpunkten
+                if (m_HasLastRawPos)
+                    m_ArcLength += Vector3.Distance(rawPos, m_LastRawPos);
+                m_LastRawPos = rawPos;
+                m_HasLastRawPos = true;
+
+                // Kontrollpunkt nur wenn weit genug bewegt (für Spline-Richtung)
+                if (m_ControlPoints.Count == 0 ||
+                    Vector3.Distance(rawPos, m_ControlPoints[m_ControlPoints.Count - 1])
+                        >= m_ControlPointMinDistance)
+                {
+                    m_ControlPoints.Add(attach.position);
+                    m_ControlRotations.Add(attach.rotation);
+                }
+
+                // Sine-Position für diesen Frame berechnen
+                ComputeSinePosition();
+            }
+            else
+            {
+                m_SinePos = null;
+            }
+
+            if (triggerUp) ResetState();
+
+            m_WasTriggerHeld = triggerHeld;
+
+            // base.UpdateTool() → PositionPointer() → GetPointerPosition() (unser Override)
+            base.UpdateTool();
         }
 
-        private void OnStrokeBegin()
-        {
-            ResetSplineState();
-            RecordControlPoint(); // seed: need a starting point immediately
-        }
-
-        private void OnStrokeContinue()
-        {
-            Vector3 currentPos = InputManager.m_Instance.GetBrushControllerAttachPoint().position;
-            bool hasPrev = m_ControlPoints.Count > 0;
-            bool farEnough = !hasPrev ||
-                Vector3.Distance(currentPos, m_ControlPoints[m_ControlPoints.Count - 1])
-                >= m_ControlPointMinDistance;
-            
-            if(farEnough)
-                RecordControlPoint();
-            EmitPendingSegments(flushAll:false);
-        }
-
-        private void OnStrokeEnd()
-        {
-            // Flush any remaining partial segment so the stroke finishes cleanly.
-            EmitPendingSegments(flushAll: true);
-            ResetSplineState();
-        }
-
-        private void RecordControlPoint()
-        {
-            Transform attach = InputManager.m_Instance.GetBrushControllerAttachPoint();
-            m_ControlPoints.Add(attach.position);
-            m_ControlRotations.Add(attach.rotation);
-        }
-
-        private void ResetSplineState()
-        {
-            m_ControlPoints.Clear();
-            m_ControlRotations.Clear();
-            m_SplineArcLength = 0f;
-            m_NextSegmentToEmit = 0;
-            m_PendingSinePosition = null;
-        }
-
-        private void EmitPendingSegments(bool flushAll)
-        {
-            int count = m_ControlPoints.Count;
-            if (count < 4) return; // need at least one complete Catmull-Rom segment
-
-            int lastEmittable = flushAll ? count - 4 : count - 5;
-            if (lastEmittable < 0) return;
-
-            for (int seg = m_NextSegmentToEmit; seg <= lastEmittable; seg++)
-                EmitSegmentSamples(seg);
-        }
+        // ── GetPointerPosition override ────────────────────────────────────────────
 
         protected override (Vector3, Quaternion) GetPointerPosition()
         {
-            if (m_PendingSinePosition.HasValue)
-                return (m_PendingSinePosition.Value, m_PendingSineRotation);
+            if (m_SinePos.HasValue)
+                return (m_SinePos.Value, m_SineRot);
+
             Transform attach = InputManager.m_Instance.GetBrushControllerAttachPoint();
-            return (attach.position, attach.rotation);
+            return (attach.position, attach.rotation * sm_OrientationAdjust);
         }
 
-        private void EmitSegmentSamples(int segIndex)
+        // ── Sine-Berechnung ────────────────────────────────────────────────────────
+
+        private void ComputeSinePosition()
         {
-            Vector3 p0 = m_ControlPoints[segIndex];
-            Vector3 p1 = m_ControlPoints[segIndex + 1];
-            Vector3 p2 = m_ControlPoints[segIndex + 2];
-            Vector3 p3 = m_ControlPoints[segIndex + 3];
-            Quaternion r1 = m_ControlRotations[segIndex + 1];
-            Quaternion r2 = m_ControlRotations[segIndex + 2];
-
-            float segmentChord = Vector3.Distance(p1, p2);
-            float stepArc = segmentChord / m_SamplesPerSegment;
-
-            Vector3 lastPos = p1;
-            Quaternion lastRot = r1;
-
-            for (int i = 0; i < m_SamplesPerSegment; i++)
+            int count = m_ControlPoints.Count;
+            if (count < 2)
             {
-                float t = (float)i / (m_SamplesPerSegment - 1);
-
-                Vector3 splinePos = CatmullRom(p0, p1, p2, p3, t);
-                Vector3 splineTangent = CatmullRomDerivative(p0, p1, p2, p3, t);
-                if (splineTangent == Vector3.zero)
-                    splineTangent = (p2 - p1).normalized; // graceful fallback at zero-derivative
-
-                splineTangent = splineTangent.normalized;
-
-                // ── Stable up-vector from interpolated controller orientation ──────
-                Quaternion controllerRot = Quaternion.Slerp(r1, r2, t);
-                Vector3 controllerUp = controllerRot * Vector3.up;
-
-                // ── Sine axis: perpendicular to tangent, in tangent-up plane ───────
-                Vector3 sineAxis = Vector3.Cross(splineTangent, controllerUp).normalized;
-                if (sineAxis == Vector3.zero)
-                    sineAxis = controllerRot * Vector3.right; // fallback if tangent ∥ up
-
-                // ── Arc-length accumulation (uniform visual frequency) ─────────────
-                m_SplineArcLength += stepArc;
-
-                // ── Sine displacement ──────────────────────────────────────────────
-                float sineValue = Mathf.Sin(m_SplineArcLength * m_SineFrequency * 2f * Mathf.PI);
-                Vector3 sineOffset = sineAxis * (sineValue * m_SineAmplitude);
-
-                lastPos = splinePos + sineOffset;
-                lastRot = (splineTangent != Vector3.zero)
-                    ? Quaternion.LookRotation(splineTangent, controllerUp) * sm_OrientationAdjust
-                    : controllerRot;
+                m_SinePos = null;
+                return;
             }
 
-            m_PendingSinePosition = lastPos;
-            m_PendingSineRotation = lastRot;
+            // Bewegungsrichtung: aus Spline wenn möglich, sonst linear
+            Vector3 currentPos;
+            Vector3 tangent;
+            Quaternion controllerRot;
 
-            m_NextSegmentToEmit = segIndex + 1;
+            if (count >= 4)
+            {
+                int i = count - 4;
+                Vector3 p0 = m_ControlPoints[i];
+                Vector3 p1 = m_ControlPoints[i + 1];
+                Vector3 p2 = m_ControlPoints[i + 2];
+                Vector3 p3 = m_ControlPoints[i + 3];
+                currentPos = CatmullRom(p0, p1, p2, p3, 1f);
+                tangent = CatmullRomDerivative(p0, p1, p2, p3, 1f);
+                controllerRot = m_ControlRotations[i + 3];
+            }
+            else
+            {
+                currentPos = m_ControlPoints[count - 1];
+                tangent = m_ControlPoints[count - 1] - m_ControlPoints[count - 2];
+                controllerRot = m_ControlRotations[count - 1];
+            }
+
+            if (tangent.sqrMagnitude < 1e-6f) tangent = Vector3.forward;
+            tangent = tangent.normalized;
+
+            // Sine-Achse senkrecht zur Bewegungsrichtung
+            Vector3 up = controllerRot * Vector3.up;
+            Vector3 sineAxis = Vector3.Cross(tangent, up).normalized;
+            if (sineAxis.sqrMagnitude < 1e-6f)
+                sineAxis = controllerRot * Vector3.right;
+
+            // Sine-Offset — Phase aus akkumulierter Weglänge (frame-rate-unabhängig)
+            float sine = Mathf.Sin(m_ArcLength * m_SineFrequency * 2f * Mathf.PI);
+            m_SinePos = currentPos + sineAxis * (sine * m_SineAmplitude);
+            m_SineRot = Quaternion.LookRotation(tangent, up) * sm_OrientationAdjust;
         }
+
+        // ── State reset ────────────────────────────────────────────────────────────
+
+        private void ResetState()
+        {
+            m_ControlPoints.Clear();
+            m_ControlRotations.Clear();
+            m_ArcLength = 0f;
+            m_HasLastRawPos = false;
+            m_SinePos = null;
+        }
+
+        // ── Public Spline API (für Markov Pen System) ──────────────────────────────
 
         public IReadOnlyList<Vector3> SplineControlPoints => m_ControlPoints;
 
@@ -164,47 +196,29 @@ namespace TiltBrush
         {
             int count = m_ControlPoints.Count;
             if (count < 4) return Vector3.zero;
-
-            int totalSegments = count - 3;
-            float scaledT = Mathf.Clamp01(t) * totalSegments;
-            int seg = Mathf.Min((int)scaledT, totalSegments - 1);
-            float localT = scaledT - seg;
-
+            int segs = count - 3;
+            float scaled = Mathf.Clamp01(t) * segs;
+            int seg = Mathf.Min((int)scaled, segs - 1);
             return CatmullRom(
-                m_ControlPoints[seg],
-                m_ControlPoints[seg + 1],
-                m_ControlPoints[seg + 2],
-                m_ControlPoints[seg + 3],
-                localT);
+                m_ControlPoints[seg], m_ControlPoints[seg + 1],
+                m_ControlPoints[seg + 2], m_ControlPoints[seg + 3],
+                scaled - seg);
         }
 
-        // ── Catmull-Rom mathematics ────────────────────────────────────────────────
+        // ── Catmull-Rom ────────────────────────────────────────────────────────────
 
-        /// <summary>
-        /// Uniform Catmull-Rom spline position.
-        /// The active segment runs from p1 to p2; p0 and p3 are ghost/flanking points.
-        /// </summary>
         private static Vector3 CatmullRom(
             Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, float t)
         {
-            float t2 = t * t;
-            float t3 = t2 * t;
-            return 0.5f * (
-                  2f * p1
-                + (-p0 + p2) * t
-                + (2f * p0 - 5f * p1 + 4f * p2 - p3) * t2
-                + (-p0 + 3f * p1 - 3f * p2 + p3) * t3);
+            float t2 = t * t, t3 = t2 * t;
+            return 0.5f * (2f * p1 + (-p0 + p2) * t + (2f * p0 - 5f * p1 + 4f * p2 - p3) * t2 + (-p0 + 3f * p1 - 3f * p2 + p3) * t3);
         }
 
-        /// <summary>First derivative of the Catmull-Rom formula (tangent vector, un-normalised).</summary>
         private static Vector3 CatmullRomDerivative(
             Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, float t)
         {
             float t2 = t * t;
-            return 0.5f * (
-                  (-p0 + p2)
-                + 2f * (2f * p0 - 5f * p1 + 4f * p2 - p3) * t
-                + 3f * (-p0 + 3f * p1 - 3f * p2 + p3) * t2);
+            return 0.5f * ((-p0 + p2) + 2f * (2f * p0 - 5f * p1 + 4f * p2 - p3) * t + 3f * (-p0 + 3f * p1 - 3f * p2 + p3) * t2);
         }
     }
 }

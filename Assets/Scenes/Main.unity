@@ -9944,7 +9944,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 599570338}
-  - component: {fileID: 599570340}
   - component: {fileID: 599570339}
   m_Layer: 14
   m_Name: MarkovPenTool
@@ -9982,14 +9981,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7016ac5a564eff041a26b7cf309ea22f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Type: 0
+  m_Type: 11002
   m_ShowTransformGizmo: 0
   m_ExitOnAbortCommand: 1
   m_ScalingSupported: 0
-  m_BimanualGuideLine: {fileID: 0}
-  m_BimanualGuideLineOutline: {fileID: 0}
-  m_BimanualGuideIntersect: {fileID: 0}
-  m_BimanualGuideIntersectOutline: {fileID: 0}
+  m_BimanualGuideLine: {fileID: 1029841512}
+  m_BimanualGuideLineOutline: {fileID: 1151093197}
+  m_BimanualGuideIntersect: {fileID: 1712388237}
+  m_BimanualGuideIntersectOutline: {fileID: 1151093197}
   m_BimanualGuideLineHorizontalOffset: 0.75
   m_BimanualGuideLineOutlineWidth: 0.05
   m_BimanualGuideLineBaseWidth: 0.015
@@ -10000,31 +9999,6 @@ MonoBehaviour:
   m_HapticInterval: 0.1
   m_HapticSizeUp: 0
   m_HapticSizeDown: 0
---- !u!114 &599570340
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 599570337}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dfbd4d59b4cc48eaa7065807369d6f2e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Type: 11001
-  m_ShowTransformGizmo: 0
-  m_ExitOnAbortCommand: 1
-  m_ScalingSupported: 0
-  m_IntersectionResetBehavior: 2
-  m_TimeSliceInMS: 0.5
-  m_PointerForwardOffset: 0.22
-  m_DropperTransform: {fileID: 76673406}
-  m_DropperConeRenderer: {fileID: 1978293252}
-  m_DropperRenderer: {fileID: 1824613262}
-  m_DropperBrushSelectRadius: 0.1
-  m_EnterSpeed: 16
-  m_OffsetTransform: {fileID: 470842174}
 --- !u!4 &605405043 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 400000, guid: 25ba8134f2fcdc447aa836e22af16c68,
@@ -28983,12 +28957,6 @@ PrefabInstance:
 --- !u!4 &1978293251 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 400000, guid: 954c67d0e13c2594e808082b9bc1bb07,
-    type: 3}
-  m_PrefabInstance: {fileID: 1978293250}
-  m_PrefabAsset: {fileID: 0}
---- !u!23 &1978293252 stripped
-MeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 2300000, guid: 954c67d0e13c2594e808082b9bc1bb07,
     type: 3}
   m_PrefabInstance: {fileID: 1978293250}
   m_PrefabAsset: {fileID: 0}
