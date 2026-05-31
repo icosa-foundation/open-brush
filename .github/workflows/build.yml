@@ -1434,7 +1434,7 @@ jobs:
   publish_ios_zapbox:
     name: Publish Zapbox iOS
     needs: [configuration, build]
-    runs-on: macos-latest
+    runs-on: macos-26
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
