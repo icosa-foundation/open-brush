@@ -22,8 +22,8 @@ namespace TiltBrush
     /// @class MarkovPen
     /// @brief The Markov Pen is a technique for generating character styles.
     ///
-    /// This class serves as the base for other partial classes and derives from MarkovTool.
-    public partial class MarkovPen : MarkovTool
+    /// This class serves as the base for other partial classes and derives from MarkovPenTool.
+    public partial class MarkovPen : MarkovPenTool
     {
         private Mapping m_ExampleMapping;
         private Mapping m_TargetMapping;
