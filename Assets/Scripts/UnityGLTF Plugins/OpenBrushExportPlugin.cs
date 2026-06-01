@@ -27,6 +27,7 @@ namespace TiltBrush
     {
         private Dictionary<int, Batch> _meshesToBatches;
         private Dictionary<Batch, Mesh> m_OriginalBatchMeshes;
+        private List<Mesh> m_TemporaryBatchMeshes;
         private List<Camera> m_CameraPathsCameras;
         private GameObject m_ThumbnailCamera;
         private bool m_WasUsingBatchedBrushes;
@@ -40,6 +41,7 @@ namespace TiltBrush
             SelectionManager.m_Instance?.ClearActiveSelection();
             _meshesToBatches = new Dictionary<int, Batch>();
             m_OriginalBatchMeshes = new Dictionary<Batch, Mesh>();
+            m_TemporaryBatchMeshes = new List<Mesh>();
             GenerateCameraPathsCameras();
             m_ThumbnailCamera = App.Instance.InstantiateThumbnailCamera();
             m_ThumbnailCamera.transform.SetParent(App.Scene.MainCanvas.transform, worldPositionStays: true);
@@ -201,6 +203,7 @@ namespace TiltBrush
                     if (mesh.vertexCount > 0)
                     {
                         mesh = BrushBaker.m_Instance.ProcessMesh(mesh, brush.m_Guid.ToString());
+                        m_TemporaryBatchMeshes.Add(mesh);
                         mf.sharedMesh = mesh;
                         mf.mesh = mesh;
                     }
@@ -295,6 +298,12 @@ namespace TiltBrush
                         mf.sharedMesh = originalMesh;
                     }
                 }
+
+                foreach (var mesh in m_TemporaryBatchMeshes)
+                {
+                    SafeDestroy(mesh);
+                }
+                m_TemporaryBatchMeshes.Clear();
             }
         }
 
@@ -540,6 +549,7 @@ namespace TiltBrush
 
             Object.Destroy(m_ThumbnailCamera);
             m_OriginalBatchMeshes?.Clear();
+            m_TemporaryBatchMeshes?.Clear();
         }
 
         private static void SafeDestroy(Object o)
