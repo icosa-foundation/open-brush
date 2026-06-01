@@ -26,6 +26,7 @@ namespace TiltBrush
     public class OpenBrushExportPluginConfig : GLTFExportPluginContext
     {
         private Dictionary<int, Batch> _meshesToBatches;
+        private Dictionary<Batch, Mesh> m_OriginalBatchMeshes;
         private List<Camera> m_CameraPathsCameras;
         private GameObject m_ThumbnailCamera;
         private bool m_WasUsingBatchedBrushes;
@@ -38,6 +39,7 @@ namespace TiltBrush
             }
             SelectionManager.m_Instance?.ClearActiveSelection();
             _meshesToBatches = new Dictionary<int, Batch>();
+            m_OriginalBatchMeshes = new Dictionary<Batch, Mesh>();
             GenerateCameraPathsCameras();
             m_ThumbnailCamera = App.Instance.InstantiateThumbnailCamera();
             m_ThumbnailCamera.transform.SetParent(App.Scene.MainCanvas.transform, worldPositionStays: true);
@@ -195,9 +197,7 @@ namespace TiltBrush
                         Debug.LogError($"No mesh found for brush {brush.name}");
                         continue;
                     }
-#if UNITY_EDITOR
-                    batch.m_EditorDebugMesh = mf.sharedMesh;
-#endif
+                    m_OriginalBatchMeshes[batch] = mf.sharedMesh;
                     if (mesh.vertexCount > 0)
                     {
                         mesh = BrushBaker.m_Instance.ProcessMesh(mesh, brush.m_Guid.ToString());
@@ -290,8 +290,10 @@ namespace TiltBrush
                 foreach (var batch in canvas.BatchManager.AllBatches())
                 {
                     var mf = batch.gameObject.GetComponent<MeshFilter>();
-                    mf.sharedMesh = batch.m_EditorDebugMesh;
-                    batch.m_EditorDebugMesh = null;
+                    if (m_OriginalBatchMeshes.TryGetValue(batch, out var originalMesh))
+                    {
+                        mf.sharedMesh = originalMesh;
+                    }
                 }
             }
         }
@@ -537,6 +539,7 @@ namespace TiltBrush
             gltfRoot.Extras = extras;
 
             Object.Destroy(m_ThumbnailCamera);
+            m_OriginalBatchMeshes?.Clear();
         }
 
         private static void SafeDestroy(Object o)
