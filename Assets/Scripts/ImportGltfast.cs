@@ -14,11 +14,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using TiltBrushToolkit;
 using UnityEngine;
 using UnityGLTF;
+using UnityGLTF.Loader;
 
 namespace TiltBrush
 {
@@ -98,15 +100,18 @@ namespace TiltBrush
                 // per-frame budget is exceeded) instead of doing it all in one blocking call.
                 options.AsyncCoroutineHelper = GetAsyncCoroutineHelper();
 
-                var normalizedPath = Uri.UnescapeDataString(localPath).Replace("\\", "/");
-                if (normalizedPath.StartsWith("/"))
-                {
-                    normalizedPath = normalizedPath.TrimStart('/');
-                }
-
-                // See https://github.com/KhronosGroup/UnityGLTF/issues/805
-                var uriPath = $"file:///{normalizedPath}";
-                GLTFSceneImporter gltf = new GLTFSceneImporter(uriPath, options);
+                // Load from disk via FileLoader rather than letting the importer fall back to the
+                // auto-selected UnityWebRequestLoader. FileLoader resolves external references
+                // (textures, .bin buffers) with plain File IO (File.OpenRead / Path.Combine) plus an
+                // Uri.UnescapeDataString fallback for %20-escaped names, so it avoids the
+                // UnityWebRequest "new Uri(absolutePath)" path that mishandled spaces and bare POSIX
+                // (Android) paths - which is why we previously had to hand-build a file:/// URI.
+                // See https://github.com/KhronosGroup/UnityGLTF/issues/805. FileLoader also implements
+                // IDataLoader2, letting the importer read the glTF JSON off the main thread when
+                // IsMultithreaded is set.
+                var fullPath = Uri.UnescapeDataString(localPath).Replace("\\", "/");
+                options.DataLoader = new FileLoader(Path.GetDirectoryName(fullPath));
+                GLTFSceneImporter gltf = new GLTFSceneImporter(fullPath, options);
 
                 // Device builds only: GLTFSceneImporter hard-forces this false in the editor (to
                 // avoid a historical editor freeze), so editor imports stay single-threaded regardless.
