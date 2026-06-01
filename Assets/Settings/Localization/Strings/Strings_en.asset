@@ -730,6 +730,10 @@ MonoBehaviour:
     m_Localized: Featured Models
     m_Metadata:
       m_Items: []
+  - m_Id: 7930412489482241
+    m_Localized: All Models
+    m_Metadata:
+      m_Items: []
   - m_Id: 7930550461112320
     m_Localized: Liked Models
     m_Metadata:
@@ -747,15 +751,19 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7931977472385024
-    m_Localized: Your Models
+    m_Localized: Your Uploaded Models
     m_Metadata:
       m_Items: []
   - m_Id: 7932160536977408
     m_Localized: Featured Models
     m_Metadata:
       m_Items: []
+  - m_Id: 7932160536977409
+    m_Localized: All Models
+    m_Metadata:
+      m_Items: []
   - m_Id: 7932251041669120
-    m_Localized: Liked Models
+    m_Localized: Your Liked Models
     m_Metadata:
       m_Items: []
   - m_Id: 7932559960547328
@@ -3630,11 +3638,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 332573810292776960
-    m_Localized: Search
+    m_Localized: Search by title
     m_Metadata:
       m_Items: []
   - m_Id: 332574165927813120
-    m_Localized: Filter/Sorting
+    m_Localized: Filter and sort
     m_Metadata:
       m_Items: []
   - m_Id: 326532953040941056
