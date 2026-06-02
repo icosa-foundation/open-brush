@@ -30,6 +30,7 @@ namespace TiltBrush
 
         private const string kAssetCacheVersion = "2.28.10";
         private readonly List<string> m_AssetIdsToCleanup = new List<string>();
+        private readonly List<string> m_CachePathsToCleanup = new List<string>();
         private GameObject m_AppObject;
         private GameObject m_CatalogObject;
 
@@ -58,7 +59,15 @@ namespace TiltBrush
                     Directory.Delete(assetPath, true);
                 }
             }
+            foreach (string cachePath in m_CachePathsToCleanup)
+            {
+                if (Directory.Exists(cachePath))
+                {
+                    Directory.Delete(cachePath, true);
+                }
+            }
             m_AssetIdsToCleanup.Clear();
+            m_CachePathsToCleanup.Clear();
         }
 
         [Test]
@@ -147,6 +156,41 @@ namespace TiltBrush
 
             Assert.IsTrue(Directory.Exists(assetDir), $"Expected startup to retain valid cache {assetId}");
             Assert.NotNull(catalog.GetModel(assetId), $"Expected startup to register model for {assetId}");
+        }
+
+        [Test]
+        public void Init_RemovesCacheDirectoriesOutsideCurrentVersion()
+        {
+            m_AppObject = new GameObject("TestApp");
+            var app = m_AppObject.AddComponent<App>();
+            sm_AppInstanceField.SetValue(null, app);
+
+            m_CatalogObject = new GameObject("IcosaAssetCatalog");
+            var catalog = m_CatalogObject.AddComponent<IcosaAssetCatalog>();
+
+            string cacheDir = Path.Combine(Application.persistentDataPath, "assetCache");
+            string oldAssetId = $"unit-test-old-{Guid.NewGuid():N}";
+            string newAssetId = $"unit-test-new-{Guid.NewGuid():N}";
+
+            string oldAssetDir = Path.Combine(cacheDir, oldAssetId);
+            Directory.CreateDirectory(oldAssetDir);
+            File.WriteAllText(Path.Combine(oldAssetDir, "old.gltf2"), "test");
+            m_CachePathsToCleanup.Add(oldAssetDir);
+
+            string versionedAssetDir = Path.Combine(cacheDir, kAssetCacheVersion, newAssetId);
+            Directory.CreateDirectory(versionedAssetDir);
+            File.WriteAllText(Path.Combine(versionedAssetDir, "new.gltf2"), "test");
+            m_AssetIdsToCleanup.Add(newAssetId);
+
+            string previousVersionDir = Path.Combine(cacheDir, "2.28.9");
+            Directory.CreateDirectory(previousVersionDir);
+            m_CachePathsToCleanup.Add(previousVersionDir);
+
+            catalog.Init();
+
+            Assert.IsFalse(Directory.Exists(oldAssetDir), "Expected old unversioned cache folder to be deleted");
+            Assert.IsTrue(Directory.Exists(versionedAssetDir), "Expected current versioned cache folder to be retained");
+            Assert.IsFalse(Directory.Exists(previousVersionDir), "Expected old version cache folder to be deleted");
         }
     }
 }

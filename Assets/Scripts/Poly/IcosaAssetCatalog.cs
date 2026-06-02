@@ -606,6 +606,7 @@ namespace TiltBrush
 
             FileUtils.InitializeDirectoryWithUserError(m_CacheDir, "Failed to create asset cache");
             FileUtils.InitializeDirectoryWithUserError(GetVersionedCacheDirectory(), "Failed to create asset cache");
+            DeleteOldCacheDirectories();
 
             m_ModelsByAssetId = new Dictionary<string, Model>();
             // InitCatalogQueries();
@@ -781,6 +782,25 @@ namespace TiltBrush
         private string GetVersionedCacheDirectory()
         {
             return Path.Combine(m_CacheDir, kAssetCacheVersion);
+        }
+
+        private void DeleteOldCacheDirectories()
+        {
+            try
+            {
+                foreach (var cacheDirectory in new DirectoryInfo(m_CacheDir).EnumerateDirectories())
+                {
+                    if (cacheDirectory.Name == kAssetCacheVersion)
+                    {
+                        continue;
+                    }
+
+                    cacheDirectory.Delete(true);
+                }
+            }
+            catch (UnauthorizedAccessException e) { Debug.LogException(e); }
+            catch (DirectoryNotFoundException e) { Debug.LogException(e); }
+            catch (IOException e) { Debug.LogException(e); }
         }
 
         /// On any error, returns an empty enumeration
