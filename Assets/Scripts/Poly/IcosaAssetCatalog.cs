@@ -832,6 +832,11 @@ namespace TiltBrush
             return model;
         }
 
+        public bool HasCachedModel(string assetId)
+        {
+            return m_ModelsByAssetId.ContainsKey(assetId);
+        }
+
         /// Checks to see if it's time to kick off a new refresh
         /// Polls any refresh coroutines going on.
         void Update()
