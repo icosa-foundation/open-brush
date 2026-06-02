@@ -21,11 +21,11 @@ namespace TiltBrush
 {
     partial class MarkovPen
     {
-         /// @class Mapping
-         /// @brief Represents a mapping between arc length positions and offsets from style to base curve.
-         ///
-         /// Samples the style curve, projects samples onto the base curve, and computes mapping and offsets.
-         public class Mapping
+        /// @class Mapping
+        /// @brief Represents a mapping between arc length positions and offsets from style to base curve.
+        ///
+        /// Samples the style curve, projects samples onto the base curve, and computes mapping and offsets.
+        public class Mapping
         {
             //Curves
             public BaseCurve BaseCurve { get; private set; }
@@ -47,11 +47,11 @@ namespace TiltBrush
 
             public int LastIndex { get; private set; }
 
-                 /// @brief Constructor for the Mapping class.
-                 /// @param styleCurve The style curve for the mapping.
-                 /// @param baseCurve The base curve for the mapping.
-                 /// @exception NullReferenceException Thrown if styleCurve or baseCurve is null.
-                 public Mapping(Curve styleCurve, BaseCurve baseCurve)
+            /// @brief Constructor for the Mapping class.
+            /// @param styleCurve The style curve for the mapping.
+            /// @param baseCurve The base curve for the mapping.
+            /// @exception NullReferenceException Thrown if styleCurve or baseCurve is null.
+            public Mapping(Curve styleCurve, BaseCurve baseCurve)
             {
                 Debug.Log("ENter");
 

@@ -40,18 +40,18 @@ namespace TiltBrush
             {
             }
 
-                  /// @brief Set the tap value for smoothing. A non-zero tap initiates the smoothing
-                  /// process during the addition of control points.
-                  /// @param tap The tap value for smoothing.
+            /// @brief Set the tap value for smoothing. A non-zero tap initiates the smoothing
+            /// process during the addition of control points.
+            /// @param tap The tap value for smoothing.
             public void SetTap(float tap)
             {
                 m_Tap = tap;
             }
 
-                  /// @brief Add a control point to the base curve and update related information.
-                  /// Extends the base class method to incorporate smoothing functionalities based on the tap value.
-                  /// @param controlPoint The control point to be added to the base curve.
-                  /// @param upVector The up vector associated with the control point.
+            /// @brief Add a control point to the base curve and update related information.
+            /// Extends the base class method to incorporate smoothing functionalities based on the tap value.
+            /// @param controlPoint The control point to be added to the base curve.
+            /// @param upVector The up vector associated with the control point.
             public override void AddControlPoint(Vector3 controlPoint, Vector3 upVector)
             {
                 base.AddControlPoint(controlPoint, upVector);
