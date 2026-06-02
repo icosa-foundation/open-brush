@@ -238,6 +238,60 @@ namespace TiltBrush
             };
         }
 
+        public static bool TryGetDownloadFormat(
+            JObject json, VrAssetFormat[] desiredTypes,
+            out JToken format, out VrAssetFormat selectedType, out string formatType)
+        {
+            format = null;
+            selectedType = VrAssetFormat.Unknown;
+            formatType = null;
+
+            if (json == null)
+            {
+                return false;
+            }
+
+            var formatsToken = json["formats"];
+            if (formatsToken == null || !formatsToken.HasValues)
+            {
+                return false;
+            }
+
+            var allFormats = formatsToken.ToList();
+            if (allFormats.Count == 0)
+            {
+                return false;
+            }
+
+            var desiredFormatTypes = desiredTypes.Select(x => x.ToString()).ToList();
+            var preferredFormats = allFormats.Where(f => f["isPreferredForDownload"]?.Value<bool>() == true);
+            format = GetBestFormat(preferredFormats, desiredFormatTypes)
+                ?? GetBestFormat(allFormats, desiredFormatTypes);
+            if (format == null)
+            {
+                return false;
+            }
+
+            formatType = format["formatType"]?.ToString();
+            return !string.IsNullOrEmpty(formatType)
+                && Enum.TryParse(formatType, out selectedType);
+        }
+
+        private static JToken GetBestFormat(IEnumerable<JToken> formats, List<string> desiredTypes)
+        {
+            foreach (var typeByPreference in desiredTypes)
+            {
+                foreach (var format in formats)
+                {
+                    if (format["formatType"]?.ToString() == typeByPreference)
+                    {
+                        return format;
+                    }
+                }
+            }
+            return null;
+        }
+
         public enum AssetLoadState
         {
             Unknown,
@@ -835,6 +889,50 @@ namespace TiltBrush
         public bool HasCachedModel(string assetId)
         {
             return m_ModelsByAssetId.ContainsKey(assetId);
+        }
+
+        public bool CanAutoDownloadForPreview(string assetId)
+        {
+            if (!TryGetDownloadFormat(GetJsonForAsset(assetId), GetSupportedIcosaFormats(),
+                out JToken format, out _, out _))
+            {
+                return false;
+            }
+
+            return !FormatUsesInternetArchive(format);
+        }
+
+        private static bool FormatUsesInternetArchive(JToken format)
+        {
+            if (IsInternetArchiveUrl(format["root"]?["url"]?.ToString()))
+            {
+                return true;
+            }
+
+            var resources = format["resources"];
+            if (resources != null)
+            {
+                foreach (var resource in resources)
+                {
+                    if (IsInternetArchiveUrl(resource["url"]?.ToString()))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsInternetArchiveUrl(string url)
+        {
+            if (!Uri.TryCreate(url, UriKind.Absolute, out Uri uri))
+            {
+                return false;
+            }
+
+            return uri.Host.Equals("archive.org", StringComparison.OrdinalIgnoreCase)
+                || uri.Host.EndsWith(".archive.org", StringComparison.OrdinalIgnoreCase);
         }
 
         /// Checks to see if it's time to kick off a new refresh
