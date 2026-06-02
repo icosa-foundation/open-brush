@@ -29,8 +29,6 @@ namespace TiltBrush
         private static readonly MethodInfo sm_ValidModelCache =
             typeof(IcosaAssetCatalog).GetMethod("ValidModelCache", BindingFlags.Static | BindingFlags.NonPublic);
 
-        private const string kAssetCacheVersion = "2.28.10";
-        private readonly List<string> m_AssetIdsToCleanup = new List<string>();
         private readonly List<string> m_CachePathsToCleanup = new List<string>();
         private GameObject m_AppObject;
         private GameObject m_CatalogObject;
@@ -51,15 +49,6 @@ namespace TiltBrush
 
             sm_AppInstanceField.SetValue(null, null);
 
-            string cacheDir = Path.Combine(Application.persistentDataPath, "assetCache");
-            foreach (string assetId in m_AssetIdsToCleanup)
-            {
-                string assetPath = Path.Combine(cacheDir, kAssetCacheVersion, assetId);
-                if (Directory.Exists(assetPath))
-                {
-                    Directory.Delete(assetPath, true);
-                }
-            }
             foreach (string cachePath in m_CachePathsToCleanup)
             {
                 if (Directory.Exists(cachePath))
@@ -67,7 +56,6 @@ namespace TiltBrush
                     Directory.Delete(cachePath, true);
                 }
             }
-            m_AssetIdsToCleanup.Clear();
             m_CachePathsToCleanup.Clear();
         }
 
@@ -112,23 +100,23 @@ namespace TiltBrush
             var catalog = m_CatalogObject.AddComponent<IcosaAssetCatalog>();
 
             string[] extensions = { ".vox", ".ply", ".obj", ".gltf", ".gltf2", ".glb" };
+            var assetIds = new List<string>();
             foreach (string extension in extensions)
             {
                 string assetId = $"unit-test-{extension.TrimStart('.')}-{Guid.NewGuid():N}";
-                m_AssetIdsToCleanup.Add(assetId);
+                assetIds.Add(assetId);
 
-                string assetDir = Path.Combine(
-                    Application.persistentDataPath, "assetCache", kAssetCacheVersion, assetId);
+                string assetDir = catalog.GetCacheDirectoryForAsset(assetId);
+                m_CachePathsToCleanup.Add(assetDir);
                 Directory.CreateDirectory(assetDir);
                 File.WriteAllText(Path.Combine(assetDir, $"model{extension}"), "test");
             }
 
             catalog.Init();
 
-            foreach (string assetId in m_AssetIdsToCleanup)
+            foreach (string assetId in assetIds)
             {
-                string assetDir = Path.Combine(
-                    Application.persistentDataPath, "assetCache", kAssetCacheVersion, assetId);
+                string assetDir = catalog.GetCacheDirectoryForAsset(assetId);
                 Assert.IsTrue(Directory.Exists(assetDir), $"Expected startup to retain valid cache {assetId}");
                 Assert.NotNull(catalog.GetModel(assetId), $"Expected startup to register model for {assetId}");
             }
@@ -145,10 +133,9 @@ namespace TiltBrush
             var catalog = m_CatalogObject.AddComponent<IcosaAssetCatalog>();
 
             string assetId = $"unit-test-nested-{Guid.NewGuid():N}";
-            m_AssetIdsToCleanup.Add(assetId);
 
-            string assetDir = Path.Combine(
-                Application.persistentDataPath, "assetCache", kAssetCacheVersion, assetId);
+            string assetDir = catalog.GetCacheDirectoryForAsset(assetId);
+            m_CachePathsToCleanup.Add(assetDir);
             string nestedDir = Path.Combine(assetDir, "source", "subdir");
             Directory.CreateDirectory(nestedDir);
             File.WriteAllText(Path.Combine(nestedDir, "model.gltf2"), "test");
@@ -178,10 +165,10 @@ namespace TiltBrush
             File.WriteAllText(Path.Combine(oldAssetDir, "old.gltf2"), "test");
             m_CachePathsToCleanup.Add(oldAssetDir);
 
-            string versionedAssetDir = Path.Combine(cacheDir, kAssetCacheVersion, newAssetId);
+            string versionedAssetDir = catalog.GetCacheDirectoryForAsset(newAssetId);
             Directory.CreateDirectory(versionedAssetDir);
             File.WriteAllText(Path.Combine(versionedAssetDir, "new.gltf2"), "test");
-            m_AssetIdsToCleanup.Add(newAssetId);
+            m_CachePathsToCleanup.Add(versionedAssetDir);
 
             string previousVersionDir = Path.Combine(cacheDir, "2.28.9");
             Directory.CreateDirectory(previousVersionDir);
@@ -240,6 +227,31 @@ namespace TiltBrush
                     "https://assets.example.com/model.bin")));
 
             Assert.IsTrue(catalog.CanAutoDownloadForPreview(assetId));
+        }
+
+        [Test]
+        public void TryGetDownloadFormat_ReturnsFalseForNullDesiredTypes()
+        {
+            Assert.IsFalse(IcosaAssetCatalog.TryGetDownloadFormat(
+                AssetJson(FormatJson("GLTF2", "https://assets.example.com/model.gltf")),
+                null, out JToken format, out VrAssetFormat selectedType, out string formatType));
+
+            Assert.IsNull(format);
+            Assert.AreEqual(VrAssetFormat.Unknown, selectedType);
+            Assert.IsNull(formatType);
+        }
+
+        [Test]
+        public void TryGetDownloadFormat_ClearsOutValuesWhenSelectedFormatTypeIsInvalid()
+        {
+            Assert.IsFalse(IcosaAssetCatalog.TryGetDownloadFormat(
+                AssetJson(FormatJson("NOT_A_FORMAT", "https://assets.example.com/model.gltf")),
+                new[] { VrAssetFormat.GLTF2 }, out JToken format, out VrAssetFormat selectedType,
+                out string formatType));
+
+            Assert.IsNull(format);
+            Assert.AreEqual(VrAssetFormat.Unknown, selectedType);
+            Assert.IsNull(formatType);
         }
 
         private static JObject AssetJson(params JObject[] formats)

@@ -263,6 +263,11 @@ namespace TiltBrush
                 return false;
             }
 
+            if (desiredTypes == null)
+            {
+                return false;
+            }
+
             var desiredFormatTypes = desiredTypes.Select(x => x.ToString()).ToList();
             var preferredFormats = allFormats.Where(f => f["isPreferredForDownload"]?.Value<bool>() == true);
             format = GetBestFormat(preferredFormats, desiredFormatTypes)
@@ -273,8 +278,15 @@ namespace TiltBrush
             }
 
             formatType = format["formatType"]?.ToString();
-            return !string.IsNullOrEmpty(formatType)
-                && Enum.TryParse(formatType, out selectedType);
+            if (!string.IsNullOrEmpty(formatType) && Enum.TryParse(formatType, out selectedType))
+            {
+                return true;
+            }
+
+            format = null;
+            selectedType = VrAssetFormat.Unknown;
+            formatType = null;
+            return false;
         }
 
         private static JToken GetBestFormat(IEnumerable<JToken> formats, List<string> desiredTypes)
