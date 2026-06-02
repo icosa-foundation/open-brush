@@ -28,6 +28,7 @@ namespace TiltBrush
         private static readonly MethodInfo sm_ValidModelCache =
             typeof(IcosaAssetCatalog).GetMethod("ValidModelCache", BindingFlags.Static | BindingFlags.NonPublic);
 
+        private const string kAssetCacheVersion = "2.28.10";
         private readonly List<string> m_AssetIdsToCleanup = new List<string>();
         private GameObject m_AppObject;
         private GameObject m_CatalogObject;
@@ -51,7 +52,7 @@ namespace TiltBrush
             string cacheDir = Path.Combine(Application.persistentDataPath, "assetCache");
             foreach (string assetId in m_AssetIdsToCleanup)
             {
-                string assetPath = Path.Combine(cacheDir, assetId);
+                string assetPath = Path.Combine(cacheDir, kAssetCacheVersion, assetId);
                 if (Directory.Exists(assetPath))
                 {
                     Directory.Delete(assetPath, true);
@@ -76,7 +77,7 @@ namespace TiltBrush
                     File.WriteAllText(modelFile, "test");
 
                     string result = (string)sm_ValidModelCache.Invoke(null, new object[] { tempDir });
-                    Assert.AreEqual(modelFile, result, $"Expected cache with {extension} file to be valid");
+                    Assert.AreEqual($"model{extension}", result, $"Expected cache with {extension} file to be valid");
 
                     File.Delete(modelFile);
                 }
@@ -106,7 +107,8 @@ namespace TiltBrush
                 string assetId = $"unit-test-{extension.TrimStart('.')}-{Guid.NewGuid():N}";
                 m_AssetIdsToCleanup.Add(assetId);
 
-                string assetDir = Path.Combine(Application.persistentDataPath, "assetCache", assetId);
+                string assetDir = Path.Combine(
+                    Application.persistentDataPath, "assetCache", kAssetCacheVersion, assetId);
                 Directory.CreateDirectory(assetDir);
                 File.WriteAllText(Path.Combine(assetDir, $"model{extension}"), "test");
             }
@@ -115,10 +117,36 @@ namespace TiltBrush
 
             foreach (string assetId in m_AssetIdsToCleanup)
             {
-                string assetDir = Path.Combine(Application.persistentDataPath, "assetCache", assetId);
+                string assetDir = Path.Combine(
+                    Application.persistentDataPath, "assetCache", kAssetCacheVersion, assetId);
                 Assert.IsTrue(Directory.Exists(assetDir), $"Expected startup to retain valid cache {assetId}");
                 Assert.NotNull(catalog.GetModel(assetId), $"Expected startup to register model for {assetId}");
             }
+        }
+
+        [Test]
+        public void Init_RetainsCachedAssetsWithNestedRootPath()
+        {
+            m_AppObject = new GameObject("TestApp");
+            var app = m_AppObject.AddComponent<App>();
+            sm_AppInstanceField.SetValue(null, app);
+
+            m_CatalogObject = new GameObject("IcosaAssetCatalog");
+            var catalog = m_CatalogObject.AddComponent<IcosaAssetCatalog>();
+
+            string assetId = $"unit-test-nested-{Guid.NewGuid():N}";
+            m_AssetIdsToCleanup.Add(assetId);
+
+            string assetDir = Path.Combine(
+                Application.persistentDataPath, "assetCache", kAssetCacheVersion, assetId);
+            string nestedDir = Path.Combine(assetDir, "source", "subdir");
+            Directory.CreateDirectory(nestedDir);
+            File.WriteAllText(Path.Combine(nestedDir, "model.gltf2"), "test");
+
+            catalog.Init();
+
+            Assert.IsTrue(Directory.Exists(assetDir), $"Expected startup to retain valid cache {assetId}");
+            Assert.NotNull(catalog.GetModel(assetId), $"Expected startup to register model for {assetId}");
         }
     }
 }

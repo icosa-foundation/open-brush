@@ -213,6 +213,7 @@ namespace TiltBrush
         // as mass "couldn't connect" failures, not HTTP 429), so a page-load firing ~6+ downloads at
         // once trips it. A small cap keeps throughput while staying under the throttle.
         private const int kMaxConcurrentDownloads = 4;
+        private const string kAssetCacheVersion = "2.28.10";
 
         // This may be a bit broader than an asset id, but it's a safe set of
         // filename characters.
@@ -604,6 +605,7 @@ namespace TiltBrush
             m_LoadQueue = new List<ModelLoadRequest>();
 
             FileUtils.InitializeDirectoryWithUserError(m_CacheDir, "Failed to create asset cache");
+            FileUtils.InitializeDirectoryWithUserError(GetVersionedCacheDirectory(), "Failed to create asset cache");
 
             m_ModelsByAssetId = new Dictionary<string, Model>();
             // InitCatalogQueries();
@@ -616,8 +618,7 @@ namespace TiltBrush
                     string modelFile = ValidModelCache(folderPath);
                     if (modelFile != null)
                     {
-                        string path = Path.Combine(folderPath, assetId);
-                        path = Path.Combine(path, modelFile);
+                        string path = Path.Combine(folderPath, modelFile);
                         m_ModelsByAssetId[assetId] = new Model(assetId, path);
                     }
                     else
@@ -774,7 +775,12 @@ namespace TiltBrush
                 Debug.LogWarningFormat("Not an asset id: {0}", asset);
                 return null;
             }
-            return Path.Combine(m_CacheDir, "2.28.10", asset);
+            return Path.Combine(GetVersionedCacheDirectory(), asset);
+        }
+
+        private string GetVersionedCacheDirectory()
+        {
+            return Path.Combine(m_CacheDir, kAssetCacheVersion);
         }
 
         /// On any error, returns an empty enumeration
@@ -782,7 +788,7 @@ namespace TiltBrush
         {
             try
             {
-                return Directory.GetDirectories(m_CacheDir);
+                return Directory.GetDirectories(GetVersionedCacheDirectory());
             }
             catch (UnauthorizedAccessException e) { Debug.LogException(e); }
             catch (DirectoryNotFoundException e) { Debug.LogException(e); }
@@ -1438,7 +1444,7 @@ namespace TiltBrush
 
         // Ideally we would check against the format info from Poly that we have all the required
         // elements but for now we know there should be one root model file in a supported format.
-        // Returns the filename of the root model file, or null if not valid.
+        // Returns the path of the root model file relative to dir, or null if not valid.
         private static string ValidModelCache(string dir)
         {
             // We now don't require a .bin file, as some assets are glbs
@@ -1457,7 +1463,7 @@ namespace TiltBrush
                 ".ply"
             };
 
-            var allFiles = Directory.GetFiles(dir);
+            var allFiles = Directory.GetFiles(dir, "*", SearchOption.AllDirectories);
             var modelFiles = allFiles.Where(file =>
                 preferredExtensions.Contains(Path.GetExtension(file).ToLowerInvariant())).ToArray();
 
@@ -1466,7 +1472,9 @@ namespace TiltBrush
                 return null;
             }
 
-            return modelFiles[0];
+            return modelFiles[0]
+                .Substring(dir.Length)
+                .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         }
 
         public void ClearLoadingQueue()
