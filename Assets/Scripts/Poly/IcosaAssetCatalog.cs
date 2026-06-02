@@ -199,6 +199,21 @@ namespace TiltBrush
         const int kThumbnailFetchMaxCount = 30;
         const int kThumbnailReadRate = 4;
         private const int DEFAULT_MODEL_TRIANGLE_COUNT_MAX = 80000;
+        // Budget for keeping loaded-but-unplaced models resident so that browsing back to a recently
+        // viewed model (e.g. switching panel tabs) doesn't re-import it. Sized by estimated runtime
+        // bytes (meshes + textures), not model count, since model sizes vary wildly. Models placed in
+        // the scene (m_UsageCount > 0) are always retained and are not evicted.
+        private const long kLoadedModelMemoryBudgetBytes = 512L * 1024 * 1024;
+        // A model whose measured runtime footprint exceeds this is remembered as "oversized" and no
+        // longer auto-preloaded/previewed (it still loads on explicit selection). This catches heavy
+        // models whose API triangle-count metadata under-reports their true cost.
+        private const long kOversizedModelByteThreshold = 256L * 1024 * 1024;
+        // Max simultaneous asset downloads. Capping this avoids bursting the asset host: legacy Poly
+        // assets are served via web.archive.org, which drops connections under a flood (manifesting
+        // as mass "couldn't connect" failures, not HTTP 429), so a page-load firing ~6+ downloads at
+        // once trips it. A small cap keeps throughput while staying under the throttle.
+        private const int kMaxConcurrentDownloads = 4;
+        private const string kAssetCacheVersion = "2.28.10";
 
         // This may be a bit broader than an asset id, but it's a safe set of
         // filename characters.
@@ -221,6 +236,72 @@ namespace TiltBrush
                 VrAssetFormat.OBJ,
                 VrAssetFormat.PLY
             };
+        }
+
+        public static bool TryGetDownloadFormat(
+            JObject json, VrAssetFormat[] desiredTypes,
+            out JToken format, out VrAssetFormat selectedType, out string formatType)
+        {
+            format = null;
+            selectedType = VrAssetFormat.Unknown;
+            formatType = null;
+
+            if (json == null)
+            {
+                return false;
+            }
+
+            var formatsToken = json["formats"];
+            if (formatsToken == null || !formatsToken.HasValues)
+            {
+                return false;
+            }
+
+            var allFormats = formatsToken.ToList();
+            if (allFormats.Count == 0)
+            {
+                return false;
+            }
+
+            if (desiredTypes == null)
+            {
+                return false;
+            }
+
+            var desiredFormatTypes = desiredTypes.Select(x => x.ToString()).ToList();
+            var preferredFormats = allFormats.Where(f => f["isPreferredForDownload"]?.Value<bool>() == true);
+            format = GetBestFormat(preferredFormats, desiredFormatTypes)
+                ?? GetBestFormat(allFormats, desiredFormatTypes);
+            if (format == null)
+            {
+                return false;
+            }
+
+            formatType = format["formatType"]?.ToString();
+            if (!string.IsNullOrEmpty(formatType) && Enum.TryParse(formatType, out selectedType))
+            {
+                return true;
+            }
+
+            format = null;
+            selectedType = VrAssetFormat.Unknown;
+            formatType = null;
+            return false;
+        }
+
+        private static JToken GetBestFormat(IEnumerable<JToken> formats, List<string> desiredTypes)
+        {
+            foreach (var typeByPreference in desiredTypes)
+            {
+                foreach (var format in formats)
+                {
+                    if (format["formatType"]?.ToString() == typeByPreference)
+                    {
+                        return format;
+                    }
+                }
+            }
+            return null;
         }
 
         public enum AssetLoadState
@@ -248,6 +329,10 @@ namespace TiltBrush
             public string HumanName { get; }
             public string AccountName { get; }
             public Quaternion? ModelRotation { get; }
+            // Highest triangle count reported across the asset's formats (0 if unknown). Used to skip
+            // auto-preload/preview of very heavy models. This is metadata, so it's available before
+            // any download/import.
+            public int TriangleCount { get; }
 
             public Texture2D Thumbnail
             {
@@ -286,6 +371,22 @@ namespace TiltBrush
                 {
                     ModelRotation = null;
                 }
+
+                int maxTriangleCount = 0;
+                var formats = json["formats"];
+                if (formats != null)
+                {
+                    foreach (var format in formats)
+                    {
+                        var triToken = format?["formatComplexity"]?["triangleCount"];
+                        if (triToken != null && int.TryParse(triToken.ToString(), out int tris)
+                            && tris > maxTriangleCount)
+                        {
+                            maxTriangleCount = tris;
+                        }
+                    }
+                }
+                TriangleCount = maxTriangleCount;
 
                 m_Thumbnail = new Texture2D(4, 4, TextureFormat.ARGB32, false);
                 m_ThumbnailUrl = json?["thumbnail"]?["url"]?.ToString();
@@ -396,6 +497,25 @@ namespace TiltBrush
             public string[] Formats;
             public string Curated;
             public string Category;
+
+            public string FriendlyString
+            {
+                get
+                {
+                    var parts = new List<string>();
+                    string orderingLabel = OrderBy.ToLowerInvariant();
+                    orderingLabel = orderingLabel.Replace("_", " ");
+                    orderingLabel = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(orderingLabel);
+                    if (!string.IsNullOrEmpty(OrderBy)) parts.Add($"{orderingLabel} first");
+                    if (!string.IsNullOrEmpty(SearchText)) parts.Add($"Title contains \"{SearchText.ToLowerInvariant()}\"");
+                    if (!string.IsNullOrEmpty(License)) parts.Add($"{License.ToLowerInvariant()}");
+                    if (!string.IsNullOrEmpty(Category)) parts.Add($"Category is {Category.ToLowerInvariant()}");
+                    //if (!string.IsNullOrEmpty(Curated)) parts.Add($"Curated: {Curated.ToLowerInvariant()}");
+                    //if (Formats != null && Formats.Length > 0) parts.Add($"Formats: {string.Join(", ", Formats).ToLowerInvariant()}");
+                    if (TriangleCountMax > 0) parts.Add($"Max triangles {TriangleCountMax:N0}");
+                    return parts.Count > 0 ? string.Join(", ", parts) : "(no filters)";
+                }
+            }
         }
 
         private static Vector3? GetCameraForward(JToken cameraParams)
@@ -451,6 +571,10 @@ namespace TiltBrush
         /// TODO: figure out why we have this intermediate stage
         private List<ModelLoadRequest> m_RequestLoadQueue;
         private List<ModelLoadRequest> m_LoadQueue;
+        /// Asset downloads waiting for a free slot (see kMaxConcurrentDownloads). Dispatched in
+        /// UpdateCatalog by PumpDownloadQueue. Items here are not yet in m_ActiveRequests.
+        private readonly List<(string assetId, string reason)> m_PendingDownloads =
+            new List<(string assetId, string reason)>();
         /// Memoization data for IsLoading().
         /// Set this to null to invalidate it; or (if you are very confident) mutate it.
         /// Invariant: either null, or the union of m_ActiveRequests, m_RequestLoadQueue, m_LoadQueue.
@@ -464,6 +588,17 @@ namespace TiltBrush
         private Dictionary<string, JObject> m_AssetJsonByAssetId;
         private Dictionary<IcosaSetType, AssetSet> m_AssetSetByType;
         private bool m_NotifyListeners;
+
+        // LRU bookkeeping for the in-memory model cache. Entries exist only while a model is loaded
+        // (m_Valid); they are removed on unload/evict via PruneModelCacheBookkeeping.
+        private readonly Dictionary<string, long> m_LoadedModelBytes = new Dictionary<string, long>();
+        private readonly Dictionary<string, float> m_ModelLastUsedTime = new Dictionary<string, float>();
+        // AssetIds the active panel is currently displaying. These are pinned (never evicted) so the
+        // visible page can't be unloaded out from under the user - which would thrash-reload it.
+        private readonly HashSet<string> m_VisibleAssetIds = new HashSet<string>();
+        // AssetIds measured (after a load) to exceed kOversizedModelByteThreshold. We stop
+        // auto-preloading these. Learned per session; not persisted.
+        private readonly HashSet<string> m_OversizedModelIds = new HashSet<string>();
 
         private AwaitableRateLimiter m_thumbnailFetchLimiter =
             new AwaitableRateLimiter(kThumbnailFetchRate, kThumbnailFetchMaxCount);
@@ -484,6 +619,7 @@ namespace TiltBrush
             {
                 m_IsLoadingMemo = new HashSet<string>();
                 m_IsLoadingMemo.UnionWith(m_ActiveRequests.Select(request => request.Asset.Id));
+                m_IsLoadingMemo.UnionWith(m_PendingDownloads.Select(d => d.assetId));
                 m_IsLoadingMemo.UnionWith(m_RequestLoadQueue.Select(request => request.AssetId));
                 m_IsLoadingMemo.UnionWith(m_LoadQueue.Select(request => request.AssetId));
             }
@@ -501,8 +637,8 @@ namespace TiltBrush
         public void RequestAutoRefresh(IcosaSetType type)
         {
             EnsureCatalogsExist();
-            // We don't update featured except on startup
-            if (type != IcosaSetType.Featured && App.IcosaIsLoggedIn)
+            // We don't update public catalogue tabs except on startup or forced refresh.
+            if (type != IcosaSetType.Featured && type != IcosaSetType.AllModels && App.IcosaIsLoggedIn)
             {
                 m_AssetSetByType[type].m_RefreshRequested = true;
             }
@@ -535,6 +671,8 @@ namespace TiltBrush
             m_LoadQueue = new List<ModelLoadRequest>();
 
             FileUtils.InitializeDirectoryWithUserError(m_CacheDir, "Failed to create asset cache");
+            FileUtils.InitializeDirectoryWithUserError(GetVersionedCacheDirectory(), "Failed to create asset cache");
+            DeleteOldCacheDirectories();
 
             m_ModelsByAssetId = new Dictionary<string, Model>();
             // InitCatalogQueries();
@@ -547,8 +685,7 @@ namespace TiltBrush
                     string modelFile = ValidModelCache(folderPath);
                     if (modelFile != null)
                     {
-                        string path = Path.Combine(folderPath, assetId);
-                        path = Path.Combine(path, modelFile);
+                        string path = Path.Combine(folderPath, modelFile);
                         m_ModelsByAssetId[assetId] = new Model(assetId, path);
                     }
                     else
@@ -611,10 +748,6 @@ namespace TiltBrush
                 }
             };
 
-            // Old way - newest curated
-            // "?curated=true&orderBy=NEWEST"
-            // For now try just sorting by "best"
-            // Something like orderBy=TRENDING would be good - BEST but weighted by recency
             m_AssetSetByType[IcosaSetType.Featured] = new AssetSet
             {
                 m_RefreshRequested = true,
@@ -630,10 +763,26 @@ namespace TiltBrush
                 }
             };
 
-            if (App.IcosaIsLoggedIn)
+            m_AssetSetByType[IcosaSetType.AllModels] = new AssetSet
             {
-                m_AssetSetByType[IcosaSetType.Featured].m_RefreshRequested = true;
-            }
+                m_RefreshRequested = true,
+                QueryParams = new IcosaQueryParameters
+                {
+                    SearchText = "",
+                    TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
+                    License = LicenseChoices.REMIXABLE,
+                    OrderBy = OrderByChoices.DISPLAY_NAME,
+                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Curated = CuratedChoices.ANY,
+                    Category = CategoryChoices.ANY
+                }
+            };
+
+            // if (App.IcosaIsLoggedIn)
+            // {
+            //     m_AssetSetByType[IcosaSetType.Featured].m_RefreshRequested = true;
+            //     m_AssetSetByType[IcosaSetType.AllModels].m_RefreshRequested = true;
+            // }
 
             RefreshFetchCoroutines();
         }
@@ -693,7 +842,31 @@ namespace TiltBrush
                 Debug.LogWarningFormat("Not an asset id: {0}", asset);
                 return null;
             }
-            return Path.Combine(m_CacheDir, asset);
+            return Path.Combine(GetVersionedCacheDirectory(), asset);
+        }
+
+        private string GetVersionedCacheDirectory()
+        {
+            return Path.Combine(m_CacheDir, kAssetCacheVersion);
+        }
+
+        private void DeleteOldCacheDirectories()
+        {
+            try
+            {
+                foreach (var cacheDirectory in new DirectoryInfo(m_CacheDir).EnumerateDirectories())
+                {
+                    if (cacheDirectory.Name == kAssetCacheVersion)
+                    {
+                        continue;
+                    }
+
+                    cacheDirectory.Delete(true);
+                }
+            }
+            catch (UnauthorizedAccessException e) { Debug.LogException(e); }
+            catch (DirectoryNotFoundException e) { Debug.LogException(e); }
+            catch (IOException e) { Debug.LogException(e); }
         }
 
         /// On any error, returns an empty enumeration
@@ -701,7 +874,7 @@ namespace TiltBrush
         {
             try
             {
-                return Directory.GetDirectories(m_CacheDir);
+                return Directory.GetDirectories(GetVersionedCacheDirectory());
             }
             catch (UnauthorizedAccessException e) { Debug.LogException(e); }
             catch (DirectoryNotFoundException e) { Debug.LogException(e); }
@@ -725,6 +898,55 @@ namespace TiltBrush
             return model;
         }
 
+        public bool HasCachedModel(string assetId)
+        {
+            return m_ModelsByAssetId.ContainsKey(assetId);
+        }
+
+        public bool CanAutoDownloadForPreview(string assetId)
+        {
+            if (!TryGetDownloadFormat(GetJsonForAsset(assetId), GetSupportedIcosaFormats(),
+                out JToken format, out _, out _))
+            {
+                return false;
+            }
+
+            return !FormatUsesInternetArchive(format);
+        }
+
+        private static bool FormatUsesInternetArchive(JToken format)
+        {
+            if (IsInternetArchiveUrl(format["root"]?["url"]?.ToString()))
+            {
+                return true;
+            }
+
+            var resources = format["resources"];
+            if (resources != null)
+            {
+                foreach (var resource in resources)
+                {
+                    if (IsInternetArchiveUrl(resource["url"]?.ToString()))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsInternetArchiveUrl(string url)
+        {
+            if (!Uri.TryCreate(url, UriKind.Absolute, out Uri uri))
+            {
+                return false;
+            }
+
+            return uri.Host.Equals("archive.org", StringComparison.OrdinalIgnoreCase)
+                || uri.Host.EndsWith(".archive.org", StringComparison.OrdinalIgnoreCase);
+        }
+
         /// Checks to see if it's time to kick off a new refresh
         /// Polls any refresh coroutines going on.
         void Update()
@@ -746,6 +968,31 @@ namespace TiltBrush
             foreach (var assetId in finishedModels)
             {
                 m_ModelsBeingLoaded.Remove(assetId);
+                // Record cache size/recency for models that loaded successfully.
+                if (m_ModelsByAssetId.TryGetValue(assetId, out Model finished) && finished.m_Valid)
+                {
+                    long modelBytes = EstimateModelBytes(finished);
+                    m_LoadedModelBytes[assetId] = modelBytes;
+                    m_ModelLastUsedTime[assetId] = Time.realtimeSinceStartup;
+                    if (modelBytes > kOversizedModelByteThreshold && m_OversizedModelIds.Add(assetId))
+                    {
+                        Debug.Log($"[ICOSALOAD] mark oversized {assetId} " +
+                            $"~{modelBytes / (1024 * 1024)}MB > {kOversizedModelByteThreshold / (1024 * 1024)}MB " +
+                            "- will not auto-preload");
+                    }
+                }
+            }
+            if (finishedModels.Count > 0)
+            {
+                // A load just completed: refresh IsLoading() and let the panel update its buttons.
+                m_IsLoadingMemo = null;
+                m_NotifyListeners = true;
+                long __cacheTotal = 0;
+                foreach (var kv in m_LoadedModelBytes) { __cacheTotal += kv.Value; }
+                Debug.Log($"[ICOSALOAD] cache {m_LoadedModelBytes.Count} models " +
+                    $"~{__cacheTotal / (1024 * 1024)}MB (budget {kLoadedModelMemoryBudgetBytes / (1024 * 1024)}MB, " +
+                    $"visible={m_VisibleAssetIds.Count})");
+                EnforceMemoryBudget();
             }
 
             if (!VrAssetService.m_Instance.Available)
@@ -837,6 +1084,8 @@ namespace TiltBrush
 
                 if (model.m_Valid)
                 {
+                    // Already cached in memory; mark it recently used so it survives LRU eviction.
+                    MarkModelUsed(assetId);
                     return;
                 }
                 if (model.Error != null)
@@ -851,9 +1100,29 @@ namespace TiltBrush
             }
             else
             {
-                // Not downloaded yet.
-                // Kick off a download; when done the load will arrange for the download-complete to kick off the
-                // load-into-memory work.
+                // Not downloaded yet. Queue it; PumpDownloadQueue (in UpdateCatalog) starts the actual
+                // download once a slot is free, so we don't burst the asset host all at once.
+                m_PendingDownloads.Add((assetId, reason));
+                m_IsLoadingMemo?.Add(assetId);
+            }
+        }
+
+        /// Starts queued downloads up to kMaxConcurrentDownloads. Called once per frame from
+        /// UpdateCatalog. Capping concurrency prevents flooding the (rate-limited) asset host.
+        private void PumpDownloadQueue()
+        {
+            while (m_ActiveRequests.Count < kMaxConcurrentDownloads && m_PendingDownloads.Count > 0)
+            {
+                var (assetId, reason) = m_PendingDownloads[0];
+                m_PendingDownloads.RemoveAt(0);
+
+                // It may have been downloaded (or its request canceled) while waiting in the queue.
+                if (m_ModelsByAssetId.ContainsKey(assetId))
+                {
+                    m_IsLoadingMemo = null;
+                    continue;
+                }
+
                 string assetDir = GetCacheDirectoryForAsset(assetId);
                 try
                 {
@@ -868,12 +1137,11 @@ namespace TiltBrush
                     Debug.LogError("Cannot create directory for online asset download.");
                 }
 
-                // Then request the asset from Icosa.
                 AssetGetter request = VrAssetService.m_Instance.GetAsset(
                     assetId, GetSupportedIcosaFormats(), reason);
                 StartCoroutine(request.GetAssetCoroutine());
                 m_ActiveRequests.Add(request);
-                m_IsLoadingMemo.Add(assetId);
+                m_IsLoadingMemo = null;
             }
         }
 
@@ -884,6 +1152,12 @@ namespace TiltBrush
         {
             if (IsLoading(assetId))
             {
+                // Drop it from the pending-download queue if it hasn't started yet.
+                if (m_PendingDownloads.RemoveAll(d => d.assetId == assetId) > 0)
+                {
+                    m_IsLoadingMemo = null;
+                }
+
                 // Might be tricky to safely remove from this queue, but at least mark it so that
                 // it doesn't go from "downloading" to "loading into memory"
                 bool isInActiveRequests = false;
@@ -921,7 +1195,7 @@ namespace TiltBrush
                 // and we have enough information to mutate it properly.
                 if (!isInActiveRequests && !isInRequestLoadQueue && !isInLoadQueue)
                 {
-                    m_IsLoadingMemo.Remove(assetId);
+                    m_IsLoadingMemo?.Remove(assetId);
                 }
             }
 
@@ -1097,6 +1371,9 @@ namespace TiltBrush
                 }
             }
 
+            // Start any queued downloads that now have a free slot.
+            PumpDownloadQueue();
+
             if (m_RequestLoadQueue.Count > 0 && m_LoadQueue.Count == 0)
             {
                 // Move a single item from "request load" to "load". Too many items on the load queue
@@ -1126,37 +1403,44 @@ namespace TiltBrush
         void LoadModelsInQueueAsync()
         {
             UnityEngine.Profiling.Profiler.BeginSample("PAC.LoadModelsInQueueAsync");
-            for (int i = m_LoadQueue.Count - 1; i >= 0; --i)
+            // Load one model at a time. The UnityGLTF import is time-sliced across frames (see
+            // NewGltfImporter), so we start a single async load and wait for it to finish before
+            // starting the next. Completion is detected in Update(), which clears the assetId from
+            // m_ModelsBeingLoaded once the load sets m_Valid or Error.
+            if (m_ModelsBeingLoaded.Count == 0 && m_LoadQueue.Count > 0)
             {
-                Model model = m_LoadQueue[i].Model;
-                string assetId = model.GetLocation().AssetId;
-                m_ModelsBeingLoaded.Add(assetId);
-                model.LoadModel();
-                // TODO Back to async loading
-                // AsyncHelpers.RunSync(model.LoadModelAsync);
-                m_LoadQueue.RemoveAt(i);
+                var request = m_LoadQueue[0];
+                m_LoadQueue.RemoveAt(0);
                 m_IsLoadingMemo = null;
-                // Don't notify listeners when starting load - only when it actually completes
-                // m_NotifyListeners = true;
-                // if (!model.IsLoading())
-                // {
-                //     // If the overlay is up, hitching is okay; so avoid the slow threaded image load.
-                //     bool useThreadedImageLoad =
-                //         OverlayManager.m_Instance.CurrentOverlayState == OverlayState.Hidden;
-                //     // model.LoadModelAsync(useThreadedImageLoad);
-                //     model.LoadModel();
-                // }
-                // else
-                // {
-                //     if (model.TryLoadModel(true))
-                //     {
-                //         m_LoadQueue.RemoveAt(i);
-                //         m_IsLoadingMemo = null;
-                //         m_NotifyListeners = true;
-                //     }
-                // }
+
+                Model model = request.Model;
+                if (!model.m_Valid && model.Error == null)
+                {
+                    string assetId = model.GetLocation().AssetId;
+                    m_ModelsBeingLoaded.Add(assetId);
+                    LoadModelAsyncSafe(model, assetId);
+                }
             }
             UnityEngine.Profiling.Profiler.EndSample();
+        }
+
+        /// Fire-and-forget async model load. The normal completion path (valid or load error) is
+        /// observed in Update() via m_Valid/Error. This wrapper exists only to guard against an
+        /// unexpected exception leaving the asset stuck in m_ModelsBeingLoaded, which would stall
+        /// the single-at-a-time load queue indefinitely.
+        private async void LoadModelAsyncSafe(Model model, string assetId)
+        {
+            try
+            {
+                await model.LoadModelAsync();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                m_ModelsBeingLoaded.Remove(assetId);
+                m_IsLoadingMemo = null;
+                m_NotifyListeners = true;
+            }
         }
 
         private static HashSet<T> SetMinus<T>(HashSet<T> lhs, HashSet<T> rhs)
@@ -1294,8 +1578,8 @@ namespace TiltBrush
         }
 
         // Ideally we would check against the format info from Poly that we have all the required
-        // elements but for now we know that there should be exactly one .gltf/.gltf2 and a .bin
-        // Returns the filename of the .gltf/.gltf2 file, or null if not valid.
+        // elements but for now we know there should be one root model file in a supported format.
+        // Returns the path of the root model file relative to dir, or null if not valid.
         private static string ValidModelCache(string dir)
         {
             // We now don't require a .bin file, as some assets are glbs
@@ -1304,31 +1588,35 @@ namespace TiltBrush
             //     return null;
             // }
 
-            var filesGltf1 = Directory.GetFiles(dir, "*.gltf");
-            var filesGltf2 = Directory.GetFiles(dir, "*.gltf2");
-            var filesObj = Directory.GetFiles(dir, "*.obj");
+            string[] preferredExtensions =
+            {
+                ".vox",
+                ".gltf2",
+                ".gltf",
+                ".glb",
+                ".obj",
+                ".ply"
+            };
 
-            if (filesGltf1.Length + filesGltf2.Length + filesObj.Length != 1)
+            var allFiles = Directory.GetFiles(dir, "*", SearchOption.AllDirectories);
+            var modelFiles = allFiles.Where(file =>
+                preferredExtensions.Contains(Path.GetExtension(file).ToLowerInvariant())).ToArray();
+
+            if (modelFiles.Length != 1)
             {
                 return null;
             }
 
-            // We used to prefer gltf1 for some reason. Stop doing that.
-            if (filesGltf2.Length == 1)
-            {
-                return filesGltf2[0];
-            }
-            if (filesGltf1.Length == 1)
-            {
-                return filesGltf1[0];
-            }
-            return filesObj[0];
+            return modelFiles[0]
+                .Substring(dir.Length)
+                .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         }
 
         public void ClearLoadingQueue()
         {
             m_LoadQueue.Clear();
             m_RequestLoadQueue.Clear();
+            m_PendingDownloads.Clear();
             m_IsLoadingMemo = null;
             foreach (var req in m_ActiveRequests)
             {
@@ -1341,6 +1629,128 @@ namespace TiltBrush
             foreach (var model in m_ModelsByAssetId.Values.Where(x => x != null && x.m_UsageCount == 0))
             {
                 model.UnloadModel();
+            }
+            PruneModelCacheBookkeeping();
+        }
+
+        /// True if this model was measured (on a previous load this session) to be too large to be
+        /// worth auto-preloading/previewing.
+        public bool IsModelOversized(string assetId)
+        {
+            return m_OversizedModelIds.Contains(assetId);
+        }
+
+        /// Marks a loaded model as recently used so it survives LRU eviction.
+        public void MarkModelUsed(string assetId)
+        {
+            if (m_ModelLastUsedTime.ContainsKey(assetId))
+            {
+                m_ModelLastUsedTime[assetId] = Time.realtimeSinceStartup;
+            }
+        }
+
+        /// Records which assetIds the panel is currently showing. Pinned models are never evicted,
+        /// so the budget can only reclaim models that have scrolled off-screen / out of the open tab.
+        public void SetVisibleModels(IEnumerable<string> assetIds)
+        {
+            m_VisibleAssetIds.Clear();
+            foreach (var id in assetIds)
+            {
+                if (id != null) { m_VisibleAssetIds.Add(id); }
+            }
+        }
+
+        /// Drops cache bookkeeping for any asset that is no longer loaded.
+        private void PruneModelCacheBookkeeping()
+        {
+            var stale = m_LoadedModelBytes.Keys
+                .Where(id => !m_ModelsByAssetId.TryGetValue(id, out var m) || m == null || !m.m_Valid)
+                .ToList();
+            foreach (var id in stale)
+            {
+                m_LoadedModelBytes.Remove(id);
+                m_ModelLastUsedTime.Remove(id);
+            }
+        }
+
+        /// Estimates a loaded model's runtime footprint (meshes + textures) in bytes.
+        private static long EstimateModelBytes(Model model)
+        {
+            if (model == null || model.m_ModelParent == null)
+            {
+                return 0;
+            }
+            long bytes = 0;
+            var seenMeshes = new HashSet<int>();
+            foreach (var mf in model.m_ModelParent.GetComponentsInChildren<MeshFilter>(true))
+            {
+                var mesh = mf.sharedMesh;
+                if (mesh != null && seenMeshes.Add(mesh.GetInstanceID()))
+                {
+                    bytes += UnityEngine.Profiling.Profiler.GetRuntimeMemorySizeLong(mesh);
+                }
+            }
+            var seenTextures = new HashSet<int>();
+            foreach (var renderer in model.m_ModelParent.GetComponentsInChildren<Renderer>(true))
+            {
+                foreach (var mat in renderer.sharedMaterials)
+                {
+                    if (mat == null) { continue; }
+                    foreach (var nameId in mat.GetTexturePropertyNameIDs())
+                    {
+                        var tex = mat.GetTexture(nameId);
+                        if (tex != null && seenTextures.Add(tex.GetInstanceID()))
+                        {
+                            bytes += UnityEngine.Profiling.Profiler.GetRuntimeMemorySizeLong(tex);
+                        }
+                    }
+                }
+            }
+            return bytes;
+        }
+
+        /// Evicts least-recently-used, unplaced, loaded models until the in-memory model cache is
+        /// back under kLoadedModelMemoryBudgetBytes. Models placed in the scene (m_UsageCount > 0)
+        /// are never evicted (but still count toward the total).
+        private void EnforceMemoryBudget()
+        {
+            PruneModelCacheBookkeeping();
+
+            long total = 0;
+            foreach (var kv in m_LoadedModelBytes)
+            {
+                total += kv.Value;
+            }
+            if (total <= kLoadedModelMemoryBudgetBytes)
+            {
+                return;
+            }
+
+            // Evict largest-first: one oversized model can exceed the whole budget, and dropping it
+            // frees space with a single eviction, keeping the many small/quick models cached. (Pure
+            // LRU would flush all the cheap models before the one expensive one - the worst outcome.)
+            var evictable = m_LoadedModelBytes.Keys
+                .Where(id => !m_VisibleAssetIds.Contains(id)
+                    && m_ModelsByAssetId.TryGetValue(id, out var m)
+                    && m != null && m.m_Valid && m.m_UsageCount == 0)
+                .OrderByDescending(id => m_LoadedModelBytes.TryGetValue(id, out var b) ? b : 0L)
+                .ToList();
+
+            bool evictedAny = false;
+            foreach (var id in evictable)
+            {
+                if (total <= kLoadedModelMemoryBudgetBytes) { break; }
+                long freed = m_LoadedModelBytes.TryGetValue(id, out var b) ? b : 0;
+                m_ModelsByAssetId[id].UnloadModel();
+                m_LoadedModelBytes.Remove(id);
+                m_ModelLastUsedTime.Remove(id);
+                total -= freed;
+                evictedAny = true;
+            }
+            if (evictedAny)
+            {
+                m_IsLoadingMemo = null;
+                m_NotifyListeners = true;
             }
         }
 
