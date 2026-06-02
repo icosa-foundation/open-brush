@@ -774,7 +774,7 @@ namespace TiltBrush
                 Debug.LogWarningFormat("Not an asset id: {0}", asset);
                 return null;
             }
-            return Path.Combine(m_CacheDir, asset);
+            return Path.Combine(m_CacheDir, "2.28.10", asset);
         }
 
         /// On any error, returns an empty enumeration
