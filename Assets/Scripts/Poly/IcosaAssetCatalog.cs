@@ -213,6 +213,7 @@ namespace TiltBrush
         // as mass "couldn't connect" failures, not HTTP 429), so a page-load firing ~6+ downloads at
         // once trips it. A small cap keeps throughput while staying under the throttle.
         private const int kMaxConcurrentDownloads = 4;
+        private const string kAssetCacheVersion = "2.28.10";
 
         // This may be a bit broader than an asset id, but it's a safe set of
         // filename characters.
@@ -235,6 +236,72 @@ namespace TiltBrush
                 VrAssetFormat.OBJ,
                 VrAssetFormat.PLY
             };
+        }
+
+        public static bool TryGetDownloadFormat(
+            JObject json, VrAssetFormat[] desiredTypes,
+            out JToken format, out VrAssetFormat selectedType, out string formatType)
+        {
+            format = null;
+            selectedType = VrAssetFormat.Unknown;
+            formatType = null;
+
+            if (json == null)
+            {
+                return false;
+            }
+
+            var formatsToken = json["formats"];
+            if (formatsToken == null || !formatsToken.HasValues)
+            {
+                return false;
+            }
+
+            var allFormats = formatsToken.ToList();
+            if (allFormats.Count == 0)
+            {
+                return false;
+            }
+
+            if (desiredTypes == null)
+            {
+                return false;
+            }
+
+            var desiredFormatTypes = desiredTypes.Select(x => x.ToString()).ToList();
+            var preferredFormats = allFormats.Where(f => f["isPreferredForDownload"]?.Value<bool>() == true);
+            format = GetBestFormat(preferredFormats, desiredFormatTypes)
+                ?? GetBestFormat(allFormats, desiredFormatTypes);
+            if (format == null)
+            {
+                return false;
+            }
+
+            formatType = format["formatType"]?.ToString();
+            if (!string.IsNullOrEmpty(formatType) && Enum.TryParse(formatType, out selectedType))
+            {
+                return true;
+            }
+
+            format = null;
+            selectedType = VrAssetFormat.Unknown;
+            formatType = null;
+            return false;
+        }
+
+        private static JToken GetBestFormat(IEnumerable<JToken> formats, List<string> desiredTypes)
+        {
+            foreach (var typeByPreference in desiredTypes)
+            {
+                foreach (var format in formats)
+                {
+                    if (format["formatType"]?.ToString() == typeByPreference)
+                    {
+                        return format;
+                    }
+                }
+            }
+            return null;
         }
 
         public enum AssetLoadState
@@ -604,6 +671,8 @@ namespace TiltBrush
             m_LoadQueue = new List<ModelLoadRequest>();
 
             FileUtils.InitializeDirectoryWithUserError(m_CacheDir, "Failed to create asset cache");
+            FileUtils.InitializeDirectoryWithUserError(GetVersionedCacheDirectory(), "Failed to create asset cache");
+            DeleteOldCacheDirectories();
 
             m_ModelsByAssetId = new Dictionary<string, Model>();
             // InitCatalogQueries();
@@ -616,8 +685,7 @@ namespace TiltBrush
                     string modelFile = ValidModelCache(folderPath);
                     if (modelFile != null)
                     {
-                        string path = Path.Combine(folderPath, assetId);
-                        path = Path.Combine(path, modelFile);
+                        string path = Path.Combine(folderPath, modelFile);
                         m_ModelsByAssetId[assetId] = new Model(assetId, path);
                     }
                     else
@@ -688,7 +756,7 @@ namespace TiltBrush
                     SearchText = "",
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.REMIXABLE,
-                    OrderBy = OrderByChoices.NEWEST,
+                    OrderBy = OrderByChoices.BEST,
                     Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
                     Curated = CuratedChoices.TRUE,
                     Category = CategoryChoices.ANY
@@ -703,7 +771,7 @@ namespace TiltBrush
                     SearchText = "",
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.REMIXABLE,
-                    OrderBy = OrderByChoices.BEST,
+                    OrderBy = OrderByChoices.DISPLAY_NAME,
                     Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
                     Curated = CuratedChoices.ANY,
                     Category = CategoryChoices.ANY
@@ -774,7 +842,31 @@ namespace TiltBrush
                 Debug.LogWarningFormat("Not an asset id: {0}", asset);
                 return null;
             }
-            return Path.Combine(m_CacheDir, asset);
+            return Path.Combine(GetVersionedCacheDirectory(), asset);
+        }
+
+        private string GetVersionedCacheDirectory()
+        {
+            return Path.Combine(m_CacheDir, kAssetCacheVersion);
+        }
+
+        private void DeleteOldCacheDirectories()
+        {
+            try
+            {
+                foreach (var cacheDirectory in new DirectoryInfo(m_CacheDir).EnumerateDirectories())
+                {
+                    if (cacheDirectory.Name == kAssetCacheVersion)
+                    {
+                        continue;
+                    }
+
+                    cacheDirectory.Delete(true);
+                }
+            }
+            catch (UnauthorizedAccessException e) { Debug.LogException(e); }
+            catch (DirectoryNotFoundException e) { Debug.LogException(e); }
+            catch (IOException e) { Debug.LogException(e); }
         }
 
         /// On any error, returns an empty enumeration
@@ -782,7 +874,7 @@ namespace TiltBrush
         {
             try
             {
-                return Directory.GetDirectories(m_CacheDir);
+                return Directory.GetDirectories(GetVersionedCacheDirectory());
             }
             catch (UnauthorizedAccessException e) { Debug.LogException(e); }
             catch (DirectoryNotFoundException e) { Debug.LogException(e); }
@@ -804,6 +896,55 @@ namespace TiltBrush
                 model = null;
             }
             return model;
+        }
+
+        public bool HasCachedModel(string assetId)
+        {
+            return m_ModelsByAssetId.ContainsKey(assetId);
+        }
+
+        public bool CanAutoDownloadForPreview(string assetId)
+        {
+            if (!TryGetDownloadFormat(GetJsonForAsset(assetId), GetSupportedIcosaFormats(),
+                out JToken format, out _, out _))
+            {
+                return false;
+            }
+
+            return !FormatUsesInternetArchive(format);
+        }
+
+        private static bool FormatUsesInternetArchive(JToken format)
+        {
+            if (IsInternetArchiveUrl(format["root"]?["url"]?.ToString()))
+            {
+                return true;
+            }
+
+            var resources = format["resources"];
+            if (resources != null)
+            {
+                foreach (var resource in resources)
+                {
+                    if (IsInternetArchiveUrl(resource["url"]?.ToString()))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsInternetArchiveUrl(string url)
+        {
+            if (!Uri.TryCreate(url, UriKind.Absolute, out Uri uri))
+            {
+                return false;
+            }
+
+            return uri.Host.Equals("archive.org", StringComparison.OrdinalIgnoreCase)
+                || uri.Host.EndsWith(".archive.org", StringComparison.OrdinalIgnoreCase);
         }
 
         /// Checks to see if it's time to kick off a new refresh
@@ -1438,7 +1579,7 @@ namespace TiltBrush
 
         // Ideally we would check against the format info from Poly that we have all the required
         // elements but for now we know there should be one root model file in a supported format.
-        // Returns the filename of the root model file, or null if not valid.
+        // Returns the path of the root model file relative to dir, or null if not valid.
         private static string ValidModelCache(string dir)
         {
             // We now don't require a .bin file, as some assets are glbs
@@ -1457,7 +1598,7 @@ namespace TiltBrush
                 ".ply"
             };
 
-            var allFiles = Directory.GetFiles(dir);
+            var allFiles = Directory.GetFiles(dir, "*", SearchOption.AllDirectories);
             var modelFiles = allFiles.Where(file =>
                 preferredExtensions.Contains(Path.GetExtension(file).ToLowerInvariant())).ToArray();
 
@@ -1466,7 +1607,9 @@ namespace TiltBrush
                 return null;
             }
 
-            return modelFiles[0];
+            return modelFiles[0]
+                .Substring(dir.Length)
+                .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         }
 
         public void ClearLoadingQueue()

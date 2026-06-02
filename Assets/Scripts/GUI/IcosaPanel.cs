@@ -226,9 +226,10 @@ namespace TiltBrush
 
                     // Note that App.UserConfig.Flags.IcosaModelPreload falls through to
                     // App.PlatformConfig.EnableIcosaPreload if it isn't set in Tilt Brush.cfg.
-                    // Skip auto-preload/preview for models whose reported triangle count is over the
-                    // configured limit; they still load on explicit selection. Gating preload also
-                    // gates the preview, since the preview is built from the loaded model.
+                    // The flag allows previews for cached models, plus remote models whose selected
+                    // download format is not backed by the Internet Archive.
+                    // Gating preload also gates the preview, since the preview is built from the
+                    // loaded model.
                     int maxPreviewTris = App.UserConfig.Flags.IcosaMaxPreviewTriangleCount;
                     bool tooManyTris = maxPreviewTris > 0 && asset.TriangleCount > maxPreviewTris;
                     bool measuredOversized = App.IcosaAssetCatalog.IsModelOversized(asset.AssetId);
@@ -238,7 +239,9 @@ namespace TiltBrush
                         Debug.Log($"[ICOSALOAD] skip preview/preload {asset.AssetId} " +
                             $"tris={asset.TriangleCount} (limit={maxPreviewTris}) oversized={measuredOversized}");
                     }
-                    if (App.UserConfig.Flags.IcosaModelPreload && !tooComplexToPreview)
+                    bool canPreload = App.IcosaAssetCatalog.HasCachedModel(asset.AssetId)
+                        || App.IcosaAssetCatalog.CanAutoDownloadForPreview(asset.AssetId);
+                    if (App.UserConfig.Flags.IcosaModelPreload && !tooComplexToPreview && canPreload)
                     {
                         icon.RequestModelPreload(PageIndex);
                     }
