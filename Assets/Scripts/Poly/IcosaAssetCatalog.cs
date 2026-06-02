@@ -756,7 +756,7 @@ namespace TiltBrush
                     SearchText = "",
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.REMIXABLE,
-                    OrderBy = OrderByChoices.NEWEST,
+                    OrderBy = OrderByChoices.BEST,
                     Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
                     Curated = CuratedChoices.TRUE,
                     Category = CategoryChoices.ANY
@@ -771,7 +771,7 @@ namespace TiltBrush
                     SearchText = "",
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.REMIXABLE,
-                    OrderBy = OrderByChoices.BEST,
+                    OrderBy = OrderByChoices.DISPLAY_NAME,
                     Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
                     Curated = CuratedChoices.ANY,
                     Category = CategoryChoices.ANY
