@@ -17,42 +17,36 @@ using System.Collections.Generic;
 using UnityEngine;
 using Vector3 = System.Numerics.Vector3;
 
-namespace ThreeDimensionalMarkovPen._3DMP
+namespace TiltBrush
 {
     partial class MarkovPen
     {
-         /// <summary>
-         /// The Synthesizer class is responsible for reconstructing the targetMapping based on the exampleMapping.
-         /// Part of the MarkovPen; it generates associations for the targetMapping by utilizing information from the exampleMapping.
-         /// </summary>
-         private class Synthesizer
+        /// @class Synthesizer
+        /// @brief The Synthesizer class is responsible for reconstructing the targetMapping based on the exampleMapping.
+        ///
+        /// Part of the MarkovPen; it generates associations for the targetMapping by utilizing information from the exampleMapping.
+        private class Synthesizer
         {
             private Mapping m_ExampleMapping;
 
-                 /// <summary>
-                 /// Empty constructor for the Synthesizer class. Initializes with a null example mapping.
-                 /// </summary>
-                 public Synthesizer()
+            /// @brief Empty constructor for the Synthesizer class. Initializes with a null example mapping.
+            public Synthesizer()
             {
                 m_ExampleMapping = null;
             }
 
-                 /// <summary>
-                 /// Constructor for the Synthesizer class.
-                 /// </summary>
-                 /// <param name="exampleMapping">The example mapping used for generating associations.</param>
-                 public Synthesizer(Mapping exampleMapping)
+            /// @brief Constructor for the Synthesizer class.
+            /// @param exampleMapping The example mapping used for generating associations.
+            public Synthesizer(Mapping exampleMapping)
             {
                 m_ExampleMapping = exampleMapping;
             }
 
-                 /// <summary>
-                 /// Reconstructs the target mapping by generating associations based on the example mapping.
-                 /// Iteratively applies offsets to the target mapping, generating associations and inflating points.
-                 /// </summary>
-                 /// <param name="targetMapping">The target mapping to be reconstructed.</param>
-                 /// <returns>A list of associations representing the reconstructed relationship between curves.</returns>
-                 public List<Tuple<UnityEngine.Vector3, UnityEngine.Vector3>> Reconstruct(Mapping targetMapping)
+            /// @brief Reconstructs the target mapping by generating associations based on the example mapping.
+            /// Iteratively applies offsets to the target mapping, generating associations and inflating points.
+            /// @param targetMapping The target mapping to be reconstructed.
+            /// @return A list of associations representing the reconstructed relationship between curves.
+            public List<Tuple<UnityEngine.Vector3, UnityEngine.Vector3>> Reconstruct(Mapping targetMapping)
             {
                 float offset = m_ExampleMapping.MaxOffset;
 
@@ -89,18 +83,14 @@ namespace ThreeDimensionalMarkovPen._3DMP
                 return associations;
             }
 
-            /// <summary>
-            /// Checks if the Synthesizer is trained with an example mapping.
-            /// </summary>
-            /// <returns>True if the Synthesizer is trained (exampleMapping is not null); otherwise false.</returns>
+            /// @brief Checks if the Synthesizer is trained with an example mapping.
+            /// @return True if the Synthesizer is trained (exampleMapping is not null); otherwise false.
             public bool IsTrained()
             {
                 return m_ExampleMapping != null;
             }
 
-            /// <summary>
-            /// Clears the example mapping in the Synthesizer, removing training data.
-            /// </summary>
+            /// @brief Clears the example mapping in the Synthesizer, removing training data.
             public void Clear()
             {
                 m_ExampleMapping = null;

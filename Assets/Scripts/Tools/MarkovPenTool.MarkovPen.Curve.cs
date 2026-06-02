@@ -21,10 +21,10 @@ namespace TiltBrush
 {
     public partial class MarkovPen
     {
-        /// <summary>
-        /// Partial class representative for the style curve of the MarkovPen.
+        /// @class Curve
+        /// @brief Partial class representative for the style curve of the MarkovPen.
+        ///
         /// The Curve class provides basic spline functionalities: adding control points, computing arc length positions, and interpolation on the curve.
-        /// </summary>
         public class Curve
         {
             protected List<float> m_ArcLengthPositions;
@@ -40,25 +40,21 @@ namespace TiltBrush
 
             private float m_Responsiveness = k_Responsiveness;
 
-            /// <summary>
-            /// Constructor for the style curve; initializes the first arc length position.
-            /// </summary>
-            /// <param name="responsiveness">Responsiveness parameter controlling smoothing (default: 1).</param>
+            /// @brief Constructor for the style curve; initializes the first arc length position.
+            /// @param responsiveness Responsiveness parameter controlling smoothing (default: 1).
             public Curve(float responsiveness = k_Responsiveness)
             {
                 m_Responsiveness = responsiveness;
                 m_ArcLengthPositions = new List<float> { 0f };
             }
 
-            /// <summary>
-            /// This public virtual method adds a control point to the curve and performs necessary updates.
+            /// @brief This public virtual method adds a control point to the curve and performs necessary updates.
             /// If the curve is empty, the control point is directly added. If it's the first control point,
             /// it is stored as the last input for future interpolation. For subsequent points, the method uses
             /// cubic Hermite interpolation (elasticurve implementation) to add a new point to the curve.
             /// The method also updates arc length information when the curve has at least three control points.
-            /// </summary>
-            /// <param name="controlPoint">The new control point to be added.</param>
-            /// <param name="upVector">The up vector associated with the control point.</param>
+            /// @param controlPoint The new control point to be added.
+            /// @param upVector The up vector associated with the control point.
             public virtual void AddControlPoint(Vector3 controlPoint, Vector3 upVector)
             {
                 if (m_ControlPoints.Count == 0)
@@ -94,16 +90,14 @@ namespace TiltBrush
                 }
             }
 
-            /// <summary>
-            /// Calculate the tangent vector at a given point using cubic Hermite interpolation factors.
-            /// </summary>
-            /// <param name="point1">The previous control point.</param>
-            /// <param name="point2">The current control point.</param>
-            /// <param name="point3">The next control point.</param>
-            /// <param name="tension">The tension factor for interpolation.</param>
-            /// <param name="continuity">The continuity factor for interpolation.</param>
-            /// <param name="bias">The bias factor for interpolation.</param>
-            /// <returns>The computed tangent vector at the given point.</returns>
+            /// @brief Calculate the tangent vector at a given point using cubic Hermite interpolation factors.
+            /// @param point1 The previous control point.
+            /// @param point2 The current control point.
+            /// @param point3 The next control point.
+            /// @param tension The tension factor for interpolation.
+            /// @param continuity The continuity factor for interpolation.
+            /// @param bias The bias factor for interpolation.
+            /// @return The computed tangent vector at the given point.
             protected static Vector3 ComputeTangent(
                 Vector3 point1,
                 Vector3 point2,
@@ -118,11 +112,9 @@ namespace TiltBrush
                 return factor1 * (point2 - point1) + factor2 * (point3 - point2);
             }
 
-            /// <summary>
-            /// Get an array of four Vector3 positions for the segment at the given index.
-            /// </summary>
-            /// <param name="index">The segment index used to retrieve control points.</param>
-            /// <returns>An array of four Vector3 positions.</returns>
+            /// @brief Get an array of four Vector3 positions for the segment at the given index.
+            /// @param index The segment index used to retrieve control points.
+            /// @return An array of four Vector3 positions.
             protected Vector3[] GetSegmentPositions(int index)
             {
                 Vector3 point1 = m_ControlPoints[index == 0 ? index : index - 1];
@@ -133,10 +125,8 @@ namespace TiltBrush
                 return new[] { point1, point2, point3, point4 };
             }
 
-            /// <summary>
-            /// Append a control point to the curve and update related information.
-            /// </summary>
-            /// <param name="point">The control point to be appended to the curve.</param>
+            /// @brief Append a control point to the curve and update related information.
+            /// @param point The control point to be appended to the curve.
             public void Append(Vector3 point)
             {
                 if (m_ControlPoints.Count == 0)
@@ -152,12 +142,10 @@ namespace TiltBrush
                 }
             }
 
-            /// <summary>
-            /// Calculates the position along the curve at a given arc length parameter.
+            /// @brief Calculates the position along the curve at a given arc length parameter.
             /// Returns extrapolated positions when l is outside the curve range.
-            /// </summary>
-            /// <param name="l">The arc length parameter at which to calculate the position.</param>
-            /// <returns>The Vector3 position on the curve at the specified arc length parameter.</returns>
+            /// @param l The arc length parameter at which to calculate the position.
+            /// @return The Vector3 position on the curve at the specified arc length parameter.
             public Vector3 PositionAt(float l)
             {
                 if (l < 0)
@@ -204,31 +192,25 @@ namespace TiltBrush
                     SegmentT(t));
             }
 
-            /// <summary>
-            /// Computes the local parameter within a curve segment based on the given time parameter.
-            /// </summary>
-            /// <param name="t">The time parameter for the curve segment.</param>
-            /// <returns>The local parameter within the curve segment (value between 0 and 1).</returns>
+            /// @brief Computes the local parameter within a curve segment based on the given time parameter.
+            /// @param t The time parameter for the curve segment.
+            /// @return The local parameter within the curve segment (value between 0 and 1).
             protected float SegmentT(float t)
             {
                 return t % 1;
             }
 
-            /// <summary>
-            /// Round down the given time parameter 't' and return the corresponding integer segment index.
-            /// </summary>
-            /// <param name="t">The input time parameter as a float.</param>
-            /// <returns>The rounded down integer value of 't'.</returns>
+            /// @brief Round down the given time parameter 't' and return the corresponding integer segment index.
+            /// @param t The input time parameter as a float.
+            /// @return The rounded down integer value of 't'.
             protected int SegmentIndex(float t)
             {
                 return Mathf.FloorToInt(t);
             }
 
-            /// <summary>
-            /// Calculate the time parameter 't' based on the given arc length.
-            /// </summary>
-            /// <param name="l">The desired arc length.</param>
-            /// <returns>The calculated time parameter 't'.</returns>
+            /// @brief Calculate the time parameter 't' based on the given arc length.
+            /// @param l The desired arc length.
+            /// @return The calculated time parameter 't'.
             protected float TimeAt(float l)
             {
                 int i = 0;
@@ -246,18 +228,16 @@ namespace TiltBrush
                 return i + t;
             }
 
-            /// <summary>
-            /// Perform cubic Hermite interpolation to calculate the position on the curve.
-            /// </summary>
-            /// <param name="point1">First control point.</param>
-            /// <param name="point2">Second control point.</param>
-            /// <param name="point3">Third control point.</param>
-            /// <param name="point4">Fourth control point.</param>
-            /// <param name="tension">Tension factor for interpolation.</param>
-            /// <param name="continuity">Continuity factor for interpolation.</param>
-            /// <param name="bias">Bias factor for interpolation.</param>
-            /// <param name="t">The parameter value for interpolation.</param>
-            /// <returns>The interpolated Vector3 position on the curve.</returns>
+            /// @brief Perform cubic Hermite interpolation to calculate the position on the curve.
+            /// @param point1 First control point.
+            /// @param point2 Second control point.
+            /// @param point3 Third control point.
+            /// @param point4 Fourth control point.
+            /// @param tension Tension factor for interpolation.
+            /// @param continuity Continuity factor for interpolation.
+            /// @param bias Bias factor for interpolation.
+            /// @param t The parameter value for interpolation.
+            /// @return The interpolated Vector3 position on the curve.
             public Vector3 Interpolate(
                 Vector3 point1,
                 Vector3 point2,
@@ -297,18 +277,16 @@ namespace TiltBrush
                 return newPoint;
             }
 
-            /// <summary>
-            /// Calculate the arc length between two points on the interpolated curve.
+            /// @brief Calculate the arc length between two points on the interpolated curve.
             /// Recursively subdivides the segment until distances fall below the threshold.
-            /// </summary>
-            /// <param name="p1">The first control point.</param>
-            /// <param name="p2">The second control point.</param>
-            /// <param name="p3">The third control point.</param>
-            /// <param name="p4">The fourth control point.</param>
-            /// <param name="t1">The parameter value for the first interpolated point.</param>
-            /// <param name="t2">The parameter value for the second interpolated point.</param>
-            /// <param name="threshold">The maximum distance threshold for recursive calculation (default: 0.1).</param>
-            /// <returns>The computed arc length between the two interpolated points.</returns>
+            /// @param p1 The first control point.
+            /// @param p2 The second control point.
+            /// @param p3 The third control point.
+            /// @param p4 The fourth control point.
+            /// @param t1 The parameter value for the first interpolated point.
+            /// @param t2 The parameter value for the second interpolated point.
+            /// @param threshold The maximum distance threshold for recursive calculation (default: 0.1).
+            /// @return The computed arc length between the two interpolated points.
             public float ArcLength(
                 Vector3 p1,
                 Vector3 p2,
@@ -340,11 +318,9 @@ namespace TiltBrush
                 }
             }
 
-            /// <summary>
-            /// Computes the arc length of a cubic Bezier curve segment at a specific parameter value.
-            /// </summary>
-            /// <param name="i">The index of the curve segment.</param>
-            /// <returns>The arc length of the cubic Bezier curve segment at the given parameter value.</returns>
+            /// @brief Computes the arc length of a cubic Bezier curve segment at a specific parameter value.
+            /// @param i The index of the curve segment.
+            /// @return The arc length of the cubic Bezier curve segment at the given parameter value.
             private float ComputeArcLength(int i)
             {
                 Vector3[] segment = GetSegmentPositions(i);
@@ -358,32 +334,24 @@ namespace TiltBrush
                     1f);
             }
 
-            /// <summary>
-            /// Retrieve the total arc length of the entire curve.
-            /// </summary>
-            /// <returns>The total arc length of the curve.</returns>
+            /// @brief Retrieve the total arc length of the entire curve.
+            /// @return The total arc length of the curve.
             public virtual float ArcLength()
             {
                 return m_ArcLengthPositions.Last();
             }
 
-            /// <summary>
-            /// Get the list of control points for the curve.
-            /// </summary>
+            /// @brief Get the list of control points for the curve.
             public List<Vector3> ControlPoints => m_ControlPoints;
 
-            /// <summary>
-            /// Check if the curve has any control points.
-            /// </summary>
-            /// <returns>True if the curve has no control points, otherwise false.</returns>
+            /// @brief Check if the curve has any control points.
+            /// @return True if the curve has no control points, otherwise false.
             public bool IsEmpty()
             {
                 return m_ControlPoints.Count == 0;
             }
 
-            /// <summary>
-            /// Finalize the curve, updating arc length information by computing the last segment's length.
-            /// </summary>
+            /// @brief Finalize the curve, updating arc length information by computing the last segment's length.
             public virtual void Finish()
             {
                 if (m_ControlPoints.Count < 2)
@@ -396,10 +364,8 @@ namespace TiltBrush
                     ComputeArcLength(m_ControlPoints.Count - 2));
             }
 
-            /// <summary>
-            /// Check if the curve has been fully processed and finalized.
-            /// </summary>
-            /// <returns>True if the curve is finished, otherwise false.</returns>
+            /// @brief Check if the curve has been fully processed and finalized.
+            /// @return True if the curve is finished, otherwise false.
             public bool IsFinished()
             {
                 if (this is BaseCurve)
