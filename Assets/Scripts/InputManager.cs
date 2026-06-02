@@ -87,6 +87,7 @@ namespace TiltBrush
             Share,
             Fly,
             ScriptedTool = 6000,
+            MarkovPenTool,
         }
 
         /// WARNING: do not arbitrarily rename these enum values.
@@ -646,6 +647,8 @@ namespace TiltBrush
                 case SketchCommands.Fly:
                     return Brush.GetCommand(rCommand);
                 case SketchCommands.ScriptedTool:
+                    return Brush.GetCommand(rCommand);
+                case SketchCommands.MarkovPenTool:
                     return Brush.GetCommand(rCommand);
             }
 
