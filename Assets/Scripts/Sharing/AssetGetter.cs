@@ -91,6 +91,28 @@ namespace TiltBrush
             Reason = reason;
         }
 
+        private static string GetPathRelativeToRootUrl(string rootUrl, string resourceUrl, string fallbackPath)
+        {
+            if (string.IsNullOrEmpty(rootUrl) || string.IsNullOrEmpty(resourceUrl))
+            {
+                return fallbackPath;
+            }
+
+            int lastSlash = rootUrl.LastIndexOf('/');
+            if (lastSlash < 0)
+            {
+                return fallbackPath;
+            }
+
+            string rootDir = rootUrl.Substring(0, lastSlash + 1);
+            if (!resourceUrl.StartsWith(rootDir, StringComparison.Ordinal))
+            {
+                return fallbackPath;
+            }
+
+            return resourceUrl.Substring(rootDir.Length);
+        }
+
         // Initiates the contact with Icosa
         public IEnumerator<Null> GetAssetCoroutine()
         {
@@ -213,11 +235,15 @@ namespace TiltBrush
                         internalRootFilePath,
                         format["root"]?["url"].ToString());
 
+                    string rootUrl = format["root"]?["url"].ToString();
+
                     // Get all resource infos.  There may be zero.
                     foreach (var r in format["resources"])
                     {
                         string path = r["relativePath"].ToString();
-                        m_Asset.AddResourceElement(path, r["url"].ToString());
+                        string url = r["url"].ToString();
+                        path = GetPathRelativeToRootUrl(rootUrl, url, path);
+                        m_Asset.AddResourceElement(path, url);
 
                         // The root element should be the only gltf file.
                         Debug.Assert(!path.EndsWith(".gltf") && !path.EndsWith(".gltf2"),
