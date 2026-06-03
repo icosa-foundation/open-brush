@@ -25,67 +25,140 @@ namespace TiltBrush
         public TextMeshPro m_Heading;
         public GameObject m_SketchLoadingUi;
         public string m_NonXRHelpURL;
-        private List<SceneFileInfo> m_Sketches;
+        [SerializeField] private RectTransform m_SketchGridContent;
+        [SerializeField] private NoHeadsetSketchGridItem m_SketchGridItemPrefab;
+        [SerializeField] private GameObject m_EmptySketchListMessage;
+        [SerializeField] private Texture2D m_UnknownImageTexture;
+        [SerializeField] private Texture2D m_LoadingImageTexture;
+
+        private readonly List<SketchGridEntry> m_Sketches = new List<SketchGridEntry>();
+        private readonly List<NoHeadsetSketchGridItem> m_GridItems =
+            new List<NoHeadsetSketchGridItem>();
+        private readonly Dictionary<SketchSetType, SketchSet> m_VisibleSets =
+            new Dictionary<SketchSetType, SketchSet>();
+        private readonly Dictionary<SketchSetType, Button> m_CategoryTabs =
+            new Dictionary<SketchSetType, Button>();
+        private readonly List<Sprite> m_GeneratedSprites = new List<Sprite>();
+        private readonly List<Sprite> m_ThumbnailSprites = new List<Sprite>();
+        private readonly List<Texture2D> m_OwnedThumbnailTextures = new List<Texture2D>();
         private TMP_Dropdown m_Dropdown;
+        private GameObject m_ViewSketchButton;
+        private RectTransform m_BlankSketchButtonRect;
+        private RectTransform m_HelpTextRect;
+        private GameObject m_RuntimeGridRoot;
+        private RectTransform m_RuntimeTabBarRect;
+        private RectTransform m_RuntimeGridRect;
+        private Vector2Int m_LastScreenSize;
+        private Sprite m_LoadingSprite;
+        private Sprite m_UnknownSprite;
+        private SketchSetType m_SelectedSetType = SketchSetType.User;
+        private TMP_FontAsset m_RuntimeFontAsset;
+        private Material m_RuntimeFontMaterial;
+        private bool m_HasSavedCursorState;
+        private bool m_PreviousCursorVisible;
+        private CursorLockMode m_PreviousCursorLockState;
+        private string m_VisibleSketchSignature = "";
+        private string m_ThumbnailRequestSignature = "";
+        private bool m_CuratedDownloadsActive;
 
         private const int BatchSize = 2;
         private const int MaxSketches = 20;
+        private const int LocalThumbnailLoadsPerFrame = 8;
+        private const string LogPrefix = "NOXR_GRID";
 
         public static InitNoHeadsetMode m_Instance;
+
+        private class SketchGridEntry
+        {
+            public SketchSet SketchSet;
+            public SketchSetType SetType;
+            public int SketchIndex;
+            public SceneFileInfo SceneFileInfo;
+            public string DisplayName;
+            public bool ThumbnailAssigned;
+        }
 
         void Start()
         {
             m_Instance = this;
             App.Instance.m_NoVrUi.SetActive(true);
-            m_Dropdown = GetComponentInChildren<TMP_Dropdown>();
-            if (m_Dropdown != null)
-            {
-                m_Dropdown.gameObject.SetActive(false);
-            }
-
-            m_Dropdown.ClearOptions();
-            m_Sketches = new List<SceneFileInfo>();
+            CacheAndShowCursor();
+            InitializeGridUi();
+            RefreshSketchGrid();
             StartCoroutine(DownloadAllCuratedSketchesInBatches(BatchSize, MaxSketches));
+        }
+
+        private void Update()
+        {
+            NoHeadsetPointerCursor.ForcePointerVisible();
+            RefreshRuntimeGridFrame();
+            RefreshVisibleThumbnails();
         }
 
         private IEnumerator DownloadAllCuratedSketchesInBatches(int numSketches, int maxSketches)
         {
-            var curatedSketchSet = (IcosaSketchSet)SketchCatalog.m_Instance.GetSet(SketchSetType.Curated);
+            var curatedSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Curated) as IcosaSketchSet;
+            if (curatedSketchSet == null)
+            {
+                Debug.LogWarning($"{LogPrefix} curated sketch set is not downloadable");
+                RefreshSketchGrid();
+                yield break;
+            }
 
+            m_CuratedDownloadsActive = true;
             while (true)
             {
                 yield return StartCoroutine(DownloadCuratedSketches(numSketches, maxSketches));
-                RefreshDropdownItemsForSet(curatedSketchSet);
+                RefreshSketchGridAfterCuratedBatch();
 
-                // Count how many are now available
                 int available = 0;
                 for (int i = 0; i < curatedSketchSet.NumSketches; i++)
                 {
                     var info = curatedSketchSet.GetSketchSceneFileInfo(i);
                     if (info != null && info.Available)
+                    {
                         available++;
+                    }
                 }
+
                 if (available >= maxSketches)
+                {
                     break;
+                }
+
+                if (available >= curatedSketchSet.NumSketches)
+                {
+                    Debug.LogWarning($"{LogPrefix} curated downloads stopped at {available} available sketches");
+                    break;
+                }
             }
+            m_CuratedDownloadsActive = false;
+            RefreshSketchGrid();
         }
 
         public IEnumerator DownloadCuratedSketches(int numSketches, int maxSketches)
         {
-            var curatedSketchSet = (IcosaSketchSet)SketchCatalog.m_Instance.GetSet(SketchSetType.Curated);
+            var curatedSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Curated) as IcosaSketchSet;
+            if (curatedSketchSet == null)
+            {
+                yield break;
+            }
 
-            // Count already downloaded sketches
             int alreadyDownloaded = 0;
             for (int i = 0; i < curatedSketchSet.NumSketches; i++)
             {
                 var info = curatedSketchSet.GetSketchSceneFileInfo(i);
                 if (info != null && info.Available)
+                {
                     alreadyDownloaded++;
+                }
             }
 
             int toDownload = Mathf.Min(numSketches, maxSketches - alreadyDownloaded);
             if (toDownload <= 0)
+            {
                 yield break;
+            }
 
             yield return new WaitUntil(() => curatedSketchSet.NumSketches >= alreadyDownloaded + toDownload);
 
@@ -97,85 +170,282 @@ namespace TiltBrush
 
             yield return StartCoroutine(curatedSketchSet.DownloadFilesCoroutine(indicesToDownload, () =>
             {
-                RefreshDropdownItemsForSet(curatedSketchSet);
+                RefreshSketchGridAfterCuratedBatch();
             }));
+        }
+
+        private void RefreshSketchGridAfterCuratedBatch()
+        {
+            if (m_SelectedSetType != SketchSetType.Curated || !m_CuratedDownloadsActive)
+            {
+                RefreshSketchGrid();
+            }
         }
 
         public void OnClickOutsideDropdown()
         {
-            // Hide the dropdown when clicking outside
             if (m_Dropdown != null && m_Dropdown.gameObject.activeSelf)
             {
                 m_Dropdown.Hide();
             }
         }
 
-        // Public so it can be called from the download callback
         public void RefreshDropdownItemsForSet(SketchSet sketchset)
         {
-            // Check if any set has items before clearing and repopulating
+            RefreshSketchGrid();
+        }
+
+        public void RefreshSketchGrid()
+        {
+            if (m_SketchGridContent == null || m_SketchGridItemPrefab == null)
+            {
+                Debug.LogError($"{LogPrefix} missing sketch grid UI references");
+                return;
+            }
+
             var userSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.User);
             var curatedSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Curated);
             var likedSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Liked);
 
-            bool anyHasItems =
-                (userSketchSet.IsReadyForAccess && userSketchSet.NumSketches > 0) ||
-                (curatedSketchSet.IsReadyForAccess && curatedSketchSet.NumSketches > 0) ||
-                (likedSketchSet.IsReadyForAccess && likedSketchSet.NumSketches > 0);
+            int userCount = CountSelectableSketches(userSketchSet);
+            int curatedCount = CountSelectableSketches(curatedSketchSet);
+            int likedCount = App.IcosaIsLoggedIn ? CountSelectableSketches(likedSketchSet) : 0;
 
-            if (!anyHasItems)
+            if (!HasSelectableSketchesForSet(m_SelectedSetType, userCount, curatedCount, likedCount))
             {
-                // Don't clear or show the dropdown if nothing is ready
-                m_Dropdown.gameObject.SetActive(false);
-                return;
+                m_SelectedSetType = GetFirstSelectableSetType(userCount, curatedCount, likedCount);
+            }
+            UpdateCategoryTabs(userCount, curatedCount, likedCount);
+
+            List<SketchGridEntry> visibleSketches = new List<SketchGridEntry>();
+            switch (m_SelectedSetType)
+            {
+                case SketchSetType.User:
+                    AddSketchGridEntries(userSketchSet, SketchSetType.User, visibleSketches);
+                    break;
+                case SketchSetType.Curated:
+                    AddSketchGridEntries(curatedSketchSet, SketchSetType.Curated, visibleSketches);
+                    break;
+                case SketchSetType.Liked:
+                    AddSketchGridEntries(likedSketchSet, SketchSetType.Liked, visibleSketches);
+                    break;
+                default:
+                    AddSketchGridEntries(userSketchSet, SketchSetType.User, visibleSketches);
+                    break;
             }
 
-            m_Dropdown.ClearOptions();
-            m_Sketches.Clear();
-
-            // Repopulate all sets
-            AddDropdownItems(userSketchSet);
-            AddDropdownItems(curatedSketchSet);
-            AddDropdownItems(likedSketchSet);
-
-            // Show dropdown if there is at least one item, otherwise hide it
-            m_Dropdown.gameObject.SetActive(m_Dropdown.options.Count > 0);
-            // Select the first item if available
-            if (m_Dropdown.options.Count > 0)
+            string signature = GetSketchListSignature(m_SelectedSetType, visibleSketches);
+            if (signature != m_VisibleSketchSignature)
             {
-                m_Dropdown.value = 0;
-                m_Dropdown.RefreshShownValue();
+                ApplyVisibleSketches(visibleSketches, signature);
+            }
+            else
+            {
+                RefreshVisibleTileText();
             }
 
+            if (m_EmptySketchListMessage != null)
+            {
+                m_EmptySketchListMessage.SetActive(m_Sketches.Count == 0
+                    && HasSelectableSketchesForSet(m_SelectedSetType, userCount, curatedCount, likedCount));
+            }
+            SetGridActive(m_Sketches.Count > 0
+                || HasSelectableSketchesForSet(m_SelectedSetType, userCount, curatedCount, likedCount));
+
+            Debug.Log($"{LogPrefix} refreshed grid with {m_Sketches.Count} sketches");
         }
 
-        private void AddDropdownItems(SketchSet sketchset)
+        private int CountSelectableSketches(SketchSet sketchset)
         {
-            if (!sketchset.IsReadyForAccess) return;
+            if (sketchset == null || !sketchset.IsReadyForAccess)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            for (int i = 0; i < sketchset.NumSketches; i++)
+            {
+                var info = sketchset.GetSketchSceneFileInfo(i);
+                if (info != null && sketchset.IsSketchIndexValid(i))
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        private bool HasSelectableSketchesForSet(SketchSetType setType, int userCount, int curatedCount,
+            int likedCount)
+        {
+            switch (setType)
+            {
+                case SketchSetType.User:
+                    return userCount > 0;
+                case SketchSetType.Curated:
+                    return curatedCount > 0;
+                case SketchSetType.Liked:
+                    return App.IcosaIsLoggedIn && likedCount > 0;
+                default:
+                    return false;
+            }
+        }
+
+        private SketchSetType GetFirstSelectableSetType(int userCount, int curatedCount, int likedCount)
+        {
+            if (userCount > 0)
+            {
+                return SketchSetType.User;
+            }
+            if (curatedCount > 0)
+            {
+                return SketchSetType.Curated;
+            }
+            if (App.IcosaIsLoggedIn && likedCount > 0)
+            {
+                return SketchSetType.Liked;
+            }
+            return SketchSetType.User;
+        }
+
+        private void AddSketchGridEntries(SketchSet sketchset, SketchSetType setType,
+            List<SketchGridEntry> entries)
+        {
+            if (sketchset == null || !sketchset.IsReadyForAccess)
+            {
+                return;
+            }
 
             for (int i = 0; i < sketchset.NumSketches; i++)
             {
                 var info = sketchset.GetSketchSceneFileInfo(i);
-                if (info == null || !sketchset.IsSketchIndexValid(i) || !info.Available)
+                if (info == null || !sketchset.IsSketchIndexValid(i))
                 {
-                    continue; // skip invalid sketches
+                    continue;
                 }
-                var sketchName = sketchset.GetSketchName(i);
-                m_Sketches.Add(info);
 
-                sketchset.GetSketchIcon(i, out Texture2D icon,
-                    out string[] _, out string __);
-                if (icon != null)
+                string sketchName = sketchset.GetSketchName(i);
+                entries.Add(new SketchGridEntry
                 {
-                    var sprite = Sprite.Create(icon, new Rect(0, 0,
-                        icon.width, icon.height), new Vector2(0.5f, 0.5f));
-                    m_Dropdown.options.Add(new TMP_Dropdown.OptionData(sketchName, sprite));
+                    SketchSet = sketchset,
+                    SetType = setType,
+                    SketchIndex = i,
+                    SceneFileInfo = info,
+                    DisplayName = string.IsNullOrEmpty(sketchName)
+                        ? info.HumanName
+                        : sketchName
+                });
+            }
+        }
+
+        private string GetSketchListSignature(SketchSetType setType, List<SketchGridEntry> entries)
+        {
+            System.Text.StringBuilder builder = new System.Text.StringBuilder();
+            builder.Append(setType);
+            for (int i = 0; i < entries.Count; i++)
+            {
+                builder.Append('|');
+                builder.Append(entries[i].SetType);
+                builder.Append(':');
+                builder.Append(entries[i].SketchIndex);
+                builder.Append(':');
+                builder.Append(entries[i].SceneFileInfo != null
+                    ? entries[i].SceneFileInfo.FullPath
+                    : entries[i].DisplayName);
+            }
+            return builder.ToString();
+        }
+
+        private void ApplyVisibleSketches(List<SketchGridEntry> visibleSketches, string signature)
+        {
+            DestroyThumbnailSprites();
+            m_Sketches.Clear();
+            m_Sketches.AddRange(visibleSketches);
+            m_VisibleSketchSignature = signature;
+
+            EnsureGridItemCount(m_Sketches.Count);
+            for (int i = 0; i < m_GridItems.Count; i++)
+            {
+                NoHeadsetSketchGridItem item = m_GridItems[i];
+                if (item == null)
+                {
+                    continue;
+                }
+
+                bool active = i < m_Sketches.Count;
+                item.gameObject.SetActive(active);
+                if (active)
+                {
+                    SketchGridEntry entry = m_Sketches[i];
+                    item.Init(i, entry.DisplayName, null, m_LoadingSprite, true, LoadSketchEntry);
+                    item.SetAvailableVisual(entry.SceneFileInfo != null && entry.SceneFileInfo.Available);
                 }
                 else
                 {
-                    m_Dropdown.options.Add(new TMP_Dropdown.OptionData(sketchName));
+                    item.ClearListeners();
                 }
             }
+
+            RequestVisibleThumbnailMetadata();
+        }
+
+        private void RefreshVisibleTileText()
+        {
+            int count = Mathf.Min(m_Sketches.Count, m_GridItems.Count);
+            for (int i = 0; i < count; i++)
+            {
+                if (m_GridItems[i] != null && m_GridItems[i].gameObject.activeSelf)
+                {
+                    m_GridItems[i].SetTitle(m_Sketches[i].DisplayName);
+                    m_GridItems[i].SetAvailableVisual(m_Sketches[i].SceneFileInfo != null
+                        && m_Sketches[i].SceneFileInfo.Available);
+                }
+            }
+        }
+
+        private void EnsureGridItemCount(int count)
+        {
+            while (m_GridItems.Count < count)
+            {
+                NoHeadsetSketchGridItem item = Instantiate(m_SketchGridItemPrefab, m_SketchGridContent);
+                item.gameObject.SetActive(false);
+                AttachPointerCursorHandler(item.gameObject);
+                m_GridItems.Add(item);
+            }
+        }
+
+        private void RequestVisibleThumbnailMetadata(bool force = false)
+        {
+            if (m_Sketches.Count == 0)
+            {
+                m_ThumbnailRequestSignature = "";
+                return;
+            }
+
+            string requestSignature = GetSketchListSignature(m_SelectedSetType, m_Sketches);
+            if (!force && requestSignature == m_ThumbnailRequestSignature)
+            {
+                return;
+            }
+
+            m_VisibleSets.Clear();
+            Dictionary<SketchSet, List<int>> requestsBySet = new Dictionary<SketchSet, List<int>>();
+            for (int i = 0; i < m_Sketches.Count; i++)
+            {
+                SketchGridEntry entry = m_Sketches[i];
+                if (!requestsBySet.TryGetValue(entry.SketchSet, out List<int> requests))
+                {
+                    requests = new List<int>();
+                    requestsBySet[entry.SketchSet] = requests;
+                    m_VisibleSets[entry.SetType] = entry.SketchSet;
+                }
+                requests.Add(entry.SketchIndex);
+            }
+
+            foreach (var pair in requestsBySet)
+            {
+                pair.Key.RequestOnlyLoadedMetadata(pair.Value);
+            }
+            m_ThumbnailRequestSignature = requestSignature;
         }
 
         public void InitEditMode()
@@ -189,31 +459,872 @@ namespace TiltBrush
 
         public void InitViewOnlyMode()
         {
+            LoadSketchEntry(0);
+        }
+
+        private void LoadSketchEntry(int index)
+        {
+            if (index < 0 || index >= m_Sketches.Count)
+            {
+                Debug.LogWarning($"{LogPrefix} invalid sketch index {index}");
+                return;
+            }
+
             var cameraPos = App.VrSdk.GetVrCamera().transform.position;
             cameraPos.y = 12;
             App.VrSdk.GetVrCamera().transform.position = cameraPos;
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FlyTool);
-            var dropdown = GetComponentInChildren<TMP_Dropdown>();
-            var index = dropdown.value;
-            SceneFileInfo rInfo = m_Sketches[index];
-            SketchControlsScript.m_Instance.LoadSketch(rInfo, quickload: true);
+            SketchGridEntry entry = m_Sketches[index];
+            if (entry.SceneFileInfo != null && !entry.SceneFileInfo.Available
+                && (entry.SetType == SketchSetType.Curated || entry.SetType == SketchSetType.Liked)
+                && entry.SketchSet is IcosaSketchSet icosaSketchSet)
+            {
+                if (m_GridItems[index] != null)
+                {
+                    m_GridItems[index].SetThumbnail(m_LoadingSprite, true);
+                }
+                StartCoroutine(DownloadAndLoadSketchEntry(icosaSketchSet, entry.SketchIndex));
+                return;
+            }
+
+            IssueSketchbookLoadCommand(entry);
+        }
+
+        private IEnumerator DownloadAndLoadSketchEntry(IcosaSketchSet sketchSet, int sketchIndex)
+        {
+            yield return StartCoroutine(sketchSet.DownloadFilesCoroutine(new List<int> { sketchIndex }, () =>
+            {
+                RefreshSketchGrid();
+            }));
+
+            if (!sketchSet.IsSketchIndexValid(sketchIndex))
+            {
+                Debug.LogWarning($"{LogPrefix} downloaded sketch index {sketchIndex} is no longer valid");
+                yield break;
+            }
+
+            SketchGridEntry entry = null;
+            for (int i = 0; i < m_Sketches.Count; i++)
+            {
+                if (m_Sketches[i].SketchSet == sketchSet && m_Sketches[i].SketchIndex == sketchIndex)
+                {
+                    entry = m_Sketches[i];
+                    break;
+                }
+            }
+
+            if (entry == null)
+            {
+                entry = new SketchGridEntry
+                {
+                    SketchSet = sketchSet,
+                    SetType = sketchSet.Type,
+                    SketchIndex = sketchIndex,
+                    SceneFileInfo = sketchSet.GetSketchSceneFileInfo(sketchIndex),
+                    DisplayName = sketchSet.GetSketchName(sketchIndex)
+                };
+            }
+
+            if (entry.SceneFileInfo == null || !entry.SceneFileInfo.Available)
+            {
+                Debug.LogWarning($"{LogPrefix} downloaded sketch index {sketchIndex} is not available");
+                yield break;
+            }
+
+            IssueSketchbookLoadCommand(entry);
+        }
+
+        private void IssueSketchbookLoadCommand(SketchGridEntry entry)
+        {
+            SketchControlsScript.m_Instance.IssueGlobalCommand(
+                SketchControlsScript.GlobalCommands.LoadConfirmUnsaved,
+                entry.SketchIndex,
+                (int)entry.SetType);
             ShutdownSelf();
         }
 
         private void ShutdownSelf()
         {
+            DestroyGeneratedSprites();
+            RestoreCursorState();
             m_Instance = null;
             Destroy(gameObject);
         }
 
+        private void OnDestroy()
+        {
+            DestroyGeneratedSprites();
+            RestoreCursorState();
+            m_Instance = null;
+        }
+
         public void ShowSketchSelectorUi(bool active = true)
         {
-            m_SketchLoadingUi.SetActive(active);
+            if (m_SketchLoadingUi != null)
+            {
+                m_SketchLoadingUi.SetActive(active);
+            }
         }
 
         public void HandleHelpButton()
         {
             SketchControlsScript.m_Instance.OpenURLAndInformUser(m_NonXRHelpURL);
+        }
+
+        private void CacheAndShowCursor()
+        {
+            if (!m_HasSavedCursorState)
+            {
+                m_PreviousCursorVisible = Cursor.visible;
+                m_PreviousCursorLockState = Cursor.lockState;
+                m_HasSavedCursorState = true;
+            }
+            NoHeadsetPointerCursor.ForcePointerVisible();
+        }
+
+        private void RestoreCursorState()
+        {
+            if (!m_HasSavedCursorState)
+            {
+                return;
+            }
+
+            Cursor.visible = m_PreviousCursorVisible;
+            Cursor.lockState = m_PreviousCursorLockState;
+            m_HasSavedCursorState = false;
+        }
+
+        private void CacheOriginalControlRects(Transform uiParent)
+        {
+            Transform blankSketchButton = uiParent.Find("Blank Sketch Button");
+            if (blankSketchButton != null)
+            {
+                m_BlankSketchButtonRect = blankSketchButton as RectTransform;
+            }
+
+            Transform helpText = uiParent.Find("Help Text");
+            if (helpText != null)
+            {
+                m_HelpTextRect = helpText as RectTransform;
+            }
+        }
+
+        private void AttachPointerCursorHandlers(Transform parent)
+        {
+            Button[] buttons = parent.GetComponentsInChildren<Button>(true);
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                AttachPointerCursorHandler(buttons[i].gameObject);
+            }
+        }
+
+        private void AttachPointerCursorHandler(GameObject target)
+        {
+            if (target != null && target.GetComponent<NoHeadsetPointerCursor>() == null)
+            {
+                target.AddComponent<NoHeadsetPointerCursor>();
+            }
+        }
+
+        private void StyleExistingButton(RectTransform buttonRect, float fontSize)
+        {
+            if (buttonRect == null)
+            {
+                return;
+            }
+
+            Image[] images = buttonRect.GetComponentsInChildren<Image>(true);
+            for (int i = 0; i < images.Length; i++)
+            {
+                images[i].color = new Color(0f, 0f, 0f, 0.32f);
+            }
+
+            TextMeshProUGUI[] labels = buttonRect.GetComponentsInChildren<TextMeshProUGUI>(true);
+            for (int i = 0; i < labels.Length; i++)
+            {
+                labels[i].fontSize = fontSize;
+                labels[i].fontSizeMax = fontSize;
+                labels[i].fontSizeMin = Mathf.Max(8f, fontSize - 3f);
+                labels[i].enableAutoSizing = true;
+                labels[i].color = Color.white;
+                labels[i].fontStyle = FontStyles.Normal;
+            }
+        }
+
+        private void InitializeGridUi()
+        {
+            m_Dropdown = GetComponentInChildren<TMP_Dropdown>(true);
+            if (m_Dropdown != null)
+            {
+                m_Dropdown.gameObject.SetActive(false);
+            }
+
+            Transform uiParent = m_SketchLoadingUi != null
+                ? m_SketchLoadingUi.transform
+                : transform;
+            TextMeshProUGUI templateText = uiParent.GetComponentInChildren<TextMeshProUGUI>(true);
+            if (templateText != null)
+            {
+                m_RuntimeFontAsset = templateText.font;
+                m_RuntimeFontMaterial = templateText.fontSharedMaterial;
+            }
+            Transform viewButtonTransform = uiParent.Find("View Sketch Button");
+            if (viewButtonTransform != null)
+            {
+                m_ViewSketchButton = viewButtonTransform.gameObject;
+                m_ViewSketchButton.SetActive(false);
+            }
+            CacheOriginalControlRects(uiParent);
+            AttachPointerCursorHandlers(uiParent);
+            StyleExistingButton(m_BlankSketchButtonRect, 11f);
+            StyleExistingButton(m_HelpTextRect, 10f);
+
+            if (m_SketchGridContent == null || m_SketchGridItemPrefab == null)
+            {
+                CreateFallbackGridUi(uiParent);
+            }
+            UpdateCategoryTabs(0, 0, 0);
+            SetGridActive(false);
+
+            m_LoadingSprite = CreateSprite(m_LoadingImageTexture);
+            m_UnknownSprite = CreateSprite(m_UnknownImageTexture);
+        }
+
+        private void CreateFallbackGridUi(Transform uiParent)
+        {
+            RectTransform parentRect = uiParent as RectTransform;
+            if (parentRect == null)
+            {
+                Debug.LogError($"{LogPrefix} cannot create grid UI without a RectTransform parent");
+                return;
+            }
+
+            GameObject scrollObject = new GameObject("Sketch Grid Scroll View",
+                typeof(RectTransform), typeof(Image), typeof(ScrollRect));
+            m_RuntimeGridRoot = scrollObject;
+            scrollObject.transform.SetParent(parentRect, false);
+            RectTransform scrollRectTransform = scrollObject.GetComponent<RectTransform>();
+            m_RuntimeGridRect = scrollRectTransform;
+            scrollRectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+            scrollRectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            RefreshRuntimeGridFrame(force: true);
+            Image scrollBackground = scrollObject.GetComponent<Image>();
+            scrollBackground.color = new Color(0.025f, 0.025f, 0.025f, 1f);
+
+            CreateFallbackTabBar(parentRect);
+
+            GameObject viewportObject = new GameObject("Viewport",
+                typeof(RectTransform), typeof(Image), typeof(Mask));
+            viewportObject.transform.SetParent(scrollObject.transform, false);
+            RectTransform viewport = viewportObject.GetComponent<RectTransform>();
+            viewport.anchorMin = Vector2.zero;
+            viewport.anchorMax = Vector2.one;
+            viewport.offsetMin = new Vector2(6f, 6f);
+            viewport.offsetMax = new Vector2(-16f, -6f);
+            Image viewportImage = viewportObject.GetComponent<Image>();
+            viewportImage.color = new Color(1f, 1f, 1f, 0.01f);
+            viewportObject.GetComponent<Mask>().showMaskGraphic = false;
+
+            GameObject contentObject = new GameObject("Content",
+                typeof(RectTransform), typeof(GridLayoutGroup), typeof(ContentSizeFitter),
+                typeof(NoHeadsetSketchGridLayout));
+            contentObject.transform.SetParent(viewportObject.transform, false);
+            m_SketchGridContent = contentObject.GetComponent<RectTransform>();
+            m_SketchGridContent.anchorMin = new Vector2(0f, 1f);
+            m_SketchGridContent.anchorMax = new Vector2(1f, 1f);
+            m_SketchGridContent.pivot = new Vector2(0.5f, 1f);
+            m_SketchGridContent.anchoredPosition = Vector2.zero;
+            m_SketchGridContent.sizeDelta = Vector2.zero;
+
+            ContentSizeFitter fitter = contentObject.GetComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            NoHeadsetSketchGridLayout layout = contentObject.GetComponent<NoHeadsetSketchGridLayout>();
+            layout.SetViewport(viewport);
+
+            ScrollRect scrollRect = scrollObject.GetComponent<ScrollRect>();
+            scrollRect.viewport = viewport;
+            scrollRect.content = m_SketchGridContent;
+            scrollRect.horizontal = false;
+            scrollRect.vertical = true;
+            scrollRect.movementType = ScrollRect.MovementType.Clamped;
+            scrollRect.verticalScrollbar = CreateScrollbar(scrollObject.transform);
+            scrollRect.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
+            scrollRect.verticalScrollbarSpacing = 4f;
+
+            m_SketchGridItemPrefab = CreateFallbackGridItemPrefab(m_SketchGridContent);
+            m_EmptySketchListMessage = CreateEmptyMessage(parentRect);
+            Debug.Log($"{LogPrefix} created fallback sketch grid UI");
+        }
+
+        private Scrollbar CreateScrollbar(Transform parent)
+        {
+            GameObject scrollbarObject = new GameObject("Vertical Scrollbar",
+                typeof(RectTransform), typeof(Image), typeof(Scrollbar));
+            scrollbarObject.transform.SetParent(parent, false);
+            RectTransform scrollbarRect = scrollbarObject.GetComponent<RectTransform>();
+            scrollbarRect.anchorMin = new Vector2(1f, 0f);
+            scrollbarRect.anchorMax = new Vector2(1f, 1f);
+            scrollbarRect.pivot = new Vector2(1f, 0.5f);
+            scrollbarRect.offsetMin = new Vector2(-12f, 6f);
+            scrollbarRect.offsetMax = new Vector2(-6f, -6f);
+
+            Image background = scrollbarObject.GetComponent<Image>();
+            background.color = new Color(1f, 1f, 1f, 0.12f);
+
+            GameObject slidingAreaObject = new GameObject("Sliding Area", typeof(RectTransform));
+            slidingAreaObject.transform.SetParent(scrollbarObject.transform, false);
+            RectTransform slidingArea = slidingAreaObject.GetComponent<RectTransform>();
+            slidingArea.anchorMin = Vector2.zero;
+            slidingArea.anchorMax = Vector2.one;
+            slidingArea.offsetMin = Vector2.zero;
+            slidingArea.offsetMax = Vector2.zero;
+
+            GameObject handleObject = new GameObject("Handle", typeof(RectTransform), typeof(Image));
+            handleObject.transform.SetParent(slidingAreaObject.transform, false);
+            RectTransform handleRect = handleObject.GetComponent<RectTransform>();
+            handleRect.anchorMin = Vector2.zero;
+            handleRect.anchorMax = Vector2.one;
+            handleRect.offsetMin = Vector2.zero;
+            handleRect.offsetMax = Vector2.zero;
+            Image handleImage = handleObject.GetComponent<Image>();
+            handleImage.color = new Color(1f, 1f, 1f, 0.55f);
+
+            Scrollbar scrollbar = scrollbarObject.GetComponent<Scrollbar>();
+            scrollbar.direction = Scrollbar.Direction.BottomToTop;
+            scrollbar.targetGraphic = handleImage;
+            scrollbar.handleRect = handleRect;
+            return scrollbar;
+        }
+
+        private void CreateFallbackTabBar(RectTransform parent)
+        {
+            GameObject tabBarObject = new GameObject("Sketch Category Tabs",
+                typeof(RectTransform), typeof(HorizontalLayoutGroup));
+            tabBarObject.transform.SetParent(parent, false);
+            m_RuntimeTabBarRect = tabBarObject.GetComponent<RectTransform>();
+            m_RuntimeTabBarRect.anchorMin = new Vector2(0.5f, 0.5f);
+            m_RuntimeTabBarRect.anchorMax = new Vector2(0.5f, 0.5f);
+            RefreshRuntimeGridFrame(force: true);
+
+            HorizontalLayoutGroup layout = tabBarObject.GetComponent<HorizontalLayoutGroup>();
+            layout.spacing = 6f;
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.childControlWidth = false;
+            layout.childControlHeight = false;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+
+            CreateCategoryTab(tabBarObject.transform, SketchSetType.User);
+            CreateCategoryTab(tabBarObject.transform, SketchSetType.Curated);
+            CreateCategoryTab(tabBarObject.transform, SketchSetType.Liked);
+            RefreshRuntimeGridFrame(force: true);
+        }
+
+        private void CreateCategoryTab(Transform parent, SketchSetType setType)
+        {
+            GameObject tabObject = new GameObject(GetTabLabel(setType),
+                typeof(RectTransform), typeof(Image), typeof(Button), typeof(NoHeadsetPointerCursor));
+            tabObject.transform.SetParent(parent, false);
+            RectTransform rectTransform = tabObject.GetComponent<RectTransform>();
+            rectTransform.sizeDelta = new Vector2(150f, 24f);
+
+            Image image = tabObject.GetComponent<Image>();
+            image.color = GetTabColor(setType);
+
+            Button button = tabObject.GetComponent<Button>();
+            button.targetGraphic = image;
+            button.onClick.AddListener(() => SelectCategory(setType));
+            m_CategoryTabs[setType] = button;
+
+            TextMeshProUGUI label = CreateItemText("Label", tabObject.transform, Vector2.zero,
+                Vector2.one, 9f, Color.white);
+            label.text = GetTabLabel(setType);
+            label.alignment = TextAlignmentOptions.Center;
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 8f;
+            label.fontSizeMax = 9f;
+            label.fontStyle = FontStyles.Normal;
+        }
+
+        private void SelectCategory(SketchSetType setType)
+        {
+            if (m_SelectedSetType == setType)
+            {
+                return;
+            }
+
+            m_SelectedSetType = setType;
+            RefreshSketchGrid();
+        }
+
+        private void UpdateCategoryTabs(int userCount, int curatedCount, int likedCount)
+        {
+            UpdateCategoryTab(SketchSetType.User, userCount);
+            UpdateCategoryTab(SketchSetType.Curated, curatedCount);
+            UpdateCategoryTab(SketchSetType.Liked, likedCount, App.IcosaIsLoggedIn);
+            RefreshRuntimeGridFrame(force: true);
+        }
+
+        private void UpdateCategoryTab(SketchSetType setType, int count, bool visible = true)
+        {
+            if (!m_CategoryTabs.TryGetValue(setType, out Button tab) || tab == null)
+            {
+                return;
+            }
+
+            tab.gameObject.SetActive(visible);
+            tab.interactable = count > 0;
+            Image image = tab.GetComponent<Image>();
+            if (image != null)
+            {
+                image.color = GetTabColor(setType);
+            }
+        }
+
+        private void SetGridActive(bool active)
+        {
+            if (m_RuntimeGridRoot != null)
+            {
+                m_RuntimeGridRoot.SetActive(active);
+            }
+            else if (m_SketchGridContent != null)
+            {
+                m_SketchGridContent.gameObject.SetActive(active);
+            }
+
+            if (m_RuntimeTabBarRect != null)
+            {
+                m_RuntimeTabBarRect.gameObject.SetActive(active || AnyVisibleSetReady());
+            }
+        }
+
+        private void RefreshRuntimeGridFrame(bool force = false)
+        {
+            if (m_RuntimeGridRect == null)
+            {
+                return;
+            }
+
+            Vector2Int screenSize = new Vector2Int(Screen.width, Screen.height);
+            if (!force && screenSize == m_LastScreenSize)
+            {
+                return;
+            }
+            m_LastScreenSize = screenSize;
+
+            bool portrait = screenSize.y > screenSize.x;
+            bool smallLandscape = !portrait && screenSize.y < 520;
+            Vector2 visibleCanvasSize = GetVisibleCanvasSize();
+            float horizontalMargin = portrait ? 18f : 32f;
+            float verticalMargin = portrait ? 110f : smallLandscape ? 70f : 110f;
+            float maxGridWidth = portrait ? 380f : smallLandscape ? 520f : 620f;
+            float availableWidth = Mathf.Max(120f, visibleCanvasSize.x - horizontalMargin);
+            float availableHeight = Mathf.Max(130f, visibleCanvasSize.y - verticalMargin);
+            float gridWidth = Mathf.Min(availableWidth, maxGridWidth);
+            float gridHeight = portrait
+                ? Mathf.Clamp(availableHeight * 0.58f, 150f, 280f)
+                : smallLandscape
+                    ? Mathf.Clamp(availableHeight * 0.62f, 120f, 190f)
+                    : Mathf.Clamp(availableHeight * 0.52f, 180f, 250f);
+            float gridCenterY = portrait ? 34f : smallLandscape ? 28f : 42f;
+            float tabY = gridCenterY + gridHeight * 0.5f + 24f;
+
+            if (m_RuntimeTabBarRect != null)
+            {
+                m_RuntimeTabBarRect.anchoredPosition = new Vector2(0f, tabY);
+                m_RuntimeTabBarRect.sizeDelta = new Vector2(gridWidth, 24f);
+                RefreshRuntimeTabWidths(gridWidth);
+            }
+            m_RuntimeGridRect.anchoredPosition = new Vector2(0f, gridCenterY);
+            m_RuntimeGridRect.sizeDelta = new Vector2(gridWidth, gridHeight);
+            PositionOriginalControls(gridCenterY, gridHeight, portrait, smallLandscape);
+        }
+
+        private Vector2 GetVisibleCanvasSize()
+        {
+            Canvas canvas = m_RuntimeGridRect.GetComponentInParent<Canvas>();
+            Camera camera = canvas != null ? canvas.worldCamera : null;
+            RectTransform rootRect = m_RuntimeGridRect.parent as RectTransform;
+            if (camera != null && camera.orthographic && rootRect != null)
+            {
+                Vector3 scale = rootRect.lossyScale;
+                float scaleX = Mathf.Max(0.0001f, Mathf.Abs(scale.x));
+                float scaleY = Mathf.Max(0.0001f, Mathf.Abs(scale.y));
+                float worldHeight = camera.orthographicSize * 2f;
+                float worldWidth = worldHeight * camera.aspect;
+                return new Vector2(worldWidth / scaleX, worldHeight / scaleY);
+            }
+
+            if (rootRect != null && rootRect.rect.width > 1f && rootRect.rect.height > 1f)
+            {
+                return rootRect.rect.size;
+            }
+
+            return new Vector2(360f, 360f);
+        }
+
+        private void PositionOriginalControls(float gridCenterY, float gridHeight, bool portrait,
+            bool smallLandscape)
+        {
+            float blankY = gridCenterY - gridHeight * 0.5f - (portrait ? 38f : 34f);
+            if (m_BlankSketchButtonRect != null)
+            {
+                m_BlankSketchButtonRect.anchoredPosition = new Vector2(0f, blankY);
+                m_BlankSketchButtonRect.sizeDelta = new Vector2(portrait ? 128f : 122f, 24f);
+            }
+
+            if (m_HelpTextRect != null)
+            {
+                float helpOffset = portrait ? 52f : smallLandscape ? 42f : 48f;
+                m_HelpTextRect.anchoredPosition = new Vector2(0f, blankY - helpOffset);
+                m_HelpTextRect.sizeDelta = new Vector2(portrait ? 210f : 240f, 38f);
+            }
+        }
+
+        private void RefreshRuntimeTabWidths(float tabBarWidth)
+        {
+            int visibleTabCount = 0;
+            foreach (Button tab in m_CategoryTabs.Values)
+            {
+                if (tab != null && tab.gameObject.activeSelf)
+                {
+                    visibleTabCount++;
+                }
+            }
+
+            if (visibleTabCount == 0)
+            {
+                return;
+            }
+
+            float spacing = 6f;
+            float tabWidth = (tabBarWidth - spacing * (visibleTabCount - 1)) / visibleTabCount;
+            foreach (Button tab in m_CategoryTabs.Values)
+            {
+                if (tab == null || !tab.gameObject.activeSelf)
+                {
+                    continue;
+                }
+
+                RectTransform rectTransform = tab.GetComponent<RectTransform>();
+                if (rectTransform != null)
+                {
+                    rectTransform.sizeDelta = new Vector2(tabWidth, 24f);
+                }
+            }
+        }
+
+        private NoHeadsetSketchGridItem CreateFallbackGridItemPrefab(RectTransform parent)
+        {
+            GameObject itemObject = new GameObject("Sketch Grid Item",
+                typeof(RectTransform), typeof(Image), typeof(Button), typeof(NoHeadsetPointerCursor),
+                typeof(NoHeadsetSketchGridItem));
+            itemObject.transform.SetParent(parent, false);
+            itemObject.SetActive(false);
+
+            Image background = itemObject.GetComponent<Image>();
+            background.color = new Color(0f, 0f, 0f, 0.24f);
+            Button button = itemObject.GetComponent<Button>();
+            button.targetGraphic = background;
+
+            GameObject thumbnailObject = new GameObject("Thumbnail", typeof(RectTransform), typeof(Image));
+            thumbnailObject.transform.SetParent(itemObject.transform, false);
+            RectTransform thumbnailRect = thumbnailObject.GetComponent<RectTransform>();
+            thumbnailRect.anchorMin = new Vector2(0f, 0.28f);
+            thumbnailRect.anchorMax = new Vector2(1f, 1f);
+            thumbnailRect.offsetMin = new Vector2(6f, 3f);
+            thumbnailRect.offsetMax = new Vector2(-6f, -6f);
+            Image thumbnail = thumbnailObject.GetComponent<Image>();
+            thumbnail.color = new Color(0.08f, 0.09f, 0.1f, 1f);
+            thumbnail.preserveAspect = true;
+
+            TextMeshProUGUI title = CreateItemText("Title", itemObject.transform,
+                new Vector2(0f, 0.04f), new Vector2(1f, 0.26f), 9f, Color.white);
+            title.fontStyle = FontStyles.Normal;
+            title.enableAutoSizing = true;
+            title.fontSizeMin = 7f;
+            title.fontSizeMax = 9f;
+
+            TextMeshProUGUI source = CreateItemText("Source", itemObject.transform,
+                new Vector2(0f, 0f), new Vector2(1f, 0.12f), 9f,
+                new Color(0.8f, 0.8f, 0.8f, 1f));
+            source.gameObject.SetActive(false);
+
+            GameObject loadingObject = new GameObject("Loading", typeof(RectTransform), typeof(Image));
+            loadingObject.transform.SetParent(thumbnailObject.transform, false);
+            RectTransform loadingRect = loadingObject.GetComponent<RectTransform>();
+            loadingRect.anchorMin = Vector2.zero;
+            loadingRect.anchorMax = Vector2.one;
+            loadingRect.offsetMin = Vector2.zero;
+            loadingRect.offsetMax = Vector2.zero;
+            loadingObject.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.18f);
+
+            NoHeadsetSketchGridItem item = itemObject.GetComponent<NoHeadsetSketchGridItem>();
+            item.SetReferences(button, thumbnail, title, source, loadingObject);
+            return item;
+        }
+
+        private TextMeshProUGUI CreateItemText(string name, Transform parent, Vector2 anchorMin,
+            Vector2 anchorMax, float fontSize, Color color)
+        {
+            GameObject textObject = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
+            textObject.transform.SetParent(parent, false);
+            RectTransform rectTransform = textObject.GetComponent<RectTransform>();
+            rectTransform.anchorMin = anchorMin;
+            rectTransform.anchorMax = anchorMax;
+            rectTransform.offsetMin = new Vector2(8f, 0f);
+            rectTransform.offsetMax = new Vector2(-8f, 0f);
+
+            TextMeshProUGUI text = textObject.GetComponent<TextMeshProUGUI>();
+            if (m_RuntimeFontAsset != null)
+            {
+                text.font = m_RuntimeFontAsset;
+            }
+            if (m_RuntimeFontMaterial != null)
+            {
+                text.fontSharedMaterial = m_RuntimeFontMaterial;
+            }
+            text.fontSize = fontSize;
+            text.color = color;
+            text.alignment = TextAlignmentOptions.MidlineLeft;
+            text.enableWordWrapping = false;
+            text.overflowMode = TextOverflowModes.Ellipsis;
+            text.raycastTarget = false;
+            return text;
+        }
+
+        private GameObject CreateEmptyMessage(RectTransform parent)
+        {
+            GameObject emptyObject = new GameObject("Empty Sketch List Message",
+                typeof(RectTransform), typeof(TextMeshProUGUI));
+            emptyObject.transform.SetParent(parent, false);
+            RectTransform rectTransform = emptyObject.GetComponent<RectTransform>();
+            rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+            rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            rectTransform.anchoredPosition = new Vector2(0f, 44f);
+            rectTransform.sizeDelta = new Vector2(520f, 40f);
+
+            TextMeshProUGUI text = emptyObject.GetComponent<TextMeshProUGUI>();
+            text.text = "No sketches are ready to load.";
+            text.fontSize = 12f;
+            text.color = Color.white;
+            text.alignment = TextAlignmentOptions.Center;
+            emptyObject.SetActive(false);
+            return emptyObject;
+        }
+
+        private void RefreshVisibleThumbnails()
+        {
+            int count = Mathf.Min(m_Sketches.Count, m_GridItems.Count);
+            bool assignedTextureInvalidated = false;
+            int localThumbnailLoads = 0;
+            for (int i = 0; i < count; i++)
+            {
+                SketchGridEntry entry = m_Sketches[i];
+                if (entry.ThumbnailAssigned)
+                {
+                    NoHeadsetSketchGridItem item = m_GridItems[i];
+                    if (item != null && item.HasLoadedThumbnailTexture())
+                    {
+                        continue;
+                    }
+                    assignedTextureInvalidated |= item != null && item.HasAssignedThumbnailSprite();
+                    entry.ThumbnailAssigned = false;
+                    if (item != null)
+                    {
+                        item.SetThumbnail(m_LoadingSprite, true);
+                    }
+                }
+
+                if (!entry.SketchSet.GetSketchIcon(entry.SketchIndex, out Texture2D icon,
+                        out string[] _, out string __))
+                {
+                    if (localThumbnailLoads < LocalThumbnailLoadsPerFrame
+                        && entry.SketchSet is FileSketchSet
+                        && TryCreateLocalThumbnailSprite(entry.SceneFileInfo, out Sprite localSprite))
+                    {
+                        localThumbnailLoads++;
+                        entry.ThumbnailAssigned = true;
+                        m_GridItems[i].SetThumbnail(localSprite, false);
+                    }
+                    continue;
+                }
+
+                if (icon != null)
+                {
+                    Sprite sprite = CreateThumbnailSprite(icon);
+                    entry.ThumbnailAssigned = true;
+                    m_GridItems[i].SetThumbnail(sprite, false);
+                    continue;
+                }
+
+                m_GridItems[i].SetThumbnail(m_UnknownSprite, false);
+                entry.ThumbnailAssigned = true;
+            }
+
+            if (assignedTextureInvalidated)
+            {
+                ResetVisibleThumbnailAssignments();
+                RequestVisibleThumbnailMetadata(force: true);
+            }
+        }
+
+        private bool TryCreateLocalThumbnailSprite(SceneFileInfo sceneFileInfo, out Sprite sprite)
+        {
+            sprite = null;
+            if (sceneFileInfo == null || !sceneFileInfo.Exists)
+            {
+                sprite = m_UnknownSprite;
+                return true;
+            }
+
+            byte[] thumbnailBytes = FileSketchSet.ReadThumbnail(sceneFileInfo);
+            if (thumbnailBytes == null || thumbnailBytes.Length == 0)
+            {
+                sprite = m_UnknownSprite;
+                return true;
+            }
+
+            Texture2D texture = new Texture2D(128, 128, TextureFormat.RGB24, true);
+            if (!texture.LoadImage(thumbnailBytes))
+            {
+                Destroy(texture);
+                sprite = m_UnknownSprite;
+                return true;
+            }
+            texture.Apply();
+            m_OwnedThumbnailTextures.Add(texture);
+            sprite = CreateThumbnailSprite(texture);
+            return true;
+        }
+
+        private void ResetVisibleThumbnailAssignments()
+        {
+            DestroyThumbnailSprites();
+            int count = Mathf.Min(m_Sketches.Count, m_GridItems.Count);
+            for (int i = 0; i < count; i++)
+            {
+                m_Sketches[i].ThumbnailAssigned = false;
+                if (m_GridItems[i] != null)
+                {
+                    m_GridItems[i].SetThumbnail(m_LoadingSprite, true);
+                }
+            }
+        }
+
+        private Sprite CreateSprite(Texture2D texture)
+        {
+            if (texture == null)
+            {
+                return null;
+            }
+
+            Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height),
+                new Vector2(0.5f, 0.5f));
+            m_GeneratedSprites.Add(sprite);
+            return sprite;
+        }
+
+        private Sprite CreateThumbnailSprite(Texture2D texture)
+        {
+            if (texture == null)
+            {
+                return null;
+            }
+
+            Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height),
+                new Vector2(0.5f, 0.5f));
+            m_ThumbnailSprites.Add(sprite);
+            return sprite;
+        }
+
+        private void ClearGridItems()
+        {
+            for (int i = 0; i < m_GridItems.Count; i++)
+            {
+                if (m_GridItems[i] != null)
+                {
+                    m_GridItems[i].ClearListeners();
+                    Destroy(m_GridItems[i].gameObject);
+                }
+            }
+            m_GridItems.Clear();
+            DestroyThumbnailSprites();
+            m_LoadingSprite = CreateSprite(m_LoadingImageTexture);
+            m_UnknownSprite = CreateSprite(m_UnknownImageTexture);
+        }
+
+        private void DestroyGeneratedSprites()
+        {
+            DestroyThumbnailSprites();
+            for (int i = 0; i < m_GeneratedSprites.Count; i++)
+            {
+                if (m_GeneratedSprites[i] != null)
+                {
+                    Destroy(m_GeneratedSprites[i]);
+                }
+            }
+            m_GeneratedSprites.Clear();
+        }
+
+        private void DestroyThumbnailSprites()
+        {
+            for (int i = 0; i < m_ThumbnailSprites.Count; i++)
+            {
+                if (m_ThumbnailSprites[i] != null)
+                {
+                    Destroy(m_ThumbnailSprites[i]);
+                }
+            }
+            m_ThumbnailSprites.Clear();
+
+            for (int i = 0; i < m_OwnedThumbnailTextures.Count; i++)
+            {
+                if (m_OwnedThumbnailTextures[i] != null)
+                {
+                    Destroy(m_OwnedThumbnailTextures[i]);
+                }
+            }
+            m_OwnedThumbnailTextures.Clear();
+        }
+
+        private bool AnyVisibleSetReady()
+        {
+            return IsSetReady(SketchSetType.User)
+                || IsSetReady(SketchSetType.Curated)
+                || IsSetReady(SketchSetType.Liked);
+        }
+
+        private bool IsSetReady(SketchSetType setType)
+        {
+            var sketchset = SketchCatalog.m_Instance.GetSet(setType);
+            return sketchset != null && sketchset.IsReadyForAccess;
+        }
+
+        private string GetTabLabel(SketchSetType setType)
+        {
+            switch (setType)
+            {
+                case SketchSetType.User:
+                    return "Your Sketches";
+                case SketchSetType.Curated:
+                    return "Featured Sketches";
+                case SketchSetType.Liked:
+                    return "Liked Sketches";
+                default:
+                    return setType.ToString();
+            }
+        }
+
+        private Color GetTabColor(SketchSetType setType)
+        {
+            if (m_SelectedSetType == setType)
+            {
+                return new Color(1f, 1f, 1f, 0.18f);
+            }
+            return new Color(0f, 0f, 0f, 0.22f);
         }
     }
 }
