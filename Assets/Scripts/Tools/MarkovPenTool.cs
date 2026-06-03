@@ -204,7 +204,7 @@ namespace TiltBrush
                 !m_ToolHidden &&
                 isBrushTriggerActive &&
                 App.Instance.IsInStateThatAllowsPainting();
-            if (MarkovPenPanel.IsOpen && MarkovPenPanel.Instance != null)
+            if (MarkovPenDrawingPanel.IsOpen && MarkovPenDrawingPanel.Instance != null)
             {
                 Debug.LogWarning("Markov Pen Panel Opened");
                 // Constrain pointer to MarkovPenDrawingPanel surface and allow 2D painting there.
@@ -216,12 +216,12 @@ namespace TiltBrush
                     Ray ray = new Ray(attach.position, attach.forward);
                     Vector2 panel2D;
                     Vector3 worldPoint;
-                    if (MarkovPenPanel.Instance.TryGetPanel2DPoint(ray, out panel2D, out worldPoint))
+                    if (MarkovPenDrawingPanel.Instance.TryGetPanel2DPoint(ray, out panel2D, out worldPoint))
                     {
                         Debug.LogWarning("Raycast hit panel at: " + worldPoint);
 
                         // Place and orient pointer flat on the panel so strokes are created in 2D on the panel.
-                        PointerManager.m_Instance.SetPointerTransform(InputManager.ControllerName.Brush, worldPoint, MarkovPenPanel.Instance.transform.rotation);
+                        PointerManager.m_Instance.SetPointerTransform(InputManager.ControllerName.Brush, worldPoint, MarkovPenDrawingPanel.Instance.transform.rotation);
                         // Allow painting only while trigger is held and app allows painting.
                         m_IsPaintingActive = !m_EatInput && !m_ToolHidden && App.Instance.IsInStateThatAllowsPainting();
                     }
@@ -240,7 +240,7 @@ namespace TiltBrush
                     m_IsPaintingActive = false;
                 }
             }
-            Debug.LogWarning(MarkovPenPanel.IsOpen + " " + MarkovPenPanel.Instance);
+            Debug.LogWarning(MarkovPenDrawingPanel.IsOpen + " " + MarkovPenDrawingPanel.Instance);
 
             PointerManager.m_Instance.EnableLine(m_IsPaintingActive);
             PointerManager.m_Instance.PointerPressure = m_BrushTriggerRatio;

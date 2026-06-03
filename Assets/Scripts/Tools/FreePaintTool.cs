@@ -122,9 +122,15 @@ namespace TiltBrush
             PositionPointer();
             if (PanelManager.m_Instance.AdvancedModeActive() && !m_BimanualTape && !m_PaintingActive && m_wandTrigger && !InputManager.Wand.GetControllerGrip() && SketchControlsScript.m_Instance.IsFreepaintToolReady())
                 BeginBimanualTape();
-
+            /*  Debug.LogWarning("instance "
+                  + MarkovPenSketchbookPanel.Instance != null);
+              Debug.LogWarning("instance2 "
+                  + MarkovPenSketchbookPanel.Instance);
+              Debug.LogWarning("isOpen MarkovPenSketchbookPanel: " + MarkovPenSketchbookPanel.IsOpen);
+              Debug.LogWarning("isOpen MarkovPenDrawingPanel: " + MarkovPenDrawingPanel.IsOpen);
+  */
             m_PaintingActive = !m_EatInput && !m_ToolHidden && (m_brushTrigger || (m_PaintingActive && !m_RevolverActive && m_LazyInputActive && m_BimanualTape && m_wandTrigger));
-            if (MarkovPenPanel.IsOpen && MarkovPenPanel.Instance != null)
+            if (MarkovPenDrawingPanel.IsOpen && MarkovPenDrawingPanel.Instance != null)
             {
                 // Constrain pointer to MarkovPenDrawingPanel surface and allow 2D painting there.
                 Transform attach = InputManager.m_Instance.GetBrushControllerAttachPoint();
@@ -135,12 +141,12 @@ namespace TiltBrush
                     Ray ray = new Ray(attach.position, attach.forward);
                     Vector2 panel2D;
                     Vector3 worldPoint;
-                    if (MarkovPenPanel.Instance.TryGetPanel2DPoint(ray, out panel2D, out worldPoint))
+                    if (MarkovPenDrawingPanel.Instance.TryGetPanel2DPoint(ray, out panel2D, out worldPoint))
                     {
                         Debug.LogWarning("Raycast hit panel at: " + worldPoint);
 
                         // Place and orient pointer flat on the panel so strokes are created in 2D on the panel.
-                        PointerManager.m_Instance.SetPointerTransform(InputManager.ControllerName.Brush, worldPoint, MarkovPenPanel.Instance.transform.rotation);
+                        PointerManager.m_Instance.SetPointerTransform(InputManager.ControllerName.Brush, worldPoint, MarkovPenDrawingPanel.Instance.transform.rotation);
                         // Allow painting only while trigger is held and app allows painting.
                         m_PaintingActive = !m_EatInput && m_brushTrigger && !m_ToolHidden && App.Instance.IsInStateThatAllowsPainting();
                     }
@@ -148,7 +154,6 @@ namespace TiltBrush
                     {
                         Debug.LogWarning("Raycast missed panel, disabling painting");
 
-                        // If raycast misses, don't allow painting.
                         m_PaintingActive = false;
                     }
                 }
@@ -158,6 +163,11 @@ namespace TiltBrush
 
                     m_PaintingActive = false;
                 }
+            }
+            else if (MarkovPenSketchbookPanel.IsOpen && MarkovPenSketchbookPanel.Instance != null)
+            {
+                Debug.LogWarning("Markov Pen Sketchbook Panel Opened");
+                m_PaintingActive = false;
             }
             // Allow Multiplayer to override painting mode
             if (MultiplayerManager.m_Instance.IsViewOnly)
