@@ -679,9 +679,21 @@ namespace TiltBrush
             StyleExistingButton(m_BlankSketchButtonRect, 11f);
             StyleExistingButton(m_HelpTextRect, 10f);
 
-            if (m_SketchGridContent == null || m_SketchGridItemPrefab == null)
+            RectTransform parentRect = uiParent as RectTransform;
+            if (m_SketchGridContent == null)
             {
-                CreateFallbackGridUi(uiParent);
+                BindAuthoredGridUi(uiParent);
+            }
+            if (m_SketchGridContent == null)
+            {
+                Debug.LogError($"{LogPrefix} missing authored Sketch Grid Scroll View");
+                return;
+            }
+            BindExistingGridUi(parentRect);
+            if (m_SketchGridItemPrefab == null)
+            {
+                Debug.LogError($"{LogPrefix} missing Sketch Grid Item prefab reference");
+                return;
             }
             UpdateCategoryTabs(0, 0, 0);
             SetGridActive(false);
@@ -690,115 +702,114 @@ namespace TiltBrush
             m_UnknownSprite = CreateSprite(m_UnknownImageTexture);
         }
 
-        private void CreateFallbackGridUi(Transform uiParent)
+        private void BindAuthoredGridUi(Transform uiParent)
         {
-            RectTransform parentRect = uiParent as RectTransform;
-            if (parentRect == null)
+            Transform scrollViewTransform = FindDeepChild(uiParent, "Sketch Grid Scroll View");
+            if (scrollViewTransform == null)
             {
-                Debug.LogError($"{LogPrefix} cannot create grid UI without a RectTransform parent");
                 return;
             }
 
-            GameObject scrollObject = new GameObject("Sketch Grid Scroll View",
-                typeof(RectTransform), typeof(Image), typeof(ScrollRect));
-            m_RuntimeGridRoot = scrollObject;
-            scrollObject.transform.SetParent(parentRect, false);
-            RectTransform scrollRectTransform = scrollObject.GetComponent<RectTransform>();
-            m_RuntimeGridRect = scrollRectTransform;
-            scrollRectTransform.anchorMin = new Vector2(0.5f, 0.5f);
-            scrollRectTransform.anchorMax = new Vector2(0.5f, 0.5f);
-            RefreshRuntimeGridFrame(force: true);
-            Image scrollBackground = scrollObject.GetComponent<Image>();
-            scrollBackground.color = new Color(0.025f, 0.025f, 0.025f, 1f);
+            ScrollRect scrollRect = scrollViewTransform.GetComponent<ScrollRect>();
+            if (scrollRect == null)
+            {
+                Debug.LogWarning($"{LogPrefix} authored Sketch Grid Scroll View has no ScrollRect");
+                return;
+            }
+            if (scrollRect.content == null)
+            {
+                Debug.LogWarning($"{LogPrefix} authored Sketch Grid Scroll View has no Content");
+                return;
+            }
 
-            CreateFallbackTabBar(parentRect);
+            m_RuntimeGridRoot = scrollViewTransform.gameObject;
+            m_RuntimeGridRect = scrollViewTransform as RectTransform;
+            m_SketchGridContent = scrollRect.content;
 
-            GameObject viewportObject = new GameObject("Viewport",
-                typeof(RectTransform), typeof(Image), typeof(Mask));
-            viewportObject.transform.SetParent(scrollObject.transform, false);
-            RectTransform viewport = viewportObject.GetComponent<RectTransform>();
-            viewport.anchorMin = Vector2.zero;
-            viewport.anchorMax = Vector2.one;
-            viewport.offsetMin = new Vector2(6f, 6f);
-            viewport.offsetMax = new Vector2(-16f, -6f);
-            Image viewportImage = viewportObject.GetComponent<Image>();
-            viewportImage.color = new Color(1f, 1f, 1f, 0.01f);
-            viewportObject.GetComponent<Mask>().showMaskGraphic = false;
+            NoHeadsetSketchGridLayout layout =
+                m_SketchGridContent.GetComponent<NoHeadsetSketchGridLayout>();
+            if (layout != null && scrollRect.viewport != null)
+            {
+                layout.SetViewport(scrollRect.viewport);
+            }
 
-            GameObject contentObject = new GameObject("Content",
-                typeof(RectTransform), typeof(GridLayoutGroup), typeof(ContentSizeFitter),
-                typeof(NoHeadsetSketchGridLayout));
-            contentObject.transform.SetParent(viewportObject.transform, false);
-            m_SketchGridContent = contentObject.GetComponent<RectTransform>();
-            m_SketchGridContent.anchorMin = new Vector2(0f, 1f);
-            m_SketchGridContent.anchorMax = new Vector2(1f, 1f);
-            m_SketchGridContent.pivot = new Vector2(0.5f, 1f);
-            m_SketchGridContent.anchoredPosition = Vector2.zero;
-            m_SketchGridContent.sizeDelta = Vector2.zero;
+            if (scrollRect.viewport != null)
+            {
+                AttachPointerCursorHandler(scrollRect.viewport.gameObject);
+            }
+            if (scrollRect.verticalScrollbar != null)
+            {
+                AttachPointerCursorHandler(scrollRect.verticalScrollbar.gameObject);
+            }
 
-            ContentSizeFitter fitter = contentObject.GetComponent<ContentSizeFitter>();
-            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-            NoHeadsetSketchGridLayout layout = contentObject.GetComponent<NoHeadsetSketchGridLayout>();
-            layout.SetViewport(viewport);
-
-            ScrollRect scrollRect = scrollObject.GetComponent<ScrollRect>();
-            scrollRect.viewport = viewport;
-            scrollRect.content = m_SketchGridContent;
-            scrollRect.horizontal = false;
-            scrollRect.vertical = true;
-            scrollRect.movementType = ScrollRect.MovementType.Clamped;
-            scrollRect.verticalScrollbar = CreateScrollbar(scrollObject.transform);
-            scrollRect.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
-            scrollRect.verticalScrollbarSpacing = 4f;
-
-            m_SketchGridItemPrefab = CreateFallbackGridItemPrefab(m_SketchGridContent);
-            m_EmptySketchListMessage = CreateEmptyMessage(parentRect);
-            Debug.Log($"{LogPrefix} created fallback sketch grid UI");
+            Debug.Log($"{LogPrefix} bound authored sketch grid scroll view");
         }
 
-        private Scrollbar CreateScrollbar(Transform parent)
+        private void BindExistingGridUi(RectTransform uiParent)
         {
-            GameObject scrollbarObject = new GameObject("Vertical Scrollbar",
-                typeof(RectTransform), typeof(Image), typeof(Scrollbar));
-            scrollbarObject.transform.SetParent(parent, false);
-            RectTransform scrollbarRect = scrollbarObject.GetComponent<RectTransform>();
-            scrollbarRect.anchorMin = new Vector2(1f, 0f);
-            scrollbarRect.anchorMax = new Vector2(1f, 1f);
-            scrollbarRect.pivot = new Vector2(1f, 0.5f);
-            scrollbarRect.offsetMin = new Vector2(-12f, 6f);
-            scrollbarRect.offsetMax = new Vector2(-6f, -6f);
+            if (m_RuntimeGridRect == null && m_SketchGridContent != null)
+            {
+                ScrollRect scrollRect = m_SketchGridContent.GetComponentInParent<ScrollRect>(true);
+                if (scrollRect != null)
+                {
+                    m_RuntimeGridRoot = scrollRect.gameObject;
+                    m_RuntimeGridRect = scrollRect.transform as RectTransform;
+                    if (scrollRect.viewport != null)
+                    {
+                        NoHeadsetSketchGridLayout layout =
+                            m_SketchGridContent.GetComponent<NoHeadsetSketchGridLayout>();
+                        if (layout != null)
+                        {
+                            layout.SetViewport(scrollRect.viewport);
+                        }
+                    }
+                }
+            }
 
-            Image background = scrollbarObject.GetComponent<Image>();
-            background.color = new Color(1f, 1f, 1f, 0.12f);
+            if (m_RuntimeTabBarRect == null && uiParent != null)
+            {
+                CreateRuntimeTabBar(uiParent);
+            }
 
-            GameObject slidingAreaObject = new GameObject("Sliding Area", typeof(RectTransform));
-            slidingAreaObject.transform.SetParent(scrollbarObject.transform, false);
-            RectTransform slidingArea = slidingAreaObject.GetComponent<RectTransform>();
-            slidingArea.anchorMin = Vector2.zero;
-            slidingArea.anchorMax = Vector2.one;
-            slidingArea.offsetMin = Vector2.zero;
-            slidingArea.offsetMax = Vector2.zero;
+            if (m_SketchGridItemPrefab != null)
+            {
+                m_SketchGridItemPrefab.gameObject.SetActive(false);
+            }
 
-            GameObject handleObject = new GameObject("Handle", typeof(RectTransform), typeof(Image));
-            handleObject.transform.SetParent(slidingAreaObject.transform, false);
-            RectTransform handleRect = handleObject.GetComponent<RectTransform>();
-            handleRect.anchorMin = Vector2.zero;
-            handleRect.anchorMax = Vector2.one;
-            handleRect.offsetMin = Vector2.zero;
-            handleRect.offsetMax = Vector2.zero;
-            Image handleImage = handleObject.GetComponent<Image>();
-            handleImage.color = new Color(1f, 1f, 1f, 0.55f);
-
-            Scrollbar scrollbar = scrollbarObject.GetComponent<Scrollbar>();
-            scrollbar.direction = Scrollbar.Direction.BottomToTop;
-            scrollbar.targetGraphic = handleImage;
-            scrollbar.handleRect = handleRect;
-            return scrollbar;
+            if (m_EmptySketchListMessage == null && uiParent != null)
+            {
+                Transform emptyMessageTransform = FindDeepChild(uiParent, "Empty Sketch List Message");
+                m_EmptySketchListMessage = emptyMessageTransform != null
+                    ? emptyMessageTransform.gameObject
+                    : CreateEmptyMessage(uiParent);
+            }
         }
 
-        private void CreateFallbackTabBar(RectTransform parent)
+        private Transform FindDeepChild(Transform parent, string childName)
+        {
+            if (parent == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform child = parent.GetChild(i);
+                if (child.name == childName)
+                {
+                    return child;
+                }
+
+                Transform found = FindDeepChild(child, childName);
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+            return null;
+        }
+
+        private void CreateRuntimeTabBar(RectTransform parent)
         {
             GameObject tabBarObject = new GameObject("Sketch Category Tabs",
                 typeof(RectTransform), typeof(HorizontalLayoutGroup));
@@ -1014,56 +1025,6 @@ namespace TiltBrush
                     rectTransform.sizeDelta = new Vector2(tabWidth, 24f);
                 }
             }
-        }
-
-        private NoHeadsetSketchGridItem CreateFallbackGridItemPrefab(RectTransform parent)
-        {
-            GameObject itemObject = new GameObject("Sketch Grid Item",
-                typeof(RectTransform), typeof(Image), typeof(Button), typeof(NoHeadsetPointerCursor),
-                typeof(NoHeadsetSketchGridItem));
-            itemObject.transform.SetParent(parent, false);
-            itemObject.SetActive(false);
-
-            Image background = itemObject.GetComponent<Image>();
-            background.color = new Color(0f, 0f, 0f, 0.24f);
-            Button button = itemObject.GetComponent<Button>();
-            button.targetGraphic = background;
-
-            GameObject thumbnailObject = new GameObject("Thumbnail", typeof(RectTransform), typeof(Image));
-            thumbnailObject.transform.SetParent(itemObject.transform, false);
-            RectTransform thumbnailRect = thumbnailObject.GetComponent<RectTransform>();
-            thumbnailRect.anchorMin = new Vector2(0f, 0.28f);
-            thumbnailRect.anchorMax = new Vector2(1f, 1f);
-            thumbnailRect.offsetMin = new Vector2(6f, 3f);
-            thumbnailRect.offsetMax = new Vector2(-6f, -6f);
-            Image thumbnail = thumbnailObject.GetComponent<Image>();
-            thumbnail.color = new Color(0.08f, 0.09f, 0.1f, 1f);
-            thumbnail.preserveAspect = true;
-
-            TextMeshProUGUI title = CreateItemText("Title", itemObject.transform,
-                new Vector2(0f, 0.04f), new Vector2(1f, 0.26f), 9f, Color.white);
-            title.fontStyle = FontStyles.Normal;
-            title.enableAutoSizing = true;
-            title.fontSizeMin = 7f;
-            title.fontSizeMax = 9f;
-
-            TextMeshProUGUI source = CreateItemText("Source", itemObject.transform,
-                new Vector2(0f, 0f), new Vector2(1f, 0.12f), 9f,
-                new Color(0.8f, 0.8f, 0.8f, 1f));
-            source.gameObject.SetActive(false);
-
-            GameObject loadingObject = new GameObject("Loading", typeof(RectTransform), typeof(Image));
-            loadingObject.transform.SetParent(thumbnailObject.transform, false);
-            RectTransform loadingRect = loadingObject.GetComponent<RectTransform>();
-            loadingRect.anchorMin = Vector2.zero;
-            loadingRect.anchorMax = Vector2.one;
-            loadingRect.offsetMin = Vector2.zero;
-            loadingRect.offsetMax = Vector2.zero;
-            loadingObject.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.18f);
-
-            NoHeadsetSketchGridItem item = itemObject.GetComponent<NoHeadsetSketchGridItem>();
-            item.SetReferences(button, thumbnail, title, source, loadingObject);
-            return item;
         }
 
         private TextMeshProUGUI CreateItemText(string name, Transform parent, Vector2 anchorMin,
