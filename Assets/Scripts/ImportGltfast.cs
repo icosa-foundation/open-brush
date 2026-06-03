@@ -110,8 +110,12 @@ namespace TiltBrush
                 // IDataLoader2, letting the importer read the glTF JSON off the main thread when
                 // IsMultithreaded is set.
                 var fullPath = Uri.UnescapeDataString(localPath).Replace("\\", "/");
+                // The importer's file name must be RELATIVE to the FileLoader root (the directory),
+                // not absolute. Passing the full path makes FileLoader concatenate root + absolute
+                // path into a doubled, invalid path (e.g. ".../id/C:/.../id/file.gltf2"), which fails
+                // File.Exists and spams "Invalid AssetDatabase path" before falling through.
                 options.DataLoader = new FileLoader(Path.GetDirectoryName(fullPath));
-                GLTFSceneImporter gltf = new GLTFSceneImporter(fullPath, options);
+                GLTFSceneImporter gltf = new GLTFSceneImporter(Path.GetFileName(fullPath), options);
 
                 // Device builds only: GLTFSceneImporter hard-forces this false in the editor (to
                 // avoid a historical editor freeze), so editor imports stay single-threaded regardless.
