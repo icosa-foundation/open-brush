@@ -122,13 +122,7 @@ namespace TiltBrush
             PositionPointer();
             if (PanelManager.m_Instance.AdvancedModeActive() && !m_BimanualTape && !m_PaintingActive && m_wandTrigger && !InputManager.Wand.GetControllerGrip() && SketchControlsScript.m_Instance.IsFreepaintToolReady())
                 BeginBimanualTape();
-            /*  Debug.LogWarning("instance "
-                  + MarkovPenSketchbookPanel.Instance != null);
-              Debug.LogWarning("instance2 "
-                  + MarkovPenSketchbookPanel.Instance);
-              Debug.LogWarning("isOpen MarkovPenSketchbookPanel: " + MarkovPenSketchbookPanel.IsOpen);
-              Debug.LogWarning("isOpen MarkovPenDrawingPanel: " + MarkovPenDrawingPanel.IsOpen);
-  */
+
             m_PaintingActive = !m_EatInput && !m_ToolHidden && (m_brushTrigger || (m_PaintingActive && !m_RevolverActive && m_LazyInputActive && m_BimanualTape && m_wandTrigger));
             if (MarkovPenDrawingPanel.IsOpen && MarkovPenDrawingPanel.Instance != null)
             {
@@ -136,14 +130,12 @@ namespace TiltBrush
                 Transform attach = InputManager.m_Instance.GetBrushControllerAttachPoint();
                 if (attach != null)
                 {
-                    Debug.LogWarning("Attach point found: " + attach.name);
 
                     Ray ray = new Ray(attach.position, attach.forward);
                     Vector2 panel2D;
                     Vector3 worldPoint;
                     if (MarkovPenDrawingPanel.Instance.TryGetPanel2DPoint(ray, out panel2D, out worldPoint))
                     {
-                        Debug.LogWarning("Raycast hit panel at: " + worldPoint);
 
                         // Place and orient pointer flat on the panel so strokes are created in 2D on the panel.
                         PointerManager.m_Instance.SetPointerTransform(InputManager.ControllerName.Brush, worldPoint, MarkovPenDrawingPanel.Instance.transform.rotation);
@@ -152,21 +144,16 @@ namespace TiltBrush
                     }
                     else
                     {
-                        Debug.LogWarning("Raycast missed panel, disabling painting");
-
                         m_PaintingActive = false;
                     }
                 }
                 else
                 {
-                    Debug.LogWarning("Attach point not found, disabling painting");
-
                     m_PaintingActive = false;
                 }
             }
             else if (MarkovPenSketchbookPanel.IsOpen && MarkovPenSketchbookPanel.Instance != null)
             {
-                Debug.LogWarning("Markov Pen Sketchbook Panel Opened");
                 m_PaintingActive = false;
             }
             // Allow Multiplayer to override painting mode

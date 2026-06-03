@@ -14,8 +14,6 @@ namespace TiltBrush
         /// Calls the base panel setup and stores this panel as the global instance.
         protected override void Awake()
         {
-            Debug.LogWarning("[MarkovPenSketchbookPanel] Awake");
-
             base.Awake();
             Instance = this;
         }
@@ -27,8 +25,6 @@ namespace TiltBrush
         {
             base.OnEnablePanel();
             IsOpen = true;
-
-            Debug.LogWarning("[MarkovPenSketchbookPanel] Opened. 2D drawing mode active.");
         }
 
         /// Closes the sketchbook panel.
@@ -38,8 +34,6 @@ namespace TiltBrush
         {
             base.OnDisablePanel();
             IsOpen = false;
-
-            Debug.LogWarning("[MarkovPenSketchbookPanel] Closed. 2D drawing mode inactive.");
         }
     }
 }

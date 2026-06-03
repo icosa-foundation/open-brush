@@ -55,7 +55,6 @@ namespace TiltBrush
 
                 if (IsAvailable())
                 {
-                    Debug.Log("Long press triggered: " + m_Type);
                     OnButtonPressed();
 
                     if (m_ButtonHasPressedAudio)
